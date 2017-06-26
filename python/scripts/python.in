@@ -1,0 +1,7 @@
+#!/bin/sh
+
+export LD_LIBRARY_PATH=XXXXXXXX/lib:${LD_LIBRARY_PATH}
+export PYTHONPATH=YYYYYYYY:${PYTHONPATH}
+
+python "$@"
+

@@ -1,0 +1,85 @@
+// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// -*- coding:utf-8 -*-
+/*
+ * Copyright (C) 2016 Sony Corporation
+ * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Sony Corporation;
+ * the contents of this file is not to be disclosed to third parties, copied
+ * or duplicated in any form, in whole or in part, without the prior written
+ * permission of Sony Corporation.
+ */
+
+/** CELU
+ */
+#ifndef __NBLA_FUNCTION_CELU_HPP__
+#define __NBLA_FUNCTION_CELU_HPP__
+
+#include <nbla/cpu.hpp>
+#include <nbla/function.hpp>
+#include <nbla/function_registry.hpp>
+
+namespace nbla {
+
+NBLA_REGISTER_FUNCTION_HEADER(CELU, double, int);
+
+/** Concatenated Exponential Linear Unit (CELU) concatenates ELU outputs of
+positive and negativa inputs together at specified axis.
+
+Inputs:
+- N-D array.
+
+Outputs:
+- N-D array where axis dimension is doubled by concatenating.
+
+@tparam T Data type for computation.
+@param axis The ELU activations of positive inputs and negative inputs are
+concatenated at axis.
+
+\ingroup FunctionImplGrp
+ */
+template <typename T> class CELU : public BaseFunction<double, int> {
+protected:
+  double alpha_;
+  int axis_;
+  int size0_, size1_;
+
+public:
+  CELU(const Context &ctx, double alpha, int axis)
+      : BaseFunction(ctx, alpha, axis), alpha_(alpha), axis_(axis) {}
+  virtual ~CELU() {}
+  virtual shared_ptr<Function> copy() const {
+    return create_CELU(ctx_, alpha_, axis_);
+  }
+  virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual int min_inputs() { return 1; }
+  virtual int min_outputs() { return 1; }
+  virtual string name() { return "CELU"; }
+  virtual vector<string> allowed_array_classes() {
+    return SingletonManager::get<Cpu>()->array_classes();
+  }
+
+protected:
+  NBLA_API virtual void setup_impl(const Variables &inputs,
+                                   const Variables &outputs);
+  NBLA_API virtual void forward_impl(const Variables &inputs,
+                                     const Variables &outputs);
+  NBLA_API virtual void backward_impl(const Variables &inputs,
+                                      const Variables &outputs,
+                                      const vector<bool> &propagate_down,
+                                      const vector<bool> &accum);
+};
+}
+#endif

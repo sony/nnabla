@@ -1,0 +1,652 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import numpy as np
+
+import nnabla as nn
+import nnabla.functions as F
+from nnabla.parameter import get_parameter_or_create, get_parameter
+from nnabla.initializer import (
+    calc_uniform_lim_glorot,
+    ConstantInitializer, NormalInitializer, UniformInitializer)
+
+
+def parametric_function_api(scope_name=None):
+    """Decorator for parametric functions.
+
+    The decorated function is always called under
+    a parameter scope ``scope_name``.
+    Also, the decorator adds an additional argument ``name`` (:obj:`str`,
+    default is ``None``) at the end. If ``name`` is specified, the
+    scope ``scope_name`` comes under a scope ``name``. This feature
+    could reduce vertical space usage of the source code.
+    Any parametric function should be decoreated by this.
+
+    Args:
+        scope_name (str, optional): The original function will be called
+            under a parameter scope named by ``scope_name``.
+
+    Returns:
+        function: A decorated parametric function.
+
+    """
+    if scope_name is None:
+        scope_name = name
+
+    def parametric_function_api_inside(func):
+        import inspect
+
+        name = func.__name__
+        doc = func.__doc__ + """
+    Note:
+
+        If the ``name`` option is passed, the parameters become wrapped inside the parameter scope
+        with the specified name, yielding the same results as the following code.
+        This can be used to simplify the code.
+
+        .. code-block:: python
+
+            with parametric_scope(name):
+                output = {name}(<args>)
+
+        """.format(name=name)
+
+        spec = inspect.getargspec(func)
+        defaults = spec.defaults
+        if defaults is None:
+            defaults = tuple()  # None will be appended later
+        signature = inspect.formatargspec(
+            spec.args + ['name'],
+            spec.varargs, spec.keywords,
+            defaults + (None,))
+        shortsignature = inspect.formatargspec(
+            spec.args, spec.varargs, spec.keywords, None)
+        code = """
+def {name}{signature}:
+    if name is None:
+        with parameter_scope(scope_name):
+            return func{shortsignature}
+    with parameter_scope(name):
+        with parameter_scope(scope_name):
+            return func{shortsignature}
+        """.format(**locals())
+        execdict = dict(
+            func=func, parameter_scope=nn.parameter_scope, scope_name=scope_name)
+        exec code in execdict
+        newfunc = execdict[name]
+        newfunc.__doc__ = doc
+        newfunc.__parametric_function_api_base__ = func
+        newfunc.__scope_name__ = scope_name
+        newfunc.__module__ = __name__
+        return newfunc
+    return parametric_function_api_inside
+
+
+@parametric_function_api("affine")
+def affine(inp, n_outmaps,
+           base_axis=1,
+           w_init=None, b_init=None,
+           fix_parameters=False, rng=None, with_bias=True):
+    """
+    The affine layer, also known as the fully connected layer. Computes
+
+    .. math::
+        {\\mathbf y} = {\\mathbf A} {\\mathbf x} + {\\mathbf b}.
+
+    where :math:`{\\mathbf x}, {\\mathbf y}` are the inputs and outputs respectively,
+    and :math:`{\\mathbf A}, {\\mathbf b}` are constants.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)f
+
+    """
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        inmaps = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inmaps, n_outmap), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, not fix_parameters)
+    return F.affine(inp, w, b, base_axis)
+
+
+@parametric_function_api("bicon_affine")
+def binary_connect_affine(inp, n_outmaps,
+                          base_axis=1,
+                          w_init=None, wb_init=None, b_init=None,
+                          fix_parameters=False, rng=None, with_bias=True):
+    """Binary Connect Affine, multiplier-less inner-product.
+
+    Binary Connect Affine is an affine function,
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_i = \sum_{i} sign(w_i) x_i.
+
+    Therefore :math:`sign(w_i)` is either :math:`1` or :math:`-1` and the inner product
+    simplifies to addition.
+
+    This function should be used together with Batch Normalization.
+
+    References:
+
+        M. Courbariaux, Y. Bengio, and J.-P. David. "BinaryConnect:
+        Training Deep Neural Networks with binary weights during propagations."
+        Advances in Neural Information Processing Systems. 2015.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the binarized weights (`binary_weight`)
+
+        2) The weights and the binary weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the binary weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `binary_weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        wb_init (~nnabla.initializer.BaseInitializer): Initializer for binary weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        fan_in = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(fan_in, n_outmap), rng=rng)
+    if wb_init is None:
+        fan_in = np.prod(inp.shape[base_axis:])
+        wb_init = UniformInitializer(
+            calc_uniform_lim_glorot(fan_in, n_outmap), rng=rng)
+    if b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, not fix_parameters)
+    wb = get_parameter_or_create(
+        "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        wb_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, not fix_parameters)
+    return F.binary_connect_affine(inp, w, wb, b, base_axis)
+
+
+@parametric_function_api("bwn_affine")
+def binary_weight_affine(inp, n_outmaps,
+                         base_axis=1,
+                         w_init=None, wb_init=None, b_init=None,
+                         fix_parameters=False, rng=None, with_bias=True):
+    """Binary Weight Affine, multiplier-less inner-product with a scale factor.
+
+    Binary Weight Affine is the affine function, but the inner product
+    in this function is the following,
+
+    .. math::
+
+        y_j = \\frac{1}{\\|\\mathbf{w}_j\\|_{\\ell_1}} \sum_{i} sign(w_{ji}) x_i
+
+    Therefore :math:`sign(w_{ji})` is either :math:`1` or :math:`-1` and the inner product
+    simplifies to addition followed by scaling factor :math:`\\alpha = \\frac{1}{\\|\\mathbf{w}_j\\|_{\\ell_1}}`.
+    The number of ::math:`\\alpha` is the outmaps of the affine function.
+
+    References:
+
+        Rastegari, Mohammad, et al. "XNOR-Net: ImageNet Classification Using
+        Binary Convolutional Neural Networks." arXiv preprint
+        arXiv:1603.05279 (2016).
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the binarized weights (`binary_weight`)
+
+        2) The weights and the binary weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the binary weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `binary_weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
+        n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for the weight.
+        wb_init (~nnabla.initializer.BaseInitializer): Initializer for the binary weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for the bias.
+        fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        fan_in = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(fan_in, n_outmap), rng=rng)
+    if wb_init is None:
+        fan_in = np.prod(inp.shape[base_axis:])
+        wb_init = UniformInitializer(
+            calc_uniform_lim_glorot(fan_in, n_outmap), rng=rng)
+    if b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, not fix_parameters)
+    wb = get_parameter_or_create(
+        "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        wb_init, not fix_parameters)
+    alpha = get_parameter_or_create(
+        "alpha", n_outmaps, ConstantInitializer(0), False)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, not fix_parameters)
+    return F.binary_weight_affine(inp, w, wb, alpha, b, base_axis)
+
+
+@parametric_function_api("conv")
+def convolution(inp, outmaps, kernel,
+                pad=None, stride=None, dilation=None, group=1,
+                w_init=None, b_init=None,
+                base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+    """
+    N-D Convolution with a bias term.
+
+    For Dilated Convolution (a.k.a. Atrous Convolusion), refer to:
+
+    - Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs. https://arxiv.org/abs/1606.00915
+
+    - Yu et al., Multi-Scale Context Aggregation by Dilated Convolutions. https://arxiv.org/abs/1511.07122
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        w_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+    return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("bicon_conv")
+def binary_connect_convolution(inp, outmaps, kernel,
+                               pad=None, stride=None, dilation=None, group=1,
+                               w_init=None, wb_init=None, b_init=None,
+                               base_axis=1, fix_parameters=False, rng=None,
+                               with_bias=True):
+    """Binary Connect Convolution, multiplier-less inner-product.
+
+    Binary Connect Convolution is the convolution function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j}.
+
+    Therefore :math:`sign(w_i)` is either :math:`1` or :math:`-1` and the inner product
+    simplifies to addition.
+
+    This function should be used together with BatchNormalization.
+
+    References:
+
+        M. Courbariaux, Y. Bengio, and J.-P. David. "BinaryConnect:
+        Training Deep Neural Networks with binary weights during propagations."
+        Advances in Neural Information Processing Systems. 2015.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the binarized weights (`binary_weight`)
+
+        2) The weights and the binary weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the binary weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `binary_weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        wb_init (~nnabla.initializer.BaseInitializer): Initializer for binary weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if wb_init is None:
+        wb_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
+        w_init, not fix_parameters)
+    wb = get_parameter_or_create(
+        "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
+        w_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+    return F.binary_connect_convolution(inp, w, wb, b, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("bwn_conv")
+def binary_weight_convolution(inp, outmaps, kernel,
+                              pad=None, stride=None, dilation=None, group=1,
+                              w_init=None, wb_init=None, b_init=None,
+                              base_axis=1, fix_parameters=False, rng=None,
+                              with_bias=True):
+    """Binary Weight Convolution, multiplier-less inner-product with a scale factor.
+
+    Binary Weight Convolution is the convolution function, but the
+    inner product in this function is the following,
+
+    .. math::
+
+        y_{n, a, b} = \\frac{1}{\\|\\mathbf{w}_n\\|_{\\ell_1}} \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j}.
+
+
+    Therefore :math:`sign(w_{n, m, i, j})`  is either :math:`1` or :math:`-1` and the inner product
+    simplifies to addition followed by scaling factor :math:`\\alpha = \\frac{1}{\\|\\mathbf{w}_n\\|_{\\ell_1}}`.
+    The number of :math:`n` is the number of outmaps of the convolution
+    function.
+
+    References:
+
+        Rastegari, Mohammad, et al. "XNOR-Net: ImageNet Classification Using
+        Binary Convolutional Neural Networks." arXiv preprint
+        arXiv:1603.05279 (2016).
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the binarized weights (`binary_weight`)
+
+        2) The weights and the binary weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the binary weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `binary_weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        wb_init (~nnabla.initializer.BaseInitializer): Initializer for binary weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if wb_init is None:
+        wb_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
+        w_init, not fix_parameters)
+    wb = get_parameter_or_create(
+        "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
+        w_init, not fix_parameters)
+    alpha = get_parameter_or_create(
+        "alpha", (outmaps, ), ConstantInitializer(0), False)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+    return F.binary_weight_convolution(inp, w, wb, alpha, b, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("deconv")
+def deconvolution(inp, outmaps, kernel,
+                  pad=None, stride=None, dilation=None, group=1,
+                  w_init=None, b_init=None,
+                  base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+    """
+    Deconvolution layer.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of deconvolution kernels (which is equal to the number of output channels). For example, to apply deconvolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply deconvolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(outmaps, inp.shape[base_axis], tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (inp.shape[base_axis], outmaps / group) + tuple(kernel),
+        w_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+    return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("bn")
+def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
+                        batch_stat=True, output_stat=False):
+    """
+    Batch normalization layer.
+
+    .. math::
+        \\begin{array}{lcl}
+        \\mu &=& \\frac{1}{M} \\sum x_i\\\\
+        \\sigma^2 &=& \\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\
+        \\hat{x}_i &=& \\frac{x_i - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\\\
+        y_i &=& \\hat{x}_i \\gamma + \\beta.
+        \\end{array}
+
+    where :math:`x_i, y_i` are the inputs.
+    In testing, the mean and variance computed by moving average calculated during training are used.
+
+    Args:
+        inp (~nnabla.Variable): N-D array of input.
+        axes (:obj:`tuple` of :obj:`int`): Axes mean and variance are taken.
+        decay_rate (float): Decay rate of running mean and variance.
+        eps (float): Tiny value to avoid zero division by std.
+        batch_stat (bool): Use mini-batch statistics rather than running ones.
+        output_stat (bool): Output batch mean and variance.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    References:
+
+        - Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. https://arxiv.org/abs/1502.03167
+
+    """
+    assert len(axes) == 1
+    shape_stat = [1 for _ in inp.shape]
+    shape_stat[axes[0]] = inp.shape[axes[0]]
+    beta = get_parameter_or_create(
+        "beta", shape_stat, ConstantInitializer(0), True)
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, ConstantInitializer(1), True)
+    mean = get_parameter_or_create(
+        "mean", shape_stat, ConstantInitializer(0), False)
+    var = get_parameter_or_create(
+        "var", shape_stat, ConstantInitializer(0), False)
+    return F.batch_normalization(inp, beta, gamma, mean, var, axes,
+                                 decay_rate, eps, batch_stat, output_stat)
+
+
+@parametric_function_api("embed")
+def embed(inp, n_inputs, n_features):
+    """ Embed.
+
+    Embed slices a matrix/tensor with indexing array/tensor
+
+    Args:
+        x(~nnabla.Variable): [Integer] Indices with shape :math:`(I_0, ..., I_N)`
+        n_inputs : number of possible inputs, words or vocabraries
+        n_features : number of embedding features
+    Returns:
+        ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
+    """
+    w = get_parameter_or_create("W", [n_inputs, n_features],
+                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True)
+    return F.embed(inp, w)
+
+
+@parametric_function_api("prelu")
+def prelu(inp, base_axis=1, shared=True):
+    """
+    Parametrized Rectified Linear Unit function defined as
+
+    .. math::
+        y_i = \max(0, x_i) + w_i \min(0, -x_i)
+
+    where nagative slope :math:`w` is learned and can vary accros channels (an
+    axis specified with base_axis).
+
+    Args:
+        x(~nnabla.Variable): N-D array as input
+        base_axis(int): Dimensions up to base_axis is treated as sample dimension.
+        shared(bool): Use shared weight value or not 
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    """
+    shape = tuple() if shared else inp.shape[base_axis]
+    w = get_parameter_or_create("W", shape,
+                                ConstantInitializer(-1), True)
+    return F.prelu(inp, w, base_axis)

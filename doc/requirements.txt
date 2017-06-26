@@ -1,0 +1,8 @@
+nnabla
+sphinx-rtd-theme
+sphinxcontrib-actdiag
+sphinxcontrib-blockdiag
+sphinxcontrib-nwdiag
+sphinxcontrib-plantuml
+sphinxcontrib-seqdiag
+sphinxcontrib-toc
