@@ -45,7 +45,7 @@ copyright = u'2017, Sony Corporation'
 author = u'Sony Corporation'
 
 version = u'0.9.1'
-release = u'0.9.1rc3'
+release = u'0.9.1'
 
 language = None
 

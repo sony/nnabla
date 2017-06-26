@@ -12,7 +12,7 @@ environment.
 
 First let us prepare some dependencies.
 
-.. code:: ipython2
+.. code-block:: python2
 
     import nnabla as nn
     
@@ -32,7 +32,7 @@ First let us prepare some dependencies.
 
 .. parsed-literal::
 
-    2017-06-26 11:57:43,452 [nnabla][INFO]: Initializing CPU extension...
+    2017-06-26 23:09:49,971 [nnabla][INFO]: Initializing CPU extension...
 
 
 The ``tiny_digits`` module is located under this folder. It provides
@@ -54,7 +54,7 @@ Preparing a Toy Dataset
 This section just prepares a dataset to be used for demonstration of
 NNabla usage.
 
-.. code:: ipython2
+.. code-block:: python2
 
     digits = tiny_digits.load_digits(n_class=10)
     tiny_digits.plot_stats(digits)
@@ -75,24 +75,24 @@ The next block creates a dataset loader which is a generator providing
 images and labels as minibatches. Note that this dataset is just an
 example purpose and not a part of NNabla.
 
-.. code:: ipython2
+.. code-block:: python2
 
     data = tiny_digits.data_iterator_tiny_digits(digits, batch_size=64, shuffle=True)
 
 
 .. parsed-literal::
 
-    2017-06-26 11:57:47,599 [nnabla][INFO]: DataSource with shuffle(True)
-    2017-06-26 11:57:47,651 [nnabla][INFO]: Using DataSourceWithMemoryCache
-    2017-06-26 11:57:47,651 [nnabla][INFO]: DataSource with shuffle(True)
-    2017-06-26 11:57:47,651 [nnabla][INFO]: On-memory
-    2017-06-26 11:57:47,652 [nnabla][INFO]: Using DataIterator
+    2017-06-26 23:09:50,545 [nnabla][INFO]: DataSource with shuffle(True)
+    2017-06-26 23:09:50,546 [nnabla][INFO]: Using DataSourceWithMemoryCache
+    2017-06-26 23:09:50,546 [nnabla][INFO]: DataSource with shuffle(True)
+    2017-06-26 23:09:50,547 [nnabla][INFO]: On-memory
+    2017-06-26 23:09:50,547 [nnabla][INFO]: Using DataIterator
 
 
 A minibatch is as follows. ``img`` and ``label`` are in
 ``numpy.ndarray``.
 
-.. code:: ipython2
+.. code-block:: python2
 
     img, label = data.next()
     plt.imshow(tile_images(img), **imshow_opt)
@@ -124,7 +124,7 @@ NNabla provides two different ways for backprop-based gradient descent
 optimization. One is with a static graph, and another is with a dynamic
 graph. We are going to show a static version first.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Forward pass
     x = nn.Variable(img.shape)  # Define an image variable
@@ -144,7 +144,7 @@ functions as **parametric functions**. The parameters are created and
 initialized randomly at function call, and registered by a name
 "affine1" using ``parameter_scope`` context.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Building a loss graph
     t = nn.Variable(label.shape)  # Define an target variable
@@ -156,7 +156,7 @@ build doesn't execute any computation, but the shapes of output
 variables are inferred. Therefore, we can inspect the shapes of each
 variable at this time:
 
-.. code:: ipython2
+.. code-block:: python2
 
     print "Printing shapes of variables"
     print x.shape
@@ -181,7 +181,7 @@ You can execute the computation of the graph by calling the
 ``forward()`` method in a sink variable. Inputs can be set via ``.d``
 accessor. It will borrow CPU array references as ``numpy.ndarray``.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Set data
     x.d = img
@@ -209,20 +209,20 @@ Backward propagation through the graph
 The parameters registered by ``parameter_scope`` management function can
 be queried by ``get_parameters()`` as a dict format.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print nn.get_parameters()
 
 
 .. parsed-literal::
 
-    OrderedDict([('affine1/affine/W', <Variable((64, 10), need_grad=True) at 0x7fe954cff808>), ('affine1/affine/b', <Variable((10,), need_grad=True) at 0x7fe954cff668>)])
+    OrderedDict([('affine1/affine/W', <Variable((64, 10), need_grad=True) at 0x7fa0ba361d50>), ('affine1/affine/b', <Variable((10,), need_grad=True) at 0x7fa0ba361ce8>)])
 
 
 Before executing backpropagation, we should initialize gradient buffers
 of all parameter to zeros.
 
-.. code:: ipython2
+.. code-block:: python2
 
     for param in nn.get_parameters().values():
         param.grad.zero()
@@ -230,7 +230,7 @@ of all parameter to zeros.
 Then, you can execute backprop by calling ``backward()`` method at the
 sink variable.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Compute backward
     loss.backward()
@@ -261,7 +261,7 @@ The solver module contains a bunch of optimizer implementations such as
 SGD, SGD with momentum, Adam etc. The below block creates SGD solver and
 sets parameters of logistic regression to it.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Create a solver (gradient-based optimizer)
     learning_rate = 1e-3
@@ -281,7 +281,7 @@ solver class as follows
 
 where :math:`\eta` denotes learning rate.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # One step of training
     x.d, t.d = data.next()
@@ -300,7 +300,7 @@ where :math:`\eta` denotes learning rate.
 
 Next block iterates optimization steps, and shows the loss decreases.
 
-.. code:: ipython2
+.. code-block:: python2
 
     for i in range(1000):
         x.d, t.d = data.next()
@@ -332,7 +332,7 @@ Show prediction
 
 The following code displays training results.
 
-.. code:: ipython2
+.. code-block:: python2
 
     x.d, t.d = data.next()  # Here we predict images from training set although it's useless. 
     y.forward()  # You can execute a sub graph.
@@ -367,7 +367,7 @@ doesn't show how useful dynamic graph is, but shows a bit of flavor.
 The next block just define computation graph building as functions for
 later use.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def logreg_forward(x):
         with nn.parameter_scope("affine1"):
@@ -384,7 +384,7 @@ this, computation is fired immediately at functions are called. (You can
 also use ``nnabla.set_auto_forward(auto)`` to set the auto-forward state
 globally.)
 
-.. code:: ipython2
+.. code-block:: python2
 
     x = nn.Variable(img.shape)
     t = nn.Variable(label.shape)
@@ -418,7 +418,7 @@ globally.)
 
 Backward computation can be done on a dynamically constructed graph.
 
-.. code:: ipython2
+.. code-block:: python2
 
     solver.zero_grad()
     loss.backward()
@@ -431,14 +431,14 @@ In this section, you see an example of MLP graph building and training.
 Before starting, we clear all parameters registered in the logistic
 regression example.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.clear_parameters()  # Clear all parameters
 
 Here is the function that builds a MLP with an arbitrary depth and width
 for 10 class classification.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def mlp(x, hidden=[16, 32, 16]):
         hs = []
@@ -452,12 +452,12 @@ for 10 class classification.
                 y = PF.affine(h, 10)
         return y, hs
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Construct a MLP graph
     y, hs = mlp(x)
 
-.. code:: ipython2
+.. code-block:: python2
 
     print "Printing shapes"
     print "x:", x.shape
@@ -476,7 +476,7 @@ for 10 class classification.
     y: (64, 10)
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Training
     loss = logreg_loss(y, t)  # Reuse logreg loss function.
@@ -514,7 +514,7 @@ for 10 class classification.
     900 0.555113613605
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Showing responses for each layer
     num_plot = len(hs) + 2
@@ -547,11 +547,11 @@ Convolutional Neural Network with CUDA acceleration
 
 Here we demonstrates a CNN with CUDA GPU acceleration.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.clear_parameters()
 
-.. code:: ipython2
+.. code-block:: python2
 
     def cnn(x):
         with nn.parameter_scope("cnn"):  # Parameter scope can be nested
@@ -586,7 +586,7 @@ context, Functions and solves created are instantiated with CUDNN
 reference <http://nnabla.readthedocs.io/en/latest/python/api/common.html#context>`__
 for details.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Run on CUDA
     from nnabla.contrib.context import extension_context
@@ -600,8 +600,8 @@ for details.
 
 .. parsed-literal::
 
-    2017-06-26 11:57:52,039 [nnabla][INFO]: Initializing CUDA extension...
-    2017-06-26 11:57:52,387 [nnabla][INFO]: Initializing cuDNN extension...
+    2017-06-26 23:09:54,555 [nnabla][INFO]: Initializing CUDA extension...
+    2017-06-26 23:09:54,731 [nnabla][INFO]: Initializing cuDNN extension...
 
 
 .. parsed-literal::
@@ -609,7 +609,7 @@ for details.
     Context: Context(backend='cpu|cuda', array_class='CudaCachedArray', device_id='0', compute_backend='default|cudnn')
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     training(1000, 1e-1)
 
@@ -618,17 +618,17 @@ for details.
 
     0 2.34862923622
     100 1.00527024269
-    200 0.416576743126
-    300 0.240603491664
-    400 0.254562854767
+    200 0.416576713324
+    300 0.240603536367
+    400 0.254562884569
     500 0.206138283014
-    600 0.220851480961
-    700 0.161689683795
-    800 0.230873405933
-    900 0.121101245284
+    600 0.220851421356
+    700 0.161689639091
+    800 0.230873346329
+    900 0.121101222932
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Showing responses for each layer
     num_plot = len(hs) + 2
@@ -648,7 +648,7 @@ for details.
 ``nn.save_parameters`` writes parameters registered in
 ``parameter_scope`` system in HDF5 format. We use it a later example.
 
-.. code:: ipython2
+.. code-block:: python2
 
     path_cnn_params = "tmp.params.cnn.h5"
     nn.save_parameters(path_cnn_params)
@@ -656,7 +656,7 @@ for details.
 
 .. parsed-literal::
 
-    2017-06-26 11:57:57,222 [nnabla][INFO]: Parameter save (hdf5): tmp.params.cnn.h5
+    2017-06-26 23:09:56,132 [nnabla][INFO]: Parameter save (hdf5): tmp.params.cnn.h5
 
 
 Recurrent Neural Network (Elman RNN)
@@ -664,11 +664,11 @@ Recurrent Neural Network (Elman RNN)
 
 This is an example of recurrent neural network training.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.clear_parameters()
 
-.. code:: ipython2
+.. code-block:: python2
 
     def rnn(xs, h0, hidden=32):
         hs = []
@@ -691,7 +691,7 @@ This is an example of recurrent neural network training.
 It is not meaningful, but just a demonstration purpose. We split an
 image into 2 by 2 grids, and feed them sequentially into RNN.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def split_grid4(x):
         x0 = x[..., :4, :4]
@@ -700,7 +700,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
         x3 = x[..., 4:, 4:]
         return x0, x1, x2, x3
 
-.. code:: ipython2
+.. code-block:: python2
 
     hidden = 32
     seq_img = split_grid4(img)
@@ -709,7 +709,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
     y, hs = rnn(seq_x, h0, hidden)
     loss = logreg_loss(y, t)
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Copied from the above logreg example.
     def training_rnn(steps, learning_rate):
@@ -736,18 +736,18 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
 .. parsed-literal::
 
     0 2.62527275085
-    100 0.780260741711
-    200 0.486522257328
-    300 0.289346784353
-    400 0.249013692141
-    500 0.550322055817
-    600 0.270277023315
-    700 0.143515050411
-    800 0.342485547066
-    900 0.0872729718685
+    100 0.780260562897
+    200 0.486522495747
+    300 0.289345681667
+    400 0.249717146158
+    500 0.538961410522
+    600 0.276877015829
+    700 0.159639537334
+    800 0.249660402536
+    900 0.0925596579909
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Showing responses for each layer
     num_plot = len(hs) + 2
@@ -772,7 +772,7 @@ pretrained network.
 
 First, we load parameters learned in the CNN example.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.clear_parameters()
     # Loading CNN pretrained parameters.
@@ -781,14 +781,14 @@ First, we load parameters learned in the CNN example.
 
 .. parsed-literal::
 
-    2017-06-26 11:57:58,827 [nnabla][INFO]: Parameter load (<built-in function format>): tmp.params.cnn.h5
+    2017-06-26 23:09:57,838 [nnabla][INFO]: Parameter load (<built-in function format>): tmp.params.cnn.h5
 
 
 We define embedding function. Note that the network structure and
 parameter hierarchy is identical to the previous CNN example. That
 enables you to reuse the saved parameters and finetune from it.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def cnn_embed(x, test=False):
         # Note: Identical configuration with the CNN example above.
@@ -818,7 +818,7 @@ We build two stream CNNs and compare them with the contrastive loss
 function defined above. Note that both CNNs have the same parameter
 hierarchy, which means both parameters are shared.
 
-.. code:: ipython2
+.. code-block:: python2
 
     x0 = nn.Variable(img.shape)
     x1 = nn.Variable(img.shape)
@@ -827,7 +827,7 @@ hierarchy, which means both parameters are shared.
     e1, hs1 = cnn_embed(x1)  # NOTE: parameters are shared
     loss = siamese_loss(e0, e1, t)
 
-.. code:: ipython2
+.. code-block:: python2
 
     def training_siamese(steps):
         for i in range(steps):
@@ -858,67 +858,67 @@ hierarchy, which means both parameters are shared.
 
 .. parsed-literal::
 
-    0 0.150528028607
+    0 0.150528043509
     100 0.186870157719
-    200 0.149316310883
-    300 0.207163631916
-    400 0.171384915709
-    500 0.190256133676
-    600 0.138507679105
-    700 0.091807320714
-    800 0.159692212939
-    900 0.0833696573973
-    1000 0.0839115530252
-    1100 0.104670032859
-    1200 0.0776312425733
-    1300 0.114788725972
-    1400 0.120309099555
-    1500 0.107732787728
-    1600 0.0701144486666
-    1700 0.101728200912
-    1800 0.114350445569
-    1900 0.11879440397
-    0 0.0669309198856
-    100 0.0553174093366
-    200 0.0829797610641
+    200 0.149316266179
+    300 0.207163512707
+    400 0.171384960413
+    500 0.190256178379
+    600 0.138507723808
+    700 0.0918073058128
+    800 0.159692272544
+    900 0.0833697617054
+    1000 0.0839115008712
+    1100 0.104669973254
+    1200 0.0776312947273
+    1300 0.114788673818
+    1400 0.120309025049
+    1500 0.107732802629
+    1600 0.070114441216
+    1700 0.101728007197
+    1800 0.114350572228
+    1900 0.118794307113
+    0 0.0669310241938
+    100 0.0553173273802
+    200 0.0829797014594
     300 0.0951051414013
-    400 0.128304392099
-    500 0.102962911129
-    600 0.0910560786724
-    700 0.0898950248957
-    800 0.119949676096
-    900 0.0603065416217
-    1000 0.105748683214
-    1100 0.10876069963
-    1200 0.0820946544409
-    1300 0.0971108973026
-    1400 0.083616822958
-    1500 0.0899553224444
-    1600 0.109069690108
-    1700 0.0921651571989
-    1800 0.0759358555079
-    1900 0.100669801235
+    400 0.128303915262
+    500 0.102963000536
+    600 0.0910559669137
+    700 0.0898950695992
+    800 0.119949311018
+    900 0.0603067912161
+    1000 0.105748720467
+    1100 0.108760476112
+    1200 0.0820947736502
+    1300 0.0971114039421
+    1400 0.0836166366935
+    1500 0.0899554267526
+    1600 0.109069615602
+    1700 0.0921652168036
+    1800 0.0759357959032
+    1900 0.100669950247
 
 
 We visualize embedded training images as following. You see the images
 from the same class embedded near each other.
 
-.. code:: ipython2
+.. code-block:: python2
 
     all_image = digits.images[:512, None]
     all_label = digits.target[:512]
 
-.. code:: ipython2
+.. code-block:: python2
 
     x_all = nn.Variable(all_image.shape)
     x_all.d = all_image
 
-.. code:: ipython2
+.. code-block:: python2
 
     with nn.auto_forward():
         embed, _ = cnn_embed(x_all, test=True)
 
-.. code:: ipython2
+.. code-block:: python2
 
     plt.figure(figsize=(16, 9))
     for i in range(10):

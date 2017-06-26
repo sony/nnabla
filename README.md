@@ -109,6 +109,7 @@ loss.backward()
 
 <https://nnabla.readthedocs.io/en/latest/python/installation.html>
 
+
 ### Getting started
 
 * A number of Jupyter notebook tutorials can be found in the `tutorial` folder.

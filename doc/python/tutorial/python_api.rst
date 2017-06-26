@@ -4,7 +4,7 @@ NNabla Python API Demonstration Tutorial
 
 Let us import nnabla first, and some additional useful tools.
 
-.. code:: ipython2
+.. code-block:: python2
 
     import nnabla as nn  # Abbreviate as nn for convenience.
     
@@ -15,7 +15,7 @@ Let us import nnabla first, and some additional useful tools.
 
 .. parsed-literal::
 
-    2017-06-26 11:58:08,046 [nnabla][INFO]: Initializing CPU extension...
+    2017-06-26 23:11:00,013 [nnabla][INFO]: Initializing CPU extension...
 
 
 NdArray
@@ -26,34 +26,34 @@ device (e.g. CPU, CUDA) and type (e.g. uint8, float32) agnostic, in
 which both type and device are implicitly casted or transferred when it
 is used. Below, you create a NdArray with a shape of ``(2, 3, 4)``.
 
-.. code:: ipython2
+.. code-block:: python2
 
     a = nn.NdArray((2, 3, 4))
 
 You can see the values held inside ``a`` by the following. The values
 are not initialized, and are created as float32 by default.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print a.data
 
 
 .. parsed-literal::
 
-    [[[ -2.61849964e+38   4.57692104e-41   9.55322336e-38   0.00000000e+00]
-      [             nan   4.57692104e-41   0.00000000e+00   0.00000000e+00]
+    [[[ -8.57284198e+09   4.56907377e-41  -8.57284198e+09   4.56907377e-41]
+      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   0.00000000e+00]
       [  0.00000000e+00   0.00000000e+00   0.00000000e+00   0.00000000e+00]]
     
      [[  0.00000000e+00   0.00000000e+00   0.00000000e+00   0.00000000e+00]
-      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   0.00000000e+00]
-      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   0.00000000e+00]]]
+      [  0.00000000e+00   0.00000000e+00   6.74024561e-43   0.00000000e+00]
+      [ -8.57256346e+09   4.56907377e-41  -8.57256346e+09   4.56907377e-41]]]
 
 
 The accessor ``.data`` returns a reference to the values of NdArray as
 ``numpy.ndarray``. You can modify these by using the Numpy API as
 follows.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print '[Substituting random values]'
     a.data = np.random.randn(*a.shape)
@@ -66,21 +66,21 @@ follows.
 .. parsed-literal::
 
     [Substituting random values]
-    [[[ 0.40705302  0.28001803 -0.20453408  0.13093373]
-      [ 0.90947026 -0.17857344  0.32959503 -0.20124471]
-      [ 0.68288428 -0.63338071 -3.12650847  1.35729706]]
+    [[[-0.44771791  0.37770718  0.13974769 -0.7574079 ]
+      [-0.69822484  0.72812998  0.65710258  1.39894378]
+      [ 2.45816112  0.14256425 -0.10612717  0.37355551]]
     
-     [[-1.15608287 -0.17183913  2.01262951 -0.59164506]
-      [-1.60144043  0.21257734 -0.20791137 -0.52922416]
-      [ 3.31629848 -0.59307563 -1.67073536 -0.13047314]]]
+     [[-1.26604652 -1.17278957  0.93183202 -1.35603702]
+      [-0.37144065 -0.10313081 -0.89111573 -1.47255397]
+      [ 0.62756163 -0.6097846   1.48144531  0.41393015]]]
     [Slicing]
-    [[[ 0.          0.28001803  0.          0.13093373]
-      [ 0.         -0.17857344  0.         -0.20124471]
-      [ 0.         -0.63338071  0.          1.35729706]]
+    [[[ 0.          0.37770718  0.         -0.7574079 ]
+      [ 0.          0.72812998  0.          1.39894378]
+      [ 0.          0.14256425  0.          0.37355551]]
     
-     [[-1.15608287 -0.17183913  2.01262951 -0.59164506]
-      [-1.60144043  0.21257734 -0.20791137 -0.52922416]
-      [ 3.31629848 -0.59307563 -1.67073536 -0.13047314]]]
+     [[-1.26604652 -1.17278957  0.93183202 -1.35603702]
+      [-0.37144065 -0.10313081 -0.89111573 -1.47255397]
+      [ 0.62756163 -0.6097846   1.48144531  0.41393015]]]
 
 
 Note that the above operation is all done in the host device (CPU).
@@ -92,7 +92,7 @@ filling operation is executed within a specific device (e.g. CUDA GPU),
 and more efficient if you specify the device setting, which we explain
 later.
 
-.. code:: ipython2
+.. code-block:: python2
 
     a.fill(1)  # Filling all values with one.
     print a.data
@@ -111,7 +111,7 @@ later.
 
 You can create an NdArray instance directly from a Numpy array object.
 
-.. code:: ipython2
+.. code-block:: python2
 
     b = nn.NdArray.from_numpy_array(np.ones(a.shape))
     print b.data
@@ -155,7 +155,7 @@ The following line creates a Variable instance with a shape of (2, 3,
 is used to omit unnecessary gradient computation during backprop if set
 to False.
 
-.. code:: ipython2
+.. code-block:: python2
 
     x = nn.Variable([2, 3, 4], need_grad=True)
     print 'x.data:', x.data
@@ -164,13 +164,13 @@ to False.
 
 .. parsed-literal::
 
-    x.data: <NdArray((2, 3, 4)) at 0x7f96c2ca3120>
-    x.grad: <NdArray((2, 3, 4)) at 0x7f96c2ca3120>
+    x.data: <NdArray((2, 3, 4)) at 0x7f5e93877120>
+    x.grad: <NdArray((2, 3, 4)) at 0x7f5e93877120>
 
 
 You can get the shape by:
 
-.. code:: ipython2
+.. code-block:: python2
 
     x.shape
 
@@ -188,7 +188,7 @@ reference to its values as NdArray with the ``.data`` accessor, but also
 it can be refered by ``.d`` or ``.g`` property for ``data`` and ``grad``
 respectively.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print 'x.data'
     print x.d
@@ -208,21 +208,21 @@ respectively.
 .. parsed-literal::
 
     x.data
-    [[[ -2.61862296e+38   4.57692104e-41  -2.61862296e+38   4.57692104e-41]
-      [  3.44276208e-37   0.00000000e+00   3.44276208e-37   0.00000000e+00]
+    [[[ -8.57293210e+09   4.56907377e-41  -8.57293210e+09   4.56907377e-41]
+      [             nan   4.56907377e-41   1.09979112e+27   1.83946147e+25]
       [  1.69275966e+22   4.80112800e+30   1.21230330e+25   7.22962302e+31]]
     
-     [[  1.10471027e-32   4.63080422e+27   1.74678549e+25   1.03958307e+21]
-      [  1.89904644e+28   2.20458068e-10   1.12893616e+27   6.38286091e-10]
-      [  5.44217996e+22   2.07717912e-10   9.72737793e+02   2.18638954e-10]]]
+     [[  1.10471027e-32   4.63080422e+27   2.44632805e+20   2.87606258e+20]
+      [  4.46263300e+30   4.62311881e+30   7.65000750e+28   3.01339003e+29]
+      [  2.08627352e-10   1.03903997e+21   2.46406626e+32   6.74187108e+22]]]
     x.grad
-    [[[ -2.61845097e+38   4.57692104e-41  -2.61845097e+38   4.57692104e-41]
-      [             nan              nan   0.00000000e+00   0.00000000e+00]
-      [  0.00000000e+00   0.00000000e+00   1.32472255e-38   0.00000000e+00]]
+    [[[ -8.57288294e+09   4.56907377e-41  -8.57288294e+09   4.56907377e-41]
+      [             nan   0.00000000e+00   1.09979112e+27   1.83946147e+25]
+      [  1.69275966e+22   4.80112800e+30   1.21230330e+25   7.22962302e+31]]
     
-     [[  1.96181785e-44   0.00000000e+00   9.12583854e-38   0.00000000e+00]
-      [ -3.75903959e+34   4.57692104e-41              nan   4.57692104e-41]
-      [ -6.27068418e+37   4.57692104e-41   0.00000000e+00   0.00000000e+00]]]
+     [[  1.10471027e-32   4.63080422e+27   2.44632805e+20   2.87606258e+20]
+      [  4.46263300e+30   4.62311881e+30   7.65000750e+28   3.01339003e+29]
+      [  2.08627352e-10   1.03903997e+21   2.46406626e+32   6.74187108e+22]]]
     x.grad (after `.zero()`)
     [[[ 0.  0.  0.  0.]
       [ 0.  0.  0.  0.]
@@ -236,7 +236,7 @@ respectively.
 Like ``NdArray``, a ``Variable`` can also be created from Numpy
 array(s).
 
-.. code:: ipython2
+.. code-block:: python2
 
     x2 = nn.Variable.from_numpy_array(np.ones((3,)), need_grad=True)
     print x2
@@ -249,9 +249,9 @@ array(s).
 
 .. parsed-literal::
 
-    <Variable((3,), need_grad=True) at 0x7f96c2cabbb0>
+    <Variable((3,), need_grad=True) at 0x7f5e9387e258>
     [ 1.  1.  1.]
-    <Variable((3,), need_grad=True) at 0x7f96c2cab4c8>
+    <Variable((3,), need_grad=True) at 0x7f5e9387ec18>
     [ 1.  1.  1.]
     [ 0.  0.  0.]
 
@@ -261,7 +261,7 @@ Besides storing values of a computation graph, pointing a parent edge
 ``x`` doesn't have any connection. Therefore, the ``.parent`` property
 returns None.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print x.parent
 
@@ -280,7 +280,7 @@ functions (e.g. Convolution, Affine and ReLU). You can see the list of
 functions available in the `API reference
 guide <http://nnabla.readthedocs.io/en/latest/python/api/function.html#module-nnabla.functions>`__.
 
-.. code:: ipython2
+.. code-block:: python2
 
     import nnabla.functions as F
 
@@ -290,7 +290,7 @@ sums up all values into a scalar. (This is simple enough to explain how
 it behaves but a meaningless example in the context of neural network
 training. We will show you a neural network example later.)
 
-.. code:: ipython2
+.. code-block:: python2
 
     sigmoid_output = F.sigmoid(x)
     sum_output = F.reduce_sum(sigmoid_output)
@@ -303,7 +303,7 @@ define the graph. (This is the default behavior of NNabla computation
 graph API. You can also fire actual computation during graph definition
 which we call "Dynamic mode" (explained later)).
 
-.. code:: ipython2
+.. code-block:: python2
 
     print "sigmoid_output.parent.name:", sigmoid_output.parent.name
     print "x:", x
@@ -313,11 +313,11 @@ which we call "Dynamic mode" (explained later)).
 .. parsed-literal::
 
     sigmoid_output.parent.name: Sigmoid
-    x: <Variable((2, 3, 4), need_grad=True) at 0x7f96c2cabc80>
-    sigmoid_output.parent.inputs refers to x: [<Variable((2, 3, 4), need_grad=True) at 0x7f96c29ec390>]
+    x: <Variable((2, 3, 4), need_grad=True) at 0x7f5e9387e2c0>
+    sigmoid_output.parent.inputs refers to x: [<Variable((2, 3, 4), need_grad=True) at 0x7f5e935a48d8>]
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     print "sum_output.parent.name:", sum_output.parent.name
     print "sigmoid_output:", sigmoid_output
@@ -327,14 +327,14 @@ which we call "Dynamic mode" (explained later)).
 .. parsed-literal::
 
     sum_output.parent.name: ReduceSum
-    sigmoid_output: <Variable((2, 3, 4), need_grad=True) at 0x7f96c29ec188>
-    sum_output.parent.inputs refers to sigmoid_output: [<Variable((2, 3, 4), need_grad=True) at 0x7f96c29ec3f8>]
+    sigmoid_output: <Variable((2, 3, 4), need_grad=True) at 0x7f5e935a46d0>
+    sum_output.parent.inputs refers to sigmoid_output: [<Variable((2, 3, 4), need_grad=True) at 0x7f5e935a4940>]
 
 
 The ``.forward()`` at a leaf Variable executes the forward pass
 computation in the computation graph.
 
-.. code:: ipython2
+.. code-block:: python2
 
     sum_output.forward()
     print "CG output:", sum_output.d
@@ -352,7 +352,7 @@ Here we initialize the ``grad`` values as zero before backprop since the
 NNabla backprop algorithm always accumulates the gradient in the root
 variables.
 
-.. code:: ipython2
+.. code-block:: python2
 
     x.grad.zero()
     sum_output.backward()
@@ -390,7 +390,7 @@ dense etc.). In NNabla, the learnable parameters are also represented as
 variables are also used by passing into ``Function``\ s. For example,
 Affine function takes input, weights and biases as inputs.
 
-.. code:: ipython2
+.. code-block:: python2
 
     x = nn.Variable([5, 2])  # Input
     w = nn.Variable([2, 3], need_grad=True)  # Weights
@@ -402,7 +402,7 @@ The above example takes an input with B=5 (batchsize) and D=2
 
 You may also notice that here you set ``need_grad=True`` only for
 parameter variables (w and b). The x is a non-parameter variable and the
-root of computation graph. Therefore, it doesn't requires gradient
+root of computation graph. Therefore, it doesn't require gradient
 computation. In this configuration, the gradient computation for x is
 not executed in the first affine, which will omit the computation of
 unnecessary backpropagation.
@@ -410,7 +410,7 @@ unnecessary backpropagation.
 The next block sets data and initializes grad, then applies forward and
 backward computation.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Set random input and parameters
     x.d = np.random.randn(*x.shape)
@@ -428,7 +428,7 @@ backward computation.
 
 You can see that affine\_out holds an output of Affine.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print 'F.affine'
     print affine_out.d
@@ -439,22 +439,22 @@ You can see that affine\_out holds an output of Affine.
 .. parsed-literal::
 
     F.affine
-    [[ 0.07710284 -2.41815495 -0.18701762]
-     [-0.91420352 -2.75334573 -2.18264437]
-     [ 0.73566234 -3.54556227 -0.21898538]
-     [-2.35871768  1.07976413 -0.74461746]
-     [-0.11192489 -2.43834972 -0.52358592]]
+    [[-0.12508428  0.78213298 -0.31685624]
+     [-2.05011082 -0.40075728 -0.22697631]
+     [-1.75955343  1.1205312  -0.4265328 ]
+     [-1.03893924 -0.40710089 -0.18724398]
+     [-2.58731937 -2.25192761  0.00879636]]
     Reference
-    [[ 0.07710284 -2.41815495 -0.18701762]
-     [-0.91420352 -2.75334573 -2.18264437]
-     [ 0.73566234 -3.54556227 -0.21898541]
-     [-2.35871768  1.07976413 -0.7446174 ]
-     [-0.11192489 -2.43834972 -0.52358592]]
+    [[-0.12508428  0.78213304 -0.31685624]
+     [-2.05011082 -0.40075728 -0.22697631]
+     [-1.75955343  1.1205312  -0.4265328 ]
+     [-1.03893924 -0.40710089 -0.18724398]
+     [-2.58731937 -2.25192761  0.00879636]]
 
 
-Also the gradients of weights and biases are computed as follows.
+The resulting gradients of weights and biases are as follows.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print "dw"
     print w.g
@@ -465,8 +465,8 @@ Also the gradients of weights and biases are computed as follows.
 .. parsed-literal::
 
     dw
-    [[ 0.68349785  0.68349785  0.68349785]
-     [ 0.15355726  0.15355726  0.15355726]]
+    [[ 1.40481603  1.40481603  1.40481603]
+     [-0.10959685 -0.10959685 -0.10959685]]
     db
     [ 5.  5.  5.]
 
@@ -474,7 +474,7 @@ Also the gradients of weights and biases are computed as follows.
 The gradient of ``x`` is not changed because ``need_grad`` is set as
 False.
 
-.. code:: ipython2
+.. code-block:: python2
 
     print x.g
 
@@ -501,13 +501,13 @@ parametric functions and an interface for composing trainable models.
 
 To use parametric functions, import:
 
-.. code:: ipython2
+.. code-block:: python2
 
     import nnabla.parametric_functions as PF
 
 The function with optimizable parameter can be created as below.
 
-.. code:: ipython2
+.. code-block:: python2
 
     with nn.parameter_scope("affine1"):
         c1 = PF.affine(x, 3)
@@ -516,10 +516,10 @@ The first line creates a **parameter scope**. The second line then
 applies ``PF.affine`` - an affine transform - to ``x``, and creates a
 variable ``c1`` holding that result. The parameters are created and
 initialized randomly at function call, and registered by a name
-"affine1" using ``parameter_scope`` context. The registered parameters
-can be gotten by ``nnabla.get_parameters()`` function.
+"affine1" using ``parameter_scope`` context. The function
+``nnabla.get_parameters()`` allows to get the registered parameters.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.get_parameters()
 
@@ -529,9 +529,9 @@ can be gotten by ``nnabla.get_parameters()`` function.
 .. parsed-literal::
 
     OrderedDict([('affine1/affine/W',
-                  <Variable((2, 3), need_grad=True) at 0x7f96c29ecb48>),
+                  <Variable((2, 3), need_grad=True) at 0x7f5e91557120>),
                  ('affine1/affine/b',
-                  <Variable((3,), need_grad=True) at 0x7f96c29ecbb0>)])
+                  <Variable((3,), need_grad=True) at 0x7f5e91557188>)])
 
 
 
@@ -542,7 +542,7 @@ as below. It could save the space of your Python code. The
 parametric functions such as Convolution-BatchNormalization found in a
 typical unit of CNNs.
 
-.. code:: ipython2
+.. code-block:: python2
 
     c1 = PF.affine(x, 3, name='affine1')
     nn.get_parameters()
@@ -553,18 +553,18 @@ typical unit of CNNs.
 .. parsed-literal::
 
     OrderedDict([('affine1/affine/W',
-                  <Variable((2, 3), need_grad=True) at 0x7f96c29ecb48>),
+                  <Variable((2, 3), need_grad=True) at 0x7f5e91557120>),
                  ('affine1/affine/b',
-                  <Variable((3,), need_grad=True) at 0x7f96c29ecbb0>)])
+                  <Variable((3,), need_grad=True) at 0x7f5e91557188>)])
 
 
 
 It is worth noting that the shapes of both outputs and parameter
 variables (as you can see above) are automatically determined by only
-providing the number output dimensions of affine transformation(=3).
-That lets us to create a graph easier.
+providing the output size of affine transformation(in the example above
+the output size is 3). This helps to create a graph in an easy way.
 
-.. code:: ipython2
+.. code-block:: python2
 
     c1.shape
 
@@ -580,7 +580,7 @@ That lets us to create a graph easier.
 Parameter scope can be nested as follows (although a meaningless
 example).
 
-.. code:: ipython2
+.. code-block:: python2
 
     with nn.parameter_scope('foo'):
         h = PF.affine(x, 3)
@@ -589,7 +589,7 @@ example).
 
 This creates the following.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.get_parameters()
 
@@ -599,24 +599,24 @@ This creates the following.
 .. parsed-literal::
 
     OrderedDict([('affine1/affine/W',
-                  <Variable((2, 3), need_grad=True) at 0x7f96c29ecb48>),
+                  <Variable((2, 3), need_grad=True) at 0x7f5e91557120>),
                  ('affine1/affine/b',
-                  <Variable((3,), need_grad=True) at 0x7f96c29ecbb0>),
+                  <Variable((3,), need_grad=True) at 0x7f5e91557188>),
                  ('foo/affine/W',
-                  <Variable((2, 3), need_grad=True) at 0x7f96c29ecef0>),
+                  <Variable((2, 3), need_grad=True) at 0x7f5e915574c8>),
                  ('foo/affine/b',
-                  <Variable((3,), need_grad=True) at 0x7f96c29ecf58>),
+                  <Variable((3,), need_grad=True) at 0x7f5e91557530>),
                  ('foo/bar/affine/W',
-                  <Variable((3, 4), need_grad=True) at 0x7f96c098b0b8>),
+                  <Variable((3, 4), need_grad=True) at 0x7f5e91557600>),
                  ('foo/bar/affine/b',
-                  <Variable((4,), need_grad=True) at 0x7f96c098b120>)])
+                  <Variable((4,), need_grad=True) at 0x7f5e91557668>)])
 
 
 
 Also, ``get_parameters()`` can be used in ``parameter_scope``. For
 example:
 
-.. code:: ipython2
+.. code-block:: python2
 
     with nn.parameter_scope("foo"):
         print nn.get_parameters()
@@ -624,13 +624,13 @@ example:
 
 .. parsed-literal::
 
-    OrderedDict([('affine/W', <Variable((2, 3), need_grad=True) at 0x7f96c29ecef0>), ('affine/b', <Variable((3,), need_grad=True) at 0x7f96c29ecf58>), ('bar/affine/W', <Variable((3, 4), need_grad=True) at 0x7f96c098b0b8>), ('bar/affine/b', <Variable((4,), need_grad=True) at 0x7f96c098b120>)])
+    OrderedDict([('affine/W', <Variable((2, 3), need_grad=True) at 0x7f5e915574c8>), ('affine/b', <Variable((3,), need_grad=True) at 0x7f5e91557530>), ('bar/affine/W', <Variable((3, 4), need_grad=True) at 0x7f5e91557600>), ('bar/affine/b', <Variable((4,), need_grad=True) at 0x7f5e91557668>)])
 
 
 ``nnabla.clear_parameters()`` can be used to delete registered
 parameters under the scope.
 
-.. code:: ipython2
+.. code-block:: python2
 
     with nn.parameter_scope("foo"):
         nn.clear_parameters()
@@ -639,17 +639,17 @@ parameters under the scope.
 
 .. parsed-literal::
 
-    OrderedDict([('affine1/affine/W', <Variable((2, 3), need_grad=True) at 0x7f96c29ecb48>), ('affine1/affine/b', <Variable((3,), need_grad=True) at 0x7f96c29ecbb0>)])
+    OrderedDict([('affine1/affine/W', <Variable((2, 3), need_grad=True) at 0x7f5e91557120>), ('affine1/affine/b', <Variable((3,), need_grad=True) at 0x7f5e91557188>)])
 
 
 MLP Example For Explanation
 ---------------------------
 
 The following block creates a computation graph to predict one
-dimensional output from two dimensional inputs by 2 layered fully
-connected neural network (multi-layered perceptron).
+dimensional output from two dimensional inputs by a 2 layer fully
+connected neural network (multi-layer perceptron).
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.clear_parameters()
     batchsize = 16
@@ -668,7 +668,7 @@ connected neural network (multi-layered perceptron).
 
 This will create the following parameter variables.
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.get_parameters()
 
@@ -678,20 +678,20 @@ This will create the following parameter variables.
 .. parsed-literal::
 
     OrderedDict([('fc1/affine/W',
-                  <Variable((2, 512), need_grad=True) at 0x7f96c098b390>),
+                  <Variable((2, 512), need_grad=True) at 0x7f5e915578d8>),
                  ('fc1/affine/b',
-                  <Variable((512,), need_grad=True) at 0x7f96c098b328>),
+                  <Variable((512,), need_grad=True) at 0x7f5e91557870>),
                  ('fc2/affine/W',
-                  <Variable((512, 1), need_grad=True) at 0x7f96c098b050>),
+                  <Variable((512, 1), need_grad=True) at 0x7f5e91557598>),
                  ('fc2/affine/b',
-                  <Variable((1,), need_grad=True) at 0x7f96c098b4c8>)])
+                  <Variable((1,), need_grad=True) at 0x7f5e91557a10>)])
 
 
 
-As we described above, you can execute the forward pass by calling
-forward method at the terminal variable.
+As described above, you can execute the forward pass by calling forward
+method at the terminal variable.
 
-.. code:: ipython2
+.. code-block:: python2
 
     x.d = np.random.randn(*x.shape)  # Set random input
     y.forward()
@@ -700,29 +700,29 @@ forward method at the terminal variable.
 
 .. parsed-literal::
 
-    [[-0.06116363]
-     [-0.02471643]
-     [-0.01327007]
-     [-0.07057016]
-     [ 0.07050993]
-     [ 0.01684903]
-     [ 0.05290569]
-     [ 0.06554788]
-     [ 0.01608899]
-     [ 0.00639781]
-     [-0.02477875]
-     [-0.04054631]
-     [ 0.00025999]
-     [ 0.02205839]
-     [ 0.01139119]
-     [-0.0065173 ]]
+    [[-0.11192071]
+     [ 0.01330618]
+     [-0.09277273]
+     [ 0.02282887]
+     [-0.13924919]
+     [ 0.06651091]
+     [ 0.00193427]
+     [-0.04056951]
+     [-0.01993009]
+     [ 0.05051719]
+     [-0.04514493]
+     [ 0.07883289]
+     [ 0.03532286]
+     [-0.00734853]
+     [ 0.04141491]
+     [ 0.05428782]]
 
 
 Training a neural networks needs a loss value to be minimized by
-gradient descent with backpop. In NNabla, loss function is also a just a
+gradient descent with backpop. In NNabla, loss function is also a just
 function, and packaged in the functions module.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Variable for label
     label = nn.Variable([batchsize, 1])
@@ -737,15 +737,15 @@ function, and packaged in the functions module.
 
 .. parsed-literal::
 
-    0.656837761402
+    0.605832397938
 
 
-As you've seen above, NNabla backprop accumulates the gradients at the
-root variables. You have to initialize the grad of the parameter
-variables before backprop (We will show you the more easiest way with
-"Solver" API).
+As you've seen above, NNabla ``backward`` accumulates the gradients at
+the root variables. You have to initialize the grad of the parameter
+variables before backprop (We will show you the easiest way with
+``Solver`` API).
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Collect all parameter variables and init grad.
     for name, param in nn.get_parameters().items():
@@ -760,13 +760,13 @@ After performing backprop, gradients are held in parameter variable
 grads. The next block will update the parameters with vanilla gradient
 descent.
 
-.. code:: ipython2
+.. code-block:: python2
 
     for name, param in nn.get_parameters().items():
         F.sub2(param.data, F.mul_scalar(param.grad, 0.001), outputs=[param.data])  # 0.001 as learning rate
 
 The above computation is an example of NNabla's "Imperative Mode" of
-execution of neural networks. If any input of a function takes as an
+execution of neural networks. If any input of a function takes an
 ``NdArray``, the function computation will be fired immediately, and
 returns NdArray(s) as output(s). Hence, the "Imperative mode" doesn't
 create a computation graph, and can be used like Numpy with device
@@ -774,7 +774,7 @@ acceleration (if CUDA etc is enabled). Parametric functions can also be
 used with NdArray input(s). The following block demonstrates a simple
 imperative execution example.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # A simple example of imperative mode.
     xi = nn.NdArray((2, 2))
@@ -797,16 +797,16 @@ Solver
 
 NNabla provides stochastic gradient descent algorithms to optimize
 parameters listed in the ``nnabla.solvers`` module. The parameter
-updates demonstrated above can be replace with this Solver API, which is
-easier and usually faster.
+updates demonstrated above can be replaced with this Solver API, which
+is easier and usually faster.
 
-.. code:: ipython2
+.. code-block:: python2
 
     from nnabla import solvers as S
     solver = S.Sgd(lr=0.00001)
     solver.set_parameters(nn.get_parameters())
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Set random data
     x.d = np.random.randn(*x.shape)
@@ -818,7 +818,7 @@ easier and usually faster.
 Just call the the following solver method to fill zero grad region, then
 backprop
 
-.. code:: ipython2
+.. code-block:: python2
 
     solver.zero_grad()
     loss.backward()
@@ -826,18 +826,17 @@ backprop
 The following block updates parameters with the Vanilla Sgd rule
 (equivalent to the imperative example above).
 
-.. code:: ipython2
+.. code-block:: python2
 
     solver.update()
 
 Toy Problem To Demonstrate Training
 -----------------------------------
 
-Here we define a regression problem that maps the two dimensional vector
-into the length of it. The following function is the exact system of
-this mapping.
+The following function defines a regression problem which computes the
+norm of a vector.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def vector2length(x):
         # x : [B, 2] where B is number of samples.
@@ -846,7 +845,7 @@ this mapping.
 We visualize this mapping with the contour plot by matplotlib as
 follows.
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Data for plotting contour on a grid data.
     xs = np.linspace(-1, 1, 100)
@@ -868,10 +867,9 @@ follows.
 .. image:: python_api_files/python_api_95_0.png
 
 
-We define a neural network which predicts the output of the unknown
-system (although we know).
+We define a deep prediction neural network.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def length_mlp(x):
         h = x
@@ -880,7 +878,7 @@ system (although we know).
         y = PF.affine(h, 1, name='fc')
         return y
 
-.. code:: ipython2
+.. code-block:: python2
 
     nn.clear_parameters()
     batchsize = 100
@@ -893,7 +891,7 @@ We created a 5 layers deep MLP using for-loop. Note that only 3 lines of
 the code pottentially create infinitely deep neural networks. The next
 block adds helper functions to visialize the learned function.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def predict(inp):
         ret = []
@@ -913,7 +911,7 @@ block adds helper functions to visialize the learned function.
 Next we instantiate a solver object as follows. We use Adam optimizer
 which is one of the most popular SGD algorithm used in the literature.
 
-.. code:: ipython2
+.. code-block:: python2
 
     from nnabla import solvers as S
     solver = S.Adam(alpha=0.01)
@@ -921,7 +919,7 @@ which is one of the most popular SGD algorithm used in the literature.
 
 The following function generates data from the true system infinitely.
 
-.. code:: ipython2
+.. code-block:: python2
 
     def random_data_provider(n):
         x = np.random.uniform(-1, 1, size=(n, 2))
@@ -930,7 +928,7 @@ The following function generates data from the true system infinitely.
 
 In the next block, we run 2000 training steps (SGD updates).
 
-.. code:: ipython2
+.. code-block:: python2
 
     num_iter = 2000
     for i in range(num_iter):
@@ -953,27 +951,27 @@ In the next block, we run 2000 training steps (SGD updates).
 
 .. parsed-literal::
 
-    Loss@   0: 0.921138167381
-    Loss@ 100: 0.0694101303816
-    Loss@ 200: 0.00196460122243
-    Loss@ 300: 0.000965791172348
-    Loss@ 400: 0.00102860713378
-    Loss@ 500: 0.000733042717911
-    Loss@ 600: 0.000787019962445
-    Loss@ 700: 0.000703430268914
-    Loss@ 800: 0.000588007620536
-    Loss@ 900: 0.00110029696953
-    Loss@1000: 0.000527524854988
-    Loss@1100: 0.000469014747068
-    Loss@1200: 0.000429775944212
-    Loss@1300: 0.00113972637337
-    Loss@1400: 0.00045635754941
-    Loss@1500: 0.000435676192865
-    Loss@1600: 0.000812261539977
-    Loss@1700: 0.000817801104859
-    Loss@1800: 0.000387296662666
-    Loss@1900: 0.000466798053822
-    Loss@1999: 0.000753718253691
+    Loss@   0: 1.41921281815
+    Loss@ 100: 0.0575609095395
+    Loss@ 200: 0.0476776212454
+    Loss@ 300: 0.00250923167914
+    Loss@ 400: 0.00137762445956
+    Loss@ 500: 0.00102305703331
+    Loss@ 600: 0.000931202783249
+    Loss@ 700: 0.00154988327995
+    Loss@ 800: 0.00154625205323
+    Loss@ 900: 0.00146807299461
+    Loss@1000: 0.000928562716581
+    Loss@1100: 0.000884895969648
+    Loss@1200: 0.00086419924628
+    Loss@1300: 0.000785566866398
+    Loss@1400: 0.000894531258382
+    Loss@1500: 0.00105767603964
+    Loss@1600: 0.000928580528125
+    Loss@1700: 0.00119259918574
+    Loss@1800: 0.000793418090325
+    Loss@1900: 0.000500827969518
+    Loss@1999: 0.000929419475142
 
 
 **Memory usage optimization**: You may notice that, in the above
@@ -997,7 +995,7 @@ variables. If you are interested in intermediate variables for some
 purposes (e.g. debug, log), you can use the ``.persistent`` flag to
 prevent clearing buffer of a specific ``Variable`` like below.
 
-.. code:: ipython2
+.. code-block:: python2
 
     loss.forward(clear_buffer=True)
     print "The prediction `y` is cleared because it's an intermedicate variable."
@@ -1011,15 +1009,15 @@ prevent clearing buffer of a specific ``Variable`` like below.
 .. parsed-literal::
 
     The prediction `y` is cleared because it's an intermedicate variable.
-    [ 0.00027053  0.00095906  0.00815325  0.00023331]
+    [ 0.00010636  0.00016095  0.00029495  0.00013584]
     The prediction `y` is kept by the persistent flag.
-    [ 0.25289738  0.90301794  0.18608618  0.78919256]
+    [ 1.00525522  0.70511746  0.72825861  0.62030995]
 
 
 We can confirm the prediction performs fairly well by looking at the
 following visualization of the ground truth and prediction function.
 
-.. code:: ipython2
+.. code-block:: python2
 
     plt.subplot(121)
     plt.title("Ground truth")
@@ -1036,7 +1034,7 @@ following visualization of the ground truth and prediction function.
 You can save learned parameters by ``nnabla.save_parameters`` and load
 by ``nnabla.load_parameters``.
 
-.. code:: ipython2
+.. code-block:: python2
 
     path_param = "param-vector2length.h5"
     nn.save_parameters(path_param)
@@ -1047,7 +1045,7 @@ by ``nnabla.load_parameters``.
 
 .. parsed-literal::
 
-    2017-06-26 11:58:15,396 [nnabla][INFO]: Parameter save (hdf5): param-vector2length.h5
+    2017-06-26 23:11:07,458 [nnabla][INFO]: Parameter save (hdf5): param-vector2length.h5
 
 
 
@@ -1058,7 +1056,7 @@ by ``nnabla.load_parameters``.
 
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     # Load again
     nn.load_parameters(path_param)
@@ -1067,26 +1065,26 @@ by ``nnabla.load_parameters``.
 
 .. parsed-literal::
 
-    2017-06-26 11:58:15,522 [nnabla][INFO]: Parameter load (<built-in function format>): param-vector2length.h5
+    2017-06-26 23:11:07,624 [nnabla][INFO]: Parameter load (<built-in function format>): param-vector2length.h5
 
 
 .. parsed-literal::
 
-    (u'fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f96c098e808>)
-    (u'fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f96c098e3f8>)
-    (u'fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f96c098e1f0>)
-    (u'fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f96c098e328>)
-    (u'fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f96c098e0b8>)
-    (u'fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f96c098e258>)
-    (u'fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f96c098e120>)
-    (u'fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f96c098e188>)
-    (u'fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f96c098e050>)
-    (u'fc/affine/b', <Variable((1,), need_grad=True) at 0x7f96c06367a0>)
+    (u'fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f5e91569808>)
+    (u'fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f5e91569738>)
+    (u'fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f5e91569870>)
+    (u'fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f5e91569600>)
+    (u'fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f5e915697a0>)
+    (u'fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f5e91569668>)
+    (u'fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f5e915696d0>)
+    (u'fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f5e91569390>)
+    (u'fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f5e91569598>)
+    (u'fc/affine/b', <Variable((1,), need_grad=True) at 0x7f5e9120ace8>)
 
 
 Both save and load functions can also be used in a parameter scope.
 
-.. code:: ipython2
+.. code-block:: python2
 
     with nn.parameter_scope('foo'):
         nn.load_parameters(path_param)
@@ -1095,34 +1093,34 @@ Both save and load functions can also be used in a parameter scope.
 
 .. parsed-literal::
 
-    2017-06-26 11:58:15,647 [nnabla][INFO]: Parameter load (<built-in function format>): param-vector2length.h5
+    2017-06-26 23:11:07,747 [nnabla][INFO]: Parameter load (<built-in function format>): param-vector2length.h5
 
 
 .. parsed-literal::
 
-    (u'fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f96c098e808>)
-    (u'fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f96c098e3f8>)
-    (u'fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f96c098e1f0>)
-    (u'fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f96c098e328>)
-    (u'fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f96c098e0b8>)
-    (u'fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f96c098e258>)
-    (u'fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f96c098e120>)
-    (u'fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f96c098e188>)
-    (u'fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f96c098e050>)
-    (u'fc/affine/b', <Variable((1,), need_grad=True) at 0x7f96c06367a0>)
-    (u'foo/fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f96dc4f3ae0>)
-    (u'foo/fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f96dc4f3bb0>)
-    (u'foo/fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f96dc4f3738>)
-    (u'foo/fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f96dc4f3c80>)
-    (u'foo/fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f96dc4f3ce8>)
-    (u'foo/fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f96dc4f3d50>)
-    (u'foo/fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f96dc4f3e20>)
-    (u'foo/fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f96dc4f3f58>)
-    (u'foo/fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f96dc4f3c18>)
-    (u'foo/fc/affine/b', <Variable((1,), need_grad=True) at 0x7f96dc4f3328>)
+    (u'fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f5e91569808>)
+    (u'fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f5e91569738>)
+    (u'fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f5e91569870>)
+    (u'fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f5e91569600>)
+    (u'fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f5e915697a0>)
+    (u'fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f5e91569668>)
+    (u'fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f5e915696d0>)
+    (u'fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f5e91569390>)
+    (u'fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f5e91569598>)
+    (u'fc/affine/b', <Variable((1,), need_grad=True) at 0x7f5e9120ace8>)
+    (u'foo/fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f5ea7e59ae0>)
+    (u'foo/fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f5ea7e59b48>)
+    (u'foo/fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f5ea7e59808>)
+    (u'foo/fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f5ea7e59c18>)
+    (u'foo/fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f5ea7e59c80>)
+    (u'foo/fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f5ea7e59ce8>)
+    (u'foo/fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f5ea7e59d50>)
+    (u'foo/fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f5ea7e59db8>)
+    (u'foo/fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f5ea7e59bb0>)
+    (u'foo/fc/affine/b', <Variable((1,), need_grad=True) at 0x7f5ea7e592c0>)
 
 
-.. code:: ipython2
+.. code-block:: python2
 
     !rm {path_param}  # Clean ups
 

@@ -73,7 +73,7 @@ Download NNabla repository from `here <https://github.com/sony/nnabla/archive/ma
 
 .. code-block:: shell
 
-    > cd nnabla\examples\vision\mnist
+    > cd nnabla/examples/vision/mnist
 
 
 Run MNIST classification.
@@ -107,7 +107,7 @@ Install CUDA (CUDA 8.0)
 	wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
 	sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
 	sudo apt-get update
-	sudo apt install cuda
+	sudo apt install -y cuda
 
 Install cuDNN (cuDNN version 6.0)
 """"""""""""""""""""""""""""""""

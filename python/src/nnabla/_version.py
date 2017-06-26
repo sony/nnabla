@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.9.1rc3'
+__version__ = '0.9.1'
 __author__ = "Takuya Narihira, Sony Corporation"
 __email__ = "nnabla@googlegroups.com"
