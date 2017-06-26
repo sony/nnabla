@@ -107,7 +107,7 @@ loss.backward()
 
 ### Setup
 
-<https://nnabla.readthedocs.io/en/stable/python/installation.html>
+<https://nnabla.readthedocs.io/en/latest/python/installation.html>
 
 ### Getting started
 
