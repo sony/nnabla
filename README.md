@@ -13,7 +13,7 @@ Installing NNabla is easy:
 pip install nnabla
 ```
 
-This installs the CPU version of NNabla. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla_ext-cuda`.
+This installs the CPU version of NNabla. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla-ext-cuda`.
 
 
 ## Features
