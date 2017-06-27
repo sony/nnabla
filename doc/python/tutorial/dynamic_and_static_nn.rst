@@ -251,5 +251,5 @@ First, we setup the solver and the data iterator for the training:
 
 Comparing the two processing times, we can observe that both schemes
 ("static" and "dynamic") takes the same executation time, i.e., although
-we created the computation graph dynamically, we did not loose
+we created the computation graph dynamically, we did not lose
 performance.
