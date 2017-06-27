@@ -1,0 +1,22 @@
+#!/bin/bash
+
+cd $(dirname $0)/..
+
+DOCKER_BUILD_ARGS=
+if [ "${http_proxy}" != "" ]
+then
+    DOCKER_BUILD_ARGS="${DOCKER_BUILD_ARGS} --build-arg http_proxy=${http_proxy}"
+fi
+if [ "${https_proxy}" != "" ]
+then
+    DOCKER_BUILD_ARGS="${DOCKER_BUILD_ARGS} --build-arg https_proxy=${https_proxy}"
+fi
+
+TAG=$1
+if [ "${TAG}" != "" ]
+then
+    docker build ${DOCKER_BUILD_ARGS} -f docker/Dockerfile.${TAG} -t nbla:${TAG} .
+else
+    echo Please specify TAG name.
+fi
+

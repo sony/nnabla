@@ -1,0 +1,39 @@
+# .gitignore
+
+.cache
+*.pyc
+
+/output/
+/python/setup.cfg
+/python/setup.cfg-Release
+/python/setup.cfg.in.configured
+/python/src/nnabla.egg-info/
+/python/src/nnabla/_init.cpp
+/python/src/nnabla/_init.h
+/python/src/nnabla/_nd_array.cpp
+/python/src/nnabla/_variable.cpp
+/python/src/nnabla/function.cpp
+/python/src/nnabla/function.pxd
+/python/src/nnabla/function.pyx
+/python/src/nnabla/function_bases.py
+/python/src/nnabla/solver.cpp
+/python/src/nnabla/utils/nnabla_pb2.py
+/python/src/nnabla/utils/load_function.py
+/python/src/nnabla/utils/save_function.py
+/python/test/Test-error.series.txt
+/python/test/Training-error.series.txt
+/python/test/Training-loss.series.txt
+/python/test/test.prototxt
+/python/test/tmp.h5
+/python/test/tmp.protobuf
+/src/nbla/init.cpp
+/src/nbla/proto/
+/third_party/*.zip
+/third_party/*/
+python/setup.cfg-MinSizeRel
+python/src/nnabla/nnabla.lib
+python/setup.cfg-RelWithDebInfo
+python/setup.cfg-Debug
+
+# Converted ReST
+# doc/python/tutorial/
