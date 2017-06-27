@@ -26,12 +26,14 @@ generated C++ files to build extensions.
   are set.
 '''
 from setuptools import setup
+from setuptools.command.install import install
 from distutils.extension import Extension
 import os
 import shutil
 import sys
 from collections import namedtuple
 import copy
+import subprocess
 
 setup_requires = [
     'numpy>=1.12.0',
@@ -54,6 +56,49 @@ ExtConfig = namedtuple('ExtConfig',
                        ['package_dir', 'packages', 'package_data',
                         'ext_modules', 'ext_opts'])
 
+
+class CustomInstaller(install):
+    '''Hook base install task'''
+
+
+    SO_FILES = [
+        '_init.so',
+        '_nd_array.so',
+        '_variable.so',
+        'function.so',
+        'solver.so'
+    ]
+
+
+    def get_install_path(self):
+        outputs = install.get_outputs(self)
+        library_name = 'libnnabla.dylib'
+
+        return next(output_file[:-(len(library_name))] for output_file in outputs if library_name in output_file)
+
+
+    def run(self):
+        install.run(self)
+
+        if not sys.platform.startswith('darwin'):
+            return
+
+        dylib_install_path = self.get_install_path()
+        
+        subprocess.call(
+            ['install_name_tool',
+             '-id',
+             '{}libnnabla.dylib'.format(dylib_install_path),
+             '{}libnnabla.dylib'.format(dylib_install_path)])
+
+        for so_file in self.SO_FILES:
+            subprocess.call(
+                ['install_name_tool',
+                '-change',
+                '@rpath/libnnabla.dylib',
+                '{}libnnabla.dylib'.format(dylib_install_path),
+                '{}{}'.format(dylib_install_path, so_file)])
+        
 
 def get_libinfo():
     from ConfigParser import ConfigParser
@@ -224,6 +269,7 @@ if __name__ == '__main__':
         package_dir=cfg.package_dir,
         packages=cfg.packages,
         package_data=cfg.package_data,
+        cmdclass={'install': CustomInstaller},
         **pkg_info)
 
     os.unlink(os.path.join(root_dir, 'src', 'nnabla', lib.file_name))
