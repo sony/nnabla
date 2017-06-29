@@ -117,4 +117,4 @@ loss.backward()
   working example in NNabla and `python_api.ipynb` for an introduction into the
   NNabla API.
 
-* We also provide some more sophisticated examples in `examples`.
+* We also provide some more sophisticated examples in the [`examples`](https://github.com/sony/nnabla/tree/master/examples) folder.
