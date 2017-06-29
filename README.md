@@ -1,7 +1,7 @@
 # NNabla - Neural Network Libraries
 
 NNabla is a deep learning framework that is intended to be used for research,
-development and production. We aim it running everywhere like desktop PCs, HPC
+development and production. We aim to have it running everywhere: desktop PCs, HPC
 clusters, embedded devices and production servers.
 
 
