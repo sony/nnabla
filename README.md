@@ -91,7 +91,7 @@ loss.backward()
 
 * Easy to add new modules like neural network operators and optimizers
 * The library allows developers to add specialized implementations (e.g., for
-  FPGA, ...). For example, we provides CUDA backend as an extension, which gives
+  FPGA, ...). For example, we provide CUDA backend as an extension, which gives
   speed-up by GPU accelerated computation.
 
 ### Efficient
