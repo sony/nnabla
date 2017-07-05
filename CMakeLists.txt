@@ -21,75 +21,9 @@ endif()
 ###############################################################################
 # Preprocessing
 ###############################################################################
+add_subdirectory(third_party)
 # Download third_party libraries
-if(NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/googletest-release-1.7.0)
-  message("Downloading googletest")
-  file(DOWNLOAD
-    https://github.com/google/googletest/archive/release-1.7.0.zip
-    ${CMAKE_SOURCE_DIR}/third_party/googletest-release-1.7.0.zip
-    SHOW_PROGRESS
-    STATUS status
-    LOG log)
-  list(GET status 0 status_code)
-  list(GET status 1 status_string)
-  if(NOT status_code EQUAL 0)
-    message(FATAL_ERROR "Failed to download googletest. Please check network connection and proxy settings.
-    status_code: ${status_code}
-    status_string: ${status_string}
-    log: ${log}
-    ")
-  endif()
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E
-    chdir ${CMAKE_SOURCE_DIR}/third_party
-    ${CMAKE_COMMAND} -E tar xf googletest-release-1.7.0.zip)
-endif()
 
-if(NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/eigen-eigen-de14376a69f8)
-  message("Downloading eigen")
-  file(DOWNLOAD
-    https://bitbucket.org/eigen/eigen/get/de14376a69f8.zip
-    ${CMAKE_SOURCE_DIR}/third_party/eigen-eigen-de14376a69f8.zip
-    SHOW_PROGRESS
-    STATUS status
-    LOG log)
-  list(GET status 0 status_code)
-  list(GET status 1 status_string)
-  if(NOT status_code EQUAL 0)
-    message(FATAL_ERROR "Failed to download eigen. Please check network connection and proxy settings.
-    status_code: ${status_code}
-    status_string: ${status_string}
-    log: ${log}
-    ")
-  endif()
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E
-    chdir ${CMAKE_SOURCE_DIR}/third_party
-    ${CMAKE_COMMAND} -E tar xf eigen-eigen-de14376a69f8.zip)
-endif()
-
-if(NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.13.0)
-  message("Downloading spdlog")
-  file(DOWNLOAD
-    https://github.com/gabime/spdlog/archive/v0.13.0.zip
-    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.13.0.zip
-    SHOW_PROGRESS
-    STATUS status
-    LOG log)
-  list(GET status 0 status_code)
-  list(GET status 1 status_string)
-  if(NOT status_code EQUAL 0)
-    message(FATAL_ERROR "Failed to download spdlog. Please check network connection and proxy settings.
-    status_code: ${status_code}
-    status_string: ${status_string}
-    log: ${log}
-    ")
-  endif()
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E
-    chdir ${CMAKE_SOURCE_DIR}/third_party
-    ${CMAKE_COMMAND} -E tar xf spdlog-0.13.0.zip)
-endif()
 
 execute_process(
   COMMAND ${PYTHON_COMMAND}
@@ -177,7 +111,6 @@ if(BUILD_TEST)
     set(BUILD_SHARED_LIBS ON CACHE BOOL
       "Force to build gtest with dll on Windows.")
   endif()
-  add_subdirectory(third_party/googletest-release-1.7.0)
   enable_testing()
   include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
   file(GLOB NBLA_TEST_SOURCES src/nbla/test/test_*.cpp)
@@ -325,7 +258,7 @@ if(UNIX OR APPLE)
     COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
     COMMAND cd ${CMAKE_SOURCE_DIR} &&
             PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
-            sphinx-build -M html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c build-tools/sphinx
+            sphinx-build -M html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
     COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/protoc
     COMMAND cd ${CMAKE_SOURCE_DIR} &&
             ${PROTOC_COMMAND} --doc_out=html,index.html:${CMAKE_BINARY_DIR}/doc/protoc

@@ -15,7 +15,9 @@
 import difflib
 import io
 import os
+import re
 import six
+import subprocess
 
 
 def which(name):
@@ -43,3 +45,18 @@ def check_update(filename, generated, force=False):
             write_content = write_content.replace(b'\r\n', b'\n')
             write_content = write_content.replace(b'\r', b'\n')
             f.write(write_content)
+
+
+def get_version(dir):
+    os.chdir(dir)
+    default_version = '0.9.1'
+    if os.path.exists('.git'):
+        try:
+            nearest_tag = re.sub(r'^v', '', subprocess.check_output(['git', 'describe', '--abbrev=0', '--tags']).strip().decode('utf-8'))
+            vv = subprocess.check_output(['git', 'describe', '--tags']).strip().decode('utf-8').split('-')
+            cid = vv.pop()
+            version = '-'.join(vv) + '+' + cid
+        except:
+            nearest_tag = default_version
+            version = default_version
+    return version.replace('/', '_').lower(), nearest_tag.replace('/', '_').lower()
