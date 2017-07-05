@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import map
+
 from tqdm import tqdm
 import glob
 import numpy
@@ -71,10 +73,10 @@ class TinyImageNetDataSource(DataSource):
         elif kind == 'val':
             val_set = numpy.loadtxt(os.path.join(
                 self.dir_data, 'val', 'val_annotations.txt'), dtype=str)
-            paths = map(lambda x: os.path.join(
-                self.dir_data, 'val', 'images', x), val_set[:, 0])
-            labels = numpy.array(map(lambda x: wnid2label[x], val_set[
-                :, 1]), dtype=numpy.int16)[:, numpy.newaxis]
+            paths = list(map(lambda x: os.path.join(
+                self.dir_data, 'val', 'images', x), val_set[:, 0]))
+            labels = numpy.array(list(map(lambda x: wnid2label[x], val_set[
+                :, 1])), dtype=numpy.int16)[:, numpy.newaxis]
         else:
             assert False, '{} is not implemented.'.format(kind)
         self.paths = paths

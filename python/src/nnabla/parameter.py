@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import iteritems
+
 from contextlib import contextmanager
 from collections import OrderedDict
 import numpy
@@ -137,7 +139,7 @@ def get_parameters(params=None, path='', grad_only=True):
     global current_scope
     if params is None:
         params = OrderedDict()
-    for k, v in current_scope.iteritems():
+    for k, v in iteritems(current_scope):
         if isinstance(v, dict):
             with parameter_scope(k):
                 params = get_parameters(
@@ -152,7 +154,7 @@ def get_parameters(params=None, path='', grad_only=True):
 def clear_parameters():
     """Clear all parameters in the current scope."""
     global current_scope
-    for key in current_scope.keys():
+    for key in list(current_scope.keys()):
         del current_scope[key]
 
 
@@ -215,7 +217,7 @@ def save_parameters(path, format='hdf5'):
         import h5py
         with h5py.File(path, 'w') as hd:
             params = get_parameters(grad_only=False)
-            for i, (k, v) in enumerate(params.iteritems()):
+            for i, (k, v) in enumerate(iteritems(params)):
                 hd[k] = v.d
                 hd[k].attrs['need_grad'] = v.need_grad
                 # To preserve order of parameters

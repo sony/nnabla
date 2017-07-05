@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import filter
 import pytest
 import copy
 import numpy as np
@@ -255,7 +256,7 @@ def function_tester(rng, func, ref_func, inputs,
         v.g = 0
         v.need_grad = False
         try:
-            o[0].parent.backward(filter(lambda x: x is not None, vinputs), o)
+            o[0].parent.backward(list(filter(lambda x: x is not None, vinputs)), o)
         except RuntimeError as e:
             continue  # TODO
         assert np.all(v.g == 0)
@@ -279,7 +280,7 @@ def function_tester(rng, func, ref_func, inputs,
             continue
 
         # Prepare function inputs
-        finputs = filter(lambda x: x is not None, vinputs)
+        finputs = list(filter(lambda x: x is not None, vinputs))
 
         # Save accum gradient result
         g = np.random.randn(*v.shape)

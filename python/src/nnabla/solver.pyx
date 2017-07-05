@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import map
+from six import iteritems
+
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 from libcpp.string cimport string
@@ -89,7 +92,7 @@ cdef class Solver:
         cdef _Variable x
         cdef string key
         cdef int i
-        for key, x in param_dict.iteritems():
+        for key, x in iteritems(param_dict):
             cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).varp.variable()))
         self.solverp.set_parameters(cparams, reset, retain_state)
 
@@ -173,12 +176,12 @@ def solver_api(func):
     # Parse arguments. Note: Here we drop the first argument which is a
     # context.
     r = re.compile(r'(\w+\s|)(\w+)(|=.*)$')
-    parsed_args = map(
-        lambda x: r.match(x.strip()).groups(), rawargs.split(',')[1:])
+    parsed_args = list(map(
+        lambda x: r.match(x.strip()).groups(), rawargs.split(',')[1:]))
     types, args, defaults = zip(*parsed_args)
     types = map(lambda x: x.strip(), types)
-    defaults = map(lambda x: eval(x), filter(
-        lambda x: len(x) > 0, map(lambda x: x.strip(' ='), defaults)))
+    defaults = list(map(lambda x: eval(x), filter(
+        lambda x: len(x) > 0, map(lambda x: x.strip(' ='), defaults))))
     # Create argument code.
     argspec = inspect.formatargspec(args, None, None, defaults)
     shortargspec = inspect.formatargspec(

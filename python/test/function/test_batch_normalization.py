@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import range
+
 import pytest
 import numpy as np
 import nnabla as nn
@@ -24,7 +26,7 @@ ctxs = list_context('BatchNormalization')
 def ref_batch_normalization(x, beta, gamma, rmean, rvar, axes, decay_rate,
                             eps, batch_stat, output_stat):
     assert len(axes) == 1
-    reduc_axes = range(x.ndim)
+    reduc_axes = list(range(x.ndim))
     del reduc_axes[axes[0]]
     reduc_axes = tuple(reduc_axes)
     m = x.size / x.shape[axes[0]]
