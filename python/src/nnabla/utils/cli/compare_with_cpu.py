@@ -135,13 +135,13 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
         # Backward
         o.network.prepare_backward(o.backward_sequence)
         o_cpu.network.prepare_backward(o_cpu.backward_sequence)
-        for func, func_cpu in zip(o.backward_sequence.sequence, o_cpu.backward_sequence.sequence):
-            o.network.backward_function(func)
-            o_cpu.network.backward_function(func_cpu)
+        for seq, seq_cpu in zip(o.backward_sequence.sequence, o_cpu.backward_sequence.sequence):
+            o.network.backward_function(seq)
+            o_cpu.network.backward_function(seq_cpu)
             large_diff = False
-            for v, v_cpu in zip(func.inputs, func_cpu.inputs):
+            for v, v_cpu in zip(seq.func.inputs, seq_cpu.func.inputs):
                 if v.variable_instance.need_grad:
-                    name = 'backward_function (%s, %s)' % (func.name, v.name)
+                    name = 'backward_function (%s, %s)' % (seq.func.name, v.name)
                     norm_diff, std1, std2, diff_std = calc_norm_diff(
                         v.variable_instance.g, v_cpu.variable_instance.g)
                     logger.log(99, '%s, %f, %f, %f, %f' %
@@ -157,13 +157,13 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
                         last_max_diff = norm_diff
             if large_diff:
                 logger.log(99, '  x_data:')
-                for v, v_cpu in zip(func.inputs, func_cpu.inputs):
+                for v, v_cpu in zip(seq.func.inputs, seq_cpu.func.inputs):
                     logger.log(99, '    current_context(%s.d)=%s' %
                                (v.name, str(v.variable_instance.d.flatten())))
                     logger.log(99, '    cpu(%s.d)=%s' % (
                         v_cpu.name, str(v_cpu.variable_instance.d.flatten())))
                 logger.log(99, '  y_diff:')
-                for v, v_cpu in zip(func.outputs, func_cpu.outputs):
+                for v, v_cpu in zip(seq.func.outputs, seq_cpu.func.outputs):
                     logger.log(99, '    current_context(%s.g)=%s' %
                                (v.name, str(v.variable_instance.g.flatten())))
                     logger.log(99, '    cpu(%s.g)=%s' % (

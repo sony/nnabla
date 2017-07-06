@@ -98,7 +98,7 @@ def profile_optimizer(config, result_array):
                     data = loaded_datas[opt.data_iterator][
                         opt.data_iterator.variables.index(d)]
                 except:
-                    print opt.data_iterator.variables
+                    print(opt.data_iterator.variables)
                     raise ValueError(
                         'Data "' + d + '" is not found in dataset.')
                 let_data_to_variable(v.variable_instance, data=data)
@@ -117,16 +117,14 @@ def profile_optimizer(config, result_array):
         for func in o.forward_sequence:
             def setup():
                 o.network.setup_function(func)
-            in_place_str = ' : in_place' if func.variable_outputs[0] in func.variable_inputs else ''
-            profile(config, 'setup_function (%s : %s%s)' % (
-                func.name, func.function_instance.name, in_place_str), setup, result_dict)
+            profile(config, 'setup_function (%s : %s)' % (
+                func.name, func.function_instance.name), setup, result_dict)
 
         # Forward (detail)
         for func in o.forward_sequence:
             def forward():
                 o.network.forward_function(func)
-            in_place_str = ' : in_place' if func.variable_outputs[
-                0] in func.variable_inputs else ''
+            in_place_str = ' : in_place' if func.function_instance.inplace_data(0) > 0 else ''
             profile(config, 'forward_function (%s : %s%s)' % (
                 func.name, func.function_instance.name, in_place_str), forward, result_dict)
 
@@ -134,15 +132,14 @@ def profile_optimizer(config, result_array):
         def prepare_backward():
             o.network.prepare_backward(o.backward_sequence)
         profile(config, 'prepare_backward', prepare_backward, result_dict)
-        for func in o.backward_sequence.sequence:
+        for seq in o.backward_sequence.sequence:
             o.network.prepare_backward(o.backward_sequence)
 
             def backward():
-                o.network.backward_function(func)
-            in_place_str = ' : in_place' if func.variable_outputs[
-                0] in func.variable_inputs else ''
+                o.network.backward_function(seq)
+            in_place_str = ' : in_place' if seq.func.function_instance.inplace_grad(0) > 0 else ''
             profile(config, 'backward_function (%s : %s%s)' % (
-                func.name, func.function_instance.name, in_place_str), backward, result_dict)
+                seq.func.name, seq.func.function_instance.name, in_place_str), backward, result_dict)
 
         # Forward (all)
         def forward_all():

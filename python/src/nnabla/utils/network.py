@@ -87,6 +87,7 @@ class Network:
         class BackwardSequence:
             loss_variables = []
             variables = []
+            grad_variables = []
             unused_variables = []
             parameters = []
             sequence = []
@@ -104,10 +105,10 @@ class Network:
         for p, local_lr in parameter_variables_and_locallr.items():
             if local_lr > 0.0:
                 self.__backward_recursive(
-                    backward_sequence.sequence, loss_variables, variable=p)
+                    backward_sequence, loss_variables, variable=p)
 
-        for func in backward_sequence.sequence:
-            backward_sequence.variables.extend(func.variable_outputs)
+        for seq in backward_sequence.sequence:
+            backward_sequence.variables.extend(seq.func.variable_outputs)
         for v in self.variables.values():
             vi = v.variable_instance
             if vi not in backward_sequence.variables and vi not in backward_sequence.parameters:
@@ -136,7 +137,17 @@ class Network:
                     diff_exists = diff_exists or (v in func.outputs)
             if diff_exists:
                 if backward_sequence is not None:
-                    backward_sequence.append(func)
+                    class BackwardSequenceItem:
+                        func = None
+                        accum_grad = []
+                    seq = BackwardSequenceItem()
+                    seq.func = func
+                    for i, v in enumerate(func.variable_inputs):
+                        accum = (v in backward_sequence.grad_variables or v in backward_sequence.parameters) and not func.function_instance.inplace_grad(i)
+                        seq.accum_grad.append(accum)
+                        if not accum:
+                            backward_sequence.grad_variables.append(v)
+                    backward_sequence.sequence.append(seq)
         return diff_exists
 
     def prepare_backward(self, backward_sequence, parameter_zero_grad=True):
@@ -148,28 +159,27 @@ class Network:
                 p.grad.zero()
         for v in backward_sequence.variables:
             v.need_grad = True
-            v.grad.zero()
         for l in backward_sequence.loss_variables:
             l.grad.fill(1.0 / l.shape[0])
 
     def backward(self, backward_sequence, parameter_zero_grad=True):
         self.prepare_backward(backward_sequence, parameter_zero_grad)
-        for func in backward_sequence.sequence:
+        for seq in backward_sequence.sequence:
             try:
-                self.backward_function(func)
+                self.backward_function(seq)
             except:
-                index = backward_sequence.index(func)
+                index = backward_sequence.sequence.index(seq)
                 print_network_traceback(
-                    backward_sequence[min(0, index - 4):index + 1])
+                    [seq.func for seq in backward_sequence.sequence[min(0, index - 4):index + 1]])
                 raise
 
-    def backward_function(self, func):
+    def backward_function(self, seq):
         try:
-            func.function_instance.backward(
-                func.variable_inputs, func.variable_outputs)
+            seq.func.function_instance.backward(
+                seq.func.variable_inputs, seq.func.variable_outputs, seq.accum_grad)
         except:
             logger.critical('An error occured while executing backward of function {} (nn.{}) in network {}'.format(
-                func.name, func.function_instance.name, self.name))
+                seq.func.name, seq.func.function_instance.name, self.name))
             raise
         # logger.debug('Backward: {} {}'.format(func.name, func.function_instance.name))
 
@@ -193,6 +203,11 @@ class Network:
                         del self.functions[func.name]
                         del self.variables[func.outputs[0].name]
 
+            for func in self.functions.values():
+                if func.function_instance.inplace_data(0) > 0 and func.function_instance.inplace_grad(0) > 0:
+                    func.outputs[0].variable_instance = func.inputs[
+                        0].variable_instance
+                
         # create variable instances
         for variable in self.variables.values():
             if variable.variable_instance.shape != variable.shape:
