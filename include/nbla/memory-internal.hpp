@@ -23,6 +23,8 @@ namespace nbla {
 template <typename M>
 shared_ptr<M> MemoryCache<M>::pop_or_create(Size_t bytes,
                                             const string &device) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
   if (pools_.count(device) == 0) {
     // First access the device.
     pools_.insert({device, cache_type()});
@@ -68,6 +70,8 @@ shared_ptr<M> MemoryCache<M>::pop_or_create(Size_t bytes,
 }
 
 template <typename M> void MemoryCache<M>::cache(shared_ptr<memory_type> mem) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
   const string &device = mem->device();
   if (pools_.count(device) == 0) {
     // First access the device.
@@ -81,6 +85,8 @@ template <typename M> void MemoryCache<M>::cache(shared_ptr<memory_type> mem) {
 
 template <typename M>
 size_t MemoryCache<M>::count(const string &device_id) const {
+  std::lock_guard<std::mutex> lock(mtx_);
+
   if (pools_.count(device_id) == 0) {
     return 0;
   }
@@ -88,12 +94,16 @@ size_t MemoryCache<M>::count(const string &device_id) const {
 }
 
 template <typename M> void MemoryCache<M>::clear() {
+  std::lock_guard<std::mutex> lock(mtx_);
+
   for (auto &kv : pools_) {
     kv.second.clear();
   }
 }
 
 template <typename M> void MemoryCache<M>::clear(const string &device_id) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
   if (pools_.count(device_id) == 0)
     return;
   pools_[device_id].clear();

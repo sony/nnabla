@@ -17,6 +17,7 @@
 #include <nbla/common.hpp>
 
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 namespace nbla {
@@ -65,6 +66,8 @@ public:
     @tparam M Memory class which has the same interface with Memory class.
  */
 template <class M> class MemoryCache {
+  mutable std::mutex mtx_;
+
 public:
   typedef M memory_type; ///< Memory class.
   /* Each vector element has memory pool on a specific CUDA device which ID

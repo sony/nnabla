@@ -377,7 +377,7 @@ cdef class Variable:
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
-    def forward(self, clear_buffer=False, clear_no_need_grad=False):
+    def forward(self, cpp_bool clear_buffer=False, cpp_bool clear_no_need_grad=False):
         """
         Performs a forward propagation from the root node to this variable.
         The forward propagation is performed on a subset of variables
@@ -397,9 +397,10 @@ cdef class Variable:
                 This is ignored when clear_buffer=True.
 
         """
-        self.varp.forward(clear_buffer, clear_no_need_grad)
+        with nogil:
+            self.varp.forward(clear_buffer, clear_no_need_grad)
 
-    def backward(self, grad=1, clear_buffer=False):
+    def backward(self, grad=1, cpp_bool clear_buffer=False):
         """
         Performs a backward propagation starting from this variable until
         the root variable(s) is/are reached in the function graph.
@@ -436,8 +437,10 @@ cdef class Variable:
             arr = NdArray()
             arr.data = grad
             p = (< NdArray > arr).arr
-        self.varp.backward(p, clear_buffer)
 
+        with nogil:
+            self.varp.backward(p, clear_buffer)
+            
     def unlinked(self):
         """
         Gets unlinked (forgetting parent) variable that shares a Variable buffer

@@ -19,6 +19,7 @@ Context::Context(const string &backend, const string &array_class,
                  const string &device_id, const string &compute_backend)
     : backend(backend), array_class(array_class), device_id(device_id),
       compute_backend(compute_backend) {}
+
 Context &Context::set_backend(const string &backend) {
   this->backend = backend;
   return *this;
@@ -35,4 +36,16 @@ Context &Context::set_compute_backend(const string &compute_backend) {
   this->compute_backend = compute_backend;
   return *this;
 }
+
+bool Context::operator==(const Context &rhs) const {
+  const Context &lhs = *this;
+  return (lhs.backend == rhs.backend
+      && lhs.array_class == rhs.array_class
+      && lhs.device_id == rhs.device_id);
+}
+
+bool Context::operator!=(const Context &rhs) const {
+  return !(this->operator==(rhs));
+}
+
 }

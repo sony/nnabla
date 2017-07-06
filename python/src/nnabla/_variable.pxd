@@ -53,8 +53,8 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         VariablePtr variable()
         int rank() const
         void set_rank(int rank) except+
-        void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad) except+
-        void backward(NdArrayPtr grad, cpp_bool clear_buffer) except+
+        void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad) nogil except+
+        void backward(NdArrayPtr grad, cpp_bool clear_buffer) nogil except+ 
         void set_persistent(cpp_bool b)
         cpp_bool persistent()
     ctypedef shared_ptr[CgVariable] CgVariablePtr

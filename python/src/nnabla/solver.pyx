@@ -115,7 +115,9 @@ cdef class Solver:
         """
         Initialize gradients of all registered parameter by zero.
         """
-        self.solverp.zero_grad()
+
+        with nogil:
+            self.solverp.zero_grad()
 
     def update(self):
         """
@@ -125,7 +127,8 @@ cdef class Solver:
         in derived classes of Solver. The updated parameter values will be stored into the data field of
         the parameter ``Variable`` s.
         """
-        self.solverp.update()
+        with nogil:
+            self.solverp.update()
 
     def weight_decay(self, float decay_rate):
         """
@@ -136,7 +139,9 @@ cdef class Solver:
         Args:
             decay_rate (float): The coefficient of weight decay.
         """
-        self.solverp.weight_decay(decay_rate)
+
+        with nogil:
+            self.solverp.weight_decay(decay_rate)
 
     @property
     def name(self):

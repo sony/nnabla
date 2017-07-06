@@ -28,6 +28,7 @@ RUN apt-get -yqq update \
         pkg-config \
         qt5-default \
         unzip \
+
     # Install protoc-gen-doc
     && git clone https://github.com/google/protobuf.git /protobuf \
     && cd /protobuf \
@@ -69,4 +70,5 @@ RUN apt-get -yqq update \
         sphinxcontrib-toc \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/* \
+
 
