@@ -137,3 +137,46 @@ def test_graph_unlink_backward(seed):
     y.backward(clear_buffer=True)
     assert np.all(x0.g == 0)
     assert not np.all(x1.g == 0)
+
+
+@pytest.mark.parametrize("seed", [311])
+def test_graph_clear_buffer(seed):
+    np.random.seed(313)
+    rng = np.random.RandomState(seed)
+    x = nn.Variable([2, 3, 4, 4])
+    t = nn.Variable([2, 1])
+    x.d = rng.randn(*x.shape)
+    t.d = rng.randint(0, 5, size=t.shape)
+
+    # Network definition
+    nn.set_default_context(nn.Context())
+    nn.clear_parameters()
+    x1 = x + 1
+    x2 = x1 - 1
+    with nn.parameter_scope('conv1'):
+        z = PF.convolution(x2, 3, (2, 2))
+        z2 = F.relu(z, inplace=True)
+    with nn.parameter_scope('fc2'):
+        z3 = PF.affine(z2, 5)
+    l = F.softmax_cross_entropy(z3, t, 1)
+    L = F.mean(l)
+
+    # Forwardprop
+    import tempfile
+    import os
+    tmpd = tempfile.mkdtemp()
+    nn.save_parameters(os.path.join(tmpd, 'parameter.h5'))
+    first = False
+    for cnng in [False, True]:
+        for cb in [False, True]:
+            _ = nn.load_parameters(os.path.join(tmpd, 'parameter.h5'))
+            for v in nn.get_parameters().values():
+                v.grad.zero()
+            L.forward(clear_no_need_grad=cnng)
+            L.backward(clear_buffer=cb)
+            if not first:
+                first = True
+                g = list(nn.get_parameters().values())[0].g.copy()
+            else:
+                g2 = list(nn.get_parameters().values())[0].g.copy()
+                assert np.all(g == g2)

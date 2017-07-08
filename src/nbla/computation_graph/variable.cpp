@@ -104,7 +104,7 @@ void forward_recursive(CgFunctionPtr cg_f, unordered_set<CgFunctionPtr> &fseen,
         // Root variable, or persistent flag is set by user.
         continue;
       }
-      if (vi->variable()->need_grad()) {
+      if (cg_f->need_grad()) {
         continue;
       }
       if (remember_unseen_or_check_all_consumed_forward(vseen, vi)) {
