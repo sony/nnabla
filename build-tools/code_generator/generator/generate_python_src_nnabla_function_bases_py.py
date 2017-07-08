@@ -168,6 +168,8 @@ def generate(info, template):
             args3 = '*inputs'
         else:
             args3 = ','.join(args3)
+        if args3:
+            args3 += ', '
 
         apis.append('')
         apis.append('')
@@ -179,6 +181,6 @@ def generate(info, template):
         apis.append('')
         apis += optional_code
         apis += set_default_values
-        apis.append('    return F.{}(ctx{})({}, n_outputs=n_outputs, auto_forward=auto_forward.get_auto_forward(), outputs=outputs)'.format(
+        apis.append('    return F.{}(ctx{})({}n_outputs=n_outputs, auto_forward=auto_forward.get_auto_forward(), outputs=outputs)'.format(
             function, args2, args3))
     return template.format(function_apis='\n'.join(apis))
