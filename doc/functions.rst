@@ -2746,6 +2746,47 @@ Element-wise logical NOT operation
 Math
 ----
 
+Constant
+^^^^^^^^
+
+Generate a constant-valued array.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - val
+     - float
+     - 0
+     - Constant value.
+   * - shape
+     - Shape
+     - []
+     - Shape of the output array.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array where all values are the specified constant.
+     -
+
 Abs
 ^^^
 
