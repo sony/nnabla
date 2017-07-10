@@ -176,30 +176,33 @@ def get_setup_config(root_dir, lib):
     package_dir = copy.deepcopy(cpu_ext.package_dir)
     package_data = copy.deepcopy(cpu_ext.package_data)
     ext_modules = cpu_ext.ext_modules
-
+    a = dict()
+    exec(open(os.path.join(root_dir, 'src', 'nnabla', '_version.py')).read(), globals(), a)
+    if '__version__' in a:
+        __version__ = a['__version__']
+    if '__email__' in a:
+        __email__ = a['__email__']
     pkg_info = dict(
         name="nnabla",
         description='Neural Network Libraries',
-        version='0.9.1',
-        author_email='nnabla@googlegroups.com',
+        version=__version__,
+        author_email=__email__,
         url="https://github.com/sony/nnabla",
         license='Apache Licence 2.0',
         classifiers=[
-                'Development Status :: 4 - Beta',
-                'Intended Audience :: Developers',
-                'Intended Audience :: Education',
-                'Intended Audience :: Science/Research',
-                'Topic :: Scientific/Engineering',
-                'Topic :: Scientific/Engineering :: Artificial Intelligence',
-                'License :: OSI Approved :: Apache Software License',
-                'Programming Language :: Python :: 2.7',
-                'Programming Language :: Python :: 3.5',
-                'Operating System :: Microsoft :: Windows',
-                'Operating System :: POSIX :: Linux',
+            'Development Status :: 4 - Beta',
+            'Intended Audience :: Developers',
+            'Intended Audience :: Education',
+            'Intended Audience :: Science/Research',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Artificial Intelligence',
+            'License :: OSI Approved :: Apache Software License',
+            'Programming Language :: Python :: {}.{}'.format(sys.version_info.major, sys.version_info.minor),
+            'Operating System :: Microsoft :: Windows',
+            'Operating System :: POSIX :: Linux',
             ],
         keywords="deep learning artificial intelligence machine learning neural network",
-        python_requires='>=2.7, >=3.3',
-    )
+        python_requires='>={}.{}'.format(sys.version_info.major, sys.version_info.minor))
     return pkg_info, ExtConfig(package_dir, packages, package_data, ext_modules, {})
 
 

@@ -7,7 +7,7 @@ project (nbla C CXX)
 # Settings
 ###############################################################################
 if (NOT PYTHON_COMMAND_NAME)
-  set(PYTHON_COMMAND_NAME "python")
+  set(PYTHON_COMMAND_NAME "python${PYTHON_VERSION}")
 endif()
 
 find_program(PYTHON_COMMAND ${PYTHON_COMMAND_NAME})
