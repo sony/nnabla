@@ -41,15 +41,15 @@ def mnist_binary_connect_lenet_prediction(image, test=False):
     with nn.parameter_scope("conv1"):
         c1 = PF.binary_connect_convolution(image, 16, (5, 5))
         c1 = PF.batch_normalization(c1, batch_stat=not test)
-        c1 = F.binary_tanh(F.average_pooling(c1, (2, 2)))
+        c1 = F.elu(F.average_pooling(c1, (2, 2)))
     with nn.parameter_scope("conv2"):
         c2 = PF.binary_connect_convolution(c1, 16, (5, 5))
         c2 = PF.batch_normalization(c2, batch_stat=not test)
-        c2 = F.binary_tanh(F.average_pooling(c2, (2, 2)))
+        c2 = F.elu(F.average_pooling(c2, (2, 2)))
     with nn.parameter_scope("fc3"):
         c3 = PF.binary_connect_affine(c2, 50)
         c3 = PF.batch_normalization(c3, batch_stat=not test)
-        c3 = F.binary_tanh(c3)
+        c3 = F.elu(c3)
     with nn.parameter_scope("fc4"):
         c4 = PF.binary_connect_affine(c3, 10)
         c4 = PF.batch_normalization(c4, batch_stat=not test)
@@ -67,18 +67,18 @@ def mnist_binary_connect_resnet_prediction(image, test=False):
         C = x.shape[1]
         with nn.parameter_scope(scope):
             with nn.parameter_scope('conv1'):
-                h = F.binary_tanh(bn(PF.binary_connect_convolution(
+                h = F.elu(bn(PF.binary_connect_convolution(
                     x, C / 2, (1, 1), with_bias=False)))
             with nn.parameter_scope('conv2'):
-                h = F.binary_tanh(
+                h = F.elu(
                     bn(PF.binary_connect_convolution(h, C / 2, (3, 3), pad=(1, 1), with_bias=False)))
             with nn.parameter_scope('conv3'):
                 h = bn(PF.binary_connect_convolution(
                     h, C, (1, 1), with_bias=False))
-        return F.binary_tanh(x + h)
+        return F.elu(x + h)
     # Conv1 --> 64 x 32 x 32
     with nn.parameter_scope("conv1"):
-        c1 = F.binary_tanh(
+        c1 = F.elu(
             bn(PF.binary_connect_convolution(image, 64, (3, 3), pad=(3, 3), with_bias=False)))
     # Conv2 --> 64 x 16 x 16
     c2 = F.max_pooling(res_unit(c1, "conv2"), (2, 2))
