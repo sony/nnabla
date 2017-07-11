@@ -140,3 +140,12 @@ def DataParalellCommunicator(CContext ctx):
             context (:obj:`Context`): context used in this communicator.
         """
         return  Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))        
+
+def mpDataParalellCommunicator(CContext ctx):
+        """
+        Multi Process Data Parallle Communicator for Distributed Training.
+        
+        Args:
+            context (:obj:`Context`): context used in this communicator.
+        """
+        return  Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        
