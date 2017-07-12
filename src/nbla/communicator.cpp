@@ -41,6 +41,10 @@ void Communicator::add_context_and_parameters(
   device_func_named_param_.push_back(ctx_params.second);
 }
 
+int Communicator::rank() {return rank_;}
+
+int Communicator::size() {return size_;}
+
 void Communicator::remove_context_parameters(
     const pair<Context, vector<string>> &keys) {
   NBLA_ERROR(error_code::not_implemented,

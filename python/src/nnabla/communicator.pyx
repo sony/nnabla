@@ -85,6 +85,20 @@ cdef class Communicator:
         Get communicator name.
         """
         return self.communicatorp.name()
+
+    @property
+    def size(self):
+        """
+        Get size of communicator.
+        """
+        return self.communicatorp.size()
+
+    @property
+    def rank(self):
+        """
+        Get rank of communicator.
+        """
+        return self.communicatorp.rank()
     
     def add_context_and_parameters(self, ctx_param_dict):
         """Add context and parameters.
@@ -148,4 +162,10 @@ def mpDataParalellCommunicator(CContext ctx):
         Args:
             context (:obj:`Context`): context used in this communicator.
         """
+        # There is the known bug in python used with MPI
+        # described https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
+        import platform
+        import ctypes
+        if platform.system() == 'Linux':
+            ctypes.CDLL("libmpi.so.12", mode=ctypes.RTLD_GLOBAL)
         return  Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        

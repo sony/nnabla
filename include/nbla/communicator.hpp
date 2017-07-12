@@ -42,6 +42,8 @@ Communicator exchanges gradients.
 class NBLA_API Communicator {
 protected:
   Context ctx_;
+  int rank_;
+  int size_;
 
   vector<Context> contexts_;
   vector<vector<pair<string, VariablePtr> > > device_func_named_param_;
@@ -59,6 +61,9 @@ public:
 
   ///<  Name of Communicator class, usually class name.
   virtual string name() = 0;
+
+  int rank();
+  int size();
 
   /** Add context and parameters
 
