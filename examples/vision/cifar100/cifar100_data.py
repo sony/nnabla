@@ -6,11 +6,14 @@ import numpy as np
 import struct
 import tarfile
 import zlib
+import time
+import os
+import errno
 
 from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
-from nnabla.utils.data_source_loader import download
+from nnabla.utils.data_source_loader import download, get_data_home 
 
 
 class Cifar100DataSource(DataSource):

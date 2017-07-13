@@ -69,8 +69,8 @@ def cifar100_resnet23_prediction(image,
 
     # Random generator for using the same init parameters in all devices
     rng = np.random.RandomState(0)
-    nmaps = 64
-    ncls = 10
+    nmaps = 384
+    ncls = 100
     
     # Conv -> BN -> Relu
     with nn.context_scope(ctx):
@@ -101,7 +101,7 @@ def cifar100_resnet23_prediction(image,
         h = F.average_pooling(h, kernel=(4, 4)) # -> 1x1
     
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(int(np.prod(h.shape[1:])), 10, kernel=(1, 1)), rng=rng)
+            calc_uniform_lim_glorot(int(np.prod(h.shape[1:])), ncls, kernel=(1, 1)), rng=rng)
         pred = PF.affine(h, ncls, w_init=w_init)
 
     return pred
