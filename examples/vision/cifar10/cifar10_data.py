@@ -6,11 +6,14 @@ import numpy as np
 import struct
 import tarfile
 import zlib
+import time
+import os
+import errno
 
 from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
-from nnabla.utils.data_source_loader import download
+from nnabla.utils.data_source_loader import download, get_data_home 
 
 
 class Cifar10DataSource(DataSource):
@@ -25,7 +28,22 @@ class Cifar10DataSource(DataSource):
 
     def __init__(self, train=True, shuffle=False, rng=None):
         super(Cifar10DataSource, self).__init__(shuffle=shuffle)
-
+        
+        # Lock
+        lockfile = os.path.join(get_data_home(), "cifar10.lock")
+        start_time = time.time()
+        while True:  # busy-lock due to communication between process spawn by mpirun
+            try:
+                fd = os.open(lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
+                break;
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise 
+                if (time.time() - start_time) >= 60 * 30:  # wait for 30min
+                    raise Exception("Timeout occured.")
+                
+            time.sleep(5)
+        
         self._train = train
         data_uri = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
         logger.info('Getting labeled data from {}.'.format(data_uri))
@@ -66,7 +84,11 @@ class Cifar10DataSource(DataSource):
             rng = np.random.RandomState(313)
         self.rng = rng
         self.reset()
-
+        
+        # Unlock
+        os.close(fd)
+        os.unlink(lockfile)
+        
     def reset(self):
         if self._shuffle:
             self._indexes = self.rng.permutation(self._size)
