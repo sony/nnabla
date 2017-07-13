@@ -114,8 +114,7 @@ def train():
     """
     Naive Multi-Device Training
     
-    NOTE: the communicator exposes low-level interfaces for the 
-    distributed training, thus it might be changed in the near future.
+    NOTE: the communicator exposes low-level interfaces
     
     * Parse command line arguments.
     * Instantiate a communicator and set parameter variables.
