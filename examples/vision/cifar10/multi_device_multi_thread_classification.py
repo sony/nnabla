@@ -147,7 +147,7 @@ def train():
     # Parse args
     args = get_args()
     n_train_samples = 50000
-    bs_valid = 100
+    bs_valid = args.batch_size
     
     # Create contexts
     extension_module = args.context
