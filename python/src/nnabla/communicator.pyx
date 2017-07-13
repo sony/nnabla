@@ -163,9 +163,9 @@ def mpDataParalellCommunicator(CContext ctx):
             context (:obj:`Context`): context used in this communicator.
         """
         # There is the known bug in python used with MPI
-        # described https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
+        # described in https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
         import platform
         import ctypes
         if platform.system() == 'Linux':
-            ctypes.CDLL("libmpi.so.12", mode=ctypes.RTLD_GLOBAL)
+            ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
         return  Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        
