@@ -266,7 +266,7 @@ def train():
                 fb_results[device_id].get()
                         
             # In-place Allreduce
-            comm.iallreduce()
+            comm.allreduce()
             
             # Solvers update
             for device_id in range(n_devices):
