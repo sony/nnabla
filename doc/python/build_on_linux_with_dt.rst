@@ -51,7 +51,19 @@ environment variable to enable to use NCCL v1 as the follows,
 	export NCCL_HOME=$(pwd)
 	
 
-Note that **NCCL_HOME** is only used for building CUDA extension.
+Distributed Training also depends on MPI, so install it as follows,
+
+.. code-block:: shell
+
+	sudo apt-get install libopenmpi-dev
+	
+then, set **MPI_HOME** like
+
+.. code-block:: shell
+  
+  export MPI_HOME=/usr/lib/openmpi  # tipically here.
+  
+Note that **NCCL_HOME** and **MPI_HOME** is only used for building CUDA extension.
 
 Follow :ref:`linux-build-and-install-cuda/cudnn-extension`, but when you do 
 `cmake ../` you could see logs like, 
