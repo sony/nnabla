@@ -132,7 +132,7 @@ cdef class Communicator:
         """
         self.communicatorp.init()
         
-    def iallreduce(self, division=True):
+    def allreduce(self, division=True):
         """Inplace allreduce over parameters added.
         This method is \b sync before and after iallreduce w.r.t. a host thread.
         Currently, `iallreduce` is applied to gradient regions.
@@ -143,7 +143,7 @@ cdef class Communicator:
                 of devices. 
         
         """
-        self.communicatorp.iallreduce(division)
+        self.communicatorp.allreduce(division)
 
 
 def DataParalellCommunicator(CContext ctx):

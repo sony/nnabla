@@ -69,23 +69,11 @@ public:
   virtual void bcast();
   virtual void allgather();
 
-  virtual void ireduce(bool division=true);
-  virtual void iallreduce(bool division=true);
-  virtual void ireducescatter(bool division=true);
-  virtual void ibcast();
-  virtual void iallgather();
-
   virtual void reduce_async(bool division=true);
   virtual void allreduce_async(bool division=true);
   virtual void reducescatter_async(bool division=true);
   virtual void bcast_async();
   virtual void allgather_async();
-
-  virtual void ireduce_async(bool division=true);
-  virtual void iallreduce_async(bool division=true);
-  virtual void ireducescatter_async(bool division=true);
-  virtual void ibcast_async();
-  virtual void iallgather_async();
 
   /** Get array classes that are allowed to be specified by Context
   */

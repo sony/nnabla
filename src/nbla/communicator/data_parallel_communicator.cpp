@@ -68,36 +68,6 @@ void DataParallelCommunicator<T>::allgather() {
 }
 
 template<typename T>
-void DataParallelCommunicator<T>::ireduce(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireduce is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::iallreduce(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallreduce is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::ireducescatter(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireducescatter is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::ibcast() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ibcast is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::iallgather() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallgather is not implemented.")
-}
-
-template<typename T>
 void DataParallelCommunicator<T>::reduce_async(bool division) {
   NBLA_ERROR(error_code::not_implemented,
       "CPU reduce_async is not implemented.")
@@ -125,36 +95,6 @@ template<typename T>
 void DataParallelCommunicator<T>::allgather_async() {
   NBLA_ERROR(error_code::not_implemented,
       "CPU allgather_async is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::ireduce_async(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireduce_async is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::iallreduce_async(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallreduce_async is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::ireducescatter_async(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireducescatter_async is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::ibcast_async() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ibcast_async is not implemented.")
-}
-
-template<typename T>
-void DataParallelCommunicator<T>::iallgather_async() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallgather_async is not implemented.")
 }
 
 template<typename T>

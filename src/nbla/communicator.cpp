@@ -107,31 +107,6 @@ void Communicator::allgather() {
       "CPU allgather is not implemented.")
 }
 
-void Communicator::ireduce(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireduce is not implemented.")
-}
-
-void Communicator::iallreduce(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallreduce is not implemented.")
-}
-
-void Communicator::ireducescatter(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireducescatter is not implemented.")
-}
-
-void Communicator::ibcast() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ibcast is not implemented.")
-}
-
-void Communicator::iallgather() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallgather is not implemented.")
-}
-
 void Communicator::reduce_async(bool division) {
   NBLA_ERROR(error_code::not_implemented,
       "CPU reduce_async is not implemented.")
@@ -155,31 +130,6 @@ void Communicator::bcast_async() {
 void Communicator::allgather_async() {
   NBLA_ERROR(error_code::not_implemented,
       "CPU allgather_async is not implemented.")
-}
-
-void Communicator::ireduce_async(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireduce_async is not implemented.")
-}
-
-void Communicator::iallreduce_async(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallreduce_async is not implemented.")
-}
-
-void Communicator::ireducescatter_async(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ireducescatter_async is not implemented.")
-}
-
-void Communicator::ibcast_async() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU ibcast_async is not implemented.")
-}
-
-void Communicator::iallgather_async() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU iallgather_async is not implemented.")
 }
 
 vector<string> Communicator::allowed_array_classes() {

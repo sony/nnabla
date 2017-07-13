@@ -41,22 +41,12 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         void reducescatter(cpp_bool division) except +
         void bcast() except +
         void allgather() except +
-        void ireduce(cpp_bool division) except +
-        void iallreduce(cpp_bool division) except +
-        void ireducescatter(cpp_bool division) except +
-        void ibcast() except +
-        void iallgather() except +
         
         void reduce_async(cpp_bool division) except +
         void allreduce_async(cpp_bool division) except +
         void reducescatter_async(cpp_bool division) except +
         void bcast_async() except +
         void allgather_async() except +
-        void ireduce_async(cpp_bool division) except +
-        void iallreduce_async(cpp_bool division) except +
-        void ireducescatter_async(cpp_bool division) except +
-        void ibcast_async() except +
-        void iallgather_async() except +
         
 cdef extern from "nbla/communicator/data_parallel_communicator.hpp" namespace "nbla":
     shared_ptr[CCommunicator] create_DataParallelCommunicatorCommunicator(const CContext &) except +        

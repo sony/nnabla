@@ -92,109 +92,58 @@ public:
    */
   void check_array_class(Context ctx, VariablePtr vp);
 
-  /** Reduce
+  /** reduce.
    @param division Divide the reduced value.
    */
   virtual void reduce(bool division=true);
 
-  /** Allreduce.
-
-   @param division Divide the reduced value.
-   */
-  virtual void allreduce(bool division=true);
-
-  /** Reducescatter.
-   @param division Divide the reduced value.
-   */
-  virtual void reducescatter(bool division=true);
-
-  /** Broadcast.
-   *
-   */
-  virtual void bcast();
-
-  /** Allgather.
-   *
-   */
-  virtual void allgather();
-
-  /** Inplace reduce.
-   @param division Divide the reduced value.
-   */
-  virtual void ireduce(bool division=true);
-
-  /** Inplace allreduce over parameters added.
+  /** allreduce over parameters added.
    This method is \b sync before and after iallreduce w.r.t. a host thread.
    Currently, \e iallreduce is applied to gradient regions.
 
   @param division Divide the reduced value.
    */
-  virtual void iallreduce(bool division=true);
+  virtual void allreduce(bool division=true);
 
-  /** Inplace reducescatter.
+  /** reducescatter.
    @param division Divide the reduced value.
    */
-  virtual void ireducescatter(bool division=true);
+  virtual void reducescatter(bool division=true);
 
-  /** Inplace broadcast.
+  /** broadcast.
    *
    */
-  virtual void ibcast();
+  virtual void bcast();
 
-  /** Inplace allgather.
+  /** allgather.
    *
    */
-  virtual void iallgather();
+  virtual void allgather();
 
-  /** Reduce asynchronously.
+  /** reduce asynchronously.
    @param division Divide the reduced value.
    */
   virtual void reduce_async(bool division=true);
 
-  /** Allreduce asynchronously.
-   *
+  /** reduce asynchronously.
+   @param division Divide the reduced value.
    */
   virtual void allreduce_async(bool division=true);
 
-  /** Reducescatter asynchronously.
+  /** reducescatter asynchronously.
    @param division Divide the reduced value.
    */
   virtual void reducescatter_async(bool division=true);
 
-  /** Broadcast asynchronously.
+  /** broadcast asynchronously.
    *
    */
   virtual void bcast_async();
 
-  /** Allgather asynchronously.
+  /** allgather asynchronously.
    *
    */
   virtual void allgather_async();
-
-  /** Inplace reduce asynchronously.
-   @param division Divide the reduced value.
-   */
-  virtual void ireduce_async(bool division=true);
-
-  /** Inplace reduce asynchronously.
-   @param division Divide the reduced value.
-   */
-  virtual void iallreduce_async(bool division=true);
-
-  /** Inplace reducescatter asynchronously.
-   @param division Divide the reduced value.
-   */
-  virtual void ireducescatter_async(bool division=true);
-
-  /** Inplace broadcast asynchronously.
-   *
-   */
-  virtual void ibcast_async();
-
-  /** Inplace allgather asynchronously.
-   *
-   */
-  virtual void iallgather_async();
 
   /** Get array classes that are allowed to be specified by Context.
   */
