@@ -237,9 +237,9 @@ def train():
     with data_iterator_cifar10(args.batch_size, True) as tdata, \
                     data_iterator_cifar10(bs_valid, False) as vdata:
         # Training-loop
-        for i in range(args.max_iter / n_devices):
+        for i in range(int(args.max_iter / n_devices)):
             # Validation
-            if i % (n_train_samples / args.batch_size / n_devices) == 0:
+            if i % int(n_train_samples / args.batch_size / n_devices) == 0:
                 ve = 0.
                 for j in range(args.val_iter):
                     image, label = vdata.next()
@@ -248,7 +248,7 @@ def train():
                     ve += categorical_error(pred_valid.d, label)
                 ve /= args.val_iter
                 monitor_verr.add(i*n_devices, ve)
-            if i % (args.model_save_interval / n_devices) == 0:
+            if i % int(args.model_save_interval / n_devices) == 0:
                 nn.save_parameters(os.path.join(
                     args.model_save_path, 'params_%06d.h5' % i))
             
