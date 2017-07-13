@@ -26,6 +26,21 @@ class Cifar100DataSource(DataSource):
     def __init__(self, train=True, shuffle=False, rng=None):
         super(Cifar100DataSource, self).__init__(shuffle=shuffle)
 
+        # Lock
+        lockfile = os.path.join(get_data_home(), "cifar100.lock")
+        start_time = time.time()
+        while True:  # busy-lock due to communication between process spawn by mpirun
+            try:
+                fd = os.open(lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
+                break;
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise 
+                if (time.time() - start_time) >= 60 * 30:  # wait for 30min
+                    raise Exception("Timeout occured.")
+                
+            time.sleep(5)
+            
         self._train = train
         data_uri = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
         logger.info('Getting labeled data from {}.'.format(data_uri))
@@ -67,6 +82,10 @@ class Cifar100DataSource(DataSource):
         self.rng = rng
         self.reset()
 
+        # Unlock
+        os.close(fd)
+        os.unlink(lockfile)
+        
     def reset(self):
         if self._shuffle:
             self._indexes = self.rng.permutation(self._size)

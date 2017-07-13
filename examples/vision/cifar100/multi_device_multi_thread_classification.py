@@ -87,6 +87,7 @@ def cifar100_resnet23_prediction(image,
             with nn.parameter_scope("conv1"):
                 # Preprocess
                 if not test:
+                    
                     image = F.image_augmentation(image, contrast=1.0,
                                              angle=0.25,
                                              flip_lr=True)
@@ -123,9 +124,8 @@ def train():
     """
     Naive Multi-Device Training
     
-    NOTE: the communicator exposes low-level interfaces for the 
-    distributed training, thus it might be changed in the near future.
-    
+    NOTE: the communicator exposes low-level interfaces
+
     * Parse command line arguments.
     * Specify contexts for computation.
     * Initialize DataIterator.
@@ -146,7 +146,7 @@ def train():
     # Parse args
     args = get_args()
     n_train_samples = 50000
-    bs_valid = 100
+    bs_valid = args.batch_size
     
     # Create contexts
     extension_module = args.context
@@ -225,7 +225,7 @@ def train():
                         losses_train[device_id], solvers[device_id]))
         ret.get()
         losses_train[device_id].d  # sync to host
-        
+    
     # Create monitor.
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
     monitor = Monitor(args.monitor_path)
@@ -236,9 +236,9 @@ def train():
     with data_iterator_cifar100(args.batch_size, True) as tdata, \
                     data_iterator_cifar100(bs_valid, False) as vdata:
         # Training-loop
-        for i in range(args.max_iter / n_devices):
+        for i in range(int(args.max_iter / n_devices)):
             # Validation
-            if i % (n_train_samples / args.batch_size / n_devices) == 0:
+            if i % int(n_train_samples / args.batch_size / n_devices) == 0:
                 ve = 0.
                 for j in range(args.val_iter):
                     image, label = vdata.next()
@@ -247,7 +247,7 @@ def train():
                     ve += categorical_error(pred_valid.d, label)
                 ve /= args.val_iter
                 monitor_verr.add(i*n_devices, ve)
-            if i % (args.model_save_interval / n_devices) == 0:
+            if i % int(args.model_save_interval / n_devices) == 0:
                 nn.save_parameters(os.path.join(
                     args.model_save_path, 'params_%06d.h5' % i))
             
@@ -263,9 +263,9 @@ def train():
                 fb_results.append(res)
             for device_id in range(n_devices):
                 fb_results[device_id].get()
-                                    
+                        
             # In-place Allreduce
-            comm.iallreduce()
+            comm.allreduce()
             
             # Solvers update
             for device_id in range(n_devices):
