@@ -147,7 +147,6 @@ def train():
     mpi_rank = comm.rank
     device_id = mpi_rank
     ctx = extension_context(extension_module, device_id=device_id)
-    comm.add_context_and_parameters((ctx, nn.get_parameters()))
     
     # Create training graphs
     test = False
@@ -157,6 +156,9 @@ def train():
         image_train, ctx, test)
     loss_train = cifar100_resnet32_loss(pred_train, label_train)
     input_image_train = {"image": image_train, "label": label_train}
+    
+    # add parameters to communicator
+    comm.add_context_and_parameters((ctx, nn.get_parameters()))
         
     # Create validation graph
     test = True
