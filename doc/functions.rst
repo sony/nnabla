@@ -3398,7 +3398,7 @@ Note:
    * - seed
      - int64
      - -1
-     - Random seed
+     - Random seed. When -1, seed is sampled from global random number generator.
 
 
 * Output(s)
@@ -3410,6 +3410,162 @@ Note:
      - Options
    * - y
      - N-D array with the same shape as x
+     - 
+
+Rand
+^^^^
+
+Samples numbers from a uniform distribution :math:`x \sim U(low, high)`
+given lowest value :math:`low`, upper bound :math:`high`,
+and shape of the returned Variable.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - low
+     - float
+     - 0
+     - :math:`low` in definition.
+   * - high
+     - float
+     - 1
+     - :math:`high` in definition.
+   * - shape
+     - Shape
+     - []
+     - Shape of returned variable.
+   * - seed
+     - int64
+     - -1
+     - Random seed. When -1, seed is sampled from global random number generator.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Variable with the shape specified in the argument.
+     - 
+
+
+Randint
+^^^^^^^
+
+Samples integer numbers from a uniform distribution :math:`x \sim U(low, high)`
+given lowest value :math:`low`, upper bound :math:`high`,
+and shape of the returned Variable.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - low
+     - int64
+     - 0
+     - :math:`low` in definition.
+   * - high
+     - int64
+     - 1
+     - :math:`high` in definition.
+   * - shape
+     - Shape
+     - []
+     - Shape of returned variable.
+   * - seed
+     - int64
+     - -1
+     - Random seed. When -1, seed is sampled from global random number generator.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Variable with the shape specified in the argument. The dtype is int32.
+     - Integer
+
+
+Randn
+^^^^^
+
+Samples numbers from a normal distribution :math:`x \sim N(\mu, \sigma)`
+given mean :math:`\mu`, standard deviation :math:`\sigma`,
+and shape of the returned Variable.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - mu
+     - float
+     - 0
+     - :math:`\mu` in definition.
+   * - sigma
+     - float
+     - 1
+     - :math:`\sigm` in definition.
+   * - shape
+     - Shape
+     - []
+     - Shape of returned variable.
+   * - seed
+     - int64
+     - -1
+     - Random seed. When -1, seed is sampled from global random number generator.
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Variable with the shape specified in the argument.
      - 
 
 RandomCrop
@@ -3447,7 +3603,7 @@ RandomCrop randomly extracts a portion of an array.
    * - seed
      - int64
      - -1
-     - Random seed
+     - Random seed. When -1, seed is sampled from global random number generator.
 
 
 * Output(s)
@@ -3496,7 +3652,7 @@ Reverses the order of elements of the specified dimension of an array at 50% pro
    * - seed
      - int64
      - -1
-     - Random seed
+     - Random seed. When -1, seed is sampled from global random number generator.
 
 
 * Output(s)
@@ -3549,7 +3705,7 @@ Randomly shifts the array elements within the specified range.
    * - seed
      - int64
      - -1
-     - Random seed
+     - Random seed. When -1, seed is sampled from global random number generator.
 
 
 * Output(s)
@@ -3650,7 +3806,7 @@ ImageAugmentation randomly alters the input image.
    * - seed 
      - int64
      - -1
-     - Random seed.
+     - Random seed. When -1, seed is sampled from global random number generator.
 
 * Output(s)
 
