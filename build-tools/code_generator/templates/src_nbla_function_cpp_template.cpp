@@ -11,15 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-/*
- * *WARNING*
- * THIS FILE IS AUTO-GENERATED DUMMY CODE BY CODE GENERATOR.
- * PLEASE IMPLEMENT REAL CODE AND DELETE THIS MESSAGE SOON.
- * If you want to change dummy code, edit following files.
- * - build-tools/code_generator/function_generator/generate_src_nbla_function_cpp.py
- * - build-tools/code_generator/templates/src_nbla_function_cpp_template.cpp
- */
+// 
+// *WARNING*
+// THIS FILE IS AUTO-GENERATED DUMMY CODE BY CODE GENERATOR.
+// PLEASE IMPLEMENT REAL CODE AND DELETE THIS MESSAGE SOON.
+// If you want to change dummy code, edit following files.
+// - build-tools/code_generator/function_generator/generate_src_nbla_function_cpp.py
+// - build-tools/code_generator/templates/src_nbla_function_cpp_template.cpp
 
 /** {func_name}
  */

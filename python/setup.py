@@ -175,7 +175,6 @@ def get_setup_config(root_dir, lib):
     package_dir = copy.deepcopy(cpu_ext.package_dir)
     package_data = copy.deepcopy(cpu_ext.package_data)
     ext_modules = cpu_ext.ext_modules
-
     exec(open(os.path.join(root_dir, 'src', 'nnabla', '_version.py')).read())
 
     pkg_info = dict(

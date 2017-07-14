@@ -1,13 +1,17 @@
 FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    g++ \
-    make \
+    clang-format-3.8 \
     cmake \
+    curl \
+    g++ \
+    git \
+    make \
     python-dev \
     python-pip \
     python-setuptools \
-    clang-format-3.8
+    unzip \
+    zip
 
 ADD python/setup_requirements.txt /tmp/deps/
 RUN pip install -U -r /tmp/deps/setup_requirements.txt
@@ -22,12 +26,9 @@ RUN pip install -U ipython
 RUN apt-get -yqq update \
     && apt-get -yqq install --no-install-recommends \
         build-essential \
-        curl \
         dh-autoreconf \
-        git \
         pkg-config \
         qt5-default \
-        unzip \
     # Install protoc-gen-doc
     && git clone https://github.com/google/protobuf.git /protobuf \
     && cd /protobuf \
@@ -44,7 +45,7 @@ RUN apt-get -yqq update \
     && make \
     && cp protoc-gen-doc /usr/local/bin \
     # Cleanup
-    && apt-get -yqq purge git curl unzip curl dh-autoreconf \
+    && apt-get -yqq purge dh-autoreconf \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /protobuf /protoc-gen-doc
@@ -68,5 +69,5 @@ RUN apt-get -yqq update \
         sphinxcontrib-seqdiag \
         sphinxcontrib-toc \
     && apt-get -yqq clean \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/*
 

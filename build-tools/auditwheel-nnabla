@@ -1,0 +1,25 @@
+#! /bin/bash
+
+# Usage: auditwheel-nnabla <relative path to wheel>
+# This will output a new wheel with manylinux1 tag.
+
+set -e
+
+TMPDIR=$(mktemp -d)
+
+if [ -e $1 ]
+then
+    INPUT=$(basename $1)
+    OUTPUT=$(echo $INPUT | sed "s/-linux_/-manylinux1_/g")
+    ABSDIR=$(cd $(dirname $1) && pwd)
+    unzip -q -d $TMPDIR $ABSDIR/$INPUT
+    cd $TMPDIR
+    for WHEEL in *dist-info/WHEEL
+    do
+        cat $WHEEL | sed "s/-linux_/-manylinux1_/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
+    done
+    echo "Creating $OUTPUT"
+    zip -q -r $ABSDIR/$OUTPUT *
+fi
+rm -rf $TMPDIR
+
