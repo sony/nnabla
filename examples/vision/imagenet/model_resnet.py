@@ -43,8 +43,7 @@ def shortcut(x, ochannels, stride, shortcut_type, test):
             x = F.average_pooling(x, (1, 1), stride)
         if ichannels != ochannels:
             # Zero-padding to channel axis
-            zeros = nn.Variable((ishape[0], ichannels) + ishape[-2:])
-            zeros.data.zero()
+            zeros = F.constant(0, (ishape[0], ichannels) + ishape[-2:])
             x = F.concatenate(x, zeros, axis=1)
     return x
 

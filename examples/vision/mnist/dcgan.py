@@ -122,20 +122,21 @@ def train(args):
 
     # Fake path
     z = nn.Variable([args.batch_size, 100, 1, 1])
-    zeros = nn.Variable([args.batch_size, 1])
-    zeros.data.zero()
-    ones = nn.Variable([args.batch_size, 1])
-    ones.data.fill(1)
     fake = generator(z)
     fake.persistent = True  # Not to clear at backward
     pred_fake = discriminator(fake)
-    loss_gen = F.mean(F.sigmoid_cross_entropy(pred_fake, ones))
-    loss_dis = F.mean(F.sigmoid_cross_entropy(pred_fake, zeros))
+    loss_gen = F.mean(F.sigmoid_cross_entropy(
+        pred_fake, F.constant(1, pred_fake.shape)))
+    fake_dis = fake.unlinked()
+    pred_fake_dis = discriminator(fake_dis)
+    loss_dis = F.mean(F.sigmoid_cross_entropy(
+        pred_fake_dis, F.constant(0, pred_fake_dis.shape)))
 
     # Real path
     x = nn.Variable([args.batch_size, 1, 28, 28])
     pred_real = discriminator(x)
-    loss_dis += F.mean(F.sigmoid_cross_entropy(pred_real, ones))
+    loss_dis += F.mean(F.sigmoid_cross_entropy(pred_real,
+                                               F.constant(1, pred_real.shape)))
 
     # Create Solver.
     solver_gen = S.Adam(args.learning_rate, beta1=0.5)
