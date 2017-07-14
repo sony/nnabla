@@ -12,19 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
-Python API setup script.
-
-This hasn't been designed well yet. Polishing it is future developement.
-The current improvement plan is as following:
-
-* Cythonize before publishing. Users do not use Cython, instead just use
-generated C++ files to build extensions.
-
-* Remove hard-coded relative paths for library link. Maybe the solution will be
-  install NNabla C++ library in order to put them into folders path of which
-  are set.
-'''
 from __future__ import print_function
 
 from setuptools import setup
@@ -177,7 +164,8 @@ def get_setup_config(root_dir, lib):
     package_data = copy.deepcopy(cpu_ext.package_data)
     ext_modules = cpu_ext.ext_modules
     a = dict()
-    exec(open(os.path.join(root_dir, 'src', 'nnabla', '_version.py')).read(), globals(), a)
+    exec(open(os.path.join(root_dir, 'src', 'nnabla',
+                           '_version.py')).read(), globals(), a)
     if '__version__' in a:
         __version__ = a['__version__']
     if '__email__' in a:
@@ -197,10 +185,11 @@ def get_setup_config(root_dir, lib):
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Artificial Intelligence',
             'License :: OSI Approved :: Apache Software License',
-            'Programming Language :: Python :: {}.{}'.format(sys.version_info.major, sys.version_info.minor),
+            'Programming Language :: Python :: {}.{}'.format(
+                sys.version_info.major, sys.version_info.minor),
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX :: Linux',
-            ],
+        ],
         keywords="deep learning artificial intelligence machine learning neural network",
         python_requires='>={}.{}'.format(sys.version_info.major, sys.version_info.minor))
     return pkg_info, ExtConfig(package_dir, packages, package_data, ext_modules, {})

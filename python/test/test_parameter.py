@@ -85,5 +85,5 @@ def test_parametric_function_api():
     params = nn.get_parameters()
     len(params) == 4
     assert list(iterkeys(params)) == ['group1/dummy/p1', 'group1/dummy/p2',
-                             'dummy/p1', 'dummy/p2']
+                                      'dummy/p1', 'dummy/p2']
     nn.clear_parameters()
