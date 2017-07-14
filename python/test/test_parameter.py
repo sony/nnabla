@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import iterkeys
+
 import pytest
 import numpy as np
 import nnabla.parametric_functions as PF
@@ -75,13 +77,13 @@ def test_parametric_function_api():
 
     params = nn.get_parameters()
     assert len(params) == 2
-    assert params.keys() == ['group1/dummy/p1', 'group1/dummy/p2']
+    assert list(iterkeys(params)) == ['group1/dummy/p1', 'group1/dummy/p2']
 
     # No scope
     v = dummy_parametric_function(shape)
 
     params = nn.get_parameters()
     len(params) == 4
-    assert params.keys() == ['group1/dummy/p1', 'group1/dummy/p2',
-                             'dummy/p1', 'dummy/p2']
+    assert list(iterkeys(params)) == ['group1/dummy/p1', 'group1/dummy/p2',
+                                      'dummy/p1', 'dummy/p2']
     nn.clear_parameters()

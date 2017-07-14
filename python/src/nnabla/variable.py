@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from _variable import Context
-from _variable import Variable as _Variable
+from __future__ import absolute_import
+
+from ._variable import Context
+from ._variable import Variable as _Variable
 
 
 # As Cython does not support some arithmetic operations,
@@ -218,14 +220,14 @@ class Variable(_Variable):
         Element-wise division.
         Part of the implementation of the division operator expression.
         """
-        return self / other
+        return self.__div__(other)
 
     def __rtruediv__(self, other):
         """
         Element-wise division.
         Part of the implementation of the division operator expression.
         """
-        return self / other
+        return self.__rdiv__(other)
 
     def __pos__(self):
         """

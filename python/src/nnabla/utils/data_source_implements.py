@@ -19,8 +19,6 @@ from collections import OrderedDict
 import csv
 import numpy
 import os
-import struct
-import zlib
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load

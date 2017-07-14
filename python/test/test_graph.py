@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import range
 import pytest
 import numpy as np
 import nnabla as nn
@@ -80,7 +81,7 @@ def test_graph_model(model, seed):
             z = PF.affine(x, 3)
             z2 = F.relu(z, inplace=True)
         h = z2
-        for _ in xrange(2):
+        for _ in range(2):
             with nn.parameter_scope('fc2'):
                 h = PF.affine(h, 3)
                 h = F.relu(h, inplace=True)
@@ -108,7 +109,7 @@ def test_graph_model(model, seed):
     parameters = nn.get_parameters()
     for param in parameters.values():
         param.grad.zero()
-    inputs = [x] + parameters.values()
+    inputs = [x] + list(parameters.values())
 
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads

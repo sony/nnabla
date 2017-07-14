@@ -27,7 +27,7 @@ def {function_snake}(ctx, *inputs, **args):
     n_outputs = args.pop('n_outputs', -1)
     outputs = args.pop('outputs', None)
 {extra_block}
-    return F.{function}({pass_args})(*inputs, n_outputs=n_outputs, auto_forward=auto_forward.get_auto_forward(), outputs=outputs)
+    return F.{function}({pass_args})(*inputs, n_outputs=n_outputs, auto_forward=get_auto_forward(), outputs=outputs)
 '''
 
 
@@ -181,6 +181,6 @@ def generate(info, template):
         apis.append('')
         apis += optional_code
         apis += set_default_values
-        apis.append('    return F.{}(ctx{})({}n_outputs=n_outputs, auto_forward=auto_forward.get_auto_forward(), outputs=outputs)'.format(
+        apis.append('    return F.{}(ctx{})({}n_outputs=n_outputs, auto_forward=get_auto_forward(), outputs=outputs)'.format(
             function, args2, args3))
     return template.format(function_apis='\n'.join(apis))

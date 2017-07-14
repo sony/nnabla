@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import map
 from scipy.misc import imsave
 import csv
 import numpy as np
@@ -190,8 +191,8 @@ def forward_command(args):
     row0 = rows.pop(0)
     root_path = os.path.dirname(args.dataset)
     root_path = os.path.abspath(root_path.replace('/|\\', os.path.sep))
-    rows = map(lambda row: map(lambda x: x if is_float(
-        x) else compute_full_path(root_path, x), row), rows)
+    rows = list(map(lambda row: list(map(lambda x: x if is_float(
+        x) else compute_full_path(root_path, x), row)), rows))
 
     with data_iterator() as di:
         index = 0

@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
-Python API setup script.
+from __future__ import print_function
 
-This hasn't been designed well yet. Polishing it is future developement.
-The current improvement plan is as following:
-
-* Cythonize before publishing. Users do not use Cython, instead just use
-generated C++ files to build extensions.
-
-* Remove hard-coded relative paths for library link. Maybe the solution will be
-  install NNabla C++ library in order to put them into folders path of which
-  are set.
-'''
 from setuptools import setup
 from distutils.extension import Extension
 import os
@@ -40,7 +29,6 @@ setup_requires = [
 
 install_requires = setup_requires + [
     'contextlib2',
-    'enum',
     'futures',
     'h5py',
     'protobuf',
@@ -56,7 +44,7 @@ ExtConfig = namedtuple('ExtConfig',
 
 
 def get_libinfo():
-    from ConfigParser import ConfigParser
+    from six.moves.configparser import ConfigParser
 
     # Parse setup.cfg
     path_cfg = os.path.join(os.path.dirname(__file__), "setup.cfg")
@@ -83,10 +71,10 @@ def get_libinfo():
                       cfgp.get("cmake", "target_file"),
                       cfgp.get("cmake", "target_name"),
                       '')
-    print "Library name:", lib.name
-    print "Library file name:", lib.file_name
-    print "Library file:", lib.path
-    print "Export Library", lib.export_lib
+    print("Library name:", lib.name)
+    print("Library file name:", lib.file_name)
+    print("Library file:", lib.path)
+    print("Export Library", lib.export_lib)
 
     return lib
 
@@ -175,8 +163,13 @@ def get_setup_config(root_dir, lib):
     package_dir = copy.deepcopy(cpu_ext.package_dir)
     package_data = copy.deepcopy(cpu_ext.package_data)
     ext_modules = cpu_ext.ext_modules
-    exec(open(os.path.join(root_dir, 'src', 'nnabla', '_version.py')).read())
-
+    a = dict()
+    exec(open(os.path.join(root_dir, 'src', 'nnabla',
+                           '_version.py')).read(), globals(), a)
+    if '__version__' in a:
+        __version__ = a['__version__']
+    if '__email__' in a:
+        __email__ = a['__email__']
     pkg_info = dict(
         name="nnabla",
         description='Neural Network Libraries',
@@ -185,20 +178,20 @@ def get_setup_config(root_dir, lib):
         url="https://github.com/sony/nnabla",
         license='Apache Licence 2.0',
         classifiers=[
-                'Development Status :: 4 - Beta',
-                'Intended Audience :: Developers',
-                'Intended Audience :: Education',
-                'Intended Audience :: Science/Research',
-                'Topic :: Scientific/Engineering',
-                'Topic :: Scientific/Engineering :: Artificial Intelligence',
-                'License :: OSI Approved :: Apache Software License',
-                'Programming Language :: Python :: 2.7',
-                'Operating System :: Microsoft :: Windows',
-                'Operating System :: POSIX :: Linux',
-            ],
+            'Development Status :: 4 - Beta',
+            'Intended Audience :: Developers',
+            'Intended Audience :: Education',
+            'Intended Audience :: Science/Research',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Artificial Intelligence',
+            'License :: OSI Approved :: Apache Software License',
+            'Programming Language :: Python :: {}.{}'.format(
+                sys.version_info.major, sys.version_info.minor),
+            'Operating System :: Microsoft :: Windows',
+            'Operating System :: POSIX :: Linux',
+        ],
         keywords="deep learning artificial intelligence machine learning neural network",
-        python_requires='>=2.7, <3',
-    )
+        python_requires='>={}.{}'.format(sys.version_info.major, sys.version_info.minor))
     return pkg_info, ExtConfig(package_dir, packages, package_data, ext_modules, {})
 
 
@@ -211,7 +204,9 @@ if __name__ == '__main__':
 
     # Cythonize
     ext_modules = cythonize(cfg.ext_modules, compiler_directives={
-                            "embedsignature": True})
+                            "embedsignature": True,
+                            "c_string_type": 'str',
+                            "c_string_encoding": "ascii"})
 
     # Setup
     setup(
