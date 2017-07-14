@@ -58,6 +58,9 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
     parser.add_argument("--num-layers", "-L", type=int,
                         choices=[18, 34, 50, 101, 152], default=34,
                         help='Number of layers of ResNet.')
+    parser.add_argument("--shortcut-type", "-S", type=str,
+                        choices=['b', 'c', ''], default='b',
+                        help='Skip connection type. See `resnet_imagenet()` in model_resenet.py for description.')
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
         os.makedirs(args.model_save_path)

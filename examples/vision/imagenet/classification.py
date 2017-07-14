@@ -54,7 +54,7 @@ def get_model(args, num_classes, test=False, tiny=False):
     label = nn.Variable([args.batch_size, 1])
     pimage = image_preprocess(image, nn_in_size)
     pred, hidden = model_resnet.resnet_imagenet(
-        pimage, num_classes, args.num_layers, 'b', test=test, tiny=tiny)
+        pimage, num_classes, args.num_layers, args.shortcut_type, test=test, tiny=tiny)
     loss = F.mean(F.softmax_cross_entropy(pred, label))
     Model = namedtuple('Model', ['image', 'label', 'pred', 'loss', 'hidden'])
     return Model(image, label, pred, loss, hidden)
