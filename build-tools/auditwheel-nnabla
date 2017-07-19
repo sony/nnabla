@@ -14,10 +14,24 @@ then
     ABSDIR=$(cd $(dirname $1) && pwd)
     unzip -q -d $TMPDIR $ABSDIR/$INPUT
     cd $TMPDIR
+
+    # Replace tag linux to manylinux1 to fool the pip installer.
     for WHEEL in *dist-info/WHEEL
     do
         cat $WHEEL | sed "s/-linux_/-manylinux1_/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
     done
+
+    # Remove link to libpython from so files.
+    # https://github.com/pypa/manylinux/issues/30
+    find nnabla -name *.so | while read SOFILE
+    do
+	LIBPYTHON=`ldd $SOFILE|grep libpython| awk '{$1=$1};1'|cut -d" " -f1`
+	if [[ ! -z $LIBPYTHON ]] ; then
+	    patchelf --remove-needed $LIBPYTHON $SOFILE
+	    echo "Removed $LIBPYTHON from $SOFILE"
+	fi
+    done
+
     echo "Creating $OUTPUT"
     zip -q -r $ABSDIR/$OUTPUT *
 fi
