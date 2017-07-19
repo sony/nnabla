@@ -13,22 +13,6 @@ ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/python27/root/usr/bin:/opt/rh/devtoo
 ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH 
 ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:/opt/rh/python27/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
 
-RUN yum install -y rh-python35
-ENV PATH=$PATH:/opt/rh/rh-python35/root/usr/bin
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rh/rh-python35/root/usr/lib64
-ENV PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/opt/rh/rh-python35/root/usr/lib64/pkgconfig
-
-RUN pip3 install -U pip
-RUN pip3 install -U wheel
-ADD python/requirements.txt /tmp/deps/
-RUN pip3 install -U -r /tmp/deps/requirements.txt
-RUN pip3 install -U ipython
-ADD python/setup_requirements.txt /tmp/deps/
-RUN pip3 install -U -r /tmp/deps/setup_requirements.txt
-ADD python/test_requirements.txt /tmp/deps/
-RUN pip3 install -U -r /tmp/deps/test_requirements.txt
-RUN pip3 install -U auditwheel
-
 RUN yum install -y wget curl zip unzip
 
 RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
@@ -60,3 +44,9 @@ RUN cd /tmp \
     && make \
     && make install
 
+# Conda environment for Python3 versions
+RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
+     && rm -rf Miniconda3-latest-Linux-x86_64.sh
+ENV PATH /opt/miniconda3/bin:$PATH
+RUN chmod -R ugo+w /opt/miniconda3
