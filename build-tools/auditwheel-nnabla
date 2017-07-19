@@ -23,7 +23,7 @@ then
 
     # Remove link to libpython from so files.
     # https://github.com/pypa/manylinux/issues/30
-    find nnabla -name *.so | while read SOFILE
+    find . -name *.so | while read SOFILE
     do
 	LIBPYTHON=`ldd $SOFILE|grep libpython| awk '{$1=$1};1'|cut -d" " -f1`
 	if [[ ! -z $LIBPYTHON ]] ; then
