@@ -56,6 +56,8 @@ def finalize():
     Clear all resources before exiting Python. Register to atexit.
     """
     import gc
+    import nnabla as nn
+    nn.clear_parameters()
     gc.collect()
     SingletonManager.clear()
 
