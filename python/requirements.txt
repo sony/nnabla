@@ -1,4 +1,4 @@
-Cython>=0.24
+Cython>=0.24,<0.26
 boto3
 futures
 h5py
