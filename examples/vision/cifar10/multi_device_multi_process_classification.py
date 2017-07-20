@@ -206,7 +206,7 @@ def train():
             loss_train.backward()
 
             # In-place Allreduce
-            comm.allreduce()
+            comm.allreduce(division=True)
             
             # Solvers update
             solver.update()
