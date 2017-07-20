@@ -17,3 +17,4 @@ List of communicators
 ---------------------
 
 .. autofunction:: DataParalellCommunicator
+.. autofunction:: mpDataParalellCommunicator

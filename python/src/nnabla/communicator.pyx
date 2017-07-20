@@ -37,39 +37,7 @@ cdef class Communicator:
     
     Communicator exchanges data (e.g., gradient) using MPI-like 
     collectives. This class is used for the distributed training.
-    
-    In case of the multi-thread data parallel distributed training,
-    
-    .. code-block:: python
-    
-        # Networks and Solvers building comes above
-        import nnabla.communicators as C
-        comm = C.DataParalellCommunicator(ctx)
-        
-        # Add contexts and parameters to the communicator 
-        for i in range(n_devices):
-            device_scope_name = "device{}".format(i)
-            with nn.parameter_scope(device_scope_name):
-                ctx = ctxs[i]
-                params = nn.get_parameters()
-                comm.add_context_and_parameters((ctx, params))
-        comm.init()
-        
-        # Training loop
-        for itr in range(num_itr):
 
-            # Forward, zerograd, backward
-            for i in range(n_devices):
-                losses[i].forward()
-                solvers[i].zero_grad()
-                losses[i].backward()
-            
-            # Inplace-allreduce
-            comm.iallreduce()
-            
-            # Update
-            for i in range(n_devices):
-                solvers[i].update()
     """
     
     @staticmethod
@@ -134,8 +102,8 @@ cdef class Communicator:
         
     def allreduce(self, division=True):
         """Inplace allreduce over parameters added.
-        This method is \b sync before and after iallreduce w.r.t. a host thread.
-        Currently, `iallreduce` is applied to gradient regions.
+        This method is \b sync before and after allreduce w.r.t. a host thread.
+        Currently, `allreduce` is applied to gradient regions.
         
         Args:
             division (bool): Flag to divide the reduce data by the 
@@ -147,25 +115,100 @@ cdef class Communicator:
 
 
 def DataParalellCommunicator(CContext ctx):
-        """
-        Data Parallle Communicator for Distributed Training.
+    """
+    Data Parallel Communicator for Distributed Training.
+    
+    Args:
+        context (:obj:`Context`): context used in this communicator.
+
+    Example: 
+    
+    In case of the multi-thread data parallel distributed training,
+    
+    .. code-block:: python
+
+        # Networks and Solvers building comes above
+        import nnabla.communicators as C
+        comm = C.DataParalellCommunicator(ctx)
         
-        Args:
-            context (:obj:`Context`): context used in this communicator.
-        """
-        return  Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))        
+        # Add contexts and parameters to the communicator 
+        for i in range(n_devices):
+            device_scope_name = "device{}".format(i)
+            with nn.parameter_scope(device_scope_name):
+                ctx = ctxs[i]
+                params = nn.get_parameters()
+                comm.add_context_and_parameters((ctx, params))
+        comm.init()
+        
+        # Training loop
+        for itr in range(num_itr):
+
+            # Forward, zerograd, backward
+            for i in range(n_devices):
+                losses[i].forward()
+                solvers[i].zero_grad()
+                losses[i].backward()
+            
+            # Inplace-allreduce
+            comm.allreduce()
+            
+            # Update
+            for i in range(n_devices):
+                solvers[i].update()            
+        
+    """
+
+    return Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))        
+
 
 def mpDataParalellCommunicator(CContext ctx):
-        """
-        Multi Process Data Parallle Communicator for Distributed Training.
+    """
+    Multi Process Data Parallel Communicator for Distributed Training.
+    
+    Args:
+        context (:obj:`Context`): context used in this communicator.
         
-        Args:
-            context (:obj:`Context`): context used in this communicator.
-        """
-        # There is the known bug in python used with MPI
-        # described in https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
-        import platform
-        import ctypes
-        if platform.system() == 'Linux':
-            ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
-        return  Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        
+    Example: 
+    
+    In case of the multi-process data parallel distributed training,
+    
+    .. code-block:: python
+    
+        # Communicator and Context
+        extension_module = "cuda.cudnn"
+        ctx = extension_context(extension_module)
+        comm = C.mpDataParalellCommunicator(ctx)
+        comm.init()
+        n_devices = comm.size
+        mpi_rank = comm.rank
+        device_id = mpi_rank
+
+        # Network and Solver created here
+        
+        ...
+        
+        # add contexts and parameters to the communicator 
+        comm.add_context_and_parameters((ctx, nn.get_parameters()))
+        
+        # Training loop
+        for itr in range(num_itr):
+            # Forward, zerograd, backward
+            losse.forward()
+            solver.zero_grad()
+            loss.backward()
+            
+            # Inplace-allreduce
+            comm.allreduce()
+            
+            # Update
+            solver.update()
+            
+    """
+    
+    # There is the known bug in python used with MPI
+    # described in https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
+    import platform
+    import ctypes
+    if platform.system() == 'Linux':
+        ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
+    return Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        
