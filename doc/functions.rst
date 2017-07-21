@@ -4407,13 +4407,14 @@ Validation
 TopNError
 ^^^^^^^^^
 
-Top N error along dimension specified by axis.
+Top N error along the dimension specified by the axis, the elment of outputs is 
 
 .. math::
+
     y_i = \left \{
     \begin{array}{l}
-    1 (x_i is not within Nth place) \\
-    0 (x_i is within Nth place)
+    1 \ (x_i \ is \ not \ within \ N-th \ place) \\
+    0 \ (x_i \ is \ within \ N-th \ place)
     \end{array}
     \right.
 
@@ -4425,10 +4426,10 @@ Top N error along dimension specified by axis.
      - Description
      - Options
    * - x
-     - Probabilities N-D array. (\f$D_1 \times ... \times D_i \times ... \times D_N\f$)
+     - Probabilities N-D array. :math:`D_1 \times ... \times D_i \times ... \times D_N`
      - 
    * - target
-     - N-D array of labels. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+     - N-D array of labels. :math:`D_1 \times ... \times 1 \times ... \times D_N`
      - Integer
 
 * Argument(s)
@@ -4446,7 +4447,7 @@ Top N error along dimension specified by axis.
    * - n
      - int64
      - 1
-     - N
+     - top N
 
 * Output(s)
 
@@ -4456,7 +4457,7 @@ Top N error along dimension specified by axis.
      - Description
      - Options
    * - output
-     - Element-wise error N-D array. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+     - Element-wise error N-D array. (:math:`D_1 \times ... \times 1 \times ... \times D_N`)
      - 
 
 BinaryError
