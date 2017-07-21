@@ -57,8 +57,8 @@ def get_version(dir):
             version = nearest_tag
             vv = subprocess.check_output(['git', 'describe', '--tags']).strip().decode('utf-8').split('-')
             if len(vv) > 1:
-            cid = vv.pop()
-            version = '-'.join(vv) + '+' + cid
+                cid = vv.pop()
+                version = '-'.join(vv) + '+' + cid
                 vertion = version.replace('/', '_').lower()
         except:
             nearest_tag = default_version
