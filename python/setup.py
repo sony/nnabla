@@ -23,8 +23,8 @@ from collections import namedtuple
 import copy
 
 setup_requires = [
-    'numpy>=1.12.0',
-    'Cython>=0.24',  # Requires python-dev.
+    'numpy>=1.10',
+    'Cython>=0.24,<0.26',  # Requires python-dev.
 ]
 
 install_requires = setup_requires + [
@@ -185,13 +185,20 @@ def get_setup_config(root_dir, lib):
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Artificial Intelligence',
             'License :: OSI Approved :: Apache Software License',
-            'Programming Language :: Python :: {}.{}'.format(
-                sys.version_info.major, sys.version_info.minor),
+            'Programming Language :: C++',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: Implementation :: CPython',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX :: Linux',
         ],
         keywords="deep learning artificial intelligence machine learning neural network",
-        python_requires='>={}.{}'.format(sys.version_info.major, sys.version_info.minor))
+        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+    )
     return pkg_info, ExtConfig(package_dir, packages, package_data, ext_modules, {})
 
 
