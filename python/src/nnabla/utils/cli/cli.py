@@ -16,11 +16,6 @@ import argparse
 import os
 import sys
 
-try:
-    import nnabla_ext.cuda.cudnn
-except:
-    pass
-
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()

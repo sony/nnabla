@@ -570,6 +570,11 @@ def load(filenames, prepare_data_iterator=True):
     if proto.HasField('global_config'):
         info.global_config = _global_config(proto)
         default_context = info.global_config.default_context
+        if 'cuda' in default_context.backend:
+            try:
+                import nnabla_ext.cuda.cudnn
+            except:
+                pass
     else:
         default_context = nn.context()
 
