@@ -170,6 +170,9 @@ def train():
     # Solvers
     solver = S.Adam()
     solver.set_parameters(nn.get_parameters())
+    base_lr = args.learning_rate
+    warmup_iter = int(1. * n_train_samples / args.batch_size / n_devices) * args.warmup_epoch
+    warmup_slope = 1. * n_devices / warmup_iter
     
     # Create monitor
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
@@ -206,10 +209,18 @@ def train():
             loss_train.backward()
 
             # In-place Allreduce
-            comm.allreduce()
+            comm.allreduce(division=True)
             
             # Solvers update
             solver.update()
+            
+            # Linear Warmup
+            if i < warmup_iter:
+                lr = base_lr * n_devices * warmup_slope * i
+                solver.set_learning_rate(lr)
+            else:
+                lr = base_lr * n_devices
+                solver.set_learning_rate(lr)
 
             if mpi_rank == 0:
                 e = categorical_error(pred_train.d, input_image_train["label"].d)
