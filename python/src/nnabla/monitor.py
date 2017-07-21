@@ -70,7 +70,7 @@ class MonitorSeries(object):
         self.fd = None
         if monitor is not None:
             self.fd = open(os.path.join(
-                monitor.save_path, name.replace(" ", "-")) + ".series.txt", 'w', 0)
+                monitor.save_path, name.replace(" ", "-")) + ".series.txt", 'w', 1)
         self.flush_at = -1
         self.buf = []
 
@@ -131,7 +131,7 @@ class MonitorTimeElapsed(object):
         self.fd = None
         if monitor is not None:
             self.fd = open(os.path.join(
-                monitor.save_path, name.replace(" ", "-")) + ".timer.txt", 'w', 0)
+                monitor.save_path, name.replace(" ", "-")) + ".timer.txt", 'w', 1)
         self.flush_at = -1
         self.start = time.time()
         self.lap = self.start

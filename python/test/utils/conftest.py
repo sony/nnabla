@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import print_function
 
 import pytest
 
@@ -26,11 +27,11 @@ import warnings
 @contextmanager
 def create_temp_with_dir(filename):
     tmpdir = tempfile.mkdtemp()
-    print 'created {}'.format(tmpdir)
+    print('created {}'.format(tmpdir))
     csvfilename = os.path.join(tmpdir, filename)
     yield csvfilename
     rmtree(tmpdir, ignore_errors=True)
-    print 'deleted {}'.format(tmpdir)
+    print('deleted {}'.format(tmpdir))
 
 
 @contextmanager

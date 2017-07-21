@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from six.moves import range
+
 from contextlib import contextmanager
 import numpy as np
 import os
@@ -193,7 +196,7 @@ def visualize(args):
 
     rng = np.random.RandomState(313)
     data = data_iterator_mnist(batch_size, train=False, shuffle=True, rng=rng)
-    for i in range(10000 / batch_size):
+    for i in range(10000 // batch_size):
         image_data, label_data = data.next()
         image.d = image_data / 255.
         feature.forward(clear_buffer=True)

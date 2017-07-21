@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import division
+
 import pytest
 import numpy as np
 import nnabla as nn
@@ -45,7 +47,7 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
     rng = np.random.RandomState(seed)
     i = rng.randn(*inshape).astype(np.float32)
     inmaps = inshape[-3]
-    kshape = (outmaps,) + (inmaps / group,) + kernel
+    kshape = (outmaps,) + (inmaps // group,) + kernel
     k = rng.randn(*kshape).astype(np.float32)
     base_axis = len(inshape) - 3
     b = None

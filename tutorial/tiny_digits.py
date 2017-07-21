@@ -20,6 +20,9 @@ digits = tiny_digits.load_digits()
 
 ```
 """
+
+from __future__ import print_function
+
 from nnabla.monitor import tile_images
 from nnabla.utils.data_iterator import data_iterator_simple
 
@@ -30,23 +33,23 @@ import numpy as np
 try:
     from sklearn.datasets import load_digits  # Only for dataset
 except ImportError:
-    print >> sys.stderr, "Require scikit-learn"
+    print("Require scikit-learn", file=sys.stderr)
     raise
 
 # Matplotlib
 try:
     import matplotlib.pyplot as plt
 except ImportError:
-    print >> sys.stderr, "Require matplotlib"
+    print("Require matplotlib", file=sys.stderr)
     raise
 
 imshow_opt = dict(cmap='gray', interpolation='nearest')
 
 
 def plot_stats(digits):
-    print "Num images:", digits.images.shape[0]
-    print "Image shape:", digits.images.shape[1:]
-    print "Labels:", digits.target[:10]
+    print("Num images:", digits.images.shape[0])
+    print("Image shape:", digits.images.shape[1:])
+    print("Labels:", digits.target[:10])
     plt.imshow(tile_images(digits.images[:64, None]), **imshow_opt)
 
 

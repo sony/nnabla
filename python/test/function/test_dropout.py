@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import range
 import pytest
 import numpy as np
 import nnabla as nn
@@ -23,7 +24,7 @@ ctxs = list_context('Dropout')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("p", [p / 10. for p in xrange(1, 9)])
+@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)])
 def test_dropout_forward_backward(p, seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import iteritems
+
 import pytest
 import numpy as np
 import nnabla as nn
@@ -29,7 +31,7 @@ def test_save_load_parameters():
             h1 = PF.convolution(v, 32, (3, 3))
             b2 = PF.batch_normalization(h1, batch_stat=True)
 
-    for k, v in nn.get_parameters(grad_only=False).iteritems():
+    for k, v in iteritems(nn.get_parameters(grad_only=False)):
         v.data.cast(np.float32)[...] = np.random.randn(*v.shape)
 
     with nn.parameter_scope("param1"):

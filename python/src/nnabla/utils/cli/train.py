@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import range
 from collections import OrderedDict
 from contextlib2 import ExitStack  # Backport from python3
 import numpy as np
@@ -170,7 +171,7 @@ def train(args, config):
 
     best_error = None
 
-    for iter in xrange(max_iter):
+    for iter in range(max_iter):
         cost = _update(iter, config, cost)
 
         if (iter + 1) % config.training_config.iter_per_epoch == 0:

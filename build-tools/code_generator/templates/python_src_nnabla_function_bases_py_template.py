@@ -20,16 +20,18 @@
 # - build-tools/code_generator/templates/python_src_nnabla_function_bases_py_template.py
 # - build-tools/code_generator/generator/generate_python_src_nnabla_function_bases_py.py
 
-import context
-import function as F
-import auto_forward
+from __future__ import absolute_import
+
+from .context import get_current_context
+from . import function as F
+from .auto_forward import get_auto_forward
 
 import inspect
 
 
 # Templates for function_api source building.
 FUNCTION_API_HEADER = "def {{name}}{{signature}}:"
-FUNCTION_API_BODY = '''ctx = context.get_current_context()
+FUNCTION_API_BODY = '''ctx = get_current_context()
 return _func_(ctx, {{shortsignature}})'''
 
 
@@ -65,7 +67,7 @@ def function_api(func):
 
     # Evaluate source code from string
     code = compile(src, "<{{name}}>".format(**locals()), 'single')
-    execdict = dict(_func_=func, context=context)
+    execdict = dict(_func_=func, get_current_context=get_current_context)
     exec(code, execdict)
 
     # Get created function.

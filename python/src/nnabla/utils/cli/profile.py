@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 from collections import OrderedDict
 from contextlib2 import ExitStack  # Backport from python3
 import numpy as np
@@ -98,7 +100,7 @@ def profile_optimizer(config, result_array):
                     data = loaded_datas[opt.data_iterator][
                         opt.data_iterator.variables.index(d)]
                 except:
-                    print opt.data_iterator.variables
+                    print(opt.data_iterator.variables)
                     raise ValueError(
                         'Data "' + d + '" is not found in dataset.')
                 let_data_to_variable(v.variable_instance, data=data)

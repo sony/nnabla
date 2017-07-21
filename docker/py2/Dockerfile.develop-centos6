@@ -7,10 +7,11 @@ RUN yum install -y devtoolset-4-gcc
 RUN yum install -y devtoolset-4-gcc-c++ 
 RUN yum install -y devtoolset-4-gcc-gfortran 
 RUN yum install -y devtoolset-4-binutils 
+RUN yum install -y git19
 RUN yum install -y python27
-ENV PATH=/opt/rh/python27/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH 
-ENV LD_LIBRARY_PATH=/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH 
-ENV PKG_CONFIG_PATH=/opt/rh/python27/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
+ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/python27/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH 
+ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH 
+ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:/opt/rh/python27/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
 
 RUN pip install -U pip wheel
 ADD python/requirements.txt /tmp/deps/
@@ -21,7 +22,7 @@ RUN pip install -U -r /tmp/deps/setup_requirements.txt
 ADD python/test_requirements.txt /tmp/deps/
 RUN pip install -U -r /tmp/deps/test_requirements.txt
 
-RUN yum install -y wget curl
+RUN yum install -y wget curl zip unzip
 
 RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
     && cd /tmp \
