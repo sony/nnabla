@@ -236,7 +236,7 @@ if __name__ == '__main__':
     """
     Call this script with `mpirun` or `mpiexec`
     
-    $ mpirun -n 2 python multi_device_multi_process.py
+    $ mpirun -n 4 python multi_device_multi_process.py
      
     """
     train()
