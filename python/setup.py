@@ -23,7 +23,7 @@ from collections import namedtuple
 import copy
 
 setup_requires = [
-    'numpy>=1.8.2',
+    'numpy>=1.10',
     'Cython>=0.24,<0.26',  # Requires python-dev.
 ]
 
