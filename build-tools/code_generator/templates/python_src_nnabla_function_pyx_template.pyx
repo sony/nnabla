@@ -133,7 +133,7 @@ cdef class Function:
         f.fun = make_shared[CgFunction](fun)
         f.funp = f.fun.get()
         info2 = {{'name': info.type_name, 'args': info.args}}
-        f.funp.set_info(repr(info2))
+        f.funp.set_info(repr(info2).encode('ascii'))
         return f
 
     @staticmethod
@@ -193,9 +193,10 @@ cdef class Function:
         cdef vector[cpp_bool] caccum
         cdef int i
         if accum is None:
-            caccum.assign(len(inputs), True)
+            caccum.resize(len(inputs), True)
+            # caccum.assign(len(inputs), True)
         else:
-            caccum.resize(<int> (len(accum)))
+            caccum.resize(<size_t> (len(accum)))
             for i in range(<int>(len(accum))):
                 caccum[i] = accum[i]
         self.funp.function().get().backward(
@@ -467,7 +468,7 @@ cdef class PythonFunction(Function):
                             backward_callback,
                             cleanup_callback))
         self.funp = self.fun.get()
-        self.funp.set_info(repr({{'name': 'PythonFunction (cannot save/load)', 'args': {{}}}}))
+        self.funp.set_info(repr({{'name': 'PythonFunction (cannot save/load)', 'args': {{}}}}).encode('ascii'))
 
     @property
     def name(self):

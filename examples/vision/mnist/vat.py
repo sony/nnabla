@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from six.moves import range
+
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
@@ -34,7 +37,7 @@ def split_dataset(x, t, n_labeled, n_class):
     ts_l = [0] * n_class
     ts_u = [0] * n_class
     # To get designated number of labels
-    n_labels_per_class = n_labeled / n_class
+    n_labels_per_class = n_labeled // n_class
     for i in range(n_class):
 
         # i the class datum

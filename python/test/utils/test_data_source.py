@@ -19,8 +19,8 @@ import pytest
 from nnabla.utils.data_source_implements import SimpleDataSource, CsvDataSource
 from nnabla.utils.data_source_loader import load_image
 
-from conftest import test_data_csv_csv_10, test_data_csv_csv_20
-from conftest import test_data_csv_png_10, test_data_csv_png_20
+from .conftest import test_data_csv_csv_10, test_data_csv_csv_20
+from .conftest import test_data_csv_png_10, test_data_csv_png_20
 
 
 @pytest.mark.parametrize("size", [10, 20])

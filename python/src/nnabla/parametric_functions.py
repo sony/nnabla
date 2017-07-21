@@ -83,7 +83,7 @@ def {name}{signature}:
         """.format(**locals())
         execdict = dict(
             func=func, parameter_scope=nn.parameter_scope, scope_name=scope_name)
-        exec code in execdict
+        exec(code, execdict)
         newfunc = execdict[name]
         newfunc.__doc__ = doc
         newfunc.__parametric_function_api_base__ = func

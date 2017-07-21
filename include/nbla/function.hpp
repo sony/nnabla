@@ -169,12 +169,12 @@ public:
       If i=1 and o=0, checking checking if i-th input' gradient
       computation requires o-th output's data or not.
 
-      By default, always returns true. If override this in a sub-class, the
-     computation graph engine will optimize memory usage.
-
       @param[in] i Input variable index.
       @param[in] o Output variable index.
 
+      @note If any of inputs requires an output variable data when computing
+      its gradient, this function must be overridden to return appropreate
+      boorean value. Otherwise, backward computation will be incorrect.
    */
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
   /** Depenency flag for checking if in-grad depends on in-data.

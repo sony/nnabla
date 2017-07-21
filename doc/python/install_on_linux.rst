@@ -14,7 +14,7 @@ on Ubuntu 16.04 (64bit).
 
 * Required software.
 
-  * Python 2.7: PIP
+  * Python 2.7 or Python>=3.5: PIP
 
 * Recommended software (for NVIDIA GPU users).
 
@@ -124,7 +124,7 @@ Download cuDNN from `this page <https://developer.nvidia.com/cudnn>`_, then
 Q. I use Anaconda, and the installation fails.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use libgcc 5 and numpy 1.13.0 or the greater, and note that `numba` depends on the older `numpy` so please uninstall `numba` first.
+Use libgcc 5 and numpy 1.13.0 or the greater, and note that `numba` depends on the older `numpy` so please uninstall `numba` first (The following is for Python2).
 
 .. code-block:: bash
 
@@ -135,11 +135,6 @@ Use libgcc 5 and numpy 1.13.0 or the greater, and note that `numba` depends on t
 
 Then, you can follow the usual installation workflow.
 
-
-Q. I want to use Python 3.
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-We are currently working on to make it compatible with python 3.
 
 Q. I don't have CUDNN6 in my environment.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

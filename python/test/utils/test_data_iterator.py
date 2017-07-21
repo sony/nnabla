@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import os
 import pytest
 
@@ -22,7 +24,7 @@ from nnabla.utils.data_source_loader import load_image
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
 from nnabla.utils.data_iterator import data_iterator_simple
 
-from conftest import test_data_csv_png_10, test_data_csv_png_20
+from .conftest import test_data_csv_png_10, test_data_csv_png_20
 
 
 def check_data_iterator_result(di, batch_size, shuffle, normalize):

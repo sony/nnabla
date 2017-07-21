@@ -16,6 +16,8 @@
 Contents loader functions for DataSource.
 
 '''
+
+from six.moves import map
 from scipy.misc import imresize, imread
 from shutil import rmtree
 from six import StringIO
@@ -320,8 +322,12 @@ def load_csv(file, shape=None, normalize=False):
     :return: numpy array
     """
     value_list = []
-    for row in csv.reader(file):
-        value_list.append(map(float, row))
+    if six.PY2:
+        for row in csv.reader(file):
+            value_list.append(list(map(float, row)))
+    elif six.PY34:
+        for row in csv.reader([l.decode('utf-8') for l in file.readlines()]):
+            value_list.append(list(map(float, row)))
     if shape is None:
         return numpy.array(value_list)
     else:

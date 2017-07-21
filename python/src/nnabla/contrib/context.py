@@ -28,7 +28,7 @@ def extension_context(extension_name='cpu', **kw):
         :class:`nnabla.Context`: The current extension context.
 
     Example:
-    
+
         .. code-block:: python
 
             ctx = extension_context('cuda.cudnn', device_id=0)

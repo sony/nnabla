@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 from collections import OrderedDict
 from contextlib2 import ExitStack  # Backport from python3
 import numpy as np

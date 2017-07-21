@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 import os
 import csv
 
@@ -30,7 +32,7 @@ from nnabla.parameter import get_parameters, set_parameter, save_parameters, loa
 
 def save_param_in_txt(x, filepath):
     with open(filepath, 'w') as output:
-        print >> output, x.shape
+        print(x.shape, file=output)
         np.array(x).tofile(output, sep="\n")
 
 
