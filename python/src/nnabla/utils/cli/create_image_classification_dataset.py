@@ -24,14 +24,16 @@ import tqdm
 def create_image_classification_dataset_command(args):
     # settings
     source_dir = args.sourcedir
-    dest_csv_file_name = [os.path.join(args.outdir, args.file1), os.path.join(args.outdir, args.file2)]
+    dest_csv_file_name = [os.path.join(args.outdir, args.file1)]
+    if args.file2:
+        dest_csv_file_name.append(os.path.join(args.outdir, args.file2))
     dest_dir = args.outdir
     width = int(args.width)
     height= int(args.height)
     padding = args.mode == 'padding'
     ch = int(args.channel)
     shuffle = args.shuffle == 'true'
-    test_data_ratio = int(args.ratio2)
+    test_data_ratio = int(args.ratio2) if args.ratio2 else 0
     
     if source_dir == dest_dir:
         logger.critical("Input directory and output directory are same.")
