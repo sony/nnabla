@@ -23,7 +23,8 @@ def generate_init_cpp(info, backend='cpu', engine='default', rank=0):
     function_name_suffix = '' if backend == 'cpu' else backend.capitalize() + \
         engine_suffix.capitalize()
     for function, function_info in each_function(info):
-        if 'Implements' not in info or (backend in info['Implements'][function] and engine == 'default') or (engine in info['Implements'][function]):
+        if 'Implements' not in info or (function in info['Implements'] and
+                                       ((backend in info['Implements'][function] and engine == 'default') or (engine in info['Implements'][function]))):
             includes.append('{}.hpp'.format(info['Names'][function]))
             io_info = function_io(function_info)
             arg_info = function_arguments(function_info)

@@ -13,6 +13,8 @@
 # limitations under the License.
 
 #!/bin/env python
+
+from __future__ import print_function
 import io
 import os
 
@@ -43,13 +45,13 @@ def command(arg):
                 fullname = os.path.join(dirname, filename)
                 if extname in file_formatter.python_extensions:
                     if filename in file_formatter.python_exclude:
-                        print 'Skipped {}'.format(fullname)
+                        print('Skipped {}'.format(fullname))
                         continue
                     _convert_file(extname, fullname)
                 elif extname in file_formatter.c_extensions:
                     if filename in file_formatter.c_exclude:
-                        print 'Skipped {}'.format(fullname)
+                        print('Skipped {}'.format(fullname))
                         continue
                     _convert_file(extname, fullname)
                 if extname in (file_formatter.c_extensions + file_formatter.python_extensions):
-                    os.chmod(fullname, 0644)
+                    os.chmod(fullname, 644)

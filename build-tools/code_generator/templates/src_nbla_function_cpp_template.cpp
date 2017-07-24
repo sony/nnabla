@@ -11,22 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// -*- coding:utf-8 -*-
-/*
- * Copyright (C) 2016 Sony Corporation
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Sony Corporation;
- * the contents of this file is not to be disclosed to third parties, copied
- * or duplicated in any form, in whole or in part, without the prior written
- * permission of Sony Corporation.
- *
- * *WARNING*
- * THIS FILE IS AUTO-GENERATED DUMMY CODE BY CODE GENERATOR.
- * PLEASE IMPLEMENT REAL CODE AND DELETE THIS MESSAGE SOON.
- * If you want to change dummy code, edit following files.
- * - build-tools/code_generator/function_generator/generate_src_nbla_function_cpp.py
- * - build-tools/code_generator/templates/src_nbla_function_cpp_template.cpp
- */
+// 
+// *WARNING*
+// THIS FILE IS AUTO-GENERATED DUMMY CODE BY CODE GENERATOR.
+// PLEASE IMPLEMENT REAL CODE AND DELETE THIS MESSAGE SOON.
+// If you want to change dummy code, edit following files.
+// - build-tools/code_generator/function_generator/generate_src_nbla_function_cpp.py
+// - build-tools/code_generator/templates/src_nbla_function_cpp_template.cpp
 
 /** {func_name}
  */
@@ -52,7 +43,8 @@ void {func_name}<{templates}>::forward_impl(const Variables &inputs, const Varia
 
 template <{template_defines}>
 void {func_name}<{templates}>::backward_impl(const Variables &inputs, const Variables &outputs,
-                            const vector<bool> &propagate_down) {{
+					     const vector<bool> &propagate_down,
+					     const vector<bool> &accum) {{
   // TEMPLATE CODE
 }}
 

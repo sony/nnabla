@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import division
+
 import numpy as np
 
 
 def get_conv_out_size(w, k, p, s, d=1):
-    return (w + 2 * p - (d * (k - 1) + 1)) / s + 1
+    return (w + 2 * p - (d * (k - 1) + 1)) // s + 1
 
 
 def get_deconv_out_size(w, k, p, s, d):

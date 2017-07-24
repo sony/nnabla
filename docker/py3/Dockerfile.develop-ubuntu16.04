@@ -6,11 +6,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     curl \
     g++ \
+    git \
     make \
-    python-dev \
-    python-pip \
-    python-setuptools \
-    unzip
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    unzip \
+    wget \
+    zip
 
 RUN curl -L https://github.com/google/protobuf/releases/download/v3.1.0/protoc-3.1.0-linux-x86_64.zip -o /tmp/protoc-3.1.0-linux-x86_64.zip \
     && cd /usr/local \
@@ -19,10 +22,10 @@ RUN curl -L https://github.com/google/protobuf/releases/download/v3.1.0/protoc-3
     && rm -f /tmp/protoc-3.1.0-linux-x86_64.zip readme.txt
 
 ADD python/setup_requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/setup_requirements.txt
+RUN pip3 install -U -r /tmp/deps/setup_requirements.txt
 ADD python/requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/requirements.txt
+RUN pip3 install -U -r /tmp/deps/requirements.txt
 ADD python/test_requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/test_requirements.txt
+RUN pip3 install -U -r /tmp/deps/test_requirements.txt
 
 

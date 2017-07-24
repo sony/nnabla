@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six.moves import map
+
 import pytest
 import nnabla as nn
 
 
 def check_cached_array_prefered(ac, prefer=True):
-    c = map(lambda x: not (prefer ^ ('Cached' in x)), ac)
+    c = list(map(lambda x: not (prefer ^ ('Cached' in x)), ac))
     assert c == sorted(c, reverse=True)
 
 
