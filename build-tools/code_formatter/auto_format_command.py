@@ -15,6 +15,13 @@
 #!/bin/env python
 
 from __future__ import print_function
+try:
+    from builtins import str
+except:
+    import sys
+    print("`auto_format` requires `future` package installed.", file=sys.stderr)
+    raise
+
 import io
 import os
 
@@ -24,9 +31,10 @@ import file_formatter
 def _convert_file(ext, filename):
     eol = file_formatter.check_eol(filename)
     with io.open(filename, 'rt', encoding='utf_8_sig') as f:
-        original = unicode(f.read())
+        # 'utf_8_sig' enables to read UTF-8 formatting file with BOM
+        original = str(f.read())
     converted = file_formatter.format_file(ext, original)
-    write_content = converted.encode('utf_8')
+    write_content = str(converted)
     if not write_content == original:
         print('Formatting {}'.format(filename))
         write_content = write_content.replace('\r\n', '\n')
