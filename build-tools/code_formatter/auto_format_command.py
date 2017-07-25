@@ -54,4 +54,4 @@ def command(arg):
                         continue
                     _convert_file(extname, fullname)
                 if extname in (file_formatter.c_extensions + file_formatter.python_extensions):
-                    os.chmod(fullname, 0644)
+                    os.chmod(fullname, 0o644)
