@@ -24,7 +24,6 @@ from nnabla.logger import logger
 
 def shortcut(x, ochannels, stride, shortcut_type, test):
     ichannels = x.shape[1]
-    ishape = x.shape[1]
     use_conv = shortcut_type.lower() == 'c'
     if ichannels != ochannels:
         assert (ichannels * 2 == ochannels) or (ichannels * 4 == ochannels)
@@ -43,8 +42,9 @@ def shortcut(x, ochannels, stride, shortcut_type, test):
             x = F.average_pooling(x, (1, 1), stride)
         if ichannels != ochannels:
             # Zero-padding to channel axis
-            zeros = nn.Variable((ishape[0], ichannels) + ishape[-2:])
-            zeros.data.zero()
+            ishape = x.shape
+            zeros = F.constant(
+                0, (ishape[0], ochannels - ichannels) + ishape[-2:])
             x = F.concatenate(x, zeros, axis=1)
     return x
 

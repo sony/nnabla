@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import iteritems
+
 import nnabla as nn
 import numpy as np
 from collections import OrderedDict
@@ -21,8 +23,8 @@ class RefSolver(object):
 
     def set_parameters(self, params):
         if not hasattr(self, 'params'):
-            self.params = {}
-        for key, param in params.iteritems():
+            self.params = OrderedDict()
+        for key, param in iteritems(params):
             param = param.d.copy()
             if key in self.params:
                 continue
@@ -33,12 +35,12 @@ class RefSolver(object):
         pass
 
     def update(self, grads):
-        for key, grad in grads.iteritems():
+        for key, grad in iteritems(grads):
             param = self.params[key]
             self._update_impl(key, param, grad)
 
     def weight_decay(self, grads, decay_rate):
-        for key, grad in grads.iteritems():
+        for key, grad in iteritems(grads):
             param = self.params[key]
             grad[...] = grad + decay_rate * param
 
@@ -70,7 +72,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
 
     # Check weight decay.
     grad_copy = OrderedDict([(k, p.g.copy())
-                             for k, p in params.iteritems()])
+                             for k, p in iteritems(params)])
     s.weight_decay(decay)
     ref_s.weight_decay(grad_copy, decay)
     for p, ref_p in zip(params.values(), grad_copy.values()):
@@ -79,8 +81,8 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     # Check solver udpate.
     for i in range(num_itr):
         grads = OrderedDict([(k, rng.randn(*p.shape))
-                             for k, p in params.iteritems()])
-        for k, g in grads.iteritems():
+                             for k, p in iteritems(params)])
+        for k, g in iteritems(grads):
             params[k].g = g
         s.update()
         ref_s.update(grads)

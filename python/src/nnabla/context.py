@@ -15,8 +15,10 @@
 """
 NNabla Context manager
 """
+from __future__ import absolute_import
+
 from contextlib import contextmanager
-from variable import Context
+from .variable import Context
 
 
 current_ctx = Context()
