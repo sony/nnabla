@@ -1,39 +1,73 @@
-#! /bin/bash
+FROM ubuntu:16.04
 
-# Usage: auditwheel-nnabla <relative path to wheel>
-# This will output a new wheel with manylinux1 tag.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang-format-3.8 \
+    cmake \
+    curl \
+    g++ \
+    git \
+    make \
+    python-dev \
+    python-pip \
+    python-setuptools \
+    unzip \
+    zip
 
-set -e
+ADD python/setup_requirements.txt /tmp/deps/
+RUN pip install -U -r /tmp/deps/setup_requirements.txt
+ADD python/requirements.txt /tmp/deps/
+RUN pip install -U -r /tmp/deps/requirements.txt
+ADD python/test_requirements.txt /tmp/deps/
+RUN pip install -U -r /tmp/deps/test_requirements.txt
 
-TMPDIR=$(mktemp -d)
+# Optioinal
+RUN pip install -U ipython
 
-if [ -e $1 ]
-then
-    INPUT=$(basename $1)
-    OUTPUT=$(echo $INPUT | sed "s/-linux_/-manylinux1_/g")
-    ABSDIR=$(cd $(dirname $1) && pwd)
-    unzip -q -d $TMPDIR $ABSDIR/$INPUT
-    cd $TMPDIR
+RUN apt-get -yqq update \
+    && apt-get -yqq install --no-install-recommends \
+        build-essential \
+        dh-autoreconf \
+        pkg-config \
+        qt5-default \
+    # Install protoc-gen-doc
+    && git clone https://github.com/google/protobuf.git /protobuf \
+    && cd /protobuf \
+    && git checkout v3.1.0 \
+    && ./autogen.sh \
+    && ./configure \
+    && make \
+    && make install \
+    && ldconfig \
+    # Install protoc-gen-doc
+    && git clone https://github.com/estan/protoc-gen-doc.git /protoc-gen-doc \
+    && cd /protoc-gen-doc \
+    && qmake \
+    && make \
+    && cp protoc-gen-doc /usr/local/bin \
+    # Cleanup
+    && apt-get -yqq purge dh-autoreconf \
+    && apt-get -yqq clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /protobuf /protoc-gen-doc
 
-    # Replace tag linux to manylinux1 to fool the pip installer.
-    for WHEEL in *dist-info/WHEEL
-    do
-        cat $WHEEL | sed "s/-linux_/-manylinux1_/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
-    done
-
-    # Remove link to libpython from so files.
-    # https://github.com/pypa/manylinux/issues/30
-    find . -name *.so | while read SOFILE
-    do
-	LIBPYTHON=`ldd $SOFILE|grep libpython| awk '{$1=$1};1'|cut -d" " -f1`
-	if [[ ! -z $LIBPYTHON ]] ; then
-	    patchelf --remove-needed $LIBPYTHON $SOFILE
-	    echo "Removed $LIBPYTHON from $SOFILE"
-	fi
-    done
-
-    echo "Creating $OUTPUT"
-    zip -q -r $ABSDIR/$OUTPUT *
-fi
-rm -rf $TMPDIR
+RUN apt-get -yqq update \
+    && apt-get -yqq install --no-install-recommends \
+        doxygen \
+        graphviz \
+        pandoc \
+        plantuml \
+        unzip \
+    && pip install -U \
+        Sphinx \
+        pygments \
+        recommonmark==0.4.0 \
+        sphinx-rtd-theme \
+        sphinxcontrib-actdiag \
+        sphinxcontrib-blockdiag \
+        sphinxcontrib-nwdiag \
+        sphinxcontrib-plantuml \
+        sphinxcontrib-seqdiag \
+        sphinxcontrib-toc \
+    && apt-get -yqq clean \
+    && rm -rf /var/lib/apt/lists/*
 

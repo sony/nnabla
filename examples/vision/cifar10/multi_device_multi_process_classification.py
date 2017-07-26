@@ -141,7 +141,7 @@ def train():
     # Communicator and Context
     extension_module = "cuda.cudnn"
     ctx = extension_context(extension_module)
-    comm = C.mpDataParalellCommunicator(ctx)
+    comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
     mpi_rank = comm.rank

@@ -44,9 +44,6 @@ public:
   Context NBLA_API &set_device_id(const string &device_id);
   Context NBLA_API &set_compute_backend(const string &compute_backend);
 
-  bool operator==(const Context &rhs) const;
-  bool operator!=(const Context &rhs) const;
-
 };
 
 /**

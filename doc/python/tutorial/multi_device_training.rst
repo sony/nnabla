@@ -105,7 +105,7 @@ Define the communicator for gradients exchange.
     %%px
     extension_module = "cuda.cudnn"
     ctx = extension_context(extension_module)
-    comm = C.mpDataParalellCommunicator(ctx)
+    comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
     mpi_rank = comm.rank
@@ -202,9 +202,9 @@ it is
 3. loss.backward()
 4. solver.update()
 
-In use of ``C.mpDataParalellCommunicator``, these steps are performed in
+In use of ``C.MultiProcessDataParalellCommunicator``, these steps are performed in
 different GPUs, and the **only difference** from these steps is
-``comm.allreduce()`` Thus, in case of ``C.mpDataParalellCommunicator``
+``comm.allreduce()`` Thus, in case of ``C.MultiProcessDataParalellCommunicator``
 training steps are as follows,
 
 1. loss.forward()
@@ -320,10 +320,10 @@ Update weights,
     %%px
     solver.update()
 
-That's all for the usage of ``C.mpDataParallelCommunicator`` in the
+That's all for the usage of ``C.MultiProcessDataParalellCommunicator`` in the
 sense of Data Parallel Distributed Training.
 
-Now you got the picture of using ``C.mpDataParallelCommunicator``, go to
+Now you got the picture of using ``C.MultiProcessDataParalellCommunicator``, go to
 the cifar10 example,
 
 1. **multi\_device\_multi\_process\_classification.sh**

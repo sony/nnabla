@@ -18,6 +18,7 @@ Our build system requires:
   * CUDA Toolkit 8.0 / cuDNN 6.0 (to build CUDA/cuDNN extension for NVIDIA GPU)
   * Multiple GPUs
   * NCCL v1
+  * OpenMPI
 
 Setup build environment
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -50,6 +51,8 @@ environment variable to enable to use NCCL v1 as the follows,
 	cd .. 
 	export NCCL_HOME=$(pwd)
 	
+Note that **NCCL_HOME** is only used for building CUDA extension.
+
 
 Distributed Training also depends on MPI, so install it as follows,
 
@@ -57,30 +60,27 @@ Distributed Training also depends on MPI, so install it as follows,
 
 	sudo apt-get install libopenmpi-dev
 	
-then, set **MPI_HOME** like
+Follow :ref:`linux-build-and-install-cuda/cudnn-extension` but 
+with **WITH_DIST_TRAIN**, when you do `cmake` like 
 
 .. code-block:: shell
-  
-  export MPI_HOME=/usr/lib/openmpi  # tipically here.
-  
-Note that **NCCL_HOME** and **MPI_HOME** is only used for building CUDA extension.
 
-Follow :ref:`linux-build-and-install-cuda/cudnn-extension`, but when you do 
-`cmake ../` you could see logs like, 
+	cmake -D WITH_DIST_TRAIN=ON ../                                                            
+
+You can see nccl and mpi includes and dependencies,   
 
 .. code-block:: shell
 
 	...
-	...
-	CUDA libs: /usr/local/cuda/lib64/libcudart.so;/usr/local/cuda/lib64/libcublas.so;/usr/local/cuda/lib64/libcurand.so;/home/kzky/git/nccl/build/lib/libnccl.so;/usr/local/cuda/lib64/libcudnn.so
-	CUDA includes: /usr/local/cuda/include;/home/kzky/git/nccl/build/include;/usr/local/cuda/include
+
+	CUDA libs: /usr/local/cuda/lib64/libcudart.so;/usr/local/cuda/lib64/libcublas.so;/usr/local/cuda/lib64/libcurand.so;/home/kzky/git/nccl/build/lib/libnccl.so;/usr/lib/openmpi/lib/libmpi_cxx.so;/usr/lib/openmpi/lib/libmpi.so;/usr/local/cuda/lib64/libcudnn.so
+	CUDA includes: /usr/local/cuda/include;/home/kzky/git/nccl/build/include;/usr/lib/openmpi/include/openmpi/opal/mca/event/libevent2021/libevent;/usr/lib/openmpi/include/openmpi/opal/mca/event/libevent2021/libevent/include;/usr/lib/openmpi/include;/usr/lib/openmpi/include/openmpi;/usr/local/cuda/include
 	...
 
-It shows NCCL include directory and library.
 
 .. note::
 
-	When we change terminals or re-login, set **NCC_HOME** again or 
+	When we change terminals or re-login, set **NCCL_HOME** again or 
 	**LD_LIBRARY_PATH** like
 	
 .. code-block:: shell
@@ -102,7 +102,7 @@ test passed.
 	...
 
 
-You can use **Data Parallel Distributed Training** using multiple GPUs, please
+Now you can use **Data Parallel Distributed Training** using multiple GPUs, please
 go to CIFAR-10 example for how to use it.
 
 

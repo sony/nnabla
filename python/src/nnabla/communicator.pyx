@@ -100,15 +100,15 @@ cdef class Communicator:
         """
         self.communicatorp.init()
         
-    def allreduce(self, division=True):
+    def allreduce(self, division=False):
         """Inplace allreduce over parameters added.
         This method is \b sync before and after allreduce w.r.t. a host thread.
         Currently, `allreduce` is applied to gradient regions.
         
         Args:
             division (bool): Flag to divide the reduce data by the 
-                number of `contexts` added, in other words, the number
-                of devices. 
+                number of `contexts` added, or the number of devices. 
+                
         
         """
         self.communicatorp.allreduce(division)
@@ -157,11 +157,15 @@ def DataParalellCommunicator(CContext ctx):
                 solvers[i].update()            
         
     """
-
+    import platform
+    import ctypes
+    if platform.system() != 'Linux':
+        raise Exception("DataParalellCommunicator is not supported other than linux.")
+    
     return Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))        
 
 
-def mpDataParalellCommunicator(CContext ctx):
+def MultiProcessDataParalellCommunicator(CContext ctx):
     """
     Multi Process Data Parallel Communicator for Distributed Training.
     
@@ -177,7 +181,7 @@ def mpDataParalellCommunicator(CContext ctx):
         # Communicator and Context
         extension_module = "cuda.cudnn"
         ctx = extension_context(extension_module)
-        comm = C.mpDataParalellCommunicator(ctx)
+        comm = C.MultiProcessDataParalellCommunicator(ctx)
         comm.init()
         n_devices = comm.size
         mpi_rank = comm.rank
@@ -211,4 +215,6 @@ def mpDataParalellCommunicator(CContext ctx):
     import ctypes
     if platform.system() == 'Linux':
         ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
+    else:
+        raise Exception("MultiProcessDataParalellCommunicator is not supported other than linux.")
     return Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        

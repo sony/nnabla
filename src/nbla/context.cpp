@@ -37,15 +37,4 @@ Context &Context::set_compute_backend(const string &compute_backend) {
   return *this;
 }
 
-bool Context::operator==(const Context &rhs) const {
-  const Context &lhs = *this;
-  return (lhs.backend == rhs.backend
-      && lhs.array_class == rhs.array_class
-      && lhs.device_id == rhs.device_id);
-}
-
-bool Context::operator!=(const Context &rhs) const {
-  return !(this->operator==(rhs));
-}
-
 }
