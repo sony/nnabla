@@ -127,12 +127,6 @@ def main():
             sys.path.append(os.path.join(tooldir, 'code_formatter'))
             sys.path.append(os.path.join(tooldir, 'code_generator'))
 
-    # Code formatter
-    import auto_format_command
-    subparser = subparsers.add_parser('auto-format')
-    subparser.add_argument('base')
-    subparser.set_defaults(func=auto_format_command.command)
-
     args = parser.parse_args()
     args.func(args)
 

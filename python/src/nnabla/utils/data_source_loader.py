@@ -177,7 +177,7 @@ def load_image_imread(file, shape=None, max_range=1.0):
     '''
     # return value is from zero to 255 (even if the image has 16-bitdepth.)
     img = Image.open(file)
-    img255 = numpy.asarray(img, dtype=numpy.float32))
+    img255 = numpy.asarray(img, dtype=numpy.float32)
 
     if len(img255.shape) == 2:  # gray image
         height, width = img255.shape
@@ -188,7 +188,7 @@ def load_image_imread(file, shape=None, max_range=1.0):
         assert(out_n_color == 1)
         if out_height != height or out_width != width:
             img = img.resize(out_height, out_width)
-            img255 = numpy.asarray(img, dtype=numpy.float32))
+            img255 = numpy.asarray(img, dtype=numpy.float32)
         img255 = img255.reshape((out_n_color, out_height, out_width))
     elif len(img255.shape) == 3:  # RGB image
         height, width, n_color = img255.shape
@@ -199,7 +199,7 @@ def load_image_imread(file, shape=None, max_range=1.0):
         assert(out_n_color == n_color)
         if out_height != height or out_width != width or out_n_color != n_color:
             img = img.resize(out_height, out_width)
-            img255 = numpy.asarray(img, dtype=numpy.float32))
+            img255 = numpy.asarray(img, dtype=numpy.float32)
         img255 = img255.transpose(2, 0, 1)
 
     if max_range < 0 or max_range == 255.0:
