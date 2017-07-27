@@ -6,5 +6,5 @@ numpy>=1.10
 protobuf
 tqdm
 virtualenv
-
+pillow
 autopep8

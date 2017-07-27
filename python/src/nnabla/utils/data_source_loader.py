@@ -18,7 +18,7 @@ Contents loader functions for DataSource.
 '''
 
 from six.moves import map
-from scipy.misc import imresize, imread
+from PIL import Image
 from shutil import rmtree
 from six import StringIO
 from six.moves.urllib.parse import urljoin
@@ -37,9 +37,11 @@ from nnabla.logger import logger
 pypng_available = False
 try:
     import png
+    from scipy.misc import imresize
     pypng_available = True
 except ImportError:
     pass
+
 cv2_available = False
 try:
     import cv2
@@ -173,8 +175,9 @@ def load_image_imread(file, shape=None, max_range=1.0):
     :return: numpy array
 
     '''
-    img255 = imread(
-        file)  # return value is from zero to 255 (even if the image has 16-bitdepth.)
+    # return value is from zero to 255 (even if the image has 16-bitdepth.)
+    img = Image.open(file)
+    img255 = numpy.asarray(img, dtype=numpy.float32))
 
     if len(img255.shape) == 2:  # gray image
         height, width = img255.shape
@@ -184,8 +187,8 @@ def load_image_imread(file, shape=None, max_range=1.0):
             out_n_color, out_height, out_width = shape
         assert(out_n_color == 1)
         if out_height != height or out_width != width:
-            # imresize returns 0 to 255 image.
-            img255 = imresize(img255, (out_height, out_width))
+            img = img.resize(out_height, out_width)
+            img255 = numpy.asarray(img, dtype=numpy.float32))
         img255 = img255.reshape((out_n_color, out_height, out_width))
     elif len(img255.shape) == 3:  # RGB image
         height, width, n_color = img255.shape
@@ -195,8 +198,8 @@ def load_image_imread(file, shape=None, max_range=1.0):
             out_n_color, out_height, out_width = shape
         assert(out_n_color == n_color)
         if out_height != height or out_width != width or out_n_color != n_color:
-            # imresize returns 0 to 255 image.
-            img255 = imresize(img255, (out_height, out_width, out_n_color))
+            img = img.resize(out_height, out_width)
+            img255 = numpy.asarray(img, dtype=numpy.float32))
         img255 = img255.transpose(2, 0, 1)
 
     if max_range < 0 or max_range == 255.0:
