@@ -17,7 +17,7 @@ NOTE that if you would like to run this example, please follow the bulid instruc
 When you run the script like the following, 
 
 ```
-mpirun -n 4 python multi_device_multi_process_classification.py --context "cuda.cudnn" -bs 64
+mpirun -n 4 python multi_device_multi_process_classification.py --context "cuda.cudnn" -b 64
 
 ```
 
@@ -32,7 +32,7 @@ NOTE that if you would like to run this example, please follow the bulid instruc
 When you run the script like the following, 
 
 ```
-python multi_device_multi_thread classification.py --context "cuda.cudnn" -bs 64 -n 4
+python multi_device_multi_thread classification.py --context "cuda.cudnn" -b 64 -n 4
 
 ```
 
