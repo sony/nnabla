@@ -14,6 +14,7 @@ import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 import numpy as np
 
+
 def categorical_error(pred, label):
     """
     Compute categorical error given score vectors and labels as
@@ -21,12 +22,13 @@ def categorical_error(pred, label):
     """
     pred_label = pred.argmax(1)
     return (pred_label != label.flat).mean()
-    
-def cifar10_resnet23_prediction(image, 
+
+
+def cifar10_resnet23_prediction(image,
                                 ctx, test=False):
     """
     Construct ResNet 23
-    """    
+    """
     # Residual Unit
     def res_unit(x, scope_name, rng, dn=False, test=False):
         C = x.shape[1]
@@ -35,43 +37,43 @@ def cifar10_resnet23_prediction(image,
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
                 w_init = UniformInitializer(
-                    calc_uniform_lim_glorot(C, C/2, kernel=(1, 1)), 
+                    calc_uniform_lim_glorot(C, C / 2, kernel=(1, 1)),
                     rng=rng)
-                h = PF.convolution(x, C/2, kernel=(1, 1), pad=(0, 0), 
+                h = PF.convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
                                    w_init=w_init, with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
                 w_init = UniformInitializer(
-                    calc_uniform_lim_glorot(C/2, C/2, kernel=(3, 3)),
+                    calc_uniform_lim_glorot(C / 2, C / 2, kernel=(3, 3)),
                     rng=rng)
-                h = PF.convolution(h, C/2, kernel=(3, 3), pad=(1, 1), 
+                h = PF.convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
                                    w_init=w_init, with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN
-            with nn.parameter_scope("conv3"): 
+            with nn.parameter_scope("conv3"):
                 w_init = UniformInitializer(
-                    calc_uniform_lim_glorot(C/2, C, kernel=(1, 1)), 
+                    calc_uniform_lim_glorot(C / 2, C, kernel=(1, 1)),
                     rng=rng)
-                h = PF.convolution(h, C, kernel=(1, 1), pad=(0, 0), 
+                h = PF.convolution(h, C, kernel=(1, 1), pad=(0, 0),
                                    w_init=w_init, with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
             # Residual -> Relu
             h = F.relu(h + x)
-            
+
             # Maxpooling
             if dn:
                 h = F.max_pooling(h, kernel=(2, 2), stride=(2, 2))
-            
+
             return h
 
     # Random generator for using the same init parameters in all devices
     rng = np.random.RandomState(0)
     nmaps = 64
     ncls = 10
-    
+
     # Conv -> BN -> Relu
     with nn.context_scope(ctx):
         with nn.parameter_scope("conv1"):
@@ -79,18 +81,18 @@ def cifar10_resnet23_prediction(image,
             if not test:
 
                 image = F.image_augmentation(image, contrast=1.0,
-                                         angle=0.25,
-                                         flip_lr=True)
+                                             angle=0.25,
+                                             flip_lr=True)
                 image.need_grad = False
 
             w_init = UniformInitializer(
-                calc_uniform_lim_glorot(3, nmaps, kernel=(3, 3)), 
+                calc_uniform_lim_glorot(3, nmaps, kernel=(3, 3)),
                 rng=rng)
-            h = PF.convolution(image, nmaps, kernel=(3, 3), pad=(1, 1), 
+            h = PF.convolution(image, nmaps, kernel=(3, 3), pad=(1, 1),
                                w_init=w_init, with_bias=False)
             h = PF.batch_normalization(h, batch_stat=not test)
             h = F.relu(h)
-    
+
         h = res_unit(h, "conv2", rng, False)    # -> 32x32
         h = res_unit(h, "conv3", rng, True)     # -> 16x16
         h = res_unit(h, "conv4", rng, False)    # -> 16x16
@@ -98,24 +100,26 @@ def cifar10_resnet23_prediction(image,
         h = res_unit(h, "conv6", rng, False)    # -> 8x8
         h = res_unit(h, "conv7", rng, True)     # -> 4x4
         h = res_unit(h, "conv8", rng, False)    # -> 4x4
-        h = F.average_pooling(h, kernel=(4, 4)) # -> 1x1
-    
+        h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1
+
         w_init = UniformInitializer(
             calc_uniform_lim_glorot(int(np.prod(h.shape[1:])), ncls, kernel=(1, 1)), rng=rng)
         pred = PF.affine(h, ncls, w_init=w_init)
 
     return pred
-        
+
+
 def cifar10_resnet32_loss(pred, label):
     loss = F.mean(F.softmax_cross_entropy(pred, label))
     return loss
 
+
 def train():
     """
     Naive Multi-Device Training
-    
+
     NOTE: the communicator exposes low-level interfaces
-    
+
     * Parse command line arguments.
     * Instantiate a communicator and set parameter variables.
     * Specify contexts for computation.
@@ -147,7 +151,7 @@ def train():
     mpi_rank = comm.rank
     device_id = mpi_rank
     ctx = extension_context(extension_module, device_id=device_id)
-    
+
     # Create training graphs
     test = False
     image_train = nn.Variable((args.batch_size, 3, 32, 32))
@@ -156,24 +160,25 @@ def train():
         image_train, ctx, test)
     loss_train = cifar10_resnet32_loss(pred_train, label_train)
     input_image_train = {"image": image_train, "label": label_train}
-    
+
     # add parameters to communicator
     comm.add_context_and_parameters((ctx, nn.get_parameters()))
-        
+
     # Create validation graph
     test = True
     image_valid = nn.Variable((bs_valid, 3, 32, 32))
     pred_valid = cifar10_resnet23_prediction(
         image_valid, ctx, test)
     input_image_valid = {"image": image_valid}
-    
+
     # Solvers
     solver = S.Adam()
     solver.set_parameters(nn.get_parameters())
     base_lr = args.learning_rate
-    warmup_iter = int(1. * n_train_samples / args.batch_size / n_devices) * args.warmup_epoch
+    warmup_iter = int(1. * n_train_samples /
+                      args.batch_size / n_devices) * args.warmup_epoch
     warmup_slope = 1. * n_devices / warmup_iter
-    
+
     # Create monitor
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
     monitor = Monitor(args.monitor_path)
@@ -182,7 +187,7 @@ def train():
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=100)
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
     with data_iterator_cifar10(args.batch_size, True) as tdata, \
-                    data_iterator_cifar10(bs_valid, False) as vdata:
+            data_iterator_cifar10(bs_valid, False) as vdata:
         # Training-loop
         for i in range(int(args.max_iter / n_devices)):
             # Validation
@@ -195,7 +200,7 @@ def train():
                         pred_valid.forward()
                         ve += categorical_error(pred_valid.d, label)
                     ve /= args.val_iter
-                    monitor_verr.add(i*n_devices, ve)
+                    monitor_verr.add(i * n_devices, ve)
                 if i % int(args.model_save_interval / n_devices) == 0:
                     nn.save_parameters(os.path.join(
                         args.model_save_path, 'params_%06d.h5' % i))
@@ -210,10 +215,10 @@ def train():
 
             # In-place Allreduce
             comm.allreduce(division=True)
-            
+
             # Solvers update
             solver.update()
-            
+
             # Linear Warmup
             if i < warmup_iter:
                 lr = base_lr * n_devices * warmup_slope * i
@@ -223,20 +228,22 @@ def train():
                 solver.set_learning_rate(lr)
 
             if mpi_rank == 0:
-                e = categorical_error(pred_train.d, input_image_train["label"].d)
-                monitor_loss.add(i*n_devices, loss_train.d.copy())
-                monitor_err.add(i*n_devices, e)
-                monitor_time.add(i*n_devices)
+                e = categorical_error(
+                    pred_train.d, input_image_train["label"].d)
+                monitor_loss.add(i * n_devices, loss_train.d.copy())
+                monitor_err.add(i * n_devices, e)
+                monitor_time.add(i * n_devices)
     if mpi_rank == 0:
         nn.save_parameters(os.path.join(
-            args.model_save_path, 
-            'params_%06d.h5' % (args.max_iter/ n_devices)))
-            
+            args.model_save_path,
+            'params_%06d.h5' % (args.max_iter / n_devices)))
+
+
 if __name__ == '__main__':
     """
     Call this script with `mpirun` or `mpiexec`
-    
+
     $ mpirun -n 4 python multi_device_multi_process.py --context "cuda.cudnn" -bs 64
-     
+
     """
     train()

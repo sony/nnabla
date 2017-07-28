@@ -19,24 +19,25 @@ import nnabla.communicators as C
 import numpy as np
 from nbla_test_utils import list_context
 
+
 def test_data_parallel_communicator():
     try:
         import nnabla_ext
         import nnabla_ext.cuda
         from nnabla.contrib.context import extension_context
-            
-    except: 
+
+    except:
         pytest.skip("DataParallelCommunicator are only supported in CUDA now.")
 
     n_devices = nnabla_ext.cuda.init.get_device_count()
     if n_devices < 2:
         pytest.skip("Number of cuda devices is less than 2.")
-            
+
     # Contexts and Computation Graph
     extension_module = "cuda"
     ctxs = []
     for d in range(n_devices):
-        ctx = extension_context(extension_module, 
+        ctx = extension_context(extension_module,
                                 device_id="{}".format(d))
         ctxs.append(ctx)
         with nn.context_scope(ctx):
@@ -60,10 +61,10 @@ def test_data_parallel_communicator():
                 v.g = grad_
                 v.grad.cast(np.float32, ctxs[d])
                 grad.append(grad_)
-            grads.append(grad)    
+            grads.append(grad)
 
     # Reference
-    ref_grads = []  
+    ref_grads = []
     with nn.parameter_scope("gpu{}".format(d)):
         params = nn.get_parameters()
         for i in range(len(params)):
@@ -72,20 +73,21 @@ def test_data_parallel_communicator():
                 ave_grad += grads[d][i]
             ave_grad /= n_devices
             ref_grads.append(ave_grad)
-        
+
     # Communicator
-    try:  
+    try:
         comm = C.DataParalellCommunicator(ctxs[0])
     except:
-        pytest.skip("DataParalellCommunicator is not supported in cpu or not linux platform.")
-        
+        pytest.skip(
+            "DataParalellCommunicator is not supported in cpu or not linux platform.")
+
     for d in range(n_devices):
         with nn.parameter_scope("gpu{}".format(d)):
             comm.add_context_and_parameters(
                 (ctxs[d], nn.get_parameters()))
     comm.init()
     comm.allreduce(division=True)
-    
+
     # Check
     atol = 1e-6
     for d in range(n_devices):

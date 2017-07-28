@@ -440,7 +440,7 @@ cdef class Variable:
 
         with nogil:
             self.varp.backward(p, clear_buffer)
-            
+
     def unlinked(self):
         """
         Gets unlinked (forgetting parent) variable that shares a Variable buffer

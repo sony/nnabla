@@ -34,7 +34,8 @@ using std::unordered_map;
 /** \addtogroup NNablaCoreGrp */
 /*@{*/
 
-/** Communicator interface which is extended to implement a new Communicator class.
+/** Communicator interface which is extended to implement a new Communicator
+class.
 
 Communicator exchanges gradients.
 
@@ -46,8 +47,8 @@ protected:
   int size_;
 
   vector<Context> contexts_;
-  vector<vector<pair<string, VariablePtr> > > device_func_named_param_;
-  vector<vector<pair<string, VariablePtr> > > func_device_named_param_;
+  vector<vector<pair<string, VariablePtr>>> device_func_named_param_;
+  vector<vector<pair<string, VariablePtr>>> func_device_named_param_;
 
   bool initialized_ = false;
 
@@ -70,11 +71,11 @@ public:
   @param pair pair<Context, vector of pair<name, VariablePtr>
   */
   void add_context_and_parameters(
-      const pair<Context, vector<pair<string, VariablePtr> > > &ctx_params);
+      const pair<Context, vector<pair<string, VariablePtr>>> &ctx_params);
 
   /** Remove previously registered parameters.
    */
-  void remove_context_parameters(const pair<Context, vector<string> > &ctx_keys);
+  void remove_context_parameters(const pair<Context, vector<string>> &ctx_keys);
 
   /** Clear all parameters.
    */
@@ -95,7 +96,7 @@ public:
   /** reduce.
    @param division Divide the reduced value.
    */
-  virtual void reduce(bool division=true);
+  virtual void reduce(bool division = true);
 
   /** allreduce over parameters added.
    This method is \b sync before and after iallreduce w.r.t. a host thread.
@@ -103,12 +104,12 @@ public:
 
   @param division Divide the reduced value.
    */
-  virtual void allreduce(bool division=true);
+  virtual void allreduce(bool division = true);
 
   /** reducescatter.
    @param division Divide the reduced value.
    */
-  virtual void reducescatter(bool division=true);
+  virtual void reducescatter(bool division = true);
 
   /** broadcast.
    *
@@ -123,17 +124,17 @@ public:
   /** reduce asynchronously.
    @param division Divide the reduced value.
    */
-  virtual void reduce_async(bool division=true);
+  virtual void reduce_async(bool division = true);
 
   /** reduce asynchronously.
    @param division Divide the reduced value.
    */
-  virtual void allreduce_async(bool division=true);
+  virtual void allreduce_async(bool division = true);
 
   /** reducescatter asynchronously.
    @param division Divide the reduced value.
    */
-  virtual void reducescatter_async(bool division=true);
+  virtual void reducescatter_async(bool division = true);
 
   /** broadcast asynchronously.
    *
@@ -150,7 +151,6 @@ public:
   vector<string> allowed_array_classes();
 
 protected:
-
   DISABLE_COPY_AND_ASSIGN(Communicator);
 };
 /*@}*/

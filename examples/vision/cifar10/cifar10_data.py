@@ -13,7 +13,7 @@ import errno
 from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
-from nnabla.utils.data_source_loader import download, get_data_home 
+from nnabla.utils.data_source_loader import download, get_data_home
 
 
 class Cifar10DataSource(DataSource):
@@ -28,22 +28,22 @@ class Cifar10DataSource(DataSource):
 
     def __init__(self, train=True, shuffle=False, rng=None):
         super(Cifar10DataSource, self).__init__(shuffle=shuffle)
-        
+
         # Lock
         lockfile = os.path.join(get_data_home(), "cifar10.lock")
         start_time = time.time()
         while True:  # busy-lock due to communication between process spawn by mpirun
             try:
-                fd = os.open(lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-                break;
+                fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                break
             except OSError as e:
                 if e.errno != errno.EEXIST:
-                    raise 
+                    raise
                 if (time.time() - start_time) >= 60 * 30:  # wait for 30min
                     raise Exception("Timeout occured.")
-                
+
             time.sleep(5)
-        
+
         self._train = train
         data_uri = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
         logger.info('Getting labeled data from {}.'.format(data_uri))
@@ -61,7 +61,8 @@ class Cifar10DataSource(DataSource):
                     images.append(data["data"])
                     labels.append(data["labels"])
                 self._size = 50000
-                self._images = np.concatenate(images).reshape(self._size, 3, 32, 32)
+                self._images = np.concatenate(
+                    images).reshape(self._size, 3, 32, 32)
                 self._labels = np.concatenate(labels).reshape(-1, 1)
             # Validation data
             else:
@@ -77,18 +78,18 @@ class Cifar10DataSource(DataSource):
                 self._labels = np.array(labels).reshape(-1, 1)
         r.close()
         logger.info('Getting labeled data from {}.'.format(data_uri))
-        
+
         self._size = self._labels.size
         self._variables = ('x', 'y')
         if rng is None:
             rng = np.random.RandomState(313)
         self.rng = rng
         self.reset()
-        
+
         # Unlock
         os.close(fd)
         os.unlink(lockfile)
-        
+
     def reset(self):
         if self._shuffle:
             self._indexes = self.rng.permutation(self._size)
@@ -109,12 +110,12 @@ class Cifar10DataSource(DataSource):
 
 @contextmanager
 def data_iterator_cifar10(batch_size,
-                        train=True,
-                        rng=None,
-                        shuffle=True,
-                        with_memory_cache=False,
-                        with_parallel=False,
-                        with_file_cache=False):
+                          train=True,
+                          rng=None,
+                          shuffle=True,
+                          with_memory_cache=False,
+                          with_parallel=False,
+                          with_file_cache=False):
     '''
     Provide DataIterator with :py:class:`Cifar10DataSource`
     with_memory_cache, with_parallel and with_file_cache option's default value is all False,
@@ -136,7 +137,3 @@ def data_iterator_cifar10(batch_size,
                       with_parallel,
                       with_file_cache) as di:
         yield di
-    
-    
-    
-    

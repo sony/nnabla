@@ -19,88 +19,86 @@
 
 namespace nbla {
 
-//TODO: should separate interface for each communicator, perhaps
+// TODO: should separate interface for each communicator, perhaps
 // like solver does.
 NBLA_REGISTER_COMMUNICATOR_SOURCE(MultiProcessDataParallelCommunicator);
 
 using std::make_shared;
 
-template<typename T>
-MultiProcessDataParallelCommunicator<T>::MultiProcessDataParallelCommunicator(const Context &ctx) : Communicator(ctx) {}
+template <typename T>
+MultiProcessDataParallelCommunicator<T>::MultiProcessDataParallelCommunicator(
+    const Context &ctx)
+    : Communicator(ctx) {}
 
-template<typename T>
-MultiProcessDataParallelCommunicator<T>::~MultiProcessDataParallelCommunicator() {}
+template <typename T>
+MultiProcessDataParallelCommunicator<
+    T>::~MultiProcessDataParallelCommunicator() {}
 
-template<typename T>
-void MultiProcessDataParallelCommunicator<T>::init() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU init is not implemented.")
+template <typename T> void MultiProcessDataParallelCommunicator<T>::init() {
+  NBLA_ERROR(error_code::not_implemented, "CPU init is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::reduce(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU reduce is not implemented.")
+  NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::allreduce(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU allreduce is not implemented.")
+  NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::reducescatter(bool division) {
   NBLA_ERROR(error_code::not_implemented,
-      "CPU reducescatter is not implemented.")
+             "CPU reducescatter is not implemented.")
 }
 
-template<typename T>
-void MultiProcessDataParallelCommunicator<T>::bcast() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU bcast is not implemented.")
+template <typename T> void MultiProcessDataParallelCommunicator<T>::bcast() {
+  NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::allgather() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU allgather is not implemented.")
+  NBLA_ERROR(error_code::not_implemented, "CPU allgather is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::reduce_async(bool division) {
   NBLA_ERROR(error_code::not_implemented,
-      "CPU reduce_async is not implemented.")
+             "CPU reduce_async is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::allreduce_async(bool division) {
   NBLA_ERROR(error_code::not_implemented,
-      "CPU allreduce_async is not implemented.")
+             "CPU allreduce_async is not implemented.")
 }
 
-template<typename T>
-void MultiProcessDataParallelCommunicator<T>::reducescatter_async(bool division) {
+template <typename T>
+void MultiProcessDataParallelCommunicator<T>::reducescatter_async(
+    bool division) {
   NBLA_ERROR(error_code::not_implemented,
-      "CPU reducescatter_async is not implemented.")
+             "CPU reducescatter_async is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::bcast_async() {
-  NBLA_ERROR(error_code::not_implemented,
-      "CPU bcast_async is not implemented.")
+  NBLA_ERROR(error_code::not_implemented, "CPU bcast_async is not implemented.")
 }
 
-template<typename T>
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::allgather_async() {
   NBLA_ERROR(error_code::not_implemented,
-      "CPU allgather_async is not implemented.")
+             "CPU allgather_async is not implemented.")
 }
 
-template<typename T>
-vector<string> MultiProcessDataParallelCommunicator<T>::allowed_array_classes() {
+template <typename T>
+vector<string>
+MultiProcessDataParallelCommunicator<T>::allowed_array_classes() {
   NBLA_ERROR(error_code::not_implemented,
-      "Derived class of MultiProcessDataParallelCommunicator must implement allowed_array_classes().")
+             "Derived class of MultiProcessDataParallelCommunicator must "
+             "implement allowed_array_classes().")
 }
 
 template class MultiProcessDataParallelCommunicator<float>;

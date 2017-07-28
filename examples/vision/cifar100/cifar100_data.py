@@ -13,7 +13,7 @@ import errno
 from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
-from nnabla.utils.data_source_loader import download, get_data_home 
+from nnabla.utils.data_source_loader import download, get_data_home
 
 
 class Cifar100DataSource(DataSource):
@@ -34,16 +34,16 @@ class Cifar100DataSource(DataSource):
         start_time = time.time()
         while True:  # busy-lock due to communication between process spawn by mpirun
             try:
-                fd = os.open(lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-                break;
+                fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                break
             except OSError as e:
                 if e.errno != errno.EEXIST:
-                    raise 
+                    raise
                 if (time.time() - start_time) >= 60 * 30:  # wait for 30min
                     raise Exception("Timeout occured.")
-                
+
             time.sleep(5)
-            
+
         self._train = train
         data_uri = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
         logger.info('Getting labeled data from {}.'.format(data_uri))
@@ -77,7 +77,7 @@ class Cifar100DataSource(DataSource):
                 self._labels = np.array(labels).reshape(-1, 1)
         r.close()
         logger.info('Getting labeled data from {} done.'.format(data_uri))
- 
+
         self._size = self._labels.size
         self._variables = ('x', 'y')
         if rng is None:
@@ -88,7 +88,7 @@ class Cifar100DataSource(DataSource):
         # Unlock
         os.close(fd)
         os.unlink(lockfile)
-        
+
     def reset(self):
         if self._shuffle:
             self._indexes = self.rng.permutation(self._size)
@@ -109,12 +109,12 @@ class Cifar100DataSource(DataSource):
 
 @contextmanager
 def data_iterator_cifar100(batch_size,
-                        train=True,
-                        rng=None,
-                        shuffle=True,
-                        with_memory_cache=False,
-                        with_parallel=False,
-                        with_file_cache=False):
+                           train=True,
+                           rng=None,
+                           shuffle=True,
+                           with_memory_cache=False,
+                           with_parallel=False,
+                           with_file_cache=False):
     '''
     Provide DataIterator with :py:class:`Cifar100DataSource`
     with_memory_cache, with_parallel and with_file_cache option's default value is all False,

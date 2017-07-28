@@ -43,7 +43,6 @@ public:
   Context NBLA_API &set_array_class(const string &array_class);
   Context NBLA_API &set_device_id(const string &device_id);
   Context NBLA_API &set_compute_backend(const string &compute_backend);
-
 };
 
 /**

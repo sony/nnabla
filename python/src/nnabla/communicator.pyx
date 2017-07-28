@@ -22,7 +22,7 @@ from libc.stdint cimport int64_t
 
 cimport communicator
 from communicator cimport CCommunicator
- 
+
 cimport _variable
 from _variable cimport Variable as _Variable, CVariable
 from _variable import Context
@@ -34,12 +34,12 @@ np.import_array()
 
 cdef class Communicator:
     """Communicator interface class.
-    
+
     Communicator exchanges data (e.g., gradient) using MPI-like 
     collectives. This class is used for the distributed training.
 
     """
-    
+
     @staticmethod
     cdef create(shared_ptr[CCommunicator] communicator):
         c = Communicator()
@@ -67,10 +67,10 @@ cdef class Communicator:
         Get rank of communicator.
         """
         return self.communicatorp.rank()
-    
+
     def add_context_and_parameters(self, ctx_param_dict):
         """Add context and parameters.
-        
+
         Args: 
             ctx_param_dict (:obj:`tuple` of :obj:`Context`, :obj:`dict`): 
                 Key of the dictionary is :obj:`string` and value of the
@@ -80,36 +80,36 @@ cdef class Communicator:
             raise Exception("ctx_param_dict must be tuple of two elements")
         if len(ctx_param_dict) != 2:
             raise Exception("ctx_param_dict must be tuple of two elements")
-         
-        cdef vector[pair[string, shared_ptr[CVariable]]] cparams        
+
+        cdef vector[pair[string, shared_ptr[CVariable]]] cparams
         cdef _Variable x
         cdef string key
         for key, x in ctx_param_dict[1].iteritems():
-            cparams.push_back(pair[string, shared_ptr[CVariable]](key, ( < _Variable > x).varp.variable()))
-         
+            cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).varp.variable()))
+
         self.communicatorp.add_context_and_parameters(
             pair[CContext, vector[pair[string, shared_ptr[CVariable]]]](ctx_param_dict[0], cparams))
-        
+
     def init(self, ):
         """Initialize a communicator.
-        
+
         Initall or initrank, depending multi-threads or multi-processes.
         This function *MUST* be called after all parameters communicated
         are added by `add_context_and_parameters`.        
-         
+
         """
         self.communicatorp.init()
-        
+
     def allreduce(self, division=False):
         """Inplace allreduce over parameters added.
         This method is \b sync before and after allreduce w.r.t. a host thread.
         Currently, `allreduce` is applied to gradient regions.
-        
+
         Args:
             division (bool): Flag to divide the reduce data by the 
                 number of `contexts` added, or the number of devices. 
-                
-        
+
+
         """
         self.communicatorp.allreduce(division)
 
@@ -117,20 +117,20 @@ cdef class Communicator:
 def DataParalellCommunicator(CContext ctx):
     """
     Data Parallel Communicator for Distributed Training.
-    
+
     Args:
         context (:obj:`Context`): context used in this communicator.
 
     Example: 
-    
+
     In case of the multi-thread data parallel distributed training,
-    
+
     .. code-block:: python
 
         # Networks and Solvers building comes above
         import nnabla.communicators as C
         comm = C.DataParalellCommunicator(ctx)
-        
+
         # Add contexts and parameters to the communicator 
         for i in range(n_devices):
             device_scope_name = "device{}".format(i)
@@ -139,7 +139,7 @@ def DataParalellCommunicator(CContext ctx):
                 params = nn.get_parameters()
                 comm.add_context_and_parameters((ctx, params))
         comm.init()
-        
+
         # Training loop
         for itr in range(num_itr):
 
@@ -148,36 +148,37 @@ def DataParalellCommunicator(CContext ctx):
                 losses[i].forward()
                 solvers[i].zero_grad()
                 losses[i].backward()
-            
+
             # Inplace-allreduce
             comm.allreduce()
-            
+
             # Update
             for i in range(n_devices):
                 solvers[i].update()            
-        
+
     """
     import platform
     import ctypes
     if platform.system() != 'Linux':
-        raise Exception("DataParalellCommunicator is not supported other than linux.")
-    
-    return Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))        
+        raise Exception(
+            "DataParalellCommunicator is not supported other than linux.")
+
+    return Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))
 
 
 def MultiProcessDataParalellCommunicator(CContext ctx):
     """
     Multi Process Data Parallel Communicator for Distributed Training.
-    
+
     Args:
         context (:obj:`Context`): context used in this communicator.
-        
+
     Example: 
-    
+
     In case of the multi-process data parallel distributed training,
-    
+
     .. code-block:: python
-    
+
         # Communicator and Context
         extension_module = "cuda.cudnn"
         ctx = extension_context(extension_module)
@@ -188,27 +189,27 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
         device_id = mpi_rank
 
         # Network and Solver created here
-        
+
         ...
-        
+
         # add contexts and parameters to the communicator 
         comm.add_context_and_parameters((ctx, nn.get_parameters()))
-        
+
         # Training loop
         for itr in range(num_itr):
             # Forward, zerograd, backward
             losse.forward()
             solver.zero_grad()
             loss.backward()
-            
+
             # Inplace-allreduce
             comm.allreduce()
-            
+
             # Update
             solver.update()
-            
+
     """
-    
+
     # There is the known bug in python used with MPI
     # described in https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
     import platform
@@ -216,5 +217,6 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
     if platform.system() == 'Linux':
         ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
     else:
-        raise Exception("MultiProcessDataParalellCommunicator is not supported other than linux.")
-    return Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))        
+        raise Exception(
+            "MultiProcessDataParalellCommunicator is not supported other than linux.")
+    return Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))

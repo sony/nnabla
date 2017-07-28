@@ -36,5 +36,4 @@ Context &Context::set_compute_backend(const string &compute_backend) {
   this->compute_backend = compute_backend;
   return *this;
 }
-
 }

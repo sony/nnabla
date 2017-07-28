@@ -29,9 +29,9 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
             const pair[CContext, vector[pair[string, shared_ptr[CVariable]]]] & ctx_params) except +
 
         void remove_context_parameters(
-            const pair[CContext, vector[string]] &ctx_keys) except +
+            const pair[CContext, vector[string]] & ctx_keys) except +
         void clear_context_parameters() except +
-        
+
         void init() except +
         int size() except +
         int rank() except +
@@ -41,18 +41,18 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         void reducescatter(cpp_bool division) except +
         void bcast() except +
         void allgather() except +
-        
+
         void reduce_async(cpp_bool division) except +
         void allreduce_async(cpp_bool division) except +
         void reducescatter_async(cpp_bool division) except +
         void bcast_async() except +
         void allgather_async() except +
-        
+
 cdef extern from "nbla/communicator/data_parallel_communicator.hpp" namespace "nbla":
-    shared_ptr[CCommunicator] create_DataParallelCommunicatorCommunicator(const CContext &) except +        
+    shared_ptr[CCommunicator] create_DataParallelCommunicatorCommunicator(const CContext & ) except +
 
 cdef extern from "nbla/communicator/multi_process_data_parallel_communicator.hpp" namespace "nbla":
-    shared_ptr[CCommunicator] create_MultiProcessDataParallelCommunicatorCommunicator(const CContext &) except +        
+    shared_ptr[CCommunicator] create_MultiProcessDataParallelCommunicatorCommunicator(const CContext & ) except +
 
 cdef class Communicator:
 
@@ -61,5 +61,3 @@ cdef class Communicator:
 
     @staticmethod
     cdef create(shared_ptr[CCommunicator] communicator)
-    
-    
