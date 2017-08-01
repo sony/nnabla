@@ -8,7 +8,7 @@ The examples listed below demonstrate several deep learning algorithms on CIFAR-
 
 ---
 
-## Multi-Device Multi-Thread Training
+## Multi-Device Multi-Process Training
 
 This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-100 dataset and 23-layers ResNet with [NCCL v1](https://github.com/NVIDIA/nccl) using `multi-process`. 
 
