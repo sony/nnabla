@@ -98,7 +98,7 @@ loss.backward()
 
 * High speed on a single CUDA GPU
 * Memory optimization engine
-* Multiple GPU support (Available soon)
+* Multiple GPU support
 
 
 ## Documentation
