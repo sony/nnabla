@@ -78,6 +78,11 @@ public:
     return head_.dtype;
   };
 
+  /** Get the array class of the head.
+   *
+   */
+  inline std::string head_array_class() { return head_.array_class; }
+
   /** Size. */
   inline Size_t size() const { return size_; }
 

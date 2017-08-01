@@ -22,6 +22,7 @@ Install From Source
     :maxdepth: 1
 
     build_on_linux.rst
+    build_on_linux_with_dt.rst
     build_on_windows.rst
     build_on_macos.rst
 

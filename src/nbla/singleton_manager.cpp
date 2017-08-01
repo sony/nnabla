@@ -47,28 +47,48 @@ SingletonManager::~SingletonManager() { clear(); }
 ///////////////////
 // Impl of NNabla
 ///////////////////
-NNabla::NNabla() : ones_(new SyncedArray(0)), zeros_(new SyncedArray(0)) {
-
-  ones_->fill(1);
-  zeros_->zero();
-}
+NNabla::NNabla() {}
 
 NNabla::~NNabla() {}
 
 const void *NNabla::ones(Size_t size, dtypes dtype, const Context &ctx) {
-  if (size > ones_->size()) {
-    ones_.reset(new SyncedArray(size));
-    ones_->fill(1);
+  auto tid = std::this_thread::get_id();
+  shared_ptr<SyncedArray> ones;
+  std::lock_guard<decltype(mtx_ones_)> lock(mtx_ones_);
+  auto it = ones_.find(tid);
+  if (it == ones_.end()) {
+    ones = std::make_shared<SyncedArray>(size);
+    ones->fill(1);
+    ones_.insert({tid, ones});
+    return ones->get(dtype, ctx)->const_pointer<void>();
   }
-  return ones_->get(dtype, ctx)->const_pointer<void>();
+  ones = it->second;
+  if (size > ones->size()) {
+    ones = std::make_shared<SyncedArray>(size);
+    ones->fill(1);
+    ones_.insert({tid, ones});
+  }
+  return ones->get(dtype, ctx)->const_pointer<void>();
 }
 
 const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
-  if (size > zeros_->size()) {
-    zeros_.reset(new SyncedArray(size));
-    zeros_->zero();
+  auto tid = std::this_thread::get_id();
+  shared_ptr<SyncedArray> zeros;
+  std::lock_guard<decltype(mtx_zeros_)> lock(mtx_zeros_);
+  auto it = zeros_.find(tid);
+  if (it == zeros_.end()) {
+    zeros = std::make_shared<SyncedArray>(size);
+    zeros->zero();
+    zeros_.insert({tid, zeros});
+    return zeros->get(dtype, ctx)->const_pointer<void>();
   }
-  return zeros_->get(dtype, ctx)->const_pointer<void>();
+  zeros = it->second;
+  if (size > zeros->size()) {
+    zeros = std::make_shared<SyncedArray>(size);
+    zeros->zero();
+    zeros_.insert({tid, zeros});
+  }
+  return zeros->get(dtype, ctx)->const_pointer<void>();
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, NNabla);

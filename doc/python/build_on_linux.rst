@@ -21,6 +21,7 @@ Our build system requires:
   * CUDA Toolkit 8.0 / cuDNN 6.0 (to build CUDA/cuDNN extension for NVIDIA GPU)
 
 
+.. _linux-setup-build-environment:
 Setup build environment
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -48,7 +49,6 @@ Install protoc
 
     curl -L https://github.com/google/protobuf/releases/download/v3.1.0/protoc-3.1.0-linux-x86_64.zip -o /tmp/protoc-3.1.0-linux-x86_64.zip
     sudo unzip -d /usr/local /tmp/protoc-3.1.0-linux-x86_64.zip && sudo chmod 755 /usr/local/bin/protoc
-
 
 Install CUDA and cuDNN
 """"""""""""""""""""""
@@ -78,6 +78,7 @@ Install CUDA and cuDNN
 Build and installation
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. _linux-build-and-install:
 Build and install
 """""""""""""""""
 
@@ -95,6 +96,7 @@ Build and install
     sudo pip install -U nnabla-<package version>-<package-arch>.whl # a name may depend on an environment
 
 
+.. _linux-build-and-install-cuda/cudnn-extension:
 Build and install CUDA/cuDNN extension
 """"""""""""""""""""""""""""""""""""""
 
@@ -110,7 +112,7 @@ Build and install CUDA/cuDNN extension
     cd dist
     sudo pip install -U nnabla_ext_cuda-<package version>-<package-arch>.whl
 
-
+.. _linux-unit-test:
 Unit test
 ^^^^^^^^^
 
