@@ -8,7 +8,7 @@ The examples listed below demonstrate several deep learning algorithms on CIFAR-
 
 ---
 
-## Multi Device Multi Process Classification task
+## Multi-Device Multi-Thread Training
 
 This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-100 dataset and 23-layers ResNet with [NCCL v1](https://github.com/NVIDIA/nccl) using `multi-process`. 
 
@@ -23,7 +23,7 @@ mpirun -n 4 python multi_device_multi_process_classification.py --context "cuda.
 
 you can execute the training of 23-layers ResNet in the `Data Parallel Distributed Training` manner with the batch size being 64 and 4 GPUs.
 
-## Multi Device Multi Thread Classification task
+## Multi-Device Multi-Thread Training
 
 This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-100 dataset and 23-layers ResNet with [NCCL v1](https://github.com/NVIDIA/nccl) using `multi-process`.
 
