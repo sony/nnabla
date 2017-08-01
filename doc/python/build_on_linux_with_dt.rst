@@ -61,11 +61,11 @@ Distributed Training also depends on MPI, so install it as follows,
 	sudo apt-get install libopenmpi-dev
 	
 Follow :ref:`linux-build-and-install-cuda/cudnn-extension` but 
-with **WITH_DIST_TRAIN**, when you do `cmake` like 
+with **WITH_NCCL**, when you do `cmake` like 
 
 .. code-block:: shell
 
-	cmake -D WITH_DIST_TRAIN=ON ../                                                            
+	cmake -D WITH_NCCL=ON ../                                                            
 
 You can see nccl and mpi includes and dependencies,   
 
