@@ -91,7 +91,7 @@ loss.backward()
 
 * Easy to add new modules like neural network operators and optimizers
 * The library allows developers to add specialized implementations (e.g., for
-  FPGA, ...). For example, we provides CUDA backend as an extension, which gives
+  FPGA, ...). For example, we provide CUDA backend as an extension, which gives
   speed-up by GPU accelerated computation.
 
 ### Efficient
@@ -112,7 +112,7 @@ loss.backward()
 
 ### Getting started
 
-* A number of Jupyter notebook tutorials can be found in the `tutorial` folder.
+* A number of Jupyter notebook tutorials can be found in the [tutorial](https://github.com/sony/nnabla/tree/master/tutorial) folder.
   We recommend starting from `by_examples.ipynb` for a first
   working example in NNabla and `python_api.ipynb` for an introduction into the
   NNabla API.
