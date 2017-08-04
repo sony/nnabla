@@ -204,7 +204,7 @@ class Network:
                         del self.variables[func.outputs[0].name]
 
             for func in self.functions.values():
-                if func.function_instance.inplace_data(0) > 0 and func.function_instance.inplace_grad(0) > 0 and "Reshape" not in func.function_instance.name:
+                if func.function_instance.inplace_data(0) > 0 and func.function_instance.inplace_grad(0) > 0 and func.outputs[0].variable_instance.shape == func.inputs[0].variable_instance.shape:
                     func.outputs[0].variable_instance = func.inputs[
                         0].variable_instance
                 
