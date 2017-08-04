@@ -185,7 +185,7 @@ class Network:
 
     def setup(self, optimize=False):
         if optimize:
-            for func in self.functions.values():
+            for func in list(self.functions.values()):
                 # remove identity layer
                 if func.function_instance.name[0:8] == "Identity":
                     assert(len(func.inputs) == 1)
@@ -225,7 +225,7 @@ class Network:
             try:
                 self.setup_function(func)
             except:
-                print_network_traceback(self.functions.values()[
+                print_network_traceback(list(self.functions.values())[
                                         min(0, i - 4):i + 1])
                 raise
 
