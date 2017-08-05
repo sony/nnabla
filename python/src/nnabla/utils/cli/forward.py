@@ -149,7 +149,7 @@ def forward(args, index, config, data, variables):
         else:
             outputs = outputs_1
             result = result_1
-        output_index += len(outputs_1[0])
+        output_index += len(avg)
 
     return result, outputs
 
