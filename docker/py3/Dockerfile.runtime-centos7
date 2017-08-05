@@ -1,9 +1,0 @@
-FROM centos:centos7
-
-RUN yum install -y epel-release
-
-RUN yum install -y gcc python-pip python-devel
-
-RUN pip install -U pip
-RUN pip install -U ipython
-RUN pip install -U virtualenv

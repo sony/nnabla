@@ -13,6 +13,7 @@ Python API Reference
     api/function
     api/parametric_function
     api/solver
+    api/communicator
     api/monitor
     api/data_iterator
     api/contrib

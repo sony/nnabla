@@ -23,13 +23,13 @@ from _variable cimport CVariable, CContext, dtypes
 
 cdef extern from "nbla/solver.hpp" namespace "nbla":
     cdef cppclass CSolver "nbla::Solver":
-        void zero_grad() except +
+        void zero_grad() nogil except +
         void set_parameters(const vector[pair[string, shared_ptr[CVariable]]] & params,
                             cpp_bool reset, cpp_bool retain_state) except +
         void remove_parameters(const vector[string] & keys) except +
         void clear_parameters() except +
-        void update() except +
-        void weight_decay(float decay_rate) except +
+        void update() nogil except +
+        void weight_decay(float decay_rate) nogil except +
         string name() except +
         float learning_rate() except +
         void set_learning_rate(float learning_rate) except +

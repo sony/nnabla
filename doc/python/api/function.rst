@@ -124,6 +124,7 @@ Logical
 Math
 ----
 
+.. autofunction:: constant
 .. autofunction:: abs
 .. autofunction:: exp
 .. autofunction:: log
@@ -148,6 +149,10 @@ Array Manipulation
 Stochasticity
 -------------
 
+.. autofunction:: dropout
+.. autofunction:: rand
+.. autofunction:: randint
+.. autofunction:: randn
 .. autofunction:: dropout
 .. autofunction:: random_crop
 .. autofunction:: random_flip

@@ -4137,16 +4137,15 @@ Quantization Neural Network Layers
 BinarySigmoid
 ^^^^^^^^^^^^^
 
-Element-wise binary sigmoid function.
-
-In the forward pass,
+Element-wise binary sigmoid function. In the forward pass, it computes
 
 .. math::
     f(x) = \begin{cases}
         1 & (x > 0) \\
         0 & ({\rm otherwise})\end{cases},
 
-but in the backward pass,
+but in the backward pass, a straight-through approximation of the gradient
+is used, i.e.,
 
 .. math::
     \frac{\partial f(x)}{\partial x} =
@@ -4187,9 +4186,7 @@ References:
 BinaryTanh
 ^^^^^^^^^^^
 
-Element-wise Binary Tanh function.
-
-In the forward pass,
+Element-wise binary tanh function. In the forward pass, it computes
 
 .. math::
     f(x) = \begin{cases}
@@ -4197,7 +4194,8 @@ In the forward pass,
         -1 & ({\rm otherwise})
     \end{cases},
 
-but in the backward pass,
+but in the backward pass, a straight-through approximation of the gradient
+is used, i.e.,
 
 .. math::
     \frac{\partial f(x)}{\partial x} =
@@ -4236,32 +4234,34 @@ References:
 BinaryConnectAffine
 ^^^^^^^^^^^^^^^^^^^
 
-Binary Connect Affine, multiplier-less inner-product.
-
-Binary Connect Affine is the affine function, but the inner-product
-in this function is the following,
+This function provides a BinaryConnect affine layer. It computes in
+the forward pass
 
 .. math::
 
-    y_i = \sum_{i} sign(w_i) x_i.
+    y_j = \sum_{i} sign(w_{j,i}) x_i,
 
-Therefore, :math:`sign(w_i)` becomes a discrete parameter belonging to :math:`\{0,\,1\}`, thus the inner product
-simplifies to addition.
+i.e., the weights :math:`w_{j,i}` are binarized to :math:`sign(w_{j,i})` and,
+hence, each weight is in :math:`\{-1,\,1\}`. By this weight binarization, the
+inner product computations do not require any multiplications anymore as
+they turn into additions/subtractions.
 
-This function should be used together with :meth:`~nnabla.functions.batch_normalization` .
+This function should be used together with
+:meth:`~nnabla.functions.batch_normalization`.
 
 .. note::
 
-    1) If you would like to share the binary weights between other standard layers, please
-    use the standard, floating value weights (`weight`)
+    1) If you would like to share the binary weights between other
+    layers, please use the standard, floating value weights (`weight`)
     and not the binary weights (`binary_weight`).
 
-    2) The weights and the binary weights become in sync only after a call to :meth:`~nnabla.Variable.forward`,
-    and not after a call to :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
-    the network, remember to call :meth:`~nnabla.Variable.forward`, once before doing so, otherwise the
-    weights and the binary weights will not be in sync.
+    2) The weights and the binary weights become in sync only after a call to
+    :meth:`~nnabla.Variable.forward`, and not after a call to
+    :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+    the network, remember to call :meth:`~nnabla.Variable.forward`, once before
+    doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight` ,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 References:
@@ -4318,17 +4318,18 @@ References:
 BinaryConnectConvolution
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Binary Connect Convolution, multiplier-less inner-product.
-
-Binary Connect Convolution is the convolution function, but the
-inner-product in this function is the following,
+This function provides a BinaryConnect convolution layer. It computes in
+the forward pass
 
 .. math::
 
-    y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j}.
+    y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j},
 
-Therefore, :math:`sign(w_{n, m, i, j})` becomes a discrete parameter belonging to :math:`\{0,\,1\}`, thus
-the inner product simplifies to addition.
+i.e., the weights :math:`w_{n, m, i, j}` are binarized to
+:math:`sign(w_{n, m, i, j})` and, hence,
+each weight is in :math:`\{-1,\,1\}`. By this weight binarization, the
+inner product computations do not require any multiplications anymore as
+they turn into additions/subtractions.
 
 This function should be used together with :meth:`~nnabla.functions.batch_normalization`.
 
@@ -4341,16 +4342,17 @@ Reference
 
 .. note::
 
-    1) If you would like to share the binary weights between other standard layers, please
-    use the standard, floating value weights (`weight`)
+    1) If you would like to share the binary weights between other
+    layers, please use the standard, floating value weights (`weight`)
     and not the binary weights (`binary_weight`).
 
-    2) The weights and the binary weights become in sync only after a call to :meth:`~nnabla.Variable.forward`,
-    and not after a call to :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
-    the network, remember to call :meth:`~nnabla.Variable.forward`, once before doing so, otherwise the
-    weights and the binary weights will not be in sync.
+    2) The weights and the binary weights become in sync only after a call to
+    :meth:`~nnabla.Variable.forward`, and not after a call to
+    :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+    the network, remember to call :meth:`~nnabla.Variable.forward`, once before
+    doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight` ,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4417,18 +4419,18 @@ Reference
 BinaryWeightAffine
 ^^^^^^^^^^^^^^^^^^
 
-Binary Weight Affine, multiplier-less inner-product with a scale factor.
-
-Binary Weight Affine is the affine function, but the inner-product
-in this function is the following,
+This function provides a Binary Weight Network affine layer. It computes in
+the forward pass
 
 .. math::
 
-    y_j = \frac{1}{\|\mathbf{w}_j\|_{\ell_1}} \sum_{i} sign(w_{ji}) x_i
+    y_j = \frac{1}{\|\mathbf{w}_j\|_{\ell_1}} \sum_{i} sign(w_{j,i}) x_i
 
-Therefore, :math:`sign(w_{ji})` becomes a discrete parameter belonging to :math:`\{0,\,1\}`, thus the inner product
-simplifies to addition followed by a scaling factor :math:`\alpha_n = \frac{1}{\|\mathbf{w}_n\|_{\ell_1}} \, (n = 1, \ldots, N)` ,
-where :math:`N` is the number of outmaps of this function.
+i.e., the weights :math:`w_{j,i}` are binarized to :math:`sign(w_{j,i})` and,
+hence, each weight is in :math:`\{-1,\,1\}`. By this weight binarization, the
+inner product computations turn into additions/subtractions which are followed
+by multiplication with the scaling factor
+:math:`\alpha_j = \frac{1}{\|\mathbf{w}_j\|_{\ell_1}}`.
 
 Reference
 
@@ -4438,16 +4440,17 @@ Reference
 
 .. note::
 
-    1) If you would like to share the binary weights between other standard layers, please
-    use the standard, floating value weights (`weight`)
-    and not the binary weights (`binary_weight`).
+    1) If you would like to share the binary weights with other layers, please
+    use the standard, floating value weights (`weight`) and not the binary
+    weights (`binary_weight`).
 
-    2) The weights and the binary weights become in sync only after a call to :meth:`~nnabla.Variable.forward`,
-    and not after a call to :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
-    the network, remember to call :meth:`~nnabla.Variable.forward`, once before doing so, otherwise the
-    weights and the binary weights will not be in sync.
+    2) The weights and the binary weights become in sync only after a call to
+    :meth:`~nnabla.Variable.forward`, and not after a call to
+    :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+    the network, remember to call :meth:`~nnabla.Variable.forward`, once before
+    doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight` ,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4501,18 +4504,18 @@ Reference
 BinaryWeightConvolution
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Binary Weight Convolution, multiplier-less inner-product with a scale factor.
-
-Binary Weight Convolution is the convolution function, but the
-inner-product in this function is the following,
+This function provides a Binary Weight Network convolution layer. It computes in
+the forward pass
 
 .. math::
 
     y_{n, a, b} = \frac{1}{\|\mathbf{w}_n\|_{\ell_1}} \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j}.
 
-Therefore, :math:`sign(w_{n, m, i, j})` becomes a discrete parameter belonging to :math:`\{0,\,1\}`, thus the inner product
-simplifies to addition followed by a scaling factor :math:`\alpha_n = \frac{1}{\|\mathbf{w}_n\|_{\ell_1}} \, (n = 1, \ldots, N)` ,
-where :math:`N` is the number of outmaps of this function.
+i.e., the weights :math:`w_{n, m, i, j}` are binarized to
+:math:`sign(w_{n, m, i, j})` and, hence, each weight is in :math:`\{-1,\,1\}`.
+By this weight binarization, the inner product computations turn into
+additions/subtractions which are followed by multiplication with the scaling
+factor :math:`\alpha_n = \frac{1}{\|\mathbf{w}_n\|_{\ell_1}}`.
 
 Reference
 
@@ -4526,12 +4529,14 @@ Reference
     use the standard, floating value weights (`weight`)
     and not the binary weights (`binary_weight`).
 
-    2) The weights and the binary weights become in sync only after a call to :meth:`~nnabla.Variable.forward`,
-    and not after a call to :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
-    the network, remember to call :meth:`~nnabla.Variable.forward`, once before doing so, otherwise the
-    weights and the binary weights will not be in sync.
+    2) The weights and the binary weights become in sync only after a call to
+    :meth:`~nnabla.Variable.forward`, and not after a call to
+    :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+    the network, remember to call :meth:`~nnabla.Variable.forward`, once
+    before doing so, otherwise the weights and the binary weights will not be
+    in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight` ,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4604,13 +4609,14 @@ Validation
 TopNError
 ^^^^^^^^^
 
-Top N error along dimension specified by axis.
+Top N error along the dimension specified by the axis, the elment of outputs is 
 
 .. math::
+
     y_i = \left \{
     \begin{array}{l}
-    1 (x_i is not within Nth place) \\
-    0 (x_i is within Nth place)
+    1 \ (x_i \ is \ not \ within \ N-th \ place) \\
+    0 \ (x_i \ is \ within \ N-th \ place)
     \end{array}
     \right.
 
@@ -4622,10 +4628,10 @@ Top N error along dimension specified by axis.
      - Description
      - Options
    * - x
-     - Probabilities N-D array. (\f$D_1 \times ... \times D_i \times ... \times D_N\f$)
+     - Probabilities N-D array. :math:`D_1 \times ... \times D_i \times ... \times D_N`
      - 
    * - target
-     - N-D array of labels. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+     - N-D array of labels. :math:`D_1 \times ... \times 1 \times ... \times D_N`
      - Integer
 
 * Argument(s)
@@ -4643,7 +4649,7 @@ Top N error along dimension specified by axis.
    * - n
      - int64
      - 1
-     - N
+     - top N
 
 * Output(s)
 
@@ -4653,7 +4659,7 @@ Top N error along dimension specified by axis.
      - Description
      - Options
    * - output
-     - Element-wise error N-D array. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+     - Element-wise error N-D array. (:math:`D_1 \times ... \times 1 \times ... \times D_N`)
      - 
 
 BinaryError
@@ -4780,7 +4786,7 @@ References:
      - Description
      - Options
    * - x
-     - N-D array of noise input. Noise is standard gaussian noise initially, but the next step, feedbacked gradient variable.
+     - N-D array of noise input. Noise is standard Gaussian noise initially, but the next step, fed back gradient variable.
      - 
    * - w
      - N-D array for keep gradient values.

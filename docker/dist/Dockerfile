@@ -1,26 +1,17 @@
 FROM centos:6
 
-RUN yum install -y yum-utils 
-RUN yum install -y centos-release-scl 
-RUN yum-config-manager --enable rhel-server-rhscl-7-rpms 
-RUN yum install -y devtoolset-4-gcc 
-RUN yum install -y devtoolset-4-gcc-c++ 
-RUN yum install -y devtoolset-4-gcc-gfortran 
-RUN yum install -y devtoolset-4-binutils 
+RUN yum install -y yum-utils
+RUN yum install -y centos-release-scl
+RUN yum-config-manager --enable rhel-server-rhscl-7-rpms
+RUN yum install -y devtoolset-4-gcc
+RUN yum install -y devtoolset-4-gcc-c++
+RUN yum install -y devtoolset-4-gcc-gfortran
+RUN yum install -y devtoolset-4-binutils
 RUN yum install -y git19
 RUN yum install -y python27
 ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/python27/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH 
 ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH 
 ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:/opt/rh/python27/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
-
-RUN pip install -U pip wheel
-ADD python/requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/requirements.txt
-RUN pip install -U ipython
-ADD python/setup_requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/setup_requirements.txt
-ADD python/test_requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/test_requirements.txt
 
 RUN yum install -y wget curl zip unzip
 
@@ -53,9 +44,9 @@ RUN cd /tmp \
     && make \
     && make install
 
-RUN yum install -y rh-python35
-ENV PATH=$PATH:/opt/rh/rh-python35/root/usr/bin
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rh/rh-python35/root/usr/lib64
-ENV PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/opt/rh/rh-python35/root/usr/lib64/pkgconfig
-
-RUN pip3 install -U auditwheel
+# Conda environment for Python3 versions
+RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
+     && rm -rf Miniconda3-latest-Linux-x86_64.sh
+ENV PATH /opt/miniconda3/bin:$PATH
+RUN chmod -R ugo+w /opt/miniconda3
