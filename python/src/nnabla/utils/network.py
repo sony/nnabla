@@ -145,7 +145,7 @@ class Network:
                     for i, v in enumerate(func.variable_inputs):
                         accum = (v in backward_sequence.grad_variables or v in backward_sequence.parameters) and not func.function_instance.inplace_grad(i)
                         seq.accum_grad.append(accum)
-                        if not accum:
+                        if not v in backward_sequence.grad_variables:
                             backward_sequence.grad_variables.append(v)
                     backward_sequence.sequence.append(seq)
         return diff_exists
@@ -202,11 +202,6 @@ class Network:
                                 0] else v for v in next_function.inputs]
                         del self.functions[func.name]
                         del self.variables[func.outputs[0].name]
-
-            for func in self.functions.values():
-                if func.function_instance.inplace_data(0) > 0 and func.function_instance.inplace_grad(0) > 0 and func.outputs[0].variable_instance.shape == func.inputs[0].variable_instance.shape:
-                    func.outputs[0].variable_instance = func.inputs[
-                        0].variable_instance
                 
         # create variable instances
         for variable in self.variables.values():
