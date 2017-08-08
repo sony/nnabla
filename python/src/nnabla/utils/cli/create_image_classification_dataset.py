@@ -76,7 +76,8 @@ def create_image_classification_dataset_command(args):
     logger.log(99, "Creating output images...")
     for data in tqdm.tqdm(csv_data, unit='images'):
         src_file_name = os.path.join(source_dir, data[0])
-        dest_file_name = os.path.join(dest_dir, os.path.splitext(data[0])[0] + ".png")
+        data[0] = os.path.splitext(data[0])[0] + ".png"
+        dest_file_name = os.path.join(dest_dir, data[0])
         dest_path = os.path.dirname(dest_file_name)
         # print(src_file_name, dest_file_name)
         
@@ -115,13 +116,16 @@ def create_image_classification_dataset_command(args):
             else:
                 # padding mode
                 if float(h) / w < float(height) / width:
-                    target_h = int(float(height) / width * h)
+                    target_h = int(float(height) / width * w)
                     # print('padding_target_h', target_h)
-                    im = np.pad(im, (((target_h - h) // 2, target_h - (target_h - h) // 2 - h), (0, 0)), 'constant')
+                    pad = (((target_h - h) // 2, target_h - (target_h - h) // 2 - h), (0, 0))
                 else:
-                    target_w = int(float(width) / height * w)
+                    target_w = int(float(width) / height * h)
                     # print('padding_target_w', target_w)
-                    im = np.pad(im, ((0, 0), ((target_w - w) // 2, target_w - (target_w - w) // 2 - w)), 'constant')
+                    pad = ((0, 0), ((target_w - w) // 2, target_w - (target_w - w) // 2 - w))
+                if len(im.shape) == 3:
+                    pad = pad + ((0, 0),)
+                im = np.pad(im, pad, 'constant')
                 # print('before', im.shape)
                 im = scipy.misc.imresize(arr=im, size=(height, width), interp='lanczos')
                 # print('after', im.shape)
