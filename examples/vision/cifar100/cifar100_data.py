@@ -40,7 +40,8 @@ class Cifar100DataSource(DataSource):
                 if e.errno != errno.EEXIST:
                     raise
                 if (time.time() - start_time) >= 60 * 30:  # wait for 30min
-                    raise Exception("Timeout occured.")
+                    raise Exception(
+                        "Timeout occured. If there are cifar10.lock in $HOME/nnabla_data, it should be deleted.")
 
             time.sleep(5)
 
@@ -57,9 +58,9 @@ class Cifar100DataSource(DataSource):
                     if "train" not in member.name:
                         continue
                     fp = fpin.extractfile(member)
-                    data = np.load(fp)
-                    images = data["data"]
-                    labels = data["fine_labels"]
+                    data = np.load(fp, encoding="bytes")
+                    images = data[b"data"]
+                    labels = data[b"fine_labels"]
                 self._size = 50000
                 self._images = images.reshape(self._size, 3, 32, 32)
                 self._labels = np.array(labels).reshape(-1, 1)
@@ -69,9 +70,9 @@ class Cifar100DataSource(DataSource):
                     if "test" not in member.name:
                         continue
                     fp = fpin.extractfile(member)
-                    data = np.load(fp)
-                    images = data["data"]
-                    labels = data["fine_labels"]
+                    data = np.load(fp, encoding="bytes")
+                    images = data[b"data"]
+                    labels = data[b"fine_labels"]
                 self._size = 10000
                 self._images = images.reshape(self._size, 3, 32, 32)
                 self._labels = np.array(labels).reshape(-1, 1)
