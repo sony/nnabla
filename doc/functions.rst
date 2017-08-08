@@ -4031,6 +4031,39 @@ Element-wise squared error
      - N-D array.
      - 
 
+AbsoluteError
+^^^^^^^^^^^^^
+
+Element-wise absolute error
+
+.. math::
+    y_i = | x^{(0)}_i - x^{(1)}_i |.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x0
+     - N-D array.
+     - 
+   * - x1
+     - N-D array.
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
+
 HuberLoss
 ^^^^^^^^^
 
