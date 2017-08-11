@@ -101,16 +101,16 @@ cdef class Variable:
         from nnabla.variable import Variable as PVariable
         cdef shared_ptr[CgVariable] v_sp = make_shared[CgVariable](varsp)
         var = PVariable()
-        (< Variable > var).var = v_sp
-        (< Variable > var).varp = v_sp.get()
+        ( < Variable > var).var = v_sp
+        ( < Variable > var).varp = v_sp.get()
         return var
 
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv):
         from nnabla.variable import Variable as PVariable
         var = PVariable()
-        (< Variable > var).var = cgv
-        (< Variable > var).varp = cgv.get()
+        ( < Variable > var).var = cgv
+        ( < Variable > var).varp = cgv.get()
         return var
 
     @staticmethod
@@ -373,7 +373,7 @@ cdef class Variable:
 
     @parent.setter
     def parent(self, func):
-        cdef CgFunctionPtr cg_func = ( < function.Function ?> func).fun
+        cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
@@ -425,18 +425,18 @@ cdef class Variable:
         elif np.isscalar(grad):
             arr = NdArray(self.shape)
             arr.data.fill(grad)
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         elif isinstance(grad, NdArray):
-            p = (< NdArray > grad).arr
+            p = ( < NdArray > grad).arr
         elif isinstance(grad, np.ndarray):
             arr = NdArray(grad.shape)
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         else:
             # Try to interpret as scalar value
             arr = NdArray()
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
 
         with nogil:
             self.varp.backward(p, clear_buffer)

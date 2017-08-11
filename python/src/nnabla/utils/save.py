@@ -270,7 +270,8 @@ def create_proto(contents, include_params=False):
     proto = nnabla_pb2.NNablaProtoBuf()
     if 'global_config' in contents:
         proto.global_config.MergeFrom(
-            _create_global_config(contents['global_config']['default_context']))
+            _create_global_config(contents['global_config']['default_context'])
+        )
     if 'training_config' in contents:
         proto.training_config.MergeFrom(
             _create_training_config(contents['training_config']['max_epoch'],
@@ -319,7 +320,8 @@ def create_proto(contents, include_params=False):
         proto_executors = []
         for e in contents['executors']:
             proto_executors.append(
-                _create_executor(e['name'], networks[e['network']], e['variables']))
+                _create_executor(e['name'], networks[e['network']],
+                                 e['variables']))
         proto.executor.extend(proto_executors)
 
     if include_params is True:
