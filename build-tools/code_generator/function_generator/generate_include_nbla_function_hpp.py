@@ -23,7 +23,7 @@ def generate(info, func_name, func_name_snakecase, template):
                                           t]['cpp_var'], n) for t, n in zip(arg_info['types'], arg_info['names'])])
     func_arg_variable_types = ', '.join(
         [func_name] + [utils.type_conv.type_from_proto[t]['cpp'] for t in arg_info['types']])
-    func_arg_initializers = ', '.join(['{0}_({0})'.format(n) for n in arg_info['names']])
+    func_arg_initializers = ', ' + ', '.join(['{0}_({0})'.format(n) for n in arg_info['names']])
     func_arg_variables = ', '.join(
         ['ctx_'] + ['{}_'.format(n) for n in arg_info['names']])
     func_args = ', '.join(['const Context &ctx'] + ['{} {}'.format(utils.type_conv.type_from_proto[
