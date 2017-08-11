@@ -22,7 +22,11 @@ import google.protobuf.text_format as text_format
 import numpy
 import os
 import re
+import shutil
+import tempfile
+import zipfile
 
+from nnabla import save_parameters
 from nnabla.logger import logger
 from nnabla.parameter import get_parameters
 from nnabla.utils import nnabla_pb2
@@ -41,7 +45,7 @@ def _add_variable(var, variables, params, prefix):
             count += 1
         variables[vname] = var
     else:
-        vname = variables.keys()[variables.values().index(var)]
+        vname = list(variables.keys())[list(variables.values()).index(var)]
 
     return vname
 
@@ -262,6 +266,74 @@ def _create_executor(name, network, input_names):
     return e
 
 
+def create_proto(contents, include_params=False):
+    proto = nnabla_pb2.NNablaProtoBuf()
+    if 'global_config' in contents:
+        proto.global_config.MergeFrom(
+            _create_global_config(contents['global_config']['default_context']))
+    if 'training_config' in contents:
+        proto.training_config.MergeFrom(
+            _create_training_config(contents['training_config']['max_epoch'],
+                                    contents['training_config'][
+                                        'iter_per_epoch'],
+                                    contents['training_config']['save_best']))
+    networks = {}
+    if 'networks' in contents:
+        proto_nets = []
+        for net in contents['networks']:
+            networks[net['name']] = _create_network(net)
+            proto_nets.append(networks[net['name']])
+        proto.network.extend(proto_nets)
+    datasets = {}
+    if 'datasets' in contents:
+        proto_datasets = []
+        for d in contents['datasets']:
+            if 'cache_dir' in d:
+                cache_dir = d['cache_dir']
+            else:
+                cache_dir = None
+            datasets[d['name']] = _create_dataset(d['name'],
+                                                  d['uri'],
+                                                  cache_dir,
+                                                  d['variables'],
+                                                  d['shuffle'],
+                                                  d['batch_size'],
+                                                  d['no_image_normalization'])
+            proto_datasets.append(datasets[d['name']])
+        proto.dataset.extend(proto_datasets)
+    if 'optimizers' in contents:
+        proto_optimizers = []
+        for o in contents['optimizers']:
+            proto_optimizers.append(_create_optimizer(o['name'], o['solver'],
+                                                      networks[o['network']],
+                                                      datasets[o['dataset']]))
+        proto.optimizer.extend(proto_optimizers)
+    if 'monitors' in contents:
+        proto_monitors = []
+        for m in contents['monitors']:
+            proto_monitors.append(_create_monitor(m['name'], m['monitor'],
+                                                  networks[m['network']],
+                                                  datasets[m['dataset']]))
+        proto.monitor.extend(proto_monitors)
+    if 'executors' in contents:
+        proto_executors = []
+        for e in contents['executors']:
+            proto_executors.append(
+                _create_executor(e['name'], networks[e['network']], e['variables']))
+        proto.executor.extend(proto_executors)
+
+    if include_params is True:
+        params = get_parameters(grad_only=False)
+        for variable_name, variable in params.items():
+            parameter = proto.parameter.add()
+            parameter.variable_name = variable_name
+            parameter.shape.dim.extend(variable.shape)
+            parameter.data.extend(numpy.array(variable.d).flatten().tolist())
+            parameter.need_grad = variable.need_grad
+
+    return proto
+
+
 def save(filename, contents, include_params=False):
     '''save
 
@@ -370,73 +442,25 @@ def save(filename, contents, include_params=False):
         contents (dict): Information to store.
         include_params (bool): Includes parameter into single file.
 '''
-    proto = nnabla_pb2.NNablaProtoBuf()
-    if 'global_config' in contents:
-        proto.global_config.MergeFrom(
-            _create_global_config(contents['global_config']['default_context']))
-    if 'training_config' in contents:
-        proto.training_config.MergeFrom(
-            _create_training_config(contents['training_config']['max_epoch'],
-                                    contents['training_config'][
-                                        'iter_per_epoch'],
-                                    contents['training_config']['save_best']))
-    networks = {}
-    if 'networks' in contents:
-        proto_nets = []
-        for net in contents['networks']:
-            networks[net['name']] = _create_network(net)
-            proto_nets.append(networks[net['name']])
-        proto.network.extend(proto_nets)
-    datasets = {}
-    if 'datasets' in contents:
-        proto_datasets = []
-        for d in contents['datasets']:
-            if 'cache_dir' in d:
-                cache_dir = d['cache_dir']
-            else:
-                cache_dir = None
-            datasets[d['name']] = _create_dataset(d['name'],
-                                                  d['uri'],
-                                                  cache_dir,
-                                                  d['variables'],
-                                                  d['shuffle'],
-                                                  d['batch_size'])
-            proto_datasets.append(datasets[d['name']])
-        proto.dataset.extend(proto_datasets)
-    if 'optimizers' in contents:
-        proto_optimizers = []
-        for o in contents['optimizers']:
-            proto_optimizers.append(_create_optimizer(o['name'], o['solver'],
-                                                      networks[o['network']],
-                                                      datasets[o['dataset']]))
-        proto.optimizer.extend(proto_optimizers)
-    if 'monitors' in contents:
-        proto_monitors = []
-        for m in contents['monitors']:
-            proto_monitors.append(_create_monitor(m['name'], m['monitor'],
-                                                  networks[m['network']],
-                                                  datasets[m['dataset']]))
-        proto.monitor.extend(proto_monitors)
-    if 'executors' in contents:
-        proto_executors = []
-        for e in contents['executors']:
-            proto_executors.append(
-                _create_executor(e['name'], networks[e['network']], e['variables']))
-        proto.executor.extend(proto_executors)
-
-    if include_params is True:
-        params = get_parameters(grad_only=False)
-        for variable_name, variable in params.items():
-            parameter = proto.parameter.add()
-            parameter.variable_name = variable_name
-            parameter.shape.dim.extend(variable.shape)
-            parameter.data.extend(numpy.array(variable.d).flatten().tolist())
-            parameter.need_grad = variable.need_grad
 
     _, ext = os.path.splitext(filename)
-    if ext == '.nntxt':
+    print(filename, ext)
+    if ext == '.nntxt' or ext == '.prototxt':
+        logger.info("Saveing {} as prototxt".format(filename))
+        proto = create_proto(contents, include_params)
         with open(filename, 'w') as file:
             text_format.PrintMessage(proto, file)
     elif ext == '.protobuf':
+        logger.info("Saveing {} as protobuf".format(filename))
+        proto = create_proto(contents, include_params)
         with open(filename, 'wb') as file:
             file.write(proto.SerializeToString())
+    elif ext == '.nnp':
+        logger.info("Saveing {} as nnp".format(filename))
+        tmpdir = tempfile.mkdtemp()
+        save('{}/network.nntxt'.format(tmpdir), contents, include_params=False)
+        save_parameters('{}/parameter.h5'.format(tmpdir))
+        with zipfile.ZipFile(filename, 'w') as nnp:
+            nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')
+            nnp.write('{}/parameter.h5'.format(tmpdir), 'parameter.h5')
+        shutil.rmtree(tmpdir)

@@ -123,21 +123,6 @@ def main():
     except:
         pass
 
-    # Search build tools
-    tooldir = None
-    for _tooldir in [os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dev', 'build-tools')),
-                     os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'build-tools'))]:
-        if os.path.exists(_tooldir):
-            tooldir = _tooldir
-            sys.path.append(os.path.join(tooldir, 'code_formatter'))
-            sys.path.append(os.path.join(tooldir, 'code_generator'))
-
-    # Code formatter
-    import auto_format_command
-    subparser = subparsers.add_parser('auto-format')
-    subparser.add_argument('base')
-    subparser.set_defaults(func=auto_format_command.command)
-
     args = parser.parse_args()
     args.func(args)
 
