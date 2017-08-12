@@ -32,17 +32,63 @@ from nnabla.parameter import get_parameters
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.save_function import _create_function_nntxt
 
+# ----------------------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------------------
 
-def _add_variable(var, variables, params, prefix):
+
+def _get_unique_function_name(function_type, functions):
+    '''Get a unique function name.
+
+    Args:
+        function_type(str): Name of Function. Ex) Convolution, Affine
+        functions(OrderedDict of (str, Function)
+
+    Returns: str
+        A unique function name
+    '''
+    function_name = function_name_base = function_type
+    count = 2
+    while function_name in functions:
+        function_name = '{}_{}'.format(function_name_base, count)
+        count += 1
+    return function_name
+
+
+def _get_unique_variable_name(vname, variables):
+    '''Get a unique variable name.
+
+    Args:
+        vname(str): A candidate name.
+        variable(OrderedDict of str and Variable)
+
+    Returns: str
+        A unique variable name
+    '''
+    count = 2
+    vname_base = vname
+    while vname in variables:
+        vname = '{}_{}'.format(vname_base, count)
+        count += 1
+    return vname
+
+
+def _get_variable_name_or_register(var, variables, names, params, prefix):
+    '''
+    Args:
+        var (~nnabla.Variable)
+        variables (OrderedDict)
+        names (dict): Force name table, Variable -> str
+        params (dict): NdArray -> str
+        prefix(str)
+    '''
     if var not in variables.values():
         vname = prefix
-        if var in params:
-            vname = params[var]
-        count = 2
-        vname_base = vname
-        while vname in variables:
-            vname = '{}_{}'.format(vname_base, count)
-            count += 1
+        if var.data in params:
+            vname = params[var.data]
+        elif var in names:
+            vname = names[var]
+        vname = _get_unique_variable_name(vname, variables)
         variables[vname] = var
     else:
         vname = list(variables.keys())[list(variables.values()).index(var)]
@@ -101,31 +147,45 @@ def _create_dataset(name, uri, cache_dir, variables, shuffle, batch_size):
     return d
 
 
+def _get_network_sink(outputs):
+    import nnabla.functions as F
+    outputs = [o for o in outputs.values()]
+    return F.sink(*outputs)
+
+
 def _create_network(net):
     n = nnabla_pb2.Network()
     n.name = net['name']
     n.batch_size = net['batch_size']
 
-    params = {v: k for k, v in get_parameters(grad_only=False).items()}
+    # List (dict: name -> Variable) of outputs.
+    outputs = net['outputs']
+    sink = _get_network_sink(outputs)
+
+    # Create force name table: Variable -> name.
+    names = {}
+    names.update(net['names'])
+    names.update(outputs)
+    # Reverse dict: Variable --> Name
+    names = {v: k for k, v in names.items()}
+
+    # Create table: NdArray -> str
+    # (Use Ndarray instead of Variable because parameter variable might be
+    # unlinked)
+    params = {v.data: k for k, v in get_parameters(grad_only=False).items()}
+
+    # ----------------------------------------------------------------------
+    # Parse graph to get variables and functions
+    # ----------------------------------------------------------------------
     variables = OrderedDict()
     functions = OrderedDict()
 
-    def _network_recursive(func, seen):
-        if func is None:
-            return
-        seen.add(func)
-        for i in func.inputs:
-            if i.parent in seen:
-                continue
-            _network_recursive(i.parent, seen)
-
+    def collect_info(func):
         # Collect information.
         function_type = func.info.type_name
-        function_name = function_name_base = function_type
-        count = 2
-        while function_name in functions:
-            function_name = '{}_{}'.format(function_name_base, count)
-            count += 1
+        if function_type == 'Sink':
+            return
+        function_name = _get_unique_function_name(function_type, functions)
         functions[function_name] = {
             'type': function_type,
             'args': func.info.args,
@@ -133,28 +193,38 @@ def _create_network(net):
             'outputs': []
         }
         for i in func.inputs:
-            vname = _add_variable(i, variables, params,
-                                  '{}_Input'.format(function_name))
+            base_name = '{}_Input'.format(function_name)
+            vname = _get_variable_name_or_register(
+                i, variables, names, params, base_name)
             functions[function_name]['inputs'].append(vname)
         for o in func.outputs:
-            vname = _add_variable(o, variables, params,
-                                  '{}_Output'.format(function_name))
+            base_name = '{}_Output'.format(function_name)
+            vname = _get_variable_name_or_register(
+                o, variables, names, params, base_name)
             functions[function_name]['outputs'].append(vname)
 
-    seen = set()
-    _network_recursive(net['variable'].parent, seen)
+    sink.visit(collect_info)
 
+    # ----------------------------------------------------------------------
+    # Convert variables and functions into proto
+    # ----------------------------------------------------------------------
     for name, variable in variables.items():
         v = n.variable.add()
         v.name = name
         shape = list(numpy.array(variable.d).shape)
-        if variable in params:
+        if variable.data in params:
             v.type = 'Parameter'
         else:
             v.type = 'Buffer'
+            # TODO: The first dimension is always considered as batch size.
+            # No problem?
             if len(shape) > 0:
                 shape[0] = -1
         v.shape.dim.extend(shape)
+        # ----------------------------------------------------------------------
+        # Add info to variable
+        # ----------------------------------------------------------------------
+        # TODO: Only required for Parameter variables?
         if variable.info:
             i = v.initializer
             i.type = variable.info.initializer.__class__.__name__.replace(
@@ -243,27 +313,39 @@ def _create_monitor(name, monitor, network, dataset):
     return m
 
 
-def _create_executor(name, network, input_names):
+def _create_executor(name, network, data, output, remap=None):
+    '''
+    '''
+    if remap is None:
+        remap = {}
     e = nnabla_pb2.Executor()
     e.name = name
     e.network_name = network.name
-    inputs, outputs, params = _get_net_variables(network)
-    count = 0
-    for inp in inputs:
-        d = e.data_variable.add()
-        d.variable_name = inp
-        d.data_name = input_names[count]
-        count += 1
-    for out in outputs:
-        d = e.output_variable.add()
-        d.variable_name = out
-        d.data_name = input_names[count]
-        count += 1
+    _, _, params = _get_net_variables(network)
+    var_dict = {v.name: v for v in network.variable}
+    for vname in data:
+        try:
+            _ = var_dict[vname]
+        except KeyError:
+            raise KeyError("{} not found in {}".format(vname, network.name))
+        dv = e.data_variable.add()
+        dv.variable_name = vname
+        dv.data_name = remap.get(vname, vname)
+    for vname in output:
+        try:
+            _ = var_dict[vname]
+        except KeyError:
+            raise KeyError("{} not found in {}".format(vname, network.name))
+        ov = e.output_variable.add()
+        ov.variable_name = vname
+        ov.data_name = remap.get(vname, vname)
     for param in params:
         d = e.parameter_variable.add()
         d.variable_name = param
-
     return e
+# ----------------------------------------------------------------------
+# Helper functions (END)
+# ----------------------------------------------------------------------
 
 
 def create_proto(contents, include_params=False):
@@ -321,7 +403,7 @@ def create_proto(contents, include_params=False):
         for e in contents['executors']:
             proto_executors.append(
                 _create_executor(e['name'], networks[e['network']],
-                                 e['variables']))
+                                 e['data'], e['output'], e.get('remp', {})))
         proto.executor.extend(proto_executors)
 
     if include_params is True:
@@ -337,114 +419,21 @@ def create_proto(contents, include_params=False):
 
 
 def save(filename, contents, include_params=False):
-    '''save
-
-    Save network information into protocol buffer file.
-
-    This function store information in 'contents' arg into filename.
-
-    Filename
-
-    If extension of the filename is '.nntxt' contents store with
-    readable text format, or if extension of the filename is '.protobuf',
-    contents store with binary-encoded text.
-
-    Format of contents.
-
-    Root of contents
-
-    ================ ==================
-    Key              Type
-    ================ ==================
-    global_config    dict
-    training_config  dict
-    networks         list of networks
-    datasets         list of datasets
-    optimizers       list of optimizes
-    monitors         list of monitors
-    executors        list of executors
-    ================ ==================
-
-
-    global_config
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    default_context  Context            Instance of nnabla.Context
-    ================ ================== =================================
-
-    training_config
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    max_epoch        int                Training limit.
-    iter_per_epoch   int                Number of iteration in epoch.
-    save_best        bool               Save parameter if result is best.
-    ================ ================== =================================
-
-    network
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    name             str                Name of the network
-    batch_size       int                Batch size
-    variable         Variable           Output instance of nnabla.variable.
-    ================ ================== =================================
-
-    dataset
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    name             str                Name of the dataset
-    uri              str                Data location.
-    cache_dir        str                Optional: Cache file location.
-    variables        tuple of str       Variable names in this dataset.
-    shuffle          bool               Is shuffled or not.
-    batch_size       int                Batch size
-    ================ ================== =================================
-
-    optimizer
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    name             str                Name of the optimizer
-    solver           Solver             Instance of nnabla.Solver
-    network          str                Name of network to optimize.
-    dataset          str                Name of dataset to use.
-    ================ ================== =================================
-
-    monitor
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    name             str                Name of the monitor.
-    monitor          Monitor            Instance of nnabla.Monitor
-    network          str                Name of network to monitor.
-    dataset          str                Name of dataset to use.
-    ================ ================== =================================
-
-    executor
-
-    ================ ================== =================================
-    Key              Type               Description
-    ================ ================== =================================
-    name             str                Name of the executor.
-    network          str                Name of network to execute.
-    variables        tuple of str       Input variable names.
-    ================ ================== =================================
+    '''Save network definition, inference/training execution
+    configurations etc.
 
     Args:
-        filename (str): Filename to store infomation.
+        filename (str): Filename to store infomation. The file
+            extension is used to determine the saving file format.
+            ``.nnp``: (Recomended) Creating a zip archive with nntxt (network
+            definition etc.) and h5 (parameters).
+            ``.nntxt``: Protobuf in text format.
+            ``.protobuf'': Protobuf in binary format (unsafe in terms of
+             backward compatibility).
         contents (dict): Information to store.
-        include_params (bool): Includes parameter into single file.
-'''
-
+        include_params (bool): Includes parameter into single file. This is
+            ignored when the extension of filename is nnp.
+    '''
     _, ext = os.path.splitext(filename)
     print(filename, ext)
     if ext == '.nntxt' or ext == '.prototxt':
