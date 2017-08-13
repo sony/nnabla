@@ -149,7 +149,10 @@ cdef class Variable:
         pass
 
     def __richcmp__(self, other, int op):
-        from nnabla.variable import Variable as PVariable
+        '''Overrides comparison operators ``==`` and ``!=``.
+
+        Compare the addresses of their C++ objects.
+        '''
         if op == 2:
             try:
                 return (< Variable > self).varp == ( < Variable ?> other).varp
@@ -160,6 +163,8 @@ cdef class Variable:
         return False
 
     def __hash__(self):
+        '''Returns hash of the integer address of holding C++ object.
+        '''
         return hash(< intptr_t > (( < Variable > self).varp))
 
     @property
