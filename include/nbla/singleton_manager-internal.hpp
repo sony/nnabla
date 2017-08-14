@@ -20,7 +20,11 @@
 #include <typeinfo>
 
 namespace nbla {
+
 template <typename SINGLETON> SINGLETON *SingletonManager::get() {
+  static std::mutex mtx_;
+  std::lock_guard<std::mutex> lock(mtx_);
+
   static SINGLETON *r = nullptr;
   if (r)
     return r;
@@ -29,6 +33,7 @@ template <typename SINGLETON> SINGLETON *SingletonManager::get() {
   // std::cout << "Creating a singleton \"" << typeid(SINGLETON).name() << "\""
   //           << std::endl;
   r = new SINGLETON{};
+
   auto deleter = []() -> void {
     // TODO: Enable debug print
     // std::cout << "Deleting a singleton \"" << typeid(SINGLETON).name() <<

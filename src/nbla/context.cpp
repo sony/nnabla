@@ -19,6 +19,7 @@ Context::Context(const string &backend, const string &array_class,
                  const string &device_id, const string &compute_backend)
     : backend(backend), array_class(array_class), device_id(device_id),
       compute_backend(compute_backend) {}
+
 Context &Context::set_backend(const string &backend) {
   this->backend = backend;
   return *this;
