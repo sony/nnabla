@@ -475,3 +475,53 @@ cdef class Variable:
     @persistent.setter
     def persistent(self, cpp_bool b):
         self.varp.set_persistent(b)
+
+    def visit(self, f):
+        '''Visit functions recursively in forward order.
+
+        Args:
+            f (function): Function object which takes
+                :obj:`nnabla._function.Function` object as an argument.
+
+        Returns: None
+        '''
+        def _recursive_visit_functions(func, seen):
+            if func is None:
+                return
+            seen.add(func)
+            for i in func.inputs:
+                if i.parent in seen:
+                    continue
+                _recursive_visit_functions(i.parent, seen)
+            f(func)
+        seen = set()
+        _recursive_visit_functions(self.parent, seen)
+
+    def visit_check(self, f):
+        '''Visit functions recursively in forward order.
+
+        Note:
+            If any of evaluation of the function object returns True,
+            the visit propagation will stop immediately,
+            and will return True.
+
+        Args:
+            f (function): Function object which takes
+                :obj:`nnabla._function.Function` object as an argument.
+
+        Returns: bool
+            Returns True if any of the function object call returns True.
+        '''
+        def _recursive_visit_functions(func, seen):
+            if func is None:
+                return False
+            seen.add(func)
+            for i in func.inputs:
+                if i.parent in seen:
+                    continue
+                if _recursive_visit_functions(i.parent, seen):
+                    return True
+            return f(func)
+
+        seen = set()
+        return _recursive_visit_functions(self.parent, seen)
