@@ -31,6 +31,8 @@ def main():
         # Train
         subparser = subparsers.add_parser('train')
         subparser.add_argument(
+            '-r', '--resume', help='resume from last saved parameter.', action='store_true')
+        subparser.add_argument(
             '-c', '--config', help='path to nntxt', required=True)
         subparser.add_argument(
             '-p', '--param', help='path to parameter file', required=False)

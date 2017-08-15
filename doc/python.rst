@@ -9,5 +9,6 @@ The Python API built on top of our C++11 core maximizes the flexibility of the d
     python/installation.rst
     python/tutorial.rst
     python/examples.rst
+    python/command_line_interface.rst
     python/api.rst
 
