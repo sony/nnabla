@@ -24,35 +24,61 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "protobuf_internal.hpp"
+#include "nnp_impl.hpp"
 
 #include <archive.h>
 #include <archive_entry.h>
 
-namespace nbla_utils {
-namespace NNP {
-nnp::nnp(nbla::Context &ctx) {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-  _proto = new _proto_internal(ctx);
+namespace nbla {
+namespace utils {
+namespace nnp {
+
+// ----------------------------------------------------------------------
+// Network
+// ----------------------------------------------------------------------
+Network::Network(NetworkImpl *impl)
+    : impl_(std::unique_ptr<NetworkImpl>(impl)) {}
+
+void Network::replace_variable(const string &name, CgVariablePtr variable) {
+  impl_->replace_variable(name, variable);
 }
 
-nnp::~nnp() { delete _proto; }
+CgVariablePtr Network::get_variable(const string &name) {
+  return impl_->get_variable(name);
+}
 
-bool nnp::add(std::string filename) {
+string Network::name() const { return impl_->name(); }
+
+void Network::set_batch_size(int batch_size) {
+  impl_->set_batch_size(batch_size);
+}
+
+int Network::batch_size() { return impl_->batch_size(); }
+
+// ----------------------------------------------------------------------
+// Nnp
+// ----------------------------------------------------------------------
+Nnp::Nnp(const nbla::Context &ctx) : impl_(new NnpImpl(ctx)) {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+}
+
+Nnp::~Nnp() {}
+
+bool Nnp::add(const string &filename) {
   int ep = filename.find_last_of(".");
   std::string extname = filename.substr(ep, filename.size() - ep);
 
   if (extname == ".prototxt" || extname == ".nntxt") {
-    return _proto->add_prototxt(filename);
+    return impl_->add_prototxt(filename);
   } else if (extname == ".protobuf") {
-    return _proto->add_protobuf(filename);
+    return impl_->add_protobuf(filename);
   } else if (extname == ".h5") {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
     std::vector<char> buffer(size);
     if (file.read(buffer.data(), size)) {
-      return _proto->add_hdf5(buffer.data(), size);
+      return impl_->add_hdf5(buffer.data(), size);
     }
   } else if (extname == ".nnp") {
     struct archive *a = archive_read_new();
@@ -77,11 +103,11 @@ bool nnp::add(std::string filename) {
       std::string ext = entryname.substr(ep, entryname.size() - ep);
 
       if (ext == ".prototxt" || ext == ".nntxt") {
-        _proto->add_prototxt(buffer, size);
+        impl_->add_prototxt(buffer, size);
       } else if (ext == ".protobuf") {
-        _proto->add_protobuf(buffer, size);
+        impl_->add_protobuf(buffer, size);
       } else if (ext == ".h5") {
-        _proto->add_hdf5(buffer, size);
+        impl_->add_hdf5(buffer, size);
       }
       free(buffer);
     }
@@ -94,23 +120,9 @@ bool nnp::add(std::string filename) {
   return false;
 }
 
-void nnp::set_batch_size(int batch_size) { _proto->_batch_size = batch_size; }
-
-int nnp::get_batch_size() { return _proto->_batch_size; }
-
-int nnp::num_of_executors() { return _proto->num_of_executors(); }
-
-std::vector<std::string> nnp::get_executor_input_names(int index) {
-  return _proto->get_executor_input_names(index);
+shared_ptr<Network> Nnp::get_network(const string &name) {
+  return impl_->get_network(name);
 }
-
-std::vector<nbla::CgVariablePtr> nnp::get_executor_input_variables(int index) {
-  return _proto->get_executor_input_variables(index);
-}
-
-std::vector<nbla::CgVariablePtr>
-nnp::get_executor(int index, std::vector<nbla::CgVariablePtr> inputs) {
-  return _proto->get_executor(index, inputs);
 }
 }
 }

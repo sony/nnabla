@@ -3,8 +3,8 @@ include_directories(${CMAKE_BINARY_DIR}/libraries/include)
 add_library(nbla_utils SHARED 
   nnp.cpp
   nnabla.pb.cc
-  protobuf_internal.cpp
-  protobuf_internal_create_function.cpp
+  nnp_impl.cpp
+  nnp_impl_create_function.cpp
   )
 
 if (WIN32)

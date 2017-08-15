@@ -12,49 +12,75 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H_NBLA_UTILS_HPP_170720113455_
-#define H_NBLA_UTILS_HPP_170720113455_
+#ifndef NBLA_UTILS_NNP_HPP_
+#define NBLA_UTILS_NNP_HPP_
 
 #include <nbla/computation_graph/variable.hpp>
 #include <string>
 
-namespace nbla_utils {
-namespace NNP {
+namespace nbla {
+namespace utils {
+namespace nnp {
 
-///
-/// Internal class for process protobuf data.
-///
-class _proto_internal;
+// Forward dec.
+class NnpImpl;
+class NetworkImpl;
 
-///
-/// nnp
-///
-/// Load network and parameter from supported format to
-/// std::vector<nbla::CgVariablePtr>.
-///
-class nnp {
-protected:
-  ///
-  /// Internal information placeholder.
-  ///
-  _proto_internal *_proto;
+class Network {
+  friend NnpImpl;
+  std::unique_ptr<NetworkImpl> impl_;
+  Network(NetworkImpl *impl);
 
 public:
-  nnp(nbla::Context &ctx);
-  ~nnp();
+  /** Network name.
+   */
+  string name() const;
 
+  /** Set batch size.
+  */
   void set_batch_size(int batch_size);
-  int get_batch_size();
 
-  bool add(std::string filename);
+  /** Get batch size.
+  */
+  int batch_size();
 
-  int num_of_executors();
-  std::vector<std::string> get_executor_input_names(int index);
-  std::vector<nbla::CgVariablePtr> get_executor_input_variables(int index);
-  std::vector<nbla::CgVariablePtr>
-  get_executor(int index, std::vector<nbla::CgVariablePtr> inputs);
-};
-};
+  /** Replace an arbitrary variable with name in the network with a given
+      variable.
+
+      The predecessors of the variable in the networks are dicarded, and
+      replaced with the predecessors of the given variable.
+   */
+  void replace_variable(const string &name, CgVariablePtr variable);
+
+  /** Get a variable by name.
+
+      This is usually used to set or get data inside the variable.
+
+      If requires_build_ is true, build() is called before returns the
+      variable.
+   */
+  CgVariablePtr get_variable(const string &name);
 };
 
-#endif // H_NBLA_UTILS_HPP_170720113455_
+class Nnp {
+  std::unique_ptr<NnpImpl> impl_;
+
+public:
+  // ctor
+  Nnp(const nbla::Context &ctx);
+  // dtor
+  ~Nnp();
+
+  /** Add nnp|nntxt|h5 file
+   */
+  bool add(const string &filename);
+
+  /** Get NetworkBuilder object associated with a network with specified name.
+   */
+  shared_ptr<Network> get_network(const string &name);
+};
+}
+}
+}
+
+#endif // NBLA_UTILS_NNP_HPP_

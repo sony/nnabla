@@ -57,9 +57,9 @@ def generate(info, template):
                     args.append(av)
                     arg_index += 1
 
-                creator_lines.append('    nbla::FunctionPtr fp = create_{}(_ctx, {});'.format(function, ' ,'.join(args)))
+                creator_lines.append('    nbla::FunctionPtr fp = create_{}(ctx_, {});'.format(function, ' ,'.join(args)))
             else:
-                creator_lines.append('    nbla::FunctionPtr fp = create_{}(_ctx);'.format(function))
+                creator_lines.append('    nbla::FunctionPtr fp = create_{}(ctx_);'.format(function))
             creator_lines.append('    return std::make_shared<nbla::CgFunction>(fp);')
 
             creator_lines.append('}')

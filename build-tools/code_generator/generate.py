@@ -32,7 +32,7 @@ generation_list = {
             'python/src/nnabla/utils/save_function.py',
             'src/nbla/init.cpp',
             'src/nbla/proto/nnabla.proto',
-            'src/nbla_utils/protobuf_internal_create_function.cpp']
+            'src/nbla_utils/nnp_impl_create_function.cpp']
 }
 
 function_generation_list = {
