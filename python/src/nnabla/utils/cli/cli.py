@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import argparse
-import os
-import sys
 
 
 def main():
@@ -118,20 +116,17 @@ def main():
     except:
         pass
 
-    # Search build tools
-    tooldir = None
-    for _tooldir in [os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dev', 'build-tools')),
-                     os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'build-tools'))]:
-        if os.path.exists(_tooldir):
-            tooldir = _tooldir
-            sys.path.append(os.path.join(tooldir, 'code_formatter'))
-            sys.path.append(os.path.join(tooldir, 'code_generator'))
-
-    # Code formatter
-    import auto_format_command
-    subparser = subparsers.add_parser('auto-format')
-    subparser.add_argument('base')
-    subparser.set_defaults(func=auto_format_command.command)
+    # Uploader
+    from nnabla.utils.cli.upload import upload_command
+    subparser = subparsers.add_parser('upload')
+    subparser.add_argument(
+        '-d', '--dest', help='destination path', required=True)
+    subparser.add_argument(
+        '-s', '--size', help='split size in GB', required=False, default=10, type=int)
+    subparser.add_argument(
+        '-t', '--tmp', help='specify temporary directory')
+    subparser.add_argument('source')
+    subparser.set_defaults(func=upload_command)
 
     args = parser.parse_args()
     args.func(args)
