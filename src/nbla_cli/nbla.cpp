@@ -47,7 +47,7 @@ static void print_usage_and_exit(const char *name) {
   exit(-1);
 }
 
-std::vector<std::string> add_files_to_nnp(nbla_utils::NNP::nnp &nnp,
+std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
                                           std::vector<std::string> files) {
   std::vector<std::string> input_files;
 
@@ -69,69 +69,73 @@ std::vector<std::string> add_files_to_nnp(nbla_utils::NNP::nnp &nnp,
 bool infer(int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
-  p.add<int>("executor", 'e', "Executor", false, 0);
+  p.add<std::string>("executor", 'e', "Executor name (required)", true,
+                     std::string());
   p.add<int>("help", 0, "Print help", false);
   if (!p.parse(argc, argv) || p.exist("help")) {
     std::cout << p.error_full() << p.usage();
     return false;
   }
 
-  nbla::Context ctx; // ("cpu", "CpuArray", "0", "default");
-  nbla_utils::NNP::nnp nnp(ctx);
+  nbla::Context ctx{"cpu", "CpuCachedArray", "0", "default"};
+  nbla::utils::nnp::Nnp nnp(ctx);
   std::vector<std::string> input_files = add_files_to_nnp(nnp, p.rest());
 
-  nnp.set_batch_size(p.get<int>("batch_size"));
-  int n = nnp.num_of_executors();
-  int exec_num = p.get<int>("executor");
-  if (n > exec_num) {
-    // Get variables for input values.
-    std::vector<std::string> names = nnp.get_executor_input_names(exec_num);
-    std::vector<nbla::CgVariablePtr> inputs =
-        nnp.get_executor_input_variables(exec_num);
-    for (int i = 0; i < inputs.size(); i++) {
-      std::cout << "Input" << i << ": " << names[i] << std::endl;
-      auto var = inputs[i]->variable();
+  int batch_size = p.get<int>("batch_size");
+  std::string exec_name = p.get<std::string>("executor");
+  std::shared_ptr<nbla::utils::nnp::Executor> exec =
+      nnp.get_executor(exec_name);
+  exec->set_batch_size(batch_size);
 
-      std::string ifile = input_files[i];
-      std::ifstream file(ifile.c_str(), std::ios::binary | std::ios::ate);
-      std::streamsize size = file.tellg();
-      file.seekg(0, std::ios::beg);
+  // Get variables for input values.
+  std::vector<nbla::utils::nnp::Executor::DataVariable> inputs =
+      exec->get_data_variables();
+  for (int i = 0; i < inputs.size(); i++) {
+    std::cout << "Input" << i << ": " << inputs[i].data_name << std::endl;
+    auto var = inputs[i].variable->variable();
 
-      float *data = var->cast_data_and_get_pointer<float>(ctx);
-      if ((int)size == ((int)(var.get()->size()) * sizeof(float))) {
-        std::vector<float> buffer(size / sizeof(float));
-        if (file.read((char *)buffer.data(), size)) {
-          std::cout << "  Read data from [" << ifile << "]" << std::endl;
-          for (int j = 0; j < var.get()->size(); ++j) {
-            data[j] = buffer[j];
-          }
+    std::string ifile = input_files[i];
+    std::ifstream file(ifile.c_str(), std::ios::binary | std::ios::ate);
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    // TODO: other types
+    float *data = var->cast_data_and_get_pointer<float>(ctx);
+    if ((int)size == ((int)(var->size()) * sizeof(float))) {
+      std::vector<float> buffer(size / sizeof(float));
+      if (file.read((char *)buffer.data(), size)) {
+        std::cout << "  Read data from [" << ifile << "]" << std::endl;
+        for (int j = 0; j < var->size(); ++j) {
+          data[j] = buffer[j];
         }
-      } else {
-        std::cout << " Data size mismatch on data " << i
-                  << ". expected size is "
-                  << (int)(var.get()->size()) * sizeof(float)
-                  << " but data file [" << ifile << "] size is " << size << "."
-                  << std::endl;
-        return false;
       }
+    } else {
+      std::cout << " Data size mismatch on data " << i << ". expected size is "
+                << (int)(var->size()) * sizeof(float) << " but data file ["
+                << ifile << "] size is " << size << "." << std::endl;
+      return false;
     }
+  }
 
-    // Get computation graph for inference.
-    std::vector<nbla::CgVariablePtr> e = nnp.get_executor(exec_num, inputs);
-    e[0]->forward(true,   // clear_buffer
-                  false); // clear_no_need_grad
+  // Execute network.
+  exec->execute();
 
-    auto var = e[0]->variable();
+  std::vector<nbla::utils::nnp::Executor::OutputVariable> outputs =
+      exec->get_output_variables();
+  for (auto it = outputs.begin(); it != outputs.end(); it++) {
+    if (outputs.size() > 1) {
+      std::cout << "Output: " << it->data_name << std::endl;
+    }
+    auto var = it->variable->variable();
     float *data = var->cast_data_and_get_pointer<float>(ctx);
     for (int i = 0; i < var.get()->size(); ++i) {
       printf("%f,", data[i]);
     }
     printf("\n");
   }
-
   return true;
 }
 
+#if 0
 bool dump(int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
@@ -188,6 +192,7 @@ bool dump(int argc, char *argv[]) {
 
   return true;
 }
+#endif
 
 int main(int argc, char *argv[]) {
   const char *command_name = argv[0];
@@ -201,8 +206,10 @@ int main(int argc, char *argv[]) {
 
   if (command == "infer") {
     infer(argc, argv);
+#if 0
   } else if (command == "dump") {
     dump(argc, argv);
+#endif
   } else {
     print_usage_and_exit(command_name);
   }
