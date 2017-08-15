@@ -18,6 +18,7 @@
 /python/src/nnabla/_nd_array.cpp
 /python/src/nnabla/_variable.cpp
 /python/src/nnabla/_version.py
+/python/src/nnabla/clibtest
 /python/src/nnabla/communicator.cpp
 /python/src/nnabla/cpp_graph_example
 /python/src/nnabla/function.cpp
