@@ -56,6 +56,25 @@ void Network::set_batch_size(int batch_size) {
 int Network::batch_size() { return impl_->batch_size(); }
 
 // ----------------------------------------------------------------------
+// Executor
+// ----------------------------------------------------------------------
+Executor::Executor(ExecutorImpl *impl)
+    : impl_(std::unique_ptr<ExecutorImpl>(impl)) {}
+string Executor::name() const { return impl_->name(); }
+string Executor::network_name() const { return impl_->network_name(); }
+void Executor::set_batch_size(int batch_size) {
+  impl_->set_batch_size(batch_size);
+}
+int Executor::batch_size() const { return impl_->batch_size(); }
+vector<Executor::DataVariable> Executor::get_data_variables() {
+  return impl_->get_data_variables();
+}
+vector<Executor::OutputVariable> Executor::get_output_variables() {
+  return impl_->get_output_variables();
+}
+shared_ptr<Network> Executor::get_network() { return impl_->get_network(); }
+void Executor::execute() { impl_->execute(); }
+// ----------------------------------------------------------------------
 // Nnp
 // ----------------------------------------------------------------------
 Nnp::Nnp(const nbla::Context &ctx) : impl_(new NnpImpl(ctx)) {
@@ -122,6 +141,9 @@ bool Nnp::add(const string &filename) {
 
 shared_ptr<Network> Nnp::get_network(const string &name) {
   return impl_->get_network(name);
+}
+shared_ptr<Executor> Nnp::get_executor(const string &name) {
+  return impl_->get_executor(name);
 }
 }
 }

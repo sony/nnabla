@@ -25,7 +25,13 @@ namespace nnp {
 // Forward dec.
 class NnpImpl;
 class NetworkImpl;
+class ExecutorImpl;
 
+// ----------------------------------------------------------------------
+// Network
+// ----------------------------------------------------------------------
+/**
+ */
 class Network {
   friend NnpImpl;
   std::unique_ptr<NetworkImpl> impl_;
@@ -62,6 +68,70 @@ public:
   CgVariablePtr get_variable(const string &name);
 };
 
+// ----------------------------------------------------------------------
+// Executor
+// ----------------------------------------------------------------------
+/**
+ */
+class Executor {
+  friend NnpImpl;
+  std::unique_ptr<ExecutorImpl> impl_;
+  Executor(ExecutorImpl *impl);
+
+public:
+  /**
+   */
+  struct DataVariable {
+    const string variable_name;
+    const string data_name;
+    const CgVariablePtr variable;
+  };
+
+  /**
+   */
+  struct OutputVariable {
+    const string variable_name;
+    const string type;
+    const string data_name;
+    const CgVariablePtr variable;
+  };
+
+  /** Executor name.
+   */
+  string name() const;
+
+  /** Network name.
+   */
+  string network_name() const;
+
+  /** Set batch size.
+  */
+  void set_batch_size(int batch_size);
+
+  /** Get batch size.
+  */
+  int batch_size() const;
+
+  /**
+   */
+  vector<DataVariable> get_data_variables();
+
+  /**
+   */
+  vector<OutputVariable> get_output_variables();
+
+  /**
+   */
+  shared_ptr<Network> get_network();
+
+  /**
+   */
+  void execute();
+};
+
+// ----------------------------------------------------------------------
+// Nnp
+// ----------------------------------------------------------------------
 class Nnp {
   std::unique_ptr<NnpImpl> impl_;
 
@@ -75,9 +145,13 @@ public:
    */
   bool add(const string &filename);
 
-  /** Get NetworkBuilder object associated with a network with specified name.
+  /** Get Network object associated with a network with specified name.
    */
   shared_ptr<Network> get_network(const string &name);
+
+  /** Get Executor object associated with a network with specified name.
+   */
+  shared_ptr<Executor> get_executor(const string &name);
 };
 }
 }

@@ -52,7 +52,7 @@ class NnpImpl;
 // ----------------------------------------------------------------------
 // NetworkImpl
 // ----------------------------------------------------------------------
-/** Implementation of NnpNetwrok.
+/** Implementation of Netwrok.
  */
 class NetworkImpl {
   friend class NnpImpl;
@@ -99,6 +99,41 @@ public:
 };
 
 // ----------------------------------------------------------------------
+// ExecutorImpl
+// ----------------------------------------------------------------------
+/** Implementation of Executor
+ */
+class ExecutorImpl {
+  friend class NnpImpl;
+
+private:
+  // Executor proto
+  const ::Executor executor_proto_;
+
+  // Network
+  shared_ptr<Network> network_;
+
+  // Sink variable to execute forward/backard
+  CgVariablePtr sink_{nullptr};
+
+  // Get sink output
+  void update_sink();
+
+  // ctor
+  ExecutorImpl(const ::Executor &executor, shared_ptr<Network> network);
+
+public:
+  string name() const;
+  string network_name() const;
+  void set_batch_size(int batch_size);
+  int batch_size() const;
+  vector<Executor::DataVariable> get_data_variables();
+  vector<Executor::OutputVariable> get_output_variables();
+  shared_ptr<Network> get_network();
+  void execute();
+};
+
+// ----------------------------------------------------------------------
 // NnpImpl
 // ----------------------------------------------------------------------
 
@@ -130,6 +165,7 @@ public:
   bool add_protobuf(char *buffer, int size);
   bool add_hdf5(char *buffer, int size);
   shared_ptr<Network> get_network(const string &name);
+  shared_ptr<Executor> get_executor(const string &name);
 };
 }
 }

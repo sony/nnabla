@@ -17,6 +17,7 @@
 
 #include <fstream>
 #include <map>
+#include <nbla/function/sink.hpp>
 #include <nbla/logger.hpp>
 
 namespace nbla {
@@ -129,6 +130,76 @@ int NetworkImpl::batch_size() {
   assert(network_proto_.batch_size() > 0);
   return network_proto_.batch_size();
 }
+// ----------------------------------------------------------------------
+// ExecutorImpl
+// ----------------------------------------------------------------------
+ExecutorImpl::ExecutorImpl(const ::Executor &executor,
+                           shared_ptr<Network> network)
+    : executor_proto_(executor), network_(network) {}
+
+void ExecutorImpl::update_sink() {
+  auto outputs = get_output_variables();
+  if (outputs.size() == 1) {
+    sink_ = outputs[0].variable;
+    return;
+  }
+  vector<CgVariablePtr> inputs;
+  for (auto it = outputs.begin(); it != outputs.end(); it++) {
+    inputs.push_back(it->variable);
+  }
+  auto f = make_shared<CgFunction>(create_Sink(nbla::Context(), true));
+  sink_ = nbla::connect(f, inputs, 1)[0];
+}
+
+string ExecutorImpl::name() const { return executor_proto_.name(); }
+
+string ExecutorImpl::network_name() const {
+  return executor_proto_.network_name();
+}
+
+void ExecutorImpl::set_batch_size(int batch_size) {
+  if (batch_size == network_->batch_size()) {
+    return;
+  }
+  network_->set_batch_size(batch_size);
+  sink_ = nullptr;
+}
+
+int ExecutorImpl::batch_size() const { return network_->batch_size(); }
+
+vector<Executor::DataVariable> ExecutorImpl::get_data_variables() {
+  vector<Executor::DataVariable> ret;
+  for (auto it = executor_proto_.data_variable().begin();
+       it != executor_proto_.data_variable().end(); it++) {
+    Executor::DataVariable v{it->variable_name(), it->data_name(),
+                             network_->get_variable(it->variable_name())};
+    ret.push_back(v);
+  }
+  return ret;
+}
+
+vector<Executor::OutputVariable> ExecutorImpl::get_output_variables() {
+  vector<Executor::OutputVariable> ret;
+  for (auto it = executor_proto_.output_variable().begin();
+       it != executor_proto_.output_variable().end(); it++) {
+    Executor::OutputVariable v{it->variable_name(), it->type(), it->data_name(),
+                               network_->get_variable(it->variable_name())};
+    ret.push_back(v);
+  }
+  NBLA_CHECK(ret.size() > 0, error_code::value,
+             "Executor `%s`'s output is empty.", name().c_str());
+  return ret;
+}
+
+shared_ptr<Network> ExecutorImpl::get_network() { return network_; }
+
+void ExecutorImpl::execute() {
+  if (sink_ == nullptr) {
+    update_sink();
+  }
+  sink_->forward(true, false);
+}
+
 // ----------------------------------------------------------------------
 // NnpImpl
 // ----------------------------------------------------------------------
@@ -379,6 +450,17 @@ shared_ptr<Network> NnpImpl::get_network(const string &name) {
   }
   return shared_ptr<Network>(
       new Network(new NetworkImpl(ctx_, network, parameters)));
+}
+shared_ptr<Executor> NnpImpl::get_executor(const string &name) {
+  for (auto it = proto_->executor().begin(); it != proto_->executor().end();
+       it++) {
+    if (it->name() != name) {
+      continue;
+    }
+    return shared_ptr<Executor>(
+        new Executor(new ExecutorImpl(*it, get_network(it->network_name()))));
+  }
+  NBLA_ERROR(error_code::value, "Executor `%s` not found", name.c_str());
 }
 }
 }
