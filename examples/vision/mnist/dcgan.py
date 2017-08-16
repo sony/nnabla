@@ -194,31 +194,12 @@ def train(args):
         monitor_loss_dis.add(i, loss_dis.d.copy())
         monitor_time.add(i)
 
-    nnp_generator = os.path.join(
-        args.model_save_path, 'generator_%06d.nnp' % args.max_iter)
-    runtime_contents = {
-        'networks': [
-            {'name': 'Generator',
-             'batch_size': args.batch_size,
-             'variable': fake}],
-        'executors': [
-            {'name': 'Runtime',
-             'network': 'Generator',
-             'variables': ['z', 'x']}]}
-    save.save(nnp_generator, runtime_contents)
-
-    nnp_discriminator = os.path.join(
-        args.model_save_path, 'discriminator_%06d.nnp' % args.max_iter)
-    runtime_contents = {
-        'networks': [
-            {'name': 'Discriminator',
-             'batch_size': args.batch_size,
-             'variable': pred_real}],
-        'executors': [
-            {'name': 'Runtime',
-             'network': 'Discriminator',
-             'variables': ['x', 'y']}]}
-    save.save(nnp_discriminator, runtime_contents)
+    with nn.parameter_scope("gen"):
+        nn.save_parameters(os.path.join(
+            args.model_save_path, "generator_param_%06d.h5" % i))
+    with nn.parameter_scope("dis"):
+        nn.save_parameters(os.path.join(
+            args.model_save_path, "discriminator_param_%06d.h5" % i))
 
 
 if __name__ == '__main__':

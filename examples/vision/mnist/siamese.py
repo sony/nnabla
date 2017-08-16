@@ -167,19 +167,6 @@ def train(args):
         args.model_save_path, 'params_%06d.h5' % args.max_iter)
     nn.save_parameters(parameter_file)
 
-    nnp_file = os.path.join(
-        args.model_save_path, 'siamese_%06d.nnp' % (args.max_iter))
-    runtime_contents = {
-        'networks': [
-            {'name': 'Validation',
-             'batch_size': args.batch_size,
-             'variable': vpred}],
-        'executors': [
-            {'name': 'Runtime',
-             'network': 'Validation',
-             'variables': ['x0', 'x1', 'y']}]}
-    save.save(nnp_file, runtime_contents)
-
 
 def visualize(args):
     """

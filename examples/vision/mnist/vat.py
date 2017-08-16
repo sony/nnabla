@@ -473,23 +473,7 @@ def main():
     # Save the model.
     parameter_file = os.path.join(
         args.model_save_path, 'params_%06d.h5' % args.max_iter)
-    structure_file = os.path.join(
-        args.model_save_path, 'params_%06d.nntxt' % args.max_iter)
-    nnp_file = os.path.join(
-        args.model_save_path, 'vat_%06d.nnp' % args.max_iter)
-    runtime_contents = {
-        'networks': [
-            {'name': 'Validation',
-             'batch_size': args.batchsize_v,
-             'variable': hv}],
-        'executors': [
-            {'name': 'Runtime',
-             'network': 'Validation',
-             'variables': ['x', 'y']}]}
-
     nn.save_parameters(parameter_file)
-    save.save(structure_file, runtime_contents)
-    save.save(nnp_file, runtime_contents)
 
 
 if __name__ == '__main__':
