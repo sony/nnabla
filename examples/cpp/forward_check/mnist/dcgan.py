@@ -194,34 +194,31 @@ def train(args):
         monitor_loss_dis.add(i, loss_dis.d.copy())
         monitor_time.add(i)
 
-    nnp_generator = os.path.join(
-        args.model_save_path, 'generator_%06d.nnp' % args.max_iter)
+    nnp = os.path.join(
+        args.model_save_path, 'dcgan_%06d.nnp' % args.max_iter)
     runtime_contents = {
         'networks': [
             {'name': 'Generator',
              'batch_size': args.batch_size,
-             'variable': fake}],
-        'executors': [
-            {'name': 'Runtime',
-             'network': 'Generator',
-             'variables': ['z', 'x']}]}
-    save.save(nnp_generator, runtime_contents)
-
-    nnp_discriminator = os.path.join(
-        args.model_save_path, 'discriminator_%06d.nnp' % args.max_iter)
-    runtime_contents = {
-        'networks': [
+             'outputs': {'G': fake},
+             'names': {'z': z}},
             {'name': 'Discriminator',
              'batch_size': args.batch_size,
-             'variable': pred_real}],
+             'outputs': {'D': pred_real},
+             'names': {'x': x}}],
         'executors': [
-            {'name': 'Runtime',
+            {'name': 'Generator',
+             'network': 'Generator',
+             'data': ['z'],
+             'output': ['G']},
+            {'name': 'Discriminator',
              'network': 'Discriminator',
-             'variables': ['x', 'y']}]}
-    save.save(nnp_discriminator, runtime_contents)
+             'data': ['x'],
+             'output': ['D']}]}
 
+    save.save(nnp, runtime_contents)
     from cpp_forward_check import check_cpp_forward
-    check_cpp_forward(args.model_save_path, [z.d], [z], fake, nnp_generator)
+    check_cpp_forward(args.model_save_path, [z.d], [z], fake, nnp, "Generator")
 
 
 if __name__ == '__main__':

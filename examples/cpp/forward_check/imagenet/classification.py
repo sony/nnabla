@@ -193,11 +193,13 @@ def train():
         'networks': [
             {'name': 'Validation',
              'batch_size': v_model.pred.shape[0],
-             'variable': v_model.pred}],
+             'outputs': {'y': v_model.pred},
+             'names': {'x': v_model.image}}],
         'executors': [
             {'name': 'Runtime',
              'network': 'Validation',
-             'variables': ['x', 'y']}]}
+             'data': ['x'],
+             'output': ['y']}]}
     save.save(nnp_file, runtime_contents)
 
     from cpp_forward_check import check_cpp_forward

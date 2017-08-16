@@ -19,7 +19,7 @@ import subprocess
 import nnabla
 
 
-def check_cpp_forward(save_path, data, x, y, nnp_file):
+def check_cpp_forward(save_path, data, x, y, nnp_file, exec_name="Runtime"):
 
     eval_data_files = []
     for i in range(len(data)):
@@ -45,7 +45,9 @@ def check_cpp_forward(save_path, data, x, y, nnp_file):
     command += nnp_file + " "
     for eval_data_file in eval_data_files:
         command += eval_data_file + " "
+    command += " -e {}".format(exec_name)
     command += " > " + cpp_forward_file
+    print("Executing: ", command)
     subprocess.call(command, shell=True)
     lines = []
     with open(cpp_forward_file, "r") as f:

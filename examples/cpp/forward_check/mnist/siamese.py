@@ -173,11 +173,13 @@ def train(args):
         'networks': [
             {'name': 'Validation',
              'batch_size': args.batch_size,
-             'variable': vpred}],
+             'outputs': {'y': vpred},
+             'names': {'x0': vimage0, 'x1': vimage1}}],
         'executors': [
             {'name': 'Runtime',
              'network': 'Validation',
-             'variables': ['x0', 'x1', 'y']}]}
+             'data': ['x0', 'x1'],
+             'output': ['y']}]}
     save.save(nnp_file, runtime_contents)
 
     from cpp_forward_check import check_cpp_forward

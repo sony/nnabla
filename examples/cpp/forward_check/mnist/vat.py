@@ -477,11 +477,13 @@ def main():
         'networks': [
             {'name': 'Validation',
              'batch_size': args.batchsize_v,
-             'variable': hv}],
+             'outputs': {'y': hv},
+             'names': {'x': xv}}],
         'executors': [
             {'name': 'Runtime',
              'network': 'Validation',
-             'variables': ['x', 'y']}]}
+             'data': ['x'],
+             'output': ['y']}]}
     save.save(nnp_file, runtime_contents)
 
     from cpp_forward_check import check_cpp_forward
