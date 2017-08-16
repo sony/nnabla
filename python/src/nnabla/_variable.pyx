@@ -360,10 +360,10 @@ cdef class Variable:
         This method can also be called as a setter.
 
         Args:
-            func(:obj:`nblaeran.function.Function`)
+            func(:obj:`nnabla.function.Function`)
 
         Returns:
-            :obj:`nblaeran.function.Function`
+            :obj:`nnabla.function.Function`
 
         """
         cdef CgFunctionPtr cgf = self.varp.parent()
