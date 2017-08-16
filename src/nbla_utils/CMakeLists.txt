@@ -1,6 +1,6 @@
 include_directories(${CMAKE_BINARY_DIR}/libraries/include)
 
-add_library(nbla_utils SHARED 
+add_library(nnabla_utils SHARED
   nnp.cpp
   nnabla.pb.cc
   nnp_impl.cpp
@@ -8,7 +8,7 @@ add_library(nbla_utils SHARED
   )
 
 if (WIN32)
-  target_link_libraries(nbla_utils
+  target_link_libraries(nnabla_utils
     nnabla
     ${CMAKE_BINARY_DIR}/libraries/lib/libprotobuf-lite.lib
     #    ${CMAKE_BINARY_DIR}/libraries/lib/libprotobuf.lib
@@ -31,7 +31,7 @@ else()
   find_package(LibArchive REQUIRED)
   include_directories(${LibArchive_INCLUDE_DIR})
 
-  target_link_libraries(nbla_utils
+  target_link_libraries(nnabla_utils
     nnabla
     ${PROTOBUF_LIBRARY}
     ${HDF5_LIBRARY}
@@ -42,5 +42,5 @@ else()
 
 endif()
 
-set_property(TARGET nbla_utils PROPERTY CXX_STANDARD 11)
-set(NBLA_UTILS_LIBRARY_NAME nnabla_utils PARENT_SCOPE)
+set_property(TARGET nnabla_utils PROPERTY CXX_STANDARD 11)
+set(NNABLA_UTILS_LIBRARY_NAME nnabla_utils PARENT_SCOPE)
