@@ -27,6 +27,7 @@ import nnabla.solvers as S
 
 from args import get_args
 from mnist_data import data_iterator_mnist
+import nnabla.utils.save as save
 
 
 def mnist_lenet_feature(image, test=False):
@@ -161,8 +162,23 @@ def train(args):
         solver.update()
         monitor_loss.add(i, loss.d.copy())
         monitor_time.add(i)
-    nn.save_parameters(os.path.join(args.model_save_path,
-                                    'params_%06d.h5' % args.max_iter))
+
+    parameter_file = os.path.join(
+        args.model_save_path, 'params_%06d.h5' % args.max_iter)
+    nn.save_parameters(parameter_file)
+
+    nnp_file = os.path.join(
+        args.model_save_path, 'siamese_%06d.nnp' % (args.max_iter))
+    runtime_contents = {
+        'networks': [
+            {'name': 'Validation',
+             'batch_size': args.batch_size,
+             'variable': vpred}],
+        'executors': [
+            {'name': 'Runtime',
+             'network': 'Validation',
+             'variables': ['x0', 'x1', 'y']}]}
+    save.save(nnp_file, runtime_contents)
 
 
 def visualize(args):
