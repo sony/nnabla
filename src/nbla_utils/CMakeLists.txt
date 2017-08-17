@@ -18,27 +18,23 @@ if (WIN32)
     ${CMAKE_BINARY_DIR}/libraries/lib/zlib.lib)
 else()
 
-  include(FindProtobuf)
   find_package(Protobuf REQUIRED)
-  include_directories(${PROTOBUF_INCLUDE_DIR})
-
-  set(HDF5_USE_STATIC_LIBRARIES ON)
-  include(FindHDF5)
-  find_package(HDF5)
-  #find_package(HDF5 REQUIRED)
-
-  include(FindLibArchive)
+  find_package(HDF5 REQUIRED COMPONENTS C HL)
   find_package(LibArchive REQUIRED)
-  include_directories(${LibArchive_INCLUDE_DIR})
+
+  include_directories(
+    ${LibArchive_INCLUDE_DIR}
+    ${HDF5_INCLUDE_DIRS}
+    ${PROTOBUF_INCLUDE_DIR}
+    )
 
   target_link_libraries(nnabla_utils
     nnabla
     ${PROTOBUF_LIBRARY}
-    ${HDF5_LIBRARY}
+    ${HDF5_LIBRARIES}
+    ${HDF5_HL_LIBRARIES}
     ${LibArchive_LIBRARIES}
-    -lhdf5-static
-    -lhdf5_hl-static
-    -ldl -lz)
+    )
 
 endif()
 
