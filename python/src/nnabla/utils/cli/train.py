@@ -176,7 +176,7 @@ def train(args, config):
 
         if (iter + 1) % config.training_config.iter_per_epoch == 0:
             # End of epoch
-            epoch = iter / config.training_config.iter_per_epoch + 1
+            epoch = iter // config.training_config.iter_per_epoch + 1
             cost_avg_epoch = cost.sum_epoch / config.training_config.iter_per_epoch
             monitoring_report = []
 
@@ -200,8 +200,6 @@ def train(args, config):
 
 
 def train_command(args):
-    logger.log(99, 'Train with contexts {}'.format(available_contexts))
-
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     files = []
     files.append(args.config)
@@ -212,6 +210,8 @@ def train_command(args):
         pass
     config = TrainConfig()
     info = load.load(files)
+
+    logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
     config.global_config = info.global_config
     config.training_config = info.training_config

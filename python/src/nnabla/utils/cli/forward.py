@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from six.moves import map
-from scipy.misc import imsave
+from PIL import Image
 import csv
 import numpy as np
 import os
@@ -87,7 +87,7 @@ def update_result(args, index, result, values, output_index, type_end_names):
                         else:
                             x = x.reshape(x.shape[1], x.shape[2])
                         x = x.clip(0, 255).astype(np.uint8)
-                        imsave(full_path, x)
+                        Image.fromarray(x).save(full_path)
                     else:
                         # CSV type
                         with open(full_path, 'w') as f:
@@ -183,7 +183,7 @@ def forward_command(args):
         if d.uri == args.dataset:
             normalize = d.normalize
     data_iterator = (lambda: data_iterator_csv_dataset(
-        args.dataset, config.networks[0].batch_size, False, padding=True, normalize=normalize))
+        args.dataset, config.networks[0].batch_size, False, normalize=normalize))
 
     # load dataset as csv
     with open(args.dataset, 'rt') as f:

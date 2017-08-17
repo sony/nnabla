@@ -393,22 +393,22 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
                 logger.log(99, 'Creating cache data for "' + uri + '"')
-                with data_iterator_csv_dataset(uri, batch_size, shuffle, padding=None, normalize=False, cache_dir=cache_dir) as di:
+                with data_iterator_csv_dataset(uri, batch_size, shuffle, normalize=False, cache_dir=cache_dir) as di:
                     index = 0
                     while index < di.size:
                         progress('', (1.0 * di.position) / di.size)
                         di.next()
                         index += batch_size
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, padding=False, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir):
             if cache_dir and not os.path.exists(cache_dir):
                 os.mkdir(cache_dir)
             dataset.data_iterator = (lambda: data_iterator_csv_dataset(
-                uri, batch_size, shuffle, padding=False, normalize=dataset.normalize, cache_dir=cache_dir))
+                uri, batch_size, shuffle, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, padding=False, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
     else:
         dataset.data_iterator = None
     return dataset
@@ -570,6 +570,11 @@ def load(filenames, prepare_data_iterator=True):
     if proto.HasField('global_config'):
         info.global_config = _global_config(proto)
         default_context = info.global_config.default_context
+        if 'cuda' in default_context.backend:
+            try:
+                import nnabla_ext.cuda.cudnn
+            except:
+                pass
     else:
         default_context = nn.context()
 
