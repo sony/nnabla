@@ -25,9 +25,11 @@ NBLA_REGISTER_SOLVER_HEADER(Adadelta, float /*lr*/, float /*decay*/,
 /** Adadelta. This is defined as
 
 \f[
-g_t \leftarrow \Delta w_t
-v_t \leftarrow - \frac{RMS \left[ v_t \right]_{t-1}}{RMS \left[ g \right]_t}g_t
+g_t \leftarrow \Delta w_t\\
+v_t \leftarrow - \frac{RMS \left[ v_t \right]_{t-1}}{RMS \left[ g
+\right]_t}g_t\\
 w_{t+1} \leftarrow w_t + \eta v_t
+\f]
 
 @param lr \f$\eta\f$ Learning rate.
 @param decay \f$\gamma\f$ Decay rate.
@@ -37,7 +39,6 @@ w_{t+1} \leftarrow w_t + \eta v_t
 Matthew D. Zeiler
 ADADELTA: An Adaptive Learning Rate Method
 https://arxiv.org/abs/1212.5701
-\f]
 
 
 \ingroup SolverImplGrp
