@@ -433,6 +433,38 @@ def save(filename, contents, include_params=False):
         contents (dict): Information to store.
         include_params (bool): Includes parameter into single file. This is
             ignored when the extension of filename is nnp.
+
+    Example:
+        The current supported fields as contents are ``networks`` and
+        ``executors``. The following example creates a two inputs and two
+        outputs MLP, and save the network structure and the initialized
+        parameters.:: python
+
+            import nnabla as nn
+            import nnabla.functions as F
+            import nnabla.parametric_functions as PF
+
+            x0 = nn.Variable([batch_size, 100])
+            x1 = nn.Variable([batch_size, 100])
+            h1_0 = PF.affine(x0, 100, name='affine1_0')
+            h1_1 = PF.affine(x1, 100, name='affine1_0')
+            h1 = F.tanh(h1_0 + h1_1)
+            h2 = F.tanh(PF.affine(h1, 50, name='affine2'))
+            y0 = PF.affine(h2, 10, name='affiney_0')
+            y1 = PF.affine(h2, 10, name='affiney_1')
+
+            contents = {
+                'networks': [
+                    {'name': 'net1',
+                     'batch_size': batch_size,
+                     'outputs': {'y0': y0, 'y1': y1},
+                     'names': {'x0': x0, 'x1': x1}}],
+                'executors': [
+                    {'name': 'runtime',
+                     'network': 'net1',
+                     'data': ['x0', 'x1'],
+                     'output': ['y0', 'y1']}]}
+            save('net.nnp', contents)
     '''
     _, ext = os.path.splitext(filename)
     print(filename, ext)
