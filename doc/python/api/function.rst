@@ -188,6 +188,7 @@ Unsupported, Special Use
 
 .. autofunction:: vat_noise
 .. autofunction:: unlink
+.. autofunction:: sink
 
 
 Validation

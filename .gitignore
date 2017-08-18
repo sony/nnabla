@@ -3,6 +3,11 @@
 .cache
 *.pyc
 
+/doc/?/
+/examples/cpp/mnist_runtime/mnist_runtime
+/examples/cpp/mnist_runtime/*.nnp
+/examples/cpp/mnist_runtime/tmp.*
+/examples/cpp/forward_check/*/tmp.*
 /output/
 /python/setup.cfg
 /python/setup.cfg-Debug
@@ -16,11 +21,14 @@
 /python/src/nnabla/_nd_array.cpp
 /python/src/nnabla/_variable.cpp
 /python/src/nnabla/_version.py
+/python/src/nnabla/clibtest
 /python/src/nnabla/communicator.cpp
+/python/src/nnabla/cpp_graph_example
 /python/src/nnabla/function.cpp
 /python/src/nnabla/function.pxd
 /python/src/nnabla/function.pyx
 /python/src/nnabla/function_bases.py
+/python/src/nnabla/nbla
 /python/src/nnabla/nnabla.lib
 /python/src/nnabla/solver.cpp
 /python/src/nnabla/utils/load_function.py
@@ -34,8 +42,15 @@
 /python/test/tmp.protobuf
 /src/nbla/init.cpp
 /src/nbla/proto/
+/src/nbla_utils/nnabla.pb.cc
+/src/nbla_utils/nnabla.pb.h
+/src/nbla_utils/nnp_impl_create_function.cpp
 /third_party/*.zip
 /third_party/*/
+/third_party/hdf5-1.10.1tar.bz2
+/third_party/libarchive-3.3.2tar.gz
+/third_party/protobuf-3.1.0tar.gz
+/third_party/zlib-1.2.11tar.gz
 
 # Converted ReST
 # doc/python/tutorial/

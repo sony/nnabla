@@ -22,6 +22,7 @@ import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
+import nnabla.utils.save as save
 
 from args import get_args
 from mnist_data import data_iterator_mnist
@@ -192,12 +193,13 @@ def train(args):
         solver_dis.update()
         monitor_loss_dis.add(i, loss_dis.d.copy())
         monitor_time.add(i)
+
     with nn.parameter_scope("gen"):
-        nn.save_parameters(os.path.join(args.model_save_path,
-                                        "generator_param_%06d.h5" % args.max_iter))
+        nn.save_parameters(os.path.join(
+            args.model_save_path, "generator_param_%06d.h5" % i))
     with nn.parameter_scope("dis"):
-        nn.save_parameters(os.path.join(args.model_save_path,
-                                        "discriminator_param_%06d.h5" % args.max_iter))
+        nn.save_parameters(os.path.join(
+            args.model_save_path, "discriminator_param_%06d.h5" % i))
 
 
 if __name__ == '__main__':

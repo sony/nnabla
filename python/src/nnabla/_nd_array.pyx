@@ -14,6 +14,7 @@
 
 from libcpp.algorithm cimport copy
 from libcpp.memory cimport make_shared
+from libc.stdint cimport intptr_t
 from cpython cimport PyObject, Py_INCREF
 
 from _nd_array cimport *
@@ -75,6 +76,25 @@ cdef class NdArray:
     def __repr__(self):
         return "<NdArray({}) at {}>".format(
             self.shape, hex(id(self)))
+
+    def __richcmp__(self, other, int op):
+        '''Overrides comparison operators ``==`` and ``!=``.
+
+        Compare the addresses of their C++ objects.
+        '''
+        if op == 2:
+            try:
+                return (< NdArray > self).arrp == ( < NdArray ?> other).arrp
+            except:
+                return False
+        elif op == 3:
+            return not self.__richcmp__(other, 2)
+        return False
+
+    def __hash__(self):
+        '''Returns hash of the integer address of holding C++ object.
+        '''
+        return hash(< intptr_t > (( < NdArray > self).arrp))
 
     @property
     def shape(self):

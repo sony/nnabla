@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-pip \
     python-setuptools \
     unzip \
-    zip
+    zip \
+    zlib1g-dev \
+    libhdf5-dev \
+    libarchive-dev
 
 ADD python/setup_requirements.txt /tmp/deps/
 RUN pip install -U -r /tmp/deps/setup_requirements.txt
@@ -70,4 +73,3 @@ RUN apt-get -yqq update \
         sphinxcontrib-toc \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/*
-

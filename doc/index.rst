@@ -12,6 +12,7 @@ This document describes how to use the Python API and C++ API, the contribution 
 
     python.rst
     cpp.rst
+    format.rst
     contributing.rst
     license.rst
 

@@ -5,6 +5,10 @@ development and production. We aim to have it running everywhere: desktop PCs, H
 clusters, embedded devices and production servers.
 
 
+* [Neural Network Console](https://dl.sony.com/), a Windows GUI app for neural network developement, has been released.
+* The GitHub repository of CUDA extension of NNabla can be found [here](https://github.com/sony/nnabla-ext-cuda).
+
+
 ## Installation
 
 Installing NNabla is easy:
@@ -118,3 +122,5 @@ loss.backward()
   NNabla API.
 
 * We also provide some more sophisticated examples in the [`examples`](https://github.com/sony/nnabla/tree/master/examples) folder.
+
+* C++ API examples are avaiailable in [`exampels/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).

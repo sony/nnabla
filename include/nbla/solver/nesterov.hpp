@@ -24,8 +24,9 @@ NBLA_REGISTER_SOLVER_HEADER(Nesterov, float /*lr*/, float /*momentum*/);
 /** Nesterov accelerated gradient. This is defined as
 
 \f[
-v_t \leftarrow \gamma v_{t-1} - \eta \Delta w_t
+v_t \leftarrow \gamma v_{t-1} - \eta \Delta w_t \\
 w_{t+1} \leftarrow w_t - \gamma v_{t-1} + \left(1 + \gamma \right) v_t
+\f]
 
 @param lr \f$\eta\f$ Learning rate.
 @param momentum \f$\gamma\f$ Momentum
@@ -34,8 +35,6 @@ w_{t+1} \leftarrow w_t - \gamma v_{t-1} + \left(1 + \gamma \right) v_t
 Yurii Nesterov
 A method for unconstrained convex minimization problem with the rate of
 convergence o(1/k2)
-\f]
-
 
 \ingroup SolverImplGrp
 */
