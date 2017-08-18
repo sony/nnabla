@@ -39,7 +39,6 @@ RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/pro
     && cmake \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -Dprotobuf_BUILD_TESTS=OFF \
-        -DBUILD_SHARED_LIBS=OFF \
         ../cmake \
     && make \
     && make install \
@@ -47,15 +46,14 @@ RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/pro
     && rm -rf /tmp/*
 
 RUN cd /tmp \
-    && curl -L https://www.hdfgroup.org/package/bzip2/?wpdmdl=4300 -o hdf5-1.10.1.tar.bz2 \
-    && tar xfa hdf5-1.10.1.tar.bz2 \
+    && curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2 -o hdf5-1.8.16.tar.bz2 \
+    && tar xfa hdf5-1.8.16.tar.bz2 \
     && cd hdf5-* \
     && mkdir build \
     && cd build \
     && cmake \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DBUILD_SHARED_LIBS=OFF \
         -DBUILD_TESTING=OFF \
         -DHDF5_BUILD_TOOLS=OFF \
         -DHDF5_BUILD_CPP_LIB=OFF \
@@ -95,7 +93,6 @@ RUN cd /tmp \
         ../libarchive-3.3.2 \
     && make \
     && make install \
-    && rm -f /usr/local/lib/libarchive*.so \
     && cd / \
     && rm -rf /tmp/*
 
