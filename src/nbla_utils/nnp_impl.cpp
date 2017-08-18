@@ -414,7 +414,7 @@ bool NnpImpl::add_protobuf(std::string filename) {
 
 bool NnpImpl::add_protobuf(char *buffer, int size) {
   NNablaProtoBuf param;
-  std::string buf(buffer);
+  std::string buf(buffer, size);
   param.ParseFromString(buf);
   proto_->MergeFrom(param);
   update_parameters();
