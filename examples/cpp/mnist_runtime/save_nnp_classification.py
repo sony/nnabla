@@ -23,20 +23,24 @@ the training script.
 
 # Python 2/3
 from __future__ import absolute_import, print_function
-from six.moves import range
-
-# Local modules
-from args import get_args
-from classification import mnist_lenet_prediction, mnist_resnet_prediction
 
 # Python packages
 import nnabla as nn
 import nnabla.logger as logger
 import nnabla.utils.save
 import os
+import sys
 
 
 def main():
+    HERE = os.path.dirname(__file__)
+    # Import MNIST data
+    sys.path.append(
+        os.path.realpath(os.path.join(HERE, '..', '..', 'vision', 'mnist')))
+    from mnist_data import data_iterator_mnist
+    from args import get_args
+    from classification import mnist_lenet_prediction, mnist_resnet_prediction
+
     args = get_args(description=__doc__)
 
     mnist_cnn_prediction = mnist_lenet_prediction
@@ -44,11 +48,13 @@ def main():
         mnist_cnn_prediction = mnist_resnet_prediction
 
     # Infer parameter file name and read it.
+    model_save_path = os.path.join('../../vision/mnist',
+                                   args.model_save_path)
     parameter_file = os.path.join(
-        args.model_save_path,
+        model_save_path,
         '{}_params_{:06}.h5'.format(args.net, args.max_iter))
     try:
-        _ = nn.load_parameters(parameter_file)
+        nn.load_parameters(parameter_file)
     except IOError:
         logger.error("Run classification.py before runnning this script.")
         exit(1)
@@ -58,8 +64,7 @@ def main():
     pred = mnist_cnn_prediction(image, test=True)
 
     # Save NNP file (used in C++ inference later.).
-    nnp_file = os.path.join(
-        args.model_save_path, '{}_{:06}.nnp'.format(args.net, args.max_iter))
+    nnp_file = '{}_{:06}.nnp'.format(args.net, args.max_iter)
     runtime_contents = {
         'networks': [
             {'name': 'runtime',

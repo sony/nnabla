@@ -4,9 +4,9 @@
 *.pyc
 
 /doc/?/
-/examples/cpp/mnist_runtime/mnist_images/
 /examples/cpp/mnist_runtime/mnist_runtime
-/examples/cpp/mnist_runtime/*.so
+/examples/cpp/mnist_runtime/*.nnp
+/examples/cpp/mnist_runtime/tmp.*
 /examples/cpp/forward_check/*/tmp.*
 /output/
 /python/setup.cfg

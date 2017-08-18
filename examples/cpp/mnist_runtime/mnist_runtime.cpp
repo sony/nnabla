@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Usage: " << argv[0] << " nnp_file input_pgm" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Positional arguments: " << std::endl;
-    std::cerr << "  nnp_file     : .nnp file created by "
+    std::cerr << "  nnp_file  : .nnp file created by "
                  "examples/vision/mnist/save_nnp_classification.py."
               << std::endl;
     std::cerr << "  input_pgm : PGM (P5) file of a 28 x 28 image where pixel "
