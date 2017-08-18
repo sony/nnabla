@@ -110,7 +110,7 @@ public:
       @retval Batch size. The if set_batch_size is not previously called,
       batch size written in nnp file will be returned.
   */
-  int batch_size();
+  int batch_size() const;
 
   /** Replace an arbitrary variable in the network with a given
       variable.
@@ -189,7 +189,7 @@ public:
       @retval Batch size. The if set_batch_size is not previously called,
       batch size written in the Network of NNabla format file will be returned.
   */
-  int batch_size();
+  int batch_size() const;
 
   /** Get data variables.
 

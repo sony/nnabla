@@ -53,7 +53,7 @@ void Network::set_batch_size(int batch_size) {
   impl_->set_batch_size(batch_size);
 }
 
-int Network::batch_size() { return impl_->batch_size(); }
+int Network::batch_size() const { return impl_->batch_size(); }
 
 // ----------------------------------------------------------------------
 // Executor

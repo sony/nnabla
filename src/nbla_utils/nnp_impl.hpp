@@ -93,7 +93,7 @@ private:
 public:
   string name() const;
   void set_batch_size(int batch_size);
-  int batch_size();
+  int batch_size() const;
   void replace_variable(const string &name, CgVariablePtr variable);
   CgVariablePtr get_variable(const string &name);
 };

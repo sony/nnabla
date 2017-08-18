@@ -123,7 +123,7 @@ void NetworkImpl::set_batch_size(int batch_size) {
   batch_size_ = batch_size;
 }
 
-int NetworkImpl::batch_size() {
+int NetworkImpl::batch_size() const {
   if (batch_size_ > 0) {
     return batch_size_;
   }
