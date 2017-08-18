@@ -183,7 +183,7 @@ def forward_command(args):
         if d.uri == args.dataset:
             normalize = d.normalize
     data_iterator = (lambda: data_iterator_csv_dataset(
-        args.dataset, config.networks[0].batch_size, False, padding=True, normalize=normalize))
+        args.dataset, config.networks[0].batch_size, False, normalize=normalize))
 
     # load dataset as csv
     with open(args.dataset, 'rt') as f:

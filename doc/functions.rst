@@ -4864,3 +4864,49 @@ Note:
    * - y
      - N-D array.
      - 
+
+Sink
+^^^^
+
+Creates a dummy variable used to call forward or backward function
+of multiple variables at one place.
+
+This takes any numbers of input variables with any shape,
+and creates a single 0-shape outputs.
+The forward pass does nothing. The backward pass set ones
+to the input grads if one_input_grad is set as true.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Any number of inputs with any shape.
+     - Variadic
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - one_input_grad
+     - bool
+     - True
+     - Set grads of inputs as one during backward. It is useful to set false if you want to set external gradients to the input variables.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Dummy variable.
+     - 

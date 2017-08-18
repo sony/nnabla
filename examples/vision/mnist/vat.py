@@ -20,6 +20,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solver as S
 from nnabla.logger import logger
+import nnabla.utils.save as save
 
 import numpy as np
 import time
@@ -470,8 +471,9 @@ def main():
     monitor_time.add(i)
 
     # Save the model.
-    nn.save_parameters(
-        os.path.join(args.model_save_path, 'params_%06d.h5' % args.max_iter))
+    parameter_file = os.path.join(
+        args.model_save_path, 'params_%06d.h5' % args.max_iter)
+    nn.save_parameters(parameter_file)
 
 
 if __name__ == '__main__':

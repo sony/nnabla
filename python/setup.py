@@ -37,7 +37,8 @@ install_requires = setup_requires + [
     'tqdm',
 ]
 
-LibInfo = namedtuple('LibInfo', ['file_name', 'path', 'name', 'export_lib'])
+LibInfo = namedtuple(
+    'LibInfo', ['file_name', 'path', 'name', 'exec_files', 'export_lib'])
 ExtConfig = namedtuple('ExtConfig',
                        ['package_dir', 'packages', 'package_data',
                         'ext_modules', 'ext_opts'])
@@ -54,26 +55,35 @@ def get_libinfo():
     cfgp = ConfigParser()
     cfgp.read(path_cfg)
 
+    binary_dir = cfgp.get("cmake", "binary_dir")
+    exec_files = []
+    for root, dirs, files in os.walk(os.path.join(binary_dir, 'bin')):
+        for fn in files:
+            if os.path.splitext(fn)[1] == '' or os.path.splitext(fn)[1] == '.exe':
+                exec_files.append(os.path.join(root, fn))
+
     # Read NNabla lib info
     if sys.platform == 'win32':
-        binary_dir = cfgp.get("cmake", "binary_dir")
         for root, dirs, files in os.walk(os.path.join(binary_dir, 'bin')):
-            for file in files:
-                if os.path.splitext(file)[1] == '.lib':
-                    export_lib = os.path.join(root, file)
+            for fn in files:
+                if os.path.splitext(fn)[1] == '.lib':
+                    export_lib = os.path.join(root, fn)
 
         lib = LibInfo(cfgp.get("cmake", "target_file_name"),
                       cfgp.get("cmake", "target_file"),
                       cfgp.get("cmake", "target_name"),
+                      exec_files,
                       export_lib)
     else:
         lib = LibInfo(cfgp.get("cmake", "target_file_name"),
                       cfgp.get("cmake", "target_file"),
                       cfgp.get("cmake", "target_name"),
+                      exec_files,
                       '')
     print("Library name:", lib.name)
     print("Library file name:", lib.file_name)
     print("Library file:", lib.path)
+    print("Exec files:", lib.exec_files)
     print("Export Library", lib.export_lib)
 
     return lib
@@ -121,6 +131,13 @@ def cpu_config(root_dir, lib):
     # http://stackoverflow.com/questions/6191942/distributing-pre-built-libraries-with-python-modules
     shutil.copyfile(lib.path, os.path.join(path_pkg, lib.file_name))
     package_data = {"nnabla": [lib.file_name, 'nnabla.conf']}
+
+    for e in lib.exec_files:
+        if os.path.exists(e):
+            shutil.copyfile(e, os.path.join(path_pkg, os.path.basename(e)))
+            os.chmod(os.path.join(path_pkg, os.path.basename(e)), 0o755)
+            package_data["nnabla"].append(os.path.basename(e))
+
     if os.path.exists(lib.export_lib):
         shutil.copyfile(lib.export_lib, os.path.join(
             path_pkg, os.path.basename(lib.export_lib)))

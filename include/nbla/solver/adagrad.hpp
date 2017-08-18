@@ -24,9 +24,10 @@ NBLA_REGISTER_SOLVER_HEADER(Adagrad, float /*lr*/, float /*eps*/);
 /** Adagrad. This is defined as
 
 \f[
-g_t \leftarrow \Delta w_t
-G_t \leftarrow G_{t-1} + g_t^2
-w_{t+1} \leftarrow w_t - \frac{\eta}{\sqrt{G_t} + \epsilon} g_t
+g_t \leftarrow \Delta w_t\\
+G_t \leftarrow G_{t-1} + g_t^2\\
+w_{t+1} \leftarrow w_t - \frac{\eta}{\sqrt{G_t} + \epsilon} g_t\\
+\f]
 
 @param lr \f$\eta\f$ Learning rate.
 @param eps \f$\epsilon\f$ Tiny factor for avoiding 0-division.
@@ -35,7 +36,6 @@ w_{t+1} \leftarrow w_t - \frac{\eta}{\sqrt{G_t} + \epsilon} g_t
 John Duchi, Elad Hazan and Yoram Singer (2011)
 Adaptive Subgradient Methods for Online Learning and Stochastic Optimization
 http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf
-\f]
 
 
 \ingroup SolverImplGrp

@@ -1,3 +1,5 @@
+.. _python_build_on_linux:
+
 Build on Linux
 --------------
 
@@ -13,7 +15,7 @@ Our build system requires:
 * Required.
 
   * `CMake <https://cmake.org/>`_ (>=3.1)
-  * Python 2.7: Devel, PIP
+  * Python 2.7, 3.4, 3.5, or 3.6: Devel, PIP
   * make, gcc, g++
 
 * Recommended.
@@ -35,6 +37,8 @@ Install apt packages
 
 Install python requirements
 """""""""""""""""""""""""""
+
+The following block installs Python2.7. You can use 3.4 3.5 and 3.6 by installing it by yourself.
 
 .. code-block:: shell
 

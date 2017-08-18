@@ -22,7 +22,9 @@ import google.protobuf.text_format as text_format
 import itertools
 import numpy
 import os
-
+import shutil
+import tempfile
+import zipfile
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
@@ -113,16 +115,6 @@ def _create_function(ctx, network, f, variable_index):
             tuple(f.reshape_param.shape.dim)
         function_instance = F.Reshape(ctx,
                                       shape=reshape_shape)
-    elif f.type == "RepeatStart":
-        function_instance = F.Identity(ctx)
-    elif f.type == "RepeatEnd":
-        function_instance = F.Identity(ctx)
-    elif f.type == "RecurrentOutput":
-        function_instance = F.Stack(ctx, axis=f.recurrent_param.axis)
-    elif f.type == "RecurrentInput":
-        function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
-    elif f.type == "Delay":
-        function_instance = F.Identity(ctx)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -392,23 +384,23 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
             if not os.path.exists(cache_dir) or overwrite_cache:
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
-                logger.log(99, 'Creating cache data for "' + uri + '"')
-                with data_iterator_csv_dataset(uri, batch_size, shuffle, padding=None, normalize=False, cache_dir=cache_dir) as di:
+                logger.info('Creating cache data for "' + uri + '"')
+                with data_iterator_csv_dataset(uri, batch_size, shuffle, normalize=False, cache_dir=cache_dir) as di:
                     index = 0
                     while index < di.size:
                         progress('', (1.0 * di.position) / di.size)
                         di.next()
                         index += batch_size
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, padding=False, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir):
             if cache_dir and not os.path.exists(cache_dir):
                 os.mkdir(cache_dir)
             dataset.data_iterator = (lambda: data_iterator_csv_dataset(
-                uri, batch_size, shuffle, padding=False, normalize=dataset.normalize, cache_dir=cache_dir))
+                uri, batch_size, shuffle, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, padding=False, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
     else:
         dataset.data_iterator = None
     return dataset
@@ -565,6 +557,18 @@ def load(filenames, prepare_data_iterator=True):
                 text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
             nn.load_parameters(filename, proto)
+        elif ext == '.nnp':
+            tmpdir = tempfile.mkdtemp()
+            with zipfile.ZipFile(filename, 'r') as nnp:
+                for name in nnp.namelist():
+                    nnp.extract(name, tmpdir)
+                    _, ext = os.path.splitext(name)
+                    if 'txt' in ext:
+                        with open(os.path.join(tmpdir, name), 'rt') as f:
+                            text_format.Merge(f.read(), proto)
+                    elif ext in ['.protobuf', '.h5']:
+                        nn.load_parameters(os.path.join(tmpdir, name), proto)
+            shutil.rmtree(tmpdir)
 
     default_context = None
     if proto.HasField('global_config'):

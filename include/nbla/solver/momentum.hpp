@@ -24,16 +24,15 @@ NBLA_REGISTER_SOLVER_HEADER(Momentum, float /*lr*/, float /*momentum*/);
 /** Momentum. This is defined as
 
 \f[
-v_t \leftarrow \gamma v_{t-1} + \eta \Delta w_t
+v_t \leftarrow \gamma v_{t-1} + \eta \Delta w_t\\
 w_{t+1} \leftarrow w_t - v_t
-
+\f]
 @param lr \f$\eta\f$ Learning rate.
 @param momentum \f$\gamma\f$ Momentum
 
 @sa See the paper linked below for more details.
 Ning Qian : On the Momentum Term in Gradient Descent Learning Algorithms
 http://www.columbia.edu/~nq6/publications/momentum.pdf
-\f]
 
 
 \ingroup SolverImplGrp
