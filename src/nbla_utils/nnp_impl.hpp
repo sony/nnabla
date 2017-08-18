@@ -164,7 +164,9 @@ public:
   bool add_protobuf(std::string filename);
   bool add_protobuf(char *buffer, int size);
   bool add_hdf5(char *buffer, int size);
+  vector<string> get_network_names();
   shared_ptr<Network> get_network(const string &name);
+  vector<string> get_executor_names();
   shared_ptr<Executor> get_executor(const string &name);
 };
 }

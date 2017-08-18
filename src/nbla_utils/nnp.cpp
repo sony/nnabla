@@ -139,9 +139,14 @@ bool Nnp::add(const string &filename) {
   return false;
 }
 
+vector<string> Nnp::get_network_names() { return impl_->get_network_names(); }
+
 shared_ptr<Network> Nnp::get_network(const string &name) {
   return impl_->get_network(name);
 }
+
+vector<string> Nnp::get_executor_names() { return impl_->get_executor_names(); }
+
 shared_ptr<Executor> Nnp::get_executor(const string &name) {
   return impl_->get_executor(name);
 }

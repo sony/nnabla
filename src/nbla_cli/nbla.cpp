@@ -135,7 +135,6 @@ bool infer(int argc, char *argv[]) {
   return true;
 }
 
-#if 0
 bool dump(int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
@@ -145,54 +144,63 @@ bool dump(int argc, char *argv[]) {
     return false;
   }
 
-  nbla::Context ctx; // ("cpu", "CpuArray", "0", "default");
-  nbla_utils::NNP::nnp nnp(ctx);
-  add_files_to_nnp(nnp, p.rest());
+  std::cout << std::endl;
 
-  if (p.get<int>("batch_size") < 0) {
-    std::cout << "Using default batch size." << std::endl;
-  } else {
-    std::cout << "Using batch size << " << p.get<int>("batch_size") << "."
-              << std::endl;
-  }
+  nbla::Context ctx{"cpu", "CpuCachedArray", "0", "default"};
+  nbla::utils::nnp::Nnp nnp(ctx);
+  std::vector<std::string> input_files = add_files_to_nnp(nnp, p.rest());
 
-  nnp.set_batch_size(p.get<int>("batch_size"));
-  int n = nnp.num_of_executors();
-  std::cout << "This configuration has " << n << " executor(s)." << std::endl;
-  for (int i = 0; i < n; i++) {
-    std::cout << "    Executor No." << i << std::endl;
+  auto names = nnp.get_executor_names();
+  std::cout << "This configuration has " << names.size() << " executors."
+            << std::endl;
+  std::cout << std::endl;
 
-    std::vector<std::string> names = nnp.get_executor_input_names(i);
-    std::vector<nbla::CgVariablePtr> inputs =
-        nnp.get_executor_input_variables(i);
-    for (int j = 0; j < inputs.size(); j++) {
+  int i = 0, j = 0;
+  for (auto it = names.begin(); it != names.end(); it++, i++) {
+    std::cout << "  Executor No." << i << " Name [" << *it << "]" << std::endl;
+    shared_ptr<nbla::utils::nnp::Executor> exec = nnp.get_executor(*it);
+    if (p.get<int>("batch_size") < 0) {
+      std::cout << "    Using default batch size " << exec->batch_size() << " ."
+                << std::endl;
+    } else {
+      int batch_size = p.get<int>("batch_size");
+      std::cout << "    Using batch size << " << batch_size << "." << std::endl;
+      exec->set_batch_size(batch_size);
+    }
 
-      std::cout << "        Input No." << j << " Name:[" << names[j] << "]";
-      auto v = inputs[i]->variable();
-      auto shape = v->shape();
-
+    std::vector<nbla::utils::nnp::Executor::DataVariable> inputs =
+        exec->get_data_variables();
+    j = 0;
+    std::cout << "     Inputs" << std::endl;
+    for (auto jj = inputs.begin(); jj != inputs.end(); jj++, j++) {
+      std::cout << "      Input No." << j << " Name [" << jj->data_name << "]";
+      auto shape = jj->variable->variable()->shape();
       std::cout << " Shape (";
       for (int k = 0; k < shape.size(); k++) {
         std::cout << " " << shape[k];
       }
       std::cout << " )" << std::endl;
     }
-    std::vector<nbla::CgVariablePtr> e = nnp.get_executor(i, inputs);
-    auto var = e[0]->variable();
-
-    auto out_shape = var->shape();
-    std::cout << "    Output: Shape (";
-    for (int j = 0; j < out_shape.size(); j++) {
-      std::cout << " " << out_shape[j];
+    std::vector<nbla::utils::nnp::Executor::OutputVariable> outputs =
+        exec->get_output_variables();
+    j = 0;
+    std::cout << "     Outputs" << std::endl;
+    for (auto jj = outputs.begin(); jj != outputs.end(); jj++, j++) {
+      std::cout << "      Output No." << j << " Name [" << jj->data_name << "]";
+      auto shape = jj->variable->variable()->shape();
+      std::cout << " Shape (";
+      for (int k = 0; k < shape.size(); k++) {
+        std::cout << " " << shape[k];
+      }
+      std::cout << " )" << std::endl;
     }
-    std::cout << " )" << std::endl;
   }
 
-  std::cout << "" << std::endl;
+  std::cout << "Finished" << std::endl;
+  std::cout << std::endl;
 
   return true;
 }
-#endif
 
 int main(int argc, char *argv[]) {
   const char *command_name = argv[0];
@@ -206,10 +214,8 @@ int main(int argc, char *argv[]) {
 
   if (command == "infer") {
     infer(argc, argv);
-#if 0
   } else if (command == "dump") {
     dump(argc, argv);
-#endif
   } else {
     print_usage_and_exit(command_name);
   }

@@ -275,6 +275,11 @@ public:
    */
   bool add(const string &filename);
 
+  /** Get Network name list from added files (nnp, nntxt etc.).
+      @retval A vector of Network instance names.
+   */
+  vector<string> get_network_names();
+
   /** Get Network object from added files (nnp, nntxt etc.).
 
       @param[in] name Network name in loaded files (nnp, nntxt etc.)
@@ -282,6 +287,11 @@ public:
       @retval A shared pointer of a Network instance.
    */
   shared_ptr<Network> get_network(const string &name);
+
+  /** Get Executor name list from added files (nnp, nntxt etc.).
+      @retval A vector of Executor instance names.
+   */
+  vector<string> get_executor_names();
 
   /** Get Executor object from added file(s).
 

@@ -432,6 +432,14 @@ bool NnpImpl::add_hdf5(char *buffer, int size) {
   return false;
 }
 
+vector<string> NnpImpl::get_network_names() {
+  vector<string> list;
+  for (int i = 0; i < proto_->network_size(); i++) {
+    list.push_back(proto_->network(i).name());
+  }
+  return list;
+}
+
 shared_ptr<Network> NnpImpl::get_network(const string &name) {
   // Find network proto
   const ::Network &orig_network = search_network(name);
@@ -451,6 +459,16 @@ shared_ptr<Network> NnpImpl::get_network(const string &name) {
   return shared_ptr<Network>(
       new Network(new NetworkImpl(ctx_, network, parameters)));
 }
+
+vector<string> NnpImpl::get_executor_names() {
+  vector<string> list;
+  for (auto it = proto_->executor().begin(); it != proto_->executor().end();
+       it++) {
+    list.push_back(it->name());
+  }
+  return list;
+}
+
 shared_ptr<Executor> NnpImpl::get_executor(const string &name) {
   for (auto it = proto_->executor().begin(); it != proto_->executor().end();
        it++) {
