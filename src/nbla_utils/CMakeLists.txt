@@ -51,4 +51,14 @@ else()
 endif()
 
 set_property(TARGET nnabla_utils PROPERTY CXX_STANDARD 11)
+
+
+if (NOT WIN32)
+  # Install
+  install(TARGETS nnabla_utils
+    LIBRARY DESTINATION lib)
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_utils
+    DESTINATION include)
+endif()
+
 set(NNABLA_UTILS_LIBRARY_NAME nnabla_utils PARENT_SCOPE)
