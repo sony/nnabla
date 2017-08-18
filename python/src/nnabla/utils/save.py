@@ -450,8 +450,9 @@ def save(filename, contents, include_params=False):
         logger.info("Saveing {} as nnp".format(filename))
         tmpdir = tempfile.mkdtemp()
         save('{}/network.nntxt'.format(tmpdir), contents, include_params=False)
-        save_parameters('{}/parameter.h5'.format(tmpdir))
+        save_parameters('{}/parameter.protobuf'.format(tmpdir))
         with zipfile.ZipFile(filename, 'w') as nnp:
             nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')
-            nnp.write('{}/parameter.h5'.format(tmpdir), 'parameter.h5')
+            nnp.write('{}/parameter.protobuf'.format(tmpdir),
+                      'parameter.protobuf')
         shutil.rmtree(tmpdir)

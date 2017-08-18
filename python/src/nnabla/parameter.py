@@ -203,7 +203,7 @@ def load_parameters(path, proto=None):
     return proto
 
 
-def save_parameters(path, format='hdf5'):
+def save_parameters(path):
     """Save all parameters into a file with the specified format.
 
     Currently hdf5 and protobuf formats are supported.
@@ -236,4 +236,4 @@ def save_parameters(path, format='hdf5'):
     else:
         logger.critical('Only supported hdf5 or protobuf.')
         assert False
-    logger.info("Parameter save ({}): {}".format(format, path))
+    logger.info("Parameter save ({}): {}".format(ext, path))
