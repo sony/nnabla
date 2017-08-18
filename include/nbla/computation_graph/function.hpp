@@ -25,7 +25,10 @@ typedef shared_ptr<CgVariable> CgVariablePtr;
 
 vector<Variable *> to_variable_pointers(const vector<CgVariablePtr> &variables);
 
-/**
+/** Computation graph function.
+
+A Function object is held in this object, and pointers to inputs and outputs
+also kept.
  */
 class CgFunction {
   int rank_{0};

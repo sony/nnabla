@@ -131,7 +131,7 @@ auto executor = nnp.get_executor("runtime");
 executor->set_batch_size(1); // Use batch_size = 1.
 ```
 
-6. Get input data as a CPU array.
+6. Get input data as a CPU array. See [computation_graph/variable.hpp](../../../include/nbla/computation_graph/variable.hpp) and [variable.hpp](../../../include/nbla/variable.hpp) for API manual written in the headers.
 ```c++
 nbla::CgVariablePtr x = executor->get_data_variables().at(0).variable;
 uint8_t *data = x->variable()->cast_data_and_get_pointer<uint8_t>(ctx);
