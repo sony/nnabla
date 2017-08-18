@@ -7,7 +7,7 @@ This example demonstrates the workflow to train a classification model in Python
 
 # Install C++ libraries
 
-Follow [the installation manual]().
+Follow [the installation manual](http://nnabla.readthedocs.io/en/latest/cpp/installation.html).
 
 Note: this example requires NNabla Python package installed.
 
