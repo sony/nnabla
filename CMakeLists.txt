@@ -7,11 +7,7 @@ project (nbla C CXX)
 ###############################################################################
 option(BUILD_TEST "Build testing" OFF)
 
-if (NOT WIN32)
-  option(BUILD_CPP_UTILS "Build C++ API and utilities" ON)
-else()
-  option(BUILD_CPP_UTILS "Build C++ API and utilities" OFF)
-endif()
+option(BUILD_CPP_UTILS "Build C++ API and utilities" OFF)
 
 option(BUILD_PYTHON_API "Build python API" ON)
 
