@@ -176,7 +176,7 @@ def train(args, config):
 
         if (iter + 1) % config.training_config.iter_per_epoch == 0:
             # End of epoch
-            epoch = iter / config.training_config.iter_per_epoch + 1
+            epoch = iter // config.training_config.iter_per_epoch + 1
             cost_avg_epoch = cost.sum_epoch / config.training_config.iter_per_epoch
             monitoring_report = []
 

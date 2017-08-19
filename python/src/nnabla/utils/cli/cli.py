@@ -13,9 +13,6 @@
 # limitations under the License.
 
 import argparse
-import os
-import sys
-
 try:
     import nnabla_ext.cuda.cudnn
 except:
@@ -122,6 +119,18 @@ def main():
         subparser.set_defaults(func=compare_with_cpu_command)
     except:
         pass
+
+    # Uploader
+    from nnabla.utils.cli.upload import upload_command
+    subparser = subparsers.add_parser('upload')
+    subparser.add_argument(
+        '-d', '--dest', help='destination path', required=True)
+    subparser.add_argument(
+        '-s', '--size', help='split size in GB', required=False, default=10, type=int)
+    subparser.add_argument(
+        '-t', '--tmp', help='specify temporary directory')
+    subparser.add_argument('source')
+    subparser.set_defaults(func=upload_command)
 
     args = parser.parse_args()
     args.func(args)
