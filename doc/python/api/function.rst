@@ -170,6 +170,7 @@ Loss Functions
 .. autofunction:: squared_error
 .. autofunction:: absolute_error
 .. autofunction:: huber_loss
+.. autofunction:: epsilon_insensitive_loss
 .. autofunction:: kl_multinomial
 
 
