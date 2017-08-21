@@ -23,7 +23,36 @@ from nnabla.logger import logger
 
 
 def upload_command(args):
-    print(args)
+    '''upload_command
+
+    Dataset uploader for Neural Network Console.
+
+    You can re-structture and upload your own csv dataset with following command.
+    $ nnabla_cli upload -d DESTINATION CSVFILE
+
+    DESTINATION
+       URI to s3 location. for example 's3://BUCKET/key/subkey/'.
+
+    CSVFILE
+       Dataset definition file in CSV format.
+
+    To access S3 data, you must specify credentials with environment
+    variable.
+
+    For example,
+
+    ::
+
+        $ export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+        $ export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+    Or, you can specify PROFILE with following.
+
+    ::
+
+        $ export AWS_DEFAULT_PROFILE=my_profile
+    '''
+
     tmpdir = args.tmp
     if tmpdir is None:
         tmpdir = tempfile.mkdtemp()
@@ -100,11 +129,8 @@ def upload_command(args):
                         tar.add(data_files[fn][3], fn)
                 tarfiles.append(tarfilename)
 
-    print(args.dest)
     if args.dest[0:5] == 's3://':
-        print(args.dest[5:])
         bucketname, basekey = args.dest[5:].split('/', 1)
-        print(bucketname, basekey)
         s3_bucket = boto3.session.Session().resource('s3').Bucket(bucketname)
         for tar in tarfiles:
             logger.log(99, 'Upload {} start'.format(tar))
