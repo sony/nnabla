@@ -15,6 +15,7 @@
 import boto3
 import csv
 import os
+import requests
 import shutil
 import tarfile
 import tempfile
@@ -129,7 +130,8 @@ def upload_command(args):
                         tar.add(data_files[fn][3], fn)
                 tarfiles.append(tarfilename)
 
-    if args.dest[0:5] == 's3://':
+    uri_type = args.dest.split('://')[0]
+    if uri_type == 's3':
         bucketname, basekey = args.dest[5:].split('/', 1)
         s3_bucket = boto3.session.Session().resource('s3').Bucket(bucketname)
         for tar in tarfiles:
@@ -137,6 +139,13 @@ def upload_command(args):
             with open(tar, 'rb') as f:
                 s3_bucket.put_object(
                     Key=basekey + '/' + os.path.basename(tar), Body=f)
+                logger.log(99, 'Upload {} done.'.format(tar))
+    elif uri_type == 'http' or  uri_type == 'https':
+        for tar in tarfiles:
+            logger.log(99, 'Upload {} start'.format(tar))
+            with open(tar, 'rb') as f:
+                data = f.read()
+                requests.put(args.dest, data=data)
                 logger.log(99, 'Upload {} done.'.format(tar))
 
     if args.tmp is None:
