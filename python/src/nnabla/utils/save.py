@@ -31,6 +31,7 @@ from nnabla.logger import logger
 from nnabla.parameter import get_parameters
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.save_function import _create_function_nntxt
+from nnabla.utils.nnp_format import nnp_version
 
 # ----------------------------------------------------------------------
 # Helper functions
@@ -467,7 +468,6 @@ def save(filename, contents, include_params=False):
             save('net.nnp', contents)
     '''
     _, ext = os.path.splitext(filename)
-    print(filename, ext)
     if ext == '.nntxt' or ext == '.prototxt':
         logger.info("Saveing {} as prototxt".format(filename))
         proto = create_proto(contents, include_params)
@@ -482,7 +482,12 @@ def save(filename, contents, include_params=False):
         logger.info("Saveing {} as nnp".format(filename))
         tmpdir = tempfile.mkdtemp()
         save('{}/network.nntxt'.format(tmpdir), contents, include_params=False)
+
+        with open('{}/nnp_version.txt', 'w') as file:
+            file.write('{}\n'.format(nnp_version())
+
         save_parameters('{}/parameter.protobuf'.format(tmpdir))
+
         with zipfile.ZipFile(filename, 'w') as nnp:
             nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')
             nnp.write('{}/parameter.protobuf'.format(tmpdir),
