@@ -19,12 +19,15 @@ import numpy as np
 import glob
 import os
 import time
+import zipfile
 
 from nnabla.logger import logger
 from nnabla import available_contexts
 from nnabla.parameter import save_parameters, load_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
+from nnabla.utils.nnp_format import nnp_version
+
 import nnabla.utils.load as load
 
 
@@ -43,15 +46,30 @@ def _save_parameters(args, suffix, epoch, force=False):
     timediff = current_time - _save_parameter_info[suffix]['time']
     epochdiff = epoch - _save_parameter_info[suffix]['epoch']
 
-    globname = os.path.join(args.outdir, 'parameters_{}_*.h5'.format(suffix))
+    globname = os.path.join(args.outdir, 'results_{}_*.nnp'.format(suffix))
     exists = glob.glob(globname)
 
-    filename = os.path.join(
-        args.outdir, 'parameters_{}_{}.h5'.format(suffix, epoch))
-
+    base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
+    filename = base + '.nnp'
+    
     if not os.path.exists(filename) and \
-       (force or timediff > 120.0 or epochdiff > 30):
-        save_parameters(filename)
+       (force or timediff > 180.0 or epochdiff > 10):
+
+        version_filename = base + '_version.txt'
+
+        with open(version_filename, 'w') as file:
+            file.write('{}\n'.format(nnp_version()))
+
+        param_filename = base + '_param.protobuf'
+        save_parameters(param_filename)
+
+        with zipfile.ZipFile(filename, 'w') as nnp:
+            nnp.write(version_filename, 'nnp_version.txt')
+            nnp.write(_save_parameter_info['config'], os.path.basename(_save_parameter_info['config']))
+            nnp.write(param_filename, 'parameter.protobuf')
+
+        os.unlink(version_filename)
+        os.unlink(param_filename)
 
         for exist in exists:
             os.unlink(exist)
@@ -189,18 +207,21 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
 
 
 def _get_current_parameter(args):
-    globname = os.path.join(args.outdir, 'parameters_current_*.h5')
+
+    globname = os.path.join(args.outdir, 'results_current_*.nnp')
     exists = glob.glob(globname)
+    
     if len(exists) > 0:
         ex_list = {}
 
         for ex in exists:
-            ex_list[int(os.path.basename(ex)[19:-3])] = ex
+            n = int(ex.rsplit('_', 1)[1].rsplit('.', 1)[0])
+            ex_list[n] = ex
 
         last_epoch = sorted(ex_list.keys())[0]
         last_parameter = ex_list[last_epoch]
         logger.log(99, "Load parameter from [{}]".format(last_parameter))
-        load_parameters(last_parameter)
+        load.load([last_parameter], parameter_only=True)
         return last_epoch
 
     return 0
@@ -209,6 +230,17 @@ def _get_current_parameter(args):
 def train(args, config):
     global _save_parameter_info
     _save_parameter_info = {}
+
+    _, config_ext = os.path.splitext(args.config)
+    if config_ext == '.prototxt' or config_ext == '.nntxt':
+        _save_parameter_info['config'] = args.config
+    elif  config_ext == '.nnp':
+        with zipfile.ZipFile(args.config, 'r') as nnp:
+            for name in nnp.namelist():
+                _, ext = os.path.splitext(name)
+                if ext == '.nntxt' or ext == '.prototxt':
+                    nnp.extract(name, args.outdir)
+                    _save_parameter_info['config'] = os.path.join(args.outdir, name)
 
     last_epoch = 0
     if args.resume:
@@ -275,7 +307,7 @@ def train_command(args):
     class TrainConfig:
         pass
     config = TrainConfig()
-    info = load.load(files)
+    info = load.load(files, exclude_parameter=True)
 
     config.global_config = info.global_config
     config.training_config = info.training_config

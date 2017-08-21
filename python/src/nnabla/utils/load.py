@@ -31,9 +31,12 @@ from nnabla.initializer import (
     calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
 from nnabla.logger import logger
 from nnabla.parameter import get_parameter_or_create
+
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.load_function import _create_function_instance
+from nnabla.utils.nnp_format import nnp_version
+
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
 import nnabla as nn
@@ -536,7 +539,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True):
+def load(filenames, prepare_data_iterator=True, exclude_parameter=False, parameter_only=True):
     '''load
     Load network information from files.
 
@@ -552,22 +555,42 @@ def load(filenames, prepare_data_iterator=True):
     proto = nnabla_pb2.NNablaProtoBuf()
     for filename in filenames:
         _, ext = os.path.splitext(filename)
-        if 'txt' in ext:
+
+        # TODO: Here is some known problems.
+        #   - Even when protobuf file includes network structure,
+        #     it will not loaded.
+        #   - Even when prototxt file includes parameter,
+        #     it will not loaded.
+
+        if ext in ['.nntxt', '.prototxt']:
             with open(filename, 'rt') as f:
                 text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
-            nn.load_parameters(filename, proto)
+            if not exclude_parameter:
+                nn.load_parameters(filename, proto)
+            else:
+                logger.info('Skip loading parameter.')
+
         elif ext == '.nnp':
             tmpdir = tempfile.mkdtemp()
             with zipfile.ZipFile(filename, 'r') as nnp:
                 for name in nnp.namelist():
                     nnp.extract(name, tmpdir)
                     _, ext = os.path.splitext(name)
-                    if 'txt' in ext:
+                    if name == 'nnp_version.txt':
+                        with open(os.path.join(tmpdir, name), 'rt') as f:
+                            print(f.readlines())
+                    elif ext in ['.nntxt', '.prototxt']:
                         with open(os.path.join(tmpdir, name), 'rt') as f:
                             text_format.Merge(f.read(), proto)
                     elif ext in ['.protobuf', '.h5']:
-                        nn.load_parameters(os.path.join(tmpdir, name), proto)
+                        if not exclude_parameter:
+                            nn.load_parameters(os.path.join(tmpdir, name),
+                                               proto)
+
+                        else:
+                            logger.info('Skip loading parameter.')
+
             shutil.rmtree(tmpdir)
 
     default_context = None
