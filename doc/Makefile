@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = NNabla
+SPHINXPROJ    = Neural\ Network\ Libraries
 SOURCEDIR     = ../../
 BUILDDIR      = ../../doc/sphinx
 
