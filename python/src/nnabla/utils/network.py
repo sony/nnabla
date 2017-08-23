@@ -146,7 +146,7 @@ class Network:
                         accum = (
                             v in backward_sequence.grad_variables or v in backward_sequence.parameters) and not func.function_instance.inplace_grad(i)
                         seq.accum_grad.append(accum)
-                        if not accum:
+                        if not v in backward_sequence.grad_variables:
                             backward_sequence.grad_variables.append(v)
                     backward_sequence.sequence.append(seq)
         return diff_exists
@@ -186,7 +186,7 @@ class Network:
 
     def setup(self, optimize=False):
         if optimize:
-            for func in self.functions.values():
+            for func in list(self.functions.values()):
                 # remove identity layer
                 if func.function_instance.name[0:8] == "Identity":
                     assert(len(func.inputs) == 1)
@@ -226,7 +226,7 @@ class Network:
             try:
                 self.setup_function(func)
             except:
-                print_network_traceback(self.functions.values()[
+                print_network_traceback(list(self.functions.values())[
                                         min(0, i - 4):i + 1])
                 raise
 
