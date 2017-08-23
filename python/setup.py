@@ -101,13 +101,30 @@ def get_cpu_extopts(lib):
         # The below definition breaks build. Use -Wcpp instead.
         # define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')],
     )
-    if sys.platform != 'win32':
+    if sys.platform == 'darwin':
+        # macOS
+        # References
+        # * About @loader_path
+        #   <https://wincent.com/wiki/%40executable_path%2C_%40load_path_and_%40rpath>
+        # * Example of setting @loader_path
+        #   <https://github.com/X-DataInitiative/tick/blob/master/setup.py>
+        # * libc++
+        #   <https://stackoverflow.com/questions/10116724/clang-os-x-lion-cannot-find-cstdint>
+        ext_opts.update(dict(
+            extra_compile_args=[
+                '-std=c++11', '-stdlib=libc++', '-Wno-sign-compare',
+                '-Wno-unused-function', '-Wno-mismatched-tags'],
+            extra_link_args=['-Wl,-rpath,@loader_path/', '-stdlib=libc++'],
+        ))
+    elif sys.platform != 'win32':
+        # Linux
         ext_opts.update(dict(
             extra_compile_args=[
                 '-std=c++11', '-Wno-sign-compare', '-Wno-unused-function', '-Wno-cpp'],
             runtime_library_dirs=['$ORIGIN/'],
         ))
     else:
+        # Assume Windows.
         ext_opts.update(dict(extra_compile_args=['/W0']))
     return ext_opts
 
