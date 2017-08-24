@@ -51,7 +51,7 @@ def _save_parameters(args, suffix, epoch, force=False):
 
     base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
     filename = base + '.nnp'
-    
+
     if not os.path.exists(filename) and \
        (force or timediff > 180.0 or epochdiff > 10):
 
@@ -65,7 +65,8 @@ def _save_parameters(args, suffix, epoch, force=False):
 
         with zipfile.ZipFile(filename, 'w') as nnp:
             nnp.write(version_filename, 'nnp_version.txt')
-            nnp.write(_save_parameter_info['config'], os.path.basename(_save_parameter_info['config']))
+            nnp.write(_save_parameter_info['config'], os.path.basename(
+                _save_parameter_info['config']))
             nnp.write(param_filename, 'parameter.protobuf')
 
         os.unlink(version_filename)
@@ -210,7 +211,7 @@ def _get_current_parameter(args):
 
     globname = os.path.join(args.outdir, 'results_current_*.nnp')
     exists = glob.glob(globname)
-    
+
     if len(exists) > 0:
         ex_list = {}
 
@@ -234,13 +235,14 @@ def train(args, config):
     _, config_ext = os.path.splitext(args.config)
     if config_ext == '.prototxt' or config_ext == '.nntxt':
         _save_parameter_info['config'] = args.config
-    elif  config_ext == '.nnp':
+    elif config_ext == '.nnp':
         with zipfile.ZipFile(args.config, 'r') as nnp:
             for name in nnp.namelist():
                 _, ext = os.path.splitext(name)
                 if ext == '.nntxt' or ext == '.prototxt':
                     nnp.extract(name, args.outdir)
-                    _save_parameter_info['config'] = os.path.join(args.outdir, name)
+                    _save_parameter_info['config'] = os.path.join(
+                        args.outdir, name)
 
     last_epoch = 0
     if args.resume:

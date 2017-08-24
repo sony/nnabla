@@ -33,6 +33,6 @@ def nnp_version():
       * Version 0.1
 
         * First version.
-    
+
     '''
     return '0.1'

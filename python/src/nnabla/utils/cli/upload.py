@@ -140,7 +140,7 @@ def upload_command(args):
                 s3_bucket.put_object(
                     Key=basekey + '/' + os.path.basename(tar), Body=f)
                 logger.log(99, 'Upload {} done.'.format(tar))
-    elif uri_type == 'http' or  uri_type == 'https':
+    elif uri_type == 'http' or uri_type == 'https':
         for tar in tarfiles:
             logger.log(99, 'Upload {} start'.format(tar))
             with open(tar, 'rb') as f:
