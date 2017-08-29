@@ -20,7 +20,7 @@ Contents loader functions for DataSource.
 from six.moves import map
 from PIL import Image
 from shutil import rmtree
-from six import StringIO
+from six import BytesIO
 from six.moves.urllib.parse import urljoin
 from tqdm import tqdm
 import contextlib
@@ -121,7 +121,7 @@ class FileReader:
             bucketname = us.pop(0)
             key = '/'.join(us)
             logger.info('Opening {}'.format(key))
-            f = StringIO(self._s3_bucket.Object(key).get()['Body'].read())
+            f = BytesIO(self._s3_bucket.Object(key).get()['Body'].read())
         elif self._file_type == 'http':
             f = request.urlopen(filename)
         else:
