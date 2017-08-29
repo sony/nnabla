@@ -4031,6 +4031,39 @@ Element-wise squared error
      - N-D array.
      - 
 
+AbsoluteError
+^^^^^^^^^^^^^
+
+Element-wise absolute error
+
+.. math::
+    y_i = | x^{(0)}_i - x^{(1)}_i |.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x0
+     - N-D array.
+     - 
+   * - x1
+     - N-D array.
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
+
 HuberLoss
 ^^^^^^^^^
 
@@ -4071,6 +4104,57 @@ where :math:`d = x^{(0)}_i - x^{(1)}_i`
      - float
      - 1.0
      - Delta
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array of element-wise losses.
+     - 
+
+EpsilonInsensitiveLoss
+^^^^^^^^^^^^^^^^^^^^^^
+
+Element-wise Eplision Insensitive Loss
+
+.. math::
+    y_i= \left\{
+    \begin{array}{ll}
+      | x^{(0)}_i - x^{(1)}_i | - \epsilon & if \ \ | x^{(0)}_i - x^{(1)}_i | > \epsilon \\
+			0 & otherwise       
+    \end{array} \right.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x0
+     - N-D array.
+     - 
+   * - x1
+     - N-D array.
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - epsilon
+     - float
+     - 
+     - Insensitive parameter.
 
 
 * Output(s)

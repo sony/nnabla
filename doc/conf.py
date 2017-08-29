@@ -32,7 +32,7 @@ templates_path = ['_templates']
 master_doc = 'index'
 
 # General information about the project.
-project = u'NNabla'
+project = u'Neural Network Libraries'
 copyright = u'2017, Sony Corporation'
 author = u'Sony Corporation'
 
