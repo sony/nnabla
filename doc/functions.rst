@@ -3371,6 +3371,35 @@ Returns an array where the last two dimensions consist of the diagonal matrix.
      The last two axes has the same dimension. 
      - 
 
+MatrixDiagPart
+^^^^^^^^^^^^^^
+
+Returns an array in which the values of the last dimension consist of the diagonal 
+elements of the last two dimensions of an input array.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`).
+     The last two axes has the same dimension.   
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N`). 
+     - 
+
 Stochasticity
 -------------
 
