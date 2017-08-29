@@ -3343,6 +3343,34 @@ Note:
      - Reshaped N-D array
      - 
 
+MatrixDiag
+^^^^^^^^^^
+
+Returns an array where the last two dimensions consist of the diagonal matrix. 
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N`). 
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`). 
+     The last two axes has the same dimension. 
+     - 
+
 Stochasticity
 -------------
 
