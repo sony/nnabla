@@ -23,6 +23,7 @@ from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_full_path
 import nnabla.utils.load as load
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
+from nnabla.utils.data_source_loader import FileReader
 
 
 def set_initial_values(result, type_and_name, d):
@@ -186,7 +187,8 @@ def forward_command(args):
         args.dataset, config.networks[0].batch_size, False, normalize=normalize))
 
     # load dataset as csv
-    with open(args.dataset, 'rt') as f:
+    filereader = FileReader(args.dataset)
+    with filereader.open(textmode=True) as f:
         rows = [row for row in csv.reader(f)]
     row0 = rows.pop(0)
     root_path = os.path.dirname(args.dataset)
