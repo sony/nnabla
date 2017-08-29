@@ -384,7 +384,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
         if cache_dir == '':
             cache_dir = None
         if cache_dir and create_cache_explicitly:
-            if not os.path.exists(cache_dir) or overwrite_cache:
+            if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
                 logger.info('Creating cache data for "' + uri + '"')
@@ -396,7 +396,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                         index += batch_size
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, normalize=dataset.normalize))
-        elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir):
+        elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
             if cache_dir and not os.path.exists(cache_dir):
                 os.mkdir(cache_dir)
             dataset.data_iterator = (lambda: data_iterator_csv_dataset(

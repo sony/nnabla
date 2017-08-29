@@ -268,36 +268,37 @@ def train(args, config):
         if last_iter < max_iter:
             for iter in range(last_iter, max_iter):
                 cost = _update(iter, config, cost)
-    
+
                 if (iter + 1) % config.training_config.iter_per_epoch == 0:
                     # End of epoch
                     epoch = iter // config.training_config.iter_per_epoch + 1
                     cost_avg_epoch = cost.sum_epoch / config.training_config.iter_per_epoch
                     monitoring_report = []
-    
+
                     # Evaluation
                     error_str = ''
                     if epoch % 10 == 0 or epoch <= 5:
                         best_error, error_str = _evaluate(
                             args, config, monitoring_report, best_error, epoch)
-    
+
                     # Write to monitoring_report.yml
-                    f = open(os.path.join(args.outdir, 'monitoring_report.yml'), 'a')
+                    f = open(os.path.join(
+                        args.outdir, 'monitoring_report.yml'), 'a')
                     f.write('{}:\n'.format(epoch))
                     f.write('  cost: {}\n'.format(cost_avg_epoch))
                     for str in monitoring_report:
                         f.write(str)
                     f.close()
                     cost.sum_epoch = 0
-    
+
                     _save_parameters(args, 'current', epoch)
-    
+
                     logger.log(99, 'epoch {} of {} cost={:.6f} {}'.format(
                         epoch, config.training_config.max_epoch, cost_avg_epoch, error_str))
-    
+
             _save_parameters(args, 'current', epoch, True)
     else:
-            _save_parameters(args, 'current', 0, True)
+        _save_parameters(args, 'current', 0, True)
 
 
 def train_command(args):
