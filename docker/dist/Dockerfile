@@ -121,6 +121,7 @@ RUN set -xe ; for PY in 2.7 3.4 3.5 3.6 \
     ; conda install -y virtualenv \
     ; pip install -U -r /tmp/deps/setup_requirements.txt \
     ; (pip install -U -r /tmp/deps/requirements.txt || true)\
+    ; pip install -U -r /tmp/deps/requirements.txt \
     ; pip install -U -r /tmp/deps/test_requirements.txt \
     ; pip install -U "Cython<0.25" \
     ; pip install -U "numpy<1.11" \
