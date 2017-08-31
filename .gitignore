@@ -3,6 +3,7 @@
 .cache
 *.pyc
 
+/build/
 /doc/?/
 /examples/cpp/mnist_runtime/mnist_runtime
 /examples/cpp/mnist_runtime/*.nnp
