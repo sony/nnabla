@@ -165,13 +165,10 @@ Build and install.
 
 .. code-block:: doscon
 
-    (nnabla) > cmake -G "Visual Studio 14 Win64" ..\
-    (nnabla) > set VS90COMNTOOLS=%VS140COMNTOOLS%
-    (nnabla) > cmake --build . --config Release --target nnabla
-    (nnabla) > cd ..\
-    (nnabla) > python python\setup.py build_ext --compiler=msvc
-    (nnabla) > python python\setup.py install
-    (nnabla) > cd ..\
+    (nnabla) > cmake -G "Visual Studio 14 Win64" ..
+    (nnabla) > msbuild ALL_BUILD.vcxproj /p:Configuration=Release
+    (nnabla) > cd dist
+    (nnabla) > pip install -U nnabla-<package version>-<package-arch>.whl
 
 
 Build CUDA/cuDNN extension
@@ -185,16 +182,18 @@ Build CUDA/cuDNN extension
     (nnabla) > cd build
 
 Build and install.
+You must add following options to cmake.
+
+- -DNNABLA_DIR=<PATH to nnabla source directory>
+- -DCPPLIB_LIBRARY=<PATH to libnnabla.so>
 
 .. code-block:: doscon
 
-    (nnabla) > cmake -G "Visual Studio 14 Win64" ..\
-    (nnabla) > set VS90COMNTOOLS=%VS140COMNTOOLS%
-    (nnabla) > cmake --build . --config Release --target ALL_BUILD
-    (nnabla) > cd ..\
-    (nnabla) > python python\setup.py build_ext --compiler=msvc
-    (nnabla) > python python\setup.py install
-    (nnabla) > cd ..\
+    (nnabla) > cmake -G "Visual Studio 14 Win64" -DNNABLA_DIR=..\..\nnabla -DCPPLIB_LIBRARY=..\..\nnabla\build\bin\Release\nnabla.dll ..
+    (nnabla) > msbuild ALL_BUILD.vcxproj /p:Configuration=Release
+    (nnabla) > cd dist
+    (nnabla) > pip install -U nnabla_ext_cuda-<package version>-<package-arch>.whl
+
 
 Unit test
 ^^^^^^^^^

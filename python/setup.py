@@ -63,7 +63,6 @@ def extopts(library_name, library_dir):
 ################################################################################
 # Main
 
-
 if __name__ == '__main__':
     from Cython.Build import cythonize
 
@@ -169,17 +168,6 @@ if __name__ == '__main__':
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [library_file_name, 'nnabla.conf']}
-
-    for d in ['include', 'doc', 'build-tools']:
-        path_d = os.path.join(path_pkg, 'dev', d)
-        shutil.rmtree(path_d, ignore_errors=True)
-        shutil.copytree(os.path.join(root_dir, '..', d), path_d)
-        for dirname, dirnames, filenames in os.walk(path_d):
-            for filename in filenames:
-                _, ext = os.path.splitext(filename)
-                if ext != '.pyc':
-                    package_data["nnabla"].append(os.path.join(
-                        'dev', d, dirname[len(path_d) + 1:], filename))
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:

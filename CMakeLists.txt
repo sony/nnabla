@@ -78,6 +78,9 @@ execute_process(
   ${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto)
 endif()
   
+###############################################################################
+# C++ Library
+###############################################################################
 if(BUILD_CPP_LIB)
   ###############################################################################
   # Third party libraries
@@ -165,7 +168,7 @@ if(BUILD_CPP_LIB)
     nbla_exclude_from_all(cpplibtest)  # Exclude target from all or default build
     add_test(NAME cpplibtest COMMAND cpplibtest)
   endif()
-  
+
   ###############################################################################
   # Generate setup.cfg
   ###############################################################################
@@ -193,7 +196,7 @@ if(BUILD_CPP_LIB)
   # file(GENERATE ...) for each build config, we generate setup.cfg files for each
   # build type with suffix `-<config>`. You can switch the build type by replacing
   # the setup.cfg file by setup.cfg-<config>. The default setup.cfg is for Release build.
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.build-together.in
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured)
   
   file(GENERATE OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg-$<CONFIG>
@@ -208,12 +211,30 @@ if(BUILD_CPP_LIB)
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg-$<CONFIG>)
   
+  
 endif() # BUILD_CPP_LIB
 
+###############################################################################
+# Python API
+###############################################################################
 if(BUILD_PYTHON_PACKAGE)
-  ###############################################################################
-  # Python API
-  ###############################################################################
+
+  if(NOT BUILD_CPP_LIB)
+    if(NOT IS_DIRECTORY ${CPPLIB_BUILD_DIR})
+      message(FATAL_ERROR "Invalid CPPLIB_BUILD_DIR :[${CPPLIB_BUILD_DIR}]")
+    endif()
+    if(NOT EXISTS ${CPPLIB_LIBRARY})
+      message(FATAL_ERROR "Invalid CPPLIB_LIBRARY :[${CPPLIB_LIBRARY}]")
+    endif()
+    
+    set(CPPLIB_LIBRARY_NAME "nnabla")
+    set(CPPLIB_TARGET_FILE ${CPPLIB_LIBRARY})
+    get_filename_component(CPPLIB_TARGET_FILE_NAME ${CPPLIB_TARGET_FILE} NAME)
+    
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.build-wheel.in
+      ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg)
+  endif()
+
   set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/python/test/solver/__pycache__
     ${CMAKE_CURRENT_SOURCE_DIR}/python/test/__pycache__
@@ -246,7 +267,12 @@ if(BUILD_PYTHON_PACKAGE)
       COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
       COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL})
   endif()
-  add_custom_target(wheel DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL} ${NBLA_PYTHON_OUTPUT_BUILD})
+  if(BUILD_CPP_LIB)
+    add_custom_target(wheel ALL DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL} ${NBLA_PYTHON_OUTPUT_BUILD})
+    add_dependencies(wheel ${NBLA_LIBRARY_NAME})
+  else()
+    add_custom_target(wheel DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL} ${NBLA_PYTHON_OUTPUT_BUILD})
+  endif()
 
   if(UNIX OR APPLE)
     add_custom_target(benchmark

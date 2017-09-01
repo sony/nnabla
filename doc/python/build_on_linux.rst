@@ -104,6 +104,13 @@ Build and install
 Build and install CUDA/cuDNN extension
 """"""""""""""""""""""""""""""""""""""
 
+You needs to build nnabla before build nnabla-ext-cuda.
+And you must add following options to cmake.
+
+- -DNNABLA_DIR=<PATH to nnabla source directory>
+- -DCPPLIB_LIBRARY=<PATH to libnnabla.so>
+
+
 .. code-block:: shell
 
     git clone https://github.com/sony/nnabla-ext-cuda
@@ -111,7 +118,7 @@ Build and install CUDA/cuDNN extension
     sudo pip install -U -r python/requirements.txt
     mkdir build
     cd build
-    cmake ../
+    cmake -DNNABLA_DIR=../../nnabla -DCPPLIB_LIBRARY=../../nnabla/build/lib/libnnabla.so ..
     make -j 16
     cd dist
     sudo pip install -U nnabla_ext_cuda-<package version>-<package-arch>.whl
