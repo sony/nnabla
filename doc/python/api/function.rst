@@ -152,7 +152,6 @@ Array Manipulation
 Stochasticity
 -------------
 
-.. autofunction:: dropout
 .. autofunction:: rand
 .. autofunction:: randint
 .. autofunction:: randn
