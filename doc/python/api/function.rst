@@ -129,6 +129,8 @@ Math
 .. autofunction:: exp
 .. autofunction:: log
 .. autofunction:: identity
+.. autofunction:: matrix_diag
+.. autofunction:: matrix_diag_part
 
 
 Array Manipulation
