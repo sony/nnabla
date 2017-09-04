@@ -2907,6 +2907,58 @@ Identity function.
      - N-D array
      - 
 
+
+BatchMatmul
+^^^^^^^^^^^
+
+Batch matrix multiplication.
+
+Two of batchs of matrices are multiplied for each sample in a batch. A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, and the first dimensions up to the third last dimension are considered as batch samples.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - a
+     - N-D array with >= 2-dim. The last two dimensions will be treated as a matrix.
+     -
+   * - b
+     - N-D array with >= 2-dim. The last two dimensions will be treated as a matrix. The product of the size of 0-th dimension through the size of the third last dimension must be same as that of the input ``a``.
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - transpose_a
+     - bool
+     - False
+     - Transpose the last two axes of ``a`` in matrix multiplication.
+   * - transpose_b
+     - bool
+     - False
+     - Transpose the last two axes of ``b`` in matrix multiplication.
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output of sample-wise matrix multiplication in a batch. When ``a`` is of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose options are all False, the output will be a shape of [N, P, R].
+     - 
+
+
 Array Manipulation
 ------------------
 

@@ -131,6 +131,7 @@ Math
 .. autofunction:: identity
 .. autofunction:: matrix_diag
 .. autofunction:: matrix_diag_part
+.. autofunction:: batch_matmul
 
 
 Array Manipulation
