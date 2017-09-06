@@ -397,7 +397,34 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
       auto type = ofunc.type();
       ofuncs[ofunc.name()] = i;
 
-      if (ofunc.repeat_id_size() > 0) {
+      if (type == "RecurrentInput") {
+
+        // RecurrentInput will convert into 'Split' function.
+        ::Function *func = net.add_function();
+        fid = net.function_size();
+        func->set_name(ofunc.name());
+        func->set_type("Split");
+        funcs[func->name()] = fid;
+
+        ::SplitParameter *split_param = new ::SplitParameter();
+        auto axis = ofunc.recurrent_param().axis();
+        split_param->set_axis(axis);
+        func->set_allocated_split_param(split_param);
+
+        // Prepare input(s)
+        // Just copy from ofunc.
+        for (int j = 0; j < ofunc.input_size(); j++) {
+          func->add_input(ofunc.input(j));
+        }
+
+        // Prepare output(s)
+        auto ovar = orig.variable(ovars[ofunc.output(0)]);
+        auto suffixes = create_var_suffixes(repeat_info, ovar);
+        for (int j = 0; j < suffixes.size(); j++) {
+          func->add_output(ofunc.output(0) + suffixes[j]);
+        }
+
+      } else if (ofunc.repeat_id_size() > 0) {
         auto suffixes = create_func_suffixes(repeat_info, ofunc);
 
         for (int j = 0; j < suffixes.size(); j++) {
@@ -423,17 +450,41 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
             }
             func->clear_input();
             func->add_input(input);
+          } else if (type == "Delay") {
+
+            // Change function type to identity
+            func->set_type("Identity");
+            // Change input....
+            NBLA_CHECK(func->input_size() == 2, error_code::value,
+                       "Input size of RepeatStart must be 2. %s (%d != 2)",
+                       func->name().c_str(), (int)func->input_size());
+            std::string input;
+            if (j == 0) {
+              input = func->input(1);
+            } else {
+              input = func->input(0) + suffixes[j - 1];
+            }
+            func->clear_input();
+            func->add_input(input);
           } else {
             // Add suffix to input params.
             for (int k = 0; k < func->input_size(); k++) {
               auto inp = func->input(k);
-              func->set_input(k, inp + suffix);
+              if (vars.count(inp + suffix) > 0) {
+                func->set_input(k, inp + suffix);
+              } else {
+                func->set_input(k, inp);
+              }
             }
           }
           // Add suffix to output params.
           for (int k = 0; k < func->output_size(); k++) {
             auto out = func->output(k);
-            func->set_output(k, out + suffix);
+            if (vars.count(out + suffix) > 0) {
+              func->set_output(k, out + suffix);
+            } else {
+              func->set_output(k, out);
+            }
           }
         }
 
@@ -453,6 +504,27 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
             auto suffixes =
                 create_var_suffixes(repeat_info, orig.variable(ovar));
             func->set_input(j, inp + suffixes[suffixes.size() - 1]);
+          }
+        } else if (type == "RecurrentOutput") {
+          // RecurrentOutput will convert into 'Stack' function.
+          func->set_name(ofunc.name());
+          func->set_type("Stack");
+          ::StackParameter *stack_param = new ::StackParameter();
+          auto axis = ofunc.recurrent_param().axis();
+          stack_param->set_axis(axis);
+          func->set_allocated_stack_param(stack_param);
+
+          // Prepare input(s)
+          auto ovar = orig.variable(ovars[ofunc.input(0)]);
+          auto suffixes = create_var_suffixes(repeat_info, ovar);
+
+          auto input_size = func->input_size();
+          for (int j = 0; j < suffixes.size(); j++) {
+            if (j < input_size) {
+              func->set_input(j, ofunc.input(0) + suffixes[j]);
+            } else {
+              func->add_input(ofunc.input(0) + suffixes[j]);
+            }
           }
         }
       }
