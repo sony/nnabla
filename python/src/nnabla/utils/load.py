@@ -196,7 +196,7 @@ def _create_variable(v, name, shape):
     return variable
 
 
-def _network(proto, default_context, all_variables):
+def _network(proto, default_context, batch_size, all_variables):
     network = Network()
     network.name = proto.name
     # Read Repeat Info
@@ -205,7 +205,12 @@ def _network(proto, default_context, all_variables):
         network.repeat_info[r.id] = r.times
 
     network.variables = OrderedDict()
-    network.batch_size = proto.batch_size
+
+    if batch_size is None:
+        network.batch_size = proto.batch_size
+    else:
+        network.batch_size = batch_size
+
     for v in proto.variable:
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
             name = v.name + ''.join(['_' + v.repeat_id[index] + '[' +
@@ -414,14 +419,15 @@ def _datasets(proto, prepare_data_iterator=True):
     return datasets
 
 
-def _networks(proto, default_context, network_names=None):
+def _networks(proto, default_context, batch_size, network_names=None):
     # Load networks
     networks = OrderedDict()
     all_variables = {}
 
     for np in proto.network:
         if not network_names or np.name in network_names:
-            networks[np.name] = _network(np, default_context, all_variables)
+            networks[np.name] = _network(
+                np, default_context, batch_size, all_variables)
 
     return networks
 
@@ -536,7 +542,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True):
+def load(filenames, prepare_data_iterator=True, batch_size=None):
     '''load
     Load network information from files.
 
@@ -584,7 +590,7 @@ def load(filenames, prepare_data_iterator=True):
         info.datasets = _datasets(proto, prepare_data_iterator)
 
     if len(proto.network) > 0:
-        info.networks = _networks(proto, default_context)
+        info.networks = _networks(proto, default_context, batch_size)
 
     if len(proto.optimizer) > 0:
         info.optimizers = _optimizers(

@@ -40,6 +40,22 @@ def main():
     except:
         pass
 
+    from nnabla.utils.cli.forward import infer_command
+    # Infer
+    subparser = subparsers.add_parser('infer')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--output', help='output file prefix', required=False)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-b', '--batch_size',
+        help='Batch size to use batch size in nnp file set -1.',
+        type=int, default=1)
+    subparser.add_argument('inputs', nargs='+')
+    subparser.set_defaults(func=infer_command)
+
     try:
         from nnabla.utils.cli.forward import forward_command
         # Forward
