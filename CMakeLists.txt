@@ -196,7 +196,7 @@ if(BUILD_CPP_LIB)
   # file(GENERATE ...) for each build config, we generate setup.cfg files for each
   # build type with suffix `-<config>`. You can switch the build type by replacing
   # the setup.cfg file by setup.cfg-<config>. The default setup.cfg is for Release build.
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.build-together.in
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured)
   
   file(GENERATE OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg-$<CONFIG>
@@ -257,15 +257,20 @@ if(BUILD_PYTHON_PACKAGE)
   # Wheel
   if(UNIX)
     add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
+      COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
       COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
       COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
       COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
       COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
-      COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL})
+      COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
+      DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
   else()
     add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
+      COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
+      COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
       COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
-      COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL})
+      COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
+      DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
   endif()
   if(BUILD_CPP_LIB)
     add_custom_target(wheel ALL DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL} ${NBLA_PYTHON_OUTPUT_BUILD})
