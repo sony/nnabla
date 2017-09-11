@@ -40,7 +40,8 @@ def check_cpp_forward(save_path, data, x, y, nnp_file, exec_name="Runtime"):
     np.savetxt(python_forward_file, h, delimiter=',')
 
     # cpp forward
-    command_file = "{}/nbla infer".format(nnabla.__path__[0])
+    command_file = "{} infer".format(
+        os.path.join(nnabla.__path__[0], 'bin', 'nbla'))
     command = command_file + " "
     command += nnp_file + " "
     for eval_data_file in eval_data_files:
