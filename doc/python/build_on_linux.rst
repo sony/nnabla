@@ -1,4 +1,4 @@
-.. _python_build_on_linux:
+.. _python-build-on-linux:
 
 Build on Linux
 --------------
@@ -24,6 +24,7 @@ Our build system requires:
 
 
 .. _linux-setup-build-environment:
+
 Setup build environment
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -83,6 +84,7 @@ Build and installation
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. _linux-build-and-install:
+
 Build and install
 """""""""""""""""
 
@@ -100,9 +102,17 @@ Build and install
     sudo pip install -U nnabla-<package version>-<package-arch>.whl # a name may depend on an environment
 
 
-.. _linux-build-and-install-cuda/cudnn-extension:
+.. _linux-build-and-install-cuda-cudnn-extension:
+
 Build and install CUDA/cuDNN extension
 """"""""""""""""""""""""""""""""""""""
+
+You needs to build nnabla before build nnabla-ext-cuda.
+And you must add following options to cmake.
+
+- -DNNABLA_DIR=<PATH to nnabla source directory>
+- -DCPPLIB_LIBRARY=<PATH to libnnabla.so>
+
 
 .. code-block:: shell
 
@@ -111,12 +121,13 @@ Build and install CUDA/cuDNN extension
     sudo pip install -U -r python/requirements.txt
     mkdir build
     cd build
-    cmake ../
+    cmake -DNNABLA_DIR=../../nnabla -DCPPLIB_LIBRARY=../../nnabla/build/lib/libnnabla.so ..
     make -j 16
     cd dist
     sudo pip install -U nnabla_ext_cuda-<package version>-<package-arch>.whl
 
 .. _linux-unit-test:
+
 Unit test
 ^^^^^^^^^
 

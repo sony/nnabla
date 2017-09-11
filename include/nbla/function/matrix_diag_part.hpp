@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** Embed
+/** MatrixDiagPart
  */
-#ifndef __NBLA_FUNCTION_EMBED_HPP__
-#define __NBLA_FUNCTION_EMBED_HPP__
+#ifndef __NBLA_FUNCTION_MATRIXDIAGPART_HPP__
+#define __NBLA_FUNCTION_MATRIXDIAGPART_HPP__
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
@@ -23,34 +23,26 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Embed);
+NBLA_REGISTER_FUNCTION_HEADER(MatrixDiagPart);
 
-/** Embed slices a matrix/tensor with indexing array/tensor.
-
-Inputs:
-- Indeces with shape @f$(I_0, ..., I_N)@f$
-- Weights with shape @f$(W_0, ..., W_M)@f$
-
-Outputs:
-- Output with shape @f$(I_0, ..., I_N, W_1, ..., W_M)@f$
-
-@tparam T Index type (integer)
-@tparam T1 Value type (usually float)
-@ingroup FunctionImplGrp
+/**
+    @todo PLACE HERE FUNCTION DOCUMENTATION.
  */
-template <typename T, typename T1> class Embed : public BaseFunction<> {
+template <typename T> class MatrixDiagPart : public BaseFunction<> {
 protected:
+  Size_t last_ndim_;
+
 public:
-  Embed(const Context &ctx) : BaseFunction<>(ctx) {}
-  virtual ~Embed() {}
-  virtual shared_ptr<Function> copy() const { return create_Embed(ctx_); }
-  virtual vector<dtypes> in_types() {
-    return vector<dtypes>{get_dtype<T>(), get_dtype<T1>()};
+  MatrixDiagPart(const Context &ctx) : BaseFunction<>(ctx) {}
+  virtual ~MatrixDiagPart() {}
+  virtual shared_ptr<Function> copy() const {
+    return create_MatrixDiagPart(ctx_);
   }
-  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T1>()}; }
-  virtual int min_inputs() { return 2; }
+  virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
-  virtual string name() { return "Embed"; }
+  virtual string name() { return "MatrixDiagPart"; }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }

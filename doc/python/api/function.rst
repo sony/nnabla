@@ -129,6 +129,9 @@ Math
 .. autofunction:: exp
 .. autofunction:: log
 .. autofunction:: identity
+.. autofunction:: matrix_diag
+.. autofunction:: matrix_diag_part
+.. autofunction:: batch_matmul
 
 
 Array Manipulation
@@ -149,7 +152,6 @@ Array Manipulation
 Stochasticity
 -------------
 
-.. autofunction:: dropout
 .. autofunction:: rand
 .. autofunction:: randint
 .. autofunction:: randn
