@@ -40,6 +40,24 @@ def test_get_parameter_or_create_need_grad():
     nn.clear_parameters()
 
 
+def test_parameter_scope_slash():
+    """Testing if parameter_scope('aaa/bbb') works.
+    """
+    import nnabla as nn
+    from nnabla.parameter import get_parameter_or_create
+    nn.clear_parameters()
+    with nn.parameter_scope('aaa/bbb'):
+        param = get_parameter_or_create('ccc', (2, 3, 4, 5))
+    ref = np.random.randn(*param.shape).astype(np.float32)
+    param.d = ref
+
+    with nn.parameter_scope('aaa'):
+        with nn.parameter_scope('bbb'):
+            param = get_parameter_or_create('ccc', (2, 3, 4, 5))
+    assert np.all(param.d == ref)
+    nn.clear_parameters()
+
+
 # Dummy parametric function for test_parameteric_function
 @PF.parametric_function_api("dummy")
 def dummy_parametric_function(shape, f=10, i=1, s="dummy"):
