@@ -5,7 +5,7 @@ development and production. We aim to have it running everywhere: desktop PCs, H
 clusters, embedded devices and production servers.
 
 
-* [Neural Network Console](https://dl.sony.com/), a Windows GUI app for neural network developement, has been released.
+* [Neural Network Console](https://dl.sony.com/), a Windows GUI app for neural network development, has been released.
 * The GitHub repository of CUDA extension of Neural Network Libraries can be found [here](https://github.com/sony/nnabla-ext-cuda).
 
 
