@@ -52,7 +52,7 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
         void zero() except+
         void fill(double v) except+
         const CArray * get(dtypes dtype, const CContext & ctx) except+
-        CArray * cast(dtypes dtype, const CContext & ctx)except +
+        CArray * cast(dtypes dtype, const CContext & ctx) nogil except +
 
     ctypedef shared_ptr[CNdArray] NdArrayPtr
 

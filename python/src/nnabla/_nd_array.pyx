@@ -177,7 +177,9 @@ cdef class NdArray:
         if ctx is not None:
             ctx_ = ctx
         cdef int type_num = np.dtype(dtype).num
-        self.arrp.cast( < dtypes > type_num, < CContext ?> ctx_)
+        cdef CContext cctx = <CContext ?> ctx_
+        with nogil:
+            self.arrp.cast(< dtypes > type_num, cctx)
         if ctx is None:
             return self.data
 
@@ -203,6 +205,7 @@ cdef class NdArray:
         cdef CArray * arr
         import nnabla as nn
         ctx = nn.context()
+        cdef CContext cctx = <CContext > ctx
         try:
             type_num = <int > self.arrp.array().get().dtype()
         except:
@@ -210,7 +213,8 @@ cdef class NdArray:
         shape.resize(self.arrp.ndim())
         shape_base = self.arrp.shape()
         copy(shape_base.begin(), shape_base.end(), shape.begin())
-        arr = <CArray * > (self.arrp.cast(< dtypes > type_num, ctx))
+        with nogil:
+            arr = <CArray * > (self.arrp.cast( < dtypes > type_num, cctx))
         cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
             shape.size(), shape.data(), type_num, arr.pointer())
         ndarray.base = <PyObject * > self
