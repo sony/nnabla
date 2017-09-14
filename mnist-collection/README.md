@@ -11,7 +11,7 @@ when running any of the examples.
 
 ---
 
-## Classification task (`classification.py`)
+## Classification task (`classification.py` and `classification_bnn.py`)
 
 This example demonstrates the training of hand-written digits classification on
 MNIST dataset. The convolutional neural network takes 28x28 pixel grayscale
@@ -44,3 +44,10 @@ The classification example provides two choices of neural network architectures
 to train, LeNet and ResNet. You can select it with the `-n` option. For more
 details see the source code and the help produced by running with the `-h`
 option.
+
+You can also try training of various types of binary neural network
+classification models on MNIST dataset.
+
+```
+python classification_bnn.py [-c cuda.cunn] [-h|--help]
+```
