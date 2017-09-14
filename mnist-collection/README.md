@@ -86,3 +86,19 @@ python siamese.py [-c cuda.cudnn] [-h|--help]
 After the learning completes successfully, the results will be saved in
 "tmp.monitor.siamese".  In this folder you will find model files
 "params_\*.h5", log files "\*.txt" and a 2d t-SNE image file "embed.png".
+
+## Semi-Supervised Learning of Classification (`vat.py`)
+
+This is a semi-supervised learning example demonstrating "Virtual Adversarial
+Training".
+
+Reference: "Distributional Smoothing with Virtual Adversarial Training"
+https://arxiv.org/abs/1507.00677
+
+```
+python vat.py [-c cuda.cudnn] [-h|--help]
+```
+
+After the learning completes successfully, the results will be saved in
+"tmp.monitor.vat". In this folder you will find model files "params_\*.h5" and
+log files "\*.txt".
