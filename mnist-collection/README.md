@@ -72,3 +72,17 @@ After the learning completes correctly, the results will be saved in
 "tmp.monitor.dcgan". In this folder you will find the discriminator model files
 "discriminator_\*.h5", the generator model files "generator_\*.h5", log files
 "\*.txt" and some generated images in "Fake-images".
+
+## Feature Embedding (`siamese.py`)
+
+This example demonstrates training of a neural network model that embeds an
+image into a low dimensional feature space. The Siamese Neural Network takes a
+pair of 28x28 pixel images as input, and outputs the feature embedding vectors.
+
+```
+python siamese.py [-c cuda.cudnn] [-h|--help]
+```
+
+After the learning completes successfully, the results will be saved in
+"tmp.monitor.siamese".  In this folder you will find model files
+"params_\*.h5", log files "\*.txt" and a 2d t-SNE image file "embed.png".
