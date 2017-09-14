@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from six.moves import map
-from PIL import Image
+from scipy.misc import imsave
 import csv
 import numpy as np
 import os
@@ -88,7 +88,7 @@ def update_result(args, index, result, values, output_index, type_end_names):
                         else:
                             x = x.reshape(x.shape[1], x.shape[2])
                         x = x.clip(0, 255).astype(np.uint8)
-                        Image.fromarray(x).save(full_path)
+                        imsave(full_path, x)
                     else:
                         # CSV type
                         with open(full_path, 'w') as f:

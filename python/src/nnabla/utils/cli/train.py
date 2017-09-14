@@ -20,6 +20,8 @@ import glob
 import os
 import time
 import zipfile
+import tempfile
+from shutil import rmtree
 
 from nnabla.logger import logger
 from nnabla import available_contexts
@@ -27,6 +29,7 @@ from nnabla.parameter import save_parameters, load_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 from nnabla.utils.nnp_format import nnp_version
+from nnabla.parameter import get_parameter_or_create
 
 import nnabla.utils.load as load
 
@@ -301,17 +304,120 @@ def train(args, config):
         _save_parameters(args, 'current', 0, True)
 
 
+def get_best_param(paramlist):
+    h5list = []
+    bestlist = {}
+    currentlist = {}
+    for fn in paramlist:
+        name, ext = os.path.splitext(fn)
+        if ext == '.h5':
+            h5.append(ext)
+        elif ext == '.nnp':
+            ns = name.split('_')
+            if len(ns) == 3:
+                if ns[0] == 'results':
+                    if ns[1] == 'best':
+                        bestlist[int(ns[2])] = fn
+                    elif ns[1] == 'current':
+                        currentlist[int(ns[2])] = fn
+    if len(bestlist) > 0:
+        return bestlist[sorted(bestlist.keys()).pop()]
+    elif len(currentlist) > 0:
+        return currentlist[sorted(currentlist.keys()).pop()]
+    elif len(h5list) > 0:
+        return sorted(h5list).pop()
+    return None
+
 def train_command(args):
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
-    files = []
-    files.append(args.config)
+    info = load.load([args.config], exclude_parameter=True)
+    
     if args.param:
-        files.append(args.param)
+        info = load.load([args.param], parameter_only=True)
+
+    
+    if args.sdcproj and args.job_url_list:
+        job_url_list = {}
+        with open(args.job_url_list) as f:
+            for line in f.readlines():
+                ls = line.strip().split()
+                if len(ls) == 2:
+                    job_url_list[ls[0]] = ls[1]
+
+        param_list = {}
+        with open(args.sdcproj) as f:
+            is_file_property = False
+            for line in f.readlines():
+                ls = line.strip().split('=')
+                if len(ls) == 2:
+                    var, val = ls
+                    vsr = var.split('_')
+                    if(len(vsr) == 3 and vsr[0] == 'Property' and vsr[2] == 'Name'):
+                        vsl = val.rsplit('.', 1)
+                        if vsl[-1] == 'File':
+                            is_file_property = True
+                            continue
+                if is_file_property:
+                    job_id, param = ls[1].split('/', 1)
+                    if job_id in job_url_list:
+                        uri = job_url_list[job_id]
+                        if uri not in param_list:
+                            param_list[uri] = []
+                        param_list[uri].append(param)
+                is_file_property = False
+
+        for uri, params in param_list.items():
+            param_proto = None
+
+            param_fn = None
+            if uri[0:5].lower() == 's3://':
+                uri_header, uri_body = uri.split('://', 1)
+                us = uri_body.split('/', 1)
+                bucketname = us.pop(0)
+                base_key = us[0]
+                logger.info('Creating session for S3 bucket {}'.format(bucketname))
+                import boto3
+                bucket = boto3.session.Session().resource('s3').Bucket(bucketname)
+                paramlist = []
+                for obj in bucket.objects.filter(Prefix=base_key):
+                    fn = obj.key[len(base_key)+1:]
+                    if len(fn) > 0:
+                        paramlist.append(fn)
+                p = get_best_param(paramlist)
+                if p is not None:
+                    param_fn = uri + '/' + p
+                    tempdir = tempfile.mkdtemp()
+                    tmp = os.path.join(tempdir, p)
+                    with open(tmp, 'wb') as f:
+                        f.write(bucket.Object(base_key+'/' + p).get()['Body'].read())
+                    param_proto = load_parameters(tmp, proto_only=True)
+                    rmtree(tempdir, ignore_errors=True)
+                
+            else:
+                paramlist = []
+                for fn in glob.glob('{}/*'.format(uri)):
+                    paramlist.append(os.path.basename(fn))
+                print(paramlist)
+                p = get_best_param(paramlist)
+                if p is not None:
+                    param_fn = os.path.join(uri, p)
+                    param_proto = load_parameters(param_fn, proto_only=True)
+
+            if param_proto is not None:
+                for param in param_proto.parameter:
+                    pn = param.variable_name.replace('/', '~')
+                    if pn in params:
+                        logger.log(99, 'Update variable {} from {}'.format(param.variable_name, param_fn))
+                        var = get_parameter_or_create(
+                            param.variable_name, param.shape.dim)
+                        var.d = np.reshape(param.data, param.shape.dim)
+                        var.need_grad = param.need_grad
+                
+    return
 
     class TrainConfig:
         pass
     config = TrainConfig()
-    info = load.load(files, exclude_parameter=True)
 
     logger.log(99, 'Train with contexts {}'.format(available_contexts))
 

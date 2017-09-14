@@ -330,7 +330,7 @@ def data_iterator_simple(load_func,
     .. code-block:: python
 
         import numpy as np
-        from PIL import Image
+        from scipy.misc import imread
         image_paths = load_image_paths()
         labels = load_labels()
         def my_load_func(i):
@@ -339,7 +339,7 @@ def data_iterator_simple(load_func,
                 image: c x h x w array
                 label: 0-shape array
             '''
-            img = np.asarray(Image.Open(image_paths[i]).astype('float32')
+            img = imread(image_paths[i]).astype('float32')
             return np.rollaxis(img, 2), np.array(labels[i])
 
 

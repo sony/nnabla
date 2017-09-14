@@ -227,7 +227,7 @@ class MonitorImage(object):
 
         """
         import nnabla as nn
-        from PIL import Image
+        from scipy.misc import imsave
         if index != 0 and (index + 1) % self.interval != 0:
             return
         if isinstance(var, nn.Variable):
@@ -253,7 +253,7 @@ class MonitorImage(object):
             if img.shape[-1] == 1:
                 img = img[..., 0]
             path = path_tmpl.format(index, '{:03d}'.format(j))
-            Image.fromarray(img).save(path)
+            imsave(path, img)
         if self.verbose:
             logger.info("iter={} {{{}}} are written to {}.".format(
                 index, self.name, path_tmpl.format(index, '*')))
@@ -306,6 +306,7 @@ class MonitorImageTile(MonitorImage):
 
         """
         import nnabla as nn
+        from scipy.misc import imsave
         if index != 0 and (index + 1) % self.interval != 0:
             return
         if isinstance(var, nn.Variable):
@@ -327,7 +328,7 @@ class MonitorImageTile(MonitorImage):
                 [data, np.ones((data.shape[0], 1) + data.shape[-2:])], axis=1)
         tile = tile_images(data)
         path = os.path.join(self.save_dir, '{:06d}.png'.format(index))
-        Image.fromarray(tile).save(path)
+        imsave(path, tile)
         if self.verbose:
             logger.info("iter={} {{{}}} is written to {}.".format(
                 index, self.name, path))

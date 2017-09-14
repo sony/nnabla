@@ -539,7 +539,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, exclude_parameter=False, parameter_only=True):
+def load(filenames, prepare_data_iterator=True, exclude_parameter=False, parameter_only=False):
     '''load
     Load network information from files.
 
@@ -563,8 +563,9 @@ def load(filenames, prepare_data_iterator=True, exclude_parameter=False, paramet
         #     it will not loaded.
 
         if ext in ['.nntxt', '.prototxt']:
-            with open(filename, 'rt') as f:
-                text_format.Merge(f.read(), proto)
+            if not parameter_only:
+                with open(filename, 'rt') as f:
+                    text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
             if not exclude_parameter:
                 nn.load_parameters(filename, proto)
@@ -581,8 +582,9 @@ def load(filenames, prepare_data_iterator=True, exclude_parameter=False, paramet
                         with open(os.path.join(tmpdir, name), 'rt') as f:
                             print(f.readlines())
                     elif ext in ['.nntxt', '.prototxt']:
-                        with open(os.path.join(tmpdir, name), 'rt') as f:
-                            text_format.Merge(f.read(), proto)
+                        if not parameter_only:
+                            with open(os.path.join(tmpdir, name), 'rt') as f:
+                                text_format.Merge(f.read(), proto)
                     elif ext in ['.protobuf', '.h5']:
                         if not exclude_parameter:
                             nn.load_parameters(os.path.join(tmpdir, name),

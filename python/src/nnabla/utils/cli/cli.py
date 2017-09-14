@@ -23,104 +23,86 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
-    try:
-        from nnabla.utils.cli.train import train_command
-        # Train
-        subparser = subparsers.add_parser('train')
-        subparser.add_argument(
-            '-r', '--resume', help='resume from last saved parameter.', action='store_true')
-        subparser.add_argument(
-            '-c', '--config', help='path to nntxt', required=True)
-        subparser.add_argument(
-            '-p', '--param', help='path to parameter file', required=False)
-        subparser.add_argument(
-            '-o', '--outdir', help='output directory', required=True)
-        subparser.set_defaults(func=train_command)
-    except:
-        pass
+    # Train
+    from nnabla.utils.cli.train import train_command
+    subparser = subparsers.add_parser('train')
+    subparser.add_argument(
+        '-r', '--resume', help='resume from last saved parameter.', action='store_true')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-s', '--sdcproj', help='path to sdcproj', required=False)
+    subparser.add_argument(
+        '-j', '--job_url_list', help='path to job url list', required=False)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=train_command)
 
-    try:
-        from nnabla.utils.cli.forward import forward_command
-        # Forward
-        subparser = subparsers.add_parser('forward')
-        subparser.add_argument(
-            '-c', '--config', help='path to nntxt', required=True)
-        subparser.add_argument(
-            '-p', '--param', help='path to parameter file', required=False)
-        subparser.add_argument(
-            '-d', '--dataset', help='path to CSV dataset', required=False)
-        subparser.add_argument(
-            '-o', '--outdir', help='output directory', required=True)
-        subparser.set_defaults(func=forward_command)
+    # Forward
+    from nnabla.utils.cli.forward import forward_command
+    subparser = subparsers.add_parser('forward')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-d', '--dataset', help='path to CSV dataset', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=forward_command)
 
-    except:
-        pass
+    # Decode param
+    from nnabla.utils.cli.encode_decode_param import decode_param_command
+    subparser = subparsers.add_parser('decode_param')
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=decode_param_command)
 
-    try:
-        from nnabla.utils.cli.encode_decode_param import decode_param_command
-        # Decode param
-        subparser = subparsers.add_parser('decode_param')
-        subparser.add_argument(
-            '-p', '--param', help='path to parameter file', required=False)
-        subparser.add_argument(
-            '-o', '--outdir', help='output directory', required=True)
-        subparser.set_defaults(func=decode_param_command)
-    except:
-        pass
+    # Encode param
+    from nnabla.utils.cli.encode_decode_param import encode_param_command
+    subparser = subparsers.add_parser('encode_param')
+    subparser.add_argument(
+        '-i', '--indir', help='input directory', required=True)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.set_defaults(func=encode_param_command)
 
-    try:
-        from nnabla.utils.cli.encode_decode_param import encode_param_command
-        # Encode param
-        subparser = subparsers.add_parser('encode_param')
-        subparser.add_argument(
-            '-i', '--indir', help='input directory', required=True)
-        subparser.add_argument(
-            '-p', '--param', help='path to parameter file', required=False)
-        subparser.set_defaults(func=encode_param_command)
-    except:
-        pass
+    # Profile
+    from nnabla.utils.cli.profile import profile_command
+    subparser = subparsers.add_parser('profile')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=profile_command)
 
-    try:
-        from nnabla.utils.cli.profile import profile_command
-        # Profile
-        subparser = subparsers.add_parser('profile')
-        subparser.add_argument(
-            '-c', '--config', help='path to nntxt', required=True)
-        subparser.add_argument(
-            '-o', '--outdir', help='output directory', required=True)
-        subparser.set_defaults(func=profile_command)
-    except:
-        pass
+    # Convert dataset
+    from nnabla.utils.cli.conv_dataset import conv_dataset_command
+    subparser = subparsers.add_parser('conv_dataset')
+    subparser.add_argument('-F', '--force', action='store_true',
+                           help='force overwrite destination', required=False)
+    subparser.add_argument(
+        '-S', '--shuffle', action='store_true', help='shuffle data', required=False)
+    subparser.add_argument('-N', '--normalize', action='store_true',
+                           help='normalize data range', required=False)
+    subparser.add_argument('source')
+    subparser.add_argument('destination')
+    subparser.set_defaults(func=conv_dataset_command)
 
-    try:
-        from nnabla.utils.cli.conv_dataset import conv_dataset_command
-        # Convert dataset
-        subparser = subparsers.add_parser('conv_dataset')
-        subparser.add_argument('-F', '--force', action='store_true',
-                               help='force overwrite destination', required=False)
-        subparser.add_argument(
-            '-S', '--shuffle', action='store_true', help='shuffle data', required=False)
-        subparser.add_argument('-N', '--normalize', action='store_true',
-                               help='normalize data range', required=False)
-        subparser.add_argument('source')
-        subparser.add_argument('destination')
-        subparser.set_defaults(func=conv_dataset_command)
-    except:
-        pass
-
-    try:
-        from nnabla.utils.cli.compare_with_cpu import compare_with_cpu_command
-        # Compare with CPU
-        subparser = subparsers.add_parser('compare_with_cpu')
-        subparser.add_argument(
-            '-c', '--config', help='path to nntxt', required=True)
-        subparser.add_argument(
-            '-c2', '--config2', help='path to cpu nntxt', required=True)
-        subparser.add_argument(
-            '-o', '--outdir', help='output directory', required=True)
-        subparser.set_defaults(func=compare_with_cpu_command)
-    except:
-        pass
+    # Compare with CPU
+    from nnabla.utils.cli.compare_with_cpu import compare_with_cpu_command
+    subparser = subparsers.add_parser('compare_with_cpu')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-c2', '--config2', help='path to cpu nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=compare_with_cpu_command)
 
     # Uploader
     from nnabla.utils.cli.upload import upload_command
@@ -135,8 +117,11 @@ def main():
     subparser.set_defaults(func=upload_command)
 
     args = parser.parse_args()
-    args.func(args)
 
+    if 'func' in args:
+        args.func(args)
+    else:
+        parser.print_help()
 
 if __name__ == '__main__':
     main()
