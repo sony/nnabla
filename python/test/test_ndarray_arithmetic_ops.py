@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import exec_ as exec
+
 import pytest
 import numpy as np
 import nnabla as nn
@@ -40,6 +42,15 @@ def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var):
     ref_z = eval("vx_data {0} vy_data".format(op))
     assert np.allclose(ref_z, vz.data)
 
+    if x_var:
+        return
+
+    # Inplace test
+    vx_bak = vx
+    exec("vx {0}= vy".format(op))
+    assert np.allclose(vx.data, vz.data)
+    assert vx is vx_bak
+
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
@@ -52,6 +63,12 @@ def test_ndarray_arithmetic_scalar_ops(seed, op):
     vz = eval("vx {0} a".format(op))
     ref_z = eval("vx.data {0} a".format(op))
     assert np.allclose(ref_z, vz.data)
+
+    # Inplace test
+    vx_bak = vx
+    exec("vx {0}= a".format(op))
+    assert np.allclose(vx.data, vz.data)
+    assert vx is vx_bak
 
 
 @pytest.mark.parametrize("seed", [313, 314])

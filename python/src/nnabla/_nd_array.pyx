@@ -41,9 +41,15 @@ cdef class NdArray:
     An arithmetic operation containing :class:`~nnabla.NdArray` returns
     :class:`~nnabla.NdArray` which stores the output of the computation
     immediately invoked.
+    Also, inplace arithmetic operations
+    (``+=``, ``-=``, ``*=``, ``/=``, ``**=``) are implemented. Note that ``=``
+    doesn't perform inplace substitution but just replaces the object
+    reference. Instead, you can use :func:`~nnabla.NdArray.copy_from` for
+    inplace substitution.
 
     Args:
         shape (tuple or int): Shape of tuple.
+
     """
 
     @staticmethod
@@ -291,3 +297,70 @@ cdef class NdArray:
 
     def __pow__(x, y, z):
         return AOP.pow(x, y, z)
+
+    def __iadd__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.add2(self, x, outputs=[self])
+        else:
+            F.add_scalar(self, x, outputs=[self])
+        return self
+
+    def __isub__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.sub2(self, x, outputs=[self])
+        else:
+            F.add_scalar(self, -x, outputs=[self])
+        return self
+
+    def __imul__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.mul2(self, x, outputs=[self])
+        else:
+            F.mul_scalar(self, x, outputs=[self])
+        return self
+
+    def __idiv__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.div2(self, x, outputs=[self])
+        else:
+            F.mul_scalar(self, 1. / x, outputs=[self])
+        return self
+
+    def __itruediv__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.div2(self, x, outputs=[self])
+        else:
+            F.mul_scalar(self, 1. / x, outputs=[self])
+        return self
+
+    def __ipow__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.pow2(self, x, outputs=[self])
+        else:
+            F.pow_scalar(self, x, outputs=[self])
+        return self
+
+    def copy_from(self, NdArray arr):
+        """
+        Copy values from another NdArray object.
+
+        It returns the caller object itself.
+        :func:`nnabla.functions.identity` is called internally to copy values.
+
+        Args:
+            arr (~nnabla.NdArray): Values will be copied to the caller object.
+                The shape of ``arr``` must be same as the caller object.
+
+        Returns:
+            :obj:`nnabla.NdArray`
+
+        """
+        import nnabla.functions as F
+        F.identity(arr, outputs=[self])
+        return self
