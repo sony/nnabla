@@ -9,6 +9,7 @@ project (nbla C CXX)
 ###############################################################################
 # Using cmake scripts and modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/build-tools/cmake/Modules)
+list(APPEND CMAKE_FIND_ROOT_PATH $ENV{CMAKE_FIND_ROOT_PATH})
 include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 
 ###############################################################################
