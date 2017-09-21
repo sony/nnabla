@@ -12,7 +12,7 @@ Build C++ libraries
 Note: The C++ inference with CUDA extension is not covered in this build manual. We'll add it very soon.
 
 This document describes how to build and install C++ libraries, headers and executabls on Ubuntu 16.04 using CMake build system.
-We successfully build C++ libraries on macOS too in a similar way (the differences are is at the installation of some dependencies). We may add build instractions on another platform in the future.
+We successfully build C++ libraries on macOS too in a similar way (the differences are at the installation of some dependencies). We may add build instractions on another platform in the future.
 
 Most of the procedure is the same as :ref:`python_build_on_linux`.
 
@@ -20,8 +20,9 @@ Most of the procedure is the same as :ref:`python_build_on_linux`.
 Requirements
 ------------
 
-Some additional dependencies are required on the Python intallation.
-
+* G++
+* CMake>=3.1: ``sudo apt-get install cmake``
+* Python: ``sudo apt-get install python`` (Used by code generator)
 * LibArchive: ``sudo apt-get install libarchive-dev``
 * Protobuf >=3: The following snippet running on your terminal will build and install protobuf-3.1.0 from source.
 * HDF5 (Optional): ``sudo apt-get instasll libhdf5-dev``
