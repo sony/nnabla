@@ -31,9 +31,11 @@ void Broadcast<T>::setup_impl(const Variables &inputs,
                               const Variables &outputs) {
   auto inshape = inputs[0]->shape();
   int ndim = inputs[0]->ndim();
-  NBLA_CHECK(shape_.size() == ndim, error_code::value,
-             "Number of dimension must match. Shape: %d != input: %d.",
-             shape_.size(), ndim);
+  if (ndim > 0) {
+    NBLA_CHECK(shape_.size() == ndim, error_code::value,
+               "Number of dimension must match. Shape: %d != input: %d.",
+               shape_.size(), ndim);
+  }
   // X Stride and Y shape.
   stride_x_.reshape({ndim}, true);
   shape_y_.reshape({ndim}, true);

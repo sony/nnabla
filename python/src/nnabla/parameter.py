@@ -50,13 +50,53 @@ def parameter_scope(name):
             bn_out2 = PF.batch_normalization(conv_out2)
             act_out2 = F.relu(bn_out2)
 
+    Nesting `with` blocks allows you to nest parameter scopes.
+    This can also be done by using "/" inside the parameter names.
+
+    Example:
+
+    .. code-block:: python
+
+        with nn.parameter_scope('network1'):
+            with nn.parameter_scope('conv1'):
+                conv_out1 = PF.convolution(x, 32, (5, 5))
+                bn_out1 = PF.batch_normalization(conv_out1)
+                act_out1 = F.relu(bn_out1)
+            with nn.parameter_scope('conv2'):
+                conv_out2 = PF.convolution(act_out1, 64, (3, 3))
+                bn_out2 = PF.batch_normalization(conv_out2)
+                act_out2 = F.relu(bn_out2)
+
+    is equivalent to
+
+    .. code-block:: python
+
+        with nn.parameter_scope('network1/conv1'):
+            conv_out1 = PF.convolution(x, 32, (5, 5))
+            bn_out1 = PF.batch_normalization(conv_out1)
+            act_out1 = F.relu(bn_out1)
+        with nn.parameter_scope('network1/conv2'):
+            conv_out2 = PF.convolution(act_out1, 64, (3, 3))
+            bn_out2 = PF.batch_normalization(conv_out2)
+            act_out2 = F.relu(bn_out2)
+
     """
     global current_scope
+    names = name.strip('/').split('/')
+    if not names:
+        raise ValueError(
+            'Invalid argument of parameter_scope("{}").'.format(name))
     prev_scope = current_scope
-    tmp = current_scope.get(name, OrderedDict())
-    assert isinstance(tmp, dict)
-    current_scope[name] = tmp
-    current_scope = tmp
+    scope = current_scope
+    for name in names:
+        parent_scope = scope
+        # Creates a new scope dict if it doesn't exist.
+        # `dict.get` returns default value (OrderedDict())
+        # if scope contains `name`
+        scope = scope.get(name, OrderedDict())
+        assert isinstance(scope, dict)
+        parent_scope[name] = scope
+    current_scope = scope
     yield
     current_scope = prev_scope
 

@@ -120,7 +120,8 @@ RUN set -xe ; for PY in 2.7 3.4 3.5 3.6 \
     ; source activate py$PY \
     ; conda install -y virtualenv \
     ; pip install -U -r /tmp/deps/setup_requirements.txt \
-    ; (pip install -U -r /tmp/deps/requirements.txt || true)\
+    ; echo Try to install setuptools few times to avoid conda problem. \
+    ; (pip install -U setuptools || pip install -U setuptools || pip install -U setuptools || true) \
     ; pip install -U -r /tmp/deps/requirements.txt \
     ; pip install -U -r /tmp/deps/test_requirements.txt \
     ; pip install -U "Cython<0.25" \

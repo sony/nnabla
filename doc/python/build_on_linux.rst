@@ -1,4 +1,4 @@
-.. _python_build_on_linux:
+.. _python-build-on-linux:
 
 Build on Linux
 --------------
@@ -24,6 +24,7 @@ Our build system requires:
 
 
 .. _linux-setup-build-environment:
+
 Setup build environment
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -83,6 +84,7 @@ Build and installation
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. _linux-build-and-install:
+
 Build and install
 """""""""""""""""
 
@@ -100,7 +102,8 @@ Build and install
     sudo pip install -U nnabla-<package version>-<package-arch>.whl # a name may depend on an environment
 
 
-.. _linux-build-and-install-cuda/cudnn-extension:
+.. _linux-build-and-install-cuda-cudnn-extension:
+
 Build and install CUDA/cuDNN extension
 """"""""""""""""""""""""""""""""""""""
 
@@ -124,6 +127,7 @@ And you must add following options to cmake.
     sudo pip install -U nnabla_ext_cuda-<package version>-<package-arch>.whl
 
 .. _linux-unit-test:
+
 Unit test
 ^^^^^^^^^
 
