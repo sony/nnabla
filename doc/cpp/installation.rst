@@ -23,10 +23,9 @@ Requirements
 
 Some additional dependencies are required on the Python intallation.
 
-
-* HDF5, LibArchive: `sudo apt-get install libhdf5-dev libarchive-dev`
-
+* LibArchive: ``sudo apt-get install libarchive-dev``
 * Protobuf >=3: The following snippet running on your terminal will build and install protobuf-3.1.0 from source.
+* HDF5 (Optional): ``sudo apt-get instasll libhdf5-dev``
 
 .. code-block:: shell
 
@@ -45,9 +44,10 @@ Build
 
     git clone https://github.com/sony/nnabla
     mkdir -p nnabla/build && cd nnabla/build
-    cmake .. -DBUILD_CPP_UTILS=ON -DBUILD_PYTHON_API=OFF
+    cmake .. -DBUILD_CPP_UTILS=ON -DBUILD_PYTHON_API=OFF -DNNABLA_UTILS_WITH_HDF5=ON
     make
 
+If you want to disable the HDF5 support, set ``-DNNABLA_UTILS_WITH_HDF5=OFF``.
 
 The following command will install the libraries, the command line executables and the include header files to your system.
 
