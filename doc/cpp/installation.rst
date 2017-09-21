@@ -12,8 +12,7 @@ Build C++ libraries
 Note: The C++ inference with CUDA extension is not covered in this build manual. We'll add it very soon.
 
 This document describes how to build and install C++ libraries, headers and executabls on Ubuntu 16.04 using CMake build system.
-We will add the installation manual on the other platforms.
-
+We successfully build C++ libraries on macOS too in a similar way (the differences are is at the installation of some dependencies). We may add build instractions on another platform in the future.
 
 Most of the procedure is the same as :ref:`python_build_on_linux`.
 
