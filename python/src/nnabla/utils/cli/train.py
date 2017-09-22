@@ -413,8 +413,6 @@ def train_command(args):
                         var.d = np.reshape(param.data, param.shape.dim)
                         var.need_grad = param.need_grad
                 
-    return
-
     class TrainConfig:
         pass
     config = TrainConfig()
