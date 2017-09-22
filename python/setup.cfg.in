@@ -2,7 +2,7 @@
 compiler=${NBLA_PYTHON_BUILD_EXT_COMPILER}
 
 [cmake]
-binary_dir=${CMAKE_BINARY_DIR}
+build_dir=${CMAKE_BINARY_DIR}
 target_name=${NBLA_LIBRARY_NAME}
 target_file_name=$<TARGET_FILE_NAME:${NBLA_LIBRARY_NAME}>
 target_file=$<TARGET_FILE:${NBLA_LIBRARY_NAME}>
