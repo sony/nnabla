@@ -92,7 +92,7 @@ def update_result(args, index, result, values, output_index, type_end_names):
                         # CSV type
                         with open(full_path, 'w') as f:
                             writer = csv.writer(f, lineterminator='\n')
-                            x = np.array(d, dtype=np.float32).transpose()
+                            x = np.array(d, dtype=np.float32)
                             writer.writerows(x)
                     outputs[data_index].append(os.path.join('.', file_name))
         output_index += 1
