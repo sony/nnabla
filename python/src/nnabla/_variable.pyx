@@ -101,16 +101,16 @@ cdef class Variable:
         from nnabla.variable import Variable as PVariable
         cdef shared_ptr[CgVariable] v_sp = make_shared[CgVariable](varsp)
         var = PVariable()
-        (< Variable > var).var = v_sp
-        (< Variable > var).varp = v_sp.get()
+        ( < Variable > var).var = v_sp
+        ( < Variable > var).varp = v_sp.get()
         return var
 
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv):
         from nnabla.variable import Variable as PVariable
         var = PVariable()
-        (< Variable > var).var = cgv
-        (< Variable > var).varp = cgv.get()
+        ( < Variable > var).var = cgv
+        ( < Variable > var).varp = cgv.get()
         return var
 
     @staticmethod
@@ -149,7 +149,10 @@ cdef class Variable:
         pass
 
     def __richcmp__(self, other, int op):
-        from nnabla.variable import Variable as PVariable
+        '''Overrides comparison operators ``==`` and ``!=``.
+
+        Compare the addresses of their C++ objects.
+        '''
         if op == 2:
             try:
                 return (< Variable > self).varp == ( < Variable ?> other).varp
@@ -160,6 +163,8 @@ cdef class Variable:
         return False
 
     def __hash__(self):
+        '''Returns hash of the integer address of holding C++ object.
+        '''
         return hash(< intptr_t > (( < Variable > self).varp))
 
     @property
@@ -360,10 +365,10 @@ cdef class Variable:
         This method can also be called as a setter.
 
         Args:
-            func(:obj:`nblaeran.function.Function`)
+            func(:obj:`nnabla.function.Function`)
 
         Returns:
-            :obj:`nblaeran.function.Function`
+            :obj:`nnabla.function.Function`
 
         """
         cdef CgFunctionPtr cgf = self.varp.parent()
@@ -373,7 +378,7 @@ cdef class Variable:
 
     @parent.setter
     def parent(self, func):
-        cdef CgFunctionPtr cg_func = ( < function.Function ?> func).fun
+        cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
@@ -425,18 +430,18 @@ cdef class Variable:
         elif np.isscalar(grad):
             arr = NdArray(self.shape)
             arr.data.fill(grad)
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         elif isinstance(grad, NdArray):
-            p = (< NdArray > grad).arr
+            p = ( < NdArray > grad).arr
         elif isinstance(grad, np.ndarray):
             arr = NdArray(grad.shape)
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         else:
             # Try to interpret as scalar value
             arr = NdArray()
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
 
         with nogil:
             self.varp.backward(p, clear_buffer)
@@ -470,3 +475,53 @@ cdef class Variable:
     @persistent.setter
     def persistent(self, cpp_bool b):
         self.varp.set_persistent(b)
+
+    def visit(self, f):
+        '''Visit functions recursively in forward order.
+
+        Args:
+            f (function): Function object which takes
+                :obj:`nnabla._function.Function` object as an argument.
+
+        Returns: None
+        '''
+        def _recursive_visit_functions(func, seen):
+            if func is None:
+                return
+            seen.add(func)
+            for i in func.inputs:
+                if i.parent in seen:
+                    continue
+                _recursive_visit_functions(i.parent, seen)
+            f(func)
+        seen = set()
+        _recursive_visit_functions(self.parent, seen)
+
+    def visit_check(self, f):
+        '''Visit functions recursively in forward order.
+
+        Note:
+            If any of evaluation of the function object returns True,
+            the visit propagation will stop immediately,
+            and will return True.
+
+        Args:
+            f (function): Function object which takes
+                :obj:`nnabla._function.Function` object as an argument.
+
+        Returns: bool
+            Returns True if any of the function object call returns True.
+        '''
+        def _recursive_visit_functions(func, seen):
+            if func is None:
+                return False
+            seen.add(func)
+            for i in func.inputs:
+                if i.parent in seen:
+                    continue
+                if _recursive_visit_functions(i.parent, seen):
+                    return True
+            return f(func)
+
+        seen = set()
+        return _recursive_visit_functions(self.parent, seen)

@@ -129,6 +129,9 @@ Math
 .. autofunction:: exp
 .. autofunction:: log
 .. autofunction:: identity
+.. autofunction:: matrix_diag
+.. autofunction:: matrix_diag_part
+.. autofunction:: batch_matmul
 
 
 Array Manipulation
@@ -149,7 +152,6 @@ Array Manipulation
 Stochasticity
 -------------
 
-.. autofunction:: dropout
 .. autofunction:: rand
 .. autofunction:: randint
 .. autofunction:: randn
@@ -168,7 +170,9 @@ Loss Functions
 .. autofunction:: softmax_cross_entropy
 .. autofunction:: categorical_cross_entropy
 .. autofunction:: squared_error
+.. autofunction:: absolute_error
 .. autofunction:: huber_loss
+.. autofunction:: epsilon_insensitive_loss
 .. autofunction:: kl_multinomial
 
 
@@ -188,6 +192,7 @@ Unsupported, Special Use
 
 .. autofunction:: vat_noise
 .. autofunction:: unlink
+.. autofunction:: sink
 
 
 Validation

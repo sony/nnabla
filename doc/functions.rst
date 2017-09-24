@@ -2907,6 +2907,58 @@ Identity function.
      - N-D array
      - 
 
+
+BatchMatmul
+^^^^^^^^^^^
+
+Batch matrix multiplication.
+
+Two of batchs of matrices are multiplied for each sample in a batch. A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, and the first dimensions up to the third last dimension are considered as batch samples.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - a
+     - N-D array with >= 2-dim. The last two dimensions will be treated as a matrix.
+     -
+   * - b
+     - N-D array with >= 2-dim. The last two dimensions will be treated as a matrix. The product of the size of 0-th dimension through the size of the third last dimension must be same as that of the input ``a``.
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - transpose_a
+     - bool
+     - False
+     - Transpose the last two axes of ``a`` in matrix multiplication.
+   * - transpose_b
+     - bool
+     - False
+     - Transpose the last two axes of ``b`` in matrix multiplication.
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output of sample-wise matrix multiplication in a batch. When ``a`` is of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose options are all False, the output will be a shape of [N, P, R].
+     - 
+
+
 Array Manipulation
 ------------------
 
@@ -3341,6 +3393,63 @@ Note:
      - Options
    * - y
      - Reshaped N-D array
+     - 
+
+MatrixDiag
+^^^^^^^^^^
+
+Returns an array where the last two dimensions consist of the diagonal matrix. 
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N`). 
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`). 
+     The last two axes has the same dimension. 
+     - 
+
+MatrixDiagPart
+^^^^^^^^^^^^^^
+
+Returns an array in which the values of the last dimension consist of the diagonal 
+elements of the last two dimensions of an input array.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`).
+     The last two axes has the same dimension.   
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with shape (:math:`M_0 \times \ldots \times M_N`). 
      - 
 
 Stochasticity
@@ -4031,6 +4140,39 @@ Element-wise squared error
      - N-D array.
      - 
 
+AbsoluteError
+^^^^^^^^^^^^^
+
+Element-wise absolute error
+
+.. math::
+    y_i = | x^{(0)}_i - x^{(1)}_i |.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x0
+     - N-D array.
+     - 
+   * - x1
+     - N-D array.
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
+
 HuberLoss
 ^^^^^^^^^
 
@@ -4071,6 +4213,57 @@ where :math:`d = x^{(0)}_i - x^{(1)}_i`
      - float
      - 1.0
      - Delta
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array of element-wise losses.
+     - 
+
+EpsilonInsensitiveLoss
+^^^^^^^^^^^^^^^^^^^^^^
+
+Element-wise Eplision Insensitive Loss
+
+.. math::
+    y_i= \left\{
+    \begin{array}{ll}
+      | x^{(0)}_i - x^{(1)}_i | - \epsilon & if \ \ | x^{(0)}_i - x^{(1)}_i | > \epsilon \\
+			0 & otherwise       
+    \end{array} \right.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x0
+     - N-D array.
+     - 
+   * - x1
+     - N-D array.
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - epsilon
+     - float
+     - 
+     - Insensitive parameter.
 
 
 * Output(s)
@@ -4863,4 +5056,50 @@ Note:
      - Options
    * - y
      - N-D array.
+     - 
+
+Sink
+^^^^
+
+Creates a dummy variable used to call forward or backward function
+of multiple variables at one place.
+
+This takes any numbers of input variables with any shape,
+and creates a single 0-shape outputs.
+The forward pass does nothing. The backward pass set ones
+to the input grads if one_input_grad is set as true.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Any number of inputs with any shape.
+     - Variadic
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - one_input_grad
+     - bool
+     - True
+     - Set grads of inputs as one during backward. It is useful to set false if you want to set external gradients to the input variables.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Dummy variable.
      - 

@@ -1,0 +1,2 @@
+add_executable(cpp_graph_example main.cpp)
+target_link_libraries(cpp_graph_example nnabla)

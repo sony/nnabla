@@ -1,26 +1,30 @@
-# NNabla - Neural Network Libraries
+# Neural Network Libraries
 
-NNabla is a deep learning framework that is intended to be used for research,
+Neural Network Libraries is a deep learning framework that is intended to be used for research,
 development and production. We aim to have it running everywhere: desktop PCs, HPC
 clusters, embedded devices and production servers.
 
 
+* [Neural Network Console](https://dl.sony.com/), a Windows GUI app for neural network development, has been released.
+* The GitHub repository of CUDA extension of Neural Network Libraries can be found [here](https://github.com/sony/nnabla-ext-cuda).
+
+
 ## Installation
 
-Installing NNabla is easy:
+Installing Neural Network Libraries is easy:
 
 ```
 pip install nnabla
 ```
 
-This installs the CPU version of NNabla. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla-ext-cuda`.
+This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla-ext-cuda`.
 
 
 ## Features
 
 ### Easy, flexible and expressive
 
-The Python API built on the NNabla C++11 core gives you flexibility and
+The Python API built on the Neural Network Libraries C++11 core gives you flexibility and
 productivity. For example, a two layer neural network with classification loss
 can be defined in the following 5 lines of codes (hyper parameters are enclosed
 by `<>`).
@@ -61,8 +65,8 @@ for n in range(<num_training_iterations>):
 ```
 
 The dynamic computation graph enables flexible runtime network construction.
-NNabla can use both paradigms of static and dynamic graphs, both using the same
-API.
+Neural Network Libraries can use both paradigms of static and dynamic graphs,
+both using the same API.
 
 ```python
 x.d = <set data>
@@ -114,7 +118,9 @@ loss.backward()
 
 * A number of Jupyter notebook tutorials can be found in the [tutorial](https://github.com/sony/nnabla/tree/master/tutorial) folder.
   We recommend starting from `by_examples.ipynb` for a first
-  working example in NNabla and `python_api.ipynb` for an introduction into the
-  NNabla API.
+  working example in Neural Network Libraries and `python_api.ipynb` for an introduction into the
+  Neural Network Libraries API.
 
 * We also provide some more sophisticated examples in the [`examples`](https://github.com/sony/nnabla/tree/master/examples) folder.
+
+* C++ API examples are avaiailable in [`exampels/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).

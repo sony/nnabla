@@ -126,7 +126,8 @@ def profile_optimizer(config, result_array):
         for func in o.forward_sequence:
             def forward():
                 o.network.forward_function(func)
-            in_place_str = ' : in_place' if func.function_instance.inplace_data(0) > 0 else ''
+            in_place_str = ' : in_place' if func.function_instance.inplace_data(
+                0) > 0 else ''
             profile(config, 'forward_function (%s : %s%s)' % (
                 func.name, func.function_instance.name, in_place_str), forward, result_dict)
 
@@ -139,7 +140,8 @@ def profile_optimizer(config, result_array):
 
             def backward():
                 o.network.backward_function(seq)
-            in_place_str = ' : in_place' if seq.func.function_instance.inplace_grad(0) > 0 else ''
+            in_place_str = ' : in_place' if seq.func.function_instance.inplace_grad(
+                0) > 0 else ''
             profile(config, 'backward_function (%s : %s%s)' % (
                 seq.func.name, seq.func.function_instance.name, in_place_str), backward, result_dict)
 

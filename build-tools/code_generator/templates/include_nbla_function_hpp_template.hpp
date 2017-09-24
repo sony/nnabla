@@ -41,7 +41,7 @@ class {func_name} : public BaseFunction<{base_function_types}> {{
 {func_arg_variable_defines}
     
 public:
-  {func_name}({func_args}) : BaseFunction<{base_function_types}>({base_function_args}) {{}}
+  {func_name}({func_args}) : BaseFunction<{base_function_types}>({base_function_args}){func_arg_initializers} {{}}
   virtual ~{func_name}() {{}}
   virtual shared_ptr<Function> copy() const {{
       return create_{func_name}({func_arg_variables});

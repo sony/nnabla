@@ -1,0 +1,8 @@
+[build_ext]
+compiler=${NBLA_PYTHON_BUILD_EXT_COMPILER}
+
+[cmake]
+build_dir=${CPPLIB_BUILD_DIR}
+target_name=${CPPLIB_LIBRARY_NAME}
+target_file_name=${CPPLIB_TARGET_FILE_NAME}
+target_file=${CPPLIB_TARGET_FILE}

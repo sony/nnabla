@@ -22,6 +22,7 @@ import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
+import nnabla.utils.save as save
 
 from args import get_args
 from mnist_data import data_iterator_mnist
@@ -183,9 +184,17 @@ def train():
         monitor_loss.add(i, loss.d.copy())
         monitor_err.add(i, e)
         monitor_time.add(i)
-        # IPython.embed()
-    nn.save_parameters(os.path.join(args.model_save_path,
-                                    'params_%06d.h5' % args.max_iter))
+
+    ve = 0.0
+    for j in range(args.val_iter):
+        vimage.d, vlabel.d = vdata.next()
+        vpred.forward(clear_buffer=True)
+        ve += categorical_error(vpred.d, vlabel.d)
+    monitor_verr.add(i, ve / args.val_iter)
+
+    parameter_file = os.path.join(
+        args.model_save_path, '{}_params_{:06}.h5'.format(args.net, args.max_iter))
+    nn.save_parameters(parameter_file)
 
 
 if __name__ == '__main__':

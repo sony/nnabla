@@ -17,6 +17,7 @@ import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solver as S
+import nnabla.utils.save as save
 
 from args import get_args
 from mnist_data import data_iterator_mnist
@@ -325,8 +326,10 @@ def train():
         monitor_loss.add(i, loss.d.copy())
         monitor_err.add(i, e)
         monitor_time.add(i)
-    nn.save_parameters(os.path.join(args.model_save_path,
-                                    'params_%06d.h5' % args.max_iter))
+
+    parameter_file = os.path.join(
+        args.model_save_path, 'params_%06d.h5' % args.max_iter)
+    nn.save_parameters(parameter_file)
 
 
 if __name__ == '__main__':

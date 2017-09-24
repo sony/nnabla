@@ -141,7 +141,8 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
             large_diff = False
             for v, v_cpu in zip(seq.func.inputs, seq_cpu.func.inputs):
                 if v.variable_instance.need_grad:
-                    name = 'backward_function (%s, %s)' % (seq.func.name, v.name)
+                    name = 'backward_function (%s, %s)' % (
+                        seq.func.name, v.name)
                     norm_diff, std1, std2, diff_std = calc_norm_diff(
                         v.variable_instance.g, v_cpu.variable_instance.g)
                     logger.log(99, '%s, %f, %f, %f, %f' %

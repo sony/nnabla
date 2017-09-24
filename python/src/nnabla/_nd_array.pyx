@@ -14,6 +14,7 @@
 
 from libcpp.algorithm cimport copy
 from libcpp.memory cimport make_shared
+from libc.stdint cimport intptr_t
 from cpython cimport PyObject, Py_INCREF
 
 from _nd_array cimport *
@@ -75,6 +76,25 @@ cdef class NdArray:
     def __repr__(self):
         return "<NdArray({}) at {}>".format(
             self.shape, hex(id(self)))
+
+    def __richcmp__(self, other, int op):
+        '''Overrides comparison operators ``==`` and ``!=``.
+
+        Compare the addresses of their C++ objects.
+        '''
+        if op == 2:
+            try:
+                return (< NdArray > self).arrp == ( < NdArray ?> other).arrp
+            except:
+                return False
+        elif op == 3:
+            return not self.__richcmp__(other, 2)
+        return False
+
+    def __hash__(self):
+        '''Returns hash of the integer address of holding C++ object.
+        '''
+        return hash(< intptr_t > (( < NdArray > self).arrp))
 
     @property
     def shape(self):
@@ -157,7 +177,9 @@ cdef class NdArray:
         if ctx is not None:
             ctx_ = ctx
         cdef int type_num = np.dtype(dtype).num
-        self.arrp.cast( < dtypes > type_num, < CContext ?> ctx_)
+        cdef CContext cctx = <CContext ?> ctx_
+        with nogil:
+            self.arrp.cast(< dtypes > type_num, cctx)
         if ctx is None:
             return self.data
 
@@ -183,6 +205,7 @@ cdef class NdArray:
         cdef CArray * arr
         import nnabla as nn
         ctx = nn.context()
+        cdef CContext cctx = <CContext > ctx
         try:
             type_num = <int > self.arrp.array().get().dtype()
         except:
@@ -190,7 +213,8 @@ cdef class NdArray:
         shape.resize(self.arrp.ndim())
         shape_base = self.arrp.shape()
         copy(shape_base.begin(), shape_base.end(), shape.begin())
-        arr = <CArray * > (self.arrp.cast(< dtypes > type_num, ctx))
+        with nogil:
+            arr = <CArray * > (self.arrp.cast( < dtypes > type_num, cctx))
         cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
             shape.size(), shape.data(), type_num, arr.pointer())
         ndarray.base = <PyObject * > self

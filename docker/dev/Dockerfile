@@ -15,13 +15,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     zip \
     ca-certificates \
-    bzip2
+    bzip2 \
+    libhdf5-dev \
+    libarchive-dev
 
-RUN wget https://github.com/google/protobuf/releases/download/v3.1.0/protoc-3.1.0-linux-x86_64.zip -O /tmp/protoc-3.1.0-linux-x86_64.zip \
-    && cd /usr/local \
-    && unzip /tmp/protoc-3.1.0-linux-x86_64.zip \
-    && chmod 755 /usr/local/bin/protoc \
-    && rm -f /tmp/protoc-3.1.0-linux-x86_64.zip readme.txt
+# Protobuf
+RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
+    && cd /tmp \
+    && tar xvf protobuf-v3.1.0.tar.gz \
+    && cd protobuf-3.1.0 \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -Dprotobuf_BUILD_TESTS=OFF \
+        ../cmake \
+    && make \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
 
 # Conda environment for Python3 versions
 RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
@@ -34,30 +46,13 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN conda create -n py2.7 python=2.7 \
-     && bash -c "source activate py2.7 \
-     && conda install virtualenv \
-     && pip install -r /tmp/deps/setup_requirements.txt \
-     && pip install -r /tmp/deps/requirements.txt \
-     && pip install -r /tmp/deps/test_requirements.txt"
-
-RUN conda create -n py3.4 python=3.4 \
-     && bash -c "source activate py3.4 \
-     && conda install virtualenv \
-     && pip install -r /tmp/deps/setup_requirements.txt \
-     && pip install -r /tmp/deps/requirements.txt \
-     && pip install -r /tmp/deps/test_requirements.txt"
-
-RUN conda create -n py3.5 python=3.5 \
-     && bash -c "source activate py3.5 \
-     && conda install virtualenv \
-     && pip install -r /tmp/deps/setup_requirements.txt \
-     && pip install -r /tmp/deps/requirements.txt \
-     && pip install -r /tmp/deps/test_requirements.txt"
-
-RUN conda create -n py3.6 python=3.6 \
-     && bash -c "source activate py3.6 \
-     && conda install virtualenv \
-     && pip install -r /tmp/deps/setup_requirements.txt \
-     && pip install -r /tmp/deps/requirements.txt \
-     && pip install -r /tmp/deps/test_requirements.txt"
+# The following block will generate conda envs of Python 2.7-3.6 with nnabla dependencies.
+RUN for PY in 2.7 3.4 3.5 3.6 \
+    ; do conda create -n py$PY python=$PY\
+    && bash -c "source activate py$PY \
+    && conda install virtualenv \
+    && pip install -r /tmp/deps/setup_requirements.txt \
+    && pip install -r /tmp/deps/requirements.txt \
+    && pip install -r /tmp/deps/test_requirements.txt" \
+    ; done
+RUN chmod -R ugo+w /opt/miniconda3

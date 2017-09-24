@@ -14,6 +14,7 @@ Install From Binary
 
     install_on_linux.rst
     install_on_windows.rst
+    install_on_macos.rst
 
 Install From Source
 -------------------

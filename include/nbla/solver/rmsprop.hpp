@@ -25,9 +25,10 @@ NBLA_REGISTER_SOLVER_HEADER(RMSprop, float /*lr*/, float /*decay*/,
 /** RMSprop. This is defined as
 
 \f[
-g_t \leftarrow \Delta w_t
-v_t \leftarrow \gamma v_{t-1} + \left(1 - \gamma \right) g_t^2
+g_t \leftarrow \Delta w_t\\
+v_t \leftarrow \gamma v_{t-1} + \left(1 - \gamma \right) g_t^2\\
 w_{t+1} \leftarrow w_t - \eta \frac{g_t}{\sqrt{v_t} + \epsilon}
+\f]
 
 @param lr \f$\eta\f$ Learning rate.
 @param decay \f$\gamma\f$ Decay rate.
@@ -37,7 +38,6 @@ w_{t+1} \leftarrow w_t - \eta \frac{g_t}{\sqrt{v_t} + \epsilon}
 Geoff Hinton
 Lecture	6a : Overview of mini-batch gradient descent
 http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf
-\f]
 
 
 \ingroup SolverImplGrp

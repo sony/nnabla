@@ -12,15 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// -*- coding:utf-8 -*-
-/*
- * Copyright (C) 2016 Sony Corporation
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Sony Corporation;
- * the contents of this file is not to be disclosed to third parties, copied
- * or duplicated in any form, in whole or in part, without the prior written
- * permission of Sony Corporation.
- */
-
 /** Mean Subtraction
  */
 #ifndef __NBLA_FUNCTION_RUNNINGMEAN_HPP__
@@ -44,15 +35,15 @@ the effect of improving accuracy in image classification and the like.
 At training time defined as
 @f[
 \begin{array}{lcl}
-\mu &=& \frac{1}{M} \sum x_i\\
-\rm &=& \decay_rate \rm + \left(\1 - \decay_rate) \mu;
-y_i &=& x_i - \rm
+\mu &=& \frac{1}{M} \sum x_i \\
+rm &=& ({\rm decay\_rate}) rm + (1 - {\rm decay\_rate}) \mu \\
+y_i &=& x_i - rm
 \end{array}
 @f]
 
 At validation time defined as
 @f[
-y_i &=& x_i - \rm
+y_i = x_i - rm
 @f]
 
 Inputs:

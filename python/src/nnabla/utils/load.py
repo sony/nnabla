@@ -22,7 +22,9 @@ import google.protobuf.text_format as text_format
 import itertools
 import numpy
 import os
-
+import shutil
+import tempfile
+import zipfile
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
@@ -113,16 +115,6 @@ def _create_function(ctx, network, f, variable_index):
             tuple(f.reshape_param.shape.dim)
         function_instance = F.Reshape(ctx,
                                       shape=reshape_shape)
-    elif f.type == "RepeatStart":
-        function_instance = F.Identity(ctx)
-    elif f.type == "RepeatEnd":
-        function_instance = F.Identity(ctx)
-    elif f.type == "RecurrentOutput":
-        function_instance = F.Stack(ctx, axis=f.recurrent_param.axis)
-    elif f.type == "RecurrentInput":
-        function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
-    elif f.type == "Delay":
-        function_instance = F.Identity(ctx)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -565,6 +557,18 @@ def load(filenames, prepare_data_iterator=True):
                 text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
             nn.load_parameters(filename, proto)
+        elif ext == '.nnp':
+            tmpdir = tempfile.mkdtemp()
+            with zipfile.ZipFile(filename, 'r') as nnp:
+                for name in nnp.namelist():
+                    nnp.extract(name, tmpdir)
+                    _, ext = os.path.splitext(name)
+                    if 'txt' in ext:
+                        with open(os.path.join(tmpdir, name), 'rt') as f:
+                            text_format.Merge(f.read(), proto)
+                    elif ext in ['.protobuf', '.h5']:
+                        nn.load_parameters(os.path.join(tmpdir, name), proto)
+            shutil.rmtree(tmpdir)
 
     default_context = None
     if proto.HasField('global_config'):
