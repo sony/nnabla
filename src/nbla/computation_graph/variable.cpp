@@ -14,11 +14,12 @@
 
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
+#include <nbla/logger.hpp>
 
 #include <memory>
 #include <set>
 #include <unordered_set>
-// #include <iostream>  // TODO: remove
+#include <iostream>  // TODO: remove
 
 namespace nbla {
 
@@ -78,8 +79,7 @@ void forward_recursive(CgFunctionPtr cg_f, unordered_set<CgFunctionPtr> &fseen,
   }
   // Execute forward.
   auto outputs_shared = cg_f->function_outputs_shared();
-  // std::cout << "Call forward of " << cg_f->function()->name() << "."
-  //           << std::endl;
+  std::cout << "Call forward of " << cg_f->function()->name() << "." << std::endl;
   cg_f->function()->forward(cg_f->function_inputs(),
                             as_pointer_array(outputs_shared));
 

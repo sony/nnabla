@@ -567,12 +567,17 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
             tmpdir = tempfile.mkdtemp()
             with zipfile.ZipFile(filename, 'r') as nnp:
                 for name in nnp.namelist():
-                    nnp.extract(name, tmpdir)
                     _, ext = os.path.splitext(name)
                     if 'txt' in ext:
+                        nnp.extract(name, tmpdir)
+                        logger.log(99, 'Loading nn {} in {}'.format(name, filename))
                         with open(os.path.join(tmpdir, name), 'rt') as f:
                             text_format.Merge(f.read(), proto)
-                    elif ext in ['.protobuf', '.h5']:
+                for name in nnp.namelist(): # Param
+                    _, ext = os.path.splitext(name)
+                    if ext in ['.protobuf', '.h5']:
+                        nnp.extract(name, tmpdir)
+                        logger.log(99, 'Loading param {} in {}'.format(name, filename))
                         nn.load_parameters(os.path.join(tmpdir, name), proto)
             shutil.rmtree(tmpdir)
 
@@ -580,6 +585,11 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
     if proto.HasField('global_config'):
         info.global_config = _global_config(proto)
         default_context = info.global_config.default_context
+        if 'cuda' in default_context.backend:
+            try:
+                import nnabla_ext.cuda.cudnn
+            except:
+                pass
     else:
         default_context = nn.context()
 

@@ -356,9 +356,7 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
 
     std::map<std::string, int> repeat_info;
     for (int i = 0; i < orig.repeat_info_size(); i++) {
-      ::RepeatInfo *rep = net.add_repeat_info();
-      rep->CopyFrom(orig.repeat_info(i));
-      repeat_info[rep->id()] = rep->times();
+      repeat_info[orig.repeat_info(i).id()] = orig.repeat_info(i).times();
     }
 
     // Prepare variables.
@@ -376,6 +374,7 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
           vid = net.variable_size();
           ::Variable *var = net.add_variable();
           var->CopyFrom(ovar);
+          var->clear_repeat_id();
           var->set_name(var->name() + suffixes[j]);
           vars[var->name()] = vid;
         }
