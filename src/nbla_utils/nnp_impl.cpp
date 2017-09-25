@@ -61,10 +61,22 @@ void NetworkImpl::build() {
                  "Function [%s] is not supported yet", func.name().c_str());
     }
 
-    auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
-
+    std::vector<nbla::CgVariablePtr> f_tmp_outputs;
     for (int j = 0; j < func.output_size(); j++) {
-      variables_.insert({func.output(j), foutputs[j]});
+      auto it = variables_.find(func.output(j));
+      if (it != variables_.end()) {
+        CgVariablePtr cg_v = get_cgvariable_or_create(func.output(j));
+        cg_v->set_parent(cgfunc);
+        f_tmp_outputs.push_back(cg_v);
+      }
+    }
+    if (f_tmp_outputs.size() == 0) {
+      auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
+      for (int j = 0; j < func.output_size(); j++) {
+        variables_.insert({func.output(j), foutputs[j]});
+      }
+    } else {
+      nbla::connect(cgfunc, finputs, f_tmp_outputs);
     }
   }
 }

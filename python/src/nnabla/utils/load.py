@@ -570,14 +570,16 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
                     _, ext = os.path.splitext(name)
                     if 'txt' in ext:
                         nnp.extract(name, tmpdir)
-                        logger.log(99, 'Loading nn {} in {}'.format(name, filename))
+                        logger.log(
+                            99, 'Loading nn {} in {}'.format(name, filename))
                         with open(os.path.join(tmpdir, name), 'rt') as f:
                             text_format.Merge(f.read(), proto)
-                for name in nnp.namelist(): # Param
+                for name in nnp.namelist():  # Param
                     _, ext = os.path.splitext(name)
                     if ext in ['.protobuf', '.h5']:
                         nnp.extract(name, tmpdir)
-                        logger.log(99, 'Loading param {} in {}'.format(name, filename))
+                        logger.log(
+                            99, 'Loading param {} in {}'.format(name, filename))
                         nn.load_parameters(os.path.join(tmpdir, name), proto)
             shutil.rmtree(tmpdir)
 

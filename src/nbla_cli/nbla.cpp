@@ -88,7 +88,6 @@ bool infer(int argc, char *argv[]) {
   int batch_size = p.get<int>("batch_size");
   std::string exec_name = p.get<std::string>("executor");
   std::string output_filename_prefix = p.get<std::string>("output");
-  WHOAMI("%s\n", output_filename_prefix.c_str());
 
   std::shared_ptr<nbla::utils::nnp::Executor> exec =
       nnp.get_executor(exec_name);
