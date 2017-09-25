@@ -48,7 +48,7 @@ def set_initial_values(result, type_and_name, d):
     return result
 
 
-def update_result(args, index, result, values, output_index, type_end_names):
+def update_result(args, index, result, values, output_index, type_end_names, output_image):
     outputs = []
     for o, type_and_name in zip(values, type_end_names):
         for data_index, d in enumerate(o):
@@ -61,7 +61,7 @@ def update_result(args, index, result, values, output_index, type_end_names):
             dim = result.dims[output_index]
 
             # Output data
-            if vtype == 'col':
+            if vtype == 'col' or not output_image:
                 # Vector type output
                 outputs[data_index].extend(np.ndarray.flatten(d))
             else:
@@ -100,7 +100,7 @@ def update_result(args, index, result, values, output_index, type_end_names):
     return result, outputs
 
 
-def forward(args, index, config, data, variables):
+def forward(args, index, config, data, variables, output_image=True):
     class ForwardResult:
         pass
 
@@ -142,7 +142,7 @@ def forward(args, index, config, data, variables):
             avg = [s / e.num_evaluations for s in sum]
 
         result_1, outputs_1 = update_result(
-            args, index, result, avg, output_index, e.output_assign.values())
+            args, index, result, avg, output_index, e.output_assign.values(), output_image)
         if 'outputs' in locals():
             outputs = [output + output_1 for output,
                        output_1 in zip(outputs, outputs_1)]
@@ -266,7 +266,7 @@ def infer_command(args):
     for v, d in inputs:
         variables.append(v)
         data.append(d)
-    result, outputs = forward(args, 0, config, data, variables)
+    result, outputs = forward(args, 0, config, data, variables, False)
     for i, o in enumerate(outputs):
         if args.output is None:
             print(o)
