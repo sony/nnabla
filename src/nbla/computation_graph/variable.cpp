@@ -14,12 +14,11 @@
 
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
-#include <nbla/logger.hpp>
 
-// #include <iostream> // TODO: remove
 #include <memory>
 #include <set>
 #include <unordered_set>
+// #include <iostream>  // TODO: remove
 
 namespace nbla {
 
