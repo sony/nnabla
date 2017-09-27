@@ -1,11 +1,11 @@
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,8 +45,9 @@ def _convert_file(ext, filename):
 
 
 def command(arg):
-    for root in ['include', 'src', 'python', 'examples', 'tutorial']:
-        for dirname, dirnames, filenames in os.walk(os.path.join(arg.base, root)):
+    # Format codes and do chmod
+    for root in arg.subfolder:
+        for dirname, _, filenames in os.walk(os.path.join(arg.base, root)):
             for filename in filenames:
                 basename, extname = os.path.splitext(filename)
                 extname = extname.lower()
@@ -61,5 +62,16 @@ def command(arg):
                         print('Skipped {}'.format(fullname))
                         continue
                     _convert_file(extname, fullname)
-                if extname in (file_formatter.c_extensions + file_formatter.python_extensions):
+                chmod_extensions = file_formatter.c_extensions + \
+                    file_formatter.python_extensions
+                if extname in chmod_extensions:
                     os.chmod(fullname, 0o644)
+
+    # chmod document files
+    for dirname, _, filenames in os.walk(arg.base):
+        for filename in filenames:
+            _, extname = os.path.splitext(filename)
+            extname = extname.lower()
+            fullname = os.path.join(dirname, filename)
+            if extname in file_formatter.doc_extensions:
+                os.chmod(fullname, 0o644)
