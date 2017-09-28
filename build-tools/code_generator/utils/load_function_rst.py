@@ -21,6 +21,10 @@ def convert_function_name(out):
     if len(out) < 6:
         return out.lower()
     else:
+        # Temporary workaround.
+        # Function name fields in functions.rst should take a snake case name
+        # optionally.
+        out = out.replace('ReLU', '_relu')
         return (''.join(["_" + x.lower() if i < len(out) - 1 and x.isupper() and out[i + 1].islower()
                          else x.lower() + "_" if i < len(out) - 1 and x.islower() and out[i + 1].isupper()
                          else x.lower() for i, x in enumerate(list(out))])).lstrip('_').replace('__', '_')
