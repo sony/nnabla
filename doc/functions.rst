@@ -556,6 +556,52 @@ Element-wise Rectified Linear Unit (ReLU) function.
      - N-D array with the same shape as x
      - 
 
+LeakyReLU
+^^^^^^^^^
+
+Element-wise Leaky Rectified Linear Unit (ReLU) function.
+
+It is defined as:
+
+.. math::
+    y_i = \alpha * \min(0, x_i) + \max (0, x_i)
+
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - alpha
+     - float
+     - 0.1
+     - The slope value multplied to negative numbers. :math:`\alpha` in the definition.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as x
+     - 
+
 Softmax
 ^^^^^^^
 
