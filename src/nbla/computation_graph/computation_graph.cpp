@@ -18,7 +18,7 @@
 
 namespace nbla {
 
-static NBLA_API vector<CgVariablePtr>
+static vector<CgVariablePtr>
 connect_core(CgFunctionPtr cg_f, const vector<CgVariablePtr> &inputs,
              const vector<CgVariablePtr> &outputs,
              vector<NdArrayPtr> inplace_outputs = {}, bool execute = false);
