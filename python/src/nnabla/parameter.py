@@ -251,7 +251,8 @@ def load_parameters(path, proto=None, proto_only=False):
                 nnp.extract(name, tmpdir)
                 _, ext = os.path.splitext(name)
                 if ext in ['.protobuf', '.h5']:
-                    proto = load_parameters(os.path.join(tmpdir, name), proto, proto_only)
+                    proto = load_parameters(os.path.join(
+                        tmpdir, name), proto, proto_only)
         shutil.rmtree(tmpdir)
     logger.info("Parameter load ({}): {}".format(format, path))
     return proto

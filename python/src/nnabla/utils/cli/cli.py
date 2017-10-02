@@ -13,10 +13,6 @@
 # limitations under the License.
 
 import argparse
-try:
-    import nnabla_ext.cuda.cudnn
-except:
-    pass
 
 
 def main():
@@ -104,24 +100,58 @@ def main():
         '-o', '--outdir', help='output directory', required=True)
     subparser.set_defaults(func=compare_with_cpu_command)
 
+    from nnabla.utils.cli.create_image_classification_dataset import create_image_classification_dataset_command
+    # Create image classification dataset
+    subparser = subparsers.add_parser('create_image_classification_dataset')
+    subparser.add_argument(
+        '-i', '--sourcedir', help='source directory with directories for each class', required=True)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '-c', '--channel', help='number of output color channels', required=True)
+    subparser.add_argument(
+        '-w', '--width', help='width of output image', required=True)
+    subparser.add_argument(
+        '-g', '--height', help='height of output image', required=True)
+    subparser.add_argument(
+        '-m', '--mode', help='shaping mode (trimming or padding)', required=True)
+    subparser.add_argument(
+        '-s', '--shuffle', help='shuffle mode (true or false)', required=True)
+    subparser.add_argument(
+        '-f1', '--file1', help='output file name 1', required=True)
+    subparser.add_argument(
+        '-r1', '--ratio1', help='output file ratio(%) 1')
+    subparser.add_argument(
+        '-f2', '--file2', help='output file name 2')
+    subparser.add_argument(
+        '-r2', '--ratio2', help='output file ratio(%) 2')
+    subparser.set_defaults(func=create_image_classification_dataset_command)
+
     # Uploader
-    from nnabla.utils.cli.upload import upload_command
+    from nnabla.utils.cli.uploader import upload_command, Uploader
     subparser = subparsers.add_parser('upload')
-    subparser.add_argument(
-        '-d', '--dest', help='destination path', required=True)
-    subparser.add_argument(
-        '-s', '--size', help='split size in GB', required=False, default=10, type=int)
-    subparser.add_argument(
-        '-t', '--tmp', help='specify temporary directory')
-    subparser.add_argument('source')
+    subparser.add_argument('-e', '--env', help='select an environment to upload from [{}].'.format(
+        ', '.join(sorted(Uploader.environments.keys())), type=str))
+    subparser.add_argument('token', help='token for upload')
+    subparser.add_argument('filename', help='filename to upload')
     subparser.set_defaults(func=upload_command)
 
-    args = parser.parse_args()
+    # Create TAR for uploader
+    from nnabla.utils.cli.uploader import create_tar_command
+    subparser = subparsers.add_parser('create_tar')
+    subparser.add_argument('source', help='CSV dataset')
+    subparser.add_argument('destination', help='TAR filename')
+    subparser.set_defaults(func=create_tar_command)
 
-    if 'func' in args:
-        args.func(args)
-    else:
-        parser.print_help()
+    args = parser.parse_args()
+    args.func(args)
+
 
 if __name__ == '__main__':
-    main()
+    import six.moves._thread as thread
+    import threading
+    thread.stack_size(128 * 1024 * 1024)
+    sys.setrecursionlimit(0x3fffffff)
+    main_thread = threading.Thread(target=main)
+    main_thread.start()
+    main_thread.join()

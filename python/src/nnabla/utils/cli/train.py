@@ -287,7 +287,7 @@ def train(args, config):
                     # Write to monitoring_report.yml
                     f = open(os.path.join(
                         args.outdir, 'monitoring_report.yml'), 'a')
-                    f.write('{}:\n'.format(epoch))
+                    f.write('{}:\n'.format(epoch - 1))
                     f.write('  cost: {}\n'.format(cost_avg_epoch))
                     for str in monitoring_report:
                         f.write(str)
@@ -328,14 +328,14 @@ def get_best_param(paramlist):
         return sorted(h5list).pop()
     return None
 
+
 def train_command(args):
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     info = load.load([args.config], exclude_parameter=True)
-    
+
     if args.param:
         info = load.load([args.param], parameter_only=True)
 
-    
     if args.sdcproj and args.job_url_list:
         job_url_list = {}
         with open(args.job_url_list) as f:
@@ -375,12 +375,13 @@ def train_command(args):
                 us = uri_body.split('/', 1)
                 bucketname = us.pop(0)
                 base_key = us[0]
-                logger.info('Creating session for S3 bucket {}'.format(bucketname))
+                logger.info(
+                    'Creating session for S3 bucket {}'.format(bucketname))
                 import boto3
                 bucket = boto3.session.Session().resource('s3').Bucket(bucketname)
                 paramlist = []
                 for obj in bucket.objects.filter(Prefix=base_key):
-                    fn = obj.key[len(base_key)+1:]
+                    fn = obj.key[len(base_key) + 1:]
                     if len(fn) > 0:
                         paramlist.append(fn)
                 p = get_best_param(paramlist)
@@ -389,10 +390,11 @@ def train_command(args):
                     tempdir = tempfile.mkdtemp()
                     tmp = os.path.join(tempdir, p)
                     with open(tmp, 'wb') as f:
-                        f.write(bucket.Object(base_key+'/' + p).get()['Body'].read())
+                        f.write(bucket.Object(
+                            base_key + '/' + p).get()['Body'].read())
                     param_proto = load_parameters(tmp, proto_only=True)
                     rmtree(tempdir, ignore_errors=True)
-                
+
             else:
                 paramlist = []
                 for fn in glob.glob('{}/*'.format(uri)):
@@ -407,12 +409,13 @@ def train_command(args):
                 for param in param_proto.parameter:
                     pn = param.variable_name.replace('/', '~')
                     if pn in params:
-                        logger.log(99, 'Update variable {} from {}'.format(param.variable_name, param_fn))
+                        logger.log(99, 'Update variable {} from {}'.format(
+                            param.variable_name, param_fn))
                         var = get_parameter_or_create(
                             param.variable_name, param.shape.dim)
                         var.d = np.reshape(param.data, param.shape.dim)
                         var.need_grad = param.need_grad
-                
+
     class TrainConfig:
         pass
     config = TrainConfig()
