@@ -51,8 +51,8 @@ Inputs:
 
 Outputs (1 or 3):
 - N-D array.
-- (Optional) N-D array of running mean.
-- (Optional) N-D array of running variance.
+- (Optional) N-D array of batch mean.
+- (Optional) N-D array of batch variance.
 
 @tparam T Data type for computation.
 
