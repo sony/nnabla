@@ -31,8 +31,6 @@ RUN apt-get -yqq update \
         build-essential \
         dh-autoreconf \
         pkg-config \
-        qt5-default \
-    # Install protoc-gen-doc
     && git clone https://github.com/google/protobuf.git /protobuf \
     && cd /protobuf \
     && git checkout v3.1.0 \
@@ -41,12 +39,6 @@ RUN apt-get -yqq update \
     && make \
     && make install \
     && ldconfig \
-    # Install protoc-gen-doc
-    && git clone https://github.com/estan/protoc-gen-doc.git /protoc-gen-doc \
-    && cd /protoc-gen-doc \
-    && qmake \
-    && make \
-    && cp protoc-gen-doc /usr/local/bin \
     # Cleanup
     && apt-get -yqq purge dh-autoreconf \
     && apt-get -yqq clean \

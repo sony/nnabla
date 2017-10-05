@@ -303,16 +303,11 @@ if(BUILD_PYTHON_PACKAGE)
       COMMAND cd ${CMAKE_SOURCE_DIR} &&
               PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
               sphinx-build -M html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
-      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/protoc
-      COMMAND cd ${CMAKE_SOURCE_DIR} &&
-              ${PROTOC_COMMAND} --doc_out=html,index.html:${CMAKE_BINARY_DIR}/doc/protoc
-              src/nbla/proto/nnabla.proto
       COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx/doctrees ${CMAKE_BINARY_DIR}/doc
       COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx/html ${CMAKE_BINARY_DIR}/doc
       COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/sphinx
       COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/html ${CMAKE_BINARY_DIR}/doc/html/doxygen
-      COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen
-      COMMAND mv ${CMAKE_BINARY_DIR}/doc/protoc ${CMAKE_BINARY_DIR}/doc/html/)
+      COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen)
     add_dependencies(doc wheel)
     nbla_exclude_from_all(doc)
   endif()
