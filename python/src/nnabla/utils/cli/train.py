@@ -422,6 +422,8 @@ def train_command(args):
 
     logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
+    logger.log(99, 'Train with contexts {}'.format(available_contexts))
+
     config.global_config = info.global_config
     config.training_config = info.training_config
 

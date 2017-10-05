@@ -387,7 +387,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
-                logger.info('Creating cache data for "' + uri + '"')
+                logger.log(99, 'Creating cache data for "' + uri + '"')
                 with data_iterator_csv_dataset(uri, batch_size, shuffle, normalize=False, cache_dir=cache_dir) as di:
                     index = 0
                     while index < di.size:

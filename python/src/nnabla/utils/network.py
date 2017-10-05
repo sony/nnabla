@@ -204,11 +204,6 @@ class Network:
                         del self.functions[func.name]
                         del self.variables[func.outputs[0].name]
 
-            for func in self.functions.values():
-                if func.function_instance.inplace_data(0) > 0 and func.function_instance.inplace_grad(0) > 0:
-                    func.outputs[0].variable_instance = func.inputs[
-                        0].variable_instance
-
         # create variable instances
         for variable in self.variables.values():
             if variable.variable_instance.shape != variable.shape:
