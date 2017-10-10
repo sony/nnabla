@@ -180,7 +180,6 @@ def main():
 
 
 if __name__ == '__main__':
-    import sys
     import six.moves._thread as thread
     import threading
     thread.stack_size(128 * 1024 * 1024)

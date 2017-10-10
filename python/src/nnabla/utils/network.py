@@ -203,7 +203,7 @@ class Network:
                                 0] else v for v in next_function.inputs]
                         del self.functions[func.name]
                         del self.variables[func.outputs[0].name]
-
+                
         # create variable instances
         for variable in self.variables.values():
             if variable.variable_instance.shape != variable.shape:
