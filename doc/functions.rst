@@ -4796,6 +4796,182 @@ Reference
      - Output
      - 
 
+INQAffine
+^^^^^^^^^
+
+This function provides a INQ affine layer. It computes in
+the forward pass
+
+.. math::
+
+    y_j = \sum_{i} w_{j,i} x_i,
+
+where the weights :math:`w_{j,i}` are quantized sequentially during
+training to power-of-two numbers. In the backward pass, only the non-fixed
+(i.e., learnable) weights are updated.
+
+References:
+
+    * `Zhou A, Yao A, Guo Y, Xu L, Chen Y. Incremental network quantization:
+      Towards lossless CNNs with low-precision weights.
+      <https://arxiv.org/abs/1702.03044>`_
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input .
+     -
+   * - weight
+     - Weight .
+     - Parameter
+   * - indicator_fixedweights
+     - Indicates which weights are already fixed (0 = not fixed, 1 = fixed) .
+     - Integer Parameter
+   * - bias
+     - Bias.
+     - Optional Parameter
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - base_axis
+     - int64
+     - 1
+     - Dimensions up to base_axis is treated as sample dimension.
+   * - num_bits
+     - int64
+     - 4
+     - Number of bits per weight. Needs to be >= 2 as two bits are used to code `zero` and sign of weight.
+   * - inq_iterations
+     - repeated int64
+     - ()
+     - List which specifies after how many forward passes we fix 50% of the learnable weights. If we have done as many iterations as specified in the last element of `inq_iterations`, then all weights are fixed.
+   * - selection_algorithm
+     - string
+     - "largest_abs"
+     - Chooses algorithm that we use for selecting the weights to fix ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
+   * - seed
+     - int64
+     - -1
+     - Random seed. When -1, seed is sampled from global random number generator.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output.
+     -
+
+INQConvolution
+^^^^^^^^^^^^^^
+
+This function provides a INQ convolution layer. It computes in
+the forward pass
+
+.. math::
+
+    y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} w_{n, m, i, j} x_{m, a + i, b + j},
+
+where the weights :math:`w_{j,i}` are quantized sequentially during
+training to power-of-two numbers. In the backward pass, only the non-fixed
+(i.e., learnable) weights are updated.
+
+Reference
+
+    * `Zhou A, Yao A, Guo Y, Xu L, Chen Y. Incremental network quantization:
+      Towards lossless CNNs with low-precision weights.
+      <https://arxiv.org/abs/1702.03044>`_
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input.
+     -
+   * - weight
+     - Weight.
+     - Parameter
+   * - indicator_fixedweights
+     - Indicates which weights are already fixed (0 = not fixed, 1 = fixed) .
+     - Integer Parameter
+   * - bias
+     - Bias.
+     - Optional Parameter
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - base_axis
+     - int64
+     - 1
+     - Dimensions up to base_axis is treated as sample dimension.
+   * - pad
+     - Shape
+     - (0,) * (len(x.shape) - (base_axis+1))
+     - Padding sizes for dimensions.
+   * - stride
+     - Shape
+     - (1,) * (len(x.shape) - (base_axis+1))
+     - Stride sizes for dimensions.
+   * - dilation
+     - Shape
+     - (1,) * (len(x.shape) - (base_axis+1))
+     - Dilation sizes for dimensions.
+   * - group
+     - int64
+     - 1
+     - Number of groups of channels. This makes the connection across channels sparser, by grouping connections along the mapping direction.
+   * - num_bits
+     - int64
+     - 4
+     - Number of bits per weight. Needs to be >= 2 as two bits are used to code `zero` and sign of weight.
+   * - inq_iterations
+     - repeated int64
+     - ()
+     - List which specifies after how many forward passes we fix 50% of the learnable weights. If we have done as many iterations as specified in the last element of `inq_iterations`, then all weights are fixed.
+   * - selection_algorithm
+     - string
+     - "largest_abs"
+     - Chooses algorithm that we use for selecting the weights to fix ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
+   * - seed
+     - int64
+     - -1
+     - Random seed. When -1, seed is sampled from global random number generator.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output
+     -
+
 Validation
 ----------
 
