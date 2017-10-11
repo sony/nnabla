@@ -21,6 +21,7 @@ import os
 import time
 import zipfile
 import tempfile
+import time
 from shutil import rmtree
 
 from nnabla.logger import logger
@@ -269,10 +270,28 @@ def train(args, config):
     if max_iter > 0:
         last_iter = last_epoch * config.training_config.iter_per_epoch
         if last_iter < max_iter:
+
+            start_time = time.time()
+            last_past_time = -1
+
             for iter in range(last_iter, max_iter):
                 cost = _update(iter, config, cost)
+                current_time = time.time()
+                if iter > 0:
+                    past_time = current_time - start_time
+                    if last_past_time < 0 or past_time - last_past_time > 5.0:
+                        estimate_time = past_time * max_iter / iter
+                        remain_time = estimate_time - past_time
+                        # logger.log(99, 'time:{} remain:{} estimate:{}'.format(
+                        #     past_time, remain_time, estimate_time))
+                        if config.timelimit > 0 and estimate_time > config.timelimit:
+                            logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
+                                estimate_time, config.timelimit))
+                            return False
+                        last_past_time = past_time
 
                 if (iter + 1) % config.training_config.iter_per_epoch == 0:
+                    last_past_time = -1
                     # End of epoch
                     epoch = iter // config.training_config.iter_per_epoch + 1
                     cost_avg_epoch = cost.sum_epoch / config.training_config.iter_per_epoch
@@ -302,6 +321,8 @@ def train(args, config):
             _save_parameters(args, 'current', epoch, True)
     else:
         _save_parameters(args, 'current', 0, True)
+
+    return True
 
 
 def get_best_param(paramlist):
@@ -333,6 +354,10 @@ def train_command(args):
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     info = load.load([args.config], exclude_parameter=True)
 
+    class TrainConfig:
+        pass
+    config = TrainConfig()
+    config.timelimit = -1
     if args.param:
         info = load.load([args.param], parameter_only=True)
 
@@ -415,10 +440,18 @@ def train_command(args):
                             param.variable_name, param.shape.dim)
                         var.d = np.reshape(param.data, param.shape.dim)
                         var.need_grad = param.need_grad
-
-    class TrainConfig:
-        pass
-    config = TrainConfig()
+    if args.sdcproj:
+        with open(args.sdcproj) as f:
+            for line in f.readlines():
+                ls = line.strip().split('=')
+                if len(ls) == 2:
+                    var, val = ls
+                    if var == 'TimeLimit':
+                        timelimits = [int(x) for x in val.split(':')]
+                        if len(timelimits) == 4:
+                            config.timelimit = float(timelimits[0] * 24 * 3600 +
+                                                     timelimits[1] * 3600 +
+                                                     timelimits[2] * 60 + timelimits[3])
 
     logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
@@ -449,6 +482,7 @@ def train_command(args):
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
 
+    result = False
     with ExitStack() as stack:
         for name, o in config.optimizers.items():
             o.data_iterator = stack.enter_context(
@@ -456,7 +490,10 @@ def train_command(args):
         for name, m in config.monitors.items():
             m.data_iterator = stack.enter_context(
                 m.monitor.data_iterator())
-        train(args, config)
+        result = train(args, config)
 
-    logger.log(99, 'Training Completed.')
+    if result:
+        logger.log(99, 'Training Completed.')
+    else:
+        logger.log(99, 'Training Incompleted.')
     progress(None)
