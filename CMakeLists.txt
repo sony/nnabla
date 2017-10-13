@@ -9,6 +9,7 @@ project (nbla C CXX)
 ###############################################################################
 # Using cmake scripts and modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/build-tools/cmake/Modules)
+list(APPEND CMAKE_FIND_ROOT_PATH $ENV{CMAKE_FIND_ROOT_PATH})
 include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 
 ###############################################################################
@@ -224,7 +225,14 @@ if(BUILD_PYTHON_PACKAGE)
       message(FATAL_ERROR "Invalid CPPLIB_BUILD_DIR :[${CPPLIB_BUILD_DIR}]")
     endif()
     if(NOT EXISTS ${CPPLIB_LIBRARY})
-      message(FATAL_ERROR "Invalid CPPLIB_LIBRARY :[${CPPLIB_LIBRARY}]")
+      if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	string(REPLACE .so .dylib CPPLIB_LIBRARY ${CPPLIB_LIBRARY})
+	if(NOT EXISTS ${CPPLIB_LIBRARY})
+	  message(FATAL_ERROR "Invalid CPPLIB_LIBRARY :[${CPPLIB_LIBRARY}]")
+	endif()
+      else()
+	message(FATAL_ERROR "Invalid CPPLIB_LIBRARY :[${CPPLIB_LIBRARY}]")
+      endif()
     endif()
     
     set(CPPLIB_LIBRARY_NAME "nnabla")
