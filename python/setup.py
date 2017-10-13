@@ -150,26 +150,19 @@ if __name__ == '__main__':
 
     ext_opts = extopts(library_name, library_dir)
 
-    ext_modules = [
-        Extension("nnabla._variable",
-                  [os.path.join(path_pkg, '_variable.pyx')],
-                  **ext_opts),
-        Extension("nnabla.function",
-                  [os.path.join(path_pkg, 'function.pyx')],
-                  **ext_opts),
-        Extension("nnabla.solver",
-                  [os.path.join(path_pkg, 'solver.pyx')],
-                  **ext_opts),
-        Extension("nnabla.communicator",
-                  [os.path.join(path_pkg, 'communicator.pyx')],
-                  **ext_opts),
-        Extension("nnabla._init",
-                  [os.path.join(path_pkg, '_init.pyx')],
-                  **ext_opts),
-        Extension("nnabla._nd_array",
-                  [os.path.join(path_pkg, '_nd_array.pyx')],
-                  **ext_opts),
-    ]
+    module_names = [
+        '_variable',
+        'function',
+        'solver',
+        'communicator',
+        '_init',
+        '_nd_array',
+        '_arithmetic_ops']
+
+    ext_modules = [Extension('nnabla.{}'.format(mname),
+                             [os.path.join(path_pkg,
+                                           '{}.pyx'.format(mname))],
+                             **ext_opts) for mname in module_names]
 
     # Cythonize
     ext_modules = cythonize(ext_modules, compiler_directives={
