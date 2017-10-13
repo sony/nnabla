@@ -22,20 +22,11 @@ import nnabla.solvers as S
 
 from args import get_args
 from tiny_imagenet_data import data_iterator_tiny_imagenet
+from imagenet_data import data_iterator_imagenet
 import model_resnet
 
 import os
 from collections import namedtuple
-
-
-def categorical_error(pred, label):
-    """
-    Compute categorical error given score vectors and labels as
-    numpy.ndarray.
-    """
-    pred_label = pred.argmax(1)
-    return (pred_label != label.flat).mean()
-
 
 def get_model(args, num_classes, test=False, tiny=False):
     """
@@ -52,7 +43,7 @@ def get_model(args, num_classes, test=False, tiny=False):
         nn_in_size = 56
     image = nn.Variable([args.batch_size, 3, data_size, data_size])
     label = nn.Variable([args.batch_size, 1])
-    pimage = image_preprocess(image, nn_in_size)
+    pimage = image_preprocess(image, nn_in_size, test)
     pred, hidden = model_resnet.resnet_imagenet(
         pimage, num_classes, args.num_layers, args.shortcut_type, test=test, tiny=tiny)
     loss = F.mean(F.softmax_cross_entropy(pred, label))
@@ -60,23 +51,24 @@ def get_model(args, num_classes, test=False, tiny=False):
     return Model(image, label, pred, loss, hidden)
 
 
-def image_preprocess(image, img_size=224):
+def image_preprocess(image, img_size=224, test=False):
     h, w = image.shape[2:]
-    size = min(h, w)
-    min_size = img_size * 1.1
-    max_size = min_size * 2
-    min_scale = min_size / size
-    max_scale = max_size / size
-    image = F.image_augmentation(image, (3, img_size, img_size),
-                                 min_scale=min_scale, max_scale=max_scale,
-                                 angle=0.5, aspect_ratio=1.3, distortion=0.2,
-                                 flip_lr=True, brightness=25.5,
-                                 brightness_each=True,
-                                 contrast=1.1, contrast_center=128.0,
-                                 contrast_each=True, noise=25.5)
-    image = image - 128
+    image = image / 255
+    if test:
+        hs = (h - img_size) / 2
+        ws = (w - img_size) / 2
+        he = (h + img_size) / 2
+        we = (w + img_size) / 2
+        image = F.slice(image, (0,ws,hs), (3,we,he), (1, 1, 1))
+    else:
+        size = min(h, w)
+        min_size = img_size * 1.1
+        max_size = min_size * 2
+        min_scale = min_size / size
+        max_scale = max_size / size
+        image = F.image_augmentation(image, (3, img_size, img_size), pad=(0,0), min_scale=min_scale, max_scale=max_scale, angle=0.5, aspect_ratio=1.3, distortion=0.2, flip_lr=True, flip_ud=False, brightness=0.0, brightness_each=True, contrast=1.1, contrast_center=0.5, contrast_each=True, noise=0.0)
+    image = image - 0.5
     return image
-
 
 def train():
     """
@@ -101,17 +93,24 @@ def train():
     # in training set. The image size is 64x64. To adapt ResNet into 64x64
     # image inputs, the input image size of ResNet is set as 56x56, and
     # the stride in the first conv and the first max pooling are removed.
-    data = data_iterator_tiny_imagenet(args.batch_size, 'train')
-    vdata = data_iterator_tiny_imagenet(args.batch_size, 'val')
-
-    num_classes = 200
-    tiny = True  # TODO: Switch ILSVRC2012 dataset and TinyImageNet.
+    if args.tiny_mode:
+        data = data_iterator_tiny_imagenet(args.batch_size, 'train')
+        vdata = data_iterator_tiny_imagenet(args.batch_size, 'val')
+        num_classes = 200
+    else:
+        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir)
+        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir)
+        num_classes = 1000
     t_model = get_model(
-        args, num_classes, test=False, tiny=tiny)
+        args, num_classes, test=False, tiny=args.tiny_mode)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
+    t_pred2 = t_model.pred.unlinked()
+    t_e = F.mean(F.top_n_error(t_pred2, t_model.label))
     v_model = get_model(
-        args, num_classes, test=True, tiny=tiny)
+        args, num_classes, test=True, tiny=args.tiny_mode)
     v_model.pred.persistent = True  # Not clearing buffer of pred in forward
+    v_pred2 = v_model.pred.unlinked()
+    v_e = F.mean(F.top_n_error(v_pred2, v_model.label))
 
     # Create Solver.
     solver = S.Momentum(args.learning_rate, 0.9)
@@ -143,13 +142,19 @@ def train():
             e = 0.0
             for j in range(args.val_iter):
                 images, labels = vdata.next()
+                # The data loading of the next mini-batch from files is overlapped
+                # with the computation of forward and backward propagation in your CUDA device
+                # because the CUDA stream runs asynchronously and the synchronization happens
+                # when the loss variable is referred by the `.d` accessor.
+                if i !=  0:
+                    l += v_model.loss.d
+                    v_e.forward(clear_buffer=True)
+                    e += v_e.d
                 v_model.image.d = images
                 v_model.label.d = labels
                 v_model.image.data.cast(np.uint8, ctx)
                 v_model.label.data.cast(np.int32, ctx)
                 v_model.loss.forward(clear_buffer=True)
-                l += v_model.loss.d
-                e += categorical_error(v_model.pred.d, v_model.label.d)
             monitor_vloss.add(i, l / args.val_iter)
             monitor_verr.add(i, e / args.val_iter)
 
@@ -164,14 +169,20 @@ def train():
         # Gradient accumulation loop
         for j in range(args.accum_grad):
             images, labels = data.next()
+            # The data loading of the next mini-batch from files is overlapped
+            # with the computation of forward and backward propagation in your CUDA device
+            # because the CUDA stream runs asynchronously and the synchronization happens
+            # when the loss variable is referred by the `.d` accessor.
+            if i !=  0:
+                l += t_model.loss.d
+                t_e.forward(clear_buffer=True)
+                e += t_e.d
             t_model.image.d = images
             t_model.label.d = labels
             t_model.image.data.cast(np.uint8, ctx)
             t_model.label.data.cast(np.int32, ctx)
             t_model.loss.forward(clear_no_need_grad=True)
             t_model.loss.backward(clear_buffer=True)  # Accumulating gradients
-            l += t_model.loss.d
-            e += categorical_error(t_model.pred.d, t_model.label.d)
         solver.weight_decay(args.weight_decay)
         solver.update()
         monitor_loss.add(i, l / args.accum_grad)
