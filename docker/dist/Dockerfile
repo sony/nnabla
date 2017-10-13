@@ -125,6 +125,8 @@ RUN set -xe ; for PYV in 2.7.14 3.4.5 3.5.3 3.6.2 \
     ; (pip install -U setuptools || pip install -U setuptools || pip install -U setuptools || true) \
     ; pip install -U -r /tmp/deps/requirements.txt \
     ; pip install -U -r /tmp/deps/test_requirements.txt \
+    ; pip install -U "pytest-pep8" \
+    ; pip install -U "pytest-cov" \
     ; pip install -U "Cython<0.25" \
     ; pip install -U "numpy<1.11" \
     ; source deactivate \

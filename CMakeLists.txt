@@ -311,6 +311,7 @@ if(BUILD_PYTHON_PACKAGE)
       COMMAND cd ${CMAKE_SOURCE_DIR} &&
               PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
               sphinx-build -M html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
+      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/protoc
       COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx/doctrees ${CMAKE_BINARY_DIR}/doc
       COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx/html ${CMAKE_BINARY_DIR}/doc
       COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/sphinx
