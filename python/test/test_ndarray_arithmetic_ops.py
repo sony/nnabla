@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six import exec_ as exec
+from six import exec_
 
 import pytest
 import numpy as np
@@ -47,7 +47,7 @@ def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var):
 
     # Inplace test
     vx_bak = vx
-    exec("vx {0}= vy".format(op))
+    exec_("vx {0}= vy".format(op))
     assert np.allclose(vx.data, vz.data)
     assert vx is vx_bak
 
@@ -66,7 +66,7 @@ def test_ndarray_arithmetic_scalar_ops(seed, op):
 
     # Inplace test
     vx_bak = vx
-    exec("vx {0}= a".format(op))
+    exec_("vx {0}= a".format(op))
     assert np.allclose(vx.data, vz.data)
     assert vx is vx_bak
 
