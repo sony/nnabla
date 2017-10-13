@@ -206,6 +206,7 @@ void ExecutorImpl::execute() {
 NnpImpl::NnpImpl(const nbla::Context &ctx)
     : ctx_(ctx), proto_(new NNablaProtoBuf()) {}
 
+#ifdef NBLA_UTILS_WITH_HDF5
 bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   hid_t sp = H5Dget_space(did);
   int rank = H5Sget_simple_extent_ndims(sp);
@@ -236,6 +237,8 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
     parameters_.insert({variable_name, cg_v});
     return true;
   }
+  return false;
+  NBLA_ERROR(error_code::not_implemented, "HDF5 is not enabled when build.");
   return false;
 }
 
@@ -287,6 +290,7 @@ bool NnpImpl::parse_hdf5_group(hid_t gid) {
   }
   return false;
 }
+#endif
 
 ::Network NnpImpl::expand_network(const ::Network &orig) {
   ::Network net;
@@ -422,6 +426,7 @@ bool NnpImpl::add_protobuf(char *buffer, int size) {
 }
 
 bool NnpImpl::add_hdf5(char *buffer, int size) {
+#ifdef NBLA_UTILS_WITH_HDF5
   hid_t id = H5LTopen_file_image(buffer, size, H5LT_FILE_IMAGE_DONT_RELEASE);
   if (id >= 0) {
     root_ = H5Gopen(id, "/", H5P_DEFAULT);
@@ -429,6 +434,9 @@ bool NnpImpl::add_hdf5(char *buffer, int size) {
       return parse_hdf5_group(root_);
     }
   }
+#else
+  NBLA_LOG_WARN("HDF5 not enabled during build.");
+#endif
   return false;
 }
 

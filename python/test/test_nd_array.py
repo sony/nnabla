@@ -35,3 +35,5 @@ def test_nd_array():
     assert np.all(b.data == 0)
     a.fill(3)
     assert np.all(a.data == 3)
+    b.copy_from(a)
+    assert np.all(a.data == b.data)
