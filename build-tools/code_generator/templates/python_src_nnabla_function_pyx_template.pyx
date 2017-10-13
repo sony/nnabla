@@ -261,11 +261,13 @@ cdef class Function:
     def __call__(self, *inputs, int n_outputs=-1, cpp_bool auto_forward=True, outputs=None):
         """
         """
+        cdef int i
         if outputs is None:
             outputs = []
         if inputs:
-            if isinstance(inputs[0], NdArray):
-                return self._imperative_call(inputs, n_outputs, outputs)
+            for i in range(len(inputs)):
+                if isinstance(inputs[i], NdArray):
+                    return self._imperative_call(inputs, n_outputs, outputs)
         return self._cg_call(inputs, n_outputs, outputs, auto_forward)
 
         

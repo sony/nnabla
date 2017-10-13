@@ -1,0 +1,8 @@
+cdef object add(object x, object y)
+cdef object sub(object x, object y)
+cdef object mul(object x, object y)
+cdef object div(object x, object y)
+cdef object truediv(object x, object y)
+cdef object pow(object x, object y, object z)
+cdef object pos(object x)
+cdef object neg(object x)

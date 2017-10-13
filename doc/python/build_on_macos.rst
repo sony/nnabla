@@ -24,4 +24,4 @@ NOTE: Building with CUDA extension is not supported so far.
 Build and installation
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Once the requirements described above are set up, the following procedure is exactly same as that in the build on Linux except CUDA installation is not supported on macOS. See :ref:`linux-build-and-install`.
+Once the requirements described above are set up, the rest of the procedure is exactly same as that in the build on Linux except CUDA installation is not supported on macOS. See :ref:`linux-build-and-install`.
