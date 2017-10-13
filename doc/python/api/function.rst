@@ -52,6 +52,7 @@ Neural Network Activation
 .. autofunction:: relu
 .. autofunction:: softmax
 .. autofunction:: elu
+.. autofunction:: selu
 .. autofunction:: crelu
 .. autofunction:: celu
 .. autofunction:: prelu
