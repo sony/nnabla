@@ -56,3 +56,6 @@
 
 # Converted ReST
 # doc/python/tutorial/
+*.h5
+tmp.*/
+*.zip
