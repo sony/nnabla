@@ -47,7 +47,7 @@ Build
 
     git clone https://github.com/sony/nnabla
     mkdir -p nnabla/build && cd nnabla/build
-    cmake .. -DBUILD_CPP_UTILS=ON -DBUILD_PYTHON_API=OFF -DNNABLA_UTILS_WITH_HDF5=ON
+    cmake .. -DBUILD_CPP_UTILS=ON -DBUILD_PYTHON_PACKAGE=OFF -DNNABLA_UTILS_WITH_HDF5=ON
     make
 
 If you want to disable the HDF5 support, set ``-DNNABLA_UTILS_WITH_HDF5=OFF``.
