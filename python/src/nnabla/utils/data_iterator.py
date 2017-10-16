@@ -119,7 +119,7 @@ class DataIterator(object):
         Returns:
             int: epoch
         '''
-        return self._epoch
+        return self._current_data[0]
 
     @property
     def position(self):
@@ -183,7 +183,7 @@ class DataIterator(object):
             d = self._get_next_data()
             for i, v in enumerate(self._variables):
                 data[i].append(d[i])
-        self._current_data = tuple([numpy.array(x) for x in data])
+        self._current_data = (self._epoch, tuple([numpy.array(x) for x in data]))
 
     def next(self):
         '''next
@@ -198,7 +198,7 @@ class DataIterator(object):
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
         self._next_thread.join()
-        data = self._current_data
+        data = self._current_data[1]
         self._next_thread = threading.Thread(target=self._next)
         self._next_thread.start()
         return data
