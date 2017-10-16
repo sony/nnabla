@@ -124,6 +124,7 @@ def train():
     monitor_vloss = M.MonitorSeries("Validation loss", monitor, interval=10)
     monitor_verr = M.MonitorSeries("Validation error", monitor, interval=10)
     monitor_time = M.MonitorTimeElapsed("Training time", monitor, interval=10)
+    monitor_vtime = M.MonitorTimeElapsed("Validation time", monitor, interval=10)
 
     # Training loop.
     for i in range(args.max_iter):
@@ -157,6 +158,7 @@ def train():
                 v_model.loss.forward(clear_buffer=True)
             monitor_vloss.add(i, l / args.val_iter)
             monitor_verr.add(i, e / args.val_iter)
+            monitor_vtime.add(i)
 
             # Clear all intermediate memory to save memory.
             # v_model.loss.clear_recursive()
