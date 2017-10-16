@@ -1,0 +1,33 @@
+1. Prepare the data of ImageNet.
+- For the trainning data.
+  - ILSVRC2012_img_train.tar
+- For the validation data.
+  - ILSVRC2012_img_val.tar
+
+2. Create a directory for the data set.
+- For the trainning data.
+  - mkdir "direcotry name"
+    [ex):mkdir train_data]
+  - python create_train_dir.py -t "tar file(trainning) of ImageNet" -o "directory name"
+    [ex):python create_train_dir.py -t ILSVRC2012_img_train.tar -o train_data]
+- For the validation data.
+  - mkdir "direcotry name"
+    [ex):mkdir val_data]
+  - python create_val_dir.py -t "tar file(validation) of ImageNet" -o "directory name"
+    [ex):python create_val_dir.py -t ILSVRC2012_img_val.tar -o val_data]
+
+3. Create the cache file for ImageNet examples.
+- For the trainning data.
+  - mkdir "direcotry name"
+    [ex):mkdir train_cache]
+  - python create_cache_file.py -i "directory of the trainning data" -o "directory of the trainning cache file" -w "width of output image" -g "height of output image" -m "shaping mode (trimming or padding)" -s "shuffle mode (true or false)"
+    [python create_cache_file.py -i train_data -o train_cache -w 320 -g 320 -m trimming -s true]
+- For the validation data.
+  - mkdir "direcotry name"
+    [ex):mkdir val_cache]
+   - python create_cache_file.py -i "directory of the validation data" -o "directory of the validatio cache file" -w "width of output image" -g "height of output image" -m "shaping mode (trimming or padding)" -s "shuffle mode (true or false)"
+    [ex):python create_cache_file.py -i val_data -o val_cache -w 320 -g 320 -m trimming -s false]
+
+4．Execute the example of ImageNet.
+  - python classification.py -b "batch size" -a "accumulate gradient" -c "device id" -T "directory of the trainning cache file" -V "directory of the validation cache file"
+    [ex):python classification.py -b 64 -a 4 -c cuda.cudnn -T train_cache -V val_cache]
