@@ -62,6 +62,8 @@ Here is the list of parametric functions.
 .. autofunction:: binary_connect_convolution
 .. autofunction:: binary_weight_affine
 .. autofunction:: binary_weight_convolution
+.. autofunction:: inq_affine
+.. autofunction:: inq_convolution
 
 Parameter Initializer
 ---------------------
