@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_path=None, learning_rate=1e-1, batch_size=8, weight_decay=1e-4, accum_grad=32, tiny_mode=False, train_cachefile_dir=None, val_cachefile_dir=None):
+def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_path=None, learning_rate=1e-1, batch_size=8, weight_decay=1e-4, accum_grad=32, tiny_mode=False, train_cachefile_dir=None, val_cachefile_dir=None, warmup_epoch=5):
     """
     Get command line arguments.
 
@@ -67,6 +67,7 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
                         help='Training cache file dir. Create to use create_cache_file.py')
     parser.add_argument("--val-cachefile-dir", "-V", type=str, default=val_cachefile_dir,
                         help='Validation cache file dir. Create to use create_cache_file.py')
+    parser.add_argument("--warmup-epoch", "-e", type=int, default=warmup_epoch)
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
         os.makedirs(args.model_save_path)
