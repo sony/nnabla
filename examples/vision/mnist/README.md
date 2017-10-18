@@ -11,7 +11,7 @@ when running any of the examples.
 
 ---
 
-## Classification task (`classification.py` and `classification_bnn.py`)
+## Classification task (`classification.py` and `classification_*.py`)
 
 This example demonstrates the training of hand-written digits classification on
 MNIST dataset. The convolutional neural network takes 28x28 pixel grayscale
@@ -46,12 +46,30 @@ details see the source code and the help produced by running with the `-h`
 option.
 
 You can also try training of various types of binary neural network
-classification models on MNIST dataset.
+(`classification_bnn.py`) and quantized classification models
+(`classification_qnn.py`) on the MNIST dataset:
 
-```
-python classification_bnn.py [-c cuda.cunn] [-h|--help]
-```
+* Binarized neural network (BNN)
 
+  `classification_bnn.py` provides an example of training a BNN on MNIST
+
+  ```
+  python classification_bnn.py [-c cuda.cudnn] [-h|--help]
+  ```
+
+  The quantization method is chosen by `--net`. By default, a BinaryConnect
+  version of a LeNet-style network is trained.
+
+* Quantized neural network
+
+  `classification_qnn.py` provides an example of training a QNN on MNIST
+
+  ```
+  python classification_qnn.py [-c cuda.cudnn] [-h|--help]
+  ```
+
+  By default a multiplierless LeNet-style network with 4-bit power-of-two values
+  is trained using Incremental Network Quantization (INQ).
 
 ## Deep Convolutional GAN (`dcgan.py`)
 
