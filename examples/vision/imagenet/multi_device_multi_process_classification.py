@@ -157,7 +157,7 @@ def train():
     solver.set_parameters(nn.get_parameters())
     base_lr = args.learning_rate
     warmup_iter = int(1. * n_train_samples /
-                      args.batch_size / n_devices) * args.warmup_epoch
+                      args.batch_size / args.accum_grad / n_devices) * args.warmup_epoch
     warmup_slope = 1. * n_devices / warmup_iter
 
     # Create monitor.
@@ -200,9 +200,10 @@ def train():
                 v_model.image.data.cast(np.uint8, ctx)
                 v_model.label.data.cast(np.int32, ctx)
                 v_model.loss.forward(clear_buffer=True)
-            monitor_vloss.add(i, l / args.val_iter)
-            monitor_verr.add(i, e / args.val_iter)
-            monitor_vtime.add(i)
+            if mpi_rank == 0:
+                monitor_vloss.add(i, l / args.val_iter)
+                monitor_verr.add(i, e / args.val_iter)
+                monitor_vtime.add(i)
 
             # Clear all intermediate memory to save memory.
             # v_model.loss.clear_recursive()
@@ -239,9 +240,10 @@ def train():
         else:
             lr = base_lr * n_devices
             solver.set_learning_rate(lr)
-        monitor_loss.add(i, l / args.accum_grad)
-        monitor_err.add(i, e / args.accum_grad)
-        monitor_time.add(i)
+        if mpi_rank == 0:
+            monitor_loss.add(i, l / args.accum_grad)
+            monitor_err.add(i, e / args.accum_grad)
+            monitor_time.add(i)
 
         # Learning rate decay at scheduled iter
         if i in args.learning_rate_decay_at:
