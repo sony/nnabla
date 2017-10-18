@@ -172,7 +172,7 @@ def train():
     monitor_vtime = M.MonitorTimeElapsed("Validation time", monitor, interval=10)
 
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(args.max_iter / n_devices):
         # Save parameters
         if i % args.model_save_interval == 0 and mpi_rank == 0:
             nn.save_parameters(os.path.join(
@@ -202,9 +202,9 @@ def train():
                 v_model.label.data.cast(np.int32, ctx)
                 v_model.loss.forward(clear_buffer=True)
             if mpi_rank == 0:
-                monitor_vloss.add(i, l / args.val_iter)
-                monitor_verr.add(i, e / args.val_iter)
-                monitor_vtime.add(i)
+                monitor_vloss.add(i * n_devices, l / args.val_iter)
+                monitor_verr.add(i * n_devices, e / args.val_iter)
+                monitor_vtime.add(i * n_devices)
 
             # Clear all intermediate memory to save memory.
             # v_model.loss.clear_recursive()
@@ -242,9 +242,9 @@ def train():
             lr = base_lr * n_devices
             solver.set_learning_rate(lr)
         if mpi_rank == 0:
-            monitor_loss.add(i, l / args.accum_grad)
-            monitor_err.add(i, e / args.accum_grad)
-            monitor_time.add(i)
+            monitor_loss.add(i * n_devices, l / args.accum_grad)
+            monitor_err.add(i * n_devices, e / args.accum_grad)
+            monitor_time.add(i * n_devices)
 
         # Learning rate decay at scheduled iter
         if i in args.learning_rate_decay_at:
