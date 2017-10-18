@@ -15,8 +15,8 @@
 /** INQConvolution
  */
 #include <nbla/array.hpp>
-#include <nbla/variable.hpp>
 #include <nbla/function/inq_convolution.hpp>
+#include <nbla/variable.hpp>
 
 #include <algorithm>
 #include <cmath>
