@@ -19,8 +19,8 @@
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
-#include <nbla/function_registry.hpp>
 #include <nbla/function/convolution.hpp>
+#include <nbla/function_registry.hpp>
 
 namespace nbla {
 

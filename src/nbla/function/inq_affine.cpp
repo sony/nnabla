@@ -15,8 +15,8 @@
 /** INQAffine
  */
 #include <nbla/array.hpp>
-#include <nbla/variable.hpp>
 #include <nbla/function/inq_affine.hpp>
+#include <nbla/variable.hpp>
 
 #include <algorithm>
 #include <cmath>

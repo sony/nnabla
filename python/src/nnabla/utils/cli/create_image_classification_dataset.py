@@ -29,12 +29,12 @@ def create_image_classification_dataset_command(args):
         dest_csv_file_name.append(os.path.join(args.outdir, args.file2))
     dest_dir = args.outdir
     width = int(args.width)
-    height= int(args.height)
+    height = int(args.height)
     padding = args.mode == 'padding'
     ch = int(args.channel)
     shuffle = args.shuffle == 'true'
     test_data_ratio = int(args.ratio2) if args.ratio2 else 0
-    
+
     if source_dir == dest_dir:
         logger.critical("Input directory and output directory are same.")
         return
@@ -45,7 +45,7 @@ def create_image_classification_dataset_command(args):
     dirs = [d for d in dirs if os.path.isdir(os.path.join(source_dir, d))]
     dirs.sort()
     # print(dirs)
-    
+
     labels = []
     label_index = -1
     csv_data = []
@@ -55,7 +55,8 @@ def create_image_classification_dataset_command(args):
         # print(dir)
         full_path = os.path.join(source_dir, dir)
         files = os.listdir(full_path)
-        files = [f for f in files if os.path.isfile(os.path.join(full_path, f))]
+        files = [f for f in files if os.path.isfile(
+            os.path.join(full_path, f))]
         files.sort()
         found = False
         for i2, file in enumerate(files):
@@ -66,7 +67,8 @@ def create_image_classification_dataset_command(args):
                     label_index += 1
                     found = True
                 csv_data.append([os.path.join('.', dir, file), label_index])
-            current = round(100 * (float(i) / len(dirs) + float(i2) / (len(dirs) * len(files))))
+            current = round(100 * (float(i) / len(dirs) +
+                                   float(i2) / (len(dirs) * len(files))))
             if last < current:
                 pbar.update(current - last)
                 last = current
@@ -80,20 +82,22 @@ def create_image_classification_dataset_command(args):
         dest_file_name = os.path.join(dest_dir, data[0])
         dest_path = os.path.dirname(dest_file_name)
         # print(src_file_name, dest_file_name)
-        
+
         # open source image
         im = scipy.misc.imread(src_file_name)
         if len(im.shape) < 2 or len(im.shape) > 3:
-            logger.warning("Illigal image file format %s.".format(src_file_name))
+            logger.warning(
+                "Illigal image file format %s.".format(src_file_name))
             csv_data.remove(data)
             continue
         elif len(im.shape) == 3:
             # RGB image
             if im.shape[2] != 3:
-                logger.warning("The image must be RGB or monochrome %s.".format(src_file_name))
+                logger.warning(
+                    "The image must be RGB or monochrome %s.".format(src_file_name))
                 csv_data.remove(data)
                 continue
-        
+
         # resize
         h = im.shape[0]
         w = im.shape[1]
@@ -111,43 +115,47 @@ def create_image_classification_dataset_command(args):
                     # print('crop_target_w', target_w)
                     im = im[::, (w - target_w) // 2:w - (w - target_w) // 2]
                 # print('before', im.shape)
-                im = scipy.misc.imresize(arr=im, size=(height, width), interp='lanczos')
+                im = scipy.misc.imresize(arr=im, size=(
+                    height, width), interp='lanczos')
                 # print('after', im.shape)
             else:
                 # padding mode
                 if float(h) / w < float(height) / width:
                     target_h = int(float(height) / width * w)
                     # print('padding_target_h', target_h)
-                    pad = (((target_h - h) // 2, target_h - (target_h - h) // 2 - h), (0, 0))
+                    pad = (((target_h - h) // 2, target_h -
+                            (target_h - h) // 2 - h), (0, 0))
                 else:
                     target_w = int(float(width) / height * h)
                     # print('padding_target_w', target_w)
-                    pad = ((0, 0), ((target_w - w) // 2, target_w - (target_w - w) // 2 - w))
+                    pad = ((0, 0), ((target_w - w) // 2,
+                                    target_w - (target_w - w) // 2 - w))
                 if len(im.shape) == 3:
                     pad = pad + ((0, 0),)
                 im = np.pad(im, pad, 'constant')
                 # print('before', im.shape)
-                im = scipy.misc.imresize(arr=im, size=(height, width), interp='lanczos')
+                im = scipy.misc.imresize(arr=im, size=(
+                    height, width), interp='lanczos')
                 # print('after', im.shape)
 
         # change color ch
         if len(im.shape) == 2 and ch == 3:
             # Monochrome to RGB
-            im = np.array([im, im, im]).transpose((1,2,0))
+            im = np.array([im, im, im]).transpose((1, 2, 0))
         elif len(im.shape) == 3 and ch == 1:
             # RGB to monochrome
-            im = np.dot(im[...,:3], [0.299, 0.587, 0.114])
-        
+            im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
+
         # output
         if not os.path.exists(dest_path):
             os.makedirs(dest_path)
         scipy.misc.imsave(dest_file_name, im)
-    
+
     logger.log(99, "Creating CSV files...")
     if shuffle:
         import random
         random.shuffle(csv_data)
-    
+
     csv_data_num = [(len(csv_data) * (100 - test_data_ratio)) // 100]
     csv_data_num.append(len(csv_data) - csv_data_num[0])
     data_head = 0
@@ -155,7 +163,7 @@ def create_image_classification_dataset_command(args):
         if data_num:
             csv_data_2 = csv_data[data_head:data_head + data_num]
             data_head += data_num
-            
+
             csv_data_2.insert(0, ['x:image', 'y:label'])
             with open(csv_file_name, 'w') as f:
                 writer = csv.writer(f, lineterminator='\n')
