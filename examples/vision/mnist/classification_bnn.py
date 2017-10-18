@@ -96,9 +96,8 @@ def mnist_binary_connect_resnet_prediction(image, test=False):
         y = bn(PF.binary_connect_affine(pl, 10))
     return y
 
+
 # Binary Net Model
-
-
 def mnist_binary_net_lenet_prediction(image, test=False):
     """
     Construct LeNet for MNIST (BinaryNet version).
@@ -160,9 +159,8 @@ def mnist_binary_net_resnet_prediction(image, test=False):
         y = bn(PF.binary_connect_affine(pl, 10))
     return y
 
+
 # Binary Weight Model
-
-
 def mnist_binary_weight_lenet_prediction(image, test=False):
     """
     Construct LeNet for MNIST (Binary Weight Network version).
