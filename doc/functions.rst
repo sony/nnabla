@@ -483,6 +483,40 @@ Element-wise sigmoid function.
      - Output
      - 
 
+Swish
+^^^^^
+
+Element-wise swish function, by Ramachandran et al. (2017).
+
+.. math::
+
+    y_i = \frac{x_i}{1 + \exp(-x_i)},
+
+References:
+    * `Prajit Ramachandran, Barret Zoph, and Quoc V. Le, Swish: a Self-Gated Activation Function, arXiv:1710.05941 [cs.NE]
+      <https://arxiv.org/abs/1710.05941>`_
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output
+     - 
+
 Tanh
 ^^^^
 
