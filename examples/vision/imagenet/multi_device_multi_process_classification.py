@@ -113,6 +113,7 @@ def train():
     """
 
     # Communicator and Context
+    from nnabla.contrib.context import extension_context
     extension_module = "cuda.cudnn"
     ctx = extension_context(extension_module)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
