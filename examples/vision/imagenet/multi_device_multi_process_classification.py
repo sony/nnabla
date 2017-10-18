@@ -122,6 +122,7 @@ def train():
     mpi_rank = comm.rank
     device_id = mpi_rank
     ctx = extension_context(extension_module, device_id=device_id)
+    nn.set_default_context(ctx)
 
     # Dataset
     # We use Tiny ImageNet from Stanford CS231N class.
