@@ -136,9 +136,12 @@ def train():
         vdata = data_iterator_tiny_imagenet(args.batch_size, 'val')
         num_classes = 200
     else:
-        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir)
-        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir)
+        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir, np.random.RandomState(mpi_rank))
+        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir, np.random.RandomState(mpi_rank))
         num_classes = 1000
+    # workaround.
+    # use the same number in multi-GPU processing.
+    np.random.sheed(100)
     t_model = get_model(
         args, num_classes, test=False, tiny=args.tiny_mode)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
