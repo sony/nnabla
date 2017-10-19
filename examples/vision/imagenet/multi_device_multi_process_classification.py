@@ -137,8 +137,8 @@ def train():
         vdata = data_iterator_tiny_imagenet(args.batch_size, 'val')
         num_classes = 200
     else:
-        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir, rng)
-        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir, rng)
+        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir, rng=rng)
+        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir, rng=rng)
         num_classes = 1000
     np.random.seed(313)
     t_model = get_model(
