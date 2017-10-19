@@ -167,6 +167,49 @@ def cap_ignore_region(arr, region):
     return arr
 
 
+class ArrayStats:
+
+    def __init__(self, a):
+        self.a = a
+        self.mean = a.mean()
+        self.std = a.std()
+        self.max = a.max()
+        self.min = a.min()
+        self.amean = np.abs(a).mean()
+        self.astd = np.abs(a).std()
+        self.amax = np.abs(a).max()
+        self.amin = np.abs(a).min()
+
+    def __str__(self):
+        lines = [
+            'shape of {}'.format(self.a.shape),
+            'raw))) mean(std): {}({}), [max, min]: [{}, {}]'.format(
+                self.mean, self.std, self.max, self.min),
+            'abs))) mean(std): {}({}), [max, min]: [{}, {}]'.format(
+                self.amean, self.astd, self.amax, self.amin),
+        ]
+        return '\n'.join(lines)
+
+
+class ArrayDiffStats:
+
+    def __init__(self, a, b):
+        self.astat = ArrayStats(a)
+        self.bstat = ArrayStats(b)
+        self.diffstat = ArrayStats(a - b)
+
+    def __str__(self):
+        lines = [
+            '[diff]',
+            str(self.diffstat),
+            '[left]',
+            str(self.astat),
+            '[right]',
+            str(self.bstat),
+        ]
+        return '\n'.join(lines)
+
+
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, dstep=1e-3, backward=None,
@@ -213,7 +256,8 @@ def function_tester(rng, func, ref_func, inputs,
     assert len(o) == len(refs)
     for i, ref in enumerate(refs):
         res = o[i].d
-        assert np.allclose(ref, res, atol=atol_f)
+        assert np.allclose(ref, res, atol=atol_f), str(
+            ArrayDiffStats(ref, res))
 
     # Checking function name
     # print 'checking function name'
@@ -247,7 +291,8 @@ def function_tester(rng, func, ref_func, inputs,
         rinputs = copy.deepcopy(inputs)
         doutputs = [o_.g for o_ in o]
         ngrads = ref_grad(*(rinputs + doutputs + func_args), **func_kwargs)
-    assert np.allclose(ngrads, agrads, atol=atol_b)
+    assert np.allclose(ngrads, agrads, atol=atol_b), str(
+        ArrayDiffStats(ngrads, agrads))
 
     # Check if need_grad works
     for v, b in zip(vinputs, backward):
@@ -295,7 +340,8 @@ def function_tester(rng, func, ref_func, inputs,
         v.g = np.random.randn(*v.shape)
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
-        assert np.allclose(v.g, true_g, atol=1e-6)
+        assert np.allclose(
+            v.g, true_g, atol=1e-6), str(ArrayDiffStats(v.g, true_g))
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')
@@ -330,4 +376,4 @@ def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx
     l_i.backward()
     grads_i = [inp.g.copy() for inp in inputs]
     for g, g_i in zip(grads, grads_i):
-        assert np.allclose(g, g_i)
+        assert np.allclose(g, g_i), str(ArrayDiffStats(g, g_i))
