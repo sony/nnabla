@@ -162,7 +162,7 @@ def train():
     base_lr = args.learning_rate
     warmup_iter = int(1. * n_train_samples /
                       args.batch_size / args.accum_grad / n_devices) * args.warmup_epoch
-    warmup_slope = 1. * n_devices / warmup_iter
+    warmup_slope = 1. / warmup_iter
 
     # Create monitor.
     import nnabla.monitor as M
