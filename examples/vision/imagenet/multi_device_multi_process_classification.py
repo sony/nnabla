@@ -141,7 +141,7 @@ def train():
         num_classes = 1000
     # workaround.
     # use the same number in multi-GPU processing.
-    np.random.sheed(100)
+    np.random.seed(100)
     t_model = get_model(
         args, num_classes, test=False, tiny=args.tiny_mode)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
