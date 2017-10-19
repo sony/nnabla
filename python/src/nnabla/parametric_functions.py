@@ -305,6 +305,72 @@ def binary_weight_affine(inp, n_outmaps,
     return F.binary_weight_affine(inp, w, wb, alpha, b, base_axis)
 
 
+@parametric_function_api("inq_affine")
+def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
+               inq_iterations=(), selection_algorithm='random',
+               seed=-1, w_init=None, i_init=None, b_init=None,
+               fix_parameters=False, rng=None, with_bias=True):
+    """Incremental Network Quantization Affine Layer
+
+    During training, the weights are sequentially quantized to power-of-two
+    values, which allows the training of a multiplierless network.
+
+    Using `inq_iterations`, one can specify after how many forward passes
+    half of the learnable weights are fixed and quantized to powers-of-two.
+    After reaching the last value in `inq_iterations`, all weights are fixed.
+
+    For more details, please refer to the reference.
+
+    Reference:
+    Zhou A, Yao A, Guo Y, Xu L, Chen Y. Incremental network quantization:
+    Towards lossless CNNs with low-precision weights.
+    <https://arxiv.org/abs/1702.03044>
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
+        n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        num_bits (int): Number of bits per weight. Value has to be larger than 1 as one bit is already used to code the value "0"
+        inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
+        selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
+        seed (int): Random seed for INQ algorithm
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for the weight.
+        i_init (~nnabla.initializer.BaseInitializer): Initializer for the indicators (0 ... learnable, 1 ... fixed).
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for the bias.
+        fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        fan_in = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(fan_in, n_outmap), rng=rng)
+    if i_init is None:
+        fan_in = np.prod(inp.shape[base_axis:])
+        i_init = ConstantInitializer()
+    if b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, not fix_parameters)
+    i = get_parameter_or_create(
+        "I", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        i_init, False)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, not fix_parameters)
+    return F.inq_affine(inp, w, i, b, base_axis, num_bits, inq_iterations, selection_algorithm, seed)
+
+
 @parametric_function_api("conv")
 def convolution(inp, outmaps, kernel,
                 pad=None, stride=None, dilation=None, group=1,
@@ -427,7 +493,7 @@ def binary_connect_convolution(inp, outmaps, kernel,
         w_init, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        wb_init, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
@@ -509,7 +575,7 @@ def binary_weight_convolution(inp, outmaps, kernel,
         w_init, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        wb_init, not fix_parameters)
     alpha = get_parameter_or_create(
         "alpha", (outmaps, ), ConstantInitializer(0), False)
     b = None
@@ -517,6 +583,68 @@ def binary_weight_convolution(inp, outmaps, kernel,
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, not fix_parameters)
     return F.binary_weight_convolution(inp, w, wb, alpha, b, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("inq_conv")
+def inq_convolution(inp, outmaps, kernel,
+                    pad=None, stride=None, dilation=None, group=1,
+                    num_bits=4, inq_iterations=(), selection_algorithm='random',
+                    seed=-1, w_init=None, i_init=None, b_init=None,
+                    base_axis=1, fix_parameters=False, rng=None,
+                    with_bias=True):
+    """Incremental Network Quantization Convolution Layer
+
+    During training, the weights are sequentially quantized to power-of-two
+    values, which allows the training of a multiplierless network.
+
+    Using `inq_iterations`, one can specify after how many forward passes
+    half of the learnable weights are fixed and quantized to powers-of-two.
+    After reaching the last value in `inq_iterations`, all weights are fixed.
+
+    For more details, please refer to the reference.
+
+    Reference:
+    Zhou A, Yao A, Guo Y, Xu L, Chen Y. Incremental network quantization:
+    Towards lossless CNNs with low-precision weights.
+    <https://arxiv.org/abs/1702.03044>
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
+        n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        num_bits (int): Number of bits per weight. Value has to be larger than 1 as one bit is already used to code the value "0"
+        inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
+        selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
+        seed (int): Random seed for INQ algorithm
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for the weight.
+        i_init (~nnabla.initializer.BaseInitializer): Initializer for the indicators (0 ... learnable, 1 ... fixed).
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for the bias.
+        fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if i_init is None:
+        i_init = ConstantInitializer()
+    if b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
+        w_init, not fix_parameters)
+    i = get_parameter_or_create(
+        "I", (outmaps, inp.shape[base_axis]) + tuple(kernel),
+        i_init, False)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+    return F.inq_convolution(inp, w, i, b, base_axis, pad, stride, dilation, group, num_bits, inq_iterations, selection_algorithm, seed)
 
 
 @parametric_function_api("deconv")
