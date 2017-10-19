@@ -131,17 +131,16 @@ def train():
     # in training set. The image size is 64x64. To adapt ResNet into 64x64
     # image inputs, the input image size of ResNet is set as 56x56, and
     # the stride in the first conv and the first max pooling are removed.
+    rng = np.random.RandomState(device_id)  # workarond to start with the same parameters.
     if args.tiny_mode:
         data = data_iterator_tiny_imagenet(args.batch_size, 'train')
         vdata = data_iterator_tiny_imagenet(args.batch_size, 'val')
         num_classes = 200
     else:
-        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir, np.random.RandomState(mpi_rank))
-        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir, np.random.RandomState(mpi_rank))
+        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir, rng)
+        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir, rng)
         num_classes = 1000
-    # workaround.
-    # use the same number in multi-GPU processing.
-    np.random.seed(100)
+    np.random.seed(313)
     t_model = get_model(
         args, num_classes, test=False, tiny=args.tiny_mode)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
