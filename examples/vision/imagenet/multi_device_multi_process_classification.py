@@ -233,7 +233,7 @@ def train():
             t_model.label.data.cast(np.int32, ctx)
             t_model.loss.forward(clear_no_need_grad=True)
             t_model.loss.backward(clear_buffer=True)  # Accumulating gradients
-        comm.allreduce(division=True)
+        comm.allreduce(division=False)
         solver.weight_decay(args.weight_decay)
         solver.update()
         # Linear Warmup
