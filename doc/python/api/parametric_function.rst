@@ -67,6 +67,12 @@ Here is the list of parametric functions.
 
 .. autofunction:: fixed_point_quantized_affine
 .. autofunction:: fixed_point_quantized_convolution
+.. autofunction:: pow2_quantized_affine
+.. autofunction:: pow2_quantized_convolution
+
+
+
+
 Parameter Initializer
 ---------------------
 

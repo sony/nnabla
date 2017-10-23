@@ -289,3 +289,98 @@ def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine
         return x
     return fixed_point_quantize_base(x, sign, n, delta, ste_fine_grained, outputs=outputs)
 
+
+def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fine_grained=True, outputs=None):
+    r"""Pow2 Quantize
+
+    Args:
+        x (Variable): An input variable.
+        sign (bool): Indicate the signed number or the unsigned number. Default is true.
+        with_zero (bool): Indicate using zero as a quantized value. Default is true. Note that `zero` consumes one bit.
+        n (int): Bit width used. Note that `sign` consumes one bit. :math:`n-1` is used for number representation in `signed` case. Default is 8.   
+        m (int): :math:`2^m` is the upper bound of the dynamic range and :math:`-2^m` is the lower bound, :math:`m \in \mathcal{Z}`. Default is 1.
+        quantize (bool): If true, quantize input, otherwise not.
+        ste_fine_grained (bool): If true, STE is not 1.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    See Also:
+        ``nnabla.function_bases.pow2_quantize``.
+    
+    In the forward pass of `signed` case,  
+    
+    .. math::
+    
+       q_i= \left\{
+    	   \begin{array}{ll}
+    			max_{+} & if \ \ \overline{q_i} > max_{+} \\
+    			\overline{q_i} & if \ \ min_{+} \le \overline{q_i} \le max_{+} \\
+    		  min_{+} & if \ \ 0 \le \overline{q_i} < min_{+} \\
+    		  min_{-} & if \ \ min_{-} < \overline{q_i} < 0 \\
+    		  \overline{q_i} & if \ \ max_{-} \le \overline{q_i} \le min_{-}\\
+    	  	max_{-} & if \ \ \overline{q_i} < max_{-} \\
+    	   \end{array} \right.,
+    
+    where 
+    
+    .. math::
+       
+       && max_{+} = 2^{m}, min_{+} = 2^{m - (2^{n-1} - 1)},\\  
+       && max_{-} = -2^{m}, min_{-} = -2^{m - (2^{n-1} - 1)},\\
+       && \overline{q_i} = sign(x_i) \times 2^{round(\log_2 |x_i|)}.
+       
+    This quantization uses the geometric mean between two power-of-two numbers 
+    as quantization threshold.   
+    
+    In the forward pass of `unsigned` case,  
+    
+    .. math::
+    
+       q_i= \left\{
+    	   \begin{array}{ll}
+    			max & if \ \ \overline{q_i} > max \\
+    			\overline{q_i} & if \ \ min \le \overline{q_i} \le max \\
+    		  min & if \ \ 0 < \overline{q_i} < min \\
+    	   \end{array} \right.,
+    
+    where 
+    
+    .. math::
+       
+       && max = 2^{m}, min = 2^{m - (2^{n} - 1)},\\  
+       && \overline{q_i} = 2^{int(\log_2 |x_i|)}.
+       
+       
+    When using `with_zero` as true, a pruning threshold is used to round an input to 
+    0 or :math:`min`. The pruning threshold is defined in this function as the following, 
+    
+    .. math::
+       
+       pruning\ threshold = min \times 2^{-\frac{1}{2}}.
+       
+    If an absolute value of the input is lesser than this value, the input is rounded to 0, otherwise :math:`min`. 
+    
+    In the backward pass when using ste_fine_grained as false,
+    
+    .. math::
+    
+       \frac{\partial q_i}{\partial x_i} = 1.
+    
+    In the backward pass when using ste_fine_grained as true,
+    
+    .. math::
+
+        \frac{\partial q_i}{\partial x_i}= \left\{
+    	   \begin{array}{ll}
+    		    0 & if \ \ \overline{q_i} > max_{+} \\
+    			1 & if \ \ otherwise \\
+    	        0 & if \ \ \overline{q_i} < max_{-} \\
+    	   \end{array} \right.. 
+
+    """
+
+    from .function_bases import pow2_quantize as pow2_quantize_base
+    if not quantize:
+        return x
+    return pow2_quantize_base(x, sign, with_zero, n, m, ste_fine_grained, outputs=outputs)

@@ -186,6 +186,7 @@ Quantized Neural Network Layers
 .. autofunction:: binary_weight_affine
 .. autofunction:: binary_weight_convolution
 .. autofunction:: fixed_point_quantize
+.. autofunction:: pow2_quantize
 		  
    
 Unsupported, Special Use

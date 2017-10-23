@@ -5062,6 +5062,152 @@ In the backward pass when using `ste_fine_grained` as true,
      - N-D array.
      -
 
+Pow2Quantize
+^^^^^^^^^^^^
+
+This function quantizes values in the power of 2 number representation, 
+in other words, it is linear (uniform) quantization in :math:`log_2` domain. 
+
+In the forward pass of `signed` case,  
+
+.. math::
+
+   q_i= \left\{
+	   \begin{array}{ll}
+			max_{+} & if \ \ \overline{q_i} > max_{+} \\
+			\overline{q_i} & if \ \ min_{+} \le \overline{q_i} \le max_{+} \\
+		  min_{+} & if \ \ 0 \le \overline{q_i} < min_{+} \\
+		  min_{-} & if \ \ min_{-} < \overline{q_i} < 0 \\
+		  \overline{q_i} & if \ \ max_{-} \le \overline{q_i} \le min_{-}\\
+	  	max_{-} & if \ \ \overline{q_i} < max_{-} \\
+	   \end{array} \right.,
+
+where 
+
+.. math::
+   
+   && max_{+} = 2^{m}, min_{+} = 2^{m - (2^{n-1} - 1)},\\  
+   && max_{-} = -2^{m}, min_{-} = -2^{m - (2^{n-1} - 1)},\\
+   && \overline{q_i} = sign(x_i) \times 2^{round(\log_2 |x_i|)}.
+   
+This quantization uses the geometric mean between two power-of-two numbers 
+as quantization threshold.   
+
+In the forward pass of `unsigned` case,  
+
+.. math::
+
+   q_i= \left\{
+	   \begin{array}{ll}
+			max & if \ \ \overline{q_i} > max \\
+			\overline{q_i} & if \ \ min \le \overline{q_i} \le max \\
+		  min & if \ \ 0 < \overline{q_i} < min \\
+	   \end{array} \right.,
+
+where 
+
+.. math::
+   
+   && max = 2^{m}, min = 2^{m - (2^{n} - 1)},\\  
+   && \overline{q_i} = 2^{int(\log_2 |x_i|)}.
+   
+   
+When using `with_zero` as true, a pruning threshold is used to round an input to 
+0 or :math:`min`. The pruning threshold is defined in this function as the following, 
+
+.. math::
+   
+   pruning\ threshold = min \times 2^{-\frac{1}{2}}.
+   
+If an absolute value of the input is lesser than this value, the input is rounded to 0, otherwise :math:`min`. 
+
+In the backward pass when using ste_fine_grained as false,
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i} = 1.
+
+In the backward pass when using ste_fine_grained as true,
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i}= \left\{
+	   \begin{array}{ll}
+			0 & if \ \ \overline{q_i} > max_{+} \\
+			1 & if \ \ otherwise \\
+	  	0 & if \ \ \overline{q_i} < max_{-} \\
+	   \end{array} \right..
+
+   
+There are some literatures using pow2 quantization in their proposed methods. 
+   
+References:
+
+  * `Miyashita Daisuke, Lee H. Edward, Murmann Boris. 
+    Convolutional Neural Networks using Logarithmic Data Representation. 
+    <https://arxiv.org/abs/1603.01025>`_
+
+  * `Aojun Zhou, Anbang Yao, Yiwen Guo, Lin Xu, Yurong Chen.
+    Incremental Network Quantization: Towards Lossless CNNs with Low-precision Weights.
+    <https://arxiv.org/abs/1702.03044>`_
+    
+.. note::
+
+
+	Quantized values are stored as floating point number, since this function is for simulation purposes.
+   
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - sign
+     - bool
+     - True
+     - Indicate the signed number or the unsigned number. Default is true.
+   * - with_zero
+     - bool
+     - True
+     - Indicate using zero as a quantized value. Default is true. Note that `zero` consumes one bit.     
+   * - n
+     - int64
+     - 8
+     - Bit width used, Note that `sign` comsumes one bit. :math:`n-1` is used for number representation in `signed` case. Default is 8.
+   * - m
+     - int64
+     - 1
+     - :math:`2^m` is the upper bound of the dynamic range and :math:`-2^m` is the lower bound, :math:`m \in \mathcal{Z}`. Default is 1.
+   * - ste_fine_grained
+     - bool
+     - True
+     - Straight Through Estimator is fine-grained or not.
+			 
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
+
 Validation
 ----------
 
