@@ -22,6 +22,8 @@
 #include <nbla/function/convolution.hpp>
 #include <nbla/function_registry.hpp>
 
+#include <random>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(INQConvolution, int, const vector<int> &,
