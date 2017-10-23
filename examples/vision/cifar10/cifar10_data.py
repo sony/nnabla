@@ -1,3 +1,17 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 '''
 Provide data iterator for CIFAR10 examples.
 '''
@@ -109,7 +123,6 @@ class Cifar10DataSource(DataSource):
         return self._labels.copy()
 
 
-@contextmanager
 def data_iterator_cifar10(batch_size,
                           train=True,
                           rng=None,
@@ -122,19 +135,9 @@ def data_iterator_cifar10(batch_size,
     with_memory_cache, with_parallel and with_file_cache option's default value is all False,
     because :py:class:`Cifar10DataSource` is able to store all data into memory.
 
-    For example,
-
-    .. code-block:: python
-
-        with data_iterator_cifar10(True, batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
-
     '''
-    with Cifar10DataSource(train=train, shuffle=shuffle, rng=rng) as ds, \
-        data_iterator(ds,
-                      batch_size,
-                      with_memory_cache,
-                      with_parallel,
-                      with_file_cache) as di:
-        yield di
+    return data_iterator(Cifar10DataSource(train=train, shuffle=shuffle, rng=rng),
+                         batch_size,
+                         with_memory_cache,
+                         with_parallel,
+                         with_file_cache)

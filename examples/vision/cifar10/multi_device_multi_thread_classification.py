@@ -1,3 +1,17 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import time
 
@@ -238,49 +252,52 @@ def train():
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=100)
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
-    with data_iterator_cifar10(args.batch_size, True) as tdata, \
-            data_iterator_cifar10(bs_valid, False) as vdata:
-        # Training-loop
-        for i in range(int(args.max_iter / n_devices)):
-            # Validation
-            if i % int(n_train_samples / args.batch_size / n_devices) == 0:
-                ve = 0.
-                for j in range(args.val_iter):
-                    image, label = vdata.next()
-                    input_image_valid["image"].d = image
-                    pred_valid.forward()
-                    ve += categorical_error(pred_valid.d, label)
-                ve /= args.val_iter
-                monitor_verr.add(i * n_devices, ve)
-            if i % int(args.model_save_interval / n_devices) == 0:
-                nn.save_parameters(os.path.join(
-                    args.model_save_path, 'params_%06d.h5' % i))
+    
+    # Data Iterator
+    tdata = data_iterator_cifar10(args.batch_size, True)
+    vdata = data_iterator_cifar10(args.batch_size, False)
 
-            # Forwards/Zerograd/Backwards
-            fb_results = []
-            for device_id in range(n_devices):
-                image, label = tdata.next()
+    # Training-loop
+    for i in range(int(args.max_iter / n_devices)):
+        # Validation
+        if i % int(n_train_samples / args.batch_size / n_devices) == 0:
+            ve = 0.
+            for j in range(args.val_iter):
+                image, label = vdata.next()
+                input_image_valid["image"].d = image
+                pred_valid.forward()
+                ve += categorical_error(pred_valid.d, label)
+            ve /= args.val_iter
+            monitor_verr.add(i * n_devices, ve)
+        if i % int(args.model_save_interval / n_devices) == 0:
+            nn.save_parameters(os.path.join(
+                args.model_save_path, 'params_%06d.h5' % i))
 
-                res = pools[device_id].apply_async(forward_backward,
-                                                   (input_image_train[device_id]["image"], image,
-                                                    input_image_train[device_id]["label"], label,
-                                                    losses_train[device_id], solvers[device_id]))
-                fb_results.append(res)
-            for device_id in range(n_devices):
-                fb_results[device_id].get()
+        # Forwards/Zerograd/Backwards
+        fb_results = []
+        for device_id in range(n_devices):
+            image, label = tdata.next()
 
-            # In-place Allreduce
-            comm.allreduce(division=True)
+            res = pools[device_id].apply_async(forward_backward,
+                                               (input_image_train[device_id]["image"], image,
+                                                input_image_train[device_id]["label"], label,
+                                                losses_train[device_id], solvers[device_id]))
+            fb_results.append(res)
+        for device_id in range(n_devices):
+            fb_results[device_id].get()
 
-            # Solvers update
-            for device_id in range(n_devices):
-                solvers[device_id].update()
+        # In-place Allreduce
+        comm.allreduce(division=True)
 
-            e = categorical_error(
-                preds_train[-1].d, input_image_train[-1]["label"].d)
-            monitor_loss.add(i * n_devices, losses_train[-1].d.copy())
-            monitor_err.add(i * n_devices, e)
-            monitor_time.add(i * n_devices)
+        # Solvers update
+        for device_id in range(n_devices):
+            solvers[device_id].update()
+
+        e = categorical_error(
+            preds_train[-1].d, input_image_train[-1]["label"].d)
+        monitor_loss.add(i * n_devices, losses_train[-1].d.copy())
+        monitor_err.add(i * n_devices, e)
+        monitor_time.add(i * n_devices)
 
     nn.save_parameters(os.path.join(
         args.model_save_path,
