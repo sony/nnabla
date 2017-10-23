@@ -31,3 +31,7 @@
 4．Execute the example of ImageNet.
   - python classification.py -b "batch size" -a "accumulate gradient" -c "device id" -T "directory of the trainning cache file" -V "directory of the validation cache file"
     [ex):python classification.py -b 64 -a 4 -c cuda.cudnn -T train_cache -V val_cache]
+
+  If you run it with Multi GPU, please refer to the following.
+  - mpirun -n "Number of GPUs" python classification.py -b "batch size" -a "accumulate gradient" -T "directory of the trainning cache file" -V "directory of the validation cache file"
+    [ex):mpirun -n 4 python classification.py -b 64 -a 4 -T train_cache -V val_cache]
