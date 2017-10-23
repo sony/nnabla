@@ -4324,7 +4324,7 @@ The Kullback Leibler Divergence for multinomial distributions.
      - Kullback Leibler divergence :math:`KL(p \parallel q)`.
      - 
 
-Quantization Neural Network Layers
+Quantized Neural Network Layers
 ----------------------------
 
 BinarySigmoid
