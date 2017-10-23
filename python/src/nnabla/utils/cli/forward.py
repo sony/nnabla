@@ -15,8 +15,10 @@
 from six.moves import map
 from scipy.misc import imsave
 import csv
+import glob
 import numpy as np
 import os
+import zipfile
 
 from nnabla.logger import logger
 from nnabla.utils.progress import configure_progress, progress
@@ -215,10 +217,78 @@ def forward_command(args):
             logger.log(
                 99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
 
-    with open(os.path.join(args.outdir, 'output_result.csv'), 'w') as f:
+    images = {}
+    ref_image_num = 0
+    new_rows = []
+    for row in rows:
+        new_row = []
+        for item in row:
+            if os.path.isfile(item):
+                if os.path.isabs(item):
+                    image_filename = item
+                    image_name = './reference/{}_{}'.format(
+                        ref_image_num, os.path.basename(item))
+                    ref_image_num += 1
+                    item = image_name
+                    images[image_name] = image_filename
+                else:
+                    image_filename = item
+                    image_name = item
+                    images[image_name] = image_filename
+            elif os.path.isfile(os.path.join(args.outdir, item)):
+                image_filename = os.path.join(args.outdir, item)
+                image_name = item
+                images[image_name] = image_filename
+            new_row.append(item)
+        new_rows.append(new_row)
+
+    result_csv_filename = os.path.join(args.outdir, 'output_result.csv')
+    with open(result_csv_filename, 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(row0)
         writer.writerows(rows)
+
+    result_csv_filename_tmp = os.path.join(
+        args.outdir, 'output_result_tmp.csv')
+    with open(result_csv_filename_tmp, 'w') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerow(row0)
+        writer.writerows(new_rows)
+
+    result_zip_filename = os.path.join(args.outdir, 'output_result.zip')
+    with zipfile.ZipFile(result_zip_filename, 'w') as res:
+        res.write(result_csv_filename_tmp, 'output_result.csv')
+        for name, filename in images.items():
+            res.write(filename, name)
+    globname = os.path.join(args.outdir, 'result*.nnp')
+    exists = glob.glob(globname)
+    if len(exists) > 0:
+        last_results = []
+        last_result_nums = {}
+        for ex in exists:
+            name = os.path.basename(ex).rsplit('.', 1)[0]
+            try:
+                name_base, num = name.rsplit('_', 1)
+                num = int(num)
+                if name_base not in last_result_nums:
+                    last_result_nums[name_base] = []
+                last_result_nums[name_base].append(num)
+            except:
+                last_results.append(os.path.basename(ex))
+        for base in last_result_nums.keys():
+            last_results.append('{}_{}.nnp'.format(
+                base, sorted(last_result_nums[base]).pop()))
+
+    for result_filename in last_results:
+        result_zip_name = 'output_result.zip'
+        result_zip_num = 1
+        with zipfile.ZipFile(os.path.join(args.outdir, result_filename), 'a') as res:
+            while result_zip_name in res.namelist():
+                result_zip_name = 'output_result_{}.zip'.format(result_zip_num)
+                result_zip_num += 1
+            logger.log(99, 'Add {} to {}.'.format(
+                result_zip_name, result_filename))
+            res.write(result_zip_filename, result_zip_name)
 
     logger.log(99, 'Forward Completed.')
     progress(None)
