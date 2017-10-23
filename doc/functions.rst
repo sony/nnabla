@@ -4324,7 +4324,7 @@ The Kullback Leibler Divergence for multinomial distributions.
      - Kullback Leibler divergence :math:`KL(p \parallel q)`.
      - 
 
-Quantized Neural Network Layers
+Quantization Neural Network Layers
 ----------------------------
 
 BinarySigmoid
@@ -4454,7 +4454,7 @@ This function should be used together with
     the network, remember to call :meth:`~nnabla.Variable.forward`, once before
     doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) Quantized values are stored as floating point number for `binary_weight`,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 References:
@@ -4545,7 +4545,7 @@ Reference
     the network, remember to call :meth:`~nnabla.Variable.forward`, once before
     doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) Quantized values are stored as floating point number for `binary_weight`,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4643,7 +4643,7 @@ Reference
     the network, remember to call :meth:`~nnabla.Variable.forward`, once before
     doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) Quantized values are stored as floating point number for `binary_weight`,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4729,7 +4729,7 @@ Reference
     before doing so, otherwise the weights and the binary weights will not be
     in sync.
 
-    3) Quantized values are stored as floating point number for `binary_weight`,
+    3) CPU and GPU implementations now use floating values for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4970,6 +4970,96 @@ Reference
      - Options
    * - y
      - Output
+     -
+
+FixedPointQuantize
+^^^^^^^^^^^^^^^^^^
+This function uniformly quantizes values in fixed-point number representation.
+
+In the forward pass, 
+
+.. math::
+
+   q_i= \left\{
+	   \begin{array}{ll}
+			max & if \ \ \ x_i > max \\
+		  sign(x_i) \times floor(|x_i| \delta^{-1} + 2^{-1}) \times \delta & if \ \ min \le x_i \le max \\
+	  	min & if \ \ x_i < min \\
+	   \end{array} \right.,
+
+where :math:`\delta` is the step size, 
+:math:`(min, max) :=(- (2^{n-1} - 1)\delta, (2^{n-1} - 1)\delta)` if :math:`sign` is true, 
+:math:`(min, max) := (0, (2^n - 1) \delta)` otherwise, and  
+:math:`n` is the total bit-width used.
+
+In the backward pass when using `ste_fine_grained` as false,  
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i} = 1.
+
+In the backward pass when using `ste_fine_grained` as true,  
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i}= \left\{
+	   \begin{array}{ll}
+			0 & if \ \ \ x_i > max \\
+		  1 & if \ \ min \le x_i \le max \\
+	  	0 & if \ \ x_i < min \\
+	   \end{array} \right..
+   
+.. note::
+
+
+	Quantized values are stored as floating point number, since this function is for simulation purposes.
+   
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - sign
+     - bool
+     - True
+     - Indicate the signed number or the unsigned number. Default is true.
+   * - n
+     - int64
+     - 8
+     - Bit width used. Note that `sign` comsumes one bit. :math:`n-1` is used for number representation in `signed` case.   
+   * - delta
+     - float
+     - 2**-4
+     - Step size.
+   * - ste_fine_grained
+     - bool
+     - True
+     - Straight Through Estimator is fine-grained or not.
+			 
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
      -
 
 Validation
