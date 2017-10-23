@@ -4454,7 +4454,7 @@ This function should be used together with
     the network, remember to call :meth:`~nnabla.Variable.forward`, once before
     doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight`,
+    3) Quantized values are stored as floating point number for `binary_weight`,
     since this function is for simulation purposes.
 
 References:
@@ -4545,7 +4545,7 @@ Reference
     the network, remember to call :meth:`~nnabla.Variable.forward`, once before
     doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight`,
+    3) Quantized values are stored as floating point number for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4643,7 +4643,7 @@ Reference
     the network, remember to call :meth:`~nnabla.Variable.forward`, once before
     doing so, otherwise the weights and the binary weights will not be in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight`,
+    3) Quantized values are stored as floating point number for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
@@ -4729,7 +4729,7 @@ Reference
     before doing so, otherwise the weights and the binary weights will not be
     in sync.
 
-    3) CPU and GPU implementations now use floating values for `binary_weight`,
+    3) Quantized values are stored as floating point number for `binary_weight`,
     since this function is for simulation purposes.
 
 * Input(s)
