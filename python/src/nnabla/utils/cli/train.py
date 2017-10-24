@@ -277,10 +277,11 @@ def train(args, config):
             for iter in range(last_iter, max_iter):
                 cost = _update(iter, config, cost)
                 current_time = time.time()
-                if iter > 0:
+                if (iter - last_iter) > 0:
                     past_time = current_time - start_time
                     if last_past_time < 0 or past_time - last_past_time > 5.0:
-                        estimate_time = past_time * max_iter / iter
+                        estimate_time = past_time * \
+                            (max_iter - last_iter) / (iter - last_iter)
                         remain_time = estimate_time - past_time
                         # logger.log(99, 'time:{} remain:{} estimate:{}'.format(
                         #     past_time, remain_time, estimate_time))
@@ -354,12 +355,21 @@ def train_command(args):
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     info = load.load([args.config], exclude_parameter=True)
 
+    # Check dataset uri is empty.
+    dataset_error = False
+    for dataset in info.datasets.values():
+        if dataset.uri.strip() == '':
+            dataset_error = True
+    if dataset_error:
+        logger.log(99, 'Fatal error. Dataset URI is empty.')
+        return
+
     class TrainConfig:
         pass
     config = TrainConfig()
     config.timelimit = -1
     if args.param:
-        info = load.load([args.param], parameter_only=True)
+        load.load([args.param], parameter_only=True)
 
     if args.sdcproj and args.job_url_list:
         job_url_list = {}
@@ -446,14 +456,12 @@ def train_command(args):
                 ls = line.strip().split('=')
                 if len(ls) == 2:
                     var, val = ls
-                    if var == 'TimeLimit':
+                    if var == 'TimeLimit' and val:
                         timelimits = [int(x) for x in val.split(':')]
                         if len(timelimits) == 4:
                             config.timelimit = float(timelimits[0] * 24 * 3600 +
                                                      timelimits[1] * 3600 +
                                                      timelimits[2] * 60 + timelimits[3])
-
-    logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
     logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
