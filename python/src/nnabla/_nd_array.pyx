@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import division
 from libcpp.algorithm cimport copy
 from libcpp.memory cimport make_shared
 from libc.stdint cimport intptr_t
@@ -20,6 +21,7 @@ from cpython cimport PyObject, Py_INCREF
 from _nd_array cimport *
 from _variable cimport *
 from _array cimport *
+cimport _arithmetic_ops as AOP
 
 # Numpy
 import numpy as np
@@ -33,9 +35,21 @@ cdef class NdArray:
     :class:`nnabla._nd_array.NdArray` can also implictly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
     See `Python API Tutorial <http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_ for more details.
 
+    :class:`~nnabla.NdArray` overrides some arithmetic operators
+    (``+``, ``-``, ``*``, ``/``, ``**``). Operands can be either a scalar number,
+    :class:`~nnabla.NdArray` or :class:`~nnabla.Variable`.
+    An arithmetic operation containing :class:`~nnabla.NdArray` returns
+    :class:`~nnabla.NdArray` which stores the output of the computation
+    immediately invoked.
+    Also, inplace arithmetic operations
+    (``+=``, ``-=``, ``*=``, ``/=``, ``**=``) are implemented. Note that ``=``
+    doesn't perform inplace substitution but just replaces the object
+    reference. Instead, you can use :func:`~nnabla.NdArray.copy_from` for
+    inplace substitution.
 
     Args:
         shape (tuple or int): Shape of tuple.
+
     """
 
     @staticmethod
@@ -259,3 +273,94 @@ cdef class NdArray:
         cdef int type_num
         type_num = <int > self.arrp.array().get().dtype()
         return np.dtype(np.PyArray_TypeObjectFromType(type_num))
+
+    def __pos__(self):
+        return AOP.pos(self)
+
+    def __neg__(self):
+        return AOP.neg(self)
+
+    def __add__(x, y):
+        return AOP.add(x, y)
+
+    def __sub__(x, y):
+        return AOP.sub(x, y)
+
+    def __mul__(x, y):
+        return AOP.mul(x, y)
+
+    def __truediv__(x, y):
+        return AOP.truediv(x, y)
+
+    def __div__(x, y):
+        return AOP.div(x, y)
+
+    def __pow__(x, y, z):
+        return AOP.pow(x, y, z)
+
+    def __iadd__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.add2(self, x, outputs=[self])
+        else:
+            F.add_scalar(self, x, outputs=[self])
+        return self
+
+    def __isub__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.sub2(self, x, outputs=[self])
+        else:
+            F.add_scalar(self, -x, outputs=[self])
+        return self
+
+    def __imul__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.mul2(self, x, outputs=[self])
+        else:
+            F.mul_scalar(self, x, outputs=[self])
+        return self
+
+    def __idiv__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.div2(self, x, outputs=[self])
+        else:
+            F.mul_scalar(self, 1. / x, outputs=[self])
+        return self
+
+    def __itruediv__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.div2(self, x, outputs=[self])
+        else:
+            F.mul_scalar(self, 1. / x, outputs=[self])
+        return self
+
+    def __ipow__(self, x):
+        import nnabla.functions as F
+        if isinstance(x, (NdArray, Variable)):
+            F.pow2(self, x, outputs=[self])
+        else:
+            F.pow_scalar(self, x, outputs=[self])
+        return self
+
+    def copy_from(self, NdArray arr):
+        """
+        Copy values from another NdArray object.
+
+        It returns the caller object itself.
+        :func:`nnabla.functions.identity` is called internally to copy values.
+
+        Args:
+            arr (~nnabla.NdArray): Values will be copied to the caller object.
+                The shape of ``arr``` must be same as the caller object.
+
+        Returns:
+            :obj:`nnabla.NdArray`
+
+        """
+        import nnabla.functions as F
+        F.identity(arr, outputs=[self])
+        return self

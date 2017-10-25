@@ -27,6 +27,8 @@ import numpy as np
 cimport numpy as np
 np.import_array()
 
+cimport _arithmetic_ops as AOP
+
 
 ctypedef void * voidp
 
@@ -81,6 +83,16 @@ cdef class Variable:
       signal (gradient) containers as :class:`nnabla._nd_array.NdArray` s.
     * Some additional information of the computation graph.
 
+    :class:`~nnabla.Variable` overrides some arithmetic operators
+    (``+``, ``-``, ``*``, ``/``, ``**``). Operands can be either a scalar number,
+    :class:`~nnabla.NdArray` or :class:`~nnabla.Variable`.
+    If :class:`~nnabla.NdArray` is given as either of left or right operand,
+    the arithmetic operation returns an :class:`~nnabla.NdArray` which stores the
+    output of the computation immediately invoked. Otherwise, it returns
+    :class:`~nnabla.Variable` holds the graph connection. The computation
+    is invoked immediately when :function:`nnabla.auto_forward`
+    or :function:`nnabla.set_auto_forward(True)` is used.
+
     See also:
         `Python API Tutorial
         <http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_.
@@ -98,19 +110,17 @@ cdef class Variable:
 
     @staticmethod
     cdef create_from_cvariable(shared_ptr[CVariable] varsp):
-        from nnabla.variable import Variable as PVariable
         cdef shared_ptr[CgVariable] v_sp = make_shared[CgVariable](varsp)
-        var = PVariable()
-        ( < Variable > var).var = v_sp
-        ( < Variable > var).varp = v_sp.get()
+        var = Variable()
+        var.var = v_sp
+        var.varp = v_sp.get()
         return var
 
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv):
-        from nnabla.variable import Variable as PVariable
-        var = PVariable()
-        ( < Variable > var).var = cgv
-        ( < Variable > var).varp = cgv.get()
+        var = Variable()
+        var.var = cgv
+        var.varp = cgv.get()
         return var
 
     @staticmethod
@@ -132,9 +142,8 @@ cdef class Variable:
         Returns: ~nnabla.Variable
 
         """
-        from nnabla.variable import Variable as PVariable
         assert isinstance(data, np.ndarray)
-        var = PVariable(data.shape, need_grad)
+        var = Variable(data.shape, need_grad)
         var.data.cast(data.dtype)
         var.d = data
         if grad is None:
@@ -147,6 +156,10 @@ cdef class Variable:
 
     def __dealloc__(self):
         pass
+
+    def __repr__(self):
+        return "<Variable({}, need_grad={}) at {}>".format(
+            self.shape, self.need_grad, hex(id(self)))
 
     def __richcmp__(self, other, int op):
         '''Overrides comparison operators ``==`` and ``!=``.
@@ -525,3 +538,27 @@ cdef class Variable:
 
         seen = set()
         return _recursive_visit_functions(self.parent, seen)
+
+    def __pos__(self):
+        return AOP.pos(self)
+
+    def __neg__(self):
+        return AOP.neg(self)
+
+    def __add__(x, y):
+        return AOP.add(x, y)
+
+    def __sub__(x, y):
+        return AOP.sub(x, y)
+
+    def __mul__(x, y):
+        return AOP.mul(x, y)
+
+    def __truediv__(x, y):
+        return AOP.truediv(x, y)
+
+    def __div__(x, y):
+        return AOP.div(x, y)
+
+    def __pow__(x, y, z):
+        return AOP.pow(x, y, z)

@@ -384,7 +384,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
             if not os.path.exists(cache_dir) or overwrite_cache:
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
-                logger.info('Creating cache data for "' + uri + '"')
+                logger.log(99, 'Creating cache data for "' + uri + '"')
                 with data_iterator_csv_dataset(uri, batch_size, shuffle, normalize=False, cache_dir=cache_dir) as di:
                     index = 0
                     while index < di.size:
@@ -574,6 +574,11 @@ def load(filenames, prepare_data_iterator=True):
     if proto.HasField('global_config'):
         info.global_config = _global_config(proto)
         default_context = info.global_config.default_context
+        if 'cuda' in default_context.backend:
+            try:
+                import nnabla_ext.cuda.cudnn
+            except:
+                pass
     else:
         default_context = nn.context()
 
