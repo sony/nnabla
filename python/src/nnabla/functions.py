@@ -241,9 +241,9 @@ def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine
         ``nnabla.function_bases.fixed_point_quantize``.
 
     In the forward pass, 
-    
+
     .. math::
-    
+
         \begin{equation}
             q_i= \left\{
                \begin{array}{ll}
@@ -252,37 +252,37 @@ def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine
                     min & if \ \ x_i < min \\
                \end{array} \right.,
         \end{equation}
-    
+
     where :math:`\delta` is the step size, 
     :math:`(min, max) :=(- (2^{n-1} - 1)\delta, (2^{n-1} - 1)\delta)` if :math:`sign` is true, 
     :math:`(min, max) := (0, (2^n - 1) \delta)` otherwise, and  
     :math:`n` is the total bit-width used.
-    
+
     In the backward pass when using `ste_fine_grained` as false,  
-    
+
     .. math::
-    
+
         \begin{equation}
             \frac{\partial q_i}{\partial x_i} = 1.
         \end{equation}
-    
+
     In the backward pass when using `ste_fine_grained` as true,  
-    
+
     .. math::
-    
+
         \begin{equation}
             \frac{\partial q_i}{\partial x_i}= \left\{
-        	    \begin{array}{ll}
-        			0 & if \ \ \ x_i > max \\
-        		    1 & if \ \ min \le x_i \le max \\
-        	  	    0 & if \ \ x_i < min \\
-        	    \end{array} \right..
+                    \begin{array}{ll}
+                                0 & if \ \ \ x_i > max \\
+                            1 & if \ \ min \le x_i \le max \\
+                            0 & if \ \ x_i < min \\
+                    \end{array} \right..
         \end{equation}
-       
+
     .. note::
-        
+
         Quantized values are stored as floating point number, since this function is for simulation purposes.
-   
+
     """
     from .function_bases import fixed_point_quantize as fixed_point_quantize_base
     if not quantize:
@@ -307,76 +307,76 @@ def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fin
 
     See Also:
         ``nnabla.function_bases.pow2_quantize``.
-    
+
     In the forward pass of `signed` case,  
-    
+
     .. math::
-    
+
        q_i= \left\{
-    	   \begin{array}{ll}
-    			max_{+} & if \ \ \overline{q_i} > max_{+} \\
-    			\overline{q_i} & if \ \ min_{+} \le \overline{q_i} \le max_{+} \\
-    		  min_{+} & if \ \ 0 \le \overline{q_i} < min_{+} \\
-    		  min_{-} & if \ \ min_{-} < \overline{q_i} < 0 \\
-    		  \overline{q_i} & if \ \ max_{-} \le \overline{q_i} \le min_{-}\\
-    	  	max_{-} & if \ \ \overline{q_i} < max_{-} \\
-    	   \end{array} \right.,
-    
+           \begin{array}{ll}
+                        max_{+} & if \ \ \overline{q_i} > max_{+} \\
+                        \overline{q_i} & if \ \ min_{+} \le \overline{q_i} \le max_{+} \\
+                  min_{+} & if \ \ 0 \le \overline{q_i} < min_{+} \\
+                  min_{-} & if \ \ min_{-} < \overline{q_i} < 0 \\
+                  \overline{q_i} & if \ \ max_{-} \le \overline{q_i} \le min_{-}\\
+                max_{-} & if \ \ \overline{q_i} < max_{-} \\
+           \end{array} \right.,
+
     where 
-    
+
     .. math::
-       
+
        && max_{+} = 2^{m}, min_{+} = 2^{m - (2^{n-1} - 1)},\\  
        && max_{-} = -2^{m}, min_{-} = -2^{m - (2^{n-1} - 1)},\\
        && \overline{q_i} = sign(x_i) \times 2^{round(\log_2 |x_i|)}.
-       
+
     This quantization uses the geometric mean between two power-of-two numbers 
     as quantization threshold.   
-    
+
     In the forward pass of `unsigned` case,  
-    
+
     .. math::
-    
+
        q_i= \left\{
-    	   \begin{array}{ll}
-    			max & if \ \ \overline{q_i} > max \\
-    			\overline{q_i} & if \ \ min \le \overline{q_i} \le max \\
-    		  min & if \ \ 0 < \overline{q_i} < min \\
-    	   \end{array} \right.,
-    
+           \begin{array}{ll}
+                        max & if \ \ \overline{q_i} > max \\
+                        \overline{q_i} & if \ \ min \le \overline{q_i} \le max \\
+                  min & if \ \ 0 < \overline{q_i} < min \\
+           \end{array} \right.,
+
     where 
-    
+
     .. math::
-       
+
        && max = 2^{m}, min = 2^{m - (2^{n} - 1)},\\  
        && \overline{q_i} = 2^{int(\log_2 |x_i|)}.
-       
-       
+
+
     When using `with_zero` as true, a pruning threshold is used to round an input to 
     0 or :math:`min`. The pruning threshold is defined in this function as the following, 
-    
+
     .. math::
-       
+
        pruning\ threshold = min \times 2^{-\frac{1}{2}}.
-       
+
     If an absolute value of the input is lesser than this value, the input is rounded to 0, otherwise :math:`min`. 
-    
+
     In the backward pass when using ste_fine_grained as false,
-    
+
     .. math::
-    
+
        \frac{\partial q_i}{\partial x_i} = 1.
-    
+
     In the backward pass when using ste_fine_grained as true,
-    
+
     .. math::
 
         \frac{\partial q_i}{\partial x_i}= \left\{
-    	   \begin{array}{ll}
-    		    0 & if \ \ \overline{q_i} > max_{+} \\
-    			1 & if \ \ otherwise \\
-    	        0 & if \ \ \overline{q_i} < max_{-} \\
-    	   \end{array} \right.. 
+           \begin{array}{ll}
+                    0 & if \ \ \overline{q_i} > max_{+} \\
+                        1 & if \ \ otherwise \\
+                0 & if \ \ \overline{q_i} < max_{-} \\
+           \end{array} \right.. 
 
     """
 

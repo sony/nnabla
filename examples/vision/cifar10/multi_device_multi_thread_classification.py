@@ -252,7 +252,7 @@ def train():
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=100)
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
-    
+
     # Data Iterator
     tdata = data_iterator_cifar10(args.batch_size, True)
     vdata = data_iterator_cifar10(args.batch_size, False)

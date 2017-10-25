@@ -37,7 +37,8 @@ void FixedPointQuantize<T>::setup_impl(const Variables &inputs,
   max_ = (pow(2, n) - 1) * delta_;
   min_ = (sign_) ? (-max_) : 0.0;
 
-  NBLA_CHECK(n > 0, error_code::value, "bit width should be positive when considering sign (1bit).");
+  NBLA_CHECK(n > 0, error_code::value,
+             "bit width should be positive when considering sign (1bit).");
 }
 
 template <typename T>
@@ -78,15 +79,15 @@ void quantize_native_backward_cpu(int size, T *dx, const T *dy) {
 // backward core
 template <typename T, bool accum>
 void quantize_backward_cpu(int size, T *dx, const T *dy, const T *x,
-    const T max, const T min) {
+                           const T max, const T min) {
   for (int s = 0; s < size; s++) {
     if (x[s] > max) {
       if (!accum)
         dx[s] = (T)0.;
-    } else if (x[s] < min) {  // also consider sign or unsign.
+    } else if (x[s] < min) { // also consider sign or unsign.
       if (!accum)
         dx[s] = (T)0.;
-    } else {  // non-clipped region
+    } else { // non-clipped region
       if (accum) {
         dx[s] += dy[s];
       } else {
@@ -101,7 +102,7 @@ void FixedPointQuantize<T>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &propagate_down,
                                           const vector<bool> &accum) {
-  //TODO: consider fine-grained STE
+  // TODO: consider fine-grained STE
   if (!propagate_down[0]) {
     return;
   }

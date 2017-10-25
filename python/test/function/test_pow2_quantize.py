@@ -50,24 +50,25 @@ def ref_pow2_quantize(x, sign, with_zero, n, m, quantize, ste_fine_grained):
     return x_q
 
 
-def ref_grad_pow2_quantize(x, dy, sign, 
+def ref_grad_pow2_quantize(x, dy, sign,
                            with_zero, n, m, quantize, ste_fine_grained):
     if not ste_fine_grained:
         return dy.flatten()
-    
+
     n_ = n - 1 if sign else n
     n_ = n_ - 1 if with_zero else n_
     ref_p_max = 2 ** m
     ref_p_min = 2 ** (m - ((1 << n_) - 1))
     ref_pruning_threshold = ref_p_min * (2. ** -0.5)
     x_q = 2. ** np.round(np.log2(np.abs(x)))
-    c = np.ones_like(x);
+    c = np.ones_like(x)
     c[np.where(x_q > ref_p_max)] = 0.
 
     if not sign:
         c[np.where(np.sign(x) < 0.)] = 0.
-    
+
     return (c * dy).flatten()
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])

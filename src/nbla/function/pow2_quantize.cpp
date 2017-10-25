@@ -38,13 +38,15 @@ void Pow2Quantize<T>::setup_impl(const Variables &inputs,
   p_min_ = pow(2., m_ - ((1 << n) - 1));
   pruning_threshold_ = p_min_ * pow(2., -0.5);
 
-  NBLA_CHECK(n > 0, error_code::value, "bit width should be positive when considering zero (1bit) and sign (1bit).");
+  NBLA_CHECK(n > 0, error_code::value, "bit width should be positive when "
+                                       "considering zero (1bit) and sign "
+                                       "(1bit).");
 }
 
 template <typename T>
 void Pow2Quantize<T>::forward_impl(const Variables &inputs,
                                    const Variables &outputs) {
-  //TODO: consider arithmetic mean
+  // TODO: consider arithmetic mean
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
 
@@ -59,7 +61,7 @@ void Pow2Quantize<T>::forward_impl(const Variables &inputs,
       q = p_max_;
     } else if (q < p_min_ && with_zero_) {
       q = x_abs < pruning_threshold_ ? 0. : p_min_;
-    } else if (q < p_min_){
+    } else if (q < p_min_) {
       q = p_min_;
     }
 
@@ -90,18 +92,19 @@ void quantize_naive_backward_cpu(int size, T *dx, const T *dy) {
   }
 }
 
-
 // backward core
 template <typename T, bool accum>
 void quantize_backward_cpu(int size, T *dx, const T *dy, const T *x,
-    const bool sign, const bool with_zero, const T p_max, const T p_min, const T pruning_threshold) {
+                           const bool sign, const bool with_zero, const T p_max,
+                           const T p_min, const T pruning_threshold) {
   T q;
   T x_abs;
   T c;
   for (int s = 0; s < size; s++) {
-    x_abs = fabs(x[s]);;
+    x_abs = fabs(x[s]);
+    ;
     q = pow(2., round(log2(x_abs)));
-    c = 1.;  // normally, assume grad is 1
+    c = 1.; // normally, assume grad is 1
     if (q > p_max) {
       c = 0.;
     }
@@ -126,7 +129,7 @@ void Pow2Quantize<T>::backward_impl(const Variables &inputs,
                                     const Variables &outputs,
                                     const vector<bool> &propagate_down,
                                     const vector<bool> &accum) {
-  //TODO: consider fine-grained STE
+  // TODO: consider fine-grained STE
   if (!propagate_down[0]) {
     return;
   }
@@ -138,9 +141,11 @@ void Pow2Quantize<T>::backward_impl(const Variables &inputs,
 
   if (ste_fine_grained_) {
     if (accum[0])
-      quantize_backward_cpu<T, true>(size, dx, dy, x, sign_, with_zero_, p_max_, p_min_, pruning_threshold_);
+      quantize_backward_cpu<T, true>(size, dx, dy, x, sign_, with_zero_, p_max_,
+                                     p_min_, pruning_threshold_);
     else
-      quantize_backward_cpu<T, false>(size, dx, dy, x, sign_, with_zero_, p_max_, p_min_, pruning_threshold_);
+      quantize_backward_cpu<T, false>(size, dx, dy, x, sign_, with_zero_,
+                                      p_max_, p_min_, pruning_threshold_);
   } else {
     if (accum[0])
       quantize_naive_backward_cpu<T, true>(size, dx, dy);

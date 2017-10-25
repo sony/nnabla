@@ -42,12 +42,12 @@ def ref_fixed_point_quantize(x, sign, n, delta, quantize, ste_fine_grained):
     return x_q
 
 
-def ref_grad_fixed_point_quantize(x, dy, sign, n, delta, 
+def ref_grad_fixed_point_quantize(x, dy, sign, n, delta,
                                   quantize, ste_fine_grained):
-    
+
     if not ste_fine_grained:
         return dy.flatten()
-    
+
     dx = dy.copy()
     ref_delta = delta
     if sign:
@@ -56,11 +56,11 @@ def ref_grad_fixed_point_quantize(x, dy, sign, n, delta,
     else:
         ref_max = ((1 << n) - 1.0) * ref_delta
         ref_min = 0.
-        
+
     dy[np.where(x > ref_max)] = 0.
     dy[np.where(x < ref_min)] = 0.
     return dy.flatten()
-    
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])

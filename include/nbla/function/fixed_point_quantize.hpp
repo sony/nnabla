@@ -28,7 +28,8 @@ NBLA_REGISTER_FUNCTION_HEADER(FixedPointQuantize, bool, int, float, bool);
 
 @tparam T Data type for computation.
 @param sign Indicate the signed number or the unsigned number. Default is true.
-@param n Bit width used. Note that `sign` consumes one bit. \f$n-1\f$ is used for number representation in `signed` case.   
+@param n Bit width used. Note that `sign` consumes one bit. \f$n-1\f$ is used
+for number representation in `signed` case.
 @param delta Step size.
 @param quantize If true, quantize input, otherwise not.
 @param ste_fine_grained If true, STE is not 1.
@@ -37,12 +38,12 @@ NBLA_REGISTER_FUNCTION_HEADER(FixedPointQuantize, bool, int, float, bool);
 template <typename T>
 class FixedPointQuantize : public BaseFunction<bool, int, float, bool> {
 protected:
-  const bool sign_; // Indicate the signed fixed-point number or the unsigned
-                    // fixed-point number. The default is true, use the signed
-                    // fixed-point number.
-  const int n_;     // Bit width used, take care that `sign` comsumes one-bit.
-                    // \f$n-1\f$ is used for number representation in `signed`
-                    // case.
+  const bool sign_;   // Indicate the signed fixed-point number or the unsigned
+                      // fixed-point number. The default is true, use the signed
+                      // fixed-point number.
+  const int n_;       // Bit width used, take care that `sign` comsumes one-bit.
+                      // \f$n-1\f$ is used for number representation in `signed`
+                      // case.
   const float delta_; // Step size
   const bool ste_fine_grained_;
 
@@ -50,11 +51,14 @@ protected:
   T min_; // lower bound in in fixed-point number region.
 
 public:
-  FixedPointQuantize(const Context &ctx, bool sign, int n, float delta, bool ste_fine_grained)
-      : BaseFunction(ctx, sign, n, delta, ste_fine_grained), sign_(sign), n_(n), delta_(delta), ste_fine_grained_(ste_fine_grained) {}
+  FixedPointQuantize(const Context &ctx, bool sign, int n, float delta,
+                     bool ste_fine_grained)
+      : BaseFunction(ctx, sign, n, delta, ste_fine_grained), sign_(sign), n_(n),
+        delta_(delta), ste_fine_grained_(ste_fine_grained) {}
   virtual ~FixedPointQuantize() {}
   virtual shared_ptr<Function> copy() const {
-    return create_FixedPointQuantize(ctx_, sign_, n_, delta_, ste_fine_grained_);
+    return create_FixedPointQuantize(ctx_, sign_, n_, delta_,
+                                     ste_fine_grained_);
   }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }

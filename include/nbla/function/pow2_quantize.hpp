@@ -26,43 +26,51 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_HEADER(Pow2Quantize, bool, bool, int, int, bool);
 
 /**
-This function quantizes values in the power of 2 number representation, 
-in other words, it is linear (uniform) quantization in :math:`log_2` domain. 
+This function quantizes values in the power of 2 number representation,
+in other words, it is linear (uniform) quantization in :math:`log_2` domain.
 
 @tparam T Data type for computation.
 @param sign Indicate the signed number or the unsigned number. Default is true.
-@param with_zero Indicate using zero as a quantized value. Default is true. Note that `zero` consumes one bit.
-@param n Bit width used. Note that `sign` consumes one bit. \f$n-1\f$ is used for number representation in `signed` case.   
-@param m \f$2^m\f$ is the upper bound of the dynamic range and \f$-2^m\f$ is the lower bound, \f$m \in \mathcal{Z}\f$.
+@param with_zero Indicate using zero as a quantized value. Default is true. Note
+that `zero` consumes one bit.
+@param n Bit width used. Note that `sign` consumes one bit. \f$n-1\f$ is used
+for number representation in `signed` case.
+@param m \f$2^m\f$ is the upper bound of the dynamic range and \f$-2^m\f$ is the
+lower bound, \f$m \in \mathcal{Z}\f$.
 @param quantize If true, quantize input, otherwise not.
 @param ste_fine_grained If true, STE is not 1.
 
  */
-template <typename T> class Pow2Quantize : public BaseFunction<bool, bool, int, int, bool> {
+template <typename T>
+class Pow2Quantize : public BaseFunction<bool, bool, int, int, bool> {
 protected:
   const bool sign_; // Indicate the signed fixed-point number or the unsigned
                     // fixed-point number. The default is true, use the signed
                     // fixed-point number.
-  const bool with_zero_;  // Indicate using zero as a quantized value. Default is true. 
+  const bool
+      with_zero_; // Indicate using zero as a quantized value. Default is true.
 
-  const int n_;     // Bit width used, take care that `sign` comsumes one-bit.
-                    // :math:`n-1` is used for number representation in `signed`
-                    // case.
-  const int m_;     // \f$2^m\f$ is upper bound and \f$-2^m\f$ is lower bound.
+  const int n_; // Bit width used, take care that `sign` comsumes one-bit.
+                // :math:`n-1` is used for number representation in `signed`
+                // case.
+  const int m_; // \f$2^m\f$ is upper bound and \f$-2^m\f$ is lower bound.
   const bool ste_fine_grained_;
 
   T p_max_; // upper bound in positive region
   T p_min_; // lower bound in positive region
-  T pruning_threshold_;  
+  T pruning_threshold_;
 
 public:
-  Pow2Quantize(const Context &ctx, bool sign, bool with_zero, int n, int m, 
-  bool ste_fine_grained)
-      : BaseFunction<bool, bool, int, int, bool>(ctx, sign, with_zero, n, m, ste_fine_grained), sign_(sign), 
-      with_zero_(with_zero), n_(n), m_(m), ste_fine_grained_(ste_fine_grained) {}
+  Pow2Quantize(const Context &ctx, bool sign, bool with_zero, int n, int m,
+               bool ste_fine_grained)
+      : BaseFunction<bool, bool, int, int, bool>(ctx, sign, with_zero, n, m,
+                                                 ste_fine_grained),
+        sign_(sign), with_zero_(with_zero), n_(n), m_(m),
+        ste_fine_grained_(ste_fine_grained) {}
   virtual ~Pow2Quantize() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Pow2Quantize(ctx_, sign_, with_zero_, n_, m_, ste_fine_grained_);
+    return create_Pow2Quantize(ctx_, sign_, with_zero_, n_, m_,
+                               ste_fine_grained_);
   }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }

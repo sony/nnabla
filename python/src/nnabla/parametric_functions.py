@@ -1169,7 +1169,7 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
         n_b (int): Bit witdh used for bias.
         m_b (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for bias. Default is 2.
         ste_fine_grained_b (bool): STE is fine-grained if `True`.
-        
+
     Returns:
         :class:`~nnabla.Variable`: N-D array.
 
