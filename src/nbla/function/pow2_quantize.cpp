@@ -57,7 +57,7 @@ void Pow2Quantize<T>::forward_impl(const Variables &inputs,
     q = pow(2., round(log2(x_abs)));
     if (q > p_max_) {
       q = p_max_;
-    } else if (q < p_min_ and with_zero_) {
+    } else if (q < p_min_ && with_zero_) {
       q = x_abs < pruning_threshold_ ? 0. : p_min_;
     } else if (q < p_min_){
       q = p_min_;
@@ -107,7 +107,7 @@ void quantize_backward_cpu(int size, T *dx, const T *dy, const T *x,
     }
 
     // address sign
-    if (not sign) {
+    if (!sign) {
       bool sign_x;
       sign_x = (x[s] < 0.0);
       c = sign_x ? 0. : c;
