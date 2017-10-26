@@ -34,7 +34,7 @@ def cifar100_resnet23_prediction(image,
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
-            # Conv -> BN -> Relu
+            # Conv -> BN -> Elu
             with nn.parameter_scope("conv1"):
                 w_init = UniformInitializer(
                     calc_uniform_lim_glorot(C, C / 2, kernel=(1, 1)),
@@ -42,8 +42,8 @@ def cifar100_resnet23_prediction(image,
                 h = PF.convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
                                    w_init=w_init, with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-                h = F.relu(h)
-            # Conv -> BN -> Relu
+                h = F.elu(h)
+            # Conv -> BN -> Elu
             with nn.parameter_scope("conv2"):
                 w_init = UniformInitializer(
                     calc_uniform_lim_glorot(C / 2, C / 2, kernel=(3, 3)),
@@ -51,7 +51,7 @@ def cifar100_resnet23_prediction(image,
                 h = PF.convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
                                    w_init=w_init, with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-                h = F.relu(h)
+                h = F.elu(h)
             # Conv -> BN
             with nn.parameter_scope("conv3"):
                 w_init = UniformInitializer(
@@ -60,8 +60,8 @@ def cifar100_resnet23_prediction(image,
                 h = PF.convolution(h, C, kernel=(1, 1), pad=(0, 0),
                                    w_init=w_init, with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-            # Residual -> Relu
-            h = F.relu(h + x)
+            # Residual -> Elu
+            h = F.elu(h + x)
 
             # Maxpooling
             if dn:
@@ -74,7 +74,7 @@ def cifar100_resnet23_prediction(image,
     nmaps = 384
     ncls = 100
 
-    # Conv -> BN -> Relu
+    # Conv -> BN -> Elu
     with nn.context_scope(ctx):
         with nn.parameter_scope("conv1"):
             # Preprocess
@@ -91,7 +91,7 @@ def cifar100_resnet23_prediction(image,
             h = PF.convolution(image, nmaps, kernel=(3, 3), pad=(1, 1),
                                w_init=w_init, with_bias=False)
             h = PF.batch_normalization(h, batch_stat=not test)
-            h = F.relu(h)
+            h = F.elu(h)
 
         h = res_unit(h, "conv2", rng, False)    # -> 32x32
         h = res_unit(h, "conv3", rng, True)     # -> 16x16
@@ -177,7 +177,7 @@ def train():
     base_lr = args.learning_rate
     warmup_iter = int(1. * n_train_samples /
                       args.batch_size / n_devices) * args.warmup_epoch
-    warmup_slope = 1. * n_devices / warmup_iter
+    warmup_slope = 1. / warmup_iter
 
     # Create monitor
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
@@ -186,53 +186,56 @@ def train():
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=100)
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
-    with data_iterator_cifar100(args.batch_size, True) as tdata, \
-            data_iterator_cifar100(bs_valid, False) as vdata:
-        # Training-loop
-        for i in range(int(args.max_iter / n_devices)):
-            # Validation
-            if mpi_rank == 0:
-                if i % int(n_train_samples / args.batch_size / n_devices) == 0:
-                    ve = 0.
-                    for j in range(args.val_iter):
-                        image, label = vdata.next()
-                        input_image_valid["image"].d = image
-                        pred_valid.forward()
-                        ve += categorical_error(pred_valid.d, label)
-                    ve /= args.val_iter
-                    monitor_verr.add(i * n_devices, ve)
-                if i % int(args.model_save_interval / n_devices) == 0:
-                    nn.save_parameters(os.path.join(
-                        args.model_save_path, 'params_%06d.h5' % i))
+    rng = np.random.RandomState(device_id)
+    tdata = data_iterator_cifar100(args.batch_size, True, rng)
+    vdata = data_iterator_cifar100(bs_valid, False)
+    
+    # Training-loop
+    for i in range(int(args.max_iter / n_devices)):
+        # Validation
+        if mpi_rank == 0:
+            if i % int(n_train_samples / args.batch_size / n_devices) == 0:
+                ve = 0.
+                for j in range(args.val_iter):
+                    image, label = vdata.next()
+                    input_image_valid["image"].d = image
+                    pred_valid.forward()
+                    ve += categorical_error(pred_valid.d, label)
+                ve /= args.val_iter
+                monitor_verr.add(i * n_devices, ve)
+            if i % int(args.model_save_interval / n_devices) == 0:
+                nn.save_parameters(os.path.join(
+                    args.model_save_path, 'params_%06d.h5' % i))
 
-            # Forward/Zerograd/Backward
-            image, label = tdata.next()
-            input_image_train["image"].d = image
-            input_image_train["label"].d = label
-            loss_train.forward()
-            solver.zero_grad()
-            loss_train.backward()
+        # Forward/Zerograd/Backward
+        image, label = tdata.next()
+        input_image_train["image"].d = image
+        input_image_train["label"].d = label
+        loss_train.forward()
+        solver.zero_grad()
+        loss_train.backward()
 
-            # In-place Allreduce
-            comm.allreduce(division=True)
+        # In-place Allreduce
+        comm.allreduce(division=False, inplace=False)
 
-            # Solvers update
-            solver.update()
+        # Solvers update
+        solver.update()
 
-            # Linear Warmup
-            if i < warmup_iter:
-                lr = base_lr * n_devices * warmup_slope * i
-                solver.set_learning_rate(lr)
-            else:
-                lr = base_lr * n_devices
-                solver.set_learning_rate(lr)
+        # Linear Warmup
+        if i < warmup_iter:
+            lr = base_lr * n_devices * warmup_slope * i
+            solver.set_learning_rate(lr)
+        else:
+            lr = base_lr * n_devices
+            solver.set_learning_rate(lr)
 
-            if mpi_rank == 0:
-                e = categorical_error(
-                    pred_train.d, input_image_train["label"].d)
-                monitor_loss.add(i * n_devices, loss_train.d.copy())
-                monitor_err.add(i * n_devices, e)
-                monitor_time.add(i * n_devices)
+        if mpi_rank == 0:
+            e = categorical_error(
+                pred_train.d, input_image_train["label"].d)
+            monitor_loss.add(i * n_devices, loss_train.d.copy())
+            monitor_err.add(i * n_devices, e)
+            monitor_time.add(i * n_devices)
+
     if mpi_rank == 0:
         nn.save_parameters(os.path.join(
             args.model_save_path,
