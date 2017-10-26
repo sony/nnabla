@@ -100,7 +100,7 @@ cdef class Communicator:
         """
         self.communicatorp.init()
 
-    def allreduce(self, division=False):
+    def allreduce(self, division=False, inplace=False):
         """Inplace allreduce over parameters added.
         This method is \b sync before and after allreduce w.r.t. a host thread.
         Currently, `allreduce` is applied to gradient regions.
@@ -108,10 +108,11 @@ cdef class Communicator:
         Args:
             division (bool): Flag to divide the reduce data by the 
                 number of `contexts` added, or the number of devices. 
-
-
+            inplace (bool): Flag to use a packed array. Default is false.
+                When true, it is memory-efficient but slow. When false, 
+                it is not memory efficient but fast.  
         """
-        self.communicatorp.allreduce(division)
+        self.communicatorp.allreduce(division, inplace)
 
 
 def DataParalellCommunicator(CContext ctx):

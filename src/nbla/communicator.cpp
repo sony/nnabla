@@ -38,6 +38,13 @@ void Communicator::add_context_and_parameters(
   }
   contexts_.push_back(ctx_params.first);
   device_func_named_param_.push_back(ctx_params.second);
+
+  // Count number of parameters in total.
+  Size_t sum_ = 0;
+  for (auto e : ctx_params.second) {
+    sum_ += e.second->size();
+  }
+  total_params_ = sum_;
 }
 
 int Communicator::rank() { return rank_; }
@@ -51,6 +58,7 @@ void Communicator::remove_context_parameters(
 }
 
 void Communicator::clear_context_parameters() {
+  total_params_ = 0;
   NBLA_ERROR(error_code::not_implemented,
              "clear_context_parameters not implemented")
 }
@@ -82,7 +90,7 @@ void Communicator::reduce(bool division) {
   NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
 
-void Communicator::allreduce(bool division) {
+void Communicator::allreduce(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
 }
 
@@ -104,7 +112,7 @@ void Communicator::reduce_async(bool division) {
              "CPU reduce_async is not implemented.")
 }
 
-void Communicator::allreduce_async(bool division) {
+void Communicator::allreduce_async(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU allreduce_async is not implemented.")
 }

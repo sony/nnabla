@@ -65,13 +65,13 @@ public:
   virtual void init();
 
   virtual void reduce(bool division = true);
-  virtual void allreduce(bool division = true);
+  virtual void allreduce(bool division = true, bool inplace=false);
   virtual void reducescatter(bool division = true);
   virtual void bcast();
   virtual void allgather();
 
   virtual void reduce_async(bool division = true);
-  virtual void allreduce_async(bool division = true);
+  virtual void allreduce_async(bool division = true, bool inplace=false);
   virtual void reducescatter_async(bool division = true);
   virtual void bcast_async();
   virtual void allgather_async();
