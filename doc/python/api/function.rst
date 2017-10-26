@@ -176,7 +176,7 @@ Loss Functions
 .. autofunction:: kl_multinomial
 
 
-Quantization Neural Network Layers
+Quantized Neural Network Layers
 ----------------------------------
 
 .. autofunction:: binary_sigmoid
@@ -185,6 +185,8 @@ Quantization Neural Network Layers
 .. autofunction:: binary_connect_convolution
 .. autofunction:: binary_weight_affine
 .. autofunction:: binary_weight_convolution
+.. autofunction:: fixed_point_quantize
+.. autofunction:: pow2_quantize
 		  
    
 Unsupported, Special Use
