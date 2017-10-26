@@ -223,7 +223,14 @@ def forward_command(args):
     for row in rows:
         new_row = []
         for item in row:
-            if os.path.isfile(item):
+
+            isfile = False
+            try:
+                isfile = os.path.isfile(item)
+            except:
+                isfile = False
+
+            if isfile:
                 if os.path.isabs(item):
                     image_filename = item
                     image_name = './reference/{}_{}'.format(
@@ -235,10 +242,19 @@ def forward_command(args):
                     image_filename = item
                     image_name = item
                     images[image_name] = image_filename
-            elif os.path.isfile(os.path.join(args.outdir, item)):
-                image_filename = os.path.join(args.outdir, item)
-                image_name = item
-                images[image_name] = image_filename
+            else:
+
+                isfile = False
+                try:
+                    isfile = os.path.isfile(os.path.join(args.outdir, item))
+                except:
+                    isfile = False
+
+                if isfile:
+                    image_filename = os.path.join(args.outdir, item)
+                    image_name = item
+                    images[image_name] = image_filename
+
             new_row.append(item)
         new_rows.append(new_row)
 
