@@ -189,7 +189,7 @@ def train():
     rng = np.random.RandomState(device_id)
     tdata = data_iterator_cifar100(args.batch_size, True, rng)
     vdata = data_iterator_cifar100(bs_valid, False)
-    
+
     # Training-loop
     for i in range(int(args.max_iter / n_devices)):
         # Validation

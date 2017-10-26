@@ -131,7 +131,7 @@ def data_iterator_cifar100(batch_size,
 
     '''
 
-    return data_iterator(Cifar100DataSource(train=train, shuffle=shuffle, rng=rng), 
+    return data_iterator(Cifar100DataSource(train=train, shuffle=shuffle, rng=rng),
                          batch_size,
                          with_memory_cache,
                          with_parallel,

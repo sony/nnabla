@@ -44,14 +44,14 @@ class NBLA_API Communicator {
 protected:
   Context ctx_;
   int rank_;
-  int size_;  // number of workers.
+  int size_; // number of workers.
 
   vector<Context> contexts_;
   vector<vector<pair<string, VariablePtr>>> device_func_named_param_;
   vector<vector<pair<string, VariablePtr>>> func_device_named_param_;
 
   bool initialized_ = false;
-  Size_t total_params_ = 0;  // total number of parameters.
+  Size_t total_params_ = 0; // total number of parameters.
 
 public:
   /** Constructor takes at least context and parameters.
@@ -106,7 +106,7 @@ public:
   @param division Divide the reduced value.
   @param inplace Pack the arrays into one large array if flase.
    */
-  virtual void allreduce(bool division = true, bool inplace=false);
+  virtual void allreduce(bool division = true, bool inplace = false);
 
   /** reducescatter.
    @param division Divide the reduced value.
@@ -130,7 +130,7 @@ public:
 
   /** reduce asynchronously.
    @param division Divide the reduced value.
-	 @param inplace Pack the arrays into one large array if flase.
+         @param inplace Pack the arrays into one large array if flase.
    */
   virtual void allreduce_async(bool division = true, bool inplace = true);
 

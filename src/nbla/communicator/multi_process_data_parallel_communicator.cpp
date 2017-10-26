@@ -44,7 +44,8 @@ void MultiProcessDataParallelCommunicator<T>::reduce(bool division) {
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::allreduce(bool division, bool inplace) {
+void MultiProcessDataParallelCommunicator<T>::allreduce(bool division,
+                                                        bool inplace) {
   NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
 }
 
@@ -70,7 +71,8 @@ void MultiProcessDataParallelCommunicator<T>::reduce_async(bool division) {
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::allreduce_async(bool division, bool inplace) {
+void MultiProcessDataParallelCommunicator<T>::allreduce_async(bool division,
+                                                              bool inplace) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU allreduce_async is not implemented.")
 }
