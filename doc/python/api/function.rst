@@ -55,6 +55,7 @@ Neural Network Activation
 .. autofunction:: crelu
 .. autofunction:: celu
 .. autofunction:: prelu
+.. autofunction:: leaky_relu
 
 
 Normalization
