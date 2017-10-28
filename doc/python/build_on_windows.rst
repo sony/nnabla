@@ -26,6 +26,8 @@ Our build system requires:
   * clang-format version 3.8
   * autopep8
 
+.. _setup-build-env-windows:
+
 Setup build environment
 ^^^^^^^^^^^^^^^^^^^^^^^
 
