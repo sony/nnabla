@@ -20,14 +20,13 @@ import nnabla.functions as F
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
-def test_arithmetic_ops2(seed, op):
+def test_variable_arithmetic_ops2(seed, op):
     rng = np.random.RandomState(seed)
-    vx = nn.Variable([2, 3, 4])
-    vy = nn.Variable([2, 3, 4])
-    vx.d = rng.randn(*vx.shape).astype(np.float32)
-    vy.d = rng.randn(*vy.shape).astype(np.float32)
+    shape = [2, 3, 4]
+    vx = nn.Variable.from_numpy_array(rng.randn(*shape).astype(np.float32))
+    vy = nn.Variable.from_numpy_array(rng.randn(*shape).astype(np.float32))
     if op == "**":
-        vx.d = - vx.d.min() + 1.0
+        vx.d += - vx.d.min() + 1.0
     with nn.auto_forward():
         vz = eval("vx {0} vy".format(op))
         ref_z = eval("vx.d {0} vy.d".format(op))
@@ -36,13 +35,12 @@ def test_arithmetic_ops2(seed, op):
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
-def test_arithmetic_scalar_ops(seed, op):
+def test_variable_arithmetic_scalar_ops(seed, op):
     rng = np.random.RandomState(seed)
-    vx = nn.Variable([2, 3, 4])
-    vx.d = rng.randn(*vx.shape).astype(np.float32)
+    vx = nn.Variable.from_numpy_array(rng.randn(2, 3, 4).astype(np.float32))
     a = rng.randn()
     if op == "**":
-        vx.d = - vx.d.min() + 1.0
+        vx.d += - vx.d.min() + 1.0
     with nn.auto_forward():
         vz = eval("vx {0} a".format(op))
         ref_z = eval("vx.d {0} a".format(op))
@@ -51,10 +49,9 @@ def test_arithmetic_scalar_ops(seed, op):
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
-def test_arithmetic_scalar_rops(seed, op):
+def test_variable_arithmetic_scalar_rops(seed, op):
     rng = np.random.RandomState(seed)
-    vx = nn.Variable([2, 3, 4])
-    vx.d = rng.randn(*vx.shape).astype(np.float32)
+    vx = nn.Variable.from_numpy_array(rng.randn(2, 3, 4).astype(np.float32))
     a = rng.randn()
     if op == "**":
         a = np.abs(a)
@@ -66,10 +63,9 @@ def test_arithmetic_scalar_rops(seed, op):
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-"])
-def test_arithmetic_unary_ops(seed, op):
+def test_variable_arithmetic_unary_ops(seed, op):
     rng = np.random.RandomState(seed)
-    vx = nn.Variable([2, 3, 4])
-    vx.d = rng.randn(*vx.shape).astype(np.float32)
+    vx = nn.Variable.from_numpy_array(rng.randn(2, 3, 4).astype(np.float32))
     with nn.auto_forward():
         vz = eval("{0} vx".format(op))
         ref_z = eval("{0} vx.d".format(op))

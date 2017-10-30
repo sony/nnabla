@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// *WARNING*
-// THIS FILE IS AUTO-GENERATED DUMMY CODE BY CODE GENERATOR.
-// PLEASE IMPLEMENT REAL CODE AND DELETE THIS MESSAGE SOON.
-
 /** Shift
  */
 #include <nbla/array.hpp>

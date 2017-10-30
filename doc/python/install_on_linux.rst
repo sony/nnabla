@@ -14,7 +14,7 @@ on Ubuntu 16.04 (64bit).
 
 * Required software.
 
-  * Python 2.7 or Python>=3.5: PIP
+  * Python 2.7 or Python>=3.4: PIP
 
 * Recommended software (for NVIDIA GPU users).
 

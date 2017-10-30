@@ -48,6 +48,6 @@ void {func_name}<{templates}>::backward_impl(const Variables &inputs, const Vari
   // TEMPLATE CODE
 }}
 
-// Template instanciation
+// Template instantiation
 template class {func_name}<{ctypes}>;
 }} // namespace nbla
