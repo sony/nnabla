@@ -37,7 +37,13 @@ void Unlink<T>::forward_impl(const Variables &inputs,
 template <typename T>
 void Unlink<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                               const vector<bool> &propagate_down,
-                              const vector<bool> &accum) {}
+                              const vector<bool> &accum) {
+  if (!propagate_down[0]) {
+    return;
+  }
+  if (!accum[0])
+    inputs[0]->grad()->zero();
+}
 
 // Template instanciation
 template class Unlink<float>;
