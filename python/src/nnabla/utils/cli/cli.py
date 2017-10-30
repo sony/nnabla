@@ -155,7 +155,7 @@ def main():
 
 
 if __name__ == '__main__':
-    import thread
+    import six.moves._thread as thread
     import threading
     thread.stack_size(128 * 1024 * 1024)
     sys.setrecursionlimit(0x3fffffff)
