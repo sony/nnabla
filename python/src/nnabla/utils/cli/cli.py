@@ -16,6 +16,7 @@ import argparse
 import os
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
@@ -120,7 +121,8 @@ def main():
     try:
         from nnabla.utils.cli.create_image_classification_dataset import create_image_classification_dataset_command
         # Create image classification dataset
-        subparser = subparsers.add_parser('create_image_classification_dataset')
+        subparser = subparsers.add_parser(
+            'create_image_classification_dataset')
         subparser.add_argument(
             '-i', '--sourcedir', help='source directory with directories for each class', required=True)
         subparser.add_argument(
@@ -143,24 +145,10 @@ def main():
             '-f2', '--file2', help='output file name 2')
         subparser.add_argument(
             '-r2', '--ratio2', help='output file ratio(%) 2')
-        subparser.set_defaults(func=create_image_classification_dataset_command)
+        subparser.set_defaults(
+            func=create_image_classification_dataset_command)
     except:
         pass
-
-    # Search build tools
-    tooldir = None
-    for _tooldir in [os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dev', 'build-tools')),
-                     os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'build-tools'))]:
-        if os.path.exists(_tooldir):
-            tooldir = _tooldir
-            sys.path.append(os.path.join(tooldir, 'code_formatter'))
-            sys.path.append(os.path.join(tooldir, 'code_generator'))
-
-    # Code formatter
-    import auto_format_command
-    subparser = subparsers.add_parser('auto-format')
-    subparser.add_argument('base')
-    subparser.set_defaults(func=auto_format_command.command)
 
     args = parser.parse_args()
     args.func(args)
