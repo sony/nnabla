@@ -341,7 +341,7 @@ def function_tester(rng, func, ref_func, inputs,
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert np.allclose(
-            v.g, true_g, atol=1e-6), str(ArrayDiffStats(v.g, true_g))
+            v.g, true_g, atol=atol_b), str(ArrayDiffStats(v.g, true_g))
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')
