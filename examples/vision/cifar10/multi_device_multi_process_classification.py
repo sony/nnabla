@@ -147,7 +147,7 @@ def train():
       * Execute forwardprop
       * Set parameter gradients zero
       * Execute backprop.
-      * Inplace allreduce (THIS IS THE MAIN difference from a single device training)
+      * Allreduce (THIS IS THE MAIN difference from a single device training)
       * Solver updates parameters by using gradients computed by backprop.
       * Compute training error
     """
@@ -191,7 +191,7 @@ def train():
     base_lr = args.learning_rate
     warmup_iter = int(1. * n_train_samples /
                       args.batch_size / n_devices) * args.warmup_epoch
-    warmup_slope = 1. * n_devices / warmup_iter
+    warmup_slope = 1. / warmup_iter
 
     # Create monitor
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
@@ -202,7 +202,8 @@ def train():
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
 
     # Data Iterator
-    tdata = data_iterator_cifar10(args.batch_size, True)
+    rng = np.random.RandomState(device_id)
+    tdata = data_iterator_cifar10(args.batch_size, True, rng)
     vdata = data_iterator_cifar10(args.batch_size, False)
 
     # Training-loop
@@ -230,8 +231,8 @@ def train():
         solver.zero_grad()
         loss_train.backward()
 
-        # In-place Allreduce
-        comm.allreduce(division=True)
+        # Allreduce
+        comm.allreduce(division=False, inplace=False)
 
         # Solvers update
         solver.update()
@@ -250,6 +251,7 @@ def train():
             monitor_loss.add(i * n_devices, loss_train.d.copy())
             monitor_err.add(i * n_devices, e)
             monitor_time.add(i * n_devices)
+
     if mpi_rank == 0:
         nn.save_parameters(os.path.join(
             args.model_save_path,
