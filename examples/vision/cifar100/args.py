@@ -1,4 +1,4 @@
-def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.monitor', learning_rate=1e-3, batch_size=64, weight_decay=0, n_devices=4):
+def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.monitor', learning_rate=1e-3, batch_size=64, weight_decay=0, n_devices=4, warmup_epoch=5):
     """
     Get command line arguments.
 
@@ -18,6 +18,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.mo
                         type=float, default=weight_decay)
     parser.add_argument("--device-id", "-d", type=int, default=0)
     parser.add_argument("--n_devices", "-n", type=int, default=n_devices)
+    parser.add_argument("--warmup-epoch", "-e", type=int, default=warmup_epoch)
     parser.add_argument("--model-save-interval", "-s", type=int, default=1000)
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path)

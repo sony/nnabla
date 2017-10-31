@@ -54,8 +54,9 @@ class Cifar10DataSource(DataSource):
                 if e.errno != errno.EEXIST:
                     raise
                 if (time.time() - start_time) >= 60 * 30:  # wait for 30min
-                    raise Exception(
-                        "Timeout occured. If there are cifar10.lock in $HOME/nnabla_data, it should be deleted.")
+                    # Unlock
+                    os.close(fd)
+                    os.unlink(lockfile)
 
             time.sleep(5)
 
