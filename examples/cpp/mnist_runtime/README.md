@@ -89,7 +89,7 @@ The following command executes image classifiation with the trained model `lenet
 ![5](./original_images/5.png "5")
 
 ```shell
-./mnist_runtime ../../vision/mnist/tmp.monitor/lenet_010000.nnp 5.pgm
+./mnist_runtime lenet_010000.nnp 5.pgm
 ```
 
 The output shows it makes a prediction. In my case, it's correct.
