@@ -149,5 +149,5 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
     function_tester(rng, F.inq_convolution, ref_inq_convolution, inputs,
                     func_args=[base_axis, pad, stride, dilation, group, num_bits, inq_iterations,
                                selection_algorithm, seed],
-                    atol_b=1e-2, atol_accum=1e-5, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
+                    atol_f=1e-5, atol_b=1e-2, atol_accum=1e-5, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_inq_convolution)
