@@ -16,7 +16,10 @@
 #define __NBLA_MEMORY_INTERNAL_HPP__
 #include <nbla/memory.hpp>
 
+#ifdef NBLA_VERBOSE_MEMORY_USAGE
+#include <iostream>
 #include <typeinfo>
+#endif
 
 namespace nbla {
 
@@ -50,9 +53,12 @@ shared_ptr<M> MemoryCache<M>::pop_or_create(Size_t bytes,
       pool.erase(it);
       return ret;
     }
+
+#ifdef NBLA_VERBOSE_MEMORY_USAGE
     // TODO: enable debut print
-    // std::cout << "MemoryCache<" << typeid(M).name() << ">: Creating with size
-    // " << alloc_bytes << " (" << count(device) << ")" << std::endl;
+    std::cout << "MemoryCache<" << typeid(M).name() << ">: Creating with size "
+              << alloc_bytes << std::endl;
+#endif
 
     // Allocate a new memory
     if (newmem->allocate())
