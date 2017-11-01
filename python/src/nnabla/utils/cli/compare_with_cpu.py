@@ -58,7 +58,7 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
     loaded_datas = {}
     for opt, opt_cpu in zip(config.optimizers.values(), config_cpu.optimizers.values()):
         o = opt.optimizer
-        o_cpu = opt.optimizer
+        o_cpu = opt_cpu.optimizer
         opts = [o, o_cpu]
 
         result_name = "optimizer '%s' with network '%s'" % (
@@ -178,8 +178,7 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
         # Update
         o.solver.update()
         o_cpu.solver.update()
-        for i, (v, lr) in enumerate(o.parameter_learning_rate_multipliers.items()):
-            v_cpu = o_cpu.parameter_learning_rate_multipliers.items()[i][0]
+        for i, ((v, lr), (v_cpu, lr_cpu)) in enumerate(zip(o.parameter_learning_rate_multipliers.items(), o_cpu.parameter_learning_rate_multipliers.items())):
             if lr > 0:
                 name = 'update (%s, %s)' % (o.solver.name, v.name)
                 norm_diff, std1, std2, diff_std = calc_norm_diff(
