@@ -1,22 +1,21 @@
-# Gallery of Neural Network Libraries
+# Neural Network Libraries - Examples
 
-This repository contains working examples of [Neural Network Liraries](https://github.com/sony/nnabla/).
-Before running any of examples in this repository, you must install NNabla Python package.
+This repository contains working examples of [Neural Network Libraries](https://github.com/sony/nnabla/).
+Before running any of the examples in this repository, you must install the Python package for Neural Network Libraries:
 
 ```
 pip install -U nnabla
 ```
 
-Some examples may be highly computationally expensive. We recommend you to have a CUDA-capable GPU installed on your machine, and install NNabla's CUDA extension ([installation guide](https://nnabla.readthedocs.io/en/latest/python/installation.html)).
+Installing the [CUDA extension](https://github.com/sony/nnabla-ext-cuda/) for Neural Network Libraries will allow you to run examples on a CUDA-compatible GPU:
 
 ```
 pip install -U nnabla-ext-cuda
 ```
 
-Each folder usually contains:
+Before running an example, also run the following command inside the example directory, to install additional dependencies:
 
-* A README file.
-* One or more example scripts and helper Python modules.
-* A Python package requirement file, `requirements.txt`.
-
-Before running a script in a example folder, it is recommended to read the README file, and install dependency packages with `pip install -U requirements.txt`. 
+```
+cd example_directory
+pip install -U requirements.txt
+```
