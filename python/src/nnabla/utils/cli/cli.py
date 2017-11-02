@@ -150,6 +150,31 @@ def main():
     except:
         pass
 
+    # Uploader
+    from nnabla.utils.cli.uploader import upload_command, Uploader
+    subparser = subparsers.add_parser('upload')
+    subparser.add_argument('-e', '--endpoint', help='set endpoint uri', type=str)
+    subparser.add_argument('token', help='token for upload')
+    subparser.add_argument('filename', help='filename to upload')
+    subparser.set_defaults(func=upload_command)
+
+    # Create TAR for uploader
+    from nnabla.utils.cli.uploader import create_tar_command
+    subparser = subparsers.add_parser('create_tar')
+    subparser.add_argument('source', help='CSV dataset')
+    subparser.add_argument('destination', help='TAR filename')
+    subparser.set_defaults(func=create_tar_command)
+
+    # Extract nnp file
+    from nnabla.utils.cli.extract import extract_command
+    subparser = subparsers.add_parser('extract')
+    subparser.add_argument(
+        '-l', '--list', help='list contents.', action='store_true')
+    subparser.add_argument(
+        '-x', '--extract', help='extract contents to current dir.', action='store_true')
+    subparser.add_argument('nnp', help='nnp filename')
+    subparser.set_defaults(func=extract_command)
+
     args = parser.parse_args()
     args.func(args)
 
