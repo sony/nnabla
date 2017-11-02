@@ -4,7 +4,6 @@ import os
 import sys
 
 
-
 tooldir = None
 for _tooldir in [os.path.abspath(os.path.join(os.path.dirname(__file__)))]:
     if os.path.exists(_tooldir):
@@ -16,4 +15,6 @@ if __name__ == '__main__':
     import auto_format_command
     parser = argparse.ArgumentParser()
     parser.add_argument('base')
+    parser.add_argument('--subfolder', nargs='*',
+                        default=['include', 'src', 'python', 'examples', 'tutorial'])
     auto_format_command.command(parser.parse_args())
