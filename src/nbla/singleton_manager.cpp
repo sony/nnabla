@@ -15,6 +15,9 @@
 #include <nbla/singleton_manager-internal.hpp>
 
 namespace nbla {
+
+SingletonManager *SingletonManager::self_ = nullptr;
+
 void SingletonManager::clear() {
   SingletonManager &s = get_self();
   for (int i = 0; i < s.count_; ++i) {
@@ -37,8 +40,11 @@ void SingletonManager::erase_by_id(int id) {
 }
 
 SingletonManager &SingletonManager::get_self() {
-  static SingletonManager s;
-  return s;
+  // TODO: thread-safe
+  if (!self_) {
+    self_ = new SingletonManager();
+  }
+  return *self_;
 }
 
 SingletonManager::SingletonManager() : count_(0) {}

@@ -1,0 +1,13 @@
+* text=auto
+*.h text
+*.c text
+*.cpp text
+*.hpp text
+*.txt text
+*.rst text
+*.md text
+*.toc text
+
+*.png binary
+*.jpeg binary
+*.pgm binary

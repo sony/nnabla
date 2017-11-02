@@ -65,7 +65,7 @@ with **WITH_NCCL**, when you do `cmake` like
 
 .. code-block:: shell
 
-	cmake -D WITH_NCCL=ON ../                                                            
+	cmake -DNNABLA_DIR=../../nnabla -DCPPLIB_LIBRARY=../../nnabla/build/lib/libnnabla.so -D WITH_NCCL=ON ../                                                            
 
 You can see nccl and mpi includes and dependencies,   
 
