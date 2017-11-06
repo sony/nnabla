@@ -48,6 +48,7 @@ Neural Network Activation
 -------------------------
 
 .. autofunction:: sigmoid
+.. autofunction:: swish
 .. autofunction:: tanh
 .. autofunction:: relu
 .. autofunction:: softmax
