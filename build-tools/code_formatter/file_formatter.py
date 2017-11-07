@@ -25,6 +25,9 @@ python_exclude = [
     'nnabla_pb2.py'
 ]
 
+# Files with the following extensions will have 644 file permission.
+doc_extensions = ['.md', '.rst', '.txt', '.toc']
+
 
 def check_eol(filename):
     eol = b'\n'

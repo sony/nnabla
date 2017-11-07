@@ -43,6 +43,10 @@ void CpuArray::zero() {
 }
 
 void CpuArray::allocate() {
+#ifdef NBLA_VERBOSE_MEMORY_USAGE
+  printf("CpuArray is created with size of %d\n",
+         (int)(this->size_ * sizeof(this->dtype_)));
+#endif
   int msize = this->size_ * sizeof_dtype(this->dtype_);
   inuse_memory_ = make_shared<CpuMemory>(msize, "");
   inuse_memory_->allocate();

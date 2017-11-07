@@ -483,6 +483,40 @@ Element-wise sigmoid function.
      - Output
      - 
 
+Swish
+^^^^^
+
+Element-wise swish function, by Ramachandran et al. (2017).
+
+.. math::
+
+    y_i = \frac{x_i}{1 + \exp(-x_i)},
+
+References:
+    * `Prajit Ramachandran, Barret Zoph, and Quoc V. Le, Swish: a Self-Gated Activation Function, arXiv:1710.05941 [cs.NE]
+      <https://arxiv.org/abs/1710.05941>`_
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output
+     - 
+
 Tanh
 ^^^^
 
@@ -544,6 +578,52 @@ Element-wise Rectified Linear Unit (ReLU) function.
      - bool
      - False
      - The output array is shared with the input array if True.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as x
+     - 
+
+LeakyReLU
+^^^^^^^^^
+
+Element-wise Leaky Rectified Linear Unit (ReLU) function.
+
+It is defined as:
+
+.. math::
+    y_i = \alpha * \min(0, x_i) + \max (0, x_i)
+
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - alpha
+     - float
+     - 0.1
+     - The slope value multplied to negative numbers. :math:`\alpha` in the definition.
 
 * Output(s)
 
@@ -653,6 +733,84 @@ References:
    * - y
      - N-D array with the same shape as x
      - 
+
+SELU
+^^^^
+
+Element-wise Scaled Exponential Linear Unit (SELU) function by Klambauer et al. (2017).
+
+.. math::
+    y_i= \lambda \left\{
+    \begin{array}{ll}
+    x_i & (x > 0)\\
+    \alpha (\exp(x_i) - 1) & (x \leq 0)
+    \end{array} \right..
+
+The coefficients :math:`\lambda` and :math:`\alpha` default to the following values :math:`\lambda_{01}` and :math:`\alpha_{01}`, respectively, provided by Klambauer et al. (2017):
+
+.. math::
+    \begin{array}{lll}
+      \lambda_{01} &=&  \left(  1 - \operatorname{erfc}\left( \frac{1}{\sqrt{2}} \right) \sqrt{e}  \right)
+                  \sqrt{2 \pi} \\
+                 && \left(
+                      2 \operatorname{erfc} \left( \sqrt{2} \right) e^2
+                      + \pi \operatorname{erfc}\left( \frac{1}{\sqrt{2}} \right)^2 e
+                      \right. \\
+                 && \left.
+                      - 2(2 + \pi) \operatorname{erfc} \left( \frac{1}{\sqrt{2}} \right) \sqrt{e}
+                      + \pi + 2
+                 \right)^{-1/2}  \\
+              &\approx& 1.0507 \\
+      \alpha_{01} &=&  - \frac
+                    {\sqrt {\frac {2}{\pi}}}
+                    {\operatorname{erfc} \left( \frac{1}{\sqrt{2}} \right) \exp \left(\frac {1} {2} \right) - 1} \\
+              &\approx& 1.67326
+    \end{array}
+
+
+References:
+    * `Klambauer, G., Unterthiner, T., Mayr, A., & Hochreiter, S. (2017).
+      Self-Normalizing Neural Networks. In Advances in Neural Information
+      Processing Systems (NIPS). <https://arxiv.org/abs/1706.02515>`_
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - scale
+     - double
+     - 1.050700987355480
+     - The coefficient :math:`\lambda` in the definition.
+   * - alpha
+     - double
+     - 1.673263242354377
+     - The coefficient :math:`\alpha` in the definition.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as x
+     -
 
 CReLU
 ^^^^^
@@ -4971,6 +5129,242 @@ Reference
    * - y
      - Output
      -
+
+FixedPointQuantize
+^^^^^^^^^^^^^^^^^^
+This function uniformly quantizes values in fixed-point number representation.
+
+In the forward pass, 
+
+.. math::
+
+   q_i= \left\{
+	   \begin{array}{ll}
+			max & if \ \ \ x_i > max \\
+		  sign(x_i) \times floor(|x_i| \delta^{-1} + 2^{-1}) \times \delta & if \ \ min \le x_i \le max \\
+	  	min & if \ \ x_i < min \\
+	   \end{array} \right.,
+
+where :math:`\delta` is the step size, 
+:math:`(min, max) :=(- (2^{n-1} - 1)\delta, (2^{n-1} - 1)\delta)` if :math:`sign` is true, 
+:math:`(min, max) := (0, (2^n - 1) \delta)` otherwise, and  
+:math:`n` is the total bit-width used.
+
+In the backward pass when using `ste_fine_grained` as false,  
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i} = 1.
+
+In the backward pass when using `ste_fine_grained` as true,  
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i}= \left\{
+	   \begin{array}{ll}
+			0 & if \ \ \ x_i > max \\
+		  1 & if \ \ min \le x_i \le max \\
+	  	0 & if \ \ x_i < min \\
+	   \end{array} \right..
+   
+.. note::
+
+
+	Quantized values are stored as floating point number, since this function is for simulation purposes.
+   
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - sign
+     - bool
+     - True
+     - Indicate the signed number or the unsigned number. Default is true.
+   * - n
+     - int64
+     - 8
+     - Bit width used. Note that `sign` comsumes one bit. :math:`n-1` is used for number representation in `signed` case.   
+   * - delta
+     - float
+     - 2**-4
+     - Step size.
+   * - ste_fine_grained
+     - bool
+     - True
+     - Straight Through Estimator is fine-grained or not.
+			 
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     -
+
+Pow2Quantize
+^^^^^^^^^^^^
+
+This function quantizes values in the power of 2 number representation, 
+in other words, it is linear (uniform) quantization in :math:`log_2` domain. 
+
+In the forward pass of `signed` case,  
+
+.. math::
+
+   q_i= \left\{
+	   \begin{array}{ll}
+			max_{+} & if \ \ \overline{q_i} > max_{+} \\
+			\overline{q_i} & if \ \ min_{+} \le \overline{q_i} \le max_{+} \\
+		  min_{+} & if \ \ 0 \le \overline{q_i} < min_{+} \\
+		  min_{-} & if \ \ min_{-} < \overline{q_i} < 0 \\
+		  \overline{q_i} & if \ \ max_{-} \le \overline{q_i} \le min_{-}\\
+	  	max_{-} & if \ \ \overline{q_i} < max_{-} \\
+	   \end{array} \right.,
+
+where 
+
+.. math::
+   
+   && max_{+} = 2^{m}, min_{+} = 2^{m - (2^{n-1} - 1)},\\  
+   && max_{-} = -2^{m}, min_{-} = -2^{m - (2^{n-1} - 1)},\\
+   && \overline{q_i} = sign(x_i) \times 2^{round(\log_2 |x_i|)}.
+   
+This quantization uses the geometric mean between two power-of-two numbers 
+as quantization threshold.   
+
+In the forward pass of `unsigned` case,  
+
+.. math::
+
+   q_i= \left\{
+	   \begin{array}{ll}
+			max & if \ \ \overline{q_i} > max \\
+			\overline{q_i} & if \ \ min \le \overline{q_i} \le max \\
+		  min & if \ \ 0 < \overline{q_i} < min \\
+	   \end{array} \right.,
+
+where 
+
+.. math::
+   
+   && max = 2^{m}, min = 2^{m - (2^{n} - 1)},\\  
+   && \overline{q_i} = 2^{int(\log_2 |x_i|)}.
+   
+   
+When using `with_zero` as true, a pruning threshold is used to round an input to 
+0 or :math:`min`. The pruning threshold is defined in this function as the following, 
+
+.. math::
+   
+   pruning\ threshold = min \times 2^{-\frac{1}{2}}.
+   
+If an absolute value of the input is lesser than this value, the input is rounded to 0, otherwise :math:`min`. 
+
+In the backward pass when using ste_fine_grained as false,
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i} = 1.
+
+In the backward pass when using ste_fine_grained as true,
+
+.. math::
+
+   \frac{\partial q_i}{\partial x_i}= \left\{
+	   \begin{array}{ll}
+			0 & if \ \ \overline{q_i} > max_{+} \\
+			1 & if \ \ otherwise \\
+	  	0 & if \ \ \overline{q_i} < max_{-} \\
+	   \end{array} \right..
+
+   
+There are some literatures using pow2 quantization in their proposed methods. 
+   
+References:
+
+  * `Miyashita Daisuke, Lee H. Edward, Murmann Boris. 
+    Convolutional Neural Networks using Logarithmic Data Representation. 
+    <https://arxiv.org/abs/1603.01025>`_
+
+  * `Aojun Zhou, Anbang Yao, Yiwen Guo, Lin Xu, Yurong Chen.
+    Incremental Network Quantization: Towards Lossless CNNs with Low-precision Weights.
+    <https://arxiv.org/abs/1702.03044>`_
+    
+.. note::
+
+
+	Quantized values are stored as floating point number, since this function is for simulation purposes.
+   
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - sign
+     - bool
+     - True
+     - Indicate the signed number or the unsigned number. Default is true.
+   * - with_zero
+     - bool
+     - True
+     - Indicate using zero as a quantized value. Default is true. Note that `zero` consumes one bit.     
+   * - n
+     - int64
+     - 8
+     - Bit width used, Note that `sign` comsumes one bit. :math:`n-1` is used for number representation in `signed` case. Default is 8.
+   * - m
+     - int64
+     - 1
+     - :math:`2^m` is the upper bound of the dynamic range and :math:`-2^m` is the lower bound, :math:`m \in \mathcal{Z}`. Default is 1.
+   * - ste_fine_grained
+     - bool
+     - True
+     - Straight Through Estimator is fine-grained or not.
+			 
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
 
 Validation
 ----------

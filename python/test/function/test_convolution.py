@@ -56,5 +56,5 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
     inputs = [i, k, b]
     function_tester(rng, F.convolution, ref_convolution, inputs,
                     func_args=[base_axis, pad, stride, dilation, group],
-                    atol_f=1e-4, atol_b=3e-3, dstep=1e-2,
+                    atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2,
                     ctx=ctx, func_name=func_name)

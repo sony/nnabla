@@ -37,13 +37,13 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         int rank() except +
 
         void reduce(cpp_bool division) except +
-        void allreduce(cpp_bool division) except +
+        void allreduce(cpp_bool division, cpp_bool inplace) except +
         void reducescatter(cpp_bool division) except +
         void bcast() except +
         void allgather() except +
 
         void reduce_async(cpp_bool division) except +
-        void allreduce_async(cpp_bool division) except +
+        void allreduce_async(cpp_bool division, cpp_bool inplace) except +
         void reducescatter_async(cpp_bool division) except +
         void bcast_async() except +
         void allgather_async() except +

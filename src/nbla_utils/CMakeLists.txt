@@ -19,12 +19,20 @@ if (WIN32)
     message(FATAL_ERROR, "HDF5 cannot be enabled on Windows.")
     error() # Undefined command to abort cmake process here.
   endif()
+  find_package(LibArchive REQUIRED)
+  find_package(ZLIB REQUIRED)
+  find_package(Protobuf REQUIRED)
+  include_directories(
+    ${LibArchive_INCLUDE_DIR}
+    ${PROTOBUF_INCLUDE_DIR}
+    ${ZLIB_INCLUDE_DIRS}
+    )
   target_link_libraries(nnabla_utils
     nnabla
-    ${CMAKE_BINARY_DIR}/libraries/lib/libprotobuf-lite.lib
-    #    ${CMAKE_BINARY_DIR}/libraries/lib/libprotobuf.lib
-    #    ${CMAKE_BINARY_DIR}/libraries/lib/libprotoc.lib
-    ${CMAKE_BINARY_DIR}/libraries/lib/zlib.lib)
+    ${PROTOBUF_LIBRARY}
+    ${LibArchive_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    )
 else()
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     if (NNABLA_UTILS_WITH_HDF5)

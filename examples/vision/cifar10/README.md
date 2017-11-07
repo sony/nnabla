@@ -37,3 +37,30 @@ python multi_device_multi_thread classification.py --context "cuda.cudnn" -b 64 
 ```
 
 you can execute the training of 23-layers ResNet in the `Data Parallel Distributed Training` manner with the batch size being 64 and 4 GPUs.
+
+
+## Quantized Neural Networks
+
+This example shows the naive `Quantized Neural Networks` (QNN) for the object regognition task using CIFAR-10 dataset and 23-layers ResNet. Currently, `classification_qnn.py` 
+contains the following QNNs,
+
+- Binary Connect
+- Binary Net
+- Binary Weight Network
+- Fixed-Point Connect
+- Fixed-Point Net
+- Pow2 Connect
+- Pow2 Net
+
+For example, if you want to use Pow2 Connect, run as 
+
+```
+python classification_qnn.py --context "cuda.cudnn" -b 64 -d 0 --net pow2con_resnet23 
+
+```
+
+
+
+
+
+

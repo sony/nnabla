@@ -60,6 +60,12 @@ The above command generates an executable `mnist_runtime` at the current directl
 
 The build file `GNUMakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++11 option `-std=c++11`.
 
+```shell
+make cuda
+```
+
+You can also compile an executable `mnist_runtime_cuda` that runs computation on your CUDA device by the above command if you install `nnabla-ext-cuda` in a right path. See `GNUMakefile` for details.
+
 
 ## Execute handwritten digit classification
 
@@ -89,7 +95,7 @@ The following command executes image classifiation with the trained model `lenet
 ![5](./original_images/5.png "5")
 
 ```shell
-./mnist_runtime ../../vision/mnist/tmp.monitor/lenet_010000.nnp 5.pgm
+./mnist_runtime lenet_010000.nnp 5.pgm
 ```
 
 The output shows it makes a prediction. In my case, it's correct.

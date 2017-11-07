@@ -21,6 +21,13 @@
 #include <nbla/function/sink.hpp>
 #include <nbla/logger.hpp>
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#define open _open
+#define O_RDONLY _O_RDONLY
+#endif
+
 namespace nbla {
 namespace utils {
 namespace nnp {

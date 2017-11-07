@@ -27,7 +27,7 @@ class Cifar100DataSource(DataSource):
         return (image, label)
 
     def __init__(self, train=True, shuffle=False, rng=None):
-        super(Cifar100DataSource, self).__init__(shuffle=shuffle)
+        super(Cifar100DataSource, self).__init__(shuffle=shuffle, rng=rng)
 
         # Lock
         lockfile = os.path.join(get_data_home(), "cifar100.lock")
@@ -40,8 +40,9 @@ class Cifar100DataSource(DataSource):
                 if e.errno != errno.EEXIST:
                     raise
                 if (time.time() - start_time) >= 60 * 30:  # wait for 30min
-                    raise Exception(
-                        "Timeout occured. If there are cifar10.lock in $HOME/nnabla_data, it should be deleted.")
+                    # Unlock
+                    os.close(fd)
+                    os.unlink(lockfile)
 
             time.sleep(5)
 
@@ -108,7 +109,6 @@ class Cifar100DataSource(DataSource):
         return self._labels.copy()
 
 
-@contextmanager
 def data_iterator_cifar100(batch_size,
                            train=True,
                            rng=None,
@@ -130,10 +130,9 @@ def data_iterator_cifar100(batch_size,
                 SOME CODE TO USE data.
 
     '''
-    with Cifar100DataSource(train=train, shuffle=shuffle, rng=rng) as ds, \
-        data_iterator(ds,
-                      batch_size,
-                      with_memory_cache,
-                      with_parallel,
-                      with_file_cache) as di:
-        yield di
+
+    return data_iterator(Cifar100DataSource(train=train, shuffle=shuffle, rng=rng),
+                         batch_size,
+                         with_memory_cache,
+                         with_parallel,
+                         with_file_cache)

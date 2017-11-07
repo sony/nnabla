@@ -73,6 +73,12 @@ def parametric_function_api(scope_name=None):
             defaults + (None,))
         shortsignature = inspect.formatargspec(
             spec.args, spec.varargs, spec.keywords, None)
+
+        # Check required argument
+        assert 'fix_parameters' in spec.args, \
+            "A parametric function must take `fix_parameters` as an argument." \
+            " `{}{}` doesn't have it.".format(name, signature)
+
         code = """
 def {name}{signature}:
     if name is None:
@@ -179,7 +185,7 @@ def binary_connect_affine(inp, n_outmaps,
         To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
         float weights and the binary weights will not be in sync.
 
-        3) CPU and GPU implementations now use float value for `binary_weight`,
+        3) Quantized values are stored as floating point number for `binary_weight`,
         since this function is only for simulation purposes.
 
     Args:
@@ -258,7 +264,7 @@ def binary_weight_affine(inp, n_outmaps,
         To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
         float weights and the binary weights will not be in sync.
 
-        3) CPU and GPU implementations now use float value for `binary_weight`,
+        3) Quantized values are stored as floating point number for `binary_weight`,
         since this function is only for simulation purposes.
 
     Args:
@@ -457,7 +463,7 @@ def binary_connect_convolution(inp, outmaps, kernel,
         To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
         float weights and the binary weights will not be in sync.
 
-        3) CPU and GPU implementations now use float value for `binary_weight`,
+        3) Quantized values are stored as floating point number for `binary_weight`,
         since this function is only for simulation purposes.
 
     Args:
@@ -539,7 +545,7 @@ def binary_weight_convolution(inp, outmaps, kernel,
         To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
         float weights and the binary weights will not be in sync.
 
-        3) CPU and GPU implementations now use float value for `binary_weight`,
+        3) Quantized values are stored as floating point number for `binary_weight`,
         since this function is only for simulation purposes.
 
     Args:
@@ -691,7 +697,7 @@ def deconvolution(inp, outmaps, kernel,
 
 @parametric_function_api("bn")
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
-                        batch_stat=True, output_stat=False):
+                        batch_stat=True, output_stat=False, fix_parameters=False):
     """
     Batch normalization layer.
 
@@ -713,6 +719,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
         eps (float): Tiny value to avoid zero division by std.
         batch_stat (bool): Use mini-batch statistics rather than running ones.
         output_stat (bool): Output batch mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -726,9 +733,9 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     shape_stat = [1 for _ in inp.shape]
     shape_stat[axes[0]] = inp.shape[axes[0]]
     beta = get_parameter_or_create(
-        "beta", shape_stat, ConstantInitializer(0), True)
+        "beta", shape_stat, ConstantInitializer(0), not fix_parameters)
     gamma = get_parameter_or_create(
-        "gamma", shape_stat, ConstantInitializer(1), True)
+        "gamma", shape_stat, ConstantInitializer(1), not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, ConstantInitializer(0), False)
     var = get_parameter_or_create(
@@ -738,7 +745,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
 
 
 @parametric_function_api("embed")
-def embed(inp, n_inputs, n_features):
+def embed(inp, n_inputs, n_features, fix_parameters=False):
     """ Embed.
 
     Embed slices a matrix/tensor with indexing array/tensor
@@ -747,16 +754,19 @@ def embed(inp, n_inputs, n_features):
         x(~nnabla.Variable): [Integer] Indices with shape :math:`(I_0, ..., I_N)`
         n_inputs : number of possible inputs, words or vocabraries
         n_features : number of embedding features
+        fix_parameters (bool): When set to `True`, the embedding weight matrix
+            will not be updated.
+
     Returns:
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
     w = get_parameter_or_create("W", [n_inputs, n_features],
-                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True)
+                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), not fix_parameters)
     return F.embed(inp, w)
 
 
 @parametric_function_api("prelu")
-def prelu(inp, base_axis=1, shared=True):
+def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     """
     Parametrized Rectified Linear Unit function defined as
 
@@ -770,6 +780,8 @@ def prelu(inp, base_axis=1, shared=True):
         x(~nnabla.Variable): N-D array as input
         base_axis(int): Dimensions up to base_axis is treated as sample dimension.
         shared(bool): Use shared weight value or not 
+        fix_parameters (bool): When set to `True`, the negative slope values
+            will not be updated.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -777,5 +789,448 @@ def prelu(inp, base_axis=1, shared=True):
     """
     shape = tuple() if shared else inp.shape[base_axis]
     w = get_parameter_or_create("W", shape,
-                                ConstantInitializer(-1), True)
+                                ConstantInitializer(-1), not fix_parameters)
     return F.prelu(inp, w, base_axis)
+
+
+@parametric_function_api("fp_quantized_affine")
+def fixed_point_quantized_affine(inp, n_outmaps,
+                                 base_axis=1,
+                                 w_init=None, b_init=None,
+                                 fix_parameters=False, rng=None, with_bias=True,
+                                 quantize_w=True, sign_w=True, n_w=8, delta_w=2**-4, ste_fine_grained_w=True,
+                                 quantize_b=True, sign_b=True, n_b=8, delta_b=2**-4, ste_fine_grained_b=True):
+    """Fixed-Point Quantized Affine.
+
+    Fixed-Point Quantized Affine is the affine function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_j = \sum_{i} Q(w_{ji}) x_i, 
+
+    where :math:`Q(w_{ji})` is the fixed-point quantization function.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        quantize_w (bool): Quantize weights if `True`.
+        sign_w (bool): Use signed quantization if `True`.
+        n_w (int): Bit witdh used for weight.
+        delta_w (float): Step size for weight.
+        ste_fine_grained_w (bool): STE is fine-grained if `True`.
+        quantize_b (bool): Quantize bias if `True`.
+        n_b (int): Bit witdh used for bias.
+        delta_w (float): Step size for bias.
+        ste_fine_grained_b (bool): STE is fine-grained if `True`.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+    """
+
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        inmaps = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inmaps, n_outmap), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, not fix_parameters)
+
+    # Quantized Weight
+    if quantize_w:
+        w_q = get_parameter_or_create(
+            "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+            w_init, not fix_parameters)
+        # Link computation graph
+        real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
+                                          sign=sign_w, n=n_w, delta=delta_w,
+                                          ste_fine_grained=ste_fine_grained_w,
+                                          outputs=[w_q.data])
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    b = None
+    b_q = None
+    real_b_q = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, not fix_parameters)
+        if quantize_b:
+            b_q = get_parameter_or_create(
+                "b_q", n_outmaps, b_init, not fix_parameters)
+            # Link computation graph
+            real_b_q = F.fixed_point_quantize(b, quantize=quantize_b,
+                                              sign=sign_b, n=n_b, delta=delta_b,
+                                              ste_fine_grained=ste_fine_grained_b,
+                                              outputs=[b_q.data])
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.affine(inp, real_w_q, real_b_q, base_axis)
+
+
+@parametric_function_api("fp_quantized_conv")
+def fixed_point_quantized_convolution(inp, outmaps, kernel,
+                                      pad=None, stride=None, dilation=None, group=1,
+                                      w_init=None, b_init=None,
+                                      base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                                      quantize_w=True, sign_w=True, n_w=8, delta_w=2**-4, ste_fine_grained_w=True,
+                                      quantize_b=True, sign_b=True, n_b=8, delta_b=2**-4, ste_fine_grained_b=True,):
+    """Fixed-Point Quantized Convolution.
+
+    Fixed-Point Quantized Convolution is the convolution function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j}, 
+
+    where :math:`Q(w_{n, m, i, j})` is the fixed-point quantization function.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        quantize_w (bool): Quantize weights if `True`.
+        quantize_bias (bool): Quantize bias if `True`.
+        sign_w (bool): Use signed quantization if `True`.
+        n_w (int): Bit witdh used for weight.
+        delta_w (float): Step size for weight.
+        ste_fine_grained_w (bool): STE is fine-grained if `True`.
+        quantize_b (bool): Quantize bias if `True`.
+        n_b (int): Bit witdh used for bias.
+        delta_w (float): Step size for bias.
+        ste_fine_grained_b (bool): STE is fine-grained if `True`.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        w_init, not fix_parameters)
+
+    # Quantized Weight
+    if quantize_w:
+        w_q = get_parameter_or_create(
+            "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+            w_init, not fix_parameters)
+        # Link computation graph
+        real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
+                                          sign=sign_w, n=n_w, delta=delta_w,
+                                          ste_fine_grained=ste_fine_grained_w,
+                                          outputs=[w_q.data])
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    b = None
+    b_q = None
+    real_b_q = None
+
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+        if quantize_b:
+            b_q = get_parameter_or_create(
+                "b_q", (outmaps,), b_init, not fix_parameters)
+            # Link computation graph
+            real_b_q = F.fixed_point_quantize(b, quantize=quantize_b,
+                                              sign=sign_b, n=n_b, delta=delta_b,
+                                              ste_fine_grained=ste_fine_grained_b,
+                                              outputs=[b_q.data])
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("pow2_quantized_affine")
+def pow2_quantized_affine(inp, n_outmaps,
+                          base_axis=1,
+                          w_init=None, b_init=None,
+                          fix_parameters=False, rng=None, with_bias=True,
+                          quantize_w=True, sign_w=True, with_zero_w=False, n_w=8, m_w=2, ste_fine_grained_w=True,
+                          quantize_b=True, sign_b=True, with_zero_b=False, n_b=8, m_b=2, ste_fine_grained_b=True):
+    """Pow2 Quantized Affine.
+
+    Pow2 Quantized Affine is the affine function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_j = \sum_{i} Q(w_{ji}) x_i, 
+
+    where :math:`Q(w_{ji})` is the power-of-2 quantization function.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) Quantized values are stored as floating point number for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        quantize_w (bool): Quantize weights if `True`.
+        sign_w (bool): Use signed quantization if `True`.
+        with_zero_w (bool): Indicate using zero as a quantized value. Default is false.
+        n_w (int): Bit witdh used for weight.
+        m_w (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for weights. Default is 2.
+        ste_fine_grained_w (bool): STE is fine-grained if `True`.
+        quantize_b (bool): Quantize bias if `True`.
+        with_zero_b (bool): Indicate using zero as a quantized value. Default is false.
+        n_b (int): Bit witdh used for bias.
+        m_b (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for bias. Default is 2.
+        ste_fine_grained_b (bool): STE is fine-grained if `True`.  
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+    """
+
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        inmaps = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inmaps, n_outmap), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, not fix_parameters)
+
+    # Quantized Weight
+    if quantize_w:
+        w_q = get_parameter_or_create(
+            "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+            w_init, not fix_parameters)
+        # Link computation graph
+        real_w_q = F.pow2_quantize(w, quantize=quantize_w,
+                                   sign=sign_w, with_zero=with_zero_w,
+                                   n=n_w, m=m_w, ste_fine_grained=ste_fine_grained_w,
+                                   outputs=[w_q.data])
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    b = None
+    b_q = None
+    real_b_q = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, not fix_parameters)
+        if quantize_b:
+            b_q = get_parameter_or_create(
+                "b_q", n_outmaps, b_init, not fix_parameters)
+            real_b_q = F.pow2_quantize(b, quantize=quantize_b,
+                                       sign=sign_b, with_zero=with_zero_b,
+                                       n=n_b, m=m_b, ste_fine_grained=ste_fine_grained_b,
+                                       outputs=[b_q.data])
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.affine(inp, real_w_q, real_b_q, base_axis)
+
+
+@parametric_function_api("pow2_quantized_conv")
+def pow2_quantized_convolution(inp, outmaps, kernel,
+                               pad=None, stride=None, dilation=None, group=1,
+                               w_init=None, b_init=None,
+                               base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                               quantize_w=True, with_zero_w=False, sign_w=True, n_w=8, m_w=2, ste_fine_grained_w=True,
+                               quantize_b=True, with_zero_b=False, sign_b=True, n_b=8, m_b=2, ste_fine_grained_b=True,):
+    """Pow2 Quantized Convolution.
+
+    Pow2 Quantized Convolution is the convolution function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j}, 
+
+    where :math:`Q(w_{n, m, i, j})` is the power-of-2 quantization function.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) Quantized values are stored as floating point number for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        quantize_w (bool): Quantize weights if `True`.
+        sign_w (bool): Use signed quantization if `True`.
+        n_w (int): Bit witdh used for weight.
+        m_w (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for weights. Default is 2.
+        ste_fine_grained_w (bool): STE is fine-grained if `True`.
+        quantize_b (bool): Quantize bias if `True`.
+        sign_b (bool): Use signed quantization if `True`.
+        n_b (int): Bit witdh used for bias.
+        m_b (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for bias. Default is 2.
+        ste_fine_grained_b (bool): STE is fine-grained if `True`.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        w_init, not fix_parameters)
+
+    # Quantized Weight
+    if quantize_w:
+        w_q = get_parameter_or_create(
+            "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+            w_init, not fix_parameters)
+
+        # Link computation graph
+        real_w_q = F.pow2_quantize(w, quantize=quantize_w,
+                                   sign=sign_w, with_zero=with_zero_w,
+                                   n=n_w, m=m_w, ste_fine_grained=ste_fine_grained_w,
+                                   outputs=[w_q.data])
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    b = None
+    b_q = None
+    real_b_q = None
+
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+        if quantize_b:
+            b_q = get_parameter_or_create(
+                "b_q", (outmaps,), b_init, not fix_parameters)
+            # Link computation graph
+            real_b_q = F.pow2_quantize(b, quantize=quantize_b,
+                                       sign=sign_b, with_zero=with_zero_b,
+                                       n=n_b, m=m_b, ste_fine_grained=ste_fine_grained_b,
+                                       outputs=[b_q.data])
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)

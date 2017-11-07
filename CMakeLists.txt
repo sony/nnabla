@@ -19,6 +19,11 @@ option(BUILD_CPP_UTILS "Build C++ API and utilities" OFF)
 
 option(BUILD_PYTHON_PACKAGE "Build python package" ON)
 
+option(NBLA_VERBOSE_MEMORY_USAGE "Enable debug print of memory usage" OFF)
+if(NBLA_VERBOSE_MEMORY_USAGE)
+  add_definitions(-DNBLA_VERBOSE_MEMORY_USAGE)
+endif()
+
 ###############################################################################
 # Settings
 ###############################################################################
