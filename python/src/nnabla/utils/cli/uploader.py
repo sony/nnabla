@@ -74,9 +74,9 @@ class Uploader:
         self._log('Create index.csv')
         self._progress.init(len(csv_data), 'Create index.csv')
         with open(indexcsvfilename, 'w') as f:
+            csvwriter = csv.writer(f)
             for row in csv_data:
-                self._progress(1.0)
-                f.write(','.join(row) + '\n')
+                csvwriter.writerow(row)
         self._progress.finish()
 
         tarfilename = os.path.join(tmpdir, '{}.tar'.format(name))
@@ -108,7 +108,7 @@ class Uploader:
 
         if 'upload_path' not in info:
             if endpoint == 'https://console-api.dl.sony.com':
-                self._log('Server not returns upload_path')
+                self._log('Upload_path could not be retrieved from the server.')
             else:
                 self._log('Server returns [{}]'.format(info['message']))
             return False
@@ -149,18 +149,20 @@ class Uploader:
         tmpdir = tempfile.mkdtemp()
         self._log('Temprary dir {} created'.format(tmpdir))
 
-        self._log('Prepare csv data')
-        csv_data, data_files = self.createCsvData(source)
-        if csv_data is not None:
-            self._log('Prepare tar file')
-            name = os.path.splitext(os.path.basename(source))[0]
-            tarfile = self.createTemporaryTar(name,
-                                              csv_data,
-                                              data_files,
-                                              tmpdir)
-            shutil.copyfile(tarfile, destination)
-        shutil.rmtree(tmpdir, ignore_errors=True)
-        self._log('Temprary dir removed')
+        try:
+            self._log('Prepare csv data')
+            csv_data, data_files = self.createCsvData(source)
+            if csv_data is not None:
+                self._log('Prepare tar file')
+                name = os.path.splitext(os.path.basename(source))[0]
+                tarfile = self.createTemporaryTar(name,
+                                                  csv_data,
+                                                  data_files,
+                                                  tmpdir)
+                shutil.copyfile(tarfile, destination)
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            self._log('Temprary dir removed')
 
     def upload(self, token, filename, name, finishCallback=None, endpoint=None):
 
@@ -169,18 +171,20 @@ class Uploader:
             tmpdir = tempfile.mkdtemp()
             self._log('Temprary dir {} created'.format(tmpdir))
 
-            self._log('Prepare csv data')
-            csv_data, data_files = self.createCsvData(filename)
-            self._log('Prepare tar file')
-            tarfile = self.createTemporaryTar(name,
-                                              csv_data,
-                                              data_files,
-                                              tmpdir)
-            self._log('Upload')
-            res = self.uploadFile(endpoint, token, tarfile, name)
+            try:
+                self._log('Prepare csv data')
+                csv_data, data_files = self.createCsvData(filename)
+                self._log('Prepare tar file')
+                tarfile = self.createTemporaryTar(name,
+                                                  csv_data,
+                                                  data_files,
+                                                      tmpdir)
+                self._log('Upload')
+                res = self.uploadFile(endpoint, token, tarfile, name)
+            finally:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+                self._log('Temprary dir removed')
 
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            self._log('Temprary dir removed')
             if res:
                 self._log('Finished')
 
