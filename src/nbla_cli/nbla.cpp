@@ -23,7 +23,7 @@
 static void print_usage_and_exit(const char *name) {
   std::cerr << "Usage: " << name << " (infer|dump)" << std::endl;
   std::cerr << "    " << name
-            << " infer [-b BATCHSIZE] [-e EXECUTOR] [-o OUTPUT] input_files ..."
+            << " infer -e EXECUTOR [-b BATCHSIZE] [-o OUTPUT] input_files ..."
             << std::endl;
   std::cerr << "               input_file must be one of followings."
             << std::endl;
@@ -69,6 +69,8 @@ std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
 bool infer(int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
+
+  // TODO: use Nnp::get_executor_names() to get default executor.
   p.add<std::string>("executor", 'e', "Executor name (required)", true,
                      std::string());
   p.add<std::string>(

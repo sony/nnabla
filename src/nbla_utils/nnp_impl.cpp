@@ -77,6 +77,7 @@ void NetworkImpl::build() {
         f_tmp_outputs.push_back(cg_v);
       }
     }
+    // TODO: It may dangerous if output  variable exists.
     if (f_tmp_outputs.size() == 0) {
       auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
       for (int j = 0; j < func.output_size(); j++) {
@@ -478,7 +479,7 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
             func->set_type("Identity");
             // Change input....
             NBLA_CHECK(func->input_size() == 2, error_code::value,
-                       "Input size of RepeatStart must be 2. %s (%d != 2)",
+                       "Input size of Delay must be 2. %s (%d != 2)",
                        func->name().c_str(), (int)func->input_size());
             std::string input;
             if (j == 0) {
