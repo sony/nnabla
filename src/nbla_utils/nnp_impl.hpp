@@ -155,6 +155,14 @@ class NnpImpl {
   bool parse_hdf5_group(hid_t gid);
 #endif
   void update_parameters();
+  int get_network_repeat_nest_depth(const ::Network &orig);
+  std::vector<std::string> create_suffixes(std::string prefix,
+                                           std::vector<std::string> ids,
+                                           std::vector<int> times);
+  std::vector<std::string>
+  create_var_suffixes(std::map<std::string, int> repeat_info, ::Variable var);
+  std::vector<std::string>
+  create_func_suffixes(std::map<std::string, int> repeat_info, ::Function func);
   ::Network expand_network(const ::Network &orig);
   const ::Network &search_network(std::string name);
 

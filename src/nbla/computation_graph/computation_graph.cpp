@@ -18,6 +18,11 @@
 
 namespace nbla {
 
+static vector<CgVariablePtr>
+connect_core(CgFunctionPtr cg_f, const vector<CgVariablePtr> &inputs,
+             const vector<CgVariablePtr> &outputs,
+             vector<NdArrayPtr> inplace_outputs = {}, bool execute = false);
+
 using std::make_shared;
 
 // Just a helper function.
@@ -45,10 +50,26 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                               const vector<CgVariablePtr> &inputs,
                               int n_outputs, vector<NdArrayPtr> inplace_outputs,
                               bool execute) {
-  // Connection
   cg_f->set_inputs(inputs);
   vector<CgVariablePtr> outputs = create_function_outputs(cg_f, n_outputs);
+  return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
+}
 
+vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
+                              const vector<CgVariablePtr> &inputs,
+                              const vector<CgVariablePtr> &outputs,
+                              vector<NdArrayPtr> inplace_outputs,
+                              bool execute) {
+  cg_f->set_inputs(inputs);
+  cg_f->set_outputs(outputs);
+  return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
+}
+
+vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
+                                   const vector<CgVariablePtr> &inputs,
+                                   const vector<CgVariablePtr> &outputs,
+                                   vector<NdArrayPtr> inplace_outputs,
+                                   bool execute) {
   // Function inputs and outputs must be Variables.
   vector<Variable *> finputs(inputs.size());
   vector<Variable *> foutputs(outputs.size());

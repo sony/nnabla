@@ -16,6 +16,7 @@
 #include <nbla/computation_graph/computation_graph.hpp>
 
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <nbla/function/sink.hpp>
 #include <nbla/logger.hpp>
@@ -67,10 +68,23 @@ void NetworkImpl::build() {
                  "Function [%s] is not supported yet", func.name().c_str());
     }
 
-    auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
-
+    std::vector<nbla::CgVariablePtr> f_tmp_outputs;
     for (int j = 0; j < func.output_size(); j++) {
-      variables_.insert({func.output(j), foutputs[j]});
+      auto it = variables_.find(func.output(j));
+      if (it != variables_.end()) {
+        CgVariablePtr cg_v = get_cgvariable_or_create(func.output(j));
+        cg_v->set_parent(cgfunc);
+        f_tmp_outputs.push_back(cg_v);
+      }
+    }
+    // TODO: It may dangerous if output  variable exists.
+    if (f_tmp_outputs.size() == 0) {
+      auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
+      for (int j = 0; j < func.output_size(); j++) {
+        variables_.insert({func.output(j), foutputs[j]});
+      }
+    } else {
+      nbla::connect(cgfunc, finputs, f_tmp_outputs);
     }
   }
 }
@@ -299,11 +313,7 @@ bool NnpImpl::parse_hdf5_group(hid_t gid) {
 }
 #endif
 
-::Network NnpImpl::expand_network(const ::Network &orig) {
-  ::Network net;
-  net.set_name(orig.name());
-  net.set_batch_size(orig.batch_size());
-
+int NnpImpl::get_network_repeat_nest_depth(const ::Network &orig) {
   // get max nest depth.
   int max_nest_depth = -1;
   for (int i = 0; i < orig.function_size(); i++) {
@@ -312,49 +322,239 @@ bool NnpImpl::parse_hdf5_group(hid_t gid) {
       max_nest_depth = depth;
     }
   }
+  return max_nest_depth;
+}
 
-  if (max_nest_depth > 0) {
-    // WHOAMI("max_nest_depth: %d\n", max_nest_depth);
-    std::vector<int> indexes(max_nest_depth);
-    std::map<std::string, std::vector<std::string>> repeat_function_queue;
+std::vector<std::string> NnpImpl::create_suffixes(std::string prefix,
+                                                  std::vector<std::string> ids,
+                                                  std::vector<int> times) {
+  std::vector<std::string> suffixes;
+  std::string id = ids.at(0);
+  ids.erase(ids.begin());
+  int max = times.at(0);
+  times.erase(times.begin());
+  for (int i = 0; i < max; i++) {
+    std::string suffix = prefix + "_" + id + "[" + std::to_string(i) + "]";
+    if (ids.size() > 0) {
+      auto sub = create_suffixes(suffix, ids, times);
+      std::copy(sub.begin(), sub.end(), std::back_inserter(suffixes));
+    } else {
+      suffixes.push_back(suffix);
+    }
+  }
+  return suffixes;
+}
 
+std::vector<std::string>
+NnpImpl::create_var_suffixes(std::map<std::string, int> repeat_info,
+                             ::Variable var) {
+  std::vector<std::string> ids;
+  std::vector<int> times;
+  for (int j = 0; j < var.repeat_id_size(); j++) {
+    auto rid = var.repeat_id(j);
+    ids.push_back(rid);
+    times.push_back(repeat_info[rid]);
+  }
+  return create_suffixes("", ids, times);
+}
+
+std::vector<std::string>
+NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
+                              ::Function func) {
+  std::vector<std::string> ids;
+  std::vector<int> times;
+  for (int j = 0; j < func.repeat_id_size(); j++) {
+    auto rid = func.repeat_id(j);
+    ids.push_back(rid);
+    times.push_back(repeat_info[rid]);
+  }
+  return create_suffixes("", ids, times);
+}
+
+::Network NnpImpl::expand_network(const ::Network &orig) {
+  ::Network net;
+  net.set_name(orig.name());
+  net.set_batch_size(orig.batch_size());
+
+  if (get_network_repeat_nest_depth(orig) > 0) {
+
+    std::map<std::string, int> repeat_info;
     for (int i = 0; i < orig.repeat_info_size(); i++) {
-      ::RepeatInfo *rep = net.add_repeat_info();
-      rep->CopyFrom(orig.repeat_info(i));
-      // WHOAMI("%d %s\n", i, rep->id().c_str());
+      repeat_info[orig.repeat_info(i).id()] = orig.repeat_info(i).times();
     }
 
+    // Prepare variables.
+    std::map<std::string, int> vars;
+    std::map<std::string, int> ovars;
+
+    int vid = 0;
     for (int i = 0; i < orig.variable_size(); i++) {
-      ::Variable *var = net.add_variable();
-      var->CopyFrom(orig.variable(i));
-      // WHOAMI("%s\n", (var->name()).c_str());
-    }
+      auto ovar = orig.variable(i);
+      ovars[ovar.name()] = i;
 
-    for (int i = 0; i < orig.function_size(); i++) {
-      const ::Function &orig_func = orig.function(i);
-      std::string type = orig_func.type();
-      // WHOAMI("%s\n", type.c_str());
-
-      if (type == "RepeatStart") {
-      } else if (type == "RepeatStart") {
-      } else if (type == "RepeatEnd") {
-      } else if (type == "RecurrentInput") {
-      } else if (type == "RecurrentOutput") {
-      } else if (type == "Delay") {
-      }
-
-      if (orig_func.repeat_id_size() == 0) {
-        ::Function *func = net.add_function();
-        func->CopyFrom(orig_func);
+      if (ovar.repeat_id_size() > 0) {
+        auto suffixes = create_var_suffixes(repeat_info, ovar);
+        for (int j = 0; j < suffixes.size(); j++) {
+          vid = net.variable_size();
+          ::Variable *var = net.add_variable();
+          var->CopyFrom(ovar);
+          var->clear_repeat_id();
+          var->set_name(var->name() + suffixes[j]);
+          vars[var->name()] = vid;
+        }
       } else {
-        // WHOAMI("%d %s\n", i, orig_func.name().c_str());
-        for (int j = 0; j < orig_func.repeat_id_size(); j++) {
-          // WHOAMI("%d %d %s\n", i, j, orig_func.repeat_id(j).c_str());
+        vid = net.variable_size();
+        ::Variable *var = net.add_variable();
+        var->CopyFrom(ovar);
+        vars[var->name()] = vid;
+      }
+    } // i
+
+    // Prepare fuctions
+    std::map<std::string, int> funcs;
+    std::map<std::string, int> ofuncs;
+
+    int fid = 0;
+    for (int i = 0; i < orig.function_size(); i++) {
+      auto ofunc = orig.function(i);
+      auto type = ofunc.type();
+      ofuncs[ofunc.name()] = i;
+
+      if (type == "RecurrentInput") {
+
+        // RecurrentInput will convert into 'Split' function.
+        ::Function *func = net.add_function();
+        fid = net.function_size();
+        func->set_name(ofunc.name());
+        func->set_type("Split");
+        funcs[func->name()] = fid;
+
+        ::SplitParameter *split_param = new ::SplitParameter();
+        auto axis = ofunc.recurrent_param().axis();
+        split_param->set_axis(axis);
+        func->set_allocated_split_param(split_param);
+
+        // Prepare input(s)
+        // Just copy from ofunc.
+        for (int j = 0; j < ofunc.input_size(); j++) {
+          func->add_input(ofunc.input(j));
+        }
+
+        // Prepare output(s)
+        auto ovar = orig.variable(ovars[ofunc.output(0)]);
+        auto suffixes = create_var_suffixes(repeat_info, ovar);
+        for (int j = 0; j < suffixes.size(); j++) {
+          func->add_output(ofunc.output(0) + suffixes[j]);
+        }
+
+      } else if (ofunc.repeat_id_size() > 0) {
+        auto suffixes = create_func_suffixes(repeat_info, ofunc);
+
+        for (int j = 0; j < suffixes.size(); j++) {
+          auto suffix = suffixes[j];
+          fid = net.function_size();
+          ::Function *func = net.add_function();
+          func->CopyFrom(ofunc);
+          func->set_name(func->name() + suffix);
+          funcs[func->name()] = fid;
+
+          if (type == "RepeatStart") {
+            // Change function type to identity
+            func->set_type("Identity");
+            // Change input....
+            NBLA_CHECK(func->input_size() == 2, error_code::value,
+                       "Input size of RepeatStart must be 2. %s (%d != 2)",
+                       func->name().c_str(), (int)func->input_size());
+            std::string input;
+            if (j == 0) {
+              input = func->input(0);
+            } else {
+              input = func->input(1) + suffixes[j - 1];
+            }
+            func->clear_input();
+            func->add_input(input);
+          } else if (type == "Delay") {
+
+            // Change function type to identity
+            func->set_type("Identity");
+            // Change input....
+            NBLA_CHECK(func->input_size() == 2, error_code::value,
+                       "Input size of Delay must be 2. %s (%d != 2)",
+                       func->name().c_str(), (int)func->input_size());
+            std::string input;
+            if (j == 0) {
+              input = func->input(1);
+            } else {
+              input = func->input(0) + suffixes[j - 1];
+            }
+            func->clear_input();
+            func->add_input(input);
+          } else {
+            // Add suffix to input params.
+            for (int k = 0; k < func->input_size(); k++) {
+              auto inp = func->input(k);
+              if (vars.count(inp + suffix) > 0) {
+                func->set_input(k, inp + suffix);
+              } else {
+                func->set_input(k, inp);
+              }
+            }
+          }
+          // Add suffix to output params.
+          for (int k = 0; k < func->output_size(); k++) {
+            auto out = func->output(k);
+            if (vars.count(out + suffix) > 0) {
+              func->set_output(k, out + suffix);
+            } else {
+              func->set_output(k, out);
+            }
+          }
+        }
+
+      } else {
+        fid = net.function_size();
+        ::Function *func = net.add_function();
+        func->CopyFrom(ofunc);
+        funcs[func->name()] = fid;
+
+        if (type == "RepeatEnd") {
+          // Change function type to identity
+          func->set_type("Identity");
+          // Add suffix to input params.
+          for (int j = 0; j < func->input_size(); j++) {
+            auto inp = func->input(j);
+            auto ovar = ovars[func->input(j)];
+            auto suffixes =
+                create_var_suffixes(repeat_info, orig.variable(ovar));
+            func->set_input(j, inp + suffixes[suffixes.size() - 1]);
+          }
+        } else if (type == "RecurrentOutput") {
+          // RecurrentOutput will convert into 'Stack' function.
+          func->set_name(ofunc.name());
+          func->set_type("Stack");
+          ::StackParameter *stack_param = new ::StackParameter();
+          auto axis = ofunc.recurrent_param().axis();
+          stack_param->set_axis(axis);
+          func->set_allocated_stack_param(stack_param);
+
+          // Prepare input(s)
+          auto ovar = orig.variable(ovars[ofunc.input(0)]);
+          auto suffixes = create_var_suffixes(repeat_info, ovar);
+
+          auto input_size = func->input_size();
+          for (int j = 0; j < suffixes.size(); j++) {
+            if (j < input_size) {
+              func->set_input(j, ofunc.input(0) + suffixes[j]);
+            } else {
+              func->add_input(ofunc.input(0) + suffixes[j]);
+            }
+          }
         }
       }
-    }
+
+    } // i
+
   } else {
-    // WHOAMI("\n");
     net.CopyFrom(orig);
   }
 
@@ -469,6 +669,7 @@ shared_ptr<Network> NnpImpl::get_network(const string &name) {
     if (found == parameters_.end()) {
       continue;
     }
+    NBLA_LOG_INFO("Initial data of {} was found.", it->name());
     parameters.insert({found->first, found->second});
   }
   return shared_ptr<Network>(

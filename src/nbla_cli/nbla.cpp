@@ -23,7 +23,7 @@
 static void print_usage_and_exit(const char *name) {
   std::cerr << "Usage: " << name << " (infer|dump)" << std::endl;
   std::cerr << "    " << name
-            << " infer [-b BATCHSIZE] [-e EXECUTOR] input_files ..."
+            << " infer -e EXECUTOR [-b BATCHSIZE] [-o OUTPUT] input_files ..."
             << std::endl;
   std::cerr << "               input_file must be one of followings."
             << std::endl;
@@ -69,8 +69,14 @@ std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
 bool infer(int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
+
+  // TODO: use Nnp::get_executor_names() to get default executor.
   p.add<std::string>("executor", 'e', "Executor name (required)", true,
                      std::string());
+  p.add<std::string>(
+      "output", 'o',
+      "Output filename prefix, if not specified print output to stdout.", false,
+      std::string());
   p.add<int>("help", 0, "Print help", false);
   if (!p.parse(argc, argv) || p.exist("help")) {
     std::cout << p.error_full() << p.usage();
@@ -83,6 +89,8 @@ bool infer(int argc, char *argv[]) {
 
   int batch_size = p.get<int>("batch_size");
   std::string exec_name = p.get<std::string>("executor");
+  std::string output_filename_prefix = p.get<std::string>("output");
+
   std::shared_ptr<nbla::utils::nnp::Executor> exec =
       nnp.get_executor(exec_name);
   exec->set_batch_size(batch_size);
@@ -121,16 +129,30 @@ bool infer(int argc, char *argv[]) {
 
   std::vector<nbla::utils::nnp::Executor::OutputVariable> outputs =
       exec->get_output_variables();
+  int index = 0;
   for (auto it = outputs.begin(); it != outputs.end(); it++) {
-    if (outputs.size() > 1) {
-      std::cout << "Output: " << it->data_name << std::endl;
-    }
     auto var = it->variable->variable();
     float *data = var->cast_data_and_get_pointer<float>(ctx);
-    for (int i = 0; i < var.get()->size(); ++i) {
-      printf("%f,", data[i]);
+    if (output_filename_prefix.size() > 0) {
+      std::ofstream out;
+      std::string out_filename =
+          output_filename_prefix + "_" + std::to_string(index) + ".bin";
+      std::cout << "Output to file [" << out_filename << "]" << std::endl;
+      out.open(out_filename,
+               std::ios::out | std::ios::binary | std::ios::trunc);
+      out.write(reinterpret_cast<char *>(data),
+                var.get()->size() * sizeof(float));
+      out.close();
+    } else {
+      if (outputs.size() > 1) {
+        std::cout << "Output: " << it->data_name << std::endl;
+      }
+      for (int i = 0; i < var.get()->size(); ++i) {
+        printf("%f,", data[i]);
+      }
+      printf("\n");
     }
-    printf("\n");
+    index += 1;
   }
   return true;
 }
