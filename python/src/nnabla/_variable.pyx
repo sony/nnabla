@@ -442,7 +442,7 @@ cdef class Variable:
             pass
         elif np.isscalar(grad):
             arr = NdArray(self.shape)
-            arr.data.fill(grad)
+            arr.fill(grad)
             p = ( < NdArray > arr).arr
         elif isinstance(grad, NdArray):
             p = ( < NdArray > grad).arr
