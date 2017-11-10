@@ -15,6 +15,7 @@
 import numpy as np
 
 import nnabla as nn
+import nnabla.communicators as C
 import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
@@ -73,10 +74,34 @@ def image_preprocess(image, img_size=224, test=False):
 def train():
     """
     Main script.
+
+    Naive Multi-Device Training
+
+    NOTE: the communicator exposes low-level interfaces
+
+    * Parse command line arguments.
+    * Instantiate a communicator and set parameter variables.
+    * Specify contexts for computation.
+    * Initialize DataIterator.
+    * Construct a computation graph for training and one for validation.
+    * Initialize solver and set parameter variables to that.
+    * Create monitor instances for saving and displaying training stats.
+    * Training loop
+      * Computate error rate for validation data (periodically)
+      * Get a next minibatch.
+      * Execute forwardprop
+      * Set parameter gradients zero
+      * Execute backprop.
+      * Inplace allreduce (THIS IS THE MAIN difference from a single device training)
+      * Solver updates parameters by using gradients computed by backprop.
+      * Compute training error
+
     """
 
     args = get_args()
+    n_train_samples = 1282167
 
+    """
     # Get context.
     from nnabla.contrib.context import extension_context
     extension_module = args.context
@@ -84,6 +109,19 @@ def train():
         extension_module = 'cpu'
     logger.info("Running in %s" % extension_module)
     ctx = extension_context(extension_module, device_id=args.device_id)
+    nn.set_default_context(ctx)
+    """
+
+    # Communicator and Context
+    from nnabla.contrib.context import extension_context
+    extension_module = "cuda.cudnn"
+    ctx = extension_context(extension_module)
+    comm = C.MultiProcessDataParalellCommunicator(ctx)
+    comm.init()
+    n_devices = comm.size
+    mpi_rank = comm.rank
+    device_id = mpi_rank
+    ctx = extension_context(extension_module, device_id=device_id)
     nn.set_default_context(ctx)
 
     # Dataset
@@ -93,14 +131,16 @@ def train():
     # in training set. The image size is 64x64. To adapt ResNet into 64x64
     # image inputs, the input image size of ResNet is set as 56x56, and
     # the stride in the first conv and the first max pooling are removed.
+    rng = np.random.RandomState(device_id)  # workarond to start with the same parameters.
     if args.tiny_mode:
         data = data_iterator_tiny_imagenet(args.batch_size, 'train')
         vdata = data_iterator_tiny_imagenet(args.batch_size, 'val')
         num_classes = 200
     else:
-        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir)
-        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir)
+        data = data_iterator_imagenet(args.batch_size, args.train_cachefile_dir, rng=rng)
+        vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir, rng=rng)
         num_classes = 1000
+    np.random.seed(313)
     t_model = get_model(
         args, num_classes, test=False, tiny=args.tiny_mode)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
@@ -112,9 +152,16 @@ def train():
     v_pred2 = v_model.pred.unlinked()
     v_e = F.mean(F.top_n_error(v_pred2, v_model.label))
 
+    # add parameters to communicator
+    comm.add_context_and_parameters((ctx, nn.get_parameters()))
+
     # Create Solver.
     solver = S.Momentum(args.learning_rate, 0.9)
     solver.set_parameters(nn.get_parameters())
+    base_lr = args.learning_rate
+    warmup_iter = int(1. * n_train_samples /
+                      args.batch_size / args.accum_grad / n_devices) * args.warmup_epoch
+    warmup_slope = 1. / warmup_iter
 
     # Create monitor.
     import nnabla.monitor as M
@@ -127,14 +174,14 @@ def train():
     monitor_vtime = M.MonitorTimeElapsed("Validation time", monitor, interval=10)
 
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(args.max_iter / n_devices):
         # Save parameters
-        if i % args.model_save_interval == 0:
+        if i % args.model_save_interval == 0 and mpi_rank == 0:
             nn.save_parameters(os.path.join(
                 args.model_save_path, 'param_%06d.h5' % i))
 
         # Validation
-        if i % args.val_interval == 0:
+        if i % args.val_interval == 0 and mpi_rank == 0:
 
             # Clear all intermediate memory to save memory.
             # t_model.loss.clear_recursive()
@@ -156,9 +203,10 @@ def train():
                 v_model.image.data.cast(np.uint8, ctx)
                 v_model.label.data.cast(np.int32, ctx)
                 v_model.loss.forward(clear_buffer=True)
-            monitor_vloss.add(i, l / args.val_iter)
-            monitor_verr.add(i, e / args.val_iter)
-            monitor_vtime.add(i)
+            if mpi_rank == 0:
+                monitor_vloss.add(i * n_devices, l / args.val_iter)
+                monitor_verr.add(i * n_devices, e / args.val_iter)
+                monitor_vtime.add(i * n_devices)
 
             # Clear all intermediate memory to save memory.
             # v_model.loss.clear_recursive()
@@ -185,17 +233,26 @@ def train():
             t_model.label.data.cast(np.int32, ctx)
             t_model.loss.forward(clear_no_need_grad=True)
             t_model.loss.backward(clear_buffer=True)  # Accumulating gradients
+        comm.allreduce(division=False)
         solver.weight_decay(args.weight_decay)
         solver.update()
-        monitor_loss.add(i, l / args.accum_grad)
-        monitor_err.add(i, e / args.accum_grad)
-        monitor_time.add(i)
+        # Linear Warmup
+        if i < warmup_iter:
+            lr = base_lr * n_devices * warmup_slope * i
+            solver.set_learning_rate(lr)
+        else:
+            lr = base_lr * n_devices
+            solver.set_learning_rate(lr)
+        if mpi_rank == 0:
+            monitor_loss.add(i * n_devices, l / args.accum_grad)
+            monitor_err.add(i * n_devices, e / args.accum_grad)
+            monitor_time.add(i * n_devices)
 
         # Learning rate decay at scheduled iter
         if i in args.learning_rate_decay_at:
             solver.set_learning_rate(solver.learning_rate() * 0.1)
-    nn.save_parameters(os.path.join(args.model_save_path,
-                                    'param_%06d.h5' % args.max_iter))
+    if mpi_rank == 0:
+        nn.save_parameters(os.path.join(args.model_save_path, 'param_%06d.h5' % args.max_iter))
 
 
 if __name__ == '__main__':
