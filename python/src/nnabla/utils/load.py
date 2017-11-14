@@ -25,6 +25,7 @@ import os
 import shutil
 import tempfile
 import zipfile
+from mpi4py import MPI
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
@@ -140,7 +141,7 @@ def _create_function(ctx, network, f, variable_index):
     return function, input_variable_names, output_variable_names
 
 
-def _create_variable(v, name, shape):
+def _create_variable(v, name, shape, rng):
     # Create and initialize variables
     class Variable:
         pass
@@ -149,34 +150,34 @@ def _create_variable(v, name, shape):
     variable_instance = None
     if parameter:
         if v.initializer.type == 'Normal':
-            initializer = NormalInitializer(v.initializer.multiplier)
+            initializer = NormalInitializer(v.initializer.multiplier, rng=rng)
         elif v.initializer.type == 'NormalAffineHe' or v.initializer.type == 'NormalAffineHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalAffineHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalAffineGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHe' or v.initializer.type == 'NormalConvolutionHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Uniform':
             initializer = UniformInitializer(
-                lim=[-v.initializer.multiplier, v.initializer.multiplier])
+                lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
         elif v.initializer.type == 'UniformAffineGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Constant':
             initializer = ConstantInitializer(value=v.initializer.multiplier)
         else:
@@ -196,7 +197,7 @@ def _create_variable(v, name, shape):
     return variable
 
 
-def _network(proto, default_context, all_variables):
+def _network(proto, default_context, all_variables, rng):
     network = Network()
     network.name = proto.name
     # Read Repeat Info
@@ -215,7 +216,7 @@ def _network(proto, default_context, all_variables):
             else:
                 shape = tuple(
                     [d if d >= 1 else network.batch_size for d in v.shape.dim])
-                variable = _create_variable(v, name, shape)
+                variable = _create_variable(v, name, shape, rng)
                 all_variables[name] = variable
             network.variables[name] = variable
             logger.debug('{}'.format(
@@ -328,8 +329,19 @@ def _create_optimizer(ctx, o, networks, datasets):
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
 
-    optimizer.solver.set_parameters({v.name: v.variable_instance for v,
-                                     local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0})
+    parameters = {v.name: v.variable_instance for v,
+                  local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
+    optimizer.solver.set_parameters(parameters)
+
+    optimizer.comm = None
+    if MPI.COMM_WORLD.Get_size() > 1:
+        try:
+            import nnabla.communicators as C
+            optimizer.comm = C.MultiProcessDataParalellCommunicator(ctx)
+            optimizer.comm.init()
+            optimizer.comm.add_context_and_parameters((ctx, parameters))
+        except:
+            logger.warning("Failed to initialize nnabla.communicators.")
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
@@ -357,6 +369,9 @@ def _global_config(proto):
         pass
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
+
+    if MPI.COMM_WORLD.Get_size() > 0:
+        config.default_context.device_id = str(MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
     return config
 
 
@@ -419,9 +434,12 @@ def _networks(proto, default_context, network_names=None):
     networks = OrderedDict()
     all_variables = {}
 
+    # Random generator for using the same init parameters in all devices
+    rng = numpy.random.RandomState(0)
+
     for np in proto.network:
         if not network_names or np.name in network_names:
-            networks[np.name] = _network(np, default_context, all_variables)
+            networks[np.name] = _network(np, default_context, all_variables, rng)
 
     return networks
 
