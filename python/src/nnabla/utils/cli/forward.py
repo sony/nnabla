@@ -164,7 +164,7 @@ def forward_command(args):
     class ForwardConfig:
         pass
     config = ForwardConfig
-    info = load.load(files, prepare_data_iterator=False, batch_size=1)
+    info = load.load(files, prepare_data_iterator=False)
     config.global_config = info.global_config
 
     config.executors = info.executors.values()
