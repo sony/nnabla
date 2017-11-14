@@ -483,6 +483,40 @@ Element-wise sigmoid function.
      - Output
      - 
 
+Swish
+^^^^^
+
+Element-wise swish function, by Ramachandran et al. (2017).
+
+.. math::
+
+    y_i = \frac{x_i}{1 + \exp(-x_i)},
+
+References:
+    * `Prajit Ramachandran, Barret Zoph, and Quoc V. Le, Swish: a Self-Gated Activation Function, arXiv:1710.05941 [cs.NE]
+      <https://arxiv.org/abs/1710.05941>`_
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Output
+     - 
+
 Tanh
 ^^^^
 
@@ -699,6 +733,84 @@ References:
    * - y
      - N-D array with the same shape as x
      - 
+
+SELU
+^^^^
+
+Element-wise Scaled Exponential Linear Unit (SELU) function by Klambauer et al. (2017).
+
+.. math::
+    y_i= \lambda \left\{
+    \begin{array}{ll}
+    x_i & (x > 0)\\
+    \alpha (\exp(x_i) - 1) & (x \leq 0)
+    \end{array} \right..
+
+The coefficients :math:`\lambda` and :math:`\alpha` default to the following values :math:`\lambda_{01}` and :math:`\alpha_{01}`, respectively, provided by Klambauer et al. (2017):
+
+.. math::
+    \begin{array}{lll}
+      \lambda_{01} &=&  \left(  1 - \operatorname{erfc}\left( \frac{1}{\sqrt{2}} \right) \sqrt{e}  \right)
+                  \sqrt{2 \pi} \\
+                 && \left(
+                      2 \operatorname{erfc} \left( \sqrt{2} \right) e^2
+                      + \pi \operatorname{erfc}\left( \frac{1}{\sqrt{2}} \right)^2 e
+                      \right. \\
+                 && \left.
+                      - 2(2 + \pi) \operatorname{erfc} \left( \frac{1}{\sqrt{2}} \right) \sqrt{e}
+                      + \pi + 2
+                 \right)^{-1/2}  \\
+              &\approx& 1.0507 \\
+      \alpha_{01} &=&  - \frac
+                    {\sqrt {\frac {2}{\pi}}}
+                    {\operatorname{erfc} \left( \frac{1}{\sqrt{2}} \right) \exp \left(\frac {1} {2} \right) - 1} \\
+              &\approx& 1.67326
+    \end{array}
+
+
+References:
+    * `Klambauer, G., Unterthiner, T., Mayr, A., & Hochreiter, S. (2017).
+      Self-Normalizing Neural Networks. In Advances in Neural Information
+      Processing Systems (NIPS). <https://arxiv.org/abs/1706.02515>`_
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - scale
+     - double
+     - 1.050700987355480
+     - The coefficient :math:`\lambda` in the definition.
+   * - alpha
+     - double
+     - 1.673263242354377
+     - The coefficient :math:`\alpha` in the definition.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as x
+     -
 
 CReLU
 ^^^^^

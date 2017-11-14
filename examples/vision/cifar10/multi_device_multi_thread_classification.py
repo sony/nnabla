@@ -158,7 +158,7 @@ def train():
       * Execute forwardprops
       * Set parameter gradients zero
       * Execute backprop.
-      * Inplace allreduce (THIS IS THE MAIN difference from a single device training)
+      * In-place allreduce (THIS IS THE MAIN difference from a single device training)
       * Solver updates parameters by using gradients computed by backprop.
       * Compute training error
     """
@@ -286,8 +286,8 @@ def train():
         for device_id in range(n_devices):
             fb_results[device_id].get()
 
-        # In-place Allreduce
-        comm.allreduce(division=True)
+        # In-place allreduce
+        comm.allreduce(division=True, inplace=True)
 
         # Solvers update
         for device_id in range(n_devices):

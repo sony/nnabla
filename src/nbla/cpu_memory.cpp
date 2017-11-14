@@ -26,6 +26,10 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_shared;
 
+#ifdef NBLA_VERBOSE_MEMORY_USAGE
+static uint64_t g_cpu_memory_usage = 0;
+#endif
+
 /////////////////////////////
 // CPU Memory implementation
 /////////////////////////////
@@ -36,6 +40,9 @@ CpuMemory::~CpuMemory() {
   if (!ptr_)
     return;
   ::free(ptr_);
+#ifdef NBLA_VERBOSE_MEMORY_USAGE
+  g_cpu_memory_usage -= size_;
+#endif
 }
 
 bool CpuMemory::allocate() {
@@ -47,6 +54,10 @@ bool CpuMemory::allocate() {
     SingletonManager::get<GarbageCollector>()->collect();
     ptr_ = ::malloc(size_);
   }
+#ifdef NBLA_VERBOSE_MEMORY_USAGE
+  g_cpu_memory_usage += size_;
+  printf("CpuMemory usage: %ld\n", g_cpu_memory_usage);
+#endif
   return ptr_;
 }
 

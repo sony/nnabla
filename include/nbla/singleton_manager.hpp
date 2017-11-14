@@ -75,6 +75,9 @@ private:
   unordered_map<int, pair<uintptr_t, std::function<void()>>> singletons_;
   unordered_map<uintptr_t, int> adr2id_; ///< Hash map from address to ID.
 
+  static SingletonManager
+      *self_; ///< Singleton instance pointer. Never be destroyed.
+
   /** Get this singleton (managing singletons) class.
    */
   static SingletonManager &get_self();

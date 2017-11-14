@@ -14,6 +14,15 @@
 
 #include <nbla_utils/nnp.hpp>
 
+#ifdef WITH_CUDA
+#include <nbla/cuda/cudnn/init.hpp>
+#include <nbla/cuda/init.hpp>
+#endif
+
+#ifdef TIMING
+#include <chrono>
+#endif
+
 #include <cassert>
 #include <fstream>
 #include <iomanip>
@@ -85,7 +94,13 @@ int main(int argc, char *argv[]) {
   const std::string input_bin(argv[2]);
 
   // Create a context (the following setting is recommended.)
-  nbla::Context ctx{"cpu", "CpuCachedArray", "0", "default"};
+  nbla::Context cpu_ctx{"cpu", "CpuCachedArray", "0", "default"};
+#ifdef WITH_CUDA
+  nbla::init_cudnn();
+  nbla::Context ctx{"cpu|cuda", "CudaCachedArray", "0", "default|cudnn"};
+#else
+  nbla::Context ctx = cpu_ctx;
+#endif
 
   // Create a Nnp objct
   nbla::utils::nnp::Nnp nnp(ctx);
@@ -100,18 +115,47 @@ int main(int argc, char *argv[]) {
 
   // Get input data as a CPU array.
   nbla::CgVariablePtr x = executor->get_data_variables().at(0).variable;
-  uint8_t *data = x->variable()->cast_data_and_get_pointer<uint8_t>(ctx);
+  uint8_t *data = x->variable()->cast_data_and_get_pointer<uint8_t>(cpu_ctx);
 
   // Read input pgm file and store image data into the CPU array.
   read_pgm_mnist(input_bin, data);
 
-  // Execute prediction
+#ifdef TIMING
+  // The first execution of NNabla is slower due to resource allocation at
+  // runtime.
+  // Hence, the execution for warmup is performed if timing.
+  std::cout << "Warming up..." << std::endl;
   executor->execute();
+#ifdef WITH_CUDA
+  nbla::cuda_device_synchronize(0);
+#endif
+  // Timing starts
+  auto start = std::chrono::steady_clock::now();
+#endif
+
+  // Execute prediction
+  std::cout << "Executing..." << std::endl;
+  executor->execute();
+
+#ifdef TIMING
+#ifdef WITH_CUDA
+  nbla::cuda_device_synchronize(0);
+#endif
+  // Timing ends
+  auto end = std::chrono::steady_clock::now();
+  std::cout << "Elapsed time: "
+            << std::chrono::duration_cast<std::chrono::microseconds>(end -
+                                                                     start)
+                       .count() *
+                   0.001
+            << " [ms]." << std::endl;
+#endif
 
   // Get output as a CPU array;
   nbla::CgVariablePtr y = executor->get_output_variables().at(0).variable;
-  const float *y_data = y->variable()->get_data_pointer<float>(ctx);
+  const float *y_data = y->variable()->get_data_pointer<float>(cpu_ctx);
   assert(y->variable()->size() == 10);
+
   int prediction = 0;
   float max_score = -1e10;
   std::cout << "Prediction scores:";

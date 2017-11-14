@@ -212,7 +212,7 @@ class ArrayDiffStats:
 
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
-                    atol_f=1e-6, atol_b=1e-3, dstep=1e-3, backward=None,
+                    atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
                     ctx=None, func_name=None, ref_grad=None):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
@@ -341,7 +341,7 @@ def function_tester(rng, func, ref_func, inputs,
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert np.allclose(
-            v.g, true_g, atol=1e-6), str(ArrayDiffStats(v.g, true_g))
+            v.g, true_g, atol=atol_accum), str(ArrayDiffStats(v.g, true_g))
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')

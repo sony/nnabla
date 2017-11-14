@@ -206,7 +206,12 @@ def _network(proto, default_context, all_variables, rng):
         network.repeat_info[r.id] = r.times
 
     network.variables = OrderedDict()
-    network.batch_size = proto.batch_size
+
+    if batch_size is None:
+        network.batch_size = proto.batch_size
+    else:
+        network.batch_size = batch_size
+
     for v in proto.variable:
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
             name = v.name + ''.join(['_' + v.repeat_id[index] + '[' +
@@ -429,7 +434,7 @@ def _datasets(proto, prepare_data_iterator=True):
     return datasets
 
 
-def _networks(proto, default_context, network_names=None):
+def _networks(proto, default_context, batch_size, network_names=None):
     # Load networks
     networks = OrderedDict()
     all_variables = {}
@@ -439,7 +444,8 @@ def _networks(proto, default_context, network_names=None):
 
     for np in proto.network:
         if not network_names or np.name in network_names:
-            networks[np.name] = _network(np, default_context, all_variables, rng)
+            networks[np.name] = _network(
+                np, default_context, batch_size, all_variables, rng)
 
     return networks
 
@@ -554,7 +560,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True):
+def load(filenames, prepare_data_iterator=True, batch_size=None):
     '''load
     Load network information from files.
 
@@ -579,12 +585,19 @@ def load(filenames, prepare_data_iterator=True):
             tmpdir = tempfile.mkdtemp()
             with zipfile.ZipFile(filename, 'r') as nnp:
                 for name in nnp.namelist():
-                    nnp.extract(name, tmpdir)
                     _, ext = os.path.splitext(name)
                     if 'txt' in ext:
+                        nnp.extract(name, tmpdir)
+                        logger.log(
+                            99, 'Loading nn {} in {}'.format(name, filename))
                         with open(os.path.join(tmpdir, name), 'rt') as f:
                             text_format.Merge(f.read(), proto)
-                    elif ext in ['.protobuf', '.h5']:
+                for name in nnp.namelist():  # Param
+                    _, ext = os.path.splitext(name)
+                    if ext in ['.protobuf', '.h5']:
+                        nnp.extract(name, tmpdir)
+                        logger.log(
+                            99, 'Loading param {} in {}'.format(name, filename))
                         nn.load_parameters(os.path.join(tmpdir, name), proto)
             shutil.rmtree(tmpdir)
 
@@ -607,7 +620,7 @@ def load(filenames, prepare_data_iterator=True):
         info.datasets = _datasets(proto, prepare_data_iterator)
 
     if len(proto.network) > 0:
-        info.networks = _networks(proto, default_context)
+        info.networks = _networks(proto, default_context, batch_size)
 
     if len(proto.optimizer) > 0:
         info.optimizers = _optimizers(

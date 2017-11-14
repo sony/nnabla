@@ -73,6 +73,12 @@ def parametric_function_api(scope_name=None):
             defaults + (None,))
         shortsignature = inspect.formatargspec(
             spec.args, spec.varargs, spec.keywords, None)
+
+        # Check required argument
+        assert 'fix_parameters' in spec.args, \
+            "A parametric function must take `fix_parameters` as an argument." \
+            " `{}{}` doesn't have it.".format(name, signature)
+
         code = """
 def {name}{signature}:
     if name is None:
@@ -691,7 +697,7 @@ def deconvolution(inp, outmaps, kernel,
 
 @parametric_function_api("bn")
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
-                        batch_stat=True, output_stat=False):
+                        batch_stat=True, output_stat=False, fix_parameters=False):
     """
     Batch normalization layer.
 
@@ -713,6 +719,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
         eps (float): Tiny value to avoid zero division by std.
         batch_stat (bool): Use mini-batch statistics rather than running ones.
         output_stat (bool): Output batch mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -726,9 +733,9 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     shape_stat = [1 for _ in inp.shape]
     shape_stat[axes[0]] = inp.shape[axes[0]]
     beta = get_parameter_or_create(
-        "beta", shape_stat, ConstantInitializer(0), True)
+        "beta", shape_stat, ConstantInitializer(0), not fix_parameters)
     gamma = get_parameter_or_create(
-        "gamma", shape_stat, ConstantInitializer(1), True)
+        "gamma", shape_stat, ConstantInitializer(1), not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, ConstantInitializer(0), False)
     var = get_parameter_or_create(
@@ -738,7 +745,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
 
 
 @parametric_function_api("embed")
-def embed(inp, n_inputs, n_features):
+def embed(inp, n_inputs, n_features, fix_parameters=False):
     """ Embed.
 
     Embed slices a matrix/tensor with indexing array/tensor
@@ -747,16 +754,19 @@ def embed(inp, n_inputs, n_features):
         x(~nnabla.Variable): [Integer] Indices with shape :math:`(I_0, ..., I_N)`
         n_inputs : number of possible inputs, words or vocabraries
         n_features : number of embedding features
+        fix_parameters (bool): When set to `True`, the embedding weight matrix
+            will not be updated.
+
     Returns:
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
     w = get_parameter_or_create("W", [n_inputs, n_features],
-                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True)
+                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), not fix_parameters)
     return F.embed(inp, w)
 
 
 @parametric_function_api("prelu")
-def prelu(inp, base_axis=1, shared=True):
+def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     """
     Parametrized Rectified Linear Unit function defined as
 
@@ -770,6 +780,8 @@ def prelu(inp, base_axis=1, shared=True):
         x(~nnabla.Variable): N-D array as input
         base_axis(int): Dimensions up to base_axis is treated as sample dimension.
         shared(bool): Use shared weight value or not 
+        fix_parameters (bool): When set to `True`, the negative slope values
+            will not be updated.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -777,7 +789,7 @@ def prelu(inp, base_axis=1, shared=True):
     """
     shape = tuple() if shared else inp.shape[base_axis]
     w = get_parameter_or_create("W", shape,
-                                ConstantInitializer(-1), True)
+                                ConstantInitializer(-1), not fix_parameters)
     return F.prelu(inp, w, base_axis)
 
 

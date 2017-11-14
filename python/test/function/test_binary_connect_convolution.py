@@ -90,5 +90,5 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
     inputs = [i, k, np.zeros_like(k), b]
     function_tester(rng, F.binary_connect_convolution, ref_binary_connect_convolution, inputs,
                     func_args=[base_axis, pad, stride, dilation, group],
-                    atol_f=1e-4, atol_b=3e-3, dstep=1e-2, backward=[True, True, False, True],
+                    atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2, backward=[True, True, False, True],
                     ctx=ctx, func_name=func_name, ref_grad=ref_grad_binary_connect_convolution)

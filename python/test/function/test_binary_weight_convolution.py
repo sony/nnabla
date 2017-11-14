@@ -91,5 +91,5 @@ def test_binary_weight_convolution_2d_forward_backward(inshape, kernel, outmaps,
     inputs = [i, k, np.zeros_like(k), np.zeros(outmaps), b]
     function_tester(rng, F.binary_weight_convolution, ref_binary_weight_convolution, inputs,
                     func_args=[base_axis, pad, stride, dilation, group],
-                    atol_f=1e-4, atol_b=3e-3, dstep=1e-2, backward=[True, True, False, False, True],
+                    atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2, backward=[True, True, False, False, True],
                     ctx=ctx, func_name=func_name, ref_grad=ref_grad_binary_weight_convolution)
