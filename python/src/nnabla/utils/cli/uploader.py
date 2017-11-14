@@ -15,12 +15,6 @@ import tqdm
 
 
 class Uploader:
-    environments = {
-        'dev': 'https://dev-api.cdd-sdeep.com',
-        'stg': 'https://stg-api.cdd-sdeep.net',
-        'qa': 'https://qa-api.cdd-sdeep.net',
-        'prod': 'https://api.dl.sony.com/console'}
-
     def createCsvData(self, csvfilename):
         data_files = {}
         csv_data = []
@@ -56,14 +50,14 @@ class Uploader:
                         if os.path.isfile(item):
                             data_file = item
                         else:
-                            fn = os.path.join(os.path.dirname(
-                                csvfilename), os.path.join(*item.split('\\')))
+                            fn = '/'.join([os.path.dirname(
+                                csvfilename), '/'.join(item.split('\\'))])
                             if os.path.isfile(fn):
                                 data_file = fn
 
                         if data_file is not None:
-                            name = os.path.join('data', '{:012d}_{}'.format(
-                                num_of_data_files, os.path.basename(data_file)))
+                            name = '/'.join(['data', '{:012d}_{}'.format(
+                                num_of_data_files, os.path.basename(data_file))])
                             data_files[name] = os.path.abspath(data_file)
                             new_row.append(name)
                             num_of_data_files += 1
@@ -80,9 +74,9 @@ class Uploader:
         self._log('Create index.csv')
         self._progress.init(len(csv_data), 'Create index.csv')
         with open(indexcsvfilename, 'w') as f:
+            csvwriter = csv.writer(f)
             for row in csv_data:
-                self._progress(1.0)
-                f.write(','.join(row) + '\n')
+                csvwriter.writerow(row)
         self._progress.finish()
 
         tarfilename = os.path.join(tmpdir, '{}.tar'.format(name))
@@ -98,13 +92,14 @@ class Uploader:
 
         return tarfilename
 
-    def uploadFile(self, env, token, filename, name):
+    def uploadFile(self, endpoint, token, filename, name):
         size = os.path.getsize(filename)
-        api_url = self.environments[env]
-        self._log('DEBUG: Getting Upload path from [{}]'.format(
-            api_url))  # TODO Remove
+        if endpoint == 'https://console-api.dl.sony.com':
+            self._log('Getting Upload path')
+        else:
+            self._log('Getting Upload path from [{}]'.format(endpoint))
 
-        r = requests.get('{}/v1/misc/credential'.format(api_url),
+        r = requests.get('{}/v1/misc/credential'.format(endpoint),
                          params={
             'encrypted_text': token,
             'dataset_name': name,
@@ -112,12 +107,18 @@ class Uploader:
         info = r.json()
 
         if 'upload_path' not in info:
-            self._log('Server returns [{}]'.format(info['message']))
+            if endpoint == 'https://console-api.dl.sony.com':
+                self._log('Upload_path could not be retrieved from the server.')
+            else:
+                self._log('Server returns [{}]'.format(info['message']))
             return False
 
         upload_url = info['upload_path']
-        self._log('DEBUG: upload_url is [{}]'.format(
-            upload_url))  # TODO Remove
+        if endpoint == 'https://console-api.dl.sony.com':
+            self._log('Got upload_url')
+        else:
+            self._log('upload_url is [{}]'.format(
+            upload_url))
 
         bucketname, key = upload_url.split('://', 1)[1].split('/', 1)
         upload_key = '{}/{}.tar'.format(key, name)
@@ -148,43 +149,47 @@ class Uploader:
         tmpdir = tempfile.mkdtemp()
         self._log('Temprary dir {} created'.format(tmpdir))
 
-        self._log('Prepare csv data')
-        csv_data, data_files = self.createCsvData(source)
-        if csv_data is not None:
-            self._log('Prepare tar file')
-            name = os.path.splitext(os.path.basename(source))[0]
-            tarfile = self.createTemporaryTar(name,
-                                              csv_data,
-                                              data_files,
-                                              tmpdir)
-            shutil.copyfile(tarfile, destination)
-        shutil.rmtree(tmpdir, ignore_errors=True)
-        self._log('Temprary dir removed')
+        try:
+            self._log('Prepare csv data')
+            csv_data, data_files = self.createCsvData(source)
+            if csv_data is not None:
+                self._log('Prepare tar file')
+                name = os.path.splitext(os.path.basename(source))[0]
+                tarfile = self.createTemporaryTar(name,
+                                                  csv_data,
+                                                  data_files,
+                                                  tmpdir)
+                shutil.copyfile(tarfile, destination)
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            self._log('Temprary dir removed')
 
-    def upload(self, token, filename, name, finishCallback=None, env='stg'):
+    def upload(self, token, filename, name, finishCallback=None, endpoint=None):
 
         _, ext = os.path.splitext(filename)
         if ext == '.csv':
             tmpdir = tempfile.mkdtemp()
             self._log('Temprary dir {} created'.format(tmpdir))
 
-            self._log('Prepare csv data')
-            csv_data, data_files = self.createCsvData(filename)
-            self._log('Prepare tar file')
-            tarfile = self.createTemporaryTar(name,
-                                              csv_data,
-                                              data_files,
-                                              tmpdir)
-            self._log('Upload')
-            res = self.uploadFile(env, token, tarfile, name)
+            try:
+                self._log('Prepare csv data')
+                csv_data, data_files = self.createCsvData(filename)
+                self._log('Prepare tar file')
+                tarfile = self.createTemporaryTar(name,
+                                                  csv_data,
+                                                  data_files,
+                                                      tmpdir)
+                self._log('Upload')
+                res = self.uploadFile(endpoint, token, tarfile, name)
+            finally:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+                self._log('Temprary dir removed')
 
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            self._log('Temprary dir removed')
             if res:
                 self._log('Finished')
 
         elif ext == '.tar':
-            if self.uploadFile(env, token, filename, name):
+            if self.uploadFile(endpoint, token, filename, name):
                 self._log('Finished')
         else:
             self._log('filename with extension {} is not supported.'.format(ext))
@@ -220,17 +225,14 @@ def log(string):
 
 
 def upload_command(args):
-    if not args.env:
-        args.env = os.getenv("NNC_ENV", 'stg')
-    if args.env not in Uploader.environments:
-        print('-e option ({}) must be one of ({})'.format(args.env,
-                                                          ', '.join(sorted(Uploader.environments.keys()))))
-        sys.exit(-1)
+    if not args.endpoint:
+        args.endpoint = os.getenv(
+            "NNC_ENDPOINT", 'https://console-api.dl.sony.com')
 
     uploader = Uploader(log=log, progress=Progress())
     name = os.path.splitext(os.path.basename(args.filename))[0]
     uploader.upload(args.token, args.filename, name,
-                    env=args.env)
+                    endpoint=args.endpoint)
 
 
 def create_tar_command(args):

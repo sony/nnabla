@@ -32,6 +32,7 @@ install_requires = setup_requires + [
     'futures',
     'h5py',
     'protobuf',
+    'requests',
     'scikit-image',
     'scipy',
     'tqdm',

@@ -5,6 +5,7 @@ futures
 h5py
 numpy>=1.10
 protobuf
+requests
 tqdm
 virtualenv
 
