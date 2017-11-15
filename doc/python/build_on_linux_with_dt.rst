@@ -17,7 +17,7 @@ Our build system requires:
   * make, gcc, g++
   * CUDA Toolkit 8.0 / cuDNN 6.0 (to build CUDA/cuDNN extension for NVIDIA GPU)
   * Multiple GPUs
-  * NCCL v1
+  * NCCL
   * OpenMPI
 
 Setup build environment
@@ -36,25 +36,32 @@ Follow :ref:`linux-build-and-install`.
 Build and install CUDA/cuDNN extension and NCCL
 """""""""""""""""""""""""""""""""""""""""""""""
 
-In order to use Distributed Training, the only difference, when building, is 
+In order to use the distributed training, the only difference, when building, is 
 the procedure described here. 
 
-Download `nccl <https://github.com/NVIDIA/nccl>`_, build it, and set **NCCL_HOME** 
-environment variable to enable to use NCCL v1 as the follows, 
+Download `nccl <https://developer.nvidia.com/nccl/nccl-download>`_ according to your environemnt,
+then install it manually in case of ubuntu16.04, 
 
 .. code-block:: shell
 
-	wget https://github.com/NVIDIA/nccl/archive/master.zip
-	unzip master.zip
-	cd nccl-master
-	make -j 16 lib
-	cd .. 
-	export NCCL_HOME=$(pwd)
+	sudo dpkg -i nvidia-machine-learning-repo-ubuntu1604_1.0.0-1_amd64.deb
+	sudo update
+	sudo apt-get install libnccl2 libnccl-dev 
+
+
+For developer, if you want to use another nccl not publicly distributed, 
+specify **NCCL_HOME** environment variable as the folloing.
+
+.. code-block:: shell
+
+	export NCCL_HOME=${path}/build
 	
-Note that **NCCL_HOME** is only used for building CUDA extension.
+Here, we assume the directry structure,  
 
+* ${path}/build/include
+* ${path}/build/lib
 
-Distributed Training also depends on MPI, so install it as follows,
+Distributed training also depends on MPI, so install it as follows,
 
 .. code-block:: shell
 
@@ -73,19 +80,9 @@ You can see nccl and mpi includes and dependencies,
 
 	...
 
-	CUDA libs: /usr/local/cuda/lib64/libcudart.so;/usr/local/cuda/lib64/libcublas.so;/usr/local/cuda/lib64/libcurand.so;/home/kzky/git/nccl/build/lib/libnccl.so;/usr/lib/openmpi/lib/libmpi_cxx.so;/usr/lib/openmpi/lib/libmpi.so;/usr/local/cuda/lib64/libcudnn.so
-	CUDA includes: /usr/local/cuda/include;/home/kzky/git/nccl/build/include;/usr/lib/openmpi/include/openmpi/opal/mca/event/libevent2021/libevent;/usr/lib/openmpi/include/openmpi/opal/mca/event/libevent2021/libevent/include;/usr/lib/openmpi/include;/usr/lib/openmpi/include/openmpi;/usr/local/cuda/include
+	CUDA libs: /usr/local/cuda-8.0/lib64/libcudart.so;/usr/local/cuda-8.0/lib64/libcublas.so;/usr/local/cuda-8.0/lib64/libcurand.so;/usr/lib/x86_64-linux-gnu/libnccl.so;/usr/lib/openmpi/lib/libmpi_cxx.so;/usr/lib/openmpi/lib/libmpi.so;/usr/local/cuda/lib64/libcudnn.so
+	CUDA includes: /usr/local/cuda-8.0/include;/usr/lib/openmpi/include/openmpi/opal/mca/event/libevent2021/libevent;/usr/lib/openmpi/include/openmpi/opal/mca/event/libevent2021/libevent/include;/usr/lib/openmpi/include;/usr/lib/openmpi/include/openmpi;/usr/local/cuda-8.0/include
 	...
-
-
-.. note::
-
-	When we change terminals or re-login, set **NCCL_HOME** again or 
-	**LD_LIBRARY_PATH** like
-	
-.. code-block:: shell
-	
-	export LD_LIBRARY_PATH=${NCCL_HOME}/build/lib
 
 
 Unit test
@@ -102,7 +99,7 @@ test passed.
 	...
 
 
-Now you can use **Data Parallel Distributed Training** using multiple GPUs, please
+Now you can use **Data Parallel Distributed Training** using multiple GPUs and multiple nodes, please
 go to CIFAR-10 example for how to use it.
 
 
