@@ -254,7 +254,8 @@ def train():
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
 
     # Data Iterator
-    tdata = data_iterator_cifar10(args.batch_size, True)
+    rng = np.random.RandomState(device_id)
+    tdata = data_iterator_cifar10(args.batch_size, True, rng)
     vdata = data_iterator_cifar10(args.batch_size, False)
 
     # Training-loop
@@ -287,7 +288,7 @@ def train():
             fb_results[device_id].get()
 
         # In-place allreduce
-        comm.allreduce(division=True, inplace=True)
+        comm.allreduce(division=True, inplace=False)
 
         # Solvers update
         for device_id in range(n_devices):

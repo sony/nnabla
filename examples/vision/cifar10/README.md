@@ -10,9 +10,9 @@ The examples listed below demonstrate several deep learning algorithms on CIFAR-
 
 ## Multi-Device Multi-Process Training
 
-This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-10 dataset and 23-layers ResNet with [NCCL v1](https://github.com/NVIDIA/nccl) using `multi-process`. 
+This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-10 dataset and 23-layers ResNet with [NCCL](https://github.com/NVIDIA/nccl) using `multi-process` in a single node. 
 
-NOTE that if you would like to run this example, please follow the bulid instruction to enable the multi-gpu training and make sure to prepare environment where you can use multiple GPUs. 
+NOTE that if you would like to run this example, please follow the bulid instruction to enable the multi-device training and make sure to prepare environment where you can use multiple GPUs. 
 
 When you run the script like the following, 
 
@@ -23,20 +23,20 @@ mpirun -n 4 python multi_device_multi_process_classification.py --context "cuda.
 
 you can execute the training of 23-layers ResNet in the `Data Parallel Distributed Training` manner with the batch size being 64 and 4 GPUs.
 
-## Multi-Device Multi-Thread Training
+## Multi-Node Training
 
-This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-10 dataset and 23-layers ResNet with [NCCL v1](https://github.com/NVIDIA/nccl) using `multi-process`.
+This example shows the naive `Data Parallel Distributed Training` for the object regognition task using CIFAR-10 dataset and 23-layers ResNet with [NCCL](https://github.com/NVIDIA/nccl) using `multi-process` over multiple nodes. 
 
-NOTE that if you would like to run this example, please follow the bulid instruction to enable the multi-gpu training and make sure to prepare environment where you can use multiple GPUs.
+NOTE that if you would like to run this example, please follow the bulid instruction to enable the multi-device training and make sure to prepare environment where you can use multiple GPUs over multiple nodes.
 
 When you run the script like the following, 
 
 ```
-python multi_device_multi_thread classification.py --context "cuda.cudnn" -b 64 -n 4
+mpirun --hostfile hostfile python multi_device_multi_process_classification.py --context "cuda.cudnn" -b 64
 
 ```
 
-you can execute the training of 23-layers ResNet in the `Data Parallel Distributed Training` manner with the batch size being 64 and 4 GPUs.
+you can execute the training of 23-layers ResNet in the `Data Parallel Distributed Training` manner with the batch size being 64 and N-GPUs and M-Nodes specified by the hostfile.
 
 
 ## Quantized Neural Networks
