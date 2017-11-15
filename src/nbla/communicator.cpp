@@ -49,6 +49,8 @@ void Communicator::add_context_and_parameters(
 
 int Communicator::rank() { return rank_; }
 
+int Communicator::local_rank() { return local_rank_; }
+
 int Communicator::size() { return size_; }
 
 void Communicator::remove_context_parameters(
