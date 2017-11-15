@@ -41,7 +41,7 @@ class Cifar10DataSource(DataSource):
         return (image, label)
 
     def __init__(self, train=True, shuffle=False, rng=None):
-        super(Cifar10DataSource, self).__init__(shuffle=shuffle)
+        super(Cifar10DataSource, self).__init__(shuffle=shuffle, rng=rng)
 
         # Lock
         lockfile = os.path.join(get_data_home(), "cifar10.lock")

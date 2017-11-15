@@ -163,7 +163,8 @@ def train():
     comm.init()
     n_devices = comm.size
     mpi_rank = comm.rank
-    device_id = mpi_rank
+    mpi_local_rank = comm.local_rank
+    device_id = mpi_local_rank
     ctx = extension_context(extension_module, device_id=device_id)
 
     # Create training graphs
@@ -191,7 +192,8 @@ def train():
     base_lr = args.learning_rate
     warmup_iter = int(1. * n_train_samples /
                       args.batch_size / n_devices) * args.warmup_epoch
-    warmup_slope = 1. / warmup_iter
+    warmup_slope = base_lr * (n_devices - 1) / warmup_iter
+    solver.set_learning_rate(base_lr)
 
     # Create monitor
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
@@ -209,7 +211,7 @@ def train():
     # Training-loop
     for i in range(int(args.max_iter / n_devices)):
         # Validation
-        if mpi_rank == 0:
+        if device_id == 0:
             if i % int(n_train_samples / args.batch_size / n_devices) == 0:
                 ve = 0.
                 for j in range(args.val_iter):
@@ -238,21 +240,18 @@ def train():
         solver.update()
 
         # Linear Warmup
-        if i < warmup_iter:
-            lr = base_lr * n_devices * warmup_slope * i
-            solver.set_learning_rate(lr)
-        else:
-            lr = base_lr * n_devices
+        if i <= warmup_iter:
+            lr = base_lr + warmup_slope * i
             solver.set_learning_rate(lr)
 
-        if mpi_rank == 0:
+        if device_id == 0:
             e = categorical_error(
                 pred_train.d, input_image_train["label"].d)
             monitor_loss.add(i * n_devices, loss_train.d.copy())
             monitor_err.add(i * n_devices, e)
             monitor_time.add(i * n_devices)
 
-    if mpi_rank == 0:
+    if device_id == 0:
         nn.save_parameters(os.path.join(
             args.model_save_path,
             'params_%06d.h5' % (args.max_iter / n_devices)))
