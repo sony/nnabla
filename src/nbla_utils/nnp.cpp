@@ -154,6 +154,13 @@ vector<string> Nnp::get_executor_names() { return impl_->get_executor_names(); }
 shared_ptr<Executor> Nnp::get_executor(const string &name) {
   return impl_->get_executor(name);
 }
+
+vector<pair<string, VariablePtr>> Nnp::get_parameters() {
+  return impl_->get_parameters();
+}
+bool Nnp::save_parameters(const string &filename) {
+  return impl_->save_parameters(filename);
+}
 }
 }
 }

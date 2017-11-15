@@ -301,6 +301,9 @@ public:
       @retval A shared pointer of a Executor instance.
    */
   NBLA_API shared_ptr<Executor> get_executor(const string &name);
+
+  NBLA_API vector<pair<string, VariablePtr>> get_parameters();
+  NBLA_API bool save_parameters(const string &filename);
 };
 }
 /*@}*/
