@@ -33,12 +33,32 @@ import sys
 
 
 def main():
+
+    # Read envvar `NNABLA_EXAMPLES_ROOT` to identify the path to your local
+    # nnabla-examples directory.
     HERE = os.path.dirname(__file__)
+    nnabla_examples_root = os.environ.get('NNABLA_EXAMPLES_ROOT', os.path.join(
+        HERE, '../../../../nnabla-examples'))
+    mnist_examples_root = os.path.realpath(
+        os.path.join(nnabla_examples_root, 'mnist-collection'))
+    sys.path.append(mnist_examples_root)
+    nnabla_examples_git_url = 'https://github.com/sony/nnabla-examples'
+
+    # Check if nnabla-examples found.
+    try:
+        from args import get_args
+    except ImportError:
+        print(
+            'An envvar `NNABLA_EXAMPLES_ROOT`'
+            ' which locates the local path to '
+            '[nnabla-examples]({})'
+            ' repository must be set correctly.'.format(
+                nnabla_examples_git_url),
+            file=sys.stderr)
+        raiseg
+
     # Import MNIST data
-    sys.path.append(
-        os.path.realpath(os.path.join(HERE, '..', '..', 'vision', 'mnist')))
     from mnist_data import data_iterator_mnist
-    from args import get_args
     from classification import mnist_lenet_prediction, mnist_resnet_prediction
 
     args = get_args(description=__doc__)
@@ -48,8 +68,7 @@ def main():
         mnist_cnn_prediction = mnist_resnet_prediction
 
     # Infer parameter file name and read it.
-    model_save_path = os.path.join('../../vision/mnist',
-                                   args.model_save_path)
+    model_save_path = os.path.join(mnist_examples_root, args.model_save_path)
     parameter_file = os.path.join(
         model_save_path,
         '{}_params_{:06}.h5'.format(args.net, args.max_iter))

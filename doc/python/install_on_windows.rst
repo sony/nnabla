@@ -117,25 +117,24 @@ Check for running (CUDA/cuDNN).
 Run an Example
 ^^^^^^^^^^^^^^
 
-Download NNabla repository from `here <https://github.com/sony/nnabla/archive/master.zip>`_, unzip it and move to example directory.
+`Get<https://github.com/sony/nnabla-examples/archive/master.zip>`_ (and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
 
 .. code-block:: doscon
 
-    > cd nnabla\examples\vision\mnist
-
+    > cd nnabla-examples\mnist-collection
 
 Run MNIST classification
 
 .. code-block:: doscon
 
-    nnabla\examples\vision\mnist > python classification.py
+    nnabla-examples\mnist-collection > python classification.py
 
 
 Run MNIST classification with CUDA/cuDNN
 
 .. code-block:: doscon
 
-    nnabla\examples\vision\mnist > python classification.py -c cuda.cudnn
+    nnabla-examples\mnist-collection > python classification.py -c cuda.cudnn
 
 
 FAQ
