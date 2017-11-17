@@ -173,9 +173,9 @@ def create_image_classification_dataset_command(args):
 
     for data in csv_data:
         file_name = os.path.splitext(data[0])[0] + ".png"
-        data[0] = os.path.join(dest_dir, file_name)
+        data[0] = file_name if os.path.exists(os.path.join(dest_dir, file_name)) else None
     for data in csv_data[:]:
-        if not os.path.exists(data[0]):
+        if not data[0]:
             csv_data.remove(data)
 
     logger.log(99, "Creating CSV files...")
