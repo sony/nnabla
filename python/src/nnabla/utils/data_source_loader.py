@@ -348,6 +348,7 @@ _load_functions = {
     '.png': load_image,
     '.gif': load_image,
     '.tif': load_image,
+    '.tiff': load_image,
     '.csv': load_csv,
     '.npy': load_npy}
 
