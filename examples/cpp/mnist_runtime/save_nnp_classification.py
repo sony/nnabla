@@ -55,7 +55,7 @@ def main():
             ' repository must be set correctly.'.format(
                 nnabla_examples_git_url),
             file=sys.stderr)
-        raiseg
+        raise
 
     # Import MNIST data
     from mnist_data import data_iterator_mnist
