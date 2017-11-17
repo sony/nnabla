@@ -106,7 +106,7 @@ def convert_image(args):
         scipy.misc.imsave(dest_file_name, im)
     except:
         logger.warning(
-            "Failed to convert %s.".format(src_file_name))
+            "Failed to convert %s." % (src_file_name))
 
 def create_image_classification_dataset_command(args):
     # settings
