@@ -17,5 +17,5 @@ Before running an example, also run the following command inside the example dir
 
 ```
 cd example_directory
-pip install -U requirements.txt
+pip install -r requirements.txt
 ```
