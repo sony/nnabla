@@ -44,11 +44,11 @@ The following block naively checks if installation succeeds:
 Run an Example
 ^^^^^^^^^^^^^^
 
-`Get<https://github.com/sony/nnabla/archive/master.zip>`_ (and unzip) or clone `NNabla repository <https://github.com/sony/nnabla/>`_, and Move to the example folder.
+`Get<https://github.com/sony/nnabla-examples/archive/master.zip>`_ (and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
 
 .. code-block:: shell
 
-    cd nnabla/examples/vision/mnist
+    cd nnabla-examples/mnist-collection/
 
 Then, run an MNIST classification:
 

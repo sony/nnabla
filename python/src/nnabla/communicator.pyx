@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import iteritems
+
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
 from libcpp.string cimport string
@@ -68,6 +70,13 @@ cdef class Communicator:
         """
         return self.communicatorp.rank()
 
+    @property
+    def local_rank(self):
+        """
+        Get local rank of communicator.
+        """
+        return self.communicatorp.local_rank()
+
     def add_context_and_parameters(self, ctx_param_dict):
         """Add context and parameters.
 
@@ -84,7 +93,7 @@ cdef class Communicator:
         cdef vector[pair[string, shared_ptr[CVariable]]] cparams
         cdef _Variable x
         cdef string key
-        for key, x in ctx_param_dict[1].iteritems():
+        for key, x in iteritems(ctx_param_dict[1]):
             cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).varp.variable()))
 
         self.communicatorp.add_context_and_parameters(
@@ -100,7 +109,7 @@ cdef class Communicator:
         """
         self.communicatorp.init()
 
-    def allreduce(self, division=False, inplace=False):
+    def allreduce(self, cpp_bool division=False, cpp_bool inplace=False):
         """Inplace allreduce over parameters added.
         This method is \b sync before and after allreduce w.r.t. a host thread.
         Currently, `allreduce` is applied to gradient regions.
@@ -112,7 +121,8 @@ cdef class Communicator:
                 When true, it is memory-efficient but slow. When false, 
                 it is not memory efficient but fast.  
         """
-        self.communicatorp.allreduce(division, inplace)
+        with nogil:
+            self.communicatorp.allreduce(division, inplace)
 
 
 def DataParalellCommunicator(CContext ctx):

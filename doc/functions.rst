@@ -130,6 +130,73 @@ References:
      - :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
      - 
 
+DepthwiseConvolution
+^^^^^^^^^^^^^^^^^^^^
+
+N-D Depthwise Convolution with bias.
+
+References:
+
+    * `F. Chollet: Chollet, Francois. "Xception: Deep Learning with Depthwise Separable Convolutions.
+      <https://arxiv.org/abs/1610.02357>`_
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C \times L_1 \times ... \times L_N`).
+     -
+   * - weight
+     - :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
+     - Parameter
+   * - bias
+     - Bias vector (:math:`C`).
+     - Optional Parameter
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - base_axis
+     - int64
+     - 1
+     - base axis :math:`B`.
+   * - pad
+     - Shape
+     - (0,) * (len(x.shape) - (base_axis+1))
+     - Padding sizes for dimensions.
+   * - stride
+     - Shape
+     - (1,) * (len(x.shape) - (base_axis+1))
+     - Stride sizes for dimensions.
+   * - dilation
+     - Shape
+     - (1,) * (len(x.shape) - (base_axis+1))
+     - Dilation sizes for dimensions.
+   * - multiplier
+     - int64
+     - 1
+     - Number of output feature maps per input feature map.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C \times L'_1 \times ... \times L'_N`).
+     -
+
 Deconvolution
 ^^^^^^^^^^^^^
 

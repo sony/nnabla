@@ -15,4 +15,5 @@
 """
 This is an alias to communicator.py.
 """
-from communicator import *
+from __future__ import absolute_import
+from .communicator import *

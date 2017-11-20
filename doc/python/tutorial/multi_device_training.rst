@@ -63,7 +63,7 @@ NOTE
 
 This tutorial depends on **IPython Cluster**, thus when you want to run
 the following excerpts of the scripts on Jupyter Notebook, follow
-**`this <https://ipython.org/ipython-doc/3/parallel/parallel_process.html#using-ipcluster-in-mpiexec-mpirun-mode>`__**
+`this <https://ipython.org/ipython-doc/3/parallel/parallel_process.html#using-ipcluster-in-mpiexec-mpirun-mode>`_
 to enable mpiexec/mpirun mode, then launch a corresponding Ipython
 Cluster on Ipython Clusters tab.
 
