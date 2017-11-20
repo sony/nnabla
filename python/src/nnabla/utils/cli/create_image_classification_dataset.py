@@ -34,6 +34,7 @@ def create_image_classification_dataset_command(args):
     ch = int(args.channel)
     shuffle = args.shuffle == 'true'
     test_data_ratio = int(args.ratio2) if args.ratio2 else 0
+
     if source_dir == dest_dir:
         logger.critical("Input directory and output directory are same.")
         return
@@ -44,6 +45,7 @@ def create_image_classification_dataset_command(args):
     dirs = [d for d in dirs if os.path.isdir(os.path.join(source_dir, d))]
     dirs.sort()
     # print(dirs)
+
     labels = []
     label_index = -1
     csv_data = []
@@ -143,6 +145,7 @@ def create_image_classification_dataset_command(args):
         elif len(im.shape) == 3 and ch == 1:
             # RGB to monochrome
             im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
+
         # output
         if not os.path.exists(dest_path):
             os.makedirs(dest_path)

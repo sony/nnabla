@@ -489,19 +489,27 @@ def train_command(args):
     # Training
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
+    if max_iter > 0:
+        result = True
+        data_iterators = {'optimizer': {}, 'monitor': {}}
+        with ExitStack() as stack:
+            for name, o in config.optimizers.items():
+                o.data_iterator = stack.enter_context(
+                    o.optimizer.data_iterator())
+            for name, m in config.monitors.items():
+                m.data_iterator = stack.enter_context(
+                    m.monitor.data_iterator())
+            if not train(args, config):
+                result = False
+        if result:
+            logger.log(99, 'Training Completed.')
+        else:
+            logger.log(99, 'Training Incompleted.')
 
-    result = False
-    with ExitStack() as stack:
-        for name, o in config.optimizers.items():
-            o.data_iterator = stack.enter_context(
-                o.optimizer.data_iterator())
-        for name, m in config.monitors.items():
-            m.data_iterator = stack.enter_context(
-                m.monitor.data_iterator())
-        result = train(args, config)
-
-    if result:
-        logger.log(99, 'Training Completed.')
     else:
-        logger.log(99, 'Training Incompleted.')
+        # save parameters without training (0 epoch learning)
+        save_parameters(os.path.join(
+            args.outdir, 'parameters.h5'))
+
+    logger.log(99, 'Training Completed.')
     progress(None)

@@ -120,15 +120,16 @@ RUN set -xe ; for PYV in 2.7.14 3.4.5 3.5.3 3.6.2 \
     ; conda create -y -n py$PY python=$PYV \
     ; source activate py$PY \
     ; conda install -y virtualenv \
-    ; pip install -U -r /tmp/deps/setup_requirements.txt \
+    ; conda install -y setuptools \
+    ; conda install -y "pytest-pep8" \
+    ; conda install -y "pytest-cov" \
+    ; (conda install -y "Cython<0.25" || pip install -U "Cython<0.25") \
+    ; conda install -y "numpy<1.11" \
+    ; pip install -r /tmp/deps/setup_requirements.txt \
     ; echo Try to install setuptools few times to avoid conda problem. \
-    ; (pip install -U setuptools || pip install -U setuptools || pip install -U setuptools || true) \
-    ; pip install -U -r /tmp/deps/requirements.txt \
-    ; pip install -U -r /tmp/deps/test_requirements.txt \
-    ; pip install -U "pytest-pep8" \
-    ; pip install -U "pytest-cov" \
-    ; pip install -U "Cython<0.25" \
-    ; pip install -U "numpy<1.11" \
+    ; (pip install setuptools || pip install setuptools || pip install setuptools || true) \
+    ; pip install -r /tmp/deps/requirements.txt \
+    ; pip install -r /tmp/deps/test_requirements.txt \
     ; source deactivate \
     ; done
 
