@@ -2,8 +2,7 @@
 
 ## Introduction
 
-This example demonstrates the workflow to train a classification model in Python and to execute it in C++. Although this example is only tested on Ubuntu 16.04 so far, a similar procedure should work on the other operating systems with little effort to the build system depending on the OSs. We will add some of more useful examples in the near future.
-
+This example demonstrates the workflow to train a classification model in Python and to execute it in C++. Although this example shows how to use it on Ubuntu 16.04 so far, a similar procedure should work on the other operating systems with little effort for the build scripts adapting to your OS. We will add some of more useful examples in the near future.
 
 # Install C++ libraries
 
@@ -12,10 +11,10 @@ Follow [the installation manual](http://nnabla.readthedocs.io/en/latest/cpp/inst
 Note: this example requires NNabla Python package installed.
 
 ## Train a classification model in Python
-First, you run a Python training script provided in the MNIST example folder in order to get a trained model for MNIST digit classification.
+At first, you will train an MNIST classification model in Python-side. The example scripts of the MNIST classification training are provided in [NNabla Examples repository](https://github.com/sony/nnabla-examples). Clone or download it, then you can run train a classification model by the following commands.
 
 ```shell
-# at examples/vision/mnist
+# at nnabla-examples/mnist-collection/
 python classification.py  # Optionally you can use -c cuda.cudnn option.
 ```
 
@@ -23,14 +22,14 @@ After training finishes, you can find a parameter file created in the `tmp.monit
 
 ## Create NNP file
 
-In order to execute your trained model on C++ code, the trained model parameters must be converted to a NNabla file format (NNP) with a network definition. NNabla file format can store the information of network definitions, parameters, and executor settings etc. We provide an example script which creates a NNP file from learned parameters and a Python script of model definition.
+In order to execute your trained model on C++ code, the trained model parameters must be converted to a NNabla file format (NNP) with a network definition. NNabla file format can store the information of network definitions, parameters, and executor settings etc. We provide an example script (found in this folder) which creates a NNP file from learned parameters and a Python script of model definition.
 
 ```shell
 # at .
-python save_nnp_classification.py
+NNABLA_EXAMPLES_ROOT=<your local path to nnabla-examples> python save_nnp_classification.py
 ```
 
-It reads parameter file, and creates a computation graph using loaded parameters. The computation graph is only used for dumping the network structure into NNP file.
+It reads parameter file, and creates a computation graph using loaded parameters. The computation graph is only used to dump the network structure into NNP file.
 
 ```pyton
     runtime_contents = {
@@ -46,9 +45,9 @@ It reads parameter file, and creates a computation graph using loaded parameters
              'output': ['y']}]}
     nn.utils.save.save(nnp_file, runtime_contents)
 ```
-In the above code, the network structure containing parameters and the execution configuration is saved into the NNP file `lenet_010000.nnp`. The contents is described in a JSON like format. In the `netoworks` field, a newtork with a name `runtime`. It has a default batch size. The computation graph can be set by the output variable `pred` in the `outputs` field. At the same time, the output variable `pred` of the computation graph is registered as a name `y`. To query an input or intermediate variable in the computation graph via the C++ interface, you should set a filed `names` in a format of `{<name>: <Variable>}`.
+In the above code, the network structure containing parameters and the execution configuration is saved into the NNP file `lenet_010000.nnp`. The contents is described in a JSON like format. In the `netoworks` field, you add a newtork with a name of `runtime`. It has a default batch size. The computation graph can be set by the output variable `pred` in the `outputs` field. At the same time, the output variable `pred` of the computation graph is registered as a name `y`. To query an input or intermediate variable in the computation graph via the C++ interface, you should set a filed `names` in a format of `{<name>: <Variable>}`.
 
-The named variables are actually reference at the `executors` config. The executor config is used in C++ for executing network in a more simpler way. The executor `runtime` is added where the newtork `runtime` is executed. The input and output variables are specified by names that are registered in the `networks` field.
+The named variables in the network are referenced by the `executors` config. The executor config is used in C++ for executing a network in a more simpler way. The executor `runtime` is added where the newtork `runtime` is executed. The input and output variables are specified by names that are registered in the `networks` field.
 
 ## Build MNIST inference example C++ code
 
@@ -59,6 +58,12 @@ make
 The above command generates an executable `mnist_runtime` at the current directly.
 
 The build file `GNUMakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++11 option `-std=c++11`.
+
+```shell
+make cuda
+```
+
+You can also compile an executable `mnist_runtime_cuda` that runs computation on your CUDA device by the above command if you install `nnabla-ext-cuda` in a right path. See `GNUMakefile` for details.
 
 
 ## Execute handwritten digit classification
@@ -89,7 +94,7 @@ The following command executes image classifiation with the trained model `lenet
 ![5](./original_images/5.png "5")
 
 ```shell
-./mnist_runtime ../../vision/mnist/tmp.monitor/lenet_010000.nnp 5.pgm
+./mnist_runtime lenet_010000.nnp 5.pgm
 ```
 
 The output shows it makes a prediction. In my case, it's correct.

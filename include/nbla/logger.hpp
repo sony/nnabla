@@ -18,7 +18,9 @@
 
 #include <spdlog/spdlog.h>
 
-std::shared_ptr<spdlog::logger> get_logger(void);
+#include <nbla/defs.hpp>
+
+NBLA_API std::shared_ptr<spdlog::logger> get_logger(void);
 
 #define NBLA_LOG_TRACE(...)                                                    \
   { get_logger()->trace(__VA_ARGS__); }

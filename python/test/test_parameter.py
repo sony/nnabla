@@ -60,7 +60,8 @@ def test_parameter_scope_slash():
 
 # Dummy parametric function for test_parameteric_function
 @PF.parametric_function_api("dummy")
-def dummy_parametric_function(shape, f=10, i=1, s="dummy"):
+def dummy_parametric_function(shape, f=10, i=1, s="dummy",
+                              fix_parameters=False):
     """Doc"""
     from nnabla import Variable
     from nnabla.parameter import get_parameter_or_create
@@ -82,8 +83,8 @@ def test_parametric_function_api():
 
     # Signature check
     spec = inspect.getargspec(dummy_parametric_function)
-    assert spec.args == ['shape', 'f', 'i', 's', 'name']
-    assert spec.defaults == (10, 1, 'dummy', None)
+    assert spec.args == ['shape', 'f', 'i', 's', 'fix_parameters', 'name']
+    assert spec.defaults == (10, 1, 'dummy', False, None)
     assert dummy_parametric_function.__doc__.splitlines()[0] == 'Doc'
 
     # Verify two different ways does the same thing.

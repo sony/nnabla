@@ -30,11 +30,23 @@ namespace nbla {
 NBLA_API vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
                                                        int n_outputs = -1);
 
-/**
+/** Connect function to network.
+
+    Create outputs on-demand.
  */
 NBLA_API vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                                        const vector<CgVariablePtr> &inputs,
                                        int n_outputs = 1,
+                                       vector<NdArrayPtr> inplace_outputs = {},
+                                       bool execute = false);
+
+/** Connect function to network.
+
+    Use allocated outputs vector.
+ */
+NBLA_API vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
+                                       const vector<CgVariablePtr> &inputs,
+                                       const vector<CgVariablePtr> &outputs,
                                        vector<NdArrayPtr> inplace_outputs = {},
                                        bool execute = false);
 }

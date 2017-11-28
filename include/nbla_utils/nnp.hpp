@@ -16,6 +16,7 @@
 #define NBLA_UTILS_NNP_HPP_
 
 #include <nbla/computation_graph/variable.hpp>
+#include <nbla/defs.hpp>
 #include <string>
 
 namespace nbla {
@@ -97,20 +98,20 @@ class Network {
 public:
   /** Network name.
    */
-  string name() const;
+  NBLA_API string name() const;
 
   /** Set batch size.
 
       @param[in] batch_size Overwrite the default batch size in nnp file.
   */
-  void set_batch_size(int batch_size);
+  NBLA_API void set_batch_size(int batch_size);
 
   /** Get batch size.
 
       @retval Batch size. The if set_batch_size is not previously called,
       batch size written in nnp file will be returned.
   */
-  int batch_size() const;
+  NBLA_API int batch_size() const;
 
   /** Replace an arbitrary variable in the network with a given
       variable.
@@ -121,7 +122,7 @@ public:
       @param[in] name Name of variable in the network you are replacing.
       @param[in] variable Replaced with this.
    */
-  void replace_variable(const string &name, CgVariablePtr variable);
+  NBLA_API void replace_variable(const string &name, CgVariablePtr variable);
 
   /** Get a variable by name.
 
@@ -132,7 +133,7 @@ public:
       @param[in] name Name of variable in the network.
       @retval Variable in a computation graph.
    */
-  CgVariablePtr get_variable(const string &name);
+  NBLA_API CgVariablePtr get_variable(const string &name);
 };
 
 // ----------------------------------------------------------------------
@@ -172,24 +173,24 @@ public:
 
   /** Executor name.
    */
-  string name() const;
+  NBLA_API string name() const;
 
   /** Network name.
    */
-  string network_name() const;
+  NBLA_API string network_name() const;
 
   /** Set batch size.
 
       @param[in] batch_size Overwrite the default batch size in Network.
   */
-  void set_batch_size(int batch_size);
+  NBLA_API void set_batch_size(int batch_size);
 
   /** Get batch size.
 
       @retval Batch size. The if set_batch_size is not previously called,
       batch size written in the Network of NNabla format file will be returned.
   */
-  int batch_size() const;
+  NBLA_API int batch_size() const;
 
   /** Get data variables.
 
@@ -197,7 +198,7 @@ public:
               instance in the Network. The data inside the CgVariable should be
               gotten via Nnabla C++ interface.
    */
-  vector<DataVariable> get_data_variables();
+  NBLA_API vector<DataVariable> get_data_variables();
 
   /** Get output variables.
 
@@ -205,15 +206,15 @@ public:
               instance in the Network. The data inside the CgVariable should be
               gotten via Nnabla C++ interface.
    */
-  vector<OutputVariable> get_output_variables();
+  NBLA_API vector<OutputVariable> get_output_variables();
 
   /** Get the reference (shared_ptr) of Network object held in this.
    */
-  shared_ptr<Network> get_network();
+  NBLA_API shared_ptr<Network> get_network();
 
   /** Execute the network from inputs to outputs.
    */
-  void execute();
+  NBLA_API void execute();
 };
 
 // ----------------------------------------------------------------------
@@ -267,18 +268,18 @@ public:
 
       @param[in] ctx Default context which overwrites the config in nnp file.
    */
-  Nnp(const nbla::Context &ctx);
+  NBLA_API Nnp(const nbla::Context &ctx);
   // dtor
-  ~Nnp();
+  NBLA_API ~Nnp();
 
   /** Add nnp|nntxt|h5 file
    */
-  bool add(const string &filename);
+  NBLA_API bool add(const string &filename);
 
   /** Get Network name list from added files (nnp, nntxt etc.).
       @retval A vector of Network instance names.
    */
-  vector<string> get_network_names();
+  NBLA_API vector<string> get_network_names();
 
   /** Get Network object from added files (nnp, nntxt etc.).
 
@@ -286,12 +287,12 @@ public:
 
       @retval A shared pointer of a Network instance.
    */
-  shared_ptr<Network> get_network(const string &name);
+  NBLA_API shared_ptr<Network> get_network(const string &name);
 
   /** Get Executor name list from added files (nnp, nntxt etc.).
       @retval A vector of Executor instance names.
    */
-  vector<string> get_executor_names();
+  NBLA_API vector<string> get_executor_names();
 
   /** Get Executor object from added file(s).
 
@@ -299,7 +300,7 @@ public:
 
       @retval A shared pointer of a Executor instance.
    */
-  shared_ptr<Executor> get_executor(const string &name);
+  NBLA_API shared_ptr<Executor> get_executor(const string &name);
 };
 }
 /*@}*/

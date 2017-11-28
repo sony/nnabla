@@ -44,13 +44,15 @@ class NBLA_API Communicator {
 protected:
   Context ctx_;
   int rank_;
-  int size_;
+  int local_rank_;
+  int size_; // number of workers.
 
   vector<Context> contexts_;
   vector<vector<pair<string, VariablePtr>>> device_func_named_param_;
   vector<vector<pair<string, VariablePtr>>> func_device_named_param_;
 
   bool initialized_ = false;
+  Size_t total_params_ = 0; // total number of parameters.
 
 public:
   /** Constructor takes at least context and parameters.
@@ -64,6 +66,7 @@ public:
   virtual string name() = 0;
 
   int rank();
+  int local_rank();
   int size();
 
   /** Add context and parameters
@@ -96,20 +99,21 @@ public:
   /** reduce.
    @param division Divide the reduced value.
    */
-  virtual void reduce(bool division = true);
+  virtual void reduce(bool division = false);
 
   /** allreduce over parameters added.
    This method is \b sync before and after iallreduce w.r.t. a host thread.
    Currently, \e iallreduce is applied to gradient regions.
 
   @param division Divide the reduced value.
+  @param inplace Pack the arrays into one large array if flase.
    */
-  virtual void allreduce(bool division = true);
+  virtual void allreduce(bool division = false, bool inplace = false);
 
   /** reducescatter.
    @param division Divide the reduced value.
    */
-  virtual void reducescatter(bool division = true);
+  virtual void reducescatter(bool division = false);
 
   /** broadcast.
    *
@@ -124,17 +128,18 @@ public:
   /** reduce asynchronously.
    @param division Divide the reduced value.
    */
-  virtual void reduce_async(bool division = true);
+  virtual void reduce_async(bool division = false);
 
   /** reduce asynchronously.
    @param division Divide the reduced value.
+         @param inplace Pack the arrays into one large array if flase.
    */
-  virtual void allreduce_async(bool division = true);
+  virtual void allreduce_async(bool division = false, bool inplace = true);
 
   /** reducescatter asynchronously.
    @param division Divide the reduced value.
    */
-  virtual void reducescatter_async(bool division = true);
+  virtual void reducescatter_async(bool division = false);
 
   /** broadcast asynchronously.
    *

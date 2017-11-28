@@ -4,8 +4,10 @@
 *.pyc
 
 /build/
+/build-tools/msvc/cmake_cpp_utils.bat
 /doc/?/
 /examples/cpp/mnist_runtime/mnist_runtime
+/examples/cpp/mnist_runtime/mnist_runtime_cuda
 /examples/cpp/mnist_runtime/*.nnp
 /examples/cpp/mnist_runtime/tmp.*
 /examples/cpp/forward_check/*/tmp.*
@@ -56,3 +58,6 @@
 
 # Converted ReST
 # doc/python/tutorial/
+*.h5
+tmp.*/
+*.zip

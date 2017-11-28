@@ -25,11 +25,12 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(Concatenate, int);
 
-/** Concatenate two arrays along specified axis.
+/** Concatenate a variable number of input arrays along specified axis.
 
 Inputs:
-Two inputs must have the same shapes except specified axis.
+Input arrays must have the same shapes except specified axis.
 - N-D array.
+- ...
 - N-D array.
 
 Outputs:
