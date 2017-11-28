@@ -18,6 +18,9 @@ from contextlib import contextmanager
 from collections import OrderedDict
 import numpy
 import os
+import shutil
+import tempfile
+import zipfile
 
 import nnabla as nn
 from nnabla.logger import logger
@@ -198,7 +201,7 @@ def clear_parameters():
         del current_scope[key]
 
 
-def load_parameters(path, proto=None):
+def load_parameters(path, proto=None, proto_only=False):
     """Load parameters from a file with the specified format.
 
     Args:
@@ -222,23 +225,40 @@ def load_parameters(path, proto=None):
             hd.visit(_get_keys)
             for _, key in sorted(keys):
                 ds = hd[key]
-                var = get_parameter_or_create(key, ds.shape,
-                                              need_grad=ds.attrs['need_grad'])
-                var.data.cast(ds.dtype)[...] = ds[...]
+                if not proto_only:
+                    var = get_parameter_or_create(key, ds.shape,
+                                                  need_grad=ds.attrs['need_grad'])
+                    var.data.cast(ds.dtype)[...] = ds[...]
                 parameter = proto.parameter.add()
                 parameter.variable_name = key
-                parameter.shape.dim.extend(var.shape)
-                parameter.data.extend(numpy.array(var.d).flatten().tolist())
-                parameter.need_grad = var.need_grad
+                parameter.shape.dim.extend(ds.shape)
+                parameter.data.extend(numpy.array(ds[...]).flatten().tolist())
+                if ds.attrs['need_grad']:
+                    parameter.need_grad = True
+                else:
+                    parameter.need_grad = False
     elif ext == '.protobuf':
         with open(path, 'rb') as f:
             proto.MergeFromString(f.read())
             for parameter in proto.parameter:
-                var = get_parameter_or_create(
-                    parameter.variable_name, parameter.shape.dim)
-                param = numpy.reshape(parameter.data, parameter.shape.dim)
-                var.d = param
-                var.need_grad = parameter.need_grad
+                if not proto_only:
+                    var = get_parameter_or_create(
+                        parameter.variable_name, parameter.shape.dim)
+                    param = numpy.reshape(parameter.data, parameter.shape.dim)
+                    var.d = param
+                    var.need_grad = parameter.need_grad
+    elif ext == '.nnp':
+        try:
+            tmpdir = tempfile.mkdtemp()
+            with zipfile.ZipFile(path, 'r') as nnp:
+                for name in nnp.namelist():
+                    nnp.extract(name, tmpdir)
+                    _, ext = os.path.splitext(name)
+                    if ext in ['.protobuf', '.h5']:
+                        proto = load_parameters(os.path.join(
+                            tmpdir, name), proto, proto_only)
+        finally:
+            shutil.rmtree(tmpdir)
     logger.info("Parameter load ({}): {}".format(format, path))
     return proto
 
