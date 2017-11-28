@@ -20,6 +20,7 @@ Contents loader functions for DataSource.
 from six.moves import map
 from scipy.misc import imresize, imread
 from shutil import rmtree
+from six import BytesIO
 from six import StringIO
 from six.moves.urllib.parse import urljoin
 from tqdm import tqdm
@@ -100,7 +101,7 @@ class FileReader:
             self._file_type = 'file'
 
     @contextlib.contextmanager
-    def open(self, filename=None):
+    def open(self, filename=None, textmode=False):
         if filename is None:
             filename = self._base_uri
         else:
@@ -119,11 +120,18 @@ class FileReader:
             bucketname = us.pop(0)
             key = '/'.join(us)
             logger.info('Opening {}'.format(key))
-            f = StringIO(self._s3_bucket.Object(key).get()['Body'].read())
+            if textmode:
+                f = StringIO(self._s3_bucket.Object(key).get()
+                             ['Body'].read().decode('utf-8'))
+            else:
+                f = BytesIO(self._s3_bucket.Object(key).get()['Body'].read())
         elif self._file_type == 'http':
             f = request.urlopen(filename)
         else:
-            f = open(filename, 'rb')
+            if textmode:
+                f = open(filename, 'rt')
+            else:
+                f = open(filename, 'rb')
         yield f
         f.close()
 
