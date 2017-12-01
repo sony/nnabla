@@ -574,7 +574,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                     text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
             if not exclude_parameter:
-                nn.load_parameters(filename, proto)
+                nn.load_parameters(filename)
             else:
                 logger.info('Skip loading parameter.')
 
@@ -592,9 +592,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                                 text_format.Merge(f.read(), proto)
                     elif ext in ['.protobuf', '.h5']:
                         if not exclude_parameter:
-                            nn.load_parameters(os.path.join(tmpdir, name),
-                                               proto)
-
+                            nn.load_parameters(os.path.join(tmpdir, name))
                         else:
                             logger.info('Skip loading parameter.')
 
