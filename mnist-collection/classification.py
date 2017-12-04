@@ -37,11 +37,21 @@ def categorical_error(pred, label):
     return (pred_label != label.flat).mean()
 
 
-def mnist_lenet_prediction(image, test=False):
+def augmentation(h, test, aug):
+    if aug is None:
+        aug = not test
+    if aug:
+        h = F.image_augmentation(h, (1, 28, 28), (0, 0), 0.9, 1.1, 0.3,
+                                 1.3, 0.1, False, False, 0.5, False, 1.5, 0.5, False, 0.1, 0)
+    return h
+
+
+def mnist_lenet_prediction(image, test=False, aug=None):
     """
     Construct LeNet for MNIST.
     """
     image /= 255.0
+    image = augmentation(image, test, aug)
     c1 = PF.convolution(image, 16, (5, 5), name='conv1')
     c1 = F.relu(F.max_pooling(c1, (2, 2)), inplace=True)
     c2 = PF.convolution(c1, 16, (5, 5), name='conv2')
@@ -51,11 +61,12 @@ def mnist_lenet_prediction(image, test=False):
     return c4
 
 
-def mnist_resnet_prediction(image, test=False):
+def mnist_resnet_prediction(image, test=False, aug=None):
     """
     Construct ResNet for MNIST.
     """
     image /= 255.0
+    image = augmentation(image, test, aug)
 
     def bn(x):
         return PF.batch_normalization(x, batch_stat=not test)
@@ -114,6 +125,9 @@ def train():
     """
     args = get_args()
 
+    from numpy.random import seed
+    seed(0)
+
     # Get context.
     from nnabla.contrib.context import extension_context
     extension_module = args.context
@@ -124,16 +138,19 @@ def train():
     nn.set_default_context(ctx)
 
     # Create CNN network for both training and testing.
-    mnist_cnn_prediction = mnist_lenet_prediction
-    if args.net == 'resnet':
+    if args.net == 'lenet':
+        mnist_cnn_prediction = mnist_lenet_prediction
+    elif args.net == 'resnet':
         mnist_cnn_prediction = mnist_resnet_prediction
+    else:
+        raise ValueError("Unknown network type {}".format(args.net))
 
     # TRAIN
     # Create input variables.
     image = nn.Variable([args.batch_size, 1, 28, 28])
     label = nn.Variable([args.batch_size, 1])
     # Create prediction graph.
-    pred = mnist_cnn_prediction(image, test=False)
+    pred = mnist_cnn_prediction(image, test=False, aug=args.augment_train)
     pred.persistent = True
     # Create loss function.
     loss = F.mean(F.softmax_cross_entropy(pred, label))
@@ -143,7 +160,7 @@ def train():
     vimage = nn.Variable([args.batch_size, 1, 28, 28])
     vlabel = nn.Variable([args.batch_size, 1])
     # Create predition graph.
-    vpred = mnist_cnn_prediction(vimage, test=True)
+    vpred = mnist_cnn_prediction(vimage, test=True, aug=args.augment_test)
 
     # Create Solver.
     solver = S.Adam(args.learning_rate)
@@ -158,7 +175,8 @@ def train():
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
 
     # Initialize DataIterator for MNIST.
-    data = data_iterator_mnist(args.batch_size, True)
+    from numpy.random import RandomState
+    data = data_iterator_mnist(args.batch_size, True, rng=RandomState(1223))
     vdata = data_iterator_mnist(args.batch_size, False)
     # Training loop.
     for i in range(args.max_iter):

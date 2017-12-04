@@ -53,6 +53,10 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
                         help="Neural network architecure type (used only in classification*.py).\n  classification.py: ('lenet'|'resnet'),  classification_bnn.py: ('bincon'|'binnet'|'bwn'|'bwn'|'bincon_resnet'|'binnet_resnet'|'bwn_resnet')")
     parser.add_argument('--context', '-c', type=str,
                         default=None, help="Extension modules. ex) 'cpu', 'cuda.cudnn'.")
+    parser.add_argument('--augment-train', action='store_true',
+                        default=False, help="Enable data augmentation of training data.")
+    parser.add_argument('--augment-test', action='store_true',
+                        default=False, help="Enable data augmentation of testing data.")
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
         os.makedirs(args.model_save_path)
