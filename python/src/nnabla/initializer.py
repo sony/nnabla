@@ -72,7 +72,7 @@ class UniformInitializer(BaseInitializer):
         \mathbf x \sim {\cal U} (a, b)
 
     Args:
-        lim (:obj:`tuple` of :obj:`float`): A tuple of two ints, :math:`(a, b)`.
+        lim (:obj:`tuple` of :obj:`float`): A tuple of two floats, :math:`(a, b)`.
         rng (numpy.random.RandomState): Random number generator.
 
     """
