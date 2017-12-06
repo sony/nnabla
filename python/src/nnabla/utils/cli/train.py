@@ -25,7 +25,11 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
-from mpi4py import MPI
+try:
+    from mpi4py import MPI
+except:
+    MPI = None
+    pass
 
 
 def _update(iter, config, cost):
@@ -33,12 +37,16 @@ def _update(iter, config, cost):
     is_first_optimizer = True
     
     def sum_cost(sum_iter):
-        cost_sum_iter = np.zeros(1)
-        cost_sum_iter[0] = sum_iter
-        cost_sum_epoch = np.zeros(1)
-        MPI.COMM_WORLD.Allreduce(cost_sum_iter, cost_sum_epoch, op = MPI.SUM)
-        cost.sum_epoch += cost_sum_epoch[0]
-        cost.num_iter += MPI.COMM_WORLD.Get_size()
+        if MPI:
+            cost_sum_iter = np.zeros(1)
+            cost_sum_iter[0] = sum_iter
+            cost_sum_epoch = np.zeros(1)
+            MPI.COMM_WORLD.Allreduce(cost_sum_iter, cost_sum_epoch, op = MPI.SUM)
+            cost.sum_epoch += cost_sum_epoch[0]
+            cost.num_iter += MPI.COMM_WORLD.Get_size()
+        else:
+            cost.sum_epoch += sum_iter
+            cost.num_iter += 1
 
     for opt in config.optimizers.values():
         o = opt.optimizer
@@ -67,7 +75,7 @@ def _update(iter, config, cost):
                 cost.sum_iter += np.mean(l.variable_instance.d)
             if is_first_optimizer:
                 is_first_optimizer = False
-                if MPI.COMM_WORLD.Get_rank() == 0:
+                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
                     progress("Training : cost={0:0.6f}".format(cost.sum_iter),
                              (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
                 sum_cost(cost.sum_iter)
@@ -109,11 +117,14 @@ def _evaluate(args, config, monitoring_report, best_error):
     valid_error = 0.0
 
     def sum_error(sum, error):
-        error_buf = np.zeros(1)
-        error_buf[0] = error
-        error_sum = np.zeros(1)
-        MPI.COMM_WORLD.Allreduce(error_buf, error_sum, op = MPI.SUM)
-        return sum + error_sum[0]
+        if MPI:
+            error_buf = np.zeros(1)
+            error_buf[0] = error
+            error_sum = np.zeros(1)
+            MPI.COMM_WORLD.Allreduce(error_buf, error_sum, op = MPI.SUM)
+            return sum + error_sum[0]
+        else:
+            return sum + error
 
     for name, mon in config.monitors.items():
         m = mon.monitor
@@ -121,7 +132,7 @@ def _evaluate(args, config, monitoring_report, best_error):
         error_count = 0
         di = mon.data_iterator
         # Todo : need to seek here for MPI exec
-        for i in range((di.size / di.batch_size) / MPI.COMM_WORLD.Get_size()):
+        for i in range((di.size / di.batch_size) / (MPI.COMM_WORLD.Get_size() if MPI else 1)):
             # Set data to variable
             datas = di.next()
             for v, d in m.dataset_assign.items():
@@ -144,12 +155,12 @@ def _evaluate(args, config, monitoring_report, best_error):
                 for v in m.monitor_variables:
                     error_sum += np.mean(v.variable_instance.d)
                 error_sum_monitor = sum_error(error_sum_monitor, error_sum)
-                if MPI.COMM_WORLD.Get_rank() == 0:
+                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
                     progress('Evaluating "{0}"'.format(
                         name) + ' : error={0:0.6f}'.format(
                         error_sum_monitor / error_count),
                         di.position * 1.0 / di.size)
-            error_count += MPI.COMM_WORLD.Get_size()
+            error_count += MPI.COMM_WORLD.Get_size() if MPI else 1
 
             # Forward recursive
             m.network.forward(m.forward_sequence)
@@ -173,7 +184,7 @@ def _evaluate(args, config, monitoring_report, best_error):
         error_str += '}'
 
     # Save Parameters
-    if MPI.COMM_WORLD.Get_rank() == 0:
+    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
         if (not config.training_config.save_best) or \
            (not best_error) or \
            (best_error is not None and valid_error <= best_error):
@@ -186,7 +197,7 @@ def _evaluate(args, config, monitoring_report, best_error):
 def train(args, config):
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
-    if MPI.COMM_WORLD.Get_rank() == 0:
+    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
         logger.log(99, 'Training epoch 1 of {} begin'.format(
             config.training_config.max_epoch))
 
@@ -217,7 +228,7 @@ def train(args, config):
                 best_error, error_str = _evaluate(
                     args, config, monitoring_report, best_error)
 
-            if MPI.COMM_WORLD.Get_rank() == 0:
+            if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
                 # Write to monitoring_report.yml
                 f = open(os.path.join(args.outdir, 'monitoring_report.yml'), 'a')
                 f.write('{}:\n'.format(epoch - 1))
@@ -245,7 +256,7 @@ def train_command(args):
     config.global_config = info.global_config
     config.training_config = info.training_config
 
-    if MPI.COMM_WORLD.Get_rank() == 0:
+    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
         logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
     class OptConfig:
@@ -283,10 +294,10 @@ def train_command(args):
 
     else:
         # save parameters without training (0 epoch learning)
-        if MPI.COMM_WORLD.Get_rank() == 0:
+        if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
             save_parameters(os.path.join(
                 args.outdir, 'parameters.h5'))
 
-    if MPI.COMM_WORLD.Get_rank() == 0:
+    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
         logger.log(99, 'Training Completed.')
     progress(None)

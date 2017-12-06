@@ -25,7 +25,11 @@ import os
 import shutil
 import tempfile
 import zipfile
-from mpi4py import MPI
+try:
+    from mpi4py import MPI
+except:
+    MPI = None
+    pass
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
@@ -339,7 +343,7 @@ def _create_optimizer(ctx, o, networks, datasets):
     optimizer.solver.set_parameters(parameters)
 
     optimizer.comm = None
-    if MPI.COMM_WORLD.Get_size() > 1:
+    if MPI and MPI.COMM_WORLD.Get_size() > 1:
         try:
             import nnabla.communicators as C
             optimizer.comm = C.MultiProcessDataParalellCommunicator(ctx)
@@ -375,7 +379,7 @@ def _global_config(proto):
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
 
-    if MPI.COMM_WORLD.Get_size() > 0:
+    if MPI and MPI.COMM_WORLD.Get_size() > 0:
         config.default_context.device_id = str(MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
     return config
 
@@ -396,7 +400,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     dataset = Dataset()
     dataset.uri = uri
     dataset.normalize = not no_image_normalization
-    rng = numpy.random.RandomState(MPI.COMM_WORLD.Get_rank())
+    rng = numpy.random.RandomState(MPI.COMM_WORLD.Get_rank() if MPI else 0)
 
     if prepare_data_iterator:
         if cache_dir == '':
