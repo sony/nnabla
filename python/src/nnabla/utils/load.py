@@ -545,7 +545,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False):
+def load(filenames, prepare_data_iterator=True, batch_size=None):
     '''load
     Load network information from files.
 
@@ -569,34 +569,30 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         #     it will not loaded.
 
         if ext in ['.nntxt', '.prototxt']:
-            if not parameter_only:
-                with open(filename, 'rt') as f:
-                    text_format.Merge(f.read(), proto)
+            with open(filename, 'rt') as f:
+                text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
-            if not exclude_parameter:
-                nn.load_parameters(filename)
-            else:
-                logger.info('Skip loading parameter.')
+            nn.load_parameters(filename)
 
         elif ext == '.nnp':
-            tmpdir = tempfile.mkdtemp()
-            with zipfile.ZipFile(filename, 'r') as nnp:
-                for name in nnp.namelist():
-                    _, ext = os.path.splitext(name)
-                    if name == 'nnp_version.txt':
-                        with open(os.path.join(tmpdir, name), 'rt') as f:
-                            pass  # Currently nnp_version.txt is ignored.
-                    elif ext in ['.nntxt', '.prototxt']:
-                        if not parameter_only:
+            try:
+                tmpdir = tempfile.mkdtemp()
+                with zipfile.ZipFile(filename, 'r') as nnp:
+                    for name in nnp.namelist():
+                        _, ext = os.path.splitext(name)
+                        if name == 'nnp_version.txt':
+                            nnp.extract(name, tmpdir)
+                            with open(os.path.join(tmpdir, name), 'rt') as f:
+                                pass  # Currently nnp_version.txt is ignored.
+                        elif ext in ['.nntxt', '.prototxt']:
+                            nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
                                 text_format.Merge(f.read(), proto)
-                    elif ext in ['.protobuf', '.h5']:
-                        if not exclude_parameter:
+                        elif ext in ['.protobuf', '.h5']:
+                            nnp.extract(name, tmpdir)
                             nn.load_parameters(os.path.join(tmpdir, name))
-                        else:
-                            logger.info('Skip loading parameter.')
-
-            shutil.rmtree(tmpdir)
+            finally:
+                shutil.rmtree(tmpdir)
 
     default_context = None
     if proto.HasField('global_config'):

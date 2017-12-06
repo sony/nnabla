@@ -469,28 +469,32 @@ def save(filename, contents, include_params=False):
     '''
     _, ext = os.path.splitext(filename)
     if ext == '.nntxt' or ext == '.prototxt':
-        logger.info("Saveing {} as prototxt".format(filename))
+        logger.info("Saving {} as prototxt".format(filename))
         proto = create_proto(contents, include_params)
         with open(filename, 'w') as file:
             text_format.PrintMessage(proto, file)
     elif ext == '.protobuf':
-        logger.info("Saveing {} as protobuf".format(filename))
+        logger.info("Saving {} as protobuf".format(filename))
         proto = create_proto(contents, include_params)
         with open(filename, 'wb') as file:
             file.write(proto.SerializeToString())
     elif ext == '.nnp':
-        logger.info("Saveing {} as nnp".format(filename))
-        tmpdir = tempfile.mkdtemp()
-        save('{}/network.nntxt'.format(tmpdir), contents, include_params=False)
+        logger.info("Saving {} as nnp".format(filename))
+        try:
+            tmpdir = tempfile.mkdtemp()
+            save('{}/network.nntxt'.format(tmpdir),
+                 contents, include_params=False)
 
-        with open('{}/nnp_version.txt', 'w') as file:
-            file.write('{}\n'.format(nnp_version())
+            with open('{}/nnp_version.txt'.format(tmpdir), 'w') as file:
+                file.write('{}\n'.format(nnp_version))
 
-        save_parameters('{}/parameter.protobuf'.format(tmpdir))
+            save_parameters('{}/parameter.protobuf'.format(tmpdir))
 
-        with zipfile.ZipFile(filename, 'w') as nnp:
-            nnp.write('{}/nnp_version.txt'.format(tmpdir), 'nnp_version.txt')
-            nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')
-            nnp.write('{}/parameter.protobuf'.format(tmpdir),
-                      'parameter.protobuf')
-        shutil.rmtree(tmpdir)
+            with zipfile.ZipFile(filename, 'w') as nnp:
+                nnp.write('{}/nnp_version.txt'.format(tmpdir),
+                          'nnp_version.txt')
+                nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')
+                nnp.write('{}/parameter.protobuf'.format(tmpdir),
+                          'parameter.protobuf')
+        finally:
+            shutil.rmtree(tmpdir)
