@@ -28,6 +28,8 @@ setup_requires = [
 ]
 
 install_requires = setup_requires + [
+    'boto3',
+    'configparser',
     'contextlib2',
     'futures',
     'h5py',
