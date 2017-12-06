@@ -84,72 +84,78 @@ def create_image_classification_dataset_command(args):
         # print(src_file_name, dest_file_name)
 
         # open source image
-        im = scipy.misc.imread(src_file_name)
-        if len(im.shape) < 2 or len(im.shape) > 3:
-            logger.warning(
-                "Illigal image file format %s.".format(src_file_name))
-            csv_data.remove(data)
-            continue
-        elif len(im.shape) == 3:
-            # RGB image
-            if im.shape[2] != 3:
+        try:
+            im = scipy.misc.imread(src_file_name, mode='RGB' if ch==3 else 'L')
+            if len(im.shape) < 2 or len(im.shape) > 3:
                 logger.warning(
-                    "The image must be RGB or monochrome %s.".format(src_file_name))
+                    "Illigal image file format %s.".format(src_file_name))
                 csv_data.remove(data)
                 continue
+            elif len(im.shape) == 3:
+                # RGB image
+                if im.shape[2] != 3:
+                    logger.warning(
+                        "The image must be RGB or monochrome %s.".format(src_file_name))
+                    csv_data.remove(data)
+                    continue
 
-        # resize
-        h = im.shape[0]
-        w = im.shape[1]
-        # print(h, w)
-        if w != width or h != height:
-            # resize image
-            if not padding:
-                # trimming mode
-                if float(h) / w > float(height) / width:
-                    target_h = int(float(w) / width * height)
-                    # print('crop_target_h', target_h)
-                    im = im[(h - target_h) // 2:h - (h - target_h) // 2, ::]
+            # resize
+            h = im.shape[0]
+            w = im.shape[1]
+            # print(h, w)
+            if w != width or h != height:
+                # resize image
+                if not padding:
+                    # trimming mode
+                    if float(h) / w > float(height) / width:
+                        target_h = int(float(w) / width * height)
+                        # print('crop_target_h', target_h)
+                        im = im[(h - target_h) // 2:h - (h - target_h) // 2, ::]
+                    else:
+                        target_w = int(float(h) / height * width)
+                        # print('crop_target_w', target_w)
+                        im = im[::, (w - target_w) // 2:w - (w - target_w) // 2]
+                    # print('before', im.shape)
+                    im = scipy.misc.imresize(arr=im, size=(
+                        height, width), interp='lanczos')
+                    # print('after', im.shape)
                 else:
-                    target_w = int(float(h) / height * width)
-                    # print('crop_target_w', target_w)
-                    im = im[::, (w - target_w) // 2:w - (w - target_w) // 2]
-                # print('before', im.shape)
-                im = scipy.misc.imresize(arr=im, size=(
-                    height, width), interp='lanczos')
-                # print('after', im.shape)
-            else:
-                # padding mode
-                if float(h) / w < float(height) / width:
-                    target_h = int(float(height) / width * w)
-                    # print('padding_target_h', target_h)
-                    pad = (((target_h - h) // 2, target_h -
-                            (target_h - h) // 2 - h), (0, 0))
-                else:
-                    target_w = int(float(width) / height * h)
-                    # print('padding_target_w', target_w)
-                    pad = ((0, 0), ((target_w - w) // 2,
-                                    target_w - (target_w - w) // 2 - w))
-                if len(im.shape) == 3:
-                    pad = pad + ((0, 0),)
-                im = np.pad(im, pad, 'constant')
-                # print('before', im.shape)
-                im = scipy.misc.imresize(arr=im, size=(
-                    height, width), interp='lanczos')
-                # print('after', im.shape)
+                    # padding mode
+                    if float(h) / w < float(height) / width:
+                        target_h = int(float(height) / width * w)
+                        # print('padding_target_h', target_h)
+                        pad = (((target_h - h) // 2, target_h -
+                                (target_h - h) // 2 - h), (0, 0))
+                    else:
+                        target_w = int(float(width) / height * h)
+                        # print('padding_target_w', target_w)
+                        pad = ((0, 0), ((target_w - w) // 2,
+                                        target_w - (target_w - w) // 2 - w))
+                    if len(im.shape) == 3:
+                        pad = pad + ((0, 0),)
+                    im = np.pad(im, pad, 'constant')
+                    # print('before', im.shape)
+                    im = scipy.misc.imresize(arr=im, size=(
+                        height, width), interp='lanczos')
+                    # print('after', im.shape)
 
-        # change color ch
-        if len(im.shape) == 2 and ch == 3:
-            # Monochrome to RGB
-            im = np.array([im, im, im]).transpose((1, 2, 0))
-        elif len(im.shape) == 3 and ch == 1:
-            # RGB to monochrome
-            im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
+            # change color ch
+            if len(im.shape) == 2 and ch == 3:
+                # Monochrome to RGB
+                im = np.array([im, im, im]).transpose((1, 2, 0))
+            elif len(im.shape) == 3 and ch == 1:
+                # RGB to monochrome
+                im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
 
-        # output
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
-        scipy.misc.imsave(dest_file_name, im)
+            # output
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
+            scipy.misc.imsave(dest_file_name, im)
+        except:
+            logger.warning(
+                "Failed to convert %s.".format(src_file_name))
+            csv_data.remove(data)
+            continue
 
     logger.log(99, "Creating CSV files...")
     if shuffle:
