@@ -181,7 +181,8 @@ if __name__ == '__main__':
     # http://stackoverflow.com/questions/6191942/distributing-pre-built-libraries-with-python-modules
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
-    package_data = {"nnabla": [library_file_name, 'nnabla.conf']}
+    package_data = {"nnabla": [
+        library_file_name, 'nnabla.conf', 'utils/converter/function_info.json']}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -219,6 +220,9 @@ if __name__ == '__main__':
                 'nnabla.contrib',
                 'nnabla.utils',
                 'nnabla.utils.cli',
+                'nnabla.utils.converter',
+                'nnabla.utils.converter.nnabla',
+                'nnabla.utils.converter.nnablart',
                 'nnabla.extensions',
                 'nnabla.extensions.cpu']
 

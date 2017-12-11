@@ -63,3 +63,17 @@ def conv_dataset_command(args):
             _convert(args, source)
     else:
         print('Command `conv_dataset` only supports CSV or CACHE as source.')
+
+
+def add_conv_dataset_command(subparsers):
+    # Convert dataset
+    subparser = subparsers.add_parser('conv_dataset')
+    subparser.add_argument('-F', '--force', action='store_true',
+                           help='force overwrite destination', required=False)
+    subparser.add_argument(
+        '-S', '--shuffle', action='store_true', help='shuffle data', required=False)
+    subparser.add_argument('-N', '--normalize', action='store_true',
+                           help='normalize data range', required=False)
+    subparser.add_argument('source')
+    subparser.add_argument('destination')
+    subparser.set_defaults(func=conv_dataset_command)

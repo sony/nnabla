@@ -86,3 +86,23 @@ def encode_param_command(args, **kwargs):
     save_parameters(args.param)
 
     logger.log(99, 'Encode Parameter Completed.')
+
+
+def add_decode_param_command(subparsers):
+    # Decode param
+    subparser = subparsers.add_parser('decode_param')
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=decode_param_command)
+
+
+def add_encode_param_command(subparsers):
+    # Encode param
+    subparser = subparsers.add_parser('encode_param')
+    subparser.add_argument(
+        '-i', '--indir', help='input directory', required=True)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.set_defaults(func=encode_param_command)

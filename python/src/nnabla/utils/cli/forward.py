@@ -274,3 +274,34 @@ def infer_command(args):
             print(o)
             (np.array(o).astype(np.float32)).tofile(
                 "{}_{}.bin".format(args.output, i))
+
+
+def add_infer_command(subparsers):
+    # Infer
+    subparser = subparsers.add_parser('infer')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--output', help='output file prefix', required=False)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-b', '--batch_size',
+        help='Batch size to use batch size in nnp file set -1.',
+        type=int, default=1)
+    subparser.add_argument('inputs', nargs='+')
+    subparser.set_defaults(func=infer_command)
+
+
+def add_forward_command(subparsers):
+    # Forward
+    subparser = subparsers.add_parser('forward')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-d', '--dataset', help='path to CSV dataset', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=forward_command)

@@ -56,15 +56,21 @@ string(STRIP ${NBLA_SETUP_LIB_DIR_RAW} NBLA_SETUP_LIB_DIR)
 # Code generator
 ###############################################################################
 file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
+file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter)
 
 execute_process(
   COMMAND
   ${PYTHON_COMMAND}
   ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py)
+execute_process(
+  COMMAND
+  ${PYTHON_COMMAND}
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate_function_info.py
+  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/function_info.json)
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN
-    ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils//nnabla_pb2.py)
+    ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/nnabla_pb2.py)
   execute_process(
     COMMAND
     ${PROTOC_COMMAND}

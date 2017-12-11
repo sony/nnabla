@@ -118,7 +118,7 @@ class Uploader:
             self._log('Got upload_url')
         else:
             self._log('upload_url is [{}]'.format(
-            upload_url))
+                upload_url))
 
         bucketname, key = upload_url.split('://', 1)[1].split('/', 1)
         upload_key = '{}/{}.tar'.format(key, name)
@@ -178,7 +178,7 @@ class Uploader:
                 tarfile = self.createTemporaryTar(name,
                                                   csv_data,
                                                   data_files,
-                                                      tmpdir)
+                                                  tmpdir)
                 self._log('Upload')
                 res = self.uploadFile(endpoint, token, tarfile, name)
             finally:
@@ -235,6 +235,26 @@ def upload_command(args):
                     endpoint=args.endpoint)
 
 
+def add_upload_command(subparsers):
+    # Uploader
+    from nnabla.utils.cli.uploader import upload_command
+    subparser = subparsers.add_parser('upload')
+    subparser.add_argument(
+        '-e', '--endpoint', help='set endpoint uri', type=str)
+    subparser.add_argument('token', help='token for upload')
+    subparser.add_argument('filename', help='filename to upload')
+    subparser.set_defaults(func=upload_command)
+
+
 def create_tar_command(args):
     Uploader(log=log, progress=Progress()).convert(
         args.source, args.destination)
+
+
+def add_create_tar_command(subparsers):
+    # Create TAR for uploader
+    from nnabla.utils.cli.uploader import create_tar_command
+    subparser = subparsers.add_parser('create_tar')
+    subparser.add_argument('source', help='CSV dataset')
+    subparser.add_argument('destination', help='TAR filename')
+    subparser.set_defaults(func=create_tar_command)
