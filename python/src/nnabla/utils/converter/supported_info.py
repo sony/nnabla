@@ -12,5 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-extensions_for_read = ['.nnp']
-extensions_for_export = ['.nnp', '.nnb']
+import collections
+
+_SupportedInfo = collections.namedtuple('_SupportedInfo', 'read export')
+extensions = _SupportedInfo(read = ['.nnp'], export = ['.nnp', '.nnb'])
+formats = _SupportedInfo(read = ['NNP'], export = ['NNP', 'NNB', 'CSRC'])

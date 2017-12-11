@@ -18,17 +18,18 @@ import sys
 from nnabla.utils.converter.nnabla import NnpReader
 from nnabla.utils.converter.nnabla import NnpExporter
 from nnabla.utils.converter.nnablart import NnbExporter
+from nnabla.utils.converter.nnablart import CsrcExporter
 
 
 def convert_files(args, ifiles, output):
-    # Currently input file seems to be NNP input.
-    # Input file that has unsuported extension store into output nnp archive or directory.
-    reader = NnpReader(*ifiles, expand_network=args.nnp_expand_network)
-    nnp = reader.read()
+    nnp = None
+    if args.read_format == 'NNP':
+        # Input file that has unsuported extension store into output nnp archive or directory.
+        nnp = NnpReader(*ifiles, expand_network=args.nnp_expand_network).read()
 
     if nnp is not None:
         output_ext = os.path.splitext(output)[1].lower()
-        if os.path.isdir(output) or output_ext == '.nnp':
+        if (os.path.isdir(output) and args.export_format == 'NNP') or output_ext == '.nnp':
             parameter_type = 'protobuf'
             if args.nnp_parameter_nntxt:
                 parameter_type = 'included'
@@ -36,15 +37,17 @@ def convert_files(args, ifiles, output):
                 parameter_type = 'h5'
             if args.nnp_exclude_parameter:
                 parameter_type = 'none'
+            NnpExporter(nnp, parameter_type).export(output)
 
-            exporter = NnpExporter(nnp, parameter_type)
-            exporter.export(output)
         elif output_ext == '.nnb':
-            exporter = NnbExporter(nnp)
-            exporter.export(output)
+            NnbExporter(nnp).export(output)
+            
+        elif os.path.isdir(output) and args.export_format == 'CSRC':
+            CsrcExporter(nnp).export(output)
+            
         else:
-            print('Output file extension ({}) is not supported.'.format(oext))
+            print('Output file ({}) is not supported or output directory does not exist.'.format(output_ext))
             return False
     else:
-        print('Read failed.')
+        print('Read from [{}] failed.'.format(ifiles))
     return False

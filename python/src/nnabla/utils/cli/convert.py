@@ -29,42 +29,21 @@ def function_info_command(args):
 
 
 def convert_command(args):
-    print(args.files)
+
+    if 'read_format' in args:
+        if args.read_format not in nnabla.utils.converter.supported_info.formats.read:
+                print('Read format ({}) is not supported.'.format(args.read_format))
+                return
+            
+    if 'export_format' in args:
+        if args.export_format not in nnabla.utils.converter.supported_info.formats.export:
+                print('Export format ({}) is not supported.'.format(args.export_format))
+                return
+
+
     if len(args.files) >= 2:
         output = args.files.pop()
-        result = True
-        for ifile in args.files:
-            if not os.path.isfile(ifile):
-                print('Input file ({}) does not exist.'.format(ifile))
-                result = False
-        if result:
-            if os.path.splitext(output)[1] in nnabla.utils.converter.supported_info.extensions_for_export:
-                if os.path.isfile(output):
-                    if args.force:
-                        nnabla.utils.converter.convert_files(
-                            args, args.files, output)
-                    else:
-                        print('Output file ({}) already exists.'.format(output))
-                        print(' Remove it or specify `-f` option.')
-                        result = False
-                else:
-                    if os.path.isdir(os.path.dirname(os.path.abspath(output))):
-                        nnabla.utils.converter.convert_files(
-                            args, args.files, output)
-                    else:
-                        print('Output directory ({}) does not exist.'.format(
-                            os.path.dirname(output)))
-                        print(' Make output directory beforre convert.')
-                        result = False
-
-            elif os.path.isdir(output):
-                nnabla.utils.converter.convert_files(args, args.files, output)
-            else:
-                print('Output ({}) is invalid.'.format(output))
-                print(' Please specify output file or existing directory.')
-                result = False
-
-    return result
+        nnabla.utils.converter.convert_files(args, args.files, output)
 
 
 def add_convert_command(subparsers):
@@ -81,16 +60,14 @@ def add_convert_command(subparsers):
     # general option
     # read option
     # NNP
-    read_formats_string = ','.join(
-        [x[1:] for x in nnabla.utils.converter.supported_info.extensions_for_read])
-    subparser.add_argument('-I', '--read-format', type=str, default=None,
+    read_formats_string = ','.join(nnabla.utils.converter.supported_info.formats.read)
+    subparser.add_argument('-I', '--read-format', type=str, default='NNP',
                            help='[read] read format. (one of [{}])'.format(read_formats_string))
     subparser.add_argument('--nnp-expand-network', action='store_true',
                            help='[read][NNP] expand network with repeat or recurrent.')
     # export option
-    export_formats_string = ','.join(
-        [x[1:] for x in nnabla.utils.converter.supported_info.extensions_for_export])
-    subparser.add_argument('-O', '--export-format', type=str, default=None,
+    export_formats_string = ','.join(nnabla.utils.converter.supported_info.formats.export)
+    subparser.add_argument('-O', '--export-format', type=str, default='NNP',
                            help='[export] export format. (one of [{}])'.format(export_formats_string))
     subparser.add_argument('-f', '--force', action='store_true',
                            help='[export] overwrite output file.')
