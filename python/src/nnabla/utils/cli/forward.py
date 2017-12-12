@@ -236,8 +236,6 @@ def infer_command(args):
     config = ForwardConfig
     info = load.load(files, prepare_data_iterator=False, batch_size=batch_size)
 
-    config.global_config = info.global_config
-
     config.executors = info.executors.values()
 
     config.networks = []
@@ -250,8 +248,8 @@ def infer_command(args):
             return
 
     normalize = True
-    for d in info.datasets.values():
-        normalize = d.normalize
+    #    for d in info.datasets.values():
+    #        normalize = d.normalize
 
     input_file_index = 0
     inputs = []

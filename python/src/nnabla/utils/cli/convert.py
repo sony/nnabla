@@ -16,17 +16,15 @@ import os
 import sys
 
 import nnabla.utils.converter
+from nnabla.utils.converter import get_category_info_string
 
 
 def function_info_command(args):
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'converter', 'function_info.json')) as f:
-        info = f.read()
     if args.dest is None:
-        sys.stdout.write(info)
+        sys.stdout.write(get_category_info_string())
     else:
         with open(args.dest, 'w') as f:
-            f.write(info)
-
+            f.write(get_category_info_string())
 
 def convert_command(args):
 

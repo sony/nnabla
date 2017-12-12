@@ -486,7 +486,7 @@ def save(filename, contents, include_params=False):
                  contents, include_params=False)
 
             with open('{}/nnp_version.txt'.format(tmpdir), 'w') as file:
-                file.write('{}\n'.format(nnp_version))
+                file.write('{}\n'.format(nnp_version()))
 
             save_parameters('{}/parameter.protobuf'.format(tmpdir))
 

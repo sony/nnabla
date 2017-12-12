@@ -65,8 +65,8 @@ execute_process(
 execute_process(
   COMMAND
   ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate_function_info.py
-  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/function_info.json)
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate_category_info.py
+  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/category_info.json)
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN

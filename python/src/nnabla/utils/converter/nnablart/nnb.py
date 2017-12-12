@@ -12,30 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import OrderedDict
-import json
 import os
 import re
 
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
+import nnabla.utils.converter
 
 
 class NnbExporter:
 
     def __init__(self, nnp):
 
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               '..', 'function_info.json'), 'r') as f:
-            categories = json.loads(f.read(), object_pairs_hook=OrderedDict)
-
-        functions = OrderedDict()
-        for category in categories:
-            for function in categories[category]:
-                functions[function] = categories[category][function]
+        functions = nnabla.utils.converter.get_function_info()
 
         message_types = nnabla_pb2.DESCRIPTOR.message_types_by_name
         function_message = message_types['Function']
-
+        
         import google.protobuf
 
         TYPE_BOOL = google.protobuf.descriptor.FieldDescriptor.TYPE_BOOL

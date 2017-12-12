@@ -35,7 +35,7 @@
 /python/src/nnabla/nbla
 /python/src/nnabla/nnabla.lib
 /python/src/nnabla/solver.cpp
-/python/src/nnabla/utils/converter/function_info.json
+/python/src/nnabla/utils/converter/category_info.json
 /python/src/nnabla/utils/load_function.py
 /python/src/nnabla/utils/nnabla_pb2.py
 /python/src/nnabla/utils/save_function.py
