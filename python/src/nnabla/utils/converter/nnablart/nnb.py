@@ -27,7 +27,7 @@ class NnbExporter:
 
         message_types = nnabla_pb2.DESCRIPTOR.message_types_by_name
         function_message = message_types['Function']
-        
+
         import google.protobuf
 
         TYPE_BOOL = google.protobuf.descriptor.FieldDescriptor.TYPE_BOOL

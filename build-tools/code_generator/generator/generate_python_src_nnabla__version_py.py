@@ -15,6 +15,8 @@
 import os
 from utils.common import get_version
 
+
 def generate(info, template):
-    version, short_version = get_version(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-    return template.format(version="'"+version+"'", short_version="'"+short_version+"'")
+    version, short_version = get_version(os.path.join(
+        os.path.dirname(__file__), '..', '..', '..'))
+    return template.format(version="'" + version + "'", short_version="'" + short_version + "'")

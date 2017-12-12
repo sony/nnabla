@@ -26,18 +26,18 @@ def function_info_command(args):
         with open(args.dest, 'w') as f:
             f.write(get_category_info_string())
 
+
 def convert_command(args):
 
     if 'read_format' in args:
         if args.read_format not in nnabla.utils.converter.supported_info.formats.read:
-                print('Read format ({}) is not supported.'.format(args.read_format))
-                return
-            
+            print('Read format ({}) is not supported.'.format(args.read_format))
+            return
+
     if 'export_format' in args:
         if args.export_format not in nnabla.utils.converter.supported_info.formats.export:
-                print('Export format ({}) is not supported.'.format(args.export_format))
-                return
-
+            print('Export format ({}) is not supported.'.format(args.export_format))
+            return
 
     if len(args.files) >= 2:
         output = args.files.pop()
@@ -58,13 +58,15 @@ def add_convert_command(subparsers):
     # general option
     # read option
     # NNP
-    read_formats_string = ','.join(nnabla.utils.converter.supported_info.formats.read)
+    read_formats_string = ','.join(
+        nnabla.utils.converter.supported_info.formats.read)
     subparser.add_argument('-I', '--read-format', type=str, default='NNP',
                            help='[read] read format. (one of [{}])'.format(read_formats_string))
     subparser.add_argument('--nnp-expand-network', action='store_true',
                            help='[read][NNP] expand network with repeat or recurrent.')
     # export option
-    export_formats_string = ','.join(nnabla.utils.converter.supported_info.formats.export)
+    export_formats_string = ','.join(
+        nnabla.utils.converter.supported_info.formats.export)
     subparser.add_argument('-O', '--export-format', type=str, default='NNP',
                            help='[export] export format. (one of [{}])'.format(export_formats_string))
     subparser.add_argument('-f', '--force', action='store_true',

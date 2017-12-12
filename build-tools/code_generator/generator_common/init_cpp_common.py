@@ -1,11 +1,11 @@
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +24,7 @@ def generate_init_cpp(info, backend='cpu', engine='default', rank=0):
         engine_suffix.capitalize()
     for function, function_info in each_function(info):
         if 'Implements' not in info or (function in info['Implements'] and
-                                       ((backend in info['Implements'][function] and engine == 'default') or (engine in info['Implements'][function]))):
+                                        ((backend in info['Implements'][function] and engine == 'default') or (engine in info['Implements'][function]))):
             includes.append('{}.hpp'.format(info['Names'][function]))
             io_info = function_io(function_info)
             arg_info = function_arguments(function_info)

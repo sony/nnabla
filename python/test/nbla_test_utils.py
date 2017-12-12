@@ -262,7 +262,8 @@ def function_tester(rng, func, ref_func, inputs,
     # Checking function name
     try:
         import save_function_test_result
-        save_function_test_result.save_result(vinputs, o, func_name, func_args, func_kwargs)
+        save_function_test_result.save_result(
+            vinputs, o, func_name, func_args, func_kwargs)
     except UnboundLocalError:
         pass
     except IndexError:

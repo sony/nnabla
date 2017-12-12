@@ -41,12 +41,13 @@ def convert_files(args, ifiles, output):
 
         elif output_ext == '.nnb':
             NnbExporter(nnp).export(output)
-            
+
         elif os.path.isdir(output) and args.export_format == 'CSRC':
             CsrcExporter(nnp).export(output)
-            
+
         else:
-            print('Output file ({}) is not supported or output directory does not exist.'.format(output_ext))
+            print('Output file ({}) is not supported or output directory does not exist.'.format(
+                output_ext))
             return False
     else:
         print('Read from [{}] failed.'.format(ifiles))
