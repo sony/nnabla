@@ -160,11 +160,14 @@ def forward_command(args):
     files.append(args.config)
     if args.param:
         files.append(args.param)
+    batch_size = args.batch_size
+    if batch_size < 1:
+        batch_size = None
 
     class ForwardConfig:
         pass
     config = ForwardConfig
-    info = load.load(files, prepare_data_iterator=False, batch_size=1)
+    info = load.load(files, prepare_data_iterator=False, batch_size=batch_size)
     config.global_config = info.global_config
 
     config.executors = info.executors.values()
@@ -269,7 +272,6 @@ def infer_command(args):
         if args.output is None:
             print(o)
         else:
-            print(o)
             (np.array(o).astype(np.float32)).tofile(
                 "{}_{}.bin".format(args.output, i))
 
@@ -302,4 +304,8 @@ def add_forward_command(subparsers):
         '-d', '--dataset', help='path to CSV dataset', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '-b', '--batch_size',
+        help='Batch size to use batch size in nnp file set -1.',
+        type=int, default=-1)
     subparser.set_defaults(func=forward_command)
