@@ -16,6 +16,7 @@ from six import iteritems
 
 from contextlib import contextmanager
 from collections import OrderedDict
+import google.protobuf.text_format as text_format
 import numpy
 import os
 import shutil
@@ -200,6 +201,13 @@ def clear_parameters():
     for key in list(current_scope.keys()):
         del current_scope[key]
 
+def set_parameter_from_proto(proto):
+    for parameter in proto.parameter:
+        var = get_parameter_or_create(
+            parameter.variable_name, parameter.shape.dim)
+        param = numpy.reshape(parameter.data, parameter.shape.dim)
+        var.d = param
+        var.need_grad = parameter.need_grad
 
 def load_parameters(path):
     """Load parameters from a file with the specified format.
@@ -230,12 +238,13 @@ def load_parameters(path):
         proto = nnabla_pb2.NNablaProtoBuf()
         with open(path, 'rb') as f:
             proto.MergeFromString(f.read())
-            for parameter in proto.parameter:
-                var = get_parameter_or_create(
-                    parameter.variable_name, parameter.shape.dim)
-                param = numpy.reshape(parameter.data, parameter.shape.dim)
-                var.d = param
-                var.need_grad = parameter.need_grad
+            set_parameter_from_proto(proto)
+    elif ext == '.nntxt' or ext == '.prototxt':
+        proto = nnabla_pb2.NNablaProtoBuf()
+        with open(path, 'r') as f:
+            text_format.Merge(f.read(), proto)
+            set_parameter_from_proto(proto)
+        
     elif ext == '.nnp':
         try:
             tmpdir = tempfile.mkdtemp()

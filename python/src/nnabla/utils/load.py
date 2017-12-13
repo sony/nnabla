@@ -571,6 +571,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
         if ext in ['.nntxt', '.prototxt']:
             with open(filename, 'rt') as f:
                 text_format.Merge(f.read(), proto)
+            if len(proto.parameter) > 0:
+                nn.load_parameters(filename)
         elif ext in ['.protobuf', '.h5']:
             nn.load_parameters(filename)
 
@@ -588,6 +590,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
                             nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
                                 text_format.Merge(f.read(), proto)
+                            if len(proto.parameter) > 0:
+                                nn.load_parameters(os.path.join(tmpdir, name))
                         elif ext in ['.protobuf', '.h5']:
                             nnp.extract(name, tmpdir)
                             nn.load_parameters(os.path.join(tmpdir, name))
