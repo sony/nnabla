@@ -52,7 +52,7 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_BINARY_1(
     EpsilonInsensitiveLoss,
-    (std::abs(x0 - x1) > (T)a0) ? (std::abs((x0 - x1)) - (T)a0) : (T)0,
+    (abs(x0 - x1) > (T)a0) ? (abs((x0 - x1)) - (T)a0) : (T)0,
     (x0 - x1) > (T)a0 ? dy : ((x0 - x1) < (T)-a0) ? -dy : (T)0,
     (x0 - x1) > (T)a0 ? -dy : ((x0 - x1) < (T)-a0) ? dy : (T)0, false, false,
     float);
