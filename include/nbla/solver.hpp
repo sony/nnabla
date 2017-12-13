@@ -174,6 +174,17 @@ protected:
 };
 /*@}*/
 
+#define NBLA_DECL_WEIGHT_DECAY()                                               \
+  virtual void weight_decay_impl(const string &key, VariablePtr param,         \
+                                 float decay_rate)
+
+#define NBLA_DEF_WEIGHT_DECAY(SOLVER, WEIGHT_DECAY_FUNC)                       \
+  template <typename T>                                                        \
+  void SOLVER<T>::weight_decay_impl(const string &key, VariablePtr param,      \
+                                    float decay_rate) {                        \
+    WEIGHT_DECAY_FUNC<T>(this->ctx_, param, decay_rate);                       \
+  }
+
 /** \defgroup SolverImplGrp Solver list */
 /*@{*/
 /*@}*/
