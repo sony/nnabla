@@ -324,4 +324,61 @@ protected:
     }                                                                          \
   }
 }
+
+// --------------------------------------------------------------------------
+// Disable inter-array copy of specific types by template specialization.
+#define NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, src_type,      \
+                                        dst_type)                              \
+  template <>                                                                  \
+  void copy_func<src_type, dst_type>(const Array *src, Array *dst) {           \
+    NBLA_ERROR(error_code::not_implemented,                                    \
+               "Copy from " #src_type " to " #dst_type                         \
+               " is disabled in " #array_class ".");                           \
+  }
+
+#define NBLA_ARRAY_DISABLE_COPY(array_class, copy_func, type)                  \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
+                                  unsigned char);                              \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, char);         \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
+                                  unsigned short);                             \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, short);        \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, unsigned int); \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, int);          \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
+                                  unsigned long);                              \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, long);         \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
+                                  unsigned long long);                         \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, long long);    \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, float);        \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, double);       \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, long double);  \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, bool);         \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned char,       \
+                                  type);                                       \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, char, type);         \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned short,      \
+                                  type);                                       \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, short, type);        \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned int, type); \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, int, type);          \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned long,       \
+                                  type);                                       \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, long, type);         \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned long long,  \
+                                  type);                                       \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, long long, type);    \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, float, type);        \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, double, type);       \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, long double, type);  \
+  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, bool, type);
+
+// --------------------------------------------------------------------------
+// Disable array filling of a specific type by template specialization.
+#define NBLA_ARRAY_DISABLE_FILL(array_class, fill_func, type)                  \
+  template <> void fill_func<type>(Array * self, float value) {                \
+    NBLA_ERROR(error_code::not_implemented,                                    \
+               "Fill function of " #type " is disabled in " #array_class "."); \
+  }
 #endif
