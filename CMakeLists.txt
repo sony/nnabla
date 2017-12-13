@@ -16,6 +16,7 @@ include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 option(BUILD_CPP_LIB "Build C++ Library" ON)
 option(BUILD_CPP_TEST "Build testing" OFF)
 option(BUILD_CPP_UTILS "Build C++ API and utilities" OFF)
+option(BUILD_CPP_UTILS_LIB_ONLY "Build C++ utilitiy lib only" OFF)
 
 option(BUILD_PYTHON_PACKAGE "Build python package" ON)
 
@@ -151,8 +152,10 @@ if(BUILD_CPP_LIB)
   ###############################################################################
   if(BUILD_CPP_UTILS)
     add_subdirectory(src/nbla_utils)
-    add_subdirectory(src/nbla_cli)
-    add_subdirectory(examples/cpp)
+    if(NOT (BUILD_CPP_UTILS_LIB_ONLY))
+      add_subdirectory(src/nbla_cli)
+      add_subdirectory(examples/cpp)
+    endif()
   endif()
     
   ###############################################################################
