@@ -19,6 +19,7 @@
 #include <nbla/variable.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace nbla {
 
