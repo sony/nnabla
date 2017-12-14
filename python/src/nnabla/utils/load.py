@@ -116,10 +116,13 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        reshape_shape = (network.batch_size,) + \
-            tuple(f.reshape_param.shape.dim)
+        shape = tuple([d if d >=0 else network.batch_size for d in f.reshape_param.shape.dim])
+        print(shape, inputs[0].shape)
+        if len(shape) < len(inputs[0].shape):
+            shape = (network.batch_size,) + \
+                tuple(f.reshape_param.shape.dim)
         function_instance = F.Reshape(ctx,
-                                      shape=reshape_shape)
+                                      shape=shape)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -130,6 +133,9 @@ def _create_function(ctx, network, f, variable_index):
         function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
+    elif f.type == "Broadcast":
+        shape = tuple([d if d >=0 else network.batch_size for d in f.broadcast_param.shape.dim])
+        function_instance = F.Broadcast(ctx, shape)
     else:
         function_instance = _create_function_instance(ctx, f)
 
