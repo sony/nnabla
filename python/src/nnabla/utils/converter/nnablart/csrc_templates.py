@@ -98,7 +98,10 @@ csrc_implements = """// Copyright (c) 2017 Sony Corporation. All Rights Reserved
 
 void* {prefix}_allocate_context(void)
 {{
-  WHOAMI("\\n");
+    WHOAMI("%s\\n", __func__);
+    nnablart_network1_local_context_t* c = calloc(sizeof(nnablart_network1_local_context_t), 1);
+{initialize_context}
+    return (void*)c;
 }}
 
 int {prefix}_free_context(void* context)
@@ -190,5 +193,6 @@ csrc_gnumake = """# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 all: {name}_example
 
 {name}_example: {name}_example.c {name}_inference.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 """

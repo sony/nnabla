@@ -98,24 +98,31 @@ class CsrcExporter:
 
     def export_csrc_implements(self, dirname, name, prefix):
 
-        internal_defines = []
-        internal_defines.append('typedef struct {')
-        internal_defines.append('    float** variable_buffers;')
         batch_size = self._network.batch_size
 
+        variable_buffers = []
+        buffer_index = {}
+        for n, v in enumerate(self._network.variable):
+            buffer_index[n] = n
+            size = nnabla.utils.converter.calc_shape_size(v.shape, batch_size)
+            variable_buffers.append(size)
+        
+        internal_defines = []
+        internal_defines.append('typedef struct {')
+        internal_defines.append('    float* variable_buffers[{}];'.format(len(variable_buffers)))
         internal_defines.append('')
         internal_defines.append('    // Variables')
         for n, v in enumerate(self._network.variable):
             vsize = nnabla.utils.converter.calc_shape_size(v.shape, batch_size)
             #print(v.name, v.type, v.shape, vsize)
             internal_defines.append('    rt_variable_t v{}; ///< {}'.format(n, v.name))
+            internal_defines.append('    int v{}_shape[{}];'.format(n, len(v.shape.dim)))
 
         internal_defines.append('')
         internal_defines.append('    // Fnctions')
         for n, f in enumerate(self._network.function):
             internal_defines.append('    rt_function_t f{}; ///< {}'.format(n, f.name))
             finfo = self._function_info[f.name]
-            print(finfo)
             internal_defines.append('    rt_variable_t* f{0}_input[{1}];'.format(n, len(finfo['input'])))
             internal_defines.append('    rt_variable_t* f{0}_output[{1}];'.format(n, len(finfo['output'])))
             if 'argument' in finfo:
@@ -131,9 +138,46 @@ class CsrcExporter:
 
         internal_defines.append('}} {}_local_context_t;'.format(prefix))
 
+
+        initialize_context = []
+        initialize_context.append('    // Variable buffer')
+        for n, size in enumerate(variable_buffers):
+            initialize_context.append('    c->variable_buffers[{}] = calloc(sizeof(float), {});'.format(n, size))
+            
+        initialize_context.append('')
+        initialize_context.append('    // Variables')
+        for n, v in enumerate(self._network.variable):
+            initialize_context.append('    // {}'.format(v.name))
+            initialize_context.append('    (c->v{}).type = NN_DATA_TYPE_FLOAT;'.format(n))
+            initialize_context.append('    (c->v{}).shape.size = {};'.format(n, len(v.shape.dim)))
+            initialize_context.append('    (c->v{0}).shape.data = c->v{0}_shape;'.format(n))
+            initialize_context.append('    (c->v{}).data = c->variable_buffers[{}];'.format(n, buffer_index[n]))
+            
+        initialize_context.append('')
+        initialize_context.append('    // Functions')
+        for n, f in enumerate(self._network.function):
+            finfo = self._function_info[f.name]
+            initialize_context.append('    // {}'.format(f.name))
+            initialize_context.append('    (c->f{}).num_of_inputs = {};'.format(n, len(finfo['input'])))
+            initialize_context.append('    (c->f{0}).inputs = c->f{0}_input;'.format(n))
+            initialize_context.append('    (c->f{}).num_of_outputs = {};'.format(n, len(finfo['output'])))
+            initialize_context.append('    (c->f{0}).outputs = c->f{0}_output;'.format(n))
+            if 'argument' in finfo:
+                initialize_context.append('    (c->f{0}).config = &(c->c{0});'.format(n))
+                args = []
+                for a in finfo['argument']:
+                    val = eval('f.{}_param.{}'.format(finfo['snakecase_name'], a))
+                    initialize_context.append('    (c->c{}).{} = {};'.format(n, a, val))
+                    args.append(str(val))
+                initialize_context.append('    init_{}_config(&(c->c{}), {});'.format(finfo['snakecase_name'], n, ', '.join(args)))
+                initialize_context.append('    init_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+
+                
+
         source = csrc_implements.format(name=name,
                                         prefix=prefix,
-                                        internal_defines='\n'.join(internal_defines))
+                                        internal_defines='\n'.join(internal_defines),
+                                        initialize_context='\n'.join(initialize_context))
 
         source_filename = os.path.join(dirname, '{}_inference.c'.format(name))
         with open(source_filename, 'w') as f:
