@@ -18,3 +18,13 @@ def get_function_info():
         for function_name, function in category.items():
             functions[function_name] = function
     return functions
+
+def select_executor(nnp, name=None):
+    return nnp.protobuf.executor[0]
+
+
+def search_network(nnp, name):
+    for n in nnp.protobuf.network:
+        if n.name == name:
+            return n
+    return None

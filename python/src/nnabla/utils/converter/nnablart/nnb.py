@@ -71,15 +71,12 @@ class NnbExporter:
                     assert('TYPE[{}] unknown !!!!!!!!!!!!!!'.format(arg.type))
                 print('    ', type_name, arg.name, arg.number)
 
-        # TODO: specify executor if number of exec in nnp.
-        executor = nnp.protobuf.executor[0]
+        executor = nnabla.utils.converter.select_executor(nnp)
+        nnp.protobuf.executor[0]
         print('Using executor [{}].'.format(executor.network_name))
 
         # Search network.
-        network = None
-        for n in nnp.protobuf.network:
-            if n.name == executor.network_name:
-                network = n
+        network = nnabla.utils.converter.search_network(nnp, executor.network_name)
 
         if network is None:
             print('Network for executor [{}] does not found.'.format(
