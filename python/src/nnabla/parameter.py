@@ -201,6 +201,7 @@ def clear_parameters():
     for key in list(current_scope.keys()):
         del current_scope[key]
 
+
 def set_parameter_from_proto(proto):
     for parameter in proto.parameter:
         var = get_parameter_or_create(
@@ -208,6 +209,7 @@ def set_parameter_from_proto(proto):
         param = numpy.reshape(parameter.data, parameter.shape.dim)
         var.d = param
         var.need_grad = parameter.need_grad
+
 
 def load_parameters(path):
     """Load parameters from a file with the specified format.
@@ -244,7 +246,7 @@ def load_parameters(path):
         with open(path, 'r') as f:
             text_format.Merge(f.read(), proto)
             set_parameter_from_proto(proto)
-        
+
     elif ext == '.nnp':
         try:
             tmpdir = tempfile.mkdtemp()

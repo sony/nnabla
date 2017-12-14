@@ -17,3 +17,4 @@ from .convert_files import convert_files
 from .utils import get_category_info_string, get_category_info,  get_function_info
 from .utils import select_executor
 from .utils import search_network
+from .utils import calc_shape_size

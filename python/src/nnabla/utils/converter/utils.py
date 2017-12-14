@@ -19,6 +19,7 @@ def get_function_info():
             functions[function_name] = function
     return functions
 
+
 def select_executor(nnp, name=None):
     return nnp.protobuf.executor[0]
 
@@ -28,3 +29,12 @@ def search_network(nnp, name):
         if n.name == name:
             return n
     return None
+
+
+def calc_shape_size(shape, batch_size):
+    size = 1
+    for d in shape.dim:
+        if d < 0:
+            d = batch_size
+        size *= d
+    return size

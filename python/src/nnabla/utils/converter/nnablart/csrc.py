@@ -17,23 +17,22 @@ import os
 import nnabla.utils.converter
 
 from .csrc_templates import \
-     csrc_defines, \
-     csrc_implements, \
-     csrc_example, \
-     csrc_gnumake
+    csrc_defines, \
+    csrc_implements, \
+    csrc_example, \
+    csrc_gnumake
+
 
 class CsrcExporter:
 
     def __init__(self, nnp):
         print('CsrcExporter')
-        
-        functions = nnabla.utils.converter.get_function_info()
 
         executor = nnabla.utils.converter.select_executor(nnp)
-        nnp.protobuf.executor[0]
 
         # Search network.
-        network = nnabla.utils.converter.search_network(nnp, executor.network_name)
+        network = nnabla.utils.converter.search_network(
+            nnp, executor.network_name)
 
         if network is None:
             print('Network for executor [{}] does not found.'.format(
@@ -50,48 +49,145 @@ class CsrcExporter:
         variables = {}
         for v in network.variable:
             variables[v.name] = v
-            
+
+        self._num_of_input_buffers = len(executor.data_variable)
+        self._input_buffer_sizes = []
         for n, i in enumerate(executor.data_variable):
+            v = variables[i.variable_name]
+            self._input_buffer_sizes.append(
+                nnabla.utils.converter.calc_shape_size(v.shape, network.batch_size))
             print('Data', n, i.variable_name, i.variable_name in variables)
 
+        self._num_of_output_buffers = len(executor.output_variable)
+        self._output_buffer_sizes = []
         for n, o in enumerate(executor.output_variable):
+            v = variables[o.variable_name]
+            self._output_buffer_sizes.append(
+                nnabla.utils.converter.calc_shape_size(v.shape, network.batch_size))
             print('Output', n, o.variable_name, o.variable_name in variables)
 
         for n, p in enumerate(executor.parameter_variable):
-            print('Parameter', n, p.variable_name, p.variable_name in variables, p.variable_name in parameters)
+            print('Parameter', n, p.variable_name,
+                  p.variable_name in variables, p.variable_name in parameters)
+
+        self._parameters = parameters
+        self._network = network
+        self._function_info = nnabla.utils.converter.get_function_info()
 
 
     def export_csrc_defines(self, dirname, name, prefix):
-        header = []
-        header.append(csrc_defines.format(name_upper=name.upper(), prefix=prefix))
+        input_buffer_size_defines = []
+        for n, s in enumerate(self._input_buffer_sizes):
+            input_buffer_size_defines.append(
+                '#define {}_INPUT{}_SIZE ({})'.format(prefix.upper(), n, s))
+        output_buffer_size_defines = []
+        for n, s in enumerate(self._output_buffer_sizes):
+            output_buffer_size_defines.append(
+                '#define {}_OUTPUT{}_SIZE ({})'.format(prefix.upper(), n, s))
+        header = csrc_defines.format(name_upper=name.upper(),
+                                     prefix=prefix,
+                                     prefix_upper=prefix.upper(),
+                                     num_of_input_buffers=self._num_of_input_buffers,
+                                     input_buffer_size_defines='\n'.join(
+                                         input_buffer_size_defines),
+                                     num_of_output_buffers=self._num_of_output_buffers,
+                                     output_buffer_size_defines='\n'.join(output_buffer_size_defines))
         header_filename = os.path.join(dirname, '{}_inference.h'.format(name))
         with open(header_filename, 'w') as f:
-            f.write('\n'.join(header))
-        
+            f.write(header)
+
     def export_csrc_implements(self, dirname, name, prefix):
-        source = []
-        source.append(csrc_implements.format(name=name, prefix=prefix))
+
+        internal_defines = []
+        internal_defines.append('typedef struct {')
+        internal_defines.append('    float** variable_buffers;')
+        batch_size = self._network.batch_size
+
+        internal_defines.append('')
+        internal_defines.append('    // Variables')
+        for n, v in enumerate(self._network.variable):
+            vsize = nnabla.utils.converter.calc_shape_size(v.shape, batch_size)
+            #print(v.name, v.type, v.shape, vsize)
+            internal_defines.append('    rt_variable_t v{}; ///< {}'.format(n, v.name))
+
+        internal_defines.append('')
+        internal_defines.append('    // Fnctions')
+        for n, f in enumerate(self._network.function):
+            internal_defines.append('    rt_function_t f{}; ///< {}'.format(n, f.name))
+            finfo = self._function_info[f.name]
+            print(finfo)
+            internal_defines.append('    rt_variable_t* f{0}_input[{1}];'.format(n, len(finfo['input'])))
+            internal_defines.append('    rt_variable_t* f{0}_output[{1}];'.format(n, len(finfo['output'])))
+            if 'argument' in finfo:
+                internal_defines.append('    {1}_config_t c{0};'.format(n, \
+                    finfo['snakecase_name']))
+
+        if len(self._parameters) > 0:
+            internal_defines.append('')
+            internal_defines.append('    // Parameters')
+            internal_defines.append('    void* params[{}];'.format(len(self._parameters)))
+            internal_defines.append('    void* param_data;')
             
+
+        internal_defines.append('}} {}_local_context_t;'.format(prefix))
+
+        source = csrc_implements.format(name=name,
+                                        prefix=prefix,
+                                        internal_defines='\n'.join(internal_defines))
+
         source_filename = os.path.join(dirname, '{}_inference.c'.format(name))
         with open(source_filename, 'w') as f:
-            f.write('\n'.join(source))
+            f.write(source)
 
     def export_csrc_example(self, dirname, name, prefix):
-        example = []
-        example.append(csrc_example.format(name=name, prefix=prefix))
+
+        prepare_input_file = []
+        for n in range(self._num_of_input_buffers):
+            prepare_input_file.append(
+                '    FILE* input{} = fopen(argv[{}], "rb");'.format(n, n + 1))
+            prepare_input_file.append('    assert(input{});'.format(n))
+            prepare_input_file.append(
+                '    // int input_read_size{2} = fread({0}_output_buffer(context, {2}), sizeof(float), {1}_INPUT{2}_SIZE, input{2});'.format(prefix, prefix.upper(), n))
+            prepare_input_file.append(
+                '    // assert(input_read_size{1} == {0}_INPUT{1}_SIZE);'.format(prefix.upper(), n))
+            prepare_input_file.append('    fclose(input{});'.format(n))
+            prepare_input_file.append('')
+
+        prepare_output_file = []
+        pos = self._num_of_input_buffers
+        for n in range(self._num_of_output_buffers):
+            prepare_output_file.append(
+                '    char* output_filename{} = malloc(strlen(argv[{}]) + 10);'.format(n, pos + n + 1))
+            prepare_output_file.append(
+                '    sprintf(output_filename{0}, "%s_{0}.bin", argv[{1}]);'.format(n, pos + n + 1))
+            prepare_output_file.append(
+                '    FILE* output{0} = fopen(output_filename{0}, "wb");'.format(n))
+            prepare_output_file.append('    assert(output{});'.format(n))
+            prepare_output_file.append(
+                '    // int output_write_size{2} = fwrite({0}_output_buffer(context, {2}), sizeof(float), {1}_OUTPUT{2}_SIZE, output{2});'.format(prefix, prefix.upper(), n))
+            prepare_output_file.append(
+                '    // assert(output_write_size{1} == {0}_OUTPUT{1}_SIZE);'.format(prefix.upper(), n))
+            prepare_output_file.append('    fclose(output{});'.format(n))
+            prepare_output_file.append('')
+
+        example = csrc_example.format(name=name,
+                                      prefix=prefix,
+                                      prefix_upper=prefix.upper(),
+                                      num_of_input_buffers=self._num_of_input_buffers,
+                                      prepare_input_file='\n'.join(
+                                          prepare_input_file),
+                                      prepare_output_file='\n'.join(prepare_output_file))
 
         example_filename = os.path.join(dirname, '{}_example.c'.format(name))
         with open(example_filename, 'w') as f:
-            f.write('\n'.join(example))
+            f.write(example)
 
     def export_csrc_gnumake(self, dirname, name, prefix):
-        gnumake = []
-        gnumake.append(csrc_gnumake.format(name=name))
+        gnumake = csrc_gnumake.format(name=name)
 
         gnumake_filename = os.path.join(dirname, 'GNUmakefile'.format(name))
         with open(gnumake_filename, 'w') as f:
-            f.write('\n'.join(gnumake))
-        
+            f.write(gnumake)
 
     def export_csrc(self, dirname):
         name = self._network_name
@@ -101,7 +197,6 @@ class CsrcExporter:
         self.export_csrc_example(dirname, name, prefix)
         self.export_csrc_gnumake(dirname, name, prefix)
 
-            
     def export(self, *args):
         print('CsrcExporter.export')
         if len(args) == 1:

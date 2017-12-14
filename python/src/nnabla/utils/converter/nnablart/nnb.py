@@ -76,7 +76,8 @@ class NnbExporter:
         print('Using executor [{}].'.format(executor.network_name))
 
         # Search network.
-        network = nnabla.utils.converter.search_network(nnp, executor.network_name)
+        network = nnabla.utils.converter.search_network(
+            nnp, executor.network_name)
 
         if network is None:
             print('Network for executor [{}] does not found.'.format(
