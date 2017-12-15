@@ -85,14 +85,7 @@ float* {prefix}_input_buffer(void* context, int index);
 {output_buffer_size_defines}
 /// Pointer of allocated buffer.
 float* {prefix}_output_buffer(void* context, int index);
-
-/// Number of parameter buffers.
-#define {prefix_upper}_NUM_OF_PARAM_BUFFERS ({num_of_param_buffers})
-/// Parameter buffer sizes.
-{param_buffer_size_defines}
-/// Pointer of allocated buffer.
-float* {prefix}_param_buffer(void* context, int index);
-
+{param_buffer}
 /// Exec inference
 int {prefix}_inference(void* context);
 
@@ -125,6 +118,7 @@ int {prefix}_free_context(void* context)
     nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
 {free_context}  
     free(context);
+    return NN_ERROR_CODE_NOERROR;
 }}
 
 float* {prefix}_input_buffer(void* context, int index)
@@ -142,20 +136,13 @@ float* {prefix}_output_buffer(void* context, int index)
 {output_buffer}
     return 0;
 }}
-
-float* {prefix}_param_buffer(void* context, int index)
-{{
-    WHOAMI(" %s\\n", __func__);
-    nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
 {param_buffer}
-    return 0;
-}}
-
 int {prefix}_inference(void* context)
 {{
     WHOAMI(" %s\\n", __func__);
     nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
 {inference}
+    return NN_ERROR_CODE_NOERROR;
 }}
 """
 

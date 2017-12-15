@@ -1061,16 +1061,16 @@ References:
      - 
    * - beta
      - N-D array of beta which is learned.
-     - 
+     - Parameter
    * - gamma
      - N-D array of gamma which is learned.
-     - 
+     - Parameter
    * - mean
      - N-D array of running mean (modified during forward execution).
-     - 
+     - Parameter
    * - variance
      - N-D array of running variance (modified during forward execution).
-     - 
+     - Parameter
 
 * Argument(s)
 
