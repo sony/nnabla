@@ -303,6 +303,10 @@ class CsrcExporter:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
                         args.append(str(val))
+                    elif 'TypeSelection' in arg:
+                        valname = '{}_{}_{}'.format(finfo['snakecase_name'].upper(), arg_name.upper(), val.upper())
+                        initialize_context.append('    (c->f{}_config).{} = {};'.format(n, arg_name, valname))
+                        args.append(valname)
                     else:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
