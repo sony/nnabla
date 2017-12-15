@@ -103,8 +103,20 @@ class Functions:
                             param_name_list.append(m.group(2))
                         else:
                             if len(m.group(2).strip()) > 0:
-                                info['Functions'][category][function][param_type][
-                                    param_name][param_name_list[param_line_count]] = m.group(2).strip()
+                                pn = param_name_list[param_line_count]
+                                if pn == 'Type':
+                                    typestr = m.group(2).strip()
+                                    pm = re.match(
+                                        r'^string\s*\((.*)\)$', typestr)
+                                    if pm:
+                                        info['Functions'][category][function][param_type][param_name]['TypeSelection'] = list(map(
+                                            lambda s: s[1:len(s) - 1], filter(lambda s: s[0] == '"' and s[-1] == '"', [x for x in pm.group(1).split()])))
+                                        typestr = 'string'
+                                    info['Functions'][category][function][param_type][param_name][pn] = typestr
+
+                                else:
+                                    info['Functions'][category][function][param_type][param_name][pn] = m.group(
+                                        2).strip()
 
                 if function_desc_line_num >= 0:
                     if function_desc_line_num == 0:

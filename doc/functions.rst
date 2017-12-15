@@ -3560,7 +3560,7 @@ Shifts the array elements by the specified amount.
      - (0,) * len(x.shape)
      - The amount to shift elements. For example, to shift image data to the right by 2 pixels and up 3 pixels, specify (-3,2).
    * - border_mode
-     - string
+     - string ("nearest" or "reflect")
      - "nearest"
      - Specify how to process the ends of arrays whose values will be undetermined as a result of shifting. nearest: The data at the ends of the original      array is copied and used. reflect: Original data reflected      at the ends of the original array is used.
 
@@ -4029,7 +4029,7 @@ Randomly shifts the array elements within the specified range.
      - (0,) * len(x.shape)
      - Max absolute amount to shift elements. For example, to shift image data horizontally by :math:`\pm 2` pixels and vertically by :math:`\pm 3` pixels, specify (3,2).
    * - border_mode
-     - string
+     - string ("nearest" or "reflect")
      - "nearest"
      - Specify how to process the ends of arrays whose values will be undetermined as a result of shifting. nearest: The data at the ends of the   original array is copied and used. reflect: Original data reflected at   the ends of the original array is used.
    * - base_axis
@@ -5082,7 +5082,7 @@ References:
      - ()
      - List which specifies after how many forward passes we fix 50% of the learnable weights. If we have done as many iterations as specified in the last element of `inq_iterations`, then all weights are fixed.
    * - selection_algorithm
-     - string
+     - string ("largest_abs" or "random")
      - "largest_abs"
      - Chooses algorithm that we use for selecting the weights to fix ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
    * - seed
@@ -5178,7 +5178,7 @@ Reference
      - ()
      - List which specifies after how many forward passes we fix 50% of the learnable weights. If we have done as many iterations as specified in the last element of `inq_iterations`, then all weights are fixed.
    * - selection_algorithm
-     - string
+     - string ("largest_abs" or "random")
      - "largest_abs"
      - Chooses algorithm that we use for selecting the weights to fix ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
    * - seed

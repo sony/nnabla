@@ -26,6 +26,8 @@ for category, functions in all_functions.items():
             for n, i in function_info['argument'].items():
                 func['argument'][n] = OrderedDict()
                 func['argument'][n]['Type'] = i['Type']
+                if 'TypeSelection' in i:
+                    func['argument'][n]['TypeSelection'] = i['TypeSelection']
 
         func['output'] = OrderedDict()
         for n, i in function_info['output'].items():
