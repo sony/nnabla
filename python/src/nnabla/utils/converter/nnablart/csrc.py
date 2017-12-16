@@ -190,15 +190,15 @@ class CsrcExporter:
                 '    int v{}_shape[{}];'.format(n, len(v.shape.dim)))
 
         internal_defines.append('')
-        internal_defines.append('    // Fnctions')
+        internal_defines.append('    // Functions')
         for n, f in enumerate(self._network.function):
             internal_defines.append(
                 '    rt_function_t f{}; ///< {}'.format(n, f.name))
             finfo = self._function_info[f.name]
             internal_defines.append(
-                '    rt_variable_t* f{0}_input[{1}];'.format(n, len(finfo['input'])))
+                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['input'])))
             internal_defines.append(
-                '    rt_variable_t* f{0}_output[{1}];'.format(n, len(finfo['output'])))
+                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(finfo['output'])))
             if 'argument' in finfo:
                 internal_defines.append(
                     '    {}_config_t f{}_config;'.format(finfo['snakecase_name'], n))
@@ -239,6 +239,7 @@ class CsrcExporter:
         initialize_context.append('    }')
 
         variable_buffers = {}
+        variables = {}
         initialize_context.append('')
         initialize_context.append('    // Variables')
         for n, v in enumerate(self._network.variable):
@@ -252,6 +253,7 @@ class CsrcExporter:
             initialize_context.append(
                 '    (c->v{}).data = c->variable_buffers[{}];'.format(n, buffer_index[n]))
             variable_buffers[v.name] = '(c->v{}).data'.format(n)
+            variables[v.name] = '(c->v{})'.format(n)
 
         initialize_context.append('')
         initialize_context.append('    // Functions')
@@ -259,13 +261,17 @@ class CsrcExporter:
             finfo = self._function_info[f.name]
             initialize_context.append('    // {}'.format(f.name))
             initialize_context.append(
-                '    (c->f{}).num_of_inputs = {};'.format(n, len(finfo['input'])))
+                '    (c->f{}).num_of_inputs = {};'.format(n, len(f.input)))
+            for ni, i in enumerate(f.input):
+                initialize_context.append(
+                    '    (c->f{0}_inputs)[{1}] = &{2};'.format(n, ni, variables[i]))
+            initialize_context.append('    (c->f{0}).inputs = c->f{0}_inputs;'.format(n))
             initialize_context.append(
-                '    (c->f{0}).inputs = c->f{0}_input;'.format(n))
-            initialize_context.append(
-                '    (c->f{}).num_of_outputs = {};'.format(n, len(finfo['output'])))
-            initialize_context.append(
-                '    (c->f{0}).outputs = c->f{0}_output;'.format(n))
+                '    (c->f{}).num_of_outputs = {};'.format(n, len(f.output)))
+            for no, o in enumerate(f.output):
+                initialize_context.append(
+                    '    (c->f{0}_outputs)[{1}] = &{2};'.format(n, no, variables[o]))
+            initialize_context.append('    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
             if 'argument' in finfo:
                 initialize_context.append(
                     '    (c->f{0}).config = &(c->f{0}_config);'.format(n))

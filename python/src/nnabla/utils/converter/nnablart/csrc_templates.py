@@ -200,6 +200,6 @@ csrc_gnumake = """# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 all: {name}_example
 
 {name}_example: {name}_example.c {name}_inference.c{param}
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) -Wall -Werror $(CFLAGS) $^ -o $@ $(LDFLAGS) -lnnablart_functions
 
 """
