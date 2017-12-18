@@ -121,7 +121,7 @@ def resnet_imagenet(x, num_classes, num_layers, shortcut_type, test, tiny=False)
                            pad=(3, 3), stride=stride, with_bias=False)
         r = F.relu(PF.batch_normalization(
             r, batch_stat=not test), inplace=True)
-        r = F.max_pooling(r, (3, 3), stride, False)
+        r = F.max_pooling(r, (3, 3), stride, pad=(1, 1))
     hidden = {}
     hidden['r0'] = r
     ochannels = [64, 128, 256, 512]
