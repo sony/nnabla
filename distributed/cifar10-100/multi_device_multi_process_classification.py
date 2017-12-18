@@ -117,6 +117,7 @@ def train():
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=10)
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
+    monitor_vtime = MonitorTimeElapsed("Validation time", monitor, interval=1)
 
     # Data Iterator
     rng = np.random.RandomState(device_id)
@@ -138,20 +139,21 @@ def train():
                            bs_valid):
                 image = val_images[j:j+bs_valid]
                 label = val_labels[j:j+bs_valid]
-                if len(image) != bs_valid:
+                if len(image) != bs_valid:  # note that smaller batch is ignored
                     continue
                 input_image_valid["image"].d = image
                 input_image_valid["label"].d = label
                 error_valid.forward(clear_buffer=True)
                 ve_local += error_valid.d.copy()
                 k += 1
-            ve /= k
+            ve_local /= k
             ve.d = ve_local
             comm.all_reduce(ve.data, division=True, inplace=True)
 
             # Save model
             if device_id == 0:
-                monitor_verr.add(i * n_devices, ve.d)
+                monitor_verr.add(i * n_devices, ve.d.copy())
+                monitor_vtime.add(i * n_devices)
                 if i % int(args.model_save_interval / n_devices) == 0:
                     nn.save_parameters(os.path.join(
                         args.model_save_path, 'params_%06d.h5' % i))
