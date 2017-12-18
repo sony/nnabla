@@ -69,11 +69,11 @@ Then,
 Run an Example
 --------------
 
-Download NNabla repository from `here <https://github.com/sony/nnabla/archive/master.zip>`_, unzip it and move to example directory.
+`Get<https://github.com/sony/nnabla-examples/archive/master.zip>`_ (and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
 
 .. code-block:: shell
 
-    > cd nnabla/examples/vision/mnist
+    cd nnabla-examples/mnist-collection/
 
 
 Run MNIST classification.

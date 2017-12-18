@@ -45,7 +45,7 @@ def test_data_parallel_communicator():
             x = nn.Variable(x_data.shape)
             with nn.parameter_scope("gpu{}".format(d)):
                 with nn.parameter_scope("affine1"):
-                    z = PF.affine(x, 6)
+                    z = PF.affine(x, 10, with_bias=True)
                 with nn.parameter_scope("affine2"):
                     y = PF.affine(z, 5)
 

@@ -35,6 +35,27 @@ def get_pool_ignore_border_in_out_size(w, k, p, s):
     return i, o
 
 
+def convolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
+    """
+    """
+    C, H = x.shape
+    K, Cg, M = w.shape
+
+    Ho = get_conv_out_size(H, M, pad[0], stride[0], dilation[0])
+    x_pad = np.zeros((C, H + pad[0] * 2), dtype=dtype)
+    x_pad[:, pad[0]:pad[0] + H] = x
+    y = np.zeros((K, Ho), dtype=dtype)
+    for k in range(K):
+        g = int(k // (K // group))
+        for ho in range(Ho):
+                hi = ho * stride[0] + np.arange(0, M) * dilation[0]
+                ci = np.arange(g * Cg, (g + 1) * Cg)
+                y[k, ho] = (w[k] * x_pad[np.ix_(ci, hi)]).sum()
+    if b is not None:
+        y += b[..., np.newaxis]
+    return y
+
+
 def convolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     """
     """

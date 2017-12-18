@@ -653,6 +653,52 @@ def inq_convolution(inp, outmaps, kernel,
     return F.inq_convolution(inp, w, i, b, base_axis, pad, stride, dilation, group, num_bits, inq_iterations, selection_algorithm, seed)
 
 
+@parametric_function_api("depthwise_conv")
+def depthwise_convolution(inp, kernel,
+                          pad=None, stride=None, dilation=None, multiplier=1,
+                          w_init=None, b_init=None,
+                          base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+    """
+    N-D Deptwise Convolution with a bias term.
+
+    Reference:
+
+    - F. Chollet: Chollet, Francois. "Xception: Deep Learning with Depthwise Separable Convolutions. https://arxiv.org/abs/1610.02357
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        multiplier (:obj:`int`): Number of output feature maps per input feature map.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], inp.shape[base_axis], tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (inp.shape[base_axis],) + tuple(kernel),
+        w_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (inp.shape[base_axis],), b_init, not fix_parameters)
+    return F.depthwise_convolution(inp, w, b, base_axis, pad, stride, dilation,
+                                   multiplier)
+
+
 @parametric_function_api("deconv")
 def deconvolution(inp, outmaps, kernel,
                   pad=None, stride=None, dilation=None, group=1,
@@ -705,9 +751,14 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
         \\begin{array}{lcl}
         \\mu &=& \\frac{1}{M} \\sum x_i\\\\
         \\sigma^2 &=& \\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\
-        \\hat{x}_i &=& \\frac{x_i - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\\\
-        y_i &=& \\hat{x}_i \\gamma + \\beta.
-        \\end{array}
+        \\hat{
+          x
+        } _i &= & \\frac{x_i - \\mu} {
+          \\sqrt {\\sigma ^ 2 + \\epsilon }
+        }
+        \\\ y_i &= & \\hat { x }
+        _i \\gamma + \\beta.
+        \\end { array }
 
     where :math:`x_i, y_i` are the inputs.
     In testing, the mean and variance computed by moving average calculated during training are used.
