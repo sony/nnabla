@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.monitor', learning_rate=1e-3, batch_size=64, weight_decay=0, n_devices=4, warmup_epoch=5):
+def get_args(monitor_path='tmp.monitor', max_iter=234300, model_save_path='tmp.monitor', learning_rate=1e-3, batch_size=64, weight_decay=0, n_devices=4, warmup_epoch=5):
     """
     Get command line arguments.
 
