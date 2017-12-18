@@ -106,16 +106,14 @@ csrc_implements = _header + """
 
 void* {prefix}_allocate_context(void** params)
 {{
-    WHOAMI("%s\\n", __func__);
-    nnablart_network1_local_context_t* c = calloc(sizeof(nnablart_network1_local_context_t), 1);
+    {prefix}_local_context_t* c = malloc(sizeof({prefix}_local_context_t));
 {initialize_context}
     return (void*)c;
 }}
 
 int {prefix}_free_context(void* context)
 {{
-    WHOAMI(" %s\\n", __func__);
-    nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
+    {prefix}_local_context_t* c = ({prefix}_local_context_t*)context;
 {free_context}  
     free(context);
     return NN_ERROR_CODE_NOERROR;
@@ -123,24 +121,21 @@ int {prefix}_free_context(void* context)
 
 float* {prefix}_input_buffer(void* context, int index)
 {{
-    WHOAMI(" %s\\n", __func__);
-    nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
+    {prefix}_local_context_t* c = ({prefix}_local_context_t*)context;
 {input_buffer}
     return 0;
 }}
 
 float* {prefix}_output_buffer(void* context, int index)
 {{
-    WHOAMI(" %s\\n", __func__);
-    nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
+    {prefix}_local_context_t* c = ({prefix}_local_context_t*)context;
 {output_buffer}
     return 0;
 }}
 {param_buffer}
 int {prefix}_inference(void* context)
 {{
-    WHOAMI(" %s\\n", __func__);
-    nnablart_network1_local_context_t* c = (nnablart_network1_local_context_t*)context;
+    {prefix}_local_context_t* c = ({prefix}_local_context_t*)context;
 {inference}
     return NN_ERROR_CODE_NOERROR;
 }}
@@ -200,6 +195,6 @@ csrc_gnumake = """# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 all: {name}_example
 
 {name}_example: {name}_example.c {name}_inference.c{param}
-	$(CC) -Wall -Werror $(CFLAGS) $^ -o $@ $(LDFLAGS) -lnnablart_functions
+	$(CC) -Wall -Werror $(CFLAGS) $^ -o $@ $(LDFLAGS) -lnnablart_functions -lm
 
 """

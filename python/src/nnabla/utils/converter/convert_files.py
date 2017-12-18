@@ -37,13 +37,13 @@ def convert_files(args, ifiles, output):
                 parameter_type = 'h5'
             if args.nnp_exclude_parameter:
                 parameter_type = 'none'
-            NnpExporter(nnp, parameter_type).export(output)
+            NnpExporter(nnp, args.batch_size, parameter_type).export(output)
 
         elif output_ext == '.nnb':
-            NnbExporter(nnp).export(output)
+            NnbExporter(nnp, args.batch_size).export(output)
 
         elif os.path.isdir(output) and args.export_format == 'CSRC':
-            CsrcExporter(nnp).export(output)
+            CsrcExporter(nnp, args.batch_size).export(output)
 
         else:
             print('Output file ({}) is not supported or output directory does not exist.'.format(

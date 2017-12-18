@@ -27,9 +27,9 @@ from .csrc_templates import \
 
 class CsrcExporter:
 
-    def __init__(self, nnp):
+    def __init__(self, nnp, batch_size):
         print('CsrcExporter')
-
+        
         executor = nnabla.utils.converter.select_executor(nnp)
 
         # Search network.
@@ -41,6 +41,10 @@ class CsrcExporter:
                 executor.network_name))
             return
         print('Using network [{}].'.format(executor.network_name))
+
+        self._batch_size = batch_size
+        if batch_size < 0:
+            self._batch_size = network.batch_size
 
         self._network_name = executor.network_name
 
@@ -59,7 +63,7 @@ class CsrcExporter:
             self._input_variables.append(i.variable_name)
             v = variables[i.variable_name]
             self._input_buffer_sizes.append(
-                nnabla.utils.converter.calc_shape_size(v.shape, network.batch_size))
+                nnabla.utils.converter.calc_shape_size(v.shape, self._batch_size))
 
         self._output_variables = []
         self._num_of_outputs = len(executor.output_variable)
@@ -68,7 +72,7 @@ class CsrcExporter:
             self._output_variables.append(o.variable_name)
             v = variables[o.variable_name]
             self._output_buffer_sizes.append(
-                nnabla.utils.converter.calc_shape_size(v.shape, network.batch_size))
+                nnabla.utils.converter.calc_shape_size(v.shape, self._batch_size))
 
         self._param_variables = []
         self._num_of_params = len(executor.parameter_variable)
@@ -163,7 +167,7 @@ class CsrcExporter:
 
     def export_csrc_implements(self, dirname, name, prefix):
 
-        batch_size = self._network.batch_size
+        batch_size = self._batch_size
 
         # Prepare variable buffers
         variable_buffers = []
@@ -229,13 +233,13 @@ class CsrcExporter:
                 initialize_context.append(
                     '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(n))
                 initialize_context.append(
-                    '        c->variable_buffers[{}] = calloc(sizeof(float), {});'.format(n, size))
+                    '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(n, size))
         initialize_context.append('    } else {')
         for n, size in enumerate(variable_buffers):
             initialize_context.append(
                 '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(n))
             initialize_context.append(
-                '        c->variable_buffers[{}] = calloc(sizeof(float), {});'.format(n, size))
+                '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(n, size))
         initialize_context.append('    }')
 
         variable_buffers = {}
@@ -318,8 +322,8 @@ class CsrcExporter:
                     else:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
-                initialize_context.append(
-                    '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+            initialize_context.append(
+                '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_free_context
         free_context = []
@@ -349,8 +353,7 @@ class CsrcExporter:
         output_buffer.append('')
         for n, f in enumerate(self._network.function):
             finfo = self._function_info[f.name]
-            if 'argument' in finfo:
-                free_context.append('    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+            free_context.append('    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_param_buffer
         param_buffer = []
@@ -358,7 +361,6 @@ class CsrcExporter:
             param_buffer.append(
                 'float* {}_param_buffer(void* context, int index)'.format(prefix))
             param_buffer.append('{')
-            param_buffer.append('    WHOAMI(" %s\\n", __func__);')
             param_buffer.append(
                 '    {0}_local_context_t* c = ({0}_local_context_t*)context;'.format(prefix))
             param_buffer.append('    switch(index) {')

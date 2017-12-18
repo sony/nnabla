@@ -71,6 +71,8 @@ def add_convert_command(subparsers):
                            help='[export] export format. (one of [{}])'.format(export_formats_string))
     subparser.add_argument('-f', '--force', action='store_true',
                            help='[export] overwrite output file.')
+    subparser.add_argument('-b', '--batch-size', type=int, default=-1,
+                           help='[export] overwrite batch size.')
     # NNP
     subparser.add_argument('--nnp-parameter-h5', action='store_true',
                            help='[export][NNP] store parameter with h5 format')
