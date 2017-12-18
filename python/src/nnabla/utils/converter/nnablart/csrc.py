@@ -282,7 +282,6 @@ class CsrcExporter:
             if 'argument' in finfo:
                 initialize_context.append(
                     '    (c->f{0}).config = &(c->f{0}_config);'.format(n))
-                args = []
                 for arg_name, arg in finfo['argument'].items():
                     val = eval('f.{}_param.{}'.format(
                         finfo['snakecase_name'], arg_name))
@@ -296,7 +295,6 @@ class CsrcExporter:
                         for vn, v in enumerate(val.dim):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
-                        args.append('arg_f{}_{}'.format(n, arg_name))
                     elif arg['Type'] == 'repeated int64':
                         initialize_context.append(
                             '    rt_list_t arg_f{}_{};'.format(n, arg_name))
@@ -307,7 +305,6 @@ class CsrcExporter:
                         for vn, v in enumerate(val):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
-                        args.append('arg_f{}_{}'.format(n, arg_name))
                     elif arg['Type'] == 'bool':
                         if val:
                             val = 1
@@ -315,19 +312,14 @@ class CsrcExporter:
                             val = 0
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
-                        args.append(str(val))
                     elif 'TypeSelection' in arg:
                         valname = '{}_{}_{}'.format(finfo['snakecase_name'].upper(), arg_name.upper(), val.upper())
                         initialize_context.append('    (c->f{}_config).{} = {};'.format(n, arg_name, valname))
-                        args.append(valname)
                     else:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
-                        args.append(str(val))
                 initialize_context.append(
-                    '    init_{}_config(&(c->f{}_config), {});'.format(finfo['snakecase_name'], n, ', '.join(args)))
-                initialize_context.append(
-                    '    init_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+                    '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_free_context
         free_context = []
@@ -354,6 +346,11 @@ class CsrcExporter:
             output_buffer.append('        case {}: return {};'.format(
                 n, variable_buffers[self._output_variables[n]]))
         output_buffer.append('    }')
+        output_buffer.append('')
+        for n, f in enumerate(self._network.function):
+            finfo = self._function_info[f.name]
+            if 'argument' in finfo:
+                free_context.append('    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_param_buffer
         param_buffer = []
