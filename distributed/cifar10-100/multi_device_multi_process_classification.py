@@ -86,14 +86,20 @@ def train():
     image_train = nn.Variable((args.batch_size, 3, 32, 32))
     label_train = nn.Variable((args.batch_size, 1))
     pred_train = prediction(image_train, test)
+    pred_train.persistent = True
     loss_train = loss_function(pred_train, label_train)
+    pred_train_copy = nn.Variable(pred_train.shape)  # memory share to prevent redundant forward calls.
+    pred_train_copy.data = pred_train.data
+    error_train = F.mean(F.top_n_error(pred_train_copy, label_train, axis=1))
     input_image_train = {"image": image_train, "label": label_train}
 
     # Create validation graph
     test = True
     image_valid = nn.Variable((bs_valid, 3, 32, 32))
+    label_valid = nn.Variable((args.batch_size, 1))
     pred_valid = prediction(image_valid, test)
-    input_image_valid = {"image": image_valid}
+    error_valid = F.mean(F.top_n_error(pred_valid, label_valid, axis=1))
+    input_image_valid = {"image": image_valid, "label": label_valid}
 
     # Solvers
     solver = S.Adam()
@@ -118,11 +124,11 @@ def train():
     vsource, vdata = data_iterator(args.batch_size, False)
 
     # Training-loop
-    v_eval = nn.Variable()
+    ve = nn.Variable()
     for i in range(int(args.max_iter / n_devices)):
         # Validation
         if i % int(n_train_samples / args.batch_size / n_devices) == 0:
-            ve = 0.
+            ve_local = 0.
             k = 0
             idx = np.random.permutation(n_valid_samples)
             val_images = vsource.images[idx]
@@ -131,21 +137,21 @@ def train():
                            int(n_valid_samples/n_devices*(mpi_rank+1)),
                            bs_valid):
                 image = val_images[j:j+bs_valid]
+                label = val_labels[j:j+bs_valid]
                 if len(image) != bs_valid:
                     continue
                 input_image_valid["image"].d = image
-                pred_valid.forward()
-                label = val_labels[j:j+bs_valid]
-                #TODO: use F.top_n_error
-                ve += categorical_error(pred_valid.d, label)
+                input_image_valid["label"].d = label
+                error_valid.forward(clear_buffer=True)
+                ve_local += error_valid.d.copy()
                 k += 1
             ve /= k
-            v_eval.d = ve
-            comm.all_reduce(v_eval.data, division=True, inplace=True)
+            ve.d = ve_local
+            comm.all_reduce(ve.data, division=True, inplace=True)
 
             # Save model
             if device_id == 0:
-                monitor_verr.add(i * n_devices, v_eval.d)
+                monitor_verr.add(i * n_devices, ve.d)
                 if i % int(args.model_save_interval / n_devices) == 0:
                     nn.save_parameters(os.path.join(
                         args.model_save_path, 'params_%06d.h5' % i))
@@ -154,9 +160,9 @@ def train():
         image, label = tdata.next()
         input_image_train["image"].d = image
         input_image_train["label"].d = label
-        loss_train.forward()
+        loss_train.forward(clear_no_need_grad=True)
         solver.zero_grad()
-        loss_train.backward()
+        loss_train.backward(clear_buffer=True)
 
         # AllReduce
         params = [x.grad for x in nn.get_parameters().values()]
@@ -171,10 +177,9 @@ def train():
             solver.set_learning_rate(lr)
 
         if device_id == 0:  # loss and error locally, and elapsed time
-            e = categorical_error(
-                pred_train.d, input_image_train["label"].d)
+            error_train.forward(clear_no_need_grad=True)
             monitor_loss.add(i * n_devices, loss_train.d.copy())
-            monitor_err.add(i * n_devices, e)
+            monitor_err.add(i * n_devices, error_train.d.copy())
             monitor_time.add(i * n_devices)
 
     if device_id == 0:
