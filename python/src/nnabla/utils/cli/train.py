@@ -210,7 +210,6 @@ def train(args, config):
 
     best_error = None
 
-    print("max_iter=%d" % (max_iter))
     for iter in range(max_iter):
         cost = _update(iter, config, cost)
 

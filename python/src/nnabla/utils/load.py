@@ -357,7 +357,8 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.comm.add_context_and_parameters((ctx, parameters))
         except:
             optimizer.comm = None
-            logger.warning("Failed to initialize nnabla.communicators.")
+            if MPI.COMM_WORLD.Get_rank() == 0:
+                logger.warning("Failed to initialize nnabla.communicators.")
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
