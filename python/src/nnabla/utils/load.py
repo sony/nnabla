@@ -356,6 +356,7 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.comm.init()
             optimizer.comm.add_context_and_parameters((ctx, parameters))
         except:
+            optimizer.comm = None
             logger.warning("Failed to initialize nnabla.communicators.")
 
     optimizer.weight_decay = o.solver.weight_decay

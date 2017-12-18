@@ -131,8 +131,7 @@ def _evaluate(args, config, monitoring_report, best_error):
         error_sum_monitor = 0.0
         error_count = 0
         di = mon.data_iterator
-        # Todo : need to seek here for MPI exec
-        for i in range((di.size / di.batch_size) / (MPI.COMM_WORLD.Get_size() if MPI else 1)):
+        for i in range(di.size / di.batch_size):
             # Set data to variable
             datas = di.next()
             for v, d in m.dataset_assign.items():
@@ -211,6 +210,7 @@ def train(args, config):
 
     best_error = None
 
+    print("max_iter=%d" % (max_iter))
     for iter in range(max_iter):
         cost = _update(iter, config, cost)
 
@@ -278,18 +278,22 @@ def train_command(args):
         config.monitors[name] = m
 
     # Training
+    config.training_config.iter_per_epoch /= MPI.COMM_WORLD.Get_size() if MPI else 1
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
     if max_iter > 0:
-
         data_iterators = {'optimizer': {}, 'monitor': {}}
         with ExitStack() as stack:
             for name, o in config.optimizers.items():
                 o.data_iterator = stack.enter_context(
                     o.optimizer.data_iterator())
+                if MPI and MPI.COMM_WORLD.Get_size() > 1:
+                    o.data_iterator = o.data_iterator.slice(MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
             for name, m in config.monitors.items():
                 m.data_iterator = stack.enter_context(
                     m.monitor.data_iterator())
+                if MPI and MPI.COMM_WORLD.Get_size() > 1:
+                    m.data_iterator = m.data_iterator.slice(MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
             train(args, config)
 
     else:
