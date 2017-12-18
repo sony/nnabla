@@ -248,6 +248,13 @@ class CsrcExporter:
                 '    (c->v{}).type = NN_DATA_TYPE_FLOAT;'.format(n))
             initialize_context.append(
                 '    (c->v{}).shape.size = {};'.format(n, len(v.shape.dim)))
+
+            for n_dim, dim in enumerate(v.shape.dim):
+                val = dim
+                if val < 0:
+                    val = batch_size
+                initialize_context.append('    c->v{}_shape[{}] = {};'.format(n, n_dim, val))
+
             initialize_context.append(
                 '    (c->v{0}).shape.data = c->v{0}_shape;'.format(n))
             initialize_context.append(
