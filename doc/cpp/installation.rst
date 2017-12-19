@@ -33,7 +33,7 @@ Requirements
     tar xvf protobuf-v3.1.0.tar.gz
     cd protobuf-3.1.0
     mkdir build && cd build
-    cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF ../cmake
+    cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF ..
     make
     sudo make install
 
