@@ -23,7 +23,7 @@ from nnabla.utils import nnabla_pb2
 
 
 class NnpExporter:
-    def __init__(self, nnp, parameter_type='protobuf', force=False):
+    def __init__(self, nnp, batch_size, parameter_type='protobuf', force=False):
         self._parameter_type = parameter_type
         self._force = force
         self._nnp = nnp.protobuf

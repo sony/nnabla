@@ -1,5 +1,6 @@
 import json
 import sys
+import zlib
 from collections import OrderedDict
 
 from utils.load_function_rst import Functions
@@ -8,9 +9,12 @@ info = OrderedDict()
 f = Functions()
 
 all_functions = f.info['Functions']
+
+info['categories'] = OrderedDict()
+
 for category, functions in all_functions.items():
     if category not in info:
-        info[category] = OrderedDict()
+        info['categories'][category] = OrderedDict()
     for function, function_info in functions.items():
         func = OrderedDict()
         func['name'] = function
@@ -34,8 +38,9 @@ for category, functions in all_functions.items():
             func['output'][n] = OrderedDict()
             if 'Options' in i:
                 func['output'][n]['Options'] = i['Options'].split()
-        info[category][function] = func
+        info['categories'][category][function] = func
 
+info['version'] = zlib.crc32(json.dumps(info['categories']).encode('utf-8')) & 0x7ffffff
 
 with open(sys.argv[1], 'w') as f:
     f.write(json.dumps(info, indent=4))

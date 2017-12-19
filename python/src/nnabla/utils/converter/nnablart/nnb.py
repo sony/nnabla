@@ -12,103 +12,110 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
+import math
 import os
 import re
+import struct
 
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import nnabla.utils.converter
 
+from .utils import create_nnabart_info
 
 class NnbExporter:
+    def _align(self, size):
+        return math.ceil(size/4)*4
+    
+    def _alloc(self, size=-1, data=b''):
+        size = len(data) if size < 0 else size
+        index = len(self._memory_index)
+        pointer = sum(self._memory_index)
+        self._memory_index.append(self._align(size))
+        assert(len(data) <= size)
+        self._memory_data += data
+        self._memory_data += b'\n' * (self._align(len(data)) - len(data))
+        return (index, pointer)
+    
+    def __init__(self, nnp, batch_size):
+        self._info = create_nnabart_info(nnp, batch_size)
 
-    def __init__(self, nnp):
+        self._List = collections.namedtuple('List', ('size', 'list_index'))
+        self._Memory = collections.namedtuple('Memory', ('num_of_data', 'data_size'))
 
-        functions = nnabla.utils.converter.get_function_info()
-
-        message_types = nnabla_pb2.DESCRIPTOR.message_types_by_name
-        function_message = message_types['Function']
-
-        import google.protobuf
-
-        TYPE_BOOL = google.protobuf.descriptor.FieldDescriptor.TYPE_BOOL
-        TYPE_BYTES = google.protobuf.descriptor.FieldDescriptor.TYPE_BYTES
-        TYPE_DOUBLE = google.protobuf.descriptor.FieldDescriptor.TYPE_DOUBLE
-        TYPE_ENUM = google.protobuf.descriptor.FieldDescriptor.TYPE_ENUM
-        TYPE_FIXED32 = google.protobuf.descriptor.FieldDescriptor.TYPE_FIXED32
-        TYPE_FIXED64 = google.protobuf.descriptor.FieldDescriptor.TYPE_FIXED64
-        TYPE_FLOAT = google.protobuf.descriptor.FieldDescriptor.TYPE_FLOAT
-        TYPE_GROUP = google.protobuf.descriptor.FieldDescriptor.TYPE_GROUP
-        TYPE_INT32 = google.protobuf.descriptor.FieldDescriptor.TYPE_INT32
-        TYPE_INT64 = google.protobuf.descriptor.FieldDescriptor.TYPE_INT64
-        TYPE_MESSAGE = google.protobuf.descriptor.FieldDescriptor.TYPE_MESSAGE
-        TYPE_SFIXED32 = google.protobuf.descriptor.FieldDescriptor.TYPE_SFIXED32
-        TYPE_SFIXED64 = google.protobuf.descriptor.FieldDescriptor.TYPE_SFIXED64
-        TYPE_SINT32 = google.protobuf.descriptor.FieldDescriptor.TYPE_SINT32
-        TYPE_SINT64 = google.protobuf.descriptor.FieldDescriptor.TYPE_SINT64
-        TYPE_STRING = google.protobuf.descriptor.FieldDescriptor.TYPE_STRING
-        TYPE_UINT32 = google.protobuf.descriptor.FieldDescriptor.TYPE_UINT32
-        TYPE_UINT64 = google.protobuf.descriptor.FieldDescriptor.TYPE_UINT64
-
-        for param_message in function_message.oneofs[0].fields:
-            print(param_message.name, param_message.number)
-            message_type = param_message.message_type
-            name = re.sub(r'Parameter$', '', message_type.name)
-            if not name in functions:
-                assert('[{}] not in functions_info'.format(message_type.name))
-            for arg in message_type.fields:
-                type_name = None
-                if arg.type == TYPE_BOOL:
-                    type_name = 'BOOL'
-                elif arg.type == TYPE_DOUBLE or arg.type == TYPE_FLOAT:
-                    type_name = 'FLOAT'
-                elif arg.type == TYPE_INT32 or arg.type == TYPE_INT64:
-                    type_name = 'INTEGER'
-                elif arg.type == TYPE_MESSAGE and arg.message_type.name == 'Shape':
-                    type_name = 'SHAPE'
-                elif arg.type == TYPE_STRING:
-                    type_name = 'STRING'
-                else:
-                    assert('TYPE[{}] unknown !!!!!!!!!!!!!!'.format(arg.type))
-                print('    ', type_name, arg.name, arg.number)
-
-        executor = nnabla.utils.converter.select_executor(nnp)
-        nnp.protobuf.executor[0]
-        print('Using executor [{}].'.format(executor.network_name))
-
-        # Search network.
-        network = nnabla.utils.converter.search_network(
-            nnp, executor.network_name)
-
-        if network is None:
-            print('Network for executor [{}] does not found.'.format(
-                executor.network_name))
-            return
-
-        variables = {}
-        for v in network.variable:
-            variables[v.name] = v
-
-        for n, i in enumerate(executor.data_variable):
-            pass
-            #print(n, variables[i.variable_name], i.data_name)
-
-        for n, o in enumerate(executor.output_variable):
-            pass
-            #print(n, variables[o.variable_name], o.data_name)
-
-        for n, o in enumerate(executor.parameter_variable):
-            print(n, o)
-
-        for f in network.function:
-            print('Function [{}]'.format(f.name))
-            for field in f.ListFields():
-                m = re.match('.*_param$', field[0].name)
-                if m:
-                    print('  Processing [{}].'.format(m.group(0)))
-                    params = field[1]
-                    for param in params.ListFields():
-                        print('    ', param[0].name, type(param[1]))
+        self._memory_index = []
+        self._memory_data = b''
+        
+        self._argument_formats = {}
+        for fn, func in self._info._function_info.items():
+            if 'argument' in func:
+                argfmt = ''
+                for an, arg in func['argument'].items():
+                    if arg['Type'] == 'bool':
+                        argfmt += 'B'
+                    elif arg['Type'] == 'double' or arg['Type'] == 'float':
+                        argfmt += 'f'
+                    elif arg['Type'] == 'int64':
+                        argfmt += 'i'
+                    elif arg['Type'] == 'repeated int64' or arg['Type'] == 'Shape':
+                        argfmt += 'iI'
+                    elif arg['Type'] == 'string':
+                        argfmt += 'i'
+                self._argument_formats[fn] = argfmt
+        
 
     def export(self, *args):
         if len(args) == 1:
-            print(args[0])
+            version = nnabla.utils.converter.get_category_info_version()
+            self._Variable = collections.namedtuple('Variable', ('id', 'shape', 'type', 'fp_pos', 'data_index'))
+
+            variables = []
+            for n, v in enumerate(self._info._network.variable):
+                var = self._Variable
+                var.id = n
+
+                shape = [x if x >= 0 else self._info._batch_size for x in v.shape.dim]
+                index, pointer = self._alloc(data=struct.pack('{}I'.format(len(shape)), *shape))
+                var.shape = self._List(len(shape), index)
+
+                var.type = 0 # NN_DATA_TYPE_FLOAT
+                var.fp_pos = 0
+                
+                print(n, v.name, self._info._variable_buffer_index[n])
+                if v.type == 'Parameter':
+                    index, pointer = self._alloc(size=self._info._variable_sizes[self._info._variable_buffer_index[n]])
+                    var.data_index = index
+                elif v.type == 'Buffer':
+                    var.data_index = self._info._variable_buffer_index[n] * -1
+
+                variable = struct.pack('IiIBi',
+                                       var.id,
+                                       var.shape.size, var.shape.list_index,
+                                       (var.type & 0xf << 4) | (var.fp_pos & 0xf),
+                                       var.data_index)
+                index, pointer = self._alloc(data=variable)
+                variables.append(index)
+            
+                
+            index, pointer = self._alloc(data=struct.pack('{}I'.format(len(variables)), *variables))
+            variables = self._List(len(variables), index)
+            functions = self._List(0, 0)
+            inputs = self._List(0, 0)
+            outputs = self._List(0, 0)
+            memory = self._Memory(0, 0)
+            
+            network= struct.pack('IiIiIiIiIII',
+                                 version,
+                                 variables.size,
+                                 variables.list_index,
+                                 functions.size,
+                                 functions.list_index,
+                                 inputs.size,
+                                 inputs.list_index,
+                                 outputs.size,
+                                 outputs.list_index,
+                                 memory.num_of_data,
+                                 memory.data_size)
+
+            with open(args[0], 'wb') as f:
+                f.write(network)

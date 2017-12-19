@@ -8,8 +8,11 @@ def get_category_info_string():
         return f.read()
 
 
+def get_category_info_version():
+    return json.loads(get_category_info_string())['version']
+
 def get_category_info():
-    return json.loads(get_category_info_string())
+    return json.loads(get_category_info_string())['categories']
 
 
 def get_function_info():
