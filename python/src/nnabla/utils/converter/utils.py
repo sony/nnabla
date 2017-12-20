@@ -11,6 +11,7 @@ def get_category_info_string():
 def get_category_info_version():
     return json.loads(get_category_info_string())['version']
 
+
 def get_category_info():
     return json.loads(get_category_info_string())['categories']
 

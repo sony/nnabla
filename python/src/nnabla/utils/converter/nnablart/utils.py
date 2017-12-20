@@ -1,5 +1,6 @@
 import nnabla.utils.converter
 
+
 def create_nnabart_info(nnp, batch_size):
     class info:
         pass
@@ -51,15 +52,14 @@ def create_nnabart_info(nnp, batch_size):
     for n, p in enumerate(executor.parameter_variable):
         info._param_variables.append(p.variable_name)
 
-
     # Prepare variable buffers
     info._variable_sizes = []
     info._variable_buffer_index = {}
     for n, v in enumerate(network.variable):
         info._variable_buffer_index[n] = n
-        size = nnabla.utils.converter.calc_shape_size(v.shape, info._batch_size)
+        size = nnabla.utils.converter.calc_shape_size(
+            v.shape, info._batch_size)
         info._variable_sizes.append(size)
-
 
     info._parameters = parameters
     info._network = network

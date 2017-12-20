@@ -26,6 +26,7 @@ from .csrc_templates import \
 
 from .utils import create_nnabart_info
 
+
 class CsrcExporter:
 
     def __init__(self, nnp, batch_size):
@@ -197,7 +198,8 @@ class CsrcExporter:
                 val = dim
                 if val < 0:
                     val = batch_size
-                initialize_context.append('    c->v{}_shape[{}] = {};'.format(n, n_dim, val))
+                initialize_context.append(
+                    '    c->v{}_shape[{}] = {};'.format(n, n_dim, val))
 
             initialize_context.append(
                 '    (c->v{0}).shape.data = c->v{0}_shape;'.format(n))
@@ -216,13 +218,15 @@ class CsrcExporter:
             for ni, i in enumerate(f.input):
                 initialize_context.append(
                     '    (c->f{0}_inputs)[{1}] = &{2};'.format(n, ni, variables[i]))
-            initialize_context.append('    (c->f{0}).inputs = c->f{0}_inputs;'.format(n))
+            initialize_context.append(
+                '    (c->f{0}).inputs = c->f{0}_inputs;'.format(n))
             initialize_context.append(
                 '    (c->f{}).num_of_outputs = {};'.format(n, len(f.output)))
             for no, o in enumerate(f.output):
                 initialize_context.append(
                     '    (c->f{0}_outputs)[{1}] = &{2};'.format(n, no, variables[o]))
-            initialize_context.append('    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
+            initialize_context.append(
+                '    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
             if 'argument' in finfo:
                 initialize_context.append(
                     '    (c->f{0}).config = &(c->f{0}_config);'.format(n))
@@ -257,8 +261,10 @@ class CsrcExporter:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
                     elif 'TypeSelection' in arg:
-                        valname = '{}_{}_{}'.format(finfo['snakecase_name'].upper(), arg_name.upper(), val.upper())
-                        initialize_context.append('    (c->f{}_config).{} = {};'.format(n, arg_name, valname))
+                        valname = '{}_{}_{}'.format(
+                            finfo['snakecase_name'].upper(), arg_name.upper(), val.upper())
+                        initialize_context.append(
+                            '    (c->f{}_config).{} = {};'.format(n, arg_name, valname))
                     else:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
@@ -293,7 +299,8 @@ class CsrcExporter:
         output_buffer.append('')
         for n, f in enumerate(self._info._network.function):
             finfo = self._info._function_info[f.name]
-            free_context.append('    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+            free_context.append(
+                '    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_param_buffer
         param_buffer = []
