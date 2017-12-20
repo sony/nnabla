@@ -88,9 +88,8 @@ def train():
     pred_train = prediction(image_train, test)
     pred_train.persistent = True
     loss_train = loss_function(pred_train, label_train)
-    pred_train_copy = nn.Variable(pred_train.shape)  # memory share to prevent redundant forward calls.
-    pred_train_copy.data = pred_train.data
-    error_train = F.mean(F.top_n_error(pred_train_copy, label_train, axis=1))
+    error_train = F.mean(F.top_n_error(pred_train, label_train, axis=1))
+    loss_error_train = F.sink(loss_train, error_train)
     input_image_train = {"image": image_train, "label": label_train}
 
     # Create validation graph
@@ -162,7 +161,7 @@ def train():
         image, label = tdata.next()
         input_image_train["image"].d = image
         input_image_train["label"].d = label
-        loss_train.forward(clear_no_need_grad=True)
+        loss_error_train.forward(clear_no_need_grad=True)
         solver.zero_grad()
         loss_train.backward(clear_buffer=True)
 
@@ -179,7 +178,6 @@ def train():
             solver.set_learning_rate(lr)
 
         if device_id == 0:  # loss and error locally, and elapsed time
-            error_train.forward(clear_no_need_grad=True)
             monitor_loss.add(i * n_devices, loss_train.d.copy())
             monitor_err.add(i * n_devices, error_train.d.copy())
             monitor_time.add(i * n_devices)
