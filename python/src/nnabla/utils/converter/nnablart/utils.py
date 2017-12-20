@@ -56,7 +56,6 @@ def create_nnabart_info(nnp, batch_size):
     info._variable_sizes = []
     info._variable_buffer_index = {}
     for n, v in enumerate(network.variable):
-        print(v.type)
         info._variable_buffer_index[n] = n
         size = nnabla.utils.converter.calc_shape_size(v.shape, info._batch_size)
         info._variable_sizes.append(size)
