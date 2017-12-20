@@ -25,6 +25,52 @@ from nnabla.utils.data_source import DataSource
 from nnabla.utils.data_source_loader import download
 
 
+def load_mnist(train=True):
+    '''
+    Load MNIST dataset images and labels from the original page by Yan LeCun or the cache file.
+
+    Args:
+        train (bool): The testing dataset will be returned if False. Training data has 60000 images, while testing has 10000 images.
+
+    Returns:
+        numpy.ndarray: A shape of (#images, 1, 28, 28). Values in [0.0, 1.0].
+        numpy.ndarray: A shape of (#images, 1). Values in {0, 1, ..., 9}.
+
+    '''
+    if train:
+        image_uri = 'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz'
+        label_uri = 'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz'
+    else:
+        image_uri = 'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz'
+        label_uri = 'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz'
+    logger.info('Getting label data from {}.'.format(label_uri))
+    # With python3 we can write this logic as following, but with
+    # python2, gzip.object does not support file-like object and
+    # urllib.request does not support 'with statement'.
+    #
+    #   with request.urlopen(label_uri) as r, gzip.open(r) as f:
+    #       _, size = struct.unpack('>II', f.read(8))
+    #       labels = numpy.frombuffer(f.read(), numpy.uint8).reshape(-1, 1)
+    #
+    r = download(label_uri)
+    data = zlib.decompress(r.read(), zlib.MAX_WBITS | 32)
+    _, size = struct.unpack('>II', data[0:8])
+    labels = numpy.frombuffer(data[8:], numpy.uint8).reshape(-1, 1)
+    r.close()
+    logger.info('Getting label data done.')
+
+    logger.info('Getting image data from {}.'.format(image_uri))
+    r = download(image_uri)
+    data = zlib.decompress(r.read(), zlib.MAX_WBITS | 32)
+    _, size, height, width = struct.unpack('>IIII', data[0:16])
+    images = numpy.frombuffer(data[16:], numpy.uint8).reshape(
+        size, 1, height, width)
+    r.close()
+    logger.info('Getting image data done.')
+
+    return images, labels
+
+
 class MnistDataSource(DataSource):
     '''
     Get data directly from MNIST dataset from Internet(yann.lecun.com).
@@ -38,37 +84,8 @@ class MnistDataSource(DataSource):
     def __init__(self, train=True, shuffle=False, rng=None):
         super(MnistDataSource, self).__init__(shuffle=shuffle)
         self._train = train
-        if self._train:
-            image_uri = 'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz'
-            label_uri = 'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz'
-        else:
-            image_uri = 'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz'
-            label_uri = 'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz'
 
-        logger.info('Getting label data from {}.'.format(label_uri))
-        # With python3 we can write this logic as following, but with
-        # python2, gzip.object does not support file-like object and
-        # urllib.request does not support 'with statement'.
-        #
-        #   with request.urlopen(label_uri) as r, gzip.open(r) as f:
-        #       _, size = struct.unpack('>II', f.read(8))
-        #       self._labels = numpy.frombuffer(f.read(), numpy.uint8).reshape(-1, 1)
-        #
-        r = download(label_uri)
-        data = zlib.decompress(r.read(), zlib.MAX_WBITS | 32)
-        _, size = struct.unpack('>II', data[0:8])
-        self._labels = numpy.frombuffer(data[8:], numpy.uint8).reshape(-1, 1)
-        r.close()
-        logger.info('Getting label data done.')
-
-        logger.info('Getting image data from {}.'.format(image_uri))
-        r = download(image_uri)
-        data = zlib.decompress(r.read(), zlib.MAX_WBITS | 32)
-        _, size, height, width = struct.unpack('>IIII', data[0:16])
-        self._images = numpy.frombuffer(data[16:], numpy.uint8).reshape(
-            size, 1, height, width)
-        r.close()
-        logger.info('Getting image data done.')
+        self._images, self._labels = load_mnist(train)
 
         self._size = self._labels.size
         self._variables = ('x', 'y')
