@@ -48,9 +48,9 @@ def convolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     for k in range(K):
         g = int(k // (K // group))
         for ho in range(Ho):
-                hi = ho * stride[0] + np.arange(0, M) * dilation[0]
-                ci = np.arange(g * Cg, (g + 1) * Cg)
-                y[k, ho] = (w[k] * x_pad[np.ix_(ci, hi)]).sum()
+            hi = ho * stride[0] + np.arange(0, M) * dilation[0]
+            ci = np.arange(g * Cg, (g + 1) * Cg)
+            y[k, ho] = (w[k] * x_pad[np.ix_(ci, hi)]).sum()
     if b is not None:
         y += b[..., np.newaxis]
     return y

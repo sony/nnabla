@@ -77,7 +77,7 @@ def test_simple_data_source(test_data_csv_png_20, shuffle):
 
 
 @pytest.mark.parametrize("shuffle", [False, True])
-def test_concat_data_source(test_data_csv_png_10, test_data_csv_png_20, shuffle):
+def test_concat_data_source(test_data_csv_csv_10, test_data_csv_csv_20, shuffle):
     data_list = [test_data_csv_csv_10, test_data_csv_csv_20]
     ds_list = [CsvDataSource(csvfilename, shuffle)
                for csvfilename in data_list]
@@ -89,8 +89,9 @@ def test_concat_data_source(test_data_csv_png_10, test_data_csv_png_20, shuffle)
         data, label = cds.next()
         assert data[0][0] == label[0]
         order.append(int(round(data[0][0])))
+    original_order = list(range(10)) + list(range(20))
     if shuffle:
-        assert not list(range(size)) == order
-        assert list(range(size)) == sorted(order)
+        assert not original_order == order
+        assert sorted(original_order) == sorted(order)
     else:
-        assert list(range(size)) == order
+        assert original_order == order

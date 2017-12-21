@@ -18,6 +18,7 @@ import nnabla.parametric_functions as PF
 import nnabla.utils.save
 import nnabla.utils.load
 
+
 def test_save_load_parameters():
 
     batch_size = 16
