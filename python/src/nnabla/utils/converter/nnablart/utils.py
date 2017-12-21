@@ -1,3 +1,5 @@
+import collections
+
 import nnabla.utils.converter
 
 
@@ -21,11 +23,11 @@ def create_nnabart_info(nnp, batch_size):
 
     info._network_name = executor.network_name
 
-    parameters = {}
+    parameters = collections.OrderedDict()
     for p in nnp.protobuf.parameter:
         parameters[p.variable_name] = p
 
-    variables = {}
+    variables = collections.OrderedDict()
     for v in network.variable:
         variables[v.name] = v
 
@@ -54,14 +56,29 @@ def create_nnabart_info(nnp, batch_size):
 
     # Prepare variable buffers
     info._variable_sizes = []
-    info._variable_buffer_index = {}
+    info._variable_buffer_index = collections.OrderedDict()
+    info._variable_buffer_size = collections.OrderedDict()
+
+    info._buffer_ids = {}
+    buffer_index = 0
     for n, v in enumerate(network.variable):
-        info._variable_buffer_index[n] = n
         size = nnabla.utils.converter.calc_shape_size(
             v.shape, info._batch_size)
         info._variable_sizes.append(size)
+        if v.type == 'Buffer':
+            info._variable_buffer_index[buffer_index] = [n]
+            for vid in info._variable_buffer_index[buffer_index]:
+                info._buffer_ids[vid] = buffer_index
+
+            if buffer_index in info._variable_buffer_size:
+                if size > info._variable_buffer_size[buffer_index]:
+                    info._variable_buffer_size[buffer_index] = size
+            else:
+                info._variable_buffer_size[buffer_index] = size
+            buffer_index += 1
 
     info._parameters = parameters
+    info._variables = variables
     info._network = network
     info._function_info = nnabla.utils.converter.get_function_info()
     return info

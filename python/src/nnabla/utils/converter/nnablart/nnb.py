@@ -70,6 +70,13 @@ class NnbExporter:
             version = nnabla.utils.converter.get_category_info_version()
 
             ####################################################################
+            # Varible buffers
+            blist = list(self._info._variable_buffer_size.values())
+            index, pointer = self._alloc(
+                data=struct.pack('{}I'.format(len(blist)), *blist))
+            buffers = self._List(len(blist), index)
+
+            ####################################################################
             # Varibles
             self._Variable = collections.namedtuple(
                 'Variable', ('id', 'shape', 'type', 'fp_pos', 'data_index'))
@@ -97,7 +104,7 @@ class NnbExporter:
                     var.data_index = index
                 elif v.type == 'Buffer':
                     var.data_index = (
-                        self._info._variable_buffer_index[n] + 1) * -1
+                        self._info._buffer_ids[n] + 1) * -1
 
                 variable = struct.pack('IiIBi',
                                        var.id,
@@ -108,12 +115,12 @@ class NnbExporter:
                 index, pointer = self._alloc(data=variable)
                 vindexes.append(index)
 
-            ####################################################################
-            # Functions
             index, pointer = self._alloc(data=struct.pack(
                 '{}I'.format(len(vindexes)), *vindexes))
             variables = self._List(len(vindexes), index)
 
+            ####################################################################
+            # Functions
             findexes = []
             for n, f in enumerate(self._info._network.function):
                 function_data = struct.pack(
@@ -147,15 +154,16 @@ class NnbExporter:
                             argfmt += 'i'
                             values.append(val)
                         elif arg['Type'] == 'repeated int64':
+                            print(val)
                             index, pointer = self._alloc(
-                                data=struct.pack('{}I'.format(len(val)), *val))
+                                data=struct.pack('{}i'.format(len(val)), *val))
                             values.append(len(val))
                             values.append(index)
                             argfmt += 'iI'
                         elif arg['Type'] == 'Shape':
                             argfmt += 'iI'
                             index, pointer = self._alloc(data=struct.pack(
-                                '{}I'.format(len(val.dim)), *val.dim))
+                                '{}i'.format(len(val.dim)), *val.dim))
                             values.append(len(val.dim))
                             values.append(index)
                         elif arg['Type'] == 'string':
@@ -187,8 +195,10 @@ class NnbExporter:
                 '{}I'.format(len(output_list)), *output_list))
             outputs = self._List(len(output_list), index)
 
-            network = struct.pack('IiIiIiIiIII',
+            network = struct.pack('IiIiIiIiIiIII',
                                   version,
+                                  buffers.size,
+                                  buffers.list_index,
                                   variables.size,
                                   variables.list_index,
                                   functions.size,

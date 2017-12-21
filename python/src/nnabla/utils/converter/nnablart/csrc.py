@@ -158,29 +158,39 @@ class CsrcExporter:
                             '    int f{}_config_shape_{}[{}];'.format(n, arg_name, len(val)))
 
         internal_defines.append('}} {}_local_context_t;'.format(prefix))
-
+        param_id_start = 0
         # NAME_allocate_context
         initialize_context = []
         initialize_context.append('    // Variable buffer')
+        for bid, vids in self._info._variable_buffer_index.items():
+            initialize_context.append(
+                '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(bid))
+            initialize_context.append(
+                '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(bid,
+                                                                                       self._info._variable_buffer_size[bid]))
+            param_id_start += 1
+
         initialize_context.append('    if(params) {')
-        for n, size in enumerate(self._info._variable_sizes):
-            vname = self._info._network.variable[n].name
-            if vname in self._info._parameters:
-                initialize_context.append(
-                    '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_ALLOCATED;'.format(n))
-                initialize_context.append(
-                    '        c->variable_buffers[{}] = *params++;'.format(n))
-            else:
-                initialize_context.append(
-                    '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(n))
-                initialize_context.append(
-                    '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(n, size))
+        n = param_id_start
+        for vname in self._info._parameters:
+            vid = list(self._info._variables.keys()).index(vname)
+            self._info._buffer_ids[vid] = n
+            initialize_context.append(
+                '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_ALLOCATED;'.format(n))
+            initialize_context.append(
+                '        c->variable_buffers[{}] = *params++;'.format(n))
+            n += 1
         initialize_context.append('    } else {')
-        for n, size in enumerate(self._info._variable_sizes):
+        n = param_id_start
+        for vname in self._info._parameters:
+            size = self._info._variable_sizes[n]
             initialize_context.append(
                 '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(n))
             initialize_context.append(
+                '        c->variable_buffers[{}] = *params++;'.format(n))
+            initialize_context.append(
                 '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(n, size))
+            n += 1
         initialize_context.append('    }')
 
         variable_buffers = {}
@@ -204,7 +214,7 @@ class CsrcExporter:
             initialize_context.append(
                 '    (c->v{0}).shape.data = c->v{0}_shape;'.format(n))
             initialize_context.append(
-                '    (c->v{}).data = c->variable_buffers[{}];'.format(n, self._info._variable_buffer_index[n]))
+                '    (c->v{}).data = c->variable_buffers[{}];'.format(n, self._info._buffer_ids[n]))
             variable_buffers[v.name] = '(c->v{}).data'.format(n)
             variables[v.name] = '(c->v{})'.format(n)
 
@@ -243,6 +253,8 @@ class CsrcExporter:
                         for vn, v in enumerate(val.dim):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
+                        initialize_context.append(
+                            '    (c->f{0}_config).{1} = arg_f{0}_{1};'.format(n, arg_name))
                     elif arg['Type'] == 'repeated int64':
                         initialize_context.append(
                             '    rt_list_t arg_f{}_{};'.format(n, arg_name))
@@ -253,6 +265,9 @@ class CsrcExporter:
                         for vn, v in enumerate(val):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
+                        initialize_context.append(
+                            '    (c->f{0}_config).{1} = arg_f{0}_{1};'.format(n, arg_name))
+
                     elif arg['Type'] == 'bool':
                         if val:
                             val = 1

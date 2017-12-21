@@ -40,7 +40,8 @@ for category, functions in all_functions.items():
                 func['output'][n]['Options'] = i['Options'].split()
         info['categories'][category][function] = func
 
-info['version'] = zlib.crc32(json.dumps(info['categories']).encode('utf-8')) & 0x7ffffff
+info['version'] = zlib.crc32(json.dumps(
+    info['categories']).encode('utf-8')) & 0x7ffffff
 
 with open(sys.argv[1], 'w') as f:
     f.write(json.dumps(info, indent=4))
