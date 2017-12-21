@@ -40,4 +40,4 @@ def test_epsilon_insensitive_loss_forward_backward(seed, ctx, func_name, epsilon
     function_tester(rng, F.epsilon_insensitive_loss,
                     ref_epsilon_insensitive_loss_forward, inputs,
                     func_args=[epsilon],
-                    atol_b=1e-2, atol_f=0.5, ctx=ctx, func_name=func_name)
+                    atol_b=1e-2, ctx=ctx, func_name=func_name)
