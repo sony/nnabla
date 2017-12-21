@@ -222,10 +222,12 @@ class ConcatDataSource(DataSource):
     def __init__(self, data_source_list, shuffle=True, rng=None):
         super(ConcatDataSource, self).__init__(shuffle=shuffle, rng=rng)
         self._data_sources = data_source_list
-        self._sw_points = map(
+
+        self._sw_points = list(map(
             lambda s: sum(
                 [x.size for x in data_source_list[:data_source_list.index(s) + 1]]),
-            data_source_list)  # Switching DataSource index
+            data_source_list))  # Switching DataSource index
+
         self._size = self._sw_points[-1]
         self._variables = data_source_list[0].variables
         self.reset()
