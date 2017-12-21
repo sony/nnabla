@@ -21,6 +21,7 @@ from libcpp.unordered_map cimport unordered_map
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t
+from nnabla import _nd_array
 
 cimport communicator
 from communicator cimport CCommunicator
@@ -28,6 +29,10 @@ from communicator cimport CCommunicator
 cimport _variable
 from _variable cimport Variable as _Variable, CVariable
 from _variable import Context
+
+cimport _nd_array
+from _nd_array cimport NdArray
+
 
 # Numpy
 import numpy as np
@@ -110,8 +115,9 @@ cdef class Communicator:
         self.communicatorp.init()
 
     def allreduce(self, cpp_bool division=False, cpp_bool inplace=False):
-        """Inplace allreduce over parameters added.
-        This method is \b sync before and after allreduce w.r.t. a host thread.
+        """Deprecated. See all_reduce, instead. 
+
+        Allreduce over parameters added.
         Currently, `allreduce` is applied to gradient regions.
 
         Args:
@@ -119,15 +125,40 @@ cdef class Communicator:
                 number of `contexts` added, or the number of devices. 
             inplace (bool): Flag to use a packed array. Default is false.
                 When true, it is memory-efficient but slow. When false, 
-                it is not memory efficient but fast.  
+                it is not memory efficient but fast. In both case, one can 
+                get the result in the same memory region.
         """
         with nogil:
             self.communicatorp.allreduce(division, inplace)
 
+    def all_reduce(self, data, cpp_bool division=False, cpp_bool inplace=False):
+        """All reduce over parameters added.
+
+        Args:
+            data (:obj:`NdArray` or list of :obj:`NdArray`)
+            division (bool): Flag to divide the reduce data by the 
+                number of `contexts` added, or the number of devices. 
+            inplace (bool): Flag to use a packed array. Default is false.
+                When true, it is memory-efficient but slow. When false, 
+                it is not memory efficient but fast. In both case, one can 
+                get the result in the same memory region.
+        """
+        cdef vector[shared_ptr[CNdArray]] cndarray_list
+        if type(data) == list:
+            for x in data:
+                cndarray_list.push_back(( < NdArray > x).arr)
+            with nogil:
+                self.communicatorp.all_reduce(cndarray_list, division, inplace)
+        else:
+            cndarray_list.push_back(( < NdArray > data).arr)
+            with nogil:
+                self.communicatorp.all_reduce(cndarray_list, division, inplace)
+
 
 def DataParalellCommunicator(CContext ctx):
-    """
-    Data Parallel Communicator for Distributed Training.
+    """Data Parallel Communicator for Distributed Training.
+
+    This class does collectives in a single-process in a machine.
 
     Args:
         context (:obj:`Context`): context used in this communicator.
@@ -160,7 +191,7 @@ def DataParalellCommunicator(CContext ctx):
                 solvers[i].zero_grad()
                 losses[i].backward()
 
-            # Inplace-allreduce
+            # Allreduce
             comm.allreduce()
 
             # Update
@@ -197,14 +228,14 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
         comm.init()
         n_devices = comm.size
         mpi_rank = comm.rank
-        device_id = mpi_rank
+        device_id = comm.local_rank
+        ctx = extension_context(extension_module, device_id=device_id)
+        nn.set_default_context(ctx)
 
         # Network and Solver created here
 
         ...
 
-        # add contexts and parameters to the communicator 
-        comm.add_context_and_parameters((ctx, nn.get_parameters()))
 
         # Training loop
         for itr in range(num_itr):
@@ -213,8 +244,8 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
             solver.zero_grad()
             loss.backward()
 
-            # Inplace-allreduce
-            comm.allreduce()
+            # Allreduce
+            comm.allreduce([v.grad for v in nn.get_parameters().values()])
 
             # Update
             solver.update()
