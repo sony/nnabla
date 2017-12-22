@@ -30,6 +30,7 @@ from .data_source import DataSourceWithMemoryCache
 from .data_source_implements import SimpleDataSource
 from .data_source_implements import CsvDataSource
 from .data_source_implements import CacheDataSource
+from .data_source_implements import ConcatDataSource
 
 from nnabla.logger import logger
 
@@ -448,5 +449,42 @@ def data_iterator_cache(uri,
     return data_iterator(ds,
                          batch_size=batch_size,
                          with_memory_cache=with_memory_cache,
+                         epoch_begin_callbacks=epoch_begin_callbacks,
+                         epoch_end_callbacks=epoch_end_callbacks)
+
+
+def data_iterator_concat_datasets(data_source_list,
+                                  batch_size,
+                                  shuffle=True,
+                                  rng=None,
+                                  with_memory_cache=True,
+                                  with_file_cache=False,
+                                  cache_dir=None,
+                                  epoch_begin_callbacks=[],
+                                  epoch_end_callbacks=[]):
+    '''data_iterator_concat_datasets
+    Get data from multiple datasets.
+
+    For example,
+
+    .. code-block:: python
+
+        with data_iterator_concat_datasets([DataSource0, DataSource1, ...], batch_size) as di:
+            for data in di:
+                SOME CODE TO USE data.
+
+    Args:
+        data_source_list (list of DataSource): list of dataset.
+    Returns:
+        :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
+            Instance of DataIterator
+    '''
+    ds = ConcatDataSource(data_source_list,
+                          shuffle=shuffle,
+                          rng=rng)
+    return data_iterator(ds,
+                         batch_size=batch_size,
+                         with_memory_cache=with_memory_cache,
+                         with_file_cache=with_file_cache,
                          epoch_begin_callbacks=epoch_begin_callbacks,
                          epoch_end_callbacks=epoch_end_callbacks)

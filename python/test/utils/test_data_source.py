@@ -16,7 +16,7 @@ import os
 import pytest
 
 # from NNabla
-from nnabla.utils.data_source_implements import SimpleDataSource, CsvDataSource
+from nnabla.utils.data_source_implements import SimpleDataSource, CsvDataSource, ConcatDataSource
 from nnabla.utils.data_source_loader import load_image
 
 from .conftest import test_data_csv_csv_10, test_data_csv_csv_20
@@ -74,3 +74,24 @@ def test_simple_data_source(test_data_csv_png_20, shuffle):
         assert list(range(size)) == sorted(order)
     else:
         assert list(range(size)) == order
+
+
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_concat_data_source(test_data_csv_csv_10, test_data_csv_csv_20, shuffle):
+    data_list = [test_data_csv_csv_10, test_data_csv_csv_20]
+    ds_list = [CsvDataSource(csvfilename, shuffle)
+               for csvfilename in data_list]
+
+    cds = ConcatDataSource(ds_list, shuffle)
+    cds.reset()
+    order = []
+    for n in range(0, cds.size):
+        data, label = cds.next()
+        assert data[0][0] == label[0]
+        order.append(int(round(data[0][0])))
+    original_order = list(range(10)) + list(range(20))
+    if shuffle:
+        assert not original_order == order
+        assert sorted(original_order) == sorted(order)
+    else:
+        assert original_order == order
