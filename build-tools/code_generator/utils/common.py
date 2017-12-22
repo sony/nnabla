@@ -49,7 +49,8 @@ def check_update(filename, generated, force=False):
 
 def get_version(dir):
     os.chdir(dir)
-    default_version = '0.9.7'
+    version = default_version = '0.9.7'
+    nearest_tag = default_version
     if os.path.exists('.git'):
         try:
             nearest_tag = re.sub(r'^v', '', subprocess.check_output(

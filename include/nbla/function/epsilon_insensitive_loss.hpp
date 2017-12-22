@@ -23,6 +23,8 @@
 
 #include <nbla/function/utils/base_transform_binary.hpp>
 
+#include <cmath>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(EpsilonInsensitiveLoss, float);
@@ -52,7 +54,7 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_BINARY_1(
     EpsilonInsensitiveLoss,
-    (abs(x0 - x1) > (T)a0) ? (abs((x0 - x1)) - (T)a0) : (T)0,
+    (std::abs(x0 - x1) > (T)a0) ? (std::abs((x0 - x1)) - (T)a0) : (T)0,
     (x0 - x1) > (T)a0 ? dy : ((x0 - x1) < (T)-a0) ? -dy : (T)0,
     (x0 - x1) > (T)a0 ? -dy : ((x0 - x1) < (T)-a0) ? dy : (T)0, false, false,
     float);
