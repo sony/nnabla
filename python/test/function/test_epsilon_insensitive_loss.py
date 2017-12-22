@@ -33,7 +33,6 @@ def ref_epsilon_insensitive_loss_forward(x0, x1, epsilon):
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("epsilon", [0.001, 1])
 def test_epsilon_insensitive_loss_forward_backward(seed, ctx, func_name, epsilon):
-    pytest.skip('Temporarily skipped.')
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
