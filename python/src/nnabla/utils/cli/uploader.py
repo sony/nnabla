@@ -118,7 +118,7 @@ class Uploader:
             self._log('Got upload_url')
         else:
             self._log('upload_url is [{}]'.format(
-            upload_url))
+                upload_url))
 
         bucketname, key = upload_url.split('://', 1)[1].split('/', 1)
         upload_key = '{}/{}.tar'.format(key, name)
@@ -178,7 +178,7 @@ class Uploader:
                 tarfile = self.createTemporaryTar(name,
                                                   csv_data,
                                                   data_files,
-                                                      tmpdir)
+                                                  tmpdir)
                 self._log('Upload')
                 res = self.uploadFile(endpoint, token, tarfile, name)
             finally:

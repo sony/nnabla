@@ -579,26 +579,30 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                 logger.info('Skip loading parameter.')
 
         elif ext == '.nnp':
-            tmpdir = tempfile.mkdtemp()
-            with zipfile.ZipFile(filename, 'r') as nnp:
-                for name in nnp.namelist():
-                    _, ext = os.path.splitext(name)
-                    if name == 'nnp_version.txt':
-                        with open(os.path.join(tmpdir, name), 'rt') as f:
-                            print(f.readlines())
-                    elif ext in ['.nntxt', '.prototxt']:
-                        if not parameter_only:
+            try:
+                tmpdir = tempfile.mkdtemp()
+                with zipfile.ZipFile(filename, 'r') as nnp:
+                    for name in nnp.namelist():
+                        _, ext = os.path.splitext(name)
+                        if name == 'nnp_version.txt':
+                            nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
-                                text_format.Merge(f.read(), proto)
-                    elif ext in ['.protobuf', '.h5']:
-                        if not exclude_parameter:
-                            nn.load_parameters(os.path.join(tmpdir, name),
-                                               proto)
+                                print(f.readlines())
+                        elif ext in ['.nntxt', '.prototxt']:
+                            nnp.extract(name, tmpdir)
+                            if not parameter_only:
+                                with open(os.path.join(tmpdir, name), 'rt') as f:
+                                    text_format.Merge(f.read(), proto)
+                        elif ext in ['.protobuf', '.h5']:
+                            nnp.extract(name, tmpdir)
+                            if not exclude_parameter:
+                                nn.load_parameters(os.path.join(tmpdir, name),
+                                                   proto)
 
-                        else:
-                            logger.info('Skip loading parameter.')
-
-            shutil.rmtree(tmpdir)
+                            else:
+                                logger.info('Skip loading parameter.')
+            finally:
+                shutil.rmtree(tmpdir)
 
     default_context = None
     if proto.HasField('global_config'):

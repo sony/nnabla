@@ -43,7 +43,6 @@ def test_get_parameter_or_create_need_grad():
 def test_parameter_scope_slash():
     """Testing if parameter_scope('aaa/bbb') works.
     """
-    pytest.skip("Skip temporarily in console branch.")
     import nnabla as nn
     from nnabla.parameter import get_parameter_or_create
     nn.clear_parameters()

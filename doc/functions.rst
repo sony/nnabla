@@ -3190,7 +3190,7 @@ Array Manipulation
 Concatenate
 ^^^^^^^^^^^
 
-Concatenate two arrays along the specified axis.
+Concatenate a variable number of input arrays along the specified axis.
 
 * Input(s)
 

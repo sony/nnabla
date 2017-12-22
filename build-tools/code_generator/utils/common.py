@@ -49,18 +49,7 @@ def check_update(filename, generated, force=False):
 
 def get_version(dir):
     os.chdir(dir)
-    default_version = '0.9.5'
-    if os.path.exists('.git'):
-        try:
-            nearest_tag = re.sub(r'^v', '', subprocess.check_output(['git', 'describe', '--abbrev=0', '--tags']).strip().decode('utf-8'))
-            nearest_tag = nearest_tag.replace('/', '_').lower()
-            version = nearest_tag
-            vv = subprocess.check_output(['git', 'describe', '--tags']).strip().decode('utf-8').split('-')
-            if len(vv) > 1:
-                cid = vv.pop()
-                version = '-'.join(vv) + '+' + cid
-                vertion = version.replace('/', '_').lower()
-        except:
-            nearest_tag = default_version
-            version = default_version
+    default_version = '0.9.console'
+    nearest_tag = default_version
+    version = default_version
     return version.replace('/', '_').lower(), nearest_tag.replace('/', '_').lower()

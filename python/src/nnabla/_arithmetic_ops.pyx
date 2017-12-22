@@ -137,7 +137,7 @@ cdef object truediv(object x, object y):
         if isinstance(y, (NdArray, Variable)):
             return F.div2(x, y)
         else:
-            return F.mul_scalar(x, 1 / y)
+            return F.mul_scalar(x, 1. / y)
     else:
         if isinstance(y, (NdArray, Variable)):
             return F.r_div_scalar(y, x)
@@ -168,7 +168,7 @@ cdef object div(object x, object y):
         if isinstance(y, (NdArray, Variable)):
             return F.div2(x, y)
         else:
-            return F.mul_scalar(x, 1 / y)
+            return F.mul_scalar(x, 1. / y)
     else:
         if isinstance(y, (NdArray, Variable)):
             return F.r_div_scalar(y, x)
