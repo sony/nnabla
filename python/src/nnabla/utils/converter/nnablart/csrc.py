@@ -383,9 +383,9 @@ class CsrcExporter:
         pos = self._info._num_of_inputs
         for n in range(self._info._num_of_outputs):
             prepare_output_file.append(
-                '    char* output_filename{} = malloc(strlen(argv[{}]) + 10);'.format(n, pos + n + 1))
+                '    char* output_filename{} = malloc(strlen(argv[{}]) + 10);'.format(n, pos + 1))
             prepare_output_file.append(
-                '    sprintf(output_filename{0}, "%s_{0}.bin", argv[{1}]);'.format(n, pos + n + 1))
+                '    sprintf(output_filename{0}, "%s_{0}.bin", argv[{1}]);'.format(n, pos + 1))
             prepare_output_file.append(
                 '    FILE* output{0} = fopen(output_filename{0}, "wb");'.format(n))
             prepare_output_file.append('    assert(output{});'.format(n))
