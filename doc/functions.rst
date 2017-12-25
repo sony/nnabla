@@ -1947,6 +1947,7 @@ Element-wise scalar power function.
      - N-D array with the same shape as x
      - 
 
+
 Logical
 -------
 
@@ -3183,6 +3184,52 @@ Two of batchs of matrices are multiplied for each sample in a batch. A batch of 
      - Output of sample-wise matrix multiplication in a batch. When ``a`` is of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose options are all False, the output will be a shape of [N, P, R].
      - 
 
+Round
+^^^^^^^^^^
+
+Element-wise round function.
+
+In the forward pass, this function simply computes `round`, 
+
+.. math::
+    y_i = round(x_i).
+
+In the backward pass, the simple Straight-Through Estimator (STE) is applied, 
+
+.. math::
+    \frac{\partial y_i}{\partial x_i} = 1.
+ 
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input variable
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as x
+     - 
 
 Array Manipulation
 ------------------
