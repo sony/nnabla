@@ -25,12 +25,11 @@ from nnabla.contrib.context import extension_context
 # otherwise, mpirun fails.
 ############################################
 
-# Contex
-extension_module = "cuda"
-ctx = extension_context(extension_module)
-
 # Communicator
-try: 
+comm = None
+try:
+    extension_module = "cuda"
+    ctx = extension_context(extension_module)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
@@ -55,6 +54,7 @@ def ref_all_reduce(x_data_list, size, division):
     return results
 
 
+@pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("division", [False])
