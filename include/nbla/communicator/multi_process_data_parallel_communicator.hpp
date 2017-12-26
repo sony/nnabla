@@ -67,6 +67,10 @@ public:
 
   virtual void reduce(bool division = false);
   virtual void allreduce(bool division = false, bool inplace = false);
+  virtual void all_reduce(vector<NdArrayPtr> ndarray_list,
+                          bool division = false, bool inplace = false);
+  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
+                          bool inplace = false);
   virtual void reducescatter(bool division = false);
   virtual void bcast();
   virtual void allgather();

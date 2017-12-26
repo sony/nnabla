@@ -102,13 +102,32 @@ public:
   virtual void reduce(bool division = false);
 
   /** allreduce over parameters added.
-   This method is \b sync before and after iallreduce w.r.t. a host thread.
    Currently, \e iallreduce is applied to gradient regions.
 
   @param division Divide the reduced value.
   @param inplace Pack the arrays into one large array if flase.
    */
   virtual void allreduce(bool division = false, bool inplace = false);
+
+  /** all_reduce over parameters added.
+   Currently, \e iallreduce is applied to gradient regions.
+
+        @param ndarray_list Vector of NdArrayPtr
+  @param division Divide the reduced value.
+  @param inplace Pack the arrays into one large array if flase.
+   */
+  virtual void all_reduce(vector<NdArrayPtr> ndarray_list,
+                          bool division = false, bool inplace = false);
+
+  /** all_reduce over parameters added.
+Currently, \e iallreduce is applied to gradient regions.
+
+  @param data NdArrayPtr
+@param division Divide the reduced value.
+@param inplace Pack the arrays into one large array if flase.
+*/
+  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
+                          bool inplace = false);
 
   /** reducescatter.
    @param division Divide the reduced value.
