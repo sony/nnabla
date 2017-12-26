@@ -1,0 +1,34 @@
+Neural Network Layer:
+  Affine:
+    doc: |
+      Affine layer, also called as the fully connected layer. It calculates:
+
+      .. math::
+        {\mathbf y} = {\mathbf A} {\mathbf x} + {\mathbf b}.
+
+      where :math:`{\mathbf x}` is the input and :math:`{\mathbf y}` is the output. 
+
+    inputs:
+      x:
+        doc: Input N-D array with shape (:math:`M_0 \times ... \times M_{B-1} \times D_B \times ... \times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        # template: T   # T is reserved as default template parameter
+      weight:
+        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L`)
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`L`)
+        optional: true
+        parameter: true
+
+    arguments:
+      base_axis:
+        type: int64
+        default: 1
+        doc: Base axis of Affine operation. Dimensions up to base_axis is treated as sample dimension.
+
+    outputs:
+      y:
+        doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times L`)
+
+    templates:
+      C: Compute Type
