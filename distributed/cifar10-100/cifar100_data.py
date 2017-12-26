@@ -93,13 +93,13 @@ class Cifar100DataSource(DataSource):
 
     @property
     def images(self):
-        """Get copy of whole data with a shape of (N, 1, H, W)."""
-        return self._images.copy()
+        """Get whole data with a shape of (N, 3, H, W)."""
+        return self._images
 
     @property
     def labels(self):
-        """Get copy of whole label with a shape of (N, 1)."""
-        return self._labels.copy()
+        """Get whole label with a shape of (N, 1)."""
+        return self._labels
 
 
 def data_iterator_cifar100(batch_size,
@@ -114,8 +114,9 @@ def data_iterator_cifar100(batch_size,
     with_memory_cache, with_parallel and with_file_cache option's default value is all False,
     because :py:class:`Cifar100DataSource` is able to store all data into memory.
     '''
-    return data_iterator(Cifar100DataSource(train=train, shuffle=shuffle, rng=rng),
-                         batch_size,
-                         with_memory_cache,
-                         with_parallel,
-                         with_file_cache)
+    data_source = Cifar100DataSource(train=train, shuffle=shuffle, rng=rng)
+    return data_source, data_iterator(data_source,
+                                      batch_size,
+                                      with_memory_cache,
+                                      with_parallel,
+                                      with_file_cache)
