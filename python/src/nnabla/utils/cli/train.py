@@ -91,13 +91,13 @@ def _save_parameters(args, suffix, epoch, force=False):
 def _update(iter, config, cost):
     loaded_datas = {}
     is_first_optimizer = True
-    
+
     def sum_cost(sum_iter):
         if MPI:
             cost_sum_iter = np.zeros(1)
             cost_sum_iter[0] = sum_iter
             cost_sum_epoch = np.zeros(1)
-            MPI.COMM_WORLD.Allreduce(cost_sum_iter, cost_sum_epoch, op = MPI.SUM)
+            MPI.COMM_WORLD.Allreduce(cost_sum_iter, cost_sum_epoch, op=MPI.SUM)
             cost.sum_epoch += cost_sum_epoch[0]
             cost.num_iter += MPI.COMM_WORLD.Get_size()
         else:
@@ -177,7 +177,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             error_buf = np.zeros(1)
             error_buf[0] = error
             error_sum = np.zeros(1)
-            MPI.COMM_WORLD.Allreduce(error_buf, error_sum, op = MPI.SUM)
+            MPI.COMM_WORLD.Allreduce(error_buf, error_sum, op=MPI.SUM)
             return sum + error_sum[0]
         else:
             return sum + error
@@ -538,12 +538,14 @@ def train_command(args):
                 o.data_iterator = stack.enter_context(
                     o.optimizer.data_iterator())
                 if MPI and MPI.COMM_WORLD.Get_size() > 1:
-                    o.data_iterator = o.data_iterator.slice(MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
+                    o.data_iterator = o.data_iterator.slice(
+                        MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
             for name, m in config.monitors.items():
                 m.data_iterator = stack.enter_context(
                     m.monitor.data_iterator())
                 if MPI and MPI.COMM_WORLD.Get_size() > 1:
-                    m.data_iterator = m.data_iterator.slice(MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
+                    m.data_iterator = m.data_iterator.slice(
+                        MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
             train(args, config)
 
     else:

@@ -22,6 +22,7 @@ import nnabla.logger as logger
 import csv
 import tqdm
 
+
 def convert_image(args):
     file_name = args[0]
     source_dir = args[1]
@@ -39,7 +40,7 @@ def convert_image(args):
 
     # open source image
     try:
-        im = scipy.misc.imread(src_file_name, mode='RGB' if ch==3 else 'L')
+        im = scipy.misc.imread(src_file_name, mode='RGB' if ch == 3 else 'L')
         if len(im.shape) < 2 or len(im.shape) > 3:
             logger.warning(
                 "Illigal image file format.")
@@ -108,6 +109,7 @@ def convert_image(args):
         logger.warning(
             "Failed to convert %s." % (src_file_name))
 
+
 def create_image_classification_dataset_command(args):
     # settings
     source_dir = args.sourcedir
@@ -164,16 +166,18 @@ def create_image_classification_dataset_command(args):
 
     # create output data
     logger.log(99, "Creating output images...")
-    process_args = [(data[0], source_dir, dest_dir, width, height, padding, ch) for data in csv_data]
+    process_args = [(data[0], source_dir, dest_dir, width,
+                     height, padding, ch) for data in csv_data]
     p = mp.Pool(mp.cpu_count())
-    pbar = tqdm.tqdm(total = len(process_args))
+    pbar = tqdm.tqdm(total=len(process_args))
     for _ in p.imap_unordered(convert_image, process_args):
         pbar.update()
     pbar.close()
 
     for data in csv_data:
         file_name = os.path.splitext(data[0])[0] + ".png"
-        data[0] = file_name if os.path.exists(os.path.join(dest_dir, file_name)) else None
+        data[0] = file_name if os.path.exists(
+            os.path.join(dest_dir, file_name)) else None
     for data in csv_data[:]:
         if not data[0]:
             csv_data.remove(data)

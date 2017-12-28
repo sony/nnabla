@@ -119,7 +119,8 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        shape = tuple([d if d >=0 else network.batch_size for d in f.reshape_param.shape.dim])
+        shape = tuple(
+            [d if d >= 0 else network.batch_size for d in f.reshape_param.shape.dim])
         print(shape, inputs[0].shape)
         if len(shape) < len(inputs[0].shape):
             shape = (network.batch_size,) + \
@@ -137,7 +138,8 @@ def _create_function(ctx, network, f, variable_index):
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
     elif f.type == "Broadcast":
-        shape = tuple([d if d >=0 else network.batch_size for d in f.broadcast_param.shape.dim])
+        shape = tuple(
+            [d if d >= 0 else network.batch_size for d in f.broadcast_param.shape.dim])
         function_instance = F.Broadcast(ctx, shape)
     else:
         function_instance = _create_function_instance(ctx, f)
@@ -391,7 +393,8 @@ def _global_config(proto):
     config.default_context = _context(proto.global_config.default_context)
 
     if MPI and MPI.COMM_WORLD.Get_size() > 0:
-        config.default_context.device_id = str(MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
+        config.default_context.device_id = str(
+            MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
     return config
 
 
