@@ -239,146 +239,112 @@ protected:
 
 // --------------------------------------------------------------------------
 // Helper macro for defining copy function from one to another type
-#define NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, type, src_type, dst_type)      \
+#define NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, type, src_type, dst_type,      \
+                                     name)                                     \
   case dtypes::type:                                                           \
-    copy_func<src_type, dst_type>(src_array, this);                            \
+    if (name##_type_enabled<dst_type>::value) {                                \
+      copy_func<src_type, dst_type>(src_array, this);                          \
+    }                                                                          \
     break
 
-#define NBLA_ARRAY_COPY_FROM(copy_func, type)                                  \
+#define NBLA_ARRAY_COPY_FROM(copy_func, type, name)                            \
   switch (this->dtype()) {                                                     \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, UBYTE, type, unsigned char);       \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, BYTE, type, char);                 \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, USHORT, type, unsigned short);     \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, SHORT, type, short);               \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, UINT, type, unsigned int);         \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, INT, type, int);                   \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, ULONG, type, unsigned long);       \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, LONG, type, long);                 \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, UBYTE, type, unsigned char, name); \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, BYTE, type, char, name);           \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, USHORT, type, unsigned short,      \
+                                 name);                                        \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, SHORT, type, short, name);         \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, UINT, type, unsigned int, name);   \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, INT, type, int, name);             \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, ULONG, type, unsigned long, name); \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, LONG, type, long, name);           \
     NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, ULONGLONG, type,                   \
-                                 unsigned long long);                          \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, LONGLONG, type, long long);        \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, FLOAT, type, float);               \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, DOUBLE, type, double);             \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, BOOL, type, bool);                 \
-    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, LONGDOUBLE, type, long double);    \
+                                 unsigned long long, name);                    \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, LONGLONG, type, long long, name);  \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, FLOAT, type, float, name);         \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, DOUBLE, type, double, name);       \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, BOOL, type, bool, name);           \
+    NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, LONGDOUBLE, type, long double,     \
+                                 name);                                        \
   default:                                                                     \
-    NBLA_ERROR(error_code::unclassified, "Unknown dtype.");                    \
+    NBLA_ERROR(error_code::unclassified, "Disabled dtype %s.",                 \
+               dtype_to_string(this->dtype()).c_str());                        \
   }
 
-#define NBLA_CASE_ARRAY_COPY_FROM(copy_func, type, src_type)                   \
+#define NBLA_CASE_ARRAY_COPY_FROM(copy_func, type, src_type, name)             \
   case dtypes::type:                                                           \
-    NBLA_ARRAY_COPY_FROM(copy_func, src_type);                                 \
+    if (name##_type_enabled<src_type>::value) {                                \
+      NBLA_ARRAY_COPY_FROM(copy_func, src_type, name);                         \
+    }                                                                          \
     break;
 // --------------------------------------------------------------------------
 
-#define NBLA_DEFINE_FUNC_COPY_FROM(array_class, copy_func)                     \
+#define NBLA_DEFINE_FUNC_COPY_FROM(array_class, copy_func, name)               \
   void array_class::copy_from(const Array *src_array) {                        \
     if (src_array->size() != this->size_) {                                    \
       NBLA_ERROR(error_code::unclassified, "Size mismatch.");                  \
     }                                                                          \
     switch (src_array->dtype()) {                                              \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, UBYTE, unsigned char);              \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, BYTE, char);                        \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, USHORT, unsigned short);            \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, SHORT, short);                      \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, UINT, unsigned int);                \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, INT, int);                          \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, ULONG, unsigned long);              \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, LONG, long);                        \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, ULONGLONG, unsigned long long);     \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, LONGLONG, long long);               \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, FLOAT, float);                      \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, DOUBLE, double);                    \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, BOOL, bool);                        \
-      NBLA_CASE_ARRAY_COPY_FROM(copy_func, LONGDOUBLE, long double);           \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, UBYTE, unsigned char, name);        \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, BYTE, char, name);                  \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, USHORT, unsigned short, name);      \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, SHORT, short, name);                \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, UINT, unsigned int, name);          \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, INT, int, name);                    \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, ULONG, unsigned long, name);        \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, LONG, long, name);                  \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, ULONGLONG, unsigned long long,      \
+                                name);                                         \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, LONGLONG, long long, name);         \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, FLOAT, float, name);                \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, DOUBLE, double, name);              \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, BOOL, bool, name);                  \
+      NBLA_CASE_ARRAY_COPY_FROM(copy_func, LONGDOUBLE, long double, name);     \
     default:                                                                   \
-      NBLA_ERROR(error_code::type, "Unknown dtype.");                          \
+      NBLA_ERROR(error_code::unclassified, "Disabled dtype %s.",               \
+                 dtype_to_string(src_array->dtype()).c_str());                 \
     }                                                                          \
   }
 
-#define NBLA_CASE_ARRAY_FILL(fill_func, type_enum, type)                       \
+#define NBLA_CASE_ARRAY_FILL(fill_func, type_enum, type, name)                 \
   case dtypes::type_enum:                                                      \
-    fill_func<type>(this, value);                                              \
+    if (name##_type_enabled<type>::value) {                                    \
+      fill_func<type>(this, value);                                            \
+    }                                                                          \
     break;
 // --------------------------------------------------------------------------
 
-#define NBLA_DEFINE_FUNC_FILL(array_class, fill_func)                          \
+#define NBLA_DEFINE_FUNC_FILL(array_class, fill_func, name)                    \
   void array_class::fill(float value) {                                        \
     switch (this->dtype()) {                                                   \
-      NBLA_CASE_ARRAY_FILL(fill_func, UBYTE, unsigned char);                   \
-      NBLA_CASE_ARRAY_FILL(fill_func, BYTE, char);                             \
-      NBLA_CASE_ARRAY_FILL(fill_func, USHORT, unsigned short);                 \
-      NBLA_CASE_ARRAY_FILL(fill_func, SHORT, short);                           \
-      NBLA_CASE_ARRAY_FILL(fill_func, UINT, unsigned int);                     \
-      NBLA_CASE_ARRAY_FILL(fill_func, INT, int);                               \
-      NBLA_CASE_ARRAY_FILL(fill_func, ULONG, unsigned long);                   \
-      NBLA_CASE_ARRAY_FILL(fill_func, LONG, long);                             \
-      NBLA_CASE_ARRAY_FILL(fill_func, ULONGLONG, unsigned long long);          \
-      NBLA_CASE_ARRAY_FILL(fill_func, LONGLONG, long long);                    \
-      NBLA_CASE_ARRAY_FILL(fill_func, FLOAT, float);                           \
-      NBLA_CASE_ARRAY_FILL(fill_func, DOUBLE, double);                         \
-      NBLA_CASE_ARRAY_FILL(fill_func, BOOL, bool);                             \
-      NBLA_CASE_ARRAY_FILL(fill_func, LONGDOUBLE, long double);                \
+      NBLA_CASE_ARRAY_FILL(fill_func, UBYTE, unsigned char, name);             \
+      NBLA_CASE_ARRAY_FILL(fill_func, BYTE, char, name);                       \
+      NBLA_CASE_ARRAY_FILL(fill_func, USHORT, unsigned short, name);           \
+      NBLA_CASE_ARRAY_FILL(fill_func, SHORT, short, name);                     \
+      NBLA_CASE_ARRAY_FILL(fill_func, UINT, unsigned int, name);               \
+      NBLA_CASE_ARRAY_FILL(fill_func, INT, int, name);                         \
+      NBLA_CASE_ARRAY_FILL(fill_func, ULONG, unsigned long, name);             \
+      NBLA_CASE_ARRAY_FILL(fill_func, LONG, long, name);                       \
+      NBLA_CASE_ARRAY_FILL(fill_func, ULONGLONG, unsigned long long, name);    \
+      NBLA_CASE_ARRAY_FILL(fill_func, LONGLONG, long long, name);              \
+      NBLA_CASE_ARRAY_FILL(fill_func, FLOAT, float, name);                     \
+      NBLA_CASE_ARRAY_FILL(fill_func, DOUBLE, double, name);                   \
+      NBLA_CASE_ARRAY_FILL(fill_func, BOOL, bool, name);                       \
+      NBLA_CASE_ARRAY_FILL(fill_func, LONGDOUBLE, long double, name);          \
     default:                                                                   \
-      NBLA_ERROR(error_code::type, "Unknown dtype.");                          \
+      NBLA_ERROR(error_code::unclassified, "Disabled dtype %s.",               \
+                 dtype_to_string(this->dtype()).c_str());                      \
     }                                                                          \
   }
 }
 
-// --------------------------------------------------------------------------
-// Disable inter-array copy of specific types by template specialization.
-#define NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, src_type,      \
-                                        dst_type)                              \
-  template <>                                                                  \
-  void copy_func<src_type, dst_type>(const Array *src, Array *dst) {           \
-    NBLA_ERROR(error_code::not_implemented,                                    \
-               "Copy from " #src_type " to " #dst_type                         \
-               " is disabled in " #array_class ".");                           \
+#define NBLA_DEFINE_TYPE_DISABLER(name)                                        \
+  template <typename T> struct name##_type_enabled {                           \
+    static const bool value = true;                                            \
+  }
+#define NBLA_DISABLE_TYPE(name, type)                                          \
+  template <> struct name##_type_enabled<type> {                               \
+    static const bool value = false;                                           \
   }
 
-#define NBLA_ARRAY_DISABLE_COPY(array_class, copy_func, type)                  \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
-                                  unsigned char);                              \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, char);         \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
-                                  unsigned short);                             \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, short);        \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, unsigned int); \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, int);          \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
-                                  unsigned long);                              \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, long);         \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type,                \
-                                  unsigned long long);                         \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, long long);    \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, float);        \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, double);       \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, long double);  \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, type, bool);         \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned char,       \
-                                  type);                                       \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, char, type);         \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned short,      \
-                                  type);                                       \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, short, type);        \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned int, type); \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, int, type);          \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned long,       \
-                                  type);                                       \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, long, type);         \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, unsigned long long,  \
-                                  type);                                       \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, long long, type);    \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, float, type);        \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, double, type);       \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, long double, type);  \
-  NBLA_ARRAY_DISABLE_COPY_FROM_TO(array_class, copy_func, bool, type);
-
-// --------------------------------------------------------------------------
-// Disable array filling of a specific type by template specialization.
-#define NBLA_ARRAY_DISABLE_FILL(array_class, fill_func, type)                  \
-  template <> void fill_func<type>(Array * self, float value) {                \
-    NBLA_ERROR(error_code::not_implemented,                                    \
-               "Fill function of " #type " is disabled in " #array_class "."); \
-  }
 #endif
