@@ -169,7 +169,8 @@ def main():
     # Uploader
     from nnabla.utils.cli.uploader import upload_command, Uploader
     subparser = subparsers.add_parser('upload')
-    subparser.add_argument('-e', '--endpoint', help='set endpoint uri', type=str)
+    subparser.add_argument(
+        '-e', '--endpoint', help='set endpoint uri', type=str)
     subparser.add_argument('token', help='token for upload')
     subparser.add_argument('filename', help='filename to upload')
     subparser.set_defaults(func=upload_command)

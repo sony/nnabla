@@ -98,4 +98,5 @@ def test_depthwise_convolution_1d_forward_backward(inshape, kernel, pad,
                         atol_f=1e-4, atol_b=3e-3, dstep=1e-2,
                         ctx=ctx, func_name=func_name)
     else:
-        pytest.xfail("1D depthwise convolution currently only supported for CUDA.")
+        pytest.xfail(
+            "1D depthwise convolution currently only supported for CUDA.")
