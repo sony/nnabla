@@ -119,7 +119,9 @@ class DataSourceWithFileCache(DataSource):
         start_position = self.position - len(self._cache_data) + 1
         end_position = self.position
         cache_filename = os.path.join(
-            self._cache_dir, 'cache_{:08d}_{:08d}.h5'.format(start_position, end_position))
+            self._cache_dir, '{}_{:08d}_{:08d}.h5'.format(self._cache_file_name_prefix,
+                                                          start_position,
+                                                          end_position))
 
         data = {n: [] for n in self._data_source.variables}
         for cd in self._cache_data:
@@ -130,6 +132,7 @@ class DataSourceWithFileCache(DataSource):
                     d = numpy.array(cd[i]).astype(numpy.float32)
                 data[n].append(d)
 
+        logger.info('Creating cache file {}'.format(cache_filename))
         h5 = h5py.File(cache_filename, 'w')
         for k, v in data.items():
             h5.create_dataset(k, data=v)
@@ -170,16 +173,66 @@ class DataSourceWithFileCache(DataSource):
 
     def _get_data(self, position):
         self._position = position
-        if self._generation <= 0:
-            d = self._store_data_to_cache_buffer(position)
-        else:
-            d = self._get_data_from_cache_file(position)
-        return d
+        return self._get_data_from_cache_file(position)
 
-    def __init__(self, data_source, cache_dir=None, shuffle=False, rng=None):
+    def _create_cache(self):
+        # Save all data into cache file(s).
+        self._position = 0
+        logger.info('Creating cache start')
+
+        percent = 0
+        while self._position < self._data_source._size:
+            current_percent = self._position * 10 // self._data_source._size
+            if current_percent != percent:
+                percent = current_percent
+                logger.info('Creating cache {}0% finished.'.format(percent))
+
+            self._store_data_to_cache_buffer(self._position)
+            self._position += 1
+        if len(self._cache_data) > 0:
+            self._save_cache_to_file()
+        logger.info('Creating cache end')
+        # Adjust data size into reseted position. In most case it means
+        # multiple of bunch(mini-batch) size.
+        num_of_cache_files = int(numpy.ceil(
+            float(self._data_source._size) / self._cache_size))
+        self._cache_file_order = self._cache_file_order[
+            0:num_of_cache_files]
+        self._cache_file_data_orders = self._cache_file_data_orders[
+            0:num_of_cache_files]
+        if self._data_source._size % self._cache_size != 0:
+            self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
+                num_of_cache_files - 1][0:self._data_source._size % self._cache_size]
+
+    def _create_cache_file_position_table(self):
+        # Create cached data position table.
+        pos = 0
+        self._cache_file_start_positions = list(
+            range(len(self._cache_file_order)))
+        self._order = list(range(len(self._order)))
+
+        self._cache_file_positions = list(range(len(self._order)))
+        count = 0
+        for i, cache_file_pos in enumerate(self._cache_file_order):
+            self._cache_file_start_positions[cache_file_pos] = pos
+            pos += len(self._cache_file_data_orders[cache_file_pos])
+            for j in self._cache_file_data_orders[cache_file_pos]:
+                p = j + (cache_file_pos * self._cache_size)
+                self._order[count] = p
+                self._cache_file_positions[count] = cache_file_pos
+                count += 1
+
+    def __init__(self,
+                 data_source,
+                 cache_dir=None,
+                 cache_file_name_prefix='cache',
+                 shuffle=False,
+                 rng=None):
         logger.info('Using DataSourceWithFileCache')
         super(DataSourceWithFileCache, self).__init__(shuffle=shuffle, rng=rng)
+        self._cache_file_name_prefix = cache_file_name_prefix
         self._cache_dir = cache_dir
+        logger.info('Cache Directory is {}'.format(self._cache_dir))
         self._cache_size = int(nnabla_config.get(
             'DATA_ITERATOR', 'data_source_file_cache_size'))
         logger.info('Cache size is {}'.format(self._cache_size))
@@ -209,9 +262,13 @@ class DataSourceWithFileCache(DataSource):
                     'DATA_ITERATOR', 'data_source_file_cache_location'))
             else:
                 self._cache_dir = tempfile.mkdtemp()
-            logger.info('Tempdir {} created.'.format(self._cache_dir))
+            logger.info(
+                'Tempdir for cache {} created.'.format(self._cache_dir))
         self._closed = False
         atexit.register(self.close)
+
+        self._create_cache()
+        self._create_cache_file_position_table()
 
     def __enter__(self):
         return self
@@ -230,31 +287,7 @@ class DataSourceWithFileCache(DataSource):
             self._closed = True
 
     def reset(self):
-        if self._generation == 0:
-
-            # Save all data into cache file(s).
-            size = self._position + 1
-            if size > self._data_source._size:
-                size = self._data_source._size
-            while self._position < self._data_source._size:
-                self._store_data_to_cache_buffer(self._position)
-                self._position += 1
-            if len(self._cache_data) > 0:
-                self._save_cache_to_file()
-
-            # Adjust data size into reseted position. In most case it means
-            # multiple of bunch(mini-batch) size.
-            num_of_cache_files = int(numpy.ceil(
-                float(size) / self._cache_size))
-            self._cache_file_order = self._cache_file_order[
-                0:num_of_cache_files]
-            self._cache_file_data_orders = self._cache_file_data_orders[
-                0:num_of_cache_files]
-            if size % self._cache_size != 0:
-                self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
-                    num_of_cache_files - 1][0:size % self._cache_size]
-
-        elif self._generation > 0 and self._shuffle:
+        if self._shuffle:
             self._cache_file_order = list(
                 numpy.random.permutation(self._cache_file_order))
             for i in range(len(self._cache_file_data_orders)):
@@ -264,23 +297,7 @@ class DataSourceWithFileCache(DataSource):
             for i in self._cache_file_order:
                 self._order += self._cache_file_data_orders[i]
 
-        if self._generation >= 0:
-            # Create cached data position table.
-            pos = 0
-            self._cache_file_start_positions = list(
-                range(len(self._cache_file_order)))
-            self._order = list(range(len(self._order)))
-
-            self._cache_file_positions = list(range(len(self._order)))
-            count = 0
-            for i, cache_file_pos in enumerate(self._cache_file_order):
-                self._cache_file_start_positions[cache_file_pos] = pos
-                pos += len(self._cache_file_data_orders[cache_file_pos])
-                for j in self._cache_file_data_orders[cache_file_pos]:
-                    p = j + (cache_file_pos * self._cache_size)
-                    self._order[count] = p
-                    self._cache_file_positions[count] = cache_file_pos
-                    count += 1
+        self._create_cache_file_position_table()
         self._data_source.reset()
         self._position = 0
         self._generation += 1
@@ -365,3 +382,33 @@ class DataSourceWithMemoryCache(DataSource):
             self._position = self._data_source._position
 
         super(DataSourceWithMemoryCache, self).reset()
+
+
+class SlicedDataSource(DataSource):
+    '''
+    Provides sliced data source.
+    '''
+
+    def __init__(self, data_source, shuffle=False, rng=None, slice_start=None, slice_end=None):
+        logger.info('Using SlicedDataSource')
+        super(SlicedDataSource, self).__init__(shuffle=shuffle, rng=rng)
+
+        self._data_source = data_source
+        self._data_source.shuffle = False
+        self._variables = data_source._variables[:]
+        self._slice_start = slice_start
+        self._slice_end = slice_end
+        self._size = self._slice_end - self._slice_start
+        self._generation = -1
+        self.reset()
+
+    def reset(self):
+        self._data_source.reset()
+        self._data_source._position = self._slice_start
+        self._generation += 1
+        self._position = 0
+
+    def _get_data(self, position):
+        self._position = position
+        data = self._data_source._get_data(self._slice_start + position)
+        return data
