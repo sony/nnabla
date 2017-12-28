@@ -124,9 +124,9 @@ class NnbExporter:
             findexes = []
             for n, f in enumerate(self._info._network.function):
                 function_data = struct.pack(
-                    'I', list(self._info._function_info.keys()).index(f.name))
+                    'I', list(self._info._function_info.keys()).index(f.type))
 
-                finfo = self._info._function_info[f.name]
+                finfo = self._info._function_info[f.type]
 
                 inputs = [vindexes_by_name[i] for i in f.input]
                 index, pointer = self._alloc(data=struct.pack(

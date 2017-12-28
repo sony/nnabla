@@ -138,8 +138,8 @@ class CsrcExporter:
         internal_defines.append('    // Functions')
         for n, f in enumerate(self._info._network.function):
             internal_defines.append(
-                '    rt_function_t f{}; ///< {}'.format(n, f.name))
-            finfo = self._info._function_info[f.name]
+                '    rt_function_t f{}; ///< {}'.format(n, f.type))
+            finfo = self._info._function_info[f.type]
             internal_defines.append(
                 '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['input'])))
             internal_defines.append(
@@ -221,8 +221,8 @@ class CsrcExporter:
         initialize_context.append('')
         initialize_context.append('    // Functions')
         for n, f in enumerate(self._info._network.function):
-            finfo = self._info._function_info[f.name]
-            initialize_context.append('    // {}'.format(f.name))
+            finfo = self._info._function_info[f.type]
+            initialize_context.append('    // {}'.format(f.type))
             initialize_context.append(
                 '    (c->f{}).num_of_inputs = {};'.format(n, len(f.input)))
             for ni, i in enumerate(f.input):
@@ -313,7 +313,7 @@ class CsrcExporter:
         output_buffer.append('    }')
         output_buffer.append('')
         for n, f in enumerate(self._info._network.function):
-            finfo = self._info._function_info[f.name]
+            finfo = self._info._function_info[f.type]
             free_context.append(
                 '    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
@@ -336,7 +336,7 @@ class CsrcExporter:
         # NAME_inference
         inference = []
         for n, f in enumerate(self._info._network.function):
-            finfo = self._info._function_info[f.name]
+            finfo = self._info._function_info[f.type]
             inference.append(
                 '    exec_{}(&(c->f{}));'.format(finfo['snakecase_name'], n))
 

@@ -172,7 +172,7 @@ class NnpExpander:
                             i0 = inputs[finput[0][0]][1] + \
                                 '_{}[{}]'.format(repeat_id, i - 1)
                             i1 = self.variable_by_expanded_name[i0]
-                            expand_input = [(i0, i1)]
+                            expand_input[0] = (i0, i1)
 
                     for x1, x2 in (expand_input + expand_output):
                         if x2 not in self.variable_by_name:
@@ -213,7 +213,6 @@ class NnpExpander:
                 if in_loop:
                     loop_funcs.append(func)
                 else:
-
                     if loop_output is not None:
                         finput_new = []
                         for n, inp in enumerate(finput):
@@ -231,7 +230,6 @@ class NnpExpander:
 
     # Simple topological sort.
     def sort_functions(self, orig_functions):
-
         all_inputs = []
         for y in [x[3] for x in orig_functions]:
             for z in y:
@@ -244,15 +242,6 @@ class NnpExpander:
         all_outputs = set(all_outputs)
 
         variables_for_sorting = all_inputs & all_outputs
-
-        # remove repeatstart second input from sort variable
-        for di in [x[3][1][1] for x in filter(lambda n: n[2] == 'RepeatStart', [f for f in orig_functions])]:
-            variables_for_sorting = variables_for_sorting - {di}
-
-        # remove delay input/output from sort variable
-        for di, do in [[x[3][1][1], x[4][0][1]] for x in filter(lambda n: n[2] == 'Delay', [f for f in orig_functions])]:
-            variables_for_sorting = variables_for_sorting - {di, do}
-
         prev = orig_functions.pop(0)
 
         output_wait_list = []
@@ -268,11 +257,13 @@ class NnpExpander:
             for n, func in enumerate(orig_functions):
                 input_list = set([f[1] for f in func[3]]
                                  ) & variables_for_sorting
+
+                if func[2] == 'RepeatStart':
+                    input_list = input_list - {func[3][1][1]}
+
                 if input_list <= output_wait_list:  # input_list is subset of output_wait_list
                     found_list = found_list | input_list
                     founds.append(n)
-
-            #output_wait_list = output_wait_list - found_list
 
             for found in sorted(founds)[::-1]:
                 prev = orig_functions.pop(found)
@@ -302,16 +293,15 @@ class NnpExpander:
             self.func_proto_by_name[f.name] = f
 
         # Before expanding loop network must be topologically sorted.
-        functions = self.sort_functions([(func.name,
-                                          func.name,
-                                          func.type,
-                                          [(n1, n2) for n1, n2 in zip(
-                                              list(func.input), list(func.input))],
-                                          [(n1, n2) for n1, n2 in zip(
-                                              list(func.output), list(func.output))],
-                                          func.repeat_param if func.HasField('repeat_param')
-                                          else func.recurrent_param)
-                                         for func in network.function])
+
+        functions = self.sort_functions([(
+            func.name,
+            func.name,
+            func.type,
+            [(n, n) for n in func.input],
+            [(n, n) for n in func.output],
+            func.repeat_param if func.HasField('repeat_param') else func.recurrent_param)
+            for func in network.function])
 
         # Expand repeat.
         self.variable_by_name = collections.OrderedDict()
@@ -332,16 +322,12 @@ class NnpExpander:
         network.ClearField('variable')
         network.ClearField('function')
 
-        for v, vbase in self.variable_by_expanded_name.items():
-            proto = network.variable.add()
-            proto.CopyFrom(self.var_proto_by_name[vbase])
-            proto.name = v
-            proto.ClearField('repeat_id')
-
+        all_variables = set()
         for func in functions:
+            all_variables |= set(finput + foutput)
+
             fname, fbasename, ftype, finput, foutput, repeat_param = func
             proto = network.function.add()
-
             if fbasename == '':
                 if ftype == 'Split':
                     proto.split_param.axis = repeat_param.axis
@@ -349,7 +335,6 @@ class NnpExpander:
                     proto.stack_param.axis = repeat_param.axis
             else:
                 proto.CopyFrom(self.func_proto_by_name[fbasename])
-
             proto.ClearField('repeat_id')
             proto.ClearField('input')
             proto.ClearField('output')
@@ -359,6 +344,12 @@ class NnpExpander:
                 proto.output.append(o0)
             proto.name = fname
             proto.type = ftype
+
+        for expanded_name, original_name in all_variables:
+            proto = network.variable.add()
+            proto.CopyFrom(self.var_proto_by_name[original_name])
+            proto.name = expanded_name
+            proto.ClearField('repeat_id')
 
     def expand(self):
         nnp = nnabla_pb2.NNablaProtoBuf()
