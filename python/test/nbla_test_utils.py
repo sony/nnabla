@@ -35,7 +35,8 @@ def list_context(func_name):
     try:
         import list_context_ext
         return list_context_ext.list(func_name)
-    except:
+    except Exception as e:
+        print(e)
         return [(nn.Context(), func_name)]
 
 
