@@ -1,0 +1,232 @@
+Affine:
+  float: [float]
+Convolution:
+  float: [float]
+DepthwiseConvolution:
+  float: [float]
+Deconvolution:
+  float: [float]
+MaxPooling:
+  float: [float]
+AveragePooling:
+  float: [float]
+SumPooling:
+  float: [float]
+Unpooling:
+  float: [float]
+Embed:
+  float: [float]
+Sigmoid:
+  float: [float]
+Swish:
+  float: [float]
+Tanh:
+  float: [float]
+ReLU:
+  float: [float]
+LeakyReLU:
+  float: [float]
+Softmax:
+  float: [float]
+ELU:
+  float: [float]
+SELU:
+  float: [float]
+CReLU:
+  float: [float]
+CELU:
+  float: [float]
+PReLU:
+  float: [float]
+BatchNormalization:
+  float: [float]
+MeanSubtraction:
+  float: [float]
+Sum:
+  float: [float]
+Mean:
+  float: [float]
+Max:
+  float: [float]
+Min:
+  float: [float]
+Prod:
+  float: [float]
+ReduceSum:
+  float: [float]
+ReduceMean:
+  float: [float]
+Add2:
+  float: [float]
+BcAdd2:
+  float: [float]
+Sub2:
+  float: [float]
+Mul2:
+  float: [float]
+Div2:
+  float: [float]
+Pow2:
+  float: [float]
+AddScalar:
+  float: [float]
+MulScalar:
+  float: [float]
+PowScalar:
+  float: [float]
+RSubScalar:
+  float: [float]
+RDivScalar:
+  float: [float]
+RPowScalar:
+  float: [float]
+Sign:
+  float: [float]
+Minimum2:
+  float: [float]
+Maximum2:
+  float: [float]
+MinimumScalar:
+  float: [float]
+MaximumScalar:
+  float: [float]
+LogicalAnd:
+  float: [float]
+LogicalOr:
+  float: [float]
+LogicalXor:
+  float: [float]
+Equal:
+  float: [float]
+NotEqual:
+  float: [float]
+GreaterEqual:
+  float: [float]
+Greater:
+  float: [float]
+LessEqual:
+  float: [float]
+Less:
+  float: [float]
+LogicalAndScalar:
+  float: [float]
+LogicalOrScalar:
+  float: [float]
+LogicalXorScalar:
+  float: [float]
+EqualScalar:
+  float: [float]
+NotEqualScalar:
+  float: [float]
+GreaterEqualScalar:
+  float: [float]
+GreaterScalar:
+  float: [float]
+LessEqualScalar:
+  float: [float]
+LessScalar:
+  float: [float]
+LogicalNot:
+  float: [float]
+Constant:
+  float: [float]
+Abs:
+  float: [float]
+Exp:
+  float: [float]
+Log:
+  float: [float]
+Identity:
+  float: [float]
+BatchMatmul:
+  float: [float]
+Concatenate:
+  float: [float]
+Split:
+  float: [float]
+Stack:
+  float: [float]
+Slice:
+  float: [float]
+Transpose:
+  float: [float]
+Broadcast:
+  float: [float]
+OneHot:
+  float: [float]
+Flip:
+  float: [float]
+Shift:
+  float: [float]
+Reshape:
+  float: [float]
+MatrixDiag:
+  float: [float]
+MatrixDiagPart:
+  float: [float]
+Dropout:
+  float: [float]
+Rand:
+  float: [float]
+Randint:
+  float: [float]
+Randn:
+  float: [float]
+RandomCrop:
+  float: [float]
+RandomFlip:
+  float: [float]
+RandomShift:
+  float: [float]
+ImageAugmentation:
+  float: [float]
+SigmoidCrossEntropy:
+  float: [float]
+BinaryCrossEntropy:
+  float: [float]
+SoftmaxCrossEntropy:
+  float: [float]
+CategoricalCrossEntropy:
+  float: [float]
+SquaredError:
+  float: [float]
+AbsoluteError:
+  float: [float]
+HuberLoss:
+  float: [float]
+EpsilonInsensitiveLoss:
+  float: [float]
+KLMultinomial:
+  float: [float]
+BinarySigmoid:
+  float: [float]
+BinaryTanh:
+  float: [float]
+BinaryConnectAffine:
+  float: [float]
+BinaryConnectConvolution:
+  float: [float]
+BinaryWeightAffine:
+  float: [float]
+BinaryWeightConvolution:
+  float: [float]
+INQAffine:
+  float: [float]
+INQConvolution:
+  float: [float]
+FixedPointQuantize:
+  float: [float]
+Pow2Quantize:
+  float: [float]
+TopNError:
+  float: [float]
+BinaryError:
+  float: [float]
+ConfusionMatrix:
+  float: [float]
+VATNoise:
+  float: [float]
+Unlink:
+  float: [float]
+Sink:
+  float: [float]
