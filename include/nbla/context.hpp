@@ -31,18 +31,32 @@ It will be used specifying device and array class etc.
 */
 class Context {
 public:
-  explicit NBLA_API Context(const string &backend = "cpu",
+  /** A compute backend descriptor passed to Function/Solver or NdArray class.
+
+     @param[in] backend A vector of backend description. A specific
+     implementation of Function/Solver will be queried by each description, the
+     first matched one is used. For each element, it describes the backend of
+     computation and the data type config in a format of `<backend>:<data type
+     config>`. If only `backend` is given (`:<data type configuration>` is
+     ommited), the default data type config (`:float`)is automatically added.
+     @param[in] array_class Optional: A string expression of a preferred array
+     class. Even if it is not specified an array class is chosen according to
+     the default array class of an implementation of Function/Solver. Every
+     Funciton/Solver class has a list of array classes that can be used as
+     storages of the computation inputs and ouputs. If the given array_class
+     doesn't match any of them, the default array class of the implementation
+     will be used.
+     @param[in] device_id A string expression of device ID of the backend.
+   */
+  explicit NBLA_API Context(const vector<string> &backend = {"cpu:float"},
                             const string &array_class = "CpuArray",
-                            const string &device_id = "0",
-                            const string &compute_backend = "default");
-  string backend;
+                            const string &device_id = "0");
+  vector<string> backend;
   string array_class;
   string device_id;
-  string compute_backend;
-  Context NBLA_API &set_backend(const string &backend);
+  Context NBLA_API &set_backend(const vector<string> &backend);
   Context NBLA_API &set_array_class(const string &array_class);
   Context NBLA_API &set_device_id(const string &device_id);
-  Context NBLA_API &set_compute_backend(const string &compute_backend);
 };
 
 /**

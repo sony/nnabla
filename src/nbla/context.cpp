@@ -15,13 +15,20 @@
 #include <nbla/context.hpp>
 
 namespace nbla {
-Context::Context(const string &backend, const string &array_class,
-                 const string &device_id, const string &compute_backend)
-    : backend(backend), array_class(array_class), device_id(device_id),
-      compute_backend(compute_backend) {}
+Context::Context(const vector<string> &backend, const string &array_class,
+                 const string &device_id)
+    : array_class(array_class), device_id(device_id) {
+  this->set_backend(backend);
+}
 
-Context &Context::set_backend(const string &backend) {
+Context &Context::set_backend(const vector<string> &backend) {
   this->backend = backend;
+  for (auto it = this->backend.begin(); it != this->backend.end(); it++) {
+    if (it->find(":") == it->end()) {
+      // The default type config is float.
+      *it = *it + std::string(":float");
+    }
+  }
   return *this;
 }
 Context &Context::set_array_class(const string &array_class) {
@@ -30,10 +37,6 @@ Context &Context::set_array_class(const string &array_class) {
 }
 Context &Context::set_device_id(const string &device_id) {
   this->device_id = device_id;
-  return *this;
-}
-Context &Context::set_compute_backend(const string &compute_backend) {
-  this->compute_backend = compute_backend;
   return *this;
 }
 }
