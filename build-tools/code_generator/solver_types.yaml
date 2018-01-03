@@ -1,0 +1,16 @@
+Sgd:
+  default: [float]
+Momentum:
+  default: [float]
+Adadelta:
+  default: [float]
+Adagrad:
+  default: [float]
+Adam:
+  default: [float]
+Adamax:
+  default: [float]
+Nesterov:
+  default: [float]
+RMSprop:
+  default: [float]
