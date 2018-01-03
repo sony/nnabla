@@ -41,7 +41,7 @@ has an idea, please let me know or PR is wellcome.
 /**
 This will be used inside init method.
 */
-#define NBLA_REGISTER_COMMUNICATOR_IMPL(BASE, CLS, RANK, BACKEND, ENGINE, ...) \
+#define NBLA_REGISTER_COMMUNICATOR_IMPL(BASE, CLS, BACKEND, ...)               \
   {                                                                            \
     std::function<shared_ptr<Communicator>(                                    \
         const Context &NBLA_VA_ARGS(__VA_ARGS__))>                             \
@@ -51,7 +51,7 @@ This will be used inside init method.
         };                                                                     \
     typedef FunctionDbItem<Communicator NBLA_VA_ARGS(__VA_ARGS__)> item_t;     \
     get_##BASE##CommunicatorRegistry().add(                                    \
-        shared_ptr<item_t>(new item_t{RANK, BACKEND, ENGINE, func}));          \
+        shared_ptr<item_t>(new item_t{BACKEND, func}));                        \
   }
 #else
 /**
@@ -80,7 +80,7 @@ This will be used inside init method.
 /**
 This will be used inside init method.
 */
-#define NBLA_REGISTER_COMMUNICATOR_IMPL(BASE, CLS, RANK, BACKEND, ENGINE, ...) \
+#define NBLA_REGISTER_COMMUNICATOR_IMPL(BASE, CLS, BACKEND, ...)               \
   {                                                                            \
     std::function<shared_ptr<Communicator>(const Context &, ##__VA_ARGS__)>    \
         func = [](NBLA_ARGDEFS(const Context &, ##__VA_ARGS__)) {              \
@@ -89,7 +89,7 @@ This will be used inside init method.
         };                                                                     \
     typedef FunctionDbItem<Communicator, ##__VA_ARGS__> item_t;                \
     get_##BASE##CommunicatorRegistry().add(                                    \
-        shared_ptr<item_t>(new item_t{RANK, BACKEND, ENGINE, func}));          \
+        shared_ptr<item_t>(new item_t{BACKEND, func}));                        \
   }
 #endif
 }
