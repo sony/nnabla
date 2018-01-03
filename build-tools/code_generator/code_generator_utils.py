@@ -15,8 +15,19 @@
 
 from __future__ import print_function
 
+from os.path import abspath, join, dirname
+
 import yaml
 from collections import OrderedDict
+
+
+def represent_odict(dumper, instance):
+    return dumper.represent_mapping('tag:yaml.org,2002:map', instance.items())
+
+
+yaml.add_representer(OrderedDict, represent_odict)
+
+here = abspath(dirname(__file__))
 
 
 def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -79,3 +90,34 @@ def generate_from_template(path_template, overwrite=True, **kwargs):
     generated = render_with_template(
         filename=path_template, template_kwargs=kwargs)
     check_update(path_out, generated, force=overwrite)
+
+
+def load_function_info(flatten=False):
+    ret = load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
+    if not flatten:
+        return ret
+    ret2 = OrderedDict()
+    for _, cat in ret.items():
+        for func_name, func in cat.items():
+            ret2[func_name] = func
+    return ret2
+
+
+class MyDumper(yaml.Dumper):
+    def __init__(self, *args, **kwargs):
+        super(MyDumper, self).__init__(*args, **kwargs)
+
+    def process_scalar(self):
+        if self.analysis is None:
+            self.analysis = self.analyze_scalar(self.event.value)
+        if '\n' in self.analysis.scalar:
+            self.style = '|'
+        super(MyDumper, self).process_scalar()
+
+
+def dump_yaml(data, stream, default_flow_style=None):
+    dumper = MyDumper(stream, default_flow_style=default_flow_style, indent=2,
+                      default_style=None)
+    dumper.open()
+    dumper.represent(data)
+    dumper.close()
