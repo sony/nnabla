@@ -79,3 +79,6 @@ for category, functions in info['Functions'].items():
                          "(info['Functions'][category][function], function, function_name, s)").format(modulename))
                 if code:
                     check_update(filename, code)
+
+import generate2
+generate2.generate()
