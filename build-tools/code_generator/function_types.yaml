@@ -153,7 +153,7 @@ Transpose:
 Broadcast:
   float: [float]
 OneHot:
-  float: [float]
+  float: [int, float]
 Flip:
   float: [float]
 Shift:
@@ -169,7 +169,7 @@ Dropout:
 Rand:
   float: [float]
 Randint:
-  float: [float]
+  float: [int]
 Randn:
   float: [float]
 RandomCrop:
@@ -181,13 +181,13 @@ RandomShift:
 ImageAugmentation:
   float: [float]
 SigmoidCrossEntropy:
-  float: [float]
+  float: [float, int]
 BinaryCrossEntropy:
   float: [float]
 SoftmaxCrossEntropy:
-  float: [float]
+  float: [float, int]
 CategoricalCrossEntropy:
-  float: [float]
+  float: [float, int]
 SquaredError:
   float: [float]
 AbsoluteError:
@@ -211,19 +211,19 @@ BinaryWeightAffine:
 BinaryWeightConvolution:
   float: [float]
 INQAffine:
-  float: [float]
+  float: [float, int]
 INQConvolution:
-  float: [float]
+  float: [float, int]
 FixedPointQuantize:
   float: [float]
 Pow2Quantize:
   float: [float]
 TopNError:
-  float: [float]
+  float: [float, int]
 BinaryError:
   float: [float]
 ConfusionMatrix:
-  float: [float]
+  float: [float, int]
 VATNoise:
   float: [float]
 Unlink:
