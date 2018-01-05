@@ -15,7 +15,7 @@ SumPooling:
 Unpooling:
   float: [float]
 Embed:
-  float: [float]
+  float: [int, float]
 Sigmoid:
   float: [float]
 Swish:

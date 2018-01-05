@@ -24,7 +24,7 @@ Context::Context(const vector<string> &backend, const string &array_class,
 Context &Context::set_backend(const vector<string> &backend) {
   this->backend = backend;
   for (auto it = this->backend.begin(); it != this->backend.end(); it++) {
-    if (it->find(":") == it->end()) {
+    if (it->find(':') == string::npos) {
       // The default type config is float.
       *it = *it + std::string(":float");
     }

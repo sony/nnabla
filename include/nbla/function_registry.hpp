@@ -36,7 +36,7 @@ std::string print_function_items(vector<shared_ptr<Item>> items) {
   std::ostringstream ss;
   ss << "[";
   for (auto &&item : items) {
-    ss << item->backend ", ";
+    ss << item->backend << ", ";
   }
   ss << "]";
   return ss.str();
@@ -56,8 +56,9 @@ public:
   typename Item::function_t query(const vector<string> &backend) {
     auto it = items_.end();
     for (auto &be : backend) {
-      it = std::find_if(items_.begin, items.end(),
-                        [be](const Item &item) { return item.backend == be; });
+      it = std::find_if(
+          items_.begin(), items_.end(),
+          [be](const shared_ptr<Item> &item) { return item->backend == be; });
       if (it != items_.end()) {
         break;
       }
@@ -66,7 +67,7 @@ public:
                "Any of [%s] could not be found in %s",
                string_join(backend, ", ").c_str(),
                print_function_items<Item>(items_).c_str());
-    return it->function;
+    return (*it)->function;
   }
 
   /**

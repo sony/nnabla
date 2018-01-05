@@ -49,7 +49,7 @@ void init_cpu() {
                                    synchronizer_default);
   NBLA_REGISTER_ARRAY_SYNCHRONIZER(CpuCachedArray, CpuArray,
                                    synchronizer_default);
-]
+
   // Function registration
 % for name, _, arg_types in function_list:
   % for type_config, ttypes in function_types.get(name, {}).items():

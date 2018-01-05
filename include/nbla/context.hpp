@@ -19,10 +19,12 @@
 
 #include <nbla/defs.hpp>
 #include <string>
+#include <vector>
 
 namespace nbla {
 
 using std::string;
+using std::vector;
 
 /** Context structure
 
@@ -62,7 +64,7 @@ public:
 /**
 */
 inline string get_array_key_from_context(const Context &ctx) {
-  return ctx.backend + ":" + ctx.device_id + ":" + ctx.array_class;
+  return ctx.device_id + ":" + ctx.array_class;
 }
 }
 
