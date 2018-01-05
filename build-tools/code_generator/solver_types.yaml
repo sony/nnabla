@@ -1,16 +1,16 @@
 Sgd:
-  default: [float]
+  float: [float]
 Momentum:
-  default: [float]
+  float: [float]
 Adadelta:
-  default: [float]
+  float: [float]
 Adagrad:
-  default: [float]
+  float: [float]
 Adam:
-  default: [float]
+  float: [float]
 Adamax:
-  default: [float]
+  float: [float]
 Nesterov:
-  default: [float]
+  float: [float]
 RMSprop:
-  default: [float]
+  float: [float]

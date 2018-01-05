@@ -17,7 +17,14 @@
 
 #include <nbla/defs.hpp>
 
+#include <string>
+#include <vector>
+
 namespace nbla {
+
+using std::string;
+using std::vector;
+
 /**
 Initialize NNabla CPU features.
 

@@ -78,7 +78,7 @@ template <typename T> void cpu_fill(Array *self, float value) {
 }
 
 Context CpuArray::filter_context(const Context &ctx) {
-  return Context("", "CpuArray", "", "");
+  return Context({}, "CpuArray", "");
 }
 
 NBLA_DEFINE_TYPE_DISABLER(cpu);
@@ -109,6 +109,6 @@ void CpuCachedArray::deallocate() {
   }
 }
 Context CpuCachedArray::filter_context(const Context &ctx) {
-  return Context("", "CpuCachedArray", "", "");
+  return Context({}, "CpuCachedArray", "");
 }
 }
