@@ -26,6 +26,46 @@ base = abspath(join(here, '../..'))
 import code_generator_utils as utils
 
 
+def generate_function_types_one(template, function_name_camel, function_name_snake, ttypes_list):
+    kwargs = utils.dict_filter(
+        locals(), ['function_name_camel', 'function_name_snake', 'ttypes_list'])
+    generated = utils.render_with_template(
+        filename=template, template_kwargs=kwargs)
+    return generated
+
+
+def generate_function_types(function_info, function_types):
+    template = join(
+        base, 'src/nbla/function/function.cpp.tmpl')
+    for name, ttypes_list in function_types.items():
+        snake = function_info[name]['snake_name']
+        generated = generate_function_types_one(
+            template, name, snake, ttypes_list)
+        path_o = join(base, 'src/nbla/function/%s.cpp' % (snake))
+        check_update(path_o, generated, force=True)
+
+
+def generate_solver_types_one(template, solver_name_camel, solver_name_snake, ext_info, ttypes_list):
+    kwargs = utils.dict_union(ext_info, utils.dict_filter(
+        locals(), ['solver_name_camel', 'solver_name_snake', 'ttypes_list']))
+    generated = utils.render_with_template(
+        filename=template, template_kwargs=kwargs)
+    return generated
+
+
+def generate_solver_types(solver_types, ext_info):
+    global solver_dict
+    template = join(
+        base, 'src/nbla/%s/solver/solver.cpp.tmpl' % ext_info['ext_name_snake'])
+    for solver_name_camel, ttypes_list in solver_types.items():
+        solver_name_snake = solver_dict[solver_name_camel][0]
+        generated = generate_solver_types_one(
+            template, solver_name_camel, solver_name_snake, ext_info, ttypes_list)
+        path_o = join(base, 'src/nbla/%s/solver/%s.cpp' % (
+            ext_info['ext_name_snake'], solver_name_snake))
+        check_update(path_o, generated, force=True)
+
+
 def info_to_list(info):
     '''Returns a list of (name, snake_name, [argument types as c++ type])'''
     items = []
@@ -66,4 +106,5 @@ def generate(function_info):
     solver_types = utils.load_yaml_ordered(open(
         join(here, 'solver_types.yaml'), 'r'))
     generate_init(function_info, function_types, solver_info, solver_types)
+    generate_function_types(function_info, function_types)
     generate_solver_python_intereface(solver_info)
