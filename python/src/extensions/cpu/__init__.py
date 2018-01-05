@@ -18,7 +18,7 @@ from nnabla import array_classes
 
 def context(**kw):
     """CPU Context."""
-    return nn.Context('cpu', array_classes()[0], '', 'default')
+    return nn.Context(['cpu:float'], array_classes()[0], '')
 
 
 def synchronize(**kw):
