@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 
 cdef extern from "nbla/context.hpp" namespace "nbla":
     struct CContext "nbla::Context":
-        string backend
+        vector[string] backend
         string array_class
         string device_id
-        string compute_backend

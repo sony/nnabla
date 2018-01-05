@@ -18,20 +18,18 @@ from _init cimport(
     register_gc, SingletonManager,
     _cpu_array_classes, _cpu_set_array_classes)
 
-available_contexts = {}
+available_contexts = []
 
 
-def add_available_context(ctx, backend):
+def add_available_context(ctx):
     if ctx not in available_contexts:
-        available_contexts[ctx] = []
-    if backend not in available_contexts[ctx]:
-        available_contexts[ctx].append(backend)
+        available_contexts.append(ctx)
 
 # Explicitly initialize NNabla.
 
 
 logger.info('Initializing CPU extension...')
-add_available_context('cpu', 'default')
+add_available_context('cpu')
 _init.init_cpu()
 
 
