@@ -4,6 +4,7 @@ file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   solver/*.cpp
   communicator/*.cpp
   function/*.cpp
+  function/nontemplate/*.cpp
   utils/*.cpp
   computation_graph/*.cpp)
 

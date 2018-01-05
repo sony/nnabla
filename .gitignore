@@ -11,6 +11,7 @@
 /examples/cpp/mnist_runtime/*.nnp
 /examples/cpp/mnist_runtime/tmp.*
 /examples/cpp/forward_check/*/tmp.*
+/src/nbla/function/*.cpp
 /output/
 /python/setup.cfg
 /python/setup.cfg-Debug
