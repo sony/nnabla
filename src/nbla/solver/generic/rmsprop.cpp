@@ -14,43 +14,44 @@
 
 #include <algorithm>
 #include <cmath>
-#include <nbla/solver/adagrad.hpp>
+#include <nbla/solver/rmsprop.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
 using std::make_shared;
 
-NBLA_REGISTER_SOLVER_SOURCE(Adagrad, float, float);
+NBLA_REGISTER_SOLVER_SOURCE(RMSprop, float, float, float);
 
 template <typename T>
-Adagrad<T>::Adagrad(const Context &ctx, float lr, float eps)
-    : BaseSolver<T>(ctx), lr_(lr), eps_(eps) {}
+RMSprop<T>::RMSprop(const Context &ctx, float lr, float decay, float eps)
+    : Solver(ctx), lr_(lr), decay_(decay), eps_(eps) {}
 
-template <typename T> Adagrad<T>::~Adagrad() {}
+template <typename T> RMSprop<T>::~RMSprop() {}
 
 template <typename T>
-void Adagrad<T>::set_state_impl(const string &key, VariablePtr param) {
-  auto v = make_shared<Variable>(param->shape());
+void RMSprop<T>::set_state_impl(const string &key, VariablePtr param) {
+  auto shape = param->shape();
+  auto v = make_shared<Variable>(shape);
   v->data()->zero();
   state_.insert({key, v});
 }
-template <typename T> void Adagrad<T>::remove_state_impl(const string &key) {
+template <typename T> void RMSprop<T>::remove_state_impl(const string &key) {
   state_.erase(key);
 }
 
 template <typename T>
-void Adagrad<T>::update_impl(const string &key, VariablePtr param) {
+void RMSprop<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr g_ = state_.at(key);
-  T *g = g_->cast_data_and_get_pointer<T>(this->ctx_);
+  VariablePtr state = state_.at(key);
+  T *e_sqr_grad = state->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
   for (int s = 0; s < size; ++s) {
-    g[s] += grad[s] * grad[s];
-    data[s] -= lr_ * grad[s] / (std::sqrt(g[s]) + eps_);
+    e_sqr_grad[s] = e_sqr_grad[s] * decay_ + grad[s] * grad[s] * (1 - decay_);
+    data[s] -= lr_ / (std::sqrt(e_sqr_grad[s]) + eps_) * grad[s];
   }
 }
 
-// Template instanciation
-template class Adagrad<float>;
+NBLA_DEF_WEIGHT_DECAY(RMSprop, weight_decay_cpu);
 }

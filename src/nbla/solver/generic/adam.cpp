@@ -16,6 +16,7 @@
 #include <cmath>
 #include <limits>
 #include <nbla/solver/adam.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
@@ -26,7 +27,7 @@ NBLA_REGISTER_SOLVER_SOURCE(Adam, float, float, float, float);
 template <typename T>
 Adam<T>::Adam(const Context &ctx, float alpha, float beta1, float beta2,
               float eps)
-    : BaseSolver<T>(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2),
+    : Solver(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2),
       eps_(eps) {}
 
 template <typename T> Adam<T>::~Adam() {}
@@ -68,6 +69,5 @@ void Adam<T>::update_impl(const string &key, VariablePtr param) {
   }
 }
 
-// Template instanciation
-template class Adam<float>;
+NBLA_DEF_WEIGHT_DECAY(Adam, weight_decay_cpu);
 }

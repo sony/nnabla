@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <nbla/solver/nesterov.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
@@ -23,7 +24,7 @@ NBLA_REGISTER_SOLVER_SOURCE(Nesterov, float, float);
 
 template <typename T>
 Nesterov<T>::Nesterov(const Context &ctx, float lr, float momentum)
-    : BaseSolver<T>(ctx), lr_(lr), momentum_(momentum) {}
+    : Solver(ctx), lr_(lr), momentum_(momentum) {}
 
 template <typename T> Nesterov<T>::~Nesterov() {}
 
@@ -52,6 +53,5 @@ void Nesterov<T>::update_impl(const string &key, VariablePtr param) {
   }
 }
 
-// Template instanciation
-template class Nesterov<float>;
+NBLA_DEF_WEIGHT_DECAY(Nesterov, weight_decay_cpu);
 }

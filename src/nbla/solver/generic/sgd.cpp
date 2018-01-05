@@ -13,31 +13,33 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <nbla/solver/base_solver.hpp>
+#include <nbla/solver/sgd.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
 using std::make_shared;
 
-template <typename T>
-BaseSolver<T>::BaseSolver(const Context &ctx) : Solver(ctx) {}
-
-template <typename T> BaseSolver<T>::~BaseSolver() {}
+NBLA_REGISTER_SOLVER_SOURCE(Sgd, float);
 
 template <typename T>
-void BaseSolver<T>::set_state_impl(const string &key, VariablePtr param) {}
-template <typename T>
-void BaseSolver<T>::remove_state_impl(const string &key) {}
+Sgd<T>::Sgd(const Context &ctx, float lr) : Solver(ctx), lr_(lr) {}
+
+template <typename T> Sgd<T>::~Sgd() {}
 
 template <typename T>
-void BaseSolver<T>::weight_decay_impl(const string &key, VariablePtr param,
-                                      float decay_rate) {
+void Sgd<T>::set_state_impl(const string &key, VariablePtr param) {}
+template <typename T> void Sgd<T>::remove_state_impl(const string &key) {}
+
+template <typename T>
+void Sgd<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  const T *data = param->get_data_pointer<T>(ctx_);
-  T *grad = param->cast_grad_and_get_pointer<T>(ctx_);
-  std::transform(data, data + size, grad, grad,
-                 [this, decay_rate](T x, T g) { return g + decay_rate * x; });
+
+  const T *grad = param->get_grad_pointer<T>(this->ctx_);
+  T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
+  std::transform(grad, grad + size, data, data,
+                 [this](T g, T x) { return x - lr_ * g; });
 }
-// Template instanciation
-template class BaseSolver<float>;
+
+NBLA_DEF_WEIGHT_DECAY(Sgd, weight_decay_cpu);
 }

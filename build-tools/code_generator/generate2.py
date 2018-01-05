@@ -45,24 +45,22 @@ def generate_function_types(function_info, function_types):
         check_update(path_o, generated, force=True)
 
 
-def generate_solver_types_one(template, solver_name_camel, solver_name_snake, ext_info, ttypes_list):
-    kwargs = utils.dict_union(ext_info, utils.dict_filter(
-        locals(), ['solver_name_camel', 'solver_name_snake', 'ttypes_list']))
+def generate_solver_types_one(template, solver_name_camel, solver_name_snake, ttypes_list):
+    kwargs = utils.dict_filter(
+        locals(), ['solver_name_camel', 'solver_name_snake', 'ttypes_list'])
     generated = utils.render_with_template(
         filename=template, template_kwargs=kwargs)
     return generated
 
 
-def generate_solver_types(solver_types, ext_info):
-    global solver_dict
+def generate_solver_types(solver_info, solver_types):
     template = join(
-        base, 'src/nbla/%s/solver/solver.cpp.tmpl' % ext_info['ext_name_snake'])
-    for solver_name_camel, ttypes_list in solver_types.items():
-        solver_name_snake = solver_dict[solver_name_camel][0]
+        base, 'src/nbla/solver/solver.cpp.tmpl')
+    for name, ttypes_list in solver_types.items():
+        snake = solver_info[name]['snake_name']
         generated = generate_solver_types_one(
-            template, solver_name_camel, solver_name_snake, ext_info, ttypes_list)
-        path_o = join(base, 'src/nbla/%s/solver/%s.cpp' % (
-            ext_info['ext_name_snake'], solver_name_snake))
+            template, name, snake, ttypes_list)
+        path_o = join(base, 'src/nbla/solver/%s.cpp' % (snake))
         check_update(path_o, generated, force=True)
 
 
@@ -107,4 +105,5 @@ def generate(function_info):
         join(here, 'solver_types.yaml'), 'r'))
     generate_init(function_info, function_types, solver_info, solver_types)
     generate_function_types(function_info, function_types)
+    generate_solver_types(solver_info, solver_types)
     generate_solver_python_intereface(solver_info)
