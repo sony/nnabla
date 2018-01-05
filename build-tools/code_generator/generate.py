@@ -30,7 +30,6 @@ generation_list = {
             'python/src/nnabla/function_bases.py',
             'python/src/nnabla/utils/load_function.py',
             'python/src/nnabla/utils/save_function.py',
-            'src/nbla/init.cpp',
             'src/nbla/proto/nnabla.proto',
             'src/nbla_utils/nnp_impl_create_function.cpp']
 }
