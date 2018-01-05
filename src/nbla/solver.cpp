@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <nbla/solver.hpp>
+#include <nbla/singleton_manager.hpp>
+#include <nbla/cpu.hpp>
+
 
 #include <algorithm>
 #include <memory>
@@ -118,7 +121,6 @@ void Solver::weight_decay(float decay_rate) {
 }
 
 vector<string> Solver::allowed_array_classes() {
-  NBLA_ERROR(error_code::not_implemented,
-             "Derived class of Solver must implement allowed_array_classes().")
+  return SingletonManager::get<Cpu>()->array_classes();
 }
 }

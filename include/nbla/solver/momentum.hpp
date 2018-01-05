@@ -14,7 +14,7 @@
 
 #ifndef __NBLA_SOLVER_MOMENTUM_HPP__
 #define __NBLA_SOLVER_MOMENTUM_HPP__
-#include <nbla/solver/base_solver.hpp>
+#include <nbla/solver.hpp>
 #include <nbla/solver_registry.hpp>
 
 namespace nbla {
@@ -37,7 +37,7 @@ http://www.columbia.edu/~nq6/publications/momentum.pdf
 
 \ingroup SolverImplGrp
 */
-template <typename T> class NBLA_API Momentum : public BaseSolver<T> {
+template <typename T> class NBLA_API Momentum : public Solver {
 public:
   Momentum(const Context &ctx, float lr, float momentum);
   virtual ~Momentum();
@@ -55,6 +55,7 @@ protected:
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);
+  NBLA_DECL_WEIGHT_DECAY();
 };
 }
 #endif

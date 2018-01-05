@@ -13,45 +13,43 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <cmath>
-#include <nbla/solver/rmsprop.hpp>
+#include <nbla/solver/momentum.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
 using std::make_shared;
 
-NBLA_REGISTER_SOLVER_SOURCE(RMSprop, float, float, float);
+NBLA_REGISTER_SOLVER_SOURCE(Momentum, float, float);
 
 template <typename T>
-RMSprop<T>::RMSprop(const Context &ctx, float lr, float decay, float eps)
-    : BaseSolver<T>(ctx), lr_(lr), decay_(decay), eps_(eps) {}
+Momentum<T>::Momentum(const Context &ctx, float lr, float momentum)
+    : Solver(ctx), lr_(lr), momentum_(momentum) {}
 
-template <typename T> RMSprop<T>::~RMSprop() {}
+template <typename T> Momentum<T>::~Momentum() {}
 
 template <typename T>
-void RMSprop<T>::set_state_impl(const string &key, VariablePtr param) {
+void Momentum<T>::set_state_impl(const string &key, VariablePtr param) {
   auto shape = param->shape();
-  auto v = make_shared<Variable>(shape);
-  v->data()->zero();
-  state_.insert({key, v});
+  auto m = make_shared<Variable>(shape);
+  m->data()->zero();
+  state_.insert({key, m});
 }
-template <typename T> void RMSprop<T>::remove_state_impl(const string &key) {
+template <typename T> void Momentum<T>::remove_state_impl(const string &key) {
   state_.erase(key);
 }
 
 template <typename T>
-void RMSprop<T>::update_impl(const string &key, VariablePtr param) {
+void Momentum<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr state = state_.at(key);
-  T *e_sqr_grad = state->cast_data_and_get_pointer<T>(this->ctx_);
+  VariablePtr v_ = state_.at(key);
+  T *v = v_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
-  for (int s = 0; s < size; ++s) {
-    e_sqr_grad[s] = e_sqr_grad[s] * decay_ + grad[s] * grad[s] * (1 - decay_);
-    data[s] -= lr_ / (std::sqrt(e_sqr_grad[s]) + eps_) * grad[s];
-  }
+  std::transform(grad, grad + size, v, v,
+                 [this](T g, T v) { return momentum_ * v + lr_ * g; });
+  std::transform(v, v + size, data, data, [this](T v, T x) { return x - v; });
 }
 
-// Template instanciation
-template class RMSprop<float>;
+NBLA_DEF_WEIGHT_DECAY(Momentum, weight_decay_cpu);
 }

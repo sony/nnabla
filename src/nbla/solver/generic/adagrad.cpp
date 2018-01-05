@@ -13,43 +13,44 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <nbla/solver/momentum.hpp>
+#include <cmath>
+#include <nbla/solver/adagrad.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
 using std::make_shared;
 
-NBLA_REGISTER_SOLVER_SOURCE(Momentum, float, float);
+NBLA_REGISTER_SOLVER_SOURCE(Adagrad, float, float);
 
 template <typename T>
-Momentum<T>::Momentum(const Context &ctx, float lr, float momentum)
-    : BaseSolver<T>(ctx), lr_(lr), momentum_(momentum) {}
+Adagrad<T>::Adagrad(const Context &ctx, float lr, float eps)
+    : Solver(ctx), lr_(lr), eps_(eps) {}
 
-template <typename T> Momentum<T>::~Momentum() {}
+template <typename T> Adagrad<T>::~Adagrad() {}
 
 template <typename T>
-void Momentum<T>::set_state_impl(const string &key, VariablePtr param) {
-  auto shape = param->shape();
-  auto m = make_shared<Variable>(shape);
-  m->data()->zero();
-  state_.insert({key, m});
+void Adagrad<T>::set_state_impl(const string &key, VariablePtr param) {
+  auto v = make_shared<Variable>(param->shape());
+  v->data()->zero();
+  state_.insert({key, v});
 }
-template <typename T> void Momentum<T>::remove_state_impl(const string &key) {
+template <typename T> void Adagrad<T>::remove_state_impl(const string &key) {
   state_.erase(key);
 }
 
 template <typename T>
-void Momentum<T>::update_impl(const string &key, VariablePtr param) {
+void Adagrad<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr v_ = state_.at(key);
-  T *v = v_->cast_data_and_get_pointer<T>(this->ctx_);
+  VariablePtr g_ = state_.at(key);
+  T *g = g_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
-  std::transform(grad, grad + size, v, v,
-                 [this](T g, T v) { return momentum_ * v + lr_ * g; });
-  std::transform(v, v + size, data, data, [this](T v, T x) { return x - v; });
+  for (int s = 0; s < size; ++s) {
+    g[s] += grad[s] * grad[s];
+    data[s] -= lr_ * grad[s] / (std::sqrt(g[s]) + eps_);
+  }
 }
 
-// Template instanciation
-template class Momentum<float>;
+NBLA_DEF_WEIGHT_DECAY(Adagrad, weight_decay_cpu);
 }

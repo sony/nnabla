@@ -14,7 +14,7 @@
 
 #ifndef __NBLA_SOLVER_ADAGRAD_HPP__
 #define __NBLA_SOLVER_ADAGRAD_HPP__
-#include <nbla/solver/base_solver.hpp>
+#include <nbla/solver.hpp>
 #include <nbla/solver_registry.hpp>
 
 namespace nbla {
@@ -40,7 +40,7 @@ http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf
 
 \ingroup SolverImplGrp
 */
-template <typename T> class NBLA_API Adagrad : public BaseSolver<T> {
+template <typename T> class NBLA_API Adagrad : public Solver {
 public:
   Adagrad(const Context &ctx, float lr, float eps);
   virtual ~Adagrad();
@@ -58,6 +58,7 @@ protected:
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);
+  NBLA_DECL_WEIGHT_DECAY();
 };
 }
 #endif

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <nbla/solver/adadelta.hpp>
+#include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
 using std::shared_ptr;
@@ -24,7 +25,7 @@ NBLA_REGISTER_SOLVER_SOURCE(Adadelta, float, float, float);
 
 template <typename T>
 Adadelta<T>::Adadelta(const Context &ctx, float lr, float decay, float eps)
-    : BaseSolver<T>(ctx), lr_(lr), decay_(decay), eps_(eps) {}
+    : Solver(ctx), lr_(lr), decay_(decay), eps_(eps) {}
 
 template <typename T> Adadelta<T>::~Adadelta() {}
 
@@ -60,6 +61,5 @@ void Adadelta<T>::update_impl(const string &key, VariablePtr param) {
   }
 }
 
-// Template instanciation
-template class Adadelta<float>;
+NBLA_DEF_WEIGHT_DECAY(Adadelta, weight_decay_cpu);
 }
