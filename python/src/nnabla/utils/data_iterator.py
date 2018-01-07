@@ -22,7 +22,6 @@ Detailed design document is :doc:`/doc/designs/data_iterator`.
 import atexit
 import numpy
 import six
-import threading
 
 from .data_source import DataSourceWithFileCache
 from .data_source import DataSourceWithMemoryCache
@@ -89,11 +88,6 @@ class DataIterator(object):
         self._size = data_source.size
 
         self._reset()
-        self._current_epoch = -1
-        self._current_data = None
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
-
         self._closed = False
         atexit.register(self.close)
 
@@ -124,7 +118,7 @@ class DataIterator(object):
         Returns:
             int: epoch
         '''
-        return self._current_epoch
+        return self._epoch
 
     @property
     def position(self):
@@ -181,16 +175,6 @@ class DataIterator(object):
 
         self._data_source.reset()
 
-    def _next(self):
-        data = [[] for x in self._variables]
-        batch_size = self._batch_size
-        for b in range(batch_size):
-            d = self._get_next_data()
-            for i, v in enumerate(self._variables):
-                data[i].append(d[i])
-        self._current_data = (self._epoch, tuple(
-            [numpy.array(x) for x in data]))
-
     def next(self):
         '''next
 
@@ -203,11 +187,13 @@ class DataIterator(object):
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
-        self._next_thread.join()
-        self._current_epoch, data = self._current_data
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
-        return data
+        data = [[] for x in self._variables]
+        batch_size = self._batch_size
+        for b in range(batch_size):
+            d = self._get_next_data()
+            for i, v in enumerate(self._variables):
+                data[i].append(d[i])
+        return tuple([numpy.array(x) for x in data])
 
     def slice(self, num_of_slices=None, slice_pos=None,
               slice_start=None, slice_end=None,
