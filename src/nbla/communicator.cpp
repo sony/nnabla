@@ -96,6 +96,14 @@ void Communicator::allreduce(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
 }
 
+void Communicator::all_reduce(vector<NdArrayPtr> ndarray_list, bool division, bool inplace) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
+}
+
+void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
+}
+
 void Communicator::reducescatter(bool division) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU reducescatter is not implemented.")

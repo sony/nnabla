@@ -20,6 +20,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 cimport _variable
 from _variable cimport CVariable, CContext, dtypes
+from _nd_array cimport CNdArray
 
 
 cdef extern from "nbla/communicator.hpp" namespace "nbla":
@@ -39,6 +40,8 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
 
         void reduce(cpp_bool division) except +
         void allreduce(cpp_bool division, cpp_bool inplace) nogil except +
+        void all_reduce(vector[shared_ptr[CNdArray]] ndarray_list, cpp_bool division, cpp_bool inplace) nogil except +
+        void all_reduce(shared_ptr[CNdArray] data, cpp_bool division, cpp_bool inplace) nogil except +
         void reducescatter(cpp_bool division) nogil except +
         void bcast() nogil except +
         void allgather() nogil except +

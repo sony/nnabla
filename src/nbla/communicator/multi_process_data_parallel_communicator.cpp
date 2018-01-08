@@ -50,6 +50,19 @@ void MultiProcessDataParallelCommunicator<T>::allreduce(bool division,
 }
 
 template <typename T>
+void MultiProcessDataParallelCommunicator<T>::all_reduce(
+    vector<NdArrayPtr> ndarray_list, bool division, bool inplace) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
+}
+
+template <typename T>
+void MultiProcessDataParallelCommunicator<T>::all_reduce(NdArrayPtr ndarray,
+                                                         bool division,
+                                                         bool inplace) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
+}
+
+template <typename T>
 void MultiProcessDataParallelCommunicator<T>::reducescatter(bool division) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU reducescatter is not implemented.")
