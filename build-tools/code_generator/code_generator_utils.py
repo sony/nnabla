@@ -17,6 +17,9 @@ from __future__ import print_function
 
 from os.path import abspath, join, dirname
 
+from utils.common import check_update
+from utils.type_conv import type_from_proto
+
 import yaml
 from collections import OrderedDict
 
@@ -28,6 +31,7 @@ def represent_odict(dumper, instance):
 yaml.add_representer(OrderedDict, represent_odict)
 
 here = abspath(dirname(__file__))
+base = abspath(join(here, '../..'))
 
 
 def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -103,6 +107,12 @@ def load_function_info(flatten=False):
     return ret2
 
 
+def load_solver_info():
+    solver_info = load_yaml_ordered(
+        open(join(here, 'solvers.yaml'), 'r'))
+    return solver_info
+
+
 class MyDumper(yaml.Dumper):
     def __init__(self, *args, **kwargs):
         super(MyDumper, self).__init__(*args, **kwargs)
@@ -121,3 +131,74 @@ def dump_yaml(data, stream, default_flow_style=None):
     dumper.open()
     dumper.represent(data)
     dumper.close()
+
+
+def info_to_list(info):
+    '''Returns a list of (name, snake_name, [argument types as c++ type])'''
+    items = []
+    for name, item in info.items():
+        items.append((name, item['snake_name'], [
+            type_from_proto[v['type']]['cpp'] for v in item.get('arguments', {}).values()]))
+    return items
+
+
+def generate_function_types_one(template, function_name_camel, function_name_snake, ttypes_list, ext_info=None):
+    kwargs = dict_filter(
+        locals(), ['function_name_camel', 'function_name_snake', 'ttypes_list'])
+    if ext_info is not None:
+        kwargs.update(ext_info)
+    generated = render_with_template(
+        filename=template, template_kwargs=kwargs)
+    return generated
+
+
+def generate_function_types(function_info, function_types, ext_info=None, template=None, output_dir=None, output_format='%s.cpp'):
+    if template is None:
+        template = join(
+            base, 'src/nbla/function/function.cpp.tmpl')
+    if output_dir is None:
+        output_dir = dirname(template)
+    for name, ttypes_list in function_types.items():
+        snake = function_info[name]['snake_name']
+        generated = generate_function_types_one(
+            template, name, snake, ttypes_list, ext_info=ext_info)
+        path_o = join(output_dir, output_format % snake)
+        check_update(path_o, generated, force=True)
+
+
+def generate_solver_types_one(template, solver_name_camel, solver_name_snake, ttypes_list, ext_info=None):
+    kwargs = dict_filter(
+        locals(), ['solver_name_camel', 'solver_name_snake', 'ttypes_list'])
+    if ext_info is not None:
+        kwargs.update(ext_info)
+    generated = render_with_template(
+        filename=template, template_kwargs=kwargs)
+    return generated
+
+
+def generate_solver_types(solver_info, solver_types, ext_info=None, template=None, output_dir=None, output_format='%s.cpp'):
+    if template is None:
+        template = join(
+            base, 'src/nbla/solver/solver.cpp.tmpl')
+    if output_dir is None:
+        output_dir = dirname(template)
+    for name, ttypes_list in solver_types.items():
+        snake = solver_info[name]['snake_name']
+        generated = generate_solver_types_one(
+            template, name, snake, ttypes_list, ext_info=ext_info)
+        path_o = join(output_dir, output_format % snake)
+        check_update(path_o, generated, force=True)
+
+
+def generate_init(function_info, function_types, solver_info, solver_types, ext_info=None, template=None):
+    if template is None:
+        template = join(base, 'src/nbla/init.cpp.tmpl')
+    # Create function list
+    function_list = info_to_list(function_info)
+    # Create solver list
+    solver_list = info_to_list(solver_info)
+    kwargs = dict_filter(
+        locals(), ['function_list', 'function_types', 'solver_list', 'solver_types'])
+    if ext_info is not None:
+        kwargs.update(ext_info)
+    generate_from_template(template, **kwargs)
