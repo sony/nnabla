@@ -175,13 +175,13 @@ def _create_variable(v, name, shape, rng):
                 shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHe' or v.initializer.type == 'NormalConvolutionHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Uniform':
             initializer = UniformInitializer(
                 lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
@@ -190,7 +190,7 @@ def _create_variable(v, name, shape, rng):
                 shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[1], shape[0], kernel=shape[2:]), rng=rng)(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Constant':
             initializer = ConstantInitializer(value=v.initializer.multiplier)
         else:
