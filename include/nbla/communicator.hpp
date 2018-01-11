@@ -17,6 +17,7 @@
 #ifndef __NBLA_COMMUNICATOR_HPP__
 #define __NBLA_COMMUNICATOR_HPP__
 #include <nbla/array.hpp>
+#include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
 #include <nbla/variable.hpp>
 
@@ -164,10 +165,30 @@ public:
   virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
                           bool inplace = false, const string &group = "world");
 
-  /** reduce_scatter.
+  /** all_reduce over parameters added.
 
-         @param ndarray_list Vector of NdArrayPtr
-         @param ndarray NdArrayPtr
+  @param ndarray_list Vector of NdArrayPtr
+  @param pack_size The number of values contained in the packed data.
+  @param division Divide the reduced value.
+   */
+  virtual CommunicatorBackwardCallbackPtr
+  all_reduce_callback(const vector<NdArrayPtr> &ndarray_list, size_t pack_size,
+                      bool division = false, const string &group = "world");
+
+  /** all_reduce over parameters added.
+
+  @param ndarray NdArrayPtr
+  @param pack_size The number of values contained in the packed data.
+  @param division Divide the reduced value.
+   */
+  virtual CommunicatorBackwardCallbackPtr
+  all_reduce_callback(NdArrayPtr ndarray, size_t pack_size,
+                      bool division = false, const string &group = "world");
+
+  /** reducescatter.
+
+   @param ndarray_list Vector of NdArrayPtr
+   @param ndarray NdArrayPtr
    @param division Divide the reduced value.
    @param group Name of a group.
    */

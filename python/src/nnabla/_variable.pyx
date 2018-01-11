@@ -83,6 +83,14 @@ cdef class Context:
         return repr(self)
 
 
+cdef class CommunicatorBackwardCallback:
+    @staticmethod
+    cdef create_from_ccallback(shared_ptr[CCommunicatorBackwardCallback] varsp):
+        var = CommunicatorBackwardCallback()
+        var.var = varsp
+
+        return var
+
 cdef class Variable:
     """
     :class:`nnabla.Variable` is used to construct computation graphs (neural networks) together
@@ -433,7 +441,7 @@ cdef class Variable:
         with nogil:
             self.varp.forward(clear_buffer, clear_no_need_grad)
 
-    def backward(self, grad=1, cpp_bool clear_buffer=False):
+    def backward(self, grad=1, cpp_bool clear_buffer=False, communicator_callbacks=None):
         """
         Performs a backward propagation starting from this variable until
         the root variable(s) is/are reached in the function graph.
@@ -450,6 +458,10 @@ cdef class Variable:
                 variable.
             clear_buffer(bool): Clears the no longer referenced variables
                 during backpropagation to save memory.  
+            communicator_callbacks(:obj:`nnabla.CommunicatorBackwardCallback` or list of :obj:`nnabla.CommunicatorBackwardCallback`):
+                The callback functions invoked when 1) backward computation
+                of each function is finished and 2) all backward
+                computation is finished.
 
         """
         cdef NdArrayPtr p
@@ -471,8 +483,15 @@ cdef class Variable:
             arr.data = grad
             p = ( < NdArray > arr).arr
 
+        cdef vector[CommunicatorBackwardCallbackPtr] callback_list
+        if type(communicator_callbacks) == list:
+            for x in communicator_callbacks:
+                callback_list.push_back(( < CommunicatorBackwardCallback?> x).var)
+        elif type(communicator_callbacks) != type(None):
+            callback_list.push_back(( < CommunicatorBackwardCallback?> communicator_callbacks).var)
+
         with nogil:
-            self.varp.backward(p, clear_buffer)
+            self.varp.backward(p, clear_buffer, callback_list)
 
     def unlinked(self):
         """

@@ -28,6 +28,7 @@ from communicator cimport CCommunicator
 
 cimport _variable
 from _variable cimport Variable as _Variable, CVariable
+from _variable cimport CommunicatorBackwardCallback
 from _variable import Context
 
 cimport _nd_array
@@ -394,6 +395,57 @@ cdef class Communicator:
         with nogil:
             self.communicatorp.reduce_scatter(
                 cndarray_list, cndarray, division, group)
+
+    def all_reduce_callback(self, data, size_t pack_size, cpp_bool division=False, string group="world"):
+        """All reduce over data.
+
+        Note:
+            This function does not support shared parameters (such as RNNs) currently.
+
+        Args:
+            data (:obj:`NdArray` or list of :obj:`NdArray`)
+            pack_size (int): The number of values contained in the packed data.
+            division (bool): Flag to divide the reduce data by the
+                number of `contexts` added, or the number of devices.
+            group (string): Name of a group. This groups is used when the collective is called.
+
+        Example:
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            n_class = 2
+            b, c, h, w = 4, 1, 32, 32
+
+            # Data
+            x = nn.Variable([b, c, h, w])
+            y = nn.Variable([b, 1])
+
+            # Network setting
+            h = PF.convolution(x, 1, (3, 3), (1, 1), (1, 1))
+            pred = PF.affine(h, 2)
+            loss = F.mean(F.softmax_cross_entropy(pred, y))
+
+            loss.forward()
+            # AllReduce during backward
+            loss.backward(communicator_callbacks = comm.all_reduce_callback([v.grad for v in nn.get_parameters().values()], 1024 * 1024 * 2))
+
+        """
+        cdef vector[shared_ptr[CNdArray]] cndarray_list
+        if type(data) == list:
+            for x in data:
+                cndarray_list.push_back((< NdArray > x).arr)
+        else:
+            cndarray_list.push_back((< NdArray > data).arr)
+        return CommunicatorBackwardCallback.create_from_ccallback(
+            self.communicatorp.all_reduce_callback(cndarray_list, pack_size, division, group))
 
 
 def DataParalellCommunicator(CContext ctx):
