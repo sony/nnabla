@@ -133,11 +133,11 @@ def train():
             idx = np.random.permutation(n_valid_samples)
             val_images = vsource.images[idx]
             val_labels = vsource.labels[idx]
-            for j in range(int(n_valid_samples/n_devices*mpi_rank), 
-                           int(n_valid_samples/n_devices*(mpi_rank+1)),
+            for j in range(int(n_valid_samples / n_devices * mpi_rank),
+                           int(n_valid_samples / n_devices * (mpi_rank + 1)),
                            bs_valid):
-                image = val_images[j:j+bs_valid]
-                label = val_labels[j:j+bs_valid]
+                image = val_images[j:j + bs_valid]
+                label = val_labels[j:j + bs_valid]
                 if len(image) != bs_valid:  # note that smaller batch is ignored
                     continue
                 input_image_valid["image"].d = image
