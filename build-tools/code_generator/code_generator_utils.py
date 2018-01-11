@@ -17,7 +17,7 @@ from __future__ import print_function
 
 from os.path import abspath, join, dirname
 
-from utils.common import check_update
+from utils.common import check_update, get_version
 from utils.type_conv import type_from_proto
 
 import yaml
@@ -202,3 +202,15 @@ def generate_init(function_info, function_types, solver_info, solver_types, ext_
     if ext_info is not None:
         kwargs.update(ext_info)
     generate_from_template(template, **kwargs)
+
+
+def generate_version(template=None, rootdir=None):
+    if template is None:
+        template = join(base, 'python/src/nnabla/_version.py.tmpl')
+    if rootdir is None:
+        rootdir = base
+    version, short_version = get_version(rootdir)
+    generated = render_with_template(filename=template, template_kwargs=dict(
+        version=version, short_version=short_version))
+    path_o = template.replace('.tmpl', '')
+    check_update(path_o, generated, force=True)

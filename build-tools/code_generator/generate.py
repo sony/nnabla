@@ -24,14 +24,14 @@ functions = Functions()
 info = functions.info
 
 generation_list = {
-    'cpu': ['python/src/nnabla/_version.py',
-            'python/src/nnabla/function.pxd',
-            'python/src/nnabla/function.pyx',
-            'python/src/nnabla/function_bases.py',
-            'python/src/nnabla/utils/load_function.py',
-            'python/src/nnabla/utils/save_function.py',
-            'src/nbla/proto/nnabla.proto',
-            'src/nbla_utils/nnp_impl_create_function.cpp']
+    'cpu': [
+        'python/src/nnabla/function.pxd',
+        'python/src/nnabla/function.pyx',
+        'python/src/nnabla/function_bases.py',
+        'python/src/nnabla/utils/load_function.py',
+        'python/src/nnabla/utils/save_function.py',
+        'src/nbla/proto/nnabla.proto',
+        'src/nbla_utils/nnp_impl_create_function.cpp']
 }
 
 function_generation_list = {
