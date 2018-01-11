@@ -37,7 +37,7 @@ try:
     mpi_local_rank = comm.local_rank
     device_id = mpi_local_rank
     ctx.device_id = str(device_id)
-except: 
+except:
     pass
 
 ############################################
