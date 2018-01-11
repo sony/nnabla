@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <nbla/common.hpp>
 #include <nbla/context.hpp>
+#include <nbla/exception.hpp>
 
 namespace nbla {
 Context::Context(const vector<string> &backend, const string &array_class,
@@ -38,5 +40,11 @@ Context &Context::set_array_class(const string &array_class) {
 Context &Context::set_device_id(const string &device_id) {
   this->device_id = device_id;
   return *this;
+}
+
+string Context::to_string() const {
+  string b = "[" + string_join(backend, ", ") + "]";
+  return format_string("Context(%s, %s, %s)", b.c_str(), array_class.c_str(),
+                       device_id.c_str());
 }
 }
