@@ -40,4 +40,5 @@ def generate(function_info):
                         solver_info, solver_types)
     utils.generate_function_types(function_info, function_types)
     utils.generate_solver_types(solver_info, solver_types)
+    utils.generate_version()
     generate_solver_python_intereface(solver_info)
