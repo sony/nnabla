@@ -15,7 +15,7 @@
 
 from __future__ import print_function
 
-from os.path import abspath, join, dirname
+from os.path import abspath, join, dirname, exists
 
 from utils.common import check_update, get_version
 from utils.type_conv import type_from_proto
@@ -214,3 +214,43 @@ def generate_version(template=None, rootdir=None):
         version=version, short_version=short_version))
     path_o = template.replace('.tmpl', '')
     check_update(path_o, generated, force=True)
+
+
+def unique_ordered(*lists):
+    ret = []
+    for l in lists:
+        for v in l:
+            if v not in ret:
+                ret.append(v)
+    return ret
+
+
+def generate_skelton_function_impl_one(ext_info, name, func, template, output_dir, output_format):
+    path_o = join(output_dir, output_format % func['snake_name'])
+    if exists(path_o):
+        return
+    in_types = [v.get('template', 'T')
+                for v in func['inputs'].values()]
+    out_types = [v.get('template', 'T')
+                 for v in func['outputs'].values()]
+    ttypes = unique_ordered(in_types, out_types)
+    if 'arguments' not in func:
+        func['arguments'] = {}
+    generated = render_with_template(filename=template, template_kwargs=dict_union(
+        ext_info, dict(name=name, in_types=in_types, out_types=out_types, ttypes=ttypes, **func)))
+    check_update(path_o, generated, force=False)
+
+
+def generate_skelton_function_impl(function_info, function_types, ext_info={}, template=None, output_dir=None, output_format='%s.cpp'):
+    if template is None:
+        template = join(base, 'src/nbla/function/generic/function_impl.cpp.tmpl')
+    if output_dir is None:
+        output_dir = dirname(template)
+
+    for name, func in function_info.items():
+        if name not in function_types:
+            continue
+        generate_skelton_function_impl_one(
+            ext_info, name, func, template, output_dir, output_format)
+
+
