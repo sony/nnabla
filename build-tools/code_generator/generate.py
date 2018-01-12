@@ -24,8 +24,7 @@ functions = Functions()
 info = functions.info
 
 generation_list = {
-    'cpu': [
-        'src/nbla_utils/nnp_impl_create_function.cpp']
+    'cpu': []
 }
 
 function_generation_list = {

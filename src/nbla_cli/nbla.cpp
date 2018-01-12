@@ -83,7 +83,7 @@ bool infer(int argc, char *argv[]) {
     return false;
   }
 
-  nbla::Context ctx{"cpu", "CpuCachedArray", "0", "default"};
+  nbla::Context ctx{{"cpu:float"}, "CpuCachedArray", "0"};
   nbla::utils::nnp::Nnp nnp(ctx);
   std::vector<std::string> input_files = add_files_to_nnp(nnp, p.rest());
 
@@ -168,7 +168,7 @@ bool dump(int argc, char *argv[]) {
 
   std::cout << std::endl;
 
-  nbla::Context ctx{"cpu", "CpuCachedArray", "0", "default"};
+  nbla::Context ctx{{"cpu:float"}, "CpuCachedArray", "0"};
   nbla::utils::nnp::Nnp nnp(ctx);
   std::vector<std::string> input_files = add_files_to_nnp(nnp, p.rest());
 
