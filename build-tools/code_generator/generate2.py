@@ -56,7 +56,7 @@ def generate_solver_python_intereface(solver_info):
         join(base, 'python/src/nnabla/solver.pxd.tmpl'), solver_info=solver_info)
 
 
-def generate(function_info):
+def generate():
     function_info = utils.load_function_info(flatten=True)
     solver_info = utils.load_solver_info()
     function_types = utils.load_yaml_ordered(open(

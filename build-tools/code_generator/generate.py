@@ -73,4 +73,4 @@ for category, functions in info['Functions'].items():
                     check_update(filename, code)
 
 import generate2
-generate2.generate(info)
+generate2.generate()
