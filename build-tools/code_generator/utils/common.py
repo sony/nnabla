@@ -49,7 +49,7 @@ def check_update(filename, generated, force=False):
 
 def get_version(dir):
     os.chdir(dir)
-    if 'NNABLA_VERSION' in os.environ:
+    if 'NNABLA_VERSION' in os.environ and len(os.environ['NNABLA_VERSION']) > 0:
         default_version = os.environ['NNABLA_VERSION']
     else:
         default_version = '0.9.console'
