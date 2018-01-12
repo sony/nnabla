@@ -22,6 +22,12 @@ base = abspath(join(here, '../..'))
 import code_generator_utils as utils
 
 
+def generate_cpp_utils(function_info):
+    function_list = utils.info_to_list(function_info)
+    utils.generate_from_template(
+        join(base, 'src/nbla_utils/nnp_impl_create_function.cpp.tmpl'), function_info=function_info, function_list=function_list)
+
+
 def generate_proto(function_info, solver_info):
     utils.generate_from_template(
         join(base, 'src/nbla/proto/nnabla.proto.tmpl'), function_info=function_info, solver_info=solver_info)
@@ -66,3 +72,4 @@ def generate(function_info):
     generate_function_python_intereface(function_info)
     generate_python_utils(function_info)
     generate_proto(function_info, solver_info)
+    generate_cpp_utils(function_info)
