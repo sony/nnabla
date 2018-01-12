@@ -27,6 +27,8 @@ def generate_function_python_intereface(function_info):
         join(base, 'python/src/nnabla/function.pyx.tmpl'), function_info=function_info)
     utils.generate_from_template(
         join(base, 'python/src/nnabla/function.pxd.tmpl'), function_info=function_info)
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/function_bases.py.tmpl'), function_info=function_info)
 
 
 def generate_solver_python_intereface(solver_info):
