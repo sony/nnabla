@@ -25,8 +25,6 @@ info = functions.info
 
 generation_list = {
     'cpu': [
-        'python/src/nnabla/utils/load_function.py',
-        'python/src/nnabla/utils/save_function.py',
         'src/nbla/proto/nnabla.proto',
         'src/nbla_utils/nnp_impl_create_function.cpp']
 }

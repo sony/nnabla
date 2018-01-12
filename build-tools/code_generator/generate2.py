@@ -22,6 +22,13 @@ base = abspath(join(here, '../..'))
 import code_generator_utils as utils
 
 
+def generate_python_utils(function_info):
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/utils/load_function.py.tmpl'), function_info=function_info)
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/utils/save_function.py.tmpl'), function_info=function_info)
+
+
 def generate_function_python_intereface(function_info):
     utils.generate_from_template(
         join(base, 'python/src/nnabla/function.pyx.tmpl'), function_info=function_info)
@@ -52,3 +59,4 @@ def generate(function_info):
     utils.generate_version()
     generate_solver_python_intereface(solver_info)
     generate_function_python_intereface(function_info)
+    generate_python_utils(function_info)
