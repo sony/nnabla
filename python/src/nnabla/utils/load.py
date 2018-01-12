@@ -121,7 +121,6 @@ def _create_function(ctx, network, f, variable_index):
     if f.type == "Reshape":
         shape = tuple(
             [d if d >= 0 else network.batch_size for d in f.reshape_param.shape.dim])
-        print(shape, inputs[0].shape)
         if len(shape) < len(inputs[0].shape):
             shape = (network.batch_size,) + \
                 tuple(f.reshape_param.shape.dim)
@@ -423,13 +422,20 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
-                logger.log(99, 'Creating cache data for "' + uri + '"')
-                with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
-                    index = 0
-                    while index < di.size:
-                        progress('', (1.0 * di.position) / di.size)
-                        di.next()
-                        index += batch_size
+                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                    logger.log(99, 'Creating cache data for "' + uri + '"')
+                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
+                        index = 0
+                        while index < di.size:
+                            progress('', (1.0 * di.position) / di.size)
+                            di.next()
+                            index += batch_size
+                    for dest in range(1, MPI.COMM_WORLD.Get_size()):
+                        MPI.COMM_WORLD.send(True, dest=dest)
+                else:
+                    if MPI and MPI.COMM_WORLD.Get_rank() > 0:
+                        MPI.COMM_WORLD.recv(source=0)
+
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
@@ -621,7 +627,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                         if name == 'nnp_version.txt':
                             nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
-                                print(f.readlines())
+                                # print(f.readlines())
+                                pass  # TODO currently do nothing with version.
                         elif ext in ['.nntxt', '.prototxt']:
                             nnp.extract(name, tmpdir)
                             if not parameter_only:
