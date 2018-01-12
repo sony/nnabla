@@ -49,7 +49,7 @@
 /python/test/tmp.h5
 /python/test/tmp.protobuf
 /src/nbla/init.cpp
-/src/nbla/proto/
+/src/nbla/proto/nnabla.proto
 /src/nbla_utils/nnabla.pb.cc
 /src/nbla_utils/nnabla.pb.h
 /src/nbla_utils/nnp_impl_create_function.cpp
