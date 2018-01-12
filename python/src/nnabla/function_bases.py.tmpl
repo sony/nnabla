@@ -99,6 +99,23 @@ def has_variadic(inputs):
         ret = var
     return ret
 
+def get_variadic(inputs):
+    for name, i in inputs.items():
+        if i.get('variadic', False):
+            return name, i
+    return None
+
+def has_optional(inputs):
+    ret = False
+    for i in inputs.values():
+        opt = i.get('optional', False)
+        if ret:
+            raise ValueError('''Optional input must come at the last of inputs.
+            %s
+            ''' % inputs)
+        ret = opt
+    return ret
+
 def is_valid_rhs(rhs):
     try:
         eval(rhs)
@@ -109,7 +126,10 @@ def is_valid_rhs(rhs):
 def as_args(inputs, with_opt=True):
     a = ''
     for name, i in inputs.items():
-        a += ', ' + name
+        if i.get('variadic', False):
+            a += ', *' + name
+        else:
+            a += ', ' + name
         if not with_opt:
             continue
         if 'default' in i:
@@ -162,10 +182,21 @@ def get_min_inputs(inputs):
 def as_passed_inputs(inputs):
     ret = []
     for name, i in inputs.items():
+        if i.get('optional', False):
+            return ['*inputs']
         prefix = ''
         if i.get('variadic', False):
             prefix = '*'
         ret.append(prefix + name)
+    return ret
+
+def filter_inputs(inputs, optional=False):
+    from collections import OrderedDict
+    ret = OrderedDict()
+    for name, i in inputs.items():
+        if optional ^ i.get('optional', False):
+            continue
+        ret[name] = i
     return ret
 %>
 % for name, func in function_info.items():
@@ -178,7 +209,7 @@ min_inputs = get_min_inputs(func['inputs'])
 
 @function_api
 % if variadic:
-def ${func['snake_name']}(ctx, *inputs, **kw):
+def ${func['snake_name']}(ctx${as_args(func['inputs'])}, **kw):
 % else:
 def ${func['snake_name']}(ctx${as_args(func['inputs'])}${as_args(arguments)}, n_outputs=-1, outputs=None):
 % endif
@@ -206,7 +237,7 @@ def ${func['snake_name']}(ctx${as_args(func['inputs'])}${as_args(arguments)}, n_
 % endfor
     """
 % if variadic:
-    assert len(inputs) >= ${min_inputs}, "${func['snake_name']} must take more than ${min_inputs} inputs"
+    assert len(${get_variadic(func['inputs'])[0]}) >= ${min_inputs}, "${func['snake_name']} must take more than ${min_inputs} inputs"
     n_outputs = kw.pop('n_outputs', -1)
     outputs = kw.pop('outputs', None)
 % for argname, arg in arguments.items():
@@ -218,6 +249,13 @@ def ${func['snake_name']}(ctx${as_args(func['inputs'])}${as_args(arguments)}, n_
     if ${argname} is None:
         ${argname} = ${arg['default']}
 % endif
+% endfor
+% endif
+% if has_optional(func['inputs']):
+    inputs = [${', '.join(filter_inputs(func['inputs']).keys())}]
+% for iname, i in filter_inputs(func['inputs'], True).items():
+    if ${iname} is not None:
+        inputs += [${iname}]
 % endfor
 % endif
     return F.${name}(ctx${as_args(arguments, False)})(${', '.join(as_passed_inputs(func['inputs']) + ['n_outputs=n_outputs, auto_forward=get_auto_forward(), outputs=outputs'])})
