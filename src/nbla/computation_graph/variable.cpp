@@ -147,7 +147,9 @@ public:
   inline ~ScopedVariableGrad() { var_->set_grad(backup_); }
 };
 
-void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
+void CgVariable::backward(
+    NdArrayPtr grad, bool clear_buffer,
+    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
   set<tuple<int, uint64_t, CgFunctionPtr>> cand;
   unordered_map<CgFunctionPtr, uint64_t> ids;
   unordered_set<CgVariablePtr> branch;
@@ -230,6 +232,9 @@ void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
     // 	      << std::endl;
     f->function()->backward(f->function_inputs(),
                             as_pointer_array(outputs_shared), accum);
+    for (auto &callback : communicator_callbacks) {
+      callback->on_finish_function_backward(f);
+    }
 
     // Clear outputs buffer
     if (clear_buffer) {
@@ -270,6 +275,10 @@ void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
         continue;
       cand.insert(make_tuple(-p_i->rank(), get_id(p_i), p_i));
     }
+  }
+
+  for (auto &callback : communicator_callbacks) {
+    callback->on_finish_backward();
   }
 }
 }

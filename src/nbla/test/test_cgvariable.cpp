@@ -30,8 +30,16 @@ using std::make_shared;
 auto ignore1 = [](void *obj, const Variables &, const Variables &) {};
 auto ignore2 = [](void *obj) {};
 
+struct MockCommunicatorBackwardCallback : public CommunicatorBackwardCallback {
+  std::function<void(const CgFunctionPtr &)> on_finish_function_backward_;
+  std::function<void()> on_finish_backward_;
+  virtual void on_finish_function_backward(const CgFunctionPtr &ptr) {
+    this->on_finish_function_backward_(ptr);
+  }
+  virtual void on_finish_backward() { this->on_finish_backward_(); }
+};
+
 class CgVariableTest : public ::testing::Test {
-public:
 protected:
   virtual void SetUp() {
     init_cpu();
@@ -98,5 +106,43 @@ TEST_F(CgVariableTest, OrderOfBackwardForGraphWithBranches) {
   /* backward and check the order */
   h5[0]->backward();
   EXPECT_EQ(vector<std::string>({"E", "D", "C", "B", "A"}), order);
+}
+
+TEST_F(CgVariableTest, CommunicatorBackwardCallback) {
+  auto generate_backward = [](std::string name) {
+    return [name](void *obj, const Variables &inputs, const Variables &outputs,
+                  const vector<bool> &propagate_down,
+                  const vector<bool> &accum) {};
+  };
+
+  /* Generate network */
+  auto a = make_shared<CgFunction>(make_shared<Callback>(
+      this->ctx_, nullptr, ignore1, ignore1, generate_backward("A"), ignore2));
+  auto b = make_shared<CgFunction>(make_shared<Callback>(
+      this->ctx_, nullptr, ignore1, ignore1, generate_backward("B"), ignore2));
+  auto c = make_shared<CgFunction>(make_shared<Callback>(
+      this->ctx_, nullptr, ignore1, ignore1, generate_backward("C"), ignore2));
+  auto in = make_shared<CgVariable>(Shape_t{1, 1, 1}, false);
+  auto p1 = make_shared<CgVariable>(Shape_t{1, 1, 1}, true);
+  auto p2 = make_shared<CgVariable>(Shape_t{1, 1, 1}, true);
+  auto h1 = connect(a, {in, p1}, 1);
+  h1.push_back(p2);
+  auto h2 = connect(b, h1, 1);
+  auto h3 = connect(c, h2, 1);
+  EXPECT_EQ(1, h3.size());
+
+  /* backward and check the order */
+  vector<CgFunctionPtr> funcs;
+  auto expected = vector<CgFunctionPtr>{c, b, a};
+  bool is_called = false;
+  auto p = make_shared<MockCommunicatorBackwardCallback>();
+  p->on_finish_function_backward_ = [&funcs](const CgFunctionPtr &func) {
+    funcs.push_back(func);
+  };
+  p->on_finish_backward_ = [&is_called]() { is_called = true; };
+
+  h3[0]->backward(nullptr, false, {p});
+  EXPECT_EQ(expected, funcs);
+  EXPECT_TRUE(is_called);
 }
 }

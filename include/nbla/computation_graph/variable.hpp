@@ -15,13 +15,25 @@
 #ifndef __NBLA_COMPUTATION_GRAPH_VARIABLE_HPP__
 #define __NBLA_COMPUTATION_GRAPH_VARIABLE_HPP__
 
+#include <nbla/function.hpp>
 #include <nbla/variable.hpp>
+
+#include <memory>
 
 namespace nbla {
 
 // Forward declaration
 class CgFunction;
 typedef shared_ptr<CgFunction> CgFunctionPtr;
+
+/** Callback functions during backward.
+ */
+struct CommunicatorBackwardCallback {
+  virtual void on_finish_function_backward(const CgFunctionPtr &ptr) {}
+  virtual void on_finish_backward() {}
+};
+typedef shared_ptr<CommunicatorBackwardCallback>
+    CommunicatorBackwardCallbackPtr;
 
 /** Computation graph variable.
 
@@ -132,11 +144,16 @@ public:
                  set, its gradients are set as 1.
       @param[in] clear_buffer Clears the no longer referenced variables
                  during backpropagation to save memory.
+      @param     communicator_callbacks The callback functions invoked when 1)
+                 backward computation of each function is finished and
+                 2) all backward computation is finished.
 
       @seealso set_persistent() to prevent a specific variable to be cleared
                during forward propagation.
   */
-  NBLA_API void backward(NdArrayPtr grad = nullptr, bool clear_buffer = false);
+  NBLA_API void
+  backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
+           vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
   /** @copydoc function_reference_count_
    */
