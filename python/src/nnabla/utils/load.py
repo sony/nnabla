@@ -102,9 +102,14 @@ def _create_function(ctx, network, f, variable_index):
             input_variable_names = [f.input[0] + variable_index_low_level_name + '_' +
                                     f.recurrent_param.repeat_id + '[' + str(variable_index[-1] - 1) + ']']
     else:
+        v_names = []
+        for v_name in f.input:
+            for index, i in enumerate(variable_index):
+                v_name = v_name.replace('{' + f.repeat_id[index] + '}', '[' + str(i) + ']')
+            v_names.append(v_name)
         input_variable_names = [v_name if v_name in network.variables else
                                 v_name + variable_index_name if v_name + variable_index_name in network.variables else
-                                v_name + variable_index_low_level_name for v_name in f.input]
+                                v_name + variable_index_low_level_name for v_name in v_names]
     inputs = [network.variables[v_name] for v_name in input_variable_names]
 
     if f.type == "RecurrentInput":
@@ -120,10 +125,8 @@ def _create_function(ctx, network, f, variable_index):
 
     if f.type == "Reshape":
         shape = tuple([d if d >=0 else network.batch_size for d in f.reshape_param.shape.dim])
-        print(shape, inputs[0].shape)
-        if len(shape) < len(inputs[0].shape):
-            shape = (network.batch_size,) + \
-                tuple(f.reshape_param.shape.dim)
+        if numpy.prod(shape) != numpy.prod(inputs[0].shape):
+            shape = (network.batch_size,) + shape
         function_instance = F.Reshape(ctx,
                                       shape=shape)
     elif f.type == "RepeatStart":
@@ -227,8 +230,12 @@ def _network(proto, default_context, batch_size, all_variables, rng):
 
     for v in proto.variable:
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
-            name = v.name + ''.join(['_' + v.repeat_id[index] + '[' +
-                                     str(i) + ']' for index, i in enumerate(variable_index)])
+            name = v.name
+            for index, i in enumerate(variable_index):
+                if ('{' + v.repeat_id[index] + '}' in name):
+                    name = name.replace('{' + v.repeat_id[index] + '}', '[' + str(i) + ']')
+                else:
+                    name += '_' + v.repeat_id[index] + '[' + str(i) + ']'
             if name in all_variables:
                 variable = all_variables[name]
             else:
