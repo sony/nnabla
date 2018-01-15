@@ -73,3 +73,15 @@ def generate():
     generate_python_utils(function_info)
     generate_proto(function_info, solver_info)
     generate_cpp_utils(function_info)
+
+    # Generate function skeltons if new ones are added to functions.yaml and function_types.yaml.
+    utils.generate_skelton_function_impl(
+        function_info, function_types)
+    func_header_template = join(
+        base,
+        'include/nbla/function/function_impl.hpp.tmpl')
+    utils.generate_skelton_function_impl(
+        function_info, function_types,
+        template=func_header_template, output_format='%s.hpp')
+
+    # TODO: solver skelton generation
