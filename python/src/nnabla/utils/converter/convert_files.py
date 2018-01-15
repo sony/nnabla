@@ -20,7 +20,7 @@ from nnabla.utils.converter.nnablart import NnbExporter, CsrcExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
 
-def export_from_nnp(input, output, nnp):
+def export_from_nnp(args, nnp, output):
     output_ext = os.path.splitext(output)[1].lower()
     if (os.path.isdir(output) and args.export_format == 'NNP') or output_ext == '.nnp':
         parameter_type = 'protobuf'
@@ -46,13 +46,15 @@ def export_from_nnp(input, output, nnp):
 
 
 def convert_files(args, ifiles, output):
+    nnp = None
     if args.read_format == 'NNP':
         # Input file that has unsuported extension store into output nnp archive or directory.
         nnp = NnpReader(*ifiles, expand_network=args.nnp_expand_network).read()
-        if nnp is not None:
-            return export_from_nnp(input, output, nnp)
-        else:
-            print('Read from [{}] failed.'.format(ifiles))
     elif args.read_format == 'ONNX':
-        onnx = OnnxReader(*ifiles).read()
-    return False
+        nnp = OnnxReader(*ifiles).read()
+
+    if nnp is not None:
+        return export_from_nnp(args, nnp, output)
+    else:
+        print('Read from [{}] failed.'.format(ifiles))
+        return False
