@@ -13,6 +13,16 @@
 # limitations under the License.
 
 import nnabla.utils.converter
+from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
-def test_nnp_conversion():
+def test_conversion():
     nnabla.utils.converter.convert_files(args, args.files, output)
+
+def test_onnx_nnp_conversion_relu():
+    f = open("relu.onnx", "rb")
+    r = OnnxReader(f)
+    nnp = r.read()
+    assert nnp is not None
+    # Process nnp with naabla and get result
+    # Process with caffe2 and get result
+    # Compare both naabla and caffe2 results
