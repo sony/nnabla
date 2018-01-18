@@ -12,17 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import nnabla.utils.converter
+import onnx
+import onnx_caffe2.backend
+import numpy as np
+import nnabla as nn
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
-def test_conversion():
-    nnabla.utils.converter.convert_files(args, args.files, output)
+TEST_DATA_DIR="conversion_data"
+#def test_conversion():
+#    nnabla.utils.converter.convert_files(args, args.files, output)
 
 def test_onnx_nnp_conversion_relu():
-    f = open("relu.onnx", "rb")
-    r = OnnxReader(f)
+    path = os.path.join(TEST_DATA_DIR, "relu.onnx")
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    # Process onnx with naabla
+    r = OnnxReader(path)
     nnp = r.read()
     assert nnp is not None
-    # Process nnp with naabla and get result
-    # Process with caffe2 and get result
+    #nout = np.zeros((1,3,3,3))
+    assert nnp.protobuf is not None
+    nn.clear_parameters()
+    print(nnp.protobuf)
+    nn.parameter.set_parameter_from_proto(nnp.protobuf)
+    param = nn.get_parameters().values()
+    print(param)
     # Compare both naabla and caffe2 results
+    #assert np.allclose(c2out, nout)

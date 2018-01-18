@@ -23,8 +23,9 @@ from onnx import (defs, checker, helper, numpy_helper, mapping,
                   ModelProto, GraphProto, NodeProto, AttributeProto, TensorProto, OperatorSetIdProto)
 from onnx.helper import make_tensor, make_tensor_value_info
 
-def onnx_graph_to_naabla_net(onnx_model_proto):
-    nnabla_net = nnabla_pb2.NNablaProtoBuf()
+def onnx_model_to_protobuf(onnx_model):
+    protobuf = nnabla_pb2.NNablaProtoBuf()
+    # convert onnx model to nnabla protobuf
     #for ifile in self._args:
     #    print('Reading {}'.format(ifile))
     #    ext = os.path.splitext(ifile)[1].lower()
@@ -55,19 +56,12 @@ def onnx_graph_to_naabla_net(onnx_model_proto):
 
     class nnp:
         pass
-    nnp.protobuf = naabla_net
+    nnp.protobuf = protobuf
     return nnp
 
 class OnnxReader:
-    def __init__(self, *args, **kwargs):
-        if len(args) != 1:
-            raise ValueError('ONNX format can only accept a single file input')
-        self._onnx_model = args[0]
-
-        #self._expand_network = False
-        #if 'expand_network' in kwargs:
-        #    self._expand_network = kwargs['expand_network']
-
+    def __init__(self, file_path):
+        self._file_path = file_path
 
     #def load_parameters(self, filename):
     #    e = os.path.splitext(filename)[1].lower()
@@ -100,6 +94,7 @@ class OnnxReader:
     #            self._nnp.MergeFromString(f.read())
 
     def read(self):
-        onnx_model_proto = ModelProto()
-        onnx_model_proto.ParseFromString(self._onnx_model.read())
-        return onnx_graph_to_naabla_net(onnx_model_proto)
+        model_proto = ModelProto()
+        with open(self._file_path, "rb") as f:
+            model_proto.ParseFromString(f.read())
+        return onnx_model_to_protobuf(model_proto)
