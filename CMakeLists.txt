@@ -142,7 +142,7 @@ if(BUILD_CPP_LIB)
   list(APPEND NBLA_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/third_party/eigen-eigen-de14376a69f8
-    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.13.0/include)
+    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.16.3/include)
   
   if(BUILD_CPP_UTILS)
     list(APPEND NBLA_INCLUDE_DIRS
