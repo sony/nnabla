@@ -21,6 +21,8 @@ from onnx import (defs, checker, helper, numpy_helper, mapping,
 import onnx_caffe2.backend
 import numpy as np
 import nnabla as nn
+import pdb
+from nnabla.utils.converter.nnabla import NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
 TEST_DATA_DIR="conversion_data"
@@ -29,6 +31,9 @@ TEST_DATA_DIR="conversion_data"
 
 def onnx_model_to_protobuf(onnx_model):
     protobuf = nnabla_pb2.NNablaProtoBuf()
+    if onnx_model.ir_version > 3:
+        raise ValueError("ONNX models newer than version 3 is currently not supported")
+    #print(onnx_model.producer_name)
     # convert onnx model to nnabla protobuf
     #for ifile in self._args:
     #    print('Reading {}'.format(ifile))
@@ -61,6 +66,7 @@ def onnx_model_to_protobuf(onnx_model):
     class nnp:
         pass
     nnp.protobuf = protobuf
+    nnp.other_files = []
     return nnp
 
 class OnnxReader:
@@ -103,7 +109,7 @@ class OnnxReader:
             model_proto.ParseFromString(f.read())
         return onnx_model_to_protobuf(model_proto)
 
-def test_onnx_nnp_conversion_relu():
+def test_onnx_nnp_conversion_relu(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "relu.onnx")
     # Process onnx with caffe2 backend
     model = onnx.load(path)
@@ -113,11 +119,15 @@ def test_onnx_nnp_conversion_relu():
     nnp = r.read()
     assert nnp is not None
     #nout = np.zeros((1,3,3,3))
+    assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    nn.clear_parameters()
     print(nnp.protobuf)
-    nn.parameter.set_parameter_from_proto(nnp.protobuf)
-    param = nn.get_parameters().values()
-    print(param)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    p = tmpdir.mkdir("nnp").join("relu.nnp")
+    pdb.set_trace()
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    nn_net = nnabla.utils.load(p)
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
