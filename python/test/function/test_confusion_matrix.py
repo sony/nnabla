@@ -16,11 +16,9 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nbla_test_utils import list_context
 
-ctxs = [(nn.Context(), 'ConfusionMatrix')]
-if hasattr(nn.extensions, 'cuda'):
-    ctxs += [(nn.extensions.cuda.context(),
-              'ConfusionMatrixCuda')]
+ctxs = list_context('ConfusionMatrix')
 
 
 def ref_confusion_matrix(x, l, axis):
