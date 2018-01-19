@@ -15,8 +15,9 @@
 import os
 import struct
 import nnabla.utils.converter
-import onnx
+import nnabla.utils.load as nnload
 from nnabla.utils import nnabla_pb2
+import onnx
 from onnx import (defs, checker, helper, numpy_helper, mapping,
                   ModelProto, GraphProto, NodeProto, AttributeProto, TensorProto, OperatorSetIdProto)
 import onnx_caffe2.backend
@@ -29,6 +30,23 @@ from nnabla.utils.converter.nnabla import NnpExporter
 
 TEST_DATA_DIR="conversion_data"
 
+def onnx_data_type_to_string(data_type):
+    if data_type == TensorProto.FLOAT:
+        return "float"
+    else:
+        return "unknown"
+
+def onnx_value_info_proto_to_variable(info, network):
+    if not info.type.HasField("tensor_type"): # accepting only tensor
+        logger.warning("Only TensorProto is allowed as ValueInfoProto's type for now (Got {}). Skipping {}"
+                .format(info.type, info.name))
+        return
+    t = info.type.tensor_type
+    v = network.variable.add()
+    v.name = info.name
+    v.type = onnx_data_type_to_string(t.elem_type)
+    v.shape.dim.extend([x.dim_value for x in t.shape.dim])
+
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
@@ -40,10 +58,20 @@ def onnx_graph_to_protobuf(pb, graph):
         f.input.extend(n.input)
         f.output.extend(n.output)
 
+    # convert Input/Output ValueInfoProto
+    # to Variable
+    for i in graph.input:
+        onnx_value_info_proto_to_variable(i, network)
+    for o in graph.output:
+        onnx_value_info_proto_to_variable(o, network)
+    for vi in graph.value_info:
+        onnx_value_info_proto_to_variable(vi, network)
+
     # convert parameters
     for init in graph.initializer:
-        if init.data_type != 1: # float
-            logger.warning("Only floating point data is supported for parameters. Skipping {}".format(init.name))
+        if init.data_type != TensorProto.FLOAT:
+            logger.warning("Only floating point data is supported for parameters (Got {}). Skipping {}"
+                    .format(init.data_type, init.name))
             pass
         p = pb.parameter.add()
         p.variable_name = init.name
@@ -84,36 +112,6 @@ class OnnxReader:
     def __init__(self, file_path):
         self._file_path = file_path
 
-    #def load_parameters(self, filename):
-    #    e = os.path.splitext(filename)[1].lower()
-    #    if e == '.h5':
-    #        import h5py
-    #        with h5py.File(filename, 'r') as hd:
-    #            keys = []
-
-    #            def _get_keys(name):
-    #                ds = hd[name]
-    #                if not isinstance(ds, h5py.Dataset):
-    #                    # Group
-    #                    return
-    #                # To preserve order of parameters
-    #                keys.append((ds.attrs.get('index', None), name))
-    #            hd.visit(_get_keys)
-    #            for _, key in sorted(keys):
-    #                ds = hd[key]
-    #                parameter = self._nnp.parameter.add()
-    #                parameter.variable_name = key
-    #                parameter.shape.dim.extend(ds.shape)
-    #                parameter.data.extend(ds[...].flatten())
-    #                if ds.attrs['need_grad']:
-    #                    parameter.need_grad = True
-    #                else:
-    #                    parameter.need_grad = False
-
-    #    elif e == '.protobuf':
-    #        with open(filename, 'rb') as f:
-    #            self._nnp.MergeFromString(f.read())
-
     def read(self):
         model_proto = ModelProto()
         with open(self._file_path, "rb") as f:
@@ -129,7 +127,6 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     r = OnnxReader(path)
     nnp = r.read()
     assert nnp is not None
-    #nout = np.zeros((1,3,3,3))
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
     logger.log(99, nnp.protobuf)
@@ -137,9 +134,9 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), "relu.nnp")
-    pdb.set_trace()
+    #pdb.set_trace()
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    nn_net = nnabla.utils.load(p)
+    nn_net = nnload.load(p)
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
