@@ -135,7 +135,8 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     logger.log(99, nnp.protobuf)
 
     nnpex = NnpExporter(nnp, batch_size=0)
-    p = tmpdir.mkdir("nnp").join("relu.nnp")
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "relu.nnp")
     pdb.set_trace()
     nnpex.export_nnp(p)
     # read exported nnp and run network
