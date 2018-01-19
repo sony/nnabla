@@ -27,6 +27,9 @@ def extension_context(extension_name='cpu', **kw):
     Returns:
         :class:`nnabla.Context`: The current extension context.
 
+    Note:
+        Deprecated. Use :function:`nnabla.ext_utils.get_extension_context` instead.
+
     Example:
 
         .. code-block:: python
@@ -35,10 +38,8 @@ def extension_context(extension_name='cpu', **kw):
             nn.set_default_context(ctx)
 
     """
-    if extension_name == 'cuda.cudnn':
-        from nnabla import logger
-        logger.warn('Deprecated extension name "cuda.cudnn" passed.')
-        extensin_name = 'cudnn'
-    import importlib
-    mod = importlib.import_module('.' + extension_name, 'nnabla_ext')
-    return mod.context(**kw)
+    from nnabla import logger
+    logger.warn(
+        'Deprecated API. Use `nnabla.extension.get_extension_context(ext_name, **kw)`.')
+    from nnabla.ext_utils import get_extension_context
+    return get_extension_context(extension_name, **kw)
