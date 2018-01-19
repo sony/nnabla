@@ -31,10 +31,14 @@ def extension_context(extension_name='cpu', **kw):
 
         .. code-block:: python
 
-            ctx = extension_context('cuda.cudnn', device_id=0)
+            ctx = extension_context('cudnn', device_id=0)
             nn.set_default_context(ctx)
 
     """
+    if extension_name == 'cuda.cudnn':
+        from nnabla import logger
+        logger.warn('Deprecated extension name "cuda.cudnn" passed.')
+        extensin_name = 'cudnn'
     import importlib
     mod = importlib.import_module('.' + extension_name, 'nnabla_ext')
     return mod.context(**kw)
