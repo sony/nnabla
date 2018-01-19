@@ -26,10 +26,11 @@ message Shape {
 }
 
 message Context {
-  string backend = 1;
+  repeated string backends = 1;
   string array_class = 2;
   string device_id = 3;
-  string compute_backend = 4;
+  string backend = 4;  // Obsolete
+  string compute_backend = 5;  // Obsolete
 }
 
 message NNablaProtoBuf {
