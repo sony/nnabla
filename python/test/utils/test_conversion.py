@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import struct
 import nnabla.utils.converter
 import onnx
 from nnabla.utils import nnabla_pb2
@@ -39,9 +40,20 @@ def onnx_graph_to_protobuf(pb, graph):
         f.input.extend(n.input)
         f.output.extend(n.output)
 
-    ## convert parameters
-    #param = pb.parameter.add()
-    #param.variable_name = "aaaa"
+    # convert parameters
+    for init in graph.initializer:
+        if init.data_type != 1: # float
+            logger.warning("Only floating point data is supported for parameters. Skipping {}".format(init.name))
+            pass
+        p = pb.parameter.add()
+        p.variable_name = init.name
+        p.shape.dim.extend(init.dims)
+        # convert raw bytestream to floating points
+        num = len(init.raw_data) // 4
+        logger.log(99, "raw_data num: {}".format(num))
+        data = struct.unpack(str(num)+'f', init.raw_data)
+        p.data.extend(data)
+        p.need_grad = False
 
 def onnx_model_to_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
@@ -124,7 +136,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
 
     nnpex = NnpExporter(nnp, batch_size=0)
     p = tmpdir.mkdir("nnp").join("relu.nnp")
-    #pdb.set_trace()
+    pdb.set_trace()
     nnpex.export_nnp(p)
     # read exported nnp and run network
     nn_net = nnabla.utils.load(p)
