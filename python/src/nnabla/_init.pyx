@@ -125,3 +125,30 @@ def array_classes():
     return _cpu_array_classes()
 
 ###############################################################################
+def device_synchronize(str device):
+    """Dummy.
+
+    Args:
+        device (int): Device ID.
+
+    """
+    cpu_device_synchronize(device)
+
+
+def get_device_count():
+    """Always returns 1.
+
+    Retuns:
+        int: Number of devices available.
+
+    """
+    return cpu_get_device_count()
+
+def get_devices():
+    """Dummy.
+
+    Returns:
+        list of str: List of available devices.
+
+    """
+    return cpu_get_devices()

@@ -43,6 +43,8 @@ import nnabla as nn
 import nnabla.function as F
 import nnabla.solver as S
 
+import nnabla_ext.cpu
+
 
 ##########################################################################
 # Private functions.
@@ -604,7 +606,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
             except:
                 pass
     else:
-        default_context = nn.context()
+        import nnabla_ext.cpu
+        default_context = nnabla_ext.cpu.context()
 
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)

@@ -35,8 +35,6 @@ from .parameter import (
 from .context import (
     context_scope, set_default_context, get_current_context)
 from .auto_forward import auto_forward, set_auto_forward, get_auto_forward
-from . import extensions
-from .extensions.cpu import context
 
 # Prefer cached array by default for performance.
 prefer_cached_array(True)

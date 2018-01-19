@@ -21,7 +21,7 @@ def extension_context(extension_name='cpu', **kw):
     All extension's module must provide `context(**kw)` function.
 
     Args:
-        extension_name (str) : Module path relative to `nnabla.extensions`.
+        extension_name (str) : Module path relative to `nnabla_ext`.
         kw (dict) : Additional keyword arguments for context function in a extension module.
 
     Returns:
@@ -36,9 +36,5 @@ def extension_context(extension_name='cpu', **kw):
 
     """
     import importlib
-    try:
-        mod = importlib.import_module(
-            '.' + extension_name, 'nnabla.extensions')
-    except ImportError:
-        mod = importlib.import_module('.' + extension_name, 'nnabla_ext')
+    mod = importlib.import_module('.' + extension_name, 'nnabla_ext')
     return mod.context(**kw)

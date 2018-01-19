@@ -12,8 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
-from os.path import dirname, basename, join
-packages = glob.glob(join(dirname(__file__), '*', '__init__.py'))
-__all__ = [basename(dirname(package)) for package in packages]
-from . import *
+__import__('pkg_resources').declare_namespace(__name__)

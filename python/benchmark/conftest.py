@@ -18,8 +18,8 @@ import os
 
 def pytest_addoption(parser):
     parser.addoption('--nnabla-ext', type=str, default='cpu',
-                     help='Extension path, e.g. "cpu", "cuda", "cuda.cudnn".')
-    parser.addoption('--nnabla-ext-device-id', type='int', default=0,
+                     help='Extension path, e.g. "cpu", "cuda", "cudnn".')
+    parser.addoption('--nnabla-ext-device-id', type='str', default='0',
                      help='Keyward argument `device_id` of extensions specifies'
                      ' gpu index where test runs')
     parser.addoption('--nnabla-benchmark-output', type=str,

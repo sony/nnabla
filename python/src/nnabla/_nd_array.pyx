@@ -186,8 +186,8 @@ cdef class NdArray:
         Returns:
             :obj:`numpy.array` if ``ctx`` is None, otherwise nothing.
         """
-        import nnabla as nn
-        ctx_ = nn.context()
+        from nnabla_ext.cpu import context
+        ctx_ = context()
         if ctx is not None:
             ctx_ = ctx
         cdef int type_num = np.dtype(dtype).num
@@ -217,8 +217,8 @@ cdef class NdArray:
         cdef vector[np.npy_intp] shape
         cdef Shape_t shape_base
         cdef CArray * arr
-        import nnabla as nn
-        ctx = nn.context()
+        from nnabla_ext.cpu import context
+        ctx = context()
         cdef CContext cctx = <CContext > ctx
         try:
             type_num = <int > self.arrp.array().get().dtype()

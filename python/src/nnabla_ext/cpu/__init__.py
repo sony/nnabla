@@ -13,7 +13,19 @@
 # limitations under the License.
 
 import nnabla as nn
-from nnabla import array_classes
+
+from nnabla._init import (
+    clear_memory_cache,
+    array_classes,
+    device_synchronize,
+    get_device_count,
+    get_devices)
+
+from nnabla._version import (
+    __version__,
+    __author__,
+    __email__
+)
 
 
 def context(**kw):
@@ -21,6 +33,6 @@ def context(**kw):
     return nn.Context(['cpu:float'], array_classes()[0], '')
 
 
-def synchronize(**kw):
-    """Dummy Synchronizer."""
-    pass
+def synchronize(*kw):
+    """Dummy."""
+    device_synchronize('')

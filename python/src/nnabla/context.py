@@ -35,7 +35,7 @@ def context_scope(ctx):
         import nnabla as nn
         import nnabla.functions as F
         x = nn.Variable([2, 3 ,4])
-        ctx = nn.extensions.cuda.cudnn.context(0)
+        ctx = nnabla_ext.cuda.context('0')
         with context_scope(ctx):
             # Inside with scope, the specified context is used.
             with parameter_scope('w1'):

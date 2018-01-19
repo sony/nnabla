@@ -216,7 +216,7 @@ class FunctionBenchmark:
         self.ext = ext
         self.ext_kwargs = ext_kwargs
         self.mod_ext = importlib.import_module(
-            '.' + ext, 'nnabla.extensions')
+            '.' + ext, 'nnabla_ext')
         self.ctx = self.mod_ext.context(**ext_kwargs)
         self.min_run = min_run
         self.min_time = min_time
