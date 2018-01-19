@@ -90,7 +90,7 @@ def onnx_graph_to_protobuf(pb, graph):
     # Add executor for target network
     exe = pb.executor.add()
     exe.name = "exec_0"
-    exe.network_name = graph.name
+    exe.network_name = network.name
     for iv in in_vars:
         dv = exe.data_variable.add()
         dv.variable_name = iv.name
@@ -99,7 +99,6 @@ def onnx_graph_to_protobuf(pb, graph):
         outv = exe.output_variable.add()
         outv.variable_name = ov.name
         outv.data_name = ov.name
-
 
 def onnx_model_to_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
@@ -152,9 +151,9 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), "relu.nnp")
-    #pdb.set_trace()
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    nn_net = nnload.load(p)
+    pdb.set_trace()
+    nn_net = nnload.load([p])
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
