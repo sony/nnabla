@@ -134,7 +134,7 @@ Run MNIST classification with CUDA/cuDNN
 
 .. code-block:: doscon
 
-    nnabla-examples\mnist-collection > python classification.py -c cuda.cudnn
+    nnabla-examples\mnist-collection > python classification.py -c cudnn
 
 
 FAQ

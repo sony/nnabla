@@ -15,7 +15,7 @@ At first, you will train an MNIST classification model in Python-side. The examp
 
 ```shell
 # at nnabla-examples/mnist-collection/
-python classification.py  # Optionally you can use -c cuda.cudnn option.
+python classification.py  # Optionally you can use -c cudnn option.
 ```
 
 After training finishes, you can find a parameter file created in the `tmp.monitor` folder with name `lenet_params_010000.h5`

@@ -458,7 +458,7 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
     .. code-block:: python
 
         # Communicator and Context
-        extension_module = "cuda.cudnn"
+        extension_module = "cudnn"
         ctx = extension_context(extension_module)
         comm = C.MultiProcessDataParalellCommunicator(ctx)
         comm.init()

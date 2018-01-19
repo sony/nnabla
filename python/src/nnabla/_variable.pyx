@@ -36,13 +36,13 @@ ctypedef void * voidp
 cdef class Context:
 
     """
-    Context is used to specify the computation engine (cpu, cuda, cuda.cudnn etc.) which the
+    Context is used to specify the computation engine (cpu, cuda, cudnn etc.) which the
     function operator modules and optimizer modules shall be ran on.
     The context can be set for each function, as well as set globally with functions
     listed in the :meth:`context-specifier`.
 
     Args:
-        backend (list of str): 'cpu', 'cuda', 'cuda.cudnn' etc.
+        backend (list of str): 'cpu', 'cuda', 'cudnn' etc.
         array_class (str): str, 'CpuArray', 'CpuCachedArray', 'CudaArray', 'CudaCachedArray' etc.
         device_id (str): str, default '0'
 

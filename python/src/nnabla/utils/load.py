@@ -602,7 +602,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
         default_context = info.global_config.default_context
         if 'cuda' in default_context.backend:
             try:
-                import nnabla_ext.cuda.cudnn
+                import nnabla_ext.cudnn
             except:
                 pass
     else:

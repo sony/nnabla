@@ -103,7 +103,7 @@ Define the communicator for gradients exchange.
 .. code:: python
 
     %%px
-    extension_module = "cuda.cudnn"
+    extension_module = "cudnn"
     ctx = extension_context(extension_module)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()

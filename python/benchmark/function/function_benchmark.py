@@ -185,7 +185,7 @@ class FunctionBenchmark:
             They specify shape, initializer, and need_grad attributes.
         func_args (list): A list of function arguments passed to func.
         func_kwargs (dict): Keyword arguments passed to func.
-        ext (str): Extension module, e.g. 'cuda', 'cuda.cudnn'.
+        ext (str): Extension module, e.g. 'cuda', 'cudnn'.
         ext_kwargs (dict): Keyword arguments passed to extension APIs,
             e.g. ``context(*kw)``, ``synchronize(**kw).
         min_run (int): Minimum number of calling function
