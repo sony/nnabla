@@ -36,7 +36,7 @@ def onnx_data_type_to_string(data_type):
     else:
         return "unknown"
 
-def onnx_value_info_proto_to_variable(info, network):
+def onnx_value_info_proto_to_variable(info, network, out_list):
     if not info.type.HasField("tensor_type"): # accepting only tensor
         logger.warning("Only TensorProto is allowed as ValueInfoProto's type for now (Got {}). Skipping {}"
                 .format(info.type, info.name))
@@ -46,6 +46,7 @@ def onnx_value_info_proto_to_variable(info, network):
     v.name = info.name
     v.type = onnx_data_type_to_string(t.elem_type)
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
+    out_list.append(v)
 
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
@@ -60,12 +61,15 @@ def onnx_graph_to_protobuf(pb, graph):
 
     # convert Input/Output ValueInfoProto
     # to Variable
+    in_vars = []
+    out_vars = []
+    mid_vars = []
     for i in graph.input:
-        onnx_value_info_proto_to_variable(i, network)
+        onnx_value_info_proto_to_variable(i, network, in_vars)
     for o in graph.output:
-        onnx_value_info_proto_to_variable(o, network)
+        onnx_value_info_proto_to_variable(o, network, out_vars)
     for vi in graph.value_info:
-        onnx_value_info_proto_to_variable(vi, network)
+        onnx_value_info_proto_to_variable(vi, network, mid_vars)
 
     # convert parameters
     for init in graph.initializer:
@@ -82,6 +86,20 @@ def onnx_graph_to_protobuf(pb, graph):
         data = struct.unpack(str(num)+'f', init.raw_data)
         p.data.extend(data)
         p.need_grad = False
+
+    # Add executor for target network
+    exe = pb.executor.add()
+    exe.name = "exec_0"
+    exe.network_name = graph.name
+    for iv in in_vars:
+        dv = exe.data_variable.add()
+        dv.variable_name = iv.name
+        dv.data_name = iv.name
+    for ov in out_vars:
+        outv = exe.output_variable.add()
+        outv.variable_name = ov.name
+        outv.data_name = ov.name
+
 
 def onnx_model_to_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
