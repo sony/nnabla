@@ -19,6 +19,7 @@ from nnabla.utils import nnabla_pb2
 from onnx import (defs, checker, helper, numpy_helper, mapping,
                   ModelProto, GraphProto, NodeProto, AttributeProto, TensorProto, OperatorSetIdProto)
 import onnx_caffe2.backend
+import nnabla.logger as logger
 import numpy as np
 import nnabla as nn
 import pdb
@@ -26,46 +27,44 @@ from nnabla.utils.converter.nnabla import NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
 TEST_DATA_DIR="conversion_data"
-#def test_conversion():
-#    nnabla.utils.converter.convert_files(args, args.files, output)
 
-def onnx_model_to_protobuf(onnx_model):
-    protobuf = nnabla_pb2.NNablaProtoBuf()
-    if onnx_model.ir_version > 3:
+def onnx_graph_to_protobuf(pb, graph):
+    network = pb.network.add()
+    network.name = graph.name
+    # convert nodes
+    for n in graph.node:
+        f = network.function.add()
+        f.name = n.name
+        f.type = n.op_type
+        f.input.extend(n.input)
+        f.output.extend(n.output)
+
+    ## convert parameters
+    #param = pb.parameter.add()
+    #param.variable_name = "aaaa"
+
+def onnx_model_to_protobuf(model):
+    pb = nnabla_pb2.NNablaProtoBuf()
+    if model.ir_version > 3:
         raise ValueError("ONNX models newer than version 3 is currently not supported")
-    #print(onnx_model.producer_name)
-    # convert onnx model to nnabla protobuf
-    #for ifile in self._args:
-    #    print('Reading {}'.format(ifile))
-    #    ext = os.path.splitext(ifile)[1].lower()
-    #    if ext == '.nnp':
-    #        try:
-    #            tmpdir = tempfile.mkdtemp()
-    #            with zipfile.ZipFile(ifile, 'r') as nnpzip:
-    #                for name in nnpzip.namelist():
-    #                    if os.path.splitext(name)[1].lower() in ['.nntxt', '.prototxt']:
-    #                        nnpzip.extract(name, tmpdir)
-    #                        with open(os.path.join(tmpdir, name), 'rt') as f:
-    #                            text_format.Merge(f.read(), self._nnp)
-    #                for name in nnpzip.namelist():  # Param
-    #                    if os.path.splitext(name)[1].lower() in ['.protobuf', '.h5']:
-    #                        nnpzip.extract(name, tmpdir)
-    #                        self.load_parameters(
-    #                            os.path.join(tmpdir, name))
-    #        finally:
-    #            shutil.rmtree(tmpdir)
-    #    elif ext in ['.nntxt', '.prototxt']:
-    #        with open(ifile, 'rt') as f:
-    #            text_format.Merge(f.read(), self._nnp)
-    #    elif ext in ['.protobuf', '.h5']:
-    #        self.load_parameters(ifile)
+    for opset in model.opset_import:
+        if opset.domain == "":
+            # ONNX opset.
+            # Check if we have the correct version
+            if opset.version > 2:
+                raise ValueError("ONNX opsets newer than version 2 is currently not supported")
+        else:
+            logger.warning("Unknown opset from domain {}. Ignoring.".format(opset.domain))
 
-    #if self._expand_network:
-    #    self._nnp = expander.NnpExpander(self._nnp).expand()
+    # convert onnx model to nnabla protobuf
+    logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))
+
+    # conver graph
+    onnx_graph_to_protobuf(pb, model.graph)
 
     class nnp:
         pass
-    nnp.protobuf = protobuf
+    nnp.protobuf = pb
     nnp.other_files = []
     return nnp
 
@@ -112,8 +111,8 @@ class OnnxReader:
 def test_onnx_nnp_conversion_relu(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "relu.onnx")
     # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
+    #model = onnx.load(path)
+    #c2out = onnx_caffe2.backend.run_model(model, [])
     # Process onnx with naabla
     r = OnnxReader(path)
     nnp = r.read()
@@ -121,11 +120,11 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     #nout = np.zeros((1,3,3,3))
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    print(nnp.protobuf)
+    logger.log(99, nnp.protobuf)
 
     nnpex = NnpExporter(nnp, batch_size=0)
     p = tmpdir.mkdir("nnp").join("relu.nnp")
-    pdb.set_trace()
+    #pdb.set_trace()
     nnpex.export_nnp(p)
     # read exported nnp and run network
     nn_net = nnabla.utils.load(p)
