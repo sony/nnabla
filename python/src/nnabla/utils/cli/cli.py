@@ -150,7 +150,7 @@ def main():
         subparser.add_argument(
             '-g', '--height', help='height of output image', required=True)
         subparser.add_argument(
-            '-m', '--mode', help='shaping mode (trimming or padding)', required=True)
+            '-m', '--mode', help='shaping mode (trimming, padding or resize)', required=True)
         subparser.add_argument(
             '-s', '--shuffle', help='shuffle mode (true or false)', required=True)
         subparser.add_argument(
