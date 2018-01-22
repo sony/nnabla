@@ -48,6 +48,11 @@ def onnx_value_info_proto_to_variable(info, network, out_list):
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
     out_list.append(v)
 
+def onnx_optype_to_function_type(optype):
+    '''Convert ONNX op_type to NNabla function names'''
+    if optype == "Relu":
+        return "ReLU"
+
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
@@ -55,7 +60,7 @@ def onnx_graph_to_protobuf(pb, graph):
     for n in graph.node:
         f = network.function.add()
         f.name = n.name
-        f.type = n.op_type
+        f.type = onnx_optype_to_function_type(n.op_type)
         f.input.extend(n.input)
         f.output.extend(n.output)
 
@@ -153,7 +158,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    pdb.set_trace()
+    #pdb.set_trace()
     nn_net = nnload.load([p])
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
