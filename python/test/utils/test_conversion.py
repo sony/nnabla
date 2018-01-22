@@ -26,17 +26,13 @@ import numpy as np
 import nnabla as nn
 import pdb
 from nnabla.utils.converter.nnabla import NnpExporter
+import nnabla.utils.cli.forward as nnfwd
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
+
 
 TEST_DATA_DIR="conversion_data"
 
-def onnx_data_type_to_string(data_type):
-    if data_type == TensorProto.FLOAT:
-        return "float"
-    else:
-        return "unknown"
-
-def onnx_value_info_proto_to_variable(info, network, out_list):
+def onnx_value_info_proto_to_variable(info, network):
     if not info.type.HasField("tensor_type"): # accepting only tensor
         logger.warning("Only TensorProto is allowed as ValueInfoProto's type for now (Got {}). Skipping {}"
                 .format(info.type, info.name))
@@ -44,9 +40,8 @@ def onnx_value_info_proto_to_variable(info, network, out_list):
     t = info.type.tensor_type
     v = network.variable.add()
     v.name = info.name
-    v.type = onnx_data_type_to_string(t.elem_type)
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
-    out_list.append(v)
+    return v
 
 def onnx_optype_to_function_type(optype):
     '''Convert ONNX op_type to NNabla function names'''
@@ -70,11 +65,18 @@ def onnx_graph_to_protobuf(pb, graph):
     out_vars = []
     mid_vars = []
     for i in graph.input:
-        onnx_value_info_proto_to_variable(i, network, in_vars)
+        v = onnx_value_info_proto_to_variable(i, network)
+        v.type = "Parameter"
+        v.initializer.type = "Constant"
+        v.initializer.multiplier = 1.0
+        in_vars.append(v)
     for o in graph.output:
-        onnx_value_info_proto_to_variable(o, network, out_vars)
+        v = onnx_value_info_proto_to_variable(o, network)
+        v.type = "Buffer"
+        out_vars.append(v)
     for vi in graph.value_info:
-        onnx_value_info_proto_to_variable(vi, network, mid_vars)
+        v = onnx_value_info_proto_to_variable(vi, network)
+        mid_vars.append(v)
 
     # convert parameters
     for init in graph.initializer:
@@ -158,7 +160,17 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    #pdb.set_trace()
+    pdb.set_trace()
     nn_net = nnload.load([p])
+    relu = nn_net.networks["relu_net"]
+    in_data = relu.variables["in_data_0"]
+    ivi = in_data.variable_instance
+    print(ivi.d)
+    out_data = relu.variables["out_data_1"]
+    ovi = out_data.variable_instance
+    ovi.forward()
+    print(ovi.d)
+    #exe = nn_net.executors["exec_0"]
+    #nnfwd.forward(None, None, nn_net, None, None)
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
