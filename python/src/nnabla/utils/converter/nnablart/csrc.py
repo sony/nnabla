@@ -284,7 +284,7 @@ class CsrcExporter:
                         initialize_context.append(
                             '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
             initialize_context.append(
-                '    allocate_{}_config(&(c->f{}));'.format(finfo['snakecase_name'], n))
+                '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_free_context
         free_context = []
@@ -315,7 +315,7 @@ class CsrcExporter:
         for n, f in enumerate(self._info._network.function):
             finfo = self._info._function_info[f.type]
             free_context.append(
-                '    free_{}_config(&(c->f{}));'.format(finfo['snakecase_name'], n))
+                '    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
         # NAME_param_buffer
         param_buffer = []
