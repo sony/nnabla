@@ -146,16 +146,16 @@ class CsrcExporter:
                 '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(finfo['output'])))
             if 'argument' in finfo:
                 internal_defines.append(
-                    '    {}_config_t f{}_config;'.format(finfo['snakecase_name'], n))
+                    '    {}_local_context_t f{}_local_context;'.format(finfo['snakecase_name'], n))
                 for arg_name, arg in finfo['argument'].items():
                     val = eval('f.{}_param.{}'.format(
                         finfo['snakecase_name'], arg_name))
                     if arg['Type'] == 'Shape':
                         internal_defines.append(
-                            '    int f{}_config_shape_{}[{}];'.format(n, arg_name, len(val.dim)))
+                            '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val.dim)))
                     elif arg['Type'] == 'repeated int64':
                         internal_defines.append(
-                            '    int f{}_config_shape_{}[{}];'.format(n, arg_name, len(val)))
+                            '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val)))
 
         internal_defines.append('}} {}_local_context_t;'.format(prefix))
         param_id_start = 0
@@ -239,7 +239,7 @@ class CsrcExporter:
                 '    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
             if 'argument' in finfo:
                 initialize_context.append(
-                    '    (c->f{0}).config = &(c->f{0}_config);'.format(n))
+                    '    (c->f{0}).local_context = &(c->f{0}_local_context);'.format(n))
                 for arg_name, arg in finfo['argument'].items():
                     val = eval('f.{}_param.{}'.format(
                         finfo['snakecase_name'], arg_name))
@@ -249,24 +249,24 @@ class CsrcExporter:
                         initialize_context.append(
                             '    arg_f{}_{}.size = {};'.format(n, arg_name, len(val.dim)))
                         initialize_context.append(
-                            '    arg_f{0}_{1}.data = c->f{0}_config_shape_{1};'.format(n, arg_name))
+                            '    arg_f{0}_{1}.data = c->f{0}_local_context_shape_{1};'.format(n, arg_name))
                         for vn, v in enumerate(val.dim):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
                         initialize_context.append(
-                            '    (c->f{0}_config).{1} = arg_f{0}_{1};'.format(n, arg_name))
+                            '    (c->f{0}_local_context).{1} = arg_f{0}_{1};'.format(n, arg_name))
                     elif arg['Type'] == 'repeated int64':
                         initialize_context.append(
                             '    rt_list_t arg_f{}_{};'.format(n, arg_name))
                         initialize_context.append(
                             '    arg_f{}_{}.size = {};'.format(n, arg_name, len(val)))
                         initialize_context.append(
-                            '    arg_f{0}_{1}.data = c->f{0}_config_shape_{1};'.format(n, arg_name))
+                            '    arg_f{0}_{1}.data = c->f{0}_local_context_shape_{1};'.format(n, arg_name))
                         for vn, v in enumerate(val):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
                         initialize_context.append(
-                            '    (c->f{0}_config).{1} = arg_f{0}_{1};'.format(n, arg_name))
+                            '    (c->f{0}_local_context).{1} = arg_f{0}_{1};'.format(n, arg_name))
 
                     elif arg['Type'] == 'bool':
                         if val:
@@ -274,15 +274,15 @@ class CsrcExporter:
                         else:
                             val = 0
                         initialize_context.append(
-                            '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
+                            '    (c->f{}_local_context).{} = {};'.format(n, arg_name, val))
                     elif 'TypeSelection' in arg:
                         valname = '{}_{}_{}'.format(
                             finfo['snakecase_name'].upper(), arg_name.upper(), val.upper())
                         initialize_context.append(
-                            '    (c->f{}_config).{} = {};'.format(n, arg_name, valname))
+                            '    (c->f{}_local_context).{} = {};'.format(n, arg_name, valname))
                     else:
                         initialize_context.append(
-                            '    (c->f{}_config).{} = {};'.format(n, arg_name, val))
+                            '    (c->f{}_local_context).{} = {};'.format(n, arg_name, val))
             initialize_context.append(
                 '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
 
