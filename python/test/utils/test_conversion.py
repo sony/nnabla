@@ -14,22 +14,17 @@
 
 import os
 import struct
-import nnabla.utils.converter
 import nnabla.utils.load as nnload
 from nnabla.utils import nnabla_pb2
 import onnx
-from onnx import (defs, checker, helper, numpy_helper, mapping,
-                  ModelProto, GraphProto, NodeProto, AttributeProto, TensorProto, OperatorSetIdProto)
-import onnx_caffe2.backend
+from onnx import (ModelProto, TensorProto)
 import nnabla.logger as logger
-import numpy as np
-import nnabla as nn
 import pdb
 from nnabla.utils.converter.nnabla import NnpExporter
-import nnabla.utils.cli.forward as nnfwd
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
-
+MIN_IR_VERSION = 3
+MIN_OPSET_VERSION = 2
 TEST_DATA_DIR="conversion_data"
 
 def onnx_value_info_proto_to_variable(info, network):
@@ -109,14 +104,14 @@ def onnx_graph_to_protobuf(pb, graph):
 
 def onnx_model_to_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
-    if model.ir_version > 3:
-        raise ValueError("ONNX models newer than version 3 is currently not supported")
+    if model.ir_version < MIN_IR_VERSION:
+        raise ValueError("Older ONNX IR versions are currently not supported")
     for opset in model.opset_import:
         if opset.domain == "":
             # ONNX opset.
             # Check if we have the correct version
-            if opset.version > 2:
-                raise ValueError("ONNX opsets newer than version 2 is currently not supported")
+            if opset.version < MIN_OPSET_VERSION:
+                raise ValueError("Older ONNX opsets are currently not supported")
         else:
             logger.warning("Unknown opset from domain {}. Ignoring.".format(opset.domain))
 
@@ -160,7 +155,6 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    pdb.set_trace()
     nn_net = nnload.load([p])
     relu = nn_net.networks["relu_net"]
     in_data = relu.variables["in_data_0"]
@@ -168,9 +162,9 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     print(ivi.d)
     out_data = relu.variables["out_data_1"]
     ovi = out_data.variable_instance
+    #pdb.set_trace()
     ovi.forward()
     print(ovi.d)
     #exe = nn_net.executors["exec_0"]
-    #nnfwd.forward(None, None, nn_net, None, None)
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
