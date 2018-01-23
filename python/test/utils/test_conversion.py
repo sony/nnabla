@@ -22,6 +22,7 @@ import nnabla.logger as logger
 import pdb
 import nnabla.utils.load
 import nnabla.utils.network
+import onnx_caffe2.backend
 from nnabla.utils.converter.nnabla import NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
@@ -44,6 +45,8 @@ def onnx_optype_to_function_type(optype):
     '''Convert ONNX op_type to NNabla function names'''
     if optype == "Relu":
         return "ReLU"
+    elif optype == "Concat":
+        return "Concatenate"
 
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
@@ -164,7 +167,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    pdb.set_trace()
+    #pdb.set_trace()
     nn_net = nnload.load([p])
     relu = nn_net.networks["relu_net"]
     in_data = relu.variables["in_data_0"]
@@ -177,3 +180,34 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     #exe = nn_net.executors["exec_0"]
     # Compare both naabla and caffe2 results
     #assert np.allclose(c2out, nout)
+
+def test_onnx_nnp_conversion_concat(tmpdir):
+    path = os.path.join(TEST_DATA_DIR, "concat.onnx")
+    # Process onnx with caffe2 backend
+    #model = onnx.load(path)
+    #c2out = onnx_caffe2.backend.run_model(model, [])
+    #print(c2out)
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "concat.nnp")
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    pdb.set_trace()
+    nn_net = nnload.load([p])
+    concat = nn_net.networks["concat_net"]
+    id0 = concat.variables["in_data_0_0"]
+    id1 = concat.variables["in_data_1_0"]
+    print(id0.variable_instance.d)
+    print(id1.variable_instance.d)
+    out_data = concat.variables["out_data_1"]
+    ovi = out_data.variable_instance
+    ovi.forward()
+    print(ovi.d)
