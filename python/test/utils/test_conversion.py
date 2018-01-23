@@ -20,6 +20,8 @@ import onnx
 from onnx import (ModelProto, TensorProto)
 import nnabla.logger as logger
 import pdb
+import nnabla.utils.load
+import nnabla.utils.network
 from nnabla.utils.converter.nnabla import NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
@@ -46,11 +48,18 @@ def onnx_optype_to_function_type(optype):
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
+    DEFAULT_REPEAT_ID = "repeat_0"
+    # generate repeat_info
+    ri = network.repeat_info.add()
+    ri.id = DEFAULT_REPEAT_ID
+    ri.times = 1
+
     # convert nodes
     for n in graph.node:
         f = network.function.add()
         f.name = n.name
         f.type = onnx_optype_to_function_type(n.op_type)
+        f.repeat_id.append(DEFAULT_REPEAT_ID)
         f.input.extend(n.input)
         f.output.extend(n.output)
 
@@ -155,6 +164,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
+    pdb.set_trace()
     nn_net = nnload.load([p])
     relu = nn_net.networks["relu_net"]
     in_data = relu.variables["in_data_0"]
@@ -162,7 +172,6 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     print(ivi.d)
     out_data = relu.variables["out_data_1"]
     ovi = out_data.variable_instance
-    #pdb.set_trace()
     ovi.forward()
     print(ovi.d)
     #exe = nn_net.executors["exec_0"]
