@@ -154,7 +154,6 @@ class NnbExporter:
                             argfmt += 'i'
                             values.append(val)
                         elif arg['Type'] == 'repeated int64':
-                            print(val)
                             index, pointer = self._alloc(
                                 data=struct.pack('{}i'.format(len(val)), *val))
                             values.append(len(val))

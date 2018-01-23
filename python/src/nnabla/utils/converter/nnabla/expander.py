@@ -351,9 +351,27 @@ class NnpExpander:
             proto.name = expanded_name
             proto.ClearField('repeat_id')
 
+    def expand_parameter_variable(self, proto):
+        names = []
+        for pv in proto.parameter_variable:
+            if pv.variable_name in self.variable_by_name:
+                for n in self.variable_by_name[pv.variable_name]:
+                    names.append(n)
+            else:
+                names.append(pv.variable_name)
+        proto.ClearField('parameter_variable')
+        for n in sorted(names):
+            pv = proto.parameter_variable.add()
+            pv.variable_name = n
+
     def expand(self):
         nnp = nnabla_pb2.NNablaProtoBuf()
         nnp.CopyFrom(self._nnp)
         for network in nnp.network:
             self.expand_network(network)
+        for optimizer in nnp.optimizer:
+            self.expand_parameter_variable(optimizer)
+        for executor in nnp.executor:
+            self.expand_parameter_variable(executor)
+
         return nnp
