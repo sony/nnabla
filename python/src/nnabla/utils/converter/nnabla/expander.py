@@ -157,22 +157,30 @@ class NnpExpander:
                 suffix = '_{}[{}]'.format(repeat_id, i)
                 for n, func in enumerate(orig_functions):
                     fname, fbasename, ftype, finput, foutput, repeat_param = func
-                    expand_input = [(x1 + suffix, x2) for x1, x2 in finput]
-                    expand_output = [(x1 + suffix, x2) for x1, x2 in foutput]
-                    expand_fname = fname + suffix
-                    if n == 0:
-                        if i == 0:
-                            i0 = inputs[finput[0][0]][0]
-                            if i0 in self.variable_by_expanded_name:
-                                i1 = self.variable_by_expanded_name[i0]
+
+                    expand_input = []
+                    for x1, x2 in finput:
+                        if x1 in inputs:
+                            if i == 0:
+                                i0 = inputs[x1][0]
+                                if i0 in self.variable_by_expanded_name:
+                                    i1 = self.variable_by_expanded_name[i0]
+                                else:
+                                    i1 = i0
+                                expand_input.append((i0, i1))
                             else:
-                                i1 = i0
-                            expand_input[0] = (i0, i1)
-                        else:
-                            i0 = inputs[finput[0][0]][1] + \
+                                i0 = inputs[x1][1]+ \
                                 '_{}[{}]'.format(repeat_id, i - 1)
-                            i1 = self.variable_by_expanded_name[i0]
-                            expand_input[0] = (i0, i1)
+                                i1 = self.variable_by_expanded_name[i0]
+                                expand_input.append((i0, i1))
+                        else:
+                            expand_input.append((x1 + suffix, x2))
+                    expand_output = []
+
+                    for x1, x2 in foutput:
+                        expand_output.append((x1 + suffix, x2))
+
+                    expand_fname = fname + suffix
 
                     for x1, x2 in (expand_input + expand_output):
                         if x2 not in self.variable_by_name:

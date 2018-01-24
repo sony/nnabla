@@ -75,13 +75,20 @@ class Network:
 
     def forward_function(self, func):
         try:
+            ## Uncomment when debugging expand_recurrent
+            # print(func.name)
+            # print(func.function_instance)
+            # for n, inp in enumerate(func.variable_inputs):
+            #     print('   IN:', n, inp.shape, inp.d.flatten()[0])
             func.function_instance.forward(
                 func.variable_inputs, func.variable_outputs)
+            ## Uncomment when debugging expand_recurrent
+            # for n, out in enumerate(func.variable_outputs):
+            #     print('  OUT:', n, out.shape, out.d.flatten()[0])
         except:
             logger.critical('An error occured while executing forward of function {} (nn.{}) in network {}'.format(
                 func.name, func.function_instance.name, self.name))
             raise
-        # logger.debug('Forward: {} {}'.format(func.name, func.function_instance.name))
 
     def get_backward_sequence(self, loss_variables, parameter_variables_and_locallr):
         class BackwardSequence:
