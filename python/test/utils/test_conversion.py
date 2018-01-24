@@ -65,18 +65,13 @@ def set_function_parameters(func, node):
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
-    DEFAULT_REPEAT_ID = "repeat_0"
-    # generate repeat_info
-    ri = network.repeat_info.add()
-    ri.id = DEFAULT_REPEAT_ID
-    ri.times = 1
+    network.batch_size = 1
 
     # convert nodes
     for n in graph.node:
         f = network.function.add()
         f.name = n.name
         f.type = onnx_optype_to_function_type(n.op_type)
-        f.repeat_id.append(DEFAULT_REPEAT_ID)
         f.input.extend(n.input)
         f.output.extend(n.output)
         set_function_parameters(f, n)
@@ -84,6 +79,7 @@ def onnx_graph_to_protobuf(pb, graph):
     # convert Input/Output ValueInfoProto
     # to Variable
     in_vars = []
+    param_vars = []
     out_vars = []
     mid_vars = []
     for i in graph.input:
@@ -91,7 +87,7 @@ def onnx_graph_to_protobuf(pb, graph):
         v.type = "Parameter"
         v.initializer.type = "Constant"
         v.initializer.multiplier = 1.0
-        in_vars.append(v)
+        param_vars.append(v)
     for o in graph.output:
         v = onnx_value_info_proto_to_variable(o, network)
         v.type = "Buffer"
@@ -128,6 +124,9 @@ def onnx_graph_to_protobuf(pb, graph):
         outv = exe.output_variable.add()
         outv.variable_name = ov.name
         outv.data_name = ov.name
+    for pv in param_vars:
+        p = exe.parameter_variable.add()
+        p.variable_name = pv.name
 
 def onnx_model_to_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
