@@ -23,6 +23,8 @@
 
 #include <nbla/function/utils/base_transform_binary.hpp>
 
+#include <cmath>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(EpsilonInsensitiveLoss, float);

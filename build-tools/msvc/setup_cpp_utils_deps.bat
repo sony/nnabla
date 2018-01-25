@@ -12,11 +12,17 @@
 :: See the License for the specific language governing permissions and
 :: limitations under the License.
 
+:: To build with Debug mode, set environment variable `build_type` as `Debug` as following
+:: before running this script.
+:: set build_type=Debug
+
 SETLOCAL
 :: Options
 SET protobuf_tag=v3.4.1
 SET libarchive_tag=v3.3.2
-SET build_type=Release
+IF [%build_type%] == [] (
+  SET build_type=Release
+)
 IF [%generate_target%] == [] (
   SET generate_target=Visual Studio 14 2015 Win64
 )
@@ -97,14 +103,18 @@ cmake.exe -G "%generate_target%" .. ^
 -DENABLE_TEST=FALSE ^
 -DZLIB_INCLUDE_DIR=%zlib_include_dir% ^
 -DZLIB_LIBRARY_RELEASE=%zlib_library% || GOTO :error
-cmake.exe --build . --config Release || GOTO :error
+cmake.exe --build . --config %build_type% || GOTO :error
 
 :: Build protobuf libs
 SET protobuf_folder=%third_party_folder%\protobuf-%protobuf_tag%
 SET protobuf_include_dir=%protobuf_folder%\src
-SET protobuf_bin_folder=%protobuf_folder%\build-folder\Release
-SET protobuf_library=%protobuf_bin_folder%\libprotobuf.lib
-SET protobuf_lite_library=%protobuf_bin_folder%\libprotobuf-lite.lib
+SET protobuf_bin_folder=%protobuf_folder%\build-folder\%build_type%
+SET protobuf_lib_suffix=.lib
+IF [%build_type%] == [Debug] (
+  SET protobuf_lib_suffix=.dlib
+)
+SET protobuf_library=%protobuf_bin_folder%\libprotobuf%protobuf_lib_suffix%
+SET protobuf_lite_library=%protobuf_bin_folder%\libprotobuf-lite%protobuf_lib_suffix%
 SET protobuf_protoc_executable=%protobuf_bin_folder%\protoc.exe
 if not exist %protobuf_folder% (
 	git clone https://github.com/google/protobuf.git --branch %protobuf_tag% --depth=1 %protobuf_folder% || GOTO :error
@@ -115,11 +125,15 @@ if not exist build-folder (
 )
 CD build-folder
 cmake.exe -G "%generate_target%" -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\cmake || GOTO :error
-cmake.exe --build . --config Release || GOTO :error
+cmake.exe --build . --config %build_type% || GOTO :error
 : extract_includes.bat
 
 ECHO "--- CMake options for C++ build ---"
-SET nnabla_cmake_command=cmake -G "%generate_target%" -DBUILD_CPP_UTILS=ON -DBUILD_PYTHON_PACKAGE=OFF -DLibArchive_LIBRARY=%libarchive_library% -DLibArchive_INCLUDE_DIR=%libarchive_include_dir% -DProtobuf_INCLUDE_DIR=%protobuf_include_dir% -DProtobuf_LIBRARY=%protobuf_library% -DProtobuf_LITE_LIBRARY=%protobuf_lite_library% -DProtobuf_PROTOC_EXECUTABLE=%protobuf_protoc_executable% -DPROTOC_COMMAND=%protobuf_protoc_executable% %nnabla_root%
+set nnabla_debug_options=
+IF [%build_type%] == [Debug] (
+  set nnabla_debug_options=-DCMAKE_CXX_FLAGS="/bigobj"
+)
+SET nnabla_cmake_command=cmake -G "%generate_target%" -DBUILD_CPP_UTILS=ON -DBUILD_PYTHON_PACKAGE=OFF -DLibArchive_LIBRARY=%libarchive_library% -DLibArchive_INCLUDE_DIR=%libarchive_include_dir% -DProtobuf_INCLUDE_DIR=%protobuf_include_dir% -DProtobuf_LIBRARY=%protobuf_library% -DProtobuf_LITE_LIBRARY=%protobuf_lite_library% -DProtobuf_PROTOC_EXECUTABLE=%protobuf_protoc_executable% -DPROTOC_COMMAND=%protobuf_protoc_executable% %nnabla_root% -DZLIB_LIBRARY_RELEASE=%zlib_library% -DZLIB_INCLUDE_DIR=%zlib_include_dir% %nnabla_debug_options%
 
 @ECHO OFF
 (
@@ -129,7 +143,7 @@ SET nnabla_cmake_command=cmake -G "%generate_target%" -DBUILD_CPP_UTILS=ON -DBUI
 	ECHO ^)
 	ECHO CD %nnabla_build_folder%
 	ECHO %nnabla_cmake_command% ^|^| GOTO :error
-	ECHO cmake --build . --config Release ^|^| GOTO :error
+	ECHO cmake --build . --config %build_type% ^|^| GOTO :error
 	ECHO :error
 	ECHO ECHO failed with error code ^%errorlevel^%.
 	ECHO exit /b ^%errorlevel^%
@@ -137,6 +151,7 @@ SET nnabla_cmake_command=cmake -G "%generate_target%" -DBUILD_CPP_UTILS=ON -DBUI
 ) > %nnabla_cmake_cpp_utils%
 ENDLOCAL
 
+exit /b
 :error
 ECHO failed with error code %errorlevel%.
 exit /b %errorlevel%

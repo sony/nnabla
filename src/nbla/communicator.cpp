@@ -79,7 +79,7 @@ void Communicator::check_array_class(Context ctx, VariablePtr vp) {
     NBLA_LOG_WARN(
         "\n"
         "###################################################################\n"
-        "Data are on different devices. Collective operations in　\n"
+        "Data are on different devices. Collective operations in \n"
         "`communicator` can be called for data which are on the same device.\n"
         "Please CHECK the function implementation of the device \n"
         "now you are calling. For example, Affine CUDA might not be \n"
@@ -94,6 +94,15 @@ void Communicator::reduce(bool division) {
 
 void Communicator::allreduce(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
+}
+
+void Communicator::all_reduce(vector<NdArrayPtr> ndarray_list, bool division,
+                              bool inplace) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
+}
+
+void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
 void Communicator::reducescatter(bool division) {
