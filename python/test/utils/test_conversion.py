@@ -19,6 +19,7 @@ from nnabla.utils import nnabla_pb2
 import onnx
 from onnx import (ModelProto, TensorProto)
 import nnabla.logger as logger
+import numpy as np
 import pdb
 import nnabla.utils.load
 import nnabla.utils.network
@@ -65,7 +66,6 @@ def set_function_parameters(func, node):
 def onnx_graph_to_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
-    network.batch_size = 1
 
     # convert nodes
     for n in graph.node:
@@ -166,8 +166,8 @@ class OnnxReader:
 def test_onnx_nnp_conversion_relu(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "relu.onnx")
     # Process onnx with caffe2 backend
-    #model = onnx.load(path)
-    #c2out = onnx_caffe2.backend.run_model(model, [])
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
     # Process onnx with naabla
     r = OnnxReader(path)
     nnp = r.read()
@@ -184,16 +184,17 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     #pdb.set_trace()
     nn_net = nnload.load([p])
     relu = nn_net.networks["relu_net"]
+    exec0 = nn_net.executors["exec_0"]
     in_data = relu.variables["in_data_0"]
-    ivi = in_data.variable_instance
-    print(ivi.d)
-    out_data = relu.variables["out_data_1"]
-    ovi = out_data.variable_instance
-    ovi.forward()
-    print(ovi.d)
-    #exe = nn_net.executors["exec_0"]
+    #print(in_data.variable_instance.d)
+    relu.forward(exec0.forward_sequence)
+    OUT_DATA_NAME = "out_data_1"
+    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+    #print(nnout.variable_instance.d)
     # Compare both naabla and caffe2 results
-    #assert np.allclose(c2out, nout)
+    c2 = c2out[OUT_DATA_NAME]
+    #print(c2, nnout)
+    assert np.allclose(c2, nnout)
 
 def test_onnx_nnp_conversion_concat(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "concat.onnx")
