@@ -163,6 +163,12 @@ class OnnxReader:
             model_proto.ParseFromString(f.read())
         return onnx_model_to_protobuf(model_proto)
 
+def run_executor(nn_net, exec_name):
+    '''Run specified executor and return its network'''
+    exe = nn_net.executors[exec_name]
+    exe.network.forward(exe.forward_sequence)
+    return exe.network
+
 def test_onnx_nnp_conversion_relu(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "relu.onnx")
     # Process onnx with caffe2 backend
@@ -183,11 +189,9 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     # read exported nnp and run network
     #pdb.set_trace()
     nn_net = nnload.load([p])
-    relu = nn_net.networks["relu_net"]
-    exec0 = nn_net.executors["exec_0"]
-    in_data = relu.variables["in_data_0"]
+    relu = run_executor(nn_net, "exec_0")
+    #in_data = relu.variables["in_data_0"]
     #print(in_data.variable_instance.d)
-    relu.forward(exec0.forward_sequence)
     OUT_DATA_NAME = "out_data_1"
     nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
     #print(nnout.variable_instance.d)
