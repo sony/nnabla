@@ -24,7 +24,7 @@ import pdb
 import nnabla.utils.load
 import nnabla.utils.network
 import onnx_caffe2.backend
-from nnabla.utils.converter.nnabla import NnpExporter
+from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
 MIN_IR_VERSION = 3
@@ -63,7 +63,7 @@ def set_function_parameters(func, node):
 
 
 
-def onnx_graph_to_protobuf(pb, graph):
+def onnx_graph_to_nnp_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
 
@@ -128,7 +128,7 @@ def onnx_graph_to_protobuf(pb, graph):
         p = exe.parameter_variable.add()
         p.variable_name = pv.name
 
-def onnx_model_to_protobuf(model):
+def onnx_model_to_nnp_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
     if model.ir_version < MIN_IR_VERSION:
         raise ValueError("Older ONNX IR versions are currently not supported")
@@ -145,7 +145,7 @@ def onnx_model_to_protobuf(model):
     logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))
 
     # conver graph
-    onnx_graph_to_protobuf(pb, model.graph)
+    onnx_graph_to_nnp_protobuf(pb, model.graph)
 
     class nnp:
         pass
@@ -161,7 +161,21 @@ class OnnxReader:
         model_proto = ModelProto()
         with open(self._file_path, "rb") as f:
             model_proto.ParseFromString(f.read())
-        return onnx_model_to_protobuf(model_proto)
+        return onnx_model_to_nnp_protobuf(model_proto)
+
+def nnp_model_to_onnx_protobuf(nnp):
+    mp = ModelProto()
+    return mp
+
+class OnnxExporter:
+    def __init__(self, nnp):
+        self._nnp = nnp.protobuf
+
+    def export(self, file_path):
+        model_proto = nnp_model_to_onnx_protobuf(self._nnp)
+        with open(file_path, "wb") as f:
+            f.write(model_proto.SerializeToString())
+
 
 def run_executor(nn_net, exec_name):
     '''Run specified executor and return its network'''
@@ -187,7 +201,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    #pdb.set_trace()
+    pdb.set_trace()
     nn_net = nnload.load([p])
     relu = run_executor(nn_net, "exec_0")
     #in_data = relu.variables["in_data_0"]
@@ -198,6 +212,35 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     # Compare both naabla and caffe2 results
     c2 = c2out[OUT_DATA_NAME]
     #print(c2, nnout)
+    assert np.allclose(c2, nnout)
+
+def test_nnp_onnx_conversion_relu(tmpdir):
+    # Process nnp with nnabla
+    OUT_DATA_NAME = "out_data_1"
+    path = os.path.join(TEST_DATA_DIR, "relu.nnp")
+    nn_net = nnload.load([path])
+    relu = run_executor(nn_net, "exec_0")
+    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    logger.log(99, nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), "relu.onnx")
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2 = c2out[OUT_DATA_NAME]
+    ## Compare both naabla and caffe2 results
+    print(c2, nnout)
     assert np.allclose(c2, nnout)
 
 def test_onnx_nnp_conversion_concat(tmpdir):
