@@ -228,8 +228,6 @@ def nnp_model_to_onnx_graph(graph, nnp):
         dims = [create_dim(d) for d in var_dict[ov.variable_name].dim]
         o.type.tensor_type.shape.dim.extend(dims)
 
-    graph.input
-
 def nnp_model_to_onnx_protobuf(nnp):
     mp = ModelProto()
     mp.ir_version = MIN_ONNX_IR_VERSION
