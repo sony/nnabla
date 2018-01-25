@@ -17,7 +17,7 @@ import struct
 import nnabla.utils.load as nnload
 from nnabla.utils import nnabla_pb2
 import onnx
-from onnx import (ModelProto, TensorProto, GraphProto)
+from onnx import (ModelProto, TensorProto, GraphProto, TensorShapeProto)
 import nnabla.logger as logger
 import numpy as np
 import pdb
@@ -174,15 +174,61 @@ class OnnxReader:
 
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
-        raise ValueError("NNP with a single network is currently supported")
+        raise ValueError("NNP with only a single network is currently supported")
+    if len(nnp.executor) != 1:
+        raise ValueError("NNP with only a single executor is currently supported")
     net = nnp.network[0]
+    exe = nnp.executor[0]
+    if exe.network_name != net.name:
+        raise ValueError("Names of the included network and executor's target network do not match")
     graph.name = net.name
+    # store all variable shape info to use later
+    var_dict = {}
+    for v in net.variable:
+        var_dict[v.name] = v.shape
+
     for f in net.function:
         n = graph.node.add()
         n.name = f.name
         n.op_type = nnabla_function_type_to_onnx_optype.get(f.type, f.type)
         n.input.extend(f.input)
         n.output.extend(f.output)
+    for param in nnp.parameter:
+        init = graph.initializer.add()
+        init.name = param.variable_name
+        init.dims.extend(param.shape.dim)
+        init.data_type = TensorProto.FLOAT # We should be only getting float data from NNabla
+        init.raw_data = struct.pack("{}f".format(len(param.data)), *param.data)
+        #init.float_data.extend(param.data)
+    # Add all the constant parameters for all nodes
+    # and the first node's input as input
+    def create_dim(d):
+        '''Createa dimension message for a given dimension'''
+        dim = TensorShapeProto.Dimension()
+        dim.dim_value = d
+        return dim
+
+    for iv in exe.data_variable:
+        i = graph.input.add()
+        i.name = iv.variable_name
+        i.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in var_dict[iv.variable_name].dim]
+        i.type.tensor_type.shape.dim.extend(dims)
+    for pv in exe.parameter_variable:
+        p = graph.input.add()
+        p.name = pv.variable_name
+        p.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in var_dict[pv.variable_name].dim]
+        p.type.tensor_type.shape.dim.extend(dims)
+    # Add only the final output of the graph as output
+    for ov in exe.output_variable:
+        o = graph.output.add()
+        o.name = ov.variable_name
+        o.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in var_dict[ov.variable_name].dim]
+        o.type.tensor_type.shape.dim.extend(dims)
+
+    graph.input
 
 def nnp_model_to_onnx_protobuf(nnp):
     mp = ModelProto()
@@ -267,11 +313,12 @@ def test_nnp_onnx_conversion_relu(tmpdir):
 
     # read exported onnx and run network
     model = onnx.load(p)
-    pdb.set_trace()
+    #print(model)
+    #pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [])
     c2 = c2out[OUT_DATA_NAME]
-    ## Compare both naabla and caffe2 results
-    print(c2, nnout)
+    # Compare both naabla and caffe2 results
+    #print(c2, nnout)
     assert np.allclose(c2, nnout)
 
 def test_onnx_nnp_conversion_concat(tmpdir):
