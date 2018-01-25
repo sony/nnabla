@@ -80,7 +80,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for n in graph.node:
         f = network.function.add()
         f.name = n.name
-        f.type = onnx_optype_to_nnabla_function_type.get(n.optype, n.optype)
+        f.type = onnx_optype_to_nnabla_function_type.get(n.op_type, n.op_type)
         f.input.extend(n.input)
         f.output.extend(n.output)
         set_function_parameters(f, n)
@@ -269,7 +269,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    logger.log(99, nnp.protobuf)
+    #logger.log(99, nnp.protobuf)
 
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
@@ -303,7 +303,7 @@ def test_nnp_onnx_conversion_relu(tmpdir):
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    logger.log(99, nnp.protobuf)
+    #logger.log(99, nnp.protobuf)
     onnxex = OnnxExporter(nnp)
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), "relu.onnx")
@@ -319,62 +319,62 @@ def test_nnp_onnx_conversion_relu(tmpdir):
     #print(c2, nnout)
     assert np.allclose(c2, nnout)
 
-def test_onnx_nnp_conversion_concat(tmpdir):
-    path = os.path.join(TEST_DATA_DIR, "concat.onnx")
-    # Process onnx with caffe2 backend
-    #model = onnx.load(path)
-    #c2out = onnx_caffe2.backend.run_model(model, [])
-    #print(c2out)
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "concat.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    concat = nn_net.networks["concat_net"]
-    id0 = concat.variables["in_data_0_0"]
-    id1 = concat.variables["in_data_1_0"]
-    print(id0.variable_instance.d)
-    print(id1.variable_instance.d)
-    out_data = concat.variables["out_data_1"]
-    ovi = out_data.variable_instance
-    ovi.forward()
-    print(ovi.d)
-
-def test_onnx_nnp_conversion_gap(tmpdir):
-    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
-    # Process onnx with caffe2 backend
-    #model = onnx.load(path)
-    #c2out = onnx_caffe2.backend.run_model(model, [])
-    #print(c2out)
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "gap.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    gap = nn_net.networks["gap_net"]
-    id = gap.variables["in_data_0"]
-    print(id.variable_instance.d)
-    out_data = gap.variables["out_data_1"]
-    ovi = out_data.variable_instance
-    ovi.forward()
-    print(ovi.d)
+#def test_onnx_nnp_conversion_concat(tmpdir):
+#    path = os.path.join(TEST_DATA_DIR, "concat.onnx")
+#    # Process onnx with caffe2 backend
+#    #model = onnx.load(path)
+#    #c2out = onnx_caffe2.backend.run_model(model, [])
+#    #print(c2out)
+#    # Process onnx with naabla
+#    r = OnnxReader(path)
+#    nnp = r.read()
+#    assert nnp is not None
+#    assert len(nnp.other_files) == 0
+#    assert nnp.protobuf is not None
+#    logger.log(99, nnp.protobuf)
+#
+#    nnpex = NnpExporter(nnp, batch_size=0)
+#    nnpdir = tmpdir.mkdir("nnp")
+#    p = os.path.join(str(nnpdir), "concat.nnp")
+#    nnpex.export_nnp(p)
+#    # read exported nnp and run network
+#    #pdb.set_trace()
+#    nn_net = nnload.load([p])
+#    concat = nn_net.networks["concat_net"]
+#    id0 = concat.variables["in_data_0_0"]
+#    id1 = concat.variables["in_data_1_0"]
+#    print(id0.variable_instance.d)
+#    print(id1.variable_instance.d)
+#    out_data = concat.variables["out_data_1"]
+#    ovi = out_data.variable_instance
+#    ovi.forward()
+#    print(ovi.d)
+#
+#def test_onnx_nnp_conversion_gap(tmpdir):
+#    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
+#    # Process onnx with caffe2 backend
+#    #model = onnx.load(path)
+#    #c2out = onnx_caffe2.backend.run_model(model, [])
+#    #print(c2out)
+#    # Process onnx with naabla
+#    r = OnnxReader(path)
+#    nnp = r.read()
+#    assert nnp is not None
+#    assert len(nnp.other_files) == 0
+#    assert nnp.protobuf is not None
+#    logger.log(99, nnp.protobuf)
+#
+#    nnpex = NnpExporter(nnp, batch_size=0)
+#    nnpdir = tmpdir.mkdir("nnp")
+#    p = os.path.join(str(nnpdir), "gap.nnp")
+#    nnpex.export_nnp(p)
+#    # read exported nnp and run network
+#    #pdb.set_trace()
+#    nn_net = nnload.load([p])
+#    gap = nn_net.networks["gap_net"]
+#    id = gap.variables["in_data_0"]
+#    print(id.variable_instance.d)
+#    out_data = gap.variables["out_data_1"]
+#    ovi = out_data.variable_instance
+#    ovi.forward()
+#    print(ovi.d)
