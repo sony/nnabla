@@ -192,7 +192,7 @@ def calc_normal_std_he_forward(inmaps, outmaps, kernel=(1, 1)):
 	import nnabla.initializer as I
 
 	x = nn.Variable([60,1,28,28])
-	s= I.calc_normal_std_he_forward(x.shape[1],64)
+	s = I.calc_normal_std_he_forward(x.shape[1],64)
 	w = I.NormalInitializer(s)
 	b = I.ConstantInitializer(0)
 	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
@@ -224,7 +224,7 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
 	import nnabla.initializer as I
 
 	x = nn.Variable([60,1,28,28])
-	s= I.calc_normal_std_he_backward(x.shape[1],64)
+	s = I.calc_normal_std_he_backward(x.shape[1],64)
 	w = I.NormalInitializer(s)
 	b = I.ConstantInitializer(0)
 	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
@@ -257,7 +257,7 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
 	import nnabla.initializer as I
 
 	x = nn.Variable([60,1,28,28])
-	s= I.calc_normal_std_glorot(x.shape[1],64)
+	s = I.calc_normal_std_glorot(x.shape[1],64)
 	w = I.NormalInitializer(s)
 	b = I.ConstantInitializer(0)
 	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
