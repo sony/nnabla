@@ -17,7 +17,7 @@ import struct
 import nnabla.utils.load as nnload
 from nnabla.utils import nnabla_pb2
 import onnx
-from onnx import (ModelProto, TensorProto)
+from onnx import (ModelProto, TensorProto, GraphProto)
 import nnabla.logger as logger
 import numpy as np
 import pdb
@@ -27,8 +27,12 @@ import onnx_caffe2.backend
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
-MIN_IR_VERSION = 3
-MIN_OPSET_VERSION = 2
+NNABLA_DOMAIN = "org.nnabla"
+MIN_NNABLA_OPSET_VERSION = 1
+MIN_ONNX_IR_VERSION = 3
+MIN_ONNX_OPSET_VERSION = 2
+PRODUCER_NAME = "nnabla-onnx"
+PRODUCER_VERSION = "0.1"
 TEST_DATA_DIR="conversion_data"
 
 def onnx_value_info_proto_to_variable(info, network):
@@ -42,14 +46,19 @@ def onnx_value_info_proto_to_variable(info, network):
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
     return v
 
-def onnx_optype_to_function_type(optype):
-    '''Convert ONNX op_type to NNabla function names'''
-    if optype == "Relu":
-        return "ReLU"
-    elif optype == "Concat":
-        return "Concatenate"
-    elif optype == "GlobalAveragePool":
-        return "AveragePooling"
+# Dictionary used to convert ONNX op_type to NNabla function names
+onnx_optype_to_nnabla_function_type = {
+    "Relu": "ReLU",
+    "Concat": "Concatenate",
+    "GlobalAveragePool": "AveragePooling"
+}
+
+# Dictionary used to convert NNabla function names to ONNX op_type 
+nnabla_function_type_to_onnx_optype = {
+    "ReLU": "Relu",
+    "Concatenate": "Concat",
+    "AveragePooling": "GlobalAveragePool",
+}
 
 def set_function_parameters(func, node):
     '''Set additional parameters for specific functions'''
@@ -71,7 +80,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for n in graph.node:
         f = network.function.add()
         f.name = n.name
-        f.type = onnx_optype_to_function_type(n.op_type)
+        f.type = onnx_optype_to_nnabla_function_type.get(n.optype, n.optype)
         f.input.extend(n.input)
         f.output.extend(n.output)
         set_function_parameters(f, n)
@@ -130,13 +139,13 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
 
 def onnx_model_to_nnp_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
-    if model.ir_version < MIN_IR_VERSION:
+    if model.ir_version < MIN_ONNX_IR_VERSION:
         raise ValueError("Older ONNX IR versions are currently not supported")
     for opset in model.opset_import:
         if opset.domain == "":
             # ONNX opset.
             # Check if we have the correct version
-            if opset.version < MIN_OPSET_VERSION:
+            if opset.version < MIN_ONNX_OPSET_VERSION:
                 raise ValueError("Older ONNX opsets are currently not supported")
         else:
             logger.warning("Unknown opset from domain {}. Ignoring.".format(opset.domain))
@@ -163,8 +172,30 @@ class OnnxReader:
             model_proto.ParseFromString(f.read())
         return onnx_model_to_nnp_protobuf(model_proto)
 
+def nnp_model_to_onnx_graph(graph, nnp):
+    if len(nnp.network) != 1:
+        raise ValueError("NNP with a single network is currently supported")
+    net = nnp.network[0]
+    graph.name = net.name
+    for f in net.function:
+        n = graph.node.add()
+        n.name = f.name
+        n.op_type = nnabla_function_type_to_onnx_optype.get(f.type, f.type)
+        n.input.extend(f.input)
+        n.output.extend(f.output)
+
 def nnp_model_to_onnx_protobuf(nnp):
     mp = ModelProto()
+    mp.ir_version = MIN_ONNX_IR_VERSION
+    opset = mp.opset_import.add()
+    opset.version = MIN_ONNX_OPSET_VERSION
+    #nn_opset = mp.opset_import.add()
+    #nn_opset.domain = NNABLA_DOMAIN
+    #nn_opset.version = MIN_NNABLA_OPSET_VERSION
+    mp.producer_name = PRODUCER_NAME
+    mp.producer_version = PRODUCER_VERSION
+    mp.domain = NNABLA_DOMAIN
+    nnp_model_to_onnx_graph(mp.graph, nnp)
     return mp
 
 class OnnxExporter:
@@ -201,7 +232,7 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     p = os.path.join(str(nnpdir), "relu.nnp")
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    pdb.set_trace()
+    #pdb.set_trace()
     nn_net = nnload.load([p])
     relu = run_executor(nn_net, "exec_0")
     #in_data = relu.variables["in_data_0"]
