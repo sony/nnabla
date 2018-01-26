@@ -1,4 +1,4 @@
-# MNIST Examples
+﻿# MNIST Examples
 
 ---
 
@@ -101,4 +101,19 @@ python vat.py [-c cuda.cudnn] [-h|--help]
 
 After the learning completes successfully, the results will be saved in
 "tmp.monitor.vat". In this folder you will find model files "params_\*.h5" and
+log files "\*.txt".
+
+## Variational Auto-encoder (`vae.py`)
+
+This example demonstrates training of a variational auto-encoder model.
+
+Reference: "Auto-Encoding Variational Bayes"
+https://arxiv.org/abs/1312.6114
+
+```
+python vae.py [-c cuda.cudnn] [-h|--help]
+```
+
+After the learning completes successfully, the results will be saved in
+"tmp.monitor.vae". In this folder you will find model files "params_\*.h5" and
 log files "\*.txt".
