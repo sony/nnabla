@@ -50,5 +50,4 @@ void Reshape<T>::backward_impl(const Variables &inputs,
                                const Variables &outputs,
                                const vector<bool> &propagate_down,
                                const vector<bool> &accum) {}
-
 }

@@ -131,5 +131,4 @@ void Affine<T>::backward_impl(const Variables &inputs, const Variables &outputs,
       mdb = mdy.colwise().sum();
   }
 }
-
 }

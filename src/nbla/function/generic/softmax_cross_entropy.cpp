@@ -116,5 +116,4 @@ void SoftmaxCrossEntropy<T, Tl>::backward_impl(
     }
   }
 }
-
 }

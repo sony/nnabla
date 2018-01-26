@@ -263,5 +263,4 @@ void Convolution<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-
 }

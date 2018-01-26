@@ -156,5 +156,4 @@ void MaxPooling<T>::backward_impl(const Variables &inputs,
     m += y_stride;
   }
 }
-
 }

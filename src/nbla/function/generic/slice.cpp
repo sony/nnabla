@@ -176,5 +176,4 @@ void Slice<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   int slice_index = 0;
   slice_backward_recursive(inputs[0], outputs[0], dx, dy, 0, 0, 0, slice_index);
 }
-
 }

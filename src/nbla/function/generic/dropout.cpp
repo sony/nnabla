@@ -63,5 +63,4 @@ void Dropout<T>::backward_impl(const Variables &inputs,
     dx[s] = (accum[0] ? dx[s] : 0) + dy[s] * m[s] * scale_;
   }
 }
-
 }

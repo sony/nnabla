@@ -103,5 +103,4 @@ void BinaryConnectAffine<T>::backward_impl(const Variables &inputs,
       false); // reset `need_grad` to false as we do not need
               // backward for binary variables
 }
-
 }

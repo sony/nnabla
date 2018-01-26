@@ -116,5 +116,4 @@ void CategoricalCrossEntropy<T, Tl>::backward_impl(
     memset(dx, 0, sizeof(*dx) * inputs[0]->size());
   categorical_cross_entropy_backward_cpu(size0_, size1_, size2_, dx, dy, p, l);
 }
-
 }

@@ -72,5 +72,4 @@ void ReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     relu_backward_cpu<T, false>(inputs[0]->size(), dx, dy, x);
   }
 }
-
 }

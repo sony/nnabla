@@ -134,5 +134,4 @@ void SumPooling<T>::backward_impl(const Variables &inputs,
     dy += y_stride;
   }
 }
-
 }

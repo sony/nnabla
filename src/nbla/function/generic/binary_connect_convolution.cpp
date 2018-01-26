@@ -111,5 +111,4 @@ void BinaryConnectConvolution<T>::backward_impl(
       false); // reset `need_grad` to false as we do not need
               // backward for binary variables
 }
-
 }

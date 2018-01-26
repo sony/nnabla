@@ -149,5 +149,4 @@ void Unpooling<T>::backward_impl(const Variables &inputs,
   const T *pdy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   unpooling_backward_recursive(inputs[0], outputs[0], pdx, pdy, 0, 0, 0);
 }
-
 }

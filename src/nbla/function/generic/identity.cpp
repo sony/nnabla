@@ -59,5 +59,4 @@ void Identity<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-
 }

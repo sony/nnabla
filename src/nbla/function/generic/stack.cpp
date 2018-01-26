@@ -78,5 +78,4 @@ void Stack<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     }
   }
 }
-
 }

@@ -126,5 +126,4 @@ void Transpose<T>::backward_impl(const Variables &inputs,
     transpose_backward_cpu<T, false>(size, ndim, axes, x_strides, y_strides,
                                      y_shape, dx, dy);
 }
-
 }

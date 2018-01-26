@@ -140,5 +140,4 @@ void AveragePooling<T>::backward_impl(const Variables &inputs,
     dy += y_stride;
   }
 }
-
 }

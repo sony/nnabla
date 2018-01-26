@@ -76,5 +76,4 @@ void SigmoidCrossEntropy<T, Tl>::backward_impl(
     }
   }
 }
-
 }

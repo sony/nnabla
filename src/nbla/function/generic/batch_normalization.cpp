@@ -283,5 +283,4 @@ void BatchNormalization<T>::backward_impl_batch(
     }
   }
 }
-
 }
