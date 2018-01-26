@@ -86,20 +86,27 @@ def set_function_parameters(func, node):
         elif axis_count > 1:
             raise ValueError("More than one axis was specifed as the Concat Axis")
     elif node.op_type == "Conv":
+        func.convolution_param.base_axis = 2
         for attr in node.attribute:
-            if attr.name == "kernel_shape":
-                pass
-            elif attr.name == "pads":
-                pass
+            #if attr.name == "kernel_shape":
+            #    if attr.type != AttributeProto.INTS:
+            #        raise ValueError("Only INTS are supported for kernel_shape in Conv op_type")
+            #    func.convolution_param.dilation.dim.extend(attr.ints)
+            if attr.name == "pads":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for pads in Conv op_type")
+                func.convolution_param.pad.dim.extend(attr.ints)
             elif attr.name == "strides":
-                pass
-    #elif node.op_type == "GlobalAveragePool":
-    #    # We substitute GlobalAveragePool with an AveragePool
-    #    # that has the same kernel size as the input WxH
-    #    app = func.average_pooling_param
-    #    app.kernel.dim.extend([3,3])
-    #    app.stride.dim.extend([1,1])
-    #    app.pad.dim.extend([0,0])
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for strides in Conv op_type")
+                func.convolution_param.stride.dim.extend(attr.ints)
+    elif node.op_type == "GlobalAveragePool":
+        # We substitute GlobalAveragePool with an AveragePool
+        # that has the same kernel size as the input WxH
+        app = func.average_pooling_param
+        app.kernel.dim.extend([3,3])
+        app.stride.dim.extend([3,3])
+        app.pad.dim.extend([0,0])
 
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
@@ -426,8 +433,8 @@ def test_nnp_onnx_conversion_concat(tmpdir):
 #def test_onnx_nnp_conversion_conv(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "conv.onnx")
 #    # Process onnx with caffe2 backend
-#    model = onnx.load(path)
-#    c2out = onnx_caffe2.backend.run_model(model, [])
+#    #model = onnx.load(path)
+#    #c2out = onnx_caffe2.backend.run_model(model, [])
 #    # Process onnx with naabla
 #    r = OnnxReader(path)
 #    nnp = r.read()
@@ -441,7 +448,7 @@ def test_nnp_onnx_conversion_concat(tmpdir):
 #    #p = os.path.join(str(nnpdir), "conv.nnp")
 #    #nnpex.export_nnp(p)
 #    # read exported nnp and run network
-#    ##pdb.set_trace()
+#    # pdb.set_trace()
 #    #nn_net = nnload.load([p])
 #    #conv = run_executor(nn_net, "exec_0")
 #    #OUT_DATA_NAME = "out_data_1"
@@ -450,32 +457,32 @@ def test_nnp_onnx_conversion_concat(tmpdir):
 #    ##print(c2, c2.shape)
 #    ##print(nnout, nnout.shape)
 #    #assert np.allclose(c2, nnout)
-#
-#def test_onnx_nnp_conversion_gap(tmpdir):
-#    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
-#    # Process onnx with caffe2 backend
-#    #model = onnx.load(path)
-#    #c2out = onnx_caffe2.backend.run_model(model, [])
-#    #print(c2out)
-#    # Process onnx with naabla
-#    r = OnnxReader(path)
-#    nnp = r.read()
-#    assert nnp is not None
-#    assert len(nnp.other_files) == 0
-#    assert nnp.protobuf is not None
-#    logger.log(99, nnp.protobuf)
-#
-#    nnpex = NnpExporter(nnp, batch_size=0)
-#    nnpdir = tmpdir.mkdir("nnp")
-#    p = os.path.join(str(nnpdir), "gap.nnp")
-#    nnpex.export_nnp(p)
-#    # read exported nnp and run network
-#    #pdb.set_trace()
-#    nn_net = nnload.load([p])
-#    gap = nn_net.networks["gap_net"]
-#    id = gap.variables["in_data_0"]
-#    print(id.variable_instance.d)
-#    out_data = gap.variables["out_data_1"]
-#    ovi = out_data.variable_instance
-#    ovi.forward()
-#    print(ovi.d)
+##
+def test_onnx_nnp_conversion_gap(tmpdir):
+    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    #print(c2out)
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "gap.nnp")
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    #pdb.set_trace()
+    nn_net = nnload.load([p])
+    gap = run_executor(nn_net, "exec_0")
+    OUT_DATA_NAME = "out_data_1"
+    out_data = gap.variables[OUT_DATA_NAME]
+    nnout = gap.variables[OUT_DATA_NAME].variable_instance.d
+    c2 = c2out[OUT_DATA_NAME]
+    #print(c2, nnout)
+    assert np.allclose(c2, nnout)
