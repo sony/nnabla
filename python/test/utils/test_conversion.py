@@ -54,6 +54,7 @@ def onnx_value_info_proto_to_variable(info, network):
 onnx_optype_to_nnabla_function_type = {
     "Relu": "ReLU",
     "Concat": "Concatenate",
+    "Conv": "Convolution",
     "GlobalAveragePool": "AveragePooling"
 }
 
@@ -61,33 +62,44 @@ onnx_optype_to_nnabla_function_type = {
 nnabla_function_type_to_onnx_optype = {
     "ReLU": "Relu",
     "Concatenate": "Concat",
+    "Convolution": "Conv", 
     "AveragePooling": "GlobalAveragePool",
 }
 
 def set_function_parameters(func, node):
     '''Set additional parameters for specific functions'''
-    if node.op_type == "GlobalAveragePool":
-        # We substitute GlobalAveragePool with an AveragePool
-        # that has the same kernel size as the input WxH
-        app = func.average_pooling_param
-        app.kernel.dim.extend([3,3])
-        app.stride.dim.extend([1,1])
-        app.pad.dim.extend([0,0])
-    elif node.op_type == "Concat":
+    if node.op_type == "Concat":
         # Since concat axis is currently not required in ONNX,
         # the default axis depends on which backend we use.
         # For now we are comparing with caffe2, so we are 
         # defaulting to the channel axis if the axis is not specified.
         # https://github.com/onnx/onnx/issues/374
-        axis_attr = [x for x in node.attribute if x.name == "axis"]
-        if len(axis_attr) == 0:
+        axis_count = 0
+        for attr in node.attribute:
+            if attr.name == "axis":
+                # The axis was specified so we use it
+                func.concatenate_param.axis = attr.i
+                axis_count += 1
+        if axis_count == 0:
             # No axis was specifed so we default to the channel axis for now
             func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
-        elif len(axis_attr) == 1:
-            # The axis was specified so we use it
-            func.concatenate_param.axis = axis_attr[0].i
-        else:
+        elif axis_count > 1:
             raise ValueError("More than one axis was specifed as the Concat Axis")
+    elif node.op_type == "Conv":
+        for attr in node.attribute:
+            if attr.name == "kernel_shape":
+                pass
+            elif attr.name == "pads":
+                pass
+            elif attr.name == "strides":
+                pass
+    #elif node.op_type == "GlobalAveragePool":
+    #    # We substitute GlobalAveragePool with an AveragePool
+    #    # that has the same kernel size as the input WxH
+    #    app = func.average_pooling_param
+    #    app.kernel.dim.extend([3,3])
+    #    app.stride.dim.extend([1,1])
+    #    app.pad.dim.extend([0,0])
 
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
@@ -410,6 +422,34 @@ def test_nnp_onnx_conversion_concat(tmpdir):
     # Compare both naabla and caffe2 results
     #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
+
+#def test_onnx_nnp_conversion_conv(tmpdir):
+#    path = os.path.join(TEST_DATA_DIR, "conv.onnx")
+#    # Process onnx with caffe2 backend
+#    model = onnx.load(path)
+#    c2out = onnx_caffe2.backend.run_model(model, [])
+#    # Process onnx with naabla
+#    r = OnnxReader(path)
+#    nnp = r.read()
+#    assert nnp is not None
+#    assert len(nnp.other_files) == 0
+#    assert nnp.protobuf is not None
+#    logger.log(99, nnp.protobuf)
+#
+#    #nnpex = NnpExporter(nnp, batch_size=0)
+#    #nnpdir = tmpdir.mkdir("nnp")
+#    #p = os.path.join(str(nnpdir), "conv.nnp")
+#    #nnpex.export_nnp(p)
+#    # read exported nnp and run network
+#    ##pdb.set_trace()
+#    #nn_net = nnload.load([p])
+#    #conv = run_executor(nn_net, "exec_0")
+#    #OUT_DATA_NAME = "out_data_1"
+#    #nnout = conv.variables[OUT_DATA_NAME].variable_instance.d
+#    #c2 = c2out[OUT_DATA_NAME]
+#    ##print(c2, c2.shape)
+#    ##print(nnout, nnout.shape)
+#    #assert np.allclose(c2, nnout)
 #
 #def test_onnx_nnp_conversion_gap(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
