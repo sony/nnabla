@@ -22,7 +22,7 @@ cdef extern from "nbla/init.hpp" namespace "nbla":
     void clear_cpu_memory_cache() except+
     vector[string] cpu_array_classes() except +
     void _cpu_set_array_classes(const vector[string] & a) except +
-    void cpu_device_synchronize(const string &device) except +
+    void cpu_device_synchronize(const string & device) except +
     int cpu_get_device_count() except +
     vector[string] cpu_get_devices() except +
 

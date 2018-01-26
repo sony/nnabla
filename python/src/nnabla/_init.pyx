@@ -125,6 +125,8 @@ def array_classes():
     return _cpu_array_classes()
 
 ###############################################################################
+
+
 def device_synchronize(str device):
     """Dummy.
 
@@ -143,6 +145,7 @@ def get_device_count():
 
     """
     return cpu_get_device_count()
+
 
 def get_devices():
     """Dummy.
