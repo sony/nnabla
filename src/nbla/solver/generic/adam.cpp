@@ -27,8 +27,7 @@ NBLA_REGISTER_SOLVER_SOURCE(Adam, float, float, float, float);
 template <typename T>
 Adam<T>::Adam(const Context &ctx, float alpha, float beta1, float beta2,
               float eps)
-    : Solver(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2),
-      eps_(eps) {}
+    : Solver(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2), eps_(eps) {}
 
 template <typename T> Adam<T>::~Adam() {}
 

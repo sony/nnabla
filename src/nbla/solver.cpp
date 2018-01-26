@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/solver.hpp>
-#include <nbla/singleton_manager.hpp>
 #include <nbla/cpu.hpp>
-
+#include <nbla/singleton_manager.hpp>
+#include <nbla/solver.hpp>
 
 #include <algorithm>
 #include <memory>

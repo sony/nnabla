@@ -19,7 +19,7 @@ namespace nbla {
 
 template <typename T>
 void weight_decay_cpu(const Context &ctx, const shared_ptr<Variable> param,
-                       float decay_rate) {
+                      float decay_rate) {
   Size_t size = param->size();
   const T *data = param->get_data_pointer<T>(ctx);
   T *grad = param->cast_grad_and_get_pointer<T>(ctx);
