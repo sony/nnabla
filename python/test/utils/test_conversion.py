@@ -35,6 +35,10 @@ PRODUCER_NAME = "nnabla-onnx"
 PRODUCER_VERSION = "0.1"
 TEST_DATA_DIR="conversion_data"
 
+# We default to concat the channel axis
+# so the concat results match with caffe2
+DEFAULT_CONCAT_AXIS = 1
+
 def onnx_value_info_proto_to_variable(info, network):
     if not info.type.HasField("tensor_type"): # accepting only tensor
         logger.warning("Only TensorProto is allowed as ValueInfoProto's type for now (Got {}). Skipping {}"
@@ -69,7 +73,21 @@ def set_function_parameters(func, node):
         app.kernel.dim.extend([3,3])
         app.stride.dim.extend([1,1])
         app.pad.dim.extend([0,0])
-
+    elif node.op_type == "Concat":
+        # Since concat axis is currently not required in ONNX,
+        # the default axis depends on which backend we use.
+        # For now we are comparing with caffe2, so we are 
+        # defaulting to the channel axis if the axis is not specified.
+        # https://github.com/onnx/onnx/issues/374
+        axis_attr = [x for x in node.attribute if x.name == "axis"]
+        if len(axis_attr) == 0:
+            # No axis was specifed so we default to the channel axis for now
+            func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
+        elif len(axis_attr) == 1:
+            # The axis was specified so we use it
+            func.concatenate_param.axis = axis_attr[0].i
+        else:
+            raise ValueError("More than one axis was specifed as the Concat Axis")
 
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
@@ -116,7 +134,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         p.shape.dim.extend(init.dims)
         # convert raw bytestream to floating points
         num = len(init.raw_data) // 4
-        logger.log(99, "raw_data num: {}".format(num))
+        #logger.log(99, "raw_data num: {}".format(num))
         data = struct.unpack(str(num)+'f', init.raw_data)
         p.data.extend(data)
         p.need_grad = False
@@ -151,7 +169,7 @@ def onnx_model_to_nnp_protobuf(model):
             logger.warning("Unknown opset from domain {}. Ignoring.".format(opset.domain))
 
     # convert onnx model to nnabla protobuf
-    logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))
+    #logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))
 
     # conver graph
     onnx_graph_to_nnp_protobuf(pb, model.graph)
@@ -330,7 +348,7 @@ def test_onnx_nnp_conversion_concat(tmpdir):
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    logger.log(99, nnp.protobuf)
+    #logger.log(99, nnp.protobuf)
 
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
