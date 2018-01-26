@@ -17,7 +17,7 @@ import struct
 import nnabla.utils.load as nnload
 from nnabla.utils import nnabla_pb2
 import onnx
-from onnx import (ModelProto, TensorProto, GraphProto, TensorShapeProto)
+from onnx import (ModelProto, TensorProto, GraphProto, TensorShapeProto, AttributeProto)
 import nnabla.logger as logger
 import numpy as np
 import pdb
@@ -190,6 +190,17 @@ class OnnxReader:
             model_proto.ParseFromString(f.read())
         return onnx_model_to_nnp_protobuf(model_proto)
 
+def set_node_attribute(node, func):
+    if func.type == "Concatenate":
+        # ONNX requires axis setting as a parameter
+        # for the concat op_type.
+        attr = node.attribute.add()
+        attr.name = "axis"
+        attr.type = AttributeProto.INT
+        # If no value is set for axis,
+        # the default value 0 will be set
+        attr.i = func.concatenate_param.axis
+
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
         raise ValueError("NNP with only a single network is currently supported")
@@ -211,6 +222,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
         n.op_type = nnabla_function_type_to_onnx_optype.get(f.type, f.type)
         n.input.extend(f.input)
         n.output.extend(f.output)
+        set_node_attribute(n, f)
     for param in nnp.parameter:
         init = graph.initializer.add()
         init.name = param.variable_name
@@ -367,6 +379,36 @@ def test_onnx_nnp_conversion_concat(tmpdir):
     c2 = c2out[OUT_DATA_NAME]
     #print(c2, c2.shape)
     #print(nnout, nnout.shape)
+    assert np.allclose(c2, nnout)
+
+def test_nnp_onnx_conversion_concat(tmpdir):
+    # Process nnp with nnabla
+    OUT_DATA_NAME = "out_data_1"
+    path = os.path.join(TEST_DATA_DIR, "concat.nnp")
+    nn_net = nnload.load([path])
+    relu = run_executor(nn_net, "exec_0")
+    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), "concat.onnx")
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    #print(model)
+    #pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2 = c2out[OUT_DATA_NAME]
+    # Compare both naabla and caffe2 results
+    #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
 #
 #def test_onnx_nnp_conversion_gap(tmpdir):
