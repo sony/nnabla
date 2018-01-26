@@ -7,11 +7,11 @@ multiple devices. It is normally used for gradients exchange in data
 parallel distributed training. Basically, there are two types of
 distributed trainings in Neural Network literature: Data Parallel and
 Model Parallel. Here we only focus on the former, Data Parallel
-Training. Data Parallel Distributed Training are based on the very
-simple equation in the optimization for a neural network called
+Training. Data Parallel Distributed Training is based on the very
+simple equation used for the optimization of a neural network called
 (Mini-Batch) Stochastic Gradient Descent.
 
-In the oprimization process, the objective one tries to minimize is
+In the optimization process, the objective one tries to minimize is
 
 .. math::
 
@@ -44,7 +44,7 @@ data points.
     + \frac{1}{B} \sum_{i=B \times (N-1) + 1}^{B \times N} \nabla_{\mathbf{w}} \ell (\mathbf{w}, \mathbf{x}_i)
    \right)
 
-In data parallel distributed training, the follwoing steps are peformed
+In data parallel distributed training, the following steps are peformed
 according to the above equation,
 
 1. each term, summation of derivatives (gradients) divided by batch size
@@ -70,7 +70,7 @@ Cluster on Ipython Clusters tab.
 Launch client
 -------------
 
-This codes are **only** needed for this turoial on **Jupyter Notebook**.
+This code is **only** needed for this tutorial via **Jupyter Notebook**.
 
 .. code:: python
 
@@ -174,7 +174,7 @@ Create data points and a very simple neural network
         pred = PF.affine(h, n_class, w_init=w_init)
         loss = F.mean(F.softmax_cross_entropy(pred, y))
 
-**Important notice** here is that ``w_init`` is passed to parametric
+**Important to notice** here is that ``w_init`` is passed to parametric
 functions to let the network on each GPU start from the same values of
 trainable parameters in the optimization process.
 
@@ -320,10 +320,10 @@ Update weights,
     %%px
     solver.update()
 
-That's all for the usage of ``C.MultiProcessDataParalellCommunicator`` in the
-sense of Data Parallel Distributed Training.
+This concludes the usage of ``C.MultiProcessDataParalellCommunicator`` for
+Data Parallel Distributed Training.
 
-Now you got the picture of using ``C.MultiProcessDataParalellCommunicator``, go to
+Now you should have an understanding of how to use ``C.MultiProcessDataParalellCommunicator``, go to
 the cifar10 example,
 
 1. **multi\_device\_multi\_process\_classification.sh**
