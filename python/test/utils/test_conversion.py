@@ -66,8 +66,13 @@ nnabla_function_type_to_onnx_optype = {
     "AveragePooling": "GlobalAveragePool",
 }
 
-def set_function_parameters(func, node):
-    '''Set additional parameters for specific functions'''
+def convert_to_function(node):
+    '''Convert given node to corresponding function'''
+    func = nnabla_pb2.Function()
+    func.name = node.name
+    func.type = onnx_optype_to_nnabla_function_type.get(node.op_type, node.op_type)
+    func.input.extend(node.input)
+    func.output.extend(node.output)
     if node.op_type == "Concat":
         # Since concat axis is currently not required in ONNX,
         # the default axis depends on which backend we use.
@@ -104,11 +109,10 @@ def set_function_parameters(func, node):
                 if attr.i != 0:
                     # is_test is True meaning we will not be applying dropout.
                     # We are simply going to pass through the input values
-                    # by accepting all values
-                    func.dropout_param.p = 1.0
-                    # We return here so we don't overwrite the dropout ratio
-                    # with an attribute afterwards
-                    return
+                    # by using the Identity function
+                    func.type = "Identity"
+                    # We break here so we don't write any needless attributes
+                    break
             elif attr.name == "ratio":
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Dropout ratio must be a single float")
@@ -135,6 +139,7 @@ def set_function_parameters(func, node):
         app.kernel.dim.extend([3,3])
         app.stride.dim.extend([3,3])
         app.pad.dim.extend([0,0])
+    return func
 
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
@@ -143,12 +148,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
 
     # convert nodes
     for n in graph.node:
-        f = network.function.add()
-        f.name = n.name
-        f.type = onnx_optype_to_nnabla_function_type.get(n.op_type, n.op_type)
-        f.input.extend(n.input)
-        f.output.extend(n.output)
-        set_function_parameters(f, n)
+        f = convert_to_function(n)
+        network.function.extend([f])
 
     # convert Input/Output ValueInfoProto
     # to Variable
@@ -458,39 +459,8 @@ def test_nnp_onnx_conversion_concat(tmpdir):
     #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
 
-def test_onnx_nnp_conversion_softmax(tmpdir):
-    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "softmax.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    softmax = run_executor(nn_net, "exec_0")
-    OUT_DATA_NAME = "out_data_1"
-    nnout = softmax.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(softmax.variables["in_data_0"].variable_instance.d)
-    print(np.sum(c2))
-    print(np.sum(nnout))
-    print(c2, c2.shape)
-    print(nnout, nnout.shape)
-    #assert np.allclose(c2, nnout)
-
-#def test_onnx_nnp_conversion_dropout(tmpdir):
-#    path = os.path.join(TEST_DATA_DIR, "dropout_test.onnx")
+#def test_onnx_nnp_conversion_softmax(tmpdir):
+#    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
 #    # Process onnx with caffe2 backend
 #    model = onnx.load(path)
 #    c2out = onnx_caffe2.backend.run_model(model, [])
@@ -500,22 +470,53 @@ def test_onnx_nnp_conversion_softmax(tmpdir):
 #    assert nnp is not None
 #    assert len(nnp.other_files) == 0
 #    assert nnp.protobuf is not None
-#    #logger.log(99, nnp.protobuf)
+#    logger.log(99, nnp.protobuf)
 #
 #    nnpex = NnpExporter(nnp, batch_size=0)
 #    nnpdir = tmpdir.mkdir("nnp")
-#    p = os.path.join(str(nnpdir), "dropout_test.nnp")
+#    p = os.path.join(str(nnpdir), "softmax.nnp")
 #    nnpex.export_nnp(p)
 #    # read exported nnp and run network
 #    #pdb.set_trace()
 #    nn_net = nnload.load([p])
-#    dropout = run_executor(nn_net, "exec_0")
+#    softmax = run_executor(nn_net, "exec_0")
 #    OUT_DATA_NAME = "out_data_1"
-#    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
+#    nnout = softmax.variables[OUT_DATA_NAME].variable_instance.d
 #    c2 = c2out[OUT_DATA_NAME]
-#    #print(c2, c2.shape)
-#    #print(nnout, nnout.shape)
-#    assert np.allclose(c2, nnout)
+#    #print(softmax.variables["in_data_0"].variable_instance.d)
+#    print(np.sum(c2))
+#    print(np.sum(nnout))
+#    print(c2, c2.shape)
+#    print(nnout, nnout.shape)
+#    #assert np.allclose(c2, nnout)
+
+def test_onnx_nnp_conversion_dropout(tmpdir):
+    path = os.path.join(TEST_DATA_DIR, "dropout_test.onnx")
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "dropout_test.nnp")
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    #pdb.set_trace()
+    nn_net = nnload.load([p])
+    dropout = run_executor(nn_net, "exec_0")
+    OUT_DATA_NAME = "out_data_1"
+    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
+    c2 = c2out[OUT_DATA_NAME]
+    #print(c2, c2.shape)
+    #print(nnout, nnout.shape)
+    assert np.allclose(c2, nnout)
 #
 #def test_onnx_nnp_conversion_conv(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "conv.onnx")
