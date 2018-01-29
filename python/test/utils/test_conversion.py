@@ -491,6 +491,37 @@ def test_nnp_onnx_conversion_concat(tmpdir):
 #    #assert np.allclose(c2, nnout)
 
 def test_onnx_nnp_conversion_dropout(tmpdir):
+    path = os.path.join(TEST_DATA_DIR, "dropout.onnx")
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "dropout.nnp")
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    #pdb.set_trace()
+    nn_net = nnload.load([p])
+    dropout = run_executor(nn_net, "exec_0")
+    OUT_DATA_NAME = "out_data_1"
+    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
+    c2 = c2out[OUT_DATA_NAME]
+    #print(c2, c2.shape)
+    #print(nnout, nnout.shape)
+    assert c2.shape == nnout.shape
+    # We do not check if the values match because a dropout
+    # output yield random results
+    #assert np.allclose(c2, nnout)
+
+def test_onnx_nnp_conversion_dropout_is_test(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "dropout_test.onnx")
     # Process onnx with caffe2 backend
     model = onnx.load(path)
