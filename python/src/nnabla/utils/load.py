@@ -22,6 +22,7 @@ import google.protobuf.text_format as text_format
 import itertools
 import numpy
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -287,6 +288,17 @@ def _get_generator(proto):
                          proto.type + '" is not supported.')
 
 
+def _get_matching_variable_names(variable, variable_names):
+    r = re.compile('{[^}]*}')
+    key=r.sub('\[[\d+]\]', variable, re.U)
+    r2=re.compile(key)
+    variable_names = [v_name for v_name in variable_names if re.match(r2, v_name)]
+    if not variable_names:
+        raise ValueError('Variable "' +
+            variable + '" is not found.')
+    return variable_names
+
+
 def _create_optimizer(ctx, o, networks, datasets):
     class Optimizer:
         pass
@@ -316,8 +328,8 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer.parameter_learning_rate_multipliers = OrderedDict()
     for p in o.parameter_variable:
-        param_variable_names = [v_name for v_name in optimizer.network.variables.keys(
-        ) if v_name.find(p.variable_name) == 0]
+        param_variable_names = _get_matching_variable_names(
+            p.variable_name, optimizer.network.variables.keys())
         for v_name in param_variable_names:
             optimizer.parameter_learning_rate_multipliers[
                 optimizer.network.variables[v_name]] = p.learning_rate_multiplier
@@ -549,8 +561,8 @@ def _executors(executors_proto, networks):
 
         executor.parameters = OrderedDict()
         for p in e.parameter_variable:
-            param_variable_names = [v_name for v_name in executor.network.variables.keys(
-            ) if v_name.find(p.variable_name) == 0]
+            param_variable_names = _get_matching_variable_names(
+                p.variable_name, executor.network.variables.keys())
             for v_name in param_variable_names:
                 executor.parameters[
                     executor.network.variables[v_name]] = v_name
@@ -566,8 +578,8 @@ def _executors(executors_proto, networks):
 
             executor.parameter_learning_rate_multipliers = OrderedDict()
             for p in e.parameter_variable:
-                param_variable_names = [v_name for v_name in executor.network.variables.keys(
-                ) if v_name.find(p.variable_name) == 0]
+                param_variable_names = _get_matching_variable_names(
+                    p.variable_name, executor.network.variables.keys())
                 for v_name in param_variable_names:
                     executor.parameter_learning_rate_multipliers[
                         executor.network.variables[v_name]] = p.learning_rate_multiplier
