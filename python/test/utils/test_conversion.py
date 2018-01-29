@@ -77,6 +77,8 @@ def set_function_parameters(func, node):
         axis_count = 0
         for attr in node.attribute:
             if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Axis type must be a single integer")
                 # The axis was specified so we use it
                 func.concatenate_param.axis = attr.i
                 axis_count += 1
@@ -85,6 +87,24 @@ def set_function_parameters(func, node):
             func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
         elif axis_count > 1:
             raise ValueError("More than one axis was specifed as the Concat Axis")
+    elif node.op_type == "Dropout":
+        # Dropout requires a ratio to be set
+        for attr in node.attribute:
+            if attr.name == "is_test":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Dropout is_test must be a single integer")
+                if attr.i != 0:
+                    # is_test is True meaning we will not be applying dropout.
+                    # We are simply going to pass through the input values
+                    # by accepting all values
+                    func.dropout_param.p = 1.0
+                    # We return here so we don't overwrite the dropout ratio
+                    # with an attribute afterwards
+                    return
+            elif attr.name == "ratio":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Dropout ratio must be a single float")
+                func.dropout_param.p = attr.f
     elif node.op_type == "Conv":
         func.convolution_param.base_axis = 2
         for attr in node.attribute:
@@ -430,6 +450,34 @@ def test_nnp_onnx_conversion_concat(tmpdir):
     #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
 
+def test_onnx_nnp_conversion_dropout(tmpdir):
+    path = os.path.join(TEST_DATA_DIR, "dropout_test.onnx")
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "dropout_test.nnp")
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    #pdb.set_trace()
+    nn_net = nnload.load([p])
+    dropout = run_executor(nn_net, "exec_0")
+    OUT_DATA_NAME = "out_data_1"
+    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
+    c2 = c2out[OUT_DATA_NAME]
+    #print(c2, c2.shape)
+    #print(nnout, nnout.shape)
+    assert np.allclose(c2, nnout)
+
 #def test_onnx_nnp_conversion_conv(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "conv.onnx")
 #    # Process onnx with caffe2 backend
@@ -458,31 +506,31 @@ def test_nnp_onnx_conversion_concat(tmpdir):
 #    ##print(nnout, nnout.shape)
 #    #assert np.allclose(c2, nnout)
 ##
-def test_onnx_nnp_conversion_gap(tmpdir):
-    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    #print(c2out)
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "gap.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    gap = run_executor(nn_net, "exec_0")
-    OUT_DATA_NAME = "out_data_1"
-    out_data = gap.variables[OUT_DATA_NAME]
-    nnout = gap.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, nnout)
-    assert np.allclose(c2, nnout)
+#def test_onnx_nnp_conversion_gap(tmpdir):
+#    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
+#    # Process onnx with caffe2 backend
+#    model = onnx.load(path)
+#    c2out = onnx_caffe2.backend.run_model(model, [])
+#    #print(c2out)
+#    # Process onnx with naabla
+#    r = OnnxReader(path)
+#    nnp = r.read()
+#    assert nnp is not None
+#    assert len(nnp.other_files) == 0
+#    assert nnp.protobuf is not None
+#    #logger.log(99, nnp.protobuf)
+#
+#    nnpex = NnpExporter(nnp, batch_size=0)
+#    nnpdir = tmpdir.mkdir("nnp")
+#    p = os.path.join(str(nnpdir), "gap.nnp")
+#    nnpex.export_nnp(p)
+#    # read exported nnp and run network
+#    #pdb.set_trace()
+#    nn_net = nnload.load([p])
+#    gap = run_executor(nn_net, "exec_0")
+#    OUT_DATA_NAME = "out_data_1"
+#    out_data = gap.variables[OUT_DATA_NAME]
+#    nnout = gap.variables[OUT_DATA_NAME].variable_instance.d
+#    c2 = c2out[OUT_DATA_NAME]
+#    #print(c2, nnout)
+#    assert np.allclose(c2, nnout)
