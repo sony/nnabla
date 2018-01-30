@@ -13,8 +13,13 @@
 # limitations under the License.
 
 import argparse
-import os
 import sys
+
+try:
+    from mpi4py import MPI
+except:
+    MPI = None
+    pass
 
 
 def main():
@@ -172,7 +177,14 @@ def main():
     subparser.set_defaults(func=extract_command)
 
     args = parser.parse_args()
-    args.func(args)
+
+    if MPI and MPI.COMM_WORLD.Get_size() > 1:
+        try:
+            args.func(args)
+        except:
+            MPI.COMM_WORLD.Abort()
+    else:
+        args.func(args)
 
 
 if __name__ == '__main__':
