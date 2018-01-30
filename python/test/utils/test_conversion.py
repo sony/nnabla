@@ -302,6 +302,21 @@ def convert_to_node(func):
         attr.name = "is_test"
         attr.type = AttributeProto.INT
         attr.i = 1
+    elif func.type == "MaxPooling":
+        mpp = func.max_pooling_param
+        # Copy kernel, stride, and pads values
+        k = n.attribute.add()
+        k.name = "kernel_shape"
+        k.type = AttributeProto.INTS
+        k.ints.extend(mpp.kernel.dim)
+        s = n.attribute.add()
+        s.name = "strides"
+        s.type = AttributeProto.INTS
+        s.ints.extend(mpp.stride.dim)
+        p = n.attribute.add()
+        p.name = "pads"
+        p.type = AttributeProto.INTS
+        p.ints.extend(mpp.pad.dim)
     return n
 
 def nnp_model_to_onnx_graph(graph, nnp):
@@ -387,310 +402,131 @@ def run_executor(nn_net, exec_name):
     exe.network.forward(exe.forward_sequence)
     return exe.network
 
+
+def convert_onnx_to_nnp_and_compare(
+        tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
+        compare_values=True):
+    '''Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla'''
+    path = os.path.join(onnx_dir, onnx_name)
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), nnp_name)
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    #pdb.set_trace()
+    nn_net = nnload.load([p])
+    exe = run_executor(nn_net, exec_name)
+    #in_data = exe.variables["in_data_0"]
+    #print(in_data.variable_instance.d)
+    nnout = exe.variables[out_name].variable_instance.d
+    #print(nnout.variable_instance.d)
+    # Compare both naabla and caffe2 results
+    c2 = c2out[out_name]
+    #print(c2, nnout)
+    assert c2.shape == nnout.shape
+    if compare_values:
+        assert np.allclose(c2, nnout)
+
+def convert_nnp_to_onnx_and_compare(
+        tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
+        compare_values=True):
+    '''Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla'''
+    # Process nnp with nnabla
+    path = os.path.join(nnp_dir, nnp_name)
+    nn_net = nnload.load([path])
+    exe = run_executor(nn_net, exec_name)
+    nnout = exe.variables[out_name].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), onnx_name)
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    #print(model)
+    #pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2 = c2out[out_name]
+    # Compare both naabla and caffe2 results
+    #print(c2, nnout)
+    assert c2.shape == nnout.shape
+    if compare_values:
+        assert np.allclose(c2, nnout)
+
 @pytest.fixture
 def nnp_fixture():
     nnabla.clear_parameters()
 
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
-    path = os.path.join(TEST_DATA_DIR, "relu.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "relu.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    exe = run_executor(nn_net, "exec_0")
-    #in_data = exe.variables["in_data_0"]
-    #print(in_data.variable_instance.d)
-    OUT_DATA_NAME = "out_data_1"
-    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
-    #print(nnout.variable_instance.d)
-    # Compare both naabla and caffe2 results
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, nnout)
-    assert np.allclose(c2, nnout)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
 
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
-    # Process nnp with nnabla
-    OUT_DATA_NAME = "out_data_1"
-    path = os.path.join(TEST_DATA_DIR, "relu.nnp")
-    nn_net = nnload.load([path])
-    exe = run_executor(nn_net, "exec_0")
-    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
-
-    # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), "relu.onnx")
-    onnxex.export(p)
-
-    # read exported onnx and run network
-    model = onnx.load(p)
-    #print(model)
-    #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    c2 = c2out[OUT_DATA_NAME]
-    # Compare both naabla and caffe2 results
-    #print(c2, nnout)
-    assert np.allclose(c2, nnout)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
-    path = os.path.join(TEST_DATA_DIR, "concat.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "concat.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    concat = run_executor(nn_net, "exec_0")
-    #id0 = concat.variables["in_data_0_0"]
-    #id1 = concat.variables["in_data_1_0"]
-    #print(id0.variable_instance.d)
-    #print(id1.variable_instance.d)
-    OUT_DATA_NAME = "out_data_1"
-    nnout = concat.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, c2.shape)
-    #print(nnout, nnout.shape)
-    assert np.allclose(c2, nnout)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "concat.onnx", "concat.nnp", "out_data_1", "exec_0")
 
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
-    # Process nnp with nnabla
-    OUT_DATA_NAME = "out_data_1"
-    path = os.path.join(TEST_DATA_DIR, "concat.nnp")
-    nn_net = nnload.load([path])
-    exe = run_executor(nn_net, "exec_0")
-    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
-
-    # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), "concat.onnx")
-    onnxex.export(p)
-
-    # read exported onnx and run network
-    model = onnx.load(p)
-    #print(model)
-    #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    c2 = c2out[OUT_DATA_NAME]
-    # Compare both naabla and caffe2 results
-    #print(c2.shape, nnout.shape)
-    assert np.allclose(c2, nnout)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "concat.nnp", "concat.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
-    path = os.path.join(TEST_DATA_DIR, "dropout.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "dropout.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    dropout = run_executor(nn_net, "exec_0")
-    OUT_DATA_NAME = "out_data_1"
-    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, c2.shape)
-    #print(nnout, nnout.shape)
-    assert c2.shape == nnout.shape
     # We do not check if the values match because a dropout
     # output yield random results
-    #assert np.allclose(c2, nnout)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "dropout.onnx", "dropout.nnp", "out_data_1", "exec_0", compare_values=False)
 
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
-    # Process nnp with nnabla
-    OUT_DATA_NAME = "out_data_1"
-    path = os.path.join(TEST_DATA_DIR, "dropout.nnp")
-    nn_net = nnload.load([path])
-    exe = run_executor(nn_net, "exec_0")
-    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
-
-    # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), "dropout.onnx")
-    onnxex.export(p)
-
-    # read exported onnx and run network
-    model = onnx.load(p)
-    #print(model)
-    #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    c2 = c2out[OUT_DATA_NAME]
-    # Compare both naabla and caffe2 results
-    #print(c2.shape, nnout.shape)
-    assert c2.shape == nnout.shape
     # We do not check if the values match because a dropout
     # output yield random results
-    #assert np.allclose(c2, nnout)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "dropout.nnp", "dropout.onnx", "out_data_1", "exec_0", compare_values=False)
 
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    path = os.path.join(TEST_DATA_DIR, "dropout_test.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "dropout_test.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    dropout = run_executor(nn_net, "exec_0")
-    OUT_DATA_NAME = "out_data_1"
-    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, c2.shape)
-    #print(nnout, nnout.shape)
-    assert np.allclose(c2, nnout)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "dropout_test.onnx", "dropout_test.nnp", "out_data_1", "exec_0")
 
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    # Process nnp with nnabla
-    OUT_DATA_NAME = "out_data_1"
-    path = os.path.join(TEST_DATA_DIR, "dropout_test.nnp")
-    nn_net = nnload.load([path])
-    exe = run_executor(nn_net, "exec_0")
-    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
-
-    # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), "dropout_test.onnx")
-    onnxex.export(p)
-
-    # read exported onnx and run network
-    model = onnx.load(p)
-    #print(model)
-    #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    c2 = c2out[OUT_DATA_NAME]
-    # Compare both naabla and caffe2 results
-    #print(c2.shape, nnout.shape)
-    assert np.allclose(c2, nnout)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "dropout_test.nnp", "dropout_test.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
-    path = os.path.join(TEST_DATA_DIR, "maxpool.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "maxpool.onnx", "maxpool.nnp", "out_data_1", "exec_0")
 
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "maxpool.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    dropout = run_executor(nn_net, "exec_0")
-    OUT_DATA_NAME = "out_data_1"
-    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, c2.shape)
-    #print(nnout, nnout.shape)
-    assert np.allclose(c2, nnout)
+def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "maxpool.nnp", "maxpool.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
-    path = os.path.join(TEST_DATA_DIR, "maxpool_no_pad.onnx")
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    c2out = onnx_caffe2.backend.run_model(model, [])
-    # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "maxpool_no_pad.onnx", "maxpool_no_pad.nnp", "out_data_1", "exec_0")
 
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), "maxpool_no_pad.nnp")
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    #pdb.set_trace()
-    nn_net = nnload.load([p])
-    dropout = run_executor(nn_net, "exec_0")
-    OUT_DATA_NAME = "out_data_1"
-    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
-    c2 = c2out[OUT_DATA_NAME]
-    #print(c2, c2.shape)
-    #print(nnout, nnout.shape)
-    assert np.allclose(c2, nnout)
+def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
