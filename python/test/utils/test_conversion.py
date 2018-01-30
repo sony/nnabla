@@ -56,15 +56,17 @@ onnx_optype_to_nnabla_function_type = {
     "Relu": "ReLU",
     "Concat": "Concatenate",
     "Conv": "Convolution",
-    "GlobalAveragePool": "AveragePooling"
+    "GlobalAveragePool": "AveragePooling",
+    "MaxPool": "MaxPooling",
 }
 
 # Dictionary used to convert NNabla function names to ONNX op_type 
 nnabla_function_type_to_onnx_optype = {
     "ReLU": "Relu",
     "Concatenate": "Concat",
-    "Convolution": "Conv", 
+    "Convolution": "Conv",
     "AveragePooling": "GlobalAveragePool",
+    "MaxPooling": "MaxPool",
 }
 
 def convert_to_function(node):
@@ -140,6 +142,35 @@ def convert_to_function(node):
         app.kernel.dim.extend([3,3])
         app.stride.dim.extend([3,3])
         app.pad.dim.extend([0,0])
+    elif node.op_type == "MaxPool":
+        mpp = func.max_pooling_param
+        strides = []
+        pads = []
+        kernel = []
+        for attr in node.attribute:
+            if attr.name == "strides":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for strides in MaxPool op_type")
+                strides.extend(attr.ints)
+            elif attr.name == "pads":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for pads in MaxPool op_type")
+                pads.extend(attr.ints)
+            elif attr.name == "kernel_shape":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for kernel_shape in MaxPool op_type")
+                kernel.extend(attr.ints)
+        # NNabla requires for the dimensions of strides, pads, kernels to match.
+        # We align the dimensions for all three attributes to the shortest one
+        dim = min(min(len(strides), len(pads)), len(kernel))
+        mpp.stride.dim.extend(strides[:dim])
+        mpp.pad.dim.extend(pads[:dim])
+        mpp.kernel.dim.extend(kernel[:dim])
+        # Pooling should ignore borders when a valid padding value
+        # has been set in order to match the ONNX results
+        ignore_border = len(pads) > 0 and pads[0] > 0
+        mpp.ignore_border = ignore_border
+
     return func
 
 
@@ -478,37 +509,6 @@ def test_nnp_onnx_conversion_concat(tmpdir):
     #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
 
-#def test_onnx_nnp_conversion_softmax(tmpdir):
-#    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
-#    # Process onnx with caffe2 backend
-#    model = onnx.load(path)
-#    c2out = onnx_caffe2.backend.run_model(model, [])
-#    # Process onnx with naabla
-#    r = OnnxReader(path)
-#    nnp = r.read()
-#    assert nnp is not None
-#    assert len(nnp.other_files) == 0
-#    assert nnp.protobuf is not None
-#    logger.log(99, nnp.protobuf)
-#
-#    nnpex = NnpExporter(nnp, batch_size=0)
-#    nnpdir = tmpdir.mkdir("nnp")
-#    p = os.path.join(str(nnpdir), "softmax.nnp")
-#    nnpex.export_nnp(p)
-#    # read exported nnp and run network
-#    #pdb.set_trace()
-#    nn_net = nnload.load([p])
-#    softmax = run_executor(nn_net, "exec_0")
-#    OUT_DATA_NAME = "out_data_1"
-#    nnout = softmax.variables[OUT_DATA_NAME].variable_instance.d
-#    c2 = c2out[OUT_DATA_NAME]
-#    #print(softmax.variables["in_data_0"].variable_instance.d)
-#    print(np.sum(c2))
-#    print(np.sum(nnout))
-#    print(c2, c2.shape)
-#    print(nnout, nnout.shape)
-#    #assert np.allclose(c2, nnout)
-
 def test_onnx_nnp_conversion_dropout(tmpdir):
     path = os.path.join(TEST_DATA_DIR, "dropout.onnx")
     # Process onnx with caffe2 backend
@@ -630,6 +630,66 @@ def test_nnp_onnx_conversion_dropout_is_test(tmpdir):
     # Compare both naabla and caffe2 results
     #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
+
+def test_onnx_nnp_conversion_maxpool(tmpdir):
+    path = os.path.join(TEST_DATA_DIR, "maxpool.onnx")
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), "maxpool.nnp")
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    #pdb.set_trace()
+    nn_net = nnload.load([p])
+    dropout = run_executor(nn_net, "exec_0")
+    OUT_DATA_NAME = "out_data_1"
+    nnout = dropout.variables[OUT_DATA_NAME].variable_instance.d
+    c2 = c2out[OUT_DATA_NAME]
+    #print(c2, c2.shape)
+    #print(nnout, nnout.shape)
+    assert np.allclose(c2, nnout)
+
+#def test_onnx_nnp_conversion_softmax(tmpdir):
+#    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
+#    # Process onnx with caffe2 backend
+#    model = onnx.load(path)
+#    c2out = onnx_caffe2.backend.run_model(model, [])
+#    # Process onnx with naabla
+#    r = OnnxReader(path)
+#    nnp = r.read()
+#    assert nnp is not None
+#    assert len(nnp.other_files) == 0
+#    assert nnp.protobuf is not None
+#    logger.log(99, nnp.protobuf)
+#
+#    nnpex = NnpExporter(nnp, batch_size=0)
+#    nnpdir = tmpdir.mkdir("nnp")
+#    p = os.path.join(str(nnpdir), "softmax.nnp")
+#    nnpex.export_nnp(p)
+#    # read exported nnp and run network
+#    #pdb.set_trace()
+#    nn_net = nnload.load([p])
+#    softmax = run_executor(nn_net, "exec_0")
+#    OUT_DATA_NAME = "out_data_1"
+#    nnout = softmax.variables[OUT_DATA_NAME].variable_instance.d
+#    c2 = c2out[OUT_DATA_NAME]
+#    #print(softmax.variables["in_data_0"].variable_instance.d)
+#    print(np.sum(c2))
+#    print(np.sum(nnout))
+#    print(c2, c2.shape)
+#    print(nnout, nnout.shape)
+#    #assert np.allclose(c2, nnout)
+
 #
 #def test_onnx_nnp_conversion_conv(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "conv.onnx")
