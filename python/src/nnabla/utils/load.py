@@ -418,20 +418,23 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     if prepare_data_iterator:
         if cache_dir == '':
             cache_dir = None
-        if cache_dir and create_cache_explicitly:
+
+        # Disble implicit cache creation when MPI is available.
+        if cache_dir and (create_cache_explicitly or MPI):
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
-                if not os.path.exists(cache_dir):
-                    os.mkdir(cache_dir)
                 if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
                     logger.log(99, 'Creating cache data for "' + uri + '"')
+                    if not os.path.exists(cache_dir):
+                        os.mkdir(cache_dir)
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
                         index = 0
                         while index < di.size:
                             progress('', (1.0 * di.position) / di.size)
                             di.next()
                             index += batch_size
-                    for dest in range(1, MPI.COMM_WORLD.Get_size()):
-                        MPI.COMM_WORLD.send(True, dest=dest)
+                    if MPI:
+                        for dest in range(1, MPI.COMM_WORLD.Get_size()):
+                            MPI.COMM_WORLD.send(True, dest=dest)
                 else:
                     if MPI and MPI.COMM_WORLD.Get_rank() > 0:
                         MPI.COMM_WORLD.recv(source=0)
@@ -439,10 +442,16 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
-            if cache_dir and not os.path.exists(cache_dir):
-                os.mkdir(cache_dir)
-            dataset.data_iterator = (lambda: data_iterator_csv_dataset(
-                uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
+            if MPI:
+                logger.critical(
+                    'Implicit cache creation does not support with MPI')
+                import sys
+                sys.exit(-1)
+            else:
+                if cache_dir and not os.path.exists(cache_dir):
+                    os.mkdir(cache_dir)
+                dataset.data_iterator = (lambda: data_iterator_csv_dataset(
+                    uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
@@ -614,7 +623,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                     text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
             if not exclude_parameter:
-                nn.load_parameters(filename, proto)
+                nn.load_parameters(filename)
             else:
                 logger.info('Skip loading parameter.')
 
@@ -637,9 +646,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                         elif ext in ['.protobuf', '.h5']:
                             nnp.extract(name, tmpdir)
                             if not exclude_parameter:
-                                nn.load_parameters(os.path.join(tmpdir, name),
-                                                   proto)
-
+                                nn.load_parameters(os.path.join(tmpdir, name))
                             else:
                                 logger.info('Skip loading parameter.')
             finally:
