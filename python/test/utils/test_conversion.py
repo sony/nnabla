@@ -248,6 +248,14 @@ def set_node_attribute(node, func):
         # If no value is set for axis,
         # the default value 0 will be set
         attr.i = func.concatenate_param.axis
+    elif func.type == "Dropout":
+        # NNP Dropout is always is_test=false
+        # since we always apply dropout when it is
+        # included in a network.
+        attr = node.attribute.add()
+        attr.name = "is_test"
+        attr.type = AttributeProto.INT
+        attr.i = 0
 
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
@@ -516,6 +524,39 @@ def test_onnx_nnp_conversion_dropout(tmpdir):
     c2 = c2out[OUT_DATA_NAME]
     #print(c2, c2.shape)
     #print(nnout, nnout.shape)
+    assert c2.shape == nnout.shape
+    # We do not check if the values match because a dropout
+    # output yield random results
+    #assert np.allclose(c2, nnout)
+
+def test_nnp_onnx_conversion_dropout(tmpdir):
+    # Process nnp with nnabla
+    OUT_DATA_NAME = "out_data_1"
+    path = os.path.join(TEST_DATA_DIR, "dropout.nnp")
+    nn_net = nnload.load([path])
+    relu = run_executor(nn_net, "exec_0")
+    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), "dropout.onnx")
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    #print(model)
+    #pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2 = c2out[OUT_DATA_NAME]
+    # Compare both naabla and caffe2 results
+    #print(c2.shape, nnout.shape)
     assert c2.shape == nnout.shape
     # We do not check if the values match because a dropout
     # output yield random results
