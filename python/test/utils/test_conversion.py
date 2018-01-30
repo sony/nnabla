@@ -405,11 +405,13 @@ def run_executor(nn_net, exec_name):
 
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
-        compare_values=True):
+        compare_values=True, show_onnx=False, show_nnp=False):
     '''Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla'''
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
+    if show_onnx:
+        logger.log(99, model)
     c2out = onnx_caffe2.backend.run_model(model, [])
     # Process onnx with naabla
     r = OnnxReader(path)
@@ -417,7 +419,8 @@ def convert_onnx_to_nnp_and_compare(
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
+    if show_nnp:
+        logger.log(99, nnp.protobuf)
 
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
@@ -440,7 +443,7 @@ def convert_onnx_to_nnp_and_compare(
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
-        compare_values=True):
+        compare_values=True, show_nnp=False, show_onnx=False):
     '''Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla'''
     # Process nnp with nnabla
     path = os.path.join(nnp_dir, nnp_name)
@@ -454,7 +457,8 @@ def convert_nnp_to_onnx_and_compare(
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
-    #logger.log(99, nnp.protobuf)
+    if show_nnp:
+        logger.log(99, nnp.protobuf)
     onnxex = OnnxExporter(nnp)
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), onnx_name)
@@ -462,7 +466,8 @@ def convert_nnp_to_onnx_and_compare(
 
     # read exported onnx and run network
     model = onnx.load(p)
-    #print(model)
+    if show_onnx:
+        logger.log(99, model)
     #pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [])
     c2 = c2out[out_name]
