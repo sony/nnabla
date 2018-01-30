@@ -411,7 +411,7 @@ def convert_onnx_to_nnp_and_compare(
     # Process onnx with caffe2 backend
     model = onnx.load(path)
     if show_onnx:
-        logger.log(99, model)
+        print(model)
     c2out = onnx_caffe2.backend.run_model(model, [])
     # Process onnx with naabla
     r = OnnxReader(path)
@@ -420,7 +420,7 @@ def convert_onnx_to_nnp_and_compare(
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
     if show_nnp:
-        logger.log(99, nnp.protobuf)
+        print(nnp.protobuf)
 
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
@@ -458,7 +458,7 @@ def convert_nnp_to_onnx_and_compare(
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
     if show_nnp:
-        logger.log(99, nnp.protobuf)
+        print(nnp.protobuf)
     onnxex = OnnxExporter(nnp)
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), onnx_name)
@@ -467,7 +467,7 @@ def convert_nnp_to_onnx_and_compare(
     # read exported onnx and run network
     model = onnx.load(p)
     if show_onnx:
-        logger.log(99, model)
+        print(model)
     #pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [])
     c2 = c2out[out_name]
