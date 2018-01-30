@@ -17,7 +17,8 @@ import struct
 import nnabla.utils.load as nnload
 from nnabla.utils import nnabla_pb2
 import onnx
-from onnx import (ModelProto, TensorProto, GraphProto, TensorShapeProto, AttributeProto)
+from onnx import (ModelProto, TensorProto, GraphProto,
+    TensorShapeProto, AttributeProto, NodeProto)
 import nnabla.logger as logger
 import numpy as np
 import pdb
@@ -238,11 +239,16 @@ class OnnxReader:
             model_proto.ParseFromString(f.read())
         return onnx_model_to_nnp_protobuf(model_proto)
 
-def set_node_attribute(node, func):
+def convert_to_node(func):
+    n = NodeProto()
+    n.name = func.name
+    n.op_type = nnabla_function_type_to_onnx_optype.get(func.type, func.type)
+    n.input.extend(func.input)
+    n.output.extend(func.output)
     if func.type == "Concatenate":
         # ONNX requires axis setting as a parameter
         # for the concat op_type.
-        attr = node.attribute.add()
+        attr = n.attribute.add()
         attr.name = "axis"
         attr.type = AttributeProto.INT
         # If no value is set for axis,
@@ -252,10 +258,19 @@ def set_node_attribute(node, func):
         # NNP Dropout is always is_test=false
         # since we always apply dropout when it is
         # included in a network.
-        attr = node.attribute.add()
+        attr = n.attribute.add()
         attr.name = "is_test"
         attr.type = AttributeProto.INT
         attr.i = 0
+    elif func.type == "Identity":
+        # Convert Identity to a Dropout with is_test=true
+        # so we just copy the input to output
+        n.op_type = "Dropout"
+        attr = n.attribute.add()
+        attr.name = "is_test"
+        attr.type = AttributeProto.INT
+        attr.i = 1
+    return n
 
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
@@ -273,12 +288,8 @@ def nnp_model_to_onnx_graph(graph, nnp):
         var_dict[v.name] = v.shape
 
     for f in net.function:
-        n = graph.node.add()
-        n.name = f.name
-        n.op_type = nnabla_function_type_to_onnx_optype.get(f.type, f.type)
-        n.input.extend(f.input)
-        n.output.extend(f.output)
-        set_node_attribute(n, f)
+        n = convert_to_node(f)
+        graph.node.extend([n])
     for param in nnp.parameter:
         init = graph.initializer.add()
         init.name = param.variable_name
@@ -364,11 +375,11 @@ def test_onnx_nnp_conversion_relu(tmpdir):
     # read exported nnp and run network
     #pdb.set_trace()
     nn_net = nnload.load([p])
-    relu = run_executor(nn_net, "exec_0")
-    #in_data = relu.variables["in_data_0"]
+    exe = run_executor(nn_net, "exec_0")
+    #in_data = exe.variables["in_data_0"]
     #print(in_data.variable_instance.d)
     OUT_DATA_NAME = "out_data_1"
-    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
     #print(nnout.variable_instance.d)
     # Compare both naabla and caffe2 results
     c2 = c2out[OUT_DATA_NAME]
@@ -380,8 +391,8 @@ def test_nnp_onnx_conversion_relu(tmpdir):
     OUT_DATA_NAME = "out_data_1"
     path = os.path.join(TEST_DATA_DIR, "relu.nnp")
     nn_net = nnload.load([path])
-    relu = run_executor(nn_net, "exec_0")
-    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+    exe = run_executor(nn_net, "exec_0")
+    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
 
     # Convert nnp to ONNX
     r = NnpReader(path)
@@ -442,8 +453,8 @@ def test_nnp_onnx_conversion_concat(tmpdir):
     OUT_DATA_NAME = "out_data_1"
     path = os.path.join(TEST_DATA_DIR, "concat.nnp")
     nn_net = nnload.load([path])
-    relu = run_executor(nn_net, "exec_0")
-    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+    exe = run_executor(nn_net, "exec_0")
+    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
 
     # Convert nnp to ONNX
     r = NnpReader(path)
@@ -534,8 +545,8 @@ def test_nnp_onnx_conversion_dropout(tmpdir):
     OUT_DATA_NAME = "out_data_1"
     path = os.path.join(TEST_DATA_DIR, "dropout.nnp")
     nn_net = nnload.load([path])
-    relu = run_executor(nn_net, "exec_0")
-    nnout = relu.variables[OUT_DATA_NAME].variable_instance.d
+    exe = run_executor(nn_net, "exec_0")
+    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
 
     # Convert nnp to ONNX
     r = NnpReader(path)
@@ -588,6 +599,36 @@ def test_onnx_nnp_conversion_dropout_is_test(tmpdir):
     c2 = c2out[OUT_DATA_NAME]
     #print(c2, c2.shape)
     #print(nnout, nnout.shape)
+    assert np.allclose(c2, nnout)
+
+def test_nnp_onnx_conversion_dropout_is_test(tmpdir):
+    # Process nnp with nnabla
+    OUT_DATA_NAME = "out_data_1"
+    path = os.path.join(TEST_DATA_DIR, "dropout_test.nnp")
+    nn_net = nnload.load([path])
+    exe = run_executor(nn_net, "exec_0")
+    nnout = exe.variables[OUT_DATA_NAME].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    #logger.log(99, nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), "dropout_test.onnx")
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    #print(model)
+    #pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2 = c2out[OUT_DATA_NAME]
+    # Compare both naabla and caffe2 results
+    #print(c2.shape, nnout.shape)
     assert np.allclose(c2, nnout)
 #
 #def test_onnx_nnp_conversion_conv(tmpdir):
