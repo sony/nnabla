@@ -309,7 +309,7 @@ class OnnxReader:
             model_proto.ParseFromString(f.read())
         return onnx_model_to_nnp_protobuf(model_proto)
 
-def convert_to_node(func):
+def convert_to_node(func, variables):
     n = NodeProto()
     n.name = func.name
     n.op_type = nnabla_function_type_to_onnx_optype.get(func.type, func.type)
@@ -355,6 +355,44 @@ def convert_to_node(func):
         p.name = "pads"
         p.type = AttributeProto.INTS
         p.ints.extend(mpp.pad.dim)
+    elif func.type == "Convolution":
+        cp = func.convolution_param
+        # Calculate the kernel_shape from input weight data.
+        # Weight data should be the second input for convolution
+        if len(func.input) < 2:
+            raise ValueError(
+                "Weight input is missing for convolution {}"
+                .format(func.name))
+        weight = func.input[1]
+        weight_var = [v for v in variables if v.name == weight]
+        if len(weight_var) != 1:
+            raise ValueError(
+                "Multiple weight inputs were found for convolution {} where there should be only one."
+                .format(func.name))
+        weight_shape = weight_var[0].shape
+        # The base axis for weights is the next axis from the data's base axis
+        weight_base = cp.base_axis + 1
+        k = n.attribute.add()
+        k.name = "kernel_shape"
+        k.type = AttributeProto.INTS
+        k.ints.extend(weight_shape.dim[weight_base:])
+
+        d = n.attribute.add()
+        d.name = "dilations"
+        d.type = AttributeProto.INTS
+        d.ints.extend(cp.dilation.dim)
+        s = n.attribute.add()
+        s.name = "strides"
+        s.type = AttributeProto.INTS
+        s.ints.extend(cp.stride.dim)
+        p = n.attribute.add()
+        p.name = "pads"
+        p.type = AttributeProto.INTS
+        p.ints.extend(cp.pad.dim)
+        g = n.attribute.add()
+        g.name = "group"
+        g.type = AttributeProto.INT
+        g.i = cp.group
     return n
 
 def nnp_model_to_onnx_graph(graph, nnp):
@@ -373,7 +411,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
         var_dict[v.name] = v.shape
 
     for f in net.function:
-        n = convert_to_node(f)
+        n = convert_to_node(f, net.variable)
         graph.node.extend([n])
     for param in nnp.parameter:
         init = graph.initializer.add()
@@ -578,6 +616,10 @@ def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0", show_onnx=True)
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
