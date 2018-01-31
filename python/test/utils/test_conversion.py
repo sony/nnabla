@@ -122,20 +122,24 @@ def convert_to_function(node):
                     raise ValueError("Dropout ratio must be a single float")
                 func.dropout_param.p = attr.f
     elif node.op_type == "Conv":
-        func.convolution_param.base_axis = 2
+        cp = func.convolution_param
+        #cp.base_axis = 1
         for attr in node.attribute:
-            #if attr.name == "kernel_shape":
-            #    if attr.type != AttributeProto.INTS:
-            #        raise ValueError("Only INTS are supported for kernel_shape in Conv op_type")
-            #    func.convolution_param.dilation.dim.extend(attr.ints)
+            # We do not set 'kernel_shape' to NNabla
+            # since NNabla doesn't have a parameter for it
+            # (it will be inferred from weight input)
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for pads in Conv op_type")
-                func.convolution_param.pad.dim.extend(attr.ints)
+                cp.pad.dim.extend(attr.ints)
             elif attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for strides in Conv op_type")
-                func.convolution_param.stride.dim.extend(attr.ints)
+                cp.stride.dim.extend(attr.ints)
+            elif attr.name == "dilations":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for dilations in Conv op_type")
+                cp.dilation.dim.extend(attr.ints)
     elif node.op_type == "GlobalAveragePool":
         # We substitute GlobalAveragePool with an AveragePool
         # that has the same kernel size as the input WxH
@@ -479,6 +483,8 @@ def convert_nnp_to_onnx_and_compare(
 
 @pytest.fixture
 def nnp_fixture():
+    # We need to remove all parameters for each test case
+    # because the buffer shape will differ while having same names
     nnabla.clear_parameters()
 
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
@@ -533,6 +539,10 @@ def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
 
+def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0", show_nnp=True)
+
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
 #    # Process onnx with caffe2 backend
@@ -564,34 +574,6 @@ def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
 #    print(nnout, nnout.shape)
 #    #assert np.allclose(c2, nnout)
 
-#
-#def test_onnx_nnp_conversion_conv(tmpdir):
-#    path = os.path.join(TEST_DATA_DIR, "conv.onnx")
-#    # Process onnx with caffe2 backend
-#    #model = onnx.load(path)
-#    #c2out = onnx_caffe2.backend.run_model(model, [])
-#    # Process onnx with naabla
-#    r = OnnxReader(path)
-#    nnp = r.read()
-#    assert nnp is not None
-#    assert len(nnp.other_files) == 0
-#    assert nnp.protobuf is not None
-#    logger.log(99, nnp.protobuf)
-#
-#    #nnpex = NnpExporter(nnp, batch_size=0)
-#    #nnpdir = tmpdir.mkdir("nnp")
-#    #p = os.path.join(str(nnpdir), "conv.nnp")
-#    #nnpex.export_nnp(p)
-#    # read exported nnp and run network
-#    # pdb.set_trace()
-#    #nn_net = nnload.load([p])
-#    #conv = run_executor(nn_net, "exec_0")
-#    #OUT_DATA_NAME = "out_data_1"
-#    #nnout = conv.variables[OUT_DATA_NAME].variable_instance.d
-#    #c2 = c2out[OUT_DATA_NAME]
-#    ##print(c2, c2.shape)
-#    ##print(nnout, nnout.shape)
-#    #assert np.allclose(c2, nnout)
 ##
 #def test_onnx_nnp_conversion_gap(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
