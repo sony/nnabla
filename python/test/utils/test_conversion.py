@@ -123,7 +123,14 @@ def convert_to_function(node):
                 func.dropout_param.p = attr.f
     elif node.op_type == "Conv":
         cp = func.convolution_param
-        #cp.base_axis = 1
+        # We shouldn't need these default settings
+        # since NNabla will set these for us
+        cp.base_axis = 1
+        cp.group = 1
+        dims = []
+        pads = []
+        strides = []
+        dilations = []
         for attr in node.attribute:
             # We do not set 'kernel_shape' to NNabla
             # since NNabla doesn't have a parameter for it
@@ -131,15 +138,35 @@ def convert_to_function(node):
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for pads in Conv op_type")
-                cp.pad.dim.extend(attr.ints)
+                pads.extend(attr.ints)
+                dims.append(len(pads))
             elif attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for strides in Conv op_type")
-                cp.stride.dim.extend(attr.ints)
+                strides.extend(attr.ints)
+                dims.append(len(strides))
             elif attr.name == "dilations":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for dilations in Conv op_type")
-                cp.dilation.dim.extend(attr.ints)
+                dilations.extend(attr.ints)
+                dims.append(len(dilations))
+            elif attr.name == "group":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Only INT are supported for group in Conv op_type")
+                cp.group = attr.int
+        # NNabla requires for the dimensions of strides, pads, dilations to match.
+        # We align the dimensions for all three attributes to the shortest one
+        dim = min(dims)
+        if strides:
+            cp.stride.dim.extend(strides[:dim])
+        if pads:
+            cp.pad.dim.extend(pads[:dim])
+        if dilations:
+            cp.dilation.dim.extend(dilations[:dim])
+        else:
+            # Set default values.
+            # Do we really need this? (Default value should be set by NNabla)
+            cp.dilation.dim.extend([1 for _ in range(dim)])
     elif node.op_type == "GlobalAveragePool":
         # We substitute GlobalAveragePool with an AveragePool
         # that has the same kernel size as the input WxH
@@ -149,6 +176,7 @@ def convert_to_function(node):
         app.pad.dim.extend([0,0])
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
+        dims = []
         strides = []
         pads = []
         kernel = []
@@ -157,23 +185,29 @@ def convert_to_function(node):
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for strides in MaxPool op_type")
                 strides.extend(attr.ints)
+                dims.append(len(strides))
             elif attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for pads in MaxPool op_type")
                 pads.extend(attr.ints)
+                dims.append(len(pads))
             elif attr.name == "kernel_shape":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for kernel_shape in MaxPool op_type")
                 kernel.extend(attr.ints)
+                dims.append(len(kernel))
         # NNabla requires for the dimensions of strides, pads, kernels to match.
         # We align the dimensions for all three attributes to the shortest one
-        dim = min(min(len(strides), len(pads)), len(kernel))
-        mpp.stride.dim.extend(strides[:dim])
-        mpp.pad.dim.extend(pads[:dim])
-        mpp.kernel.dim.extend(kernel[:dim])
+        dim = min(dims)
+        if strides:
+            mpp.stride.dim.extend(strides[:dim])
+        if pads:
+            mpp.pad.dim.extend(pads[:dim])
+        if kernel:
+            mpp.kernel.dim.extend(kernel[:dim])
         # Pooling should ignore borders when a valid padding value
         # has been set in order to match the ONNX results
-        ignore_border = len(pads) > 0 and pads[0] > 0
+        ignore_border = pads and (pads[0] > 0)
         mpp.ignore_border = ignore_border
 
     return func
@@ -409,7 +443,7 @@ def run_executor(nn_net, exec_name):
 
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
-        compare_values=True, show_onnx=False, show_nnp=False):
+        compare_values=True, show_onnx=False, show_nnp=False, show_output=False):
     '''Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla'''
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
@@ -440,14 +474,15 @@ def convert_onnx_to_nnp_and_compare(
     #print(nnout.variable_instance.d)
     # Compare both naabla and caffe2 results
     c2 = c2out[out_name]
-    #print(c2, nnout)
+    if show_output:
+        print(c2, nnout)
     assert c2.shape == nnout.shape
     if compare_values:
         assert np.allclose(c2, nnout)
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
-        compare_values=True, show_nnp=False, show_onnx=False):
+        compare_values=True, show_nnp=False, show_onnx=False, show_output=False):
     '''Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla'''
     # Process nnp with nnabla
     path = os.path.join(nnp_dir, nnp_name)
@@ -476,7 +511,8 @@ def convert_nnp_to_onnx_and_compare(
     c2out = onnx_caffe2.backend.run_model(model, [])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
-    #print(c2, nnout)
+    if show_output:
+        print(c2, nnout)
     assert c2.shape == nnout.shape
     if compare_values:
         assert np.allclose(c2, nnout)
@@ -541,7 +577,7 @@ def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
 
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
-        tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0", show_nnp=True)
+        tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
