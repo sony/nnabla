@@ -17,7 +17,6 @@ import shutil
 import sys
 from tqdm import tqdm
 
-from nnabla.logger import logger
 from nnabla.utils.data_source import DataSourceWithFileCache
 from nnabla.utils.data_source_implements import CacheDataSource, CsvDataSource
 
@@ -46,14 +45,14 @@ def conv_dataset_command(args):
         elif os.path.isdir(args.destination):
             print('Overwrite destination [{}].'.format(args.destination))
             shutil.rmtree(args.destination, ignore_errors=True)
-            os.mkdir(args.destination)
+            os.makedirs(args.destination, exist_ok=True)
         else:
             print('Cannnot overwrite file [{}] please delete it.'.format(
                 args.destination))
             sys.exit(-1)
     else:
-        os.mkdir(args.destination)
-    datasource = None
+        os.makedirs(args.destination, exist_ok=True)
+
     _, ext = os.path.splitext(args.source)
     if ext.lower() == '.csv':
         with CsvDataSource(args.source, shuffle=args.shuffle, normalize=args.normalize) as source:

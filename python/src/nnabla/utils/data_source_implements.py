@@ -59,13 +59,22 @@ class CacheDataSource(DataSource):
     def _get_data(self, position):
         self._position = position
         filename, index = self._order[position]
-        if filename != self._current_filename:
-            self._current_filename = filename
-            self._current_data = {}
+
+        try:
+            if filename != self._current_filename:
+                self._current_filename = filename
+                self._current_data = {}
+                with self._filereader.open_cache(self._current_filename) as cache:
+                    for k, v in cache.items():
+                        self._current_data[k] = v.value
+            data = [self._current_data[v][index] for v in self.variables]
+        except KeyError:
+            logger.log(99, '_get_data() fails retrying.')
             with self._filereader.open_cache(self._current_filename) as cache:
                 for k, v in cache.items():
                     self._current_data[k] = v.value
-        data = [self._current_data[v][index] for v in self.variables]
+            data = [self._current_data[v][index] for v in self.variables]
+
         if self._normalize:
             data = [d.astype(numpy.float32) * (1.0 / 255.0)
                     if d.dtype == numpy.uint8 else d for d in data]

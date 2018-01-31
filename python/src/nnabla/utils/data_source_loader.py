@@ -385,8 +385,7 @@ def _download_hook(t):
 def get_data_home():
     import os
     d = os.path.expanduser("~/nnabla_data")
-    if not os.path.isdir(d):
-        os.makedirs(d)
+    os.makedirs(d, exist_ok=True)
     return d
 
 

@@ -182,6 +182,8 @@ def main():
         try:
             args.func(args)
         except:
+            import traceback
+            print(traceback.format_exc())
             MPI.COMM_WORLD.Abort()
     else:
         args.func(args)

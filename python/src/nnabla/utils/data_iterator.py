@@ -204,7 +204,16 @@ class DataIterator(object):
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
+        if self._current_data is None:
+            self._next_thread = threading.Thread(target=self._next)
+            self._next_thread.start()
         self._next_thread.join()
+
+        if self._current_data is None:
+            logger.log(99, 'next() got None retrying.')
+            self._next_thread = threading.Thread(target=self._next)
+            self._next_thread.start()
+            self._next_thread.join()
         self._current_epoch, data = self._current_data
         self._next_thread = threading.Thread(target=self._next)
         self._next_thread.start()

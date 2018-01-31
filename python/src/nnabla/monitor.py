@@ -32,8 +32,7 @@ class Monitor(object):
 
     def __init__(self, save_path):
         self._save_path = save_path
-        if not os.path.isdir(save_path):
-            os.makedirs(save_path)
+        os.makedirs(save_path, exist_ok=True)
 
     @property
     def save_path(self):
@@ -207,8 +206,7 @@ class MonitorImage(object):
             self.normalize_method = self.default_normalize_method
         self.num_images = num_images
         self.save_dir = os.path.join(monitor.save_path, name.replace(' ', '-'))
-        if not os.path.isdir(self.save_dir):
-            os.makedirs(self.save_dir)
+        os.makedirs(self.save_dir, exist_ok=True)
 
     def default_normalize_method(self, x):
         ma = x.max()

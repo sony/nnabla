@@ -51,8 +51,7 @@ def load_param_in_txt(name, filepath):
 # subcommands
 # ===========
 def decode_param_command(args, **kwargs):
-    if not os.path.exists(args.outdir):
-        os.makedirs(args.outdir)
+    os.makedirs(args.outdir, exist_ok=True)
 
     # Load prameter
     logger.log(99, 'Loading parameters...')
@@ -64,8 +63,7 @@ def decode_param_command(args, **kwargs):
         logger.log(99, key)
         file_path = args.outdir + os.sep + key.replace('/', '~') + '.txt'
         dir = os.path.dirname(file_path)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        os.makedirs(dir, exist_ok=True)
         save_param_in_txt(variable.d, file_path)
 
     logger.log(99, 'Decode Parameter Completed.')

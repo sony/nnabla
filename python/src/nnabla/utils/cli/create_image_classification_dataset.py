@@ -102,8 +102,8 @@ def convert_image(args):
             im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
 
         # output
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
+        os.makedirs(dest_path, exist_ok=True)
+
         scipy.misc.imsave(dest_file_name, im)
     except:
         logger.warning(

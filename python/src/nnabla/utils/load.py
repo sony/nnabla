@@ -424,8 +424,9 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
                 if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
                     logger.log(99, 'Creating cache data for "' + uri + '"')
-                    if not os.path.exists(cache_dir):
-                        os.mkdir(cache_dir)
+
+                    os.makedirs(cache_dir, exist_ok=True)
+
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
                         index = 0
                         while index < di.size:
@@ -448,8 +449,8 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                 import sys
                 sys.exit(-1)
             else:
-                if cache_dir and not os.path.exists(cache_dir):
-                    os.mkdir(cache_dir)
+                if cache_dir:
+                    os.makedirs(cache_dir, exist_ok=True)
                 dataset.data_iterator = (lambda: data_iterator_csv_dataset(
                     uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
