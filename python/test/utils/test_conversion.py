@@ -152,7 +152,7 @@ def convert_to_function(node):
                 dims.append(len(dilations))
             elif attr.name == "group":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT are supported for group in Conv op_type")
+                    raise ValueError("Only INT is supported for group in Conv op_type")
                 cp.group = attr.int
         # NNabla requires for the dimensions of strides, pads, dilations to match.
         # We align the dimensions for all three attributes to the shortest one
