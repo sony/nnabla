@@ -651,49 +651,72 @@ def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
 
-#def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
-#    onnx_dir = TEST_DATA_DIR
-#    onnx_name = "squeezenet.onnx"
-#    nnp_name = "squeezenet.nnp"
-#    out_name = "softmaxout_1"
-#    exec_name = "exec_0"
-#    show_onnx = False
-#    show_nnp = True
-#    path = os.path.join(onnx_dir, onnx_name)
-#    # Process onnx with caffe2 backend
-#    model = onnx.load(path)
-#    if show_onnx:
-#        print(model)
-#    #img = np.random.rand(1,3,224,224)
-#    #c2out = onnx_caffe2.backend.run_model(model, [img])
-#    # Process onnx with naabla
-#    r = OnnxReader(path)
-#    nnp = r.read()
-#    assert nnp is not None
-#    assert len(nnp.other_files) == 0
-#    assert nnp.protobuf is not None
-#    if show_nnp:
-#        print(nnp.protobuf)
-#
-#    #nnpex = NnpExporter(nnp, batch_size=0)
-#    #nnpdir = tmpdir.mkdir("nnp")
-#    #p = os.path.join(str(nnpdir), nnp_name)
-#    #nnpex.export_nnp(p)
-#    ## read exported nnp and run network
-#    ##pdb.set_trace()
-#    #nn_net = nnload.load([p])
-#    #exe = run_executor(nn_net, exec_name)
-#    ##in_data = exe.variables["in_data_0"]
-#    ##print(in_data.variable_instance.d)
-#    #nnout = exe.variables[out_name].variable_instance.d
-#    ##print(nnout.variable_instance.d)
-#    ## Compare both naabla and caffe2 results
-#    #c2 = c2out[out_name]
-#    #if show_output:
-#    #    print(c2, nnout)
-#    #assert c2.shape == nnout.shape
-#    #if compare_values:
-#    #    assert np.allclose(c2, nnout)
+def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
+    onnx_dir = TEST_DATA_DIR
+    onnx_name = "squeezenet.onnx"
+    nnp_name = "squeezenet.nnp"
+    out_name = "softmaxout_1"
+    exec_name = "exec_0"
+    show_onnx = False
+    show_nnp = False
+    path = os.path.join(onnx_dir, onnx_name)
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    pdb.set_trace()
+    if show_onnx:
+        print(model)
+    img = np.random.rand(1,3,224,224).astype(np.float32)
+
+    # Remove Softmax and GlobalAveragePooling for now.
+    # This is temporal
+    nodes = len(model.graph.node)
+    sm_node = model.graph.node[nodes-1]
+    gap_node = model.graph.node[nodes-2]
+    def change_to_copy(node):
+        """Change node operation to a simple copy"""
+        # Dropout with is_test=True is equal to a simple copy
+        node.op_type = "Dropout"
+        attr = node.attribute.add()
+        attr.name = "is_test"
+        attr.type = AttributeProto.INT
+        attr.i = 1
+    change_to_copy(sm_node)
+    change_to_copy(gap_node)
+    # Change the output dimension so it matches the actual size
+    out_shape = model.graph.output[0].type.tensor_type.shape
+    out_shape.dim[0].dim_value = 1
+    out_shape.dim[1].dim_value = 1000
+    out_shape.dim[2].dim_value = 13
+    out_shape.dim[3].dim_value = 13
+
+    c2out = onnx_caffe2.backend.run_model(model, [img])
+    # Process onnx with naabla
+    r = OnnxReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    if show_nnp:
+        print(nnp.protobuf)
+
+    nnpex = NnpExporter(nnp, batch_size=0)
+    nnpdir = tmpdir.mkdir("nnp")
+    p = os.path.join(str(nnpdir), nnp_name)
+    nnpex.export_nnp(p)
+    # read exported nnp and run network
+    nn_net = nnload.load([p])
+    #exe = run_executor(nn_net, exec_name)
+    ##in_data = exe.variables["in_data_0"]
+    ##print(in_data.variable_instance.d)
+    #nnout = exe.variables[out_name].variable_instance.d
+    ##print(nnout.variable_instance.d)
+    ## Compare both naabla and caffe2 results
+    #c2 = c2out[out_name]
+    #if show_output:
+    #    print(c2, nnout)
+    #assert c2.shape == nnout.shape
+    #if compare_values:
+    #    assert np.allclose(c2, nnout)
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
