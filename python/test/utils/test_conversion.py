@@ -29,6 +29,7 @@ import onnx_caffe2.backend
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
 
+SKIP_RAW_DATA = False # Skip raw data fro debugging purposes
 NNABLA_DOMAIN = "org.nnabla"
 MIN_NNABLA_OPSET_VERSION = 1
 MIN_ONNX_IR_VERSION = 3
@@ -217,32 +218,19 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
 
+    all_vars = set()
     # convert nodes
     for n in graph.node:
         f = convert_to_function(n)
+        #Gather all unique names for input and output
+        for i in f.input:
+            all_vars.add(i)
+        for o in f.output:
+            all_vars.add(o)
         network.function.extend([f])
 
-    # convert Input/Output ValueInfoProto
-    # to Variable
-    in_vars = []
-    param_vars = []
-    out_vars = []
-    mid_vars = []
-    for i in graph.input:
-        v = onnx_value_info_proto_to_variable(i, network)
-        v.type = "Parameter"
-        v.initializer.type = "Constant"
-        v.initializer.multiplier = 1.0
-        param_vars.append(v)
-    for o in graph.output:
-        v = onnx_value_info_proto_to_variable(o, network)
-        v.type = "Buffer"
-        out_vars.append(v)
-    for vi in graph.value_info:
-        v = onnx_value_info_proto_to_variable(vi, network)
-        mid_vars.append(v)
-
     # convert parameters
+    param_vars = set()
     for init in graph.initializer:
         if init.data_type != TensorProto.FLOAT:
             logger.warning("Only floating point data is supported for parameters (Got {}). Skipping {}"
@@ -251,26 +239,68 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         p = pb.parameter.add()
         p.variable_name = init.name
         p.shape.dim.extend(init.dims)
-        # convert raw bytestream to floating points
-        num = len(init.raw_data) // 4
-        #logger.log(99, "raw_data num: {}".format(num))
-        data = struct.unpack(str(num)+'f', init.raw_data)
-        p.data.extend(data)
+        if not SKIP_RAW_DATA:
+            # convert raw bytestream to floating points
+            num = len(init.raw_data) // 4
+            #logger.log(99, "raw_data num: {}".format(num))
+            data = struct.unpack(str(num)+'f', init.raw_data)
+            p.data.extend(data)
         p.need_grad = False
+        # Keep the list of all initializer names
+        param_vars.add(init.name)
+    # We need to distinguish constant parameters (which become 'Parameter' in NNabla)
+    # from input/output variables (which become 'Buffer' in NNabla).
+    # Contant parameters appear in the initializer list so we keep
+    # all names of variables from the initializer and compare them with 
+    # the names we gathered in all_vars.
+    # The names that only appear in all_vars are the input/output variables.
+
+    # convert Input/Output ValueInfoProto
+    # to Variable
+    in_list = []
+    param_list = []
+    out_list = []
+    for i in graph.input:
+        v = onnx_value_info_proto_to_variable(i, network)
+        if v.name in param_vars:
+            # This input is a parameter
+            v.type = "Parameter"
+            v.initializer.type = "Constant"
+            v.initializer.multiplier = 1.0
+            param_list.append(v)
+        else :
+            # This input is a variable
+            v.type ="Buffer"
+            in_list.append(v)
+        all_vars.remove(v.name)
+    for o in graph.output:
+        v = onnx_value_info_proto_to_variable(o, network)
+        v.type = "Buffer"
+        out_list.append(v)
+        all_vars.remove(v.name)
+
+    for varg in all_vars:
+        # We add all remaining variables as intermediate buffer
+        v = network.variable.add()
+        v.type = "Buffer"
+        v.name = varg
+        # We calculate the buffer size of all intermediate buffers here
+    
+    #pdb.set_trace()
 
     # Add executor for target network
     exe = pb.executor.add()
     exe.name = "exec_0"
     exe.network_name = network.name
-    for iv in in_vars:
+    for iv in in_list:
         dv = exe.data_variable.add()
         dv.variable_name = iv.name
         dv.data_name = iv.name
-    for ov in out_vars:
+    for ov in out_list:
         outv = exe.output_variable.add()
         outv.variable_name = ov.name
         outv.data_name = ov.name
-    for pv in param_vars:
+    for pv in param_list:
         p = exe.parameter_variable.add()
         p.variable_name = pv.name
 
@@ -620,6 +650,50 @@ def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
+
+#def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
+#    onnx_dir = TEST_DATA_DIR
+#    onnx_name = "squeezenet.onnx"
+#    nnp_name = "squeezenet.nnp"
+#    out_name = "softmaxout_1"
+#    exec_name = "exec_0"
+#    show_onnx = False
+#    show_nnp = True
+#    path = os.path.join(onnx_dir, onnx_name)
+#    # Process onnx with caffe2 backend
+#    model = onnx.load(path)
+#    if show_onnx:
+#        print(model)
+#    #img = np.random.rand(1,3,224,224)
+#    #c2out = onnx_caffe2.backend.run_model(model, [img])
+#    # Process onnx with naabla
+#    r = OnnxReader(path)
+#    nnp = r.read()
+#    assert nnp is not None
+#    assert len(nnp.other_files) == 0
+#    assert nnp.protobuf is not None
+#    if show_nnp:
+#        print(nnp.protobuf)
+#
+#    #nnpex = NnpExporter(nnp, batch_size=0)
+#    #nnpdir = tmpdir.mkdir("nnp")
+#    #p = os.path.join(str(nnpdir), nnp_name)
+#    #nnpex.export_nnp(p)
+#    ## read exported nnp and run network
+#    ##pdb.set_trace()
+#    #nn_net = nnload.load([p])
+#    #exe = run_executor(nn_net, exec_name)
+#    ##in_data = exe.variables["in_data_0"]
+#    ##print(in_data.variable_instance.d)
+#    #nnout = exe.variables[out_name].variable_instance.d
+#    ##print(nnout.variable_instance.d)
+#    ## Compare both naabla and caffe2 results
+#    #c2 = c2out[out_name]
+#    #if show_output:
+#    #    print(c2, nnout)
+#    #assert c2.shape == nnout.shape
+#    #if compare_values:
+#    #    assert np.allclose(c2, nnout)
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
