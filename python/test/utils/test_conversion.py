@@ -98,13 +98,14 @@ def convert_to_function(node):
         elif axis_count > 1:
             raise ValueError("More than one axis was specifed as the Concat Axis")
     elif node.op_type == "Softmax":
+        func.type = "Identity"
         # default to channel axis
-        func.softmax_param.axis = 1
-        for attr in node.attribute:
-            if attr.name == "axis":
-                if attr.type != AttributeProto.INT:
-                    raise ValueError("Softmax axis must be a single integer")
-                func.softmax_param.axis = attr.i
+        #func.softmax_param.axis = 1
+        #for attr in node.attribute:
+        #    if attr.name == "axis":
+        #        if attr.type != AttributeProto.INT:
+        #            raise ValueError("Softmax axis must be a single integer")
+        #        func.softmax_param.axis = attr.i
     elif node.op_type == "Dropout":
         # Dropout requires a ratio to be set
         for attr in node.attribute:
@@ -115,6 +116,7 @@ def convert_to_function(node):
                     # is_test is True meaning we will not be applying dropout.
                     # We are simply going to pass through the input values
                     # by using the Identity function
+                    func.ClearField("dropout_param")
                     func.type = "Identity"
                     # We break here so we don't write any needless attributes
                     break
@@ -169,12 +171,13 @@ def convert_to_function(node):
             # Do we really need this? (Default value should be set by NNabla)
             cp.dilation.dim.extend([1 for _ in range(dim)])
     elif node.op_type == "GlobalAveragePool":
-        # We substitute GlobalAveragePool with an AveragePool
-        # that has the same kernel size as the input WxH
-        app = func.average_pooling_param
-        app.kernel.dim.extend([3,3])
-        app.stride.dim.extend([3,3])
-        app.pad.dim.extend([0,0])
+        func.type = "Identity"
+        ## We substitute GlobalAveragePool with an AveragePool
+        ## that has the same kernel size as the input WxH
+        #app = func.average_pooling_param
+        #app.kernel.dim.extend([3,3])
+        #app.stride.dim.extend([3,3])
+        #app.pad.dim.extend([0,0])
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
         dims = []
@@ -662,7 +665,6 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
-    pdb.set_trace()
     if show_onnx:
         print(model)
     img = np.random.rand(1,3,224,224).astype(np.float32)
@@ -703,6 +705,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
+    pdb.set_trace()
     # read exported nnp and run network
     nn_net = nnload.load([p])
     #exe = run_executor(nn_net, exec_name)
