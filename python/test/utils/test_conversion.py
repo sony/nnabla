@@ -71,7 +71,7 @@ nnabla_function_type_to_onnx_optype = {
 }
 
 def convert_to_function(node):
-    '''Convert given node to corresponding function'''
+    """Convert given node to corresponding function"""
     func = nnabla_pb2.Function()
     func.name = node.name
     func.type = onnx_optype_to_nnabla_function_type.get(node.op_type, node.op_type)
@@ -423,7 +423,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
     # Add all the constant parameters for all nodes
     # and the first node's input as input
     def create_dim(d):
-        '''Createa dimension message for a given dimension'''
+        """Createa dimension message for a given dimension"""
         dim = TensorShapeProto.Dimension()
         dim.dim_value = d
         return dim
@@ -473,7 +473,7 @@ class OnnxExporter:
 
 
 def run_executor(nn_net, exec_name):
-    '''Run specified executor and return its network'''
+    """Run specified executor and return its network"""
     exe = nn_net.executors[exec_name]
     exe.network.forward(exe.forward_sequence)
     return exe.network
@@ -482,7 +482,7 @@ def run_executor(nn_net, exec_name):
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
         compare_values=True, show_onnx=False, show_nnp=False, show_output=False):
-    '''Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla'''
+    """Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
@@ -521,7 +521,7 @@ def convert_onnx_to_nnp_and_compare(
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
         compare_values=True, show_nnp=False, show_onnx=False, show_output=False):
-    '''Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla'''
+    """Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla"""
     # Process nnp with nnabla
     path = os.path.join(nnp_dir, nnp_name)
     nn_net = nnload.load([path])
@@ -619,7 +619,7 @@ def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
 
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
-        tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0", show_onnx=True)
+        tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
