@@ -138,6 +138,13 @@ def convert_to_function(node, base_name, func_counter):
                     # by using the Identity function
                     func.ClearField("dropout_param")
                     func.type = "Identity"
+
+                    if len(node.output) > 1:
+                        # Identity only allows a single output,
+                        # while a dropout node may have two outputs (result + mask)
+                        # We will drop the mask output (which should be the second one)
+                        del func.output[:]
+                        func.output.extend([node.output[0]])
                     # We break here so we don't write any needless attributes
                     break
             elif attr.name == "ratio":
