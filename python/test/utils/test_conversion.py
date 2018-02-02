@@ -661,6 +661,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     exec_name = "exec_0"
     show_onnx = False
     show_nnp = False
+    show_output = False
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
@@ -703,21 +704,21 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
-    pdb.set_trace()
+    #pdb.set_trace()
     # read exported nnp and run network
     nn_net = nnload.load([p])
-    #exe = run_executor(nn_net, exec_name)
-    ##in_data = exe.variables["in_data_0"]
-    ##print(in_data.variable_instance.d)
-    #nnout = exe.variables[out_name].variable_instance.d
-    ##print(nnout.variable_instance.d)
-    ## Compare both naabla and caffe2 results
-    #c2 = c2out[out_name]
-    #if show_output:
-    #    print(c2, nnout)
-    #assert c2.shape == nnout.shape
-    #if compare_values:
-    #    assert np.allclose(c2, nnout)
+    exe = run_executor(nn_net, exec_name)
+    #in_data = exe.variables["in_data_0"]
+    #print(in_data.variable_instance.d)
+    nnout = exe.variables[out_name].variable_instance.d
+    #print(nnout.variable_instance.d)
+    # Compare both naabla and caffe2 results
+    c2 = c2out[out_name]
+    if show_output:
+        print(c2, nnout)
+    assert c2.shape == nnout.shape
+    if compare_values:
+        assert np.allclose(c2, nnout)
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
