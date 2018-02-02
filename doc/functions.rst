@@ -3189,7 +3189,7 @@ Round
 
 Element-wise round function.
 
-In the forward pass, this function simply computes `round`, 
+In the forward pass, this function simply computes `round` to the nearest integer value.
 
 .. math::
     y_i = round(x_i).
