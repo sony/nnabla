@@ -20,7 +20,7 @@ from nbla_test_utils import list_context
 
 ctxs = list_context('Round')
 
-def ref_round(x, ):
+def ref_round(x):
     return np.round(x)
 
 def ref_grad_round(x, dy):
