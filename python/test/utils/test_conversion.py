@@ -659,6 +659,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     nnp_name = "squeezenet.nnp"
     out_name = "softmaxout_1"
     exec_name = "exec_0"
+    in_name = "data_0"
     show_onnx = False
     show_nnp = False
     show_output = False
@@ -704,13 +705,17 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
-    #pdb.set_trace()
     # read exported nnp and run network
     nn_net = nnload.load([p])
-    exe = run_executor(nn_net, exec_name)
+    #pdb.set_trace()
+    # set input data and run inference
+    net = nn_net.executors[exec_name].network
+    in_data = net.variables[in_name]
+    in_data.variable_instance.d = img
+    net = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
     #print(in_data.variable_instance.d)
-    nnout = exe.variables[out_name].variable_instance.d
+    nnout = net.variables[out_name].variable_instance.d
     #print(nnout.variable_instance.d)
     # Compare both naabla and caffe2 results
     c2 = c2out[out_name]
