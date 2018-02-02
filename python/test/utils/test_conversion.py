@@ -72,11 +72,30 @@ nnabla_function_type_to_onnx_optype = {
     "MaxPooling": "MaxPool",
 }
 
-def convert_to_function(node):
+def convert_to_function(node, base_name, func_counter):
     """Convert given node to corresponding function"""
     func = nnabla_pb2.Function()
-    func.name = node.name
     func.type = onnx_optype_to_nnabla_function_type.get(node.op_type, node.op_type)
+    # NNabla requires each function to have a unique name.
+    # If the node's name already has something set,
+    # we are going to use it.
+    # If no name is set (which is allowed in ONNX) we
+    # are going to generate a name
+    if node.name:
+        func.name = node.name
+    else:
+        # Node name was not specified.
+        # We are going to generate a name by counting
+        # how many times a function was used.
+        # (or we might use some kind of random number and hash it)
+        count = 0
+        if func.type in func_counter:
+            # This function has been used already.
+            # Get the current count
+            count = func_counter[func.type]
+        func.name = "{}/{}_{}".format(base_name, func.type, count)
+        # Store the current usage count
+        func_counter[func.type] = count+1
     func.input.extend(node.input)
     func.output.extend(node.output)
     if node.op_type == "Concat":
@@ -223,9 +242,10 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     network.name = graph.name
 
     all_vars = set()
+    func_counter = {}
     # convert nodes
     for n in graph.node:
-        f = convert_to_function(n)
+        f = convert_to_function(n, graph.name, func_counter)
         #Gather all unique names for input and output
         for i in f.input:
             all_vars.add(i)
@@ -676,9 +696,9 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
-    #pdb.set_trace()
+    pdb.set_trace()
     # read exported nnp and run network
-    #nn_net = nnload.load([p])
+    nn_net = nnload.load([p])
     #exe = run_executor(nn_net, exec_name)
     ##in_data = exe.variables["in_data_0"]
     ##print(in_data.variable_instance.d)
