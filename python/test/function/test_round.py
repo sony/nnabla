@@ -20,11 +20,14 @@ from nbla_test_utils import list_context
 
 ctxs = list_context('Round')
 
+
 def ref_round(x):
     return np.round(x)
 
+
 def ref_grad_round(x, dy):
     return dy.flatten()
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
@@ -37,10 +40,10 @@ def test_fixed_point_quantize_forward_backward(seed,
         cap_ignore_region(
             rng.randn(2, 3, 4).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
-        
-    function_tester(rng,F.round,
-                        ref_round,
-                        inputs,
-                        atol_b=1e-3, backward=[True],
-                        ctx=ctx, func_name=func_name,
-                        ref_grad=ref_grad_round)
+
+    function_tester(rng, F.round,
+                    ref_round,
+                    inputs,
+                    atol_b=1e-3, backward=[True],
+                    ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_round)
