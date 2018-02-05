@@ -29,6 +29,7 @@ import nnabla.utils.network
 import onnx_caffe2.backend
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 #from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
+import logging
 
 SKIP_RAW_DATA = False # Skip raw data fro debugging purposes
 NNABLA_DOMAIN = "org.nnabla"
@@ -236,10 +237,9 @@ def convert_to_function(node, base_name, func_counter):
             mpp.pad.dim.extend(pads[:dim])
         if kernel:
             mpp.kernel.dim.extend(kernel[:dim])
-        # Pooling should ignore borders when a valid padding value
-        # has been set in order to match the ONNX results
-        ignore_border = pads and (pads[0] > 0)
-        mpp.ignore_border = ignore_border
+        # Always ignore borders in order to match ONNX(caffe2) results?
+        # Not quite sure yet.
+        mpp.ignore_border = True
 
     return func
 
@@ -667,6 +667,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     show_onnx = False
     show_nnp = False
     show_output = False
+    compare_values = True
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
@@ -721,13 +722,18 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     #print(in_data.variable_instance.d)
     nnout = net.variables[out_name].variable_instance.d
     #print(nnout.variable_instance.d)
+
+    # Print all the intermediate buffer shape in order
+    #for k, v in net.functions.items():
+    #    out = v.outputs[0]
+    #    print(out.name, net.variables[out.name].variable_instance.shape)
     # Compare both naabla and caffe2 results
     c2 = c2out[out_name]
     if show_output:
         print(c2, nnout)
     assert c2.shape == nnout.shape
     if compare_values:
-        assert np.allclose(c2, nnout)
+        assert np.allclose(c2, nnout, atol=1e-05)
 
 #def test_onnx_nnp_conversion_softmax(tmpdir):
 #    path = os.path.join(TEST_DATA_DIR, "softmax.onnx")
