@@ -397,6 +397,8 @@ def convert_to_node(func, variables):
         n.attribute.extend([attr])
     elif func.type == "MaxPooling":
         mpp = func.max_pooling_param
+        if not mpp.ignore_border:
+            raise ValueError("MaxPooling with ignore_border=False is not supported")
         # Copy kernel, stride, and pads values
         k = onnx.helper.make_attribute("kernel_shape", mpp.kernel.dim)
         s = onnx.helper.make_attribute("strides", mpp.stride.dim)
@@ -641,13 +643,17 @@ def test_onnx_nnp_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_no_pad.onnx", "maxpool_no_pad.nnp", "out_data_1", "exec_0")
 
+def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
+
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.onnx", "maxpool_p0_s2_k3.nnp", "out_data_1", "exec_0")
 
-def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
+def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
-        tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
+        tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.nnp", "maxpool_p0_s2_k3.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
@@ -729,6 +735,54 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     #    print(out.name, net.variables[out.name].variable_instance.shape)
     # Compare both naabla and caffe2 results
     c2 = c2out[out_name]
+    if show_output:
+        print(c2, nnout)
+    assert c2.shape == nnout.shape
+    if compare_values:
+        assert np.allclose(c2, nnout, atol=1e-05)
+
+def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
+    nnp_dir = TEST_DATA_DIR
+    onnx_name = "squeezenet.onnx"
+    nnp_name = "squeezenet.nnp"
+    out_name = "softmaxout_1"
+    exec_name = "exec_0"
+    in_name = "data_0"
+    show_onnx = False
+    show_nnp = False
+    show_output = False
+    compare_values = True
+    # Process nnp with nnabla
+    path = os.path.join(nnp_dir, nnp_name)
+    nn_net = nnload.load([path])
+    net = nn_net.executors[exec_name].network
+    in_data = net.variables[in_name]
+    img = np.random.rand(1,3,224,224).astype(np.float32)
+    in_data.variable_instance.d = img
+    exe = run_executor(nn_net, exec_name)
+    nnout = exe.variables[out_name].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    if show_nnp:
+        print(nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), onnx_name)
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    if show_onnx:
+        print(model)
+    #pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [img])
+    c2 = c2out[out_name]
+    # Compare both naabla and caffe2 results
     if show_output:
         print(c2, nnout)
     assert c2.shape == nnout.shape
