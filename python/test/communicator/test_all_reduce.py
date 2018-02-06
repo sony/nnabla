@@ -57,6 +57,7 @@ def ref_all_reduce(x_data_list, size, division):
 @pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inplace", [True, False])
+# each process do not seem to call the function in the same order.
 @pytest.mark.parametrize("division", [False])
 def test_all_reduce(seed, inplace, division):
     try:
