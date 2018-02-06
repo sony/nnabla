@@ -18,6 +18,7 @@ NBLA_REGISTER_COMMUNICATOR_HEADER(MultiProcessDataParallelCommunicator);
 
 using std::string;
 using std::vector;
+using std::pair;
 using std::shared_ptr;
 using std::unordered_map;
 
@@ -65,15 +66,32 @@ public:
   */
   virtual void init();
 
-  virtual void reduce(bool division = false);
+  virtual string new_group(pair<string, vector<int>> name_ranks_pair);
+  virtual unordered_map<string, vector<int>> list_groups();
+  virtual bool find_self(const string &group);
+  virtual vector<int> find_group(const string &group);
+
+  virtual void reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
+                      bool division = false, bool inplace = false,
+                      const string &group = "world");
+  virtual void reduce(const NdArrayPtr &ndarray, int dst, bool division = false,
+                      bool inplace = false, const string &group = "world");
   virtual void allreduce(bool division = false, bool inplace = false);
-  virtual void all_reduce(vector<NdArrayPtr> ndarray_list,
-                          bool division = false, bool inplace = false);
-  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
-                          bool inplace = false);
-  virtual void reducescatter(bool division = false);
-  virtual void bcast();
-  virtual void allgather();
+  virtual void all_reduce(const vector<NdArrayPtr> &ndarray_list,
+                          bool division = false, bool inplace = false,
+                          const string &group = "world");
+  virtual void all_reduce(const NdArrayPtr &ndarray, bool division = false,
+                          bool inplace = false, const string &group = "world");
+  virtual void reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
+                              const NdArrayPtr &ndarray, bool division = false,
+                              const string &group = "world");
+  virtual void bcast(const vector<NdArrayPtr> &ndarray_list, int src,
+                     bool inplace = false, const string &group = "world");
+  virtual void bcast(const NdArrayPtr &ndarray, int src, bool inplace = false,
+                     const string &group = "world");
+  virtual void all_gather(const NdArrayPtr &ndarray,
+                          const vector<NdArrayPtr> &ndarray_list,
+                          const string &group = "world");
 
   virtual void reduce_async(bool division = false);
   virtual void allreduce_async(bool division = false, bool inplace = false);
@@ -86,6 +104,8 @@ public:
   vector<string> allowed_array_classes();
 
 protected:
+  unordered_map<string, vector<int>> groups_;
+
   DISABLE_COPY_AND_ASSIGN(MultiProcessDataParallelCommunicator);
 };
 /*@}*/

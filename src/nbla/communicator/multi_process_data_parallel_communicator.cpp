@@ -39,7 +39,51 @@ template <typename T> void MultiProcessDataParallelCommunicator<T>::init() {
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::reduce(bool division) {
+string MultiProcessDataParallelCommunicator<T>::new_group(
+    pair<string, vector<int>> name_ranks_pair) {
+  NBLA_ERROR(error_code::not_implemented, "CPU new_group is not implemented.")
+}
+
+template <typename T>
+unordered_map<string, vector<int>>
+MultiProcessDataParallelCommunicator<T>::list_groups() {
+  return this->groups_;
+}
+
+template <typename T>
+vector<int>
+MultiProcessDataParallelCommunicator<T>::find_group(const string &group) {
+  auto it = this->groups_.find(group);
+  if (it == this->groups_.end()) { // not found
+    return vector<int>();
+  } else {
+    return it->second;
+  }
+}
+
+template <typename T>
+bool MultiProcessDataParallelCommunicator<T>::find_self(const string &group) {
+  auto ranks = this->groups_[group];
+  auto result = std::find(ranks.begin(), ranks.end(), this->rank_);
+  if (result == ranks.end()) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+template <typename T>
+void MultiProcessDataParallelCommunicator<T>::reduce(
+    const vector<NdArrayPtr> &ndarray_list, int dst, bool division,
+    bool inplace, const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
+}
+
+template <typename T>
+void MultiProcessDataParallelCommunicator<T>::reduce(const NdArrayPtr &ndarray,
+                                                     int dst, bool division,
+                                                     bool inplace,
+                                                     const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
 
@@ -51,30 +95,45 @@ void MultiProcessDataParallelCommunicator<T>::allreduce(bool division,
 
 template <typename T>
 void MultiProcessDataParallelCommunicator<T>::all_reduce(
-    vector<NdArrayPtr> ndarray_list, bool division, bool inplace) {
+    const vector<NdArrayPtr> &ndarray_list, bool division, bool inplace,
+    const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::all_reduce(NdArrayPtr ndarray,
-                                                         bool division,
-                                                         bool inplace) {
+void MultiProcessDataParallelCommunicator<T>::all_reduce(
+    const NdArrayPtr &ndarray, bool division, bool inplace,
+    const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::reducescatter(bool division) {
+void MultiProcessDataParallelCommunicator<T>::reduce_scatter(
+    const vector<NdArrayPtr> &ndarray_list, const NdArrayPtr &ndarray,
+    bool division, const string &group) {
   NBLA_ERROR(error_code::not_implemented,
-             "CPU reducescatter is not implemented.")
+             "CPU reduce_scatter is not implemented.")
 }
 
-template <typename T> void MultiProcessDataParallelCommunicator<T>::bcast() {
+template <typename T>
+void MultiProcessDataParallelCommunicator<T>::bcast(
+    const vector<NdArrayPtr> &ndarray_list, int src, bool inplace,
+    const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::allgather() {
-  NBLA_ERROR(error_code::not_implemented, "CPU allgather is not implemented.")
+void MultiProcessDataParallelCommunicator<T>::bcast(const NdArrayPtr &ndarray,
+                                                    int src, bool inplace,
+                                                    const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
+}
+
+template <typename T>
+void MultiProcessDataParallelCommunicator<T>::all_gather(
+    const NdArrayPtr &ndarray, const vector<NdArrayPtr> &ndarray_list,
+    const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_gather is not implemented.")
 }
 
 template <typename T>
