@@ -187,6 +187,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_sum_monitor = 0.0
         error_count = 0
         di = mon.data_iterator
+
         for i in range(di.size // di.batch_size):
             # Set data to variable
             datas = di.next()
@@ -226,6 +227,8 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             error_sum += np.mean(v.variable_instance.d)
         error_sum_monitor = sum_error(error_sum_monitor, error_sum)
 
+        if error_count == 0:
+            error_count = 1
         error = error_sum_monitor / error_count
         monitoring_report.append('  {}: {}\n'.format(name, error))
         if error_str != '':
@@ -272,19 +275,6 @@ def _get_current_parameter(args):
 
 def train(args, config):
     global _save_parameter_info
-    _save_parameter_info = {}
-
-    _, config_ext = os.path.splitext(args.config)
-    if config_ext == '.prototxt' or config_ext == '.nntxt':
-        _save_parameter_info['config'] = args.config
-    elif config_ext == '.nnp':
-        with zipfile.ZipFile(args.config, 'r') as nnp:
-            for name in nnp.namelist():
-                _, ext = os.path.splitext(name)
-                if ext == '.nntxt' or ext == '.prototxt':
-                    nnp.extract(name, args.outdir)
-                    _save_parameter_info['config'] = os.path.join(
-                        args.outdir, name)
 
     last_epoch = 0
     if args.resume:
@@ -531,6 +521,21 @@ def train_command(args):
     config.training_config.iter_per_epoch //= MPI.COMM_WORLD.Get_size() if MPI else 1
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
+
+    global _save_parameter_info
+    _save_parameter_info = {}
+    _, config_ext = os.path.splitext(args.config)
+    if config_ext == '.prototxt' or config_ext == '.nntxt':
+        _save_parameter_info['config'] = args.config
+    elif config_ext == '.nnp':
+        with zipfile.ZipFile(args.config, 'r') as nnp:
+            for name in nnp.namelist():
+                _, ext = os.path.splitext(name)
+                if ext == '.nntxt' or ext == '.prototxt':
+                    nnp.extract(name, args.outdir)
+                    _save_parameter_info['config'] = os.path.join(
+                        args.outdir, name)
+
     if max_iter > 0:
         data_iterators = {'optimizer': {}, 'monitor': {}}
         with ExitStack() as stack:
