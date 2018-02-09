@@ -517,7 +517,6 @@ def train_command(args):
         config.monitors[name] = m
 
     # Training
-    result = False
     config.training_config.iter_per_epoch //= MPI.COMM_WORLD.Get_size() if MPI else 1
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
@@ -536,6 +535,7 @@ def train_command(args):
                     _save_parameter_info['config'] = os.path.join(
                         args.outdir, name)
 
+    result = False
     if max_iter > 0:
         data_iterators = {'optimizer': {}, 'monitor': {}}
         with ExitStack() as stack:
@@ -552,11 +552,12 @@ def train_command(args):
                     m.data_iterator = m.data_iterator.slice(
                         MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
             result = train(args, config)
-
     else:
         # save parameters without training (0 epoch learning)
+        logger.log(99, '0 epoch learning. (Just save parameter.)')
         if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
             _save_parameters(args, 'current', 0, True)
+        result = True
 
     if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
         if result:
