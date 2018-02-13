@@ -48,6 +48,16 @@ class NormalInitializer(BaseInitializer):
         sigma (float): :math:`\sigma`.
         rng (numpy.random.RandomState): Random number generator.
 
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	w = I.NormalInitializer(5e-5)
+	b = I.NormalInitializer(0.0)
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
+
     """
 
     def __init__(self, sigma=1.0, rng=None):
@@ -74,6 +84,16 @@ class UniformInitializer(BaseInitializer):
     Args:
         lim (:obj:`tuple` of :obj:`float`): A tuple of two floats, :math:`(a, b)`.
         rng (numpy.random.RandomState): Random number generator.
+
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	w = I.UniformInitializer() # this generates uniform distribution within the defalut range of (-1,1)
+	b = I.UniformInitializer((-0.5,0.5))
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
 
     """
 
@@ -102,6 +122,16 @@ class UniformIntInitializer(BaseInitializer):
         lim (:obj:`tuple` of :obj:`int`): A tuple of two ints, :math:`[a, b)`.
         rng (numpy.random.RandomState): Random number generator.
 
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	w = I.UniformIntInitializer() # this generates uniform integer distribution within the defalut range of (0,10)
+	b = I.UniformIntInitializer((-1,1))
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
+
     """
 
     def __init__(self, lim=(0, 10), rng=None):
@@ -125,6 +155,16 @@ class ConstantInitializer(BaseInitializer):
     Args:
         value (float): A constant value.
 
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	w = I.ConstantInitializer(0.1)
+	b = I.ConstantInitializer() # this generates constant valued array of default value 0
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
+
     """
 
     def __init__(self, value=0):
@@ -146,6 +186,16 @@ def calc_normal_std_he_forward(inmaps, outmaps, kernel=(1, 1)):
         kernel (:obj:`tuple` of :obj:`int`): Convolution kernel spatial shape.
             In above definition, :math:`K` is the product of shape dimensions.
             In Affine, the default value should be used.
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	s = I.calc_normal_std_he_forward(x.shape[1],64)
+	w = I.NormalInitializer(s)
+	b = I.ConstantInitializer(0)
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
 
     References:
         * `He, et al. Delving Deep into Rectifiers: Surpassing Human-Level
@@ -168,6 +218,16 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
         kernel (:obj:`tuple` of :obj:`int`): Convolution kernel spatial shape.
             In above definition, :math:`K` is the product of shape dimensions.
             In Affine, the default value should be used.
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	s = I.calc_normal_std_he_backward(x.shape[1],64)
+	w = I.NormalInitializer(s)
+	b = I.ConstantInitializer(0)
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
 
     References:
         * `He, et al. Delving Deep into Rectifiers: Surpassing Human-Level
@@ -191,6 +251,17 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
             In above definition, :math:`K` is the product of shape dimensions.
             In Affine, the default value should be used.
 
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	s = I.calc_normal_std_glorot(x.shape[1],64)
+	w = I.NormalInitializer(s)
+	b = I.ConstantInitializer(0)
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
+
     References:
         * `Glorot and Bengio. Understanding the difficulty of training deep
           feedforward neural networks
@@ -213,6 +284,17 @@ def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
         kernel (:obj:`tuple` of :obj:`int`): Convolution kernel spatial shape.
             In above definition, :math:`K` is the product of shape dimensions.
             In Affine, the default value should be used.
+    Example:
+	import nnabla as nn
+	import nnabla.parametric_functions as PF
+	import nnabla.initializer as I
+
+	x = nn.Variable([60,1,28,28])
+	lb,ub= I.calc_uniform_lim_glorot(x.shape[1],64)
+	w = I.UniformInitializer((lb,ub))
+	b = I.ConstantInitializer(0)
+	h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
+
 
     References:
         * `Glorot and Bengio. Understanding the difficulty of training deep
