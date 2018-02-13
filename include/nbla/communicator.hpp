@@ -128,7 +128,7 @@ public:
 @param inplace Pack the arrays into one large array if false.
 @param group Name of a group.
 */
-  virtual void reduce(const NdArrayPtr &ndarray, int dst, bool division = false,
+  virtual void reduce(NdArrayPtr ndarray, int dst, bool division = false,
                       bool inplace = false, const string &group = "world");
 
   /** allreduce over parameters added.
@@ -161,7 +161,7 @@ public:
 @param inplace Pack the arrays into one large array if false.
   @param group Name of a group.
 */
-  virtual void all_reduce(const NdArrayPtr &ndarray, bool division = false,
+  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
                           bool inplace = false, const string &group = "world");
 
   /** reduce_scatter.
@@ -172,7 +172,7 @@ public:
    @param group Name of a group.
    */
   virtual void reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
-                              const NdArrayPtr &ndarray, bool division = false,
+                              NdArrayPtr ndarray, bool division = false,
                               const string &group = "world");
 
   /** broadcast.
@@ -192,7 +192,7 @@ public:
          @param inplace Pack the arrays into one large array if false.
          @param group Name of a group.
    */
-  virtual void bcast(const NdArrayPtr &ndarray, int src, bool inplace = false,
+  virtual void bcast(NdArrayPtr ndarray, int src, bool inplace = false,
                      const string &group = "world");
 
   /** all_gather.
@@ -201,7 +201,7 @@ public:
          @param ndarray_list Vector of NdArrayPtr to recieve data.
          @param group Name of a group.
    */
-  virtual void all_gather(const NdArrayPtr &ndarray,
+  virtual void all_gather(NdArrayPtr ndarray,
                           const vector<NdArrayPtr> &ndarray_list,
                           const string &group = "world");
 

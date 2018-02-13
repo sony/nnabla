@@ -67,22 +67,22 @@ public:
   virtual void reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
                       bool division = false, bool inplace = false,
                       const string &group = "world");
-  virtual void reduce(const NdArrayPtr &ndarray, int dst, bool division = false,
+  virtual void reduce(NdArrayPtr ndarray, int dst, bool division = false,
                       bool inplace = false, const string &group = "world");
   virtual void allreduce(bool division = false, bool inplace = false);
   virtual void all_reduce(const vector<NdArrayPtr> &ndarray_list,
                           bool division = false, bool inplace = false,
                           const string &group = "world");
-  virtual void all_reduce(const NdArrayPtr &ndarray, bool division = false,
+  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
                           bool inplace = false, const string &group = "world");
   virtual void reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
-                              const NdArrayPtr &ndarray, bool division = false,
+                              NdArrayPtr ndarray, bool division = false,
                               const string &group = "world");
   virtual void bcast(const vector<NdArrayPtr> &ndarray_list, int src,
                      bool inplace = false, const string &group = "world");
-  virtual void bcast(const NdArrayPtr &ndarray, int src, bool inplace = false,
+  virtual void bcast(NdArrayPtr ndarray, int src, bool inplace = false,
                      const string &group = "world");
-  virtual void all_gather(const NdArrayPtr &ndarray,
+  virtual void all_gather(NdArrayPtr ndarray,
                           const vector<NdArrayPtr> &ndarray_list,
                           const string &group = "world");
 

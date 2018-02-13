@@ -80,7 +80,7 @@ void MultiProcessDataParallelCommunicator<T>::reduce(
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::reduce(const NdArrayPtr &ndarray,
+void MultiProcessDataParallelCommunicator<T>::reduce(NdArrayPtr ndarray,
                                                      int dst, bool division,
                                                      bool inplace,
                                                      const string &group) {
@@ -102,14 +102,14 @@ void MultiProcessDataParallelCommunicator<T>::all_reduce(
 
 template <typename T>
 void MultiProcessDataParallelCommunicator<T>::all_reduce(
-    const NdArrayPtr &ndarray, bool division, bool inplace,
+    NdArrayPtr ndarray, bool division, bool inplace,
     const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
 template <typename T>
 void MultiProcessDataParallelCommunicator<T>::reduce_scatter(
-    const vector<NdArrayPtr> &ndarray_list, const NdArrayPtr &ndarray,
+    const vector<NdArrayPtr> &ndarray_list, NdArrayPtr ndarray,
     bool division, const string &group) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU reduce_scatter is not implemented.")
@@ -123,7 +123,7 @@ void MultiProcessDataParallelCommunicator<T>::bcast(
 }
 
 template <typename T>
-void MultiProcessDataParallelCommunicator<T>::bcast(const NdArrayPtr &ndarray,
+void MultiProcessDataParallelCommunicator<T>::bcast(NdArrayPtr ndarray,
                                                     int src, bool inplace,
                                                     const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
@@ -131,7 +131,7 @@ void MultiProcessDataParallelCommunicator<T>::bcast(const NdArrayPtr &ndarray,
 
 template <typename T>
 void MultiProcessDataParallelCommunicator<T>::all_gather(
-    const NdArrayPtr &ndarray, const vector<NdArrayPtr> &ndarray_list,
+    NdArrayPtr ndarray, const vector<NdArrayPtr> &ndarray_list,
     const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_gather is not implemented.")
 }

@@ -105,7 +105,7 @@ void Communicator::reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
   NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
 
-void Communicator::reduce(const NdArrayPtr &ndarray, int dst, bool division,
+void Communicator::reduce(NdArrayPtr ndarray, int dst, bool division,
                           bool inplace, const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
@@ -120,13 +120,13 @@ void Communicator::all_reduce(const vector<NdArrayPtr> &ndarray_list,
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
-void Communicator::all_reduce(const NdArrayPtr &ndarray, bool division,
+void Communicator::all_reduce(NdArrayPtr ndarray, bool division,
                               bool inplace, const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
 void Communicator::reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
-                                  const NdArrayPtr &ndarray, bool division,
+                                  NdArrayPtr ndarray, bool division,
                                   const string &group) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU reduce_scatter is not implemented.")
@@ -137,12 +137,12 @@ void Communicator::bcast(const vector<NdArrayPtr> &ndarray_list, int src,
   NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
 }
 
-void Communicator::bcast(const NdArrayPtr &ndarray, int src, bool inplace,
+void Communicator::bcast(NdArrayPtr ndarray, int src, bool inplace,
                          const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
 }
 
-void Communicator::all_gather(const NdArrayPtr &ndarray,
+void Communicator::all_gather(NdArrayPtr ndarray,
                               const vector<NdArrayPtr> &ndarray_list,
                               const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_gather is not implemented.")
