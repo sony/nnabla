@@ -748,7 +748,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     Batch normalization layer.
 
     .. math::
-        \[
+
         \\begin{array}{lcl}
         \\mu &=& \\frac{1}{M} \\sum x_i\\\\
         \\sigma^2 &=& \\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\
