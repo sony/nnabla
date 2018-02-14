@@ -22,10 +22,10 @@ Detailed design document is :doc:`/doc/designs/data_iterator`.
 import atexit
 import numpy
 import six
-import threading
 
 from .data_source import DataSourceWithFileCache
 from .data_source import DataSourceWithMemoryCache
+from .data_source import SlicedDataSource
 
 from .data_source_implements import SimpleDataSource
 from .data_source_implements import CsvDataSource
@@ -76,6 +76,9 @@ class DataIterator(object):
         self._data_position = 0  # Only use with padding
 
         self._data_source = data_source
+        # place holder for shuffle is enabled or not at starting time.
+        self._shuffle = self._data_source.shuffle
+
         self._variables = data_source.variables
         self._batch_size = batch_size
         self._epoch = -1
@@ -86,11 +89,6 @@ class DataIterator(object):
         self._size = data_source.size
 
         self._reset()
-        self._current_epoch = -1
-        self._current_data = None
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
-
         self._closed = False
         atexit.register(self.close)
 
@@ -121,7 +119,7 @@ class DataIterator(object):
         Returns:
             int: epoch
         '''
-        return self._current_epoch
+        return self._epoch
 
     @property
     def position(self):
@@ -178,16 +176,6 @@ class DataIterator(object):
 
         self._data_source.reset()
 
-    def _next(self):
-        data = [[] for x in self._variables]
-        batch_size = self._batch_size
-        for b in range(batch_size):
-            d = self._get_next_data()
-            for i, v in enumerate(self._variables):
-                data[i].append(d[i])
-        self._current_data = (self._epoch, tuple(
-            [numpy.array(x) for x in data]))
-
     def next(self):
         '''next
 
@@ -200,11 +188,76 @@ class DataIterator(object):
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
-        self._next_thread.join()
-        self._current_epoch, data = self._current_data
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
-        return data
+        data = [[] for x in self._variables]
+        batch_size = self._batch_size
+        for b in range(batch_size):
+            d = self._get_next_data()
+            for i, v in enumerate(self._variables):
+                data[i].append(d[i])
+        return tuple([numpy.array(x) for x in data])
+
+    def slice(self, num_of_slices=None, slice_pos=None,
+              slice_start=None, slice_end=None,
+              cache_dir=None):
+        '''
+        Generate new data iterator that has limited range of original data.
+        '''
+        if num_of_slices is not None and slice_pos is not None and slice_start is None and slice_end is None:
+            size = self._size // num_of_slices
+            amount = self._size % num_of_slices
+            slice_start = slice_pos * size
+            if slice_pos < amount:
+                slice_start += slice_pos
+            else:
+                slice_start += amount
+            slice_end = slice_start + size
+            if slice_end > self._size:
+                slice_start -= (slice_end - self._size)
+                slice_end = self._size
+
+        elif num_of_slices is None and slice_pos is None and slice_start is not None and slice_end is not None:
+            pass
+        else:
+            logger.critical(
+                'You must specify position(num_of_slice and slice_pos) nor range(slice_start and slice_end).')
+            return None
+
+        if cache_dir is None:
+            ds = self._data_source
+            while '_data_source' in dir(ds):
+                if '_cache_dir' in dir(ds):
+                    cache_dir = ds._cache_dir
+                ds = ds._data_source
+
+        if cache_dir is None:
+            return DataIterator(
+                DataSourceWithMemoryCache(
+                    SlicedDataSource(
+                        self._data_source,
+                        self._data_source.shuffle,
+                        slice_start=slice_start,
+                        slice_end=slice_end),
+                    shuffle=self._shuffle,
+                    rng=self._rng),
+                self._batch_size)
+        else:
+            return DataIterator(
+                DataSourceWithMemoryCache(
+                    DataSourceWithFileCache(
+                        SlicedDataSource(
+                            self._data_source,
+                            self._data_source.shuffle,
+                            slice_start=slice_start,
+                            slice_end=slice_end),
+                        cache_dir=cache_dir,
+                        cache_file_name_prefix='cache_sliced_{:08d}_{:08d}'.format(
+                            slice_start,
+                            slice_end),
+                        shuffle=self._shuffle,
+                        rng=self._rng),
+                    shuffle=self._shuffle,
+                    rng=self._rng),
+                self._batch_size)
 
     def _callback_epoch_end(self):
         for callback in self._epoch_end_callbacks:

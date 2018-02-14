@@ -22,9 +22,15 @@ import google.protobuf.text_format as text_format
 import itertools
 import numpy
 import os
+import re
 import shutil
 import tempfile
 import zipfile
+try:
+    from mpi4py import MPI
+except:
+    MPI = None
+    pass
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
@@ -97,9 +103,14 @@ def _create_function(ctx, network, f, variable_index):
             input_variable_names = [f.input[0] + variable_index_low_level_name + '_' +
                                     f.recurrent_param.repeat_id + '[' + str(variable_index[-1] - 1) + ']']
     else:
+        v_names = []
+        for v_name in f.input:
+            for index, i in enumerate(variable_index):
+                v_name = v_name.replace('{' + f.repeat_id[index] + '}', '[' + str(i) + ']')
+            v_names.append(v_name)
         input_variable_names = [v_name if v_name in network.variables else
                                 v_name + variable_index_name if v_name + variable_index_name in network.variables else
-                                v_name + variable_index_low_level_name for v_name in f.input]
+                                v_name + variable_index_low_level_name for v_name in v_names]
     inputs = [network.variables[v_name] for v_name in input_variable_names]
 
     if f.type == "RecurrentInput":
@@ -114,10 +125,11 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        reshape_shape = (network.batch_size,) + \
-            tuple(f.reshape_param.shape.dim)
+        shape = tuple([d if d >=0 else network.batch_size for d in f.reshape_param.shape.dim])
+        if numpy.prod(shape) != numpy.prod(inputs[0].shape):
+            shape = (network.batch_size,) + shape
         function_instance = F.Reshape(ctx,
-                                      shape=reshape_shape)
+                                      shape=shape)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -128,6 +140,9 @@ def _create_function(ctx, network, f, variable_index):
         function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
+    elif f.type == "Broadcast":
+        shape = tuple([d if d >=0 else network.batch_size for d in f.broadcast_param.shape.dim])
+        function_instance = F.Broadcast(ctx, shape)
     else:
         function_instance = _create_function_instance(ctx, f)
 
@@ -143,7 +158,7 @@ def _create_function(ctx, network, f, variable_index):
     return function, input_variable_names, output_variable_names
 
 
-def _create_variable(v, name, shape):
+def _create_variable(v, name, shape, rng):
     # Create and initialize variables
     class Variable:
         pass
@@ -152,34 +167,34 @@ def _create_variable(v, name, shape):
     variable_instance = None
     if parameter:
         if v.initializer.type == 'Normal':
-            initializer = NormalInitializer(v.initializer.multiplier)
+            initializer = NormalInitializer(v.initializer.multiplier, rng=rng)
         elif v.initializer.type == 'NormalAffineHe' or v.initializer.type == 'NormalAffineHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalAffineHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalAffineGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHe' or v.initializer.type == 'NormalConvolutionHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Uniform':
             initializer = UniformInitializer(
-                lim=[-v.initializer.multiplier, v.initializer.multiplier])
+                lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
         elif v.initializer.type == 'UniformAffineGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Constant':
             initializer = ConstantInitializer(value=v.initializer.multiplier)
         else:
@@ -199,7 +214,7 @@ def _create_variable(v, name, shape):
     return variable
 
 
-def _network(proto, default_context, batch_size, all_variables):
+def _network(proto, default_context, batch_size, all_variables, rng):
     network = Network()
     network.name = proto.name
     # Read Repeat Info
@@ -216,14 +231,18 @@ def _network(proto, default_context, batch_size, all_variables):
 
     for v in proto.variable:
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
-            name = v.name + ''.join(['_' + v.repeat_id[index] + '[' +
-                                     str(i) + ']' for index, i in enumerate(variable_index)])
+            name = v.name
+            for index, i in enumerate(variable_index):
+                if ('{' + v.repeat_id[index] + '}' in name):
+                    name = name.replace('{' + v.repeat_id[index] + '}', '[' + str(i) + ']')
+                else:
+                    name += '_' + v.repeat_id[index] + '[' + str(i) + ']'
             if name in all_variables:
                 variable = all_variables[name]
             else:
                 shape = tuple(
                     [d if d >= 1 else network.batch_size for d in v.shape.dim])
-                variable = _create_variable(v, name, shape)
+                variable = _create_variable(v, name, shape, rng)
                 all_variables[name] = variable
             network.variables[name] = variable
             logger.debug('{}'.format(
@@ -269,6 +288,17 @@ def _get_generator(proto):
                          proto.type + '" is not supported.')
 
 
+def _get_matching_variable_names(variable, variable_names):
+    r = re.compile('{[^}]*}')
+    key=r.sub('\[[\d+]\]', variable, re.U)
+    r2=re.compile(key)
+    variable_names = [v_name for v_name in variable_names if re.match(r2, v_name)]
+    if not variable_names:
+        raise ValueError('Variable "' +
+            variable + '" is not found.')
+    return variable_names
+
+
 def _create_optimizer(ctx, o, networks, datasets):
     class Optimizer:
         pass
@@ -298,8 +328,8 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer.parameter_learning_rate_multipliers = OrderedDict()
     for p in o.parameter_variable:
-        param_variable_names = [v_name for v_name in optimizer.network.variables.keys(
-        ) if v_name.find(p.variable_name) == 0]
+        param_variable_names = _get_matching_variable_names(
+            p.variable_name, optimizer.network.variables.keys())
         for v_name in param_variable_names:
             optimizer.parameter_learning_rate_multipliers[
                 optimizer.network.variables[v_name]] = p.learning_rate_multiplier
@@ -336,8 +366,21 @@ def _create_optimizer(ctx, o, networks, datasets):
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
 
-    optimizer.solver.set_parameters({v.name: v.variable_instance for v,
-                                     local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0})
+    parameters = {v.name: v.variable_instance for v,
+                  local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
+    optimizer.solver.set_parameters(parameters)
+
+    optimizer.comm = None
+    if MPI and MPI.COMM_WORLD.Get_size() > 1:
+        try:
+            import nnabla.communicators as C
+            optimizer.comm = C.MultiProcessDataParalellCommunicator(ctx)
+            optimizer.comm.init()
+            optimizer.comm.add_context_and_parameters((ctx, parameters))
+        except:
+            optimizer.comm = None
+            if MPI.COMM_WORLD.Get_rank() == 0:
+                logger.warning("Failed to initialize nnabla.communicators.")
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
@@ -365,6 +408,9 @@ def _global_config(proto):
         pass
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
+
+    if MPI and MPI.COMM_WORLD.Get_size() > 0:
+        config.default_context.device_id = str(MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
     return config
 
 
@@ -384,6 +430,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     dataset = Dataset()
     dataset.uri = uri
     dataset.normalize = not no_image_normalization
+    rng = numpy.random.RandomState(MPI.COMM_WORLD.Get_rank() if MPI else 0)
 
     if prepare_data_iterator:
         if cache_dir == '':
@@ -393,22 +440,19 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
                 logger.log(99, 'Creating cache data for "' + uri + '"')
-                with data_iterator_csv_dataset(uri, batch_size, shuffle, normalize=False, cache_dir=cache_dir) as di:
-                    index = 0
-                    while index < di.size:
-                        progress('', (1.0 * di.position) / di.size)
-                        di.next()
-                        index += batch_size
+                # create cache files
+                with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
+                    pass
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
             if cache_dir and not os.path.exists(cache_dir):
                 os.mkdir(cache_dir)
             dataset.data_iterator = (lambda: data_iterator_csv_dataset(
-                uri, batch_size, shuffle, normalize=dataset.normalize, cache_dir=cache_dir))
+                uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
     else:
         dataset.data_iterator = None
     return dataset
@@ -427,10 +471,13 @@ def _networks(proto, default_context, batch_size, network_names=None):
     networks = OrderedDict()
     all_variables = {}
 
+    # Random generator for using the same init parameters in all devices
+    rng = numpy.random.RandomState(0)
+
     for np in proto.network:
         if not network_names or np.name in network_names:
             networks[np.name] = _network(
-                np, default_context, batch_size, all_variables)
+                np, default_context, batch_size, all_variables, rng)
 
     return networks
 
@@ -511,8 +558,8 @@ def _executors(executors_proto, networks):
 
         executor.parameters = OrderedDict()
         for p in e.parameter_variable:
-            param_variable_names = [v_name for v_name in executor.network.variables.keys(
-            ) if v_name.find(p.variable_name) == 0]
+            param_variable_names = _get_matching_variable_names(
+                p.variable_name, executor.network.variables.keys())
             for v_name in param_variable_names:
                 executor.parameters[
                     executor.network.variables[v_name]] = v_name
@@ -528,8 +575,8 @@ def _executors(executors_proto, networks):
 
             executor.parameter_learning_rate_multipliers = OrderedDict()
             for p in e.parameter_variable:
-                param_variable_names = [v_name for v_name in executor.network.variables.keys(
-                ) if v_name.find(p.variable_name) == 0]
+                param_variable_names = _get_matching_variable_names(
+                    p.variable_name, executor.network.variables.keys())
                 for v_name in param_variable_names:
                     executor.parameter_learning_rate_multipliers[
                         executor.network.variables[v_name]] = p.learning_rate_multiplier

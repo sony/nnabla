@@ -77,7 +77,7 @@ def update_result(args, index, result, values, output_index, type_end_names, out
                     if not os.path.exists(directory):
                         os.makedirs(directory)
                     if vtype in ['.bmp', '.jpeg', '.jpg', '.png', '.gif', '.tif']:
-                        x = np.array(d, dtype=np.float32) * 256.
+                        x = np.array(d, dtype=np.float32) * 255.
                         while len(x.shape) == 4:
                             x = x[0]
                         if x.shape[0] > 3 or x.shape[0] == 2:
@@ -164,7 +164,7 @@ def forward_command(args):
     class ForwardConfig:
         pass
     config = ForwardConfig
-    info = load.load(files, prepare_data_iterator=False, batch_size=1)
+    info = load.load(files, prepare_data_iterator=False)
     config.global_config = info.global_config
 
     config.executors = info.executors.values()
