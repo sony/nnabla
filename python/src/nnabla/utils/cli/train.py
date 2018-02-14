@@ -131,7 +131,7 @@ def _evaluate(args, config, monitoring_report, best_error):
         error_sum_monitor = 0.0
         error_count = 0
         di = mon.data_iterator
-        for i in range(di.size / di.batch_size):
+        for i in range(di.size // di.batch_size):
             # Set data to variable
             datas = di.next()
             for v, d in m.dataset_assign.items():
@@ -277,7 +277,7 @@ def train_command(args):
         config.monitors[name] = m
 
     # Training
-    config.training_config.iter_per_epoch /= MPI.COMM_WORLD.Get_size() if MPI else 1
+    config.training_config.iter_per_epoch //= MPI.COMM_WORLD.Get_size() if MPI else 1
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
     if max_iter > 0:

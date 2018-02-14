@@ -24,6 +24,11 @@ import tempfile
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
+try:
+    from mpi4py import MPI
+except:
+    MPI = None
+    pass
 
 
 class DataSource(object):
@@ -183,7 +188,8 @@ class DataSourceWithFileCache(DataSource):
 
         percent = 0
         while self._position < self._data_source._size:
-            progress('', self._position * 1.0 / self._data_source._size)
+            if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                progress('', self._position * 1.0 / self._data_source._size)
             current_percent = self._position * 100 // self._data_source._size
             if current_percent != percent:
                 percent = current_percent
