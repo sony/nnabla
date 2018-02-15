@@ -83,8 +83,13 @@ class BinaryWeightConvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
                           const vector<int> &, int> {
 protected:
-  shared_ptr<Function> sign_;
   shared_ptr<Function> convolution_;
+  shared_ptr<Function> abs_;
+  shared_ptr<Function> sum_;
+  shared_ptr<Function> div_;
+  shared_ptr<Function> bin_;
+  shared_ptr<Function> mul_;
+  Variable scaled_weights_;
 
   int base_axis_;
   const vector<int> pad_;
