@@ -60,7 +60,7 @@ onnx_optype_to_nnabla_function_type = {
     "Relu": "ReLU",
     "Concat": "Concatenate",
     "Conv": "Convolution",
-    "GlobalAveragePool": "AveragePooling",
+    "GlobalAveragePool": "GlobalAveragePooling",
     "MaxPool": "MaxPooling",
 }
 
@@ -69,7 +69,7 @@ nnabla_function_type_to_onnx_optype = {
     "ReLU": "Relu",
     "Concatenate": "Concat",
     "Convolution": "Conv",
-    "AveragePooling": "GlobalAveragePool",
+    "GlobalAveragePooling": "GlobalAveragePool",
     "MaxPooling": "MaxPool",
 }
 
@@ -198,14 +198,6 @@ def convert_to_function(node, base_name, func_counter):
             # Set default values.
             # Do we really need this? (Default value should be set by NNabla)
             cp.dilation.dim.extend([1 for _ in range(dim)])
-    elif node.op_type == "GlobalAveragePool":
-        func.type = "Identity"
-        ## We substitute GlobalAveragePool with an AveragePool
-        ## that has the same kernel size as the input WxH
-        #app = func.average_pooling_param
-        #app.kernel.dim.extend([3,3])
-        #app.stride.dim.extend([3,3])
-        #app.pad.dim.extend([0,0])
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
         dims = []
@@ -537,7 +529,7 @@ def convert_onnx_to_nnp_and_compare(
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    #pdb.set_trace()
+    pdb.set_trace()
     nn_net = nnload.load([p])
     exe = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
@@ -662,6 +654,10 @@ def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
+
+def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
@@ -820,32 +816,3 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
 #    print(nnout, nnout.shape)
 #    #assert np.allclose(c2, nnout)
 
-##
-#def test_onnx_nnp_conversion_gap(tmpdir):
-#    path = os.path.join(TEST_DATA_DIR, "gap.onnx")
-#    # Process onnx with caffe2 backend
-#    model = onnx.load(path)
-#    c2out = onnx_caffe2.backend.run_model(model, [])
-#    #print(c2out)
-#    # Process onnx with naabla
-#    r = OnnxReader(path)
-#    nnp = r.read()
-#    assert nnp is not None
-#    assert len(nnp.other_files) == 0
-#    assert nnp.protobuf is not None
-#    #logger.log(99, nnp.protobuf)
-#
-#    nnpex = NnpExporter(nnp, batch_size=0)
-#    nnpdir = tmpdir.mkdir("nnp")
-#    p = os.path.join(str(nnpdir), "gap.nnp")
-#    nnpex.export_nnp(p)
-#    # read exported nnp and run network
-#    #pdb.set_trace()
-#    nn_net = nnload.load([p])
-#    gap = run_executor(nn_net, "exec_0")
-#    OUT_DATA_NAME = "out_data_1"
-#    out_data = gap.variables[OUT_DATA_NAME]
-#    nnout = gap.variables[OUT_DATA_NAME].variable_instance.d
-#    c2 = c2out[OUT_DATA_NAME]
-#    #print(c2, nnout)
-#    assert np.allclose(c2, nnout)
