@@ -244,6 +244,9 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     func_counter = {}
     # convert nodes
     for n in graph.node:
+        # We do not allow any operator from an unknown domain
+        if not (n.domain == '' or n.domain == NNABLA_DOMAIN):
+            raise ValueError("Unknown operator from domain {} was found".format(n.domain))
         f = convert_to_function(n, graph.name, func_counter)
         #Gather all unique names for input and output
         for i in f.input:
