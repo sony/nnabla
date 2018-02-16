@@ -46,9 +46,8 @@ DEFAULT_CONCAT_AXIS = 1
 
 def onnx_value_info_proto_to_variable(info, network):
     if not info.type.HasField("tensor_type"): # accepting only tensor
-        logger.warning("Only TensorProto is allowed as ValueInfoProto's type for now (Got {}). Skipping {}"
-                .format(info.type, info.name))
-        return
+        raise ValueError("Only TensorProto is allowed as ValueInfoProto's type for info.name (Got {})"
+                .format(info.name, info.type))
     t = info.type.tensor_type
     v = network.variable.add()
     v.name = info.name
@@ -246,7 +245,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for n in graph.node:
         # We do not allow any operator from an unknown domain
         if not (n.domain == '' or n.domain == NNABLA_DOMAIN):
-            raise ValueError("Unknown operator from domain {} was found".format(n.domain))
+            raise ValueError("Unsupported operator from domain {} was found".format(n.domain))
         f = convert_to_function(n, graph.name, func_counter)
         #Gather all unique names for input and output
         for i in f.input:
@@ -259,9 +258,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     param_vars = set()
     for init in graph.initializer:
         if init.data_type != TensorProto.FLOAT:
-            logger.warning("Only floating point data is supported for parameters (Got {}). Skipping {}"
-                    .format(init.data_type, init.name))
-            pass
+            raise ValueError("Only floating point data is supported for parameters {} (Got {})"
+                    .format(init.name, init.data_type))
         p = pb.parameter.add()
         p.variable_name = init.name
         p.shape.dim.extend(init.dims)
@@ -341,7 +339,7 @@ def onnx_model_to_nnp_protobuf(model):
             if opset.version < MIN_ONNX_OPSET_VERSION:
                 raise ValueError("Older ONNX opsets are currently not supported")
         else:
-            logger.warning("Unknown opset from domain {}. Ignoring.".format(opset.domain))
+            raise ValueError("Unsupported opset from domain {}".format(opset.domain))
 
     # convert onnx model to nnabla protobuf
     #logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))
