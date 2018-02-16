@@ -14,14 +14,15 @@
 
 /** BinaryWeightAffine
  */
-#include <nbla/array.hpp>
+#include <nbla/function/abs.hpp>
 #include <nbla/function/affine.hpp>
 #include <nbla/function/binary_weight_affine.hpp>
+#include <nbla/function/mul2.hpp>
+#include <nbla/function/mul_scalar.hpp>
 #include <nbla/function/sign.hpp>
+#include <nbla/function/sum.hpp>
+#include <nbla/function/transpose.hpp>
 #include <nbla/variable.hpp>
-
-#include <algorithm>
-#include <cmath>
 
 namespace nbla {
 
@@ -30,11 +31,6 @@ NBLA_REGISTER_FUNCTION_SOURCE(BinaryWeightAffine, int);
 template <typename T>
 void BinaryWeightAffine<T>::setup_impl(const Variables &inputs,
                                        const Variables &outputs) {
-  // Initialize function to binarize (we use the `sign` function with alpha =
-  // -1.0)
-  sign_ = create_Sign(this->ctx_, -1.0);
-  sign_->setup(Variables{inputs[1]}, Variables{inputs[2]});
-
   // Initialize internal `affine` function
   affine_ = create_Affine(this->ctx_, this->base_axis_);
   if (inputs.size() == 5) { // with bias
@@ -64,39 +60,64 @@ void BinaryWeightAffine<T>::setup_impl(const Variables &inputs,
 
   // Check size of alpha.
   NBLA_CHECK(inputs[3]->size() == w_col_, error_code::value,
-             "Size of alpha must equal to output size.");
+             "Size of alpha must be equal to output size.");
+
+  transpose_ = create_Transpose(this->ctx_, vector<int>{1, 0});
+  abs_ = create_Abs(this->ctx_);
+  sum_ = create_Sum(this->ctx_, vector<int>{1}, false);
+  div_ = create_MulScalar(this->ctx_, (T)1 / w_row_);
+  bin_ = create_Sign(this->ctx_, -1.0);
+  mul_ = create_Mul2(this->ctx_);
+  scaled_weights_.reshape(shape_weights, true);
 }
 
 template <typename T>
 void BinaryWeightAffine<T>::forward_impl(const Variables &inputs,
                                          const Variables &outputs) {
-  // binarize weights, put values into inputs[2]
-  sign_->forward(Variables{inputs[1]}, Variables{inputs[2]});
+  // Binarization of the weights to +/-H where H is the L1 norm of the
+  // soft weights for each output
 
-  // binarization of the weights to +/-H where H is the L1 norm of the soft
-  // weights for each output
-  const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *w_bin = inputs[2]->cast_data_and_get_pointer<T>(this->ctx_);
-  T *alpha = inputs[3]->cast_data_and_get_pointer<T>(this->ctx_);
-  T scale;
+  Shape_t shape_weights = inputs[1]->shape();
+  Shape_t shape_alpha = inputs[3]->shape();
 
-  for (int c = 0; c < w_col_; ++c) {
-    scale = 0.0;
-    for (int r = 0; r < w_row_; ++r) {
-      scale += std::abs(w[c + r * w_col_]);
-    }
-    scale /= w_row_;
-    for (int r = 0; r < w_row_; ++r) {
-      w_bin[c + r * w_col_] *= scale;
-    }
-    alpha[c] = scale;
-  }
+  inputs[1]->reshape(Shape_t{w_row_, w_col_}, false);
 
-  // calculate the forward pass using binarized weights `inputs[2]`
+  transpose_->setup(Variables{inputs[1]}, Variables{&scaled_weights_});
+  transpose_->forward(Variables{inputs[1]}, Variables{&scaled_weights_});
+
+  // compute absolute weight values
+  abs_->setup(Variables{&scaled_weights_}, Variables{&scaled_weights_});
+  abs_->forward(Variables{&scaled_weights_}, Variables{&scaled_weights_});
+
+  // compute sums of absolute weights into inputs[3]
+  sum_->setup(Variables{&scaled_weights_}, Variables{inputs[3]});
+  sum_->forward(Variables{&scaled_weights_}, Variables{inputs[3]});
+
+  // compute alpha in inputs[3] by multiply with 1/col_w_
+  div_->setup(Variables{inputs[3]}, Variables{inputs[3]});
+  div_->forward(Variables{inputs[3]}, Variables{inputs[3]});
+
+  // binarize weights to +1/-1 into inputs[3] (binary_weights parameter)
+  bin_->setup(Variables{inputs[1]}, Variables{inputs[2]});
+  bin_->forward(Variables{inputs[1]}, Variables{inputs[2]});
+
+  // multiply binarized weights with alpha using mul2 broadcasting
+  inputs[3]->reshape(Shape_t{1, w_col_}, false);
+  mul_->setup(Variables{inputs[2], inputs[3]}, Variables{&scaled_weights_});
+  mul_->forward(Variables{inputs[2], inputs[3]}, Variables{&scaled_weights_});
+
+  // reshape float/binary weights and alpha back to original
+  scaled_weights_.reshape(shape_weights, false);
+  inputs[1]->reshape(shape_weights, false);
+  inputs[2]->reshape(shape_weights, false);
+  inputs[3]->reshape(shape_alpha, false);
+
+  // calculate the forward pass using the binarized scaled weights
   if (inputs.size() == 5) { // with bias
-    affine_->forward(Variables{inputs[0], inputs[2], inputs[4]}, outputs);
+    affine_->forward(Variables{inputs[0], &scaled_weights_, inputs[4]},
+                     outputs);
   } else {
-    affine_->forward(Variables{inputs[0], inputs[2]}, outputs);
+    affine_->forward(Variables{inputs[0], &scaled_weights_}, outputs);
   }
 }
 
@@ -105,35 +126,23 @@ void BinaryWeightAffine<T>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &propagate_down,
                                           const vector<bool> &accum) {
-  if (propagate_down[1]) {
-    // reset `grad` part of binary weights to zero
-    // inputs[2]->grad()->zero();
+  scaled_weights_.set_need_grad(propagate_down[1]);
 
-    // set `need_grad` to true for binary weights
-    inputs[2]->set_need_grad(true);
-  } else {
-    // set `need_grad` to false for binary weights
-    inputs[2]->set_need_grad(false);
-  }
-
-  // calculate the backward pass using the already binarized weights
+  // calculate the backward pass using the binarized scaled weights
   if (inputs.size() == 5) { // with bias
-    affine_->backward(Variables{inputs[0], inputs[2], inputs[4]}, outputs,
-                      {accum[0], false, accum[4]});
+    affine_->backward(Variables{inputs[0], &scaled_weights_, inputs[4]},
+                      outputs, {accum[0], false, accum[4]});
   } else { // without bias
-    affine_->backward(Variables{inputs[0], inputs[2]}, outputs,
+    affine_->backward(Variables{inputs[0], &scaled_weights_}, outputs,
                       {accum[0], false});
   }
 
-  // add the calculated gradient wrt the binary weights from inputs[2] to
-  // inputs[1]
-  sign_->backward(Variables{inputs[1]}, Variables{inputs[2]}, {accum[1]});
-
-  inputs[2]->set_need_grad(
-      false); // reset `need_grad` to false as we do not need
-              // backward for binary variables
+  // add the calculated gradient w.r.t. the binary weights from
+  // scaled_weights_ to inputs[1]
+  bin_->setup(Variables{inputs[1]}, Variables{&scaled_weights_});
+  bin_->backward(Variables{inputs[1]}, Variables{&scaled_weights_}, {accum[1]});
 }
 
-// Template instanciation
+// Template instantiation
 template class BinaryWeightAffine<float>;
 } // namespace nbla

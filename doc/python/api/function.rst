@@ -94,7 +94,6 @@ Arithmetic
 .. autofunction:: r_div_scalar
 .. autofunction:: r_pow_scalar
 
-
 Logical
 -------
 
@@ -131,6 +130,7 @@ Math
 .. autofunction:: abs
 .. autofunction:: exp
 .. autofunction:: log
+.. autofunction:: round
 .. autofunction:: identity
 .. autofunction:: matrix_diag
 .. autofunction:: matrix_diag_part
