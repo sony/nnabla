@@ -419,6 +419,15 @@ def convert_to_node(func, variables):
         p = onnx.helper.make_attribute("pads", cp.pad.dim)
         g = onnx.helper.make_attribute("group", cp.group)
         n.attribute.extend([k, d, s, p, g])
+    elif func.type == "GlobalAveragePooling":
+        # We wipeout the node name to avoid a bug?
+        # that occurs when we use a GlobalAveragePooling node with a name
+        # "Conv" or "Pool" contained.
+        # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
+        # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the 
+        # above code if we have a specific name.
+        # The above caffe2 code should be checking the node's operator name and not the node's name.
+        n.name = ""
     return n
 
 def nnp_model_to_onnx_graph(graph, nnp):
@@ -477,8 +486,11 @@ def nnp_model_to_onnx_graph(graph, nnp):
 def nnp_model_to_onnx_protobuf(nnp):
     mp = ModelProto()
     mp.ir_version = MIN_ONNX_IR_VERSION
-    opset = mp.opset_import.add()
-    opset.version = MIN_ONNX_OPSET_VERSION
+    op0 = mp.opset_import.add()
+    op0.version = MIN_ONNX_OPSET_VERSION
+    op1 = mp.opset_import.add()
+    op1.domain = "" # empty string indicates ONNX domain
+    op1.version = MIN_ONNX_OPSET_VERSION
     #nn_opset = mp.opset_import.add()
     #nn_opset.domain = NNABLA_DOMAIN
     #nn_opset.version = MIN_NNABLA_OPSET_VERSION
@@ -659,6 +671,10 @@ def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0")
 
+def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0")
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
     onnx_name = "squeezenet.onnx"
@@ -767,7 +783,7 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     model = onnx.load(p)
     if show_onnx:
         print(model)
-    pdb.set_trace()
+    #pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [img])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
