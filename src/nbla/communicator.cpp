@@ -120,8 +120,8 @@ void Communicator::all_reduce(const vector<NdArrayPtr> &ndarray_list,
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
-void Communicator::all_reduce(NdArrayPtr ndarray, bool division,
-                              bool inplace, const string &group) {
+void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace,
+                              const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
