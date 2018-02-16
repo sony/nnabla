@@ -529,7 +529,7 @@ def convert_onnx_to_nnp_and_compare(
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    pdb.set_trace()
+    #pdb.set_trace()
     nn_net = nnload.load([p])
     exe = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
@@ -677,11 +677,10 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
         print(model)
     img = np.random.rand(1,3,224,224).astype(np.float32)
 
-    # Remove Softmax and GlobalAveragePooling for now.
+    # Remove Softmax for now.
     # This is temporal
     nodes = len(model.graph.node)
     sm_node = model.graph.node[nodes-1]
-    gap_node = model.graph.node[nodes-2]
     def change_to_copy(node):
         """Change node operation to a simple copy"""
         # Dropout with is_test=True is equal to a simple copy
@@ -691,13 +690,6 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
         attr.type = AttributeProto.INT
         attr.i = 1
     change_to_copy(sm_node)
-    change_to_copy(gap_node)
-    # Change the output dimension so it matches the actual size
-    out_shape = model.graph.output[0].type.tensor_type.shape
-    out_shape.dim[0].dim_value = 1
-    out_shape.dim[1].dim_value = 1000
-    out_shape.dim[2].dim_value = 13
-    out_shape.dim[3].dim_value = 13
 
     c2out = onnx_caffe2.backend.run_model(model, [img])
     # Process onnx with naabla
@@ -775,7 +767,7 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     model = onnx.load(p)
     if show_onnx:
         print(model)
-    #pdb.set_trace()
+    pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [img])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
