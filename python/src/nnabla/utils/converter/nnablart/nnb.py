@@ -138,7 +138,7 @@ class NnbExporter:
                     '{}I'.format(len(outputs)), *outputs))
                 function_data += struct.pack('iI', len(outputs), index)
 
-                if 'argument' in finfo:
+                if 'argument' in finfo and len(finfo['argument']) > 0:
                     argfmt = ''
                     values = []
                     for an, arg in finfo['argument'].items():
