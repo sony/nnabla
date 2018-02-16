@@ -23,6 +23,7 @@ import tempfile
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
+from nnabla.utils.progress import progress
 
 
 class DataSource(object):
