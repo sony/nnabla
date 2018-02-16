@@ -43,7 +43,7 @@ except:
 ############################################
 
 
-def ref_all_reduce(x_data_list, size, division):
+def ref_reduce(x_data_list, size, division):
     f = reduce(lambda x, y: x + y, np.arange(size)) + size
     results = []
     for x_data in x_data_list:
@@ -56,10 +56,11 @@ def ref_all_reduce(x_data_list, size, division):
 
 @pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inplace", [True, False])
 # each process do not seem to call the function in the same order.
-@pytest.mark.parametrize("division", [False])
-def test_all_reduce(seed, inplace, division):
+@pytest.mark.parametrize("dst", [1])
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("division", [True, False])
+def test_reduce(seed, dst, inplace, division):
     try:
         import nnabla_ext
         import nnabla_ext.cuda
@@ -86,13 +87,14 @@ def test_all_reduce(seed, inplace, division):
         x.d = x_data * (device_id + 1)
         x_list.append(x)
 
-    # AllReduce
-    comm.all_reduce([x.data for x in x_list],
-                    division=division, inplace=inplace)
+    # Reduce
+    comm.reduce([x.data for x in x_list], dst,
+                division=division, inplace=inplace)
 
-    # Ref AllReduce
-    refs = ref_all_reduce(x_data_list, n_devices, division)
+    if mpi_rank == dst:
+        # Ref Reduce
+        refs = ref_reduce(x_data_list, n_devices, division)
 
-    # Check
-    for x, ref in zip(x_list, refs):
-        assert np.allclose(x.d, ref)
+        # Check
+        for x, ref in zip(x_list, refs):
+            assert np.allclose(x.d, ref)

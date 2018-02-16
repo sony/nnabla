@@ -43,23 +43,9 @@ except:
 ############################################
 
 
-def ref_all_reduce(x_data_list, size, division):
-    f = reduce(lambda x, y: x + y, np.arange(size)) + size
-    results = []
-    for x_data in x_data_list:
-        result = x_data * f
-        if division:
-            result /= size
-        results.append(result)
-    return results
-
-
 @pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inplace", [True, False])
-# each process do not seem to call the function in the same order.
-@pytest.mark.parametrize("division", [False])
-def test_all_reduce(seed, inplace, division):
+def test_new_group(seed):
     try:
         import nnabla_ext
         import nnabla_ext.cuda
@@ -74,25 +60,22 @@ def test_all_reduce(seed, inplace, division):
     if n_devices != comm.size:
         pytest.skip("Number of cuda devices is not same as that of processes.")
 
-    # Variables
-    x_list = []
-    x_data_list = []
-    num_layers = 20
+    # Reference
     rng = np.random.RandomState(seed)
-    for l in range(num_layers):
-        x_data = rng.rand(3, 4)
-        x_data_list.append(x_data)
-        x = nn.Variable(x_data.shape)
-        x.d = x_data * (device_id + 1)
-        x_list.append(x)
+    device = rng.choice(n_devices)
+    groups = {
+        "group_i": [device],
+        "all": np.arange(n_devices).tolist(),
+        "world": np.arange(n_devices).tolist()
+    }
 
-    # AllReduce
-    comm.all_reduce([x.data for x in x_list],
-                    division=division, inplace=inplace)
+    # comm.new_group
+    group_i = comm.new_group(("group_i", [device]))
+    group_all = comm.new_group(("all", np.arange(n_devices)))
 
-    # Ref AllReduce
-    refs = ref_all_reduce(x_data_list, n_devices, division)
+    # comm.list_groups
+    assert comm.list_groups() == groups
 
-    # Check
-    for x, ref in zip(x_list, refs):
-        assert np.allclose(x.d, ref)
+    # comm.find_group
+    assert comm.find_group("group_i") == groups["group_i"]
+    assert comm.find_group("group_k") == []

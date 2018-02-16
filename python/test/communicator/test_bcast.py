@@ -43,23 +43,18 @@ except:
 ############################################
 
 
-def ref_all_reduce(x_data_list, size, division):
-    f = reduce(lambda x, y: x + y, np.arange(size)) + size
+def ref_bcast(x_data_list, src):
     results = []
     for x_data in x_data_list:
-        result = x_data * f
-        if division:
-            result /= size
-        results.append(result)
+        results.append(x_data * (src + 1))
     return results
 
 
 @pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("src", [0, 1])
 @pytest.mark.parametrize("inplace", [True, False])
-# each process do not seem to call the function in the same order.
-@pytest.mark.parametrize("division", [False])
-def test_all_reduce(seed, inplace, division):
+def test_bcast(seed, src, inplace):
     try:
         import nnabla_ext
         import nnabla_ext.cuda
@@ -86,12 +81,11 @@ def test_all_reduce(seed, inplace, division):
         x.d = x_data * (device_id + 1)
         x_list.append(x)
 
-    # AllReduce
-    comm.all_reduce([x.data for x in x_list],
-                    division=division, inplace=inplace)
+    # Bcast
+    comm.bcast([x.data for x in x_list], src, inplace=inplace)
 
-    # Ref AllReduce
-    refs = ref_all_reduce(x_data_list, n_devices, division)
+    # Ref
+    refs = ref_bcast(x_data_list, src)
 
     # Check
     for x, ref in zip(x_list, refs):

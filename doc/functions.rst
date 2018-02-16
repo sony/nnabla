@@ -709,7 +709,7 @@ Softmax
 Softmax normalization. Calculates
 
 .. math::
-    y_i = \frac{\exp(x_i)}{\sum_j exp(x_j)}
+    y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 
 along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
 
@@ -3626,10 +3626,13 @@ Shifts the array elements by the specified amount.
 Reshape
 ^^^^^^^
 
-Returns a copy of the reshaped input variable.
+Reshapes the input variable in-place. It does not create a copy of the variable.
+The output variable (y) has a new shape but points to the same data as the input variable (x).
+This means that if the data in the output variable (y) is modified, the data in the input
+variable (x) also gets modified since the reshape was done in-place.
 
 Note:
-    If you do not need a copy, you should use the :meth:`nnabla.Variable.reshape` method instead.
+    This function has the same behavior as the :meth:`nnabla.Variable.reshape` method.
 
 * Input(s)
 
@@ -4284,7 +4287,7 @@ SoftmaxCrossEntropy
 Element-wise cross entropy between the variables and the variables of a label given by a category index with Softmax normalization.
 
 .. math::
-    y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+    y_{j} = -\ln \left(\frac{\exp(x_{j,t_j})}{\sum_{i'} \exp(x_{j,i'})}\right)
 
 along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
 
@@ -4333,10 +4336,10 @@ Note:
 CategoricalCrossEntropy
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Element-wise cross entropy between x and the target, given by a category index.
+Element-wise cross entropy between `x` and the target `t` where targets are given by a category index.
 
 .. math::
-    y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+    y_{j} = -\ln \left( x_{j, t_j} \right)
 
 along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
 
