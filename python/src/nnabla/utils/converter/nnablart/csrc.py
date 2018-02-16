@@ -152,10 +152,10 @@ class CsrcExporter:
                         finfo['snakecase_name'], arg_name))
                     if arg['Type'] == 'Shape':
                         internal_defines.append(
-                            '    int f{}_config_shape_{}[{}];'.format(n, arg_name, len(val.dim)))
+                            '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val.dim)))
                     elif arg['Type'] == 'repeated int64':
                         internal_defines.append(
-                            '    int f{}_config_shape_{}[{}];'.format(n, arg_name, len(val)))
+                            '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val)))
 
         internal_defines.append('}} {}_local_context_t;'.format(prefix))
         param_id_start = 0
@@ -249,7 +249,7 @@ class CsrcExporter:
                         initialize_context.append(
                             '    arg_f{}_{}.size = {};'.format(n, arg_name, len(val.dim)))
                         initialize_context.append(
-                            '    arg_f{0}_{1}.data = c->f{0}_config_shape_{1};'.format(n, arg_name))
+                            '    arg_f{0}_{1}.data = c->f{0}_local_context_shape_{1};'.format(n, arg_name))
                         for vn, v in enumerate(val.dim):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
@@ -261,7 +261,7 @@ class CsrcExporter:
                         initialize_context.append(
                             '    arg_f{}_{}.size = {};'.format(n, arg_name, len(val)))
                         initialize_context.append(
-                            '    arg_f{0}_{1}.data = c->f{0}_config_shape_{1};'.format(n, arg_name))
+                            '    arg_f{0}_{1}.data = c->f{0}_local_context_shape_{1};'.format(n, arg_name))
                         for vn, v in enumerate(val):
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
