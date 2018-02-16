@@ -80,7 +80,7 @@ def update_result(args, index, result, values, output_index, type_end_names, out
                     os.makedirs(directory, exist_ok=True)
 
                     if vtype in ['.bmp', '.jpeg', '.jpg', '.png', '.gif', '.tif']:
-                        x = np.array(d, dtype=np.float32) * 256.
+                        x = np.array(d, dtype=np.float32) * 255.
                         while len(x.shape) == 4:
                             x = x[0]
                         if x.shape[0] > 3 or x.shape[0] == 2:

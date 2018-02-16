@@ -59,122 +59,155 @@ def main():
     subparser.add_argument('inputs', nargs='+')
     subparser.set_defaults(func=infer_command)
 
-    # Forward
-    from nnabla.utils.cli.forward import forward_command
-    subparser = subparsers.add_parser('forward')
-    subparser.add_argument(
-        '-c', '--config', help='path to nntxt', required=True)
-    subparser.add_argument(
-        '-p', '--param', help='path to parameter file', required=False)
-    subparser.add_argument(
-        '-d', '--dataset', help='path to CSV dataset', required=False)
-    subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
-    subparser.set_defaults(func=forward_command)
+    try:
+        from nnabla.utils.cli.forward import forward_command
+        # Forward
+        subparser = subparsers.add_parser('forward')
+        subparser.add_argument(
+            '-c', '--config', help='path to nntxt', required=True)
+        subparser.add_argument(
+            '-p', '--param', help='path to parameter file', required=False)
+        subparser.add_argument(
+            '-d', '--dataset', help='path to CSV dataset', required=False)
+        subparser.add_argument(
+            '-o', '--outdir', help='output directory', required=True)
+        subparser.set_defaults(func=forward_command)
 
-    # Decode param
-    from nnabla.utils.cli.encode_decode_param import decode_param_command
-    subparser = subparsers.add_parser('decode_param')
-    subparser.add_argument(
-        '-p', '--param', help='path to parameter file', required=False)
-    subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
-    subparser.set_defaults(func=decode_param_command)
+    except:
+        pass
 
-    # Encode param
-    from nnabla.utils.cli.encode_decode_param import encode_param_command
-    subparser = subparsers.add_parser('encode_param')
-    subparser.add_argument(
-        '-i', '--indir', help='input directory', required=True)
-    subparser.add_argument(
-        '-p', '--param', help='path to parameter file', required=False)
-    subparser.set_defaults(func=encode_param_command)
+    try:
+        from nnabla.utils.cli.encode_decode_param import decode_param_command
+        # Decode param
+        subparser = subparsers.add_parser('decode_param')
+        subparser.add_argument(
+            '-p', '--param', help='path to parameter file', required=False)
+        subparser.add_argument(
+            '-o', '--outdir', help='output directory', required=True)
+        subparser.set_defaults(func=decode_param_command)
+    except:
+        pass
 
-    # Profile
-    from nnabla.utils.cli.profile import profile_command
-    subparser = subparsers.add_parser('profile')
-    subparser.add_argument(
-        '-c', '--config', help='path to nntxt', required=True)
-    subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
-    subparser.set_defaults(func=profile_command)
+    try:
+        from nnabla.utils.cli.encode_decode_param import encode_param_command
+        # Encode param
+        subparser = subparsers.add_parser('encode_param')
+        subparser.add_argument(
+            '-i', '--indir', help='input directory', required=True)
+        subparser.add_argument(
+            '-p', '--param', help='path to parameter file', required=False)
+        subparser.set_defaults(func=encode_param_command)
+    except:
+        pass
 
-    # Convert dataset
-    from nnabla.utils.cli.conv_dataset import conv_dataset_command
-    subparser = subparsers.add_parser('conv_dataset')
-    subparser.add_argument('-F', '--force', action='store_true',
-                           help='force overwrite destination', required=False)
-    subparser.add_argument(
-        '-S', '--shuffle', action='store_true', help='shuffle data', required=False)
-    subparser.add_argument('-N', '--normalize', action='store_true',
-                           help='normalize data range', required=False)
-    subparser.add_argument('source')
-    subparser.add_argument('destination')
-    subparser.set_defaults(func=conv_dataset_command)
+    try:
+        from nnabla.utils.cli.profile import profile_command
+        # Profile
+        subparser = subparsers.add_parser('profile')
+        subparser.add_argument(
+            '-c', '--config', help='path to nntxt', required=True)
+        subparser.add_argument(
+            '-o', '--outdir', help='output directory', required=True)
+        subparser.set_defaults(func=profile_command)
+    except:
+        pass
 
-    # Compare with CPU
-    from nnabla.utils.cli.compare_with_cpu import compare_with_cpu_command
-    subparser = subparsers.add_parser('compare_with_cpu')
-    subparser.add_argument(
-        '-c', '--config', help='path to nntxt', required=True)
-    subparser.add_argument(
-        '-c2', '--config2', help='path to cpu nntxt', required=True)
-    subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
-    subparser.set_defaults(func=compare_with_cpu_command)
+    try:
+        from nnabla.utils.cli.conv_dataset import conv_dataset_command
+        # Convert dataset
+        subparser = subparsers.add_parser('conv_dataset')
+        subparser.add_argument('-F', '--force', action='store_true',
+                               help='force overwrite destination', required=False)
+        subparser.add_argument(
+            '-S', '--shuffle', action='store_true', help='shuffle data', required=False)
+        subparser.add_argument('-N', '--normalize', action='store_true',
+                               help='normalize data range', required=False)
+        subparser.add_argument('source')
+        subparser.add_argument('destination')
+        subparser.set_defaults(func=conv_dataset_command)
+    except:
+        pass
 
-    from nnabla.utils.cli.create_image_classification_dataset import create_image_classification_dataset_command
-    # Create image classification dataset
-    subparser = subparsers.add_parser('create_image_classification_dataset')
-    subparser.add_argument(
-        '-i', '--sourcedir', help='source directory with directories for each class', required=True)
-    subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
-    subparser.add_argument(
-        '-c', '--channel', help='number of output color channels', required=True)
-    subparser.add_argument(
-        '-w', '--width', help='width of output image', required=True)
-    subparser.add_argument(
-        '-g', '--height', help='height of output image', required=True)
-    subparser.add_argument(
-        '-m', '--mode', help='shaping mode (trimming or padding)', required=True)
-    subparser.add_argument(
-        '-s', '--shuffle', help='shuffle mode (true or false)', required=True)
-    subparser.add_argument(
-        '-f1', '--file1', help='output file name 1', required=True)
-    subparser.add_argument(
-        '-r1', '--ratio1', help='output file ratio(%) 1')
-    subparser.add_argument(
-        '-f2', '--file2', help='output file name 2')
-    subparser.add_argument(
-        '-r2', '--ratio2', help='output file ratio(%) 2')
-    subparser.set_defaults(func=create_image_classification_dataset_command)
+    try:
+        from nnabla.utils.cli.compare_with_cpu import compare_with_cpu_command
+        # Compare with CPU
+        subparser = subparsers.add_parser('compare_with_cpu')
+        subparser.add_argument(
+            '-c', '--config', help='path to nntxt', required=True)
+        subparser.add_argument(
+            '-c2', '--config2', help='path to cpu nntxt', required=True)
+        subparser.add_argument(
+            '-o', '--outdir', help='output directory', required=True)
+        subparser.set_defaults(func=compare_with_cpu_command)
+    except:
+        pass
 
-    # Uploader
-    from nnabla.utils.cli.uploader import upload_command, Uploader
-    subparser = subparsers.add_parser('upload')
-    subparser.add_argument(
-        '-e', '--endpoint', help='set endpoint uri', type=str)
-    subparser.add_argument('token', help='token for upload')
-    subparser.add_argument('filename', help='filename to upload')
-    subparser.set_defaults(func=upload_command)
+    try:
+        from nnabla.utils.cli.create_image_classification_dataset import create_image_classification_dataset_command
+        # Create image classification dataset
+        subparser = subparsers.add_parser(
+            'create_image_classification_dataset')
+        subparser.add_argument(
+            '-i', '--sourcedir', help='source directory with directories for each class', required=True)
+        subparser.add_argument(
+            '-o', '--outdir', help='output directory', required=True)
+        subparser.add_argument(
+            '-c', '--channel', help='number of output color channels', required=True)
+        subparser.add_argument(
+            '-w', '--width', help='width of output image', required=True)
+        subparser.add_argument(
+            '-g', '--height', help='height of output image', required=True)
+        subparser.add_argument(
+            '-m', '--mode', help='shaping mode (trimming, padding or resize)', required=True)
+        subparser.add_argument(
+            '-s', '--shuffle', help='shuffle mode (true or false)', required=True)
+        subparser.add_argument(
+            '-f1', '--file1', help='output file name 1', required=True)
+        subparser.add_argument(
+            '-r1', '--ratio1', help='output file ratio(%) 1')
+        subparser.add_argument(
+            '-f2', '--file2', help='output file name 2')
+        subparser.add_argument(
+            '-r2', '--ratio2', help='output file ratio(%) 2')
+        subparser.set_defaults(
+            func=create_image_classification_dataset_command)
+    except:
+        pass
 
-    # Create TAR for uploader
-    from nnabla.utils.cli.uploader import create_tar_command
-    subparser = subparsers.add_parser('create_tar')
-    subparser.add_argument('source', help='CSV dataset')
-    subparser.add_argument('destination', help='TAR filename')
-    subparser.set_defaults(func=create_tar_command)
+    try:
+        # Uploader
+        from nnabla.utils.cli.uploader import upload_command, Uploader
+        subparser = subparsers.add_parser('upload')
+        subparser.add_argument(
+            '-e', '--endpoint', help='set endpoint uri', type=str)
+        subparser.add_argument('token', help='token for upload')
+        subparser.add_argument('filename', help='filename to upload')
+        subparser.set_defaults(func=upload_command)
+    except:
+        pass
 
-    # Extract nnp file
-    from nnabla.utils.cli.extract import extract_command
-    subparser = subparsers.add_parser('extract')
-    subparser.add_argument(
-        '-l', '--list', help='list contents.', action='store_true')
-    subparser.add_argument(
-        '-x', '--extract', help='extract contents to current dir.', action='store_true')
-    subparser.add_argument('nnp', help='nnp filename')
-    subparser.set_defaults(func=extract_command)
+    try:
+        # Create TAR for uploader
+        from nnabla.utils.cli.uploader import create_tar_command
+        subparser = subparsers.add_parser('create_tar')
+        subparser.add_argument('source', help='CSV dataset')
+        subparser.add_argument('destination', help='TAR filename')
+        subparser.set_defaults(func=create_tar_command)
+    except:
+        pass
+
+    try:
+        # Extract nnp file
+        from nnabla.utils.cli.extract import extract_command
+        subparser = subparsers.add_parser('extract')
+        subparser.add_argument(
+            '-l', '--list', help='list contents.', action='store_true')
+        subparser.add_argument(
+            '-x', '--extract', help='extract contents to current dir.', action='store_true')
+        subparser.add_argument('nnp', help='nnp filename')
+        subparser.set_defaults(func=extract_command)
+    except:
+        pass
 
     args = parser.parse_args()
 

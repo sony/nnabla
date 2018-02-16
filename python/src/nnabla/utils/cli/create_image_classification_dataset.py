@@ -29,7 +29,7 @@ def convert_image(args):
     dest_dir = args[2]
     width = args[3]
     height = args[4]
-    padding = args[5]
+    mode = args[5]
     ch = args[6]
 
     src_file_name = os.path.join(source_dir, file_name)
@@ -59,7 +59,7 @@ def convert_image(args):
         # print(h, w)
         if w != width or h != height:
             # resize image
-            if not padding:
+            if mode == 'trimming':
                 # trimming mode
                 if float(h) / w > float(height) / width:
                     target_h = int(float(w) / width * height)
@@ -70,10 +70,7 @@ def convert_image(args):
                     # print('crop_target_w', target_w)
                     im = im[::, (w - target_w) // 2:w - (w - target_w) // 2]
                 # print('before', im.shape)
-                im = scipy.misc.imresize(arr=im, size=(
-                    height, width), interp='lanczos')
-                # print('after', im.shape)
-            else:
+            elif mode == 'padding':
                 # padding mode
                 if float(h) / w < float(height) / width:
                     target_h = int(float(height) / width * w)
@@ -89,9 +86,9 @@ def convert_image(args):
                     pad = pad + ((0, 0),)
                 im = np.pad(im, pad, 'constant')
                 # print('before', im.shape)
-                im = scipy.misc.imresize(arr=im, size=(
-                    height, width), interp='lanczos')
-                # print('after', im.shape)
+            im = scipy.misc.imresize(arr=im, size=(
+                height, width), interp='lanczos')
+            # print('after', im.shape)
 
         # change color ch
         if len(im.shape) == 2 and ch == 3:
@@ -116,7 +113,7 @@ def create_image_classification_dataset_command(args):
     dest_dir = args.outdir
     width = int(args.width)
     height = int(args.height)
-    padding = args.mode == 'padding'
+    mode = args.mode
     ch = int(args.channel)
     shuffle = args.shuffle == 'true'
 
@@ -167,7 +164,7 @@ def create_image_classification_dataset_command(args):
     # create output data
     logger.log(99, "Creating output images...")
     process_args = [(data[0], source_dir, dest_dir, width,
-                     height, padding, ch) for data in csv_data]
+                     height, mode, ch) for data in csv_data]
     p = mp.Pool(mp.cpu_count())
     pbar = tqdm.tqdm(total=len(process_args))
     for _ in p.imap_unordered(convert_image, process_args):
