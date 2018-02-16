@@ -20,6 +20,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 cimport _variable
 from _variable cimport CVariable, CContext, dtypes
+from _nd_array cimport CNdArray
 
 
 cdef extern from "nbla/communicator.hpp" namespace "nbla":
@@ -37,11 +38,19 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         int rank() except +
         int local_rank() except +
 
-        void reduce(cpp_bool division) except +
+        string new_group(pair[string, vector[int]] name_ranks) except +
+        unordered_map[string, vector[int]] list_groups() except +
+        vector[int] find_group(const string & group) except +
+
+        void reduce(const vector[shared_ptr[CNdArray]] & ndarray_list, int dst, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
+        void reduce(shared_ptr[CNdArray] data, int dst, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
         void allreduce(cpp_bool division, cpp_bool inplace) nogil except +
-        void reducescatter(cpp_bool division) nogil except +
-        void bcast() nogil except +
-        void allgather() nogil except +
+        void all_reduce(const vector[shared_ptr[CNdArray]] & ndarray_list, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
+        void all_reduce(shared_ptr[CNdArray] data, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
+        void reduce_scatter(const vector[shared_ptr[CNdArray]] & ndarray_list, shared_ptr[CNdArray] ndarray, cpp_bool division, const string & group) nogil except +
+        void bcast(const vector[shared_ptr[CNdArray]] & ndarray_list, int src, cpp_bool inplace, const string & group) nogil except +
+        void bcast(shared_ptr[CNdArray] ndarray, int src, cpp_bool inplace, const string & group) nogil except +
+        void all_gather(shared_ptr[CNdArray] ndarray, const vector[shared_ptr[CNdArray]] & ndarray_list, const string & group) nogil except +
 
         void reduce_async(cpp_bool division) nogil except +
         void allreduce_async(cpp_bool division, cpp_bool inplace) nogil except +

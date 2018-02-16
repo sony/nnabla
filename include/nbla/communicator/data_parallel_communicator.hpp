@@ -64,11 +64,27 @@ public:
   */
   virtual void init();
 
-  virtual void reduce(bool division = false);
+  virtual void reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
+                      bool division = false, bool inplace = false,
+                      const string &group = "world");
+  virtual void reduce(NdArrayPtr ndarray, int dst, bool division = false,
+                      bool inplace = false, const string &group = "world");
   virtual void allreduce(bool division = false, bool inplace = false);
-  virtual void reducescatter(bool division = false);
-  virtual void bcast();
-  virtual void allgather();
+  virtual void all_reduce(const vector<NdArrayPtr> &ndarray_list,
+                          bool division = false, bool inplace = false,
+                          const string &group = "world");
+  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
+                          bool inplace = false, const string &group = "world");
+  virtual void reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
+                              NdArrayPtr ndarray, bool division = false,
+                              const string &group = "world");
+  virtual void bcast(const vector<NdArrayPtr> &ndarray_list, int src,
+                     bool inplace = false, const string &group = "world");
+  virtual void bcast(NdArrayPtr ndarray, int src, bool inplace = false,
+                     const string &group = "world");
+  virtual void all_gather(NdArrayPtr ndarray,
+                          const vector<NdArrayPtr> &ndarray_list,
+                          const string &group = "world");
 
   virtual void reduce_async(bool division = false);
   virtual void allreduce_async(bool division = false, bool inplace = false);

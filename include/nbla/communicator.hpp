@@ -90,40 +90,120 @@ public:
   */
   virtual void init();
 
+  /** Create group
+   */
+  virtual string new_group(pair<string, vector<int>> name_ranks_pair);
+
+  /** List groups
+   */
+  virtual unordered_map<string, vector<int>> list_groups();
+
+  /** Find groups
+   */
+  virtual vector<int> find_group(const string &group);
+
   /** Check difference of the array classes.
    * Check difference between the array class of the context and that of
    * the synced_array. If it differs, the error occurs.
    */
   void check_array_class(Context ctx, VariablePtr vp);
 
-  /** reduce.
-   @param division Divide the reduced value.
+  /** reduce over parameters added.
+
+        @param ndarray_list Vector of NdArrayPtr.
+        @param dst Distination rank.
+  @param division Divide the reduced value.
+  @param inplace Pack the arrays into one large array if false.
+  @param group Name of a group.
    */
-  virtual void reduce(bool division = false);
+  virtual void reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
+                      bool division = false, bool inplace = false,
+                      const string &group = "world");
+
+  /** reduce over parameters added.
+
+  @param data NdArrayPtr.
+  @param dst Distination rank.
+@param division Divide the reduced value.
+@param inplace Pack the arrays into one large array if false.
+@param group Name of a group.
+*/
+  virtual void reduce(NdArrayPtr ndarray, int dst, bool division = false,
+                      bool inplace = false, const string &group = "world");
 
   /** allreduce over parameters added.
-   This method is \b sync before and after iallreduce w.r.t. a host thread.
-   Currently, \e iallreduce is applied to gradient regions.
+   Deprecated. Use all_reduce.
+
+   Currently, \e allreduce is applied to gradient regions.
 
   @param division Divide the reduced value.
-  @param inplace Pack the arrays into one large array if flase.
+  @param inplace Pack the arrays into one large array if false.
+  @param group Name of a group.
    */
   virtual void allreduce(bool division = false, bool inplace = false);
 
-  /** reducescatter.
-   @param division Divide the reduced value.
+  /** all_reduce over parameters added.
+
+        @param ndarray_list Vector of NdArrayPtr
+  @param division Divide the reduced value.
+  @param inplace Pack the arrays into one large array if false.
+        @param group Name of a group.
+
    */
-  virtual void reducescatter(bool division = false);
+  virtual void all_reduce(const vector<NdArrayPtr> &ndarray_list,
+                          bool division = false, bool inplace = false,
+                          const string &group = "world");
+
+  /** all_reduce over parameters added.
+
+  @param data NdArrayPtr
+@param division Divide the reduced value.
+@param inplace Pack the arrays into one large array if false.
+  @param group Name of a group.
+*/
+  virtual void all_reduce(NdArrayPtr ndarray, bool division = false,
+                          bool inplace = false, const string &group = "world");
+
+  /** reduce_scatter.
+
+         @param ndarray_list Vector of NdArrayPtr
+         @param ndarray NdArrayPtr
+   @param division Divide the reduced value.
+   @param group Name of a group.
+   */
+  virtual void reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
+                              NdArrayPtr ndarray, bool division = false,
+                              const string &group = "world");
 
   /** broadcast.
-   *
-   */
-  virtual void bcast();
 
-  /** allgather.
-   *
+         @param ndarray_list Vector of NdArrayPtr.
+         @param src Source rank.
+         @param inplace Pack the arrays into one large array if false.
+         @param group Name of a group.
    */
-  virtual void allgather();
+  virtual void bcast(const vector<NdArrayPtr> &ndarray_list, int src,
+                     bool inplace = false, const string &group = "world");
+
+  /** broadcast.
+
+         @param data NdArrayPtr.
+         @param src Source rank.
+         @param inplace Pack the arrays into one large array if false.
+         @param group Name of a group.
+   */
+  virtual void bcast(NdArrayPtr ndarray, int src, bool inplace = false,
+                     const string &group = "world");
+
+  /** all_gather.
+
+         @param ndarray data to be sent.
+         @param ndarray_list Vector of NdArrayPtr to recieve data.
+         @param group Name of a group.
+   */
+  virtual void all_gather(NdArrayPtr ndarray,
+                          const vector<NdArrayPtr> &ndarray_list,
+                          const string &group = "world");
 
   /** reduce asynchronously.
    @param division Divide the reduced value.
@@ -132,7 +212,7 @@ public:
 
   /** reduce asynchronously.
    @param division Divide the reduced value.
-         @param inplace Pack the arrays into one large array if flase.
+         @param inplace Pack the arrays into one large array if false.
    */
   virtual void allreduce_async(bool division = false, bool inplace = true);
 
