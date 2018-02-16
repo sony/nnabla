@@ -63,16 +63,16 @@ void DataParallelCommunicator<T>::all_reduce(
 }
 
 template <typename T>
-void DataParallelCommunicator<T>::all_reduce(NdArrayPtr ndarray,
-                                             bool division, bool inplace,
+void DataParallelCommunicator<T>::all_reduce(NdArrayPtr ndarray, bool division,
+                                             bool inplace,
                                              const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
 template <typename T>
 void DataParallelCommunicator<T>::reduce_scatter(
-    const vector<NdArrayPtr> &ndarray_list, NdArrayPtr ndarray,
-    bool division, const string &group) {
+    const vector<NdArrayPtr> &ndarray_list, NdArrayPtr ndarray, bool division,
+    const string &group) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU reduce_scatter is not implemented.")
 }
