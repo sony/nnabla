@@ -712,21 +712,6 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     if show_onnx:
         print(model)
     img = np.random.rand(1,3,224,224).astype(np.float32)
-
-    # Remove Softmax for now.
-    # This is temporal
-    nodes = len(model.graph.node)
-    sm_node = model.graph.node[nodes-1]
-    def change_to_copy(node):
-        """Change node operation to a simple copy"""
-        # Dropout with is_test=True is equal to a simple copy
-        node.op_type = "Dropout"
-        attr = node.attribute.add()
-        attr.name = "is_test"
-        attr.type = AttributeProto.INT
-        attr.i = 1
-    change_to_copy(sm_node)
-
     c2out = onnx_caffe2.backend.run_model(model, [img])
     # Process onnx with naabla
     nnp = onnx_model_to_nnp_protobuf(model)
@@ -761,9 +746,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     c2 = c2out[out_name]
     if show_output:
         print(c2, nnout)
-    assert c2.shape == nnout.shape
-    if compare_values:
-        assert np.allclose(c2, nnout, atol=1e-05)
+    assert np.allclose(c2, nnout)
 
 def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     nnp_dir = TEST_DATA_DIR
@@ -775,7 +758,6 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     show_onnx = False
     show_nnp = False
     show_output = False
-    compare_values = True
     # Process nnp with nnabla
     path = os.path.join(nnp_dir, nnp_name)
     nn_net = nnload.load([path])
@@ -809,6 +791,4 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     # Compare both naabla and caffe2 results
     if show_output:
         print(c2, nnout)
-    assert c2.shape == nnout.shape
-    if compare_values:
-        assert np.allclose(c2, nnout, atol=1e-05)
+    assert np.allclose(c2, nnout)
