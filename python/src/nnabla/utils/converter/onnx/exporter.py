@@ -12,83 +12,177 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
-import google.protobuf.text_format as text_format
-import os
-import shutil
-import tempfile
-import zipfile
+import struct
+import nnabla.logger as logger
+import onnx
+from .utils import *
+from onnx import (ModelProto, TensorProto, TensorShapeProto)
 
-from nnabla.utils import nnabla_pb2
+# Dictionary used to convert NNabla function names to ONNX op_type 
+nnabla_function_type_to_onnx_optype = {
+    "ReLU": "Relu",
+    "Concatenate": "Concat",
+    "Convolution": "Conv",
+    "GlobalAveragePooling": "GlobalAveragePool",
+    "MaxPooling": "MaxPool",
+}
+
+
+def convert_to_node(func, variables):
+    n = onnx.helper.make_node(
+            nnabla_function_type_to_onnx_optype.get(func.type, func.type),
+            func.input,
+            func.output,
+            name=func.name)
+    if func.type == "Concatenate":
+        # ONNX requires axis setting as a parameter
+        # for the concat op_type.
+        # If no value is set for axis,
+        # the default value 0 will be set
+        attr = onnx.helper.make_attribute("axis", func.concatenate_param.axis)
+        n.attribute.extend([attr])
+    elif func.type == "Dropout":
+        # NNP Dropout is always is_test=false
+        # since we always apply dropout when it is
+        # included in a network.
+        attr = onnx.helper.make_attribute("is_test", 0)
+        n.attribute.extend([attr])
+    elif func.type == "Identity":
+        # Convert Identity to a Dropout with is_test=true
+        # so we just copy the input to output
+        n.op_type = "Dropout"
+        attr = onnx.helper.make_attribute("is_test", 1)
+        n.attribute.extend([attr])
+    elif func.type == "MaxPooling":
+        mpp = func.max_pooling_param
+        if not mpp.ignore_border:
+            raise ValueError("MaxPooling with ignore_border=False is not supported")
+        # Copy kernel, stride, and pads values
+        k = onnx.helper.make_attribute("kernel_shape", mpp.kernel.dim)
+        s = onnx.helper.make_attribute("strides", mpp.stride.dim)
+        p = onnx.helper.make_attribute("pads", mpp.pad.dim)
+        n.attribute.extend([k, s, p])
+    elif func.type == "Convolution":
+        cp = func.convolution_param
+        # Calculate the kernel_shape from input weight data.
+        # Weight data should be the second input for convolution
+        if len(func.input) < 2:
+            raise ValueError(
+                "Weight input is missing for convolution {}"
+                .format(func.name))
+        weight = func.input[1]
+        weight_var = [v for v in variables if v.name == weight]
+        if len(weight_var) != 1:
+            raise ValueError(
+                "Multiple weight inputs were found for convolution {} where there should be only one."
+                .format(func.name))
+        weight_shape = weight_var[0].shape
+        # The base axis for weights is the next axis from the data's base axis
+        weight_base = cp.base_axis + 1
+        k = onnx.helper.make_attribute("kernel_shape", weight_shape.dim[weight_base:])
+        d = onnx.helper.make_attribute("dilations", cp.dilation.dim)
+        s = onnx.helper.make_attribute("strides", cp.stride.dim)
+        p = onnx.helper.make_attribute("pads", cp.pad.dim)
+        g = onnx.helper.make_attribute("group", cp.group)
+        n.attribute.extend([k, d, s, p, g])
+    elif func.type == "GlobalAveragePooling":
+        # We wipeout the node name to avoid a bug?
+        # that occurs when we use a GlobalAveragePooling node with a name
+        # "Conv" or "Pool" contained.
+        # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
+        # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the 
+        # above code if we have a specific name.
+        # The above caffe2 code should be checking the node's operator name and not the node's name.
+        n.name = ""
+    elif func.type == "Softmax":
+        # Softmax on NNabla does a softmax ONLY along the specified axis.
+        # ONNX first squashes the input dimensions to 2D based on the specifed axis,
+        # and then calculates the Softmax.
+        # Since these two slightly differ, we show a warning here.
+        logger.warning(SOFTMAX_WARNING)
+        attr = onnx.helper.make_attribute("axis", func.softmax_param.axis)
+        n.attribute.extend([attr])
+    return n
+
+
+def nnp_model_to_onnx_graph(graph, nnp):
+    if len(nnp.network) != 1:
+        raise ValueError("NNP with only a single network is currently supported")
+    if len(nnp.executor) != 1:
+        raise ValueError("NNP with only a single executor is currently supported")
+    net = nnp.network[0]
+    exe = nnp.executor[0]
+    if exe.network_name != net.name:
+        raise ValueError("Names of the included network and executor's target network do not match")
+    graph.name = net.name
+    # store all variable shape info to use later
+    var_dict = {}
+    for v in net.variable:
+        var_dict[v.name] = v.shape
+
+    for f in net.function:
+        n = convert_to_node(f, net.variable)
+        graph.node.extend([n])
+    for param in nnp.parameter:
+        init = graph.initializer.add()
+        init.name = param.variable_name
+        init.dims.extend(param.shape.dim)
+        init.data_type = TensorProto.FLOAT # We should be only getting float data from NNabla
+        init.raw_data = struct.pack("{}f".format(len(param.data)), *param.data)
+        # init.float_data.extend(param.data)
+    # Add all the constant parameters for all nodes
+    # and the first node's input as input
+    def create_dim(d):
+        """Create a dimension message for a given dimension"""
+        dim = TensorShapeProto.Dimension()
+        dim.dim_value = d
+        return dim
+
+    for iv in exe.data_variable:
+        i = graph.input.add()
+        i.name = iv.variable_name
+        i.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in var_dict[iv.variable_name].dim]
+        i.type.tensor_type.shape.dim.extend(dims)
+    for pv in exe.parameter_variable:
+        p = graph.input.add()
+        p.name = pv.variable_name
+        p.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in var_dict[pv.variable_name].dim]
+        p.type.tensor_type.shape.dim.extend(dims)
+    # Add only the final output of the graph as output
+    for ov in exe.output_variable:
+        o = graph.output.add()
+        o.name = ov.variable_name
+        o.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in var_dict[ov.variable_name].dim]
+        o.type.tensor_type.shape.dim.extend(dims)
+
+
+def nnp_model_to_onnx_protobuf(nnp):
+    mp = ModelProto()
+    mp.ir_version = MIN_ONNX_IR_VERSION
+    op0 = mp.opset_import.add()
+    op0.version = MIN_ONNX_OPSET_VERSION
+    op1 = mp.opset_import.add()
+    op1.domain = "" # empty string indicates ONNX domain
+    op1.version = MIN_ONNX_OPSET_VERSION
+    # nn_opset = mp.opset_import.add()
+    # nn_opset.domain = NNABLA_DOMAIN
+    # nn_opset.version = MIN_NNABLA_OPSET_VERSION
+    mp.producer_name = PRODUCER_NAME
+    mp.producer_version = PRODUCER_VERSION
+    mp.domain = NNABLA_DOMAIN
+    nnp_model_to_onnx_graph(mp.graph, nnp)
+    return mp
 
 
 class OnnxExporter:
-    def __init__(self, nnp, batch_size, parameter_type='protobuf', force=False):
-        self._parameter_type = parameter_type
-        self._force = force
+    def __init__(self, nnp):
         self._nnp = nnp.protobuf
-        self._other_files = nnp.other_files
 
-    #def write_nntxt(self, filename, nnp):
-    #    with open(filename, 'w') as f:
-    #        text_format.PrintMessage(nnp, f)
+    def export(self, file_path):
+        model_proto = nnp_model_to_onnx_protobuf(self._nnp)
+        with open(file_path, "wb") as f:
+            f.write(model_proto.SerializeToString())
 
-    #def write_protobuf(self, filename, nnp):
-    #    with open(filename, 'wb') as f:
-    #        f.write(nnp.SerializeToString())
-
-    #def write_h5(self, filename, nnp):
-    #    import h5py
-    #    with h5py.File(filename, 'w') as hd:
-    #        for i, param in enumerate(nnp.parameter):
-    #            dset = hd.create_dataset(
-    #                param.variable_name, dtype='f4', data=list(param.data))
-    #            dset.attrs['need_grad'] = param.need_grad
-    #            dset.attrs['index'] = i
-
-    #def export_files(self, outdir):
-    #    with open('{}/nnp_version.txt'.format(outdir), 'w') as f:
-    #        f.write('0.1\n')
-    #    if self._parameter_type == 'included':
-    #        self.write_nntxt('{}/network.nntxt'.format(outdir), self._nnp)
-    #    else:
-    #        nnp_wo_parameter = nnabla_pb2.NNablaProtoBuf()
-    #        nnp_wo_parameter.CopyFrom(self._nnp)
-    #        nnp_wo_parameter.ClearField('parameter')
-    #        self.write_nntxt(
-    #            '{}/network.nntxt'.format(outdir), nnp_wo_parameter)
-
-    #        if self._parameter_type == 'protobuf':
-    #            nnp_parameter_only = nnabla_pb2.NNablaProtoBuf()
-    #            for param in self._nnp.parameter:
-    #                parameter = nnp_parameter_only.parameter.add()
-    #                parameter.CopyFrom(param)
-    #            self.write_protobuf(
-    #                '{}/parameter.protobuf'.format(outdir), nnp_parameter_only)
-    #        elif self._parameter_type == 'h5':
-    #            self.write_h5('{}/parameter.h5'.format(outdir), self._nnp)
-    #        elif self._parameter_type == 'none':
-    #            pass  # store without param.
-    #        else:
-    #            print('Unsupported parameter type `{}`.'.format(
-    #                self._parameter_type))
-
-    #def export_nnp(self, ofile):
-    #    try:
-    #        tmpdir = tempfile.mkdtemp()
-    #        with zipfile.ZipFile(ofile, 'w') as nnpzip:
-    #            self.export_files(tmpdir)
-    #            for f in glob.glob('{}/*'.format(tmpdir)):
-    #                nnpzip.write(f, os.path.basename(f))
-    #    finally:
-    #        shutil.rmtree(tmpdir)
-
-    def export(self, *args):
-        if len(args) == 1:
-            if os.path.isdir(args[0]):
-                self.export_files(args[0])
-            else:
-                ofile = args[0]
-                ext = os.path.splitext(ofile)[1].lower()
-                if ext == '.nnp':
-                    self.export_nnp(ofile)

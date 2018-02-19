@@ -38,6 +38,8 @@ def export_from_nnp(args, nnp, output):
     elif os.path.isdir(output) and args.export_format == 'CSRC':
         CsrcExporter(nnp, args.batch_size).export(output)
 
+    elif output_ext == '.onnx':
+        OnnxExporter(nnp).export(output)
     else:
         print('Output file ({}) is not supported or output directory does not exist.'.format(
             output_ext))
@@ -52,7 +54,6 @@ def convert_files(args, ifiles, output):
         nnp = NnpReader(*ifiles, expand_network=args.nnp_expand_network).read()
     elif args.read_format == 'ONNX':
         nnp = OnnxReader(*ifiles).read()
-
     if nnp is not None:
         return export_from_nnp(args, nnp, output)
     else:
