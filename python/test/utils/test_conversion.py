@@ -44,6 +44,9 @@ TEST_DATA_DIR="nnabla-sample-data/conversion_data"
 # so the concat results match with caffe2
 DEFAULT_CONCAT_AXIS = 1
 
+SOFTMAX_WARNING = """Softmax on NNabla will calculate on the specified axis ONLY. If the incoming tensor is two dimensional (for example N*C*1*1),
+NNabla's Softmax and ONNX's Softmax should match. If the incoming tensor has more than two dimensions, the Softmax results may differ."""
+
 def onnx_value_info_proto_to_variable(info, network):
     if not info.type.HasField("tensor_type"): # accepting only tensor
         raise ValueError("Only TensorProto is allowed as ValueInfoProto's type for info.name (Got {})"
@@ -118,10 +121,7 @@ def convert_to_function(node, base_name, func_counter):
         elif axis_count > 1:
             raise ValueError("More than one axis was specifed as the Concat Axis")
     elif node.op_type == "Softmax":
-        logger.warning(
-            "Softmax on NNabla assumes the input tensor to be two dimensional (for example N*C*1*1)."
-            " If the incoming tensor has more dimensions,"
-            " NNabla may compute different results compared to other frameworks")
+        logger.warning(SOFTMAX_WARNING)
         # default to channel axis
         func.softmax_param.axis = 1
         for attr in node.attribute:
@@ -432,6 +432,14 @@ def convert_to_node(func, variables):
         # above code if we have a specific name.
         # The above caffe2 code should be checking the node's operator name and not the node's name.
         n.name = ""
+    elif func.type == "Softmax":
+        # Softmax on NNabla does a softmax ONLY along the specified axis.
+        # ONNX first squashes the input dimensions to 2D based on the specifed axis,
+        # and then calculates the Softmax.
+        # Since these two slightly differ, we show a warning here.
+        logger.warning(SOFTMAX_WARNING)
+        attr = onnx.helper.make_attribute("axis", func.softmax_param.axis)
+        n.attribute.extend([attr])
     return n
 
 def nnp_model_to_onnx_graph(graph, nnp):
@@ -682,6 +690,10 @@ def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.onnx", "softmax.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "softmax.nnp", "softmax.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
