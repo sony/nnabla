@@ -38,7 +38,7 @@ MIN_ONNX_IR_VERSION = 3
 MIN_ONNX_OPSET_VERSION = 2
 PRODUCER_NAME = "nnabla-onnx"
 PRODUCER_VERSION = "0.1"
-TEST_DATA_DIR="conversion_data"
+TEST_DATA_DIR="nnabla-sample-data/conversion_data"
 
 # We default to concat the channel axis
 # so the concat results match with caffe2
