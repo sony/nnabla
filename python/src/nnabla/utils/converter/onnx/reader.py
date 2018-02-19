@@ -77,19 +77,13 @@ def convert_to_function(node, base_name, func_counter):
         # For now we are comparing with caffe2, so we are 
         # defaulting to the channel axis if the axis is not specified.
         # https://github.com/onnx/onnx/issues/374
-        axis_count = 0
+        func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
         for attr in node.attribute:
             if attr.name == "axis":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Axis type must be a single integer")
                 # The axis was specified so we use it
                 func.concatenate_param.axis = attr.i
-                axis_count += 1
-        if axis_count == 0:
-            # No axis was specifed so we default to the channel axis for now
-            func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
-        elif axis_count > 1:
-            raise ValueError("More than one axis was specifed as the Concat Axis")
     elif node.op_type == "Softmax":
         logger.warning(SOFTMAX_WARNING)
         # default to channel axis
