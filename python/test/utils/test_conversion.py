@@ -705,7 +705,6 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     show_onnx = False
     show_nnp = False
     show_output = False
-    compare_values = True
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
