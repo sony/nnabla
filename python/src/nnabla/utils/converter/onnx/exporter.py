@@ -74,7 +74,8 @@ def convert_to_node(func, variables):
         weight_var = [v for v in variables if v.name == weight]
         if len(weight_var) != 1:
             raise ValueError(
-                "Multiple weight inputs were found for convolution {} where there should be only one."
+                "No weight input was found, or multiple weight inputs were found"
+                " for convolution {} where there should be only one."
                 .format(func.name))
         weight_shape = weight_var[0].shape
         # The base axis for weights is the next axis from the data's base axis
@@ -89,13 +90,15 @@ def convert_to_node(func, variables):
         # We wipeout the node name to avoid a bug?
         # that occurs when we use a GlobalAveragePooling node with a name
         # "Conv" or "Pool" contained.
-        # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
+        # Caffe2 issue is here:
+        # https://github.com/caffe2/caffe2/issues/1971
         # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the 
-        # above code if we have a specific name.
+        # following code if we have a specific name.
+        # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
         # The above caffe2 code should be checking the node's operator name and not the node's name.
         n.name = ""
     elif func.type == "Softmax":
-        # Softmax on NNabla does a softmax ONLY along the specified axis.
+        # Softmax on NNabla does softmax ONLY along the specified axis.
         # ONNX first squashes the input dimensions to 2D based on the specifed axis,
         # and then calculates the Softmax.
         # Since these two slightly differ, we show a warning here.
@@ -127,15 +130,16 @@ def nnp_model_to_onnx_graph(graph, nnp):
         init = graph.initializer.add()
         init.name = param.variable_name
         init.dims.extend(param.shape.dim)
-        init.data_type = TensorProto.FLOAT # We should be only getting float data from NNabla
+        init.data_type = TensorProto.FLOAT  # We should be only getting float data from NNabla
         init.raw_data = struct.pack("{}f".format(len(param.data)), *param.data)
         # init.float_data.extend(param.data)
+
     # Add all the constant parameters for all nodes
     # and the first node's input as input
-    def create_dim(d):
+    def create_dim(val):
         """Create a dimension message for a given dimension"""
         dim = TensorShapeProto.Dimension()
-        dim.dim_value = d
+        dim.dim_value = val
         return dim
 
     for iv in exe.data_variable:
@@ -165,7 +169,7 @@ def nnp_model_to_onnx_protobuf(nnp):
     op0 = mp.opset_import.add()
     op0.version = MIN_ONNX_OPSET_VERSION
     op1 = mp.opset_import.add()
-    op1.domain = "" # empty string indicates ONNX domain
+    op1.domain = ""  # empty string indicates ONNX domain
     op1.version = MIN_ONNX_OPSET_VERSION
     # nn_opset = mp.opset_import.add()
     # nn_opset.domain = NNABLA_DOMAIN
@@ -185,4 +189,3 @@ class OnnxExporter:
         model_proto = nnp_model_to_onnx_protobuf(self._nnp)
         with open(file_path, "wb") as f:
             f.write(model_proto.SerializeToString())
-

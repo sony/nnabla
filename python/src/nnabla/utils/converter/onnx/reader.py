@@ -23,6 +23,11 @@ from .utils import *
 # We default to concat the channel axis
 # so the concat results match with caffe2
 DEFAULT_CONCAT_AXIS = 1
+DEFAULT_SOFTMAX_AXIS = 1
+# ONNX does not have the concept of executors.
+# We will add a single executor to NNP when converted from ONNX,
+# and set a default name to it.
+DEFAULT_EXECUTOR_NAME = "exec_0"
 
 # Dictionary used to convert ONNX op_type to NNabla function names
 onnx_optype_to_nnabla_function_type = {
@@ -35,9 +40,9 @@ onnx_optype_to_nnabla_function_type = {
 
 
 def onnx_value_info_proto_to_variable(info, network):
-    if not info.type.HasField("tensor_type"): # accepting only tensor
+    if not info.type.HasField("tensor_type"):  # accepting only tensor
         raise ValueError("Only TensorProto is allowed as ValueInfoProto's type for info.name (Got {})"
-                .format(info.name, info.type))
+                         .format(info.name, info.type))
     t = info.type.tensor_type
     v = network.variable.add()
     v.name = info.name
@@ -74,7 +79,7 @@ def convert_to_function(node, base_name, func_counter):
     if node.op_type == "Concat":
         # Since concat axis is currently not required in ONNX,
         # the default axis depends on which backend we use.
-        # For now we are comparing with caffe2, so we are 
+        # For now we are comparing with caffe2, so we are
         # defaulting to the channel axis if the axis is not specified.
         # https://github.com/onnx/onnx/issues/374
         func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
@@ -87,7 +92,7 @@ def convert_to_function(node, base_name, func_counter):
     elif node.op_type == "Softmax":
         logger.warning(SOFTMAX_WARNING)
         # default to channel axis
-        func.softmax_param.axis = 1
+        func.softmax_param.axis = DEFAULT_SOFTMAX_AXIS
         for attr in node.attribute:
             if attr.name == "axis":
                 if attr.type != AttributeProto.INT:
@@ -216,7 +221,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         if not (n.domain == '' or n.domain == NNABLA_DOMAIN):
             raise ValueError("Unsupported operator from domain {} was found".format(n.domain))
         f = convert_to_function(n, graph.name, func_counter)
-        #Gather all unique names for input and output
+        # Gather all unique names for input and output
         for i in f.input:
             all_vars[i] = None
         for o in f.output:
@@ -230,12 +235,12 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for init in graph.initializer:
         if init.data_type != TensorProto.FLOAT:
             raise ValueError("Only floating point data is supported for parameters {} (Got {})"
-                    .format(init.name, init.data_type))
+                             .format(init.name, init.data_type))
         p = pb.parameter.add()
         p.variable_name = init.name
         p.shape.dim.extend(init.dims)
         # convert raw bytestream to floating points
-        num = len(init.raw_data) // 4
+        num = len(init.raw_data) // 4  # four bytes per float
         # logger.log(99, "raw_data num: {}".format(num))
         data = struct.unpack(str(num)+'f', init.raw_data)
         p.data.extend(data)
@@ -244,8 +249,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         param_vars[init.name] = None
     # We need to distinguish constant parameters (which become 'Parameter' in NNabla)
     # from input/output variables (which become 'Buffer' in NNabla).
-    # Contant parameters appear in the initializer list so we keep
-    # all names of variables from the initializer and compare them with 
+    # Constant parameters appear in the initializer list so we keep
+    # all names of variables from the initializer and compare them with
     # the names we gathered in all_vars.
     # The names that only appear in all_vars are the input/output variables.
 
@@ -254,6 +259,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     in_list = []
     param_list = []
     out_list = []
+    var_type_buffer = "Buffer"
     for i in graph.input:
         v = onnx_value_info_proto_to_variable(i, network)
         if v.name in param_vars:
@@ -262,14 +268,14 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
             v.initializer.type = "Constant"
             v.initializer.multiplier = 1.0
             param_list.append(v)
-        else :
+        else:
             # This input is a variable
-            v.type ="Buffer"
+            v.type = var_type_buffer
             in_list.append(v)
         del all_vars[v.name]
     for o in graph.output:
         v = onnx_value_info_proto_to_variable(o, network)
-        v.type = "Buffer"
+        v.type = var_type_buffer
         out_list.append(v)
         del all_vars[v.name]
 
@@ -277,14 +283,12 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         # We add all remaining variables as intermediate buffer
         # We leave the buffer size of all intermediate buffers empty
         v = network.variable.add()
-        v.type = "Buffer"
+        v.type = var_type_buffer
         v.name = varg
-    
-    #pdb.set_trace()
 
     # Add executor for target network
     exe = pb.executor.add()
-    exe.name = "exec_0"
+    exe.name = DEFAULT_EXECUTOR_NAME
     exe.network_name = network.name
     for iv in in_list:
         dv = exe.data_variable.add()
