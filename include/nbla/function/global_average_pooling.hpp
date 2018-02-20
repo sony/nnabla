@@ -11,14 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// *WARNING*
-// THIS FILE IS AUTO-GENERATED DUMMY CODE BY CODE GENERATOR.
-// PLEASE IMPLEMENT REAL CODE AND DELETE THIS MESSAGE SOON.
-// If you want to change dummy code, edit following files.
-// - build-tools/code_generator/function_generator/generate_include_nbla_function_hpp.py
-// - build-tools/code_generator/templates/include_nbla_function_hpp_template.hpp
-
 
 /** GlobalAveragePooling
  */
@@ -33,8 +25,9 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(GlobalAveragePooling);
 
-/** 
-    @todo PLACE HERE FUNCTION DOCUMENTATION.
+/** Global average pooling operator.
+@copydetails BasePooling
+\ingroup FunctionImplGrp
  */
 template <typename T>
 class GlobalAveragePooling : public BaseFunction<> {
