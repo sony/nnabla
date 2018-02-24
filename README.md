@@ -23,12 +23,8 @@ This installs the CPU version of Neural Network Libraries. GPU-acceleration can 
 For more details, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
 
 ### Building from Source
-There are currently four options for building Neural Network Libraries from source:
 
-- [Build on Linux](http://nnabla.readthedocs.io/en/latest/python/build_on_linux.html)
-- [Build on Linux with Distributed Training](http://nnabla.readthedocs.io/en/latest/python/build_on_linux_with_dt.html)
-- [Build on Windows](http://nnabla.readthedocs.io/en/latest/python/build_on_windows.html)
-- [Build on macOS](http://nnabla.readthedocs.io/en/latest/python/build_on_macos.html)
+See [Build Manuals](doc/build/README.md).
 
 ### Running on Docker
 For details on running on Docker, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
