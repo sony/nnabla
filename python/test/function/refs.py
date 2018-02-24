@@ -80,6 +80,26 @@ def convolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     return y
 
 
+def deconvolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
+    y = x
+    K, Ho = y.shape
+    K, Cg, M = w.shape
+    C = Cg * group
+
+    H = get_deconv_out_size(Ho, M, pad[0], stride[0], dilation[0])
+    x_pad = np.zeros((C, H + pad[0] * 2), dtype=dtype)
+    for k in range(K):
+        g = int(k // (K // group))
+        for ho in range(Ho):
+            hi = ho * stride[0] + np.arange(0, M) * dilation[0]
+            ci = np.arange(g * Cg, (g + 1) * Cg)
+            x_pad[np.ix_(ci, hi)] += w[k] * y[k, ho]
+    x = x_pad[:, pad[0]:pad[0] + H]
+    if b is not None:
+        x += b[..., np.newaxis]
+    return x
+
+
 def deconvolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     y = x
     K, Ho, Wo = y.shape

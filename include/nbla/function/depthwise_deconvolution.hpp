@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** DepthwiseConvolution
+/** DepthwiseDeconvolution
  */
-#ifndef __NBLA_FUNCTION_DEPTHWISECONVOLUTION_HPP__
-#define __NBLA_FUNCTION_DEPTHWISECONVOLUTION_HPP__
+#ifndef __NBLA_FUNCTION_DEPTHWISEDECONVOLUTION_HPP__
+#define __NBLA_FUNCTION_DEPTHWISEDECONVOLUTION_HPP__
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
-#include <memory>
-#include <string>
-
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(DepthwiseConvolution, int, const vector<int> &,
+NBLA_REGISTER_FUNCTION_HEADER(DepthwiseDeconvolution, int, const vector<int> &,
                               const vector<int> &, const vector<int> &, int);
 
-/** N-D Depthwise Convolution with bias.
+/** 1-D and 2-D Depthwise Deconvolution with bias.
 
 Inputs (\f$B\f$ is base_axis):
 - Input \f$(B + 1 + N)\f$-D array
@@ -49,16 +46,11 @@ is treated as sample dimension.
 @param pad Padding sizes for dimensions.
 @param stride Stride sizes for dimensions.
 @param dilation Dilation sizes for dimensions.
-@param multiplier Number of output feature maps per input feature map.
-
-@sa Reference:
-- F. Chollet: Chollet, Francois. "Xception: Deep Learning with Depthwise
-Separable Convolutions.
-<https://arxiv.org/abs/1610.02357>
+@param divisor Number of input feature maps per output feature map.
 
  */
 template <typename T>
-class DepthwiseConvolution
+class DepthwiseDeconvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
                           const vector<int> &, int> {
 protected:
@@ -66,7 +58,7 @@ protected:
   const vector<int> padding_;
   const vector<int> stride_;
   const vector<int> dilation_;
-  int multiplier_;
+  int divisor_;
 
   vector<int> sample_shape_;
   vector<int> outmap_shape_;
@@ -81,18 +73,18 @@ protected:
   Variable col_;
 
 public:
-  DepthwiseConvolution(const Context &ctx, int base_axis,
-                       const vector<int> &pad, const vector<int> &stride,
-                       const vector<int> &dilation, int multiplier)
+  DepthwiseDeconvolution(const Context &ctx, int base_axis,
+                         const vector<int> &pad, const vector<int> &stride,
+                         const vector<int> &dilation, int divisor)
       : BaseFunction<int, const vector<int> &, const vector<int> &,
                      const vector<int> &, int>(ctx, base_axis, pad, stride,
-                                               dilation, multiplier),
+                                               dilation, divisor),
         base_axis_(base_axis), padding_(pad), stride_(stride),
-        dilation_(dilation), multiplier_(multiplier) {}
-  virtual ~DepthwiseConvolution() {}
+        dilation_(dilation), divisor_(divisor) {}
+  virtual ~DepthwiseDeconvolution() {}
   virtual shared_ptr<Function> copy() const {
-    return create_DepthwiseConvolution(ctx_, base_axis_, padding_, stride_,
-                                       dilation_, multiplier_);
+    return create_DepthwiseDeconvolution(ctx_, base_axis_, padding_, stride_,
+                                         dilation_, divisor_);
   }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<T>()};
@@ -100,7 +92,7 @@ public:
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
-  virtual string name() { return "DepthwiseConvolution"; }
+  virtual string name() { return "DepthwiseDeconvolution"; }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
