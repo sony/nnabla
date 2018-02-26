@@ -30,6 +30,7 @@ nnabla_function_type_to_onnx_optype = {
     "GlobalAveragePooling": "GlobalAveragePool",
     "MaxPooling": "MaxPool",
     "AveragePooling": "AveragePool",
+    "Add2": "Sum",
     # optype that gets converted
     "Identity": "Dropout",
 }
