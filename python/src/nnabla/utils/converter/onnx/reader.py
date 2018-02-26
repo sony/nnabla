@@ -89,6 +89,9 @@ def convert_to_function(node, base_name, func_counter):
                     raise ValueError("Axis type must be a single integer")
                 # The axis was specified so we use it
                 func.concatenate_param.axis = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
     elif node.op_type == "Softmax":
         logger.warning(SOFTMAX_WARNING)
         # default to channel axis
@@ -98,6 +101,9 @@ def convert_to_function(node, base_name, func_counter):
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Softmax axis must be a single integer")
                 func.softmax_param.axis = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
     elif node.op_type == "Dropout":
         # Dropout requires a ratio to be set
         for attr in node.attribute:
@@ -123,6 +129,9 @@ def convert_to_function(node, base_name, func_counter):
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Dropout ratio must be a single float")
                 func.dropout_param.p = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
     elif node.op_type == "Conv":
         cp = func.convolution_param
         # We shouldn't need these default settings
@@ -134,9 +143,6 @@ def convert_to_function(node, base_name, func_counter):
         strides = []
         dilations = []
         for attr in node.attribute:
-            # We do not set 'kernel_shape' to NNabla
-            # since NNabla doesn't have a parameter for it
-            # (it will be inferred from weight input)
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS are supported for pads in Conv op_type")
@@ -156,6 +162,14 @@ def convert_to_function(node, base_name, func_counter):
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for group in Conv op_type")
                 cp.group = attr.int
+            elif attr.name == "kernel_shape":
+                # We do not set 'kernel_shape' to NNabla
+                # since NNabla doesn't have a parameter for it
+                # (it will be inferred from weight input)
+                pass
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         # NNabla requires for the dimensions of strides, pads, dilations to match.
         # We align the dimensions for all three attributes to the shortest one
         dim = min(dims)
@@ -191,6 +205,9 @@ def convert_to_function(node, base_name, func_counter):
                     raise ValueError("Only INTS are supported for kernel_shape in MaxPool op_type")
                 kernel.extend(attr.ints)
                 dims.append(len(kernel))
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         # NNabla requires for the dimensions of strides, pads, kernels to match.
         # We align the dimensions for all three attributes to the shortest one
         dim = min(dims)
