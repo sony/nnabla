@@ -31,6 +31,10 @@ DEFAULT_EXECUTOR_NAME = "exec_0"
 
 # Dictionary used to convert ONNX op_type to NNabla function names
 onnx_optype_to_nnabla_function_type = {
+    # optype with same names
+    "Dropout": "Dropout",
+    "Softmax": "Softmax",
+    # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
     "Conv": "Convolution",
@@ -97,7 +101,9 @@ def set_kernel_parameter(node, kp):
 def convert_to_function(node, base_name, func_counter):
     """Convert given node to corresponding function"""
     func = nnabla_pb2.Function()
-    func.type = onnx_optype_to_nnabla_function_type.get(node.op_type, node.op_type)
+    func.type = onnx_optype_to_nnabla_function_type.get(node.op_type)
+    if func.type is None:
+        raise ValueError("op_type {} is currently not supported for NNP conversion".format(node.op_type))
     # NNabla requires each function to have a unique name.
     # If the node's name already has something set,
     # we are going to use it.

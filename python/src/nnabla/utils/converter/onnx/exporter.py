@@ -20,18 +20,27 @@ from onnx import (ModelProto, TensorProto, TensorShapeProto)
 
 # Dictionary used to convert NNabla function names to ONNX op_type 
 nnabla_function_type_to_onnx_optype = {
+    # optype with same names
+    "Dropout": "Dropout",
+    "Softmax": "Softmax",
+    # optype with different names
     "ReLU": "Relu",
     "Concatenate": "Concat",
     "Convolution": "Conv",
     "GlobalAveragePooling": "GlobalAveragePool",
     "MaxPooling": "MaxPool",
     "AveragePooling": "AveragePool",
+    # optype that gets converted
+    "Identity": "Dropout",
 }
 
 
 def convert_to_node(func, variables):
+    op_type = nnabla_function_type_to_onnx_optype.get(func.type)
+    if op_type is None:
+        raise ValueError("function {} is currently not supported for ONNX conversion".format(func.type))
     n = onnx.helper.make_node(
-            nnabla_function_type_to_onnx_optype.get(func.type, func.type),
+            op_type,
             func.input,
             func.output,
             name=func.name)
@@ -51,7 +60,6 @@ def convert_to_node(func, variables):
     elif func.type == "Identity":
         # Convert Identity to a Dropout with is_test=true
         # so we just copy the input to output
-        n.op_type = "Dropout"
         attr = onnx.helper.make_attribute("is_test", 1)
         n.attribute.extend([attr])
     elif func.type == "MaxPooling":
