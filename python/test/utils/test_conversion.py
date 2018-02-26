@@ -58,7 +58,7 @@ def convert_onnx_to_nnp_and_compare(
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    #pdb.set_trace()
+    # pdb.set_trace()
     nn_net = nnload.load([p])
     exe = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
@@ -203,6 +203,10 @@ def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
 def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "average_pool.onnx", "average_pool.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "average_pool.nnp", "average_pool.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR

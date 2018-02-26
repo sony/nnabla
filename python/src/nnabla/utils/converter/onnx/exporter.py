@@ -25,6 +25,7 @@ nnabla_function_type_to_onnx_optype = {
     "Convolution": "Conv",
     "GlobalAveragePooling": "GlobalAveragePool",
     "MaxPooling": "MaxPool",
+    "AveragePooling": "AveragePool",
 }
 
 
@@ -105,6 +106,15 @@ def convert_to_node(func, variables):
         logger.warning(SOFTMAX_WARNING)
         attr = onnx.helper.make_attribute("axis", func.softmax_param.axis)
         n.attribute.extend([attr])
+    elif func.type == "AveragePooling":
+        app = func.average_pooling_param
+        if not app.ignore_border:
+            raise ValueError("AveragePooling with ignore_border=False is not supported")
+        # Copy kernel, stride, and pads values
+        k = onnx.helper.make_attribute("kernel_shape", app.kernel.dim)
+        s = onnx.helper.make_attribute("strides", app.stride.dim)
+        p = onnx.helper.make_attribute("pads", app.pad.dim)
+        n.attribute.extend([k, s, p])
     return n
 
 
