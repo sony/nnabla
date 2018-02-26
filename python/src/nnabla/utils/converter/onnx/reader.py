@@ -41,6 +41,7 @@ onnx_optype_to_nnabla_function_type = {
     "GlobalAveragePool": "GlobalAveragePooling",
     "MaxPool": "MaxPooling",
     "AveragePool": "AveragePooling",
+    "Sum": "Add2",
 }
 
 
