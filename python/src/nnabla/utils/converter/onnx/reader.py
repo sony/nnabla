@@ -36,6 +36,7 @@ onnx_optype_to_nnabla_function_type = {
     "Conv": "Convolution",
     "GlobalAveragePool": "GlobalAveragePooling",
     "MaxPool": "MaxPooling",
+    "AveragePool": "AveragePooling",
 }
 
 
@@ -49,6 +50,49 @@ def onnx_value_info_proto_to_variable(info, network):
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
     return v
 
+def set_kernel_parameter(node, kp):
+    """Set kernel related parameters(strides, pads, kernel_shape) to the given parameter"""
+    dims = []
+    strides = []
+    pads = []
+    kernel = []
+    for attr in node.attribute:
+        if attr.name == "strides":
+            if attr.type != AttributeProto.INTS:
+                raise ValueError("Only INTS are supported for strides in {}"
+                                 .format(node.op_type))
+            strides.extend(attr.ints)
+            dims.append(len(strides))
+        elif attr.name == "pads":
+            if attr.type != AttributeProto.INTS:
+                raise ValueError("Only INTS are supported for pads in {}"
+                                 .format(node.op_type))
+            pads.extend(attr.ints)
+            dims.append(len(pads))
+        elif attr.name == "kernel_shape":
+            if attr.type != AttributeProto.INTS:
+                raise ValueError("Only INTS are supported for kernel_shape in {}"
+                                 .format(node.op_type))
+            kernel.extend(attr.ints)
+            dims.append(len(kernel))
+        else:
+            raise ValueError("Unsupported attribute {} was specified at {}"
+                             .format(attr.name, node.op_type))
+    # NNabla requires for the dimensions of strides, pads, kernels to match.
+    # We align the dimensions for all three attributes to the shortest one
+    dim = min(dims)
+    if strides:
+        kp.stride.dim.extend(strides[:dim])
+    if pads:
+        kp.pad.dim.extend(pads[:dim])
+    else:
+        # In case we don't have padding set,
+        # we set zero padding just in case NNabla does not set the
+        # default padding values correctly (such as in AveragePooling).
+        # This code should not be needed if NNabla handles default values correctly.
+        kp.pad.dim.extend([0]*dim)
+    if kernel:
+        kp.kernel.dim.extend(kernel[:dim])
 
 def convert_to_function(node, base_name, func_counter):
     """Convert given node to corresponding function"""
@@ -185,41 +229,16 @@ def convert_to_function(node, base_name, func_counter):
             cp.dilation.dim.extend([1 for _ in range(dim)])
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
-        dims = []
-        strides = []
-        pads = []
-        kernel = []
-        for attr in node.attribute:
-            if attr.name == "strides":
-                if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for strides in MaxPool op_type")
-                strides.extend(attr.ints)
-                dims.append(len(strides))
-            elif attr.name == "pads":
-                if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for pads in MaxPool op_type")
-                pads.extend(attr.ints)
-                dims.append(len(pads))
-            elif attr.name == "kernel_shape":
-                if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for kernel_shape in MaxPool op_type")
-                kernel.extend(attr.ints)
-                dims.append(len(kernel))
-            else:
-                raise ValueError("Unsupported attribute {} was specified at {}"
-                                 .format(attr.name, node.op_type))
-        # NNabla requires for the dimensions of strides, pads, kernels to match.
-        # We align the dimensions for all three attributes to the shortest one
-        dim = min(dims)
-        if strides:
-            mpp.stride.dim.extend(strides[:dim])
-        if pads:
-            mpp.pad.dim.extend(pads[:dim])
-        if kernel:
-            mpp.kernel.dim.extend(kernel[:dim])
+        set_kernel_parameter(node, mpp)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         mpp.ignore_border = True
+    elif node.op_type == "AveragePool":
+        app = func.average_pooling_param
+        set_kernel_parameter(node, app)
+        # Always ignore borders in order to match ONNX(caffe2) results?
+        # Not quite sure yet.
+        app.ignore_border = True
 
     return func
 
