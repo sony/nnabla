@@ -277,6 +277,41 @@ def convert_to_function(node, base_name, func_counter):
                                  .format(attr.name, node.op_type))
     return func
 
+def convert_parameter_shape(pb):
+    """Convert the shape of some parameters so they fit NNabla's requirements.
+    We do this as a post conversion because in the future we may be able to
+    delete the whole conversion if NNabla's code gets changed"""
+    net = pb.network[0]
+    batch_norm_constants = []
+    for f in net.function:
+        if f.type == "BatchNormalization":
+            # BatchNormalization in ONNX requires the scale, bias, mean, and variance input to be
+            # one dimensional (https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization).
+            # However in NNabla these input must have a specific shape that matches the input shape.
+            # For example if the input shape is (1,3,3,3), the above variables must have the shape (1,3,1,1) and not (3).
+            # (1,3,1,1) is actually the same as a one-dimensional tensor of size 3, but NNabla's check currently does not allow this.
+            # Thus, we convert the shape of the above input so we can pass NNabla's check.
+            # If NNabla lightens the shape check, we should be able to remove this conversion.
+            batch_norm_constants.extend(f.input[1:])  # We copy all input except the first one
+
+    # This loop should be fairly slow since we loop through all variables and parameters per constant
+    for c in batch_norm_constants:
+        # Reshape all BatchNormalization constant inputs assuming the size is (1,size,1,1)
+        for v in net.variable:
+            if v.name == c:
+                size = v.shape.dim[0]
+                del v.shape.dim[:]
+                v.shape.dim.extend([1, size, 1, 1])
+                break
+        for p in pb.parameter:
+            if p.variable_name == c:
+                size = p.shape.dim[0]
+                del p.shape.dim[:]
+                p.shape.dim.extend([1, size, 1, 1])
+                break
+
+
+
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
     network = pb.network.add()
@@ -372,7 +407,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for pv in param_list:
         p = exe.parameter_variable.add()
         p.variable_name = pv.name
-
+    convert_parameter_shape(pb)
 
 def onnx_model_to_nnp_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()

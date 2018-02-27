@@ -331,9 +331,18 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
 #    # Process onnx with caffe2 backend
 #    #ops = OrderedDict()
 #    model = onnx.load(path)
+#
+#    batch_norm_inputs = []
 #    for n in model.graph.node:
+#        if n.op_type == "BatchNormalization":
+#            batch_norm_inputs.extend(n.input[1:])
+#
 #        #ops[n.op_type] = n.op_type
-#        print(n)
+#        #print(n)
+#    for init in model.graph.initializer:
+#        if init.name in batch_norm_inputs:
+#            print(init.name, init.dims)
+#
 #    #for k in ops:
 #    #    print(k)
 #    #if show_onnx:
