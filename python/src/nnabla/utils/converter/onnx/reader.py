@@ -34,6 +34,7 @@ onnx_optype_to_nnabla_function_type = {
     # optype with same names
     "Dropout": "Dropout",
     "Softmax": "Softmax",
+    "BatchNormalization": "BatchNormalization",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
@@ -101,10 +102,11 @@ def set_kernel_parameter(node, kp):
 
 def convert_to_function(node, base_name, func_counter):
     """Convert given node to corresponding function"""
-    func = nnabla_pb2.Function()
-    func.type = onnx_optype_to_nnabla_function_type.get(node.op_type)
-    if func.type is None:
+    ft = onnx_optype_to_nnabla_function_type.get(node.op_type)
+    if ft is None:
         raise ValueError("op_type {} is currently not supported for NNP conversion".format(node.op_type))
+    func = nnabla_pb2.Function()
+    func.type = ft
     # NNabla requires each function to have a unique name.
     # If the node's name already has something set,
     # we are going to use it.
@@ -246,7 +248,33 @@ def convert_to_function(node, base_name, func_counter):
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         app.ignore_border = True
-
+    elif node.op_type == "BatchNormalization":
+        bnp = func.batch_normalization_param
+        # Set default axis.
+        # We shouldn't need this if the default is set properly
+        bnp.axes.extend([1])
+        for attr in node.attribute:
+            if attr.name == "is_test":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Only INT is supported for is_test in BatchNormalization op_type")
+                if attr.i == 0:
+                    raise ValueError("BatchNormalization with is_test=False is currently not supported")
+                #bnp.output_stat = (attr.i != 1) # We output stat when we are not testing
+            elif attr.name == "epsilon":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Only FLOAT is supported for epsilon in BatchNormalization op_type")
+                bnp.eps = attr.f
+            elif attr.name == "momentum":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Only FLOAT is supported for momentum in BatchNormalization op_type")
+                bnp.decay_rate = attr.f
+            elif attr.name == "consumed_inputs":
+                # Caffe2 currently uses an undocumented attribute consumed_inputs for BatchNormalization.
+                # Since NNabla does not need this, we ignore it
+                pass
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
     return func
 
 
