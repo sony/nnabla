@@ -15,13 +15,6 @@
 import argparse
 import sys
 
-try:
-    from mpi4py import MPI
-except:
-    MPI = None
-    pass
-
-
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
@@ -210,17 +203,14 @@ def main():
         pass
 
     args = parser.parse_args()
-
-    if MPI and MPI.COMM_WORLD.Get_size() > 1:
-        try:
-            args.func(args)
-        except:
-            import traceback
-            print(traceback.format_exc())
-            MPI.COMM_WORLD.Abort()
-    else:
+    try:
         args.func(args)
-
+    except:
+        import traceback
+        print(traceback.format_exc())
+#        from mpi4py import MPI
+#        if MPI.COMM_WORLD.Get_size() > 1:
+#            MPI.COMM_WORLD.Abort()
 
 if __name__ == '__main__':
     import six.moves._thread as thread

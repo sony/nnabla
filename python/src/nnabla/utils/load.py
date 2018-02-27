@@ -26,12 +26,8 @@ import re
 import shutil
 import tempfile
 import zipfile
-try:
-    from mpi4py import MPI
-except:
-    MPI = None
-    pass
 
+import nnabla.communicators as C
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
     calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
@@ -375,17 +371,9 @@ def _create_optimizer(ctx, o, networks, datasets):
                   local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
     optimizer.solver.set_parameters(parameters)
 
-    optimizer.comm = None
-    if MPI and MPI.COMM_WORLD.Get_size() > 1:
-        try:
-            import nnabla.communicators as C
-            optimizer.comm = C.MultiProcessDataParalellCommunicator(ctx)
-            optimizer.comm.init()
-            optimizer.comm.add_context_and_parameters((ctx, parameters))
-        except:
-            optimizer.comm = None
-            if MPI.COMM_WORLD.Get_rank() == 0:
-                logger.warning("Failed to initialize nnabla.communicators.")
+    optimizer.comm = C.CurrentCommunicator()
+    if optimizer.comm is not None:
+        optimizer.comm.add_context_and_parameters((ctx, parameters))
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
@@ -414,9 +402,6 @@ def _global_config(proto):
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
 
-    if MPI and MPI.COMM_WORLD.Get_size() > 0:
-        config.default_context.device_id = str(
-            MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
     return config
 
 
@@ -436,37 +421,40 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     dataset = Dataset()
     dataset.uri = uri
     dataset.normalize = not no_image_normalization
-    rng = numpy.random.RandomState(MPI.COMM_WORLD.Get_rank() if MPI else 0)
+
+    comm = C.CurrentCommunicator()
+    
+    rng = numpy.random.RandomState(comm.rank if comm else 0)
 
     if prepare_data_iterator:
         if cache_dir == '':
             cache_dir = None
 
         # Disble implicit cache creation when MPI is available.
-        if cache_dir and (create_cache_explicitly or MPI):
+        if cache_dir and (create_cache_explicitly or comm):
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
-                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                if not comm or comm.rank == 0:
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
                     os.makedirs(cache_dir, exist_ok=True)
-
+                    open('{}/creating_cache'.format(cache_dir), 'a').close()
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
                         index = 0
                         while index < di.size:
                             progress('', (1.0 * di.position) / di.size)
                             di.next()
                             index += batch_size
-                    if MPI:
-                        for dest in range(1, MPI.COMM_WORLD.Get_size()):
-                            MPI.COMM_WORLD.send(True, dest=dest)
-                else:
-                    if MPI and MPI.COMM_WORLD.Get_rank() > 0:
-                        MPI.COMM_WORLD.recv(source=0)
+                    os.unlink('{}/creating_cache'.format(cache_dir))
+
+                if comm:
+                    from time import sleep
+                    while(os.path.exists('{}/creating_cache'.format(cache_dir))):
+                        sleep(1)
 
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
-            if MPI:
+            if comm:
                 logger.critical(
                     'Implicit cache creation does not support with MPI')
                 import sys
@@ -660,7 +648,6 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                         if name == 'nnp_version.txt':
                             nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
-                                # print(f.readlines())
                                 pass  # TODO currently do nothing with version.
                         elif ext in ['.nntxt', '.prototxt']:
                             nnp.extract(name, tmpdir)
@@ -687,6 +674,13 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                 pass
     else:
         default_context = nn.context()
+
+    try:
+        comm = C.MultiProcessDataParalellCommunicator(default_context)
+        comm.init()
+        info.global_config.default_context.device_id = str(comm.rank % comm.size)
+    except:
+        logger.warning("Failed to initialize nnabla.communicators.")
 
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
