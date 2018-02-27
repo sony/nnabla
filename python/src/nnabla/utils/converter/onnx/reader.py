@@ -249,6 +249,13 @@ def convert_to_function(node, base_name, func_counter):
         # Not quite sure yet.
         app.ignore_border = True
     elif node.op_type == "BatchNormalization":
+        # We need to rearrange the input data order.
+        # ONNX BatchNormalization input order: X, scale, bias, mean, variance
+        # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
+        nnp_order = [0, 2, 1, 3, 4]
+        nnp_input = [node.input[i] for i in nnp_order]
+        del func.input[:]
+        func.input.extend(nnp_input)
         bnp = func.batch_normalization_param
         # Set default axis.
         # We shouldn't need this if the default is set properly
@@ -259,7 +266,8 @@ def convert_to_function(node, base_name, func_counter):
                     raise ValueError("Only INT is supported for is_test in BatchNormalization op_type")
                 if attr.i == 0:
                     raise ValueError("BatchNormalization with is_test=False is currently not supported")
-                #bnp.output_stat = (attr.i != 1) # We output stat when we are not testing
+                is_test = (attr.i == 1)
+                bnp.batch_stat = not is_test
             elif attr.name == "epsilon":
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Only FLOAT is supported for epsilon in BatchNormalization op_type")

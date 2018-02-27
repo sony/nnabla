@@ -36,7 +36,7 @@ def run_executor(nn_net, exec_name):
 
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
-        compare_values=True, show_onnx=False, show_nnp=False, show_output=False):
+        compare_values=True, show_onnx=False, show_nnp=False, show_output=False, atol=1e-08):
     """Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
@@ -71,11 +71,11 @@ def convert_onnx_to_nnp_and_compare(
         print(c2, nnout)
     assert c2.shape == nnout.shape
     if compare_values:
-        assert np.allclose(c2, nnout)
+        assert np.allclose(c2, nnout, atol=atol)
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
-        compare_values=True, show_nnp=False, show_onnx=False, show_output=False):
+        compare_values=True, show_nnp=False, show_onnx=False, show_output=False, atol=1e-08):
     """Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla"""
     # Process nnp with nnabla
     path = os.path.join(nnp_dir, nnp_name)
@@ -108,7 +108,7 @@ def convert_nnp_to_onnx_and_compare(
         print(c2, nnout)
     assert c2.shape == nnout.shape
     if compare_values:
-        assert np.allclose(c2, nnout)
+        assert np.allclose(c2, nnout, atol=atol)
 
 @pytest.fixture
 def nnp_fixture():
@@ -218,7 +218,7 @@ def test_nnp_onnx_conversion_sum(tmpdir, nnp_fixture):
 
 def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
-        tmpdir, TEST_DATA_DIR, "batch_norm.onnx", "batch_norm.nnp", "out_data_1", "exec_0")
+        tmpdir, TEST_DATA_DIR, "batch_norm.onnx", "batch_norm.nnp", "out_data_1", "exec_0", atol=1e-05)
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
@@ -332,23 +332,33 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
 #    #ops = OrderedDict()
 #    model = onnx.load(path)
 #
-#    batch_norm_inputs = []
-#    for n in model.graph.node:
-#        if n.op_type == "BatchNormalization":
-#            batch_norm_inputs.extend(n.input[1:])
+#    #batch_norm_inputs = []
+#    #for n in model.graph.node:
+#    #    if n.op_type == "BatchNormalization":
+#    #        batch_norm_inputs.extend(n.input[1:])
 #
-#        #ops[n.op_type] = n.op_type
-#        #print(n)
-#    for init in model.graph.initializer:
-#        if init.name in batch_norm_inputs:
-#            print(init.name, init.dims)
+#    #    #ops[n.op_type] = n.op_type
+#    #    #print(n)
+#    #for init in model.graph.initializer:
+#    #    if init.name in batch_norm_inputs:
+#    #        print(init.name, init.dims)
 #
-#    #for k in ops:
-#    #    print(k)
-#    #if show_onnx:
-#    #    print(model)
-#    #img = np.random.rand(1,3,224,224).astype(np.float32)
-#    #c2out = onnx_caffe2.backend.run_model(model, [img])
+#    pdb.set_trace()
+#    if show_onnx:
+#        print(model)
+#    img = np.random.rand(1,3,224,224).astype(np.float32)
+#    rep = onnx_caffe2.backend.prepare(model)
+#    c2out = rep.run([img])
+#    blobs = [
+#        "gpu_0/conv1_1",
+#        "gpu_0/res2_0_branch2a_1"
+#    ]
+#    for bn in blobs:
+#        b = rep.workspace.FetchBlob(bn)
+#        print(bn, b.shape)
+#    
+#
+#
 #    ## Process onnx with naabla
 #    #nnp = onnx_model_to_nnp_protobuf(model)
 #    #assert nnp is not None
