@@ -1331,3 +1331,94 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
             real_b_q = b
 
     return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("lstm")
+def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
+    """Long Short-Term Memory.
+
+    Long Short-Term Memory, or LSTM, is a building block for recurrent neural networks (RNN) layers.
+    LSTM unit consists of a cell and input, output, forget gates whose functions are defined as following:
+
+    .. math::
+        f_t&&=\\sigma(W_fx_t+U_fh_{t-1}+b_f) \\\\
+        i_t&&=\\sigma(W_ix_t+U_ih_{t-1}+b_i) \\\\
+        o_t&&=\\sigma(W_ox_t+U_oh_{t-1}+b_o) \\\\
+        c_t&&=f_t\\odot c_{t-1}+i_t\\odot\\tanh(W_cx_t+U_ch_{t-1}+b_c) \\\\
+        h_t&&=o_t\\odot\\tanh(c_t).
+
+    References:
+
+        S. Hochreiter, and J. Schmidhuber. "Long Short-Term Memory."
+        Neural Computation. 1997.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array with shape (batch_size, step_size).
+        h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
+        c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
+        state_size (int): Internal state size is set to `state_size`.
+        w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+
+    xh = F.concatenate(*(x, h), axis=1)
+    iofc = affine(xh, (4, state_size), w_init=w_init,
+                  b_init=b_init, fix_parameters=fix_parameters)
+    i_t, o_t, f_t, gate = F.split(iofc, axis=1)
+    c_t = F.sigmoid(f_t) * c + F.sigmoid(i_t) * F.tanh(gate)
+    h_t = F.sigmoid(o_t) * F.tanh(c_t)
+    return h_t, c_t
+
+
+class LSTMCell:
+    def __init__(self, batch_size, state_size, h=None, c=None):
+        """
+        Initializes an LSTM cell.
+
+        Args:
+            batch_size (int): Internal batch size is set to `batch_size`.
+            state_size (int): Internal state size is set to `state_size`.
+            h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
+            c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
+
+        """
+        self.batch_size = batch_size
+        self.state_size = state_size
+        if h:  # when user defines h
+            self.h = h
+        else:
+            self.h = nn.Variable((self.batch_size, self.state_size))
+            self.h.data.zero()
+        if c:  # when user defines c
+            self.c = c
+        else:
+            self.c = nn.Variable((self.batch_size, self.state_size))
+            self.c.data.zero()
+
+    def reset_state(self):
+        """
+        Resets states h and c to zero.
+        """
+
+        self.h.data.zero()
+        self.c.data.zero()
+
+    def __call__(self, x, w_init=None, b_init=None, fix_parameters=False):
+        """
+        Updates h and c by calling lstm function.
+
+        Args:
+            x (~nnabla.Variable): Input N-D array with shape (batch_size, step_size).
+            w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
+            b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
+            fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+
+        """
+        self.h, self.c = lstm(
+            x, self.h, self.c, self.state_size, w_init, b_init, fix_parameters=fix_parameters)
+        return self.h
