@@ -220,6 +220,10 @@ def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "batch_norm.onnx", "batch_norm.nnp", "out_data_1", "exec_0", atol=1e-05)
 
+def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "batch_norm.nnp", "batch_norm.onnx", "out_data_1", "exec_0", atol=1e-05)
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
     onnx_name = "squeezenet.onnx"

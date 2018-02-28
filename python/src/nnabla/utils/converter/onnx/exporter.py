@@ -23,6 +23,7 @@ nnabla_function_type_to_onnx_optype = {
     # optype with same names
     "Dropout": "Dropout",
     "Softmax": "Softmax",
+    "BatchNormalization": "BatchNormalization",
     # optype with different names
     "ReLU": "Relu",
     "Concatenate": "Concat",
@@ -124,8 +125,91 @@ def convert_to_node(func, variables):
         s = onnx.helper.make_attribute("strides", app.stride.dim)
         p = onnx.helper.make_attribute("pads", app.pad.dim)
         n.attribute.extend([k, s, p])
+    elif func.type == "BatchNormalization":
+        # We need to rearrange the input data order.
+        # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
+        # ONNX BatchNormalization input order: X, scale, bias, mean, variance
+        onnx_order = [0, 2, 1, 3, 4]
+        if len(func.input) != len(onnx_order):
+            raise ValueError("The number of BatchNormalization input must be {}".format(len(onnx_order)))
+        onnx_input = [func.input[i] for i in onnx_order]
+        del n.input[:]
+        n.input.extend(onnx_input)
+        bpp = func.batch_normalization_param
+        if bpp.batch_stat:
+            # Batch normalization for training is currently not supported
+            raise ValueError("BatchNormalization with batch_stat=True is currently not supported for ONNX conversion")
+        t = onnx.helper.make_attribute("is_test", not bpp.batch_stat)
+        attrs = [t]
+        # Set values if a valid value has been set
+        if bpp.eps != 0.0:
+            e = onnx.helper.make_attribute("epsilon", bpp.eps)
+            attrs.append(e)
+        if bpp.decay_rate != 0.0:
+            m = onnx.helper.make_attribute("momentum", bpp.decay_rate)
+            attrs.append(m)
+        # We set an undocumented attribute 'consumed_inputs' here because
+        # ONNX will check if BatchNormalization has the attribute set.
+        # consumed_inputs is basically a list of flags indicating which 
+        # input data will be updated in-place (meaning the input and output will have
+        # same names). The value we are setting here is showing that the mean and variance
+        # will be specified as an in-place input.
+        # This should not be needed when is_test=True
+        # since we will not be outputting mean or variance, but since ONNX is enforcing
+        # the check we need to set it.
+        ci = onnx.helper.make_attribute("consumed_inputs", [0, 0, 0, 1, 1])
+        attrs.append(ci)
+        n.attribute.extend(attrs)
     return n
 
+def create_dim(val):
+    """Create a dimension message for a given dimension"""
+    dim = TensorShapeProto.Dimension()
+    dim.dim_value = val
+    return dim
+
+def convert_parameter_shape(graph):
+    """Convert the shape of some parameters so they fit ONNX's requirements.
+    We do this as a post conversion because in the future we may be able to
+    delete the whole conversion if NNabla's code gets changed"""
+    batch_norm_constants = []
+    for n in graph.node:
+        if n.op_type == "BatchNormalization":
+            # BatchNormalization in ONNX requires the scale, bias, mean, and variance input to be
+            # one dimensional (https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization).
+            # However in NNabla these input must have a specific shape that matches the input shape.
+            # For example if the input shape is (1,3,3,3), the above variables must have the shape (1,3,1,1) and not (3).
+            # (1,3,1,1) is actually the same as a one-dimensional tensor of size 3,
+            # but NNabla's check currently does not allow this.
+            # Thus, we convert the shape of the above input so we can pass ONNX's check.
+            # If NNabla or ONNX lightens the requirements, we should be able to remove this conversion.
+            batch_norm_constants.extend(n.input[1:5])  # copy all input names for scale, bias, mean, variance
+
+    # This loop should be fairly slow since we loop through all variables and parameters per constant
+    for c in batch_norm_constants:
+        # Reshape all BatchNormalization constant inputs assuming the size is (1,size,1,1)
+        for i in graph.initializer:
+            if i.name == c:
+                size = i.dims
+                if not (len(size) == 4 and size[2] == 1 and size[3] == 1):
+                    raise ValueError(
+                            "beta, gamma, mean, and variance parameters"
+                            "must have the shape of N*C*1*1 in {}".format(n.optype))
+                chan = size[1]
+                del i.dims[:]
+                i.dims.extend([chan])
+                break
+        for i in graph.input:
+            if i.name == c:
+                size = i.type.tensor_type.shape.dim
+                if not (len(size) == 4 and size[2].dim_value == 1 and size[3].dim_value == 1):
+                    raise ValueError(
+                            "beta, gamma, mean, and variance parameters"
+                            "must have the shape of N*C*1*1 in {}".format(n.optype))
+                chan = size[1].dim_value
+                del i.type.tensor_type.shape.dim[:]
+                i.type.tensor_type.shape.dim.extend([create_dim(chan)])
+                break
 
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
@@ -155,12 +239,6 @@ def nnp_model_to_onnx_graph(graph, nnp):
 
     # Add all the constant parameters for all nodes
     # and the first node's input as input
-    def create_dim(val):
-        """Create a dimension message for a given dimension"""
-        dim = TensorShapeProto.Dimension()
-        dim.dim_value = val
-        return dim
-
     for iv in exe.data_variable:
         i = graph.input.add()
         i.name = iv.variable_name
@@ -180,6 +258,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
         o.type.tensor_type.elem_type = TensorProto.FLOAT
         dims = [create_dim(d) for d in var_dict[ov.variable_name].dim]
         o.type.tensor_type.shape.dim.extend(dims)
+    convert_parameter_shape(graph)
 
 
 def nnp_model_to_onnx_protobuf(nnp):
