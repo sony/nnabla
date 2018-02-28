@@ -24,6 +24,7 @@ from collections import OrderedDict
 import onnx_caffe2.backend
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
+from onnx import AttributeProto
 
 TEST_DATA_DIR="nnabla-sample-data/conversion_data"
 
@@ -321,79 +322,83 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
         print(c2, nnout)
     assert np.allclose(c2, nnout)
 
-#def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
-#    onnx_dir = TEST_DATA_DIR
-#    onnx_name = "resnet50.onnx"
-#    nnp_name = "resnet50.nnp"
-#    out_name = "softmaxout_1"
-#    exec_name = "exec_0"
-#    in_name = "data_0"
-#    show_onnx = False
-#    show_nnp = False
-#    show_output = False
-#    path = os.path.join(onnx_dir, onnx_name)
-#    # Process onnx with caffe2 backend
-#    #ops = OrderedDict()
-#    model = onnx.load(path)
-#
-#    #batch_norm_inputs = []
-#    #for n in model.graph.node:
-#    #    if n.op_type == "BatchNormalization":
-#    #        batch_norm_inputs.extend(n.input[1:])
-#
-#    #    #ops[n.op_type] = n.op_type
-#    #    #print(n)
-#    #for init in model.graph.initializer:
-#    #    if init.name in batch_norm_inputs:
-#    #        print(init.name, init.dims)
-#
-#    pdb.set_trace()
-#    if show_onnx:
-#        print(model)
-#    img = np.random.rand(1,3,224,224).astype(np.float32)
-#    rep = onnx_caffe2.backend.prepare(model)
-#    c2out = rep.run([img])
-#    blobs = [
-#        "gpu_0/conv1_1",
-#        "gpu_0/res2_0_branch2a_1"
-#    ]
-#    for bn in blobs:
-#        b = rep.workspace.FetchBlob(bn)
-#        print(bn, b.shape)
-#    
-#
-#
-#    ## Process onnx with naabla
-#    #nnp = onnx_model_to_nnp_protobuf(model)
-#    #assert nnp is not None
-#    #assert len(nnp.other_files) == 0
-#    #assert nnp.protobuf is not None
-#    #if show_nnp:
-#    #    print(nnp.protobuf)
-#
-#    #nnpex = NnpExporter(nnp, batch_size=0)
-#    #nnpdir = tmpdir.mkdir("nnp")
-#    #p = os.path.join(str(nnpdir), nnp_name)
-#    #nnpex.export_nnp(p)
-#    ## read exported nnp and run network
-#    #nn_net = nnload.load([p])
-#    ##pdb.set_trace()
-#    ## set input data and run inference
-#    #net = nn_net.executors[exec_name].network
-#    #in_data = net.variables[in_name]
-#    #in_data.variable_instance.d = img
-#    #net = run_executor(nn_net, exec_name)
-#    ##in_data = exe.variables["in_data_0"]
-#    ##print(in_data.variable_instance.d)
-#    #nnout = net.variables[out_name].variable_instance.d
-#    ##print(nnout.variable_instance.d)
-#
-#    ## Print all the intermediate buffer shape in order
-#    ##for k, v in net.functions.items():
-#    ##    out = v.outputs[0]
-#    ##    print(out.name, net.variables[out.name].variable_instance.shape)
-#    ## Compare both naabla and caffe2 results
-#    #c2 = c2out[out_name]
-#    #if show_output:
-#    #    print(c2, nnout)
-#    #assert np.allclose(c2, nnout)
+def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
+    onnx_dir = TEST_DATA_DIR
+    onnx_name = "resnet50.onnx"
+    nnp_name = "resnet50.nnp"
+    out_name = "gpu_0/softmax_1"
+    exec_name = "exec_0"
+    in_name = "gpu_0/data_0"
+    show_onnx = False
+    show_nnp = False
+    show_output = False
+    path = os.path.join(onnx_dir, onnx_name)
+    # Process onnx with caffe2 backend
+    model = onnx.load(path)
+    if show_onnx:
+        print(model)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    # Remove Softmax and Gemm for now.
+    # This is temporal
+    nodes = len(model.graph.node)
+    del model.graph.node[nodes-1]
+    del model.graph.node[nodes-2]
+    # redirect average pool output to the final output
+    ap_node = model.graph.node[nodes-3]
+    del ap_node.output[0]
+    ap_node.output.extend(["gpu_0/softmax_1"])
+    #sm_node = model.graph.node[nodes-1]
+    #gemm_node = model.graph.node[nodes-2]
+    #def change_to_copy(node):
+    #    """Change node operation to a simple copy"""
+    #    # Dropout with is_test=True is equal to a simple copy
+    #    node.op_type = "Dropout"
+    #    attr = node.attribute.add()
+    #    attr.name = "is_test"
+    #    attr.type = AttributeProto.INT
+    #    attr.i = 1
+    #change_to_copy(sm_node)
+    #change_to_copy(gemm_node)
+    # Change the output dimension so it matches the actual size
+    #out_shape = model.graph.output[0].type.tensor_type.shape
+    #out_shape.dim[0].dim_value = 1
+    #out_shape.dim[1].dim_value = 1000
+    #out_shape.dim[2].dim_value = 13
+    #out_shape.dim[3].dim_value = 13
+    #pdb.set_trace()
+    rep = onnx_caffe2.backend.prepare(model)
+    c2out = rep.run([img])
+    # Process onnx with naabla
+    nnp = onnx_model_to_nnp_protobuf(model)
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    if show_nnp:
+        print(nnp.protobuf)
+
+    #nnpex = NnpExporter(nnp, batch_size=0)
+    #nnpdir = tmpdir.mkdir("nnp")
+    #p = os.path.join(str(nnpdir), nnp_name)
+    #nnpex.export_nnp(p)
+    ## read exported nnp and run network
+    #nn_net = nnload.load([p])
+    ##pdb.set_trace()
+    ## set input data and run inference
+    #net = nn_net.executors[exec_name].network
+    #in_data = net.variables[in_name]
+    #in_data.variable_instance.d = img
+    #net = run_executor(nn_net, exec_name)
+    ##in_data = exe.variables["in_data_0"]
+    ##print(in_data.variable_instance.d)
+    #nnout = net.variables[out_name].variable_instance.d
+    ##print(nnout.variable_instance.d)
+
+    ## Print all the intermediate buffer shape in order
+    ##for k, v in net.functions.items():
+    ##    out = v.outputs[0]
+    ##    print(out.name, net.variables[out.name].variable_instance.shape)
+    ## Compare both naabla and caffe2 results
+    #c2 = c2out[out_name]
+    #if show_output:
+    #    print(c2, nnout)
+    #assert np.allclose(c2, nnout)
