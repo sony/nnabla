@@ -378,10 +378,13 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
-    if optimizer.comm is not None:
-        logger.log(99, 'LR Decay divide by {} ({} -> {})'.format(optimizer.comm.size, optimizer.lr_decay, optimizer.lr_decay / optimizer.comm.size))
-        optimizer.lr_decay = optimizer.lr_decay / optimizer.comm.size
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+    if optimizer.comm is not None:
+        new_interval = optimizer.lr_decay_interval // optimizer.comm.size
+        if new_interval == 0:
+            new_interval = 1
+        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
+        optimizer.lr_decay_interval = new_interval
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
         optimizer.loss_variables)
@@ -684,7 +687,6 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
 
     try:
         logger.log(99, 'Create communicator with contexts {}'.format(default_context))
-        nn.set_default_context(default_context)
         comm = C.MultiProcessDataParalellCommunicator(default_context)
         comm.init()
         info.global_config.default_context.device_id = str(comm.rank % comm.size)

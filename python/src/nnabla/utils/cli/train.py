@@ -91,6 +91,7 @@ def _update(iter, config, cost):
 
     def sum_cost(sum_iter):
         if comm:
+            #logger.log(99, "Calc cost with communicator")
             cost_sum_iter = np.zeros(1)
             cost_sum_iter[0] = sum_iter
             v = nn.Variable((1, ))
@@ -147,6 +148,8 @@ def _update(iter, config, cost):
             if o.weight_decay > 0:
                 o.solver.weight_decay(o.weight_decay)
             if o.comm:
+                #logger.log(99, "Update param with communicator")
+                #logger.log(99, "Rank {} Context {}".format(o.comm.rank, config.global_config.default_context))
                 params = [x.grad for x in nn.get_parameters().values()]
                 o.comm.all_reduce(params, division=False, inplace=False)
             o.solver.update()
@@ -175,6 +178,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
 
     def sum_error(sum, error):
         if comm:
+            #logger.log(99, "Calc error with communicator")
             error_buf = np.zeros(1)
             error_buf[0] = error
             v = nn.Variable((1, ))
