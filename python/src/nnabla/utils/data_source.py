@@ -25,6 +25,7 @@ from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
 
+
 class DataSource(object):
     '''
     Detailed documentation is available in :ref:`data_source_design`.
@@ -182,14 +183,8 @@ class DataSourceWithFileCache(DataSource):
 
         percent = 0
         while self._position < self._data_source._size:
-            try:
-                from mpi4py import MPI
-                if MPI.COMM_WORLD.Get_rank() == 0:
-                    progress('', self._position * 1.0 / self._data_source._size)
-            except:
-                progress('', self._position * 1.0 / self._data_source._size)
-
-            current_percent = self._position * 100 // self._data_source._size
+            current_percent = self._position * 10 // self._data_source._size
+            progress('', self._position * 1.0 / self._data_source._size)
             if current_percent != percent:
                 percent = current_percent
                 logger.info('Creating cache {}0% finished.'.format(percent))
