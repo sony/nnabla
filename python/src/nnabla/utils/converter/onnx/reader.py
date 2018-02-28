@@ -253,6 +253,8 @@ def convert_to_function(node, base_name, func_counter):
         # ONNX BatchNormalization input order: X, scale, bias, mean, variance
         # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
         nnp_order = [0, 2, 1, 3, 4]
+        if len(node.input) != len(nnp_order):
+            raise ValueError("The number of BatchNormalization input must be {}".format(len(nnp_order)))
         nnp_input = [node.input[i] for i in nnp_order]
         del func.input[:]
         func.input.extend(nnp_input)
