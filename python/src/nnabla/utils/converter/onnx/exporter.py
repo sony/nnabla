@@ -191,10 +191,11 @@ def convert_parameter_shape(graph):
         for i in graph.initializer:
             if i.name == c:
                 size = i.dims
-                if not (len(size) == 4 and size[2] == 1 and size[3] == 1):
+                if not (len(size) == 4 and
+                        size[0] == 1 and size[2] == 1 and size[3] == 1):
                     raise ValueError(
                             "beta, gamma, mean, and variance parameters"
-                            "must have the shape of N*C*1*1 in {}".format(n.optype))
+                            "must have the shape of 1*C*1*1 in {}".format(n.op_type))
                 chan = size[1]
                 del i.dims[:]
                 i.dims.extend([chan])
@@ -202,10 +203,13 @@ def convert_parameter_shape(graph):
         for i in graph.input:
             if i.name == c:
                 size = i.type.tensor_type.shape.dim
-                if not (len(size) == 4 and size[2].dim_value == 1 and size[3].dim_value == 1):
+                if not (len(size) == 4 and
+                        size[0].dim_value == 1 and
+                        size[2].dim_value == 1 and
+                        size[3].dim_value == 1):
                     raise ValueError(
                             "beta, gamma, mean, and variance parameters"
-                            "must have the shape of N*C*1*1 in {}".format(n.optype))
+                            "must have the shape of 1*C*1*1 in {}".format(n.op_type))
                 chan = size[1].dim_value
                 del i.type.tensor_type.shape.dim[:]
                 i.type.tensor_type.shape.dim.extend([create_dim(chan)])
