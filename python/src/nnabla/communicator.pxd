@@ -34,6 +34,7 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         void clear_context_parameters() except +
 
         void init() except +
+        void abort() except +
         int size() except +
         int rank() except +
         int local_rank() except +

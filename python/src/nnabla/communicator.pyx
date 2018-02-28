@@ -114,6 +114,11 @@ cdef class Communicator:
         """
         self.communicatorp.init()
 
+    def abort(self, ):
+        """Abort all processes.
+        """
+        self.communicatorp.abort()
+
     def new_group(self, name_ranks):
         """
         Args:

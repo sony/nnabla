@@ -71,6 +71,10 @@ void Communicator::init() {
   }
 }
 
+void Communicator::abort() {
+  NBLA_ERROR(error_code::not_implemented, "abort not implemented");
+}
+
 void Communicator::check_array_class(Context ctx, VariablePtr vp) {
   auto ctx_array_class = ctx.array_class;
   auto array_class = vp->grad()->array()->head_array_class();

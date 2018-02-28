@@ -15,6 +15,7 @@
 import argparse
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
@@ -208,6 +209,9 @@ def main():
     except:
         import traceback
         print(traceback.format_exc())
+        from nnabla.utils.communicator_util import current_communicator
+        if current_communicator():
+            current_communicator().abort()
 
 
 if __name__ == '__main__':
