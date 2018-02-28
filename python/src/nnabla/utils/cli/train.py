@@ -93,12 +93,14 @@ def _update(iter, config, cost):
         if comm:
             cost_sum_iter = np.zeros(1)
             cost_sum_iter[0] = sum_iter
-            cost_sum_epoch = np.zeros(1)
-            #MPI.COMM_WORLD.Allreduce(cost_sum_iter, cost_sum_epoch, op=MPI.SUM)
-            cost.sum_epoch += cost_sum_epoch[0]
+            v = nn.Variable((1, ))
+            let_data_to_variable(v, cost_sum_iter, config.global_config.default_context)
+            var = [v.data]
+            comm.all_reduce(var, division=True, inplace=True)
+            cost.sum_epoch += v.data.data[0]
             cost.num_iter += comm.size
         else:
-            cost.sum_epoch += sum_iter
+            cost.sum_epoch += sum_iter1
             cost.num_iter += 1
 
     for opt in config.optimizers.values():
@@ -175,9 +177,11 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         if comm:
             error_buf = np.zeros(1)
             error_buf[0] = error
-            error_sum = np.zeros(1)
-            #MPI.COMM_WORLD.Allreduce(error_buf, error_sum, op=MPI.SUM)
-            return sum + error_sum[0]
+            v = nn.Variable((1, ))
+            let_data_to_variable(v, error_buf, config.global_config.default_context)
+            var = [v.data]
+            comm.all_reduce(var, division=True, inplace=True)
+            return sum + v.data.data[0]
         else:
             return sum + error
 

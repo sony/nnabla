@@ -373,10 +373,14 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer.comm = C.CurrentCommunicator()
     if optimizer.comm is not None:
+        logger.log(99, 'Add communicator contexts {}'.format(ctx))
         optimizer.comm.add_context_and_parameters((ctx, parameters))
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
+    if optimizer.comm is not None:
+        logger.log(99, 'LR Decay divide by {} ({} -> {})'.format(optimizer.comm.size, optimizer.lr_decay, optimizer.lr_decay / optimizer.comm.size))
+        optimizer.lr_decay = optimizer.lr_decay / optimizer.comm.size
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
@@ -670,17 +674,23 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         if 'cuda' in default_context.backend:
             try:
                 import nnabla_ext.cuda.cudnn
+                from nnabla.contrib.context import extension_context
+                extension_module = "cuda.cudnn"
+                default_context = extension_context(extension_module)
             except:
                 pass
     else:
         default_context = nn.context()
 
     try:
+        logger.log(99, 'Create communicator with contexts {}'.format(default_context))
+        nn.set_default_context(default_context)
         comm = C.MultiProcessDataParalellCommunicator(default_context)
         comm.init()
         info.global_config.default_context.device_id = str(comm.rank % comm.size)
     except:
         logger.warning("Failed to initialize nnabla.communicators.")
+        raise
 
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
