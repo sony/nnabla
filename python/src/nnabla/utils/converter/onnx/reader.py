@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import struct
 from collections import OrderedDict
 import nnabla.logger as logger
 from nnabla.utils import nnabla_pb2
 from onnx import (ModelProto, TensorProto, AttributeProto)
+import numpy as np
 
 from .utils import *
 
@@ -359,10 +359,9 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         p.variable_name = init.name
         p.shape.dim.extend(init.dims)
         # convert raw bytestream to floating points
-        num = len(init.raw_data) // 4  # four bytes per float
+        #num = len(init.raw_data) // 4  # four bytes per float
         # logger.log(99, "raw_data num: {}".format(num))
-        data = struct.unpack(str(num)+'f', init.raw_data)
-        p.data.extend(data)
+        p.data.extend(np.fromstring(init.raw_data, dtype=np.float32))
         p.need_grad = False
         # Keep the list of all initializer names
         param_vars[init.name] = None

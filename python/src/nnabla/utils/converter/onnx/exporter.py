@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import struct
 import nnabla.logger as logger
 import onnx
+import numpy as np
 from .utils import *
 from onnx import (ModelProto, TensorProto, TensorShapeProto)
 
@@ -238,7 +238,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
         init.name = param.variable_name
         init.dims.extend(param.shape.dim)
         init.data_type = TensorProto.FLOAT  # We should be only getting float data from NNabla
-        init.raw_data = struct.pack("{}f".format(len(param.data)), *param.data)
+        init.raw_data = np.array(param.data, dtype=np.float32).tostring()
         # init.float_data.extend(param.data)
 
     # Add all the constant parameters for all nodes
