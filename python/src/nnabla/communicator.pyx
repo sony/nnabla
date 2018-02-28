@@ -444,11 +444,6 @@ def DataParalellCommunicator(CContext ctx):
     return Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))
 
 
-_current_communicator = None
-def CurrentCommunicator():
-    global _current_communicator
-    return _current_communicator
-
 def MultiProcessDataParalellCommunicator(CContext ctx):
     """
     Multi Process Data Parallel Communicator for Distributed Training.
@@ -502,6 +497,4 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
     else:
         raise Exception(
             "MultiProcessDataParalellCommunicator is not supported other than linux.")
-    global _current_communicator
-    _current_communicator = Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))
-    return _current_communicator
+    return Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))

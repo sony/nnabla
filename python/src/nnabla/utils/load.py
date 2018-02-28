@@ -27,7 +27,6 @@ import shutil
 import tempfile
 import zipfile
 
-import nnabla.communicators as C
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
     calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
@@ -38,6 +37,7 @@ from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
+from nnabla.utils.communicator_util import current_communicator, create_communicator, single_or_rankzero
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -371,7 +371,7 @@ def _create_optimizer(ctx, o, networks, datasets):
                   local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
     optimizer.solver.set_parameters(parameters)
 
-    optimizer.comm = C.CurrentCommunicator()
+    optimizer.comm = current_communicator()
     if optimizer.comm is not None:
         logger.log(99, 'Add communicator contexts {}'.format(ctx))
         optimizer.comm.add_context_and_parameters((ctx, parameters))
@@ -383,7 +383,8 @@ def _create_optimizer(ctx, o, networks, datasets):
         new_interval = optimizer.lr_decay_interval // optimizer.comm.size
         if new_interval == 0:
             new_interval = 1
-        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
+        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(
+            optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
         optimizer.lr_decay_interval = new_interval
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
@@ -429,8 +430,8 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     dataset.uri = uri
     dataset.normalize = not no_image_normalization
 
-    comm = C.CurrentCommunicator()
-    
+    comm = current_communicator()
+
     rng = numpy.random.RandomState(comm.rank if comm else 0)
 
     if prepare_data_iterator:
@@ -440,7 +441,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
         # Disble implicit cache creation when MPI is available.
         if cache_dir and (create_cache_explicitly or comm):
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
-                if not comm or comm.rank == 0:
+                if single_or_rankzero():
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
                     os.makedirs(cache_dir, exist_ok=True)
@@ -685,15 +686,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     else:
         default_context = nn.context()
 
-    try:
-        logger.log(99, 'Create communicator with contexts {}'.format(default_context))
-        comm = C.MultiProcessDataParalellCommunicator(default_context)
-        comm.init()
-        info.global_config.default_context.device_id = str(comm.rank % comm.size)
-    except:
-        logger.warning("Failed to initialize nnabla.communicators.")
-        raise
-
+    comm = create_communicator(default_context)
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 

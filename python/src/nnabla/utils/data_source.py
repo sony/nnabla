@@ -24,6 +24,7 @@ import tempfile
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
+from nnabla.utils.communicator_util import single_or_rankzero
 
 
 class DataSource(object):
@@ -183,11 +184,13 @@ class DataSourceWithFileCache(DataSource):
 
         percent = 0
         while self._position < self._data_source._size:
-            current_percent = self._position * 10 // self._data_source._size
-            progress('', self._position * 1.0 / self._data_source._size)
-            if current_percent != percent:
-                percent = current_percent
-                logger.info('Creating cache {}0% finished.'.format(percent))
+            if single_or_rankzero():
+                current_percent = self._position * 10 // self._data_source._size
+                progress('', self._position * 1.0 / self._data_source._size)
+                if current_percent != percent:
+                    percent = current_percent
+                    logger.info(
+                        'Creating cache {}0% finished.'.format(percent))
 
             self._store_data_to_cache_buffer(self._position)
             self._position += 1

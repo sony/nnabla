@@ -24,7 +24,6 @@ import tempfile
 import time
 from shutil import rmtree
 
-import nnabla.communicators as C
 import nnabla as nn
 from nnabla.logger import logger
 from nnabla import available_contexts
@@ -33,10 +32,12 @@ from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.parameter import get_parameter_or_create
+from nnabla.utils.communicator_util import current_communicator, create_communicator, single_or_rankzero
 
 import nnabla.utils.load as load
 
 _save_parameter_info = {}
+
 
 def _save_parameters(args, suffix, epoch, force=False):
     global _save_parameter_info
@@ -84,7 +85,7 @@ def _save_parameters(args, suffix, epoch, force=False):
 
 
 def _update(iter, config, cost):
-    comm = C.CurrentCommunicator()
+    comm = current_communicator()
 
     loaded_datas = {}
     is_first_optimizer = True
@@ -95,13 +96,14 @@ def _update(iter, config, cost):
             cost_sum_iter = np.zeros(1)
             cost_sum_iter[0] = sum_iter
             v = nn.Variable((1, ))
-            let_data_to_variable(v, cost_sum_iter, config.global_config.default_context)
+            let_data_to_variable(
+                v, cost_sum_iter, config.global_config.default_context)
             var = [v.data]
             comm.all_reduce(var, division=True, inplace=True)
             cost.sum_epoch += v.data.data[0]
             cost.num_iter += comm.size
         else:
-            cost.sum_epoch += sum_iter1
+            cost.sum_epoch += sum_iter
             cost.num_iter += 1
 
     for opt in config.optimizers.values():
@@ -131,7 +133,7 @@ def _update(iter, config, cost):
                 cost.sum_iter += np.mean(l.variable_instance.d)
             if is_first_optimizer:
                 is_first_optimizer = False
-                if not comm or comm.rank == 0:
+                if single_or_rankzero():
                     progress("Training : cost={0:0.6f}".format(cost.sum_iter),
                              (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
                 sum_cost(cost.sum_iter)
@@ -148,8 +150,6 @@ def _update(iter, config, cost):
             if o.weight_decay > 0:
                 o.solver.weight_decay(o.weight_decay)
             if o.comm:
-                #logger.log(99, "Update param with communicator")
-                #logger.log(99, "Rank {} Context {}".format(o.comm.rank, config.global_config.default_context))
                 params = [x.grad for x in nn.get_parameters().values()]
                 o.comm.all_reduce(params, division=False, inplace=False)
             o.solver.update()
@@ -172,7 +172,7 @@ def _update(iter, config, cost):
 
 
 def _evaluate(args, config, monitoring_report, best_error, epoch):
-    comm = C.CurrentCommunicator()
+    comm = current_communicator()
     error_str = ''
     valid_error = 0.0
 
@@ -182,7 +182,8 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             error_buf = np.zeros(1)
             error_buf[0] = error
             v = nn.Variable((1, ))
-            let_data_to_variable(v, error_buf, config.global_config.default_context)
+            let_data_to_variable(
+                v, error_buf, config.global_config.default_context)
             var = [v.data]
             comm.all_reduce(var, division=True, inplace=True)
             return sum + v.data.data[0]
@@ -218,7 +219,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                 for v in m.monitor_variables:
                     error_sum += np.mean(v.variable_instance.d)
                 error_sum_monitor = sum_error(error_sum_monitor, error_sum)
-                if not comm or comm.rank == 0:
+                if single_or_rankzero():
                     progress('Evaluating "{0}"'.format(
                         name) + ' : error={0:0.6f}'.format(
                         error_sum_monitor / error_count),
@@ -249,7 +250,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_str += '}'
 
     # Save Parameters
-    if not comm or comm.rank == 0:
+    if single_or_rankzero():
         if (not config.training_config.save_best) or \
            (not best_error) or \
            (best_error is not None and valid_error <= best_error):
@@ -282,7 +283,7 @@ def _get_current_parameter(args):
 
 def train(args, config):
     global _save_parameter_info
-    comm = C.CurrentCommunicator()
+    comm = current_communicator()
 
     last_epoch = 0
     if args.resume:
@@ -291,7 +292,7 @@ def train(args, config):
 
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
-    if not comm or comm.rank == 0:
+    if single_or_rankzero():
         logger.log(99, 'Training epoch 1 of {} begin'.format(
             config.training_config.max_epoch))
 
@@ -344,7 +345,7 @@ def train(args, config):
                         best_error, error_str = _evaluate(
                             args, config, monitoring_report, best_error, epoch)
 
-                    if not comm or comm.rank == 0:
+                    if single_or_rankzero():
                         # Write to monitoring_report.yml
                         f = open(os.path.join(
                             args.outdir, 'monitoring_report.yml'), 'a')
@@ -358,7 +359,7 @@ def train(args, config):
                         logger.log(99, 'epoch {} of {} cost={:.6f} {}'.format(
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str))
 
-            if not comm or comm.rank == 0:
+            if single_or_rankzero():
                 _save_parameters(args, 'current', epoch, True)
 
     return True
@@ -503,8 +504,7 @@ def train_command(args):
     config.global_config = info.global_config
     config.training_config = info.training_config
 
-    comm = C.CurrentCommunicator()
-    if not comm or comm.rank == 0:
+    if single_or_rankzero():
         logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
     class OptConfig:
@@ -526,6 +526,7 @@ def train_command(args):
         config.monitors[name] = m
 
     # Training
+    comm = current_communicator()
     config.training_config.iter_per_epoch //= comm.size if comm else 1
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
@@ -564,11 +565,11 @@ def train_command(args):
     else:
         # save parameters without training (0 epoch learning)
         logger.log(99, '0 epoch learning. (Just save parameter.)')
-        if not comm or comm.rank == 0:
+        if single_or_rankzero():
             _save_parameters(args, 'current', 0, True)
         result = True
 
-    if not comm or comm.rank == 0:
+    if single_or_rankzero():
         if result:
             logger.log(99, 'Training Completed.')
         else:
