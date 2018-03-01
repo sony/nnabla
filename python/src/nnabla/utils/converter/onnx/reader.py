@@ -230,6 +230,10 @@ def convert_to_function(node, base_name, func_counter):
             cp.stride.dim.extend(strides[:dim])
         if pads:
             cp.pad.dim.extend(pads[:dim])
+        else:
+            # Set default values.
+            # Do we really need this? (Default value should be set by NNabla)
+            cp.pad.dim.extend([0 for _ in range(dim)])
         if dilations:
             cp.dilation.dim.extend(dilations[:dim])
         else:

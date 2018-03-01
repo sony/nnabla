@@ -377,7 +377,7 @@ def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     nnpex.export_nnp(p)
     # read exported nnp and run network
     nn_net = nnload.load([p])
-    pdb.set_trace()
+    #pdb.set_trace()
     # set input data and run inference
     net = nn_net.executors[exec_name].network
     in_data = net.variables[in_name]
@@ -396,4 +396,4 @@ def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     c2 = c2out[out_name]
     if show_output:
         print(c2, nnout)
-    assert np.allclose(c2, nnout)
+    assert np.allclose(c2, nnout, atol=1e-5)
