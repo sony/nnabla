@@ -337,10 +337,6 @@ def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     if show_onnx:
         print(model)
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    # Remove an unused buffer with the name of
-    # 'gpu_0/imagenet1k_blobs_queue_f22e83c9-22cd-4a8b-a66d-113af6b832b4_0'
-    del model.graph.input[-1]
-    del model.graph.initializer[-1]
     # Remove Softmax and Gemm for now.
     # This is temporal
     nodes = len(model.graph.node)

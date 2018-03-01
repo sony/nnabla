@@ -394,7 +394,14 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
             # This input is a variable
             v.type = var_type_buffer
             in_list.append(v)
-        del all_vars[v.name]
+        if v.name in all_vars:
+            del all_vars[v.name]
+        else:
+            # We come here when a buffer (usually a parameter) is included in
+            # graph.input and graph.initializer,
+            # but was not actually used as input for any node.
+            # No one is using this buffer so we show a warning and ignore it.
+            logger.warning("Input buffer {} is not used as input for any node.".format(v.name))
     for o in graph.output:
         v = onnx_value_info_proto_to_variable(o, network)
         v.type = var_type_buffer
