@@ -393,3 +393,48 @@ def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     if show_output:
         print(c2, nnout)
     assert np.allclose(c2, nnout, atol=1e-5)
+
+def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
+    nnp_dir = TEST_DATA_DIR
+    onnx_name = "resnet50.onnx"
+    nnp_name = "resnet50.nnp"
+    out_name = "gpu_0/softmax_1"
+    exec_name = "exec_0"
+    in_name = "gpu_0/data_0"
+    show_onnx = False
+    show_nnp = False
+    show_output = False
+    # Process nnp with nnabla
+    path = os.path.join(nnp_dir, nnp_name)
+    nn_net = nnload.load([path])
+    net = nn_net.executors[exec_name].network
+    in_data = net.variables[in_name]
+    img = np.random.rand(1,3,224,224).astype(np.float32)
+    in_data.variable_instance.d = img
+    exe = run_executor(nn_net, exec_name)
+    nnout = exe.variables[out_name].variable_instance.d
+
+    # Convert nnp to ONNX
+    r = NnpReader(path)
+    nnp = r.read()
+    assert nnp is not None
+    assert len(nnp.other_files) == 0
+    assert nnp.protobuf is not None
+    if show_nnp:
+        print(nnp.protobuf)
+    onnxex = OnnxExporter(nnp)
+    onnxdir = tmpdir.mkdir("onnx")
+    p = os.path.join(str(onnxdir), onnx_name)
+    onnxex.export(p)
+
+    # read exported onnx and run network
+    model = onnx.load(p)
+    if show_onnx:
+        print(model)
+    #pdb.set_trace()
+    c2out = onnx_caffe2.backend.run_model(model, [img])
+    c2 = c2out[out_name]
+    # Compare both naabla and caffe2 results
+    if show_output:
+        print(c2, nnout)
+    assert np.allclose(c2, nnout, atol=1e-5)
