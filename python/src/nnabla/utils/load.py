@@ -452,19 +452,21 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
                     os.makedirs(cache_dir, exist_ok=True)
-                    open('{}/creating_cache'.format(cache_dir), 'a').close()
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
                         index = 0
                         while index < di.size:
                             progress('', (1.0 * di.position) / di.size)
                             di.next()
                             index += batch_size
-                    os.unlink('{}/creating_cache'.format(cache_dir))
 
                 if comm:
-                    from time import sleep
-                    while(os.path.exists('{}/creating_cache'.format(cache_dir))):
-                        sleep(1)
+                    from nnabla.utils.cli.utility import let_data_to_variable
+                    d = numpy.zeros(1)
+                    d[0] = comm.rank
+                    v = nn.Variable((1, ))
+                    let_data_to_variable(v, d, nn.get_current_context())
+                    var = [v.data]
+                    comm.all_reduce(var, division=False, inplace=True)
 
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))

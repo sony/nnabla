@@ -32,7 +32,7 @@ from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.parameter import get_parameter_or_create
-from nnabla.utils.communicator_util import current_communicator, create_communicator, single_or_rankzero
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
 import nnabla.utils.load as load
 

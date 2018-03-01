@@ -15,7 +15,12 @@
 from shutil import rmtree
 import abc
 import atexit
+
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
+
 import numpy
 import os
 import six
