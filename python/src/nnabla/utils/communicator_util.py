@@ -23,8 +23,13 @@ def current_communicator():
     return _current_communicator
 
 
-def create_communicator(context):
+def create_communicator():
     global _current_communicator
+
+    import nnabla_ext.cuda.cudnn
+    from nnabla.contrib.context import extension_context
+    extension_module = "cuda.cudnn"
+    context = extension_context(extension_module)
     try:
         logger.log(99, 'Create communicator with contexts {}'.format(context))
         _current_communicator = C.MultiProcessDataParalellCommunicator(context)

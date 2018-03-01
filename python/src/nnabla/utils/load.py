@@ -37,7 +37,7 @@ from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
-from nnabla.utils.communicator_util import current_communicator, create_communicator, single_or_rankzero
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -399,7 +399,13 @@ def _context(proto):
     ctx = nn.Context()
     ctx.backend = proto.backend
     ctx.array_class = proto.array_class
-    ctx.device_id = proto.device_id
+
+    comm = current_communicator()
+    if comm:
+        ctx.device_id = str(comm.rank)
+    else:
+        ctx.device_id = proto.device_id
+
     ctx.compute_backend = proto.compute_backend
     return ctx
 
@@ -409,6 +415,7 @@ def _global_config(proto):
         pass
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
+    nn.set_default_context(config.default_context)
 
     return config
 
@@ -686,7 +693,9 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     else:
         default_context = nn.context()
 
-    comm = create_communicator(default_context)
+    comm = current_communicator()
+    if comm:
+        default_context.device_id = str(comm.rank)
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
