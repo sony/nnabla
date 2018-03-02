@@ -114,7 +114,9 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN set -xe ; for PYV in 2.7.14 3.4.5 3.5.3 3.6.2 \
+RUN set -xe \
+    ; umask 0 \
+    ; for PYV in 2.7.14 3.4.5 3.5.3 3.6.2 \
     ; do PY=${PYV%.*} \
     ; echo Setup Python $PYV \
     ; conda create -y -n py$PY python=$PYV \
@@ -133,4 +135,3 @@ RUN set -xe ; for PYV in 2.7.14 3.4.5 3.5.3 3.6.2 \
     ; source deactivate \
     ; done
 
-RUN chmod -R ugo+w /opt/miniconda3
