@@ -93,7 +93,7 @@ def distil():
     monitor_loss = MonitorSeries("Training loss", monitor, interval=10)
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=100)
-    monitor_verr = MonitorSeries("Test error", monitor, interval=10)
+    monitor_verr = MonitorSeries("Test error", monitor, interval=1)
 
     # Initialize DataIterator for MNIST.
     data = data_iterator(args.batch_size, True)
