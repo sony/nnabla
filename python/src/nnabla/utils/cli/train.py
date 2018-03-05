@@ -131,6 +131,7 @@ def _update(iter, config, cost):
         if cost.variables:
             for l in cost.variables:
                 cost.sum_iter += np.mean(l.variable_instance.d)
+                l.variable_instance.data.zero()
             if is_first_optimizer:
                 is_first_optimizer = False
                 if single_or_rankzero():
@@ -166,6 +167,7 @@ def _update(iter, config, cost):
     if iter % config.training_config.iter_per_epoch == config.training_config.iter_per_epoch - 1 and cost.variables:
         for l in cost.variables:
             cost.sum_iter += np.mean(l.variable_instance.d)
+            l.variable_instance.data.zero()
         sum_cost(cost.sum_iter)
         cost.variables = None
         cost.sum_iter = 0.0
@@ -220,6 +222,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                 error_sum = 0.0
                 for v in m.monitor_variables:
                     error_sum += np.mean(v.variable_instance.d)
+                    v.variable_instance.data.zero()
                 error_sum_monitor = sum_error(error_sum_monitor, error_sum)
                 if single_or_rankzero():
                     progress('Evaluating "{0}"'.format(
@@ -235,6 +238,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_sum = 0.0
         for v in m.monitor_variables:
             error_sum += np.mean(v.variable_instance.d)
+            v.variable_instance.data.zero()
         error_sum_monitor = sum_error(error_sum_monitor, error_sum)
 
         if error_count == 0:
