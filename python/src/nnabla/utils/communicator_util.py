@@ -23,7 +23,7 @@ def current_communicator():
     return _current_communicator
 
 
-def create_communicator():
+def create_communicator(ignore_error=False):
     global _current_communicator
 
     import nnabla_ext.cuda.cudnn
@@ -39,6 +39,8 @@ def create_communicator():
         if _current_communicator.size == 1:
             _current_communicator = None
     except:
+        if not ignore_error:
+            raise
         logger.warning("Failed to initialize nnabla.communicators.")
         _current_communicator = None
 
