@@ -208,8 +208,8 @@ class DataSourceWithFileCache(DataSource):
                 progress('', self._position * 1.0 / self._data_source._size)
                 if current_percent != percent:
                     percent = current_percent
-                    logger.log(99, 
-                        'Creating cache {}0% finished.'.format(percent))
+                    logger.log(99,
+                               'Creating cache {}0% finished.'.format(percent))
 
             self._store_data_to_cache_buffer(self._position)
             self._position += 1
