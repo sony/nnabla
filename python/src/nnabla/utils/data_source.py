@@ -291,10 +291,10 @@ class DataSourceWithFileCache(DataSource):
     def reset(self):
         if self._shuffle:
             self._cache_file_order = list(
-                numpy.random.permutation(self._cache_file_order))
+                self._rng.permutation(self._cache_file_order))
             for i in range(len(self._cache_file_data_orders)):
                 self._cache_file_data_orders[i] = list(
-                    numpy.random.permutation(self._cache_file_data_orders[i]))
+                    self._rng.permutation(self._cache_file_data_orders[i]))
             self._order = []
             for i in self._cache_file_order:
                 self._order += self._cache_file_data_orders[i]
