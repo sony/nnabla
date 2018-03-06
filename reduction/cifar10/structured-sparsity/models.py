@@ -77,7 +77,7 @@ def cifar10_resnet23_prediction(image, maps=64,
     Construct Resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -142,7 +142,7 @@ def cifar10_resnet23_slim_prediction(image, maps=64,
     Construct Resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 

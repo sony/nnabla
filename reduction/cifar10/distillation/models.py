@@ -40,7 +40,7 @@ def cifar10_resnet23_prediction(image, net="teacher", maps=64,
     Construct ResNet 23
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 

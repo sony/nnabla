@@ -39,7 +39,7 @@ def cifar10_resnet23_prediction(image, maps=64,
     Construct Resnet23 as reference.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -104,7 +104,7 @@ def cifar10_binary_connect_resnet23_prediction(image, maps=64,
     Construct BianryConnect using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -169,7 +169,7 @@ def cifar10_binary_net_resnet23_prediction(image, maps=64,
     Construct BianryNet using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -234,7 +234,7 @@ def cifar10_binary_weight_resnet23_prediction(image, maps=64,
     Construct BianryWeight using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -299,7 +299,7 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
     Construct FixedPointConnect using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -378,7 +378,7 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
     Construct FixedPointNet using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -461,7 +461,7 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
     Construct Pow2Connect using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
 
@@ -540,7 +540,7 @@ def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
     Construct Pow2Net using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Pow2Quantize -> Relu
@@ -625,7 +625,7 @@ def cifar10_inq_resnet23_prediction(image, maps=64, num_bits=4,
     Construct INQ Network using resnet23.
     """
     # Residual Unit
-    def res_unit(x, scope_name, dn=False, test=False):
+    def res_unit(x, scope_name, dn=False):
         C = x.shape[1]
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Relu
