@@ -133,8 +133,8 @@ class DataSourceWithFileCache(DataSource):
         # for pos in self._cache_positions:
         #     logger.log(99, "Get {}".format(pos))
         #     get_data(pos)
-        pool = ThreadPool(processes=self._num_of_threads)
-        pool.map(get_data, self._cache_positions)
+        with ThreadPool(processes=self._num_of_threads) as pool:
+            pool.map(get_data, self._cache_positions)
 
         start_position = self.position - len(cache_data) + 1
         end_position = self.position
