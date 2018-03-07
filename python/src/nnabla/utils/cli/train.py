@@ -153,12 +153,18 @@ def _update(iter, config, cost):
                 # logger.log(99, "Update param with communicator")
                 # logger.log(99, "Rank {} Context {} {}".format(o.comm.rank, config.global_config.default_context, nn.get_current_context()))
                 params = [x.grad for x in nn.get_parameters().values()]
-                o.comm.all_reduce(params, division=True, inplace=True)
+                o.comm.all_reduce(params, division=True, inplace=False)
             o.solver.update()
 
         if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
             o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
 
+        # Sync w sometimes
+        if iter % 10 == 0:  #TODO: change the interval
+            if o.comm:
+                params = [x.data for x in nn.get_parameters().values()]
+                o.comm.all_reduce(params, division=True, inplace=True)
+            
         # Reserve monitor loss
         cost.variables = o.loss_variables
 
@@ -226,7 +232,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                         name) + ' : error={0:0.6f}'.format(
                         error_sum_monitor / error_count),
                         di.position * 1.0 / di.size)
-            error_count += comm.size if comm else 1
+            error_count += 1
 
             # Forward recursive
             m.network.forward(m.forward_sequence)
