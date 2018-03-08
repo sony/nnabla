@@ -370,15 +370,13 @@ def _create_optimizer(ctx, o, networks, datasets):
     parameters = {v.name: v.variable_instance for v,
                   local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
     optimizer.solver.set_parameters(parameters)
-
-    optimizer.comm = current_communicator()
-    if optimizer.comm is not None:
-        logger.log(99, 'Add communicator contexts {}'.format(ctx))
-        optimizer.comm.add_context_and_parameters((ctx, parameters))
+    optimizer.parameters = parameters
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+
+    optimizer.comm = current_communicator()
     if optimizer.comm is not None:
         new_interval = optimizer.lr_decay_interval // optimizer.comm.size
         if new_interval == 0:

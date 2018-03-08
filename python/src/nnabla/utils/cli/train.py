@@ -153,7 +153,7 @@ def _update(iter, config, cost):
             if o.comm:
                 # logger.log(99, "Update param with communicator")
                 # logger.log(99, "Rank {} Context {} {}".format(o.comm.rank, config.global_config.default_context, nn.get_current_context()))
-                params = [x.grad for x in nn.get_parameters().values()]
+                params = [x.grad for x in o.parameters.values()]
                 o.comm.all_reduce(params, division=True, inplace=False)
             o.solver.update()
 
@@ -163,7 +163,7 @@ def _update(iter, config, cost):
         # Sync w sometimes
         if iter % 10 == 0:  #TODO: change the interval
             if o.comm:
-                params = [x.data for x in nn.get_parameters().values()]
+                params = [x.data for x in o.parameters.values()]
                 o.comm.all_reduce(params, division=True, inplace=True)
             
         # Reserve monitor loss
