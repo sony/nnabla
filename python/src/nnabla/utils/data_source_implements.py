@@ -48,7 +48,7 @@ class SimpleDataSource(DataSource):
                            for x in range(len(self._load_func(0)))]
         if shuffle:
             self._order = list(
-                numpy.random.permutation(list(range(self._size))))
+                self._rng.permutation(list(range(self._size))))
         else:
             self._order = list(range(self._size))
 
@@ -120,9 +120,9 @@ class CacheDataSource(DataSource):
         self._order = []
 
         if self._shuffle:
-            for i in list(numpy.random.permutation(list(range(len(self._cache_files))))):
+            for i in list(self._rng.permutation(list(range(len(self._cache_files))))):
                 filename, length = self._cache_files[i]
-                for j in list(numpy.random.permutation(list(range(length)))):
+                for j in list(self._rng.permutation(list(range(length)))):
                     self._order.append((filename, j))
         else:
             for i in range(len(self._cache_files)):
@@ -225,7 +225,7 @@ class CsvDataSource(DataSource):
         if self._shuffle:
             logger.debug('Shuffle start.')
             self._order = list(
-                numpy.random.permutation(list(range(self._size))))
+                self._rng.permutation(list(range(self._size))))
             logger.debug('Shuffle end.')
         self._generation += 1
         super(CsvDataSource, self).reset()
