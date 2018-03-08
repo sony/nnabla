@@ -90,6 +90,10 @@ public:
   */
   virtual void init();
 
+  /** Synchronize all processes.
+  */
+  virtual void barrier();
+
   /** Abort all processes.
   */
   virtual void abort();

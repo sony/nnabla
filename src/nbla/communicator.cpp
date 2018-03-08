@@ -71,6 +71,10 @@ void Communicator::init() {
   }
 }
 
+void Communicator::barrier() {
+  NBLA_ERROR(error_code::not_implemented, "barrier not implemented");
+}
+
 void Communicator::abort() {
   NBLA_ERROR(error_code::not_implemented, "abort not implemented");
 }

@@ -458,13 +458,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                             index += batch_size
 
                 if comm:
-                    from nnabla.utils.cli.utility import let_data_to_variable
-                    d = numpy.zeros(1)
-                    d[0] = comm.rank
-                    v = nn.Variable((1, ))
-                    let_data_to_variable(v, d, nn.get_current_context())
-                    var = [v.data]
-                    comm.all_reduce(var, division=False, inplace=True)
+                    comm.barrier()
 
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
