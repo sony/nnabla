@@ -15,20 +15,23 @@
 from shutil import rmtree
 import abc
 import atexit
+
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
+
+from multiprocessing.pool import ThreadPool
 import numpy
 import os
 import six
 import tempfile
+import collections
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
-try:
-    from mpi4py import MPI
-except:
-    MPI = None
-    pass
+from nnabla.utils.communicator_util import single_or_rankzero
 
 
 class DataSource(object):
@@ -121,8 +124,19 @@ class DataSourceWithFileCache(DataSource):
         if self._cache_dir is None:
             raise DataSourceWithFileCacheError(
                 'Use this class with "with statement" if you dont specify cache dir.')
+        cache_data = collections.OrderedDict()
 
-        start_position = self.position - len(self._cache_data) + 1
+        def get_data(pos):
+            d = self._data_source._get_data(pos)
+            cache_data[pos] = d
+
+        # for pos in self._cache_positions:
+        #     logger.log(99, "Get {}".format(pos))
+        #     get_data(pos)
+        with ThreadPool(processes=self._num_of_threads) as pool:
+            pool.map(get_data, self._cache_positions)
+
+        start_position = self.position - len(cache_data) + 1
         end_position = self.position
         cache_filename = os.path.join(
             self._cache_dir, '{}_{:08d}_{:08d}.h5'.format(self._cache_file_name_prefix,
@@ -130,7 +144,8 @@ class DataSourceWithFileCache(DataSource):
                                                           end_position))
 
         data = {n: [] for n in self._data_source.variables}
-        for cd in self._cache_data:
+        for pos in sorted(cache_data):
+            cd = cache_data[pos]
             for i, n in enumerate(self._data_source.variables):
                 if isinstance(cd[i], numpy.ndarray):
                     d = cd[i]
@@ -146,17 +161,16 @@ class DataSourceWithFileCache(DataSource):
 
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
-        self._cache_file_data_orders.append(list(range(len(self._cache_data))))
-        self._cache_data = []
+        self._cache_file_data_orders.append(list(range(len(cache_data))))
+        self._cache_positions = []
 
     def _store_data_to_cache_buffer(self, position):
-        d = self._data_source._get_data(position)
+        self._cache_positions.append(position)
         if position == self._total_cached_size:
-            self._cache_data.append(d)
             self._total_cached_size += 1
-            if len(self._cache_data) >= self._cache_size or self._total_cached_size >= self.size:
+            if len(self._cache_positions) >= self._cache_size or self._total_cached_size >= self.size:
+                tmp_cache = {}
                 self._save_cache_to_file()
-        return d
 
     def _get_data_from_cache_file(self, position):
         cache_file_index = self._cache_file_positions[position]
@@ -183,23 +197,25 @@ class DataSourceWithFileCache(DataSource):
 
     def _create_cache(self):
         # Save all data into cache file(s).
+        self._cache_positions = []
         self._position = 0
-        logger.info('Creating cache start')
+        logger.log(99, 'Creating cache start')
 
         percent = 0
         while self._position < self._data_source._size:
-            if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+            if single_or_rankzero():
+                current_percent = self._position * 10 // self._data_source._size
                 progress('', self._position * 1.0 / self._data_source._size)
-            current_percent = self._position * 100 // self._data_source._size
-            if current_percent != percent:
-                percent = current_percent
-                logger.info('Creating cache {}0% finished.'.format(percent))
+                if current_percent != percent:
+                    percent = current_percent
+                    logger.log(99,
+                               'Creating cache {}0% finished.'.format(percent))
 
             self._store_data_to_cache_buffer(self._position)
             self._position += 1
-        if len(self._cache_data) > 0:
+        if len(self._cache_positions) > 0:
             self._save_cache_to_file()
-        logger.info('Creating cache end')
+        logger.log(99, 'Creating cache end')
         # Adjust data size into reseted position. In most case it means
         # multiple of bunch(mini-batch) size.
         num_of_cache_files = int(numpy.ceil(
@@ -241,14 +257,22 @@ class DataSourceWithFileCache(DataSource):
         self._cache_file_name_prefix = cache_file_name_prefix
         self._cache_dir = cache_dir
         logger.info('Cache Directory is {}'.format(self._cache_dir))
+
         self._cache_size = int(nnabla_config.get(
             'DATA_ITERATOR', 'data_source_file_cache_size'))
         logger.info('Cache size is {}'.format(self._cache_size))
+        logger.log(99, 'Cache size is {}'.format(self._cache_size))
+
+        self._num_of_threads = int(nnabla_config.get(
+            'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
+        logger.info('Num of thread is {}'.format(self._num_of_threads))
+        logger.log(99, 'Num of thread is {}'.format(self._num_of_threads))
+
         self._size = data_source._size
         self._variables = data_source.variables
         self._data_source = data_source
         self._generation = -1
-        self._cache_data = []
+        self._cache_positions = []
         self._total_cached_size = 0
         self._cache_file_names = []
         self._cache_file_order = []

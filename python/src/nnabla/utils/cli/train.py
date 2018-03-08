@@ -24,6 +24,7 @@ import tempfile
 import time
 from shutil import rmtree
 
+import nnabla as nn
 from nnabla.logger import logger
 from nnabla import available_contexts
 from nnabla.parameter import save_parameters, load_parameters
@@ -31,14 +32,9 @@ from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.parameter import get_parameter_or_create
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
 import nnabla.utils.load as load
-try:
-    from mpi4py import MPI
-except:
-    MPI = None
-    pass
-
 
 _save_parameter_info = {}
 
@@ -89,17 +85,23 @@ def _save_parameters(args, suffix, epoch, force=False):
 
 
 def _update(iter, config, cost):
+    comm = current_communicator()
+
     loaded_datas = {}
     is_first_optimizer = True
 
     def sum_cost(sum_iter):
-        if MPI:
+        if comm:
+            # logger.log(99, "Calc cost with communicator")
             cost_sum_iter = np.zeros(1)
             cost_sum_iter[0] = sum_iter
-            cost_sum_epoch = np.zeros(1)
-            MPI.COMM_WORLD.Allreduce(cost_sum_iter, cost_sum_epoch, op=MPI.SUM)
-            cost.sum_epoch += cost_sum_epoch[0]
-            cost.num_iter += MPI.COMM_WORLD.Get_size()
+            v = nn.Variable((1, ))
+            let_data_to_variable(
+                v, cost_sum_iter, config.global_config.default_context)
+            var = [v.data]
+            comm.all_reduce(var, division=True, inplace=True)
+            cost.sum_epoch += v.data.data[0]
+            cost.num_iter += comm.size
         else:
             cost.sum_epoch += sum_iter
             cost.num_iter += 1
@@ -129,9 +131,10 @@ def _update(iter, config, cost):
         if cost.variables:
             for l in cost.variables:
                 cost.sum_iter += np.mean(l.variable_instance.d)
+                l.variable_instance.data.zero()
             if is_first_optimizer:
                 is_first_optimizer = False
-                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                if single_or_rankzero():
                     progress("Training : cost={0:0.6f}".format(cost.sum_iter),
                              (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
                 sum_cost(cost.sum_iter)
@@ -147,12 +150,21 @@ def _update(iter, config, cost):
         if iter % o.update_interval == o.update_interval - 1:
             if o.weight_decay > 0:
                 o.solver.weight_decay(o.weight_decay)
-            if o.comm:
-                o.comm.allreduce(division=False)
+
+            if o.comm:  # Updated param with communicator
+                params = [x.grad for x in o.parameters.values()]
+                o.comm.all_reduce(params, division=True, inplace=False)
             o.solver.update()
 
         if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
             o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
+
+        # Sync w sometimes
+        if iter % 10 == 0:  # TODO: change the interval
+            if o.comm:
+                params = [x.grad for x in nn.get_parameters().values()]  # TODO
+                #params = [x.data for x in o.parameters.values()]
+                o.comm.all_reduce(params, division=True, inplace=False)
 
         # Reserve monitor loss
         cost.variables = o.loss_variables
@@ -161,6 +173,7 @@ def _update(iter, config, cost):
     if iter % config.training_config.iter_per_epoch == config.training_config.iter_per_epoch - 1 and cost.variables:
         for l in cost.variables:
             cost.sum_iter += np.mean(l.variable_instance.d)
+            l.variable_instance.data.zero()
         sum_cost(cost.sum_iter)
         cost.variables = None
         cost.sum_iter = 0.0
@@ -169,16 +182,21 @@ def _update(iter, config, cost):
 
 
 def _evaluate(args, config, monitoring_report, best_error, epoch):
+    comm = current_communicator()
     error_str = ''
     valid_error = 0.0
 
     def sum_error(sum, error):
-        if MPI:
+        if comm:
+            # logger.log(99, "Calc error with communicator")
             error_buf = np.zeros(1)
             error_buf[0] = error
-            error_sum = np.zeros(1)
-            MPI.COMM_WORLD.Allreduce(error_buf, error_sum, op=MPI.SUM)
-            return sum + error_sum[0]
+            v = nn.Variable((1, ))
+            let_data_to_variable(
+                v, error_buf, config.global_config.default_context)
+            var = [v.data]
+            comm.all_reduce(var, division=True, inplace=True)
+            return sum + v.data.data[0]
         else:
             return sum + error
 
@@ -210,13 +228,14 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                 error_sum = 0.0
                 for v in m.monitor_variables:
                     error_sum += np.mean(v.variable_instance.d)
+                    v.variable_instance.data.zero()
                 error_sum_monitor = sum_error(error_sum_monitor, error_sum)
-                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                if single_or_rankzero():
                     progress('Evaluating "{0}"'.format(
                         name) + ' : error={0:0.6f}'.format(
                         error_sum_monitor / error_count),
                         di.position * 1.0 / di.size)
-            error_count += MPI.COMM_WORLD.Get_size() if MPI else 1
+            error_count += 1
 
             # Forward recursive
             m.network.forward(m.forward_sequence)
@@ -225,6 +244,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_sum = 0.0
         for v in m.monitor_variables:
             error_sum += np.mean(v.variable_instance.d)
+            v.variable_instance.data.zero()
         error_sum_monitor = sum_error(error_sum_monitor, error_sum)
 
         if error_count == 0:
@@ -242,7 +262,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_str += '}'
 
     # Save Parameters
-    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+    if single_or_rankzero():
         if (not config.training_config.save_best) or \
            (not best_error) or \
            (best_error is not None and valid_error <= best_error):
@@ -275,6 +295,7 @@ def _get_current_parameter(args):
 
 def train(args, config):
     global _save_parameter_info
+    comm = current_communicator()
 
     last_epoch = 0
     if args.resume:
@@ -283,7 +304,7 @@ def train(args, config):
 
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
-    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+    if single_or_rankzero():
         logger.log(99, 'Training epoch 1 of {} begin'.format(
             config.training_config.max_epoch))
 
@@ -336,7 +357,7 @@ def train(args, config):
                         best_error, error_str = _evaluate(
                             args, config, monitoring_report, best_error, epoch)
 
-                    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                    if single_or_rankzero():
                         # Write to monitoring_report.yml
                         f = open(os.path.join(
                             args.outdir, 'monitoring_report.yml'), 'a')
@@ -350,7 +371,7 @@ def train(args, config):
                         logger.log(99, 'epoch {} of {} cost={:.6f} {}'.format(
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str))
 
-            if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+            if single_or_rankzero():
                 _save_parameters(args, 'current', epoch, True)
 
     return True
@@ -495,7 +516,7 @@ def train_command(args):
     config.global_config = info.global_config
     config.training_config = info.training_config
 
-    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+    if single_or_rankzero():
         logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
     class OptConfig:
@@ -517,7 +538,8 @@ def train_command(args):
         config.monitors[name] = m
 
     # Training
-    config.training_config.iter_per_epoch //= MPI.COMM_WORLD.Get_size() if MPI else 1
+    comm = current_communicator()
+    config.training_config.iter_per_epoch //= comm.size if comm else 1
     max_iter = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
 
@@ -542,24 +564,24 @@ def train_command(args):
             for name, o in config.optimizers.items():
                 o.data_iterator = stack.enter_context(
                     o.optimizer.data_iterator())
-                if MPI and MPI.COMM_WORLD.Get_size() > 1:
+                if comm and comm.size > 1:
                     o.data_iterator = o.data_iterator.slice(
-                        MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
+                        comm.size, comm.rank)
             for name, m in config.monitors.items():
                 m.data_iterator = stack.enter_context(
                     m.monitor.data_iterator())
-                if MPI and MPI.COMM_WORLD.Get_size() > 1:
+                if comm and comm.size > 1:
                     m.data_iterator = m.data_iterator.slice(
-                        MPI.COMM_WORLD.Get_size(), MPI.COMM_WORLD.Get_rank())
+                        comm.size, comm.rank)
             result = train(args, config)
     else:
         # save parameters without training (0 epoch learning)
         logger.log(99, '0 epoch learning. (Just save parameter.)')
-        if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+        if single_or_rankzero():
             _save_parameters(args, 'current', 0, True)
         result = True
 
-    if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+    if single_or_rankzero():
         if result:
             logger.log(99, 'Training Completed.')
         else:

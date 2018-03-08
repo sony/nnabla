@@ -57,12 +57,6 @@ class DataIterator(object):
 
     '''
 
-    def _get_next_data(self):
-        d = self._data_source.next()
-        if self._data_source.position >= self._size:
-            self._reset()
-        return d
-
     def __init__(self,
                  data_source,
                  batch_size,
@@ -81,6 +75,7 @@ class DataIterator(object):
         self._shuffle = self._data_source.shuffle
 
         self._variables = data_source.variables
+        self._num_of_variables = len(data_source.variables)
         self._batch_size = batch_size
         self._epoch = -1
 
@@ -183,14 +178,18 @@ class DataIterator(object):
         self._data_source.reset()
 
     def _next(self):
-        data = [[] for x in self._variables]
-        batch_size = self._batch_size
-        for b in range(batch_size):
-            d = self._get_next_data()
-            for i, v in enumerate(self._variables):
-                data[i].append(d[i])
-        self._current_data = (self._epoch, tuple(
-            [numpy.array(x) for x in data]))
+        data = [[None]*self._batch_size for x in self._variables]
+
+        for b in range(self._batch_size):
+
+            d = self._data_source.next()
+            if self._data_source.position >= self._size:
+                self._reset()
+
+            for i in range(self._num_of_variables):
+                data[i][b] = d[i]
+
+        self._current_data = (self._epoch, [numpy.array(x) for x in data])
 
     def next(self):
         '''next
@@ -199,17 +198,22 @@ class DataIterator(object):
 
         For example,
         if self._variables == ('x', 'y')
-        This method returns, ( [[X] * batch_size], [[Y} * batch_size] )
+        This method returns, ( [[X] * batch_size], [[Y] * batch_size] )
 
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
+        # Wait for finish previous thread.
         self._next_thread.join()
+
         if self._current_data is None:
             logger.log(99, 'next() got None retrying.')
             self._next_thread = threading.Thread(target=self._next)
             self._next_thread.start()
+            self._next_thread.join()
         self._current_epoch, data = self._current_data
+
+        # Start next thread.
         self._next_thread = threading.Thread(target=self._next)
         self._next_thread.start()
         return data

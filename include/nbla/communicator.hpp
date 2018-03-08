@@ -90,6 +90,14 @@ public:
   */
   virtual void init();
 
+  /** Synchronize all processes.
+  */
+  virtual void barrier();
+
+  /** Abort all processes.
+  */
+  virtual void abort();
+
   /** Create group
    */
   virtual string new_group(pair<string, vector<int>> name_ranks_pair);

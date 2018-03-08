@@ -20,6 +20,14 @@ pip install nnabla
 
 This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla-ext-cuda`.
 
+For more details, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
+
+### Building from Source
+
+See [Build Manuals](doc/build/README.md).
+
+### Running on Docker
+For details on running on Docker, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
 
 ## Features
 
@@ -109,11 +117,6 @@ loss.backward()
 ## Documentation
 
 <https://nnabla.readthedocs.org>
-
-### Setup
-
-<https://nnabla.readthedocs.io/en/latest/python/installation.html>
-
 
 ### Getting started
 

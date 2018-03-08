@@ -26,11 +26,6 @@ import re
 import shutil
 import tempfile
 import zipfile
-try:
-    from mpi4py import MPI
-except:
-    MPI = None
-    pass
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer,
@@ -42,6 +37,7 @@ from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -374,22 +370,20 @@ def _create_optimizer(ctx, o, networks, datasets):
     parameters = {v.name: v.variable_instance for v,
                   local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
     optimizer.solver.set_parameters(parameters)
-
-    optimizer.comm = None
-    if MPI and MPI.COMM_WORLD.Get_size() > 1:
-        try:
-            import nnabla.communicators as C
-            optimizer.comm = C.MultiProcessDataParalellCommunicator(ctx)
-            optimizer.comm.init()
-            optimizer.comm.add_context_and_parameters((ctx, parameters))
-        except:
-            optimizer.comm = None
-            if MPI.COMM_WORLD.Get_rank() == 0:
-                logger.warning("Failed to initialize nnabla.communicators.")
+    optimizer.parameters = parameters
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+
+    optimizer.comm = current_communicator()
+    if optimizer.comm is not None:
+        new_interval = optimizer.lr_decay_interval // optimizer.comm.size
+        if new_interval == 0:
+            new_interval = 1
+        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(
+            optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
+        optimizer.lr_decay_interval = new_interval
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
         optimizer.loss_variables)
@@ -403,7 +397,13 @@ def _context(proto):
     ctx = nn.Context()
     ctx.backend = proto.backend
     ctx.array_class = proto.array_class
-    ctx.device_id = proto.device_id
+
+    comm = current_communicator()
+    if comm:
+        ctx.device_id = str(comm.rank)
+    else:
+        ctx.device_id = proto.device_id
+
     ctx.compute_backend = proto.compute_backend
     return ctx
 
@@ -413,10 +413,8 @@ def _global_config(proto):
         pass
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
+    nn.set_default_context(config.default_context)
 
-    if MPI and MPI.COMM_WORLD.Get_size() > 0:
-        config.default_context.device_id = str(
-            MPI.COMM_WORLD.Get_rank() % MPI.COMM_WORLD.Get_size())
     return config
 
 
@@ -436,37 +434,36 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     dataset = Dataset()
     dataset.uri = uri
     dataset.normalize = not no_image_normalization
-    rng = numpy.random.RandomState(MPI.COMM_WORLD.Get_rank() if MPI else 0)
+
+    comm = current_communicator()
+
+    rng = numpy.random.RandomState(comm.rank if comm else 0)
 
     if prepare_data_iterator:
         if cache_dir == '':
             cache_dir = None
 
         # Disble implicit cache creation when MPI is available.
-        if cache_dir and (create_cache_explicitly or MPI):
+        if cache_dir and (create_cache_explicitly or comm):
             if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
-                if not MPI or MPI.COMM_WORLD.Get_rank() == 0:
+                if single_or_rankzero():
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
                     os.makedirs(cache_dir, exist_ok=True)
-
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
                         index = 0
                         while index < di.size:
                             progress('', (1.0 * di.position) / di.size)
                             di.next()
                             index += batch_size
-                    if MPI:
-                        for dest in range(1, MPI.COMM_WORLD.Get_size()):
-                            MPI.COMM_WORLD.send(True, dest=dest)
-                else:
-                    if MPI and MPI.COMM_WORLD.Get_rank() > 0:
-                        MPI.COMM_WORLD.recv(source=0)
+
+                if comm:
+                    comm.barrier()
 
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
-            if MPI:
+            if comm:
                 logger.critical(
                     'Implicit cache creation does not support with MPI')
                 import sys
@@ -660,7 +657,6 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                         if name == 'nnp_version.txt':
                             nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
-                                # print(f.readlines())
                                 pass  # TODO currently do nothing with version.
                         elif ext in ['.nntxt', '.prototxt']:
                             nnp.extract(name, tmpdir)
@@ -683,11 +679,17 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         if 'cuda' in default_context.backend:
             try:
                 import nnabla_ext.cuda.cudnn
+                from nnabla.contrib.context import extension_context
+                extension_module = "cuda.cudnn"
+                default_context = extension_context(extension_module)
             except:
                 pass
     else:
         default_context = nn.context()
 
+    comm = current_communicator()
+    if comm:
+        default_context.device_id = str(comm.rank)
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 

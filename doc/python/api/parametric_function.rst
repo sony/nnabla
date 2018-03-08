@@ -69,8 +69,11 @@ Here is the list of parametric functions.
 .. autofunction:: fixed_point_quantized_convolution
 .. autofunction:: pow2_quantized_affine
 .. autofunction:: pow2_quantized_convolution
+.. autofunction:: lstm
 
+.. autoclass:: LSTMCell
 
+    .. automethod:: __call__(x, w_init, b_init, fix_parameters)
 
 
 Parameter Initializer

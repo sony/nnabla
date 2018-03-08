@@ -211,6 +211,9 @@ def load_parameters(path, proto=None, proto_only=False):
     if proto is None:
         proto = nnabla_pb2.NNablaProtoBuf()
     if ext == '.h5':
+        # TODO temporary work around to suppress FutureWarning message.
+        import warnings
+        warnings.simplefilter('ignore', category=FutureWarning)
         import h5py
         with h5py.File(path, 'r') as hd:
             keys = []
@@ -271,6 +274,9 @@ def save_parameters(path):
     _, ext = os.path.splitext(path)
     params = get_parameters(grad_only=False)
     if ext == '.h5':
+        # TODO temporary work around to suppress FutureWarning message.
+        import warnings
+        warnings.simplefilter('ignore', category=FutureWarning)
         import h5py
         with h5py.File(path, 'w') as hd:
             params = get_parameters(grad_only=False)
