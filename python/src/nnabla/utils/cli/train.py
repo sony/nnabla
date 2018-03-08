@@ -154,7 +154,7 @@ def _update(iter, config, cost):
             if o.comm:  # Updated param with communicator
                 params = [x.grad for x in o.parameters.values()]
                 o.comm.all_reduce(params, division=True, inplace=False)
-                o.solver.update()
+            o.solver.update()
 
         if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
             o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
