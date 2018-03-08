@@ -150,22 +150,22 @@ def _update(iter, config, cost):
         if iter % o.update_interval == o.update_interval - 1:
             if o.weight_decay > 0:
                 o.solver.weight_decay(o.weight_decay)
-            if o.comm:
-                # logger.log(99, "Update param with communicator")
-                # logger.log(99, "Rank {} Context {} {}".format(o.comm.rank, config.global_config.default_context, nn.get_current_context()))
+
+            if o.comm:  # Updated param with communicator
                 params = [x.grad for x in o.parameters.values()]
                 o.comm.all_reduce(params, division=True, inplace=False)
-            o.solver.update()
+                o.solver.update()
 
         if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
             o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
 
         # Sync w sometimes
-        if iter % 10 == 0:  #TODO: change the interval
+        if iter % 10 == 0:  # TODO: change the interval
             if o.comm:
-                params = [x.data for x in o.parameters.values()]
-                o.comm.all_reduce(params, division=True, inplace=True)
-            
+                params = [x.grad for x in nn.get_parameters().values()]  # TODO
+                #params = [x.data for x in o.parameters.values()]
+                o.comm.all_reduce(params, division=True, inplace=False)
+
         # Reserve monitor loss
         cost.variables = o.loss_variables
 
