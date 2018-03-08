@@ -210,6 +210,7 @@ class DataIterator(object):
             logger.log(99, 'next() got None retrying.')
             self._next_thread = threading.Thread(target=self._next)
             self._next_thread.start()
+            self._next_thread.join()
         self._current_epoch, data = self._current_data
 
         # Start next thread.
