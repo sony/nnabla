@@ -23,6 +23,7 @@ import os
 from .data_source import DataSource
 from .data_source_loader import FileReader, load
 from nnabla.logger import logger
+from nnabla.utils.communicator_util import current_communicator
 
 
 class SimpleDataSource(DataSource):
@@ -60,19 +61,28 @@ class CacheDataSource(DataSource):
         self._position = position
         filename, index = self._order[position]
 
-        try:
+        if current_communicator():
+            try:
+                if filename != self._current_filename:
+                    self._current_filename = filename
+                    self._current_data = {}
+                    with self._filereader.open_cache(self._current_filename) as cache:
+                        for k, v in cache.items():
+                            self._current_data[k] = v.value
+                data = [self._current_data[v][index] for v in self.variables]
+            except KeyError:
+                logger.log(99, '_get_data() fails retrying.')
+                with self._filereader.open_cache(self._current_filename) as cache:
+                    for k, v in cache.items():
+                        self._current_data[k] = v.value
+                data = [self._current_data[v][index] for v in self.variables]
+        else:
             if filename != self._current_filename:
                 self._current_filename = filename
                 self._current_data = {}
                 with self._filereader.open_cache(self._current_filename) as cache:
                     for k, v in cache.items():
                         self._current_data[k] = v.value
-            data = [self._current_data[v][index] for v in self.variables]
-        except KeyError:
-            logger.log(99, '_get_data() fails retrying.')
-            with self._filereader.open_cache(self._current_filename) as cache:
-                for k, v in cache.items():
-                    self._current_data[k] = v.value
             data = [self._current_data[v][index] for v in self.variables]
 
         if self._normalize:
