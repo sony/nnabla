@@ -73,5 +73,8 @@ def command(arg):
             _, extname = os.path.splitext(filename)
             extname = extname.lower()
             fullname = os.path.join(dirname, filename)
+            if os.path.islink(fullname):
+                # Symlink is passed
+                continue
             if extname in file_formatter.doc_extensions:
                 os.chmod(fullname, 0o644)
