@@ -245,7 +245,7 @@ cdef class Function:
         from nnabla.variable import Variable
         cdef vector[CgVariablePtr] cg_inputs 
         cdef vector[CgVariablePtr] cg_outputs
-        assert allisinstance(inputs, Variable)
+        assert allisinstance(inputs, Variable), "All inputs must be Variable. {}".format([type(i for i in inputs)])
         cg_inputs = list_to_vector_cg_variable(inputs)
         cg_outputs = connect(
             self.fun,
