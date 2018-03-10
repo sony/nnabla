@@ -183,7 +183,7 @@ public:
     if (!object_) {
       allocate();
     }
-    return static_cast<T *>(object_);
+    return reinterpret_cast<T *>(object_);
   }
 
   /** Get constant object pointer
@@ -192,7 +192,7 @@ public:
     if (!object_) {
       const_cast<Array *>(this)->allocate();
     }
-    return static_cast<const T *>(object_);
+    return reinterpret_cast<const T *>(object_);
   }
 
   /** Return dtype. */
