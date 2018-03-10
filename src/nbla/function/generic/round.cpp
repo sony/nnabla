@@ -24,6 +24,4 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(Round);
 
-// Template instantiation
-template class Round<float>;
 } // namespace nbla

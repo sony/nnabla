@@ -230,3 +230,7 @@ Unlink:
   float: [float]
 Sink:
   float: [float]
+DepthwiseDeconvolution:
+  float: [float]
+Round:
+  float: [float]

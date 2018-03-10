@@ -178,6 +178,47 @@ Neural Network Layer:
       y:
         doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
           C' \times L'_1 \times ... \times L'_N`).
+  DepthwiseDeconvolution:
+    snake_name: depthwise_deconvolution
+    doc: |2
+
+      Depthwise deconvolution computes the transposed depthwise convolution with bias for one-dimensional and two-dimensional input data.
+    inputs:
+      x:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L_1 \times ... \times L_N`).
+      weight:
+        doc: :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`C`).
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: base axis :math:`B`.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      divisor:
+        doc: Number of input feature maps per output feature map.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L'_1 \times ... \times L'_N`).
   MaxPooling:
     snake_name: max_pooling
     doc: |2
@@ -413,7 +454,7 @@ Neural Network Activation Functions:
       Softmax normalization. Calculates
 
       .. math::
-          y_i = \frac{\exp(x_i)}{\sum_j exp(x_j)}
+          y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 
       along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
     inputs:
@@ -1630,6 +1671,29 @@ Math:
         doc: Output of sample-wise matrix multiplication in a batch. When ``a`` is
           of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose
           options are all False, the output will be a shape of [N, P, R].
+  Round:
+    snake_name: round
+    doc: |2+
+
+      Element-wise round function.
+
+      In the forward pass, this function simply computes `round` to the nearest integer value.
+
+      .. math::
+          y_i = round(x_i).
+
+      In the backward pass, the simple Straight-Through Estimator (STE) is applied,
+
+      .. math::
+          \frac{\partial y_i}{\partial x_i} = 1.
+
+    inputs:
+      x:
+        doc: Input variable
+    arguments: {}
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
 Array Manipulation:
   Concatenate:
     snake_name: concatenate
@@ -1814,10 +1878,13 @@ Array Manipulation:
     snake_name: reshape
     doc: |2
 
-      Returns a copy of the reshaped input variable.
+      Reshapes the input variable in-place. It does not create a copy of the variable.
+      The output variable (y) has a new shape but points to the same data as the input variable (x).
+      This means that if the data in the output variable (y) is modified, the data in the input
+      variable (x) also gets modified since the reshape was done in-place.
 
       Note:
-          If you do not need a copy, you should use the :meth:`nnabla.Variable.reshape` method instead.
+          This function has the same behavior as the :meth:`nnabla.Variable.reshape` method.
     inputs:
       x:
         doc: N-D array.
@@ -2215,7 +2282,7 @@ Loss Functions:
       Element-wise cross entropy between the variables and the variables of a label given by a category index with Softmax normalization.
 
       .. math::
-          y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+          y_{j} = -\ln \left(\frac{\exp(x_{j,t_j})}{\sum_{i'} \exp(x_{j,i'})}\right)
 
       along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
 
@@ -2244,10 +2311,10 @@ Loss Functions:
     snake_name: categorical_cross_entropy
     doc: |2
 
-      Element-wise cross entropy between x and the target, given by a category index.
+      Element-wise cross entropy between `x` and the target `t` where targets are given by a category index.
 
       .. math::
-          y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+          y_{j} = -\ln \left( x_{j, t_j} \right)
 
       along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
     inputs:
