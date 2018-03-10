@@ -19,6 +19,8 @@ import os
 def pytest_addoption(parser):
     parser.addoption('--nnabla-ext', type=str, default='cpu',
                      help='Extension path, e.g. "cpu", "cuda", "cudnn".')
+    parser.addoption('--nnabla-ext-type-config', type=str, default='float',
+                     help='Extension type-config, e.g. "float", "half".')
     parser.addoption('--nnabla-ext-device-id', type=str, default='0',
                      help='Keyward argument `device_id` of extensions specifies'
                      ' gpu index where test runs')
@@ -39,12 +41,13 @@ def nnabla_opts(request):
     from function_benchmark import FunctionBenchmarkCsvWriter
     getoption = request.config.getoption
     ext = getoption("--nnabla-ext")
-    ext_kwargs = dict(device_id=getoption("--nnabla-ext-device-id"))
+    ext_kwargs = dict(device_id=getoption("--nnabla-ext-device-id"),
+                      type_config=getoption('--nnabla-ext-type-config'))
     benchmark_output_dir = getoption('--nnabla-benchmark-output')
     if not os.path.isdir(benchmark_output_dir):
         os.makedirs(benchmark_output_dir)
-    function_benchmark_name = 'function_{}_{}.csv'.format(ext.replace('.', '-'),
-                                                          ext_kwargs['device_id'])
+    function_benchmark_name = 'function_{}_{}_{}.csv'.format(
+        ext.replace('.', '-'), ext_kwargs['device_id'], ext_kwargs['type_config'])
     function_benchmark_file = os.path.join(
         benchmark_output_dir, function_benchmark_name)
     function_benchmark_writer = FunctionBenchmarkCsvWriter(
