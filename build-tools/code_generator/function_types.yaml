@@ -1,236 +1,352 @@
 Affine:
   float: [float]
+  half: [Half]
 Convolution:
   float: [float]
+  half: [Half]
 DepthwiseConvolution:
   float: [float]
+  half: [Half]
 Deconvolution:
   float: [float]
+  half: [Half]
 MaxPooling:
   float: [float]
+  half: [Half]
 AveragePooling:
   float: [float]
+  half: [Half]
 SumPooling:
   float: [float]
+  half: [Half]
 Unpooling:
   float: [float]
+  half: [Half]
 Embed:
   float: [int, float]
+  half: [int, Half]
 Sigmoid:
   float: [float]
+  half: [Half]
 Swish:
   float: [float]
+  half: [Half]
 Tanh:
   float: [float]
+  half: [Half]
 ReLU:
   float: [float]
+  half: [Half]
 LeakyReLU:
   float: [float]
+  half: [Half]
 Softmax:
   float: [float]
+  half: [Half]
 ELU:
   float: [float]
+  half: [Half]
 SELU:
   float: [float]
+  half: [Half]
 CReLU:
   float: [float]
+  half: [Half]
 CELU:
   float: [float]
+  half: [Half]
 PReLU:
   float: [float]
+  half: [Half]
 BatchNormalization:
   float: [float]
+  half: [Half]
 MeanSubtraction:
   float: [float]
+  half: [Half]
 Sum:
   float: [float]
+  half: [Half]
 Mean:
   float: [float]
+  half: [Half]
 Max:
   float: [float]
+  half: [Half]
 Min:
   float: [float]
+  half: [Half]
 Prod:
   float: [float]
+  half: [Half]
 ReduceSum:
   float: [float]
+  half: [Half]
 ReduceMean:
   float: [float]
+  half: [Half]
 Add2:
   float: [float]
+  half: [Half]
 BcAdd2:
   float: [float]
+  half: [Half]
 Sub2:
   float: [float]
+  half: [Half]
 Mul2:
   float: [float]
+  half: [Half]
 Div2:
   float: [float]
+  half: [Half]
 Pow2:
   float: [float]
+  half: [Half]
 AddScalar:
   float: [float]
+  half: [Half]
 MulScalar:
   float: [float]
+  half: [Half]
 PowScalar:
   float: [float]
+  half: [Half]
 RSubScalar:
   float: [float]
+  half: [Half]
 RDivScalar:
   float: [float]
+  half: [Half]
 RPowScalar:
   float: [float]
+  half: [Half]
 Sign:
   float: [float]
+  half: [Half]
 Minimum2:
   float: [float]
+  half: [Half]
 Maximum2:
   float: [float]
+  half: [Half]
 MinimumScalar:
   float: [float]
+  half: [Half]
 MaximumScalar:
   float: [float]
+  half: [Half]
 LogicalAnd:
   float: [float]
+  half: [Half]
 LogicalOr:
   float: [float]
+  half: [Half]
 LogicalXor:
   float: [float]
+  half: [Half]
 Equal:
   float: [float]
+  half: [Half]
 NotEqual:
   float: [float]
+  half: [Half]
 GreaterEqual:
   float: [float]
+  half: [Half]
 Greater:
   float: [float]
+  half: [Half]
 LessEqual:
   float: [float]
+  half: [Half]
 Less:
   float: [float]
+  half: [Half]
 LogicalAndScalar:
   float: [float]
+  half: [Half]
 LogicalOrScalar:
   float: [float]
+  half: [Half]
 LogicalXorScalar:
   float: [float]
+  half: [Half]
 EqualScalar:
   float: [float]
+  half: [Half]
 NotEqualScalar:
   float: [float]
+  half: [Half]
 GreaterEqualScalar:
   float: [float]
+  half: [Half]
 GreaterScalar:
   float: [float]
+  half: [Half]
 LessEqualScalar:
   float: [float]
+  half: [Half]
 LessScalar:
   float: [float]
+  half: [Half]
 LogicalNot:
   float: [float]
+  half: [Half]
 Constant:
   float: [float]
+  half: [Half]
 Abs:
   float: [float]
+  half: [Half]
 Exp:
   float: [float]
+  half: [Half]
 Log:
   float: [float]
+  half: [Half]
 Identity:
   float: [float]
+  half: [Half]
 BatchMatmul:
   float: [float]
+  half: [Half]
 Concatenate:
   float: [float]
+  half: [Half]
 Split:
   float: [float]
+  half: [Half]
 Stack:
   float: [float]
+  half: [Half]
 Slice:
   float: [float]
+  half: [Half]
 Transpose:
   float: [float]
+  half: [Half]
 Broadcast:
   float: [float]
+  half: [Half]
 OneHot:
   float: [int, float]
+  half: [int, Half]
 Flip:
   float: [float]
+  half: [Half]
 Shift:
   float: [float]
+  half: [Half]
 Reshape:
   float: [float]
+  half: [Half]
 MatrixDiag:
   float: [float]
+  half: [Half]
 MatrixDiagPart:
   float: [float]
+  half: [Half]
 Dropout:
   float: [float]
+  half: [Half]
 Rand:
   float: [float]
+  half: [Half]
 Randint:
   float: [int]
 Randn:
   float: [float]
+  half: [Half]
 RandomCrop:
   float: [float]
+  half: [Half]
 RandomFlip:
   float: [float]
+  half: [Half]
 RandomShift:
   float: [float]
+  half: [Half]
 ImageAugmentation:
   float: [float]
+  half: [Half]
 SigmoidCrossEntropy:
   float: [float, int]
+  half: [Half, int]
 BinaryCrossEntropy:
   float: [float]
+  half: [Half]
 SoftmaxCrossEntropy:
   float: [float, int]
+  half: [Half, int]
 CategoricalCrossEntropy:
   float: [float, int]
+  half: [Half, int]
 SquaredError:
   float: [float]
+  half: [Half]
 AbsoluteError:
   float: [float]
+  half: [Half]
 HuberLoss:
   float: [float]
+  half: [Half]
 EpsilonInsensitiveLoss:
   float: [float]
+  half: [Half]
 KLMultinomial:
   float: [float]
+  half: [Half]
 BinarySigmoid:
   float: [float]
+  half: [Half]
 BinaryTanh:
   float: [float]
+  half: [Half]
 BinaryConnectAffine:
   float: [float]
+  half: [Half]
 BinaryConnectConvolution:
   float: [float]
+  half: [Half]
 BinaryWeightAffine:
   float: [float]
+  half: [Half]
 BinaryWeightConvolution:
   float: [float]
+  half: [Half]
 INQAffine:
   float: [float, int]
+  half: [Half, int]
 INQConvolution:
   float: [float, int]
+  half: [Half, int]
 FixedPointQuantize:
   float: [float]
+  half: [Half]
 Pow2Quantize:
   float: [float]
+  half: [Half]
 TopNError:
   float: [float, int]
+  half: [Half, int]
 BinaryError:
   float: [float]
+  half: [Half]
 ConfusionMatrix:
   float: [float, int]
+  half: [Half, int]
 VATNoise:
   float: [float]
+  half: [Half]
 Unlink:
   float: [float]
+  half: [Half]
 Sink:
   float: [float]
 DepthwiseDeconvolution:
   float: [float]
+  half: [Half]
 Round:
   float: [float]
+  half: [Half]
