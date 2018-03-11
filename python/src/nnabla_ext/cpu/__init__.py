@@ -28,11 +28,18 @@ from nnabla._version import (
 )
 
 
-def context(**kw):
+def context(type_config='float', **kw):
     """CPU Context."""
-    return nn.Context(['cpu:float'], array_classes()[0], '')
+    backends = ['cpu:float']
+    if type_config == 'half':
+        backends = ['cpu:half', 'cpu:float']
+    elif type_config == 'float':
+        pass
+    else:
+        raise ValueError("Unknown data type config is given %s" % type_config)
+    return nn.Context(backends, array_classes()[0], '')
 
 
-def synchronize(*kw):
+def synchronize(**kw):
     """Dummy."""
     device_synchronize('')
