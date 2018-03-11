@@ -242,9 +242,7 @@ protected:
 #define NBLA_CASE_ARRAY_COPY_FROM_TO(copy_func, type, src_type, dst_type,      \
                                      name)                                     \
   case dtypes::type:                                                           \
-    if (name##_type_enabled<dst_type>::value) {                                \
-      copy_func<src_type, dst_type>(src_array, this);                          \
-    }                                                                          \
+    copy_func##_wrapper<src_type, dst_type>::copy(src_array, this);            \
     break
 
 #define NBLA_ARRAY_COPY_FROM(copy_func, type, name)                            \
@@ -273,10 +271,8 @@ protected:
 
 #define NBLA_CASE_ARRAY_COPY_FROM(copy_func, type, src_type, name)             \
   case dtypes::type:                                                           \
-    if (name##_type_enabled<src_type>::value) {                                \
-      NBLA_ARRAY_COPY_FROM(copy_func, src_type, name);                         \
-    }                                                                          \
-    break;
+    NBLA_ARRAY_COPY_FROM(copy_func, src_type, name);                           \
+    break
 // --------------------------------------------------------------------------
 
 #define NBLA_DEFINE_FUNC_COPY_FROM(array_class, copy_func, name)               \
@@ -308,10 +304,8 @@ protected:
 
 #define NBLA_CASE_ARRAY_FILL(fill_func, type_enum, type, name)                 \
   case dtypes::type_enum:                                                      \
-    if (name##_type_enabled<type>::value) {                                    \
-      fill_func<type>(this, value);                                            \
-    }                                                                          \
-    break;
+    fill_func<type>(this, value);                                              \
+    break
 // --------------------------------------------------------------------------
 
 #define NBLA_DEFINE_FUNC_FILL(array_class, fill_func, name)                    \
@@ -337,14 +331,41 @@ protected:
     }                                                                          \
   }
 }
-
-#define NBLA_DEFINE_TYPE_DISABLER(name)                                        \
-  template <typename T> struct name##_type_enabled {                           \
-    static const bool value = true;                                            \
+#define NBLA_DEFINE_COPY_WRAPPER(copy_func)                                    \
+  template <typename Ta, typename Tb, typename Enabled = void>                 \
+  struct copy_func##_wrapper {                                                 \
+    static void copy(const Array *src, Array *dst) {                           \
+      copy_func<Ta, Tb>(src, dst);                                             \
+    }                                                                          \
+  };                                                                           \
+  template <typename T> struct copy_func##_is_disabled {                       \
+    static constexpr bool value = false;                                       \
   }
-#define NBLA_DISABLE_TYPE(name, type)                                          \
-  template <> struct name##_type_enabled<type> {                               \
-    static const bool value = false;                                           \
+
+#define NBLA_DISABLE_TYPE(copy_func, fill_func, TYPE)                          \
+  template <typename Ta, typename Tb>                                          \
+  struct copy_func##_wrapper<                                                  \
+      Ta, Tb, typename std::enable_if<std::is_same<Ta, TYPE>::value>::type> {  \
+    static void copy(const Array *src, Array *dst) {                           \
+      NBLA_ERROR(error_code::not_implemented,                                  \
+                 "`" #TYPE "` is disabled in `" #copy_func "`.");              \
+    }                                                                          \
+  };                                                                           \
+  template <> struct copy_func##_is_disabled<TYPE> {                           \
+    static constexpr bool value = true;                                        \
+  };                                                                           \
+  template <typename Ta, typename Tb>                                          \
+  struct copy_func##_wrapper<                                                  \
+      Ta, Tb, typename std::enable_if<!copy_func##_is_disabled<Ta>::value &&   \
+                                      std::is_same<Tb, TYPE>::value>::type> {  \
+    static void copy(const Array *src, Array *dst) {                           \
+      NBLA_ERROR(error_code::not_implemented,                                  \
+                 "`" #TYPE "` is disabled in `" #copy_func "`.");              \
+    }                                                                          \
+  };                                                                           \
+  template <> void fill_func<TYPE>(Array * self, float value) {                \
+    NBLA_ERROR(error_code::not_implemented,                                    \
+               "`" #TYPE "` is disabled in `" #fill_func "`.");                \
   }
 
 #endif
