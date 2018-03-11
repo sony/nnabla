@@ -147,13 +147,13 @@ void BatchNormalization<T>::forward_impl_batch(const Variables &inputs,
     rv[i1] = decay_rate_ * rv[i1] +
              (1 - decay_rate_) * v[i1] * size02_ / (size02_ - 1);
 
-    // v[i1] = 1 / std::sqrt(v[i1] + eps_);
+    // v[i1] = 1 / std::sqrt(v[i1] + (T)eps_);
     // Subtract mean and divide by std, and apply beta and gamma.
     for (int i02 = 0; i02 < size02_; ++i02) {
       const int i0 = i02 / size2_;
       const int i2 = i02 % size2_;
       const int i = i0 * size12_ + i1 * size2_ + i2;
-      const T stdvar = std::sqrt(v[i1] + eps_);
+      const T stdvar = std::sqrt(v[i1] + (T)eps_);
       y[i] = (x[i] - m[i1]) * gamma[i1] / stdvar + beta[i1];
     }
   }
@@ -178,7 +178,7 @@ void BatchNormalization<T>::forward_impl_global(const Variables &inputs,
       const int i2 = i02 % size2_;
       const int i = i0 * size12_ + i1 * size2_ + i2;
       const T mean = rm[i1];
-      const T stdvar = std::sqrt(rv[i1] + eps_);
+      const T stdvar = std::sqrt(rv[i1] + (T)eps_);
       y[i] = (x[i] - mean) * gamma[i1] / stdvar + beta[i1];
     }
   }
@@ -244,15 +244,16 @@ void BatchNormalization<T>::backward_impl_batch(
       }
       // dm and dv are set if batch mean and var are used following functions
       // in computation graph.
-      dvar = dvar * -0.5 * std::pow(v[i1] + eps_, -1.5) + (dv ? dv[i1] : 0);
-      dmean = dmean * (-1 / std::sqrt(v[i1] + eps_)) +
-              dvar * (-2) * tmp / (size02_) + (dm ? dm[i1] : 0);
+      dvar = dvar * (T)-0.5 * std::pow(v[i1] + (T)eps_, (T)-1.5) +
+             (dv ? dv[i1] : (T)0);
+      dmean = dmean * (-1 / std::sqrt(v[i1] + (T)eps_)) +
+              dvar * (-2) * tmp / (size02_) + (dm ? dm[i1] : (T)0);
       // Compute gradient wrt x.
       for (int i02 = 0; i02 < size02_; ++i02) {
         const int i0 = i02 / size2_;
         const int i2 = i02 % size2_;
         const int i = i0 * size12_ + i1 * size2_ + i2;
-        const T grad = dy[i] * g[i1] / std::sqrt(v[i1] + eps_) +
+        const T grad = dy[i] * g[i1] / std::sqrt(v[i1] + (T)eps_) +
                        dvar * 2 * (x[i] - m[i1]) / (size02_) +
                        dmean / (size02_);
         if (accum[0])
@@ -269,14 +270,14 @@ void BatchNormalization<T>::backward_impl_batch(
     T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
     T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_);
     for (int i1 = 0; i1 < size1_; ++i1) {
-      T dbv = accum[1] ? db[i1] : 0;
-      T dgv = accum[2] ? dg[i1] : 0;
+      T dbv = accum[1] ? db[i1] : (T)0;
+      T dgv = accum[2] ? dg[i1] : (T)0;
       for (int i02 = 0; i02 < size02_; ++i02) {
         const int i0 = i02 / size2_;
         const int i2 = i02 % size2_;
         const int i = i0 * size12_ + i1 * size2_ + i2;
         dbv += dy[i];
-        dgv += dy[i] * (x[i] - m[i1]) / std::sqrt(v[i1] + eps_);
+        dgv += dy[i] * (x[i] - m[i1]) / std::sqrt(v[i1] + (T)eps_);
       }
       db[i1] = dbv;
       dg[i1] = dgv;

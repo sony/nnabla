@@ -84,13 +84,13 @@ https://arxiv.org/abs/1706.02515
  */
 template <typename T> class SELU : public BaseFunction<double, double> {
 protected:
-  T scale_;
-  T alpha_;
+  float scale_;
+  float alpha_;
 
 public:
   SELU(const Context &ctx, double scale, double alpha)
-      : BaseFunction<double, double>(ctx, scale, alpha), scale_((T)scale),
-        alpha_((T)alpha) {}
+      : BaseFunction<double, double>(ctx, (float)scale, (float)alpha),
+        scale_((float)scale), alpha_((float)alpha) {}
   virtual ~SELU() {}
   virtual shared_ptr<Function> copy() const {
     return create_SELU(ctx_, scale_, alpha_);

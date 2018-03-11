@@ -49,8 +49,8 @@ void CELU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
     for (int i0 = 0; i0 < size0_; ++i0) {
       const int j0 = i1 * size0_ * 2 + i0;
       const T &xk = x[i1 * size0_ + i0];
-      y[j0] = 0 <= xk ? xk : alpha_ * (std::exp(xk) - 1);
-      y[j0 + size0_] = xk <= 0 ? -xk : alpha_ * (std::exp(-xk) - 1);
+      y[j0] = 0 <= xk ? xk : (T)alpha_ * (std::exp(xk) - 1);
+      y[j0 + size0_] = xk <= 0 ? -xk : (T)alpha_ * (std::exp(-xk) - 1);
     }
   }
 }
@@ -73,9 +73,9 @@ void CELU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
       const T &dyj0 = dy[j0];
       const T &dyj1 = dy[j1];
       const T &xk = x[k];
-      const T d = (0 <= xk ? dyj0 : dyj0 * alpha_ * std::exp(xk)) -
-                  (xk <= 0 ? dyj1 : dyj1 * alpha_ * std::exp(-xk));
-      dx[k] = (accum[0] ? dx[k] : 0) + d;
+      const T d = (0 <= xk ? dyj0 : dyj0 * (T)alpha_ * std::exp(xk)) -
+                  (xk <= 0 ? dyj1 : dyj1 * (T)alpha_ * std::exp(-xk));
+      dx[k] = (accum[0] ? dx[k] : (T)0) + d;
     }
   }
 }

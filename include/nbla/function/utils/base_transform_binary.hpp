@@ -136,7 +136,8 @@ template <typename T, typename BinaryOp, bool accum>
 void transform_binary_grad0(int size, const T *dy, const T *x0, const T *x1,
                             const T *y, T *g0, BinaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g0[idx] = (accum ? g0[idx] : 0) + op.g0(dy[idx], x0[idx], x1[idx], y[idx]);
+    g0[idx] =
+        (accum ? g0[idx] : (T)0) + op.g0(dy[idx], x0[idx], x1[idx], y[idx]);
   }
 }
 
@@ -144,7 +145,8 @@ template <typename T, typename BinaryOp, bool accum>
 void transform_binary_grad1(int size, const T *dy, const T *x0, const T *x1,
                             const T *y, T *g1, BinaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g1[idx] = (accum ? g1[idx] : 0) + op.g1(dy[idx], x0[idx], x1[idx], y[idx]);
+    g1[idx] =
+        (accum ? g1[idx] : (T)0) + op.g1(dy[idx], x0[idx], x1[idx], y[idx]);
   }
 }
 

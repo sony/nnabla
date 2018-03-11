@@ -14,6 +14,8 @@
 
 #include <nbla/utils/unfold_to_patches.hpp>
 
+#include <nbla/half.hpp>
+
 #include <cstring>
 #include <thread>
 
@@ -36,7 +38,7 @@ inline void kernel_1d(const T *sample_data, const int *const outmap_shape,
   for (int i = 0; i < *outmap_shape; i++) {
     *column_data++ = index_in_shape(sample_index, *sample_shape)
                          ? sample_data[sample_index]
-                         : 0;
+                         : (T)0;
     sample_index += *stride;
   }
 }
@@ -177,11 +179,13 @@ void unfold_to_patches(const T *sample_data, T *column_data, const int channels,
   }
 }
 
-template void unfold_to_patches<float>(const float *sample_data,
-                                       float *column_data, const int channels,
-                                       const vector<int> &shape,
-                                       const vector<int> &kernel,
-                                       const vector<int> &padding,
-                                       const vector<int> &stride,
-                                       const vector<int> &dilation);
+// Template specialization
+#define NBLA_SPEC_UNFOLD_TO_PATCHS(TYPE)                                       \
+  template void unfold_to_patches<TYPE>(                                       \
+      const TYPE *sample_data, TYPE *column_data, const int channels,          \
+      const vector<int> &shape, const vector<int> &kernel,                     \
+      const vector<int> &padding, const vector<int> &stride,                   \
+      const vector<int> &dilation)
+NBLA_SPEC_UNFOLD_TO_PATCHS(float);
+NBLA_SPEC_UNFOLD_TO_PATCHS(Half);
 }

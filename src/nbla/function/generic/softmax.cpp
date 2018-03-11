@@ -99,7 +99,7 @@ void Softmax<T>::backward_impl(const Variables &inputs,
       // Compute backward
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
-        dx[k] = (accum[0] ? dx[k] : 0) + y[k] * (dy[k] - dyy_sum);
+        dx[k] = (accum[0] ? dx[k] : (T)0) + y[k] * (dy[k] - dyy_sum);
       }
     }
   }

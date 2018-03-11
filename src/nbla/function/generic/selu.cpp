@@ -36,7 +36,7 @@ void SELU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
   const T coef = alpha_ * scale_;
   for (int s = 0; s < inputs[0]->size(); s++) {
-    y[s] = x[s] > (T)0 ? scale_ * x[s] : coef * (std::exp(x[s]) - (T)1);
+    y[s] = x[s] > (T)0 ? (T)scale_ * x[s] : (T)coef * (std::exp(x[s]) - (T)1);
   }
 }
 
@@ -53,11 +53,13 @@ void SELU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   const T coef = alpha_ * scale_;
   if (accum[0]) {
     for (int s = 0; s < inputs[0]->size(); ++s) {
-      dx[s] += (x[s] > (T)0 ? scale_ * dy[s] : coef * std::exp(x[s]) * dy[s]);
+      dx[s] +=
+          (x[s] > (T)0 ? (T)scale_ * dy[s] : (T)coef * std::exp(x[s]) * dy[s]);
     }
   } else {
     for (int s = 0; s < inputs[0]->size(); ++s) {
-      dx[s] = (x[s] > (T)0 ? scale_ * dy[s] : coef * std::exp(x[s]) * dy[s]);
+      dx[s] =
+          (x[s] > (T)0 ? (T)scale_ * dy[s] : (T)coef * std::exp(x[s]) * dy[s]);
     }
   }
 }

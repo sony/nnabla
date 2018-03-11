@@ -27,6 +27,6 @@ def test_log_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)
     inputs = [
-        np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e10, 1e-6, 1e10)]
+        np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e4, 1e-2, 1e4)]
     function_tester(rng, F.log, np.log, inputs, atol_f=1e-6,
                     atol_b=1e-2, ctx=ctx, func_name=func_name)

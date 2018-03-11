@@ -14,10 +14,10 @@
 
 // convolution.cpp
 
+#include "../../utils/im2col-internal.hpp"
 #include <nbla/array.hpp>
 #include <nbla/function/convolution.hpp>
 #include <nbla/utils/eigen.hpp>
-#include <nbla/utils/im2col.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>

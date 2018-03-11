@@ -33,7 +33,8 @@ void Rand<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
 template <typename T>
 void Rand<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
-  std::uniform_real_distribution<T> rdist(low_, high_);
+  std::uniform_real_distribution<typename force_float<T>::type> rdist(low_,
+                                                                      high_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
   for (int s = 0; s < outputs[0]->size(); s++) {
     y[s] = rdist(rgen_);

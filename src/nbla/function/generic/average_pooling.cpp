@@ -131,7 +131,7 @@ void AveragePooling<T>::backward_impl(const Variables &inputs,
         const T dyk = dy[k] / pool_size;
         for (int ix = hstart; ix < hend; ++ix) {
           for (int jx = ix * wx + wstart; jx < ix * wx + wend; ++jx) {
-            dx[jx] = (accum[0] ? dx[jx] : 0) + dyk;
+            dx[jx] = (accum[0] ? dx[jx] : (T)0) + dyk;
           }
         }
       }

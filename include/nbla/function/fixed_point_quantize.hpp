@@ -47,8 +47,8 @@ protected:
   const float delta_; // Step size
   const bool ste_fine_grained_;
 
-  T max_; // upper bound in in fixed-point number region.
-  T min_; // lower bound in in fixed-point number region.
+  float max_; // upper bound in in fixed-point number region.
+  float min_; // lower bound in in fixed-point number region.
 
 public:
   FixedPointQuantize(const Context &ctx, bool sign, int n, float delta,

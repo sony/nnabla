@@ -66,7 +66,7 @@ void BinaryCrossEntropy<T>::backward_impl(const Variables &inputs,
     T *dx0 = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
     for (int s = 0; s < size; ++s) {
       dx0[s] =
-          (accum[0] ? dx0[s] : 0) +
+          (accum[0] ? dx0[s] : (T)0) +
           dy[s] * (x0[s] - x1[s]) /
               std::max(x0[s] - x0[s] * x0[s], std::numeric_limits<T>::min());
     }
@@ -75,7 +75,7 @@ void BinaryCrossEntropy<T>::backward_impl(const Variables &inputs,
     T *dx1 = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
     for (int s = 0; s < size; ++s) {
       dx1[s] =
-          (accum[1] ? dx1[s] : 0) +
+          (accum[1] ? dx1[s] : (T)0) +
           dy[s] *
               (std::log(std::max(1 - x0[s], std::numeric_limits<T>::min())) -
                std::log(std::max(x0[s], std::numeric_limits<T>::min())));

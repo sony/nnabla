@@ -36,7 +36,7 @@ void FixedPointQuantize<T>::setup_impl(const Variables &inputs,
 
   int n = (sign_) ? n_ - 1 : n_;
   max_ = (pow(2, n) - 1) * delta_;
-  min_ = (sign_) ? (-max_) : 0.0;
+  min_ = (sign_) ? (T)(-max_) : (T)0;
 
   NBLA_CHECK(n > 0, error_code::value,
              "bit width should be positive when considering sign (1bit).");

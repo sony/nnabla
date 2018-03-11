@@ -60,7 +60,7 @@ void Dropout<T>::backward_impl(const Variables &inputs,
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const T *m = mask_.get_data_pointer<T>(this->ctx_);
   for (int s = 0; s < inputs[0]->size(); ++s) {
-    dx[s] = (accum[0] ? dx[s] : 0) + dy[s] * m[s] * scale_;
+    dx[s] = (accum[0] ? dx[s] : (T)0) + dy[s] * m[s] * scale_;
   }
 }
 }

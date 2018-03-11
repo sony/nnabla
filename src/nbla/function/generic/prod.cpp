@@ -68,9 +68,9 @@ void Prod<T>::backward_impl_reduce_prod(const T *dy, const T *x, const T *y,
       // Note: Very unstable gradient. Compute (x1...xN)/xi
       // instead of (x1...xi-1xi+1...xN).
       if (accum) {
-        dx[j] += ((x[j] == 0) ? (0) : (dy[o] * y[o] / x[j]));
+        dx[j] += ((x[j] == 0) ? (T)0 : (dy[o] * y[o] / x[j]));
       } else {
-        dx[j] = ((x[j] == 0) ? (0) : (dy[o] * y[o] / x[j]));
+        dx[j] = ((x[j] == 0) ? (T)0 : (dy[o] * y[o] / x[j]));
       }
     }
   }

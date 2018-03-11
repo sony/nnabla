@@ -45,9 +45,9 @@ template <typename T, bool accum>
 void relu_backward_cpu(int size, T *dx, const T *dy, const T *x) {
   for (int s = 0; s < size; ++s) {
     if (accum)
-      dx[s] += (x[s] > 0 ? dy[s] : 0);
+      dx[s] += (x[s] > 0 ? dy[s] : (T)0);
     else
-      dx[s] = (x[s] > 0 ? dy[s] : 0);
+      dx[s] = (x[s] > 0 ? dy[s] : (T)0);
   }
 }
 

@@ -87,7 +87,7 @@ template <typename T, typename UnaryOp, bool accum>
 void transform_unary_grad(int size, const T *dy, const T *x, const T *y, T *g,
                           UnaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g[idx] = (accum ? g[idx] : 0) + op.g(dy[idx], x[idx], y[idx]);
+    g[idx] = (accum ? g[idx] : (T)0) + op.g(dy[idx], x[idx], y[idx]);
   }
 }
 

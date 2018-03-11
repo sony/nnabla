@@ -60,7 +60,7 @@ void Pow2Quantize<T>::forward_impl(const Variables &inputs,
     if (q > p_max_) {
       q = p_max_;
     } else if (q < p_min_ && with_zero_) {
-      q = x_abs < pruning_threshold_ ? 0. : p_min_;
+      q = x_abs < pruning_threshold_ ? (T)0 : (T)p_min_;
     } else if (q < p_min_) {
       q = p_min_;
     }
@@ -71,9 +71,9 @@ void Pow2Quantize<T>::forward_impl(const Variables &inputs,
       q = sign_x ? -q : q;
     } else {
       if (with_zero_) {
-        q = sign_x ? 0. : q;
+        q = sign_x ? (T)0 : q;
       } else {
-        q = sign_x ? p_min_ : q;
+        q = sign_x ? (T)p_min_ : q;
       }
     }
     y[s] = q;
@@ -113,7 +113,7 @@ void quantize_backward_cpu(int size, T *dx, const T *dy, const T *x,
     if (!sign) {
       bool sign_x;
       sign_x = (x[s] < 0.0);
-      c = sign_x ? 0. : c;
+      c = sign_x ? (T)0 : c;
     }
 
     if (accum) {

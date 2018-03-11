@@ -83,7 +83,7 @@ void Concatenate<T>::backward_impl(const Variables &inputs,
       for (int o = 0; o < outer_size_; ++o) {
         for (int i = 0; i < inner_size; ++i) {
           T &rdx = dx[o * inner_size + i];
-          rdx = (accum[c] ? rdx : 0) +
+          rdx = (accum[c] ? rdx : (T)0) +
                 dy[o * inner_total_size_ + inner_offset + i];
         }
       }

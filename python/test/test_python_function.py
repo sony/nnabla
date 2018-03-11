@@ -61,4 +61,4 @@ def test_python_add2_forward_backward(seed):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
-    function_tester(rng, add2, lambda x, y: x + y, inputs)
+    function_tester(rng, add2, lambda x, y: x + y, inputs, atol_b=2e-3)

@@ -41,7 +41,7 @@ void im2col(const T *img, const int c_i, const int *shape, const int *k,
           col[col_offset + x_o] =
               (static_cast<unsigned>(x_i) < static_cast<unsigned>(shape[1]))
                   ? img[im_offset + x_i]
-                  : 0;
+                  : (T)0;
         }
       } else {
         std::memset(col + col_offset, 0, sizeof(T) * w_o);
@@ -93,23 +93,4 @@ void col2im_nd(const T *col, const int c, const int spatial_dims,
                const int *stride, const int *dilation, T *img) {
   NBLA_ERROR(error_code::not_implemented, "Col2Im_ND is not implemented.");
 }
-
-template void im2col<float>(const float *img, const int c_i, const int *shape,
-                            const int *k, const int *p, const int *s,
-                            const int *d, float *col);
-template void im2col_nd<float>(const float *img, const int c,
-                               const int spatial_dims, const int *spatial_shape,
-                               const int *kernel, const int *pad,
-                               const int *stride, const int *dilation,
-                               float *col);
-
-template void col2im<float>(const float *col, const int c_i, const int *shape,
-                            const int *k, const int *p, const int *s,
-                            const int *d, float *img);
-
-template void col2im_nd<float>(const float *col, const int c,
-                               const int spatial_dims, const int *spatial_shape,
-                               const int *kernel, const int *pad,
-                               const int *stride, const int *dilation,
-                               float *img);
 }

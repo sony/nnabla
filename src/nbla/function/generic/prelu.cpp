@@ -87,7 +87,8 @@ void PReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     // Single slope mode.
     if (dx) {
       for (int s = 0; s < size; ++s) {
-        dx[s] = (accum[0] ? dx[s] : 0) + ((x[s] >= 0) ? dy[s] : dy[s] * (*w));
+        dx[s] =
+            (accum[0] ? dx[s] : (T)0) + ((x[s] >= 0) ? dy[s] : dy[s] * (*w));
       }
     }
     if (dw) {
@@ -104,7 +105,8 @@ void PReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     if (dx) {
       for (int s = 0; s < size; ++s) {
         const int iw = int(s / base_stride_) % base_shape_;
-        dx[s] = (accum[0] ? dx[s] : 0) + ((x[s] >= 0) ? dy[s] : dy[s] * w[iw]);
+        dx[s] =
+            (accum[0] ? dx[s] : (T)0) + ((x[s] >= 0) ? dy[s] : dy[s] * w[iw]);
       }
     }
     if (dw) {

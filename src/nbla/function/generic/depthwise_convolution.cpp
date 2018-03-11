@@ -19,6 +19,7 @@
 #include <nbla/utils/eigen.hpp>
 #include <nbla/utils/fold_from_patches.hpp>
 #include <nbla/utils/unfold_to_patches.hpp>
+
 #include <nbla/variable.hpp>
 
 #include <algorithm>

@@ -67,9 +67,9 @@ void CReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     for (int i0 = 0; i0 < size0_; ++i0) {
       T &rdx = dx[i1 * size0_ + i0];
       if (x[i1 * size0_ + i0] > 0)
-        rdx = (accum[0] ? rdx : 0) + dy[i1 * size0_ * 2 + i0];
+        rdx = (accum[0] ? rdx : (T)0) + dy[i1 * size0_ * 2 + i0];
       else
-        rdx = (accum[0] ? rdx : 0) - dy[i1 * size0_ * 2 + size0_ + i0];
+        rdx = (accum[0] ? rdx : (T)0) - dy[i1 * size0_ * 2 + size0_ + i0];
     }
   }
 }

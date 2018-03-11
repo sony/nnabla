@@ -56,9 +56,9 @@ protected:
   const int m_; // \f$2^m\f$ is upper bound and \f$-2^m\f$ is lower bound.
   const bool ste_fine_grained_;
 
-  T p_max_; // upper bound in positive region
-  T p_min_; // lower bound in positive region
-  T pruning_threshold_;
+  float p_max_; // upper bound in positive region
+  float p_min_; // lower bound in positive region
+  float pruning_threshold_;
 
 public:
   Pow2Quantize(const Context &ctx, bool sign, bool with_zero, int n, int m,
