@@ -315,6 +315,8 @@ def convert_to_functions(node, base_name, func_counter):
                                  .format(attr.name, node.op_type))
     elif node.op_type == "Gemm":
         transposed_postfix = "_transposed"
+        broadcast_postfix = "_broadcast"
+        input = node.input[:]
         for attr in node.attribute:
             if attr.name == "transA":
                 if attr.type != AttributeProto.INT:
@@ -330,9 +332,10 @@ def convert_to_functions(node, base_name, func_counter):
                 aout = ain+transposed_postfix
                 transA.input.extend([ain])
                 transA.output.extend([aout])
-                tp = transA.transpose_param;
-                tp.axes.extend([3,2]) # switch H and W
+                tp = transA.transpose_param
+                tp.axes.extend([1, 0])  # switch H and W
                 func_list.append(transA)
+                input[0] = aout  # rewire input to transposed input
             elif attr.name == "transB":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for transB in {} op_type".format(node.op_type))
@@ -347,19 +350,31 @@ def convert_to_functions(node, base_name, func_counter):
                 bout = bin+transposed_postfix
                 transB.input.extend([bin])
                 transB.output.extend([bout])
-                tp = transB.transpose_param;
-                tp.axes.extend([3,2]) # switch H and W
+                tp = transB.transpose_param
+                tp.axes.extend([1, 0])  # switch H and W
                 func_list.append(transB)
+                input[1] = bout # rewire input to transposed input
             elif attr.name == "broadcast":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
                 # Add a new intermediate buffer for broadcasting
                 # and rewire the buffer as input,
+                bin = node.input[2]
+                bout = bin+broadcast_postfix
                 bc = nnabla_pb2.Function()
                 bc.type = "Broadcast"
+                bc.input.extend([bin])
+                bc.output.extend([bout])
+                bp = bc.broadcast_param
+                bp.shape.dim.extend([4, 2])  # hardcoded shape for experimenting
+                func_list.append(bc)
+                input[2] = bout  # rewire input to broadcast input
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
+        # update Gemm input with the converted inputs
+        del func.input[:]
+        func.input.extend(input)
     func_list.append(func)
     return func_list
 
