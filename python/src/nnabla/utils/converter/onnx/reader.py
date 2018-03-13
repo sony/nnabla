@@ -140,8 +140,8 @@ def convert_to_functions(node, base_name, func_counter):
     but some nodes end up as a composition of functions.
     """
     func_list = []
+    func = generate_default_function(node, base_name, func_counter)
     if node.op_type == "Concat":
-        func = generate_default_function(node, base_name, func_counter)
         # Since concat axis is currently not required in ONNX,
         # the default axis depends on which backend we use.
         # For now we are comparing with caffe2, so we are
@@ -157,9 +157,7 @@ def convert_to_functions(node, base_name, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
-        func_list.append(func)
     elif node.op_type == "Softmax":
-        func = generate_default_function(node, base_name, func_counter)
         logger.warning(SOFTMAX_WARNING)
         # default to channel axis
         func.softmax_param.axis = DEFAULT_SOFTMAX_AXIS
@@ -171,9 +169,7 @@ def convert_to_functions(node, base_name, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
-        func_list.append(func)
     elif node.op_type == "Dropout":
-        func = generate_default_function(node, base_name, func_counter)
         # Dropout requires a ratio to be set
         for attr in node.attribute:
             if attr.name == "is_test":
@@ -201,9 +197,7 @@ def convert_to_functions(node, base_name, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
-        func_list.append(func)
     elif node.op_type == "Conv":
-        func = generate_default_function(node, base_name, func_counter)
         cp = func.convolution_param
         # We shouldn't need these default settings
         # since NNabla will set these for us
@@ -258,25 +252,19 @@ def convert_to_functions(node, base_name, func_counter):
             # Set default values.
             # Do we really need this? (Default value should be set by NNabla)
             cp.dilation.dim.extend([1 for _ in range(dim)])
-        func_list.append(func)
     elif node.op_type == "MaxPool":
-        func = generate_default_function(node, base_name, func_counter)
         mpp = func.max_pooling_param
         set_kernel_parameter(node, mpp)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         mpp.ignore_border = True
-        func_list.append(func)
     elif node.op_type == "AveragePool":
-        func = generate_default_function(node, base_name, func_counter)
         app = func.average_pooling_param
         set_kernel_parameter(node, app)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         app.ignore_border = True
-        func_list.append(func)
     elif node.op_type == "BatchNormalization":
-        func = generate_default_function(node, base_name, func_counter)
         # We need to rearrange the input data order.
         # ONNX BatchNormalization input order: X, scale, bias, mean, variance
         # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
@@ -313,7 +301,6 @@ def convert_to_functions(node, base_name, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
-        func_list.append(func)
     elif node.op_type == "Gemm":
         for attr in node.attribute:
             if attr.name == "transA":
@@ -338,6 +325,7 @@ def convert_to_functions(node, base_name, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
+    func_list.append(func)
     return func_list
 
 def convert_parameter_shape(pb):
