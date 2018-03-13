@@ -102,6 +102,37 @@ def set_kernel_parameter(node, kp):
         kp.kernel.dim.extend(kernel[:dim])
 
 
+def update_function_counter(func_type, func_counter, count):
+    # Store the current usage count
+    func_counter[func_type] = count+1
+
+
+def generate_function_name(func_type, base_name, func_counter):
+    # We are going to generate a name by counting
+    # how many times a function was used.
+    # (or we might use some kind of random number and hash it)
+    count = 0
+    if func_type in func_counter:
+        # This function has been used already.
+        # Get the current count
+        count = func_counter[func_type]
+    return "{}/{}_{}".format(base_name, func_type, count), count
+
+def set_function_name(func, nodeName, base_name, func_counter):
+    """Set a sufficient name for the function"""
+    # NNabla requires each function to have a unique name.
+    # If the node's name already has something set,
+    # we are going to use it.
+    # If no name is set (which is allowed in ONNX) we
+    # are going to generate a name
+    if nodeName:
+        func.name = nodeName
+    else:
+        # Node name was not specified.
+        func.name, count = generate_function_name(func.type, base_name, func_counter)
+        update_function_counter(func.type, func_counter, count)
+
+
 def generate_default_function(node, base_name, func_counter):
     """Generate a default function from the given node
     """
@@ -110,26 +141,7 @@ def generate_default_function(node, base_name, func_counter):
         raise ValueError("op_type {} is currently not supported for NNP conversion".format(node.op_type))
     func = nnabla_pb2.Function()
     func.type = ft
-    # NNabla requires each function to have a unique name.
-    # If the node's name already has something set,
-    # we are going to use it.
-    # If no name is set (which is allowed in ONNX) we
-    # are going to generate a name
-    if node.name:
-        func.name = node.name
-    else:
-        # Node name was not specified.
-        # We are going to generate a name by counting
-        # how many times a function was used.
-        # (or we might use some kind of random number and hash it)
-        count = 0
-        if func.type in func_counter:
-            # This function has been used already.
-            # Get the current count
-            count = func_counter[func.type]
-        func.name = "{}/{}_{}".format(base_name, func.type, count)
-        # Store the current usage count
-        func_counter[func.type] = count+1
+    set_function_name(func, node.name, base_name, func_counter)
     func.input.extend(node.input)
     func.output.extend(node.output)
     return func
@@ -302,26 +314,49 @@ def convert_to_functions(node, base_name, func_counter):
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
     elif node.op_type == "Gemm":
+        transposed_postfix = "_transposed"
         for attr in node.attribute:
             if attr.name == "transA":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for transA in {} op_type".format(node.op_type))
                 # We need to transpose the input weight beforehand
                 # since NNabla does not support transpose with Affine.
+                transA = nnabla_pb2.Function()
+                transA.type = "Transpose"
+                set_function_name(transA, node.name, base_name, func_counter)
                 # Add a new intermediate buffer for transposition,
                 # and rewire the buffer as input.
+                ain = node.input[0]
+                aout = ain+transposed_postfix
+                transA.input.extend([ain])
+                transA.output.extend([aout])
+                tp = transA.transpose_param;
+                tp.axes.extend([3,2]) # switch H and W
+                func_list.append(transA)
             elif attr.name == "transB":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for transB in {} op_type".format(node.op_type))
                 # We need to transpose the input weight beforehand
                 # since NNabla does not support transpose with Affine.
+                transB = nnabla_pb2.Function()
+                transB.type = "Transpose"
+                set_function_name(transB, node.name, base_name, func_counter)
                 # Add a new intermediate buffer for transposition,
                 # and rewire the buffer as input.
+                bin = node.input[1]
+                bout = bin+transposed_postfix
+                transB.input.extend([bin])
+                transB.output.extend([bout])
+                tp = transB.transpose_param;
+                tp.axes.extend([3,2]) # switch H and W
+                func_list.append(transB)
             elif attr.name == "broadcast":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
                 # Add a new intermediate buffer for broadcasting
                 # and rewire the buffer as input,
+                bc = nnabla_pb2.Function()
+                bc.type = "Broadcast"
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
