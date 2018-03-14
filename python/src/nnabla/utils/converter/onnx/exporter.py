@@ -169,10 +169,22 @@ def convert_to_nodes(func, variables):
         p = onnx.helper.make_attribute("perm", tp.axes)
         n.attribute.extend([p])
     elif func.type == "Affine":
+        ap = func.affine_param
+        flatten_postfix = "_flatten"
         # Broadcast tensor C by default since it's usually a 1D vector
         b = onnx.helper.make_attribute("broadcast", 1)
-        # When base_axis is set, we need to flatten the input to 2D based on the axis
         n.attribute.extend([b])
+        # We need to flatten tensor A to 2D based on the base_axis
+        x = func.input[0]
+        flout = x+flatten_postfix
+        fl = onnx.helper.make_node(
+                "Flatten",
+                [x],
+                [flout])
+        n.input[0] = flout  # rewire input data
+        a = onnx.helper.make_attribute("axis", ap.base_axis)
+        fl.attribute.extend([a])
+        nl.append(fl)
     nl.append(n)
     return nl
 
