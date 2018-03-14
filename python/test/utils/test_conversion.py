@@ -228,6 +228,10 @@ def test_onnx_nnp_conversion_gemm(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.onnx", "gemm.nnp", "out_data_1", "exec_0")
 
+def test_nnp_onnx_conversion_gemm(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "gemm.nnp", "gemm.onnx", "out_data_1", "exec_0")
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
     onnx_name = "squeezenet.onnx"

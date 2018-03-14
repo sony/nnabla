@@ -24,6 +24,7 @@ nnabla_function_type_to_onnx_optype = {
     "Dropout": "Dropout",
     "Softmax": "Softmax",
     "BatchNormalization": "BatchNormalization",
+    "Transpose": "Transpose",
     # optype with different names
     "ReLU": "Relu",
     "Concatenate": "Concat",
@@ -34,10 +35,12 @@ nnabla_function_type_to_onnx_optype = {
     "Add2": "Sum",
     # optype that gets converted
     "Identity": "Dropout",
+    "Affine": "Gemm"
 }
 
 
-def convert_to_node(func, variables):
+def convert_to_nodes(func, variables):
+    """Convert a function to a node or a group of nodes"""
     op_type = nnabla_function_type_to_onnx_optype.get(func.type)
     if op_type is None:
         raise ValueError("function {} is currently not supported for ONNX conversion".format(func.type))
@@ -46,6 +49,7 @@ def convert_to_node(func, variables):
             func.input,
             func.output,
             name=func.name)
+    nl = []
     if func.type == "Concatenate":
         # ONNX requires axis setting as a parameter
         # for the concat op_type.
@@ -160,7 +164,17 @@ def convert_to_node(func, variables):
         ci = onnx.helper.make_attribute("consumed_inputs", [0, 0, 0, 1, 1])
         attrs.append(ci)
         n.attribute.extend(attrs)
-    return n
+    elif func.type == "Transpose":
+        tp = func.transpose_param
+        p = onnx.helper.make_attribute("perm", tp.axes)
+        n.attribute.extend([p])
+    elif func.type == "Affine":
+        # Broadcast tensor C by default since it's usually a 1D vector
+        b = onnx.helper.make_attribute("broadcast", 1)
+        # When base_axis is set, we need to flatten the input to 2D based on the axis
+        n.attribute.extend([b])
+    nl.append(n)
+    return nl
 
 def create_dim(val):
     """Create a dimension message for a given dimension"""
@@ -231,8 +245,8 @@ def nnp_model_to_onnx_graph(graph, nnp):
         var_dict[v.name] = v.shape
 
     for f in net.function:
-        n = convert_to_node(f, net.variable)
-        graph.node.extend([n])
+        nl = convert_to_nodes(f, net.variable)
+        graph.node.extend(nl)
     for param in nnp.parameter:
         init = graph.initializer.add()
         init.name = param.variable_name
