@@ -178,7 +178,7 @@ class DataIterator(object):
         self._data_source.reset()
 
     def _next(self):
-        data = [[None]*self._batch_size for x in self._variables]
+        data = [[] for x in self._variables]
 
         for b in range(self._batch_size):
 
@@ -186,10 +186,11 @@ class DataIterator(object):
             if self._data_source.position >= self._size:
                 self._reset()
 
-            for i in range(self._num_of_variables):
-                data[i][b] = d[i]
+            for i, v in enumerate(self._variables):
+                data[i].append(d[i])
 
-        self._current_data = (self._epoch, [numpy.array(x) for x in data])
+        self._current_data = (self._epoch, tuple(
+            [numpy.array(x) for x in data]))
 
     def next(self):
         '''next
