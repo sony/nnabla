@@ -24,6 +24,8 @@ using std::thread;
 
 namespace nbla {
 
+namespace ns_unfold_to_patches {
+
 inline bool index_in_shape(int index, int shape) {
   return static_cast<unsigned>(index) < static_cast<unsigned>(shape);
 }
@@ -55,8 +57,8 @@ kernel_2d(const T *sample_data, const int *const outmap_shape,
 
   for (int i = 0; i < *outmap_shape; i++) {
     if (index_in_shape(sample_index, *sample_shape)) {
-      kernel_1d(sample_data, outmap_shape + 1, sample_shape + 1,
-                sample_shift + 1, stride + 1, column_data);
+      kernel_1d<T>(sample_data, outmap_shape + 1, sample_shape + 1,
+                   sample_shift + 1, stride + 1, column_data);
     } else {
       memset(column_data, 0, *outmap_isize * sizeof(T));
     }
@@ -80,18 +82,22 @@ void kernel_nd(const int dimensions, const T *sample_data,
     if (!index_in_shape(sample_index, *sample_shape)) {
       memset(column_data, 0, *outmap_isize * sizeof(T));
     } else if (dimensions > 2) {
-      kernel_nd(dimensions - 1, sample_data, outmap_shape + 1, outmap_isize + 1,
-                sample_shape + 1, sample_isize + 1, sample_shift + 1,
-                stride + 1, column_data);
+      kernel_nd<T>(dimensions - 1, sample_data, outmap_shape + 1,
+                   outmap_isize + 1, sample_shape + 1, sample_isize + 1,
+                   sample_shift + 1, stride + 1, column_data);
     } else {
-      kernel_1d(sample_data, outmap_shape + 1, sample_shape + 1,
-                sample_shift + 1, stride + 1, column_data);
+      kernel_1d<T>(sample_data, outmap_shape + 1, sample_shape + 1,
+                   sample_shift + 1, stride + 1, column_data);
     }
     sample_index += *stride;
     sample_data += sample_stride;
     column_data += *outmap_isize;
   }
 }
+
+} // namespace ns_unfold_to_patches
+
+using namespace ns_unfold_to_patches;
 
 template <typename T>
 void unfold_to_patches(const T *sample_data, T *column_data, const int channels,
