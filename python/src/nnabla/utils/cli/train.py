@@ -403,7 +403,10 @@ def get_best_param(paramlist):
 
 
 def train_command(args):
-    configure_progress(os.path.join(args.outdir, 'progress.txt'))
+
+    if single_or_rankzero():
+        configure_progress(os.path.join(args.outdir, 'progress.txt'))
+
     info = load.load([args.config], exclude_parameter=True)
 
     # Check dataset uri is empty.
@@ -586,4 +589,5 @@ def train_command(args):
             logger.log(99, 'Training Completed.')
         else:
             logger.log(99, 'Training Incompleted.')
-    progress(None)
+    if single_or_rankzero():
+        progress(None)

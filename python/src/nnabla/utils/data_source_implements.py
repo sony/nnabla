@@ -15,7 +15,9 @@
 '''data_source_implements
 '''
 
+
 from collections import OrderedDict
+from time import sleep
 import csv
 import numpy
 import os
@@ -55,43 +57,82 @@ class SimpleDataSource(DataSource):
 
 class CacheDataSource(DataSource):
     '''
+    Get data from file cache directly.
     '''
 
+    def _get_next_data(self, filename, retry=1):
+        if retry > 10:
+            logger.log(99, '_get_current_data() retry count over give up.')
+            raise
+        next_data = {}
+        with self._filereader.open_cache(filename) as cache:
+            for k, v in cache.items():
+                next_data[k] = v.value
+
+            if current_communicator():
+                if set(self._variables) != set(next_data.keys()):
+                    logger.log(99, '_get_data() fails at worker {} retrying count {}/10.'.format(
+                        current_communicator().rank, retry))
+                    sleep(0.01)
+                    return self._get_current_data(filename, retry+1)
+        return next_data
+
     def _get_data(self, position):
-        self._position = position
+
+        retry_count = 1
+        while retry_count < 10 and len(self._order) == 0:
+            logger.log(
+                99, '_get_data() retry with count {}/10.'.format(retry_count))
+            self.reset()
+            retry_count += 1
+
+        self._position = position % len(self._order)
+
+        if self._position != position:
+            logger.log(99, 'Warning! Invalid position {} {}'.format(
+                self._position, position))
+
         filename, index = self._order[position]
 
-        if current_communicator():
-            try:
-                if filename != self._current_filename:
-                    self._current_filename = filename
-                    self._current_data = {}
-                    with self._filereader.open_cache(self._current_filename) as cache:
-                        for k, v in cache.items():
-                            self._current_data[k] = v.value
-                data = [self._current_data[v][index] for v in self.variables]
-            except KeyError:
-                logger.log(99, '_get_data() fails retrying.')
-                with self._filereader.open_cache(self._current_filename) as cache:
-                    for k, v in cache.items():
-                        self._current_data[k] = v.value
-                data = [self._current_data[v][index] for v in self.variables]
-        else:
-            if filename != self._current_filename:
-                self._current_filename = filename
-                self._current_data = {}
-                with self._filereader.open_cache(self._current_filename) as cache:
-                    for k, v in cache.items():
-                        self._current_data[k] = v.value
-            data = [self._current_data[v][index] for v in self.variables]
+        if filename != self._current_filename:
+            self._current_data = self._get_next_data(filename)
+            self._current_filename = filename
+
+        data = [self._current_data[v][index] for v in self.variables]
 
         if self._normalize:
             data = [d.astype(numpy.float32) * (1.0 / 255.0)
                     if d.dtype == numpy.uint8 else d for d in data]
         return data
 
+    def initialize_cache_files(self, filename):
+        length = -1
+        with self._filereader.open_cache(filename) as cache:
+
+            # Check variables.
+            if self._variables is None:
+                self._variables = list(cache.keys())
+            else:
+                if current_communicator():
+                    if not set(self._variables) == set(cache.keys()):
+                        logger.log(99, 'Error at worker {} {} {}'.format(
+                            current_communicator().rank, set(self._variables), set(cache.keys())))
+                        raise
+
+            for k, v in cache.items():
+                if length < 0:
+                    length = len(v)
+                else:
+                    assert(length == len(v))
+            self._cache_files.append((filename, length))
+            logger.info('{} {}'.format(filename, length))
+
     def __init__(self, cachedir, shuffle=False, rng=None, normalize=False):
         super(CacheDataSource, self).__init__(shuffle=shuffle, rng=rng)
+
+        self._current_data = {}
+        self._current_filename = None
+
         self._cachedir = cachedir
         self._normalize = normalize
         self._filereader = FileReader(self._cachedir)
@@ -99,24 +140,16 @@ class CacheDataSource(DataSource):
 
         self._generation = -1
         self._cache_files = []
+
         for filename in self._filenames:
-            length = -1
-            with self._filereader.open_cache(filename) as cache:
-                if self._variables is None:
-                    self._variables = list(cache.keys())
-                for k, v in cache.items():
-                    if length < 0:
-                        length = len(v)
-                    else:
-                        assert(length == len(v))
-                self._cache_files.append((filename, length))
-                logger.info('{} {}'.format(filename, length))
+            self.initialize_cache_files(filename)
 
         logger.info('{}'.format(len(self._cache_files)))
         self.reset()
 
     def reset(self):
         super(CacheDataSource, self).reset()
+
         self._order = []
 
         if self._shuffle:
@@ -130,8 +163,8 @@ class CacheDataSource(DataSource):
                 for j in range(length):
                     self._order.append((filename, j))
 
-        self._current_filename = None
         self._current_data = {}
+        self._current_filename = None
         self._size = len(self._order)
         self._generation += 1
 

@@ -169,7 +169,6 @@ class DataSourceWithFileCache(DataSource):
         if position == self._total_cached_size:
             self._total_cached_size += 1
             if len(self._cache_positions) >= self._cache_size or self._total_cached_size >= self.size:
-                tmp_cache = {}
                 self._save_cache_to_file()
 
     def _get_data_from_cache_file(self, position):
