@@ -146,7 +146,20 @@ def generate_default_function(node, base_name, func_counter):
     func.output.extend(node.output)
     return func
 
-def convert_to_functions(node, base_name, func_counter):
+def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
+    """Generate a Transpose operator to transpose the specified buffer.
+    We assume the buffer is two dimensional.
+    """
+    trans = nnabla_pb2.Function()
+    trans.type = "Transpose"
+    set_function_name(trans, node_name, base_name, func_counter)
+    trans.input.extend([in_name])
+    trans.output.extend([out_name])
+    tp = trans.transpose_param
+    tp.axes.extend([1, 0])  # switch H and W
+    return trans
+
+def convert_to_functions(node, base_name, initializers, func_counter):
     """Convert given node to corresponding functions.
     A node is usually converted to a single function,
     but some nodes end up as a composition of functions.
@@ -314,61 +327,52 @@ def convert_to_functions(node, base_name, func_counter):
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
     elif node.op_type == "Gemm":
+        ap = func.affine_param
+        ap.base_axis = 1
         transposed_postfix = "_transposed"
-        broadcast_postfix = "_broadcast"
         input = node.input[:]
+        # Check the dimension of all inputs
+        x = input[0]
+        weight = input[1]
+        bias = input[2]
+        for init in initializers:
+            if init.name == x or init.name == weight:
+                # must be two dimensional
+                if len(init.dims) != 2:
+                    raise ValueError("Only two dimensional input is currently supported for Gemm input tensor A and B ({})".format(init.name))
+            elif init.name == bias:
+                # Must be one dimensional
+                if len(init.dims) != 1:
+                    raise ValueError("Only one dimensional input is currently supported for Gemm input tensor C ({})".format(init.name))
+
         for attr in node.attribute:
             if attr.name == "transA":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for transA in {} op_type".format(node.op_type))
                 # We need to transpose the input weight beforehand
                 # since NNabla does not support transpose with Affine.
-                transA = nnabla_pb2.Function()
-                transA.type = "Transpose"
-                set_function_name(transA, node.name, base_name, func_counter)
                 # Add a new intermediate buffer for transposition,
                 # and rewire the buffer as input.
                 ain = node.input[0]
                 aout = ain+transposed_postfix
-                transA.input.extend([ain])
-                transA.output.extend([aout])
-                tp = transA.transpose_param
-                tp.axes.extend([1, 0])  # switch H and W
+                transA = generate_transpose(node.name, ain, aout, base_name, func_counter)
                 func_list.append(transA)
                 input[0] = aout  # rewire input to transposed input
             elif attr.name == "transB":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for transB in {} op_type".format(node.op_type))
-                # We need to transpose the input weight beforehand
-                # since NNabla does not support transpose with Affine.
-                transB = nnabla_pb2.Function()
-                transB.type = "Transpose"
-                set_function_name(transB, node.name, base_name, func_counter)
-                # Add a new intermediate buffer for transposition,
-                # and rewire the buffer as input.
+                # same as transA
                 bin = node.input[1]
                 bout = bin+transposed_postfix
-                transB.input.extend([bin])
-                transB.output.extend([bout])
-                tp = transB.transpose_param
-                tp.axes.extend([1, 0])  # switch H and W
+                transB = generate_transpose(node.name, bin, bout, base_name, func_counter)
                 func_list.append(transB)
-                input[1] = bout # rewire input to transposed input
+                input[1] = bout  # rewire input to transposed input
             elif attr.name == "broadcast":
                 if attr.type != AttributeProto.INT:
                     raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
-                # Add a new intermediate buffer for broadcasting
-                # and rewire the buffer as input,
-                bin = node.input[2]
-                bout = bin+broadcast_postfix
-                bc = nnabla_pb2.Function()
-                bc.type = "Broadcast"
-                bc.input.extend([bin])
-                bc.output.extend([bout])
-                bp = bc.broadcast_param
-                bp.shape.dim.extend([4, 2])  # hardcoded shape for experimenting
-                func_list.append(bc)
-                input[2] = bout  # rewire input to broadcast input
+                # Affine broadcasts Bias vector automatically if the bias is one dimension
+                # so we don't have to do anything here
+                pass
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
@@ -430,7 +434,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         # We do not allow any operator from an unknown domain
         if not (n.domain == '' or n.domain == NNABLA_DOMAIN):
             raise ValueError("Unsupported operator from domain {} was found".format(n.domain))
-        fl = convert_to_functions(n, graph.name, func_counter)
+        fl = convert_to_functions(n, graph.name, graph.initializer, func_counter)
         # Gather all unique names for input and output
         for f in fl:
             for i in f.input:
