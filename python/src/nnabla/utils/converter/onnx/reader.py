@@ -380,6 +380,9 @@ def convert_to_functions(node, base_name, initializers, func_counter):
         # update Gemm input with the converted inputs
         del func.input[:]
         func.input.extend(input)
+    elif node.op_type == "Sum":
+        if len(func.input) > 2:
+            raise ValueError("Sum operations with more than two input is currently not supported")
     elif node.op_type == "Add":
         # We need the input buffer's dimension information here
         # in order to reshape the bias vector correctly.

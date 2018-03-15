@@ -232,9 +232,13 @@ def test_nnp_onnx_conversion_gemm(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.nnp", "gemm.onnx", "out_data_1", "exec_0")
 
-def test_onnx_nnp_conversion_add(tmpdir, nnp_fixture):
+def test_onnx_nnp_conversion_add_no_broadcast(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
-        tmpdir, TEST_DATA_DIR, "add.onnx", "add.nnp", "out_data_1", "exec_0")
+        tmpdir, TEST_DATA_DIR, "add_no_broadcast.onnx", "add_no_broadcast.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_add_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "add_no_broadcast.nnp", "add_no_broadcast.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
