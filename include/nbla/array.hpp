@@ -25,6 +25,7 @@ Array classes are not directly used by users
 #include <nbla/exception.hpp>
 #include <nbla/half.hpp>
 
+#include <memory>
 #include <type_traits>
 
 namespace nbla {
@@ -48,6 +49,8 @@ protected:
   Context ctx_;  ///< Hold device info to identify
                  ///< what device array is used.
 public:
+  typedef shared_ptr<Array> Ptr;
+
   explicit NBLA_API Array(const Size_t size, dtypes dtype, const Context &ctx);
   virtual NBLA_API ~Array() = 0;
 
@@ -105,6 +108,9 @@ protected:
 
   DISABLE_COPY_AND_ASSIGN(Array);
 };
+
+///< Shared pointer of NdArray
+typedef Array::Ptr ArrayPtr;
 
 /*@}*/
 /** \defgroup ArrayImplGrp Array list */

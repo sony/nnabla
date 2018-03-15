@@ -26,12 +26,24 @@ SyncedArray::SyncedArray(const Size_t size)
 
 SyncedArray::~SyncedArray() {}
 
-Array *SyncedArray::cast(dtypes dtype, const Context &ctx) {
-  head_ = sync(dtype, ctx); // cast() changes head.
-  reset_head(); // This will clear all head state, zeroing and filling flags.
-  array_[head_.key].second = true; // Set as at-head.
+Array *SyncedArray::cast(dtypes dtype, const Context &ctx, bool write_only) {
+  return cast_sp(dtype, ctx, write_only).get();
+}
+
+shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
+                                       bool write_only) {
+  // 1. Create an array and/or synchronize with the head.
+  head_ = sync(dtype, ctx, write_only); // cast() changes head.
+  // 2. Clear all previous arrays.
+  auto created_array = array_[head_.key];
+  clear_all_array();
+  created_array.second = true;
+  array_[head_.key] = created_array;
+  // 3. Increment modification count to let solver to know whether it's modified
+  // or not
   modification_count_++;
-  return array_[head_.key].first.get();
+  // 4. Return a requested array
+  return created_array.first;
 }
 
 const Array *SyncedArray::get(dtypes dtype, const Context &ctx) {
@@ -41,13 +53,13 @@ const Array *SyncedArray::get(dtypes dtype, const Context &ctx) {
 }
 
 void SyncedArray::zero() {
-  reset_head();
+  clear_all_array();
   zeroing_ = true;
   modification_count_++;
 }
 
 void SyncedArray::fill(float value) {
-  reset_head();
+  clear_all_array();
   filling_ = true;
   fill_value_ = value;
   modification_count_++;
@@ -55,8 +67,8 @@ void SyncedArray::fill(float value) {
 
 size_t SyncedArray::modification_count() const { return modification_count_; }
 
-SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype,
-                                         const Context &ctx_orig) {
+SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
+                                         bool write_only) {
   Context ctx = ArrayCreator::filter_context(ctx_orig);
   ArrayDesc desc{get_array_key_from_context(ctx) + ":" + dtype_to_string(dtype),
                  ctx.array_class, dtype};
@@ -67,26 +79,31 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype,
     array_[desc.key] = std::make_pair(
         shared_ptr<Array>(ArrayCreator::create(size_, dtype, ctx)), false);
   }
+  if (write_only) {
+    return desc;
+  }
+
   auto ah = array_[desc.key];
   Array *array = ah.first.get();
   bool at_head = ah.second;
-
   // Not initialized or the array is not at head.
-  if (!at_head) {
-    if (zeroing_) {
-      // Do lazy evaluation of zero().
-      array->zero();
-    } else if (filling_) {
-      // Do lazy evaluation of fill().
-      array->fill(fill_value_);
-    } else if (array_.size() > 1) {
-      Array *head_array = array_[head_.key].first.get();
-      if (head_.array_class == desc.array_class) {
-        array->copy_from(head_array);
-      } else {
-        ArraySynchronizer::synchronize(head_.array_class, head_array,
-                                       desc.array_class, array);
-      }
+  if (at_head) {
+    return desc;
+  }
+  if (zeroing_) {
+    // Do lazy evaluation of zero().
+    array->zero();
+  } else if (filling_) {
+    // Do lazy evaluation of fill().
+    array->fill(fill_value_);
+  } else if (array_.size() > 1) {
+    // TODO: Better heuristic choice from current heads
+    Array *head_array = array_[head_.key].first.get();
+    if (head_.array_class == desc.array_class) {
+      array->copy_from(head_array);
+    } else {
+      ArraySynchronizer::synchronize(head_.array_class, head_array,
+                                     desc.array_class, array);
     }
   }
   return desc;
@@ -99,10 +116,8 @@ void SyncedArray::clear() {
 }
 
 // Reset head state
-void SyncedArray::reset_head() {
-  for (auto &kv : array_) {
-    kv.second.second = false;
-  }
+void SyncedArray::clear_all_array() {
+  array_.clear();
   zeroing_ = false;
   filling_ = false;
 }

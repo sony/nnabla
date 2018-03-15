@@ -119,8 +119,17 @@ public:
 
       @param[in] dtype Enum of data type.
       @param[in] ctx Descriptor of array backend.
+      @param[in] write_only No synchronization happens.
    */
-  NBLA_API Array *cast(dtypes dtype, const Context &ctx);
+  NBLA_API Array *cast(dtypes dtype, const Context &ctx,
+                       bool write_only = false);
+
+  /** Get a mutable array as a shared_ptr
+
+      @sa cast
+   */
+  NBLA_API shared_ptr<Array> cast_sp(dtypes dtype, const Context &ctx,
+                                     bool write_only = false);
 
   DISABLE_COPY_AND_ASSIGN(NdArray);
 };

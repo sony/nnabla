@@ -56,8 +56,19 @@ public:
 
   This will return an array object with specified dtype and device with implicit
   synchronization over different dtypes/devices.
+
+  @param[in] write_only When true, just returns an Array instance requested
+  without synchronization.
   */
-  Array *cast(dtypes dtype, const Context &ctx);
+  Array *cast(dtypes dtype, const Context &ctx, bool write_only = false);
+
+  /** Cast and get array as a shared_ptr
+
+      @sa cast
+
+   */
+  shared_ptr<Array> cast_sp(dtypes dtype, const Context &ctx,
+                            bool write_only = false);
 
   /** Get array with dtype context.
 
@@ -105,9 +116,9 @@ public:
   void clear();
 
 private:
-  ArrayDesc sync(dtypes dtype, const Context &ctx);
+  ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false);
 
-  void reset_head();
+  void clear_all_array();
 
   DISABLE_COPY_AND_ASSIGN(SyncedArray);
 };
