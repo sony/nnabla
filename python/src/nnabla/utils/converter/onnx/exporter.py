@@ -35,7 +35,8 @@ nnabla_function_type_to_onnx_optype = {
     "Add2": "Add",
     # optype that gets converted
     "Identity": "Dropout",
-    "Affine": "Gemm"
+    "Affine": "Gemm",
+    "Mul2": "Mul"
 }
 
 
