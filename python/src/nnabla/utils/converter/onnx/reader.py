@@ -43,7 +43,8 @@ onnx_optype_to_nnabla_function_type = {
     "MaxPool": "MaxPooling",
     "AveragePool": "AveragePooling",
     "Sum": "Add2",
-    "Gemm": "Affine"
+    "Gemm": "Affine",
+    "Add": "Add2"
 }
 
 
@@ -379,6 +380,35 @@ def convert_to_functions(node, base_name, initializers, func_counter):
         # update Gemm input with the converted inputs
         del func.input[:]
         func.input.extend(input)
+    elif node.op_type == "Add":
+        # We need the input buffer's dimension information here
+        # in order to reshape the bias vector correctly.
+        # Therefore we cannot support broadcasting unless we get an operator like ReshapeTo
+        # which allows reshaping without shape specification.
+        reshaped_postfix = "_reshaped"
+        input = node.input[:]
+        for attr in node.attribute:
+            if attr.name == "axis":
+                pass
+                ## Reshape the input bias so it fits
+                ## the specifed axis's broadcasted shape
+                #rin = node.input[1]
+                #rout = rin+reshaped_postfix
+                #rs = nnabla_pb2.Function()
+                #rs.type = "Reshape"
+                #set_function_name(rs, node.name, base_name, func_counter)
+                #rs.input.extend([rin])
+                #rs.output.extend([rout])
+                ## Calculate the reshaped size for the bias.
+                ## We calculate this from the input buffer's dimension and
+                ## the specified axis.
+                #rp = rs.reshape_param
+                #rp.shape.dim.extend(reshaped)
+                #input[1] = rout  # rewire input to reshaped input
+            elif attr.name == "broadcast":
+                raise ValueError("broadcasting is currently not supported for {}".format(node.op_type))
+                # Add2 broadcasts by default so we do nothing here
+                #pass
     func_list.append(func)
     return func_list
 
