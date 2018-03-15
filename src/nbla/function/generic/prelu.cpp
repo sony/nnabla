@@ -48,7 +48,7 @@ template <typename T>
 void PReLU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const Size_t size = inputs[0]->size();
   if (inputs[1]->size() == 1) {
     // Single slope mode.
@@ -78,9 +78,9 @@ void PReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   T *dx = nullptr;
   T *dw = nullptr;
   if (propagate_down[0])
-    dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   if (propagate_down[1])
-    dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
+    dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
 
   const Size_t size = inputs[0]->size();
   if (inputs[1]->size() == 1) {

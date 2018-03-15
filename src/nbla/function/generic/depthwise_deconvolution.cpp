@@ -164,11 +164,11 @@ void DepthwiseDeconvolution<T>::forward_impl(const Variables &inputs,
   output->data()->zero();
 
   auto sample_data = input->get_data_pointer<T>(this->ctx_);
-  auto outmap_data = output->cast_data_and_get_pointer<T>(this->ctx_);
+  auto outmap_data = output->cast_data_and_get_pointer<T>(this->ctx_, false);
   auto weight_data = weights->get_data_pointer<T>(this->ctx_);
   auto bias_data = bias ? bias->get_data_pointer<T>(this->ctx_) : nullptr;
 
-  auto col_data = col_.cast_data_and_get_pointer<T>(this->ctx_);
+  auto col_data = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
 
   for (int samp = 0; samp < batch_size_; samp++) {
     memset(col_data, 0, col_.size() * sizeof(T));
@@ -222,24 +222,24 @@ void DepthwiseDeconvolution<T>::backward_impl(
   T *sample_grad, *weight_grad, *bias_grad, *col;
 
   if (propagate_down[0] || propagate_down[1]) {
-    col = col_.cast_data_and_get_pointer<T>(this->ctx_);
+    col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
   }
   if (propagate_down[0]) {
     if (!accum[0])
       input->grad()->zero();
-    sample_grad = input->cast_grad_and_get_pointer<T>(this->ctx_);
+    sample_grad = input->cast_grad_and_get_pointer<T>(this->ctx_, false);
     weight_data = weights->get_data_pointer<T>(this->ctx_);
   }
   if (propagate_down[1]) {
     if (!accum[1])
       weights->grad()->zero();
-    weight_grad = weights->cast_grad_and_get_pointer<T>(this->ctx_);
+    weight_grad = weights->cast_grad_and_get_pointer<T>(this->ctx_, false);
     sample_data = input->get_data_pointer<T>(this->ctx_);
   }
   if (bias && propagate_down[2]) {
     if (!accum[2])
       bias->grad()->zero();
-    bias_grad = bias->cast_grad_and_get_pointer<T>(this->ctx_);
+    bias_grad = bias->cast_grad_and_get_pointer<T>(this->ctx_, false);
   }
 
   for (int samp = 0; samp < batch_size_; samp++) {

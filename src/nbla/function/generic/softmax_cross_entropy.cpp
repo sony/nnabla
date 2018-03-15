@@ -76,7 +76,7 @@ void SoftmaxCrossEntropy<T, Tl>::forward_impl(const Variables &inputs,
   // Setting up variables
   const T *p = softmax_output_.get_data_pointer<T>(this->ctx_);
   const Tl *l = inputs[1]->get_data_pointer<Tl>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   for (int i0 = 0; i0 < size0_; ++i0) {
     for (int i2 = 0; i2 < size2_; ++i2) {
@@ -100,7 +100,7 @@ void SoftmaxCrossEntropy<T, Tl>::backward_impl(
   const T *p = softmax_output_.get_data_pointer<T>(this->ctx_);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const Tl *l = inputs[1]->get_data_pointer<Tl>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   if (!accum[0])
     memset(dx, 0, sizeof(*dx) * inputs[0]->size());
   for (int i0 = 0; i0 < size0_; ++i0) {

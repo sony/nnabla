@@ -23,7 +23,7 @@ void Min<T>::forward_impl_reduce(const T *x, T *y, int outer_size,
                                  int reduction_size) {
   // Note: Saving index is a bit inefficient if backward is not required.
   auto _cast = [this](Variable *v) {
-    return v->cast_data_and_get_pointer<int>(this->ctx_);
+    return v->cast_data_and_get_pointer<int>(this->ctx_, true);
   };
   int *ind = _cast(this->index_buff_.get());
   for (int o = 0; o < outer_size; ++o) {

@@ -54,7 +54,7 @@ void KLMultinomial<T>::forward_impl(const Variables &inputs,
                                     const Variables &outputs) {
   const T *x0 = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *x1 = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   const int k = inputs[0]->strides()[base_axis_ - 1];
   const int n = inputs[0]->size() / k;
@@ -87,7 +87,7 @@ void KLMultinomial<T>::backward_impl(const Variables &inputs,
   const int n = inputs[0]->size() / k;
 
   if (propagate_down[0]) {
-    T *dx0 = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *dx0 = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
     for (int i = 0; i < n; i++) {
       const T *x0i = x0 + i * k;
       const T *x1i = x1 + i * k;
@@ -102,7 +102,7 @@ void KLMultinomial<T>::backward_impl(const Variables &inputs,
   }
 
   if (propagate_down[1]) {
-    T *dx1 = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *dx1 = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
     for (int i = 0; i < n; i++) {
       const T *x0i = x0 + i * k;
       const T *x1i = x1 + i * k;

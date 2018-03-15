@@ -92,7 +92,7 @@ void RandomFlip<T>::forward_impl(const Variables &inputs,
   }
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   int flip_index = 0;
   flip_recursive(inputs[0], x, y, false, 0, 0, 0, flip_index);
 }
@@ -106,7 +106,7 @@ void RandomFlip<T>::backward_impl(const Variables &inputs,
     return;
   }
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   int flip_index = 0;
   flip_recursive(outputs[0], dy, dx, accum[0], 0, 0, 0, flip_index);
 }

@@ -50,10 +50,12 @@ void Transpose<T>::setup_impl(const Variables &inputs,
   v_y_strides_.reshape(Shape_t{ndim}, true);
   v_y_shape_.reshape(Shape_t{ndim}, true);
   Context cpu; // CPU Context
-  int64_t *p_axes = v_axes_.cast_data_and_get_pointer<int64_t>(cpu);
-  int64_t *p_x_strides = v_x_strides_.cast_data_and_get_pointer<int64_t>(cpu);
-  int64_t *p_y_strides = v_y_strides_.cast_data_and_get_pointer<int64_t>(cpu);
-  int64_t *p_y_shape = v_y_shape_.cast_data_and_get_pointer<int64_t>(cpu);
+  int64_t *p_axes = v_axes_.cast_data_and_get_pointer<int64_t>(cpu, true);
+  int64_t *p_x_strides =
+      v_x_strides_.cast_data_and_get_pointer<int64_t>(cpu, true);
+  int64_t *p_y_strides =
+      v_y_strides_.cast_data_and_get_pointer<int64_t>(cpu, true);
+  int64_t *p_y_shape = v_y_shape_.cast_data_and_get_pointer<int64_t>(cpu, true);
   for (int i = 0; i < ndim; ++i) {
     p_axes[i] = axes_[i];
     p_x_strides[i] = inputs[0]->strides()[i];
@@ -67,7 +69,7 @@ void Transpose<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const int64_t *axes = v_axes_.get_data_pointer<int64_t>(this->ctx_);
   const int64_t *x_strides = v_x_strides_.get_data_pointer<int64_t>(this->ctx_);
   const int64_t *y_strides = v_y_strides_.get_data_pointer<int64_t>(this->ctx_);
@@ -110,7 +112,7 @@ void Transpose<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
 
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
 
   const int64_t *axes = v_axes_.get_data_pointer<int64_t>(this->ctx_);

@@ -64,7 +64,7 @@ void TopNError<T, T1>::forward_impl(const Variables &inputs,
   // Setting up variables
   const T *p = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T1 *l = inputs[1]->get_data_pointer<T1>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   for (int i0 = 0; i0 < size0_; ++i0) {
     for (int i2 = 0; i2 < size2_; ++i2) {

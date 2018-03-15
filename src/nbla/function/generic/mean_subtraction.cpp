@@ -81,8 +81,8 @@ void MeanSubtraction<T>::forward_impl_batch(const Variables &inputs,
   // Inputs
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   // Output
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
-  T *m = mean_.cast_data_and_get_pointer<T>(this->ctx_); // batch mean
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  T *m = mean_.cast_data_and_get_pointer<T>(this->ctx_, true); // batch mean
   // Inputs/Outputs
   T *rm = inputs[1]->cast_data_and_get_pointer<T>(this->ctx_); // running mean
   int *t =
@@ -120,7 +120,7 @@ void MeanSubtraction<T>::forward_impl_global(const Variables &inputs,
   const T *rm = inputs[1]->get_data_pointer<T>(this->ctx_); // running mean
 
   // Output
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   // Output running mean
   for (int i1 = 0; i1 < size1_; ++i1) {
@@ -163,7 +163,7 @@ void MeanSubtraction<T>::backward_impl_batch(const Variables &inputs,
   }
 
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
 
   const int *t = inputs[2]->get_data_pointer<int>(this->ctx_);
   const T factor = (T)1.0 / ((*t) * size0_);
@@ -193,7 +193,7 @@ void MeanSubtraction<T>::backward_impl_global(
   }
 
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
 
   if (accum[0])
     mean_subtraction_backward_global<T, true>(inputs[0]->size(), dx, dy);

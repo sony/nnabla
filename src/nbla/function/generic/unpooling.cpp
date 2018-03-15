@@ -92,7 +92,7 @@ template <class T>
 void Unpooling<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
   const T *px = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *py = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *py = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   unpooling_forward_recursive(inputs[0], outputs[0], px, py, 0, 0, 0);
 }
@@ -145,7 +145,7 @@ void Unpooling<T>::backward_impl(const Variables &inputs,
     return;
   if (!accum[0])
     inputs[0]->grad()->zero();
-  T *pdx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *pdx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   const T *pdy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   unpooling_backward_recursive(inputs[0], outputs[0], pdx, pdy, 0, 0, 0);
 }

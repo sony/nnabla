@@ -72,7 +72,7 @@ void BatchMatmul<T>::forward_impl(const Variables &inputs,
   using namespace ::nbla::eigen;
   const T *a = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *b = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < samples_; ++s) {
     ConstMatrixMap<T> ma(a + s * offset_a_, row_a_, col_a_);
     ConstMatrixMap<T> mb(b + s * offset_b_, row_b_, col_b_);
@@ -93,7 +93,7 @@ void BatchMatmul<T>::backward_impl(const Variables &inputs,
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   if (propagate_down[0]) {
     const T *b = inputs[1]->get_data_pointer<T>(this->ctx_);
-    T *da = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *da = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
     for (int s = 0; s < samples_; ++s) {
       MatrixMap<T> mda(da + s * offset_a_, row_a_, col_a_);
       ConstMatrixMap<T> mb(b + s * offset_b_, row_b_, col_b_);
@@ -109,7 +109,7 @@ void BatchMatmul<T>::backward_impl(const Variables &inputs,
   }
   if (propagate_down[1]) {
     const T *a = inputs[0]->get_data_pointer<T>(this->ctx_);
-    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
     for (int s = 0; s < samples_; ++s) {
       ConstMatrixMap<T> ma(a + s * offset_a_, row_a_, col_a_);
       MatrixMap<T> mdb(db + s * offset_b_, row_b_, col_b_);

@@ -83,7 +83,7 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
   // std::cout << "shape_out : w=" << w_out << ", h=" << h_out << "\n";
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   const int ch_size_in = h_in * w_in;
   const int ch_size_out = h_out * w_out;

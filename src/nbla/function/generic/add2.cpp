@@ -42,7 +42,7 @@ template <class T>
 void Add2<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x0 = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *x1 = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !inplace_);
   for (int s = 0; s < inputs[0]->size(); s++) {
     y[s] = x0[s] + x1[s];
   }
@@ -69,7 +69,9 @@ void Add2<T>::backward_impl(const Variables &inputs, const Variables &outputs,
 
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
-      T *dx = inputs[i]->cast_grad_and_get_pointer<T>(this->ctx_);
+      T *dx = inputs[i]->cast_grad_and_get_pointer<T>(
+          this->ctx_, !((i == 0 && inplace_) || accum[i]));
+      // dx == dy at i = 1 never happens.
       if (dx != dy) {
         // Not in-place
         if (accum[i])

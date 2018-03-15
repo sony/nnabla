@@ -40,7 +40,7 @@ void Embed<T, T1>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T1 *w = inputs[1]->get_data_pointer<T1>(this->ctx_);
-  T1 *y = outputs[0]->cast_data_and_get_pointer<T1>(this->ctx_);
+  T1 *y = outputs[0]->cast_data_and_get_pointer<T1>(this->ctx_, true);
 
   Size_t stride0 = inputs[1]->size(1);
   for (int i = 0; i < inputs[0]->size(); ++i) {
@@ -72,7 +72,7 @@ void Embed<T, T1>::backward_impl(const Variables &inputs,
   if (!accum[1])
     inputs[1]->grad()->zero();
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T1 *dw = inputs[1]->cast_grad_and_get_pointer<T1>(this->ctx_);
+  T1 *dw = inputs[1]->cast_grad_and_get_pointer<T1>(this->ctx_, false);
   const T1 *dy = outputs[0]->get_grad_pointer<T1>(this->ctx_);
   Size_t stride0 = inputs[1]->size(1);
   embed_backward_cpu(inputs[0]->size(), stride0, dw, dy, x);

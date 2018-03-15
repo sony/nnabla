@@ -118,9 +118,11 @@ void BatchNormalization<T>::forward_impl_batch(const Variables &inputs,
   const T *beta = inputs[1]->get_data_pointer<T>(this->ctx_);
   const T *gamma = inputs[2]->get_data_pointer<T>(this->ctx_);
   // Output
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
-  T *m = batch_mean->cast_data_and_get_pointer<T>(this->ctx_); // batch mean
-  T *v = batch_var->cast_data_and_get_pointer<T>(this->ctx_);  // batch varf
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  T *m =
+      batch_mean->cast_data_and_get_pointer<T>(this->ctx_, true); // batch mean
+  T *v =
+      batch_var->cast_data_and_get_pointer<T>(this->ctx_, true); // batch varf
   // Inputs/Outputs
   T *rm = inputs[3]->cast_data_and_get_pointer<T>(this->ctx_); // running mean
   T *rv = inputs[4]->cast_data_and_get_pointer<T>(this->ctx_); // running var
@@ -169,7 +171,7 @@ void BatchNormalization<T>::forward_impl_global(const Variables &inputs,
   const T *rm = inputs[3]->get_data_pointer<T>(this->ctx_); // running mean
   const T *rv = inputs[4]->get_data_pointer<T>(this->ctx_); // running var
   // Output
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   // Subtract mean and divide by std, and apply beta and gamma.
   for (int i1 = 0; i1 < size1_; ++i1) {
@@ -219,7 +221,7 @@ void BatchNormalization<T>::backward_impl_batch(
 
   // Gradient wrt. x.
   if (propagate_down[0]) {
-    T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
     const T *g = inputs[2]->get_data_pointer<T>(this->ctx_);
     const T *dm = nullptr;
     const T *dv = nullptr;
@@ -267,8 +269,8 @@ void BatchNormalization<T>::backward_impl_batch(
   if (propagate_down[1] || propagate_down[2]) { // beta and gamma
     NBLA_CHECK(propagate_down[1] && propagate_down[2], error_code::value,
                "'need_grad' of beta and gamma must be the same.");
-    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
-    T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
+    T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
     for (int i1 = 0; i1 < size1_; ++i1) {
       T dbv = accum[1] ? db[i1] : (T)0;
       T dgv = accum[2] ? dg[i1] : (T)0;

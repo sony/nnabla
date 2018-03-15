@@ -128,7 +128,7 @@ void RandomShift<T>::forward_impl(const Variables &inputs,
   }
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   int shift_index = 0;
   shift_recursive(inputs[0], x, y, 0, 0, 0, shift_index);
 }
@@ -145,7 +145,7 @@ void RandomShift<T>::backward_impl(const Variables &inputs,
     inputs[0]->grad()->zero();
   }
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   int shift_index = 0;
   shift_backward_recursive(outputs[0], dy, dx, 0, 0, 0, shift_index);
 }

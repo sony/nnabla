@@ -34,7 +34,7 @@ void Randn<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <typename T>
 void Randn<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   std::normal_distribution<typename force_float<T>::type> rdist(mu_, sigma_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {
     y[s] = (T)rdist(rgen_);
   }

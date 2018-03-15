@@ -154,7 +154,7 @@ void Slice<T>::slice_backward_recursive(Variable *outp, const Variable *inp,
 template <class T>
 void Slice<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   int slice_index = 0;
   slice_forward_recursive(inputs[0], outputs[0], x, y, 0, 0, 0, slice_index);
@@ -171,7 +171,7 @@ void Slice<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     inputs[0]->grad()->zero();
 
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
 
   int slice_index = 0;
   slice_backward_recursive(inputs[0], outputs[0], dx, dy, 0, 0, 0, slice_index);

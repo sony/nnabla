@@ -40,7 +40,7 @@ void BinaryError<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
   const T *x0 = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *x1 = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const Size_t size = inputs[0]->size();
   for (int s = 0; s < size; s++) {
     y[s] = (x0[s] >= 0.5) != (x1[s] >= 0.5);

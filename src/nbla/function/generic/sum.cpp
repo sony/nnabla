@@ -83,7 +83,7 @@ void Sum<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
     return v->get_data_pointer<T>(this->ctx_);
   };
   const T *x = f_transpose_ ? _get(o_transpose_.get()) : _get(inputs[0]);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const int outer_size = inputs[0]->size() / reduction_size_;
   this->forward_impl_reduce(x, y, outer_size, reduction_size_);
 }
@@ -94,11 +94,12 @@ void Sum<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                            const vector<bool> &accum) {
   if (!propagate_down[0])
     return;
-  auto _gcast = [this](Variable *v) {
-    return v->cast_grad_and_get_pointer<T>(this->ctx_);
+  auto _gcast = [this](Variable *v, bool wo) {
+    return v->cast_grad_and_get_pointer<T>(this->ctx_, wo);
   };
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = f_transpose_ ? _gcast(o_transpose_.get()) : _gcast(inputs[0]);
+  T *dx = f_transpose_ ? _gcast(o_transpose_.get(), false)
+                       : _gcast(inputs[0], !accum[0]);
   this->backward_impl_reduce(dy, dx, inputs[0]->size() / reduction_size_,
                              reduction_size_, (!f_transpose_) && accum[0]);
 

@@ -51,7 +51,7 @@ template <typename T>
 void VATNoise<T>::forward_impl(const Variables &inputs,
                                const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   const int m = inputs[0]->strides()[base_axis_ - 1];
   const int n = inputs[0]->size() / m;
@@ -76,7 +76,7 @@ void VATNoise<T>::backward_impl(const Variables &inputs,
                                 const vector<bool> &propagate_down,
                                 const vector<bool> &accum) {
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *w = inputs[1]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *w = inputs[1]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   for (int i = 0; i < inputs[0]->size(); ++i) {
     w[i] = dy[i] * eps_;

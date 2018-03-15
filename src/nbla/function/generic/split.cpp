@@ -50,7 +50,7 @@ template <class T>
 void Split<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   for (int i0 = 0; i0 < num_outputs_; ++i0) {
-    T *y = outputs[i0]->cast_data_and_get_pointer<T>(this->ctx_);
+    T *y = outputs[i0]->cast_data_and_get_pointer<T>(this->ctx_, true);
     for (int i1 = 0; i1 < outer_size_; ++i1) {
       for (int i2 = 0; i2 < inner_size_; ++i2) {
         y[i1 * inner_size_ + i2] =
@@ -79,7 +79,7 @@ void Split<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   if (!propagate_down[0]) {
     return;
   }
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   for (int i0 = 0; i0 < num_outputs_; ++i0) {
     const T *dy = outputs[i0]->get_grad_pointer<T>(this->ctx_);
     if (accum[0])

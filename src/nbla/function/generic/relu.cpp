@@ -36,7 +36,7 @@ void ReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <class T>
 void ReLU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !inplace_);
   for (int s = 0; s < inputs[0]->size(); s++) {
     y[s] = std::max(T(0), x[s]);
   }
@@ -59,7 +59,8 @@ void ReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     return;
   }
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_,
+                                                  !(inplace_ || accum[0]));
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   if (dx != dy) {
     // not in-place

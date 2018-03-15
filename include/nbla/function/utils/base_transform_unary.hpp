@@ -95,7 +95,7 @@ template <typename T, typename UnaryOp, typename... Args>
 void TransformUnary<T, UnaryOp, Args...>::forward_impl(
     const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   transform_unary(inputs[0]->size(), x, y, unary_op_);
 }
 
@@ -110,7 +110,7 @@ void TransformUnary<T, UnaryOp, Args...>::backward_impl(
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *y = outputs[0]->get_data_pointer<T>(this->ctx_);
   Size_t size = inputs[0]->size();
-  T *g = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *g = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   if (accum[0])
     transform_unary_grad<T, UnaryOp, true>(size, dy, x, y, g, unary_op_);
   else

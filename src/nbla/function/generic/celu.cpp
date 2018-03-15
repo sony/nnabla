@@ -44,7 +44,7 @@ void CELU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <typename T>
 void CELU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int i1 = 0; i1 < size1_; ++i1) {
     for (int i0 = 0; i0 < size0_; ++i0) {
       const int j0 = i1 * size0_ * 2 + i0;
@@ -63,7 +63,7 @@ void CELU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     return;
   }
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   for (int i1 = 0; i1 < size1_; ++i1) {
     for (int i0 = 0; i0 < size0_; ++i0) {

@@ -35,7 +35,7 @@ template <class T>
 void Identity<T>::forward_impl(const Variables &inputs,
                                const Variables &outputs) {
   const Array *x = inputs[0]->data()->get(get_dtype<T>(), this->ctx_);
-  Array *y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_);
+  Array *y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
   y->copy_from(x);
 }
 
@@ -48,7 +48,7 @@ void Identity<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   if (dx != dy) {
     for (int i = 0; i < inputs[0]->size(); ++i) {

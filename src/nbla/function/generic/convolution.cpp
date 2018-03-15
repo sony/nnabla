@@ -139,8 +139,8 @@ void Convolution<T>::forward_impl(const Variables &inputs,
   // Getting variable pointers
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *col = col_.cast_data_and_get_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const T *b;
   if (inputs.size() == 3) {
     b = inputs[2]->get_data_pointer<T>(this->ctx_);
@@ -189,20 +189,20 @@ void Convolution<T>::backward_impl(const Variables &inputs,
   T *dx, *dw, *db, *col;
   std::unique_ptr<ColVectorMap<T>> mdb;
   if (propagate_down[0] || propagate_down[1]) {
-    col = col_.cast_data_and_get_pointer<T>(this->ctx_);
+    col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
   }
   if (propagate_down[0]) {
     w = inputs[1]->get_data_pointer<T>(this->ctx_);
-    dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   }
   if (propagate_down[1]) {
     x = inputs[0]->get_data_pointer<T>(this->ctx_);
-    dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
+    dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
     if (!accum[1])
       memset(dw, 0, sizeof(*dw) * inputs[1]->size());
   }
   if (inputs.size() == 3 && propagate_down[2]) {
-    db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_);
+    db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
     mdb.reset(new ColVectorMap<T>(db, channels_o_));
     if (!accum[2])
       // mdb = 0; // Results in segfault

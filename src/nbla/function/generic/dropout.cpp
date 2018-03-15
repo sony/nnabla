@@ -40,8 +40,8 @@ template <class T>
 void Dropout<T>::forward_impl(const Variables &inputs,
                               const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
-  T *m = mask_.cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  T *m = mask_.cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < inputs[0]->size(); s++) {
     m[s] = rdist_(rgen_);
     y[s] = x[s] * m[s] * scale_;
@@ -56,7 +56,7 @@ void Dropout<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0]) {
     return;
   }
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const T *m = mask_.get_data_pointer<T>(this->ctx_);
   for (int s = 0; s < inputs[0]->size(); ++s) {

@@ -78,7 +78,7 @@ void Affine<T>::forward_impl(const Variables &inputs,
   using namespace ::nbla::eigen;
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   ConstMatrixMap<T> mx(x, i_row_, i_col_);
   ConstMatrixMap<T> mw(w, w_row_, w_col_);
   MatrixMap<T> my(y, o_row_, o_col_);
@@ -102,7 +102,7 @@ void Affine<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   ConstMatrixMap<T> mdy(dy, o_row_, o_col_);
   if (propagate_down[0]) {
-    T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
     const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
     MatrixMap<T> mdx(dx, i_row_, i_col_);
     ConstMatrixMap<T> mw(w, w_row_, w_col_);
@@ -113,7 +113,7 @@ void Affine<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   }
   if (propagate_down[1]) {
     const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-    T *dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
     ConstMatrixMap<T> mx(x, i_row_, i_col_);
     MatrixMap<T> mdw(dw, w_row_, w_col_);
     if (accum[1])
@@ -123,7 +123,7 @@ void Affine<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   }
   if (inputs.size() == 3 && propagate_down[2]) {
     // With bias.
-    T *db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
     RowVectorMap<T> mdb(db, o_col_);
     if (accum[2])
       mdb += mdy.colwise().sum();

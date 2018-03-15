@@ -30,7 +30,7 @@ template <typename T>
 void Max<T>::forward_impl_reduce(const T *x, T *y, int outer_size,
                                  int reduction_size) {
   // Saving index is a bit inefficient if backward is not required.
-  int *ind = index_buff_->cast_data_and_get_pointer<int>(this->ctx_);
+  int *ind = index_buff_->cast_data_and_get_pointer<int>(this->ctx_, true);
   for (int o = 0; o < outer_size; ++o) {
     int mi = 0;
     T m = -1e+8;

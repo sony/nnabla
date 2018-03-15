@@ -41,7 +41,7 @@ template <typename T>
 void MatrixDiag<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int i = 0; i < inputs[0]->size(); ++i) {
     for (int j = 0; j < last_ndim_; ++j) {
       if (i % last_ndim_ == j) {
@@ -72,7 +72,7 @@ void MatrixDiag<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   Size_t size = inputs[0]->size();
   if (accum[0])

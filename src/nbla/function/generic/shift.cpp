@@ -102,7 +102,7 @@ void Shift<T>::shift_backward_recursive(Variable *outp, const T *dy, T *dx,
 template <typename T>
 void Shift<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   shift_recursive(inputs[0], x, y, 0, 0, 0);
 }
 
@@ -116,7 +116,7 @@ void Shift<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   if (!accum[0])
     inputs[0]->grad()->zero();
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   shift_backward_recursive(outputs[0], dy, dx, 0, 0, 0);
 }
 

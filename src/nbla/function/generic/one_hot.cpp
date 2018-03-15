@@ -51,7 +51,7 @@ void OneHot<T, T1>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   outputs[0]->data()->zero();
-  T1 *y = outputs[0]->cast_data_and_get_pointer<T1>(this->ctx_);
+  T1 *y = outputs[0]->cast_data_and_get_pointer<T1>(this->ctx_, false);
   for (int i = 0; i < num_; ++i) {
     int addr = 0;
     Size_t size = 1;

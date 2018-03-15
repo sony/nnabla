@@ -46,7 +46,7 @@ void Stack<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
 template <class T>
 void Stack<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int i0 = 0; i0 < num_inputs_; ++i0) {
     const T *x = inputs[i0]->get_data_pointer<T>(this->ctx_);
     for (int i1 = 0; i1 < outer_size_; ++i1) {
@@ -65,7 +65,7 @@ void Stack<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   for (int i0 = 0; i0 < num_inputs_; ++i0) {
     if (propagate_down[i0]) {
-      T *dx = inputs[i0]->cast_grad_and_get_pointer<T>(this->ctx_);
+      T *dx = inputs[i0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[i0]);
       for (int i1 = 0; i1 < outer_size_; ++i1) {
         for (int i2 = 0; i2 < inner_size_; ++i2) {
           T &rdx = dx[i1 * inner_size_ + i2];

@@ -54,7 +54,7 @@ void Concatenate<T>::setup_impl(const Variables &inputs,
 template <class T>
 void Concatenate<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   int inner_offset = 0;
   for (int c = 0; c < inputs.size(); ++c) {
     const T *x = inputs[c]->get_data_pointer<T>(this->ctx_);
@@ -79,7 +79,7 @@ void Concatenate<T>::backward_impl(const Variables &inputs,
   for (int c = 0; c < inputs.size(); ++c) {
     const int inner_size = inputs[c]->size(this->axis_);
     if (propagate_down[c]) {
-      T *dx = inputs[c]->cast_grad_and_get_pointer<T>(this->ctx_);
+      T *dx = inputs[c]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[c]);
       for (int o = 0; o < outer_size_; ++o) {
         for (int i = 0; i < inner_size; ++i) {
           T &rdx = dx[o * inner_size + i];

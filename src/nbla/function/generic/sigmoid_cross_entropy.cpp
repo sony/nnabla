@@ -44,7 +44,7 @@ void SigmoidCrossEntropy<T, Tl>::forward_impl(const Variables &inputs,
                                               const Variables &outputs) {
   const T *x0 = inputs[0]->get_data_pointer<T>(this->ctx_);
   const Tl *x1 = inputs[1]->get_data_pointer<Tl>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const Size_t size = inputs[0]->size();
   for (int s = 0; s < size; s++) {
     y[s] = -(x0[s] * (x1[s] - (x0[s] >= 0)) -
@@ -66,7 +66,7 @@ void SigmoidCrossEntropy<T, Tl>::backward_impl(
   const Tl *x1 = inputs[1]->get_data_pointer<Tl>(this->ctx_);
   const Size_t size = inputs[0]->size();
   if (propagate_down[0]) {
-    T *dx0 = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    T *dx0 = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
     for (int s = 0; s < size; ++s) {
       const T tmp = dy[s] * (1 / (1 + std::exp(-x0[s])) - x1[s]);
       if (accum[0])

@@ -44,7 +44,7 @@ void MaxPooling<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   const Shape_t inshape = inputs[0]->shape();
   const Shape_t outshape = outputs[0]->shape();
@@ -64,7 +64,7 @@ void MaxPooling<T>::forward_impl(const Variables &inputs,
   const int hpad = this->pad_[0];
   const int wpad = this->pad_[1];
   const int n_map = inputs[0]->size() / x_stride;
-  int *m = max_idx_.cast_data_and_get_pointer<int>(this->ctx_);
+  int *m = max_idx_.cast_data_and_get_pointer<int>(this->ctx_, true);
   for (int n = 0; n < n_map; ++n) {
     for (int iy = 0; iy < hy; ++iy) {
       for (int jy = 0; jy < wy; ++jy) {
@@ -112,7 +112,7 @@ void MaxPooling<T>::backward_impl(const Variables &inputs,
              "Forward must be called before calling backward.");
   if (!accum[0])
     inputs[0]->grad()->zero();
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
 
   const Shape_t inshape = inputs[0]->shape();

@@ -36,7 +36,7 @@ void Randint<T>::forward_impl(const Variables &inputs,
                               const Variables &outputs) {
   // TODO: consider templating integer type.
   std::uniform_int_distribution<int> rdist(low_, high_ - 1);
-  int *y = outputs[0]->cast_data_and_get_pointer<int>(this->ctx_);
+  int *y = outputs[0]->cast_data_and_get_pointer<int>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {
     y[s] = rdist(rgen_);
   }

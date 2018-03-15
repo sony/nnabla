@@ -40,8 +40,8 @@ void Broadcast<T>::setup_impl(const Variables &inputs,
   stride_x_.reshape({ndim}, true);
   shape_y_.reshape({ndim}, true);
   Context cpu = Context().set_array_class("CpuCachedArray");
-  int *stride_x = stride_x_.cast_data_and_get_pointer<int>(cpu);
-  int *shape_y = shape_y_.cast_data_and_get_pointer<int>(cpu);
+  int *stride_x = stride_x_.cast_data_and_get_pointer<int>(cpu, true);
+  int *shape_y = shape_y_.cast_data_and_get_pointer<int>(cpu, true);
   auto stride_x_in = inputs[0]->strides();
   // Check shape, and store variables.
   for (int d = 0; d < ndim; ++d) {
@@ -164,7 +164,7 @@ template <typename T>
 void Broadcast<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const int *stride_x = stride_x_.get_data_pointer<int>(this->ctx_);
   const int *shape_y = shape_y_.get_data_pointer<int>(this->ctx_);
   int ndim = inputs[0]->ndim();
@@ -184,7 +184,7 @@ void Broadcast<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *g = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *g = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const int *stride_x = stride_x_.get_data_pointer<int>(this->ctx_);
   const int *shape_y = shape_y_.get_data_pointer<int>(this->ctx_);
   int ndim = inputs[0]->ndim();
