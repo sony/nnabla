@@ -57,7 +57,7 @@ void FixedPointQuantize<T>::forward_impl(const Variables &inputs,
       y_tmp = min_;
     } else {
       bool sign_x = (x[s] < 0.0);
-      T abs_x = fabs(x[s]);
+      T abs_x = std::fabs(x[s]);
       y_tmp = T(int((abs_x / delta_) + 0.5)) * delta_;
       y_tmp = sign_x ? -y_tmp : y_tmp;
     }

@@ -55,8 +55,8 @@ void Pow2Quantize<T>::forward_impl(const Variables &inputs,
   bool sign_x;
   for (int s = 0; s < inputs[0]->size(); s++) {
     // quantize in positive domain
-    T x_abs = fabs(x[s]);
-    q = pow(2., round(log2(x_abs)));
+    T x_abs = std::fabs(x[s]);
+    q = std::pow((T)2., std::round(std::log2(x_abs)));
     if (q > p_max_) {
       q = p_max_;
     } else if (q < p_min_ && with_zero_) {
@@ -101,9 +101,9 @@ void quantize_backward_cpu(int size, T *dx, const T *dy, const T *x,
   T x_abs;
   T c;
   for (int s = 0; s < size; s++) {
-    x_abs = fabs(x[s]);
+    x_abs = std::fabs(x[s]);
     ;
-    q = pow(2., round(log2(x_abs)));
+    q = std::pow((T)2., std::round(std::log2(x_abs)));
     c = 1.; // normally, assume grad is 1
     if (q > p_max) {
       c = 0.;

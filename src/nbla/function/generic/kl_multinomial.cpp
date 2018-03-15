@@ -65,7 +65,8 @@ void KLMultinomial<T>::forward_impl(const Variables &inputs,
     T &yi = *(y + i);
     yi = 0;
     for (int j = 0; j < k; j++) {
-      yi += x0i[j] * (log(x0i[j] + (T)1.0e-8) - log(x1i[j] + (T)1.0e-8));
+      yi += x0i[j] *
+            (std::log(x0i[j] + (T)1.0e-8) - std::log(x1i[j] + (T)1.0e-8));
     }
   }
 }
@@ -94,9 +95,9 @@ void KLMultinomial<T>::backward_impl(const Variables &inputs,
       const T &dyi = *(dy + i);
       T *dx0i = dx0 + i * k;
       for (int j = 0; j < k; j++) {
-        dx0i[j] =
-            (accum[0] ? dx0i[j] : (T)0) +
-            dyi * (log(x0i[j] + (T)1.0e-8) - log(x1i[j] + (T)1.0e-8) + (T)1);
+        dx0i[j] = (accum[0] ? dx0i[j] : (T)0) +
+                  dyi * (std::log(x0i[j] + (T)1.0e-8) -
+                         std::log(x1i[j] + (T)1.0e-8) + (T)1);
       }
     }
   }

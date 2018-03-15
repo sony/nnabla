@@ -63,7 +63,7 @@ void VATNoise<T>::forward_impl(const Variables &inputs,
     for (int k = 0; k < m; k++) {
       sum += xi[k] * xi[k];
     }
-    const T scale = eps_ / sqrt(sum);
+    const T scale = eps_ / std::sqrt(sum);
     for (int k = 0; k < m; k++) {
       yi[k] = scale * xi[k];
     }
