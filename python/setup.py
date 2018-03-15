@@ -161,6 +161,7 @@ if __name__ == '__main__':
         'communicator',
         '_init',
         '_nd_array',
+        '_array',
         '_arithmetic_ops']
 
     ext_modules = [Extension('nnabla.{}'.format(mname),

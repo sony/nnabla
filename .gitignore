@@ -23,6 +23,7 @@
 /python/src/nnabla.egg-info/
 /python/src/nnabla/_init.cpp
 /python/src/nnabla/_init.h
+/python/src/nnabla/_array.cpp
 /python/src/nnabla/_nd_array.cpp
 /python/src/nnabla/_variable.cpp
 /python/src/nnabla/_arithmetic_ops.cpp
