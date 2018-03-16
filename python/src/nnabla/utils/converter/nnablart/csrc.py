@@ -144,7 +144,7 @@ class CsrcExporter:
                 '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['input'])))
             internal_defines.append(
                 '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(finfo['output'])))
-            if 'argument' in finfo:
+            if 'argument' in finfo and len(finfo['argument']) > 0:
                 internal_defines.append(
                     '    {}_local_context_t f{}_local_context;'.format(finfo['snakecase_name'], n))
                 for arg_name, arg in finfo['argument'].items():
@@ -237,7 +237,7 @@ class CsrcExporter:
                     '    (c->f{0}_outputs)[{1}] = &{2};'.format(n, no, variables[o]))
             initialize_context.append(
                 '    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
-            if 'argument' in finfo:
+            if 'argument' in finfo and len(finfo['argument']) > 0:
                 initialize_context.append(
                     '    (c->f{0}).local_context = &(c->f{0}_local_context);'.format(n))
                 for arg_name, arg in finfo['argument'].items():

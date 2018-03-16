@@ -43,23 +43,16 @@ except:
 ############################################
 
 
-def ref_all_reduce(x_data_list, size, division):
-    f = reduce(lambda x, y: x + y, np.arange(size)) + size
+def ref_all_gather(x_data, n_devices):
     results = []
-    for x_data in x_data_list:
-        result = x_data * f
-        if division:
-            result /= size
-        results.append(result)
+    for i in range(n_devices):
+        results.append(x_data * i)
     return results
 
 
 @pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inplace", [True, False])
-# each process do not seem to call the function in the same order.
-@pytest.mark.parametrize("division", [False])
-def test_all_reduce(seed, inplace, division):
+def test_all_gather(seed):
     try:
         import nnabla_ext
         import nnabla_ext.cuda
@@ -75,24 +68,21 @@ def test_all_reduce(seed, inplace, division):
         pytest.skip("Number of cuda devices is not same as that of processes.")
 
     # Variables
-    x_list = []
-    x_data_list = []
-    num_layers = 20
     rng = np.random.RandomState(seed)
-    for l in range(num_layers):
-        x_data = rng.rand(3, 4)
-        x_data_list.append(x_data)
-        x = nn.Variable(x_data.shape)
-        x.d = x_data * (device_id + 1)
-        x_list.append(x)
+    x_data = rng.rand(3, 4)
+    x = nn.Variable(x_data.shape)
+    x.d = x_data * device_id
+    y_list = []
+    for i in range(n_devices):
+        y = nn.Variable(x_data.shape)
+        y_list.append(y)
 
-    # AllReduce
-    comm.all_reduce([x.data for x in x_list],
-                    division=division, inplace=inplace)
+    # AllGahter
+    comm.all_gather(x.data, [y.data for y in y_list])
 
-    # Ref AllReduce
-    refs = ref_all_reduce(x_data_list, n_devices, division)
+    # Ref
+    refs = ref_all_gather(x_data, n_devices)
 
     # Check
-    for x, ref in zip(x_list, refs):
-        assert np.allclose(x.d, ref)
+    for y, ref in zip(y_list, refs):
+        assert np.allclose(y.d, ref)

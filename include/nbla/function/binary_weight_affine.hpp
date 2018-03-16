@@ -69,10 +69,16 @@ is treated as sample dimension.
  */
 template <typename T> class BinaryWeightAffine : public BaseFunction<int> {
 protected:
-  int base_axis_;
-  shared_ptr<Function> sign_;
+  shared_ptr<Function> transpose_;
   shared_ptr<Function> affine_;
+  shared_ptr<Function> abs_;
+  shared_ptr<Function> sum_;
+  shared_ptr<Function> div_;
+  shared_ptr<Function> bin_;
+  shared_ptr<Function> mul_;
+  Variable scaled_weights_;
 
+  int base_axis_;
   Size_t w_row_, w_col_;
 
 public:
