@@ -16,6 +16,37 @@
 #include <nbla/context.hpp>
 #include <nbla/synced_array.hpp>
 
+#ifdef ENABLE_SYNC_DEBUG
+#include <cstdlib>
+static bool sync_debug_enabled() {
+  static bool enabled = false;
+  if (enabled) {
+    return enabled;
+  }
+  const char *env_c = std::getenv("NNABLA_SYNC_DEBUG");
+  if (env_c == nullptr) {
+    return true;
+  }
+  std::string env = std::string(env_c);
+  try {
+    if (std::stoi(env) == 0) {
+      return false;
+    }
+  } catch (...) {
+  }
+  enabled = true;
+  return true;
+}
+
+#define SYNC_DEBUG(...)                                                        \
+  if (sync_debug_enabled()) {                                                  \
+    printf(__VA_ARGS__);                                                       \
+    printf("\n");                                                              \
+  }
+#else
+#define SYNC_DEBUG(...)
+#endif
+
 namespace nbla {
 // Constructor
 SyncedArray::SyncedArray(const Size_t size)
@@ -104,6 +135,12 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
     } else {
       ArraySynchronizer::synchronize(head_.array_class, head_array,
                                      desc.array_class, array);
+      SYNC_DEBUG("SYNC: %s<%s> --[%ld elements (%ld bytes in %s)]--> %s<%s>.",
+                 head_.array_class.c_str(),
+                 dtype_to_string(head_.dtype).c_str(),
+                 size() / sizeof_dtype(head_.dtype), size(),
+                 dtype_to_string(head_.dtype).c_str(), desc.array_class.c_str(),
+                 dtype_to_string(desc.dtype).c_str());
     }
   }
   return desc;
