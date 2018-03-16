@@ -13,7 +13,9 @@
 # limitations under the License.
 
 from __future__ import division
+from six.moves import range
 
+import itertools
 import numpy as np
 
 
@@ -78,6 +80,62 @@ def convolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     if b is not None:
         y += b[..., np.newaxis, np.newaxis]
     return y
+
+
+def convolution_nd(x, w, b, pad, stride, dilation, group, dtype=np.float32):
+    """
+    """
+    C = x.shape[0]
+    inshape = x.shape[1:]
+    ndim = len(inshape)
+    assert w.ndim == ndim + 2
+    K, Cg = w.shape[:2]
+    kshape = w.shape[2:]
+
+    def get_conv_out_size_recursive(d, ndim):
+        if d == ndim:
+            return []
+        s = get_conv_out_size(
+            inshape[d], kshape[d], pad[d], stride[d], dilation[d])
+        return [s] + get_conv_out_size_recursive(d + 1, ndim)
+
+    outshape = get_conv_out_size_recursive(0, ndim)
+    inshape_pad = [C] + [inshape[d] + 2 * pad[d] for d in range(ndim)]
+    x_pad = np.zeros(inshape_pad, dtype=dtype)
+    x_pad[[slice(None,)] + [slice(pad[d], pad[d] + inshape[d])
+                            for d in range(ndim)]] = x
+    y = np.zeros([K] + outshape, dtype=dtype)
+    for k in range(K):
+        g = int(k // (K // group))
+        for outindex in itertools.product(*map(range, outshape)):
+            inindex = [outindex[d] * stride[d] +
+                       np.arange(0, kshape[d]) * dilation[d] for d in range(ndim)]
+            ci = np.arange(g * Cg, (g + 1) * Cg)
+            y[(k,) + tuple(outindex)] = (w[k] *
+                                         x_pad[np.ix_(ci, *inindex)]).sum()
+    if b is not None:
+        y += b[[Ellipsis] + [np.newaxis for d in range(ndim)]]
+    return y
+
+
+def deconvolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
+    y = x
+    K, Ho = y.shape
+    K, Cg, M = w.shape
+    C = Cg * group
+
+    H = get_deconv_out_size(Ho, M, pad[0], stride[0], dilation[0])
+    x_pad = np.zeros((C, H + pad[0] * 2), dtype=dtype)
+    for k in range(K):
+        g = int(k // (K // group))
+        for ho in range(Ho):
+            hi = ho * stride[0] + np.arange(0, M) * dilation[0]
+            ci = np.arange(g * Cg, (g + 1) * Cg)
+            x_pad[np.ix_(ci, hi)] += w[k] * y[k, ho]
+    x = x_pad[:, pad[0]:pad[0] + H]
+    if b is not None:
+        x += b[..., np.newaxis]
+    return x
 
 
 def deconvolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):

@@ -654,10 +654,9 @@ def inq_convolution(inp, outmaps, kernel,
 
 
 @parametric_function_api("depthwise_conv")
-def depthwise_convolution(inp, kernel,
-                          pad=None, stride=None, dilation=None, multiplier=1,
-                          w_init=None, b_init=None,
-                          base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
+                          multiplier=1, w_init=None, b_init=None, base_axis=1,
+                          fix_parameters=False, rng=None, with_bias=True):
     """
     N-D Deptwise Convolution with a bias term.
 
@@ -685,16 +684,21 @@ def depthwise_convolution(inp, kernel,
     """
     if w_init is None:
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(inp.shape[base_axis], inp.shape[base_axis], tuple(kernel)), rng=rng)
+            calc_uniform_lim_glorot(
+                inp.shape[base_axis] * multiplier,
+                inp.shape[base_axis],
+                tuple(kernel)),
+            rng=rng)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (inp.shape[base_axis],) + tuple(kernel),
+        "W", (inp.shape[base_axis] * multiplier,) + tuple(kernel),
         w_init, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (inp.shape[base_axis],), b_init, not fix_parameters)
+            "b", (inp.shape[base_axis] * multiplier,),
+            b_init, not fix_parameters)
     return F.depthwise_convolution(inp, w, b, base_axis, pad, stride, dilation,
                                    multiplier)
 
@@ -741,6 +745,52 @@ def deconvolution(inp, outmaps, kernel,
     return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
+@parametric_function_api("depthwise_deconv")
+def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
+                            divisor=1, w_init=None, b_init=None, base_axis=1,
+                            fix_parameters=False, rng=None, with_bias=True):
+    """Depthwise deconvolution computes the transposed depthwise
+    convolution for one-dimensional and two-dimensional input data.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        divisor (:obj:`int`): Number of input feature maps per output feature map.
+        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(
+                inp.shape[base_axis],
+                inp.shape[base_axis],
+                tuple(kernel)),
+            rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w = get_parameter_or_create(
+        "W", (inp.shape[base_axis],) + tuple(kernel),
+        w_init, not fix_parameters)
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (inp.shape[base_axis] // divisor,),
+            b_init, not fix_parameters)
+    return F.depthwise_deconvolution(inp, w, b, base_axis, pad, stride,
+                                     dilation, divisor)
+
+
 @parametric_function_api("bn")
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                         batch_stat=True, output_stat=False, fix_parameters=False):
@@ -748,17 +798,13 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     Batch normalization layer.
 
     .. math::
+
         \\begin{array}{lcl}
         \\mu &=& \\frac{1}{M} \\sum x_i\\\\
         \\sigma^2 &=& \\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\
-        \\hat{
-          x
-        } _i &= & \\frac{x_i - \\mu} {
-          \\sqrt {\\sigma ^ 2 + \\epsilon }
-        }
-        \\\ y_i &= & \\hat { x }
-        _i \\gamma + \\beta.
-        \\end { array }
+        \\hat{x}_i &=& \\frac{x_i - \\mu}{\\sqrt{\\sigma^2 + \\epsilon }}\\\\
+        y_i &= & \\hat{x}_i \\gamma + \\beta.
+        \\end{array}
 
     where :math:`x_i, y_i` are the inputs.
     In testing, the mean and variance computed by moving average calculated during training are used.
@@ -839,7 +885,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
 
     """
     shape = tuple() if shared else inp.shape[base_axis]
-    w = get_parameter_or_create("W", shape,
+    w = get_parameter_or_create("slope", shape,
                                 ConstantInitializer(-1), not fix_parameters)
     return F.prelu(inp, w, base_axis)
 
@@ -1285,3 +1331,94 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
             real_b_q = b
 
     return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("lstm")
+def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
+    """Long Short-Term Memory.
+
+    Long Short-Term Memory, or LSTM, is a building block for recurrent neural networks (RNN) layers.
+    LSTM unit consists of a cell and input, output, forget gates whose functions are defined as following:
+
+    .. math::
+        f_t&&=\\sigma(W_fx_t+U_fh_{t-1}+b_f) \\\\
+        i_t&&=\\sigma(W_ix_t+U_ih_{t-1}+b_i) \\\\
+        o_t&&=\\sigma(W_ox_t+U_oh_{t-1}+b_o) \\\\
+        c_t&&=f_t\\odot c_{t-1}+i_t\\odot\\tanh(W_cx_t+U_ch_{t-1}+b_c) \\\\
+        h_t&&=o_t\\odot\\tanh(c_t).
+
+    References:
+
+        S. Hochreiter, and J. Schmidhuber. "Long Short-Term Memory."
+        Neural Computation. 1997.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array with shape (batch_size, step_size).
+        h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
+        c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
+        state_size (int): Internal state size is set to `state_size`.
+        w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+
+    Returns:
+        :class:`~nnabla.Variable`
+
+    """
+
+    xh = F.concatenate(*(x, h), axis=1)
+    iofc = affine(xh, (4, state_size), w_init=w_init,
+                  b_init=b_init, fix_parameters=fix_parameters)
+    i_t, o_t, f_t, gate = F.split(iofc, axis=1)
+    c_t = F.sigmoid(f_t) * c + F.sigmoid(i_t) * F.tanh(gate)
+    h_t = F.sigmoid(o_t) * F.tanh(c_t)
+    return h_t, c_t
+
+
+class LSTMCell:
+    def __init__(self, batch_size, state_size, h=None, c=None):
+        """
+        Initializes an LSTM cell.
+
+        Args:
+            batch_size (int): Internal batch size is set to `batch_size`.
+            state_size (int): Internal state size is set to `state_size`.
+            h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
+            c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
+
+        """
+        self.batch_size = batch_size
+        self.state_size = state_size
+        if h:  # when user defines h
+            self.h = h
+        else:
+            self.h = nn.Variable((self.batch_size, self.state_size))
+            self.h.data.zero()
+        if c:  # when user defines c
+            self.c = c
+        else:
+            self.c = nn.Variable((self.batch_size, self.state_size))
+            self.c.data.zero()
+
+    def reset_state(self):
+        """
+        Resets states h and c to zero.
+        """
+
+        self.h.data.zero()
+        self.c.data.zero()
+
+    def __call__(self, x, w_init=None, b_init=None, fix_parameters=False):
+        """
+        Updates h and c by calling lstm function.
+
+        Args:
+            x (~nnabla.Variable): Input N-D array with shape (batch_size, step_size).
+            w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
+            b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
+            fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+
+        """
+        self.h, self.c = lstm(
+            x, self.h, self.c, self.state_size, w_init, b_init, fix_parameters=fix_parameters)
+        return self.h
