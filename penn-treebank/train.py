@@ -116,12 +116,11 @@ def main():
 
     train_data, val_data, test_data = get_data()
 
-    from nnabla.contrib.context import extension_context
-    extension_module = args.context
-    if args.context is None:
-        extension_module = 'cpu'
-    logger.info("Running in %s" % extension_module)
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    # Get context.
+    from nnabla.ext_utils import get_extension_context
+    logger.info("Running in %s" % args.context)
+    ctx = get_extension_context(
+        args.context, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
 
     from nnabla.monitor import Monitor, MonitorSeries

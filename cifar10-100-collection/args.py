@@ -31,13 +31,16 @@ def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.mo
     parser.add_argument("--val-iter", "-j", type=int, default=100)
     parser.add_argument("--weight-decay", "-w",
                         type=float, default=weight_decay)
-    parser.add_argument("--device-id", "-d", type=int, default=0)
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--warmup-epoch", "-e", type=int, default=warmup_epoch)
     parser.add_argument("--model-save-interval", "-s", type=int, default=1000)
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path)
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension path. ex) cpu, cuda.cudnn.")
+                        default=None, help="Extension path. ex) cpu, cudnn.")
     parser.add_argument("--net", "-n", type=str,
                         default='cifar10_resnet23',
                         help="Neural network architecure type (used only in classification.py).\n"

@@ -39,12 +39,14 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     parser.add_argument("--weight-decay", "-w",
                         type=float, default=weight_decay,
                         help='Weight decay factor of SGD update.')
-    parser.add_argument("--device-id", "-d", type=int, default=0,
-                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path,
                         help='Path the model parameters saved.')
-    parser.add_argument("--model-load-path", "-t",
+    parser.add_argument("--model-load-path", "-T",
                         type=str, default="",
                         help='Path the model parameters loaded.')
     parser.add_argument("--net", "-n", type=str,
@@ -60,7 +62,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         default=5. * 1e-5,
                         help="Decay coefficient for regularization of channel.")
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension modules. ex) 'cpu', 'cuda.cudnn'.")
+                        default=None, help="Extension modules. ex) 'cpu', 'cudnn'.")
     parser.add_argument('--reduction-rate', type=float,
                         default=0.25, help="Reduction rate, should be less than 1.")
     args = parser.parse_args()

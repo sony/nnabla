@@ -36,12 +36,10 @@ def classification_svd():
     args = get_args()
 
     # Get context.
-    from nnabla.contrib.context import extension_context
-    extension_module = args.context
-    if args.context is None:
-        extension_module = 'cpu'
-    logger.info("Running in %s" % extension_module)
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    from nnabla.ext_utils import get_extension_context
+    logger.info("Running in %s" % args.context)
+    ctx = get_extension_context(
+        args.context, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
 
     # Create CNN network for both training and testing.

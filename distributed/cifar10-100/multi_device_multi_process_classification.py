@@ -22,7 +22,7 @@ from cifar100_data import data_iterator_cifar100
 from nnabla.utils.data_iterator import data_iterator
 import nnabla as nn
 import nnabla.communicators as C
-from nnabla.contrib.context import extension_context
+from nnabla.ext_utils import get_extension_context
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
@@ -70,8 +70,8 @@ def train():
         data_iterator = data_iterator_cifar100
 
     # Create Communicator and Context
-    extension_module = "cuda.cudnn"
-    ctx = extension_context(extension_module)
+    extension_module = "cudnn"
+    ctx = get_extension_context(extension_module)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     """
     Call this script with `mpirun` or `mpiexec`
 
-    $ mpirun -n 4 python multi_device_multi_process.py --context "cuda.cudnn" -bs 64
+    $ mpirun -n 4 python multi_device_multi_process.py --context "cudnn" -bs 64
 
     """
     train()

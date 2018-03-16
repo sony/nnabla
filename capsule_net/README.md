@@ -16,7 +16,7 @@ There might be some differences between this implemntation and the original pape
 To train a CapsNet, run:
 
 ```shell
-python train.py [-c cuda.cudnn] [-d <device_id>] [--disable-grad-dynamic-routing]
+python train.py [-c cudnn] [-d <device_id>] [--disable-grad-dynamic-routing]
 ```
 
 You can see the list of options by running command with `-h` option.
