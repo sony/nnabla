@@ -250,6 +250,12 @@ MatrixDiagPart:
 Dropout:
   float: [float]
   half: [Half]
+TopKData:
+  float: [float]
+  half: [Half]
+TopKGrad:
+  float: [float]
+  half: [Half]
 Rand:
   float: [float]
   half: [Half]
