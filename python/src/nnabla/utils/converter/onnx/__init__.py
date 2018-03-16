@@ -12,8 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-
-_SupportedInfo = collections.namedtuple('_SupportedInfo', 'read export')
-extensions = _SupportedInfo(read=['.nnp', '.onnx'], export=['.nnp', '.nnb', '.onnx'])
-formats = _SupportedInfo(read=['NNP', 'ONNX'], export=['NNP', 'NNB', 'CSRC', 'ONNX'])
+from .reader import OnnxReader, onnx_model_to_nnp_protobuf
+from .exporter import OnnxExporter

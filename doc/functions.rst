@@ -382,6 +382,42 @@ where :math:`x_{i_1 + k_1, i_2 + k_2}` is the input and :math:`y_{i_1, i_2}` is 
      - Average values variable
      - 
 
+GlobalAveragePooling
+^^^^^^^^^^^^^^
+
+Global average pooling. It pools an averaged value from the whole image
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input variable.
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Average values variable
+     - 
+
 SumPooling
 ^^^^^^^^^^
 

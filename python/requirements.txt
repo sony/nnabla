@@ -9,3 +9,5 @@ tqdm
 virtualenv
 
 autopep8
+onnx
+
