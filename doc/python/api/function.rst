@@ -159,6 +159,7 @@ Stochasticity
 .. autofunction:: randint
 .. autofunction:: randn
 .. autofunction:: dropout
+.. autofunction:: top_k_select
 .. autofunction:: random_crop
 .. autofunction:: random_flip
 .. autofunction:: random_shift
