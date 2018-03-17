@@ -15,6 +15,8 @@ ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:/opt/rh/python27/root
 
 RUN yum install -y wget curl zip unzip
 RUN yum install -y zlib-static
+RUN yum install -y epel-release
+RUN yum install -y hdf5 hdf5-devel
 
 RUN mkdir -p /tmp/deps \
     && yum install -y cmake \
@@ -30,34 +32,16 @@ RUN mkdir -p /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
-RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
+RUN curl -L https://github.com/google/protobuf/archive/v3.5.1.tar.gz -o /tmp/protobuf-v3.5.1.tar.gz \
     && cd /tmp \
-    && tar xvf protobuf-v3.1.0.tar.gz \
-    && cd protobuf-3.1.0 \
+    && tar xvf protobuf-v3.5.1.tar.gz \
+    && cd protobuf-3.5.1 \
     && mkdir build \
     && cd build \
     && cmake \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -Dprotobuf_BUILD_TESTS=OFF \
         ../cmake \
-    && make \
-    && make install \
-    && cd / \
-    && rm -rf /tmp/*
-
-RUN cd /tmp \
-    && curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2 -o hdf5-1.8.16.tar.bz2 \
-    && tar xfa hdf5-1.8.16.tar.bz2 \
-    && cd hdf5-* \
-    && mkdir build \
-    && cd build \
-    && cmake \
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DBUILD_TESTING=OFF \
-        -DHDF5_BUILD_TOOLS=OFF \
-        -DHDF5_BUILD_CPP_LIB=OFF \
-        .. \
     && make \
     && make install \
     && cd / \

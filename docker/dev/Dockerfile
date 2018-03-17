@@ -20,10 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libarchive-dev
 
 # Protobuf
-RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
+RUN curl -L https://github.com/google/protobuf/archive/v3.5.1.tar.gz -o /tmp/protobuf-v3.5.1.tar.gz \
     && cd /tmp \
-    && tar xvf protobuf-v3.1.0.tar.gz \
-    && cd protobuf-3.1.0 \
+    && tar xvf protobuf-v3.5.1.tar.gz \
+    && cd protobuf-3.5.1 \
     && mkdir build \
     && cd build \
     && cmake \
