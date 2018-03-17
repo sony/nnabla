@@ -21,6 +21,7 @@ from time import sleep
 import csv
 import numpy
 import os
+import threading
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load
@@ -78,20 +79,7 @@ class CacheDataSource(DataSource):
         return next_data
 
     def _get_data(self, position):
-
-        retry_count = 1
-        while retry_count < 10 and len(self._order) == 0:
-            logger.log(
-                99, '_get_data() retry with count {}/10.'.format(retry_count))
-            self.reset()
-            retry_count += 1
-
-        self._position = position % len(self._order)
-
-        if self._position != position:
-            logger.log(99, 'Warning! Invalid position {} {}'.format(
-                self._position, position))
-
+        self._position = position
         filename, index = self._order[position]
 
         if filename != self._current_filename:
@@ -145,23 +133,27 @@ class CacheDataSource(DataSource):
             self.initialize_cache_files(filename)
 
         logger.info('{}'.format(len(self._cache_files)))
+
+        self._thread_lock = threading.Lock()
+
         self.reset()
 
     def reset(self):
         super(CacheDataSource, self).reset()
 
-        self._order = []
+        with self._thread_lock:
+            self._order = []
 
-        if self._shuffle:
-            for i in list(self._rng.permutation(list(range(len(self._cache_files))))):
-                filename, length = self._cache_files[i]
-                for j in list(self._rng.permutation(list(range(length)))):
-                    self._order.append((filename, j))
-        else:
-            for i in range(len(self._cache_files)):
-                filename, length = self._cache_files[i]
-                for j in range(length):
-                    self._order.append((filename, j))
+            if self._shuffle:
+                for i in list(self._rng.permutation(list(range(len(self._cache_files))))):
+                    filename, length = self._cache_files[i]
+                    for j in list(self._rng.permutation(list(range(length)))):
+                        self._order.append((filename, j))
+            else:
+                for i in range(len(self._cache_files)):
+                    filename, length = self._cache_files[i]
+                    for j in range(length):
+                        self._order.append((filename, j))
 
         self._current_data = {}
         self._current_filename = None
