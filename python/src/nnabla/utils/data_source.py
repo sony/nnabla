@@ -425,7 +425,6 @@ class SlicedDataSource(DataSource):
         super(SlicedDataSource, self).__init__(shuffle=shuffle, rng=rng)
 
         self._data_source = data_source
-        self._data_source.shuffle = False
         self._variables = data_source._variables[:]
         self._slice_start = slice_start
         self._slice_end = slice_end

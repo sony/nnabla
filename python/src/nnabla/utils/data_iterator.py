@@ -219,7 +219,7 @@ class DataIterator(object):
         self._next_thread.start()
         return data
 
-    def slice(self, num_of_slices=None, slice_pos=None,
+    def slice(self, rng, num_of_slices=None, slice_pos=None,
               slice_start=None, slice_end=None,
               cache_dir=None):
         '''
@@ -261,7 +261,7 @@ class DataIterator(object):
                         slice_start=slice_start,
                         slice_end=slice_end),
                     shuffle=self._shuffle,
-                    rng=self._rng),
+                    rng=rng),
                 self._batch_size)
         else:
             return DataIterator(
@@ -277,9 +277,9 @@ class DataIterator(object):
                             slice_start,
                             slice_end),
                         shuffle=self._shuffle,
-                        rng=self._rng),
+                        rng=rng),
                     shuffle=self._shuffle,
-                    rng=self._rng),
+                    rng=rng),
                 self._batch_size)
 
     def _callback_epoch_end(self):
