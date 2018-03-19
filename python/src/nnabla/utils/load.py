@@ -370,7 +370,7 @@ def _create_optimizer(ctx, o, networks, datasets):
     parameters = {v.name: v.variable_instance for v,
                   local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
     optimizer.solver.set_parameters(parameters)
-    optimizer.parameters = parameters
+    optimizer.parameters = OrderedDict(sorted(parameters.items(), key=lambda x:x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
@@ -437,7 +437,9 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
 
     comm = current_communicator()
 
-    rng = numpy.random.RandomState(comm.rank if comm else 0)
+    # use same random state for each process until slice is called
+    rng = numpy.random.RandomState(0)
+    use_memory_cache = comm.size == 1 if comm else True
 
     if prepare_data_iterator:
         if cache_dir == '':
@@ -450,7 +452,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
                     os.makedirs(cache_dir, exist_ok=True)
-                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir) as di:
+                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
                         index = 0
                         while index < di.size:
                             progress('', (1.0 * di.position) / di.size)
@@ -460,8 +462,9 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                 if comm:
                     comm.barrier()
 
+            rng = numpy.random.RandomState(0)
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
             if comm:
                 logger.critical(
@@ -475,7 +478,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                     uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
     else:
         dataset.data_iterator = None
     return dataset

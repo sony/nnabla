@@ -90,20 +90,16 @@ def _update(iter, config, cost):
     loaded_datas = {}
     is_first_optimizer = True
 
-    def sum_cost(sum_iter):
+    def sum_cost():
         if comm:
             # logger.log(99, "Calc cost with communicator")
-            cost_sum_iter = np.zeros(1)
-            cost_sum_iter[0] = sum_iter
-            v = nn.Variable((1, ))
-            let_data_to_variable(
-                v, cost_sum_iter, config.global_config.default_context)
-            var = [v.data]
-            comm.all_reduce(var, division=True, inplace=True)
-            cost.sum_epoch += v.data.data[0]
+            var = [nn.NdArray()]
+            var[0].data = cost.sum_iter
+            comm.all_reduce(var, division=False, inplace=True)
+            cost.sum_epoch += var[0].data
             cost.num_iter += comm.size
         else:
-            cost.sum_epoch += sum_iter
+            cost.sum_epoch += cost.sum_iter
             cost.num_iter += 1
 
     for opt in config.optimizers.values():
@@ -134,10 +130,10 @@ def _update(iter, config, cost):
                 l.variable_instance.data.zero()
             if is_first_optimizer:
                 is_first_optimizer = False
+                sum_cost()
                 if single_or_rankzero():
                     progress("Training : cost={0:0.6f}".format(cost.sum_iter),
                              (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
-                sum_cost(cost.sum_iter)
                 cost.sum_iter = 0.0
 
         # Forward
@@ -153,18 +149,17 @@ def _update(iter, config, cost):
 
             if o.comm:  # Updated param with communicator
                 params = [x.grad for x in o.parameters.values()]
-                o.comm.all_reduce(params, division=True, inplace=False)
+                o.comm.all_reduce(params, division=True, inplace=True)
             o.solver.update()
 
         if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
             o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
 
         # Sync w sometimes
-        if iter % 10 == 0:  # TODO: change the interval
+        if iter % 10 == 9:  # TODO: change the interval
             if o.comm:
-                params = [x.grad for x in nn.get_parameters().values()]  # TODO
-                #params = [x.data for x in o.parameters.values()]
-                o.comm.all_reduce(params, division=True, inplace=False)
+                params = [x.data for x in o.parameters.values()]
+                o.comm.all_reduce(params, division=True, inplace=True)
 
         # Reserve monitor loss
         cost.variables = o.loss_variables
@@ -174,7 +169,7 @@ def _update(iter, config, cost):
         for l in cost.variables:
             cost.sum_iter += np.mean(l.variable_instance.d)
             l.variable_instance.data.zero()
-        sum_cost(cost.sum_iter)
+        sum_cost()
         cost.variables = None
         cost.sum_iter = 0.0
 
@@ -189,14 +184,10 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
     def sum_error(sum, error):
         if comm:
             # logger.log(99, "Calc error with communicator")
-            error_buf = np.zeros(1)
-            error_buf[0] = error
-            v = nn.Variable((1, ))
-            let_data_to_variable(
-                v, error_buf, config.global_config.default_context)
-            var = [v.data]
-            comm.all_reduce(var, division=True, inplace=True)
-            return sum + v.data.data[0]
+            var = [nn.NdArray()]
+            var[0].data = error
+            comm.all_reduce(var, division=False, inplace=True)
+            return sum + var[0].data
         else:
             return sum + error
 
@@ -235,7 +226,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                         name) + ' : error={0:0.6f}'.format(
                         error_sum_monitor / error_count),
                         di.position * 1.0 / di.size)
-            error_count += 1
+            error_count += comm.size if comm else 1
 
             # Forward recursive
             m.network.forward(m.forward_sequence)
@@ -248,8 +239,9 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_sum_monitor = sum_error(error_sum_monitor, error_sum)
 
         if error_count == 0:
-            error_count = 1
-        error = error_sum_monitor / error_count
+            error = 0
+        else:
+            error = error_sum_monitor / error_count
         monitoring_report.append('  {}: {}\n'.format(name, error))
         if error_str != '':
             error_str += ', '
@@ -363,8 +355,8 @@ def train(args, config):
                             args.outdir, 'monitoring_report.yml'), 'a')
                         f.write('{}:\n'.format(epoch - 1))
                         f.write('  cost: {}\n'.format(cost_avg_epoch))
-                        for str in monitoring_report:
-                            f.write(str)
+                        for s in monitoring_report:
+                            f.write(s)
                         f.close()
                         _save_parameters(args, 'current', epoch)
 
@@ -563,19 +555,20 @@ def train_command(args):
     result = False
     if max_iter > 0:
         data_iterators = {'optimizer': {}, 'monitor': {}}
+        rng = np.random.RandomState(comm.rank if comm else 0)
         with ExitStack() as stack:
             for name, o in config.optimizers.items():
                 o.data_iterator = stack.enter_context(
                     o.optimizer.data_iterator())
                 if comm and comm.size > 1:
                     o.data_iterator = o.data_iterator.slice(
-                        comm.size, comm.rank)
+                        rng, comm.size, comm.rank)
             for name, m in config.monitors.items():
                 m.data_iterator = stack.enter_context(
                     m.monitor.data_iterator())
                 if comm and comm.size > 1:
                     m.data_iterator = m.data_iterator.slice(
-                        comm.size, comm.rank)
+                        rng, comm.size, comm.rank)
             result = train(args, config)
     else:
         # save parameters without training (0 epoch learning)
