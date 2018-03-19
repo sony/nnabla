@@ -27,6 +27,8 @@ import os
 import six
 import tempfile
 import collections
+from contextlib import closing
+import csv
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
@@ -133,7 +135,7 @@ class DataSourceWithFileCache(DataSource):
         # for pos in self._cache_positions:
         #     logger.log(99, "Get {}".format(pos))
         #     get_data(pos)
-        with ThreadPool(processes=self._num_of_threads) as pool:
+        with closing(ThreadPool(processes=self._num_of_threads)) as pool:
             pool.map(get_data, self._cache_positions)
 
         start_position = self.position - len(cache_data) + 1
@@ -226,6 +228,11 @@ class DataSourceWithFileCache(DataSource):
         if self._data_source._size % self._cache_size != 0:
             self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
                 num_of_cache_files - 1][0:self._data_source._size % self._cache_size]
+        index_filename = os.path.join(self._cache_dir, "cache_index.csv")
+        with open(index_filename, 'w') as f:
+            writer = csv.writer(f, lineterminator='\n')
+            for fn, orders in zip(self._cache_file_names, self._cache_file_data_orders):
+                writer.writerow((fn, len(orders)))
 
     def _create_cache_file_position_table(self):
         # Create cached data position table.
