@@ -63,7 +63,7 @@ class CacheDataSource(DataSource):
 
     def _get_next_data(self, filename, retry=1):
         if retry > 10:
-            logger.log(99, '_get_current_data() retry count over give up.')
+            logger.log(99, '_get_next_data() retry count over give up.')
             raise
         next_data = {}
         with self._filereader.open_cache(filename) as cache:
@@ -75,22 +75,51 @@ class CacheDataSource(DataSource):
                     logger.log(99, '_get_data() fails at worker {} retrying count {}/10.'.format(
                         current_communicator().rank, retry))
                     sleep(0.01)
-                    return self._get_current_data(filename, retry+1)
-        return next_data
+                    self._get_next_data(filename, retry+1)
+        self._next_data = next_data
 
     def _get_data(self, position):
-        self._position = position
-        filename, index = self._order[position]
 
-        if filename != self._current_filename:
-            self._current_data = self._get_next_data(filename)
-            self._current_filename = filename
+        with self._thread_lock:
+            self._position = position
+            try:
+                filename, index = self._order[position]
+            except:
+                print(len(self._order), position)
+            if filename != self._current_filename:
 
-        data = [self._current_data[v][index] for v in self.variables]
+                if self._use_thread:
+                    if self._next_thread is None:
+                        self._get_next_data(filename)
+                    else:
+                        self._next_thread.join()
 
-        if self._normalize:
-            data = [d.astype(numpy.float32) * (1.0 / 255.0)
-                    if d.dtype == numpy.uint8 else d for d in data]
+                    self._next_thread = None
+                    self._current_data = self._next_data
+                    self._current_filename = filename
+
+                    next_pos = position
+                    next_filename = filename
+                    while True:
+                        next_filename, next_index = self._order[next_pos]
+                        next_pos += 1
+                        if next_filename != filename:
+                            self._next_thread = threading.Thread(
+                                target=self._get_next_data, args=(next_filename, ))
+                            self._next_thread.start()
+                            break
+                        if next_pos >= self._size:
+                            break
+                else:
+                    self._get_next_data(filename)
+                    self._current_data = self._next_data
+                    self._current_filename = filename
+
+            data = [self._current_data[v][index] for v in self.variables]
+
+            if self._normalize:
+                data = [d.astype(numpy.float32) * (1.0 / 255.0)
+                        if d.dtype == numpy.uint8 else d for d in data]
         return data
 
     def initialize_cache_files(self, filename):
@@ -115,7 +144,7 @@ class CacheDataSource(DataSource):
             self._cache_files.append((filename, length))
             logger.info('{} {}'.format(filename, length))
 
-    def __init__(self, cachedir, shuffle=False, rng=None, normalize=False):
+    def __init__(self, cachedir, shuffle=False, rng=None, normalize=False, use_thread=True):
         super(CacheDataSource, self).__init__(shuffle=shuffle, rng=rng)
 
         self._current_data = {}
@@ -134,14 +163,17 @@ class CacheDataSource(DataSource):
 
         logger.info('{}'.format(len(self._cache_files)))
 
+        self._use_thread = use_thread
         self._thread_lock = threading.Lock()
+        if self._use_thread:
+            self._next_thread = None
 
         self.reset()
 
     def reset(self):
-        super(CacheDataSource, self).reset()
-
         with self._thread_lock:
+            super(CacheDataSource, self).reset()
+
             self._order = []
 
             if self._shuffle:
@@ -155,10 +187,13 @@ class CacheDataSource(DataSource):
                     for j in range(length):
                         self._order.append((filename, j))
 
-        self._current_data = {}
-        self._current_filename = None
-        self._size = len(self._order)
-        self._generation += 1
+            self._current_data = {}
+            self._current_filename = None
+            if self._use_thread:
+                self._next_thread = None
+
+            self._size = len(self._order)
+            self._generation += 1
 
 
 class CsvDataSource(DataSource):

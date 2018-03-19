@@ -61,6 +61,7 @@ class DataIterator(object):
                  data_source,
                  batch_size,
                  rng=None,
+                 use_thread=True,
                  epoch_begin_callbacks=[],
                  epoch_end_callbacks=[]):
         logger.info('Using DataIterator')
@@ -87,8 +88,11 @@ class DataIterator(object):
         self._reset()
         self._current_epoch = -1
         self._current_data = None
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
+
+        self._use_thread = use_thread
+        if self._use_thread:
+            self._next_thread = threading.Thread(target=self._next)
+            self._next_thread.start()
 
         self._closed = False
         atexit.register(self.close)
@@ -204,19 +208,23 @@ class DataIterator(object):
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
-        # Wait for finish previous thread.
-        self._next_thread.join()
+        if self._use_thread:
+            # Wait for finish previous thread.
+            self._next_thread.join()
 
-        if self._current_data is None:
-            logger.log(99, 'next() got None retrying.')
+            if self._current_data is None:
+                logger.log(99, 'next() got None retrying.')
+                self._next_thread = threading.Thread(target=self._next)
+                self._next_thread.start()
+                self._next_thread.join()
+            self._current_epoch, data = self._current_data
+            # Start next thread.
             self._next_thread = threading.Thread(target=self._next)
             self._next_thread.start()
-            self._next_thread.join()
-        self._current_epoch, data = self._current_data
+        else:
+            self._next()
+            self._current_epoch, data = self._current_data
 
-        # Start next thread.
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
         return data
 
     def slice(self, num_of_slices=None, slice_pos=None,
@@ -313,6 +321,7 @@ def data_iterator(data_source,
                   with_memory_cache=True,
                   with_file_cache=False,
                   cache_dir=None,
+                  use_thread=True,
                   epoch_begin_callbacks=[],
                   epoch_end_callbacks=[]):
     '''data_iterator
@@ -385,6 +394,7 @@ def data_iterator(data_source,
                                                     shuffle=data_source.shuffle,
                                                     rng=rng)
         return DataIterator(data_source, batch_size,
+                            use_thread=use_thread,
                             epoch_begin_callbacks=epoch_begin_callbacks,
                             epoch_end_callbacks=epoch_end_callbacks)
 
@@ -525,6 +535,7 @@ def data_iterator_cache(uri,
     return data_iterator(ds,
                          batch_size=batch_size,
                          with_memory_cache=with_memory_cache,
+                         use_thread=False,
                          epoch_begin_callbacks=epoch_begin_callbacks,
                          epoch_end_callbacks=epoch_end_callbacks)
 
