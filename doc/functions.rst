@@ -398,15 +398,6 @@ Global average pooling. It pools an averaged value from the whole image
      - Input variable.
      - 
 
-* Argument(s)
-
-.. list-table::
-
-   * - Name
-     - Type
-     - Default
-     - Description
-
 * Output(s)
 
 .. list-table::
@@ -3246,15 +3237,6 @@ In the backward pass, the simple Straight-Through Estimator (STE) is applied,
    * - x
      - Input variable
      - 
-
-* Argument(s)
-
-.. list-table::
-
-   * - Name
-     - Type
-     - Default
-     - Description
 
 * Output(s)
 

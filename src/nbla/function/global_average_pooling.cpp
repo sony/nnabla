@@ -1,11 +1,11 @@
 // Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,8 +15,8 @@
 /** GlobalAveragePooling
  */
 #include <nbla/array.hpp>
-#include <nbla/variable.hpp>
 #include <nbla/function/global_average_pooling.hpp>
+#include <nbla/variable.hpp>
 
 #include <algorithm>
 
@@ -25,7 +25,8 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_SOURCE(GlobalAveragePooling);
 
 template <typename T>
-void GlobalAveragePooling<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
+void GlobalAveragePooling<T>::setup_impl(const Variables &inputs,
+                                         const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
 
@@ -33,9 +34,10 @@ void GlobalAveragePooling<T>::setup_impl(const Variables &inputs, const Variable
   const int in_dim = inshape.size();
   const int MIN_DIM = 2;
   NBLA_CHECK(in_dim >= MIN_DIM, error_code::value,
-    "GlobalAveragePooling averages across the channel, "
-    "so the input's shape must have a dimension equal to or larger than %d. actual: %d",
-    MIN_DIM, in_dim);
+             "GlobalAveragePooling averages across the channel, "
+             "so the input's shape must have a dimension equal to or larger "
+             "than %d. actual: %d",
+             MIN_DIM, in_dim);
   Shape_t shape_out;
   shape_out.push_back(inshape[0]);
   shape_out.push_back(inshape[1]);
@@ -45,7 +47,8 @@ void GlobalAveragePooling<T>::setup_impl(const Variables &inputs, const Variable
 }
 
 template <typename T>
-void GlobalAveragePooling<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
+void GlobalAveragePooling<T>::forward_impl(const Variables &inputs,
+                                           const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
 
@@ -57,25 +60,26 @@ void GlobalAveragePooling<T>::forward_impl(const Variables &inputs, const Variab
   const int chandim = outshape[1];
   const int in_h = in_dim >= 3 ? inshape[2] : 1;
   const int in_w = in_dim >= 4 ? inshape[3] : 1;
-  const int in_wh = in_w*in_h;
-  const int in_n_ofs = in_wh*chandim;
+  const int in_wh = in_w * in_h;
+  const int in_n_ofs = in_wh * chandim;
 
   for (int n = 0; n < ndim; ++n) {
     const T *xchan = &x[n * in_n_ofs];
     T *ychan = &y[n * chandim];
     for (int c = 0; c < chandim; ++c) {
-      const T *ximg = &xchan[c*in_wh];
+      const T *ximg = &xchan[c * in_wh];
       // calculate average of each channel
-      T avg = std::accumulate(ximg, ximg+in_wh, T(0)) / (T)in_wh;
+      T avg = std::accumulate(ximg, ximg + in_wh, T(0)) / (T)in_wh;
       ychan[c] = avg;
     }
   }
 }
 
 template <typename T>
-void GlobalAveragePooling<T>::backward_impl(const Variables &inputs, const Variables &outputs,
-					     const vector<bool> &propagate_down,
-					     const vector<bool> &accum) {
+void GlobalAveragePooling<T>::backward_impl(const Variables &inputs,
+                                            const Variables &outputs,
+                                            const vector<bool> &propagate_down,
+                                            const vector<bool> &accum) {
   if (!propagate_down[0])
     return;
 
@@ -88,8 +92,8 @@ void GlobalAveragePooling<T>::backward_impl(const Variables &inputs, const Varia
   const int chandim = outshape[1];
   const int in_h = in_dim >= 3 ? inshape[2] : 1;
   const int in_w = in_dim >= 4 ? inshape[3] : 1;
-  const int in_wh = in_w*in_h;
-  const int in_n_ofs = in_wh*chandim;
+  const int in_wh = in_w * in_h;
+  const int in_n_ofs = in_wh * chandim;
   const bool accumulate = accum[0];
 
   if (accumulate) {
@@ -97,9 +101,10 @@ void GlobalAveragePooling<T>::backward_impl(const Variables &inputs, const Varia
       T *dxchan = &dx[n * in_n_ofs];
       const T *dychan = &dy[n * chandim];
       for (int c = 0; c < chandim; ++c) {
-        T *dximg = &dxchan[c*in_wh];
+        T *dximg = &dxchan[c * in_wh];
         const T dyval = dychan[c] / (T)in_wh;
-        std::transform(dximg, dximg+in_wh, dximg, [=](T val){return val+dyval;});
+        std::transform(dximg, dximg + in_wh, dximg,
+                       [=](T val) { return val + dyval; });
       }
     }
   } else {
@@ -107,9 +112,9 @@ void GlobalAveragePooling<T>::backward_impl(const Variables &inputs, const Varia
       T *dxchan = &dx[n * in_n_ofs];
       const T *dychan = &dy[n * chandim];
       for (int c = 0; c < chandim; ++c) {
-        T *dximg = &dxchan[c*in_wh];
+        T *dximg = &dxchan[c * in_wh];
         const T dyval = dychan[c] / (T)in_wh;
-        std::fill(dximg, dximg+in_wh, dyval);
+        std::fill(dximg, dximg + in_wh, dyval);
       }
     }
   }
