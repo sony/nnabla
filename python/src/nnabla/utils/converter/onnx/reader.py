@@ -53,7 +53,8 @@ def onnx_value_info_proto_to_variable(info, network):
 def convert_to_function(node, base_name, func_counter):
     """Convert given node to corresponding function"""
     func = nnabla_pb2.Function()
-    func.type = onnx_optype_to_nnabla_function_type.get(node.op_type, node.op_type)
+    func.type = onnx_optype_to_nnabla_function_type.get(
+        node.op_type, node.op_type)
     # NNabla requires each function to have a unique name.
     # If the node's name already has something set,
     # we are going to use it.
@@ -103,7 +104,8 @@ def convert_to_function(node, base_name, func_counter):
         for attr in node.attribute:
             if attr.name == "is_test":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Dropout is_test must be a single integer")
+                    raise ValueError(
+                        "Dropout is_test must be a single integer")
                 if attr.i != 0:
                     # is_test is True meaning we will not be applying dropout.
                     # We are simply going to pass through the input values
@@ -139,22 +141,26 @@ def convert_to_function(node, base_name, func_counter):
             # (it will be inferred from weight input)
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for pads in Conv op_type")
+                    raise ValueError(
+                        "Only INTS are supported for pads in Conv op_type")
                 pads.extend(attr.ints)
                 dims.append(len(pads))
             elif attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for strides in Conv op_type")
+                    raise ValueError(
+                        "Only INTS are supported for strides in Conv op_type")
                 strides.extend(attr.ints)
                 dims.append(len(strides))
             elif attr.name == "dilations":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for dilations in Conv op_type")
+                    raise ValueError(
+                        "Only INTS are supported for dilations in Conv op_type")
                 dilations.extend(attr.ints)
                 dims.append(len(dilations))
             elif attr.name == "group":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for group in Conv op_type")
+                    raise ValueError(
+                        "Only INT is supported for group in Conv op_type")
                 cp.group = attr.int
         # NNabla requires for the dimensions of strides, pads, dilations to match.
         # We align the dimensions for all three attributes to the shortest one
@@ -178,17 +184,20 @@ def convert_to_function(node, base_name, func_counter):
         for attr in node.attribute:
             if attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for strides in MaxPool op_type")
+                    raise ValueError(
+                        "Only INTS are supported for strides in MaxPool op_type")
                 strides.extend(attr.ints)
                 dims.append(len(strides))
             elif attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for pads in MaxPool op_type")
+                    raise ValueError(
+                        "Only INTS are supported for pads in MaxPool op_type")
                 pads.extend(attr.ints)
                 dims.append(len(pads))
             elif attr.name == "kernel_shape":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for kernel_shape in MaxPool op_type")
+                    raise ValueError(
+                        "Only INTS are supported for kernel_shape in MaxPool op_type")
                 kernel.extend(attr.ints)
                 dims.append(len(kernel))
         # NNabla requires for the dimensions of strides, pads, kernels to match.
@@ -219,7 +228,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for n in graph.node:
         # We do not allow any operator from an unknown domain
         if not (n.domain == '' or n.domain == NNABLA_DOMAIN):
-            raise ValueError("Unsupported operator from domain {} was found".format(n.domain))
+            raise ValueError(
+                "Unsupported operator from domain {} was found".format(n.domain))
         f = convert_to_function(n, graph.name, func_counter)
         # Gather all unique names for input and output
         for i in f.input:
@@ -312,9 +322,11 @@ def onnx_model_to_nnp_protobuf(model):
             # ONNX opset.
             # Check if we have the correct version
             if opset.version < MIN_ONNX_OPSET_VERSION:
-                raise ValueError("Older ONNX opsets are currently not supported")
+                raise ValueError(
+                    "Older ONNX opsets are currently not supported")
         else:
-            raise ValueError("Unsupported opset from domain {}".format(opset.domain))
+            raise ValueError(
+                "Unsupported opset from domain {}".format(opset.domain))
 
     # convert onnx model to nnabla protobuf
     # logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))

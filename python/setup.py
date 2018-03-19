@@ -33,6 +33,7 @@ install_requires = setup_requires + [
     'contextlib2',
     'futures',
     'h5py',
+    'onnx',
     'protobuf',
     'requests',
     'scikit-image',

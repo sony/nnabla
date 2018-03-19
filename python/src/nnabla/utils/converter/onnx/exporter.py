@@ -18,7 +18,7 @@ import onnx
 from .utils import *
 from onnx import (ModelProto, TensorProto, TensorShapeProto)
 
-# Dictionary used to convert NNabla function names to ONNX op_type 
+# Dictionary used to convert NNabla function names to ONNX op_type
 nnabla_function_type_to_onnx_optype = {
     "ReLU": "Relu",
     "Concatenate": "Concat",
@@ -30,10 +30,10 @@ nnabla_function_type_to_onnx_optype = {
 
 def convert_to_node(func, variables):
     n = onnx.helper.make_node(
-            nnabla_function_type_to_onnx_optype.get(func.type, func.type),
-            func.input,
-            func.output,
-            name=func.name)
+        nnabla_function_type_to_onnx_optype.get(func.type, func.type),
+        func.input,
+        func.output,
+        name=func.name)
     if func.type == "Concatenate":
         # ONNX requires axis setting as a parameter
         # for the concat op_type.
@@ -56,7 +56,8 @@ def convert_to_node(func, variables):
     elif func.type == "MaxPooling":
         mpp = func.max_pooling_param
         if not mpp.ignore_border:
-            raise ValueError("MaxPooling with ignore_border=False is not supported")
+            raise ValueError(
+                "MaxPooling with ignore_border=False is not supported")
         # Copy kernel, stride, and pads values
         k = onnx.helper.make_attribute("kernel_shape", mpp.kernel.dim)
         s = onnx.helper.make_attribute("strides", mpp.stride.dim)
@@ -80,7 +81,8 @@ def convert_to_node(func, variables):
         weight_shape = weight_var[0].shape
         # The base axis for weights is the next axis from the data's base axis
         weight_base = cp.base_axis + 1
-        k = onnx.helper.make_attribute("kernel_shape", weight_shape.dim[weight_base:])
+        k = onnx.helper.make_attribute(
+            "kernel_shape", weight_shape.dim[weight_base:])
         d = onnx.helper.make_attribute("dilations", cp.dilation.dim)
         s = onnx.helper.make_attribute("strides", cp.stride.dim)
         p = onnx.helper.make_attribute("pads", cp.pad.dim)
@@ -92,7 +94,7 @@ def convert_to_node(func, variables):
         # "Conv" or "Pool" contained.
         # Caffe2 issue is here:
         # https://github.com/caffe2/caffe2/issues/1971
-        # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the 
+        # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the
         # following code if we have a specific name.
         # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
         # The above caffe2 code should be checking the node's operator name and not the node's name.
@@ -110,13 +112,16 @@ def convert_to_node(func, variables):
 
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
-        raise ValueError("NNP with only a single network is currently supported")
+        raise ValueError(
+            "NNP with only a single network is currently supported")
     if len(nnp.executor) != 1:
-        raise ValueError("NNP with only a single executor is currently supported")
+        raise ValueError(
+            "NNP with only a single executor is currently supported")
     net = nnp.network[0]
     exe = nnp.executor[0]
     if exe.network_name != net.name:
-        raise ValueError("Names of the included network and executor's target network do not match")
+        raise ValueError(
+            "Names of the included network and executor's target network do not match")
     graph.name = net.name
     # store all variable shape info to use later
     var_dict = {}
@@ -130,7 +135,8 @@ def nnp_model_to_onnx_graph(graph, nnp):
         init = graph.initializer.add()
         init.name = param.variable_name
         init.dims.extend(param.shape.dim)
-        init.data_type = TensorProto.FLOAT  # We should be only getting float data from NNabla
+        # We should be only getting float data from NNabla
+        init.data_type = TensorProto.FLOAT
         init.raw_data = struct.pack("{}f".format(len(param.data)), *param.data)
         # init.float_data.extend(param.data)
 

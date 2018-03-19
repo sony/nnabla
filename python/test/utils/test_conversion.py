@@ -24,7 +24,8 @@ import onnx_caffe2.backend
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
 
-TEST_DATA_DIR="nnabla-sample-data/conversion_data"
+TEST_DATA_DIR = "nnabla-sample-data/conversion_data"
+
 
 def run_executor(nn_net, exec_name):
     """Run specified executor and return its network"""
@@ -57,13 +58,13 @@ def convert_onnx_to_nnp_and_compare(
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    #pdb.set_trace()
+    # pdb.set_trace()
     nn_net = nnload.load([p])
     exe = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
-    #print(in_data.variable_instance.d)
+    # print(in_data.variable_instance.d)
     nnout = exe.variables[out_name].variable_instance.d
-    #print(nnout.variable_instance.d)
+    # print(nnout.variable_instance.d)
     # Compare both naabla and caffe2 results
     c2 = c2out[out_name]
     if show_output:
@@ -71,6 +72,7 @@ def convert_onnx_to_nnp_and_compare(
     assert c2.shape == nnout.shape
     if compare_values:
         assert np.allclose(c2, nnout)
+
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
@@ -99,7 +101,7 @@ def convert_nnp_to_onnx_and_compare(
     model = onnx.load(p)
     if show_onnx:
         print(model)
-    #pdb.set_trace()
+    # pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
@@ -109,27 +111,33 @@ def convert_nnp_to_onnx_and_compare(
     if compare_values:
         assert np.allclose(c2, nnout)
 
+
 @pytest.fixture
 def nnp_fixture():
     # We need to remove all parameters for each test case
     # because the buffer shape will differ while having same names
     nnabla.clear_parameters()
 
+
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "concat.onnx", "concat.nnp", "out_data_1", "exec_0")
 
+
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "concat.nnp", "concat.onnx", "out_data_1", "exec_0")
+
 
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
     # We do not check if the values match because a dropout
@@ -137,67 +145,83 @@ def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout.onnx", "dropout.nnp", "out_data_1", "exec_0", compare_values=False)
 
+
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
     # We do not check if the values match because a dropout
     # output yield random results
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout.nnp", "dropout.onnx", "out_data_1", "exec_0", compare_values=False)
 
+
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout_test.onnx", "dropout_test.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout_test.nnp", "dropout_test.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.onnx", "maxpool.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.nnp", "maxpool.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_no_pad.onnx", "maxpool_no_pad.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.onnx", "maxpool_p0_s2_k3.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.nnp", "maxpool_p0_s2_k3.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.onnx", "softmax.nnp", "out_data_1", "exec_0")
 
+
 def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.nnp", "softmax.onnx", "out_data_1", "exec_0")
+
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
@@ -214,7 +238,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     model = onnx.load(path)
     if show_onnx:
         print(model)
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     c2out = onnx_caffe2.backend.run_model(model, [img])
     # Process onnx with naabla
     nnp = onnx_model_to_nnp_protobuf(model)
@@ -230,19 +254,19 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     nnpex.export_nnp(p)
     # read exported nnp and run network
     nn_net = nnload.load([p])
-    #pdb.set_trace()
+    # pdb.set_trace()
     # set input data and run inference
     net = nn_net.executors[exec_name].network
     in_data = net.variables[in_name]
     in_data.variable_instance.d = img
     net = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
-    #print(in_data.variable_instance.d)
+    # print(in_data.variable_instance.d)
     nnout = net.variables[out_name].variable_instance.d
-    #print(nnout.variable_instance.d)
+    # print(nnout.variable_instance.d)
 
     # Print all the intermediate buffer shape in order
-    #for k, v in net.functions.items():
+    # for k, v in net.functions.items():
     #    out = v.outputs[0]
     #    print(out.name, net.variables[out.name].variable_instance.shape)
     # Compare both naabla and caffe2 results
@@ -250,6 +274,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     if show_output:
         print(c2, nnout)
     assert np.allclose(c2, nnout)
+
 
 def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     nnp_dir = TEST_DATA_DIR
@@ -266,7 +291,7 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     nn_net = nnload.load([path])
     net = nn_net.executors[exec_name].network
     in_data = net.variables[in_name]
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     in_data.variable_instance.d = img
     exe = run_executor(nn_net, exec_name)
     nnout = exe.variables[out_name].variable_instance.d
@@ -288,7 +313,7 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     model = onnx.load(p)
     if show_onnx:
         print(model)
-    #pdb.set_trace()
+    # pdb.set_trace()
     c2out = onnx_caffe2.backend.run_model(model, [img])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
