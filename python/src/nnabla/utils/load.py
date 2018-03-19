@@ -370,7 +370,8 @@ def _create_optimizer(ctx, o, networks, datasets):
     parameters = {v.name: v.variable_instance for v,
                   local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
     optimizer.solver.set_parameters(parameters)
-    optimizer.parameters = OrderedDict(sorted(parameters.items(), key=lambda x:x[0]))
+    optimizer.parameters = OrderedDict(
+        sorted(parameters.items(), key=lambda x: x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
