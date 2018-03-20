@@ -15,13 +15,14 @@
 from shutil import rmtree
 import abc
 import atexit
+from contextlib import closing
 
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
-from multiprocessing.pool import ThreadPool
+from multiprocessing.pool import ThreadPool, Queue
 import numpy
 import os
 import six
@@ -128,16 +129,33 @@ class DataSourceWithFileCache(DataSource):
                 'Use this class with "with statement" if you dont specify cache dir.')
         cache_data = collections.OrderedDict()
 
-        def get_data(pos):
-            d = self._data_source._get_data(pos)
-            cache_data[pos] = d
+        def get_data((pos, q)):
+            retry = 1
+            while True:
+                if retry > 10:
+                    logger.log(99, '_get_current_data() retry count over give up.')
+                    raise
+                d = self._data_source._get_data(pos)
+                if d:
+                    break;
+                logger.log(99, '_get_data() fails. retrying count {}/10.'.format(
+                           retry))
+                retry += 1
+                
+            q.put((pos, d))
 
         # for pos in self._cache_positions:
         #     logger.log(99, "Get {}".format(pos))
         #     get_data(pos)
+        
+        q = Queue.Queue()
         with closing(ThreadPool(processes=self._num_of_threads)) as pool:
-            pool.map(get_data, self._cache_positions)
+            pool.map(get_data, [(pos, q) for pos in self._cache_positions])
 
+        while not q.empty():
+            index, data = q.get()
+            cache_data[index] = data
+        assert(len(cache_data.items()) == len(self._cache_positions))
         start_position = self.position - len(cache_data) + 1
         end_position = self.position
         cache_filename = os.path.join(
