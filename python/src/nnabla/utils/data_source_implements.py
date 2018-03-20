@@ -22,11 +22,14 @@ import csv
 import numpy
 import os
 import threading
+import atexit
+import queue
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load
 from nnabla.logger import logger
 from nnabla.utils.communicator_util import current_communicator
+from nnabla.config import nnabla_config
 
 
 class SimpleDataSource(DataSource):
@@ -56,26 +59,121 @@ class SimpleDataSource(DataSource):
             self._order = list(range(self._size))
 
 
+class CachePrefetcher(object):
+    def __init__(self, cachedir, variables):
+        self._q = queue.Queue()
+        self.file_name = None
+        self._cachedir = cachedir
+        self._variables = variables
+        self._filereader = FileReader(self._cachedir)
+        self._current_data = None
+        self._thread = threading.Thread(target=self._worker)
+        self._thread.setDaemon(True)
+        self._thread.start()
+        self._closed = False
+        atexit.register(self.close)
+
+    def _worker(self):
+        while True:
+            sleep(0.001)
+            cache_file_name = self._q.get()
+            self._current_data = {}
+            if cache_file_name is None:
+                self._q.task_done()
+                break
+            self._current_data = []
+            with open(cache_file_name, 'rb') as f:
+                for v in variables:
+                    self._current_data[v] = numpy.load(f)
+            self._q.task_done()
+
+    def request(self, cache_file_name):
+        self.file_name = cache_file_name
+        self._q.put(cache_file_name)
+
+    def read(self):
+        self._q.join()
+        result = self._current_data
+        self.file_name = None
+        self._current_data = None
+        return result
+
+    def close(self):
+        if not self._closed:
+            self._q.join()
+            self._q.put(None)
+            self._q.join()
+            self._closed = True
+
+
+class CacheReaderWithPrefetch(object):
+    def __init__(self, cachedir, num_threads, variables):
+        self._variables = variables
+        self._filereader = FileReader(cachedir)
+        self._cache_prefetchers = [CachePrefetcher(cachedir, variables) for _ in range(num_threads)]
+        self._closed = False
+        atexit.register(self.close)
+
+    def open_and_prefetch_cache(self, file_name, file_names_to_prefetch):
+        cp_file_names = [cf.file_name for cf in self._cache_prefetchers]
+        # print('cp files', cp_file_names)
+        result = None
+        for cf in self._cache_prefetchers:
+            if cf.file_name == file_name:
+                result = cf.read()
+                break
+        if not result:
+            # print("no hit", file_name)
+            result = {}
+            with open(file_name, 'rb') as f:
+                for v in self._variables:
+                    result[v] = numpy.load(f)
+        cp_file_names = [cf.file_name for cf in self._cache_prefetchers]
+        for i, fn in enumerate(cp_file_names):
+            if fn and fn not in file_names_to_prefetch:
+                self._cache_prefetchers[i].read() # waste prefetched cache
+                # print("wasted", fn)
+        for fn in file_names_to_prefetch:
+            if fn not in cp_file_names:
+                try:
+                    index = cp_file_names.index(None)
+                    cp_file_names[index] = fn
+                    self._cache_prefetchers[index].request(cp_file_names[index], variables)
+                except:
+                    continue
+        return result
+    
+    def close(self):
+        if not self._closed:
+            for cf in self._cache_prefetchers:
+                cf.close()
+            self._closed = True
+
 class CacheDataSource(DataSource):
     '''
     Get data from file cache directly.
     '''
 
-    def _get_next_data(self, filename, retry=1):
+    def _get_next_data(self, filename, file_names_to_prefetch, retry=1):
         if retry > 10:
             logger.log(99, '_get_current_data() retry count over give up.')
             raise
-        next_data = {}
-        with self._filereader.open_cache(filename) as cache:
-            for k, v in cache.items():
-                next_data[k] = v.value
+        if self._cache_type == '.npy':
+            next_data = self._cache_reader_with_prefetch.open_and_prefetch_cache(
+                            filename, file_names_to_prefetch)
+        else:
+            # h5 format
+            next_data = {}
+            with self._filereader.open_cache(filename) as cache:
+                for k, v in cache.items():
+                    next_data[k] = v.value
 
-            if current_communicator():
-                if set(self._variables) != set(next_data.keys()):
-                    logger.log(99, '_get_data() fails at worker {} retrying count {}/10.'.format(
-                        current_communicator().rank, retry))
-                    sleep(0.01)
-                    return self._get_next_data(filename, retry+1)
+        if current_communicator():
+            if set(self._variables) != set(next_data.keys()):
+                logger.log(99, '_get_data() fails at worker {} retrying count {}/10.'.format(
+                    current_communicator().rank, retry))
+                sleep(0.01)
+                return self._get_next_data(filename, file_names_to_prefetch, retry+1)
         return next_data
 
     def _get_data(self, position):
@@ -83,7 +181,8 @@ class CacheDataSource(DataSource):
         filename, index = self._order[position]
 
         if filename != self._current_filename:
-            self._current_data = self._get_next_data(filename)
+            file_names_to_prefetch = [o[0] for o in self._order[position + self._max_length:position + self._max_length * self._num_of_threads:self._max_length]] if self._cache_type == ".npy" and self._num_of_threads > 0 else None
+            self._current_data = self._get_next_data(filename, file_names_to_prefetch)
             self._current_filename = filename
 
         data = [self._current_data[v][index] for v in self.variables]
@@ -112,8 +211,10 @@ class CacheDataSource(DataSource):
                     length = len(v)
                 else:
                     assert(length == len(v))
-            self._cache_files.append((filename, length))
-            logger.info('{} {}'.format(filename, length))
+                self._cache_files.append((filename, length))
+                logger.info('{} {}'.format(filename, length))
+            if length > self._max_length:
+                self._max_length = length
 
     def initialize_cache_files_with_index(self, index_filename):
         self._filenames = []
@@ -124,10 +225,19 @@ class CacheDataSource(DataSource):
                 self._filenames.append(row[0])
                 length = int(row[1])
                 self._cache_files.append((row[0], length))
+                if length > self._max_length:
+                    self._max_length = length
                 if self._variables is None:
                     with self._filereader.open_cache(row[0]) as cache:
                         # Check variables.
                         self._variables = list(cache.keys())
+
+    def initialize_cache_info(self, info_filename):
+        with open(info_filename, 'r') as f:
+            self._variables = []
+            reader = csv.reader(f)
+            for row in reader:
+                self._variables.append(row[0])
 
     def __init__(self, cachedir, shuffle=False, rng=None, normalize=False):
         super(CacheDataSource, self).__init__(shuffle=shuffle, rng=rng)
@@ -138,10 +248,20 @@ class CacheDataSource(DataSource):
         self._cachedir = cachedir
         self._normalize = normalize
         self._filereader = FileReader(self._cachedir)
+        self._num_of_threads = int(nnabla_config.get(
+            'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
+        self._variables = None
 
         self._generation = -1
         self._cache_files = []
+        self._max_length = 1
 
+        info_filename = os.path.join(self._cachedir, "cache_info.csv")
+        if os.path.exists(info_filename):
+            self.initialize_cache_info(info_filename)
+            self._cache_type = '.npy'
+        else:
+            self._cache_type = '.h5'
         index_filename = os.path.join(self._cachedir, "cache_index.csv")
         if os.path.exists(index_filename):
             self.initialize_cache_files_with_index(index_filename)
@@ -152,6 +272,7 @@ class CacheDataSource(DataSource):
 
         logger.info('{}'.format(len(self._cache_files)))
 
+        self._cache_reader_with_prefetch = CacheReaderWithPrefetch(self._cachedir, self._num_of_threads, self._variables)
         self._thread_lock = threading.Lock()
 
         self.reset()

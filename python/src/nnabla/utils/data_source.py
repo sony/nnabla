@@ -30,6 +30,7 @@ import tempfile
 import collections
 from contextlib import closing
 import csv
+from collections import OrderedDict
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
@@ -127,7 +128,7 @@ class DataSourceWithFileCache(DataSource):
         if self._cache_dir is None:
             raise DataSourceWithFileCacheError(
                 'Use this class with "with statement" if you dont specify cache dir.')
-        cache_data = collections.OrderedDict()
+        cache_data = OrderedDict()
 
         def get_data((pos, q)):
             retry = 1
@@ -159,11 +160,12 @@ class DataSourceWithFileCache(DataSource):
         start_position = self.position - len(cache_data) + 1
         end_position = self.position
         cache_filename = os.path.join(
-            self._cache_dir, '{}_{:08d}_{:08d}.h5'.format(self._cache_file_name_prefix,
+            self._cache_dir, '{}_{:08d}_{:08d}{}'.format(self._cache_file_name_prefix,
                                                           start_position,
-                                                          end_position))
+                                                          end_position,
+                                                          self._cache_file_format))
 
-        data = {n: [] for n in self._data_source.variables}
+        data = OrderedDict([(n, []) for n in self._data_source.variables])
         for pos in sorted(cache_data):
             cd = cache_data[pos]
             for i, n in enumerate(self._data_source.variables):
@@ -174,11 +176,16 @@ class DataSourceWithFileCache(DataSource):
                 data[n].append(d)
 
         logger.info('Creating cache file {}'.format(cache_filename))
-        h5 = h5py.File(cache_filename, 'w')
-        for k, v in data.items():
-            h5.create_dataset(k, data=v)
-        h5.close()
-
+        if self._cache_file_format == ".h5":
+            h5 = h5py.File(cache_filename, 'w')
+            for k, v in data.items():
+                h5.create_dataset(k, data=v)
+            h5.close()
+        else:
+            with open(cache_filename, 'wb') as f:
+                for v in data.values():
+                    numpy.save(f, v)
+            
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
         self._cache_file_data_orders.append(list(range(len(cache_data))))
@@ -200,11 +207,17 @@ class DataSourceWithFileCache(DataSource):
         if self._current_cache_file_index != cache_file_index:
             self._current_cache_file_index = cache_file_index
 
-            h5 = h5py.File(self._cache_file_names[cache_file_index], 'r')
-            self._current_cache_data = {}
-            for k, v in h5.items():
-                self._current_cache_data[k] = v.value
-            h5.close()
+            if self._cache_file_format == '.npy':
+                self._current_cache_data = {}
+                with open(self._cache_file_names[cache_file_index], 'rb') as f:
+                    for v in self._variables:
+                        self._current_cache_data[v] = numpy.load(f)
+            else:
+                h5 = h5py.File(self._cache_file_names[cache_file_index], 'r')
+                self._current_cache_data = {}
+                for k, v in h5.items():
+                    self._current_cache_data[k] = v.value
+                h5.close()
 
         d = [self._current_cache_data[v][cache_data_position]
              for v in self.variables]
@@ -218,23 +231,16 @@ class DataSourceWithFileCache(DataSource):
         # Save all data into cache file(s).
         self._cache_positions = []
         self._position = 0
-        logger.log(99, 'Creating cache start')
 
         percent = 0
         while self._position < self._data_source._size:
             if single_or_rankzero():
-                current_percent = self._position * 10 // self._data_source._size
                 progress('', self._position * 1.0 / self._data_source._size)
-                if current_percent != percent:
-                    percent = current_percent
-                    logger.log(99,
-                               'Creating cache {}0% finished.'.format(percent))
 
             self._store_data_to_cache_buffer(self._position)
             self._position += 1
         if len(self._cache_positions) > 0:
             self._save_cache_to_file()
-        logger.log(99, 'Creating cache end')
         # Adjust data size into reseted position. In most case it means
         # multiple of bunch(mini-batch) size.
         num_of_cache_files = int(numpy.ceil(
@@ -252,6 +258,13 @@ class DataSourceWithFileCache(DataSource):
             for fn, orders in zip(self._cache_file_names, self._cache_file_data_orders):
                 writer.writerow((fn, len(orders)))
 
+        if self._cache_file_format == ".npy":
+            info_filename = os.path.join(self._cache_dir, "cache_info.csv")
+            with open(info_filename, 'w') as f:
+                writer = csv.writer(f, lineterminator='\n')
+                for variable in self._variables:
+                    writer.writerow((variable, ))
+            
     def _create_cache_file_position_table(self):
         # Create cached data position table.
         pos = 0
@@ -285,12 +298,14 @@ class DataSourceWithFileCache(DataSource):
         self._cache_size = int(nnabla_config.get(
             'DATA_ITERATOR', 'data_source_file_cache_size'))
         logger.info('Cache size is {}'.format(self._cache_size))
-        logger.log(99, 'Cache size is {}'.format(self._cache_size))
 
         self._num_of_threads = int(nnabla_config.get(
             'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
         logger.info('Num of thread is {}'.format(self._num_of_threads))
-        logger.log(99, 'Num of thread is {}'.format(self._num_of_threads))
+        
+        self._cache_file_format = nnabla_config.get(
+            'DATA_ITERATOR', 'cache_file_format')
+        logger.info('Cache file format is {}'.format(self._cache_file_format))
 
         self._size = data_source._size
         self._variables = data_source.variables
