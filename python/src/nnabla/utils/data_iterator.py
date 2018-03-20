@@ -321,7 +321,6 @@ def data_iterator(data_source,
                   with_memory_cache=True,
                   with_file_cache=False,
                   cache_dir=None,
-                  use_thread=True,
                   epoch_begin_callbacks=[],
                   epoch_end_callbacks=[]):
     '''data_iterator
@@ -394,7 +393,6 @@ def data_iterator(data_source,
                                                     shuffle=data_source.shuffle,
                                                     rng=rng)
         return DataIterator(data_source, batch_size,
-                            use_thread=use_thread,
                             epoch_begin_callbacks=epoch_begin_callbacks,
                             epoch_end_callbacks=epoch_end_callbacks)
 
@@ -535,7 +533,6 @@ def data_iterator_cache(uri,
     return data_iterator(ds,
                          batch_size=batch_size,
                          with_memory_cache=with_memory_cache,
-                         use_thread=False,
                          epoch_begin_callbacks=epoch_begin_callbacks,
                          epoch_end_callbacks=epoch_end_callbacks)
 

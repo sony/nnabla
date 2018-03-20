@@ -27,6 +27,7 @@ import os
 import six
 import tempfile
 import collections
+import six.moves.queue as queue
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
@@ -126,15 +127,22 @@ class DataSourceWithFileCache(DataSource):
                 'Use this class with "with statement" if you dont specify cache dir.')
         cache_data = collections.OrderedDict()
 
-        def get_data(pos):
+        def get_data(arg):
+            pos, q = arg
             d = self._data_source._get_data(pos)
-            cache_data[pos] = d
+            q.put((pos, d))
 
-        # for pos in self._cache_positions:
-        #     logger.log(99, "Get {}".format(pos))
-        #     get_data(pos)
+        q = queue.Queue()
         with ThreadPool(processes=self._num_of_threads) as pool:
-            pool.map(get_data, self._cache_positions)
+            pool.map(get_data, [(pos, q) for pos in self._cache_positions])
+
+        while not q.empty():
+            index, data = q.get()
+            cache_data[index] = data
+
+        if len(cache_data.items()) != len(self._cache_positions):
+            logger.log(99, 'WARNING Cache data length miss match. ({} != {})'.format(
+                len(cache_data.items()), len(self._cache_positions)))
 
         start_position = self.position - len(cache_data) + 1
         end_position = self.position
