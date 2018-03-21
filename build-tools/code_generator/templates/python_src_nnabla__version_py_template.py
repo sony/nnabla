@@ -21,3 +21,4 @@ __version__ = {version}
 __short_version__ = {short_version}
 __author__ = "Takuya Narihira, Sony Corporation"
 __email__ = "nnabla@googlegroups.com"
+__build_number__ = {build_number}

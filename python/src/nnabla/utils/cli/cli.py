@@ -15,6 +15,14 @@
 import argparse
 import sys
 
+import nnabla
+
+
+def version_command(args):
+    import nnabla
+    print('Version {}, Build {}'.format(
+        nnabla.__version__, nnabla.__build_number__))
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -176,7 +184,14 @@ def main():
     subparser.add_argument('nnp', help='nnp filename')
     subparser.set_defaults(func=extract_command)
 
+    # Extract nnp file
+    subparser = subparsers.add_parser('version')
+    subparser.set_defaults(func=version_command)
+
     args = parser.parse_args()
+
+    print('NNabla command line interface (Version {}, Build {})'.format(
+        nnabla.__version__, nnabla.__build_number__))
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
