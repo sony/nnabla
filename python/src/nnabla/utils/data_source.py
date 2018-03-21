@@ -137,21 +137,22 @@ class DataSourceWithFileCache(DataSource):
             retry = 1
             while True:
                 if retry > 10:
-                    logger.log(99, '_get_current_data() retry count over give up.')
+                    logger.log(
+                        99, '_get_current_data() retry count over give up.')
                     raise
                 d = self._data_source._get_data(pos)
                 if d:
-                    break;
+                    break
                 logger.log(99, '_get_data() fails. retrying count {}/10.'.format(
                            retry))
                 retry += 1
-                
+
             q.put((pos, d))
 
         # for pos in self._cache_positions:
         #     logger.log(99, "Get {}".format(pos))
         #     get_data(pos)
-        
+
         q = Queue()
         with closing(ThreadPool(processes=self._num_of_threads)) as pool:
             pool.map(get_data, [(pos, q) for pos in self._cache_positions])
@@ -163,9 +164,9 @@ class DataSourceWithFileCache(DataSource):
         end_position = self.position
         cache_filename = os.path.join(
             self._cache_dir, '{}_{:08d}_{:08d}{}'.format(self._cache_file_name_prefix,
-                                                          start_position,
-                                                          end_position,
-                                                          self._cache_file_format))
+                                                         start_position,
+                                                         end_position,
+                                                         self._cache_file_format))
 
         data = OrderedDict([(n, []) for n in self._data_source.variables])
         for pos in sorted(cache_data):
@@ -187,7 +188,7 @@ class DataSourceWithFileCache(DataSource):
             with open(cache_filename, 'wb') as f:
                 for v in data.values():
                     numpy.save(f, v)
-            
+
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
         self._cache_file_data_orders.append(list(range(len(cache_data))))
@@ -266,7 +267,7 @@ class DataSourceWithFileCache(DataSource):
                 writer = csv.writer(f, lineterminator='\n')
                 for variable in self._variables:
                     writer.writerow((variable, ))
-            
+
     def _create_cache_file_position_table(self):
         # Create cached data position table.
         pos = 0
@@ -304,7 +305,7 @@ class DataSourceWithFileCache(DataSource):
         self._num_of_threads = int(nnabla_config.get(
             'DATA_ITERATOR', 'cache_file_cache_num_of_threads'))
         logger.info('Num of thread is {}'.format(self._num_of_threads))
-        
+
         self._cache_file_format = nnabla_config.get(
             'DATA_ITERATOR', 'cache_file_format')
         logger.info('Cache file format is {}'.format(self._cache_file_format))

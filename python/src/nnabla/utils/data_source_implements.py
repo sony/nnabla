@@ -86,7 +86,8 @@ class CachePrefetcher(object):
             if set(result.keys()) == set(variables):
                 break
             else:
-                logger.log(99, 'read_cache() fails retrying count {}/10.'.format(retry))
+                logger.log(
+                    99, 'read_cache() fails retrying count {}/10.'.format(retry))
                 retry += 1
         return result
 
@@ -98,7 +99,8 @@ class CachePrefetcher(object):
             if cache_file_name is None:
                 self._q.task_done()
                 break
-            self._current_data = self.read_cache(self.file_name, self._variables)
+            self._current_data = self.read_cache(
+                self.file_name, self._variables)
             self._q.task_done()
 
     def request(self, cache_file_name):
@@ -123,7 +125,8 @@ class CachePrefetcher(object):
 class CacheReaderWithPrefetch(object):
     def __init__(self, cachedir, num_threads, variables):
         self._variables = variables
-        self._cache_prefetchers = [CachePrefetcher(cachedir, variables) for _ in range(num_threads)]
+        self._cache_prefetchers = [CachePrefetcher(
+            cachedir, variables) for _ in range(num_threads)]
         self._closed = False
         atexit.register(self.close)
 
@@ -141,23 +144,25 @@ class CacheReaderWithPrefetch(object):
         cp_file_names = [cf.file_name for cf in self._cache_prefetchers]
         for i, fn in enumerate(cp_file_names):
             if fn and fn not in file_names_to_prefetch:
-                self._cache_prefetchers[i].read() # waste prefetched cache
+                self._cache_prefetchers[i].read()  # waste prefetched cache
                 # print("wasted", fn)
         for fn in file_names_to_prefetch:
             if fn not in cp_file_names:
                 try:
                     index = cp_file_names.index(None)
                     cp_file_names[index] = fn
-                    self._cache_prefetchers[index].request(cp_file_names[index])
+                    self._cache_prefetchers[index].request(
+                        cp_file_names[index])
                 except:
                     continue
         return result
-    
+
     def close(self):
         if not self._closed:
             for cf in self._cache_prefetchers:
                 cf.close()
             self._closed = True
+
 
 class CacheDataSource(DataSource):
     '''
@@ -170,7 +175,7 @@ class CacheDataSource(DataSource):
             raise
         if self._cache_type == '.npy':
             next_data = self._cache_reader_with_prefetch.open_and_prefetch_cache(
-                            filename, file_names_to_prefetch)
+                filename, file_names_to_prefetch)
         else:
             # h5 format
             next_data = {}
@@ -189,8 +194,10 @@ class CacheDataSource(DataSource):
     def _get_data(self, position):
 
         if filename != self._current_filename:
-            file_names_to_prefetch = [o[0] for o in self._order[position + self._max_length:position + self._max_length * self._num_of_threads:self._max_length]] if self._cache_type == ".npy" and self._num_of_threads > 0 else None
-            self._current_data = self._get_next_data(filename, file_names_to_prefetch)
+            file_names_to_prefetch = [o[0] for o in self._order[position + self._max_length:position + self._max_length *
+                                                                self._num_of_threads:self._max_length]] if self._cache_type == ".npy" and self._num_of_threads > 0 else None
+            self._current_data = self._get_next_data(
+                filename, file_names_to_prefetch)
             self._current_filename = filename
 
             data = [self._current_data[v][index] for v in self.variables]
@@ -275,13 +282,15 @@ class CacheDataSource(DataSource):
         if os.path.exists(index_filename):
             self.initialize_cache_files_with_index(index_filename)
         else:
-            self._filenames = [f for f in self._filereader.listdir() if os.path.splitext(f)[1].lower() == ".h5"]
+            self._filenames = [f for f in self._filereader.listdir() if os.path.splitext(f)[
+                1].lower() == ".h5"]
             for filename in self._filenames:
                 self.initialize_cache_files(filename)
 
         logger.info('{}'.format(len(self._cache_files)))
 
-        self._cache_reader_with_prefetch = CacheReaderWithPrefetch(self._cachedir, self._num_of_threads, self._variables)
+        self._cache_reader_with_prefetch = CacheReaderWithPrefetch(
+            self._cachedir, self._num_of_threads, self._variables)
         self._thread_lock = threading.Lock()
 
         self.reset()

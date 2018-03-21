@@ -89,6 +89,8 @@ class DataIterator(object):
         self._current_epoch = -1
         self._current_data = None
 
+        self._thread_lock = threading.Lock()
+
         self._use_thread = use_thread
         if self._use_thread:
             self._next_thread = threading.Thread(target=self._next)
@@ -174,12 +176,11 @@ class DataIterator(object):
         return self._batch_size
 
     def _reset(self):
-
-        self._callback_epoch_end()
-        self._epoch += 1
-        self._callback_epoch_begin()
-
-        self._data_source.reset()
+        with self._thread_lock:
+            self._callback_epoch_end()
+            self._epoch += 1
+            self._callback_epoch_begin()
+            self._data_source.reset()
 
     def _next(self):
         data = [[] for x in self._variables]
