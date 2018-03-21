@@ -232,13 +232,14 @@ class CacheDataSource(DataSource):
         with open(index_filename, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
-                self._filenames.append(row[0])
+                file_name = os.path.join(self._cachedir, row[0])
+                self._filenames.append(file_name)
                 length = int(row[1])
-                self._cache_files.append((row[0], length))
+                self._cache_files.append((file_name, length))
                 if length > self._max_length:
                     self._max_length = length
                 if self._variables is None:
-                    with self._filereader.open_cache(row[0]) as cache:
+                    with self._filereader.open_cache(file_name) as cache:
                         # Check variables.
                         self._variables = list(cache.keys())
 

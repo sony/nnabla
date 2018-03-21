@@ -258,7 +258,7 @@ class DataSourceWithFileCache(DataSource):
         with open(index_filename, 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
             for fn, orders in zip(self._cache_file_names, self._cache_file_data_orders):
-                writer.writerow((fn, len(orders)))
+                writer.writerow((os.path.basename(fn), len(orders)))
 
         if self._cache_file_format == ".npy":
             info_filename = os.path.join(self._cache_dir, "cache_info.csv")
