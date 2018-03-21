@@ -43,7 +43,7 @@ def progress(state, progress=0.0):
         if log_display_progress:
             global last_progress
             if progress < last_progress or progress - last_progress > 0.1 or time_to_update_progress:
-                print(state, ' ({0:3.2f}%)'.format(progress * 100))
+                logger.log(99, state + ' ({0:3.2f}%)'.format(progress * 100))
                 last_progress = progress
 
         if time_to_update_progress:

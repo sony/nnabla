@@ -194,11 +194,16 @@ class CacheDataSource(DataSource):
     def _get_data(self, position):
 
         self._position = position
-        try:
+        if current_communicator():
+            try:
+                filename, index = self._order[position]
+            except IndexError:
+                logger.log(99, '_get_data() fails at worker {} retrying count {}/10.'.format(
+                    current_communicator().rank, retry))
+                sleep(0.01)
+                return self._get_data(position)
+        else:
             filename, index = self._order[position]
-        except IndexError:
-            logger.log(99, '_get_data() fails at worker {} retrying.')
-            return self._get_data(position)
 
         if filename != self._current_filename:
             file_names_to_prefetch = None
