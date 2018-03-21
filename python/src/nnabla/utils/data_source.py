@@ -22,7 +22,8 @@ import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
-from multiprocessing.pool import ThreadPool, Queue
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Queue
 import numpy
 import os
 import six
@@ -130,7 +131,9 @@ class DataSourceWithFileCache(DataSource):
                 'Use this class with "with statement" if you dont specify cache dir.')
         cache_data = OrderedDict()
 
-        def get_data((pos, q)):
+        def get_data(args):
+            pos = args[0]
+            q = args[1]
             retry = 1
             while True:
                 if retry > 10:
@@ -149,14 +152,13 @@ class DataSourceWithFileCache(DataSource):
         #     logger.log(99, "Get {}".format(pos))
         #     get_data(pos)
         
-        q = Queue.Queue()
+        q = Queue()
         with closing(ThreadPool(processes=self._num_of_threads)) as pool:
             pool.map(get_data, [(pos, q) for pos in self._cache_positions])
 
-        while not q.empty():
+        while len(cache_data) < len(self._cache_positions):
             index, data = q.get()
             cache_data[index] = data
-        assert(len(cache_data.items()) == len(self._cache_positions))
         start_position = self.position - len(cache_data) + 1
         end_position = self.position
         cache_filename = os.path.join(
@@ -300,7 +302,7 @@ class DataSourceWithFileCache(DataSource):
         logger.info('Cache size is {}'.format(self._cache_size))
 
         self._num_of_threads = int(nnabla_config.get(
-            'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
+            'DATA_ITERATOR', 'cache_file_cache_num_of_threads'))
         logger.info('Num of thread is {}'.format(self._num_of_threads))
         
         self._cache_file_format = nnabla_config.get(

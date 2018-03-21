@@ -73,6 +73,23 @@ class CachePrefetcher(object):
         self._closed = False
         atexit.register(self.close)
 
+    def read_cache(self, file_name, variables):
+        retry = 1
+        while True:
+            if retry > 10:
+                logger.log(99, 'read_cache() retry count over give up.')
+                raise
+            result = {}
+            with open(file_name, 'rb') as f:
+                for v in variables:
+                    result[v] = numpy.load(f)
+            if set(result.keys()) == set(variables):
+                break
+            else:
+                logger.log(99, 'read_cache() fails retrying count {}/10.'.format(retry))
+                retry += 1
+        return result
+
     def _worker(self):
         while True:
             sleep(0.001)
@@ -81,10 +98,7 @@ class CachePrefetcher(object):
             if cache_file_name is None:
                 self._q.task_done()
                 break
-            self._current_data = []
-            with open(cache_file_name, 'rb') as f:
-                for v in variables:
-                    self._current_data[v] = numpy.load(f)
+            self._current_data = self.read_cache(self.file_name, self._variables)
             self._q.task_done()
 
     def request(self, cache_file_name):
@@ -109,7 +123,6 @@ class CachePrefetcher(object):
 class CacheReaderWithPrefetch(object):
     def __init__(self, cachedir, num_threads, variables):
         self._variables = variables
-        self._filereader = FileReader(cachedir)
         self._cache_prefetchers = [CachePrefetcher(cachedir, variables) for _ in range(num_threads)]
         self._closed = False
         atexit.register(self.close)
@@ -124,10 +137,7 @@ class CacheReaderWithPrefetch(object):
                 break
         if not result:
             # print("no hit", file_name)
-            result = {}
-            with open(file_name, 'rb') as f:
-                for v in self._variables:
-                    result[v] = numpy.load(f)
+            result = cf.read_cache(file_name, self._variables)
         cp_file_names = [cf.file_name for cf in self._cache_prefetchers]
         for i, fn in enumerate(cp_file_names):
             if fn and fn not in file_names_to_prefetch:
@@ -138,7 +148,7 @@ class CacheReaderWithPrefetch(object):
                 try:
                     index = cp_file_names.index(None)
                     cp_file_names[index] = fn
-                    self._cache_prefetchers[index].request(cp_file_names[index], variables)
+                    self._cache_prefetchers[index].request(cp_file_names[index])
                 except:
                     continue
         return result
@@ -249,7 +259,7 @@ class CacheDataSource(DataSource):
         self._normalize = normalize
         self._filereader = FileReader(self._cachedir)
         self._num_of_threads = int(nnabla_config.get(
-            'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
+            'DATA_ITERATOR', 'cache_file_cache_num_of_threads'))
         self._variables = None
 
         self._generation = -1
