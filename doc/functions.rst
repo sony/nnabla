@@ -3858,6 +3858,62 @@ Note:
      - N-D array with the same shape as x
      - 
 
+TopKSelect
+^^^^^^^^^^
+
+Set all except the `k` largest data values or `k_grad` largest
+gradient values of `x` to zero. A negative value `k` (or `k_grad`) is
+taken as `abs(k)` and `abs(value)` then used to determine top-k
+elements. The default values of `k` and `k_grad` let all data and
+gradient values propagate unmodified.
+
+Dimensions from zero to `base_axis` are treated as sample dimension.
+Dimensions from `base_axis` to :attr:`~nnabla.Variable.ndim` are
+treated as sample vectors.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - k
+     - int64
+     - 0
+     - Number of largest data values to keep.
+   * - k_grad
+     - int64
+     - 0
+     - Number of largest gradient values to keep.
+   * - base_axis
+     - int64
+     - 1
+     - Dimensions up to `base_axis` is treated as sample dimension.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as `x`.
+     -
+
 Rand
 ^^^^
 
