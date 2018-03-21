@@ -13,12 +13,15 @@
 # limitations under the License.
 
 from datetime import datetime, timedelta
-
+from nnabla.config import nnabla_config
 
 # state output
 # ============
 state_file_name = ''
 last_state_datetime = datetime.now()
+last_progress = 0
+log_display_progress = (nnabla_config.get(
+    'LOG', 'log_display_progress') == 'True')
 
 
 def configure_progress(file_name):
@@ -28,10 +31,22 @@ def configure_progress(file_name):
 
 
 def progress(state, progress=0.0):
-    if len(state_file_name):
-        global last_state_datetime
-        if last_state_datetime < datetime.now() + timedelta(milliseconds=-1000) or state is None:
-            last_state_datetime = datetime.now()
-            with open(state_file_name, 'w') as f:
-                if state is not None:
+
+    global last_state_datetime
+    time_to_update_progress = False
+    if last_state_datetime < datetime.now() + timedelta(milliseconds=-1000) or state is None:
+        last_state_datetime = datetime.now()
+        time_to_update_progress = True
+
+    if state is not None:
+        global log_display_progress
+        if log_display_progress:
+            global last_progress
+            if progress < last_progress or progress - last_progress > 0.1 or time_to_update_progress:
+                print(state, ' ({0:3.2f}%)'.format(progress * 100))
+                last_progress = progress
+
+        if time_to_update_progress:
+            if len(state_file_name):
+                with open(state_file_name, 'w') as f:
                     f.write(state + ' ({0:3.2f}%)'.format(progress * 100))

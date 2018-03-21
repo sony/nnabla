@@ -193,18 +193,24 @@ class CacheDataSource(DataSource):
 
     def _get_data(self, position):
 
+        self._position = position
+        filename, index = self._order[position]
+
         if filename != self._current_filename:
-            file_names_to_prefetch = [o[0] for o in self._order[position + self._max_length:position + self._max_length *
-                                                                self._num_of_threads:self._max_length]] if self._cache_type == ".npy" and self._num_of_threads > 0 else None
+            file_names_to_prefetch = None
+            if self._cache_type == ".npy" and self._num_of_threads > 0:
+                file_names_to_prefetch = [o[0] for o in self._order[position + self._max_length:position + self._max_length *
+                                                                    self._num_of_threads:self._max_length]]
+
             self._current_data = self._get_next_data(
                 filename, file_names_to_prefetch)
             self._current_filename = filename
 
-            data = [self._current_data[v][index] for v in self.variables]
+        data = [self._current_data[v][index] for v in self.variables]
 
-            if self._normalize:
-                data = [d.astype(numpy.float32) * (1.0 / 255.0)
-                        if d.dtype == numpy.uint8 else d for d in data]
+        if self._normalize:
+            data = [d.astype(numpy.float32) * (1.0 / 255.0)
+                    if d.dtype == numpy.uint8 else d for d in data]
         return data
 
     def initialize_cache_files(self, filename):
