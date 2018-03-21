@@ -169,7 +169,7 @@ class FileReader:
             return sorted(list)
         elif self._file_type == 'http':
             return None
-        return sorted(os.listdir(self._base_uri))
+        return [f for f in sorted(os.listdir(self._base_uri)) if os.path.splitext(f)[1].lower() == ".h5"]
 
 
 def load_image_imread(file, shape=None, max_range=1.0):

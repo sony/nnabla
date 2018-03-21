@@ -448,7 +448,8 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
 
         # Disble implicit cache creation when MPI is available.
         if cache_dir and (create_cache_explicitly or comm):
-            if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
+            cache_index = os.path.join(cache_dir, "cache_index.csv")
+            if not os.path.exists(cache_index) or overwrite_cache:
                 if single_or_rankzero():
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
