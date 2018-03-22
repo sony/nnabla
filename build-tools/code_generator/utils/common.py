@@ -52,7 +52,7 @@ def get_version(dir):
     if 'NNABLA_VERSION' in os.environ and len(os.environ['NNABLA_VERSION']) > 0:
         default_version = os.environ['NNABLA_VERSION']
     else:
-        default_version = '0.9.8.console-180309-1'
+        default_version = '0.9.8.console-180323-1'
     
     nearest_tag = default_version
     version = default_version
