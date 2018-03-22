@@ -198,8 +198,8 @@ class CacheDataSource(DataSource):
             try:
                 filename, index = self._order[position]
             except IndexError:
-                logger.log(99, '_get_data() fails at worker {} retrying count {}/10.'.format(
-                    current_communicator().rank, retry))
+                logger.log(99, '_get_data() fails at worker {} retrying.'.format(
+                    current_communicator().rank))
                 sleep(0.01)
                 return self._get_data(position)
         else:

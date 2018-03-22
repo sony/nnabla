@@ -12,26 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from shutil import rmtree
-import abc
-import atexit
-from contextlib import closing
 
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
-from multiprocessing.pool import ThreadPool
+from collections import OrderedDict
+from contextlib import closing
+from contextlib import closing
 from multiprocessing import Queue
+from multiprocessing.pool import ThreadPool
+from shutil import rmtree
+import abc
+import atexit
+import collections
+import csv
 import numpy
 import os
 import six
 import tempfile
-import collections
-from contextlib import closing
-import csv
-from collections import OrderedDict
+import threading
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
@@ -141,17 +142,13 @@ class DataSourceWithFileCache(DataSource):
                         99, '_get_current_data() retry count over give up.')
                     raise
                 d = self._data_source._get_data(pos)
-                if d:
+                if d is not None:
                     break
                 logger.log(99, '_get_data() fails. retrying count {}/10.'.format(
                            retry))
                 retry += 1
 
             q.put((pos, d))
-
-        # for pos in self._cache_positions:
-        #     logger.log(99, "Get {}".format(pos))
-        #     get_data(pos)
 
         q = Queue()
         with closing(ThreadPool(processes=self._num_of_threads)) as pool:
@@ -227,8 +224,9 @@ class DataSourceWithFileCache(DataSource):
         return d
 
     def _get_data(self, position):
-        self._position = position
-        return self._get_data_from_cache_file(position)
+        with self._thread_lock:
+            self._position = position
+            return self._get_data_from_cache_file(position)
 
     def _create_cache(self):
         # Save all data into cache file(s).
@@ -311,6 +309,8 @@ class DataSourceWithFileCache(DataSource):
             'DATA_ITERATOR', 'cache_file_format')
         logger.info('Cache file format is {}'.format(self._cache_file_format))
 
+        self._thread_lock = threading.Lock()
+
         self._size = data_source._size
         self._variables = data_source.variables
         self._data_source = data_source
@@ -362,20 +362,21 @@ class DataSourceWithFileCache(DataSource):
             self._closed = True
 
     def reset(self):
-        if self._shuffle:
-            self._cache_file_order = list(
-                self._rng.permutation(self._cache_file_order))
-            for i in range(len(self._cache_file_data_orders)):
-                self._cache_file_data_orders[i] = list(
-                    self._rng.permutation(self._cache_file_data_orders[i]))
-            self._order = []
-            for i in self._cache_file_order:
-                self._order += self._cache_file_data_orders[i]
+        with self._thread_lock:
+            if self._shuffle:
+                self._cache_file_order = list(
+                    self._rng.permutation(self._cache_file_order))
+                for i in range(len(self._cache_file_data_orders)):
+                    self._cache_file_data_orders[i] = list(
+                        self._rng.permutation(self._cache_file_data_orders[i]))
+                self._order = []
+                for i in self._cache_file_order:
+                    self._order += self._cache_file_data_orders[i]
 
-        self._create_cache_file_position_table()
-        self._data_source.reset()
-        self._position = 0
-        self._generation += 1
+            self._create_cache_file_position_table()
+            self._data_source.reset()
+            self._position = 0
+            self._generation += 1
 
 
 class DataSourceWithMemoryCache(DataSource):

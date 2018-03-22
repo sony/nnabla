@@ -14,6 +14,7 @@
 
 from datetime import datetime, timedelta
 from nnabla.config import nnabla_config
+from nnabla.logger import logger
 
 # state output
 # ============
