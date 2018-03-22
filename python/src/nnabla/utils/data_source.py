@@ -302,7 +302,7 @@ class DataSourceWithFileCache(DataSource):
         logger.info('Cache size is {}'.format(self._cache_size))
 
         self._num_of_threads = int(nnabla_config.get(
-            'DATA_ITERATOR', 'cache_file_cache_num_of_threads'))
+            'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
         logger.info('Num of thread is {}'.format(self._num_of_threads))
 
         self._cache_file_format = nnabla_config.get(
