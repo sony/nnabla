@@ -104,6 +104,11 @@ cdef class Communicator:
         self.communicatorp.add_context_and_parameters(
             pair[CContext, vector[pair[string, shared_ptr[CVariable]]]](ctx_param_dict[0], cparams))
 
+    def clear_context_parameters(self):
+        '''Clear all registered contexts and parameters.
+        '''
+        self.communicatorp.clear_context_parameters()
+
     def init(self, ):
         """Initialize a communicator.
 
