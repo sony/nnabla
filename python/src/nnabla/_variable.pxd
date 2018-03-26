@@ -76,6 +76,11 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         void set_info(const string & info)
     ctypedef shared_ptr[CgFunction] CgFunctionPtr
 
+cdef class Context:
+    cdef vector[string] backend_
+    cdef public str array_class
+    cdef public str device_id
+
 
 cdef class Variable:
     cdef CgVariablePtr var

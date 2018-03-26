@@ -18,20 +18,18 @@ from _init cimport(
     register_gc, SingletonManager,
     _cpu_array_classes, _cpu_set_array_classes)
 
-available_contexts = {}
+available_contexts = []
 
 
-def add_available_context(ctx, backend):
+def add_available_context(ctx):
     if ctx not in available_contexts:
-        available_contexts[ctx] = []
-    if backend not in available_contexts[ctx]:
-        available_contexts[ctx].append(backend)
+        available_contexts.append(ctx)
 
 # Explicitly initialize NNabla.
 
 
 logger.info('Initializing CPU extension...')
-add_available_context('cpu', 'default')
+add_available_context('cpu')
 _init.init_cpu()
 
 
@@ -127,3 +125,33 @@ def array_classes():
     return _cpu_array_classes()
 
 ###############################################################################
+
+
+def device_synchronize(str device):
+    """Dummy.
+
+    Args:
+        device (int): Device ID.
+
+    """
+    cpu_device_synchronize(device)
+
+
+def get_device_count():
+    """Always returns 1.
+
+    Retuns:
+        int: Number of devices available.
+
+    """
+    return cpu_get_device_count()
+
+
+def get_devices():
+    """Dummy.
+
+    Returns:
+        list of str: List of available devices.
+
+    """
+    return cpu_get_devices()

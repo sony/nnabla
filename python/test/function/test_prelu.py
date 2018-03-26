@@ -21,10 +21,6 @@ from nbla_test_utils import list_context
 ctxs = list_context('PReLU')
 
 
-if hasattr(nn.extensions, 'cuda'):
-    ctxs += [(nn.Context(backend='cuda'), 'PReLUCuda')]
-
-
 def ref_prelu(x, w, base_axis=1):
     wshape = [1 for _ in range(x.ndim)]
     if w.size != 1:

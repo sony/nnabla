@@ -14,7 +14,7 @@
 
 #ifndef __NBLA_SOLVER_ADADELTA_HPP__
 #define __NBLA_SOLVER_ADADELTA_HPP__
-#include <nbla/solver/base_solver.hpp>
+#include <nbla/solver.hpp>
 #include <nbla/solver_registry.hpp>
 
 namespace nbla {
@@ -43,7 +43,7 @@ https://arxiv.org/abs/1212.5701
 
 \ingroup SolverImplGrp
 */
-template <typename T> class NBLA_API Adadelta : public BaseSolver<T> {
+template <typename T> class NBLA_API Adadelta : public Solver {
 public:
   Adadelta(const Context &ctx, float lr, float decay, float eps);
   virtual ~Adadelta();
@@ -66,6 +66,7 @@ protected:
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);
+  NBLA_DECL_WEIGHT_DECAY();
 };
 }
 #endif

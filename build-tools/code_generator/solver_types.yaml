@@ -1,0 +1,16 @@
+Sgd:
+  float: [float]
+Momentum:
+  float: [float]
+Adadelta:
+  float: [float]
+Adagrad:
+  float: [float]
+Adam:
+  float: [float]
+Adamax:
+  float: [float]
+Nesterov:
+  float: [float]
+RMSprop:
+  float: [float]

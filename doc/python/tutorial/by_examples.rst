@@ -578,7 +578,7 @@ can be instantiated by ``nn.Context()``, specifying a context descriptor
 might be a bit complicated for users. There for we recommend create a
 context by using a helper function ``extension_context()`` found in the
 ``nnabla.contrib.context`` module. NNabla officially supports ``cpu``
-and ``cuda.cudnn`` as a context specifier passed to the first argument
+and ``cudnn`` as a context specifier passed to the first argument
 (extension name). NOTE: By setting the cudnn context as a global default
 context, Functions and solves created are instantiated with CUDNN
 (prefered) mode. You can also specify a context using
@@ -591,7 +591,7 @@ for details.
     # Run on CUDA
     from nnabla.contrib.context import extension_context
     cuda_device_id = 0
-    ctx = extension_context('cuda.cudnn', device_id=cuda_device_id)
+    ctx = extension_context('cudnn', device_id=cuda_device_id)
     print "Context:", ctx
     nn.set_default_context(ctx)  # Set CUDA as a default context.
     y, hs = cnn(x)

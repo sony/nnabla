@@ -28,4 +28,4 @@ def test_squared_error_forward_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
     function_tester(rng, F.squared_error, lambda x, y: (x - y)**2, inputs,
-                    atol_b=1e-2, ctx=ctx, func_name=func_name)
+                    atol_b=2e-2, ctx=ctx, func_name=func_name)

@@ -22,10 +22,6 @@ import nnabla.functions as F
 from nbla_test_utils import list_context
 
 ctxs = list_context('RandomShift')
-"""
-if hasattr(nn.extensions, 'cuda'):
-    ctxs += [(nn.extensions.cuda.context(), 'RandomShiftCuda')]
-"""
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)

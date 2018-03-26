@@ -14,6 +14,8 @@
 
 #include <nbla/utils/fold_from_patches.hpp>
 
+#include <nbla/half.hpp>
+
 namespace nbla {
 
 inline bool index_in_shape(int index, int shape) {
@@ -146,11 +148,14 @@ void fold_from_patches(const T *column_data, T *outmap_data, const int channels,
   }
 }
 
-template void fold_from_patches<float>(const float *column_data,
-                                       float *outmap_data, const int channels,
-                                       const vector<int> &shape,
-                                       const vector<int> &kernel,
-                                       const vector<int> &padding,
-                                       const vector<int> &stride,
-                                       const vector<int> &dilation);
+// Template specialization
+#define NBLA_SPEC_FOLD_FROM_PATCHS(TYPE)                                       \
+  template void fold_from_patches<TYPE>(                                       \
+      const TYPE *column_data, TYPE *outmap_data, const int channels,          \
+      const vector<int> &shape, const vector<int> &kernel,                     \
+      const vector<int> &padding, const vector<int> &stride,                   \
+      const vector<int> &dilation)
+
+NBLA_SPEC_FOLD_FROM_PATCHS(float);
+NBLA_SPEC_FOLD_FROM_PATCHS(Half);
 }

@@ -14,7 +14,7 @@
 
 #ifndef __NBLA_SOLVER_NESTOREV_HPP__
 #define __NBLA_SOLVER_NESTOREV_HPP__
-#include <nbla/solver/base_solver.hpp>
+#include <nbla/solver.hpp>
 #include <nbla/solver_registry.hpp>
 
 namespace nbla {
@@ -38,7 +38,7 @@ convergence o(1/k2)
 
 \ingroup SolverImplGrp
 */
-template <typename T> class NBLA_API Nesterov : public BaseSolver<T> {
+template <typename T> class NBLA_API Nesterov : public Solver {
 public:
   Nesterov(const Context &ctx, float lr, float momentum);
   virtual ~Nesterov();
@@ -56,6 +56,7 @@ protected:
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);
+  NBLA_DECL_WEIGHT_DECAY();
 };
 }
 #endif

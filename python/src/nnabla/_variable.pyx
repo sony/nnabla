@@ -33,36 +33,51 @@ cimport _arithmetic_ops as AOP
 ctypedef void * voidp
 
 
-class Context(object):
+cdef class Context:
 
     """
-    Context is used to specify the computation engine (cpu, cuda, cuda.cudnn etc.) which the
+    Context is used to specify the computation engine (cpu, cuda, cudnn etc.) which the
     function operator modules and optimizer modules shall be ran on.
     The context can be set for each function, as well as set globally with functions
     listed in the :meth:`context-specifier`.
 
     Args:
-        backend : str, 'cpu' or 'cuda'
-        array_class : str, 'CpuArray', 'CpuCachedArray', 'CudaArray', 'CudaCachedArray'
-        device_id : str, default '0'
-        compute_backend : str, 'default', 'cudnn'
+        backend (list of str): 'cpu', 'cuda', 'cudnn' etc.
+        array_class (str): str, 'CpuArray', 'CpuCachedArray', 'CudaArray', 'CudaCachedArray' etc.
+        device_id (str): str, default '0'
 
     """
 
-    def __init__(self, backend='cpu', array_class='',
-                 device_id='0', compute_backend='default'):
-        l = locals()
-        del l['self']
-        self.__dict__.update(l)
+    def __init__(self, backend=None, array_class='',
+                 device_id='0'):
+        if backend is None:
+            backend = ['cpu:float']
+        for b in backend:
+            self.backend_.push_back(b)
+        self.array_class = array_class
+        self.device_id = device_id
+
+    @property
+    def backend(self):
+        ret = []
+        for b in self.backend_:
+            ret.append(b)
+        return ret
+
+    @backend.setter
+    def backend(self, backends):
+        self.backend_.resize(len(backends))
+        for i, b in enumerate(backends):
+            self.backend_[i] = b
 
     def __getitem__(self, key):
-        return self.__dict__[key]
+        return getattr(self, key)
 
     def __repr__(self):
         return "Context(backend='{}', array_class='{}'"\
-            ", device_id='{}', compute_backend='{}')".format(
+            ", device_id='{}')".format(
                 self.backend, self.array_class,
-                self.device_id, self.compute_backend)
+                self.device_id)
 
     def __str__(self):
         return repr(self)

@@ -86,7 +86,7 @@ def test_depthwise_deconvolution_2d_forward_backward(inshape, kernel, pad,
     func_args = [base_axis, pad, stride, dilation, divisor]
     reference = ref_depthwise_deconvolution_2d
     function_tester(rng, F.depthwise_deconvolution, reference, inputs,
-                    func_args, atol_f=1e-4, atol_b=3e-3, dstep=1e-2,
+                    func_args, atol_f=1e-4, atol_b=4e-3, dstep=1e-2,
                     ctx=ctx, func_name=func_name)
 
 

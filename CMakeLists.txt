@@ -60,7 +60,12 @@ file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
 execute_process(
   COMMAND
   ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py)
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py
+  RESULT_VARIABLE GENERATE_RESULT)
+
+if (NOT ${GENERATE_RESULT} EQUAL 0)
+  message(FATAL_ERROR "generate.py failed.")
+endif ()
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN

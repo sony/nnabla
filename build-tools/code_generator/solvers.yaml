@@ -1,0 +1,227 @@
+Sgd:
+  snake_name: sgd
+  doc: |
+    Stochastic gradient descent (SGD) optimizer.
+
+    .. math::
+        w_{t+1} \leftarrow w_t - \eta \Delta w_t
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+
+Momentum:
+  snake_name: momentum
+  doc: |
+    SGD with Momentum.
+
+    .. math::
+        v_t &\leftarrow \gamma v_{t-1} + \eta \Delta w_t\\
+        w_{t+1} &\leftarrow w_t - v_t
+
+  references:
+    - |
+      `Ning Qian : On the Momentum Term in Gradient Descent Learning Algorithms.
+      <http://www.columbia.edu/~nq6/publications/momentum.pdf>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+    momentum:
+      type: float
+      default: 0.9
+      doc: Decay rate of momentum.
+
+Nesterov:
+  snake_name: nesterov
+  doc: |
+    Nesterov Accellerated Gradient optimizer.
+
+    .. math::
+        v_t &\leftarrow \gamma v_{t-1} - \eta \Delta w_t\\
+        w_{t+1} &\leftarrow w_t - \gamma v_{t-1} + \left(1 + \gamma \right) v_t
+
+  references:
+    - |
+      Yurii Nesterov. A method for unconstrained convex minimization problem with
+      the rate of convergence :math:`o(1/k2)`.
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+    momentum:
+      type: float
+      default: 0.9
+      doc: Decay rate of momentum.
+              
+Adadelta:
+  snake_name: adadelta
+  doc: |
+    AdaDelta optimizer.
+
+    .. math::
+        g_t &\leftarrow \Delta w_t\\
+        v_t &\leftarrow - \frac{RMS \left[ v_t \right]_{t-1}}
+            {RMS \left[ g \right]_t}g_t\\
+        w_{t+1} &\leftarrow w_t + \eta v_t
+
+  references:
+    - |
+      `Matthew D. Zeiler.
+      ADADELTA: An Adaptive Learning Rate Method.
+      <https://arxiv.org/abs/1212.5701>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1.0
+      doc: Learning rate (:math:`\eta`).
+    decay:
+      type: float
+      default: 0.95
+      doc: Decay rate (:math:`\gamma`).
+    eps:
+      type: float
+      default: 1e-6
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+
+Adagrad:
+  snake_name: adagrad
+  doc: |
+    ADAGrad optimizer.
+
+    .. math::
+        g_t &\leftarrow \Delta w_t\\
+        G_t &\leftarrow G_{t-1} + g_t^2\\
+        w_{t+1} &\leftarrow w_t - \frac{\eta}{\sqrt{G_t} + \epsilon} g_t
+
+  references:
+    - |
+      `John Duchi, Elad Hazan and Yoram Singer (2011).
+      Adaptive Subgradient Methods for Online Learning and Stochastic Optimization.
+      <http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-2
+      doc: Learning rate (:math:`\eta`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+  
+RMSprop:
+  snake_name: rmsprop
+  doc: |
+    RMSprop optimizeer (Geoffery Hinton).
+
+    .. math::
+        g_t &\leftarrow \Delta w_t\\
+        v_t &\leftarrow \gamma v_{t-1} + \left(1 - \gamma \right) g_t^2\\
+        w_{t+1} &\leftarrow w_t - \eta \frac{g_t}{\sqrt{v_t} + \epsilon}
+
+  references:
+    - |
+      `Geoff Hinton.
+      Lecture 6a : Overview of mini-batch gradient descent.
+      <http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+    decay:
+      type: float
+      default: 0.9
+      doc: Decay rate (:math:`\gamma`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+              
+Adam:
+  snake_name: adam
+  doc: |
+    ADAM optimizer.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
+        w_{t+1} &\leftarrow w_t - \alpha
+            \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
+            \frac{m_t}{\sqrt{v_t} + \epsilon}
+
+    where :math:`g_t` denotes a gradient, and let :math:`m_0 \leftarrow 0`
+    and :math:`v_0 \leftarrow 0`.
+
+  references:
+    - |
+      `Kingma and Ba, Adam: A Method for Stochastic Optimization.
+      <https://arxiv.org/abs/1412.6980>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 1e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+  
+Adamax:
+  snake_name: adamax
+  doc: |
+    ADAMAX Optimizer.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        v_t &\leftarrow \max\left(\beta_2 v_{t-1}, |g_t|\right)\\
+        w_{t+1} &\leftarrow w_t - \alpha
+            \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
+            \frac{m_t}{v_t + \epsilon}
+
+    where :math:`g_t` denotes a gradient, and let :math:`m_0 \leftarrow 0`
+    and :math:`v_0 \leftarrow 0`, :math:`v_t` is an
+    exponentially weighted infinity norm of a sequence of
+    gradients :math:`t=0,...,t`.
+
+  references:
+    - |
+      `Kingma and Ba, Adam: A Method for Stochastic Optimization.
+      <https://arxiv.org/abs/1412.6980>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 2e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of inf-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+  

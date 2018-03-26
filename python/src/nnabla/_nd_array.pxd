@@ -24,7 +24,8 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
 
     cdef cppclass CSyncedArray "nbla::SyncedArray":
         CSyncedArray(Size_t size) except +
-        const CArray * cast(dtypes dtype, const CContext & ctx) except+
+        CArray * cast(dtypes dtype, const CContext & ctx) except+
+        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) except+
         const CArray * get(dtypes dtype, const CContext & ctx) except+
         dtypes dtype() except+
         Size_t size() except+
@@ -53,6 +54,7 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
         void fill(double v) except+
         const CArray * get(dtypes dtype, const CContext & ctx) except+
         CArray * cast(dtypes dtype, const CContext & ctx) nogil except +
+        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) nogil except +
 
     ctypedef shared_ptr[CNdArray] NdArrayPtr
 

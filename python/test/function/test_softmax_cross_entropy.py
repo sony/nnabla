@@ -51,4 +51,5 @@ def test_softmax_cross_entropy_forward_backward(seed, axis, ctx, func_name):
         rng.randint(0, n_class, size=l_shape).astype(np.int)]
 
     function_tester(rng, F.softmax_cross_entropy, ref_softmax_cross_entropy,
-                    inputs, func_args=[axis], backward=[True, False], ctx=ctx, func_name=func_name)
+                    inputs, func_args=[axis], backward=[True, False],
+                    atol_b=2e-3, ctx=ctx, func_name=func_name)

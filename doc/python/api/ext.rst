@@ -2,7 +2,7 @@ Extensions
 ==========
 
 NNabla offers easy extensibility for developers to add new device extensions.
-The NNabla Python package officially supports the ``cuda.cudnn`` extension, which
+The NNabla Python package officially supports the ``cudnn`` extension, which
 dramatically accelerates computation
 by leveraging NVIDIA CUDA GPUs with cuDNN computation primitives.
 
@@ -10,11 +10,22 @@ You can manually import extensions by:
 
 .. code-block:: python
 
-   import nnabla_ext.cuda.cudnn
+   import nnabla_ext.cudnn
 
-See :ref:`python-package-installation` to install the CUDA extension.
+   See :ref:`python-package-installation` to install the CUDA extension.
 
-Implementing an extension
+
+Utilities for extension
+-----------------------
+
+.. automodule:: nnabla.ext_utils
+
+.. autofunction:: list_extensions
+.. autofunction:: import_extension_module
+.. autofunction:: get_extension_context
+
+
+APIs of extension modules
 -------------------------
 
 All extension modules must have the following functions.
@@ -23,15 +34,35 @@ All extension modules must have the following functions.
 
     Returns a default context descriptor of the extension module.
     This method takes optional arguments depending on the extension.
-    For example, in the ``cuda.cudnn`` extension, it takes the ``device_id`` as an ``int``
+    For example, in the ``cudnn`` extension, it takes the ``device_id`` as an ``int``
     to specify the GPU where computation runs on.
 
-.. py:function:: synchronize(*kw)
+.. py:function:: device_synchronize(*kw)
 
     This method is used to synchronize the device execution stream with respect to the host thread.
     For example, in CUDA, the kernel execution is enqueued into a stream, and is
     executed asynchronously w.r.t. the host thread. This function is only valid in devices that use
     such features. In the CPU implementation, this method is implemented as dummy function,
     and therefore calls to this function are ignored.
-    The function in the ``cuda.cudnn`` extension takes the ``device_id`` as an optional argument,
+    The function in the ``cudnn`` extension takes the ``device_id`` as an optional argument,
     which specifies the device you want to synchronize with.
+
+.. py:function:: get_device_count
+
+    TODO: Write me.
+
+.. py:function:: get_devices
+
+    TODO: Write me.
+
+.. py:function:: clear_memory_cache()
+
+    TODO: Write me.
+
+
+		     
+Implementing an extension
+-------------------------
+
+TODO: Link to a page of how to create a new extension.
+

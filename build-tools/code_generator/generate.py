@@ -1,11 +1,11 @@
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,68 +14,77 @@
 
 import io
 import os
-from utils.load_function_rst import Functions
-from utils.common import check_update
+from os.path import abspath, dirname, join
 
-base = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../..')
-template = os.path.abspath(os.path.dirname(
-    os.path.abspath(__file__)) + '/templates')
-functions = Functions()
-info = functions.info
+here = abspath(dirname(abspath(__file__)))
+base = abspath(join(here, '../..'))
 
-generation_list = {
-    'cpu': ['python/src/nnabla/_version.py',
-            'python/src/nnabla/function.pxd',
-            'python/src/nnabla/function.pyx',
-            'python/src/nnabla/function_bases.py',
-            'python/src/nnabla/utils/load_function.py',
-            'python/src/nnabla/utils/save_function.py',
-            'src/nbla/init.cpp',
-            'src/nbla/proto/nnabla.proto',
-            'src/nbla_utils/nnp_impl_create_function.cpp']
-}
+import code_generator_utils as utils
 
-function_generation_list = {
-    'cpu': ['include/nbla/function/{}.hpp', 'src/nbla/function/{}.cpp']
-}
 
-for implements, filelist in generation_list.items():
-    for fn in filelist:
-        filename = '{}/{}'.format(base, fn)
-        modulename = fn.replace('/', '_').replace('.', '_')
-        temp = '{}/{}_template{}'.format(template,
-                                         modulename, os.path.splitext(fn)[1])
-        exec('import generator.generate_{}'.format(modulename))
-        code_template = None
-        with io.open(temp, 'rt', encoding='utf_8_sig') as f:
-            code_template = f.read()
-        if code_template:
-            code = eval(
-                ('generator.generate_{}.generate' +
-                 '(info, code_template)').format(modulename))
-            if code:
-                check_update(filename, code, force=True)
+def generate_cpp_utils(function_info):
+    function_list = utils.info_to_list(function_info)
+    utils.generate_from_template(
+        join(base, 'src/nbla_utils/nnp_impl_create_function.cpp.tmpl'), function_info=function_info, function_list=function_list)
 
-for category, functions in info['Functions'].items():
-    for function, function_info in functions.items():
-        function_name = info['Names'][function]
-        implements = ['cpu']
-        if 'Implements' in info:
-            implements = info['Implements'][function]
-        for implement in implements:
-            for fn in function_generation_list[implement]:
-                filename = '{}/{}'.format(base, fn.format(function_name))
-                modulename = fn.replace(
-                    '/', '_').replace('.', '_').replace('_{}', '')
-                temp = '{}/{}_template{}'.format(template,
-                                                 modulename, os.path.splitext(fn)[1])
-                exec('import function_generator.generate_{}'.format(modulename))
-                s = None
-                with io.open(temp, 'rt', encoding='utf_8_sig') as f:
-                    s = f.read()
-                if s:
-                    code = eval(
-                        ("function_generator.generate_{}.generate" +
-                         "(info['Functions'][category][function], function, function_name, s)").format(modulename))
-                if code:
-                    check_update(filename, code)
+
+def generate_proto(function_info, solver_info):
+    utils.generate_from_template(
+        join(base, 'src/nbla/proto/nnabla.proto.tmpl'), function_info=function_info, solver_info=solver_info)
+
+
+def generate_python_utils(function_info):
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/utils/load_function.py.tmpl'), function_info=function_info)
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/utils/save_function.py.tmpl'), function_info=function_info)
+
+
+def generate_function_python_intereface(function_info):
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/function.pyx.tmpl'), function_info=function_info)
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/function.pxd.tmpl'), function_info=function_info)
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/function_bases.py.tmpl'), function_info=function_info)
+
+
+def generate_solver_python_intereface(solver_info):
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/solver.pyx.tmpl'), solver_info=solver_info)
+    utils.generate_from_template(
+        join(base, 'python/src/nnabla/solver.pxd.tmpl'), solver_info=solver_info)
+
+
+def generate():
+    function_info = utils.load_function_info(flatten=True)
+    solver_info = utils.load_solver_info()
+    function_types = utils.load_yaml_ordered(open(
+        join(here, 'function_types.yaml'), 'r'))
+    solver_types = utils.load_yaml_ordered(open(
+        join(here, 'solver_types.yaml'), 'r'))
+    utils.generate_init(function_info, function_types,
+                        solver_info, solver_types)
+    utils.generate_function_types(function_info, function_types)
+    utils.generate_solver_types(solver_info, solver_types)
+    utils.generate_version()
+    generate_solver_python_intereface(solver_info)
+    generate_function_python_intereface(function_info)
+    generate_python_utils(function_info)
+    generate_proto(function_info, solver_info)
+    generate_cpp_utils(function_info)
+
+    # Generate function skeltons if new ones are added to functions.yaml and function_types.yaml.
+    utils.generate_skelton_function_impl(
+        function_info, function_types)
+    func_header_template = join(
+        base,
+        'include/nbla/function/function_impl.hpp.tmpl')
+    utils.generate_skelton_function_impl(
+        function_info, function_types,
+        template=func_header_template, output_format='%s.hpp')
+
+    # TODO: solver skelton generation
+
+if __name__ == '__main__':
+    generate()

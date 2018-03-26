@@ -16,11 +16,9 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nbla_test_utils import list_context
 
-ctxs = [(nn.Context(), 'BinaryError')]
-if hasattr(nn.extensions, 'cuda'):
-    ctxs += [(nn.extensions.cuda.context(),
-              'BinaryErrorCuda')]
+ctxs = list_context('BinaryError')
 
 
 def ref_binary_error(x, l):
