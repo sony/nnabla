@@ -20,7 +20,7 @@ from cifar10_data import data_iterator_cifar10
 from cifar100_data import data_iterator_cifar100
 import nnabla as nn
 import nnabla.communicators as C
-from nnabla.contrib.context import extension_context
+from nnabla.ext_utils import get_extension_context
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S

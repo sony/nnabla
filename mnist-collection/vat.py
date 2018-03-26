@@ -285,7 +285,10 @@ def get_args():
                         "-np", type=int, default=1)
     parser.add_argument("--xi-for-vat", "-er", type=float, default=10.0)
     parser.add_argument("--eps-for-vat", "-el", type=float, default=1.5)
-    parser.add_argument("--device-id", "-d", type=int, default=0)
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--model-save-path", "-o",
                         type=str, default="tmp.monitor.vat")
     parser.add_argument('--context', '-c', type=str,
@@ -319,12 +322,10 @@ def main():
     args = get_args()
 
     # Get context.
-    from nnabla.contrib.context import extension_context
-    extension_module = args.context
-    if args.context is None:
-        extension_module = 'cpu'
-    logger.info("Running in %s" % extension_module)
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    from nnabla.ext_utils import get_extension_context
+    logger.info("Running in %s" % args.context)
+    ctx = get_extension_context(
+        args.context, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
 
     shape_x = (1, 28, 28)

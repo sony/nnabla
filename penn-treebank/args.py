@@ -24,7 +24,10 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--context', '-c', type=str,
                         default=None, help="Extension path. ex) cpu, cuda.cudnn.")
-    parser.add_argument("--device-id", "-d", type=int, default=0)
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--work-dir", "-w", type=str,
                         default="tmp.result/")
     parser.add_argument("--save-dir", "-s", type=str,
@@ -34,7 +37,7 @@ def get_args():
     parser.add_argument("--max-epoch", "-e", type=int, default=40)
     parser.add_argument("--monitor-interval", "-m", type=int, default=1000)
     parser.add_argument("--num-steps", "-n", type=int, default=35)
-    parser.add_argument("--state-size", "-t", type=int, default=650)
+    parser.add_argument("--state-size", "-S", type=int, default=650)
     parser.add_argument("--num-layers", "-a", type=int, default=2)
     parser.add_argument("--gradient-clipping-max-norm",
                         "-g", type=int, default=0.25)

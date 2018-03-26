@@ -27,6 +27,8 @@ import nnabla.utils.save as save
 from args import get_args
 from mnist_data import data_iterator_mnist
 
+import numpy as np
+
 
 def categorical_error(pred, label):
     """
@@ -129,12 +131,10 @@ def train():
     seed(0)
 
     # Get context.
-    from nnabla.contrib.context import extension_context
-    extension_module = args.context
-    if args.context is None:
-        extension_module = 'cpu'
-    logger.info("Running in %s" % extension_module)
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    from nnabla.ext_utils import get_extension_context
+    logger.info("Running in %s" % args.context)
+    ctx = get_extension_context(
+        args.context, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
 
     # Create CNN network for both training and testing.
@@ -186,6 +186,7 @@ def train():
             for j in range(args.val_iter):
                 vimage.d, vlabel.d = vdata.next()
                 vpred.forward(clear_buffer=True)
+                vpred.data.cast(np.float32, ctx)
                 ve += categorical_error(vpred.d, vlabel.d)
             monitor_verr.add(i, ve / args.val_iter)
         if i % args.model_save_interval == 0:
@@ -198,6 +199,8 @@ def train():
         loss.backward(clear_buffer=True)
         solver.weight_decay(args.weight_decay)
         solver.update()
+        loss.data.cast(np.float32, ctx)
+        pred.data.cast(np.float32, ctx)
         e = categorical_error(pred.d, label.d)
         monitor_loss.add(i, loss.d.copy())
         monitor_err.add(i, e)

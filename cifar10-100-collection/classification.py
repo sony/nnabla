@@ -19,7 +19,7 @@ from args import get_args
 from cifar10_data import data_iterator_cifar10
 from cifar100_data import data_iterator_cifar100
 import nnabla as nn
-from nnabla.contrib.context import extension_context
+from nnabla.ext_utils import get_extension_context
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
@@ -55,7 +55,8 @@ def train():
     n_train_samples = 50000
     bs_valid = args.batch_size
     extension_module = args.context
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    ctx = get_extension_context(
+        extension_module, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
     if args.net == "cifar10_resnet23":
         prediction = functools.partial(
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     """
     Call this script with `mpirun` or `mpiexec`
 
-    $ mpirun -n 4 python multi_device_multi_process.py --context "cuda.cudnn" -bs 64
+    $ mpirun -n 4 python multi_device_multi_process.py --context "cudnn" -bs 64
 
     """
     train()

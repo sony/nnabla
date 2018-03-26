@@ -46,15 +46,17 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
     parser.add_argument("--weight-decay", "-w",
                         type=float, default=weight_decay,
                         help='Weight decay factor of SGD update.')
-    parser.add_argument("--device-id", "-d", type=int, default=0,
-                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type configuration.')
     parser.add_argument("--model-save-interval", "-s", type=int, default=1000,
                         help='The interval of saving model parameters.')
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path,
                         help='Path the model parameters saved.')
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension module. 'cuda.cudnn' is highly.recommended.")
+                        default=None, help="Extension module. 'cudnn' is highly.recommended.")
     parser.add_argument("--num-layers", "-L", type=int,
                         choices=[18, 34, 50, 101, 152], default=34,
                         help='Number of layers of ResNet.')

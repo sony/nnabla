@@ -273,7 +273,10 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--context', '-c', type=str,
                         default=None, help="Extension path. ex) cpu, cuda.cudnn.")
-    parser.add_argument("--device-id", "-d", type=int, default=0)
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--work_dir", "-m", type=str,
                         default="tmp.result.w2v/")
 
@@ -300,13 +303,11 @@ def main():
     # Load Dataset
     itow, wtoi, dataset = load_ptbset(data_file)
 
-    # Computation environment settings
-    from nnabla.contrib.context import extension_context
-    extension_module = args.context
-    if args.context is None:
-        extension_module = 'cpu'
-    logger.info("Running in %s" % extension_module)
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    # Get context.
+    from nnabla.ext_utils import get_extension_context
+    logger.info("Running in %s" % args.context)
+    ctx = get_extension_context(
+        args.context, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
 
     # Create data provider
