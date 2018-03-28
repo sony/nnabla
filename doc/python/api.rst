@@ -16,5 +16,4 @@ Python API Reference
     api/communicator
     api/monitor
     api/data_iterator
-    api/contrib
     api/ext

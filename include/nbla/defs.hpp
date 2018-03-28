@@ -24,4 +24,8 @@
 #else
 #define NBLA_API
 #endif
+
+// C++11 gives alignas as standar
+// http://en.cppreference.com/w/cpp/language/alignas
+#define NBLA_ALIGN(N) alignas(N)
 #endif

@@ -61,8 +61,9 @@ void Communicator::remove_context_parameters(
 
 void Communicator::clear_context_parameters() {
   total_params_ = 0;
-  NBLA_ERROR(error_code::not_implemented,
-             "clear_context_parameters not implemented")
+  vector<Context>().swap(contexts_);
+  decltype(device_func_named_param_)().swap(device_func_named_param_);
+  decltype(func_device_named_param_)().swap(func_device_named_param_);
 }
 
 void Communicator::init() {

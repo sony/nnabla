@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libcpp.memory cimport shared_ptr
 
 cdef extern from "nbla/array.hpp" namespace "nbla":
     cdef cppclass dtypes:
@@ -20,3 +21,11 @@ cdef extern from "nbla/array.hpp" namespace "nbla":
     cdef cppclass CArray "nbla::Array":
         void * pointer "nbla::Array::pointer<void>" ()
         void * const_pointer "nbla::Array::const_pointer<void>" ()
+
+    ctypedef shared_ptr[CArray] ArrayPtr
+
+cdef class Array:
+    cdef ArrayPtr arr
+
+    @staticmethod
+    cdef object create(ArrayPtr arr)

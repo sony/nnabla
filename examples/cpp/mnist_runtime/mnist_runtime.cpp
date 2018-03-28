@@ -94,10 +94,11 @@ int main(int argc, char *argv[]) {
   const std::string input_bin(argv[2]);
 
   // Create a context (the following setting is recommended.)
-  nbla::Context cpu_ctx{"cpu", "CpuCachedArray", "0", "default"};
+  nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
 #ifdef WITH_CUDA
   nbla::init_cudnn();
-  nbla::Context ctx{"cpu|cuda", "CudaCachedArray", "0", "default|cudnn"};
+  nbla::Context ctx{
+      {"cudnn:float", "cuda:float", "cpu:float"}, "CudaCachedArray", "0"};
 #else
   nbla::Context ctx = cpu_ctx;
 #endif

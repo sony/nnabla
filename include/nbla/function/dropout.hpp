@@ -56,16 +56,16 @@ Outputs:
 */
 template <typename T> class Dropout : public BaseFunction<double, int> {
 protected:
-  T p_;
+  float p_;
   int seed_;
-  T scale_; // = 1./(1.-p_)
+  float scale_; // = 1./(1.-p_)
   Variable mask_;
   std::mt19937 rgen_;
   std::bernoulli_distribution rdist_;
 
 public:
   Dropout(const Context &ctx, double p, int seed = -1)
-      : BaseFunction(ctx, p, seed), p_(T(p)), seed_(seed) {}
+      : BaseFunction(ctx, p, seed), p_(p), seed_(seed) {}
   virtual ~Dropout() {}
   virtual shared_ptr<Function> copy() const {
     return create_Dropout(ctx_, p_, seed_);

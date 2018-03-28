@@ -884,7 +884,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
         ~nnabla.Variable: N-D array.
 
     """
-    shape = tuple() if shared else inp.shape[base_axis]
+    shape = tuple() if shared else (inp.shape[base_axis],)
     w = get_parameter_or_create("slope", shape,
                                 ConstantInitializer(-1), not fix_parameters)
     return F.prelu(inp, w, base_axis)

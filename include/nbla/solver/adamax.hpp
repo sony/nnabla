@@ -14,7 +14,7 @@
 
 #ifndef __NBLA_SOLVER_ADAMAX_HPP__
 #define __NBLA_SOLVER_ADAMAX_HPP__
-#include <nbla/solver/base_solver.hpp>
+#include <nbla/solver.hpp>
 #include <nbla/solver_registry.hpp>
 
 namespace nbla {
@@ -42,7 +42,7 @@ https://arxiv.org/abs/1412.6980
 
 \ingroup SolverImplGrp
 */
-template <typename T> class NBLA_API Adamax : public BaseSolver<T> {
+template <typename T> class NBLA_API Adamax : public Solver {
 public:
   Adamax(const Context &ctx, float alpha, float beta1, float beta2, float eps);
   virtual ~Adamax();
@@ -70,6 +70,7 @@ protected:
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);
+  NBLA_DECL_WEIGHT_DECAY();
 };
 }
 #endif

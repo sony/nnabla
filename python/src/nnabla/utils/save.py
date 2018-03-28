@@ -121,10 +121,9 @@ def _get_net_variables(net):
 
 def _create_global_config(ctx):
     g = nnabla_pb2.GlobalConfig()
-    g.default_context.backend = ctx.backend
+    g.default_context.backends[:] = ctx.backends
     g.default_context.array_class = ctx.array_class
     g.default_context.device_id = ctx.device_id
-    g.default_context.compute_backend = ctx.compute_backend
     return g
 
 

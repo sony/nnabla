@@ -1,0 +1,104 @@
+// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+<%
+from utils.type_conv import type_from_proto
+dec_targs = ', '.join(['typename ' + t for t in ttypes])
+targs = ', '.join(ttypes)
+args = ''.join([', ' + k for k, v in arguments.items()])
+args_ = ''.join([', ' + k + '_' for k, v in arguments.items()])
+
+arg_types = {k: type_from_proto[v['type']]['cpp'] for k, v in arguments.items()}
+dec_args = ''.join([', %s %s' % (v, k) for k, v in arg_types.items()])
+
+def get_min(inputs):
+    ret = 0
+    for i in inputs.values():
+        if i.get('optional', False):
+            break
+        ret += 1
+    return ret
+	
+min_inputs = get_min(inputs)
+min_outputs = get_min(outputs)
+%>
+#ifndef NBLA_FUNCTION_${snake_name.upper()}_HPP
+#define NBLA_FUNCTION_${snake_name.upper()}_HPP
+
+#include <nbla/cpu.hpp>
+#include <nbla/function.hpp>
+#include <nbla/function_registry.hpp>
+
+namespace nbla {
+
+NBLA_REGISTER_FUNCTION_HEADER(${', '.join([name] + list(arg_types.values()))});
+
+/** 
+    @todo Write doc.
+
+Inputs:
+
+Outputs:
+
+\ingroup FunctionImplGrp
+ */
+template <${dec_targs}> class ${name} : public BaseFunction<${', '.join(arg_types.values())}> {
+protected:
+% for argname, arg in arguments.items():
+  ${type_from_proto[arg['type']]['cpp_var']} ${argname}_;
+% endfor
+public:
+  ${name}(const Context &ctx${dec_args}) : BaseFunction(ctx${args})
+% for argname, arg in arguments.items():
+  , ${argname}_(${argname})
+% endfor
+    {}
+  virtual ~${name}() {}
+  virtual shared_ptr<Function> copy() const {
+    return create_${name}(ctx_${args_});
+  }
+  virtual int min_inputs() { return ${min_inputs}; }
+  virtual int min_outputs() { return ${min_outputs}; }
+  virtual vector<dtypes> in_types() {
+    return vector<dtypes>{${', '.join(['get_dtype<%s>()' % i.get('template', 'T') for i in inputs.values()])}};
+  }
+  virtual vector<dtypes> out_types() {
+    return vector<dtypes>{${', '.join(['get_dtype<%s>()' % o.get('template', 'T') for o in outputs.values()])}};
+  }
+  virtual vector<string> allowed_array_classes() {
+    return SingletonManager::get<Cpu>()->array_classes();
+  }
+  virtual string name() { return "${name}"; }
+  // TODO: This must be overriden if any of input grad depends on a output data. See doc in function.hpp.
+  // virtual bool grad_depends_output_data(int i, int o) const {
+  // }
+  // TODO: If any of data/grad storage is inplaced with any of output, you must override some of these. See doc in function.hpp.
+  // virtual int inplace_data(int i) const {
+  // }
+  // virtual int inplace_data_with(int i) const {
+  // }
+  // virtual int inplace_grad(int i) const {
+  // }
+  // virtual int inplace_grad_with(int i) const {
+  // }
+
+protected:
+  NBLA_API virtual void setup_impl(const Variables &inputs, const Variables &outputs);
+  NBLA_API virtual void forward_impl(const Variables &inputs, const Variables &outputs);
+  NBLA_API virtual void backward_impl(const Variables &inputs, const Variables &outputs,
+				      const vector<bool> &propagate_down,
+				      const vector<bool> &accum);
+};
+}
+#endif

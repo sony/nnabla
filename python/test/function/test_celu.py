@@ -37,4 +37,4 @@ def test_celu_forward_backward(seed, alpha, axis, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     function_tester(rng, F.celu, ref_celu, inputs, func_args=[alpha, axis],
-                    ctx=ctx, func_name=func_name, atol_b=2e-3)
+                    ctx=ctx, func_name=func_name, atol_b=4e-3)

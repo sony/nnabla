@@ -17,35 +17,14 @@ import nnabla as nn
 import nnabla.parametric_functions as PF
 import nnabla.communicators as C
 import numpy as np
-from nbla_test_utils import list_context
 from nnabla.contrib.context import extension_context
 
-############################################
-# Communicator has to be instantiated here,
-# otherwise, mpirun fails.
-############################################
 
-# Communicator
-comm = None
-try:
-    extension_module = "cuda"
-    ctx = extension_context(extension_module)
-    comm = C.MultiProcessDataParalellCommunicator(ctx)
-    comm.init()
-    n_devices = comm.size
-    mpi_rank = comm.rank
-    mpi_local_rank = comm.local_rank
-    device_id = mpi_local_rank
-    ctx.device_id = str(device_id)
-except:
-    pass
-
-############################################
-
-
-@pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
-def test_new_group(seed):
+def test_new_group(seed, comm_nccl_opts):
+    if comm_nccl_opts is None:
+        pytest.skip(
+            "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
     try:
         import nnabla_ext
         import nnabla_ext.cuda
@@ -57,7 +36,7 @@ def test_new_group(seed):
     if n_devices < 2:
         pytest.skip("Number of cuda devices in this machine is less than 2.")
 
-    if n_devices != comm.size:
+    if n_devices != comm_nccl_opts.comm.size:
         pytest.skip("Number of cuda devices is not same as that of processes.")
 
     # Reference
@@ -69,13 +48,13 @@ def test_new_group(seed):
         "world": np.arange(n_devices).tolist()
     }
 
-    # comm.new_group
-    group_i = comm.new_group(("group_i", [device]))
-    group_all = comm.new_group(("all", np.arange(n_devices)))
+    # comm_nccl_opts.comm.new_group
+    group_i = comm_nccl_opts.comm.new_group(("group_i", [device]))
+    group_all = comm_nccl_opts.comm.new_group(("all", np.arange(n_devices)))
 
-    # comm.list_groups
-    assert comm.list_groups() == groups
+    # comm_nccl_opts.comm.list_groups
+    assert comm_nccl_opts.comm.list_groups() == groups
 
-    # comm.find_group
-    assert comm.find_group("group_i") == groups["group_i"]
-    assert comm.find_group("group_k") == []
+    # comm_nccl_opts.comm.find_group
+    assert comm_nccl_opts.comm.find_group("group_i") == groups["group_i"]
+    assert comm_nccl_opts.comm.find_group("group_k") == []

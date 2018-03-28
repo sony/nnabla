@@ -43,6 +43,8 @@ import nnabla as nn
 import nnabla.function as F
 import nnabla.solver as S
 
+import nnabla_ext.cpu
+
 
 ##########################################################################
 # Private functions.
@@ -235,7 +237,7 @@ def _network(proto, default_context, batch_size, all_variables):
     network.variable_inputs = OrderedDict()
     network.variable_outputs = OrderedDict()
     for f in proto.function:
-        ctx = default_context if f.context.backend == "" else context(
+        ctx = default_context if not f.context.backends else _context(
             f.context)
 
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in f.repeat_id]))):
@@ -352,11 +354,29 @@ def _create_optimizer(ctx, o, networks, datasets):
 
 
 def _context(proto):
+    if not proto.backends:
+        logger.warn('Old-style context. Updating to new format.')
+        # Update from old Context
+        if proto.backend == 'cpu|cuda':
+            if proto.compute_backend == 'cudnn':
+                import nnabla_ext.cudnn
+                ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+            elif proto.compute_backend == 'default':
+                import nnabla_ext.cuda
+                ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+            else:
+                raise ValueError('Invalid context {}'.format(proto))
+        elif proto.backend == 'cpu':
+            import nnabla_ext.cpu
+            ctx = nnabla_ext.cpu.context()
+        else:
+            raise ValueError('Invalid context {}'.format(proto))
+        ctx.array_class = proto.array_class
+        return ctx
     ctx = nn.Context()
-    ctx.backend = proto.backend
+    ctx.backend.extend(proto.backends[:])
     ctx.array_class = proto.array_class
     ctx.device_id = proto.device_id
-    ctx.compute_backend = proto.compute_backend
     return ctx
 
 
@@ -439,7 +459,7 @@ def _optimizers(proto, default_context, networks, datasets):
     optimizers = OrderedDict()
 
     for o in proto.optimizer:
-        ctx = default_context if o.solver.context.backend == "" else context(
+        ctx = default_context if not o.solver.context.backends else _context(
             o.solver.context)
         optimizer = _create_optimizer(ctx, o, networks, datasets)
         optimizers[o.name] = optimizer
@@ -604,11 +624,12 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
         default_context = info.global_config.default_context
         if 'cuda' in default_context.backend:
             try:
-                import nnabla_ext.cuda.cudnn
+                import nnabla_ext.cudnn
             except:
                 pass
     else:
-        default_context = nn.context()
+        import nnabla_ext.cpu
+        default_context = nnabla_ext.cpu.context()
 
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)

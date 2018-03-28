@@ -17,4 +17,5 @@ if __name__ == '__main__':
     parser.add_argument('base')
     parser.add_argument('--subfolder', nargs='*',
                         default=['include', 'src', 'python', 'examples', 'tutorial'])
+    parser.add_argument('--exclude', nargs='*', type=str, default=[])
     auto_format_command.command(parser.parse_args())

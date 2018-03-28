@@ -36,8 +36,7 @@ std::string print_function_items(vector<shared_ptr<Item>> items) {
   std::ostringstream ss;
   ss << "[";
   for (auto &&item : items) {
-    ss << "(" << item->rank << ",'" << item->backend << "','" << item->engine
-       << "'),";
+    ss << item->backend << ", ";
   }
   ss << "]";
   return ss.str();
@@ -51,61 +50,41 @@ template <typename Item> class NBLA_API FunctionDb {
 
 public:
   /**
-  Query function item (FunctionDbItem) by query key of device and engine
+  Query function item (FunctionDbItem) by query key of device
   (Regex can be used).
   */
-  typename Item::function_t query(const string &backend, const string &engine) {
-    std::regex re_backend(backend);
-    std::regex re_engine(engine);
-    vector<shared_ptr<Item>> cand(items_);
-    cand.erase(std::remove_if(
-                   cand.begin(), cand.end(),
-                   [&](shared_ptr<Item> item) {
-                     if (!std::regex_match(item->backend.begin(),
-                                           item->backend.end(), re_backend)) {
-                       return true;
-                     }
-                     if (!std::regex_match(item->engine.begin(),
-                                           item->engine.end(), re_engine)) {
-                       return true;
-                     }
-                     return false;
-                   }),
-               cand.end());
-    NBLA_CHECK(cand.size() > 0, error_code::unclassified,
-               "('%s', '%s') could not be found in %s", backend.c_str(),
-               engine.c_str(), print_function_items<Item>(items_).c_str());
-    // Use one that has highest priority
-    return cand[cand.size() - 1]->function;
+  typename Item::function_t query(const vector<string> &backend) {
+    auto it = items_.end();
+    for (auto &be : backend) {
+      it = std::find_if(
+          items_.begin(), items_.end(),
+          [be](const shared_ptr<Item> &item) { return item->backend == be; });
+      if (it != items_.end()) {
+        break;
+      }
+    }
+    NBLA_CHECK(it != items_.end(), error_code::value,
+               "Any of [%s] could not be found in %s",
+               string_join(backend, ", ").c_str(),
+               print_function_items<Item>(items_).c_str());
+    return (*it)->function;
   }
 
   /**
   Adding function item (FunctionDbItem).
   */
-  void add(shared_ptr<Item> item) {
-    items_.push_back(item);
-    std::sort(items_.begin(), items_.end(),
-              [](shared_ptr<Item> a, shared_ptr<Item> b) -> int {
-                return (a->rank < b->rank);
-              }); // TODO: efficiency
-  }
+  void add(shared_ptr<Item> item) { items_.push_back(item); }
 };
 
 /**
-Item of FunctionDb that stores query keys (backend and engine), function and
-rank (if query matches multiple items, item that has highest rank is used.).
+Item of FunctionDb that stores backend key and a creator function (with variadic
+template args).
 */
 template <typename Base, typename... Args> struct FunctionDbItem {
   typedef std::function<shared_ptr<Base>(const Context &ctx, Args...)>
       function_t;
-  int rank;
   string backend;
-  string engine;
   function_t function;
-
-  bool operator<(const FunctionDbItem<Base, Args...> &right) {
-    return this->rank < right.rank;
-  }
 };
 
 /**
@@ -120,7 +99,7 @@ public:
   Create a new function instance.
   */
   shared_ptr<Base> create(const Context &ctx, Args... args) {
-    return function_db_.query(ctx.backend, ctx.compute_backend)(ctx, args...);
+    return function_db_.query(ctx.backend)(ctx, args...);
   }
 
   void add(shared_ptr<item_t> item) { function_db_.add(item); }
@@ -164,7 +143,7 @@ has an idea, please let me know or PR is wellcome.
 /**
 This will be used inside init method.
 */
-#define NBLA_REGISTER_FUNCTION_IMPL(BASE, CLS, RANK, BACKEND, ENGINE, ...)     \
+#define NBLA_REGISTER_FUNCTION_IMPL(BASE, CLS, BACKEND, ...)                   \
   {                                                                            \
     std::function<shared_ptr<Function>(                                        \
         const Context &NBLA_VA_ARGS(__VA_ARGS__))>                             \
@@ -173,8 +152,7 @@ This will be used inside init method.
               new CLS(NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__))));   \
         };                                                                     \
     typedef FunctionDbItem<Function NBLA_VA_ARGS(__VA_ARGS__)> item_t;         \
-    get_##BASE##Registry().add(                                                \
-        shared_ptr<item_t>(new item_t{RANK, BACKEND, ENGINE, func}));          \
+    get_##BASE##Registry().add(shared_ptr<item_t>(new item_t{BACKEND, func})); \
   }
 
 #else
@@ -202,7 +180,7 @@ This will be used inside init method.
 /**
 This will be used inside init method.
 */
-#define NBLA_REGISTER_FUNCTION_IMPL(BASE, CLS, RANK, BACKEND, ENGINE, ...)     \
+#define NBLA_REGISTER_FUNCTION_IMPL(BASE, CLS, BACKEND, ...)                   \
   {                                                                            \
     std::function<shared_ptr<Function>(const Context &, ##__VA_ARGS__)> func = \
         [](NBLA_ARGDEFS(const Context &, ##__VA_ARGS__)) {                     \
@@ -210,8 +188,7 @@ This will be used inside init method.
               new CLS(NBLA_ARGS(const Context &, ##__VA_ARGS__)));             \
         };                                                                     \
     typedef FunctionDbItem<Function, ##__VA_ARGS__> item_t;                    \
-    get_##BASE##Registry().add(                                                \
-        shared_ptr<item_t>(new item_t{RANK, BACKEND, ENGINE, func}));          \
+    get_##BASE##Registry().add(shared_ptr<item_t>(new item_t{BACKEND, func})); \
   }
 #endif
 }

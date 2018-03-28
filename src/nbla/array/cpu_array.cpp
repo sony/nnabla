@@ -71,19 +71,19 @@ void cpu_array_copy(const Array *src, Array *dst) {
   std::copy(p_src, p_src + src->size(), p_dst);
 }
 
-NBLA_DEFINE_FUNC_COPY_FROM(CpuArray, cpu_array_copy);
-
 template <typename T> void cpu_fill(Array *self, float value) {
   T *ptr = self->pointer<T>();
   size_t size = self->size();
   std::fill(ptr, ptr + size, static_cast<T>(value));
 }
 
-NBLA_DEFINE_FUNC_FILL(CpuArray, cpu_fill);
-
 Context CpuArray::filter_context(const Context &ctx) {
-  return Context("", "CpuArray", "", "");
+  return Context({}, "CpuArray", "");
 }
+
+NBLA_DEFINE_COPY_WRAPPER(cpu_array_copy);
+NBLA_DEFINE_FUNC_COPY_FROM(CpuArray, cpu_array_copy, cpu);
+NBLA_DEFINE_FUNC_FILL(CpuArray, cpu_fill, cpu);
 
 /////////////////////////////////
 // CpuCachedArray implementation
@@ -109,6 +109,6 @@ void CpuCachedArray::deallocate() {
   }
 }
 Context CpuCachedArray::filter_context(const Context &ctx) {
-  return Context("", "CpuCachedArray", "", "");
+  return Context({}, "CpuCachedArray", "");
 }
 }

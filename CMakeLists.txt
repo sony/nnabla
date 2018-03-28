@@ -56,21 +56,20 @@ string(STRIP ${NBLA_SETUP_LIB_DIR_RAW} NBLA_SETUP_LIB_DIR)
 # Code generator
 ###############################################################################
 file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
-file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter)
 
 execute_process(
   COMMAND
   ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py)
-execute_process(
-  COMMAND
-  ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate_category_info.py
-  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/category_info.json)
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py
+  RESULT_VARIABLE GENERATE_RESULT)
+
+if (NOT ${GENERATE_RESULT} EQUAL 0)
+  message(FATAL_ERROR "generate.py failed.")
+endif ()
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN
-    ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/nnabla_pb2.py)
+    ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils//nnabla_pb2.py)
   execute_process(
     COMMAND
     ${PROTOC_COMMAND}
@@ -142,7 +141,7 @@ if(BUILD_CPP_LIB)
   list(APPEND NBLA_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/third_party/eigen-eigen-de14376a69f8
-    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.16.3/include)
+    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.13.0/include)
   
   if(BUILD_CPP_UTILS)
     list(APPEND NBLA_INCLUDE_DIRS

@@ -134,8 +134,9 @@ public:
 
   @sa SyncedArray::cast() and Array::pointer().
   */
-  template <typename T> T *cast_data_and_get_pointer(const Context &ctx) {
-    Array *arr = data_->array()->cast(get_dtype<T>(), ctx);
+  template <typename T>
+  T *cast_data_and_get_pointer(const Context &ctx, bool write_only = false) {
+    Array *arr = data_->array()->cast(get_dtype<T>(), ctx, write_only);
     return arr->pointer<T>();
   }
 
@@ -144,8 +145,9 @@ public:
 
   @sa SyncedArray::cast() and Array::pointer().
   */
-  template <typename T> T *cast_grad_and_get_pointer(const Context &ctx) {
-    Array *arr = grad_->array()->cast(get_dtype<T>(), ctx);
+  template <typename T>
+  T *cast_grad_and_get_pointer(const Context &ctx, bool write_only = false) {
+    Array *arr = grad_->array()->cast(get_dtype<T>(), ctx, write_only);
     return arr->pointer<T>();
   }
 
