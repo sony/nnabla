@@ -32,8 +32,7 @@ class Monitor(object):
 
     def __init__(self, save_path):
         self._save_path = save_path
-        if not os.path.isdir(save_path):
-            os.makedirs(save_path)
+        os.makedirs(save_path, exist_ok=True)
 
     @property
     def save_path(self):

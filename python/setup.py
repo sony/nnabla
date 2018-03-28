@@ -186,8 +186,7 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
             if os.path.splitext(fn)[1] == '' or os.path.splitext(fn)[1] == '.exe':
-                if not os.path.isdir(os.path.join(path_pkg, 'bin')):
-                    os.makedirs(os.path.join(path_pkg, 'bin'))
+                os.makedirs(os.path.join(path_pkg, 'bin'), exist_ok=True)
                 shutil.copyfile(os.path.join(root, fn),
                                 os.path.join(path_pkg, 'bin', fn))
                 os.chmod(os.path.join(path_pkg, 'bin', fn), 0o755)
@@ -196,8 +195,7 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(os.path.join(build_dir, 'lib')):
         for fn in files:
             if os.path.splitext(fn)[1] == '.so' or os.path.splitext(fn)[1] == '.dylib':
-                if not os.path.isdir(os.path.join(path_pkg, 'bin')):
-                    os.makedirs(os.path.join(path_pkg, 'bin'))
+                os.makedirs(os.path.join(path_pkg, 'bin'), exist_ok=True)
                 shutil.copyfile(os.path.join(root, fn),
                                 os.path.join(path_pkg, 'bin', fn))
                 os.chmod(os.path.join(path_pkg, 'bin', fn), 0o755)
