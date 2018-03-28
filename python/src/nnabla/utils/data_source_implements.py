@@ -24,6 +24,7 @@ import os
 import threading
 import atexit
 import queue
+import sys
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load
@@ -80,15 +81,22 @@ class CachePrefetcher(object):
                 logger.log(99, 'read_cache() retry count over give up.')
                 raise
             result = {}
-            with open(file_name, 'rb') as f:
-                for v in variables:
-                    result[v] = numpy.load(f)
-            if set(result.keys()) == set(variables):
-                break
-            else:
+            try:
+                with open(file_name, 'rb') as f:
+                    for v in variables:
+                        result[v] = numpy.load(f)
+                if set(result.keys()) == set(variables):
+                    break
+                else:
+                    logger.log(
+                        99, 'read_cache() fails retrying count {}/10.'.format(retry))
+                    retry += 1
+            except FileNotFoundError:
                 logger.log(
-                    99, 'read_cache() fails retrying count {}/10.'.format(retry))
-                retry += 1
+                    99, 'Cache file {} not found.'.format(file_name))
+                logger.log(99, 'Fatal Error! send SIGKILL to myself.')
+                os.kill(os.getpid(), 9)
+
         return result
 
     def _worker(self):
