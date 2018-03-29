@@ -20,6 +20,8 @@ def pytest_addoption(parser):
                      default=False, help='Enable NCCL communicator test.')
     parser.addoption('--communicator-gpus', type=str, default=None,
                      help='Comma separated device IDs. e.g --communicator-gpus=0,2.')
+    parser.addoption('--type-config', type=str, default='float', action='store',
+                     help='Type of computation. e.g. "float", "half"., --type-config=float')
 
 
 @pytest.fixture(scope='session')
@@ -55,7 +57,8 @@ def comm_nccl_opts(request):
                 "GPU IDs must be comma sperated integers of available GPUs. Given {}. Avaiable GPUs are {}.".format(gpus, n_devices))
 
     extension_module = "cuda"
-    ctx = get_extension_context(extension_module)
+    type_config = request.config.getoption('--type-config')
+    ctx = get_extension_context(extension_module, type_config=type_config)
     try:
         comm = C.MultiProcessDataParalellCommunicator(ctx)
     except Exception as e:

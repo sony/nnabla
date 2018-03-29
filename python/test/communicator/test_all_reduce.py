@@ -39,6 +39,10 @@ def test_all_reduce(seed, inplace, division, comm_nccl_opts):
     if comm_nccl_opts is None:
         pytest.skip(
             "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
+    if len(comm_nccl_opts.devices) < 2:
+        pytest.skip(
+            "Communicator test is disabled. Use more than 1 gpus.")
+
     comm = comm_nccl_opts.comm
     device_id = int(comm_nccl_opts.device_id)
     n_devices = len(comm_nccl_opts.devices)
@@ -49,7 +53,7 @@ def test_all_reduce(seed, inplace, division, comm_nccl_opts):
     num_layers = 20
     rng = np.random.RandomState(seed)
     for l in range(num_layers):
-        x_data = rng.rand(3, 4)
+        x_data = np.clip(rng.rand(3, 4), -1e-5, 2.*1e3)
         x_data_list.append(x_data)
         x = nn.Variable(x_data.shape)
         x.d = x_data * (device_id + 1)
@@ -64,4 +68,4 @@ def test_all_reduce(seed, inplace, division, comm_nccl_opts):
 
     # Check
     for x, ref in zip(x_list, refs):
-        assert np.allclose(x.d, ref)
+        assert np.allclose(x.d, ref, rtol=1e-3, atol=1e-6)
