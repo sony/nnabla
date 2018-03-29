@@ -43,7 +43,7 @@ def comm_nccl_opts(request):
     if gpus is None:
         devices = list(map(str, range(n_devices)))
     else:
-        devices = gpu.split(',')
+        devices = gpus.split(',')
         # Check numbers
         try:
             for d in devices:
