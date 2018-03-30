@@ -289,6 +289,18 @@ Neural Network Layer:
     outputs:
       y:
         doc: Average values variable
+  GlobalAveragePooling:
+    snake_name: global_average_pooling
+    doc: |2
+
+      Global average pooling. It pools an averaged value from the whole image
+
+    inputs:
+      x:
+        doc: Input variable.
+    outputs:
+      y:
+        doc: Average values variable
   SumPooling:
     snake_name: sum_pooling
     doc: |2

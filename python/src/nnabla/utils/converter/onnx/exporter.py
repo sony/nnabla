@@ -14,9 +14,12 @@
 
 import struct
 import nnabla.logger as logger
-import onnx
-from .utils import *
-from onnx import (ModelProto, TensorProto, TensorShapeProto)
+try:
+    import onnx
+    from .utils import *
+    from onnx import (ModelProto, TensorProto, TensorShapeProto)
+except:
+    print('ONNX export support disabled.')
 
 # Dictionary used to convert NNabla function names to ONNX op_type
 nnabla_function_type_to_onnx_optype = {

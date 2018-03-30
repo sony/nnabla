@@ -17,11 +17,11 @@ import struct
 import pytest
 import nnabla
 import nnabla.utils.load as nnload
-import onnx
 import numpy as np
 import pdb
 
 try:
+    import onnx
     import onnx_caffe2.backend
 except:
     pass

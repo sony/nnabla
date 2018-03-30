@@ -16,7 +16,10 @@ import struct
 from collections import OrderedDict
 import nnabla.logger as logger
 from nnabla.utils import nnabla_pb2
-from onnx import (ModelProto, TensorProto, AttributeProto)
+try:
+    from onnx import (ModelProto, TensorProto, AttributeProto)
+except:
+    print('ONNX read support disabled.')
 
 from .utils import *
 

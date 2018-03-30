@@ -141,19 +141,19 @@ class CsrcExporter:
                 '    rt_function_t f{}; ///< {}'.format(n, f.type))
             finfo = self._info._function_info[f.type]
             internal_defines.append(
-                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['input'])))
+                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['inputs'])))
             internal_defines.append(
-                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(finfo['output'])))
-            if 'argument' in finfo and len(finfo['argument']) > 0:
+                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(finfo['outputs'])))
+            if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 internal_defines.append(
-                    '    {}_local_context_t f{}_local_context;'.format(finfo['snakecase_name'], n))
-                for arg_name, arg in finfo['argument'].items():
+                    '    {}_local_context_t f{}_local_context;'.format(finfo['snake_name'], n))
+                for arg_name, arg in finfo['arguments'].items():
                     val = eval('f.{}_param.{}'.format(
-                        finfo['snakecase_name'], arg_name))
-                    if arg['Type'] == 'Shape':
+                        finfo['snake_name'], arg_name))
+                    if arg['type'] == 'Shape':
                         internal_defines.append(
                             '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val.dim)))
-                    elif arg['Type'] == 'repeated int64':
+                    elif arg['type'] == 'repeated int64':
                         internal_defines.append(
                             '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val)))
 
@@ -237,13 +237,13 @@ class CsrcExporter:
                     '    (c->f{0}_outputs)[{1}] = &{2};'.format(n, no, variables[o]))
             initialize_context.append(
                 '    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
-            if 'argument' in finfo and len(finfo['argument']) > 0:
+            if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 initialize_context.append(
                     '    (c->f{0}).local_context = &(c->f{0}_local_context);'.format(n))
-                for arg_name, arg in finfo['argument'].items():
+                for arg_name, arg in finfo['arguments'].items():
                     val = eval('f.{}_param.{}'.format(
-                        finfo['snakecase_name'], arg_name))
-                    if arg['Type'] == 'Shape':
+                        finfo['snake_name'], arg_name))
+                    if arg['type'] == 'Shape':
                         initialize_context.append(
                             '    rt_list_t arg_f{}_{};'.format(n, arg_name))
                         initialize_context.append(
@@ -255,7 +255,7 @@ class CsrcExporter:
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
                         initialize_context.append(
                             '    (c->f{0}_local_context).{1} = arg_f{0}_{1};'.format(n, arg_name))
-                    elif arg['Type'] == 'repeated int64':
+                    elif arg['type'] == 'repeated int64':
                         initialize_context.append(
                             '    rt_list_t arg_f{}_{};'.format(n, arg_name))
                         initialize_context.append(
@@ -268,23 +268,23 @@ class CsrcExporter:
                         initialize_context.append(
                             '    (c->f{0}_local_context).{1} = arg_f{0}_{1};'.format(n, arg_name))
 
-                    elif arg['Type'] == 'bool':
+                    elif arg['type'] == 'bool':
                         if val:
                             val = 1
                         else:
                             val = 0
                         initialize_context.append(
                             '    (c->f{}_local_context).{} = {};'.format(n, arg_name, val))
-                    elif 'TypeSelection' in arg:
+                    elif 'available_values' in arg:
                         valname = '{}_{}_{}'.format(
-                            finfo['snakecase_name'].upper(), arg_name.upper(), val.upper())
+                            finfo['snake_name'].upper(), arg_name.upper(), val.upper())
                         initialize_context.append(
                             '    (c->f{}_local_context).{} = {};'.format(n, arg_name, valname))
                     else:
                         initialize_context.append(
                             '    (c->f{}_local_context).{} = {};'.format(n, arg_name, val))
             initialize_context.append(
-                '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+                '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snake_name'], n))
 
         # NAME_free_context
         free_context = []
@@ -315,7 +315,7 @@ class CsrcExporter:
         for n, f in enumerate(self._info._network.function):
             finfo = self._info._function_info[f.type]
             free_context.append(
-                '    free_{}_local_context(&(c->f{}));'.format(finfo['snakecase_name'], n))
+                '    free_{}_local_context(&(c->f{}));'.format(finfo['snake_name'], n))
 
         # NAME_param_buffer
         param_buffer = []
@@ -338,7 +338,7 @@ class CsrcExporter:
         for n, f in enumerate(self._info._network.function):
             finfo = self._info._function_info[f.type]
             inference.append(
-                '    exec_{}(&(c->f{}));'.format(finfo['snakecase_name'], n))
+                '    exec_{}(&(c->f{}));'.format(finfo['snake_name'], n))
 
         # Generate source code
         source = csrc_implements.format(name=name,
