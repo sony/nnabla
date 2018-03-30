@@ -1,5 +1,6 @@
 # .gitignore
 
+.pytest_cache
 .cache
 *.pyc
 
