@@ -20,17 +20,6 @@ import six
 import subprocess
 
 
-def which(name):
-    exec_suffix = '.exe' if os.name is 'nt' else ''
-    for p in os.environ['PATH'].split(os.pathsep):
-        if os.name is 'nt':
-            p = p.replace('"', '')
-        f = os.path.join(p, name + exec_suffix)
-        if os.path.isfile(f):
-            return f
-    return None
-
-
 def check_update(filename, generated, force=False):
     original = ''
     if os.path.exists(filename):

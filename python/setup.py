@@ -34,9 +34,9 @@ install_requires = setup_requires + [
     'contextlib2',
     'futures',
     'h5py',
-    'onnx',
     'protobuf',
     'requests',
+    'pyyaml',
     'scikit-image',
     'scipy',
     'tqdm',
@@ -185,7 +185,7 @@ if __name__ == '__main__':
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [
-        library_file_name, 'nnabla.conf', 'utils/converter/category_info.json']}
+        library_file_name, 'nnabla.conf', 'utils/converter/functions.yaml']}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:

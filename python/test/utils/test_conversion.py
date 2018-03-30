@@ -20,7 +20,12 @@ import nnabla.utils.load as nnload
 import onnx
 import numpy as np
 import pdb
-import onnx_caffe2.backend
+
+try:
+    import onnx_caffe2.backend
+except:
+    pass
+
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
 
@@ -119,26 +124,31 @@ def nnp_fixture():
     nnabla.clear_parameters()
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "concat.onnx", "concat.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "concat.nnp", "concat.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
     # We do not check if the values match because a dropout
     # output yield random results
@@ -146,6 +156,7 @@ def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "dropout.onnx", "dropout.nnp", "out_data_1", "exec_0", compare_values=False)
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
     # We do not check if the values match because a dropout
     # output yield random results
@@ -153,76 +164,91 @@ def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "dropout.nnp", "dropout.onnx", "out_data_1", "exec_0", compare_values=False)
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout_test.onnx", "dropout_test.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout_test.nnp", "dropout_test.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.onnx", "maxpool.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.nnp", "maxpool.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_no_pad.onnx", "maxpool_no_pad.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.onnx", "maxpool_p0_s2_k3.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.nnp", "maxpool_p0_s2_k3.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.onnx", "softmax.nnp", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.nnp", "softmax.onnx", "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR
     onnx_name = "squeezenet.onnx"
@@ -276,6 +302,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     assert np.allclose(c2, nnout)
 
 
+@pytest.mark.skip(reason="onnx_caffe2 does not include in dist Docker yet.")
 def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     nnp_dir = TEST_DATA_DIR
     onnx_name = "squeezenet.onnx"
