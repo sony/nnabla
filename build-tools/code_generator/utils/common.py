@@ -38,7 +38,7 @@ def check_update(filename, generated, force=False):
 
 def get_version(dir):
     os.chdir(dir)
-    version = default_version = '0.9.8'
+    version = default_version = '0.9.9'
     nearest_tag = default_version
     if os.path.exists('.git'):
         try:
