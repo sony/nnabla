@@ -182,9 +182,19 @@ class DataSourceWithFileCache(DataSource):
                 h5.create_dataset(k, data=v)
             h5.close()
         else:
-            with open(cache_filename, 'wb') as f:
-                for v in data.values():
-                    numpy.save(f, v)
+            retry_count = 1
+            is_create_cache_imcomplete = True
+            while is_create_cache_imcomplete:
+                try:
+                    with open(cache_filename, 'wb') as f:
+                        for v in data.values():
+                            numpy.save(f, v)
+                    is_create_cache_imcomplete = False
+                except OSError:
+                    retry_count += 1
+                    if retry_count > 10:
+                        raise
+                    logger.info('Creating cache retry {}/10'.format(retry_count))
 
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
