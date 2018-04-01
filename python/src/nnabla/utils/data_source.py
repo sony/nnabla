@@ -194,7 +194,8 @@ class DataSourceWithFileCache(DataSource):
                     retry_count += 1
                     if retry_count > 10:
                         raise
-                    logger.info('Creating cache retry {}/10'.format(retry_count))
+                    logger.info(
+                        'Creating cache retry {}/10'.format(retry_count))
 
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
