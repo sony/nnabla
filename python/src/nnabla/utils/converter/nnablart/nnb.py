@@ -48,7 +48,7 @@ class NnbExporter:
 
         self._argument_formats = {}
         for fn, func in self._info._function_info.items():
-            if 'arguments' in func  and len(func['arguments']) > 0:
+            if 'arguments' in func and len(func['arguments']) > 0:
                 argfmt = ''
                 for an, arg in func['arguments'].items():
                     if arg['type'] == 'bool':
