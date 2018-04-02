@@ -36,7 +36,7 @@ class SimpleDataSource(DataSource):
         return self._load_func(self._order[position])
 
     def reset(self):
-        pass
+        super(SimpleDataSource, self).reset()
 
     def __init__(self, load_func, num_examples, shuffle=False, rng=None):
         super(SimpleDataSource, self).__init__(shuffle=shuffle, rng=rng)
