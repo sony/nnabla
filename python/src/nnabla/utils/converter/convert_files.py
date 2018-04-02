@@ -15,9 +15,9 @@
 import os
 import sys
 
-from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
-from nnabla.utils.converter.nnablart import NnbExporter, CsrcExporter
-from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter
+from .nnabla import NnpReader, NnpExporter
+from .nnablart import NnbExporter, CsrcExporter
+from .onnx import OnnxReader, OnnxExporter
 
 
 def export_from_nnp(args, nnp, output):

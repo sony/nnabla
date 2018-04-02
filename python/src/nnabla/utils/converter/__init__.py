@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import supported_info
+from .supported_info import formats
+from .supported_info import extensions
 from .convert_files import convert_files
 from .utils import get_category_info_string
 from .utils import get_category_info_version
