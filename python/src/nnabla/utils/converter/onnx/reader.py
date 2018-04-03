@@ -481,10 +481,47 @@ def convert_parameter_shape(pb):
                 p.shape.dim.extend([1, size, 1, 1])
                 break
 
+def check_domain(domain):
+    # We do not allow any operator from an unknown domain
+    if not (domain == '' or domain == NNABLA_DOMAIN):
+        raise ValueError("Unsupported operator from domain {} was found".format(domain))
 
+def convert_constant_to_initializer(graph):
+    """Convert a 'Constant' node to an initializer in order to
+    simplify the conversion process
+    """
+    constList = []
+    nodesExceptConst = []
+    for n in graph.node:
+        check_domain(n.domain)
+        if n.op_type == "Constant":
+            # Since a Constant node does not get converted to a function,
+            # we do not want it inside the node-to-function process.
+            # Therfore we proprocess all Constant nodes and convert it
+            # to an initializer, and then remove all Constant nodes.
+            assert len(n.output) == 1, "Constant output must be a single buffer"
+            name = n.output[0]
+            for attr in n.attribute:
+                if attr.name == "value":
+                    if attr.type != AttributeProto.TENSOR:
+                        raise ValueError("Only TESNOR is supported for value in {} op_type".format(n.op_type))
+                    t = attr.t
+                    if t is None:
+                        raise ValueError("value attribute must be set for {}".format(node.op_type))
+                    t.name = name
+                    constList.append(t)
+        else:
+            # We keep all nodes except for constant
+            nodesExceptConst.append(n)
+
+    # Add all constants to the initializer and remove node from graph
+    graph.initializer.extend(constList)
+    del graph.node[:]
+    graph.node.extend(nodesExceptConst)
 
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
+    convert_constant_to_initializer(graph)
     network = pb.network.add()
     network.name = graph.name
 
@@ -494,9 +531,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     func_counter = {}
     # convert nodes
     for n in graph.node:
-        # We do not allow any operator from an unknown domain
-        if not (n.domain == '' or n.domain == NNABLA_DOMAIN):
-            raise ValueError("Unsupported operator from domain {} was found".format(n.domain))
+        check_domain(n.domain)
         fl = convert_to_functions(n, graph.name, graph.initializer, func_counter)
         # Gather all unique names for input and output
         for f in fl:
