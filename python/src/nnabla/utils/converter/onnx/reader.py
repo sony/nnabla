@@ -555,7 +555,10 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         # convert raw bytestream to floating points
         #num = len(init.raw_data) // 4  # four bytes per float
         # logger.log(99, "raw_data num: {}".format(num))
-        p.data.extend(np.fromstring(init.raw_data, dtype=np.float32))
+        if init.raw_data:
+            p.data.extend(np.fromstring(init.raw_data, dtype=np.float32))
+        elif len(init.float_data) > 0:
+            p.data.extend(init.float_data)
         p.need_grad = False
         # Keep the list of all initializer names
         param_vars[init.name] = None
