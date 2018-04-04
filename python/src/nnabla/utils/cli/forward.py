@@ -186,7 +186,11 @@ def forward_command(args):
         if d.uri == args.dataset:
             normalize = d.normalize
     data_iterator = (lambda: data_iterator_csv_dataset(
-        args.dataset, config.networks[0].batch_size, False, normalize=normalize))
+        uri=args.dataset,
+        batch_size=config.networks[0].batch_size,
+        shuffle=False,
+        normalize=normalize,
+        with_file_cache=False))
 
     # load dataset as csv
     filereader = FileReader(args.dataset)
@@ -278,8 +282,8 @@ def forward_command(args):
             res.write(filename, name)
     globname = os.path.join(args.outdir, 'result*.nnp')
     exists = glob.glob(globname)
+    last_results = []
     if len(exists) > 0:
-        last_results = []
         last_result_nums = {}
         for ex in exists:
             name = os.path.basename(ex).rsplit('.', 1)[0]
