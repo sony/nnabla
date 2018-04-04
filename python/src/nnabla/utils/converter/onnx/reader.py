@@ -52,7 +52,7 @@ onnx_optype_to_nnabla_function_type = {
 }
 
 
-def onnx_value_info_proto_to_variable(info, network):
+def add_value_info_as_variable(info, network):
     if not info.type.HasField("tensor_type"):  # accepting only tensor
         raise ValueError("Only TensorProto is allowed as ValueInfoProto's type for info.name (Got {})"
                          .format(info.name, info.type))
@@ -60,6 +60,18 @@ def onnx_value_info_proto_to_variable(info, network):
     v = network.variable.add()
     v.name = info.name
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
+    return v
+
+def add_value_info_as_parameter(info, network):
+    v = add_value_info_as_variable(info, network)
+    v.type = "Parameter"
+    v.initializer.type = "Constant"
+    v.initializer.multiplier = 1.0
+    return v
+
+def add_value_info_as_buffer(info, network):
+    v = add_value_info_as_variable(info, network)
+    v.type = "Buffer"
     return v
 
 def set_kernel_parameter(node, kp):
@@ -167,7 +179,8 @@ def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
 def convert_to_functions(node, base_name, initializers, func_counter):
     """Convert given node to corresponding functions.
     A node is usually converted to a single function,
-    but some nodes end up as a composition of functions.
+    but some nodes end up as a composition of functions,
+    or a parameter (and not a function).
     """
     func_list = []
     func = generate_default_function(node, base_name, func_counter)
@@ -551,20 +564,21 @@ def check_domain(domain):
 #    graph.node.extend(nodesExceptConst)
 
 
-def add_as_parameter(pb, init):
-    if init.data_type != TensorProto.FLOAT:
+def add_tensor_as_parameter(pb, tensor):
+    """Add given tensor as a parameter"""
+    if tensor.data_type != TensorProto.FLOAT:
         raise ValueError("Only floating point data is supported for parameters {} (Got {})"
-                         .format(init.name, init.data_type))
+                         .format(tensor.name, tensor.data_type))
     p = pb.parameter.add()
-    p.variable_name = init.name
-    p.shape.dim.extend(init.dims)
+    p.variable_name = tensor.name
+    p.shape.dim.extend(tensor.dims)
     # convert raw bytestream to floating points
-    #num = len(init.raw_data) // 4  # four bytes per float
+    #num = len(tensor.raw_data) // 4  # four bytes per float
     # logger.log(99, "raw_data num: {}".format(num))
-    if init.raw_data:
-        p.data.extend(np.fromstring(init.raw_data, dtype=np.float32))
-    elif len(init.float_data) > 0:
-        p.data.extend(init.float_data)
+    if tensor.raw_data:
+        p.data.extend(np.fromstring(tensor.raw_data, dtype=np.float32))
+    elif len(tensor.float_data) > 0:
+        p.data.extend(tensor.float_data)
     p.need_grad = False
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
@@ -592,7 +606,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
 
     # convert parameters
     for init in graph.initializer:
-        add_as_parameter(pb, init)
+        add_tensor_as_parameter(pb, init)
         # Keep the list of all initializer names
         param_vars[init.name] = None
     # We need to distinguish constant parameters (which become 'Parameter' in NNabla)
@@ -606,30 +620,25 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     # to Variable
     in_list = []  # list of input variables
     out_list = []  # list of output variables
-    var_type_buffer = "Buffer"
     for i in graph.input:
-        v = onnx_value_info_proto_to_variable(i, network)
-        if v.name in param_vars:
+        if i.name in param_vars:
             # This input is a parameter
-            v.type = "Parameter"
-            v.initializer.type = "Constant"
-            v.initializer.multiplier = 1.0
+            v = add_value_info_as_parameter(i, network)
             param_list.append(v)
         else:
-            # This input is a variable
-            v.type = var_type_buffer
+            # This input is a buffer
+            v = add_value_info_as_buffer(i, network)
             in_list.append(v)
-        if v.name in all_vars:
-            del all_vars[v.name]
+        if i.name in all_vars:
+            del all_vars[i.name]
         else:
             # We come here when a buffer (usually a parameter) is included in
             # graph.input and graph.initializer,
             # but was not actually used as input for any node.
             # No one is using this buffer so we show a warning and ignore it.
-            logger.warning("Input buffer {} is not used as input for any node.".format(v.name))
+            logger.warning("Input buffer {} is not used as input for any node.".format(i.name))
     for o in graph.output:
-        v = onnx_value_info_proto_to_variable(o, network)
-        v.type = var_type_buffer
+        v = add_value_info_as_buffer(o, network)
         out_list.append(v)
         del all_vars[v.name]
 
@@ -637,7 +646,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         # We add all remaining variables as intermediate buffer
         # We leave the buffer size of all intermediate buffers empty
         v = network.variable.add()
-        v.type = var_type_buffer
+        v.type = "Buffer"
         v.name = varg
 
     # Add executor for target network
