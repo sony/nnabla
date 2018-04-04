@@ -648,7 +648,7 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         # A conversion of a buffer to a parameter may occur in functions
         # such as Constant
         if varg in param_vars:
-            pass
+            continue
         # We leave the buffer size of all intermediate buffers empty
         v = network.variable.add()
         v.type = "Buffer"
