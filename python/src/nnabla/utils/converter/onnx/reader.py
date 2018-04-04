@@ -45,7 +45,10 @@ onnx_optype_to_nnabla_function_type = {
     "Sum": "Add2",
     "Gemm": "Affine",
     "Add": "Add2",
-    "Mul": "Mul2"
+    "Mul": "Mul2",
+    # Constant does not get converted to a function
+    # but we list it here so we can accept it
+    "Constant": ""
 }
 
 
@@ -168,7 +171,11 @@ def convert_to_functions(node, base_name, initializers, func_counter):
     """
     func_list = []
     func = generate_default_function(node, base_name, func_counter)
-    if node.op_type == "Concat":
+    if node.op_type == "Relu":
+        func_list.append(func)
+    elif node.op_type == "GlobalAveragePool":
+        func_list.append(func)
+    elif node.op_type == "Concat":
         # Since concat axis is currently not required in ONNX,
         # the default axis depends on which backend we use.
         # For now we are comparing with caffe2, so we are
@@ -184,6 +191,7 @@ def convert_to_functions(node, base_name, initializers, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
+        func_list.append(func)
     elif node.op_type == "Softmax":
         logger.warning(SOFTMAX_WARNING)
         # default to channel axis
@@ -196,6 +204,7 @@ def convert_to_functions(node, base_name, initializers, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
+        func_list.append(func)
     elif node.op_type == "Dropout":
         # Dropout requires a ratio to be set
         for attr in node.attribute:
@@ -224,6 +233,7 @@ def convert_to_functions(node, base_name, initializers, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
+        func_list.append(func)
     elif node.op_type == "Conv":
         cp = func.convolution_param
         # We shouldn't need these default settings
@@ -279,18 +289,21 @@ def convert_to_functions(node, base_name, initializers, func_counter):
             # Set default values.
             # Do we really need this? (Default value should be set by NNabla)
             cp.dilation.dim.extend([1 for _ in range(dim)])
+        func_list.append(func)
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
         set_kernel_parameter(node, mpp)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         mpp.ignore_border = True
+        func_list.append(func)
     elif node.op_type == "AveragePool":
         app = func.average_pooling_param
         set_kernel_parameter(node, app)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         app.ignore_border = True
+        func_list.append(func)
     elif node.op_type == "BatchNormalization":
         # We need to rearrange the input data order.
         # ONNX BatchNormalization input order: X, scale, bias, mean, variance
@@ -328,6 +341,7 @@ def convert_to_functions(node, base_name, initializers, func_counter):
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
+        func_list.append(func)
     elif node.op_type == "Gemm":
         ap = func.affine_param
         ap.base_axis = 1
@@ -381,9 +395,11 @@ def convert_to_functions(node, base_name, initializers, func_counter):
         # update Gemm input with the converted inputs
         del func.input[:]
         func.input.extend(input)
+        func_list.append(func)
     elif node.op_type == "Sum":
         if len(func.input) > 2:
             raise ValueError("Sum operations with more than two input is currently not supported")
+        func_list.append(func)
     elif node.op_type == "Add":
         # We need the input buffer's dimension information here
         # in order to reshape the bias vector correctly.
@@ -413,6 +429,7 @@ def convert_to_functions(node, base_name, initializers, func_counter):
                 raise ValueError("broadcasting is currently not supported for {}".format(node.op_type))
                 # Add2 broadcasts by default so we do nothing here
                 #pass
+        func_list.append(func)
     elif node.op_type == "Mul":
         # We need the input buffer's dimension information here
         # in order to reshape the bias vector correctly.
@@ -442,7 +459,21 @@ def convert_to_functions(node, base_name, initializers, func_counter):
                 raise ValueError("broadcasting is currently not supported for {}".format(node.op_type))
                 # Mul2 broadcasts by default so we do nothing here
                 #pass
-    func_list.append(func)
+        func_list.append(func)
+    elif node.op_type == "Constant":
+        pass
+        # Convert a Constant node as an input parameter and not a function
+        #assert len(node.output) == 1, "Constant output must be a single buffer"
+        #name = node.output[0]
+        #for attr in node.attribute:
+        #    if attr.name == "value":
+        #        if attr.type != AttributeProto.TENSOR:
+        #            raise ValueError("Only TESNOR is supported for value in {} op_type".format(node.op_type))
+        #        t = attr.t
+        #        if t is None:
+        #            raise ValueError("value attribute must be set for {}".format(node.op_type))
+        #        t.name = name
+        #        constList.append(t)
     return func_list
 
 def convert_parameter_shape(pb):
@@ -486,49 +517,67 @@ def check_domain(domain):
     if not (domain == '' or domain == NNABLA_DOMAIN):
         raise ValueError("Unsupported operator from domain {} was found".format(domain))
 
-def convert_constant_to_initializer(graph):
-    """Convert a 'Constant' node to an initializer in order to
-    simplify the conversion process
-    """
-    constList = []
-    nodesExceptConst = []
-    for n in graph.node:
-        check_domain(n.domain)
-        if n.op_type == "Constant":
-            # Since a Constant node does not get converted to a function,
-            # we do not want it inside the node-to-function process.
-            # Therfore we proprocess all Constant nodes and convert it
-            # to an initializer, and then remove all Constant nodes.
-            assert len(n.output) == 1, "Constant output must be a single buffer"
-            name = n.output[0]
-            for attr in n.attribute:
-                if attr.name == "value":
-                    if attr.type != AttributeProto.TENSOR:
-                        raise ValueError("Only TESNOR is supported for value in {} op_type".format(n.op_type))
-                    t = attr.t
-                    if t is None:
-                        raise ValueError("value attribute must be set for {}".format(node.op_type))
-                    t.name = name
-                    constList.append(t)
-        else:
-            # We keep all nodes except for constant
-            nodesExceptConst.append(n)
+#def convert_constant_to_initializer(graph):
+#    """Convert a 'Constant' node to an initializer in order to
+#    simplify the conversion process
+#    """
+#    constList = []
+#    nodesExceptConst = []
+#    for n in graph.node:
+#        check_domain(n.domain)
+#        if n.op_type == "Constant":
+#            # Since a Constant node does not get converted to a function,
+#            # we do not want it inside the node-to-function process.
+#            # Therfore we proprocess all Constant nodes and convert it
+#            # to an initializer, and then remove all Constant nodes.
+#            assert len(n.output) == 1, "Constant output must be a single buffer"
+#            name = n.output[0]
+#            for attr in n.attribute:
+#                if attr.name == "value":
+#                    if attr.type != AttributeProto.TENSOR:
+#                        raise ValueError("Only TESNOR is supported for value in {} op_type".format(n.op_type))
+#                    t = attr.t
+#                    if t is None:
+#                        raise ValueError("value attribute must be set for {}".format(node.op_type))
+#                    t.name = name
+#                    constList.append(t)
+#        else:
+#            # We keep all nodes except for constant
+#            nodesExceptConst.append(n)
+#
+#    # Add all constants to the input and initializer and remove node from graph
+#    graph.initializer.extend(constList)
+#    del graph.node[:]
+#    graph.node.extend(nodesExceptConst)
 
-    # Add all constants to the initializer and remove node from graph
-    graph.initializer.extend(constList)
-    del graph.node[:]
-    graph.node.extend(nodesExceptConst)
 
+def add_as_parameter(pb, init):
+    if init.data_type != TensorProto.FLOAT:
+        raise ValueError("Only floating point data is supported for parameters {} (Got {})"
+                         .format(init.name, init.data_type))
+    p = pb.parameter.add()
+    p.variable_name = init.name
+    p.shape.dim.extend(init.dims)
+    # convert raw bytestream to floating points
+    #num = len(init.raw_data) // 4  # four bytes per float
+    # logger.log(99, "raw_data num: {}".format(num))
+    if init.raw_data:
+        p.data.extend(np.fromstring(init.raw_data, dtype=np.float32))
+    elif len(init.float_data) > 0:
+        p.data.extend(init.float_data)
+    p.need_grad = False
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
-    convert_constant_to_initializer(graph)
+    #convert_constant_to_initializer(graph)
     network = pb.network.add()
     network.name = graph.name
 
     # We use an OrderedDict and not a set
     # to preserve order
-    all_vars = OrderedDict()
-    func_counter = {}
+    param_vars = OrderedDict()  # Dictionary for input parameters.
+    all_vars = OrderedDict()  # Dictionary for all variables
+    param_list = []  # list of parameter variables
+    func_counter = {}  # a counter for all functions
     # convert nodes
     for n in graph.node:
         check_domain(n.domain)
@@ -542,24 +591,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         network.function.extend(fl)
 
     # convert parameters
-    # We use an OrderedDict and not a set
-    # to preserve order
-    param_vars = OrderedDict()
     for init in graph.initializer:
-        if init.data_type != TensorProto.FLOAT:
-            raise ValueError("Only floating point data is supported for parameters {} (Got {})"
-                             .format(init.name, init.data_type))
-        p = pb.parameter.add()
-        p.variable_name = init.name
-        p.shape.dim.extend(init.dims)
-        # convert raw bytestream to floating points
-        #num = len(init.raw_data) // 4  # four bytes per float
-        # logger.log(99, "raw_data num: {}".format(num))
-        if init.raw_data:
-            p.data.extend(np.fromstring(init.raw_data, dtype=np.float32))
-        elif len(init.float_data) > 0:
-            p.data.extend(init.float_data)
-        p.need_grad = False
+        add_as_parameter(pb, init)
         # Keep the list of all initializer names
         param_vars[init.name] = None
     # We need to distinguish constant parameters (which become 'Parameter' in NNabla)
@@ -571,9 +604,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
 
     # convert Input/Output ValueInfoProto
     # to Variable
-    in_list = []
-    param_list = []
-    out_list = []
+    in_list = []  # list of input variables
+    out_list = []  # list of output variables
     var_type_buffer = "Buffer"
     for i in graph.input:
         v = onnx_value_info_proto_to_variable(i, network)
