@@ -248,9 +248,9 @@ def test_nnp_onnx_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "mul_no_broadcast.nnp", "mul_no_broadcast.onnx", "out_data_1", "exec_0")
 
-#def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
-#    convert_onnx_to_nnp_and_compare(
-#        tmpdir, TEST_DATA_DIR, "constant.onnx", "constant.nnp", "Pooling33_Output_0", "exec_0")
+def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "constant.onnx", "constant.nnp", "Pooling33_Output_0", "exec_0")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     onnx_dir = TEST_DATA_DIR

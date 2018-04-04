@@ -176,7 +176,7 @@ def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
     tp.axes.extend([1, 0])  # switch H and W
     return trans
 
-def convert_to_functions(node, base_name, initializers, func_counter):
+def convert_to_functions(pb, network, node, base_name, initializers, func_counter, param_vars, param_list):
     """Convert given node to corresponding functions.
     A node is usually converted to a single function,
     but some nodes end up as a composition of functions,
@@ -474,19 +474,30 @@ def convert_to_functions(node, base_name, initializers, func_counter):
                 #pass
         func_list.append(func)
     elif node.op_type == "Constant":
-        pass
         # Convert a Constant node as an input parameter and not a function
-        #assert len(node.output) == 1, "Constant output must be a single buffer"
-        #name = node.output[0]
-        #for attr in node.attribute:
-        #    if attr.name == "value":
-        #        if attr.type != AttributeProto.TENSOR:
-        #            raise ValueError("Only TESNOR is supported for value in {} op_type".format(node.op_type))
-        #        t = attr.t
-        #        if t is None:
-        #            raise ValueError("value attribute must be set for {}".format(node.op_type))
-        #        t.name = name
-        #        constList.append(t)
+        assert len(node.output) == 1, "Constant output must be a single buffer"
+        name = node.output[0]
+        for attr in node.attribute:
+            if attr.name == "value":
+                if attr.type != AttributeProto.TENSOR:
+                    raise ValueError("Only TESNOR is supported for value in {} op_type".format(node.op_type))
+                t = attr.t
+                if t is None:
+                    raise ValueError("value attribute must be set for {}".format(node.op_type))
+                t.name = name
+                # add tensor as parameter
+                add_tensor_as_parameter(pb, t)
+                param_vars[t.name] = None
+                # Add tensor as variable
+                v = network.variable.add()
+                v.name = t.name
+                v.shape.dim.extend(t.dims)
+                v.type = "Parameter"
+                v.initializer.type = "Constant"
+                v.initializer.multiplier = 1.0
+                param_list.append(v)
+        # We do not add any function to the list here
+        # since the node is converted as a parameter
     return func_list
 
 def convert_parameter_shape(pb):
@@ -530,39 +541,6 @@ def check_domain(domain):
     if not (domain == '' or domain == NNABLA_DOMAIN):
         raise ValueError("Unsupported operator from domain {} was found".format(domain))
 
-#def convert_constant_to_initializer(graph):
-#    """Convert a 'Constant' node to an initializer in order to
-#    simplify the conversion process
-#    """
-#    constList = []
-#    nodesExceptConst = []
-#    for n in graph.node:
-#        check_domain(n.domain)
-#        if n.op_type == "Constant":
-#            # Since a Constant node does not get converted to a function,
-#            # we do not want it inside the node-to-function process.
-#            # Therfore we proprocess all Constant nodes and convert it
-#            # to an initializer, and then remove all Constant nodes.
-#            assert len(n.output) == 1, "Constant output must be a single buffer"
-#            name = n.output[0]
-#            for attr in n.attribute:
-#                if attr.name == "value":
-#                    if attr.type != AttributeProto.TENSOR:
-#                        raise ValueError("Only TESNOR is supported for value in {} op_type".format(n.op_type))
-#                    t = attr.t
-#                    if t is None:
-#                        raise ValueError("value attribute must be set for {}".format(node.op_type))
-#                    t.name = name
-#                    constList.append(t)
-#        else:
-#            # We keep all nodes except for constant
-#            nodesExceptConst.append(n)
-#
-#    # Add all constants to the input and initializer and remove node from graph
-#    graph.initializer.extend(constList)
-#    del graph.node[:]
-#    graph.node.extend(nodesExceptConst)
-
 
 def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
@@ -582,7 +560,6 @@ def add_tensor_as_parameter(pb, tensor):
     p.need_grad = False
 
 def onnx_graph_to_nnp_protobuf(pb, graph):
-    #convert_constant_to_initializer(graph)
     network = pb.network.add()
     network.name = graph.name
 
@@ -595,7 +572,9 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     # convert nodes
     for n in graph.node:
         check_domain(n.domain)
-        fl = convert_to_functions(n, graph.name, graph.initializer, func_counter)
+        fl = convert_to_functions(pb, network,
+                                  n, graph.name, graph.initializer,
+                                  func_counter, param_vars, param_list)
         # Gather all unique names for input and output
         for f in fl:
             for i in f.input:
@@ -645,8 +624,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     for varg in all_vars:
         # We add all remaining variables as intermediate buffer,
         # except for the ones that was converted to a parameter.
-        # A conversion of a buffer to a parameter may occur in functions
-        # such as Constant
+        # A conversion of a buffer to a parameter may occur when functions
+        # such as Constant is given.
         if varg in param_vars:
             continue
         # We leave the buffer size of all intermediate buffers empty
