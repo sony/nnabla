@@ -189,9 +189,9 @@ def convert_to_functions(pb, network, node, base_name, initializers, func_counte
     elif node.op_type == "GlobalAveragePool":
         func_list.append(func)
     elif node.op_type == "Concat":
-        # Since concat axis is currently not required in ONNX,
-        # the default axis depends on which backend we use.
-        # For now we are comparing with caffe2, so we are
+        # Concat axis was not required for old versions of Concat,
+        # so the default axis depended on which backend we use.
+        # Since we are comparing with caffe2, we are
         # defaulting to the channel axis if the axis is not specified.
         # https://github.com/onnx/onnx/issues/374
         func.concatenate_param.axis = DEFAULT_CONCAT_AXIS
@@ -348,7 +348,7 @@ def convert_to_functions(pb, network, node, base_name, initializers, func_counte
                     raise ValueError("Only FLOAT is supported for momentum in BatchNormalization op_type")
                 bnp.decay_rate = attr.f
             elif attr.name == "consumed_inputs":
-                # Caffe2 currently uses an undocumented attribute consumed_inputs for BatchNormalization.
+                # Old BatchNormalization has this field.
                 # Since NNabla does not need this, we ignore it
                 pass
             else:
@@ -652,14 +652,14 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
 
 def onnx_model_to_nnp_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
-    if model.ir_version > MIN_ONNX_IR_VERSION:
-        raise ValueError("ONNX IR versions newer than {} is currently not supported: {}".format(MIN_ONNX_IR_VERSION, model.ir_version))
+    if model.ir_version > ONNX_IR_VERSION:
+        raise ValueError("ONNX IR version newer than {} is currently not supported: {}".format(ONNX_IR_VERSION, model.ir_version))
     for opset in model.opset_import:
         if opset.domain == "":
             # ONNX opset.
             # Check if we have the correct version
-            if opset.version > MIN_ONNX_OPSET_VERSION:
-                raise ValueError("ONNX opsets versions newer than {} is currently not supported: {}".format(MIN_ONNX_OPSET_VERSION, opset.version))
+            if opset.version > ONNX_OPSET_VERSION:
+                raise ValueError("ONNX opset version newer than {} is currently not supported: {}".format(ONNX_OPSET_VERSION, opset.version))
         else:
             raise ValueError("Unsupported opset from domain {}".format(opset.domain))
 
