@@ -21,7 +21,7 @@ import onnx
 import numpy as np
 import pdb
 from collections import OrderedDict
-import onnx_caffe2.backend
+import caffe2.python.onnx.backend as oc2
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
 
@@ -43,7 +43,7 @@ def convert_onnx_to_nnp_and_compare(
     model = onnx.load(path)
     if show_onnx:
         print(model)
-    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2out = oc2.run_model(model, [])
     # Process onnx with naabla
     r = OnnxReader(path)
     nnp = r.read()
@@ -101,7 +101,7 @@ def convert_nnp_to_onnx_and_compare(
     if show_onnx:
         print(model)
     #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [])
+    c2out = oc2.run_model(model, [])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
     if show_output:
@@ -160,13 +160,13 @@ def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.nnp", "maxpool.onnx", "out_data_1", "exec_0")
 
-def test_onnx_nnp_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
+def test_onnx_nnp_conversion_maxpool_p0_s2_k2(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
-        tmpdir, TEST_DATA_DIR, "maxpool_no_pad.onnx", "maxpool_no_pad.nnp", "out_data_1", "exec_0")
+        tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k2.onnx", "maxpool_p0_s2_k2.nnp", "out_data_1", "exec_0")
 
-def test_nnp_onnx_conversion_maxpool_no_pad(tmpdir, nnp_fixture):
+def test_nnp_onnx_conversion_maxpool_p0_s2_k2(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
-        tmpdir, TEST_DATA_DIR, "maxpool_no_pad.nnp", "maxpool_no_pad.onnx", "out_data_1", "exec_0")
+        tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k2.nnp", "maxpool_p0_s2_k2.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
@@ -268,7 +268,7 @@ def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     if show_onnx:
         print(model)
     img = np.random.rand(1,3,224,224).astype(np.float32)
-    c2out = onnx_caffe2.backend.run_model(model, [img])
+    c2out = oc2.run_model(model, [img])
     # Process onnx with naabla
     nnp = onnx_model_to_nnp_protobuf(model)
     assert nnp is not None
@@ -342,7 +342,7 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
     if show_onnx:
         print(model)
     #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [img])
+    c2out = oc2.run_model(model, [img])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
     if show_output:
@@ -365,7 +365,7 @@ def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     if show_onnx:
         print(model)
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    rep = onnx_caffe2.backend.prepare(model)
+    rep = oc2.prepare(model)
     c2out = rep.run([img])
     # Process onnx with naabla
     nnp = onnx_model_to_nnp_protobuf(model)
@@ -440,7 +440,7 @@ def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
     if show_onnx:
         print(model)
     #pdb.set_trace()
-    c2out = onnx_caffe2.backend.run_model(model, [img])
+    c2out = oc2.run_model(model, [img])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
     if show_output:

@@ -153,17 +153,6 @@ def convert_to_nodes(func, variables):
         if bpp.decay_rate != 0.0:
             m = onnx.helper.make_attribute("momentum", bpp.decay_rate)
             attrs.append(m)
-        # We set an undocumented attribute 'consumed_inputs' here because
-        # ONNX will check if BatchNormalization has the attribute set.
-        # consumed_inputs is basically a list of flags indicating which 
-        # input data will be updated in-place (meaning the input and output will have
-        # same names). The value we are setting here is showing that the mean and variance
-        # will be specified as an in-place input.
-        # This should not be needed when is_test=True
-        # since we will not be outputting mean or variance, but since ONNX is enforcing
-        # the check we need to set it.
-        ci = onnx.helper.make_attribute("consumed_inputs", [0, 0, 0, 1, 1])
-        attrs.append(ci)
         n.attribute.extend(attrs)
     elif func.type == "Transpose":
         tp = func.transpose_param
@@ -294,15 +283,15 @@ def nnp_model_to_onnx_graph(graph, nnp):
 
 def nnp_model_to_onnx_protobuf(nnp):
     mp = ModelProto()
-    mp.ir_version = MIN_ONNX_IR_VERSION
+    mp.ir_version = ONNX_IR_VERSION
     op0 = mp.opset_import.add()
-    op0.version = MIN_ONNX_OPSET_VERSION
+    op0.version = ONNX_OPSET_VERSION
     op1 = mp.opset_import.add()
     op1.domain = ""  # empty string indicates ONNX domain
-    op1.version = MIN_ONNX_OPSET_VERSION
+    op1.version = ONNX_OPSET_VERSION
     # nn_opset = mp.opset_import.add()
     # nn_opset.domain = NNABLA_DOMAIN
-    # nn_opset.version = MIN_NNABLA_OPSET_VERSION
+    # nn_opset.version = NNABLA_OPSET_VERSION
     mp.producer_name = PRODUCER_NAME
     mp.producer_version = PRODUCER_VERSION
     mp.domain = NNABLA_DOMAIN
