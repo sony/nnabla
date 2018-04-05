@@ -652,14 +652,14 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
 
 def onnx_model_to_nnp_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
-    if model.ir_version < MIN_ONNX_IR_VERSION:
-        raise ValueError("Older ONNX IR versions are currently not supported")
+    if model.ir_version > MIN_ONNX_IR_VERSION:
+        raise ValueError("ONNX IR versions newer than {} is currently not supported: {}".format(MIN_ONNX_IR_VERSION, model.ir_version))
     for opset in model.opset_import:
         if opset.domain == "":
             # ONNX opset.
             # Check if we have the correct version
-            if opset.version < MIN_ONNX_OPSET_VERSION:
-                raise ValueError("Older ONNX opsets are currently not supported")
+            if opset.version > MIN_ONNX_OPSET_VERSION:
+                raise ValueError("ONNX opsets versions newer than {} is currently not supported: {}".format(MIN_ONNX_OPSET_VERSION, opset.version))
         else:
             raise ValueError("Unsupported opset from domain {}".format(opset.domain))
 
