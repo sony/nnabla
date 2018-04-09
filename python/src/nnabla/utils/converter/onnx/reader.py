@@ -47,6 +47,7 @@ onnx_optype_to_nnabla_function_type = {
     "Gemm": "Affine",
     "Add": "Add2",
     "Mul": "Mul2",
+    "MatMul": "BatchMatmul",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -533,6 +534,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             del func.input[1]
         if not shape_found:
             raise ValueError("Shape information was not found in {} op_type".format(node.op_type))
+        func_list.append(func)
+    elif node.op_type == "MatMul":
         func_list.append(func)
     return func_list
 
