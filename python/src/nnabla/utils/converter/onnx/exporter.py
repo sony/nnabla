@@ -33,6 +33,7 @@ nnabla_function_type_to_onnx_optype = {
     "MaxPooling": "MaxPool",
     "AveragePooling": "AveragePool",
     "Add2": "Add",
+    "BatchMatmul": "MatMul",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
@@ -175,6 +176,10 @@ def convert_to_nodes(func, variables):
         a = onnx.helper.make_attribute("axis", ap.base_axis)
         fl.attribute.extend([a])
         nl.append(fl)
+    elif func.type == "BatchMatmul":
+        bmp = func.batch_matmul_param
+        if bmp.transpose_a or bmp.transpose_b:
+            raise ValueError("{} with transpose is not supported yet".format(func.type))
     nl.append(n)
     return nl
 
