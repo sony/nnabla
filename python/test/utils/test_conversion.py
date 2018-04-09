@@ -318,4 +318,10 @@ def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "vgg19.onnx", "vgg19.nnp", "prob_1", "exec_0",
-        in_name="data_0", in_img=img, atol=1e-5)
+        in_name="data_0", in_img=img)
+
+def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
+    img = np.random.rand(1,3,224,224).astype(np.float32)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "vgg19.nnp", "vgg19.onnx", "prob_1", "exec_0",
+        in_name="data_0", in_img=img)
