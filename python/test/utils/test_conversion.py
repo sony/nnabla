@@ -36,14 +36,19 @@ def run_executor(nn_net, exec_name):
 
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
-        compare_values=True, show_onnx=False, show_nnp=False, show_output=False, atol=1e-08):
+        in_img=None, in_name="", compare_values=True, show_onnx=False, show_nnp=False,
+        show_output=False, atol=1e-08):
     """Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     # Process onnx with caffe2 backend
     model = onnx.load(path)
     if show_onnx:
         print(model)
-    c2out = oc2.run_model(model, [])
+    c2out = None
+    if type(in_img) is np.ndarray:
+        c2out = oc2.run_model(model, [in_img])
+    else:
+        c2out = oc2.run_model(model, [])
     # Process onnx with naabla
     r = OnnxReader(path)
     nnp = r.read()
@@ -60,6 +65,10 @@ def convert_onnx_to_nnp_and_compare(
     # read exported nnp and run network
     # pdb.set_trace()
     nn_net = nnload.load([p])
+    if type(in_img) is np.ndarray:
+        net = nn_net.executors[exec_name].network
+        in_data = net.variables[in_name]
+        in_data.variable_instance.d = in_img
     exe = run_executor(nn_net, exec_name)
     #in_data = exe.variables["in_data_0"]
     #print(in_data.variable_instance.d)
@@ -75,11 +84,16 @@ def convert_onnx_to_nnp_and_compare(
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
-        compare_values=True, show_nnp=False, show_onnx=False, show_output=False, atol=1e-08):
+        in_img=None, in_name="", compare_values=True, show_nnp=False,
+        show_onnx=False, show_output=False, atol=1e-08):
     """Convert specified NNP to ONNX and compare each results ran by Caffe2 and NNabla"""
     # Process nnp with nnabla
     path = os.path.join(nnp_dir, nnp_name)
     nn_net = nnload.load([path])
+    if type(in_img) is np.ndarray:
+        net = nn_net.executors[exec_name].network
+        in_data = net.variables[in_name]
+        in_data.variable_instance.d = in_img
     exe = run_executor(nn_net, exec_name)
     nnout = exe.variables[out_name].variable_instance.d
 
@@ -101,7 +115,11 @@ def convert_nnp_to_onnx_and_compare(
     if show_onnx:
         print(model)
     #pdb.set_trace()
-    c2out = oc2.run_model(model, [])
+    c2out = None
+    if type(in_img) is np.ndarray:
+        c2out = oc2.run_model(model, [in_img])
+    else:
+        c2out = oc2.run_model(model, [])
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
     if show_output:
@@ -273,196 +291,31 @@ def test_nnp_onnx_conversion_transpose(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "transpose.nnp", "transpose.onnx", "out_data_1", "exec_0")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
-    onnx_dir = TEST_DATA_DIR
-    onnx_name = "squeezenet.onnx"
-    nnp_name = "squeezenet.nnp"
-    out_name = "softmaxout_1"
-    exec_name = "exec_0"
-    in_name = "data_0"
-    show_onnx = False
-    show_nnp = False
-    show_output = False
-    path = os.path.join(onnx_dir, onnx_name)
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    if show_onnx:
-        print(model)
     img = np.random.rand(1,3,224,224).astype(np.float32)
-    c2out = oc2.run_model(model, [img])
-    # Process onnx with naabla
-    nnp = onnx_model_to_nnp_protobuf(model)
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    if show_nnp:
-        print(nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), nnp_name)
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    nn_net = nnload.load([p])
-    #pdb.set_trace()
-    # set input data and run inference
-    net = nn_net.executors[exec_name].network
-    in_data = net.variables[in_name]
-    in_data.variable_instance.d = img
-    net = run_executor(nn_net, exec_name)
-    #in_data = exe.variables["in_data_0"]
-    #print(in_data.variable_instance.d)
-    nnout = net.variables[out_name].variable_instance.d
-    #print(nnout.variable_instance.d)
-
-    # Print all the intermediate buffer shape in order
-    #for k, v in net.functions.items():
-    #    out = v.outputs[0]
-    #    print(out.name, net.variables[out.name].variable_instance.shape)
-    # Compare both naabla and caffe2 results
-    c2 = c2out[out_name]
-    if show_output:
-        print(c2, nnout)
-    assert np.allclose(c2, nnout)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "squeezenet.onnx", "squeezenet.nnp", "softmaxout_1", "exec_0",
+        in_name="data_0", in_img=img)
 
 def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
-    nnp_dir = TEST_DATA_DIR
-    onnx_name = "squeezenet.onnx"
-    nnp_name = "squeezenet.nnp"
-    out_name = "softmaxout_1"
-    exec_name = "exec_0"
-    in_name = "data_0"
-    show_onnx = False
-    show_nnp = False
-    show_output = False
-    # Process nnp with nnabla
-    path = os.path.join(nnp_dir, nnp_name)
-    nn_net = nnload.load([path])
-    net = nn_net.executors[exec_name].network
-    in_data = net.variables[in_name]
     img = np.random.rand(1,3,224,224).astype(np.float32)
-    in_data.variable_instance.d = img
-    exe = run_executor(nn_net, exec_name)
-    nnout = exe.variables[out_name].variable_instance.d
-
-    # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    if show_nnp:
-        print(nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), onnx_name)
-    onnxex.export(p)
-
-    # read exported onnx and run network
-    model = onnx.load(p)
-    if show_onnx:
-        print(model)
-    #pdb.set_trace()
-    c2out = oc2.run_model(model, [img])
-    c2 = c2out[out_name]
-    # Compare both naabla and caffe2 results
-    if show_output:
-        print(c2, nnout)
-    assert np.allclose(c2, nnout)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "squeezenet.nnp", "squeezenet.onnx", "softmaxout_1", "exec_0",
+        in_name="data_0", in_img=img)
 
 def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
-    onnx_dir = TEST_DATA_DIR
-    onnx_name = "resnet50.onnx"
-    nnp_name = "resnet50.nnp"
-    out_name = "gpu_0/softmax_1"
-    exec_name = "exec_0"
-    in_name = "gpu_0/data_0"
-    show_onnx = False
-    show_nnp = False
-    show_output = False
-    path = os.path.join(onnx_dir, onnx_name)
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    if show_onnx:
-        print(model)
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    rep = oc2.prepare(model)
-    c2out = rep.run([img])
-    # Process onnx with naabla
-    nnp = onnx_model_to_nnp_protobuf(model)
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    if show_nnp:
-        print(nnp.protobuf)
-
-    nnpex = NnpExporter(nnp, batch_size=0)
-    nnpdir = tmpdir.mkdir("nnp")
-    p = os.path.join(str(nnpdir), nnp_name)
-    nnpex.export_nnp(p)
-    # read exported nnp and run network
-    nn_net = nnload.load([p])
-    #pdb.set_trace()
-    # set input data and run inference
-    net = nn_net.executors[exec_name].network
-    in_data = net.variables[in_name]
-    in_data.variable_instance.d = img
-    net = run_executor(nn_net, exec_name)
-    #in_data = exe.variables["in_data_0"]
-    #print(in_data.variable_instance.d)
-    nnout = net.variables[out_name].variable_instance.d
-    #print(nnout.variable_instance.d)
-
-    # Print all the intermediate buffer shape in order
-    #for k, v in net.functions.items():
-    #    out = v.outputs[0]
-    #    print(out.name, net.variables[out.name].variable_instance.shape)
-    # Compare both naabla and caffe2 results
-    c2 = c2out[out_name]
-    if show_output:
-        print(c2, nnout)
-    assert np.allclose(c2, nnout, atol=1e-5)
+    img = np.random.rand(1,3,224,224).astype(np.float32)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "resnet50.onnx", "resnet50.nnp", "gpu_0/softmax_1", "exec_0",
+        in_name="gpu_0/data_0", in_img=img, atol=1e-5)
 
 def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
-    nnp_dir = TEST_DATA_DIR
-    onnx_name = "resnet50.onnx"
-    nnp_name = "resnet50.nnp"
-    out_name = "gpu_0/softmax_1"
-    exec_name = "exec_0"
-    in_name = "gpu_0/data_0"
-    show_onnx = False
-    show_nnp = False
-    show_output = False
-    # Process nnp with nnabla
-    path = os.path.join(nnp_dir, nnp_name)
-    nn_net = nnload.load([path])
-    net = nn_net.executors[exec_name].network
-    in_data = net.variables[in_name]
     img = np.random.rand(1,3,224,224).astype(np.float32)
-    in_data.variable_instance.d = img
-    exe = run_executor(nn_net, exec_name)
-    nnout = exe.variables[out_name].variable_instance.d
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "resnet50.nnp", "resnet50.onnx", "gpu_0/softmax_1", "exec_0",
+        in_name="gpu_0/data_0", in_img=img, atol=1e-5)
 
-    # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
-    assert nnp is not None
-    assert len(nnp.other_files) == 0
-    assert nnp.protobuf is not None
-    if show_nnp:
-        print(nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), onnx_name)
-    onnxex.export(p)
-
-    # read exported onnx and run network
-    model = onnx.load(p)
-    if show_onnx:
-        print(model)
-    #pdb.set_trace()
-    c2out = oc2.run_model(model, [img])
-    c2 = c2out[out_name]
-    # Compare both naabla and caffe2 results
-    if show_output:
-        print(c2, nnout)
-    assert np.allclose(c2, nnout, atol=1e-5)
+def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
+    img = np.random.rand(1,3,224,224).astype(np.float32)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "vgg19.onnx", "vgg19.nnp", "prob_1", "exec_0",
+        in_name="data_0", in_img=img, atol=1e-5)
