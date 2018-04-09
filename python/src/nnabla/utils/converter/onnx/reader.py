@@ -36,6 +36,7 @@ onnx_optype_to_nnabla_function_type = {
     "Softmax": "Softmax",
     "BatchNormalization": "BatchNormalization",
     "Reshape": "Reshape",
+    "Transpose": "Transpose",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
@@ -536,6 +537,16 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             raise ValueError("Shape information was not found in {} op_type".format(node.op_type))
         func_list.append(func)
     elif node.op_type == "MatMul":
+        func_list.append(func)
+    elif node.op_type == "Transpose":
+        tp = func.transpose_param
+        for attr in node.attribute:
+            if attr.name == "perm":
+                # perm has the same meaning for ONNX and NNabla
+                # so we simply copy the parameter
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS is supported for perm in {} op_type".format(node.op_type))
+                tp.axes.extend(attr.ints)
         func_list.append(func)
     return func_list
 
