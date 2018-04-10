@@ -18,17 +18,17 @@ that indicates if each operator can be converted to NNP.
 |ArgMax|:black_heart:||
 |ArgMin|:black_heart:||
 |AveragePool|:yellow_heart:|autopad not supported|
-|BatchNormalization|:yellow_heart:|is_test=false no supported (only inference)|
+|BatchNormalization|:yellow_heart:|is_test=false not supported (only inference)|
 |Cast|:black_heart:||
 |Ceil|:black_heart:||
 |Clip|:black_heart:||
-|Concat||
-|Constant||
-|Conv||
+|Concat|:green_heart:||
+|Constant|:yellow_heart:|Converted to an input parameter|
+|Conv|:yellow_heart:|auto_pad not supported|
 |ConvTranspose|:black_heart:||
 |DepthToSpace|:black_heart:||
 |Div|:black_heart:||
-|Dropout||
+|Dropout|:yellow_heart:|mask output will be removed since NNabla does not produce mask output.|
 |Elu|:black_heart:||
 |Equal|:black_heart:||
 |Exp|:black_heart:||
@@ -36,15 +36,15 @@ that indicates if each operator can be converted to NNP.
 |Floor|:black_heart:||
 |GRU|:black_heart:||
 |Gather|:black_heart:||
-|Gemm||
-|GlobalAveragePool||
+|Gemm|:yellow_heart:|alpha and beta is not supported. Input A and B must be two dimensional, and input C must be one dimensional|
+|GlobalAveragePool|:green_heart:||
 |GlobalLpPool|:black_heart:||
 |GlobalMaxPool|:black_heart:||
 |Greater|:black_heart:||
 |HardSigmoid|:black_heart:||
 |Hardmax|:black_heart:||
 |InstanceNormalization|:black_heart:||
-|LRN|:broken_heart:||
+|LRN|:broken_heart:|Operator does not exist in NNabla|
 |LSTM|:black_heart:||
 |LeakyRelu|:black_heart:||
 |Less|:black_heart:||
@@ -54,7 +54,7 @@ that indicates if each operator can be converted to NNP.
 |LpPool|:black_heart:||
 |MatMul|:green_heart:||
 |Max|:black_heart:||
-|MaxPool||
+|MaxPool|:yellow_heart:|auto_pad is not supported|
 |MaxRoiPool|:black_heart:||
 |Mean|:black_heart:||
 |Min|:black_heart:||

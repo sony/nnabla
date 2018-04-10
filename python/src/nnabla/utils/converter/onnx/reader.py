@@ -179,8 +179,10 @@ def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
     tp.axes.extend([1, 0])  # switch H and W
     return trans
 
+
 def convert_to_functions(pb, network, node, base_name, initializers,
-                         func_counter, param_vars, param_list, merged_inputs):
+                         func_counter, param_vars, param_list, merged_inputs,
+                         removed_outputs):
     """Convert given node to corresponding functions.
     A node is usually converted to a single function,
     but some nodes end up as a composition of functions,
@@ -223,6 +225,17 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                                  .format(attr.name, node.op_type))
         func_list.append(func)
     elif node.op_type == "Dropout":
+        if len(node.output) > 1:
+            # An ONNX Dropout node may have two outputs (result + mak)
+            # while a NNabla Dropout/Identity only allows a single output.
+            # We will drop the mask output (which should be the second one).
+            # This may result in a broken network (if the mask output was used later)
+            # so we show a warning here
+            logger.warning("Dropout's mask output {} will be removed"
+                           " since NNabla does not produce mask output".format(node.output[1]))
+            removed_outputs.append(node.output[1])
+            del func.output[:]
+            func.output.extend([node.output[0]])
         # Dropout requires a ratio to be set
         for attr in node.attribute:
             if attr.name == "is_test":
@@ -235,12 +248,6 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                     func.ClearField("dropout_param")
                     func.type = "Identity"
 
-                    if len(node.output) > 1:
-                        # Identity only allows a single output,
-                        # while a dropout node may have two outputs (result + mask)
-                        # We will drop the mask output (which should be the second one)
-                        del func.output[:]
-                        func.output.extend([node.output[0]])
                     # We break here so we don't write any needless attributes
                     break
             elif attr.name == "ratio":
@@ -619,13 +626,15 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     all_vars = OrderedDict()  # Dictionary for all variables
     param_list = []  # list of parameter variables
     merged_inputs = [] # list of input buffers that was merged to a function
+    removed_outputs = [] # list of output buffers that was removed
     func_counter = {}  # a counter for all functions
     # convert nodes
     for n in graph.node:
         check_domain(n.domain)
         fl = convert_to_functions(pb, network,
                                   n, graph.name, graph.initializer,
-                                  func_counter, param_vars, param_list, merged_inputs)
+                                  func_counter, param_vars, param_list, merged_inputs,
+                                  removed_outputs)
         # Gather all unique names for input and output
         for f in fl:
             for i in f.input:
@@ -676,6 +685,10 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
             # No one is using this buffer so we show a warning and ignore it.
             logger.warning("Input buffer {} is not used as input for any node.".format(i.name))
     for o in graph.output:
+        if o.name in removed_outputs:
+            # This output buffer was removed so we are not going to 
+            # use it
+            continue
         v = add_value_info_as_buffer(network, o)
         out_list.append(v)
         del all_vars[v.name]
