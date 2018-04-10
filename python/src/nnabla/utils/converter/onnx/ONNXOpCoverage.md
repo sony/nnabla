@@ -5,9 +5,9 @@
 - :yellow_heart: The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
 - :broken_heart: Hard to find a solution with existing NNabla operators.
 
-| Operator | Status |
-|---|:---:|
-|Abs|:black_heart:|
+| Operator | Status | Description |
+|---|:---:|:---:|
+|[Abs](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Abs)|:black_heart:||
 |Add||
 |And||
 |ArgMax||
