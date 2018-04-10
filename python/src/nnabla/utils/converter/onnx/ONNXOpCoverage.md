@@ -36,7 +36,7 @@ that indicates if each operator can be converted to NNP.
 |Floor|:black_heart:||
 |GRU|:black_heart:||
 |Gather|:black_heart:||
-|Gemm|:yellow_heart:|alpha and beta is not supported. Input A and B must be two dimensional, and input C must be one dimensional|
+|Gemm|:yellow_heart:|alpha and beta is not supported. Input A and B must be two dimensional, and input C must be one dimensional. transA, transB will be converted to a separate transpose operator|
 |GlobalAveragePool|:green_heart:||
 |GlobalLpPool|:black_heart:||
 |GlobalMaxPool|:black_heart:||
