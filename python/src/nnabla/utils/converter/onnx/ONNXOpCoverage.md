@@ -1,13 +1,13 @@
 # Tracking operator coverage for ONNX to NNP
 
-- :blackheart: The ONNX operator hasn't been checked if it can be converted to NNabla.
+- :black_heart: The ONNX operator hasn't been checked if it can be converted to NNabla.
 - :heart: The ONNX operator can map to a NNabla operator.
-- :yellowheart: The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
-- :brokenheart: Hard to find a solution with existing NNabla operators.
+- :yellow_heart: The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
+- :broken_heart: Hard to find a solution with existing NNabla operators.
 
 | Operator | Status |
 |---|:---:|
-|Abs|:blackheart:|
+|Abs|:black_heart:|
 |Add||
 |And||
 |ArgMax||
