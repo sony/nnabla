@@ -1,112 +1,117 @@
 # Tracking operator coverage for ONNX to NNP
 
+This is a status list of [ONNX operators](https://github.com/onnx/onnx/blob/master/docs/Operators.md)
+that indicates if each operator can be converted to NNP.
+
 - :black_heart: The ONNX operator hasn't been checked if it can be converted to NNabla.
-- :heart: The ONNX operator can map to a NNabla operator.
+- :green_heart: The ONNX operator can map to a NNabla operator.
 - :yellow_heart: The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
 - :broken_heart: Hard to find a solution with existing NNabla operators.
 
+- All operators have been tested with float tensors ONLY.
+
 | Operator | Status | Description |
 |---|:---:|:---:|
-|[Abs](https://github.com/onnx/onnx/blob/master/docs/Operators.md#Abs)|:black_heart:||
-|Add||
-|And||
-|ArgMax||
-|ArgMin||
-|AveragePool||
-|BatchNormalization||
-|Cast||
-|Ceil||
-|Clip||
+|Abs|:black_heart:||
+|Add|:yellow_heart:|broadcast not supported|
+|And|:black_heart:||
+|ArgMax|:black_heart:||
+|ArgMin|:black_heart:||
+|AveragePool|:yellow_heart:|autopad not supported|
+|BatchNormalization|:yellow_heart:|is_test=false no supported (only inference)|
+|Cast|:black_heart:||
+|Ceil|:black_heart:||
+|Clip|:black_heart:||
 |Concat||
 |Constant||
 |Conv||
-|ConvTranspose||
-|DepthToSpace||
-|Div||
+|ConvTranspose|:black_heart:||
+|DepthToSpace|:black_heart:||
+|Div|:black_heart:||
 |Dropout||
-|Elu||
-|Equal||
-|Exp||
-|Flatten||
-|Floor||
-|GRU||
-|Gather||
+|Elu|:black_heart:||
+|Equal|:black_heart:||
+|Exp|:black_heart:||
+|Flatten|:black_heart:||
+|Floor|:black_heart:||
+|GRU|:black_heart:||
+|Gather|:black_heart:||
 |Gemm||
 |GlobalAveragePool||
-|GlobalLpPool||
-|GlobalMaxPool||
-|Greater||
-|HardSigmoid||
-|Hardmax||
-|InstanceNormalization||
-|LRN||
-|LSTM||
-|LeakyRelu||
-|Less||
-|Log||
-|LogSoftmax||
-|LpNormalization||
-|LpPool||
-|MatMul||
-|Max||
+|GlobalLpPool|:black_heart:||
+|GlobalMaxPool|:black_heart:||
+|Greater|:black_heart:||
+|HardSigmoid|:black_heart:||
+|Hardmax|:black_heart:||
+|InstanceNormalization|:black_heart:||
+|LRN|:broken_heart:||
+|LSTM|:black_heart:||
+|LeakyRelu|:black_heart:||
+|Less|:black_heart:||
+|Log|:black_heart:||
+|LogSoftmax|:black_heart:||
+|LpNormalization|:black_heart:||
+|LpPool|:black_heart:||
+|MatMul|:green_heart:||
+|Max|:black_heart:||
 |MaxPool||
-|MaxRoiPool||
-|Mean||
-|Min||
-|Mul||
-|Neg||
-|Not||
-|Or||
-|PRelu||
-|Pad||
-|Pow||
-|RNN||
-|RandomNormal||
-|RandomNormalLike||
-|RandomUniform||
-|RandomUniformLike||
-|Reciprocal||
-|ReduceL1||
-|ReduceL2||
-|ReduceLogSum||
-|ReduceLogSumExp||
-|ReduceMax||
-|ReduceMean||
-|ReduceMin||
-|ReduceProd||
-|ReduceSum||
-|ReduceSumSquare||
-|Relu||
-|Reshape||
-|Selu||
-|Sigmoid||
-|Slice||
-|Softmax||
-|Softplus||
-|Softsign||
-|SpaceToDepth||
-|Split||
-|Sqrt||
-|Squeeze||
-|Sub||
-|Sum||
-|Tanh||
-|Tile||
-|Transpose||
-|Xor||
-|experimental ATen||
-|experimental Affine||
-|experimental ConstantFill||
-|experimental Crop||
-|experimental FC||
-|experimental GRUUnit||
-|experimental GivenTensorFill||
-|experimental Identity||
-|experimental ImageScaler||
-|experimental MeanVarianceNormalization||
-|experimental ParametricSoftplus||
-|experimental Scale||
-|experimental ScaledTanh||
-|experimental ThresholdedRelu||
-|experimental Upsample||
+|MaxRoiPool|:black_heart:||
+|Mean|:black_heart:||
+|Min|:black_heart:||
+|Mul|:yellow_heart:|broadcast is not supported|
+|Neg|:black_heart:||
+|Not|:black_heart:||
+|Or|:black_heart:||
+|PRelu|:black_heart:||
+|Pad|:black_heart:||
+|Pow|:black_heart:||
+|RNN|:black_heart:||
+|RandomNormal|:black_heart:||
+|RandomNormalLike|:black_heart:||
+|RandomUniform|:black_heart:||
+|RandomUniformLike|:black_heart:||
+|Reciprocal|:black_heart:||
+|ReduceL1|:black_heart:||
+|ReduceL2|:black_heart:||
+|ReduceLogSum|:black_heart:||
+|ReduceLogSumExp|:black_heart:||
+|ReduceMax|:black_heart:||
+|ReduceMean|:black_heart:||
+|ReduceMin|:black_heart:||
+|ReduceProd|:black_heart:||
+|ReduceSum|:black_heart:||
+|ReduceSumSquare|:black_heart:||
+|Relu|:green_heart:||
+|Reshape|:yellow_heart:|implementing|
+|Selu|:black_heart:||
+|Sigmoid|:black_heart:||
+|Slice|:black_heart:||
+|Softmax|:yellow_heart:|Supporting 2D input only|
+|Softplus|:black_heart:||
+|Softsign|:black_heart:||
+|SpaceToDepth|:black_heart:||
+|Split|:black_heart:||
+|Sqrt|:black_heart:||
+|Squeeze|:black_heart:||
+|Sub|:black_heart:||
+|Sum|:yellow_heart:|Supporting two inputs only|
+|Tanh|:black_heart:||
+|Tile|:black_heart:||
+|Transpose|:green_heart:||
+|Xor|:black_heart:||
+|experimental ATen|:black_heart:||
+|experimental Affine|:black_heart:||
+|experimental ConstantFill|:black_heart:||
+|experimental Crop|:black_heart:||
+|experimental FC|:black_heart:||
+|experimental GRUUnit|:black_heart:||
+|experimental GivenTensorFill|:black_heart:||
+|experimental Identity|:black_heart:||
+|experimental ImageScaler|:black_heart:||
+|experimental MeanVarianceNormalization|:black_heart:||
+|experimental ParametricSoftplus|:black_heart:||
+|experimental Scale|:black_heart:||
+|experimental ScaledTanh|:black_heart:||
+|experimental ThresholdedRelu|:black_heart:||
+|experimental Upsample|:black_heart:||
 
