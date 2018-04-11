@@ -84,7 +84,7 @@ that indicates if each operator can be converted to NNP.
 |Relu|:green_heart:||
 |Reshape|:yellow_heart:|implementing|
 |Selu|:black_heart:||
-|Sigmoid|:black_heart:||
+|Sigmoid|:green_heart:||
 |Slice|:black_heart:||
 |Softmax|:yellow_heart:|Supporting 2D input only|
 |Softplus|:black_heart:||
@@ -95,7 +95,7 @@ that indicates if each operator can be converted to NNP.
 |Squeeze|:black_heart:||
 |Sub|:black_heart:||
 |Sum|:yellow_heart:|Supporting two inputs only|
-|Tanh|:black_heart:||
+|Tanh|:green_heart:||
 |Tile|:black_heart:||
 |Transpose|:green_heart:||
 |Xor|:black_heart:||
