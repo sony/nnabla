@@ -26,6 +26,8 @@ nnabla_function_type_to_onnx_optype = {
     "BatchNormalization": "BatchNormalization",
     "Transpose": "Transpose",
     "Abs": "Abs",
+    "Sigmoid": "Sigmoid",
+    "Tanh": "Tanh",
     # optype with different names
     "ReLU": "Relu",
     "Concatenate": "Concat",

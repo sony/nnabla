@@ -38,6 +38,8 @@ onnx_optype_to_nnabla_function_type = {
     "Reshape": "Reshape",
     "Transpose": "Transpose",
     "Abs": "Abs",
+    "Sigmoid": "Sigmoid",
+    "Tanh": "Tanh",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",

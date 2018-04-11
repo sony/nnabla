@@ -298,6 +298,22 @@ def test_nnp_onnx_conversion_abs(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "abs.nnp", "abs.onnx", "out_data_1", "exec_0")
 
+def test_onnx_nnp_conversion_sigmoid(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "sigmoid.onnx", "sigmoid.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_sigmoid(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "sigmoid.nnp", "sigmoid.onnx", "out_data_1", "exec_0")
+
+def test_onnx_nnp_conversion_tanh(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "tanh.onnx", "tanh.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_tanh(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "tanh.nnp", "tanh.onnx", "out_data_1", "exec_0")
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
