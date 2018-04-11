@@ -314,6 +314,22 @@ def test_nnp_onnx_conversion_tanh(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "tanh.nnp", "tanh.onnx", "out_data_1", "exec_0")
 
+def test_onnx_nnp_conversion_leaky_relu(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "leaky_relu.onnx", "leaky_relu.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_leaky_relu(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "leaky_relu.nnp", "leaky_relu.onnx", "out_data_1", "exec_0")
+
+def test_onnx_nnp_conversion_log(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "log.onnx", "log.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_log(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "log.nnp", "log.onnx", "out_data_1", "exec_0")
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(

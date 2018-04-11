@@ -28,6 +28,8 @@ nnabla_function_type_to_onnx_optype = {
     "Abs": "Abs",
     "Sigmoid": "Sigmoid",
     "Tanh": "Tanh",
+    "LeakyReLU": "LeakyRelu",
+    "Log": "Log",
     # optype with different names
     "ReLU": "Relu",
     "Concatenate": "Concat",
@@ -183,6 +185,10 @@ def convert_to_nodes(func, variables):
         bmp = func.batch_matmul_param
         if bmp.transpose_a or bmp.transpose_b:
             raise ValueError("{} with transpose is not supported yet".format(func.type))
+    elif func.type == "LeakyReLU":
+        lrp = func.leaky_relu_param
+        a = onnx.helper.make_attribute("alpha", lrp.alpha)
+        n.attribute.extend([a])
     nl.append(n)
     return nl
 

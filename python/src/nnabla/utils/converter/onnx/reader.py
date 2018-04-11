@@ -40,6 +40,7 @@ onnx_optype_to_nnabla_function_type = {
     "Abs": "Abs",
     "Sigmoid": "Sigmoid",
     "Tanh": "Tanh",
+    "Log": "Log",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
@@ -52,6 +53,7 @@ onnx_optype_to_nnabla_function_type = {
     "Add": "Add2",
     "Mul": "Mul2",
     "MatMul": "BatchMatmul",
+    "LeakyRelu": "LeakyReLU",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -551,6 +553,15 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS is supported for perm in {} op_type".format(node.op_type))
                 tp.axes.extend(attr.ints)
+        func_list.append(func)
+    elif node.op_type == "LeakyRelu":
+        lrp = func.leaky_relu_param
+        lrp.alpha = 0.01  # alpha value defaults to 0.01 in ONNX
+        for attr in node.attribute:
+            if attr.name == "alpha":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
+                lrp.alpha = attr.f
         func_list.append(func)
     else:
         # Simply add the function for all other conversions
