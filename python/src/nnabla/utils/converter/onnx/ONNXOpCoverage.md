@@ -12,7 +12,7 @@ that indicates if each operator can be converted to NNP.
 
 | Operator | Status | Description |
 |---|:---:|:---:|
-|Abs|:black_heart:||
+|Abs|:green_heart:||
 |Add|:yellow_heart:|broadcast not supported|
 |And|:black_heart:||
 |ArgMax|:black_heart:||

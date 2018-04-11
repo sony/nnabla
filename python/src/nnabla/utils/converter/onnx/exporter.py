@@ -25,6 +25,7 @@ nnabla_function_type_to_onnx_optype = {
     "Softmax": "Softmax",
     "BatchNormalization": "BatchNormalization",
     "Transpose": "Transpose",
+    "Abs": "Abs",
     # optype with different names
     "ReLU": "Relu",
     "Concatenate": "Concat",

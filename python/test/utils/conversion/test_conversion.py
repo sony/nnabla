@@ -290,6 +290,14 @@ def test_nnp_onnx_conversion_transpose(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "transpose.nnp", "transpose.onnx", "out_data_1", "exec_0")
 
+def test_onnx_nnp_conversion_abs(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "abs.onnx", "abs.nnp", "out_data_1", "exec_0")
+
+def test_nnp_onnx_conversion_abs(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "abs.nnp", "abs.onnx", "out_data_1", "exec_0")
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
@@ -302,24 +310,28 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "squeezenet.nnp", "squeezenet.onnx", "softmaxout_1", "exec_0",
         in_name="data_0", in_img=img)
 
+@pytest.mark.slow
 def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "resnet50.onnx", "resnet50.nnp", "gpu_0/softmax_1", "exec_0",
         in_name="gpu_0/data_0", in_img=img, atol=1e-5)
 
+@pytest.mark.slow
 def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "resnet50.nnp", "resnet50.onnx", "gpu_0/softmax_1", "exec_0",
         in_name="gpu_0/data_0", in_img=img, atol=1e-5)
 
+@pytest.mark.slow
 def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "vgg19.onnx", "vgg19.nnp", "prob_1", "exec_0",
         in_name="data_0", in_img=img)
 
+@pytest.mark.slow
 def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
     img = np.random.rand(1,3,224,224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(

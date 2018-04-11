@@ -37,6 +37,7 @@ onnx_optype_to_nnabla_function_type = {
     "BatchNormalization": "BatchNormalization",
     "Reshape": "Reshape",
     "Transpose": "Transpose",
+    "Abs": "Abs",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
@@ -190,11 +191,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
     """
     func_list = []
     func = generate_default_function(node, base_name, func_counter)
-    if node.op_type == "Relu":
-        func_list.append(func)
-    elif node.op_type == "GlobalAveragePool":
-        func_list.append(func)
-    elif node.op_type == "Concat":
+    if node.op_type == "Concat":
         # Concat axis was not required for Concat-1 (it is required from Concat-4),
         # so the default axis depended on which backend we use.
         # Since we are comparing with caffe2, we are
@@ -543,8 +540,6 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         if not shape_found:
             raise ValueError("Shape information was not found in {} op_type".format(node.op_type))
         func_list.append(func)
-    elif node.op_type == "MatMul":
-        func_list.append(func)
     elif node.op_type == "Transpose":
         tp = func.transpose_param
         for attr in node.attribute:
@@ -554,6 +549,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS is supported for perm in {} op_type".format(node.op_type))
                 tp.axes.extend(attr.ints)
+        func_list.append(func)
+    else:
+        # Simply add the function for all other conversions
         func_list.append(func)
     return func_list
 
