@@ -46,9 +46,9 @@ that indicates if each operator can be converted to NNP.
 |InstanceNormalization|:black_heart:||
 |LRN|:broken_heart:|Operator does not exist in NNabla|
 |LSTM|:black_heart:||
-|LeakyRelu|:black_heart:||
+|LeakyRelu|:green_heart:||
 |Less|:black_heart:||
-|Log|:black_heart:||
+|Log|:green_heart:||
 |LogSoftmax|:black_heart:||
 |LpNormalization|:black_heart:||
 |LpPool|:black_heart:||
