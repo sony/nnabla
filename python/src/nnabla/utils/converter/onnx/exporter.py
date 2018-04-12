@@ -41,6 +41,7 @@ nnabla_function_type_to_onnx_optype = {
     "BatchMatmul": "MatMul",
     "LogicalNot": "Not",
     "ELU": "Elu",
+    "SELU": "Selu",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
@@ -199,6 +200,11 @@ def convert_to_nodes(func, variables, input_types, output_types):
         # Store the input/output tensor's name and convert it to boolean
         input_types[n.input[0]] = TensorProto.BOOL
         output_types[n.output[0]] = TensorProto.BOOL
+    elif func.type == "SELU":
+        sp = func.selu_param
+        a = onnx.helper.make_attribute("alpha", sp.alpha)
+        g = onnx.helper.make_attribute("gamma", sp.scale)
+        n.attribute.extend([a, g])
     nl.append(n)
     return nl
 

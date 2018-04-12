@@ -83,7 +83,7 @@ that indicates if each operator can be converted to NNP.
 |ReduceSumSquare|:black_heart:||
 |Relu|:green_heart:||
 |Reshape|:yellow_heart:|implementing|
-|Selu|:black_heart:||
+|Selu|:green_heart:||
 |Sigmoid|:green_heart:||
 |Slice|:black_heart:||
 |Softmax|:yellow_heart:|Supporting 2D input only|

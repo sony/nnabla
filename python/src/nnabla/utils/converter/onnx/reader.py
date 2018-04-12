@@ -56,6 +56,7 @@ onnx_optype_to_nnabla_function_type = {
     "LeakyRelu": "LeakyReLU",
     "Not": "LogicalNot",
     "Elu": "ELU",
+    "Selu": "SELU",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -456,6 +457,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 raise ValueError("broadcasting is currently not supported for {}".format(node.op_type))
                 # Add2 broadcasts by default so we do nothing here
                 #pass
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         func_list.append(func)
     elif node.op_type == "Mul":
         # We need the input buffer's dimension information here
@@ -486,6 +490,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 raise ValueError("broadcasting is currently not supported for {}".format(node.op_type))
                 # Mul2 broadcasts by default so we do nothing here
                 #pass
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         func_list.append(func)
     elif node.op_type == "Constant":
         # Convert a Constant node as an input parameter and not a function
@@ -510,6 +517,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 v.initializer.type = "Constant"
                 v.initializer.multiplier = 1.0
                 param_list.append(v)
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         # We do not add any function to the list here
         # since the node is converted as a parameter
     elif node.op_type == "Reshape":
@@ -522,6 +532,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                     raise ValueError("Only INTS is supported for shape in {} op_type".format(node.op_type))
                 rp.shape.dim.extend(attr.ints)
                 shape_found = True
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         if len(func.input) == 2:
             # Shape comes as input for Reshape-5.
             # NNabla reshape excepts a single input (data),
@@ -555,6 +568,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.INTS:
                     raise ValueError("Only INTS is supported for perm in {} op_type".format(node.op_type))
                 tp.axes.extend(attr.ints)
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         func_list.append(func)
     elif node.op_type == "LeakyRelu":
         lrp = func.leaky_relu_param
@@ -564,6 +580,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
                 lrp.alpha = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         func_list.append(func)
     elif node.op_type == "Elu":
         ep = func.elu_param
@@ -573,6 +592,26 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
                 ep.alpha = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
+        func_list.append(func)
+    elif node.op_type == "Selu":
+        sp = func.selu_param
+        sp.alpha = 1.6732  # Default value for ONNX
+        sp.scale = 1.0507
+        for attr in node.attribute:
+            if attr.name == "alpha":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
+                sp.alpha = attr.f
+            elif attr.name == "gamma":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Only FLOAT is supported for gamma in {} op_type".format(node.op_type))
+                sp.scale = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
         func_list.append(func)
     else:
         # Simply add the function for all other conversions
