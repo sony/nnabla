@@ -29,7 +29,7 @@ that indicates if each operator can be converted to NNP.
 |DepthToSpace|:black_heart:||
 |Div|:black_heart:||
 |Dropout|:yellow_heart:|mask output will be removed since NNabla does not produce mask output.|
-|Elu|:black_heart:||
+|Elu|:green_heart:||
 |Equal|:black_heart:||
 |Exp|:black_heart:||
 |Flatten|:black_heart:||

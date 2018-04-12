@@ -40,6 +40,7 @@ nnabla_function_type_to_onnx_optype = {
     "Add2": "Add",
     "BatchMatmul": "MatMul",
     "LogicalNot": "Not",
+    "ELU": "Elu",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
@@ -189,6 +190,10 @@ def convert_to_nodes(func, variables, input_types, output_types):
     elif func.type == "LeakyReLU":
         lrp = func.leaky_relu_param
         a = onnx.helper.make_attribute("alpha", lrp.alpha)
+        n.attribute.extend([a])
+    elif func.type == "ELU":
+        ep = func.elu_param
+        a = onnx.helper.make_attribute("alpha", ep.alpha)
         n.attribute.extend([a])
     elif func.type == "LogicalNot":
         # Store the input/output tensor's name and convert it to boolean

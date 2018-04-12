@@ -55,6 +55,7 @@ onnx_optype_to_nnabla_function_type = {
     "MatMul": "BatchMatmul",
     "LeakyRelu": "LeakyReLU",
     "Not": "LogicalNot",
+    "Elu": "ELU",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -563,6 +564,15 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
                 lrp.alpha = attr.f
+        func_list.append(func)
+    elif node.op_type == "Elu":
+        ep = func.elu_param
+        ep.alpha = 1.0  # alpha value defaults to 1.0 in ONNX
+        for attr in node.attribute:
+            if attr.name == "alpha":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
+                ep.alpha = attr.f
         func_list.append(func)
     else:
         # Simply add the function for all other conversions
