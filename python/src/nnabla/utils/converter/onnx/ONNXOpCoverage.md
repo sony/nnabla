@@ -60,7 +60,7 @@ that indicates if each operator can be converted to NNP.
 |Min|:black_heart:||
 |Mul|:yellow_heart:|broadcast is not supported|
 |Neg|:black_heart:||
-|Not|:black_heart:||
+|Not|:green_heart:||
 |Or|:black_heart:||
 |PRelu|:black_heart:||
 |Pad|:black_heart:||
