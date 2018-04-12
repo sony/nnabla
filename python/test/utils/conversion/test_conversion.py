@@ -25,7 +25,8 @@ import caffe2.python.onnx.backend as oc2
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
 
-TEST_DATA_DIR="nnabla-sample-data/conversion_data"
+TEST_DATA_DIR = "nnabla-sample-data/conversion_data"
+
 
 def run_executor(nn_net, exec_name):
     """Run specified executor and return its network"""
@@ -70,10 +71,10 @@ def convert_onnx_to_nnp_and_compare(
         in_data = net.variables[in_name]
         in_data.variable_instance.d = in_img
     exe = run_executor(nn_net, exec_name)
-    #in_data = exe.variables["in_data_0"]
-    #print(in_data.variable_instance.d)
+    # in_data = exe.variables["in_data_0"]
+    # print(in_data.variable_instance.d)
     nnout = exe.variables[out_name].variable_instance.d
-    #print(nnout.variable_instance.d)
+    # print(nnout.variable_instance.d)
     # Compare both naabla and caffe2 results
     c2 = c2out[out_name]
     if show_output:
@@ -81,6 +82,7 @@ def convert_onnx_to_nnp_and_compare(
     assert c2.shape == nnout.shape
     if compare_values:
         assert np.allclose(c2, nnout, atol=atol)
+
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
@@ -128,27 +130,33 @@ def convert_nnp_to_onnx_and_compare(
     if compare_values:
         assert np.allclose(c2, nnout, atol=atol)
 
+
 @pytest.fixture
 def nnp_fixture():
     # We need to remove all parameters for each test case
     # because the buffer shape will differ while having same names
     nnabla.clear_parameters()
 
+
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "concat.onnx", "concat.nnp", "out_data_1", "exec_0")
 
+
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "concat.nnp", "concat.onnx", "out_data_1", "exec_0")
+
 
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
     # We do not check if the values match because a dropout
@@ -156,216 +164,275 @@ def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout.onnx", "dropout.nnp", "out_data_1", "exec_0", compare_values=False)
 
+
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
     # We do not check if the values match because a dropout
     # output yield random results
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout.nnp", "dropout.onnx", "out_data_1", "exec_0", compare_values=False)
 
+
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout_test.onnx", "dropout_test.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "dropout_test.nnp", "dropout_test.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.onnx", "maxpool.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool.nnp", "maxpool.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_maxpool_p0_s2_k2(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k2.onnx", "maxpool_p0_s2_k2.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_maxpool_p0_s2_k2(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k2.nnp", "maxpool_p0_s2_k2.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.onnx", "maxpool_p0_s2_k3.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "maxpool_p0_s2_k3.nnp", "maxpool_p0_s2_k3.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.onnx", "softmax.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "softmax.nnp", "softmax.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "average_pool.onnx", "average_pool.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "average_pool.nnp", "average_pool.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_sum(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "sum.onnx", "sum.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_sum(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "sum.nnp", "sum.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "batch_norm.onnx", "batch_norm.nnp", "out_data_1", "exec_0", atol=1e-05)
+
 
 def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "batch_norm.nnp", "batch_norm.onnx", "out_data_1", "exec_0", atol=1e-05)
 
+
 def test_onnx_nnp_conversion_gemm(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.onnx", "gemm.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_gemm(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.nnp", "gemm.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_add_no_broadcast(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "add_no_broadcast.onnx", "add_no_broadcast.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_add_no_broadcast(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "add_no_broadcast.nnp", "add_no_broadcast.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "mul_no_broadcast.onnx", "mul_no_broadcast.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "mul_no_broadcast.nnp", "mul_no_broadcast.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "constant.onnx", "constant.nnp", "Pooling33_Output_0", "exec_0")
+
 
 #def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(
 #        tmpdir, TEST_DATA_DIR, "reshape.onnx", "reshape.nnp", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_matmul(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "matmul.onnx", "matmul.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_matmul(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "matmul.nnp", "matmul.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_transpose(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "transpose.onnx", "transpose.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_transpose(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "transpose.nnp", "transpose.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_abs(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "abs.onnx", "abs.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_abs(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "abs.nnp", "abs.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_sigmoid(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "sigmoid.onnx", "sigmoid.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_sigmoid(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "sigmoid.nnp", "sigmoid.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_tanh(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "tanh.onnx", "tanh.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_tanh(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "tanh.nnp", "tanh.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_leaky_relu(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "leaky_relu.onnx", "leaky_relu.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_leaky_relu(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "leaky_relu.nnp", "leaky_relu.onnx", "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_log(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "log.onnx", "log.nnp", "out_data_1", "exec_0")
+
 
 def test_nnp_onnx_conversion_log(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "log.nnp", "log.onnx", "out_data_1", "exec_0")
 
+
+def test_onnx_nnp_conversion_not(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "not.onnx", "not.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_not(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "not.nnp", "not.onnx", "out_data_1", "exec_0")
+
+
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "squeezenet.onnx", "squeezenet.nnp", "softmaxout_1", "exec_0",
         in_name="data_0", in_img=img)
 
+
 def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "squeezenet.nnp", "squeezenet.onnx", "softmaxout_1", "exec_0",
         in_name="data_0", in_img=img)
 
+
 @pytest.mark.slow
 def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "resnet50.onnx", "resnet50.nnp", "gpu_0/softmax_1", "exec_0",
         in_name="gpu_0/data_0", in_img=img, atol=1e-5)
 
+
 @pytest.mark.slow
 def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "resnet50.nnp", "resnet50.onnx", "gpu_0/softmax_1", "exec_0",
         in_name="gpu_0/data_0", in_img=img, atol=1e-5)
 
+
 @pytest.mark.slow
 def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "vgg19.onnx", "vgg19.nnp", "prob_1", "exec_0",
         in_name="data_0", in_img=img)
 
+
 @pytest.mark.slow
 def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
-    img = np.random.rand(1,3,224,224).astype(np.float32)
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "vgg19.nnp", "vgg19.onnx", "prob_1", "exec_0",
         in_name="data_0", in_img=img)

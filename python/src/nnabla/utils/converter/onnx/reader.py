@@ -54,6 +54,7 @@ onnx_optype_to_nnabla_function_type = {
     "Mul": "Mul2",
     "MatMul": "BatchMatmul",
     "LeakyRelu": "LeakyReLU",
+    "Not": "LogicalNot",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -612,19 +613,26 @@ def check_domain(domain):
 
 def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
-    if tensor.data_type != TensorProto.FLOAT:
-        raise ValueError("Only floating point data is supported for parameters {} (Got {})"
-                         .format(tensor.name, tensor.data_type))
     p = pb.parameter.add()
     p.variable_name = tensor.name
     p.shape.dim.extend(tensor.dims)
-    # convert raw bytestream to floating points
-    #num = len(tensor.raw_data) // 4  # four bytes per float
-    # logger.log(99, "raw_data num: {}".format(num))
-    if tensor.raw_data:
-        p.data.extend(np.fromstring(tensor.raw_data, dtype=np.float32))
-    elif len(tensor.float_data) > 0:
-        p.data.extend(tensor.float_data)
+    if tensor.data_type == TensorProto.FLOAT:
+        # convert raw bytestream to floating points
+        if tensor.raw_data:
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.float32))
+        elif len(tensor.float_data) > 0:
+            p.data.extend(tensor.float_data)
+        else:
+            raise ValueError("float data not found for {}".format(tensor.name))
+    elif tensor.data_type == TensorProto.BOOL:
+        if tensor.raw_data:
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.bool))
+        else:
+            raise ValueError("bool data not found for {}".format(tensor.name))
+
+    else:
+        raise ValueError("Unsupported tensor data type for {}: {}"
+                         .format(tensor.name, tensor.data_type))
     p.need_grad = False
 
 def onnx_graph_to_nnp_protobuf(pb, graph):

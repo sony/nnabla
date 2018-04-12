@@ -39,6 +39,7 @@ nnabla_function_type_to_onnx_optype = {
     "AveragePooling": "AveragePool",
     "Add2": "Add",
     "BatchMatmul": "MatMul",
+    "LogicalNot": "Not",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
