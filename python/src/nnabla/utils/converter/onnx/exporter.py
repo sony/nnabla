@@ -47,7 +47,7 @@ nnabla_function_type_to_onnx_optype = {
 }
 
 
-def convert_to_nodes(func, variables):
+def convert_to_nodes(func, variables, input_types, output_types):
     """Convert a function to a node or a group of nodes"""
     op_type = nnabla_function_type_to_onnx_optype.get(func.type)
     if op_type is None:
@@ -190,6 +190,10 @@ def convert_to_nodes(func, variables):
         lrp = func.leaky_relu_param
         a = onnx.helper.make_attribute("alpha", lrp.alpha)
         n.attribute.extend([a])
+    elif func.type == "LogicalNot":
+        # Store the input/output tensor's name and convert it to boolean
+        input_types[n.input[0]] = TensorProto.BOOL
+        output_types[n.output[0]] = TensorProto.BOOL
     nl.append(n)
     return nl
 
@@ -246,6 +250,15 @@ def convert_parameter_shape(graph):
                 i.type.tensor_type.shape.dim.extend([create_dim(chan)])
                 break
 
+
+def get_tensor_type(name, type_dict):
+    if name in type_dict:
+        return type_dict[name]
+    else:
+        # Default tensor type to float
+        return TensorProto.FLOAT
+
+
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
         raise ValueError("NNP with only a single network is currently supported")
@@ -261,15 +274,25 @@ def nnp_model_to_onnx_graph(graph, nnp):
     for v in net.variable:
         var_dict[v.name] = v.shape
 
+    # Store the names and type of all input/output
+    # tensor that must have a type other than float.
+    # If the input is in a parameter, it will be converted to that type
+    input_types = {}
+    output_types = {}
     for f in net.function:
-        nl = convert_to_nodes(f, net.variable)
+        nl = convert_to_nodes(f, net.variable, input_types, output_types)
         graph.node.extend(nl)
     for param in nnp.parameter:
         init = graph.initializer.add()
         init.name = param.variable_name
         init.dims.extend(param.shape.dim)
-        init.data_type = TensorProto.FLOAT  # We should be only getting float data from NNabla
-        init.raw_data = np.array(param.data, dtype=np.float32).tostring()
+        t = get_tensor_type(param.variable_name, input_types)
+        init.data_type = t
+        tensor_type_to_dtype = {
+            TensorProto.FLOAT: np.float32,
+            TensorProto.BOOL: np.bool
+        }
+        init.raw_data = np.array(param.data, dtype=tensor_type_to_dtype[t]).tostring()
         # init.float_data.extend(param.data)
 
     # Add all the constant parameters for all nodes
@@ -277,20 +300,20 @@ def nnp_model_to_onnx_graph(graph, nnp):
     for iv in exe.data_variable:
         i = graph.input.add()
         i.name = iv.variable_name
-        i.type.tensor_type.elem_type = TensorProto.FLOAT
+        i.type.tensor_type.elem_type = get_tensor_type(iv.variable_name, input_types)
         dims = [create_dim(d) for d in var_dict[iv.variable_name].dim]
         i.type.tensor_type.shape.dim.extend(dims)
     for pv in exe.parameter_variable:
         p = graph.input.add()
         p.name = pv.variable_name
-        p.type.tensor_type.elem_type = TensorProto.FLOAT
+        p.type.tensor_type.elem_type = get_tensor_type(pv.variable_name, input_types)
         dims = [create_dim(d) for d in var_dict[pv.variable_name].dim]
         p.type.tensor_type.shape.dim.extend(dims)
     # Add only the final output of the graph as output
     for ov in exe.output_variable:
         o = graph.output.add()
         o.name = ov.variable_name
-        o.type.tensor_type.elem_type = TensorProto.FLOAT
+        o.type.tensor_type.elem_type = get_tensor_type(ov.variable_name, output_types)
         dims = [create_dim(d) for d in var_dict[ov.variable_name].dim]
         o.type.tensor_type.shape.dim.extend(dims)
     convert_parameter_shape(graph)
