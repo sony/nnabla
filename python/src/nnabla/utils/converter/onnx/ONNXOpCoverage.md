@@ -76,10 +76,10 @@ that indicates if each operator can be converted to NNP.
 |ReduceLogSum|:black_heart:||
 |ReduceLogSumExp|:black_heart:||
 |ReduceMax|:black_heart:||
-|ReduceMean|:black_heart:||
+|ReduceMean|:green_heart:||
 |ReduceMin|:black_heart:||
 |ReduceProd|:black_heart:||
-|ReduceSum|:black_heart:||
+|ReduceSum|:green_heart:||
 |ReduceSumSquare|:black_heart:||
 |Relu|:green_heart:||
 |Reshape|:yellow_heart:|implementing|
