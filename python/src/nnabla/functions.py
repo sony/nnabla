@@ -390,20 +390,20 @@ def clip_by_value(x, min, max):
     r"""Clip inputs by values.
 
     .. math::
-    
-    	y = \begin{cases}
-    	        max & (x > max) \\
-    	        x & (otherwise) \\
-    	        min & (x < min)
-    	    \end{cases}.
-        
+
+        y = \begin{cases}
+                max & (x > max) \\
+                x & (otherwise) \\
+                min & (x < min)
+            \end{cases}.
+
     Args:
         x (Variable): An input variable.
-        min (Variable): An min variable by which `x` is clipped.
-        max (Variable): An max variable by which `x` is clipped.
+        min (Variable): A min variable by which `x` is clipped. Note that the shape of `min` must be the same as `x`'s.
+        max (Variable): A max variable by which `x` is clipped. Note that the shape of `max` must be the same as `x`'s
 
     Returns:
         ~nnabla.Variable: N-D array.
 
-    """    
+    """
     return F.minimum2(F.maximum2(x, min), max)

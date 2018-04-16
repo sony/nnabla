@@ -25,14 +25,16 @@ def ref_clip_grad_by_value(x, min_, max_):
     y = np.copy(x)
     return y
 
+
 def ref_grad_clip_grad_by_value(x, min_, max_, dy):
     dx = dy
     idx_min = np.where(dy < min_)
     idx_max = np.where(dy > max_)
-    
+
     dx[idx_min] = min_[idx_min]
     dx[idx_max] = max_[idx_max]
     return dx.flatten()
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
@@ -42,7 +44,7 @@ def test_clip_grad_by_value_forward_backward(seed, ctx, func_name):
     inputs = [
         cap_ignore_region(
             rng.randn(2, 3, 4).astype(np.float32) * 2,
-            (-1e-3, 1e-3)), 
+            (-1e-3, 1e-3)),
         cap_ignore_region(
             rng.randn(2, 3, 4).astype(np.float32) * 2,
             (-1e-3, 1e-3)),

@@ -29,7 +29,7 @@ NBLA_REGISTER_FUNCTION_HEADER(ClipGradByValue);
 
 In forward pass, the function behaves the identity.
 
-In backward pass, 
+In backward pass,
 
 @f[
 \frac{\partial C}{\partial x} = \begin{cases}
@@ -54,13 +54,10 @@ greater than `max` in the forward pass.
 \ingroup FunctionImplGrp
 
  */
-template <typename T>
-class ClipGradByValue
-    : public BaseFunction<> {
+template <typename T> class ClipGradByValue : public BaseFunction<> {
 
 public:
-  ClipGradByValue(const Context &ctx)
-      : BaseFunction<>(ctx) {}
+  ClipGradByValue(const Context &ctx) : BaseFunction<>(ctx) {}
   virtual ~ClipGradByValue() {}
   virtual shared_ptr<Function> copy() const {
     return create_ClipGradByValue(ctx_);

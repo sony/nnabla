@@ -731,13 +731,29 @@ Normalization:
                   g_y & (otherwise) \\
                   min & (g_y < min)
                  \end{cases}.
+                 
+      A typical case for use is to prevent the gradient explotion through a whole computational graph. 
+      For example, if you want to clip gradient values for each feature map, 
+      
+      .. code-block:: python
+        
+        x = nn.Variable([16, 3, 32, 32])
+        min = F.broadcast(nn.Variable.from_numpy_array(np.tile(-1.0, 64)).reshape((1, 64, 1, 1)), (8, 64, 3, 3))
+        max = F.broadcast(nn.Variable.from_numpy_array(np.tile(1.0, 64)).reshape((1, 64, 1, 1)), (8, 64, 3, 3))
+        c = F.clip_grad_by_value(x, min=min, max=max)
+        h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
+                               
     inputs:
       x:
         doc: N-D array of input.
       min:
-        doc: N-D array of minimum input value by which the gradients of the `x` are clipped.
+        doc: N-D array of minimum input value by which the gradients of the `y` are clipped. 
+          Note that the shape of `min` must be the same as `x`'s and the backward to `min`
+          is not performed.
       max:
-        doc: N-D array of maximum input value by which the gradients of the `x` are clipped.
+        doc: N-D array of maximum input value by which the gradients of the `y` are clipped.
+          Note that the shape of `max` must be the same as `x`'s and the backward to `max`
+          is not performed.
     outputs:
       y:
         doc: N-D array.

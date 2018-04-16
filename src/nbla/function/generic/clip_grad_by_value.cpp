@@ -26,21 +26,21 @@ NBLA_REGISTER_FUNCTION_SOURCE(ClipGradByValue);
 
 template <typename T>
 void ClipGradByValue<T>::setup_impl(const Variables &inputs,
-                                const Variables &outputs) {
+                                    const Variables &outputs) {
 
   // Shape size check
   Shape_t shape0 = inputs[0]->shape();
   Shape_t shape1 = inputs[1]->shape();
   Shape_t shape2 = inputs[2]->shape();
-  NBLA_CHECK(shape0.size() && shape1.size() && shape2.size(),
-             error_code::value, "Dimensions differ %d, %d, and %d", 
-             shape0.size(), shape1.size(), shape2.size());
-             
+  NBLA_CHECK(shape0.size() && shape1.size() && shape2.size(), error_code::value,
+             "Dimensions differ %d, %d, and %d", shape0.size(), shape1.size(),
+             shape2.size());
+
   // Shape check
-  for (int i=0; i < shape0.size(); i++) {
-    NBLA_CHECK(shape0[i] && shape1[i] && shape2[i],
-             error_code::value, "Size at shape[%d] differs %d, %d, and %d",
-             i, shape0[i], shape1[i], shape2[i])
+  for (int i = 0; i < shape0.size(); i++) {
+    NBLA_CHECK(shape0[i] && shape1[i] && shape2[i], error_code::value,
+               "Size at shape[%d] differs %d, %d, and %d", i, shape0[i],
+               shape1[i], shape2[i])
   }
 
   outputs[0]->reshape(inputs[0]->shape(), true);
@@ -48,7 +48,7 @@ void ClipGradByValue<T>::setup_impl(const Variables &inputs,
 
 template <typename T>
 void ClipGradByValue<T>::forward_impl(const Variables &inputs,
-                                  const Variables &outputs) {
+                                      const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int i = 0; i < inputs[0]->size(); i++) {
@@ -56,9 +56,9 @@ void ClipGradByValue<T>::forward_impl(const Variables &inputs,
   }
 }
 
-
 template <typename T, bool accum>
-void clip_grad_by_value_backward_cpu(int size, T *dx, const T *dy, const T *min, const T *max) {
+void clip_grad_by_value_backward_cpu(int size, T *dx, const T *dy, const T *min,
+                                     const T *max) {
   for (int i = 0; i < size; i++) {
     T min_i = min[i];
     T max_i = max[i];
@@ -80,9 +80,9 @@ void clip_grad_by_value_backward_cpu(int size, T *dx, const T *dy, const T *min,
 
 template <typename T>
 void ClipGradByValue<T>::backward_impl(const Variables &inputs,
-                                   const Variables &outputs,
-                                   const vector<bool> &propagate_down,
-                                   const vector<bool> &accum) {
+                                       const Variables &outputs,
+                                       const vector<bool> &propagate_down,
+                                       const vector<bool> &accum) {
   // No backward to min and max varialbes.
   if (!propagate_down[0]) {
     return;
