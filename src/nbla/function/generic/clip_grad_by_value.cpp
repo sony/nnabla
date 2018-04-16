@@ -50,7 +50,7 @@ template <typename T>
 void ClipGradByValue<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int i = 0; i < inputs[0]->size(); i++) {
     y[i] = x[i];
   }
@@ -59,29 +59,21 @@ void ClipGradByValue<T>::forward_impl(const Variables &inputs,
 
 template <typename T, bool accum>
 void clip_grad_by_value_backward_cpu(int size, T *dx, const T *dy, const T *min, const T *max) {
-  if (accum) {
-    for (int i = 0; i < size; i++) {
-      T min_i = min[i];
-      T max_i = max[i];
-      if (dy[i] > max_i) {
-        dx[i] += max_i;
-      } else if (dy[i] < min_i) {
-        dx[i] += min_i;
-      } else {
-        dx[i] += dy[i];
-      }
+  for (int i = 0; i < size; i++) {
+    T min_i = min[i];
+    T max_i = max[i];
+    T value;
+    if (dy[i] > max_i) {
+      value = max_i;
+    } else if (dy[i] < min_i) {
+      value = min_i;
+    } else {
+      value = dy[i];
     }
-  } else {
-    for (int i = 0; i < size; i++) {
-      T min_i = min[i];
-      T max_i = max[i];
-      if (dy[i] > max_i) {
-        dx[i] = max_i;
-      } else if (dy[i] < min_i) {
-        dx[i] = min_i;
-      } else {
-        dx[i] = dy[i];
-      }
+    if (accum) {
+      dx[i] += value;
+    } else {
+      dx[i] = value;
     }
   }
 }
@@ -96,8 +88,15 @@ void ClipGradByValue<T>::backward_impl(const Variables &inputs,
     return;
   }
 
+  // Zeroing grads of min and max when accum is false.
+  for (int i = 1; i < 3; i++) {
+    if (propagate_down[i] && !accum[i]) {
+      inputs[i]->grad()->zero();
+    }
+  }
+
   Size_t size = inputs[0]->size();
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const T *min = inputs[1]->get_data_pointer<T>(this->ctx_);
   const T *max = inputs[2]->get_data_pointer<T>(this->ctx_);
@@ -108,6 +107,4 @@ void ClipGradByValue<T>::backward_impl(const Variables &inputs,
     clip_grad_by_value_backward_cpu<T, false>(size, dx, dy, min, max);
 }
 
-// Template instantiation
-template class ClipGradByValue<float>;
 } // namespace nbla

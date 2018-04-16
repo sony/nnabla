@@ -718,6 +718,29 @@ Normalization:
     outputs:
       y:
         doc: N-D array.
+  ClipGradByValue:
+    snake_name: clip_grad_by_value
+    doc: |2
+      In forward pass, the function behaves as the identity.
+
+      In backward pass,
+
+          .. math::
+              g_x = \begin{cases}
+                  max & (g_y > max) \\
+                  g_y & (otherwise) \\
+                  min & (g_y < min)
+                 \end{cases}.
+    inputs:
+      x:
+        doc: N-D array of input.
+      min:
+        doc: N-D array of minimum input value by which the gradients of the `x` are clipped.
+      max:
+        doc: N-D array of maximum input value by which the gradients of the `x` are clipped.
+    outputs:
+      y:
+        doc: N-D array.
 Reduction:
   Sum:
     snake_name: sum
