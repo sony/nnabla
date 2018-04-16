@@ -57,6 +57,8 @@ onnx_optype_to_nnabla_function_type = {
     "Not": "LogicalNot",
     "Elu": "ELU",
     "Selu": "SELU",
+    "ReduceSum": "Sum",
+    # "ReduceMean": "Mean",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -609,6 +611,22 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError("Only FLOAT is supported for gamma in {} op_type".format(node.op_type))
                 sp.scale = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
+        func_list.append(func)
+    elif node.op_type == "ReduceSum":
+        sp = func.sum_param
+        sp.keep_dims = True  #  keep_dims is default True for ONNX
+        for attr in node.attribute:
+            if attr.name == "axes":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS is supported for axes in {} op_type".format(node.op_type))
+                sp.axes.extend(attr.ints)
+            elif attr.name == "keepdims":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Only INT is supported for keepdims in {} op_type".format(node.op_type))
+                sp.keep_dims = bool(attr.i)
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, node.op_type))
