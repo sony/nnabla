@@ -447,12 +447,27 @@ def test_nnp_onnx_conversion_reduce_mean(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "reduce_mean.nnp", "reduce_mean.onnx", "out_data_1", "exec_0")
 
 
+# These following tests are invalidated due to a
+# backend bug? decribed in the following issue:
+# https://github.com/Microsoft/CNTK/issues/3127
 #def test_onnx_nnp_conversion_reduce_min(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(
 #        tmpdir, TEST_DATA_DIR, "reduce_min.onnx", "reduce_min.nnp",
 #        "ReduceElements7_Output_0", "exec_0",
 #        backend="cntk")
-
+#
+#
+#def test_onnx_nnp_conversion_reduce_max(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(
+#        tmpdir, TEST_DATA_DIR, "reduce_max.onnx", "reduce_max.nnp",
+#        "ReduceElements7_Output_0", "exec_0",
+#        backend="cntk")
+#
+#def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(
+#        tmpdir, TEST_DATA_DIR, "reduce_prod.onnx", "reduce_prod.nnp",
+#        "ReduceElements7_Output_0", "exec_0",
+#        backend="cntk")
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
