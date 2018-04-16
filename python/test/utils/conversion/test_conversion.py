@@ -22,6 +22,8 @@ import numpy as np
 import pdb
 from collections import OrderedDict
 import caffe2.python.onnx.backend as oc2
+import cntk
+import cntk.ops.functions as cntkf
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
 
@@ -37,19 +39,33 @@ def run_executor(nn_net, exec_name):
 
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
+        backend="caffe2",
         in_img=None, in_name="", compare_values=True, show_onnx=False, show_nnp=False,
         show_output=False, atol=1e-08):
     """Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
-    # Process onnx with caffe2 backend
-    model = onnx.load(path)
-    if show_onnx:
-        print(model)
-    c2out = None
-    if type(in_img) is np.ndarray:
-        c2out = oc2.run_model(model, [in_img])
+    backend_out = None
+    if backend == "caffe2":
+        # Process onnx with caffe2 backend
+        model = onnx.load(path)
+        if show_onnx:
+            print(model)
+        c2out = None
+        if type(in_img) is np.ndarray:
+            c2out = oc2.run_model(model, [in_img])
+        else:
+            c2out = oc2.run_model(model, [])
+        backend_out = c2out[out_name]
+    elif backend == "cntk":
+        n = cntkf.Function.load(path, format=cntk.ModelFormat.ONNX)
+        cntk_out = None
+        if type(in_img) is np.ndarray:
+            cntk_out = n.eval({in_name: in_img})
+        else:
+            cntk_out = n.eval()
+        backend_out = cntk_out[0]
     else:
-        c2out = oc2.run_model(model, [])
+        raise ValueError("Unknown backend specified")
     # Process onnx with naabla
     r = OnnxReader(path)
     nnp = r.read()
@@ -75,13 +91,12 @@ def convert_onnx_to_nnp_and_compare(
     # print(in_data.variable_instance.d)
     nnout = exe.variables[out_name].variable_instance.d
     # print(nnout.variable_instance.d)
-    # Compare both naabla and caffe2 results
-    c2 = c2out[out_name]
+    # Compare both naabla and backend results
     if show_output:
-        print(c2, nnout)
-    assert c2.shape == nnout.shape
+        print(backend_out, nnout)
+    assert backend_out.shape == nnout.shape
     if compare_values:
-        assert np.allclose(c2, nnout, atol=atol)
+        assert np.allclose(backend_out, nnout, atol=atol)
 
 
 def convert_nnp_to_onnx_and_compare(
@@ -430,6 +445,13 @@ def test_onnx_nnp_conversion_reduce_mean(tmpdir, nnp_fixture):
 def test_nnp_onnx_conversion_reduce_mean(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "reduce_mean.nnp", "reduce_mean.onnx", "out_data_1", "exec_0")
+
+
+#def test_onnx_nnp_conversion_reduce_min(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(
+#        tmpdir, TEST_DATA_DIR, "reduce_min.onnx", "reduce_min.nnp",
+#        "ReduceElements7_Output_0", "exec_0",
+#        backend="cntk")
 
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):

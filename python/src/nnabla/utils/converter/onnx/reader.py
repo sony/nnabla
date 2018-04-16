@@ -59,6 +59,7 @@ onnx_optype_to_nnabla_function_type = {
     "Selu": "SELU",
     "ReduceSum": "Sum",
     "ReduceMean": "Mean",
+    "ReduceMin": "Min",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -636,6 +637,10 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         func_list.append(func)
     elif node.op_type == "ReduceMean":
         mp = func.mean_param
+        set_reduction_attrs(mp, node)
+        func_list.append(func)
+    elif node.op_type == "ReduceMin":
+        mp = func.min_param
         set_reduction_attrs(mp, node)
         func_list.append(func)
     else:
