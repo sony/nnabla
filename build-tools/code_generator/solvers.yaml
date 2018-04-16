@@ -36,6 +36,33 @@ Momentum:
       default: 0.9
       doc: Decay rate of momentum.
 
+Lars:
+  snake_name: lars
+  doc: |
+    LARS with Momentum
+
+  references:
+    - |
+      `https://arxiv.org/pdf/1708.03888.pdf`
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+    momentum:
+      type: float
+      default: 0.9
+      doc: Decay rate of momentum.
+    coefficient:
+      type: float
+      default: 0.001
+      doc: Trust coefficient
+    eps:
+      type: float
+      default: 1e-6
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+
 Nesterov:
   snake_name: nesterov
   doc: |
