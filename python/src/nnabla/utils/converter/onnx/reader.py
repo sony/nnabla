@@ -58,7 +58,7 @@ onnx_optype_to_nnabla_function_type = {
     "Elu": "ELU",
     "Selu": "SELU",
     "ReduceSum": "Sum",
-    # "ReduceMean": "Mean",
+    "ReduceMean": "Mean",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -188,6 +188,21 @@ def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
     tp = trans.transpose_param
     tp.axes.extend([1, 0])  # switch H and W
     return trans
+
+def set_reduction_attrs(p, node):
+    p.keep_dims = True  #  keep_dims is default True for ONNX
+    for attr in node.attribute:
+        if attr.name == "axes":
+            if attr.type != AttributeProto.INTS:
+                raise ValueError("Only INTS is supported for axes in {} op_type".format(node.op_type))
+            p.axes.extend(attr.ints)
+        elif attr.name == "keepdims":
+            if attr.type != AttributeProto.INT:
+                raise ValueError("Only INT is supported for keepdims in {} op_type".format(node.op_type))
+            p.keep_dims = bool(attr.i)
+        else:
+            raise ValueError("Unsupported attribute {} was specified at {}"
+                             .format(attr.name, node.op_type))
 
 
 def convert_to_functions(pb, network, node, base_name, initializers,
@@ -617,19 +632,11 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         func_list.append(func)
     elif node.op_type == "ReduceSum":
         sp = func.sum_param
-        sp.keep_dims = True  #  keep_dims is default True for ONNX
-        for attr in node.attribute:
-            if attr.name == "axes":
-                if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS is supported for axes in {} op_type".format(node.op_type))
-                sp.axes.extend(attr.ints)
-            elif attr.name == "keepdims":
-                if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for keepdims in {} op_type".format(node.op_type))
-                sp.keep_dims = bool(attr.i)
-            else:
-                raise ValueError("Unsupported attribute {} was specified at {}"
-                                 .format(attr.name, node.op_type))
+        set_reduction_attrs(sp, node)
+        func_list.append(func)
+    elif node.op_type == "ReduceMean":
+        mp = func.mean_param
+        set_reduction_attrs(mp, node)
         func_list.append(func)
     else:
         # Simply add the function for all other conversions

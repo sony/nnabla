@@ -43,6 +43,7 @@ nnabla_function_type_to_onnx_optype = {
     "ELU": "Elu",
     "SELU": "Selu",
     "Sum": "ReduceSum",
+    "Mean": "ReduceMean",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
@@ -210,6 +211,11 @@ def convert_to_nodes(func, variables, input_types, output_types):
         sp = func.sum_param
         a = onnx.helper.make_attribute("axes", sp.axes)
         k = onnx.helper.make_attribute("keepdims", sp.keep_dims)
+        n.attribute.extend([a, k])
+    elif func.type == "Mean":
+        mp = func.mean_param
+        a = onnx.helper.make_attribute("axes", mp.axes)
+        k = onnx.helper.make_attribute("keepdims", mp.keep_dims)
         n.attribute.extend([a, k])
     nl.append(n)
     return nl
