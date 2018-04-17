@@ -14,12 +14,13 @@
 
 <%
 from utils.type_conv import type_from_proto
+from collections import OrderedDict
 dec_targs = ', '.join(['typename ' + t for t in ttypes])
 targs = ', '.join(ttypes)
 args = ''.join([', ' + k for k, v in arguments.items()])
 args_ = ''.join([', ' + k + '_' for k, v in arguments.items()])
 
-arg_types = {k: type_from_proto[v['type']]['cpp'] for k, v in arguments.items()}
+arg_types = OrderedDict([(k, type_from_proto[v['type']]['cpp']) for k, v in arguments.items()])
 dec_args = ''.join([', %s %s' % (v, k) for k, v in arg_types.items()])
 
 def get_min(inputs):
