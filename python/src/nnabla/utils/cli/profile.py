@@ -116,11 +116,12 @@ def profile_optimizer(config, result_array):
                     v.name, generate_data, result_dict)
 
         # Setup (detail)
-        for func in o.forward_sequence:
-            def setup():
-                o.network.setup_function(func)
-            profile(config, 'setup_function (%s : %s)' % (
-                func.name, func.function_instance.name), setup, result_dict)
+        ## CSXENA-5470 disable profiling setup method.
+        #### for func in o.forward_sequence:
+        ####     def setup():
+        ####         o.network.setup_function(func)
+        ####     profile(config, 'setup_function (%s : %s)' % (
+        ####         func.name, func.function_instance.name), setup, result_dict)
 
         # Forward (detail)
         for func in o.forward_sequence:
