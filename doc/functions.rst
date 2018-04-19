@@ -3486,6 +3486,50 @@ Broadcasting ND-array to the specified shape.
      - Broadcasted N-D array
      - 
 
+BroadcastTo
+^^^^^^^^^^^
+
+Broadcasting ND-array to the specified buffer
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+   * - y
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - axis
+     - Shape
+     - 
+     - Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - z
+     - Broadcasted N-D array
+     - 
+
 OneHot
 ^^^^^^
 
