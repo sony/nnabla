@@ -105,7 +105,15 @@ class NnbExporter:
                     index, pointer = self._alloc(data=data)
                     var.data_index = index
                 elif v.type == 'Buffer':
-                    var.data_index = (vidx_to_abidx[n] + 1) * -1
+                    # FIXME: remove the following workaround
+                    if n in vidx_to_abidx:
+                        # n which is NOT in vidx_to_abidx can appear
+                        # since NnpExpander doesn't handle --nnp-expand-network correctly
+                        var.data_index = (vidx_to_abidx[n] + 1) * -1
+                    else:
+                        # this var doesn't make sense, but add  it
+                        # so that nn_network_t::variables::size is conserved
+                        var.data_index = -1
 
                 variable = struct.pack('IiIBi',
                                        var.id,
