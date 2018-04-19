@@ -3876,6 +3876,120 @@ Note:
      - N-D array with the same shape as x
      - 
 
+TopKData
+^^^^^^^^
+
+Select the `k` largest values from each sample in `x` to propagate
+unmodified and set all other values to 0. If `abs` is True, the `k`
+largest values are selected by magnitude. If `reduce` is True (the
+default), all feature dimensions are reduced to a single dimension of
+size `k` that propagates only the `k` largest values. Otherwise, if
+`reduce` is False, input and output dimensions are identical.
+Dimensions before `base_axis` are treated as number of sample
+dimensions and `k` values get selected from all elements of a
+sample (dimensions from `base_axis`) regardless of shape.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - k
+     - int64
+     - 
+     - Number of largest data values to propgate.
+   * - abs
+     - bool
+     - False
+     - Determine largest data values by magnitude.
+   * - reduce
+     - bool
+     - True
+     - Reduce feature size to one dimension of size `k`.
+   * - base_axis
+     - int64
+     - 1
+     - First dimension of the sample shape.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     -
+
+TopKGrad
+^^^^^^^^
+
+Select the `k` largest gradients for each sample in `x` to
+back-propagate unmodified and set all other gradients to 0.
+If `abs` is True, the `k` largest gradients are selected by
+magnitude. Dimensions before `base_axis` are treated as number
+of sample dimensions and `k` gradients get selected from all
+gradients of a sample (dimensions from `base_axis`)
+regardless of shape.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - k
+     - int64
+     - 
+     - Number of largest data values to propgate.
+   * - abs
+     - bool
+     - False
+     - Determine largest data values by magnitude.
+   * - base_axis
+     - int64
+     - 1
+     - First dimension of the sample shape.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with same shape and data as `x`.
+     -
+
 Rand
 ^^^^
 
