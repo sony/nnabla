@@ -23,11 +23,14 @@ from nbla_test_utils import (
     list_ctx_and_func_name)
 
 def ref_broadcast_to(x, y, axis):
-    return x
+    if axis < 0:
+        return np.ones(x.shape) * y
+    else:
+        return np.ones(x.shape)
 
 
 PARAMS = [
-    #((2, 3, 4, 5), (5), -1),
+    ((2, 3, 4, 5), (5), -1),
     ((2, 3, 4, 5), (4, 5), -1),
     #((2, 3, 4, 5), (3, 4), 1),
     #((2, 3, 4, 5), (2), 0),
@@ -40,21 +43,7 @@ def test_broadcast_to_forward_backward(xs, ys, axis, seed, fname, ctx, func_name
     rng = np.random.RandomState(seed)
     ref_func = eval('ref_' + fname)
     func = getattr(F, fname)
-    inputs = [rng.randn(*xs), rng.randn(*ys)]
+    inputs = [rng.random_sample(xs), rng.random_sample(ys)]
     function_tester(rng, func, ref_func, inputs, [axis],
-                    ctx=ctx, func_name=func_name,
-                    atol_b=4e-3)
-    #shape = rng.randint(2, 5, size=(ndim,))
-    #inshape = shape.copy()
-    #inshape[broadcast_dim] = 1
-    #if np.prod(inshape) == 1:
-    #    # Performing 0-dim array test too.
-    #    inputs = [np.array(rng.randn())]
-    #    function_tester(rng, func, ref_func, inputs, [shape],
-    #                    ctx=ctx, backward=[True], func_name=func_name,
-    #                    atol_b=4e-3)
-    #inputs = [np.array(rng.randn(*inshape))]
-    #function_tester(rng, func, ref_func, inputs, [shape],
-    #                ctx=ctx, backward=[True], func_name=func_name,
-    #                atol_b=4e-3)
-    pass
+                    backward=[False,False],
+                    ctx=ctx, func_name=func_name)

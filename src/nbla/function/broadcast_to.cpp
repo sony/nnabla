@@ -35,16 +35,16 @@ template <typename T>
 void BroadcastTo<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 	const Shape_t xs = inputs[0]->shape();
 	const Shape_t ys = inputs[1]->shape();
-	const int xss = xs.size();
-	const int yss = ys.size();
+	const Size_t xss = xs.size();
+	const Size_t yss = ys.size();
 	NBLA_CHECK(xss >= yss, error_code::value,
 		"BroadcastTo expects Y (variable to be broadcasted) to be smaller than or equal to X (target variable we want to fit to): %d vs %d",
 		yss, xss);
 	if (axis_ < 0) {
 		// No axis was specified.
 		// Check if y shape can fit x shape from the tail dimension
-		const int xofs = xss - yss;
-		for (int i=yss-1; i>=0; i--) {
+		const Size_t xofs = xss - yss;
+		for (Size_t i=yss-1; i>=0; i--) {
 			Size_t xds = xs[xofs+i];
 			Size_t yds = ys[i];
 			NBLA_CHECK(xds == yds, error_code::value,
@@ -56,7 +56,7 @@ void BroadcastTo<T>::setup_impl(const Variables &inputs, const Variables &output
 			"Specified axis index %d must be within the size of the actual input dimension %d",
 			axis_, xss);
 		// Check if y shape can fit x shape from the axis index
-		for (int i=0; i<yss; i++) {
+		for (Size_t i=0; i<yss; i++) {
 			Size_t xds = xs[i+axis_];
 			Size_t yds = ys[i];
 			NBLA_CHECK(xds == yds, error_code::value,
@@ -71,7 +71,32 @@ void BroadcastTo<T>::setup_impl(const Variables &inputs, const Variables &output
 
 template <typename T>
 void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
-  // TEMPLATE CODE
+	const T *y = inputs[1]->get_data_pointer<T>(this->ctx_);
+	T *z = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+	const Shape_t xs = inputs[0]->shape();
+	const Shape_t ys = inputs[1]->shape();
+	const Size_t ysize = inputs[1]->size();
+	const Size_t xss = xs.size();
+	const Size_t yss = ys.size();
+	if (xss == yss) {
+		// X and Y have exactly the same shape
+		// Copy Y to Z
+		std::copy(y, y+ysize, z);
+		return;
+	}
+	if (axis_ < 0) {
+		// copy the whole Y block to Z per stride
+		const Size_t diff = xss - yss;
+		Size_t loop_num = 1;
+		for (Size_t i=0; i<diff; i++) {
+			loop_num *= xs[i];
+		}
+		for (Size_t i=0; i<loop_num; i++) {
+			std::copy(y, y+ysize, z+i*ysize);
+		}
+	} else {
+
+	}
 }
 
 template <typename T>
