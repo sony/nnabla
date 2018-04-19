@@ -1975,6 +1975,82 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array with the same shape as x
+  TopKData:
+    snake_name: top_k_data
+    doc: |2
+
+      Select the `k` largest values from each sample in `x` to
+      propagate unmodified and set all other values to 0. If `abs` is
+      True, the `k` largest values are selected by magnitude. If
+      `reduce` is True (the default), all feature dimensions are
+      reduced to a single dimension of size `k` that propagates only
+      the `k` largest values. Otherwise, if `reduce` is False, input
+      and output dimensions are identical. Dimensions before
+      `base_axis` are treated as number of sample dimensions and `k`
+      values get selected from all elements of a sample (dimensions
+      from `base_axis`) regardless of shape.
+
+      >>> import nnabla as nn, nnabla.functions as F
+      >>> x = nn.Variable((4, 5, 6))
+      >>> F.top_k_data(x, 3, reduce=False).shape
+      (4, 5, 6)
+      >>> F.top_k_data(x, 3, reduce=True).shape
+      (4, 3)
+      >>> F.top_k_data(x, 3, reduce=True, base_axis=2).shape
+      (4, 5, 3)
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      k:
+        doc: Number of largest data values to propgate.
+        type: int64
+      abs:
+        doc: Determine largest data values by magnitude.
+        type: bool
+        default: 'False'
+      reduce:
+        doc: Reduce feature size to one dimension of size `k`.
+        type: bool
+        default: 'True'
+      base_axis:
+        doc: First dimension of the sample shape.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array.
+  TopKGrad:
+    snake_name: top_k_grad
+    doc: |2
+
+      Select the `k` largest gradients for each sample in `x` to
+      back-propagate unmodified and set all other gradients to 0. If
+      `abs` is True, the `k` largest gradients are selected by
+      magnitude. Dimensions before `base_axis` are treated as number
+      of sample dimensions and `k` gradients get selected from all
+      gradients of a sample (dimensions from `base_axis`) regardless
+      of shape.
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      k:
+        doc: Number of largest gradients to propgate.
+        type: int64
+      abs:
+        doc: Determine largest gradients by magnitude.
+        type: bool
+        default: 'False'
+      base_axis:
+        doc: First dimension of the sample shape.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with same shape and data as `x`.
   Rand:
     snake_name: rand
     doc: |2
