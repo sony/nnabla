@@ -31,18 +31,18 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(BroadcastTo, const vector<int> &);
+NBLA_REGISTER_FUNCTION_HEADER(BroadcastTo, int);
 
 /** 
     @todo PLACE HERE FUNCTION DOCUMENTATION.
  */
 template <typename T>
-class BroadcastTo : public BaseFunction<const vector<int> &> {
+class BroadcastTo : public BaseFunction<int> {
 protected:
-const vector<int> axis_;
+int axis_;
     
 public:
-  BroadcastTo(const Context &ctx, const vector<int> & axis) : BaseFunction<const vector<int> &>(ctx, axis), axis_(axis) {}
+  BroadcastTo(const Context &ctx, int axis) : BaseFunction<int>(ctx, axis), axis_(axis) {}
   virtual ~BroadcastTo() {}
   virtual shared_ptr<Function> copy() const {
       return create_BroadcastTo(ctx_, axis_);

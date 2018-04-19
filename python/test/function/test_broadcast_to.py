@@ -12,53 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#import pytest
-#import numpy as np
-#import nnabla as nn
-#import nnabla.functions as F
-#
-#from nbla_test_utils import (
-#    function_tester,
-#    list_ctx_and_func_name)
-#
-#
-#def ref_broadcast(x, shape):
-#    return x * np.ones(shape, dtype=x.dtype)
-#
-#
-#def get_combination(n):
-#    if n == 0:
-#        return [(n, np.array([], dtype=np.bool))]
-#    all_comb = np.vstack(map(lambda x: x.flatten(), np.meshgrid(
-#        *[[0, 1] for _ in range(n)]))).T.astype(np.bool)
-#    return [(n, comb) for comb in all_comb]
-#
-#
-#def get_combinations(*N):
-#    ret = []
-#    for n in N:
-#        ret.extend(get_combination(n))
-#    return ret
-#
-#
-#@pytest.mark.parametrize("seed", [314])
-#@pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast']))
-#@pytest.mark.parametrize("ndim, broadcast_dim", get_combinations(*range(0, 6)))
-#def test_broadcast_forward_backward(ndim, broadcast_dim, seed, fname, ctx, func_name):
-#    func = getattr(F, fname)
-#    ref_func = eval('ref_' + fname)
-#    rng = np.random.RandomState(seed)
-#    shape = rng.randint(2, 5, size=(ndim,))
-#    inshape = shape.copy()
-#    inshape[broadcast_dim] = 1
-#    if np.prod(inshape) == 1:
-#        # Performing 0-dim array test too.
-#        inputs = [np.array(rng.randn())]
-#        function_tester(rng, func, ref_func, inputs, [shape],
-#                        ctx=ctx, backward=[True], func_name=func_name,
-#                        atol_b=4e-3)
-#
-#    inputs = [np.array(rng.randn(*inshape))]
-#    function_tester(rng, func, ref_func, inputs, [shape],
-#                    ctx=ctx, backward=[True], func_name=func_name,
-#                    atol_b=4e-3)
+import pytest
+import numpy as np
+import nnabla as nn
+import nnabla.functions as F
+import pdb
+
+from nbla_test_utils import (
+    function_tester,
+    list_ctx_and_func_name)
+
+def ref_broadcast_to(x, y, axis):
+    return x
+
+
+PARAMS = [
+    #((2, 3, 4, 5), (5), -1),
+    ((2, 3, 4, 5), (4, 5), -1),
+    #((2, 3, 4, 5), (3, 4), 1),
+    #((2, 3, 4, 5), (2), 0),
+]
+
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast_to']))
+@pytest.mark.parametrize("xs, ys, axis", PARAMS)
+def test_broadcast_to_forward_backward(xs, ys, axis, seed, fname, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    ref_func = eval('ref_' + fname)
+    func = getattr(F, fname)
+    inputs = [rng.randn(*xs), rng.randn(*ys)]
+    function_tester(rng, func, ref_func, inputs, [axis],
+                    ctx=ctx, func_name=func_name,
+                    atol_b=4e-3)
+    #shape = rng.randint(2, 5, size=(ndim,))
+    #inshape = shape.copy()
+    #inshape[broadcast_dim] = 1
+    #if np.prod(inshape) == 1:
+    #    # Performing 0-dim array test too.
+    #    inputs = [np.array(rng.randn())]
+    #    function_tester(rng, func, ref_func, inputs, [shape],
+    #                    ctx=ctx, backward=[True], func_name=func_name,
+    #                    atol_b=4e-3)
+    #inputs = [np.array(rng.randn(*inshape))]
+    #function_tester(rng, func, ref_func, inputs, [shape],
+    #                ctx=ctx, backward=[True], func_name=func_name,
+    #                atol_b=4e-3)
+    pass

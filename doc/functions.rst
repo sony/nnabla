@@ -3514,8 +3514,8 @@ Broadcasting ND-array to the specified buffer
      - Default
      - Description
    * - axis
-     - Shape
-     - 
+     - int64
+     - -1
      - Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
 
 
