@@ -22,17 +22,25 @@ from nbla_test_utils import (
     function_tester,
     list_ctx_and_func_name)
 
+
 def copying_to_leaf(x, y, axis):
     return (len(x.shape) - len(y.shape) - axis) == 0
 
+
 def ref_broadcast_to(x, y, axis):
     if axis < 0 or copying_to_leaf(x, y, axis):
+        # Copy data to leaf
         return np.ones(x.shape) * y
     else:
-        return np.ones(x.shape)
+        # Copy data from specified axis
+        if len(x.shape) == 2:
+            t = y[:,np.newaxis]
+            t.transpose()
+            return np.tile(t, (1, x.shape[1]))
 
 
 PARAMS = [
+    ((2, 3), (2), 0),
     ((2, 3), (3), 1),
     ((2, 3, 4), (4), 2),
     ((2, 3, 4), (3, 4), 1),
