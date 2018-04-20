@@ -255,7 +255,17 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 							// X: (2,3,4,5) Y: (2,3) axis=0
 							break;
 						case 1:
-							// X: (2,3,4,5) Y: (3,4) axis=1
+							{
+								// X: (2,3,4,5) Y: (3,4) axis=1
+								const Size_t block_size = xs[2]*xs[3];
+								const Size_t slice_size = xs[1]*block_size;
+								for (Size_t i=0; i<xs[0]; i++) {
+									copy_buf_vertically_to_block(
+											&z[i*slice_size], y,
+											xs[1], ys[1],
+											xs[2], xs[3]);
+								}
+							}
 							break;
 						case 2:
 							// X: (2,3,4,5) Y: (4,5) axis=2
