@@ -138,17 +138,8 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 			// Y dimension size is always 1
 			switch(axis_) {
 				case 0:
-					{
-						// X: (2,3) Y: (2) axis=0
-						// copy vector vertically
-						Size_t height = xs[0];
-						Size_t width = xs[1];
-						for (Size_t v=0; v<height; v++) {
-							T val = y[v];
-							T* zrow = &z[v*width];
-							std::fill(zrow, zrow+width, val);
-						}
-					}
+					// X: (2,3) Y: (2) axis=0
+					copy_value_to_block(z, y, xs[0], xs[1]);
 					break;
 				case 1:
 					// X: (2,3) Y: (3) axis=1
