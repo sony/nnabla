@@ -22,6 +22,7 @@ import nnabla.utils.converter
 
 from .utils import create_nnabart_info
 
+
 class NnbExporter:
     def _align(self, size):
         return int(math.ceil(size / 4) * 4)
@@ -233,16 +234,18 @@ class NnbExporter:
         buf_var_lives = self.__make_buf_var_lives(info)
         actual_buf_sizes = self.__compute_actual_buf_sizes(info, buf_var_lives)
         buf_var_refs = self.__make_buf_var_refs(info, buf_var_lives)
-        vidx_to_abidx = self.__assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs)
+        vidx_to_abidx = self.__assign_actual_buf_to_variable(
+            info, actual_buf_sizes, buf_var_refs)
         return (list(actual_buf_sizes), vidx_to_abidx)
 
     def __make_buf_var_lives(self, info):
         # buf_var_lives is to remember from when and until when each
         # Buffer Variables must be alive
-        buf_var_num   = len(info._variable_buffer_index)
+        buf_var_num = len(info._variable_buffer_index)
         buf_var_lives = [_LifeSpan() for _ in range(buf_var_num)]
-        name_to_vidx  = {v.name: i for i, v in enumerate(info._network.variable)}
-        name_to_var   = {v.name: v for v in info._network.variable}
+        name_to_vidx = {v.name: i for i,
+                        v in enumerate(info._network.variable)}
+        name_to_var = {v.name: v for v in info._network.variable}
 
         # set _LifeSpan.begin_func_idx and .end_func_idx along info._network
         for func_idx, func in enumerate(info._network.function):
@@ -258,7 +261,7 @@ class NnbExporter:
                         pass
                     buf_var_life.end_func_idx = func_idx
                 else:
-                    pass # ignore 'Parameter'
+                    pass  # ignore 'Parameter'
 
         return buf_var_lives
 
@@ -287,7 +290,7 @@ class NnbExporter:
                     buf_var_refs[func_idx][crsr] = buf_idx
                     crsr += 1
                 else:
-                    pass # only focus on buffers used in this func
+                    pass  # only focus on buffers used in this func
 
         return buf_var_refs
 
@@ -306,7 +309,7 @@ class NnbExporter:
                     tmp_size_array[crsr] = info._variable_buffer_size[buf_idx]
                     crsr += 1
                 else:
-                    pass # only focus on buffers used in this func
+                    pass  # only focus on buffers used in this func
 
             # update sizes of actual buffers
             tmp_size_array = np.sort(tmp_size_array)
@@ -339,7 +342,7 @@ class NnbExporter:
                     abidx = vidx_to_abidx[vidx]
                     actual_assigned_flags[abidx] = True
                 else:
-                    pass # determine assigment for this vidx in the follwoing for loop
+                    pass  # determine assigment for this vidx in the follwoing for loop
 
             # determine new assigments of actual buffers to Variables
             for ref_crsr in range(actual_buf_num):
@@ -357,11 +360,11 @@ class NnbExporter:
                 needed_size = info._variable_buffer_size[buf_idx]
                 abidx = 0
                 while abidx != actual_buf_num:
-                    cond  = not actual_assigned_flags[abidx]
+                    cond = not actual_assigned_flags[abidx]
                     cond &= needed_size <= actual_buf_sizes[abidx]
                     if cond:
                         actual_assigned_flags[abidx] = True
-                        vidx_to_abidx[vidx]          = abidx
+                        vidx_to_abidx[vidx] = abidx
                         break
                     else:
                         abidx += 1
@@ -370,19 +373,20 @@ class NnbExporter:
                 if abidx == actual_buf_num:
                     for abidx in range(actual_buf_num):
                         if not actual_assigned_flags[abidx]:
-                            actual_buf_sizes[abidx]      = needed_size
+                            actual_buf_sizes[abidx] = needed_size
                             actual_assigned_flags[abidx] = True
-                            vidx_to_abidx[vidx]          = abidx
+                            vidx_to_abidx[vidx] = abidx
                             break
 
         return vidx_to_abidx
 
+
 class _LifeSpan:
     def __init__(self):
         self.begin_func_idx = -1
-        self.end_func_idx   = -1
+        self.end_func_idx = -1
 
     def needed_at(self, func_idx):
-        needed  = self.begin_func_idx <= func_idx
-        needed &= self.end_func_idx   >= func_idx
+        needed = self.begin_func_idx <= func_idx
+        needed &= self.end_func_idx >= func_idx
         return needed
