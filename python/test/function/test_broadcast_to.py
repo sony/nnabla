@@ -22,14 +22,23 @@ from nbla_test_utils import (
     function_tester,
     list_ctx_and_func_name)
 
+def copying_to_leaf(x, y, axis):
+    return (len(x.shape) - len(y.shape) - axis) == 0
+
 def ref_broadcast_to(x, y, axis):
-    if axis < 0:
+    if axis < 0 or copying_to_leaf(x, y, axis):
         return np.ones(x.shape) * y
     else:
         return np.ones(x.shape)
 
 
 PARAMS = [
+    ((2, 3), (3), 1),
+    ((2, 3, 4), (4), 2),
+    ((2, 3, 4), (3, 4), 1),
+    ((2, 3, 4, 5), (5), 3),
+    ((2, 3, 4, 5), (4, 5), 2),
+    ((2, 3, 4, 5), (3, 4, 5), 1),
     ((2, 3, 4, 5), (5), -1),
     ((2, 3, 4, 5), (4, 5), -1),
     #((2, 3, 4, 5), (3, 4), 1),
