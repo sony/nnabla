@@ -84,15 +84,14 @@ static void copy_block_to_tail(
 	}
 }
 
-// Copy each Y value to each channel
+// Copy each Y value to each block
 template <typename T>
-static void copy_value_to_channel(
-		T* z, const T* y, Size_t chan, Size_t height, Size_t width) {
-	const Size_t size = height*width;
-	for (Size_t c=0; c<chan; c++) {
-		T val = y[c];
-		T* zchan = &z[c*size];
-		std::fill(zchan, zchan+size, val);
+static void copy_value_to_block(
+		T* z, const T* y, Size_t y_num, Size_t block_size) {
+	for (Size_t i=0; i<y_num; i++) {
+		T val = y[i];
+		T* zblock = &z[i*block_size];
+		std::fill(zblock, zblock+block_size, val);
 	}
 }
 
@@ -152,7 +151,7 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 						case 0:
 							{
 								// X: (2,3,4) Y: (2) axis=0
-								copy_value_to_channel(z, y, xs[0], xs[1], xs[2]);
+								copy_value_to_block(z, y, xs[0], xs[1]*xs[2]);
 							}
 							break;
 						case 1:
@@ -221,6 +220,7 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 					switch(axis_) {
 						case 0:
 							// X: (2,3,4,5) Y: (2) axis=0
+							copy_value_to_block(z, y, xs[0], xs[1]*xs[2]*xs[3]);
 							break;
 						case 1:
 							{
@@ -229,7 +229,7 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 								const Size_t z_slice_size = xs[1]*xs[2]*xs[3];
 								for (Size_t i=0; i<xs[0]; i++) {
 									T* z_slice = &z[i*z_slice_size];
-									copy_value_to_channel(z_slice, y, xs[1], xs[2], xs[3]);
+									copy_value_to_block(z_slice, y, xs[1], xs[2]*xs[3]);
 								}
 							}
 							break;
