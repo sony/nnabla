@@ -96,6 +96,21 @@ static void copy_value_to_block(
 }
 
 template <typename T>
+static void copy_value_vertically_to_block(
+		T* z, const T* y, 
+		Size_t block_num, Size_t y_num,
+		Size_t block_width, Size_t block_size) {
+	for (Size_t b=0; b<block_num; b++) {
+		T* zblock = &z[b*block_size];
+		for (Size_t v=0; v<y_num; v++) {
+			T val = y[v];
+			T* zrow = &zblock[v*block_width];
+			std::fill(zrow, zrow+block_width, val);
+		}
+	}
+}
+
+template <typename T>
 void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 	const T *y = inputs[1]->get_data_pointer<T>(this->ctx_);
 	T *z = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
@@ -149,27 +164,13 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 				case 1:
 					switch(axis_) {
 						case 0:
-							{
-								// X: (2,3,4) Y: (2) axis=0
-								copy_value_to_block(z, y, xs[0], xs[1]*xs[2]);
-							}
+							// X: (2,3,4) Y: (2) axis=0
+							copy_value_to_block(z, y, xs[0], xs[1]*xs[2]);
 							break;
 						case 1:
-							{
-								// X: (2,3,4) Y: (3) axis=1
-								// copy Y values vertically per channel
-								Size_t chan = xs[0];
-								Size_t height = xs[1];
-								Size_t width = xs[2];
-								const Size_t size = height*width;
-								for (Size_t v=0; v<height; v++) {
-									T val = y[v];
-									for (Size_t c=0; c<chan; c++) {
-										T* zrow = &z[c*size+v*width];
-										std::fill(zrow, zrow+width, val);
-									}
-								}
-							}
+							// X: (2,3,4) Y: (3) axis=1
+							copy_value_vertically_to_block(
+									z, y, xs[0], xs[1], xs[2], xs[1]*xs[2]);
 							break;
 						case 2:
 							// X: (2,3,4) Y: (4) axis=2
@@ -225,16 +226,24 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 						case 1:
 							{
 								// X: (2,3,4,5) Y: (3) axis=1
-								// Copy Y to the whole channel per slice
-								const Size_t z_slice_size = xs[1]*xs[2]*xs[3];
+								const Size_t block_size = xs[2]*xs[3];
+								const Size_t z_slice_size = xs[1]*block_size;
 								for (Size_t i=0; i<xs[0]; i++) {
 									T* z_slice = &z[i*z_slice_size];
-									copy_value_to_block(z_slice, y, xs[1], xs[2]*xs[3]);
+									copy_value_to_block(z_slice, y, xs[1], block_size);
 								}
 							}
 							break;
 						case 2:
-							// X: (2,3,4,5) Y: (4) axis=2
+							{
+								// X: (2,3,4,5) Y: (4) axis=2
+								const Size_t block_size = xs[2]*xs[3];
+								const Size_t slice_size = xs[1]*block_size;
+								for (Size_t i=0; i<xs[0]; i++) {
+									copy_value_vertically_to_block(
+											&z[i*slice_size], y, xs[1], xs[2], xs[3], block_size);
+								}
+							}
 							break;
 						case 3:
 							// X: (2,3,4,5) Y: (5) axis=3
