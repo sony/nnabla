@@ -84,6 +84,18 @@ static void copy_block_to_tail(
 	}
 }
 
+// Copy each Y value to each channel
+template <typename T>
+static void copy_value_to_channel(
+		T* z, const T* y, Size_t chan, Size_t height, Size_t width) {
+	const Size_t size = height*width;
+	for (Size_t c=0; c<chan; c++) {
+		T val = y[c];
+		T* zchan = &z[c*size];
+		std::fill(zchan, zchan+size, val);
+	}
+}
+
 template <typename T>
 void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 	const T *y = inputs[1]->get_data_pointer<T>(this->ctx_);
@@ -140,16 +152,7 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 						case 0:
 							{
 								// X: (2,3,4) Y: (2) axis=0
-								// copy Y values per channel
-								Size_t chan = xs[0];
-								Size_t height = xs[1];
-								Size_t width = xs[2];
-								const Size_t size = height*width;
-								for (Size_t c=0; c<chan; c++) {
-									T val = y[c];
-									T* zchan = &z[c*size];
-									std::fill(zchan, zchan+size, val);
-								}
+								copy_value_to_channel(z, y, xs[0], xs[1], xs[2]);
 							}
 							break;
 						case 1:
@@ -220,7 +223,15 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 							// X: (2,3,4,5) Y: (2) axis=0
 							break;
 						case 1:
-							// X: (2,3,4,5) Y: (3) axis=1
+							{
+								// X: (2,3,4,5) Y: (3) axis=1
+								// Copy Y to the whole channel per slice
+								const Size_t z_slice_size = xs[1]*xs[2]*xs[3];
+								for (Size_t i=0; i<xs[0]; i++) {
+									T* z_slice = &z[i*z_slice_size];
+									copy_value_to_channel(z_slice, y, xs[1], xs[2], xs[3]);
+								}
+							}
 							break;
 						case 2:
 							// X: (2,3,4,5) Y: (4) axis=2
@@ -275,7 +286,8 @@ template <typename T>
 void BroadcastTo<T>::backward_impl(const Variables &inputs, const Variables &outputs,
 					     const vector<bool> &propagate_down,
 					     const vector<bool> &accum) {
-  // TEMPLATE CODE
+	NBLA_ERROR(error_code::not_implemented,
+					 "BroadcastTo backward function is not implemented");
 }
 
 // Template instantiation
