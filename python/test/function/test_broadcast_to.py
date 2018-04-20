@@ -36,22 +36,27 @@ def ref_broadcast_to(x, y, axis):
         xs = len(x.shape)
         ys = len(y.shape)
         if xs == 2:
-            t = y[:,np.newaxis]
+            t = y[:, np.newaxis]
             t.transpose()
             return np.broadcast_to(t, x.shape)
         elif xs == 3:
             if ys == 1:
                 if axis == 0:
-                    t = y[:,np.newaxis,np.newaxis]
+                    t = y[:, np.newaxis, np.newaxis]
                     t.transpose()
                     return np.broadcast_to(t, x.shape)
+                elif axis == 1:
+                    t = y[np.newaxis, :, np.newaxis]
+                    t.transpose()
+                    return np.broadcast_to(t, x.shape)
+
 
 
 PARAMS = [
     ((2, 3), (2), 0),
     ((2, 3), (3), 1),
     ((2, 3, 4), (2), 0),
-    #((2, 3, 4), (3), 1),
+    ((2, 3, 4), (3), 1),
     ((2, 3, 4), (4), 2),
     ((2, 3, 4), (3, 4), 1),
     ((2, 3, 4, 5), (5), 3),

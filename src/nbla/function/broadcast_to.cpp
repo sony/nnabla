@@ -155,7 +155,18 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 						case 1:
 							{
 								// X: (2,3,4) Y: (3) axis=1
-								// copy Y values vertically
+								// copy Y values vertically per channel
+								Size_t chan = xs[0];
+								Size_t height = xs[1];
+								Size_t width = xs[2];
+								const Size_t size = height*width;
+								for (Size_t v=0; v<height; v++) {
+									T val = y[v];
+									for (Size_t c=0; c<chan; c++) {
+										T* zrow = &z[c*size+v*width];
+										std::fill(zrow, zrow+width, val);
+									}
+								}
 							}
 							break;
 						case 2:
