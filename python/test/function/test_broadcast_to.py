@@ -31,42 +31,41 @@ def ref_broadcast_to(x, y, axis):
     if axis < 0 or copying_to_leaf(x, y, axis):
         # Copy data to leaf
         return np.ones(x.shape) * y
-    else:
-        # Copy data from specified axis
-        xs = len(x.shape)
-        ys = len(y.shape)
-        if xs == 2:
-            t = y[:, np.newaxis]
-            t.transpose()
-            return np.broadcast_to(t, x.shape)
-        elif xs == 3:
-            if ys == 1:
-                if axis == 0:
-                    t = y[:, np.newaxis, np.newaxis]
-                    t.transpose()
-                    return np.broadcast_to(t, x.shape)
-                elif axis == 1:
-                    t = y[np.newaxis, :, np.newaxis]
-                    t.transpose()
-                    return np.broadcast_to(t, x.shape)
-            elif ys == 2:
-                if axis == 0:
-                    t = y[:, :, np.newaxis]
-                    return np.broadcast_to(t, x.shape)
-        elif xs == 4:
-            if ys == 1:
-                if axis == 0:
-                    t = y[:, np.newaxis, np.newaxis, np.newaxis]
-                    t.transpose()
-                    return np.broadcast_to(t, x.shape)
-                elif axis == 1:
-                    t = y[np.newaxis, :, np.newaxis, np.newaxis]
-                    t.transpose()
-                    return np.broadcast_to(t, x.shape)
-                elif axis == 2:
-                    t = y[np.newaxis, np.newaxis, :, np.newaxis]
-                    t.transpose()
-                    return np.broadcast_to(t, x.shape)
+    # Copy data from specified axis
+    xs = len(x.shape)
+    ys = len(y.shape)
+    if xs == 2:
+        t = y[:, np.newaxis]
+        t.transpose()
+        return np.broadcast_to(t, x.shape)
+    elif xs == 3:
+        if ys == 1:
+            if axis == 0:
+                t = y[:, np.newaxis, np.newaxis]
+                t.transpose()
+                return np.broadcast_to(t, x.shape)
+            elif axis == 1:
+                t = y[np.newaxis, :, np.newaxis]
+                t.transpose()
+                return np.broadcast_to(t, x.shape)
+        elif ys == 2:
+            if axis == 0:
+                t = y[:, :, np.newaxis]
+                return np.broadcast_to(t, x.shape)
+    elif xs == 4:
+        if ys == 1:
+            if axis == 0:
+                t = y[:, np.newaxis, np.newaxis, np.newaxis]
+                t.transpose()
+                return np.broadcast_to(t, x.shape)
+            elif axis == 1:
+                t = y[np.newaxis, :, np.newaxis, np.newaxis]
+                t.transpose()
+                return np.broadcast_to(t, x.shape)
+            elif axis == 2:
+                t = y[np.newaxis, np.newaxis, :, np.newaxis]
+                t.transpose()
+                return np.broadcast_to(t, x.shape)
 
 
 
@@ -88,6 +87,8 @@ PARAMS = [
     ((2, 3, 4, 5), (3, 4, 5), 1),
     ((2, 3, 4, 5), (5), -1),
     ((2, 3, 4, 5), (4, 5), -1),
+    ((2, 3, 4, 5), (3, 4, 5), -1),
+    ((2, 3, 4, 5), (2, 3, 4, 5), -1),
 ]
 
 @pytest.mark.parametrize("seed", [314])
