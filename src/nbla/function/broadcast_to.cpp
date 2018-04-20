@@ -180,8 +180,24 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 				case 2:
 					switch(axis_) {
 						case 0:
-							// X: (2,3,4) Y: (2,3) axis=0
-							// copy each Y column value vertically
+							{
+								// X: (2,3,4) Y: (2,3) axis=0
+								// copy Y values vertically per channel
+								Size_t x_chan = xs[0];
+								Size_t x_height = xs[1];
+								Size_t x_width = xs[2];
+								Size_t y_width = ys[1];
+								const Size_t x_size = x_height*x_width;
+								for (Size_t c=0; c<x_chan; c++) {
+									const T* ychan = &y[c*y_width];
+									T* zchan = &z[c*x_size];
+									for (Size_t v=0; v<x_height; v++) {
+										T val = ychan[v];
+										T* zrow = &zchan[v*x_width];
+										std::fill(zrow, zrow+x_width, val);
+									}
+								}
+							}
 							break;
 						case 1:
 							// X: (2,3,4) Y: (3,4) axis=1
