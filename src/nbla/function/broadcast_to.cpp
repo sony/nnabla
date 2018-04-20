@@ -102,132 +102,145 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 	if (axis_ < 0) {
 		// copy the whole Y block to Z per stride
 		copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-	} else {
-		// copy Y depending on the axis position
-		NBLA_CHECK(xdim >= 2, error_code::value,
-			"X's dimension size should be greater than 1");
-		switch(xdim) {
-			case 2:
-				// Y dimension size is always 1
-				switch(axis_) {
-					case 0:
-						{
-							// X: (2,3) Y: (2) axis=0
-							// copy Y values vertically
-							Size_t height = xs[0];
-							Size_t width = xs[1];
-							for (Size_t v=0; v<height; v++) {
-								T val = y[v];
-								T* zrow = &z[v*width];
-								std::fill(zrow, zrow+width, val);
-							}
+		return;
+	}
+	// copy Y depending on the axis position
+	NBLA_CHECK(xdim >= 2, error_code::value,
+		"X's dimension size should be greater than 1");
+	switch(xdim) {
+		case 2:
+			// Y dimension size is always 1
+			switch(axis_) {
+				case 0:
+					{
+						// X: (2,3) Y: (2) axis=0
+						// copy vector vertically
+						Size_t height = xs[0];
+						Size_t width = xs[1];
+						for (Size_t v=0; v<height; v++) {
+							T val = y[v];
+							T* zrow = &z[v*width];
+							std::fill(zrow, zrow+width, val);
 						}
-						break;
-					case 1:
-						// X: (2,3) Y: (3) axis=1
-						copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-						break;
-					default:
-						NBLA_ERROR(error_code::value, "Unexpected axis value");
-				}
-				break;
-			case 3:
-				// Y dimension size maybe 1 or 2
-				switch(ydim) {
-					case 1:
-						switch(axis_) {
-							case 0:
+					}
+					break;
+				case 1:
+					// X: (2,3) Y: (3) axis=1
+					copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
+					break;
+				default:
+					NBLA_ERROR(error_code::value, "Unexpected axis value");
+			}
+			break;
+		case 3:
+			// Y dimension size maybe 1 or 2
+			switch(ydim) {
+				case 1:
+					switch(axis_) {
+						case 0:
+							{
 								// X: (2,3,4) Y: (2) axis=0
-								// copy Y values per block
-								break;
-							case 1:
+								// copy Y values per channel
+								Size_t chan = xs[0];
+								Size_t height = xs[1];
+								Size_t width = xs[2];
+								const Size_t size = height*width;
+								for (Size_t c=0; c<chan; c++) {
+									T val = y[c];
+									T* zchan = &z[c*size];
+									std::fill(zchan, zchan+size, val);
+								}
+							}
+							break;
+						case 1:
+							{
 								// X: (2,3,4) Y: (3) axis=1
 								// copy Y values vertically
-								break;
-							case 2:
-								// X: (2,3,4) Y: (4) axis=2
-								copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-								break;
-							default:
-								NBLA_ERROR(error_code::value, "Unexpected axis value");
-						}
-						break;
-					case 2:
-						switch(axis_) {
-							case 0:
-								// X: (2,3,4) Y: (2,3) axis=0
-								// copy each Y column value vertically
-								break;
-							case 1:
-								// X: (2,3,4) Y: (3,4) axis=1
-								copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-								break;
-							default:
-								NBLA_ERROR(error_code::value, "Unexpected axis value");
-						}
-						break;
-					default:
-						NBLA_ERROR(error_code::value, "Unexpected Y dimension size");
-				}
-				break;
-			case 4:
-				// Y dimension size maybe 1, 2, or 3
-				switch(ydim) {
-					case 1:
-						switch(axis_) {
-							case 0:
-								// X: (2,3,4,5) Y: (2) axis=0
-								break;
-							case 1:
-								// X: (2,3,4,5) Y: (3) axis=1
-								break;
-							case 2:
-								// X: (2,3,4,5) Y: (4) axis=2
-								break;
-							case 3:
-								// X: (2,3,4,5) Y: (5) axis=3
-								copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-								break;
-							default:
-								NBLA_ERROR(error_code::value, "Unexpected axis value");
-						}
-						break;
-					case 2:
-						switch(axis_) {
-							case 0:
-								// X: (2,3,4,5) Y: (2,3) axis=0
-								break;
-							case 1:
-								// X: (2,3,4,5) Y: (3,4) axis=1
-								break;
-							case 2:
-								// X: (2,3,4,5) Y: (4,5) axis=2
-								copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-								break;
-							default:
-								NBLA_ERROR(error_code::value, "Unexpected axis value");
-						}
-						break;
-					case 3:
-						switch(axis_) {
-							case 0:
-								// X: (2,3,4,5) Y: (2,3,4) axis=0
-								break;
-							case 1:
-								// X: (2,3,4,5) Y: (3,4,5) axis=1
-								copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
-								break;
-							default:
-								NBLA_ERROR(error_code::value, "Unexpected axis value");
-						}
-						break;
-					default:
-						NBLA_ERROR(error_code::value, "Unexpected Y dimension size");
-				}
-				break;
-			default:
-				NBLA_ERROR(error_code::value, "Unexpected X dimension size");
-		}
+							}
+							break;
+						case 2:
+							// X: (2,3,4) Y: (4) axis=2
+							copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
+							break;
+						default:
+							NBLA_ERROR(error_code::value, "Unexpected axis value");
+					}
+					break;
+				case 2:
+					switch(axis_) {
+						case 0:
+							// X: (2,3,4) Y: (2,3) axis=0
+							// copy each Y column value vertically
+							break;
+						case 1:
+							// X: (2,3,4) Y: (3,4) axis=1
+							copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
+							break;
+						default:
+							NBLA_ERROR(error_code::value, "Unexpected axis value");
+					}
+					break;
+				default:
+					NBLA_ERROR(error_code::value, "Unexpected Y dimension size");
+			}
+			break;
+		case 4:
+			// Y dimension size maybe 1, 2, or 3
+			switch(ydim) {
+				case 1:
+					switch(axis_) {
+						case 0:
+							// X: (2,3,4,5) Y: (2) axis=0
+							break;
+						case 1:
+							// X: (2,3,4,5) Y: (3) axis=1
+							break;
+						case 2:
+							// X: (2,3,4,5) Y: (4) axis=2
+							break;
+						case 3:
+							// X: (2,3,4,5) Y: (5) axis=3
+							copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
+							break;
+						default:
+							NBLA_ERROR(error_code::value, "Unexpected axis value");
+					}
+					break;
+				case 2:
+					switch(axis_) {
+						case 0:
+							// X: (2,3,4,5) Y: (2,3) axis=0
+							break;
+						case 1:
+							// X: (2,3,4,5) Y: (3,4) axis=1
+							break;
+						case 2:
+							// X: (2,3,4,5) Y: (4,5) axis=2
+							copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
+							break;
+						default:
+							NBLA_ERROR(error_code::value, "Unexpected axis value");
+					}
+					break;
+				case 3:
+					switch(axis_) {
+						case 0:
+							// X: (2,3,4,5) Y: (2,3,4) axis=0
+							break;
+						case 1:
+							// X: (2,3,4,5) Y: (3,4,5) axis=1
+							copy_block_to_tail(z, y, xs, xdim, ydim, ysize);
+							break;
+						default:
+							NBLA_ERROR(error_code::value, "Unexpected axis value");
+					}
+					break;
+				default:
+					NBLA_ERROR(error_code::value, "Unexpected Y dimension size");
+			}
+			break;
+		default:
+			NBLA_ERROR(error_code::value, "Unexpected X dimension size");
 	}
 }
 
