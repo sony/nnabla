@@ -125,6 +125,42 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
              "The size of the flags of accumulation gradient must be equal to "
              "the number of inputs (%d != %d). Error in '%s'.",
              accum.size(), propagate_down.size(), this->name().c_str());
+
+  // Always zero-ing gradient buffer when accum is false.
+  // NNabla's backward implementation takes an accum flag for each input
+  // variable. An accum flag is automatically determined by our graph engine.
+  // Suppose we have a Variable, and it is used twice in two difference
+  // Functions. The input variable of two different functions is responsible for
+  // storing the gradients from the functions, which are summed up. A simpler
+  // implementation to achieve this is to insert a split function that splits a
+  // variable to two and that is responsible for summing up the gradient signals
+  // from two outputs. However, in NNabla, to reduce computation and memory
+  // overhead, this is achieved in each function by the `accum` flag. In the
+  // first of two functions, `accum` is set as false by the graph engine, and
+  // the backward signal is "written" to the gradient buffer of the input
+  // variable. In the second function, `accum` is set as true, and the backward
+  // signal is "accumulated" to the buffer.
+  // In some functions, gradient is not computed (not defined), and a developer
+  // might think zeros should be propagated to the inputs gradient, and a
+  // developer probably does nothing in backward implementation. However, if
+  // `accum` is false and grad is initialized as following, the gradient buffer
+  // is not initialized (i.e. values in buffer are undefined), and propagated to
+  // predecessor functions, which is a hazardous behavior.
+  // To make it safer, gradients are initialized here as zeros when `accum` is
+  // false.
+  // Note that this does not impose overhead by explicitly calling zero()
+  // function when write_only access to variable grad is properly used, because
+  // zero() function is lazily evaluated and write_only option in
+  // Variable::cast* function resets all lazy-evaluation flags before getting an
+  // array instance.
+  for (int i = 0; i < inputs.size(); i++) {
+    if (propagate_down[i] && !accum[i] &&
+        (this->inplace_grad(i) == Function::NOT_INPLACE)) {
+      inputs[i]->grad()->zero();
+    }
+  }
+
+  // Calling the sub-class implementation of backward.
   this->backward_impl(inputs, outputs, propagate_down, accum);
 }
 
