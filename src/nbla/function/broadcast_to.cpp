@@ -282,7 +282,27 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 				case 3:
 					switch(axis_) {
 						case 0:
-							// X: (2,3,4,5) Y: (2,3,4) axis=0
+							{
+								// X: (2,3,4,5) Y: (2,3,4) axis=0
+								Size_t y_buf_width = ys[2];
+								Size_t y_slice_size = ys[1]*y_buf_width;
+								Size_t z_row_width = xs[3];
+								Size_t z_slice_size = xs[2]*xs[3];
+								Size_t z_chan_size = xs[1]*z_slice_size;
+								for (Size_t n=0; n<xs[0]; n++) {
+									const T* ychan = &y[n*y_slice_size];
+									T* zslice = &z[n*z_chan_size];
+									for (Size_t c=0; c<xs[1]; c++) {
+										const T* yrow = &ychan[c*y_buf_width];
+										T* zblock = &zslice[c*z_slice_size];
+										for (Size_t h=0; h<xs[2]; h++) {
+											T val = yrow[h];
+											T* zrow = &zblock[h*z_row_width];
+											std::fill(zrow, zrow+z_row_width, val);
+										}
+									}
+								}
+							}
 							break;
 						case 1:
 							// X: (2,3,4,5) Y: (3,4,5) axis=1
