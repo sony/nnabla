@@ -232,7 +232,7 @@ def convert_broadcasting_operator(func_list, node, func, base_name, func_counter
                                base_name, func_counter)
     func_list.append(bt)
     input[b_idx] = bout  # rewire input to broadcasted input
-    # update Add input with the converted inputs
+    # update input with the converted inputs
     del func.input[:]
     func.input.extend(input)
 

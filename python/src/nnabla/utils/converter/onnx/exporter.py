@@ -47,11 +47,31 @@ nnabla_function_type_to_onnx_optype = {
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
-    "Mul2": "Mul"
+    "Mul2": "Mul",
+    # optype that should get merged
+    # with other operators
+    "BroadcastTo": ""
 }
 
+def merge_broadcast(node, func, target_name, broadcast_target):
+    # Set the broadcast attribute to the operator
+    # so we can combine BroadcastTo with this operator.
+    param = broadcast_target[target_name]
+    before_broadcast = param[0]
+    axis = param[1]
+    a = onnx.helper.make_attribute("axis", axis)
+    b = onnx.helper.make_attribute("broadcast", 1)
+    node.attribute.extend([a, b])
+    # Replace the broadcasted input with the original input
+    del node.input[:]
+    node.input.extend([func.input[0], before_broadcast])
+    # Remove the used target.
+    # We may have a problem if the same parameter is used from
+    # multipler operators.
+    del broadcast_target[target_name]
 
-def convert_to_nodes(func, variables, input_types, output_types):
+
+def convert_to_nodes(func, variables, input_types, output_types, broadcast_target):
     """Convert a function to a node or a group of nodes"""
     op_type = nnabla_function_type_to_onnx_optype.get(func.type)
     if op_type is None:
@@ -69,17 +89,20 @@ def convert_to_nodes(func, variables, input_types, output_types):
         # the default value 0 will be set
         attr = onnx.helper.make_attribute("axis", func.concatenate_param.axis)
         n.attribute.extend([attr])
+        nl.append(n)
     elif func.type == "Dropout":
         # NNP Dropout is always is_test=false
         # since we always apply dropout when it is
         # included in a network.
         attr = onnx.helper.make_attribute("is_test", 0)
         n.attribute.extend([attr])
+        nl.append(n)
     elif func.type == "Identity":
         # Convert Identity to a Dropout with is_test=true
         # so we just copy the input to output
         attr = onnx.helper.make_attribute("is_test", 1)
         n.attribute.extend([attr])
+        nl.append(n)
     elif func.type == "MaxPooling":
         mpp = func.max_pooling_param
         if not mpp.ignore_border:
@@ -89,6 +112,7 @@ def convert_to_nodes(func, variables, input_types, output_types):
         s = onnx.helper.make_attribute("strides", mpp.stride.dim)
         p = onnx.helper.make_attribute("pads", mpp.pad.dim)
         n.attribute.extend([k, s, p])
+        nl.append(n)
     elif func.type == "Convolution":
         cp = func.convolution_param
         # Calculate the kernel_shape from input weight data.
@@ -113,6 +137,7 @@ def convert_to_nodes(func, variables, input_types, output_types):
         p = onnx.helper.make_attribute("pads", cp.pad.dim)
         g = onnx.helper.make_attribute("group", cp.group)
         n.attribute.extend([k, d, s, p, g])
+        nl.append(n)
     elif func.type == "GlobalAveragePooling":
         # We wipeout the node name to avoid a bug?
         # that occurs when we use a GlobalAveragePooling node with a name
@@ -124,6 +149,7 @@ def convert_to_nodes(func, variables, input_types, output_types):
         # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
         # The above caffe2 code should be checking the node's operator name and not the node's name.
         n.name = ""
+        nl.append(n)
     elif func.type == "Softmax":
         # Softmax on NNabla does softmax ONLY along the specified axis.
         # ONNX first squashes the input dimensions to 2D based on the specifed axis,
@@ -132,6 +158,7 @@ def convert_to_nodes(func, variables, input_types, output_types):
         logger.warning(SOFTMAX_WARNING)
         attr = onnx.helper.make_attribute("axis", func.softmax_param.axis)
         n.attribute.extend([attr])
+        nl.append(n)
     elif func.type == "AveragePooling":
         app = func.average_pooling_param
         if not app.ignore_border:
@@ -141,6 +168,7 @@ def convert_to_nodes(func, variables, input_types, output_types):
         s = onnx.helper.make_attribute("strides", app.stride.dim)
         p = onnx.helper.make_attribute("pads", app.pad.dim)
         n.attribute.extend([k, s, p])
+        nl.append(n)
     elif func.type == "BatchNormalization":
         # We need to rearrange the input data order.
         # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
@@ -165,10 +193,12 @@ def convert_to_nodes(func, variables, input_types, output_types):
             m = onnx.helper.make_attribute("momentum", bpp.decay_rate)
             attrs.append(m)
         n.attribute.extend(attrs)
+        nl.append(n)
     elif func.type == "Transpose":
         tp = func.transpose_param
         p = onnx.helper.make_attribute("perm", tp.axes)
         n.attribute.extend([p])
+        nl.append(n)
     elif func.type == "Affine":
         ap = func.affine_param
         flatten_postfix = "_flatten"
@@ -186,38 +216,68 @@ def convert_to_nodes(func, variables, input_types, output_types):
         a = onnx.helper.make_attribute("axis", ap.base_axis)
         fl.attribute.extend([a])
         nl.append(fl)
+        nl.append(n)
     elif func.type == "BatchMatmul":
         bmp = func.batch_matmul_param
         if bmp.transpose_a or bmp.transpose_b:
             raise ValueError("{} with transpose is not supported yet".format(func.type))
+        nl.append(n)
     elif func.type == "LeakyReLU":
         lrp = func.leaky_relu_param
         a = onnx.helper.make_attribute("alpha", lrp.alpha)
         n.attribute.extend([a])
+        nl.append(n)
     elif func.type == "ELU":
         ep = func.elu_param
         a = onnx.helper.make_attribute("alpha", ep.alpha)
         n.attribute.extend([a])
+        nl.append(n)
     elif func.type == "LogicalNot":
         # Store the input/output tensor's name and convert it to boolean
         input_types[n.input[0]] = TensorProto.BOOL
         output_types[n.output[0]] = TensorProto.BOOL
+        nl.append(n)
     elif func.type == "SELU":
         sp = func.selu_param
         a = onnx.helper.make_attribute("alpha", sp.alpha)
         g = onnx.helper.make_attribute("gamma", sp.scale)
         n.attribute.extend([a, g])
+        nl.append(n)
     elif func.type == "Sum":
         sp = func.sum_param
         a = onnx.helper.make_attribute("axes", sp.axes)
         k = onnx.helper.make_attribute("keepdims", sp.keep_dims)
         n.attribute.extend([a, k])
+        nl.append(n)
     elif func.type == "Mean":
         mp = func.mean_param
         a = onnx.helper.make_attribute("axes", mp.axes)
         k = onnx.helper.make_attribute("keepdims", mp.keep_dims)
         n.attribute.extend([a, k])
-    nl.append(n)
+        nl.append(n)
+    elif func.type == "BroadcastTo":
+        # BroadcastTo conversion only works when the
+        # broadcasted buffer is used as second input for the following:
+        # Add, And, Div, Equal, Greater,
+        # Less, Mul, Or, Pow, Sub, Xor
+        bp = func.broadcast_to_param
+        broadcast_target[func.output[0]] = (func.input[1], bp.axis)
+        # we do not append node here because BroadcastTo should disappear
+    elif func.type == "Add2":
+        # Check if the second input is a brodcast target.
+        bt = func.input[1]
+        if bt in broadcast_target:
+            merge_broadcast(n, func, bt, broadcast_target)
+        nl.append(n)
+    elif func.type == "Mul2":
+        # Check if the second input is a brodcast target.
+        bt = func.input[1]
+        if bt in broadcast_target:
+            merge_broadcast(n, func, bt, broadcast_target)
+        nl.append(n)
+    else:
+        # Simply append node to list
+        nl.append(n)
     return nl
 
 def create_dim(val):
@@ -302,9 +362,17 @@ def nnp_model_to_onnx_graph(graph, nnp):
     # If the input is in a parameter, it will be converted to that type
     input_types = {}
     output_types = {}
+    # Store the input/output name of all BroadcastTo targets
+    # so we can check if we can merge it to appropriate operators.
+    broadcast_target = {}
     for f in net.function:
-        nl = convert_to_nodes(f, net.variable, input_types, output_types)
+        nl = convert_to_nodes(f, net.variable, input_types, output_types, broadcast_target)
         graph.node.extend(nl)
+    if len(broadcast_target) > 0:
+        # If a broadcast target buffer is not used for any of the supported
+        # operator's inputs, we throw an error.
+        raise ValueError("BroadcastTo targets must be used in conjunction"
+                         " with certain operators in order to get converted to ONNX")
     for param in nnp.parameter:
         init = graph.initializer.add()
         init.name = param.variable_name
