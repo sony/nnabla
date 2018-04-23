@@ -68,7 +68,8 @@ def ref_broadcast_to(x, y, axis):
                 return np.broadcast_to(t, x.shape)
         elif ys == 2:
             if axis == 0:
-                pass
+                t = y[:, :, np.newaxis, np.newaxis]
+                return np.broadcast_to(t, x.shape)
             elif axis == 1:
                 t = y[np.newaxis, :, :, np.newaxis]
                 return np.broadcast_to(t, x.shape)
@@ -87,6 +88,7 @@ PARAMS = [
     ((2, 3, 4, 5), (3), 1),
     ((2, 3, 4, 5), (4), 2),
     ((2, 3, 4, 5), (5), 3),
+    ((2, 3, 4, 5), (2, 3), 0),
     ((2, 3, 4, 5), (3, 4), 1),
     ((2, 3, 4, 5), (4, 5), 2),
     #((2, 3, 4, 5), (2, 3, 4), 0),

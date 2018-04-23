@@ -253,6 +253,10 @@ void BroadcastTo<T>::forward_impl(const Variables &inputs, const Variables &outp
 					switch(axis_) {
 						case 0:
 							// X: (2,3,4,5) Y: (2,3) axis=0
+							copy_buf_vertically_to_block(
+									z, y,
+									xs[0], ys[1],
+									xs[1], xs[2]*xs[3]);
 							break;
 						case 1:
 							{
