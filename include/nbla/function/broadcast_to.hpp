@@ -65,7 +65,7 @@ protected:
   NBLA_API virtual void forward_impl(const Variables &inputs, const Variables &outputs);
   NBLA_API virtual void backward_impl(const Variables &inputs, const Variables &outputs,
                                       const vector<bool> &propagate_down,
-				      const vector<bool> &accum);
+              const vector<bool> &accum);
 };
 }
 #endif
