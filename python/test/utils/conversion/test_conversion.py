@@ -307,6 +307,13 @@ def test_nnp_onnx_conversion_add_no_broadcast(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "add_no_broadcast.nnp", "add_no_broadcast.onnx", "out_data_1", "exec_0")
 
 
+def test_onnx_nnp_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "add_broadcast_axis1.onnx",
+                                    "add_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
 def test_onnx_nnp_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "mul_no_broadcast.onnx", "mul_no_broadcast.nnp", "out_data_1", "exec_0")
