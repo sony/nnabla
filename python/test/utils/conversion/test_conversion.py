@@ -511,6 +511,27 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
         in_name="data_0", in_img=img)
 
 
+#def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
+#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#    convert_onnx_to_nnp_and_compare(
+#        tmpdir, TEST_DATA_DIR, "inception_v2.onnx", "inception_v2.nnp", "prob_1", "exec_0",
+#        in_name="data_0", in_img=img)
+
+
+def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "densenet121.onnx", "densenet121.nnp", "fc6_1", "exec_0",
+        in_name="data_0", in_img=img, atol=1e-5)
+
+
+def test_nnp_onnx_conversion_densenet121(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "densenet121.nnp", "densenet121.onnx", "fc6_1", "exec_0",
+        in_name="data_0", in_img=img, atol=1e-5)
+
+
 @pytest.mark.slow
 def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
