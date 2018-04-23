@@ -203,6 +203,39 @@ def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_count
     btp.axis = axis
     return bt
 
+def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
+    """Converts a broadcasting operator to a composite with BroadcastTo"""
+    broadcasting = False
+    broadcast_axis = -1
+    for attr in node.attribute:
+        if attr.name == "axis":
+            if attr.type != AttributeProto.INT:
+                raise ValueError("Only INT is supported for axis in {} op_type".format(node.op_type))
+            broadcast_axis = attr.i
+        elif attr.name == "broadcast":
+            if attr.type != AttributeProto.INT:
+                raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
+            if attr.i == 1:
+                broadcasting = True
+        else:
+            raise ValueError("Unsupported attribute {} was specified at {}"
+                             .format(attr.name, node.op_type))
+    if not broadcasting:
+        return
+    # Create a BroadcastTo operator to broadcast input B
+    b_idx = 1  # B is the second input
+    broadcasted_postfix = "_broadcasted"
+    input = node.input[:]
+    bin = node.input[b_idx]
+    bout = bin+broadcasted_postfix
+    bt = generate_broadcast_to(node.name, node.input[0], bin, bout, broadcast_axis,
+                               base_name, func_counter)
+    func_list.append(bt)
+    input[b_idx] = bout  # rewire input to broadcasted input
+    # update Add input with the converted inputs
+    del func.input[:]
+    func.input.extend(input)
+
 def set_reduction_attrs(p, node):
     p.keep_dims = True  #  keep_dims is default True for ONNX
     for attr in node.attribute:
@@ -460,68 +493,10 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             raise ValueError("Sum operations with more than two input is currently not supported")
         func_list.append(func)
     elif node.op_type == "Add":
-        broadcasting = False
-        broadcast_axis = -1
-        for attr in node.attribute:
-            if attr.name == "axis":
-                if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for axis in {} op_type".format(node.op_type))
-                broadcast_axis = attr.i
-            elif attr.name == "broadcast":
-                if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
-                if attr.i == 1:
-                    broadcasting = True
-            else:
-                raise ValueError("Unsupported attribute {} was specified at {}"
-                                 .format(attr.name, node.op_type))
-        if broadcasting:
-            # Create a BroadcastTo operator to broadcast input B
-            b_idx = 1  # B is the second input
-            broadcasted_postfix = "_broadcasted"
-            input = node.input[:]
-            bin = node.input[b_idx]
-            bout = bin+broadcasted_postfix
-            bt = generate_broadcast_to(node.name, node.input[0], bin, bout, broadcast_axis,
-                                       base_name, func_counter)
-            func_list.append(bt)
-            input[b_idx] = bout  # rewire input to broadcasted input
-            # update Add input with the converted inputs
-            del func.input[:]
-            func.input.extend(input)
+        convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Mul":
-        # We need the input buffer's dimension information here
-        # in order to reshape the bias vector correctly.
-        # Therefore we cannot support broadcasting unless we get an operator like ReshapeTo
-        # which allows reshaping without shape specification.
-        reshaped_postfix = "_reshaped"
-        input = node.input[:]
-        for attr in node.attribute:
-            if attr.name == "axis":
-                pass
-                ## Reshape the input bias so it fits
-                ## the specifed axis's broadcasted shape
-                #rin = node.input[1]
-                #rout = rin+reshaped_postfix
-                #rs = nnabla_pb2.Function()
-                #rs.type = "Reshape"
-                #set_function_name(rs, node.name, base_name, func_counter)
-                #rs.input.extend([rin])
-                #rs.output.extend([rout])
-                ## Calculate the reshaped size for the bias.
-                ## We calculate this from the input buffer's dimension and
-                ## the specified axis.
-                #rp = rs.reshape_param
-                #rp.shape.dim.extend(reshaped)
-                #input[1] = rout  # rewire input to reshaped input
-            elif attr.name == "broadcast":
-                raise ValueError("broadcasting is currently not supported for {}".format(node.op_type))
-                # Mul2 broadcasts by default so we do nothing here
-                #pass
-            else:
-                raise ValueError("Unsupported attribute {} was specified at {}"
-                                 .format(attr.name, node.op_type))
+        convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":
         # Convert a Constant node as an input parameter and not a function
