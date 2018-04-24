@@ -70,7 +70,6 @@ def merge_broadcast(node, func, target_name, broadcast_target):
     # multipler operators.
     del broadcast_target[target_name]
 
-
 def convert_to_nodes(func, variables, input_types, output_types, broadcast_target):
     """Convert a function to a node or a group of nodes"""
     op_type = nnabla_function_type_to_onnx_optype.get(func.type)
@@ -110,7 +109,7 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # Copy kernel, stride, and pads values
         k = onnx.helper.make_attribute("kernel_shape", mpp.kernel.dim)
         s = onnx.helper.make_attribute("strides", mpp.stride.dim)
-        p = onnx.helper.make_attribute("pads", np.repeat(mpp.pad.dim, 2))
+        p = onnx.helper.make_attribute("pads", mpp.pad.dim*2)
         n.attribute.extend([k, s, p])
         nl.append(n)
     elif func.type == "Convolution":
@@ -134,7 +133,7 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         k = onnx.helper.make_attribute("kernel_shape", weight_shape.dim[weight_base:])
         d = onnx.helper.make_attribute("dilations", cp.dilation.dim)
         s = onnx.helper.make_attribute("strides", cp.stride.dim)
-        p = onnx.helper.make_attribute("pads", np.repeat(cp.pad.dim, 2))
+        p = onnx.helper.make_attribute("pads", cp.pad.dim*2)
         g = onnx.helper.make_attribute("group", cp.group)
         n.attribute.extend([k, d, s, p, g])
         nl.append(n)
@@ -166,7 +165,7 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # Copy kernel, stride, and pads values
         k = onnx.helper.make_attribute("kernel_shape", app.kernel.dim)
         s = onnx.helper.make_attribute("strides", app.stride.dim)
-        p = onnx.helper.make_attribute("pads", np.repeat(app.pad.dim, 2))
+        p = onnx.helper.make_attribute("pads", app.pad.dim*2)
         n.attribute.extend([k, s, p])
         nl.append(n)
     elif func.type == "BatchNormalization":

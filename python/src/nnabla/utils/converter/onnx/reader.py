@@ -260,9 +260,8 @@ def check_padding(pads, dim):
     different values for start/end per axis."""
     padval = []
     for i in range(dim):
-        ofs = i*2  # start and end for each axis
-        s = pads[ofs]
-        e = pads[ofs+1]
+        s = pads[i]
+        e = pads[i+dim]
         if s != e:
             raise ValueError("NNabla does not support different padding"
                              " for start and end of each axis")
