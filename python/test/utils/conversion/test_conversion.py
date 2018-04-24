@@ -29,6 +29,10 @@ from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_
 
 TEST_DATA_DIR = "nnabla-sample-data/conversion_data"
 
+def print_buffer_shape(net):
+    for k, v in net.functions.items():
+        out = v.outputs[0]
+        print(out.name, net.variables[out.name].variable_instance.shape)
 
 def run_executor(nn_net, exec_name):
     """Run specified executor and return its network"""
@@ -51,10 +55,14 @@ def convert_onnx_to_nnp_and_compare(
         if show_onnx:
             print(model)
         c2out = None
+        rep = oc2.prepare(model)
         if type(in_img) is np.ndarray:
-            c2out = oc2.run_model(model, [in_img])
+            c2out = rep.run([in_img])
         else:
-            c2out = oc2.run_model(model, [])
+            c2out = rep.run([])
+        #for k in rep.workspace.Blobs():
+        #    v = rep.workspace.FetchBlob(k)
+        #    print(k, v.shape)
         backend_out = c2out[out_name]
     elif backend == "cntk":
         n = cntkf.Function.load(path, format=cntk.ModelFormat.ONNX)
@@ -80,13 +88,14 @@ def convert_onnx_to_nnp_and_compare(
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
     # read exported nnp and run network
-    # pdb.set_trace()
     nn_net = nnload.load([p])
     if type(in_img) is np.ndarray:
         net = nn_net.executors[exec_name].network
         in_data = net.variables[in_name]
         in_data.variable_instance.d = in_img
+    # pdb.set_trace()
     exe = run_executor(nn_net, exec_name)
+    #print_buffer_shape(exe)
     # in_data = exe.variables["in_data_0"]
     # print(in_data.variable_instance.d)
     nnout = exe.variables[out_name].variable_instance.d

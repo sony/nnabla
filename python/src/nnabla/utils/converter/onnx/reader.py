@@ -107,6 +107,11 @@ def set_kernel_parameter(node, kp):
             if attr.type != AttributeProto.INTS:
                 raise ValueError("Only INTS are supported for pads in {}"
                                  .format(node.op_type))
+            if len(attr.ints) > 4:
+                # pads with more than 4 (NCHW) dimension means
+                # it has a start and end specified.
+                # NNabla does not support different padding for start and end.
+                raise ValueError("NNabla does not support different padding for start and end of each axis")
             pads.extend(attr.ints)
             dims.append(len(pads))
         elif attr.name == "kernel_shape":
@@ -119,12 +124,13 @@ def set_kernel_parameter(node, kp):
             raise ValueError("Unsupported attribute {} was specified at {}"
                              .format(attr.name, node.op_type))
     # NNabla requires for the dimensions of strides, pads, kernels to match.
-    # We align the dimensions for all three attributes to the shortest one
+    # We align the dimensions for all three attributes to the shortest one.
+    # We use the dimensions from the end (hence the negative dim).
     dim = min(dims)
     if strides:
-        kp.stride.dim.extend(strides[:dim])
+        kp.stride.dim.extend(strides[-dim:])
     if pads:
-        kp.pad.dim.extend(pads[:dim])
+        kp.pad.dim.extend(pads[-dim:])
     else:
         # In case we don't have padding set,
         # we set zero padding just in case NNabla does not set the
@@ -132,7 +138,7 @@ def set_kernel_parameter(node, kp):
         # This code should not be needed if NNabla handles default values correctly.
         kp.pad.dim.extend([0]*dim)
     if kernel:
-        kp.kernel.dim.extend(kernel[:dim])
+        kp.kernel.dim.extend(kernel[-dim:])
 
 
 def update_function_counter(func_type, func_counter, count):
