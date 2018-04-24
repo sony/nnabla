@@ -107,11 +107,6 @@ def set_kernel_parameter(node, kp):
             if attr.type != AttributeProto.INTS:
                 raise ValueError("Only INTS are supported for pads in {}"
                                  .format(node.op_type))
-            if len(attr.ints) > 4:
-                # pads with more than 4 (NCHW) dimension means
-                # it has a start and end specified.
-                # NNabla does not support different padding for start and end.
-                raise ValueError("NNabla does not support different padding for start and end of each axis")
             pads.extend(attr.ints)
             dims.append(len(pads))
         elif attr.name == "kernel_shape":
@@ -125,20 +120,21 @@ def set_kernel_parameter(node, kp):
                              .format(attr.name, node.op_type))
     # NNabla requires for the dimensions of strides, pads, kernels to match.
     # We align the dimensions for all three attributes to the shortest one.
-    # We use the dimensions from the end (hence the negative dim).
     dim = min(dims)
     if strides:
-        kp.stride.dim.extend(strides[-dim:])
+        kp.stride.dim.extend(strides[:])
     if pads:
-        kp.pad.dim.extend(pads[-dim:])
+        padval = check_padding(pads, dim)
+        kp.pad.dim.extend(padval)
     else:
         # In case we don't have padding set,
         # we set zero padding just in case NNabla does not set the
         # default padding values correctly (such as in AveragePooling).
-        # This code should not be needed if NNabla handles default values correctly.
+        # This code should not be needed
+        # if NNabla handles default values correctly.
         kp.pad.dim.extend([0]*dim)
     if kernel:
-        kp.kernel.dim.extend(kernel[-dim:])
+        kp.kernel.dim.extend(kernel[:])
 
 
 def update_function_counter(func_type, func_counter, count):
@@ -258,6 +254,22 @@ def set_reduction_attrs(p, node):
                              .format(attr.name, node.op_type))
 
 
+def check_padding(pads, dim):
+    """Check each padding start/end value
+    so that they match, becuase NNabla cannot set
+    different values for start/end per axis."""
+    padval = []
+    for i in range(dim):
+        ofs = i*2  # start and end for each axis
+        s = pads[ofs]
+        e = pads[ofs+1]
+        if s != e:
+            raise ValueError("NNabla does not support different padding"
+                             " for start and end of each axis")
+        # If the values match, we set it as the padding for current axis
+        padval.append(s)
+    return padval
+
 def convert_to_functions(pb, network, node, base_name, initializers,
                          func_counter, param_vars, param_list, merged_inputs,
                          removed_outputs):
@@ -374,19 +386,20 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         # We align the dimensions for all three attributes to the shortest one
         dim = min(dims)
         if strides:
-            cp.stride.dim.extend(strides[:dim])
+            cp.stride.dim.extend(strides[:])
         if pads:
-            cp.pad.dim.extend(pads[:dim])
+            padval = check_padding(pads, dim)
+            cp.pad.dim.extend(padval)
         else:
             # Set default values.
             # Do we really need this? (Default value should be set by NNabla)
-            cp.pad.dim.extend([0 for _ in range(dim)])
+            cp.pad.dim.extend([0]*dim)
         if dilations:
-            cp.dilation.dim.extend(dilations[:dim])
+            cp.dilation.dim.extend(dilations[:])
         else:
             # Set default values.
             # Do we really need this? (Default value should be set by NNabla)
-            cp.dilation.dim.extend([1 for _ in range(dim)])
+            cp.dilation.dim.extend([1]*dim)
         func_list.append(func)
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
