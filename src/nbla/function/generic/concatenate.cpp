@@ -32,6 +32,10 @@ void Concatenate<T>::setup_impl(const Variables &inputs,
              axis_, shape.size());
   inner_total_size_ = 0;
   for (int i = 0; i < inputs.size(); i++) {
+    NBLA_CHECK(inputs[i]->shape().size() != 0, error_code::value,
+               "input value(inputs[%d]) does not exist. "
+               "inputs[%d]->shape().size(): %d.",
+               i, i, inputs[i]->shape().size());
     const int inner_size = inputs[i]->size(this->axis_);
     inner_total_size_ += inner_size;
     if (i >= 1) {
