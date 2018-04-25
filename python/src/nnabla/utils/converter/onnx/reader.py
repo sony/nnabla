@@ -65,6 +65,7 @@ onnx_optype_to_nnabla_function_type = {
     "ReduceMin": "Min",
     "ReduceMax": "Max",
     "ReduceProd": "Prod",
+    "And": "LogicalAnd",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -522,6 +523,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Mul":
+        convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
+        func_list.append(func)
+    elif node.op_type == "And":
         convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":

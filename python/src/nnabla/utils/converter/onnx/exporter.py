@@ -47,10 +47,11 @@ nnabla_function_type_to_onnx_optype = {
     "SELU": "Selu",
     "Sum": "ReduceSum",
     "Mean": "ReduceMean",
+    "Mul2": "Mul",
+    "LogicalAnd": "And",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
-    "Mul2": "Mul",
     # optype that should get merged
     # with other operators
     "BroadcastTo": ""
@@ -72,6 +73,8 @@ def merge_broadcast(node, func, target_name, broadcast_target):
     # We may have a problem if the same parameter is used from
     # multipler operators.
     del broadcast_target[target_name]
+    # Return the merged input's name so we can use it if we need to
+    return before_broadcast
 
 def convert_to_nodes(func, variables, input_types, output_types, broadcast_target):
     """Convert a function to a node or a group of nodes"""
@@ -278,6 +281,20 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         bt = func.input[1]
         if bt in broadcast_target:
             merge_broadcast(n, func, bt, broadcast_target)
+        nl.append(n)
+    elif func.type == "LogicalAnd":
+        # Store the input/output tensor's name and convert it to boolean
+        input_types[n.input[0]] = TensorProto.BOOL
+        output_types[n.output[0]] = TensorProto.BOOL
+        # Check if the second input is a brodcast target.
+        bt = func.input[1]
+        if bt in broadcast_target:
+            merged = merge_broadcast(n, func, bt, broadcast_target)
+            # Set the merged parameter name as BOOL
+            input_types[merged] = TensorProto.BOOL
+        else:
+            # Set the given parameter name as BOOL
+            input_types[n.input[1]] = TensorProto.BOOL
         nl.append(n)
     else:
         # Simply append node to list

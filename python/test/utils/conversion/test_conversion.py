@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-import struct
+import shutil
 import pytest
 import nnabla
 import nnabla.utils.load as nnload
@@ -44,8 +44,10 @@ def run_executor(nn_net, exec_name):
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
         backend="caffe2",
-        in_img=None, in_name="", compare_values=True, show_onnx=False, show_nnp=False,
-        show_output=False, atol=1e-08):
+        in_img=None, in_name="",
+        compare_values=True, show_onnx=False, show_nnp=False,
+        show_output=False, atol=1e-08,
+        export_nnp_path=None):
     """Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     backend_out = None
@@ -87,6 +89,8 @@ def convert_onnx_to_nnp_and_compare(
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), nnp_name)
     nnpex.export_nnp(p)
+    if export_nnp_path:
+        shutil.copy2(p, export_nnp_path)
     # read exported nnp and run network
     nn_net = nnload.load([p])
     if type(in_img) is np.ndarray:
@@ -483,6 +487,33 @@ def test_nnp_onnx_conversion_reduce_mean(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "reduce_mean.nnp", "reduce_mean.onnx", "out_data_1", "exec_0")
 
+
+def test_onnx_nnp_conversion_and_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "and_no_broadcast.onnx",
+                                    "and_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_and_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "and_no_broadcast.nnp",
+                                    "and_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "and_broadcast_axis1.onnx",
+                                    "and_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "and_broadcast_axis1.nnp",
+                                    "and_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
 
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
