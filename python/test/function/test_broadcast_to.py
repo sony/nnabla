@@ -106,7 +106,7 @@ PARAMS = [
 @pytest.mark.parametrize("seed", [314])
 @pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast_to']))
 @pytest.mark.parametrize("xs, ys, axis", PARAMS)
-def test_broadcast_to_forward_backward(xs, ys, axis, seed, fname, ctx, func_name):
+def test_broadcast_to_forward(xs, ys, axis, seed, fname, ctx, func_name):
     rng = np.random.RandomState(seed)
     ref_func = eval('ref_' + fname)
     func = getattr(F, fname)
