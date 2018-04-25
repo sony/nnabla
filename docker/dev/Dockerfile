@@ -36,18 +36,17 @@ RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/pro
     && rm -rf /tmp/*
 
 # Conda environment for Python3 versions
-RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+RUN umask 0 && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
      && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
      && rm -rf Miniconda3-latest-Linux-x86_64.sh
 ENV PATH /opt/miniconda3/bin:$PATH
-RUN chmod -R ugo+w /opt/miniconda3
 
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
 # The following block will generate conda envs of Python 2.7-3.6 with nnabla dependencies.
-RUN for PY in 2.7 3.4 3.5 3.6 \
+RUN umask 0; for PY in 2.7 3.4 3.5 3.6 \
     ; do conda create -n py$PY python=$PY\
     && bash -c "source activate py$PY \
     && conda install virtualenv \
@@ -55,4 +54,3 @@ RUN for PY in 2.7 3.4 3.5 3.6 \
     && pip install -r /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/test_requirements.txt" \
     ; done
-RUN chmod -R ugo+w /opt/miniconda3

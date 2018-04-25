@@ -143,7 +143,7 @@ public:
 */
 class NnpImpl {
   friend class Nnp;
-  const nbla::Context kCpuCtx{"cpu", "CpuCachedArray", "0", "default"};
+  const nbla::Context kCpuCtx{{"cpu:float"}, "CpuCachedArray", "0"};
   nbla::Context ctx_;
   unique_ptr<::NNablaProtoBuf> proto_;
   unordered_map<string, CgVariablePtr> parameters_;

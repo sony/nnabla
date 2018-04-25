@@ -19,13 +19,8 @@ Install From Binary
 Install From Source
 -------------------
 
-.. toctree::
-    :maxdepth: 1
+Documentation of build from source has been moved to `Github repository <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_.
 
-    build_on_linux.rst
-    build_on_linux_with_dt.rst
-    build_on_windows.rst
-    build_on_macos.rst
 
 Running On Docker
 -----------------

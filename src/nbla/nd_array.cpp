@@ -82,7 +82,12 @@ void NdArray::fill(double v) { array_->fill(v); }
 const Array *NdArray::get(dtypes dtype, const Context &ctx) {
   return array_->get(dtype, ctx);
 }
-Array *NdArray::cast(dtypes dtype, const Context &ctx) {
-  return array_->cast(dtype, ctx);
+Array *NdArray::cast(dtypes dtype, const Context &ctx, bool write_only) {
+  return array_->cast(dtype, ctx, write_only);
+}
+
+shared_ptr<Array> NdArray::cast_sp(dtypes dtype, const Context &ctx,
+                                   bool write_only) {
+  return array_->cast_sp(dtype, ctx, write_only);
 }
 }

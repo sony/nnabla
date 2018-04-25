@@ -20,6 +20,14 @@ pip install nnabla
 
 This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla-ext-cuda`.
 
+For more details, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
+
+### Building from Source
+
+See [Build Manuals](doc/build/README.md).
+
+### Running on Docker
+For details on running on Docker, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
 
 ## Features
 
@@ -110,11 +118,6 @@ loss.backward()
 
 <https://nnabla.readthedocs.org>
 
-### Setup
-
-<https://nnabla.readthedocs.io/en/latest/python/installation.html>
-
-
 ### Getting started
 
 * A number of Jupyter notebook tutorials can be found in the [tutorial](https://github.com/sony/nnabla/tree/master/tutorial) folder.
@@ -125,3 +128,13 @@ loss.backward()
 * We also provide some more sophisticated examples at [`nnabla-examples`](https://github.com/sony/nnabla-examples) repository.
 
 * C++ API examples are avaiailable in [`examples/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).
+
+
+## Contribution guide
+
+The technology is rapidly progressing, and researchers and developers often want to add their custom features to a deep learning framework.
+NNabla is really nice in this point. The architecture of Neural Network Libraries is clean and quite simple.
+Also, you can add new features very easy by the help of our code template generating system.
+See the following link for details.
+
+* [Contribution guide](CONTRIBUTING.md)

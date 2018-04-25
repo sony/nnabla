@@ -19,6 +19,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.function as F_
 import nnabla.functions as F
+import nnabla.ext_utils as ext_utils
 
 
 def ext_to_camel(ext):
@@ -35,7 +36,8 @@ def list_context(func_name):
     try:
         import list_context_ext
         return list_context_ext.list(func_name)
-    except:
+    except Exception as e:
+        print(e)
         return [(nn.Context(), func_name)]
 
 
@@ -210,10 +212,82 @@ class ArrayDiffStats:
         return '\n'.join(lines)
 
 
+def force_tuple(x):
+    if isinstance(x, tuple):
+        return x
+    return (x,)
+
+
+def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx, func_name):
+
+    # 0. Define utility functions
+    def _filter_inputs(vinputs):
+        return [v for v in vinputs if v is not None]
+
+    def _zero_grad(vs):
+        for v in vs:
+            if v is None:
+                continue
+            v.grad.zero()
+
+    def _get_grad_copy(vinputs, backward):
+        return [i.g.copy() for i, b in zip(vinputs, backward) if b and i is not None]
+
+    def _set_output_grad_and_copy(os, grads=None):
+        if grads is None:
+            grads = [rng.randn(*o.shape) for o in os]
+        for o, g in zip(os, grads):
+            o.g = g
+        return grads
+
+    # 1. Create a float32 function.
+    with nn.context_scope(ctx):
+        o_f = force_tuple(func(*(finputs + func_args), **func_kwargs))
+    if True in backward:
+        grad_copy = _set_output_grad_and_copy(o_f)
+
+    # 2. Get outputs of forward and backward of the float32 function.
+    o_f[0].parent.forward(_filter_inputs(finputs), o_f)
+    y_f = [o.d.copy() for o in o_f]
+    if True in backward:
+        _zero_grad(finputs)
+        o_f[0].parent.backward(_filter_inputs(finputs), o_f)
+        g_f = _get_grad_copy(finputs, backward)
+
+    # 3. Create a float16 (half) function.
+    ext, dtype = ctx.backend[0].split(':')
+    assert dtype == 'float'
+    ctx_h = ext_utils.get_extension_context(ext, type_config='half')
+    with nn.context_scope(ctx_h):
+        o_h = force_tuple(func(*(hinputs + func_args), **func_kwargs))
+    if True in backward:
+        _set_output_grad_and_copy(o_h, grad_copy)
+
+    # 4. Get outputs of forward and backward of the float16 function.
+    o_h[0].parent.forward(_filter_inputs(hinputs), o_h)
+    y_h = [o.d.copy() for o in o_h]
+    if True in backward:
+        _zero_grad(hinputs)
+        o_h[0].parent.backward(_filter_inputs(hinputs), o_h)
+        g_h = _get_grad_copy(hinputs, backward)
+
+    # 5. Check if output values are close between function data types.
+    for ff, hh in zip(y_f, y_h):
+        # TODO: set tol param
+        assert np.allclose(ff, hh, atol=1e-1), "Checking forward half: " + str(
+            ArrayDiffStats(ff, hh))
+    if True not in backward:
+        return
+    for ff, hh in zip(g_f, g_h):
+        # TODO: set tol param
+        assert np.allclose(ff, hh, atol=1e-1), "Checking backward half: " + str(
+            ArrayDiffStats(ff, hh))
+
+
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
-                    ctx=None, func_name=None, ref_grad=None):
+                    ctx=None, func_name=None, ref_grad=None, disable_half_test=False):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
@@ -238,8 +312,15 @@ def function_tester(rng, func, ref_func, inputs,
             vinputs += [nn.Variable(i.shape, need_grad=b)]
             vinputs[-1].data.cast(i.dtype)[...] = i
         return vinputs
-    vinputs = create_variables(inputs, backward)
 
+    # Half test
+    if not disable_half_test:
+        finputs = create_variables(inputs, backward)
+        hinputs = create_variables(inputs, backward)
+        half_test(rng, func, finputs, hinputs, func_args,
+                  func_kwargs, backward, ctx, func_name)
+
+    vinputs = create_variables(inputs, backward)
     # Checking forward
     # print 'checking forward'
     with nn.context_scope(ctx), nn.auto_forward():
@@ -247,10 +328,6 @@ def function_tester(rng, func, ref_func, inputs,
     rinputs = copy.deepcopy(inputs)  # inputs for ref_func
     refs = ref_func(*(rinputs + func_args), **func_kwargs)
 
-    def force_tuple(x):
-        if isinstance(x, tuple):
-            return x
-        return (x,)
     refs = force_tuple(refs)
     o = force_tuple(o)
     assert len(o) == len(refs)
@@ -340,7 +417,7 @@ def function_tester(rng, func, ref_func, inputs,
         finputs = list(filter(lambda x: x is not None, vinputs))
 
         # Save accum gradient result
-        g = np.random.randn(*v.shape)
+        g = rng.randn(*v.shape)
         v.g = g
         f.forward(finputs, o)
         f.backward(finputs, o)
@@ -348,7 +425,7 @@ def function_tester(rng, func, ref_func, inputs,
 
         # Check accum=False
         accum = [j != i for j in range(len(finputs))]
-        v.g = np.random.randn(*v.shape)
+        v.g = rng.randn(*v.shape)
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert np.allclose(

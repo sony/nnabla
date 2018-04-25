@@ -15,8 +15,11 @@
 from collections import OrderedDict
 import nnabla.logger as logger
 from nnabla.utils import nnabla_pb2
-from onnx import (ModelProto, TensorProto, AttributeProto)
 import numpy as np
+try:
+    from onnx import (ModelProto, TensorProto, AttributeProto)
+except:
+    print('ONNX read support disabled.')
 
 from .utils import *
 
@@ -325,7 +328,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "is_test":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Dropout is_test must be a single integer")
+                    raise ValueError(
+                        "Dropout is_test must be a single integer")
                 if attr.i != 0:
                     # is_test is True meaning we will not be applying dropout.
                     # We are simply going to pass through the input values
@@ -356,22 +360,26 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for pads in Conv op_type")
+                    raise ValueError(
+                        "Only INTS are supported for pads in Conv op_type")
                 pads.extend(attr.ints)
                 dims.append(len(pads))
             elif attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for strides in Conv op_type")
+                    raise ValueError(
+                        "Only INTS are supported for strides in Conv op_type")
                 strides.extend(attr.ints)
                 dims.append(len(strides))
             elif attr.name == "dilations":
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS are supported for dilations in Conv op_type")
+                    raise ValueError(
+                        "Only INTS are supported for dilations in Conv op_type")
                 dilations.extend(attr.ints)
                 dims.append(len(dilations))
             elif attr.name == "group":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for group in Conv op_type")
+                    raise ValueError(
+                        "Only INT is supported for group in Conv op_type")
                 cp.group = attr.int
             elif attr.name == "kernel_shape":
                 # We do not set 'kernel_shape' to NNabla
@@ -843,7 +851,8 @@ def onnx_model_to_nnp_protobuf(model):
             if opset.version > ONNX_OPSET_VERSION:
                 raise ValueError("ONNX opset version newer than {} is currently not supported: {}".format(ONNX_OPSET_VERSION, opset.version))
         else:
-            raise ValueError("Unsupported opset from domain {}".format(opset.domain))
+            raise ValueError(
+                "Unsupported opset from domain {}".format(opset.domain))
 
     # convert onnx model to nnabla protobuf
     # logger.log(99, "Converting ONNX made by {}.".format(model.producer_name))

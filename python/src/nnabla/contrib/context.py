@@ -21,24 +21,25 @@ def extension_context(extension_name='cpu', **kw):
     All extension's module must provide `context(**kw)` function.
 
     Args:
-        extension_name (str) : Module path relative to `nnabla.extensions`.
+        extension_name (str) : Module path relative to `nnabla_ext`.
         kw (dict) : Additional keyword arguments for context function in a extension module.
 
     Returns:
         :class:`nnabla.Context`: The current extension context.
 
+    Note:
+        Deprecated. Use :function:`nnabla.ext_utils.get_extension_context` instead.
+
     Example:
 
         .. code-block:: python
 
-            ctx = extension_context('cuda.cudnn', device_id=0)
+            ctx = extension_context('cudnn', device_id=0)
             nn.set_default_context(ctx)
 
     """
-    import importlib
-    try:
-        mod = importlib.import_module(
-            '.' + extension_name, 'nnabla.extensions')
-    except ImportError:
-        mod = importlib.import_module('.' + extension_name, 'nnabla_ext')
-    return mod.context(**kw)
+    from nnabla import logger
+    logger.warn(
+        'Deprecated API. Use `nnabla.extension.get_extension_context(ext_name, **kw)`.')
+    from nnabla.ext_utils import get_extension_context
+    return get_extension_context(extension_name, **kw)

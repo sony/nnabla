@@ -57,7 +57,7 @@ Then,
 
 .. code-block:: bash
 	
-	 python -c "import nnabla_ext.cuda, nnabla_ext.cuda.cudnn"
+	 python -c "import nnabla_ext.cuda, nnabla_ext.cudnn"
 
 .. code-block:: bash
 
@@ -87,7 +87,7 @@ Run MNIST classification with CUDA/cuDNN.
 
 .. code-block:: shell
 
-    python classification.py -c cuda.cudnn
+    python classification.py -c cudnn
 
 
 

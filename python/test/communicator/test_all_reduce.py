@@ -15,32 +15,10 @@
 import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
 import numpy as np
-from nbla_test_utils import list_context
 from nnabla.contrib.context import extension_context
 
-############################################
-# Communicator has to be instantiated here,
-# otherwise, mpirun fails.
-############################################
-
-# Communicator
-comm = None
-try:
-    extension_module = "cuda"
-    ctx = extension_context(extension_module)
-    comm = C.MultiProcessDataParalellCommunicator(ctx)
-    comm.init()
-    n_devices = comm.size
-    mpi_rank = comm.rank
-    mpi_local_rank = comm.local_rank
-    device_id = mpi_local_rank
-    ctx.device_id = str(device_id)
-except:
-    pass
-
-############################################
+from six.moves import reduce
 
 
 def ref_all_reduce(x_data_list, size, division):
@@ -54,24 +32,16 @@ def ref_all_reduce(x_data_list, size, division):
     return results
 
 
-@pytest.mark.skipif(comm == None, reason="Communicator does not exist.")
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inplace", [True, False])
-@pytest.mark.parametrize("division", [False])
-def test_all_reduce(seed, inplace, division):
-    try:
-        import nnabla_ext
-        import nnabla_ext.cuda
-    except:
-        pytest.skip("{} is supported in CUDA device".format(
-            sys._getframe().f_code.co_name))
-
-    n_devices = nnabla_ext.cuda.init.get_device_count()
-    if n_devices < 2:
-        pytest.skip("Number of cuda devices in this machine is less than 2.")
-
-    if n_devices != comm.size:
-        pytest.skip("Number of cuda devices is not same as that of processes.")
+@pytest.mark.parametrize("division", [True, False])
+def test_all_reduce(seed, inplace, division, comm_nccl_opts):
+    if comm_nccl_opts is None:
+        pytest.skip(
+            "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
+    comm = comm_nccl_opts.comm
+    device_id = int(comm_nccl_opts.device_id)
+    n_devices = len(comm_nccl_opts.devices)
 
     # Variables
     x_list = []

@@ -6,16 +6,16 @@ This example demonstrates the workflow to train a classification model in Python
 
 # Install C++ libraries
 
-Follow [the installation manual](http://nnabla.readthedocs.io/en/latest/cpp/installation.html).
+Follow [the installation manual of C++ utility library](../../../doc/build/build.md)
 
-Note: this example requires NNabla Python package installed.
+Note: this example requires NNabla Python package also be installed.
 
 ## Train a classification model in Python
 At first, you will train an MNIST classification model in Python-side. The example scripts of the MNIST classification training are provided in [NNabla Examples repository](https://github.com/sony/nnabla-examples). Clone or download it, then you can run train a classification model by the following commands.
 
 ```shell
 # at nnabla-examples/mnist-collection/
-python classification.py  # Optionally you can use -c cuda.cudnn option.
+python classification.py  # Optionally you can use -c cudnn option.
 ```
 
 After training finishes, you can find a parameter file created in the `tmp.monitor` folder with name `lenet_params_010000.h5`

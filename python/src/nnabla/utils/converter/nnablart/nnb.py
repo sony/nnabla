@@ -26,7 +26,7 @@ from .utils import create_nnabart_info
 
 class NnbExporter:
     def _align(self, size):
-        return math.ceil(size / 4) * 4
+        return int(math.ceil(size / 4) * 4)
 
     def _alloc(self, size=-1, data=b''):
         size = len(data) if size < 0 else size
@@ -48,18 +48,18 @@ class NnbExporter:
 
         self._argument_formats = {}
         for fn, func in self._info._function_info.items():
-            if 'argument' in func:
+            if 'arguments' in func and len(func['arguments']) > 0:
                 argfmt = ''
-                for an, arg in func['argument'].items():
-                    if arg['Type'] == 'bool':
+                for an, arg in func['arguments'].items():
+                    if arg['type'] == 'bool':
                         argfmt += 'B'
-                    elif arg['Type'] == 'double' or arg['Type'] == 'float':
+                    elif arg['type'] == 'double' or arg['type'] == 'float':
                         argfmt += 'f'
-                    elif arg['Type'] == 'int64':
+                    elif arg['type'] == 'int64':
                         argfmt += 'i'
-                    elif arg['Type'] == 'repeated int64' or arg['Type'] == 'Shape':
+                    elif arg['type'] == 'repeated int64' or arg['type'] == 'Shape':
                         argfmt += 'iI'
-                    elif arg['Type'] == 'string':
+                    elif arg['type'] == 'string':
                         argfmt += 'i'
                 self._argument_formats[fn] = argfmt
 
@@ -138,36 +138,36 @@ class NnbExporter:
                     '{}I'.format(len(outputs)), *outputs))
                 function_data += struct.pack('iI', len(outputs), index)
 
-                if 'argument' in finfo:
+                if 'arguments' in finfo and len(finfo['arguments']) > 0:
                     argfmt = ''
                     values = []
-                    for an, arg in finfo['argument'].items():
+                    for an, arg in finfo['arguments'].items():
                         val = eval('f.{}_param.{}'.format(
-                            finfo['snakecase_name'], an))
-                        if arg['Type'] == 'bool':
+                            finfo['snake_name'], an))
+                        if arg['type'] == 'bool':
                             argfmt += 'B'
                             values.append(val)
-                        elif arg['Type'] == 'double' or arg['Type'] == 'float':
+                        elif arg['type'] == 'double' or arg['type'] == 'float':
                             argfmt += 'f'
                             values.append(val)
-                        elif arg['Type'] == 'int64':
+                        elif arg['type'] == 'int64':
                             argfmt += 'i'
                             values.append(val)
-                        elif arg['Type'] == 'repeated int64':
+                        elif arg['type'] == 'repeated int64':
                             index, pointer = self._alloc(
                                 data=struct.pack('{}i'.format(len(val)), *val))
                             values.append(len(val))
                             values.append(index)
                             argfmt += 'iI'
-                        elif arg['Type'] == 'Shape':
+                        elif arg['type'] == 'Shape':
                             argfmt += 'iI'
                             index, pointer = self._alloc(data=struct.pack(
                                 '{}i'.format(len(val.dim)), *val.dim))
                             values.append(len(val.dim))
                             values.append(index)
-                        elif arg['Type'] == 'string':
+                        elif arg['type'] == 'string':
                             argfmt += 'i'
-                            val = arg['TypeSelection'].index(val)
+                            val = arg['available_values'].index(val)
                             values.append(val)
                     function_data += struct.pack(argfmt, *values)
 

@@ -104,6 +104,11 @@ cdef class Communicator:
         self.communicatorp.add_context_and_parameters(
             pair[CContext, vector[pair[string, shared_ptr[CVariable]]]](ctx_param_dict[0], cparams))
 
+    def clear_context_parameters(self):
+        '''Clear all registered contexts and parameters.
+        '''
+        self.communicatorp.clear_context_parameters()
+
     def init(self, ):
         """Initialize a communicator.
 
@@ -113,6 +118,52 @@ cdef class Communicator:
 
         """
         self.communicatorp.init()
+
+    def new_group(self, name_ranks):
+        """
+        Args:
+            name_ranks (tuple): Tuple of name (`str`) and ranks (`list`).
+
+        Returns:
+            group name (str)
+
+        Example: 
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            # New group
+            group = comm.new_group("node0", [0, 1, 2, 3])
+
+        """
+        return self.communicatorp.new_group(pair[string, vector[int]](name_ranks[0], name_ranks[1]))
+
+    def list_groups(self, ):
+        """
+        Returns:
+            groups (dict): Groups (`str`) of name to ranks (`list`).
+
+        """
+        return self.communicatorp.list_groups()
+
+    def find_group(self, group):
+        """
+        Return the list of ranks in the group. If the group does not exist, 
+        the empty list is returned.
+
+        Args: 
+            group (str): Name of the group.
+        Returns:
+            ranks (list): List of ranks (`int`).
+        """
+        return self.communicatorp.find_group(group)
 
     def allreduce(self, cpp_bool division=False, cpp_bool inplace=False):
         """Deprecated. See all_reduce, instead. 
@@ -131,8 +182,8 @@ cdef class Communicator:
         with nogil:
             self.communicatorp.allreduce(division, inplace)
 
-    def all_reduce(self, data, cpp_bool division=False, cpp_bool inplace=False):
-        """All reduce over parameters added.
+    def all_reduce(self, data, cpp_bool division=False, cpp_bool inplace=False, string group="world"):
+        """All reduce over data.
 
         Args:
             data (:obj:`NdArray` or list of :obj:`NdArray`)
@@ -142,17 +193,207 @@ cdef class Communicator:
                 When true, it is memory-efficient but slow. When false, 
                 it is not memory efficient but fast. In both case, one can 
                 get the result in the same memory region.
+            group (string): Name of a group. This groups is used when the collective is called.
+
+        Example: 
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            # Data
+            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            for x in x_list:
+                x.d = np.random.rand(x.shape)                        
+
+            # AllReduce
+            comm.all_reduce([x.data for x in x_list], inplace=True)
+
         """
         cdef vector[shared_ptr[CNdArray]] cndarray_list
         if type(data) == list:
             for x in data:
                 cndarray_list.push_back(( < NdArray > x).arr)
             with nogil:
-                self.communicatorp.all_reduce(cndarray_list, division, inplace)
+                self.communicatorp.all_reduce(
+                    cndarray_list, division, inplace, group)
         else:
             cndarray_list.push_back(( < NdArray > data).arr)
             with nogil:
-                self.communicatorp.all_reduce(cndarray_list, division, inplace)
+                self.communicatorp.all_reduce(
+                    cndarray_list, division, inplace, group)
+
+    def reduce(self, data, int dst, cpp_bool division=False, cpp_bool inplace=False, string group="world"):
+        """Reduce over data.
+
+        Args:
+            data (:obj:`NdArray` or list of :obj:`NdArray`)
+            dst (int): Distination rank where the result is saved.
+            division (bool): Flag to divide the reduce data by the 
+                number of `contexts` added, or the number of devices. 
+            inplace (bool): Flag to use a packed array. Default is false.
+                When true, it is memory-efficient but slow. When false, 
+                it is not memory efficient but fast. In both case, one can 
+                get the result in the same memory region.
+            group (string): Name of a group. This groups is used when the collective is called.
+
+        Example: 
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            # Data
+            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            for x in x_list:
+                x.d = np.random.rand(x.shape)                        
+
+            # Reduce
+            comm.reduce([x.data for x in x_list], dst=0, inplace=True)
+
+        """
+        cdef vector[shared_ptr[CNdArray]] cndarray_list
+        if type(data) == list:
+            for x in data:
+                cndarray_list.push_back(( < NdArray > x).arr)
+            with nogil:
+                self.communicatorp.reduce(
+                    cndarray_list, dst, division, inplace, group)
+        else:
+            cndarray_list.push_back(( < NdArray > data).arr)
+            with nogil:
+                self.communicatorp.reduce(
+                    cndarray_list, dst, division, inplace, group)
+
+    def bcast(self, data, int src, cpp_bool inplace=False, string group="world"):
+        """Reduce over data.
+
+        Args:
+            data (:obj:`NdArray` or list of :obj:`NdArray`)
+            src (int): Source rank where the data is broadcasted.
+            inplace (bool): Flag to use a packed array. Default is false.
+                When true, it is memory-efficient but slow. When false, 
+                it is not memory efficient but fast. In both case, one can 
+                get the result in the same memory region.
+            group (string): Name of a group. This groups is used when the collective is called.
+
+        Example: 
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            # Data
+            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            for x in x_list:
+                x.d = np.random.rand(x.shape)                        
+
+            # Bcast
+            comm.bcast([x.data for x in x_list], src=0, inplace=True)
+
+        """
+        cdef vector[shared_ptr[CNdArray]] cndarray_list
+        if type(data) == list:
+            for x in data:
+                cndarray_list.push_back(( < NdArray > x).arr)
+            with nogil:
+                self.communicatorp.bcast(cndarray_list, src, inplace, group)
+        else:
+            cndarray_list.push_back(( < NdArray > data).arr)
+            with nogil:
+                self.communicatorp.bcast(cndarray_list, src, inplace, group)
+
+    def all_gather(self, ndarray, ndarray_list, string group="world"):
+        """All gather over data.
+
+        Args:
+            ndarray (:obj:`NdArray`): Data to be gathered. 
+            ndarray_list (:obj:`NdArray`):  Data to be saved.
+            group (string): Name of a group. This groups is used when the collective is called.
+
+        Example: 
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            # Data
+            x = nn.Variable(10, 10)
+            x.d = np.random.rand(y.shape)
+            y_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+
+            # AllGather
+            comm.all_gather(x.data, [y.data for y in y_list])
+
+        """
+        cdef shared_ptr[CNdArray] cndarray = ( < NdArray > ndarray).arr
+        cdef vector[shared_ptr[CNdArray]] cndarray_list
+        for x in ndarray_list:
+            cndarray_list.push_back(( < NdArray > x).arr)
+        with nogil:
+            self.communicatorp.all_gather(cndarray, cndarray_list, group)
+
+    def reduce_scatter(self, ndarray_list, ndarray, cpp_bool division=False, string group="world"):
+        """Reduce scatter over data.
+
+        Args:
+            ndarray_list (:obj:`NdArray`):  Data to be saved.
+            ndarray (:obj:`NdArray`): Data to be gathered. 
+            group (string): Name of a group. This groups is used when the collective is called.
+
+        Example: 
+
+        In case of the multi-process data parallel distributed training,
+
+        .. code-block:: python
+
+            # Communicator and Context
+            extension_module = "cuda.cudnn"
+            ctx = extension_context(extension_module)
+            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm.init()
+
+            # Data
+            y = nn.Variable(10, 10)
+            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            for x in x_list:
+                x.d = np.random.rand(x.shape)                        
+
+            # ReduceScatter
+                comm.reduce_scatter([x.data for x in x_list], y.data)
+
+        """
+        cdef shared_ptr[CNdArray] cndarray = ( < NdArray > ndarray).arr
+        cdef vector[shared_ptr[CNdArray]] cndarray_list
+        for x in ndarray_list:
+            cndarray_list.push_back(( < NdArray > x).arr)
+        with nogil:
+            self.communicatorp.reduce_scatter(
+                cndarray_list, cndarray, division, group)
 
 
 def DataParalellCommunicator(CContext ctx):
@@ -222,14 +463,14 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
     .. code-block:: python
 
         # Communicator and Context
-        extension_module = "cuda.cudnn"
+        extension_module = "cudnn"
         ctx = extension_context(extension_module)
         comm = C.MultiProcessDataParalellCommunicator(ctx)
         comm.init()
         n_devices = comm.size
         mpi_rank = comm.rank
         device_id = comm.local_rank
-        ctx = extension_context(extension_module, device_id=device_id)
+        ctx.device_id = str(device_id)
         nn.set_default_context(ctx)
 
         # Network and Solver created here

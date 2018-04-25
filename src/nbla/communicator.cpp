@@ -61,8 +61,9 @@ void Communicator::remove_context_parameters(
 
 void Communicator::clear_context_parameters() {
   total_params_ = 0;
-  NBLA_ERROR(error_code::not_implemented,
-             "clear_context_parameters not implemented")
+  vector<Context>().swap(contexts_);
+  decltype(device_func_named_param_)().swap(device_func_named_param_);
+  decltype(func_device_named_param_)().swap(func_device_named_param_);
 }
 
 void Communicator::init() {
@@ -88,7 +89,25 @@ void Communicator::check_array_class(Context ctx, VariablePtr vp) {
   }
 }
 
-void Communicator::reduce(bool division) {
+string Communicator::new_group(pair<string, vector<int>> name_ranks_pair) {
+  NBLA_ERROR(error_code::not_implemented, "CPU new_group is not implemented.")
+}
+
+unordered_map<string, vector<int>> Communicator::list_groups() {
+  NBLA_ERROR(error_code::not_implemented, "CPU list_group is not implemented.")
+}
+
+vector<int> Communicator::find_group(const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU list_group is not implemented.")
+}
+
+void Communicator::reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
+                          bool division, bool inplace, const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
+}
+
+void Communicator::reduce(NdArrayPtr ndarray, int dst, bool division,
+                          bool inplace, const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
 
@@ -96,26 +115,38 @@ void Communicator::allreduce(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
 }
 
-void Communicator::all_reduce(vector<NdArrayPtr> ndarray_list, bool division,
-                              bool inplace) {
+void Communicator::all_reduce(const vector<NdArrayPtr> &ndarray_list,
+                              bool division, bool inplace,
+                              const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
-void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace) {
+void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace,
+                              const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
-void Communicator::reducescatter(bool division) {
+void Communicator::reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
+                                  NdArrayPtr ndarray, bool division,
+                                  const string &group) {
   NBLA_ERROR(error_code::not_implemented,
-             "CPU reducescatter is not implemented.")
+             "CPU reduce_scatter is not implemented.")
 }
 
-void Communicator::bcast() {
+void Communicator::bcast(const vector<NdArrayPtr> &ndarray_list, int src,
+                         bool inplace, const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
 }
 
-void Communicator::allgather() {
-  NBLA_ERROR(error_code::not_implemented, "CPU allgather is not implemented.")
+void Communicator::bcast(NdArrayPtr ndarray, int src, bool inplace,
+                         const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
+}
+
+void Communicator::all_gather(NdArrayPtr ndarray,
+                              const vector<NdArrayPtr> &ndarray_list,
+                              const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_gather is not implemented.")
 }
 
 void Communicator::reduce_async(bool division) {

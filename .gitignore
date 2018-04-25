@@ -1,16 +1,19 @@
 # .gitignore
 
+.pytest_cache
 .cache
 *.pyc
 
-/build-tools/msvc/cmake_cpp_utils.bat
 /build/
+/build-tools/msvc/cmake_cpp_utils.bat
 /doc/?/
-/examples/cpp/forward_check/*/tmp.*
-/examples/cpp/mnist_runtime/*.nnp
 /examples/cpp/mnist_runtime/mnist_runtime
 /examples/cpp/mnist_runtime/mnist_runtime_cuda
+/examples/cpp/mnist_runtime/*.nnp
 /examples/cpp/mnist_runtime/tmp.*
+/examples/cpp/forward_check/*/tmp.*
+/src/nbla/function/*.cpp
+/src/nbla/solver/*.cpp
 /output/
 /python/setup.cfg
 /python/setup.cfg-Debug
@@ -19,11 +22,12 @@
 /python/setup.cfg-Release
 /python/setup.cfg.in.configured
 /python/src/nnabla.egg-info/
-/python/src/nnabla/_arithmetic_ops.cpp
 /python/src/nnabla/_init.cpp
 /python/src/nnabla/_init.h
+/python/src/nnabla/_array.cpp
 /python/src/nnabla/_nd_array.cpp
 /python/src/nnabla/_variable.cpp
+/python/src/nnabla/_arithmetic_ops.cpp
 /python/src/nnabla/_version.py
 /python/src/nnabla/clibtest
 /python/src/nnabla/communicator.cpp
@@ -35,7 +39,8 @@
 /python/src/nnabla/nbla
 /python/src/nnabla/nnabla.lib
 /python/src/nnabla/solver.cpp
-/python/src/nnabla/utils/converter/category_info.json
+/python/src/nnabla/solver.pyx
+/python/src/nnabla/solver.pxd
 /python/src/nnabla/utils/load_function.py
 /python/src/nnabla/utils/nnabla_pb2.py
 /python/src/nnabla/utils/save_function.py
@@ -46,7 +51,7 @@
 /python/test/tmp.h5
 /python/test/tmp.protobuf
 /src/nbla/init.cpp
-/src/nbla/proto/
+/src/nbla/proto/nnabla.proto
 /src/nbla_utils/nnabla.pb.cc
 /src/nbla_utils/nnabla.pb.h
 /src/nbla_utils/nnp_impl_create_function.cpp

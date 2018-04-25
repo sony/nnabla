@@ -20,10 +20,6 @@ from test_flip import ref_flip
 from nbla_test_utils import list_context
 
 ctxs = list_context('RandomFlip')
-"""
-if hasattr(nn.extensions, 'cuda'):
-    ctxs += [(nn.extensions.cuda.context(), 'RandomFlipCuda')]
-"""
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)

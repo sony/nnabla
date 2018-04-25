@@ -19,7 +19,12 @@ from libcpp cimport bool as cpp_bool
 
 cdef extern from "nbla/init.hpp" namespace "nbla":
     void init_cpu() except +
-    void clear_cpu_memory_cache() except +
+    void clear_cpu_memory_cache() except+
+    vector[string] cpu_array_classes() except +
+    void _cpu_set_array_classes(const vector[string] & a) except +
+    void cpu_device_synchronize(const string & device) except +
+    int cpu_get_device_count() except +
+    vector[string] cpu_get_devices() except +
 
 cdef extern from "nbla/garbage_collector.hpp" namespace "nbla":
     void register_gc "nbla::SingletonManager::get<nbla::GarbageCollector>()->register_collector" (void() nogil) except +

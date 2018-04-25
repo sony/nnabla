@@ -136,7 +136,8 @@ template <typename T, typename BinaryOp, bool accum>
 void transform_binary_grad0(int size, const T *dy, const T *x0, const T *x1,
                             const T *y, T *g0, BinaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g0[idx] = (accum ? g0[idx] : 0) + op.g0(dy[idx], x0[idx], x1[idx], y[idx]);
+    g0[idx] =
+        (accum ? g0[idx] : (T)0) + op.g0(dy[idx], x0[idx], x1[idx], y[idx]);
   }
 }
 
@@ -144,7 +145,8 @@ template <typename T, typename BinaryOp, bool accum>
 void transform_binary_grad1(int size, const T *dy, const T *x0, const T *x1,
                             const T *y, T *g1, BinaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g1[idx] = (accum ? g1[idx] : 0) + op.g1(dy[idx], x0[idx], x1[idx], y[idx]);
+    g1[idx] =
+        (accum ? g1[idx] : (T)0) + op.g1(dy[idx], x0[idx], x1[idx], y[idx]);
   }
 }
 
@@ -156,17 +158,13 @@ void TransformBinary<T, BinaryOp, Args...>::forward_impl(
   };
   if (this->f_bc0_) {
     this->f_bc0_->forward(Variables{inputs[0]}, Variables{this->o_bc0_.get()});
-    if (this->o_bc0_->need_grad())
-      this->o_bc0_->grad()->zero();
   }
   if (this->f_bc1_) {
     this->f_bc1_->forward(Variables{inputs[1]}, Variables{this->o_bc1_.get()});
-    if (this->o_bc1_->need_grad())
-      this->o_bc1_->grad()->zero();
   }
   const T *x0 = _get((this->f_bc0_) ? (this->o_bc0_.get()) : (inputs[0]));
   const T *x1 = _get((this->f_bc1_) ? (this->o_bc1_.get()) : (inputs[1]));
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   transform_binary(outputs[0]->size(), x0, x1, y, binary_op_);
 }
 
@@ -180,8 +178,8 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
   auto _get_data = [this](Variable *v) {
     return v->get_data_pointer<T>(this->ctx_);
   };
-  auto _cast_grad = [this](Variable *v) {
-    return v->cast_grad_and_get_pointer<T>(this->ctx_);
+  auto _cast_grad = [this](Variable *v, bool wo) {
+    return v->cast_grad_and_get_pointer<T>(this->ctx_, wo);
   };
   const T *x0 = _get_data((this->f_bc0_) ? (this->o_bc0_.get()) : (inputs[0]));
   const T *x1 = _get_data((this->f_bc1_) ? (this->o_bc1_.get()) : (inputs[1]));
@@ -189,7 +187,8 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
   const T *y = _get_data(outputs[0]);
   Size_t size = outputs[0]->size();
   if (propagate_down[0]) {
-    T *dx0 = _cast_grad((this->f_bc0_) ? (this->o_bc0_.get()) : (inputs[0]));
+    T *dx0 = (this->f_bc0_) ? _cast_grad(this->o_bc0_.get(), true)
+                            : _cast_grad(inputs[0], !accum[0]);
     if ((!this->f_bc0_) && accum[0])
       transform_binary_grad0<T, BinaryOp, true>(size, dy, x0, x1, y, dx0,
                                                 binary_op_);
@@ -203,7 +202,8 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
     }
   }
   if (propagate_down[1]) {
-    T *dx1 = _cast_grad((this->f_bc1_) ? (this->o_bc1_.get()) : (inputs[1]));
+    T *dx1 = (this->f_bc1_) ? _cast_grad(this->o_bc1_.get(), true)
+                            : _cast_grad(inputs[1], !accum[1]);
     if ((!this->f_bc1_) && accum[1])
       transform_binary_grad1<T, BinaryOp, true>(size, dy, x0, x1, y, dx1,
                                                 binary_op_);

@@ -94,7 +94,6 @@ Arithmetic
 .. autofunction:: r_div_scalar
 .. autofunction:: r_pow_scalar
 
-
 Logical
 -------
 
@@ -131,6 +130,7 @@ Math
 .. autofunction:: abs
 .. autofunction:: exp
 .. autofunction:: log
+.. autofunction:: round
 .. autofunction:: identity
 .. autofunction:: matrix_diag
 .. autofunction:: matrix_diag_part
@@ -159,6 +159,8 @@ Stochasticity
 .. autofunction:: randint
 .. autofunction:: randn
 .. autofunction:: dropout
+.. autofunction:: top_k_data
+.. autofunction:: top_k_grad
 .. autofunction:: random_crop
 .. autofunction:: random_flip
 .. autofunction:: random_shift

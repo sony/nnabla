@@ -61,4 +61,4 @@ def test_broadcast_forward_backward(ndim, broadcast_dim, seed, fname, ctx, func_
     inputs = [np.array(rng.randn(*inshape))]
     function_tester(rng, func, ref_func, inputs, [shape],
                     ctx=ctx, backward=[True], func_name=func_name,
-                    atol_b=4e-3)
+                    atol_b=6e-3)

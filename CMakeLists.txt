@@ -56,21 +56,25 @@ string(STRIP ${NBLA_SETUP_LIB_DIR_RAW} NBLA_SETUP_LIB_DIR)
 # Code generator
 ###############################################################################
 file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
-file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter)
 
 execute_process(
   COMMAND
   ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py)
-execute_process(
-  COMMAND
-  ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate_category_info.py
-  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/category_info.json)
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py
+  RESULT_VARIABLE GENERATE_RESULT)
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/functions.yaml
+  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/functions.yaml
+  COPYONLY)
+
+if (NOT ${GENERATE_RESULT} EQUAL 0)
+  message(FATAL_ERROR "generate.py failed.")
+endif ()
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN
-    ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/nnabla_pb2.py)
+    ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils//nnabla_pb2.py)
   execute_process(
     COMMAND
     ${PROTOC_COMMAND}

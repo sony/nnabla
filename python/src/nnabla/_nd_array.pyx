@@ -98,7 +98,7 @@ cdef class NdArray:
         '''
         if op == 2:
             try:
-                return (< NdArray > self).arrp == ( < NdArray ?> other).arrp
+                return ( < NdArray > self).arrp == ( < NdArray ?> other).arrp
             except:
                 return False
         elif op == 3:
@@ -108,7 +108,7 @@ cdef class NdArray:
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash(< intptr_t > (( < NdArray > self).arrp))
+        return hash( < intptr_t > (( < NdArray > self).arrp))
 
     @property
     def shape(self):
@@ -186,14 +186,14 @@ cdef class NdArray:
         Returns:
             :obj:`numpy.array` if ``ctx`` is None, otherwise nothing.
         """
-        import nnabla as nn
-        ctx_ = nn.context()
+        from nnabla_ext.cpu import context
+        ctx_ = context()
         if ctx is not None:
             ctx_ = ctx
         cdef int type_num = np.dtype(dtype).num
         cdef CContext cctx = <CContext ?> ctx_
         with nogil:
-            self.arrp.cast(< dtypes > type_num, cctx)
+            self.arrp.cast( < dtypes > type_num, cctx)
         if ctx is None:
             return self.data
 
@@ -216,9 +216,10 @@ cdef class NdArray:
         cdef int type_num
         cdef vector[np.npy_intp] shape
         cdef Shape_t shape_base
-        cdef CArray * arr
-        import nnabla as nn
-        ctx = nn.context()
+        cdef ArrayPtr arr
+        cdef CArray * arrp
+        from nnabla_ext.cpu import context
+        ctx = context()
         cdef CContext cctx = <CContext > ctx
         try:
             type_num = <int > self.arrp.array().get().dtype()
@@ -228,11 +229,12 @@ cdef class NdArray:
         shape_base = self.arrp.shape()
         copy(shape_base.begin(), shape_base.end(), shape.begin())
         with nogil:
-            arr = <CArray * > (self.arrp.cast( < dtypes > type_num, cctx))
+            arr = <ArrayPtr > (self.arrp.cast_sp( < dtypes > type_num, cctx))
         cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
-            shape.size(), shape.data(), type_num, arr.pointer())
-        ndarray.base = <PyObject * > self
-        Py_INCREF(self)
+            shape.size(), shape.data(), type_num, arr.get().pointer())
+        pyarr = Array.create(arr)
+        ndarray.base = <PyObject * > pyarr
+        Py_INCREF(pyarr)
         return ndarray
 
     @data.setter

@@ -263,6 +263,68 @@ Therefore, the number of input channels (can be seen as output channels of forwa
      - :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
      - 
 
+DepthwiseDeconvolution
+^^^^^^^^^^^^^^^^^^^^^^
+
+Depthwise deconvolution computes the transposed depthwise convolution with bias for one-dimensional and two-dimensional input data.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C \times L_1 \times ... \times L_N`).
+     -
+   * - weight
+     - :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
+     - Parameter
+   * - bias
+     - Bias vector (:math:`C`).
+     - Optional Parameter
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - base_axis
+     - int64
+     - 1
+     - base axis :math:`B`.
+   * - pad
+     - Shape
+     - (0,) * (len(x.shape) - (base_axis+1))
+     - Padding sizes for dimensions.
+   * - stride
+     - Shape
+     - (1,) * (len(x.shape) - (base_axis+1))
+     - Stride sizes for dimensions.
+   * - dilation
+     - Shape
+     - (1,) * (len(x.shape) - (base_axis+1))
+     - Dilation sizes for dimensions.
+   * - divisor
+     - int64
+     - 1
+     - Number of input feature maps per output feature map.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C \times L'_1 \times ... \times L'_N`).
+     -
+
 MaxPooling
 ^^^^^^^^^^
 
@@ -397,15 +459,6 @@ Global average pooling. It pools an averaged value from the whole image
    * - x
      - Input variable.
      - 
-
-* Argument(s)
-
-.. list-table::
-
-   * - Name
-     - Type
-     - Default
-     - Description
 
 * Output(s)
 
@@ -745,7 +798,7 @@ Softmax
 Softmax normalization. Calculates
 
 .. math::
-    y_i = \frac{\exp(x_i)}{\sum_j exp(x_j)}
+    y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 
 along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
 
@@ -1983,6 +2036,7 @@ Element-wise scalar power function.
      - N-D array with the same shape as x
      - 
 
+
 Logical
 -------
 
@@ -3219,6 +3273,43 @@ Two of batchs of matrices are multiplied for each sample in a batch. A batch of 
      - Output of sample-wise matrix multiplication in a batch. When ``a`` is of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose options are all False, the output will be a shape of [N, P, R].
      - 
 
+Round
+^^^^^^^^^^
+
+Element-wise round function.
+
+In the forward pass, this function simply computes `round` to the nearest integer value.
+
+.. math::
+    y_i = round(x_i).
+
+In the backward pass, the simple Straight-Through Estimator (STE) is applied, 
+
+.. math::
+    \frac{\partial y_i}{\partial x_i} = 1.
+ 
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input variable
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with the same shape as x
+     - 
 
 Array Manipulation
 ------------------
@@ -3659,10 +3750,13 @@ Shifts the array elements by the specified amount.
 Reshape
 ^^^^^^^
 
-Returns a copy of the reshaped input variable.
+Reshapes the input variable in-place. It does not create a copy of the variable.
+The output variable (y) has a new shape but points to the same data as the input variable (x).
+This means that if the data in the output variable (y) is modified, the data in the input
+variable (x) also gets modified since the reshape was done in-place.
 
 Note:
-    If you do not need a copy, you should use the :meth:`nnabla.Variable.reshape` method instead.
+    This function has the same behavior as the :meth:`nnabla.Variable.reshape` method.
 
 * Input(s)
 
@@ -3825,6 +3919,120 @@ Note:
    * - y
      - N-D array with the same shape as x
      - 
+
+TopKData
+^^^^^^^^
+
+Select the `k` largest values from each sample in `x` to propagate
+unmodified and set all other values to 0. If `abs` is True, the `k`
+largest values are selected by magnitude. If `reduce` is True (the
+default), all feature dimensions are reduced to a single dimension of
+size `k` that propagates only the `k` largest values. Otherwise, if
+`reduce` is False, input and output dimensions are identical.
+Dimensions before `base_axis` are treated as number of sample
+dimensions and `k` values get selected from all elements of a
+sample (dimensions from `base_axis`) regardless of shape.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - k
+     - int64
+     - 
+     - Number of largest data values to propgate.
+   * - abs
+     - bool
+     - False
+     - Determine largest data values by magnitude.
+   * - reduce
+     - bool
+     - True
+     - Reduce feature size to one dimension of size `k`.
+   * - base_axis
+     - int64
+     - 1
+     - First dimension of the sample shape.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     -
+
+TopKGrad
+^^^^^^^^
+
+Select the `k` largest gradients for each sample in `x` to
+back-propagate unmodified and set all other gradients to 0.
+If `abs` is True, the `k` largest gradients are selected by
+magnitude. Dimensions before `base_axis` are treated as number
+of sample dimensions and `k` gradients get selected from all
+gradients of a sample (dimensions from `base_axis`)
+regardless of shape.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     -
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - k
+     - int64
+     - 
+     - Number of largest data values to propgate.
+   * - abs
+     - bool
+     - False
+     - Determine largest data values by magnitude.
+   * - base_axis
+     - int64
+     - 1
+     - First dimension of the sample shape.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array with same shape and data as `x`.
+     -
 
 Rand
 ^^^^
@@ -4317,7 +4525,7 @@ SoftmaxCrossEntropy
 Element-wise cross entropy between the variables and the variables of a label given by a category index with Softmax normalization.
 
 .. math::
-    y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+    y_{j} = -\ln \left(\frac{\exp(x_{j,t_j})}{\sum_{i'} \exp(x_{j,i'})}\right)
 
 along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
 
@@ -4366,10 +4574,10 @@ Note:
 CategoricalCrossEntropy
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Element-wise cross entropy between x and the target, given by a category index.
+Element-wise cross entropy between `x` and the target `t` where targets are given by a category index.
 
 .. math::
-    y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+    y_{j} = -\ln \left( x_{j, t_j} \right)
 
 along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
 

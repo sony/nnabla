@@ -3,8 +3,9 @@ file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   array/*.cpp
   solver/*.cpp
   communicator/*.cpp
-  function/*.cpp
   utils/*.cpp
+  function/*.cpp
+  function/nontemplate/*.cpp
   computation_graph/*.cpp)
 
 add_library(nnabla SHARED ${SOURCES})

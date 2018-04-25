@@ -63,26 +63,22 @@ class DepthwiseConvolution
                           const vector<int> &, int> {
 protected:
   int base_axis_;
-  const vector<int> pad_;
+  const vector<int> padding_;
   const vector<int> stride_;
   const vector<int> dilation_;
-  vector<int> kernel_;
   int multiplier_;
-  int channels_i_;
-  vector<int> spatial_shape_i_;
-  vector<int> spatial_shape_o_;
-  int spatial_dims_;
-  int outer_size_;
-  int inner_size_i_;
-  int inner_size_o_;
-  int inner_size_k_;
-  Variable col_;
 
-  // Variables for convolution by matrix multiplication
-  int col_w_;
-  int row_col_;
-  int col_col_;
-  int col_y_;
+  vector<int> sample_shape_;
+  vector<int> outmap_shape_;
+  vector<int> kernel_shape_;
+  int sample_channels_;
+  int outmap_channels_;
+  int sample_size_;
+  int outmap_size_;
+  int kernel_size_;
+  int batch_size_;
+
+  Variable col_;
 
 public:
   DepthwiseConvolution(const Context &ctx, int base_axis,
@@ -91,11 +87,11 @@ public:
       : BaseFunction<int, const vector<int> &, const vector<int> &,
                      const vector<int> &, int>(ctx, base_axis, pad, stride,
                                                dilation, multiplier),
-        base_axis_(base_axis), pad_(pad), stride_(stride), dilation_(dilation),
-        multiplier_(multiplier) {}
+        base_axis_(base_axis), padding_(pad), stride_(stride),
+        dilation_(dilation), multiplier_(multiplier) {}
   virtual ~DepthwiseConvolution() {}
   virtual shared_ptr<Function> copy() const {
-    return create_DepthwiseConvolution(ctx_, base_axis_, pad_, stride_,
+    return create_DepthwiseConvolution(ctx_, base_axis_, padding_, stride_,
                                        dilation_, multiplier_);
   }
   virtual vector<dtypes> in_types() {

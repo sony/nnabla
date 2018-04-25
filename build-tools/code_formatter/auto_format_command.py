@@ -24,6 +24,7 @@ except:
 
 import io
 import os
+import re
 
 import file_formatter
 
@@ -46,24 +47,38 @@ def _convert_file(ext, filename):
 
 def command(arg):
     # Format codes and do chmod
+    for exclude in arg.exclude:
+        print('Skipping files matching `{}`.'.format(exclude))
     for root in arg.subfolder:
         for dirname, _, filenames in os.walk(os.path.join(arg.base, root)):
             for filename in filenames:
+                # 1. Create full path.
                 basename, extname = os.path.splitext(filename)
                 extname = extname.lower()
                 fullname = os.path.join(dirname, filename)
+                # 2. Skip files matching exclude patterns
+                excluding = False
+                for exclude in arg.exclude:
+                    if re.search(exclude, fullname) is not None:
+                        excluding = True
+                if excluding:
+                    continue
+                # 3. Convert Python files
                 if extname in file_formatter.python_extensions:
                     if filename in file_formatter.python_exclude:
                         print('Skipped {}'.format(fullname))
                         continue
                     _convert_file(extname, fullname)
+                # 4. Convert C++ files
                 elif extname in file_formatter.c_extensions:
                     if filename in file_formatter.c_exclude:
                         print('Skipped {}'.format(fullname))
                         continue
                     _convert_file(extname, fullname)
+                # 4. Convert C++ files
                 chmod_extensions = file_formatter.c_extensions + \
                     file_formatter.python_extensions
+                # 5. Set file mode
                 if extname in chmod_extensions:
                     os.chmod(fullname, 0o644)
 
@@ -73,5 +88,8 @@ def command(arg):
             _, extname = os.path.splitext(filename)
             extname = extname.lower()
             fullname = os.path.join(dirname, filename)
+            if os.path.islink(fullname):
+                # Symlink is passed
+                continue
             if extname in file_formatter.doc_extensions:
                 os.chmod(fullname, 0o644)

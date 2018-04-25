@@ -23,6 +23,7 @@ from collections import namedtuple
 import copy
 
 setup_requires = [
+    'setuptools',
     'numpy>=1.10',
     'Cython>=0.24,<0.26',  # Requires python-dev.
 ]
@@ -35,6 +36,7 @@ install_requires = setup_requires + [
     'h5py',
     'protobuf',
     'requests',
+    'pyyaml',
     'scikit-image',
     'scipy',
     'tqdm',
@@ -160,6 +162,7 @@ if __name__ == '__main__':
         'communicator',
         '_init',
         '_nd_array',
+        '_array',
         '_arithmetic_ops']
 
     ext_modules = [Extension('nnabla.{}'.format(mname),
@@ -182,7 +185,7 @@ if __name__ == '__main__':
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [
-        library_file_name, 'nnabla.conf', 'utils/converter/category_info.json']}
+        library_file_name, 'nnabla.conf', 'utils/converter/functions.yaml']}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -214,8 +217,8 @@ if __name__ == '__main__':
                                     os.path.join(path_pkg, fn))
                     package_data["nnabla"].append(fn)
 
-    package_dir = {'': src_dir,
-                   'nnabla.extensions.cpu': os.path.join(src_dir, 'extensions/cpu')}
+    package_dir = {'': src_dir}
+
     packages = ['nnabla',
                 'nnabla.contrib',
                 'nnabla.utils',
@@ -224,8 +227,8 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnabla',
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
-                'nnabla.extensions',
-                'nnabla.extensions.cpu']
+                'nnabla_ext',
+                'nnabla_ext.cpu', ]
 
     # Setup
     setup(
@@ -237,6 +240,7 @@ if __name__ == '__main__':
         package_dir=package_dir,
         packages=packages,
         package_data=package_data,
+        namespace_packages=['nnabla_ext'],
         **pkg_info)
 
     os.unlink(os.path.join(root_dir, 'src', 'nnabla', library_file_name))

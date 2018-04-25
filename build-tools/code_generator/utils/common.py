@@ -20,17 +20,6 @@ import six
 import subprocess
 
 
-def which(name):
-    exec_suffix = '.exe' if os.name is 'nt' else ''
-    for p in os.environ['PATH'].split(os.pathsep):
-        if os.name is 'nt':
-            p = p.replace('"', '')
-        f = os.path.join(p, name + exec_suffix)
-        if os.path.isfile(f):
-            return f
-    return None
-
-
 def check_update(filename, generated, force=False):
     original = ''
     if os.path.exists(filename):
@@ -49,7 +38,7 @@ def check_update(filename, generated, force=False):
 
 def get_version(dir):
     os.chdir(dir)
-    version = default_version = '0.9.7'
+    version = default_version = '0.9.9'
     nearest_tag = default_version
     if os.path.exists('.git'):
         try:

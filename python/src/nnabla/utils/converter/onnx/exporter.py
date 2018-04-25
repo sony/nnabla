@@ -13,12 +13,15 @@
 # limitations under the License.
 
 import nnabla.logger as logger
-import onnx
 import numpy as np
-from .utils import *
-from onnx import (ModelProto, TensorProto, TensorShapeProto)
+try:
+    import onnx
+    from .utils import *
+    from onnx import (ModelProto, TensorProto, TensorShapeProto)
+except:
+    print('ONNX export support disabled.')
 
-# Dictionary used to convert NNabla function names to ONNX op_type 
+# Dictionary used to convert NNabla function names to ONNX op_type
 nnabla_function_type_to_onnx_optype = {
     # optype with same names
     "Dropout": "Dropout",
@@ -105,7 +108,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
     elif func.type == "MaxPooling":
         mpp = func.max_pooling_param
         if not mpp.ignore_border:
-            raise ValueError("MaxPooling with ignore_border=False is not supported")
+            raise ValueError(
+                "MaxPooling with ignore_border=False is not supported")
         # Copy kernel, stride, and pads values
         k = onnx.helper.make_attribute("kernel_shape", mpp.kernel.dim)
         s = onnx.helper.make_attribute("strides", mpp.stride.dim)
@@ -130,7 +134,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         weight_shape = weight_var[0].shape
         # The base axis for weights is the next axis from the data's base axis
         weight_base = cp.base_axis + 1
-        k = onnx.helper.make_attribute("kernel_shape", weight_shape.dim[weight_base:])
+        k = onnx.helper.make_attribute("kernel_shape",
+                                       weight_shape.dim[weight_base:])
         d = onnx.helper.make_attribute("dilations", cp.dilation.dim)
         s = onnx.helper.make_attribute("strides", cp.stride.dim)
         p = onnx.helper.make_attribute("pads", cp.pad.dim*2)
@@ -143,7 +148,7 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # "Conv" or "Pool" contained.
         # Caffe2 issue is here:
         # https://github.com/caffe2/caffe2/issues/1971
-        # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the 
+        # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the
         # following code if we have a specific name.
         # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
         # The above caffe2 code should be checking the node's operator name and not the node's name.
@@ -343,13 +348,16 @@ def get_tensor_type(name, type_dict):
 
 def nnp_model_to_onnx_graph(graph, nnp):
     if len(nnp.network) != 1:
-        raise ValueError("NNP with only a single network is currently supported")
+        raise ValueError(
+            "NNP with only a single network is currently supported")
     if len(nnp.executor) != 1:
-        raise ValueError("NNP with only a single executor is currently supported")
+        raise ValueError(
+            "NNP with only a single executor is currently supported")
     net = nnp.network[0]
     exe = nnp.executor[0]
     if exe.network_name != net.name:
-        raise ValueError("Names of the included network and executor's target network do not match")
+        raise ValueError(
+            "Names of the included network and executor's target network do not match")
     graph.name = net.name
     # store all variable shape info to use later
     var_dict = {}

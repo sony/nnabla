@@ -1,0 +1,3403 @@
+Neural Network Layer:
+  Affine:
+    snake_name: affine
+    doc: |2
+
+      Affine layer, also called as the fully connected layer. It calculates:
+
+      .. math::
+          {\mathbf y} = {\mathbf A} {\mathbf x} + {\mathbf b}.
+
+      where :math:`{\mathbf x}` is the input and :math:`{\mathbf y}` is the output.
+    inputs:
+      x:
+        doc: Input N-D array with shape (:math:`M_0 \times ... \times M_{B-1} \times
+          D_B \times ... \times D_N`). Dimensions before and after base_axis are flattened
+          as if it is a matrix.
+      weight:
+        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L`)
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`L`)
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Base axis of Affine operation. Dimensions up to base_axis is treated
+          as sample dimension.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
+          L`)
+  Convolution:
+    snake_name: convolution
+    doc: |2
+
+      N-D Convolution with bias.
+
+      See references for dilated convolution (a.k.a. atrous convolution).
+
+      References:
+
+          * `Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional
+            Nets, Atrous Convolution, and Fully Connected CRFs.
+            <https://arxiv.org/abs/1606.00915>`_
+
+          * `Yu et al., Multi-Scale Context Aggregation by Dilated Convolutions.
+            <https://arxiv.org/abs/1511.07122>`_
+    inputs:
+      x:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L_1 \times ... \times L_N`).
+      weight:
+        doc: :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
+          K_N`).
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`C'`).
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: base axis :math:`B`.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: Number of groups of channels. This makes the connection across channels
+          sparser, by grouping connections along the mapping direction.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C' \times L'_1 \times ... \times L'_N`).
+  DepthwiseConvolution:
+    snake_name: depthwise_convolution
+    doc: |2
+
+      N-D Depthwise Convolution with bias.
+
+      References:
+
+          * `F. Chollet: Chollet, Francois. "Xception: Deep Learning with Depthwise Separable Convolutions.
+            <https://arxiv.org/abs/1610.02357>`_
+    inputs:
+      x:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L_1 \times ... \times L_N`).
+      weight:
+        doc: :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`C`).
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: base axis :math:`B`.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      multiplier:
+        doc: Number of output feature maps per input feature map.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L'_1 \times ... \times L'_N`).
+  Deconvolution:
+    snake_name: deconvolution
+    doc: |2
+
+      N-D deconvolution, also known as transposed convolution, with bias operates backward convolution (derivative of the output w.r.t. the input) plus channel-wise learned bias.
+
+      The weights are specified in the same manner as :meth:`~nnabla.functions.convolution` , as if it was an ordinary convolution function.
+      The forward operation of :meth:`~nnabla.functions.deconvolution` will then be operationally equivalent to the backward pass of :meth:`~nnabla.functions.convolution` .
+      Therefore, the number of input channels (can be seen as output channels of forward convolution) is specified in the first dimension, and the number of the output channels divided by the number of groups is specified in the second dimension.
+    inputs:
+      x:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L_1 \times ... \times L_N`).
+      weight:
+        doc: :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
+          K_N`).
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`C'`).
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: base axis :math:`B`.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: Number of groups of channels. This makes the connection across channels
+          sparser, by grouping connections along the mapping direction.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C' \times L'_1 \times ... \times L'_N`).
+  DepthwiseDeconvolution:
+    snake_name: depthwise_deconvolution
+    doc: |2
+
+      Depthwise deconvolution computes the transposed depthwise convolution with bias for one-dimensional and two-dimensional input data.
+    inputs:
+      x:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L_1 \times ... \times L_N`).
+      weight:
+        doc: :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`C`).
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: base axis :math:`B`.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      divisor:
+        doc: Number of input feature maps per output feature map.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L'_1 \times ... \times L'_N`).
+  MaxPooling:
+    snake_name: max_pooling
+    doc: |2
+
+      Max pooling. It pools the maximum values inside the scanning kernel:
+
+      .. math::
+          y_{i_1, i_2} = \max_{k_1, k_2 \in K} (x_{i_1 + k_1, i_2 + k_2})
+
+      where :math:`x_{i_1 + k_1, i_2 + k_2}` is the input and :math:`y_{i_1, i_2}` is the output.
+    inputs:
+      x:
+        doc: Input variable.
+    arguments:
+      kernel:
+        doc: Kernel sizes for each spatial axis.
+        type: Shape
+      stride:
+        doc: Subsampling factors for each spatial axis.
+        type: Shape
+        default: kernel
+      ignore_border:
+        doc: If false, kernels covering borders are also considered for the output.
+        type: bool
+        default: 'True'
+      pad:
+        doc: Border padding values for each spatial axis. Padding will be added both
+          sides of the dimension.
+        type: Shape
+        default: (0,) * len(kernel)
+    outputs:
+      y:
+        doc: Maximum values variable
+  AveragePooling:
+    snake_name: average_pooling
+    doc: |2
+
+      Average pooling. It pools the averaged values inside the scanning kernel:
+
+      .. math::
+          y_{i_1, i_2} = \frac{1}{K_1 K_2} \sum_{k1} \sum_{k2} x_{i_1 + k_1, i_2 + k_2}
+
+      where :math:`x_{i_1 + k_1, i_2 + k_2}` is the input and :math:`y_{i_1, i_2}` is the output.
+    inputs:
+      x:
+        doc: Input variable.
+    arguments:
+      kernel:
+        doc: Kernel sizes for each spatial axis.
+        type: Shape
+      stride:
+        doc: Subsampling factors for each spatial axis.
+        type: Shape
+        default: kernel
+      ignore_border:
+        doc: If false, kernels covering borders are also considered for the output.
+        type: bool
+        default: 'True'
+      pad:
+        doc: Border padding values for each spatial axis. Padding will be added both
+          sides of the dimension.
+        type: Shape
+        default: (0,) * len(kernel)
+      including_pad:
+        doc: If true, border padding values are considered for the output.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Average values variable
+  GlobalAveragePooling:
+    snake_name: global_average_pooling
+    doc: |2
+
+      Global average pooling. It pools an averaged value from the whole image
+
+    inputs:
+      x:
+        doc: Input variable.
+    outputs:
+      y:
+        doc: Average values variable
+  SumPooling:
+    snake_name: sum_pooling
+    doc: |2
+
+      Sum pooling. It pools the summed values inside the scanning kernel:
+
+      .. math::
+          y_{i_1, i_2} = \sum_{k1} \sum_{k2} x_{i_1 + k_1, i_2 + k_2}
+
+      where :math:`x_{i_1 + k_1, i_2 + k_2}` is the input and :math:`y_{i_1, i_2}` is the output.
+    inputs:
+      x:
+        doc: Input variable.
+    arguments:
+      kernel:
+        doc: Kernel sizes for each spatial axis.
+        type: Shape
+      stride:
+        doc: Subsampling factors for each spatial axis.
+        type: Shape
+        default: kernel
+      ignore_border:
+        doc: If false, kernels covering borders are also considered for the output.
+        type: bool
+        default: 'True'
+      pad:
+        doc: Border padding values for each spatial axis. Padding will be added both
+          sides of the dimension.
+        type: Shape
+        default: (0,) * len(kernel)
+    outputs:
+      y:
+        doc: Summed values variable
+  Unpooling:
+    snake_name: unpooling
+    doc: |2
+
+      Inverse operation of pooling. It spreads the input values:
+
+      .. math::
+          y_{k_1 i_1 + j_1, k_2 i_2 + j_2} = x_{i_1, i_2}
+
+      where :math:`_{i_1, i_2}` is the input and :math:`y_{k_1 i_1 + j_1, k_2 i_2 + j_2}` is the output.
+    inputs:
+      x:
+        doc: Input variable.
+    arguments:
+      kernel:
+        doc: Kernel sizes for each spatial axis.
+        type: Shape
+    outputs:
+      y:
+        doc: Spread values variable
+  Embed:
+    snake_name: embed
+    doc: |2
+
+      Embed slices of a matrix/tensor with indexing array/tensor.
+    inputs:
+      x0:
+        doc: Indices with shape :math:`(I_0, ..., I_N)`
+        template: TI
+      x1:
+        doc: Weights with shape :math:`(W_0, ..., W_M)`
+    outputs:
+      y:
+        doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
+Neural Network Activation Functions:
+  Sigmoid:
+    snake_name: sigmoid
+    doc: |2
+
+      Element-wise sigmoid function.
+
+      .. math::
+
+          f(x) = \frac{1}{1 + \exp(-x)},
+    inputs:
+      x:
+        doc: Input
+    outputs:
+      y:
+        doc: Output
+  Swish:
+    snake_name: swish
+    doc: |2-
+
+      Element-wise swish function, by Ramachandran et al. (2017).
+
+      .. math::
+
+          y_i = \frac{x_i}{1 + \exp(-x_i)},
+
+      References:
+          * `Prajit Ramachandran, Barret Zoph, and Quoc V. Le, Swish: a Self-Gated Activation Function, arXiv:1710.05941 [cs.NE]
+            <https://arxiv.org/abs/1710.05941>`_
+    inputs:
+      x:
+        doc: Input
+    outputs:
+      y:
+        doc: Output
+  Tanh:
+    snake_name: tanh
+    doc: |2
+
+      Element-wise hyperbolic tangent (tanh) function.
+
+      .. math::
+          y_i = \tanh (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ReLU:
+    snake_name: relu
+    doc: |2
+
+      Element-wise Rectified Linear Unit (ReLU) function.
+
+      .. math::
+          y_i = \max (0, x_i)
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the input array if True.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LeakyReLU:
+    snake_name: leaky_relu
+    doc: |2+
+
+      Element-wise Leaky Rectified Linear Unit (ReLU) function.
+
+      It is defined as:
+
+      .. math::
+          y_i = \alpha * \min(0, x_i) + \max (0, x_i)
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      alpha:
+        doc: The slope value multplied to negative numbers. :math:`\alpha` in the
+          definition.
+        type: float
+        default: '0.1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Softmax:
+    snake_name: softmax
+    doc: |2
+
+      Softmax normalization. Calculates
+
+      .. math::
+          y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
+
+      along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score.
+    arguments:
+      axis:
+        doc: Axis normalization is taken.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ELU:
+    snake_name: elu
+    doc: |2
+
+      Element-wise Exponential Linear Unit (ELU) function.
+
+      .. math::
+          y_i= \left\{
+          \begin{array}{ll}
+          x_i & (x > 0)\\
+          \alpha (\exp(x_i) - 1) & (x \leq 0)
+          \end{array} \right..
+
+      References:
+          * `Clevart et al., Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs).
+            <http://arxiv.org/abs/1511.07289>`_
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      alpha:
+        doc: Coefficient for negative outputs. :math:`\alpha` in definition
+        type: double
+        default: '1.0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  SELU:
+    snake_name: selu
+    doc: |2
+
+      Element-wise Scaled Exponential Linear Unit (SELU) function by Klambauer et al. (2017).
+
+      .. math::
+          y_i= \lambda \left\{
+          \begin{array}{ll}
+          x_i & (x > 0)\\
+          \alpha (\exp(x_i) - 1) & (x \leq 0)
+          \end{array} \right..
+
+      The coefficients :math:`\lambda` and :math:`\alpha` default to the following values :math:`\lambda_{01}` and :math:`\alpha_{01}`, respectively, provided by Klambauer et al. (2017):
+
+      .. math::
+          \begin{array}{lll}
+            \lambda_{01} &=&  \left(  1 - \operatorname{erfc}\left( \frac{1}{\sqrt{2}} \right) \sqrt{e}  \right)
+                        \sqrt{2 \pi} \\
+                       && \left(
+                            2 \operatorname{erfc} \left( \sqrt{2} \right) e^2
+                            + \pi \operatorname{erfc}\left( \frac{1}{\sqrt{2}} \right)^2 e
+                            \right. \\
+                       && \left.
+                            - 2(2 + \pi) \operatorname{erfc} \left( \frac{1}{\sqrt{2}} \right) \sqrt{e}
+                            + \pi + 2
+                       \right)^{-1/2}  \\
+                    &\approx& 1.0507 \\
+            \alpha_{01} &=&  - \frac
+                          {\sqrt {\frac {2}{\pi}}}
+                          {\operatorname{erfc} \left( \frac{1}{\sqrt{2}} \right) \exp \left(\frac {1} {2} \right) - 1} \\
+                    &\approx& 1.67326
+          \end{array}
+
+
+      References:
+          * `Klambauer, G., Unterthiner, T., Mayr, A., & Hochreiter, S. (2017).
+            Self-Normalizing Neural Networks. In Advances in Neural Information
+            Processing Systems (NIPS). <https://arxiv.org/abs/1706.02515>`_
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      scale:
+        doc: The coefficient :math:`\lambda` in the definition.
+        type: double
+        default: '1.05070098735548'
+      alpha:
+        doc: The coefficient :math:`\alpha` in the definition.
+        type: double
+        default: '1.673263242354377'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  CReLU:
+    snake_name: crelu
+    doc: |2
+
+      Element-wise Concatenated Rectified Linear Unit (CReLU) function.
+      This function calculates the ReLU of :math:`x` and :math:`-x` , then concatenates the results together at a specified axis,
+      and returns the resulting array.
+
+
+      References:
+          * `Wenling Shang, Kihyuk Sohn, Diogo Almeida, Honglak Lee.
+            Understanding and Improving Convolutional Neural Networks
+            via Concatenated Rectified Linear Units.
+            <https://arxiv.org/abs/1603.05201>`_
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axis:
+        doc: The ReLU activations of positive inputs and negative inputs are concatenated
+          at axis.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array where axis dimension is doubled by concatenating.
+  CELU:
+    snake_name: celu
+    doc: |2
+
+      Element-wise Concatenated Exponential Linear Unit (CELU) function.
+      Concatenates ELU outputs of positive and negative inputs together at specified axis.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      alpha:
+        doc: Coefficient for negative outputs. :math:`\alpha` in definition.
+        type: double
+        default: '1.0'
+      axis:
+        doc: The ELU activations of positive inputs and negative inputs are concatenated
+          at axis.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array where axis dimension is doubled by concatenating.
+  PReLU:
+    snake_name: prelu
+    doc: |2
+
+      Element-wise Parametrized Rectified Linear Unit function. Calculates:
+
+      .. math::
+          y_i = \max(0, x_i) + w_i \min(0, -x_i)
+
+      where negative slope :math:`w` is learned and can vary across channels (an
+      axis specified with `base_axis`).
+    inputs:
+      x0:
+        doc: (N-D array) Input
+      x1:
+        doc: (N-D array) Weights
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array.
+Normalization:
+  BatchNormalization:
+    snake_name: batch_normalization
+    doc: |2
+
+      Batch normalization.
+
+      .. math::
+          \begin{eqnarray}
+            \mu &=& \frac{1}{M} \sum x_i \\
+            \sigma^2 &=& \frac{1}{M} \left(\sum x_i - \mu\right)^2 \\
+            \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
+            y_i &=& \hat{x}_i \gamma + \beta.
+          \end{eqnarray}
+
+
+      At testing time, the mean and variance values used are those that were computed during training by moving average.
+
+      References:
+
+          * `Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.
+            <https://arxiv.org/abs/1502.03167>`_
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+      gamma:
+        doc: N-D array of gamma which is learned.
+      mean:
+        doc: N-D array of running mean (modified during forward execution).
+      variance:
+        doc: N-D array of running variance (modified during forward execution).
+    arguments:
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      decay_rate:
+        doc: Decay rate of running mean and variance.
+        type: float
+        default: '0.9'
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array
+  MeanSubtraction:
+    snake_name: mean_subtraction
+    doc: |2
+
+      It subtracts the mean of the elements of the input array,
+      and normalizes it to :math:`0`. Preprocessing arrays with this function has the effect of improving accuracy
+      in various tasks such as image classification.
+
+      At training time, this function is defined as
+
+      .. math::
+          \begin{eqnarray}
+            \mu &=& \frac{1}{M} \sum x_i \\
+             rm &=& ({\rm decay\_rate}) rm + (1 - {\rm decay\_rate}) \mu \\
+            y_i &=& x_i - rm
+          \end{eqnarray}
+
+      At validation time, it is defined as
+
+      .. math::
+          y_i = x_i - rm
+
+      Note:
+          The backward performs an approximated differentiation that takes into account only the latest mini-batch.
+    inputs:
+      x:
+        doc: N-D array of input.
+      rmean:
+        doc: N-D array of running mean (modified during forward execution).
+      t:
+        doc: Scalar of num of iteration of running mean (modified during forward execution).
+    arguments:
+      base_axis:
+        doc: Base axis of Mean Subtraction operation. Dimensions up to base_axis is
+          treated as sample dimension.
+        type: int64
+        default: '1'
+      update_running_mean:
+        doc: Update running mean during forward execution.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array.
+Reduction:
+  Sum:
+    snake_name: sum
+    doc: |2
+
+      Reduces a matrix along a specified axis with the sum function.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced
+          to scalar.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+  Mean:
+    snake_name: mean
+    doc: |2
+
+      Reduces a matrix along a specified axis with the mean function.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axes:
+        doc: Axes to be reduced.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+  Max:
+    snake_name: max
+    doc: |2
+
+      Reduction along axis or axes with max operation.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axes:
+        doc: Axes to be reduced.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+  Min:
+    snake_name: min
+    doc: |2
+
+      Reduction along axis or axes with min operation.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axes:
+        doc: Axes to be reduced.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+  Prod:
+    snake_name: prod
+    doc: |2
+
+      Reduction along axis or axes with product operation.
+
+      Note:
+          Backward computation is not accurate in a zero value input.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axes:
+        doc: Axes to be reduced.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+  ReduceSum:
+    snake_name: reduce_sum
+    doc: |2
+
+      Reduction along an axis with sum operation.
+
+      Note:
+          This is deprecated. Use ``sum`` instead.
+    inputs:
+      x:
+        doc: N-D array.
+    outputs:
+      y:
+        doc: N-D array
+  ReduceMean:
+    snake_name: reduce_mean
+    doc: |2
+
+      Reduction by mean along an axis.
+
+      Note:
+          This is deprecated. Use ``mean`` instead.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array
+Arithmetic:
+  Add2:
+    snake_name: add2
+    doc: |2
+
+      Element-wise addition.
+
+      .. math::
+         y_i = x^{(0)}_i + x^{(1)}_i
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the 1st input array if True.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+  BcAdd2:
+    snake_name: bc_add2
+    doc: |2+
+
+      Note: This shouldn't be called by users.
+
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array
+  Sub2:
+    snake_name: sub2
+    doc: |2
+
+      Element-wise subtraction.
+
+      .. math::
+         y_i = x^{(0)}_i - x^{(1)}_i
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array
+  Mul2:
+    snake_name: mul2
+    doc: |2
+
+      Element-wise multiplication.
+
+      .. math::
+         y_i = x^{(0)}_i x^{(1)}_i
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array
+  Div2:
+    snake_name: div2
+    doc: |2
+
+      Element-wise division.
+
+      .. math::
+         y_i = \frac{x^{(0)}_i} {x^{(1)}_i}
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array
+  Pow2:
+    snake_name: pow2
+    doc: |2
+
+      Element-wise power funtion.
+
+      .. math::
+         y_i = {(x^{(0)}_i)} ^ {x^{(1)}_i}
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array
+  AddScalar:
+    snake_name: add_scalar
+    doc: |2+
+
+      Element-wise scalar addition.
+
+      .. math::
+         y_i = x_i + v
+
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  MulScalar:
+    snake_name: mul_scalar
+    doc: |2
+
+      Element-wise scalar multiplication.
+
+      .. math::
+         y_i = v x_i
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  PowScalar:
+    snake_name: pow_scalar
+    doc: |2
+
+      Element-wise scalar power function.
+
+      .. math::
+         y_i = (x_i) ^ v
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  RSubScalar:
+    snake_name: r_sub_scalar
+    doc: |2
+
+      Element-wise scalar subtraction.
+
+      .. math::
+         y_i = v - x_i
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  RDivScalar:
+    snake_name: r_div_scalar
+    doc: |2
+
+      Element-wise scalar division.
+
+      .. math::
+          y_i = \frac{v}{x_i}
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  RPowScalar:
+    snake_name: r_pow_scalar
+    doc: |2
+
+      Element-wise scalar power function.
+
+      .. math::
+          y_i = v ^ {x_i}
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+Logical:
+  Sign:
+    snake_name: sign
+    doc: |2
+
+      Element-wise sign function.
+
+      In the forward pass, it is defined as
+
+      .. math::
+
+          f(x) = \begin{cases}
+              1  & (x > 0) \\
+              -1 & (x < 0) \\
+              \alpha & (x = 0)
+          \end{cases}.
+
+      In the backward pass, it is defined as
+
+      .. math::
+          \frac{\partial f(x)}{\partial x} = 1,
+
+      or in other words, it behaves as the identity function for the gradient in the backward pass.
+    inputs:
+      x:
+        doc: Input
+    arguments:
+      alpha:
+        doc: Value in case of :math:`x = 0`.
+        type: float
+        default: '0.0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Minimum2:
+    snake_name: minimum2
+    doc: |2
+
+      Element-wise minimum.
+
+      .. math::
+         y_i = \min(x^{(0)}_i, x^{(1)}_i)
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array of min value
+  Maximum2:
+    snake_name: maximum2
+    doc: |2
+
+      Element-wise maximum.
+
+      .. math::
+         y_i = \max(x^{(0)}_i, x^{(1)}_i)
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array of max value
+  MinimumScalar:
+    snake_name: minimum_scalar
+    doc: |2
+
+      Element-wise scalar minimum.
+
+      .. math::
+          y_i = \min(x_i, v)
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1.0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  MaximumScalar:
+    snake_name: maximum_scalar
+    doc: |2
+
+      Element-wise scalar maximum.
+
+      .. math::
+          y_i = \max (x_i, v)
+    inputs:
+      x:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1.0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LogicalAnd:
+    snake_name: logical_and
+    doc: |2
+
+      Elementwise logical AND.
+
+      .. math::
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1 & (x^{(0)}_i \neq 0 \;\&\; x^{(1)}_i \neq 0) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  LogicalOr:
+    snake_name: logical_or
+    doc: |2-
+
+      Elementwise logical OR.
+
+      .. math::
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              0 & (x^{(0)}_i = 0 \;\&\; x^{(1)}_i = 0) \\
+              1 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  LogicalXor:
+    snake_name: logical_xor
+    doc: |2
+
+      Elementwise logical XOR.
+
+      .. math::
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1 & (x^{(0)}_i = 0 \;\&\; x^{(1)}_i = 0) \\
+              1 & (x^{(0)}_i \neq 0 \;\&\; x^{(1)}_i \neq 0) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  Equal:
+    snake_name: equal
+    doc: |2
+
+      Element wise 'equal'
+
+      .. math::
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1 & (x^{(0)}_i = x^{(1)}_i) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  NotEqual:
+    snake_name: not_equal
+    doc: |2
+
+
+      Element wise 'not equal'
+
+      .. math::
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              0 & (x^{(0)}_i = x^{(1)}_i) \\
+              1 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  GreaterEqual:
+    snake_name: greater_equal
+    doc: |2
+
+      Element wise comparison. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1  & (x^{(0)}_i \geq x^{(1)}_i) \\
+              0 & (x^{(0)}_i < x^{(1)}_i)
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  Greater:
+    snake_name: greater
+    doc: |2
+
+      Element wise comparison. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1  & (x^{(0)}_i > x^{(1)}_i) \\
+              0 & (x^{(0)}_i \leq x^{(1)}_i)
+          \end{cases}.
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  LessEqual:
+    snake_name: less_equal
+    doc: |2+
+
+      Element wise comparison. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1  & (x^{(0)}_i \leq x^{(1)}_i) \\
+              0 & (x^{(0)}_i > x^{(1)}_i)
+          \end{cases}.
+
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  Less:
+    snake_name: less
+    doc: |2+
+
+      Element wise comparison. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,x^{(1)}_i) = \begin{cases}
+              1  & (x^{(0)}_i < x^{(1)}_i) \\
+              0 & (x^{(0)}_i \geq x^{(1)}_i)
+          \end{cases}.
+
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: No Description
+  LogicalAndScalar:
+    snake_name: logical_and_scalar
+    doc: |2
+
+      Elementwise logical AND with scalar.
+
+      .. math::
+          f(x_i,v) = \begin{cases}
+              1 & (x_i \neq 0 \;\&\; v \neq 0) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: No Description
+        type: bool
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LogicalOrScalar:
+    snake_name: logical_or_scalar
+    doc: |2-
+
+      Elementwise logical OR with scalar.
+
+      .. math::
+          f(x_i,v) = \begin{cases}
+              0 & (x_i = 0 \;\&\; v = 0) \\
+              1 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: No Description
+        type: bool
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LogicalXorScalar:
+    snake_name: logical_xor_scalar
+    doc: |2
+
+      Elementwise logical XOR with scalar.
+
+      .. math::
+          f(x_i,v) = \begin{cases}
+              1 & (x_i = 0 \;\&\; v = 0) \\
+              1 & (x_i \neq 0 \;\&\; v \neq 0) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: No Description
+        type: bool
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  EqualScalar:
+    snake_name: equal_scalar
+    doc: |2
+
+      Element wise 'equal' with a scalar
+
+      .. math::
+          f(x_i,v) = \begin{cases}
+              1 & (x_i = v) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  NotEqualScalar:
+    snake_name: not_equal_scalar
+    doc: |2
+
+      Element wise 'not equal' with a scalar
+
+      .. math::
+          f(x_i,v) = \begin{cases}
+              0 & (x_i = v) \\
+              1 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  GreaterEqualScalar:
+    snake_name: greater_equal_scalar
+    doc: |2
+
+      Element wise comparison with a scalar. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,v) = \begin{cases}
+              1  & (x^{(0)}_i \geq v \\
+              0 & (x^{(0)}_i < v
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  GreaterScalar:
+    snake_name: greater_scalar
+    doc: |2
+
+      Element wise comparison with a scalar. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,v) = \begin{cases}
+              1  & (x^{(0)}_i > v \\
+              0 & (x^{(0)}_i \leq v
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LessEqualScalar:
+    snake_name: less_equal_scalar
+    doc: |2+
+
+      Element wise comparison with a scalar. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,v) = \begin{cases}
+              1  & (x^{(0)}_i \leq v) \\
+              0 & (x^{(0)}_i > v)
+          \end{cases}.
+
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LessScalar:
+    snake_name: less_scalar
+    doc: |2
+
+      Element wise comparison with a scalar. The :math:`i^{th}` element of the output is:
+
+      .. math::
+
+          f(x^{(0)}_i,v) = \begin{cases}
+              1  & (x^{(0)}_i < v) \\
+              0 & (x^{(0)}_i \geq v)
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  LogicalNot:
+    snake_name: logical_not
+    doc: |2
+
+      Element-wise logical NOT operation
+
+      .. math::
+          f(x_i) = \begin{cases}
+              1 & (x_i = 0) \\
+              0 & otherwise
+          \end{cases}.
+    inputs:
+      x0:
+        doc: Input variable
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+Math:
+  Constant:
+    snake_name: constant
+    doc: |2
+
+      Generate a constant-valued array.
+    inputs: {}
+    arguments:
+      val:
+        doc: Constant value.
+        type: float
+        default: '0'
+      shape:
+        doc: Shape of the output array.
+        type: Shape
+        default: '[]'
+    outputs:
+      y:
+        doc: N-D array where all values are the specified constant.
+  Abs:
+    snake_name: abs
+    doc: |2
+
+      Element-wise absolute value function.
+
+      .. math::
+         y_i = |x_i|
+    inputs:
+      x:
+        doc: Input variable
+    outputs:
+      y:
+        doc: Element-wise absolute variable
+  Exp:
+    snake_name: exp
+    doc: |2
+
+      Element-wise natural exponential function.
+
+      .. math::
+         y_i = \exp(x_i).
+    inputs:
+      x:
+        doc: Input variable
+    outputs:
+      y:
+        doc: Element-wise exp variable
+  Log:
+    snake_name: log
+    doc: |2
+
+      Element-wise natural logarithm function.
+
+      .. math::
+         y_i = \ln(x_i).
+    inputs:
+      x:
+        doc: Input variable
+    outputs:
+      y:
+        doc: Element-wise log variable
+  Identity:
+    snake_name: identity
+    doc: |2
+
+      Identity function.
+
+      .. math::
+          y = x
+    inputs:
+      x:
+        doc: N-D array.
+    outputs:
+      y:
+        doc: N-D array
+  BatchMatmul:
+    snake_name: batch_matmul
+    doc: |2
+
+      Batch matrix multiplication.
+
+      Two of batchs of matrices are multiplied for each sample in a batch. A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, and the first dimensions up to the third last dimension are considered as batch samples.
+    inputs:
+      a:
+        doc: N-D array with >= 2-dim. The last two dimensions will be treated as a
+          matrix.
+      b:
+        doc: N-D array with >= 2-dim. The last two dimensions will be treated as a
+          matrix. The product of the size of 0-th dimension through the size of the
+          third last dimension must be same as that of the input ``a``.
+    arguments:
+      transpose_a:
+        doc: Transpose the last two axes of ``a`` in matrix multiplication.
+        type: bool
+        default: 'False'
+      transpose_b:
+        doc: Transpose the last two axes of ``b`` in matrix multiplication.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: Output of sample-wise matrix multiplication in a batch. When ``a`` is
+          of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose
+          options are all False, the output will be a shape of [N, P, R].
+  Round:
+    snake_name: round
+    doc: |2+
+
+      Element-wise round function.
+
+      In the forward pass, this function simply computes `round` to the nearest integer value.
+
+      .. math::
+          y_i = round(x_i).
+
+      In the backward pass, the simple Straight-Through Estimator (STE) is applied,
+
+      .. math::
+          \frac{\partial y_i}{\partial x_i} = 1.
+
+    inputs:
+      x:
+        doc: Input variable
+    arguments: {}
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+Array Manipulation:
+  Concatenate:
+    snake_name: concatenate
+    doc: |2
+
+      Concatenate a variable number of input arrays along the specified axis.
+    inputs:
+      x:
+        doc: N-D arrays.
+        variadic: true
+        parameter: true
+    arguments:
+      axis:
+        doc: Axis
+        type: int64
+        default: len(x[0].shape) - 1
+    outputs:
+      y:
+        doc: Concatenate variable
+  Split:
+    snake_name: split
+    doc: |2
+
+      Split arrays at the specified axis.
+
+      note:
+          This function should not be called directly when constructing models.
+          Instead, use :meth:`nnabla.functions.split` which
+          automatically sets `n_output` from the input's shape and axis.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      axis:
+        doc: Axis
+        type: int64
+        default: '0'
+    outputs:
+      y:
+        doc: list of N-D arrays
+        variadic: true
+        parameter: true
+  Stack:
+    snake_name: stack
+    doc: |2
+
+      Joins two or more arrays on a new axis.
+
+      Note:
+          Unlike :meth:`nnabla.functions.concatenate` , which joins arrays on an existing axis,
+          Stack joins arrays on a new axis.
+    inputs:
+      x:
+        doc: N-D arrays. The sizes of all the arrays to be stacked must be the same.
+        variadic: true
+        parameter: true
+    arguments:
+      axis:
+        doc: The axis on which to concatenate arrays. Axis indices take on values
+          0, 1, 2, and so on from the left. For example, to stack four (3,28,28) inputs
+          on the second axis, specify 1. In this case, the output size will be (3,4,28,28).
+        type: int64
+        default: '0'
+    outputs:
+      y:
+        doc: Output
+  Slice:
+    snake_name: slice
+    doc: |2
+
+      Slice arrays along specified axis.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      start:
+        doc: Start indices for each axis
+        type: repeated int64
+        default: (0,) * len(x.shape)
+      stop:
+        doc: Stop indices for each axis
+        type: repeated int64
+        default: tuple(x.shape)
+      step:
+        doc: Step indices for each axis
+        type: repeated int64
+        default: (1,) * len(x.shape)
+    outputs:
+      y:
+        doc: Sliced N-D array
+  Transpose:
+    snake_name: transpose
+    doc: |2
+
+      Transposes tensor dimensions.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      axes:
+        doc: Source axis indices for each axis.
+        type: repeated int64
+    outputs:
+      y:
+        doc: Transposed N-D array.
+  Broadcast:
+    snake_name: broadcast
+    doc: |2
+
+      Broadcasting ND-array to the specified shape.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      shape:
+        doc: Shape broadcasted to. The size must be the same in axis where ``x``'s
+          shape is not 1.
+        type: Shape
+    outputs:
+      y:
+        doc: Broadcasted N-D array
+  OneHot:
+    snake_name: one_hot
+    doc: |2
+
+      OneHot creates one-hot vector based on input indices.
+    inputs:
+      x:
+        doc: N-D array
+        template: TI
+    arguments:
+      shape:
+        doc: No Description
+        type: Shape
+    outputs:
+      output:
+        doc: N-D array
+  Flip:
+    snake_name: flip
+    doc: |2
+
+      Reverses the order of elements of the specified dimension of an array.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      axes:
+        doc: The index of the dimension to reverse the order of the elements. Axis
+          indices take on values 0, 1, 2, and so on from the left. For example, to
+          flip a 32 (W) by 24 (H) 100 RGB image (100,3,24,32) vertically and horizontally,
+          specify (2,3).
+        type: repeated int64
+        default: '[len(x.shape) - 1]'
+    outputs:
+      y:
+        doc: N-D array
+  Shift:
+    snake_name: shift
+    doc: |2
+
+      Shifts the array elements by the specified amount.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      shifts:
+        doc: The amount to shift elements. For example, to shift image data to the
+          right by 2 pixels and up 3 pixels, specify (-3,2).
+        type: repeated int64
+        default: (0,) * len(x.shape)
+      border_mode:
+        doc: 'Specify how to process the ends of arrays whose values will be undetermined
+          as a result of shifting. nearest: The data at the ends of the original      array
+          is copied and used. reflect: Original data reflected      at the ends of
+          the original array is used.'
+        type: string
+        available_values:
+          - nearest
+          - reflect
+        default: '''nearest'''
+    outputs:
+      y:
+        doc: N-D array.
+  Reshape:
+    snake_name: reshape
+    doc: |2
+
+      Reshapes the input variable in-place. It does not create a copy of the variable.
+      The output variable (y) has a new shape but points to the same data as the input variable (x).
+      This means that if the data in the output variable (y) is modified, the data in the input
+      variable (x) also gets modified since the reshape was done in-place.
+
+      Note:
+          This function has the same behavior as the :meth:`nnabla.Variable.reshape` method.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      shape:
+        doc: Dimensions for each axis
+        type: Shape
+    outputs:
+      y:
+        doc: Reshaped N-D array
+  MatrixDiag:
+    snake_name: matrix_diag
+    doc: |2
+
+      Returns an array where the last two dimensions consist of the diagonal matrix.
+    inputs:
+      x:
+        doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
+    outputs:
+      y:
+        doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`).
+  MatrixDiagPart:
+    snake_name: matrix_diag_part
+    doc: |2
+
+      Returns an array in which the values of the last dimension consist of the diagonal
+      elements of the last two dimensions of an input array.
+    inputs:
+      x:
+        doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`).
+    outputs:
+      y:
+        doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
+Stochasticity:
+  Dropout:
+    snake_name: dropout
+    doc: |2
+
+      Dropout.
+      Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]` ,
+      and ignores the input if :math:`u > p`.
+
+      .. math::
+          y = \left\{
+          \begin{array}{ll}
+            \frac{x}{1 - p} & (u > p) \\
+            0 & ({\rm otherwise})
+          \end{array} \right.
+
+      Note:
+          Usually dropout only applied during training as below
+          (except `Bayesian dropout`_).
+
+          .. code-block:: python
+
+              h = PF.affine(x, num_hidden)
+              if train:
+                  h = F.dropout(h, 0.5)
+
+      .. _Bayesian dropout: https://arxiv.org/abs/1506.02142
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      p:
+        doc: :math:`p` in definition.
+        type: double
+        default: '0.5'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  TopKData:
+    snake_name: top_k_data
+    doc: |2
+
+      Select the `k` largest values from each sample in `x` to
+      propagate unmodified and set all other values to 0. If `abs` is
+      True, the `k` largest values are selected by magnitude. If
+      `reduce` is True (the default), all feature dimensions are
+      reduced to a single dimension of size `k` that propagates only
+      the `k` largest values. Otherwise, if `reduce` is False, input
+      and output dimensions are identical. Dimensions before
+      `base_axis` are treated as number of sample dimensions and `k`
+      values get selected from all elements of a sample (dimensions
+      from `base_axis`) regardless of shape.
+
+      >>> import nnabla as nn, nnabla.functions as F
+      >>> x = nn.Variable((4, 5, 6))
+      >>> F.top_k_data(x, 3, reduce=False).shape
+      (4, 5, 6)
+      >>> F.top_k_data(x, 3, reduce=True).shape
+      (4, 3)
+      >>> F.top_k_data(x, 3, reduce=True, base_axis=2).shape
+      (4, 5, 3)
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      k:
+        doc: Number of largest data values to propgate.
+        type: int64
+      abs:
+        doc: Determine largest data values by magnitude.
+        type: bool
+        default: 'False'
+      reduce:
+        doc: Reduce feature size to one dimension of size `k`.
+        type: bool
+        default: 'True'
+      base_axis:
+        doc: First dimension of the sample shape.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array.
+  TopKGrad:
+    snake_name: top_k_grad
+    doc: |2
+
+      Select the `k` largest gradients for each sample in `x` to
+      back-propagate unmodified and set all other gradients to 0. If
+      `abs` is True, the `k` largest gradients are selected by
+      magnitude. Dimensions before `base_axis` are treated as number
+      of sample dimensions and `k` gradients get selected from all
+      gradients of a sample (dimensions from `base_axis`) regardless
+      of shape.
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      k:
+        doc: Number of largest gradients to propgate.
+        type: int64
+      abs:
+        doc: Determine largest gradients by magnitude.
+        type: bool
+        default: 'False'
+      base_axis:
+        doc: First dimension of the sample shape.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: N-D array with same shape and data as `x`.
+  Rand:
+    snake_name: rand
+    doc: |2
+
+      Samples numbers from a uniform distribution :math:`x \sim U(low, high)`
+      given lowest value :math:`low`, upper bound :math:`high`,
+      and shape of the returned Variable.
+    inputs: {}
+    arguments:
+      low:
+        doc: :math:`low` in definition.
+        type: float
+        default: '0'
+      high:
+        doc: :math:`high` in definition.
+        type: float
+        default: '1'
+      shape:
+        doc: Shape of returned variable.
+        type: Shape
+        default: '[]'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Variable with the shape specified in the argument.
+  Randint:
+    snake_name: randint
+    doc: |2
+
+      Samples integer numbers from a uniform distribution :math:`x \sim U(low, high)`
+      given lowest value :math:`low`, upper bound :math:`high`,
+      and shape of the returned Variable.
+    inputs: {}
+    arguments:
+      low:
+        doc: :math:`low` in definition.
+        type: int64
+        default: '0'
+      high:
+        doc: :math:`high` in definition.
+        type: int64
+        default: '1'
+      shape:
+        doc: Shape of returned variable.
+        type: Shape
+        default: '[]'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Variable with the shape specified in the argument. The dtype is int32.
+        template: TI
+  Randn:
+    snake_name: randn
+    doc: |2
+
+      Samples numbers from a normal distribution :math:`x \sim N(\mu, \sigma)`
+      given mean :math:`\mu`, standard deviation :math:`\sigma`,
+      and shape of the returned Variable.
+    inputs: {}
+    arguments:
+      mu:
+        doc: :math:`\mu` in definition.
+        type: float
+        default: '0'
+      sigma:
+        doc: :math:`\sigm` in definition.
+        type: float
+        default: '1'
+      shape:
+        doc: Shape of returned variable.
+        type: Shape
+        default: '[]'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Variable with the shape specified in the argument.
+  RandomCrop:
+    snake_name: random_crop
+    doc: |2
+
+      RandomCrop randomly extracts a portion of an array.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      shape:
+        doc: The data size to extract. For example, to randomly extract a portion
+          of the image (3,48,48) from a 3,64,64 image, specify (3,48,48).
+        type: Shape
+        default: x.shape
+      base_axis:
+        doc: No Description
+        type: int64
+        default: '1'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array
+  RandomFlip:
+    snake_name: random_flip
+    doc: |2
+
+      Reverses the order of elements of the specified dimension of an array at 50% probability.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      axes:
+        doc: The index of the axis to reverse the order of the elements. Axis indices
+          take on values 0, 1, 2, and so on from the left. For example, to flip a
+          32 (W) by 24 (H) 100 RGB images (100, 3,24,32) vertically and horizontally
+          at random, specify (2,3).
+        type: repeated int64
+        default: '[len(x.shape) - 1]'
+      base_axis:
+        doc: No Description
+        type: int64
+        default: '1'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array
+  RandomShift:
+    snake_name: random_shift
+    doc: |2
+
+      Randomly shifts the array elements within the specified range.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      shifts:
+        doc: Max absolute amount to shift elements. For example, to shift image data
+          horizontally by :math:`\pm 2` pixels and vertically by :math:`\pm 3` pixels,
+          specify (3,2).
+        type: repeated int64
+        default: (0,) * len(x.shape)
+      border_mode:
+        doc: 'Specify how to process the ends of arrays whose values will be undetermined
+          as a result of shifting. nearest: The data at the ends of the   original
+          array is copied and used. reflect: Original data reflected at   the ends
+          of the original array is used.'
+        type: string
+        available_values:
+          - nearest
+          - reflect
+        default: '''nearest'''
+      base_axis:
+        doc: No Description
+        type: int64
+        default: '1'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array.
+  ImageAugmentation:
+    snake_name: image_augmentation
+    doc: |2
+
+      ImageAugmentation randomly alters the input image.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      shape:
+        doc: The output image data size.
+        type: Shape
+        default: x.shape
+      pad:
+        doc: Border padding values for each spatial axis. Padding will be added both
+          sides of the dimension.
+        type: Shape
+        default: (0, 0)
+      min_scale:
+        doc: The minimum scale ratio when randomly scaling the image. For example,
+          to scale down to 0.8 times the size of the original image, specify "0.8".
+          To not apply random scaling, set both min_scale and max_scale to "1.0".
+        type: float
+        default: '1.0'
+      max_scale:
+        doc: The maximum scale ratio when randomly scaling the image. For example,
+          to scale down to 2 times the size of the original image, specify "2.0".
+        type: float
+        default: '1.0'
+      angle:
+        doc: The rotation angle range in radians when randomly rotating the image.
+          The image is randomly rotated in the -Angle to +Angle range. For example,
+          to rotate in a +-15 degree range, specify "0.26" (15 degrees/360 degrees
+          * 2PI). To not apply random rotation, specify "0.0".
+        type: float
+        default: '0.0'
+      aspect_ratio:
+        doc: The aspect ratio range when randomly deforming the image. For example,
+          to deform aspect ratio of image from 1:1.3 to 1.3:1, specify "1.3". To not
+          apply random deforming, specify "1.0".
+        type: float
+        default: '1.0'
+      distortion:
+        doc: The distortion range when randomly distorting the image. To not apply
+          distortion, specify "0.0".
+        type: float
+        default: '0.0'
+      flip_lr:
+        doc: Whether to randomly flip the image horizontally at 50% probability.
+        type: bool
+        default: 'False'
+      flip_ud:
+        doc: Whether to randomly flip the image vertically at 50% probability.
+        type: bool
+        default: 'False'
+      brightness:
+        doc: The absolute range of values to randomly add to the brightness. A random
+          value in the -Brightness to +Brightness range is added to the brightness.
+          For example, to vary the brightness in the -0.05 to +0.05 range, specify
+          "0.05". To not apply random addition to brightness, specify "0.0".
+        type: float
+        default: '0.0'
+      brightness_each:
+        doc: 'Whether to apply the random addition to brightness (as specified by
+          brightness) to each color channel. True: brightness is added based on a
+          different random number for each channel. False: brightness is added based
+          on a random number common to all channels.'
+        type: bool
+        default: 'False'
+      contrast:
+        doc: The range in which to randomly vary the image contrast. The contrast
+          is varied in the 1/Contrast times to Contrast times range. The output brightness
+          is equal to (input - contrast_center) * contrast + contrast_center. For
+          example, to vary the contrast in the 0.91 times to 1.1 times range, specify
+          "1.1". To not apply random contrast variation, specify "1.0".
+        type: float
+        default: '1.0'
+      contrast_center:
+        doc: Intensity center used for applying contrast.
+        type: float
+        default: '0.0'
+      contrast_each:
+        doc: 'Whether to apply the random contrast variation (as specified by contrast)
+          to each color channel. True: contrast is varied based on a different random
+          number for each channel. False: contrast is varied based on a random number
+          common to all channels.'
+        type: bool
+        default: 'False'
+      noise:
+        doc: Sigma of normal random number to be added.
+        type: float
+        default: '0.0'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array.
+Loss Functions:
+  SigmoidCrossEntropy:
+    snake_name: sigmoid_cross_entropy
+    doc: |2
+
+      Element-wise cross entropy between `x` and the target variables, passed to a sigmoid function.
+
+      .. math::
+          y_i = - \left(x^{(1)}_i \ln \left(\sigma \left(x^{(0)}_i \right)\right) + \
+          \left(1 - x^{(1)}_i\right) \ln \left(1 - \sigma \left(x^{(0)}_i \
+          \right)\right)\right)
+
+      where :math:`\sigma(s)=\frac{1}{1+\exp(-s)}`.
+
+      Note:
+          SigmoidCrossEntropy is equivalent to Sigmoid+BinaryCrossEntropy, but computing them at once has the effect of reducing computational error.
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score. The value lies in :math:`[-\infty,
+          \infty]`
+        parameter: true
+      target:
+        doc: N-D array of labels. Only 0 or 1 value is allowed.
+        template: TI
+        parameter: true
+    outputs:
+      y:
+        doc: N-D array of element-wise losses.
+  BinaryCrossEntropy:
+    snake_name: binary_cross_entropy
+    doc: |2
+
+      Element-wise cross entropy between `x` and the target variables.
+
+      .. math::
+          y_i = - \left(x^{(1)}_i * \ln \left(x^{(0)}_i\right) + \left(1 - \
+          x^{(1)}_i\right) * \ln \left(1 - x^{(0)}_i\right)\right).
+    inputs:
+      x:
+        doc: Probabilities N-D array. :math:`-\infty` to :math:`\infty`.
+      target:
+        doc: N-D array of labels. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy,
+          it allows propbability (0 to 1) as inputs and backpropagation can be done.
+    outputs:
+      y:
+        doc: N-D array of element-wise losses.
+  SoftmaxCrossEntropy:
+    snake_name: softmax_cross_entropy
+    doc: |2
+
+      Element-wise cross entropy between the variables and the variables of a label given by a category index with Softmax normalization.
+
+      .. math::
+          y_{j} = -\ln \left(\frac{\exp(x_{j,t_j})}{\sum_{i'} \exp(x_{j,i'})}\right)
+
+      along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
+
+      Note:
+          SoftmaxCrossEntropy is equivalent to Softmax+CategoricalCrossEntropy, but computing them at once has the effect of reducing computational error.
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score. :math:`(D_1 \times ... \times
+          D_i \times ... \times D_N)`
+        parameter: true
+      target:
+        doc: N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
+          D_N)`
+        template: TI
+        parameter: true
+    arguments:
+      axis:
+        doc: Axis normalization is taken.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      y:
+        doc: N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
+          ... \times D_N)`
+  CategoricalCrossEntropy:
+    snake_name: categorical_cross_entropy
+    doc: |2
+
+      Element-wise cross entropy between `x` and the target `t` where targets are given by a category index.
+
+      .. math::
+          y_{j} = -\ln \left( x_{j, t_j} \right)
+
+      along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score. :math:`(D_1 \times ... \times
+          D_i \times ... \times D_N)`
+        parameter: true
+      target:
+        doc: N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
+          D_N)`
+        template: TI
+        parameter: true
+    arguments:
+      axis:
+        doc: Axis normalization is taken.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      y:
+        doc: N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
+          ... \times D_N)`
+  SquaredError:
+    snake_name: squared_error
+    doc: |2
+
+      Element-wise squared error
+
+      .. math::
+          y_i = \left(x^{(0)}_i - x^{(1)}_i\right)^2.
+    inputs:
+      x0:
+        doc: N-D array.
+      x1:
+        doc: N-D array.
+    outputs:
+      y:
+        doc: N-D array.
+  AbsoluteError:
+    snake_name: absolute_error
+    doc: |2
+
+      Element-wise absolute error
+
+      .. math::
+          y_i = | x^{(0)}_i - x^{(1)}_i |.
+    inputs:
+      x0:
+        doc: N-D array.
+      x1:
+        doc: N-D array.
+    outputs:
+      y:
+        doc: N-D array.
+  HuberLoss:
+    snake_name: huber_loss
+    doc: |2
+
+      Element-wise Huber loss
+
+      .. math::
+          y_i= \left\{
+          \begin{array}{ll}
+            d^2 & (|d| < \delta)\\
+            \delta (2 |d| - \delta) & ({\rm otherwise})
+          \end{array} \right.
+
+      where :math:`d = x^{(0)}_i - x^{(1)}_i`
+    inputs:
+      x0:
+        doc: N-D array.
+      x1:
+        doc: N-D array.
+    arguments:
+      delta:
+        doc: Delta
+        type: float
+        default: '1.0'
+    outputs:
+      y:
+        doc: N-D array of element-wise losses.
+  EpsilonInsensitiveLoss:
+    snake_name: epsilon_insensitive_loss
+    doc: |2
+
+      Element-wise Eplision Insensitive Loss
+
+      .. math::
+          y_i= \left\{
+          \begin{array}{ll}
+            | x^{(0)}_i - x^{(1)}_i | - \epsilon & if \ \ | x^{(0)}_i - x^{(1)}_i | > \epsilon \\
+      			0 & otherwise
+          \end{array} \right.
+    inputs:
+      x0:
+        doc: N-D array.
+      x1:
+        doc: N-D array.
+    arguments:
+      epsilon:
+        doc: Insensitive parameter.
+        type: float
+    outputs:
+      y:
+        doc: N-D array of element-wise losses.
+  KLMultinomial:
+    snake_name: kl_multinomial
+    doc: |2
+
+      The Kullback Leibler Divergence for multinomial distributions.
+
+      .. math::
+          D = \sum_i p_i \log \left( \frac{p_i}{q_i} \right)
+    inputs:
+      p:
+        doc: N-D array of the source categorical probabilities
+      q:
+        doc: N-D array of the target categorical probabilities
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+    outputs:
+      D:
+        doc: Kullback Leibler divergence :math:`KL(p \parallel q)`.
+Quantization Neural Network Layers:
+  BinarySigmoid:
+    snake_name: binary_sigmoid
+    doc: |2+
+
+      Element-wise binary sigmoid function. In the forward pass, it computes
+
+      .. math::
+          f(x) = \begin{cases}
+              1 & (x > 0) \\
+              0 & ({\rm otherwise})\end{cases},
+
+      but in the backward pass, a straight-through approximation of the gradient
+      is used, i.e.,
+
+      .. math::
+          \frac{\partial f(x)}{\partial x} =
+          \begin{cases}
+              0 & (|x| \geq 1) \\
+              \frac{1}{2} & ({\rm otherwise})
+          \end{cases}.
+
+      References:
+
+          * `Courbariaux, Matthieu, and Yoshua Bengio. Binarynet: Training deep
+            neural networks with weights and activations constrained to+ 1 or-1.
+            <https://arxiv.org/abs/1602.02830>`_
+
+    inputs:
+      x:
+        doc: Input .
+    outputs:
+      y:
+        doc: Output.
+  BinaryTanh:
+    snake_name: binary_tanh
+    doc: |2
+
+      Element-wise binary tanh function. In the forward pass, it computes
+
+      .. math::
+          f(x) = \begin{cases}
+              1 & (x > 0) \\
+              -1 & ({\rm otherwise})
+          \end{cases},
+
+      but in the backward pass, a straight-through approximation of the gradient
+      is used, i.e.,
+
+      .. math::
+          \frac{\partial f(x)}{\partial x} =
+          \begin{cases}
+              0 & (|x| \geq 1) \\
+              1 & ({\rm otherwise}) \end{cases}.
+
+      References:
+
+          * `Courbariaux, Matthieu, and Yoshua Bengio. Binarynet: Training deep
+            neural networks with weights and activations constrained to+ 1 or-1.
+            <https://arxiv.org/abs/1602.02830>`_
+    inputs:
+      x:
+        doc: Input .
+    outputs:
+      y:
+        doc: Output.
+  BinaryConnectAffine:
+    snake_name: binary_connect_affine
+    doc: |2
+
+      This function provides a BinaryConnect affine layer. It computes in
+      the forward pass
+
+      .. math::
+
+          y_j = \sum_{i} sign(w_{j,i}) x_i,
+
+      i.e., the weights :math:`w_{j,i}` are binarized to :math:`sign(w_{j,i})` and,
+      hence, each weight is in :math:`\{-1,\,1\}`. By this weight binarization, the
+      inner product computations do not require any multiplications anymore as
+      they turn into additions/subtractions.
+
+      This function should be used together with
+      :meth:`~nnabla.functions.batch_normalization`.
+
+      .. note::
+
+          1) If you would like to share the binary weights between other
+          layers, please use the standard, floating value weights (`weight`)
+          and not the binary weights (`binary_weight`).
+
+          2) The weights and the binary weights become in sync only after a call to
+          :meth:`~nnabla.Variable.forward`, and not after a call to
+          :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+          the network, remember to call :meth:`~nnabla.Variable.forward`, once before
+          doing so, otherwise the weights and the binary weights will not be in sync.
+
+          3) CPU and GPU implementations now use floating values for `binary_weight`,
+          since this function is for simulation purposes.
+
+      References:
+
+          * `M. Courbariaux, Y. Bengio, and J.-P. David. BinaryConnect:
+            Training Deep Neural Networks with binary weights during propagations.
+            <https://arxiv.org/abs/1511.00363>`_
+    inputs:
+      x:
+        doc: Input .
+      weight:
+        doc: Weight .
+        parameter: true
+      binary_weight:
+        doc: Binarized weight .
+        parameter: true
+      bias:
+        doc: Bias.
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: Output.
+  BinaryConnectConvolution:
+    snake_name: binary_connect_convolution
+    doc: |2
+
+      This function provides a BinaryConnect convolution layer. It computes in
+      the forward pass
+
+      .. math::
+
+          y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j},
+
+      i.e., the weights :math:`w_{n, m, i, j}` are binarized to
+      :math:`sign(w_{n, m, i, j})` and, hence,
+      each weight is in :math:`\{-1,\,1\}`. By this weight binarization, the
+      inner product computations do not require any multiplications anymore as
+      they turn into additions/subtractions.
+
+      This function should be used together with :meth:`~nnabla.functions.batch_normalization`.
+
+      Reference
+
+          * `M. Courbariaux, Y. Bengio, and J.-P. David. BinaryConnect:
+            Training Deep Neural Networks with binary weights during propagations.
+            <https://arxiv.org/abs/1511.00363>`_
+
+
+      .. note::
+
+          1) If you would like to share the binary weights between other
+          layers, please use the standard, floating value weights (`weight`)
+          and not the binary weights (`binary_weight`).
+
+          2) The weights and the binary weights become in sync only after a call to
+          :meth:`~nnabla.Variable.forward`, and not after a call to
+          :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+          the network, remember to call :meth:`~nnabla.Variable.forward`, once before
+          doing so, otherwise the weights and the binary weights will not be in sync.
+
+          3) CPU and GPU implementations now use floating values for `binary_weight`,
+          since this function is for simulation purposes.
+    inputs:
+      x:
+        doc: Input.
+      weight:
+        doc: Weight.
+        parameter: true
+      binary_weight:
+        doc: Binarized weight.
+        parameter: true
+      bias:
+        doc: Bias.
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: Number of groups of channels. This makes the connection across channels
+          sparser, by grouping connections along the mapping direction.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: Output
+  BinaryWeightAffine:
+    snake_name: binary_weight_affine
+    doc: |2
+
+      This function provides a Binary Weight Network affine layer. It computes in
+      the forward pass
+
+      .. math::
+
+          y_j = \frac{1}{\|\mathbf{w}_j\|_{\ell_1}} \sum_{i} sign(w_{j,i}) x_i
+
+      i.e., the weights :math:`w_{j,i}` are binarized to :math:`sign(w_{j,i})` and,
+      hence, each weight is in :math:`\{-1,\,1\}`. By this weight binarization, the
+      inner product computations turn into additions/subtractions which are followed
+      by multiplication with the scaling factor
+      :math:`\alpha_j = \frac{1}{\|\mathbf{w}_j\|_{\ell_1}}`.
+
+      Reference
+
+          * `Rastegari, Mohammad, et al. XNOR-Net: ImageNet Classification Using
+            Binary Convolutional Neural Networks.
+            <https://arxiv.org/abs/1603.05279>`_
+
+      .. note::
+
+          1) If you would like to share the binary weights with other layers, please
+          use the standard, floating value weights (`weight`) and not the binary
+          weights (`binary_weight`).
+
+          2) The weights and the binary weights become in sync only after a call to
+          :meth:`~nnabla.Variable.forward`, and not after a call to
+          :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+          the network, remember to call :meth:`~nnabla.Variable.forward`, once before
+          doing so, otherwise the weights and the binary weights will not be in sync.
+
+          3) CPU and GPU implementations now use floating values for `binary_weight`,
+          since this function is for simulation purposes.
+    inputs:
+      x:
+        doc: Input .
+      weight:
+        doc: Weight.
+        parameter: true
+      binary_weight:
+        doc: Binarized weight.
+        parameter: true
+      alpha:
+        doc: Alpha.
+        parameter: true
+      bias:
+        doc: Bias.
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: Output.
+  BinaryWeightConvolution:
+    snake_name: binary_weight_convolution
+    doc: |2
+
+      This function provides a Binary Weight Network convolution layer. It computes in
+      the forward pass
+
+      .. math::
+
+          y_{n, a, b} = \frac{1}{\|\mathbf{w}_n\|_{\ell_1}} \sum_{m} \sum_{i} \sum_{j} sign(w_{n, m, i, j}) x_{m, a + i, b + j}.
+
+      i.e., the weights :math:`w_{n, m, i, j}` are binarized to
+      :math:`sign(w_{n, m, i, j})` and, hence, each weight is in :math:`\{-1,\,1\}`.
+      By this weight binarization, the inner product computations turn into
+      additions/subtractions which are followed by multiplication with the scaling
+      factor :math:`\alpha_n = \frac{1}{\|\mathbf{w}_n\|_{\ell_1}}`.
+
+      Reference
+
+          * `Rastegari, Mohammad, et al. XNOR-Net: ImageNet Classification Using
+            Binary Convolutional Neural Networks.
+            <https://arxiv.org/abs/1603.05279>`_
+
+      .. note::
+
+          1) If you would like to share the binary weights between other standard layers, please
+          use the standard, floating value weights (`weight`)
+          and not the binary weights (`binary_weight`).
+
+          2) The weights and the binary weights become in sync only after a call to
+          :meth:`~nnabla.Variable.forward`, and not after a call to
+          :meth:`~nnabla.Variable.backward`. If you wish to store the parameters of
+          the network, remember to call :meth:`~nnabla.Variable.forward`, once
+          before doing so, otherwise the weights and the binary weights will not be
+          in sync.
+
+          3) CPU and GPU implementations now use floating values for `binary_weight`,
+          since this function is for simulation purposes.
+    inputs:
+      x:
+        doc: Input.
+      weight:
+        doc: Weight.
+        parameter: true
+      binary_weight:
+        doc: Binarized weight.
+        parameter: true
+      alpha:
+        doc: Alpha.
+        parameter: true
+      bias:
+        doc: Bias.
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: Number of groups of channels. This makes the connection across channels
+          sparser, by grouping connections along the mapping direction.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: Output
+  INQAffine:
+    snake_name: inq_affine
+    doc: |2
+
+      This function provides a INQ affine layer. It computes in
+      the forward pass
+
+      .. math::
+
+          y_j = \sum_{i} w_{j,i} x_i,
+
+      where the weights :math:`w_{j,i}` are quantized sequentially during
+      training to power-of-two numbers. In the backward pass, only the non-fixed
+      (i.e., learnable) weights are updated.
+
+      References:
+
+          * `Zhou A, Yao A, Guo Y, Xu L, Chen Y. Incremental network quantization:
+            Towards lossless CNNs with low-precision weights.
+            <https://arxiv.org/abs/1702.03044>`_
+    inputs:
+      x:
+        doc: Input .
+      weight:
+        doc: Weight .
+        parameter: true
+      indicator_fixedweights:
+        doc: Indicates which weights are already fixed (0 = not fixed, 1 = fixed)
+          .
+        template: TI
+        parameter: true
+      bias:
+        doc: Bias.
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+      num_bits:
+        doc: Number of bits per weight. Needs to be >= 2 as two bits are used to code
+          `zero` and sign of weight.
+        type: int64
+        default: '4'
+      inq_iterations:
+        doc: List which specifies after how many forward passes we fix 50% of the
+          learnable weights. If we have done as many iterations as specified in the
+          last element of `inq_iterations`, then all weights are fixed.
+        type: repeated int64
+        default: ()
+      selection_algorithm:
+        doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
+          ... fix weights with largest absolute value, "random" ... fix weights randomly)
+        type: string
+        available_values:
+          - largest_abs
+          - random
+        default: '''largest_abs'''
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Output.
+  INQConvolution:
+    snake_name: inq_convolution
+    doc: |2
+
+      This function provides a INQ convolution layer. It computes in
+      the forward pass
+
+      .. math::
+
+          y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} w_{n, m, i, j} x_{m, a + i, b + j},
+
+      where the weights :math:`w_{j,i}` are quantized sequentially during
+      training to power-of-two numbers. In the backward pass, only the non-fixed
+      (i.e., learnable) weights are updated.
+
+      Reference
+
+          * `Zhou A, Yao A, Guo Y, Xu L, Chen Y. Incremental network quantization:
+            Towards lossless CNNs with low-precision weights.
+            <https://arxiv.org/abs/1702.03044>`_
+    inputs:
+      x:
+        doc: Input.
+      weight:
+        doc: Weight.
+        parameter: true
+      indicator_fixedweights:
+        doc: Indicates which weights are already fixed (0 = not fixed, 1 = fixed)
+          .
+        template: TI
+        parameter: true
+      bias:
+        doc: Bias.
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: Number of groups of channels. This makes the connection across channels
+          sparser, by grouping connections along the mapping direction.
+        type: int64
+        default: '1'
+      num_bits:
+        doc: Number of bits per weight. Needs to be >= 2 as two bits are used to code
+          `zero` and sign of weight.
+        type: int64
+        default: '4'
+      inq_iterations:
+        doc: List which specifies after how many forward passes we fix 50% of the
+          learnable weights. If we have done as many iterations as specified in the
+          last element of `inq_iterations`, then all weights are fixed.
+        type: repeated int64
+        default: ()
+      selection_algorithm:
+        doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
+          ... fix weights with largest absolute value, "random" ... fix weights randomly)
+        type: string
+        available_values:
+          - largest_abs
+          - random
+        default: '''largest_abs'''
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Output
+  FixedPointQuantize:
+    snake_name: fixed_point_quantize
+    doc: |+
+      This function uniformly quantizes values in fixed-point number representation.
+
+      In the forward pass,
+
+      .. math::
+
+         q_i= \left\{
+      	   \begin{array}{ll}
+      			max & if \ \ \ x_i > max \\
+      		  sign(x_i) \times floor(|x_i| \delta^{-1} + 2^{-1}) \times \delta & if \ \ min \le x_i \le max \\
+      	  	min & if \ \ x_i < min \\
+      	   \end{array} \right.,
+
+      where :math:`\delta` is the step size,
+      :math:`(min, max) :=(- (2^{n-1} - 1)\delta, (2^{n-1} - 1)\delta)` if :math:`sign` is true,
+      :math:`(min, max) := (0, (2^n - 1) \delta)` otherwise, and
+      :math:`n` is the total bit-width used.
+
+      In the backward pass when using `ste_fine_grained` as false,
+
+      .. math::
+
+         \frac{\partial q_i}{\partial x_i} = 1.
+
+      In the backward pass when using `ste_fine_grained` as true,
+
+      .. math::
+
+         \frac{\partial q_i}{\partial x_i}= \left\{
+      	   \begin{array}{ll}
+      			0 & if \ \ \ x_i > max \\
+      		  1 & if \ \ min \le x_i \le max \\
+      	  	0 & if \ \ x_i < min \\
+      	   \end{array} \right..
+
+      .. note::
+
+
+      	Quantized values are stored as floating point number, since this function is for simulation purposes.
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      sign:
+        doc: Indicate the signed number or the unsigned number. Default is true.
+        type: bool
+        default: 'True'
+      n:
+        doc: Bit width used. Note that `sign` comsumes one bit. :math:`n-1` is used
+          for number representation in `signed` case.
+        type: int64
+        default: '8'
+      delta:
+        doc: Step size.
+        type: float
+        default: '0.0625'
+      ste_fine_grained:
+        doc: Straight Through Estimator is fine-grained or not.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array.
+  Pow2Quantize:
+    snake_name: pow2_quantize
+    doc: |2+
+
+      This function quantizes values in the power of 2 number representation,
+      in other words, it is linear (uniform) quantization in :math:`log_2` domain.
+
+      In the forward pass of `signed` case,
+
+      .. math::
+
+         q_i= \left\{
+      	   \begin{array}{ll}
+      			max_{+} & if \ \ \overline{q_i} > max_{+} \\
+      			\overline{q_i} & if \ \ min_{+} \le \overline{q_i} \le max_{+} \\
+      		  min_{+} & if \ \ 0 \le \overline{q_i} < min_{+} \\
+      		  min_{-} & if \ \ min_{-} < \overline{q_i} < 0 \\
+      		  \overline{q_i} & if \ \ max_{-} \le \overline{q_i} \le min_{-}\\
+      	  	max_{-} & if \ \ \overline{q_i} < max_{-} \\
+      	   \end{array} \right.,
+
+      where
+
+      .. math::
+
+         && max_{+} = 2^{m}, min_{+} = 2^{m - (2^{n-1} - 1)},\\
+         && max_{-} = -2^{m}, min_{-} = -2^{m - (2^{n-1} - 1)},\\
+         && \overline{q_i} = sign(x_i) \times 2^{round(\log_2 |x_i|)}.
+
+      This quantization uses the geometric mean between two power-of-two numbers
+      as quantization threshold.
+
+      In the forward pass of `unsigned` case,
+
+      .. math::
+
+         q_i= \left\{
+      	   \begin{array}{ll}
+      			max & if \ \ \overline{q_i} > max \\
+      			\overline{q_i} & if \ \ min \le \overline{q_i} \le max \\
+      		  min & if \ \ 0 < \overline{q_i} < min \\
+      	   \end{array} \right.,
+
+      where
+
+      .. math::
+
+         && max = 2^{m}, min = 2^{m - (2^{n} - 1)},\\
+         && \overline{q_i} = 2^{int(\log_2 |x_i|)}.
+
+
+      When using `with_zero` as true, a pruning threshold is used to round an input to
+      0 or :math:`min`. The pruning threshold is defined in this function as the following,
+
+      .. math::
+
+         pruning\ threshold = min \times 2^{-\frac{1}{2}}.
+
+      If an absolute value of the input is lesser than this value, the input is rounded to 0, otherwise :math:`min`.
+
+      In the backward pass when using ste_fine_grained as false,
+
+      .. math::
+
+         \frac{\partial q_i}{\partial x_i} = 1.
+
+      In the backward pass when using ste_fine_grained as true,
+
+      .. math::
+
+         \frac{\partial q_i}{\partial x_i}= \left\{
+      	   \begin{array}{ll}
+      			0 & if \ \ \overline{q_i} > max_{+} \\
+      			1 & if \ \ otherwise \\
+      	  	0 & if \ \ \overline{q_i} < max_{-} \\
+      	   \end{array} \right..
+
+
+      There are some literatures using pow2 quantization in their proposed methods.
+
+      References:
+
+        * `Miyashita Daisuke, Lee H. Edward, Murmann Boris.
+          Convolutional Neural Networks using Logarithmic Data Representation.
+          <https://arxiv.org/abs/1603.01025>`_
+
+        * `Aojun Zhou, Anbang Yao, Yiwen Guo, Lin Xu, Yurong Chen.
+          Incremental Network Quantization: Towards Lossless CNNs with Low-precision Weights.
+          <https://arxiv.org/abs/1702.03044>`_
+
+      .. note::
+
+
+      	Quantized values are stored as floating point number, since this function is for simulation purposes.
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      sign:
+        doc: Indicate the signed number or the unsigned number. Default is true.
+        type: bool
+        default: 'True'
+      with_zero:
+        doc: Indicate using zero as a quantized value. Default is true. Note that
+          `zero` consumes one bit.
+        type: bool
+        default: 'True'
+      n:
+        doc: Bit width used, Note that `sign` comsumes one bit. :math:`n-1` is used
+          for number representation in `signed` case. Default is 8.
+        type: int64
+        default: '8'
+      m:
+        doc: :math:`2^m` is the upper bound of the dynamic range and :math:`-2^m`
+          is the lower bound, :math:`m \in \mathcal{Z}`. Default is 1.
+        type: int64
+        default: '1'
+      ste_fine_grained:
+        doc: Straight Through Estimator is fine-grained or not.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array.
+Validation:
+  TopNError:
+    snake_name: top_n_error
+    doc: |2
+
+      Top N error along the dimension specified by the axis, the elment of outputs is
+
+      .. math::
+
+          y_i = \left \{
+          \begin{array}{l}
+          1 \ (x_i \ is \ not \ within \ N-th \ place) \\
+          0 \ (x_i \ is \ within \ N-th \ place)
+          \end{array}
+          \right.
+    inputs:
+      x:
+        doc: Probabilities N-D array. :math:`D_1 \times ... \times D_i \times ...
+          \times D_N`
+      target:
+        doc: N-D array of labels. :math:`D_1 \times ... \times 1 \times ... \times
+          D_N`
+        template: TI
+    arguments:
+      axis:
+        doc: Axis on which the top N error is calculated.
+        type: int64
+        default: len(x.shape) - 1
+      n:
+        doc: top N
+        type: int64
+        default: '1'
+    outputs:
+      output:
+        doc: Element-wise error N-D array. (:math:`D_1 \times ... \times 1 \times
+          ... \times D_N`)
+  BinaryError:
+    snake_name: binary_error
+    doc: |2+
+
+      Elementwise binary error.
+
+      .. math::
+          y_i = \left \{
+          \begin{array}{l}
+          0 ((x^{(0)} \geq 0.5) = (x^{(1)} \geq 0.5)) \\
+          1 ((x^{(0)} \geq 0.5) \neq (x^{(1)} \geq 0.5))
+          \end{array}
+          \right.
+
+    inputs:
+      x:
+        doc: Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
+      target:
+        doc: Labels N-D array. Usually set as 0 or 1, but, it allows propbability
+          (0 to 1) as inputs.
+    outputs:
+      output:
+        doc: Element-wise errors N-D array.
+  ConfusionMatrix:
+    snake_name: confusion_matrix
+    doc: |2
+
+      Confusion matrix.
+      The return value is already summed over samples.
+    inputs:
+      x:
+        doc: Probabilities N-D array. (\f$D_1 \times ... \times D_i \times ... \times
+          D_N\f$)
+      target:
+        doc: Labels N-D array. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+        template: TI
+    arguments:
+      axis:
+        doc: Axis on which the confusion matrix is calculated.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      output:
+        doc: Confusion matrix 2-D array. Col index is estimated class. Row index is
+          label class.
+Unsupported, Special Use:
+  VATNoise:
+    snake_name: vat_noise
+    doc: |2
+
+      Noise for virtual adversarial training.
+
+      This layer is a special layer for GUI network designing, specialized for getting
+      the noise of virtual adversarial training.
+
+      In the backward process, the weight parameter will be replaced with the gradient.
+
+      Forward
+
+      .. math::
+          y_i = \frac{\epsilon x_i}{\sqrt{\sum_k x_k^2 + c}}
+
+      Backward
+
+      .. math::
+          \delta x_i = 0
+
+      .. math::
+          w_i = \epsilon \delta y_i
+
+      Note:
+          This layer is a special layer for GUI network designing.
+
+      References:
+          * `Miyato et.al, Distributional Smoothing with Virtual Adversarial Training.
+            <https://arxiv.org/abs/1507.00677>`_
+    inputs:
+      x:
+        doc: N-D array of noise input. Noise is standard Gaussian noise initially,
+          but the next step, fed back gradient variable.
+      w:
+        doc: N-D array for keep gradient values.
+    arguments:
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+      eps:
+        doc: Noise norm (l2) factor.
+        type: float
+        default: '1.0'
+    outputs:
+      y:
+        doc: N-D array
+  Unlink:
+    snake_name: unlink
+    doc: |2
+
+      This function behaves as an identity function on the forward pass,
+      and deletes the gradient for the background pass.
+
+      This layer is a special layer for GUI network designing, used for getting
+      zero backward operation by adding this layer.
+
+      Forward
+
+      .. math::
+          y_i = x_i
+
+      Backward
+
+      .. math::
+          \delta x_i = 0
+
+      Note:
+          This layer is a special layer for GUI network designing.
+    inputs:
+      x:
+        doc: N-D array.
+    outputs:
+      y:
+        doc: N-D array.
+  Sink:
+    snake_name: sink
+    doc: |2
+
+      Creates a dummy variable used to call forward or backward function
+      of multiple variables at one place.
+
+      This takes any numbers of input variables with any shape,
+      and creates a single 0-shape outputs.
+      The forward pass does nothing. The backward pass set ones
+      to the input grads if one_input_grad is set as true.
+    inputs:
+      x:
+        doc: Any number of inputs with any shape.
+        variadic: true
+    arguments:
+      one_input_grad:
+        doc: Set grads of inputs as one during backward. It is useful to set false
+          if you want to set external gradients to the input variables.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Dummy variable.

@@ -28,13 +28,18 @@ def test_prefer_cached_array():
     nn.prefer_cached_array(True)
     ac2 = nn.array_classes()
     check_cached_array_prefered(ac2)
-    if hasattr(nn.extensions, 'cuda'):
-        ac2 = nn.extensions.cuda.array_classes()
+
+    try:
+        from nnabla_ext import cuda
+    except:
+        cuda = None
+    if cuda is not None:
+        ac2 = cuda.array_classes()
         check_cached_array_prefered(ac2)
 
     nn.prefer_cached_array(False)
     ac2 = nn.array_classes()
     check_cached_array_prefered(ac2, False)
-    if hasattr(nn.extensions, 'cuda'):
-        ac2 = nn.extensions.cuda.array_classes()
+    if cuda is not None:
+        ac2 = cuda.array_classes()
         check_cached_array_prefered(ac2, False)
