@@ -1,5 +1,19 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 cmake_minimum_required (VERSION 3.1)
-set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # NNabla project
 project (nbla C CXX)
@@ -16,8 +30,8 @@ include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 option(BUILD_CPP_LIB "Build C++ Library" ON)
 option(BUILD_CPP_TEST "Build testing" OFF)
 option(BUILD_CPP_UTILS "Build C++ API and utilities" OFF)
-
 option(BUILD_PYTHON_PACKAGE "Build python package" ON)
+option(MAKE_MANYLINUX_WHEEL "Convert wheel to manylinux version" OFF)
 
 option(NBLA_VERBOSE_MEMORY_USAGE "Enable debug print of memory usage" OFF)
 if(NBLA_VERBOSE_MEMORY_USAGE)
@@ -28,13 +42,20 @@ endif()
 # Settings
 ###############################################################################
 if (NOT PYTHON_COMMAND_NAME)
-  set(PYTHON_COMMAND_NAME "python${PYTHON_VERSION}")
+  if(NOT PYTHON_VERSION_MAJOR)
+    set(PYTHON_COMMAND_NAME "python")
+  else()
+    set(PYTHON_COMMAND_NAME "python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+  endif()
 endif()
 
 find_program(PYTHON_COMMAND ${PYTHON_COMMAND_NAME})
 if(NOT EXISTS ${PYTHON_COMMAND})
-  message(FATAL_ERROR, "python ${PYTHON_COMMAND_NAME} not found. Please install python or check your settings.")
-  error() # Place Unknown command to stop cmake process here.
+  find_program(PYTHON_COMMAND "python")
+  if(NOT EXISTS ${PYTHON_COMMAND})
+    message(FATAL_ERROR, "python [${PYTHON_COMMAND_NAME}] not found. Please install python or check your settings.")
+    error() # Place Unknown command to stop cmake process here.
+  endif()
 endif()
 
 find_program(PROTOC_COMMAND protoc)
@@ -282,14 +303,23 @@ if(BUILD_PYTHON_PACKAGE)
   
   # Wheel
   if(UNIX)
-    add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
-      COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
-      COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
-      COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
-      COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
-      COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
-      COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
-      DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
+    if(MAKE_MANYLINUX_WHEEL)
+      add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
+        COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
+        COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
+        COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
+        COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
+        COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
+        DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
+    else()
+      add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
+        COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
+        COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
+        COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
+        DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
+    endif()
   else()
     add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
       COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}

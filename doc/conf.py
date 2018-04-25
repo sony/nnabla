@@ -39,7 +39,8 @@ author = u'Sony Corporation'
 ################################################################################
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'build-tools', 'code_generator'))
+sys.path.append(os.path.join(os.path.dirname(
+    os.path.realpath(__file__)), '..', 'build-tools', 'code_generator'))
 from utils.common import get_version
 
 version, release = get_version(os.path.join(os.path.dirname(__file__), '..'))
