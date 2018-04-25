@@ -13,8 +13,8 @@ that indicates if each operator can be converted to NNP.
 | Operator | Status | Description |
 |---|:---:|:---:|
 |Abs|:green_heart:||
-|Add|:yellow_heart:|broadcast not supported|
-|And|:black_heart:||
+|Add|:green_heart:||
+|And|:green_heart_:||
 |ArgMax|:black_heart:||
 |ArgMin|:black_heart:||
 |AveragePool|:yellow_heart:|autopad not supported|
@@ -58,7 +58,7 @@ that indicates if each operator can be converted to NNP.
 |MaxRoiPool|:black_heart:||
 |Mean|:black_heart:||
 |Min|:black_heart:||
-|Mul|:yellow_heart:|broadcast is not supported|
+|Mul|:green_heart:||
 |Neg|:black_heart:||
 |Not|:green_heart:||
 |Or|:black_heart:||
