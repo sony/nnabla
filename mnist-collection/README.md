@@ -30,10 +30,10 @@ rate.
 
 Training can be dramatically sped up by using a CUDA GPU when the
 nnabla_ext-cuda extension is installed. Run the above command with `-c
-cuda.cudnn` option to let NNabla use GPU acceleration.
+cudnn` option to let NNabla use GPU acceleration.
 
 ```
-python classification.py -c cuda.cudnn
+python classification.py -c cudnn
 ```
 
 After the learning completes successfully, the results will be saved in
@@ -65,7 +65,7 @@ Reference: "Unsupervised Representation Learning with Deep Convolutional
 Generative Adversarial Networks". https://arxiv.org/abs/1507.00677
 
 ```
-python dcgan.py [-c cuda.cudnn] [-h|--help]
+python dcgan.py [-c cudnn] [-h|--help]
 ```
 
 After the learning completes correctly, the results will be saved in
@@ -80,7 +80,7 @@ image into a low dimensional feature space. The Siamese Neural Network takes a
 pair of 28x28 pixel images as input, and outputs the feature embedding vectors.
 
 ```
-python siamese.py [-c cuda.cudnn] [-h|--help]
+python siamese.py [-c cudnn] [-h|--help]
 ```
 
 After the learning completes successfully, the results will be saved in
@@ -96,7 +96,7 @@ Reference: "Distributional Smoothing with Virtual Adversarial Training"
 https://arxiv.org/abs/1507.00677
 
 ```
-python vat.py [-c cuda.cudnn] [-h|--help]
+python vat.py [-c cudnn] [-h|--help]
 ```
 
 After the learning completes successfully, the results will be saved in
@@ -111,7 +111,7 @@ Reference: "Auto-Encoding Variational Bayes"
 https://arxiv.org/abs/1312.6114
 
 ```
-python vae.py [-c cuda.cudnn] [-h|--help]
+python vae.py [-c cudnn] [-h|--help]
 ```
 
 After the learning completes successfully, the results will be saved in

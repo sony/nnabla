@@ -17,7 +17,7 @@ The Embedding Neural Network takes pairs of word indices as inputs, and outputs 
 You can start learning by the following command.
 
 ```
-python word_embedding.py [-c cuda.cudnn]
+python word_embedding.py [-c cudnn]
 ```
 
 After the learning completes successfully, the output shows some of similar word search demonstrations 
