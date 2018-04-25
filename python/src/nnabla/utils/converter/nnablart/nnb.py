@@ -50,16 +50,8 @@ class NnbExporter:
             if 'arguments' in func and len(func['arguments']) > 0:
                 argfmt = ''
                 for an, arg in func['arguments'].items():
-                    if arg['type'] == 'bool':
-                        argfmt += 'B'
-                    elif arg['type'] == 'double' or arg['type'] == 'float':
-                        argfmt += 'f'
-                    elif arg['type'] == 'int64':
-                        argfmt += 'i'
-                    elif arg['type'] == 'repeated int64' or arg['type'] == 'Shape':
-                        argfmt += 'iI'
-                    elif arg['type'] == 'string':
-                        argfmt += 'i'
+                    argfmt += nnabla.utils.converter.type_to_pack_format(
+                        arg['type'])
                 self._argument_formats[fn] = argfmt
 
     def export(self, *args):
@@ -133,8 +125,12 @@ class NnbExporter:
             # Functions
             findexes = []
             for n, f in enumerate(self._info._network.function):
+
                 function_data = struct.pack(
                     'I', list(self._info._function_info.keys()).index(f.type))
+
+                # Default function implementation is 0(float)
+                function_data += struct.pack('I', 0)
 
                 finfo = self._info._function_info[f.type]
 
@@ -154,29 +150,26 @@ class NnbExporter:
                     for an, arg in finfo['arguments'].items():
                         val = eval('f.{}_param.{}'.format(
                             finfo['snake_name'], an))
+
+                        argfmt += nnabla.utils.converter.type_to_pack_format(
+                            arg['type'])
                         if arg['type'] == 'bool':
-                            argfmt += 'B'
                             values.append(val)
                         elif arg['type'] == 'double' or arg['type'] == 'float':
-                            argfmt += 'f'
                             values.append(val)
                         elif arg['type'] == 'int64':
-                            argfmt += 'i'
                             values.append(val)
                         elif arg['type'] == 'repeated int64':
                             index, pointer = self._alloc(
                                 data=struct.pack('{}i'.format(len(val)), *val))
                             values.append(len(val))
                             values.append(index)
-                            argfmt += 'iI'
                         elif arg['type'] == 'Shape':
-                            argfmt += 'iI'
                             index, pointer = self._alloc(data=struct.pack(
                                 '{}i'.format(len(val.dim)), *val.dim))
                             values.append(len(val.dim))
                             values.append(index)
                         elif arg['type'] == 'string':
-                            argfmt += 'i'
                             val = arg['available_values'].index(val)
                             values.append(val)
                     function_data += struct.pack(argfmt, *values)
