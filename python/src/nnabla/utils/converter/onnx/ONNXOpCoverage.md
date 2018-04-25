@@ -14,7 +14,7 @@ that indicates if each operator can be converted to NNP.
 |---|:---:|:---:|
 |Abs|:green_heart:||
 |Add|:green_heart:||
-|And|:green_heart_:||
+|And|:green_heart:||
 |ArgMax|:black_heart:||
 |ArgMin|:black_heart:||
 |AveragePool|:yellow_heart:|autopad not supported|
