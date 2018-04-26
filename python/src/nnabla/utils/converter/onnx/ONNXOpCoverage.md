@@ -93,7 +93,7 @@ that indicates if each operator can be converted to NNP.
 |Split|:black_heart:||
 |Sqrt|:black_heart:||
 |Squeeze|:black_heart:||
-|Sub|:black_heart:||
+|Sub|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Sum|:yellow_heart:|Supporting two inputs only|
 |Tanh|:green_heart:||
 |Tile|:black_heart:||

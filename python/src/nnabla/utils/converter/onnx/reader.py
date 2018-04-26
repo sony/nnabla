@@ -57,6 +57,7 @@ onnx_optype_to_nnabla_function_type = {
     "Mul": "Mul2",
     "Div": "Div2",
     "Pow": "Pow2",
+    "Sub": "Sub2",
     "MatMul": "BatchMatmul",
     "LeakyRelu": "LeakyReLU",
     "Not": "LogicalNot",
@@ -527,6 +528,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
           node.op_type == "Mul" or
           node.op_type == "Div" or
           node.op_type == "Pow" or
+          node.op_type == "Sub" or
           node.op_type == "And" or
           node.op_type == "Or" or
           node.op_type == "Xor"):
