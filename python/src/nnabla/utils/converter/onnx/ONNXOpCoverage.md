@@ -64,7 +64,7 @@ that indicates if each operator can be converted to NNP.
 |Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |PRelu|:black_heart:||
 |Pad|:black_heart:||
-|Pow|:black_heart:||
+|Pow|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |RNN|:black_heart:||
 |RandomNormal|:black_heart:||
 |RandomNormalLike|:black_heart:||

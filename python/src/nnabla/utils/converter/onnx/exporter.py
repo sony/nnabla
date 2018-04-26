@@ -49,6 +49,7 @@ nnabla_function_type_to_onnx_optype = {
     "Mean": "ReduceMean",
     "Mul2": "Mul",
     "Div2": "Div",
+    "Pow2": "Pow",
     "LogicalAnd": "And",
     "LogicalOr": "Or",
     "LogicalXor": "Xor",
@@ -275,7 +276,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # we do not append node here because BroadcastTo should disappear
     elif (func.type == "Add2" or
           func.type == "Mul2" or
-          func.type == "Div2"):
+          func.type == "Div2" or
+          func.type == "Pow2"):
         # Check if the second input is a brodcast target.
         bt = func.input[1]
         if bt in broadcast_target:

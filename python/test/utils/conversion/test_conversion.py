@@ -603,6 +603,35 @@ def test_nnp_onnx_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
                                     "div_broadcast_axis1.nnp",
                                     "div_broadcast_axis1.onnx",
                                     "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_pow_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "pow_no_broadcast.onnx",
+                                    "pow_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_pow_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "pow_no_broadcast.nnp",
+                                    "pow_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_pow_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "pow_broadcast_axis1.onnx",
+                                    "pow_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_pow_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "pow_broadcast_axis1.nnp",
+                                    "pow_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
