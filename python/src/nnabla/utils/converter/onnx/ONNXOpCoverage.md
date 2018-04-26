@@ -98,7 +98,7 @@ that indicates if each operator can be converted to NNP.
 |Tanh|:green_heart:||
 |Tile|:black_heart:||
 |Transpose|:green_heart:||
-|Xor|:black_heart:||
+|Xor|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |experimental ATen|:black_heart:||
 |experimental Affine|:black_heart:||
 |experimental ConstantFill|:black_heart:||
