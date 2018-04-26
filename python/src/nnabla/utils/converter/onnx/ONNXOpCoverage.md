@@ -27,7 +27,7 @@ that indicates if each operator can be converted to NNP.
 |Conv|:yellow_heart:|auto_pad not supported|
 |ConvTranspose|:black_heart:||
 |DepthToSpace|:black_heart:||
-|Div|:black_heart:||
+|Div|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Dropout|:yellow_heart:|mask output will be removed since NNabla does not produce mask output.|
 |Elu|:green_heart:||
 |Equal|:black_heart:||
