@@ -27,7 +27,12 @@ import cntk.ops.functions as cntkf
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import OnnxReader, OnnxExporter, onnx_model_to_nnp_protobuf
 
+# The directory of which the input ONNX files will be at
 TEST_DATA_DIR = "nnabla-sample-data/conversion_data"
+
+# Set a path to this parameter (preferably the same as TEST_DATA_DIR)
+# if you want to update all the NNP files
+DEFAULT_NNP_EXPORT_PATH = None
 
 def print_buffer_shape(net):
     for k, v in net.functions.items():
@@ -47,7 +52,7 @@ def convert_onnx_to_nnp_and_compare(
         in_img=None, in_name="",
         compare_values=True, show_onnx=False, show_nnp=False,
         show_output=False, atol=1e-08,
-        export_nnp_path=None):
+        export_nnp_path=DEFAULT_NNP_EXPORT_PATH):
     """Convert specified ONNX to NNP and compare each results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     backend_out = None
@@ -565,12 +570,39 @@ def test_onnx_nnp_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-def test_nnp_onnx_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
+def test_nnp_onnx_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "or_broadcast_axis1.nnp",
-                                    "or_broadcast_axis1.onnx",
+                                    "xor_broadcast_axis1.nnp",
+                                    "xor_broadcast_axis1.onnx",
                                     "out_data_1", "exec_0")
 
+
+def test_onnx_nnp_conversion_div_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "div_no_broadcast.onnx",
+                                    "div_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_div_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "div_no_broadcast.nnp",
+                                    "div_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "div_broadcast_axis1.onnx",
+                                    "div_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "div_broadcast_axis1.nnp",
+                                    "div_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
@@ -613,7 +645,7 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
 #        tmpdir, TEST_DATA_DIR, "inception_v2.onnx", "inception_v2.nnp", "prob_1", "exec_0",
 #        in_name="data_0", in_img=img)
 
-
+@pytest.mark.slow
 def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(
@@ -621,6 +653,7 @@ def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):
         in_name="data_0", in_img=img, atol=1e-5)
 
 
+@pytest.mark.slow
 def test_nnp_onnx_conversion_densenet121(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(
