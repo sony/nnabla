@@ -67,6 +67,7 @@ onnx_optype_to_nnabla_function_type = {
     "ReduceProd": "Prod",
     "And": "LogicalAnd",
     "Or": "LogicalOr",
+    "Xor": "LogicalXor",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -523,7 +524,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
     elif (node.op_type == "Add" or
           node.op_type == "Mul" or
           node.op_type == "And" or
-          node.op_type == "Or"):
+          node.op_type == "Or" or
+          node.op_type == "Xor"):
         convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":

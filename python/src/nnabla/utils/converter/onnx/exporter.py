@@ -50,6 +50,7 @@ nnabla_function_type_to_onnx_optype = {
     "Mul2": "Mul",
     "LogicalAnd": "And",
     "LogicalOr": "Or",
+    "LogicalXor": "Xor",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",
@@ -279,7 +280,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
             merge_broadcast(n, func, bt, broadcast_target)
         nl.append(n)
     elif (func.type == "LogicalAnd" or
-          func.type == "LogicalOr"):
+          func.type == "LogicalOr" or
+          func.type == "LogicalXor"):
         # Store the input/output tensor's name and convert it to boolean
         input_types[n.input[0]] = TensorProto.BOOL
         output_types[n.output[0]] = TensorProto.BOOL
