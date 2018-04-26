@@ -61,7 +61,7 @@ that indicates if each operator can be converted to NNP.
 |Mul|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Neg|:black_heart:||
 |Not|:green_heart:||
-|Or|:black_heart:||
+|Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |PRelu|:black_heart:||
 |Pad|:black_heart:||
 |Pow|:black_heart:||

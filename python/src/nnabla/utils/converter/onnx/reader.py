@@ -66,6 +66,7 @@ onnx_optype_to_nnabla_function_type = {
     "ReduceMax": "Max",
     "ReduceProd": "Prod",
     "And": "LogicalAnd",
+    "Or": "LogicalOr",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -519,13 +520,10 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         if len(func.input) > 2:
             raise ValueError("Sum operations with more than two input is currently not supported")
         func_list.append(func)
-    elif node.op_type == "Add":
-        convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
-        func_list.append(func)
-    elif node.op_type == "Mul":
-        convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
-        func_list.append(func)
-    elif node.op_type == "And":
+    elif (node.op_type == "Add" or
+          node.op_type == "Mul" or
+          node.op_type == "And" or
+          node.op_type == "Or"):
         convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":
