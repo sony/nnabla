@@ -434,11 +434,9 @@ def nnp_model_to_onnx_graph(graph, nnp):
 def nnp_model_to_onnx_protobuf(nnp):
     mp = ModelProto()
     mp.ir_version = ONNX_IR_VERSION
-    op0 = mp.opset_import.add()
-    op0.version = ONNX_OPSET_VERSION
-    op1 = mp.opset_import.add()
-    op1.domain = ""  # empty string indicates ONNX domain
-    op1.version = ONNX_OPSET_VERSION
+    op = mp.opset_import.add()
+    op.domain = ""  # empty string indicates ONNX domain
+    op.version = ONNX_OPSET_VERSION
     # nn_opset = mp.opset_import.add()
     # nn_opset.domain = NNABLA_DOMAIN
     # nn_opset.version = NNABLA_OPSET_VERSION
