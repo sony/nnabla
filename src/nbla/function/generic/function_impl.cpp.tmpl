@@ -85,14 +85,19 @@ void ${name}<${targs}>::forward_impl(const Variables &inputs,
 % endfor
 
   // Outputs
+  /* TODO: remove this help message.
+     Array instances of output variables are retrieved with a write-only flag
+     (second argument) in order to avoid an unnecessary copy from another
+     array instance.
+  */
 % for i, (vout_name, vout) in enumerate(outputs.items()):
 % if vout.get('optional', false):
   ${out_types[i]}* ${vout_name}{nullptr};
   if (outputs.size() > ${i}) {
-    ${vout_name} = outputs[${i}]->cast_data_and_get_pointer<${out_types[i]}>(this->ctx_);
+    ${vout_name} = outputs[${i}]->cast_data_and_get_pointer<${out_types[i]}>(this->ctx_, true);
   }
 % else:
-  ${out_types[i]}* ${vout_name} = outputs[${i}]->cast_data_and_get_pointer<${out_types[i]}>(this->ctx_);
+  ${out_types[i]}* ${vout_name} = outputs[${i}]->cast_data_and_get_pointer<${out_types[i]}>(this->ctx_, true);
 % endif
 % endfor
 
@@ -152,6 +157,10 @@ pp = '!(%s)' % ' || '.join(pp)
      by substitution or accumulation.
   */
   // Gradient of inputs
+  /* TODO: remove this help message.
+     Array instances of gradients of inputs are transferred with write-only
+     flag when accum options are false.
+  */
 % for i, (vin_name, vin) in enumerate(inputs.items()):
   ${in_types[i]}* g_${vin_name}{nullptr};
 % endfor
@@ -159,12 +168,12 @@ pp = '!(%s)' % ' || '.join(pp)
 % for i, (vin_name, vin) in enumerate(inputs.items()):
 % if vin.get('optional', false):
   if (inputs.size() > ${i} && propagate_down[${i}]) {
-    g_${vin_name} = inputs[${i}]->cast_grad_and_get_pointer<${in_types[i]}>(this->ctx_);
+    g_${vin_name} = inputs[${i}]->cast_grad_and_get_pointer<${in_types[i]}>(this->ctx_, !accum[${i}]);
     // TODO: Write gradient computation of ${vin_name}
   }
 % else:
   if (propagate_down[${i}]) {
-    g_${vin_name} = inputs[${i}]->cast_grad_and_get_pointer<${in_types[i]}>(this->ctx_);
+    g_${vin_name} = inputs[${i}]->cast_grad_and_get_pointer<${in_types[i]}>(this->ctx_, !accum[${i}]);
     // TODO: Write gradient computation of ${vin_name}
   }
 % endif
