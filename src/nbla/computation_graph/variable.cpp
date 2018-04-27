@@ -80,15 +80,21 @@ void forward_recursive(CgFunctionPtr cg_f, unordered_set<CgFunctionPtr> &fseen,
   auto outputs_shared = cg_f->function_outputs_shared();
   // std::cout << "Call forward of " << cg_f->function()->name() << "."
   //           << std::endl;
-  cg_f->function()->forward(cg_f->function_inputs(),
-                            as_pointer_array(outputs_shared));
+  auto raw_f = cg_f->function();
+  raw_f->forward(cg_f->function_inputs(), as_pointer_array(outputs_shared));
+
+  // It returns at this point if the Function prohibit clearing input buffers.
+  if (raw_f->prohibit_clear_input_buffers()) {
+    // NOTE: it returns because assume the rest of this function only clearing
+    // buffer.
+    return;
+  }
 
   // Clear unnecessary variable buffers
   if (clear_buffer) {
     for (int i = 0; i < cg_f->num_inputs(); i++) {
       auto vi = cg_f->inputs()[i];
-      if (vi->rank() == 0 || vi->persistent() ||
-          cg_f->function()->inplace_data(i)) {
+      if (vi->rank() == 0 || vi->persistent() || raw_f->inplace_data(i)) {
         // Root variable, or persistent flag is set by user.
         continue;
       }
@@ -99,8 +105,7 @@ void forward_recursive(CgFunctionPtr cg_f, unordered_set<CgFunctionPtr> &fseen,
   } else if (clear_no_need_grad) {
     for (int i = 0; i < cg_f->num_inputs(); i++) {
       auto vi = cg_f->inputs()[i];
-      if (vi->rank() == 0 || vi->persistent() ||
-          cg_f->function()->inplace_data(i)) {
+      if (vi->rank() == 0 || vi->persistent() || raw_f->inplace_data(i)) {
         // Root variable, or persistent flag is set by user.
         continue;
       }

@@ -48,3 +48,19 @@ def test_sink(seed):
     assert np.all(h0d == h0.d)
     assert np.all(h1d == h1.d)
     assert np.all(vg == v.g)
+
+    # Check if clear_buffer still keeps h0 an h1 even though they are not
+    # leaf variables.
+    # It's done by defining prohibit_clear_input_buffers function in sink.hpp.
+    dummy = F.sink(h0, h1, one_input_grad=True)
+    dummy.forward(clear_buffer=True)
+    assert np.all(h0d == h0.d)
+    assert np.all(h1d == h1.d)
+    # Also checking backward when clear buffers.
+    v.grad.zero()
+    dummy = F.sink(h0, h1, one_input_grad=True)
+    dummy.forward(clear_no_need_grad=True)
+    dummy.backward(clear_buffer=True)
+    assert np.all(h0d == h0.d)
+    assert np.all(h1d == h1.d)
+    assert np.all(vg == v.g)

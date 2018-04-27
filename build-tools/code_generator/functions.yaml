@@ -3403,6 +3403,11 @@ Unsupported, Special Use:
       and creates a single 0-shape outputs.
       The forward pass does nothing. The backward pass set ones
       to the input grads if one_input_grad is set as true.
+
+      Note:
+          ``sink`` can only be called at the very end of the graph, and
+          ``grad`` of input variables are cleared
+           when ``y.backward(clear_buffer=True)`` is called.
     inputs:
       x:
         doc: Any number of inputs with any shape.
