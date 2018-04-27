@@ -20,6 +20,7 @@ from .utils import get_category_info_string
 from .utils import get_category_info_version
 from .utils import get_category_info
 from .utils import get_function_info
+from .utils import load_yaml_ordered
 from .utils import select_executor
 from .utils import search_network
 from .utils import calc_shape_size

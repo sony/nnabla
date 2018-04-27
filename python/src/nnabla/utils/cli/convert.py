@@ -80,4 +80,13 @@ def add_convert_command(subparsers):
                            help='[export][NNP] store parameter into nntxt')
     subparser.add_argument('--nnp-exclude-parameter', action='store_true',
                            help='[export][NNP] output without parameter')
+
+    # Both NNB and CSRC
+    subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
+                           help='Default type of variable')
+    subparser.add_argument('-G', '--settings-template', type=str, nargs=1, default=None,
+                           help='Get template for settings')
+    subparser.add_argument('-s', '--settings', type=str, nargs=1, default=None,
+                           help='Settings in YAML format file.')
+
     subparser.set_defaults(func=convert_command)
