@@ -31,10 +31,12 @@ nnabla_function_type_to_onnx_optype = {
     "Abs": "Abs",
     "Sigmoid": "Sigmoid",
     "Tanh": "Tanh",
-    "LeakyReLU": "LeakyRelu",
     "Log": "Log",
+    "Less": "Less",
+    "Greater": "Greater",
     # optype with different names
     "ReLU": "Relu",
+    "LeakyReLU": "LeakyRelu",
     "Concatenate": "Concat",
     "Convolution": "Conv",
     "GlobalAveragePooling": "GlobalAveragePool",
@@ -300,6 +302,15 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         else:
             # Set the given parameter name as BOOL
             input_types[n.input[1]] = TensorProto.BOOL
+        nl.append(n)
+    elif (func.type == "Less" or
+          func.type == "Greater"):
+        # Store the output tensor's name and convert it to boolean
+        output_types[n.output[0]] = TensorProto.BOOL
+        # Check if the second input is a brodcast target.
+        bt = func.input[1]
+        if bt in broadcast_target:
+            merged = merge_broadcast(n, func, bt, broadcast_target)
         nl.append(n)
     else:
         # Simply append node to list

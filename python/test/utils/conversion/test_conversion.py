@@ -660,6 +660,61 @@ def test_nnp_onnx_conversion_sub_broadcast_axis1(tmpdir, nnp_fixture):
                                     "sub_broadcast_axis1.onnx",
                                     "out_data_1", "exec_0")
 
+
+def test_onnx_nnp_conversion_less_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "less_no_broadcast.onnx",
+                                    "less_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_less_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "less_no_broadcast.nnp",
+                                    "less_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_less_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "less_broadcast_axis1.onnx",
+                                    "less_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_less_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "less_broadcast_axis1.nnp",
+                                    "less_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_greater_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "greater_no_broadcast.onnx",
+                                    "greater_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_greater_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "greater_no_broadcast.nnp",
+                                    "greater_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "greater_broadcast_axis1.onnx",
+                                    "greater_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "greater_broadcast_axis1.nnp",
+                                    "greater_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127

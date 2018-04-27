@@ -44,6 +44,8 @@ onnx_optype_to_nnabla_function_type = {
     "Sigmoid": "Sigmoid",
     "Tanh": "Tanh",
     "Log": "Log",
+    "Less": "Less",
+    "Greater": "Greater",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
@@ -531,7 +533,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
           node.op_type == "Sub" or
           node.op_type == "And" or
           node.op_type == "Or" or
-          node.op_type == "Xor"):
+          node.op_type == "Xor" or
+          node.op_type == "Less" or
+          node.op_type == "Greater"):
         convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":
