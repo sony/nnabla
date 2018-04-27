@@ -715,6 +715,63 @@ def test_nnp_onnx_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
                                     "greater_broadcast_axis1.nnp",
                                     "greater_broadcast_axis1.onnx",
                                     "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_no_broadcast_bool.onnx",
+                                    "equal_no_broadcast_bool.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_no_broadcast_bool.nnp",
+                                    "equal_no_broadcast_bool.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_broadcast_axis1_bool.onnx",
+                                    "equal_broadcast_axis1_bool.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_broadcast_axis1_bool.nnp",
+                                    "equal_broadcast_axis1_bool.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_no_broadcast_int.onnx",
+                                    "equal_no_broadcast_int.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_no_broadcast_int.nnp",
+                                    "equal_no_broadcast_int.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_broadcast_axis1_int.onnx",
+                                    "equal_broadcast_axis1_int.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "equal_broadcast_axis1_int.nnp",
+                                    "equal_broadcast_axis1_int.onnx",
+                                    "out_data_1", "exec_0")
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127

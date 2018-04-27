@@ -34,6 +34,7 @@ nnabla_function_type_to_onnx_optype = {
     "Log": "Log",
     "Less": "Less",
     "Greater": "Greater",
+    "Equal": "Equal",
     # optype with different names
     "ReLU": "Relu",
     "LeakyReLU": "LeakyRelu",
@@ -312,6 +313,26 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         if bt in broadcast_target:
             merged = merge_broadcast(n, func, bt, broadcast_target)
         nl.append(n)
+    elif func.type == "Equal":
+        # Get the input data's type.
+        # Since ONNX only accepts bool,int32,int64
+        # while NNabla does not expose its data type,
+        # we default to int64 for now.
+        # TODO: Get the correct type information from NNP
+        intype = TensorProto.INT64
+        # Store the input/output tensor's name and convert it to boolean
+        input_types[n.input[0]] = intype
+        output_types[n.output[0]] = TensorProto.BOOL
+        # Check if the second input is a brodcast target.
+        bt = func.input[1]
+        if bt in broadcast_target:
+            merged = merge_broadcast(n, func, bt, broadcast_target)
+            # Set the merged parameter name as BOOL
+            input_types[merged] = intype
+        else:
+            # Set the given parameter name as BOOL
+            input_types[n.input[1]] = intype
+        nl.append(n)
     else:
         # Simply append node to list
         nl.append(n)
@@ -421,7 +442,9 @@ def nnp_model_to_onnx_graph(graph, nnp):
         init.data_type = t
         tensor_type_to_dtype = {
             TensorProto.FLOAT: np.float32,
-            TensorProto.BOOL: np.bool
+            TensorProto.BOOL: np.bool,
+            TensorProto.INT32: np.int32,
+            TensorProto.INT64: np.int64,
         }
         init.raw_data = np.array(param.data, dtype=tensor_type_to_dtype[t]).tostring()
         # init.float_data.extend(param.data)

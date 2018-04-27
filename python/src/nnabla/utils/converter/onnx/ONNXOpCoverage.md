@@ -30,7 +30,7 @@ that indicates if each operator can be converted to NNP.
 |Div|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Dropout|:yellow_heart:|mask output will be removed since NNabla does not produce mask output.|
 |Elu|:green_heart:||
-|Equal|:black_heart:||
+|Equal|:yellow_heart:|broadcast will be converted to a BroadcastTo. Input data type will all be converted to int64 since NNP does not have type information|
 |Exp|:black_heart:||
 |Flatten|:black_heart:||
 |Floor|:black_heart:||

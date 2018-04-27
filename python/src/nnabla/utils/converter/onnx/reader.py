@@ -46,6 +46,7 @@ onnx_optype_to_nnabla_function_type = {
     "Log": "Log",
     "Less": "Less",
     "Greater": "Greater",
+    "Equal": "Equal",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",
@@ -535,7 +536,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
           node.op_type == "Or" or
           node.op_type == "Xor" or
           node.op_type == "Less" or
-          node.op_type == "Greater"):
+          node.op_type == "Greater" or
+          node.op_type == "Equal"):
         convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":
@@ -737,6 +739,22 @@ def add_tensor_as_parameter(pb, tensor):
             p.data.extend(tensor.float_data)
         else:
             raise ValueError("float data not found for {}".format(tensor.name))
+    elif tensor.data_type == TensorProto.INT32:
+        # convert raw bytestream to integer
+        if tensor.raw_data:
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.int32))
+        elif len(tensor.int32_data) > 0:
+            p.data.extend(tensor.int32_data)
+        else:
+            raise ValueError("int32 data not found for {}".format(tensor.name))
+    elif tensor.data_type == TensorProto.INT64:
+        # convert raw bytestream to integer
+        if tensor.raw_data:
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.int64))
+        elif len(tensor.int64_data) > 0:
+            p.data.extend(tensor.int64_data)
+        else:
+            raise ValueError("int64 data not found for {}".format(tensor.name))
     elif tensor.data_type == TensorProto.BOOL:
         if tensor.raw_data:
             p.data.extend(np.fromstring(tensor.raw_data, dtype=np.bool))
