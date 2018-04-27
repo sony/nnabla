@@ -226,6 +226,9 @@ Stack:
 Slice:
   float: [float]
   half: [Half]
+Pad:
+  float: [float]
+  half: [Half]
 Transpose:
   float: [float]
   half: [Half]
