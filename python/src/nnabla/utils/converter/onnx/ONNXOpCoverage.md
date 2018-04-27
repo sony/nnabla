@@ -40,14 +40,14 @@ that indicates if each operator can be converted to NNP.
 |GlobalAveragePool|:green_heart:||
 |GlobalLpPool|:black_heart:||
 |GlobalMaxPool|:black_heart:||
-|Greater|:black_heart:||
+|Greater|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |HardSigmoid|:black_heart:||
 |Hardmax|:black_heart:||
 |InstanceNormalization|:black_heart:||
 |LRN|:broken_heart:|Operator does not exist in NNabla|
 |LSTM|:black_heart:||
 |LeakyRelu|:green_heart:||
-|Less|:black_heart:||
+|Less|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Log|:green_heart:||
 |LogSoftmax|:black_heart:||
 |LpNormalization|:black_heart:||
