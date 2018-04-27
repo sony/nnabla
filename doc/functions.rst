@@ -1241,6 +1241,48 @@ Note:
      - N-D array.
      - 
 
+ClipGradByValue
+^^^^^^^^^^^^^^^
+
+In forward pass, the function behaves as the identity.
+
+In backward pass, 
+
+.. math::
+	g_x = \begin{cases}
+	        max & (g_y > max) \\
+	        g_y & (otherwise) \\
+	        min & (g_y < min)
+	    \end{cases}.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array of input.
+     - 
+   * - min
+     - N-D array of minimum input value by which the gradients of the `x` are clipped.
+     - 
+   * - max
+     - N-D array of maximum input value by which the gradients of the `x` are clipped.
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
+
 Reduction
 ---------
 

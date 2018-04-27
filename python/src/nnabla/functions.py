@@ -384,3 +384,26 @@ def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fin
     if not quantize:
         return x
     return pow2_quantize_base(x, sign, with_zero, n, m, ste_fine_grained, outputs=outputs)
+
+
+def clip_by_value(x, min, max):
+    r"""Clip inputs by values.
+
+    .. math::
+
+        y = \begin{cases}
+                max & (x > max) \\
+                x & (otherwise) \\
+                min & (x < min)
+            \end{cases}.
+
+    Args:
+        x (Variable): An input variable.
+        min (Variable): A min variable by which `x` is clipped. Note that the shape of `min` must be the same as `x`'s.
+        max (Variable): A max variable by which `x` is clipped. Note that the shape of `max` must be the same as `x`'s
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    """
+    return F.minimum2(F.maximum2(x, min), max)

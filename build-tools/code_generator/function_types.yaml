@@ -64,6 +64,9 @@ BatchNormalization:
 MeanSubtraction:
   float: [float]
   half: [Half]
+ClipGradByValue:
+  float: [float]
+  half: [Half]
 Sum:
   float: [float]
   half: [Half]

@@ -65,6 +65,8 @@ Normalization
 
 .. autofunction:: batch_normalization
 .. autofunction:: mean_subtraction
+.. autofunction:: clip_by_value
+.. autofunction:: clip_grad_by_value
 
 
 Reduction
