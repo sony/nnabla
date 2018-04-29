@@ -1929,7 +1929,7 @@ Array Manipulation:
         doc: N-D array.
     arguments:
       shape:
-        doc: Dimensions for each axis
+        doc: Dimensions for each axis. ``-1`` can be specified only in one shape dimension. The value is calculated from the size of the array and remaining dimensions.
         type: Shape
     outputs:
       y:
