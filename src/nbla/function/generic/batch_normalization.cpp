@@ -173,6 +173,9 @@ void BatchNormalization<T>::forward_impl_global(const Variables &inputs,
   // Output
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
   // Subtract mean and divide by std, and apply beta and gamma.
   for (int i1 = 0; i1 < size1_; ++i1) {
     for (int i02 = 0; i02 < size02_; ++i02) {
