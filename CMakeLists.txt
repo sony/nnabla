@@ -75,7 +75,11 @@ if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     ${PROTOC_COMMAND}
     --proto_path=${CMAKE_SOURCE_DIR}/src/nbla/proto/
     --python_out=${CMAKE_SOURCE_DIR}/python/src/nnabla/utils
-    ${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto)
+    ${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
+    RESULT_VARIABLE PROTOC_RESULT)
+  if (NOT ${PROTOC_RESULT} EQUAL 0)
+    message(FATAL_ERROR "protoc for Python failed.")
+  endif ()
 endif()
                          
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
@@ -86,7 +90,11 @@ execute_process(
   ${PROTOC_COMMAND}
   --proto_path=${CMAKE_SOURCE_DIR}/src/nbla/proto/
   --cpp_out=${CMAKE_SOURCE_DIR}/src/nbla_utils
-  ${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto)
+  ${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
+  RESULT_VARIABLE PROTOC_RESULT)
+  if (NOT ${PROTOC_RESULT} EQUAL 0)
+    message(FATAL_ERROR "protoc for C++ failed.")
+  endif ()
 endif()
   
 ###############################################################################
