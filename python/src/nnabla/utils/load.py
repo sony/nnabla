@@ -358,10 +358,10 @@ def _context(proto):
         logger.warn('Old-style context. Updating to new format.')
         # Update from old Context
         if proto.backend == 'cpu|cuda':
-            if proto.compute_backend == 'cudnn':
+            if 'cudnn' in proto.compute_backend:
                 import nnabla_ext.cudnn
                 ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
-            elif proto.compute_backend == 'default':
+            elif 'default' in proto.compute_backend:
                 import nnabla_ext.cuda
                 ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
             else:
@@ -371,12 +371,12 @@ def _context(proto):
             ctx = nnabla_ext.cpu.context()
         else:
             raise ValueError('Invalid context {}'.format(proto))
-        ctx.array_class = proto.array_class
+        ctx.array_class = str(proto.array_class)
         return ctx
     ctx = nn.Context()
-    ctx.backend.extend(proto.backends[:])
-    ctx.array_class = proto.array_class
-    ctx.device_id = proto.device_id
+    ctx.backend = proto.backends
+    ctx.array_class = str(proto.array_class)
+    ctx.device_id = str(proto.device_id)
     return ctx
 
 
@@ -618,7 +618,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
     if proto.HasField('global_config'):
         info.global_config = _global_config(proto)
         default_context = info.global_config.default_context
-        if 'cuda' in default_context.backend:
+        if 'cuda:float' in default_context.backend:
             try:
                 import nnabla_ext.cudnn
             except:
