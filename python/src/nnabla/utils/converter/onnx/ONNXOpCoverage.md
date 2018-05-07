@@ -43,6 +43,7 @@ that indicates if each operator can be converted to NNP.
 |Greater|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |HardSigmoid|:black_heart:||
 |Hardmax|:black_heart:||
+|Identity|:black_heart:||
 |InstanceNormalization|:black_heart:||
 |LRN|:broken_heart:|Operator does not exist in NNabla|
 |LSTM|:black_heart:||
@@ -85,6 +86,7 @@ that indicates if each operator can be converted to NNP.
 |Reshape|:yellow_heart:|implementing|
 |Selu|:green_heart:||
 |Sigmoid|:green_heart:||
+|Size|:black_heart:||
 |Slice|:black_heart:||
 |Softmax|:yellow_heart:|Supporting 2D input only|
 |Softplus|:black_heart:||
@@ -97,7 +99,9 @@ that indicates if each operator can be converted to NNP.
 |Sum|:yellow_heart:|Supporting two inputs only|
 |Tanh|:green_heart:||
 |Tile|:black_heart:||
+|TopK|:black_heart:||
 |Transpose|:green_heart:||
+|Unsqueeze|:black_heart:||
 |Xor|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |experimental ATen|:black_heart:||
 |experimental Affine|:black_heart:||
@@ -106,8 +110,10 @@ that indicates if each operator can be converted to NNP.
 |experimental FC|:black_heart:||
 |experimental GRUUnit|:black_heart:||
 |experimental GivenTensorFill|:black_heart:||
-|experimental Identity|:black_heart:||
+|experimental If|:black_heart:||
 |experimental ImageScaler|:black_heart:||
+|experimental Loop|:black_heart:||
+|experimental LoopIndexTensor|:black_heart:||
 |experimental MeanVarianceNormalization|:black_heart:||
 |experimental ParametricSoftplus|:black_heart:||
 |experimental Scale|:black_heart:||
