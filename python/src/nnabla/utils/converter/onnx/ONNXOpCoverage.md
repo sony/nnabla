@@ -4,6 +4,7 @@ This is a status list of [ONNX operators](https://github.com/onnx/onnx/blob/mast
 that indicates if each operator can be converted to NNP.
 
 - :black_heart: The ONNX operator hasn't been checked if it can be converted to NNabla.
+- :purple_heart: The ONNX operator has been checked if it can be converted to NNabla, but the implementation has not started.
 - :green_heart: The ONNX operator can map to a NNabla operator.
 - :yellow_heart: The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
 - :broken_heart: Hard to find a solution with existing NNabla operators.
@@ -15,13 +16,13 @@ that indicates if each operator can be converted to NNP.
 |Abs|:green_heart:||
 |Add|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |And|:yellow_heart:|broadcast will be converted to a BroadcastTo|
-|ArgMax|:black_heart:||
-|ArgMin|:black_heart:||
+|ArgMax|:broken_heart:|Operator does not exist in NNabla|
+|ArgMin|:broken_heart:|Operator does not exist in NNabla|
 |AveragePool|:yellow_heart:|autopad not supported|
 |BatchNormalization|:yellow_heart:|is_test=false not supported (only inference)|
-|Cast|:black_heart:||
-|Ceil|:black_heart:||
-|Clip|:black_heart:||
+|Cast|:broken_heart:|Operator does not exist in NNabla(No type information is exposed in NNP)|
+|Ceil|:broken_heart:|Operator does not exist in NNabla|
+|Clip|:purple_heart:|Should be able to be achieved with Min + Max|
 |Concat|:green_heart:||
 |Constant|:yellow_heart:|Converted to an input parameter|
 |Conv|:yellow_heart:|auto_pad not supported|
@@ -33,13 +34,13 @@ that indicates if each operator can be converted to NNP.
 |Equal|:yellow_heart:|broadcast will be converted to a BroadcastTo. Input data type will all be converted to int64 since NNP does not have type information|
 |Exp|:green_heart:||
 |Flatten|:black_heart:||
-|Floor|:black_heart:||
+|Floor|:broken_heart:|Operator does not exist in NNabla|
 |GRU|:black_heart:||
 |Gather|:black_heart:||
 |Gemm|:yellow_heart:|alpha and beta is not supported. Input A and B must be two dimensional, and input C must be one dimensional. transA, transB will be converted to a separate transpose operator|
 |GlobalAveragePool|:green_heart:||
-|GlobalLpPool|:black_heart:||
-|GlobalMaxPool|:black_heart:||
+|GlobalLpPool|:broken_heart:|Operator does not exist in NNabla|
+|GlobalMaxPool|:broken_heart:|Operator does not exist in NNabla|
 |Greater|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |HardSigmoid|:black_heart:||
 |Hardmax|:black_heart:||
@@ -57,7 +58,7 @@ that indicates if each operator can be converted to NNP.
 |Max|:yellow_heart:|Only input of two tensors is currently supported|
 |MaxPool|:yellow_heart:|auto_pad is not supported|
 |MaxRoiPool|:black_heart:||
-|Mean|:black_heart:||
+|Mean|:broken_heart:|Operator does not exist in NNabla|
 |Min|:yellow_heart:|Only input of two tensors is currently supported|
 |Mul|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Neg|:black_heart:||
@@ -67,21 +68,21 @@ that indicates if each operator can be converted to NNP.
 |Pad|:black_heart:||
 |Pow|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |RNN|:black_heart:||
-|RandomNormal|:black_heart:||
-|RandomNormalLike|:black_heart:||
-|RandomUniform|:black_heart:||
-|RandomUniformLike|:black_heart:||
+|RandomNormal|:purple_heart:|Should be able to map to Randn|
+|RandomNormalLike|:broken_heart:|Operator does not exist in NNabla|
+|RandomUniform|:purple_heart:|Should be able to map to Rand|
+|RandomUniformLike|:broken_heart:|Operator does not exist in NNabla|
 |Reciprocal|:black_heart:||
-|ReduceL1|:black_heart:||
-|ReduceL2|:black_heart:||
-|ReduceLogSum|:black_heart:||
-|ReduceLogSumExp|:black_heart:||
-|ReduceMax|:black_heart:||
+|ReduceL1|:broken_heart:|Operator does not exist in NNabla|
+|ReduceL2|:broken_heart:|Operator does not exist in NNabla|
+|ReduceLogSum|:broken_heart:|Operator does not exist in NNabla|
+|ReduceLogSumExp|:broken_heart:|Operator does not exist in NNabla|
+|ReduceMax|:purple_heart:|Should be able to map to Max. No reference implementation in CNTK or Caffe2|
 |ReduceMean|:green_heart:||
-|ReduceMin|:black_heart:||
-|ReduceProd|:black_heart:||
+|ReduceMin|:purple_heart:|Should be able to map to Min. No reference implementation in CNTK or Caffe2|
+|ReduceProd|:purple_heart:|Should be able to map to Prod. No reference implementation in CNTK or Caffe2|
 |ReduceSum|:green_heart:||
-|ReduceSumSquare|:black_heart:||
+|ReduceSumSquare|:broken_heart:|Operator does not exit in NNabla|
 |Relu|:green_heart:||
 |Reshape|:yellow_heart:|implementing|
 |Selu|:green_heart:||
@@ -93,7 +94,7 @@ that indicates if each operator can be converted to NNP.
 |Softsign|:black_heart:||
 |SpaceToDepth|:black_heart:||
 |Split|:black_heart:||
-|Sqrt|:black_heart:||
+|Sqrt|:broken_heart:|Operator does not exist in NNabla|
 |Squeeze|:black_heart:||
 |Sub|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Sum|:yellow_heart:|Supporting two inputs only|
