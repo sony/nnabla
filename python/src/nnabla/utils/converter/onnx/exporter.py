@@ -36,6 +36,7 @@ nnabla_function_type_to_onnx_optype = {
     "Greater": "Greater",
     "Equal": "Equal",
     "Exp": "Exp",
+    "Identity": "Identity",
     # optype with different names
     "ReLU": "Relu",
     "LeakyReLU": "LeakyRelu",
@@ -61,7 +62,6 @@ nnabla_function_type_to_onnx_optype = {
     "Maximum2": "Max",
     "Minimum2": "Min",
     # optype that gets converted
-    "Identity": "Dropout",
     "Affine": "Gemm",
     # optype that should get merged
     # with other operators
@@ -111,12 +111,6 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # since we always apply dropout when it is
         # included in a network.
         attr = onnx.helper.make_attribute("is_test", 0)
-        n.attribute.extend([attr])
-        nl.append(n)
-    elif func.type == "Identity":
-        # Convert Identity to a Dropout with is_test=true
-        # so we just copy the input to output
-        attr = onnx.helper.make_attribute("is_test", 1)
         n.attribute.extend([attr])
         nl.append(n)
     elif func.type == "MaxPooling":
