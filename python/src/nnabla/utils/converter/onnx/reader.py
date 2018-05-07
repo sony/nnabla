@@ -47,6 +47,7 @@ onnx_optype_to_nnabla_function_type = {
     "Less": "Less",
     "Greater": "Greater",
     "Equal": "Equal",
+    "Exp": "Exp",
     # optype with different names
     "Relu": "ReLU",
     "Concat": "Concatenate",

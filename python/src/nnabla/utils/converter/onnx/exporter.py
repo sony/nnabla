@@ -35,6 +35,7 @@ nnabla_function_type_to_onnx_optype = {
     "Less": "Less",
     "Greater": "Greater",
     "Equal": "Equal",
+    "Exp": "Exp",
     # optype with different names
     "ReLU": "Relu",
     "LeakyReLU": "LeakyRelu",

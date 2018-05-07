@@ -801,6 +801,20 @@ def test_nnp_onnx_conversion_min(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+def test_onnx_nnp_conversion_exp(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "exp.onnx",
+                                    "exp.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_exp(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "exp.nnp",
+                                    "exp.onnx",
+                                    "out_data_1", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
