@@ -43,7 +43,7 @@ that indicates if each operator can be converted to NNP.
 |Greater|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |HardSigmoid|:black_heart:||
 |Hardmax|:black_heart:||
-|Identity|:black_heart:||
+|Identity|:green_heart:||
 |InstanceNormalization|:black_heart:||
 |LRN|:broken_heart:|Operator does not exist in NNabla|
 |LSTM|:black_heart:||
