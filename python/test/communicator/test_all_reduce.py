@@ -53,7 +53,7 @@ def test_all_reduce(seed, inplace, division, comm_nccl_opts):
     num_layers = 20
     rng = np.random.RandomState(seed)
     for l in range(num_layers):
-        x_data = np.clip(rng.rand(3, 4), -1e-5, 2.*1e3)
+        x_data = rng.rand(3, 4)
         x_data_list.append(x_data)
         x = nn.Variable(x_data.shape)
         x.d = x_data * (device_id + 1)
