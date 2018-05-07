@@ -74,6 +74,8 @@ onnx_optype_to_nnabla_function_type = {
     "And": "LogicalAnd",
     "Or": "LogicalOr",
     "Xor": "LogicalXor",
+    "Max": "Maximum2",
+    "Min": "Minimum2",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -678,6 +680,13 @@ def convert_to_functions(pb, network, node, base_name, initializers,
     elif node.op_type == "ReduceProd":
         pp = func.prod_param
         set_reduction_attrs(pp, node)
+        func_list.append(func)
+    elif (node.op_type == "Max" or
+          node.op_type == "Min"):
+        # NNabla can only process two inputs for max/min.
+        # Check if this is fulfilled.
+        if len(node.input) != 2:
+            raise ValueError("NNabla can only process Min/Max of two tensors")
         func_list.append(func)
     else:
         # Simply add the function for all other conversions

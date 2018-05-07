@@ -57,6 +57,8 @@ nnabla_function_type_to_onnx_optype = {
     "LogicalAnd": "And",
     "LogicalOr": "Or",
     "LogicalXor": "Xor",
+    "Maximum2": "Max",
+    "Minimum2": "Min",
     # optype that gets converted
     "Identity": "Dropout",
     "Affine": "Gemm",

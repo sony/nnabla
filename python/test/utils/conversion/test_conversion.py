@@ -772,6 +772,35 @@ def test_nnp_onnx_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
                                     "equal_broadcast_axis1_int.onnx",
                                     "out_data_1", "exec_0")
 
+
+def test_onnx_nnp_conversion_max(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "max.onnx",
+                                    "max.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_max(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "max.nnp",
+                                    "max.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_min(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "min.onnx",
+                                    "min.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_min(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "min.nnp",
+                                    "min.onnx",
+                                    "out_data_1", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
