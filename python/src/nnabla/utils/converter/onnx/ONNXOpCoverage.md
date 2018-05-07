@@ -9,8 +9,6 @@ that indicates if each operator can be converted to NNP.
 - :yellow_heart: The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
 - :broken_heart: Hard to find a solution with existing NNabla operators.
 
-- All operators have been tested with float tensors ONLY.
-
 | Operator | Status | Description |
 |---|:---:|:---:|
 |Abs|:green_heart:||
@@ -27,7 +25,7 @@ that indicates if each operator can be converted to NNP.
 |Constant|:yellow_heart:|Converted to an input parameter|
 |Conv|:yellow_heart:|auto_pad not supported|
 |ConvTranspose|:black_heart:||
-|DepthToSpace|:black_heart:||
+|DepthToSpace|:broken_heart:|Operator does not exist in NNabla|
 |Div|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Dropout|:yellow_heart:|mask output will be removed since NNabla does not produce mask output.|
 |Elu|:green_heart:||
@@ -92,7 +90,7 @@ that indicates if each operator can be converted to NNP.
 |Softmax|:yellow_heart:|Supporting 2D input only|
 |Softplus|:black_heart:||
 |Softsign|:black_heart:||
-|SpaceToDepth|:black_heart:||
+|SpaceToDepth|:broken_heart:|Operator does not exist in NNabla|
 |Split|:black_heart:||
 |Sqrt|:broken_heart:|Operator does not exist in NNabla|
 |Squeeze|:black_heart:||
