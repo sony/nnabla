@@ -14,3 +14,5 @@ Nesterov:
   float: [float]
 RMSprop:
   float: [float]
+AMSGRAD:
+  float: [float]
