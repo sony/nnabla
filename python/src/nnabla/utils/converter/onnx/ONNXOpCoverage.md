@@ -53,11 +53,11 @@ that indicates if each operator can be converted to NNP.
 |LpNormalization|:black_heart:||
 |LpPool|:black_heart:||
 |MatMul|:green_heart:||
-|Max|:black_heart:||
+|Max|:yellow_heart:|Input of two tensors is currently only supported|
 |MaxPool|:yellow_heart:|auto_pad is not supported|
 |MaxRoiPool|:black_heart:||
 |Mean|:black_heart:||
-|Min|:black_heart:||
+|Min|:yellow_heart:|Input of two tensors is currently only supported|
 |Mul|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Neg|:black_heart:||
 |Not|:green_heart:||
