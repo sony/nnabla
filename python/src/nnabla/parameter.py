@@ -27,6 +27,10 @@ import nnabla as nn
 from nnabla.logger import logger
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
+
 current_scope = OrderedDict()
 root_scope = current_scope
 
