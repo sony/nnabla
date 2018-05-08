@@ -217,9 +217,10 @@ def {name}{argspec}:
 
 <%
 def arg_field(kv):
+    from utils.type_conv import type_from_proto
     name, arg = kv
     '''Make arg info to string expression.'''
-    argstr = '{} {}'.format(arg['type'], name)
+    argstr = '{} {}'.format(type_from_proto[arg['type']]['pyx'], name)
     if 'default' in arg:
         argstr += '={}'.format(arg['default'])
     return argstr
