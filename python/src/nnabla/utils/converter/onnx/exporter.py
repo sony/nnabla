@@ -39,6 +39,7 @@ nnabla_function_type_to_onnx_optype = {
     "Identity": "Identity",
     # optype with different names
     "ReLU": "Relu",
+    "PReLU": "PRelu",
     "LeakyReLU": "LeakyRelu",
     "Concatenate": "Concat",
     "Convolution": "Conv",

@@ -829,6 +829,34 @@ def test_nnp_onnx_conversion_identity(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+def test_onnx_nnp_conversion_prelu_c1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "prelu_c1.onnx",
+                                    "prelu_c1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_prelu_c1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "prelu_c1.nnp",
+                                    "prelu_c1.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_prelu_c3(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "prelu_c3.onnx",
+                                    "prelu_c3.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_prelu_c3(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "prelu_c3.nnp",
+                                    "prelu_c3.onnx",
+                                    "out_data_1", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127

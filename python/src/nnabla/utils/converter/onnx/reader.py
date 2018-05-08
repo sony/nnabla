@@ -51,6 +51,7 @@ onnx_optype_to_nnabla_function_type = {
     "Identity": "Identity",
     # optype with different names
     "Relu": "ReLU",
+    "PRelu": "PReLU",
     "Concat": "Concatenate",
     "Conv": "Convolution",
     "GlobalAveragePool": "GlobalAveragePooling",
@@ -689,6 +690,15 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         # Check if this is fulfilled.
         if len(node.input) != 2:
             raise ValueError("NNabla can only process Min/Max of two tensors")
+        func_list.append(func)
+    elif node.op_type == "PRelu":
+        pp = func.prelu_param
+        # ONNX PRelu defaults to the Channel axis,
+        # so we set the channel axis (1) here.
+        # This should be the same for NNabla
+        # buf currently it defaults to 0
+        # so we explicitly set 1 here.
+        pp.base_axis = 1
         func_list.append(func)
     else:
         # Simply add the function for all other conversions
