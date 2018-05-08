@@ -70,7 +70,7 @@ that indicates if each operator can be converted to NNP.
 |RandomNormalLike|:broken_heart:|Operator does not exist in NNabla|
 |RandomUniform|:purple_heart:|Should be able to map to Rand|
 |RandomUniformLike|:broken_heart:|Operator does not exist in NNabla|
-|Reciprocal|:black_heart:||
+|Reciprocal|:purple_heart:|Should be able to map to RDivScalar|
 |ReduceL1|:broken_heart:|Operator does not exist in NNabla|
 |ReduceL2|:broken_heart:|Operator does not exist in NNabla|
 |ReduceLogSum|:broken_heart:|Operator does not exist in NNabla|
@@ -85,7 +85,7 @@ that indicates if each operator can be converted to NNP.
 |Reshape|:yellow_heart:|implementing|
 |Selu|:green_heart:||
 |Sigmoid|:green_heart:||
-|Size|:black_heart:||
+|Size|:broken_heart:|Operator does not exist in NNabla|
 |Slice|:black_heart:||
 |Softmax|:yellow_heart:|Supporting 2D input only|
 |Softplus|:black_heart:||
@@ -93,14 +93,14 @@ that indicates if each operator can be converted to NNP.
 |SpaceToDepth|:broken_heart:|Operator does not exist in NNabla|
 |Split|:black_heart:||
 |Sqrt|:broken_heart:|Operator does not exist in NNabla|
-|Squeeze|:black_heart:||
+|Squeeze|:broken_heart:|Operator does not exist in NNabla|
 |Sub|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Sum|:yellow_heart:|Supporting two inputs only|
 |Tanh|:green_heart:||
 |Tile|:black_heart:||
 |TopK|:black_heart:||
 |Transpose|:green_heart:||
-|Unsqueeze|:black_heart:||
+|Unsqueeze|:broken_heart:|Operator does not exist in NNabla|
 |Xor|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |experimental ATen|:black_heart:||
 |experimental Affine|:black_heart:||
