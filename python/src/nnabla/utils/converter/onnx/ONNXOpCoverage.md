@@ -31,38 +31,38 @@ that indicates if each operator can be converted to NNP.
 |Elu|:green_heart:||
 |Equal|:yellow_heart:|broadcast will be converted to a BroadcastTo. Input data type will all be converted to int64 since NNP does not have type information|
 |Exp|:green_heart:||
-|Flatten|:black_heart:||
+|Flatten|:broken_heart:|Operator does not exist in NNabla|
 |Floor|:broken_heart:|Operator does not exist in NNabla|
-|GRU|:black_heart:||
-|Gather|:black_heart:||
+|GRU|:broken_heart:|Operator does not exist in NNabla|
+|Gather|:broken_heart:|Operator does not exist in NNabla|
 |Gemm|:yellow_heart:|alpha and beta is not supported. Input A and B must be two dimensional, and input C must be one dimensional. transA, transB will be converted to a separate transpose operator|
 |GlobalAveragePool|:green_heart:||
 |GlobalLpPool|:broken_heart:|Operator does not exist in NNabla|
 |GlobalMaxPool|:broken_heart:|Operator does not exist in NNabla|
 |Greater|:yellow_heart:|broadcast will be converted to a BroadcastTo|
-|HardSigmoid|:black_heart:||
-|Hardmax|:black_heart:||
+|HardSigmoid|:purple_heart:|Should be able to map to MulScalar+AddScalar+MinimumScalar+ReLU|
+|Hardmax|:broken_heart:|Operator does not exist in NNabla|
 |Identity|:green_heart:||
-|InstanceNormalization|:black_heart:||
+|InstanceNormalization|:broken_heart:|Operator does not exist in NNabla|
 |LRN|:broken_heart:|Operator does not exist in NNabla|
-|LSTM|:black_heart:||
+|LSTM|:broken_heart:|Operator does not exist in NNabla|
 |LeakyRelu|:green_heart:||
 |Less|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Log|:green_heart:||
-|LogSoftmax|:black_heart:||
-|LpNormalization|:black_heart:||
-|LpPool|:black_heart:||
+|LogSoftmax|:purple_heart:|Should be able to map to Softmax+Log|
+|LpNormalization|:broken_heart:|Operator does not exist in NNabla|
+|LpPool|:broken_heart:|Operator does not exist in NNabla|
 |MatMul|:green_heart:||
 |Max|:yellow_heart:|Only input of two tensors is currently supported|
 |MaxPool|:yellow_heart:|auto_pad is not supported. pads must have same value for begin and end.|
-|MaxRoiPool|:black_heart:||
+|MaxRoiPool|:broken_heart:|Operator does not exist in NNabla|
 |Mean|:broken_heart:|Operator does not exist in NNabla|
 |Min|:yellow_heart:|Only input of two tensors is currently supported|
 |Mul|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Neg|:black_heart:||
 |Not|:green_heart:||
 |Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
-|PRelu|:black_heart:||
+|PRelu|:purple_heart:|Should be able to map to PReLU|
 |Pad|:black_heart:||
 |Pow|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |RNN|:black_heart:||
