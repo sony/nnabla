@@ -16,14 +16,14 @@ that indicates if each operator can be converted to NNP.
 |And|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |ArgMax|:broken_heart:|Operator does not exist in NNabla|
 |ArgMin|:broken_heart:|Operator does not exist in NNabla|
-|AveragePool|:yellow_heart:|autopad not supported|
+|AveragePool|:yellow_heart:|autopad not supported. pads must have same value for begin and end.|
 |BatchNormalization|:yellow_heart:|is_test=false not supported (only inference)|
 |Cast|:broken_heart:|Operator does not exist in NNabla(No type information is exposed in NNP)|
 |Ceil|:broken_heart:|Operator does not exist in NNabla|
 |Clip|:purple_heart:|Should be able to be achieved with Min + Max|
 |Concat|:green_heart:||
 |Constant|:yellow_heart:|Converted to an input parameter|
-|Conv|:yellow_heart:|auto_pad not supported|
+|Conv|:yellow_heart:|auto_pad not supported. pads must have same value for begin and end.|
 |ConvTranspose|:black_heart:||
 |DepthToSpace|:broken_heart:|Operator does not exist in NNabla|
 |Div|:yellow_heart:|broadcast will be converted to a BroadcastTo|
@@ -54,7 +54,7 @@ that indicates if each operator can be converted to NNP.
 |LpPool|:black_heart:||
 |MatMul|:green_heart:||
 |Max|:yellow_heart:|Only input of two tensors is currently supported|
-|MaxPool|:yellow_heart:|auto_pad is not supported|
+|MaxPool|:yellow_heart:|auto_pad is not supported. pads must have same value for begin and end.|
 |MaxRoiPool|:black_heart:||
 |Mean|:broken_heart:|Operator does not exist in NNabla|
 |Min|:yellow_heart:|Only input of two tensors is currently supported|
