@@ -20,7 +20,7 @@ that indicates if each operator can be converted to NNP.
 |BatchNormalization|:yellow_heart:|is_test=false not supported (only inference)|
 |Cast|:broken_heart:|Operator does not exist in NNabla(No type information is exposed in NNP)|
 |Ceil|:broken_heart:|Operator does not exist in NNabla|
-|Clip|:purple_heart:|Should be able to be achieved with Min + Max|
+|Clip|:purple_heart:|Should be able to map to Min + Max|
 |Concat|:green_heart:||
 |Constant|:yellow_heart:|Converted to an input parameter|
 |Conv|:yellow_heart:|auto_pad not supported. pads must have same value for begin and end.|
@@ -59,13 +59,13 @@ that indicates if each operator can be converted to NNP.
 |Mean|:broken_heart:|Operator does not exist in NNabla|
 |Min|:yellow_heart:|Only input of two tensors is currently supported|
 |Mul|:yellow_heart:|broadcast will be converted to a BroadcastTo|
-|Neg|:black_heart:||
+|Neg|:purple_heart:|Should be able to map to MulScalar|
 |Not|:green_heart:||
 |Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |PRelu|:green_heart:||
-|Pad|:black_heart:||
+|Pad|:broken_heart:|Operator does not exist in NNabla|
 |Pow|:yellow_heart:|broadcast will be converted to a BroadcastTo|
-|RNN|:black_heart:||
+|RNN|:broken_heart:|Operator does not exist in NNabla|
 |RandomNormal|:purple_heart:|Should be able to map to Randn|
 |RandomNormalLike|:broken_heart:|Operator does not exist in NNabla|
 |RandomUniform|:purple_heart:|Should be able to map to Rand|
