@@ -86,19 +86,19 @@ that indicates if each operator can be converted to NNP.
 |Selu|:green_heart:||
 |Sigmoid|:green_heart:||
 |Size|:broken_heart:|Operator does not exist in NNabla|
-|Slice|:black_heart:||
+|Slice|:broken_heart:|Operator does not exist in NNabla|
 |Softmax|:yellow_heart:|Supporting 2D input only|
-|Softplus|:black_heart:||
-|Softsign|:black_heart:||
+|Softplus|:purple_heart:|Should be able to map to Exp + AddScalar + Log|
+|Softsign|:purple_heart:|Should be able to map to Abs + AddScalar + Div2|
 |SpaceToDepth|:broken_heart:|Operator does not exist in NNabla|
-|Split|:black_heart:||
+|Split|:broken_heart:|Operator does not exist in NNabla|
 |Sqrt|:broken_heart:|Operator does not exist in NNabla|
 |Squeeze|:broken_heart:|Operator does not exist in NNabla|
 |Sub|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Sum|:yellow_heart:|Supporting two inputs only|
 |Tanh|:green_heart:||
-|Tile|:black_heart:||
-|TopK|:black_heart:||
+|Tile|:broken_heart:|Operator does not exist in NNabla|
+|TopK|:broken_heart:|Operator does not exist in NNabla|
 |Transpose|:green_heart:||
 |Unsqueeze|:broken_heart:|Operator does not exist in NNabla|
 |Xor|:yellow_heart:|broadcast will be converted to a BroadcastTo|
