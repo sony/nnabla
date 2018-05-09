@@ -62,6 +62,7 @@ nnabla_function_type_to_onnx_optype = {
     "LogicalXor": "Xor",
     "Maximum2": "Max",
     "Minimum2": "Min",
+    "RDivScalar": "Reciprocal",
     # optype that gets converted
     "Affine": "Gemm",
     # optype that should get merged
@@ -330,6 +331,11 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         else:
             # Set the given parameter name as BOOL
             input_types[n.input[1]] = intype
+        nl.append(n)
+    elif func.type == "RDivScalar":
+        rp = func.r_div_scalar_param
+        if rp.val != 1.0:
+            raise ValueError("RDivScalar can be converted to Reciprocal only if val is 1")
         nl.append(n)
     else:
         # Simply append node to list

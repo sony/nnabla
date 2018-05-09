@@ -79,6 +79,7 @@ onnx_optype_to_nnabla_function_type = {
     "Xor": "LogicalXor",
     "Max": "Maximum2",
     "Min": "Minimum2",
+    "Reciprocal": "RDivScalar",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -699,6 +700,10 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         # buf currently it defaults to 0
         # so we explicitly set 1 here.
         pp.base_axis = 1
+        func_list.append(func)
+    elif node.op_type == "Reciprocal":
+        rp = func.r_div_scalar_param
+        rp.val = 1.0
         func_list.append(func)
     else:
         # Simply add the function for all other conversions

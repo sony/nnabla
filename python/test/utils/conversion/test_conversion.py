@@ -857,6 +857,20 @@ def test_nnp_onnx_conversion_prelu_c3(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+def test_onnx_nnp_conversion_reciprocal(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reciprocal.onnx",
+                                    "reciprocal.nnp",
+                                    "Reciprocal4_Output_0", "exec_0")
+
+
+def test_nnp_onnx_conversion_reciprocal(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reciprocal.nnp",
+                                    "reciprocal.onnx",
+                                    "Reciprocal4_Output_0", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
