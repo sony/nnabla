@@ -24,7 +24,7 @@ that indicates if each operator can be converted to NNP.
 |Concat|:green_heart:||
 |Constant|:yellow_heart:|Converted to an input parameter|
 |Conv|:yellow_heart:|auto_pad not supported. pads must have same value for begin and end.|
-|ConvTranspose|:broken_heart:|Should map to Deconvolution?|
+|ConvTranspose|:purple_heart:|Should map to Deconvolution?|
 |DepthToSpace|:broken_heart:|Operator does not exist in NNabla|
 |Div|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Dropout|:yellow_heart:|mask output will be removed since NNabla does not produce mask output.|
