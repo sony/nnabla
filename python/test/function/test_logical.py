@@ -33,7 +33,7 @@ def test_logical_scalar_forward_backward(val, seed, fname, ctx, func_name):
     func = getattr(F, fname)
     ref_func = getattr(np, fname.replace('_scalar', ''))
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4))]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32)]
     function_tester(rng, func, ref_func, inputs, [val],
                     ctx=ctx, backward=[False], func_name=func_name)
 
@@ -42,6 +42,7 @@ opstrs = {
     'greater': '>',
     'greater_equal': '>=',
     'less': '<',
+    'less_equal': '<=',
     'equal': '==',
     'not_equal': '!='}
 
@@ -51,6 +52,7 @@ opstrs = {
                          list_ctx_and_func_name(['greater_scalar',
                                                  'greater_equal_scalar',
                                                  'less_scalar',
+                                                 'less_equal_scalar',
                                                  'equal_scalar',
                                                  'not_equal_scalar']))
 @pytest.mark.parametrize("val", [-0.5, 0., 1.])
@@ -59,7 +61,7 @@ def test_logical_scalar_compare_forward_backward(val, seed, fname, ctx, func_nam
     func = getattr(F, fname)
     ref_func = eval('lambda x, y: x {} y'.format(opstr))
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4)) for _ in range(1)]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32) for _ in range(1)]
     inputs[0][..., :2] = val
     function_tester(rng, func, ref_func, inputs, [val],
                     ctx=ctx, backward=[False, False], func_name=func_name)
@@ -86,6 +88,7 @@ def test_logical_binary_forward_backward(seed, fname, ctx, func_name):
                          list_ctx_and_func_name(['greater',
                                                  'greater_equal',
                                                  'less',
+                                                 'less_equal',
                                                  'equal',
                                                  'not_equal']))
 def test_logical_binary_compare_forward_backward(seed, fname, ctx, func_name):
@@ -93,7 +96,7 @@ def test_logical_binary_compare_forward_backward(seed, fname, ctx, func_name):
     opstr = opstrs[fname]
     ref_func = eval('lambda x, y: x {} y'.format(opstr))
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4)) for _ in range(2)]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32) for _ in range(2)]
     inputs[0][..., :2] = inputs[1][..., :2]
     function_tester(rng, func, ref_func, inputs,
                     ctx=ctx, backward=[False, False], func_name=func_name)
@@ -108,6 +111,6 @@ def test_logical_not_forward_backward(seed, fname, ctx, func_name):
     func = getattr(F, fname)
     ref_func = getattr(np, fname)
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4))]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32)]
     function_tester(rng, func, ref_func, inputs,
                     ctx=ctx, backward=[False], func_name=func_name)
