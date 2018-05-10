@@ -966,6 +966,14 @@ def test_nnp_onnx_conversion_neg(tmpdir, nnp_fixture):
                                     "Negate4_Output_0", "exec_0")
 
 
+# LogSoftmax conversion not finished
+#def test_onnx_nnp_conversion_log_softmax(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "log_softmax.onnx",
+#                                    "log_softmax.nnp",
+#                                    "Block17_Output_0", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127

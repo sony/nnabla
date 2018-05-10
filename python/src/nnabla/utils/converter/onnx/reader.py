@@ -81,6 +81,7 @@ onnx_optype_to_nnabla_function_type = {
     "Min": "Minimum2",
     "Reciprocal": "RDivScalar",
     "Neg": "MulScalar",
+    # "LogSoftmax": "Sub2",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -213,6 +214,7 @@ def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
     tp.axes.extend([1, 0])  # switch H and W
     return trans
 
+
 def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_counter):
     """Generate a BroadcastTo operator to brodcast specified buffer"""
     bt = nnabla_pb2.Function()
@@ -223,6 +225,27 @@ def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_count
     btp = bt.broadcast_to_param
     btp.axis = axis
     return bt
+
+
+def generate_softmax(node_name, x, out_name, axis, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "Softmax"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    scp = func.softmax_param
+    scp.axis = axis
+    return func
+
+
+def generate_log(node_name, x, out_name,  base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "Log"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    return func
+
 
 def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
     """Converts a broadcasting operator to a composite with BroadcastTo"""
@@ -710,6 +733,35 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         mp = func.mul_scalar_param
         mp.val = -1.0  # Neg is achieved by multiplying -1
         func_list.append(func)
+    # LogSoftmax conversion does not work right now
+    # because Sub2 does not accept a variable with unknown size
+    #elif node.op_type == "LogSoftmax":
+    #    logger.warning(SOFTMAX_WARNING)
+    #    # Apply a Softmax+Log to the input,
+    #    # and subtract the result with the original input
+    #    axis = DEFAULT_SOFTMAX_AXIS
+    #    for attr in node.attribute:
+    #        if attr.name == "axis":
+    #            if attr.type != AttributeProto.INT:
+    #                raise ValueError("LogSoftmax axis must be a single integer")
+    #            axis = attr.i
+    #        else:
+    #            raise ValueError("Unsupported attribute {} was specified at {}"
+    #                             .format(attr.name, node.op_type))
+    #    lsin = node.input[0]
+    #    lsout = lsin+"_softmax"
+    #    sm = generate_softmax(node.name, lsin, lsout,
+    #                          axis, base_name, func_counter)
+    #    func_list.append(sm)
+    #    logout = lsout+"_log"
+    #    log = generate_log(node.name, lsout, logout,
+    #                       base_name, func_counter)
+    #    func_list.append(log)
+    #    # Rewire Sub2's input to the original input and
+    #    # Softmax+Log
+    #    del func.input[:]
+    #    func.input.extend([node.input[0], logout])
+    #    func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)
