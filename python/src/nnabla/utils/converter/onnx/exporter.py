@@ -67,6 +67,7 @@ nnabla_function_type_to_onnx_optype = {
     "RDivScalar": "Reciprocal",
     # optype that gets converted
     "Affine": "Gemm",
+    "MulScalar": "Neg",
     # optype that should get merged
     # with other operators
     "BroadcastTo": ""
@@ -348,6 +349,11 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         rp = func.r_div_scalar_param
         if rp.val != 1.0:
             raise ValueError("RDivScalar can be converted to Reciprocal only if val is 1")
+        nl.append(n)
+    elif func.type == "MulScalar":
+        mp = func.mul_scalar_param
+        if mp.val != -1.0:
+            raise ValueError("MulScalar can be converted to Neg only if val is -1")
         nl.append(n)
     else:
         # Simply append node to list

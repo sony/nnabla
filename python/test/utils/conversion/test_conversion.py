@@ -899,6 +899,20 @@ def test_nnp_onnx_conversion_reduce_max(tmpdir, nnp_fixture):
                                     "ReduceElements7_Output_0", "exec_0")
 
 
+def test_onnx_nnp_conversion_neg(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "neg.onnx",
+                                    "neg.nnp",
+                                    "Negate4_Output_0", "exec_0")
+
+
+def test_nnp_onnx_conversion_neg(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "neg.nnp",
+                                    "neg.onnx",
+                                    "Negate4_Output_0", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127

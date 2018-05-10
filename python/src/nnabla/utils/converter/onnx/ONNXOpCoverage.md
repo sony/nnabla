@@ -59,7 +59,7 @@ that indicates if each operator can be converted to NNP.
 |Mean|:broken_heart:|Operator does not exist in NNabla|
 |Min|:yellow_heart:|Only input of two tensors is currently supported|
 |Mul|:yellow_heart:|broadcast will be converted to a BroadcastTo|
-|Neg|:purple_heart:|Should be able to map to MulScalar|
+|Neg|:yellow_heart:|Converted to MulScalar|
 |Not|:green_heart:||
 |Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |PRelu|:green_heart:||
