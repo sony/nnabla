@@ -53,6 +53,8 @@ nnabla_function_type_to_onnx_optype = {
     "SELU": "Selu",
     "Sum": "ReduceSum",
     "Mean": "ReduceMean",
+    "Min": "ReduceMin",
+    "Max": "ReduceMax",
     "Mul2": "Mul",
     "Div2": "Div",
     "Pow2": "Pow",
@@ -88,6 +90,12 @@ def merge_broadcast(node, func, target_name, broadcast_target):
     del broadcast_target[target_name]
     # Return the merged input's name so we can use it if we need to
     return before_broadcast
+
+
+def set_reduction_attrs(node, param):
+    a = onnx.helper.make_attribute("axes", param.axes)
+    k = onnx.helper.make_attribute("keepdims", param.keep_dims)
+    node.attribute.extend([a, k])
 
 def convert_to_nodes(func, variables, input_types, output_types, broadcast_target):
     """Convert a function to a node or a group of nodes"""
@@ -259,15 +267,19 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         nl.append(n)
     elif func.type == "Sum":
         sp = func.sum_param
-        a = onnx.helper.make_attribute("axes", sp.axes)
-        k = onnx.helper.make_attribute("keepdims", sp.keep_dims)
-        n.attribute.extend([a, k])
+        set_reduction_attrs(n, sp)
         nl.append(n)
     elif func.type == "Mean":
         mp = func.mean_param
-        a = onnx.helper.make_attribute("axes", mp.axes)
-        k = onnx.helper.make_attribute("keepdims", mp.keep_dims)
-        n.attribute.extend([a, k])
+        set_reduction_attrs(n, mp)
+        nl.append(n)
+    elif func.type == "Max":
+        mp = func.max_param
+        set_reduction_attrs(n, mp)
+        nl.append(n)
+    elif func.type == "Min":
+        mp = func.min_param
+        set_reduction_attrs(n, mp)
         nl.append(n)
     elif func.type == "BroadcastTo":
         # BroadcastTo conversion only works when the

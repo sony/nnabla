@@ -75,9 +75,9 @@ that indicates if each operator can be converted to NNP.
 |ReduceL2|:broken_heart:|Operator does not exist in NNabla|
 |ReduceLogSum|:broken_heart:|Operator does not exist in NNabla|
 |ReduceLogSumExp|:broken_heart:|Operator does not exist in NNabla|
-|ReduceMax|:purple_heart:|Should be able to map to Max. No reference implementation in CNTK or Caffe2|
+|ReduceMax|:green_heart:||
 |ReduceMean|:green_heart:||
-|ReduceMin|:purple_heart:|Should be able to map to Min. No reference implementation in CNTK or Caffe2|
+|ReduceMin|:green_heart:||
 |ReduceProd|:purple_heart:|Should be able to map to Prod. No reference implementation in CNTK or Caffe2|
 |ReduceSum|:green_heart:||
 |ReduceSumSquare|:broken_heart:|Operator does not exit in NNabla|
