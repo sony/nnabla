@@ -71,7 +71,7 @@ def train():
 
     # Create Communicator and Context
     extension_module = "cudnn"
-    ctx = get_extension_context(extension_module)
+    ctx = get_extension_context(extension_module, type_config=args.type_config)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
