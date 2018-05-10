@@ -389,11 +389,26 @@ def get_data_home():
     return d
 
 
-def download(url):
+def download(url, output_file=None, open_file=True, allow_overwrite=False):
+    '''Download a file from URL.
+
+    Args:
+        url (str): URL.
+        output_file (str, optional): If given, the downloaded file is writen to the given path.
+        open_file (bool): If True, it returns an opened file stream of the downloaded file.
+        allow_overwrite (bool): If True, it overwrites an existing file.
+
+    Returns:
+        Returns file object if open_file is True, otherwise None.
+
+    '''
     filename = url.split('/')[-1]
-    cache = os.path.join(get_data_home(), filename)
-    if os.path.exists(cache):
-        logger.info("> {} in cache.".format(cache))
+    if output_file is None:
+        cache = os.path.join(get_data_home(), filename)
+    else:
+        cache = output_file
+    if os.path.exists(cache) and not allow_overwrite:
+        logger.info("> {} already exists.".format(cache))
         logger.info("> If you have any issue when using this file, ")
         logger.info("> manually remove the file and try download again.")
     else:
@@ -417,4 +432,6 @@ def download(url):
                 content += data
         with open(cache, 'wb') as f:
             f.write(content)
+    if not open_file:
+        return
     return open(cache, 'rb')

@@ -27,7 +27,7 @@ curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o protobuf-v3.
 tar xvf protobuf-v3.1.0.tar.gz
 cd protobuf-3.1.0
 mkdir build && cd build
-cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF ..
+cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF ../cmake
 make
 sudo make install  # See a note below if you want your system clean.
 ```
