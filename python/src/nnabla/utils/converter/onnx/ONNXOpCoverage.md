@@ -70,7 +70,7 @@ that indicates if each operator can be converted to NNP.
 |RandomNormalLike|:broken_heart:|Operator does not exist in NNabla|
 |RandomUniform|:purple_heart:|Should be able to map to Rand|
 |RandomUniformLike|:broken_heart:|Operator does not exist in NNabla|
-|Reciprocal|:green_heart:||
+|Reciprocal|:yellow_heart:|Converted to RDivScalar|
 |ReduceL1|:broken_heart:|Operator does not exist in NNabla|
 |ReduceL2|:broken_heart:|Operator does not exist in NNabla|
 |ReduceLogSum|:broken_heart:|Operator does not exist in NNabla|
