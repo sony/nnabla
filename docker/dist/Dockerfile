@@ -112,6 +112,6 @@ RUN umask 0 \
     ; pip install -r /tmp/deps/setup_requirements.txt \
     ; pip install -r /tmp/deps/requirements.txt \
     ; pip install -r /tmp/deps/test_requirements.txt \
-    ; pip install pytest-pep8 pytest-cov \
+    ; pip install pytest-pep8 pytest-cov autopep8 \
     ; source deactivate \
     ; done

@@ -18,6 +18,10 @@ import shutil
 import tempfile
 import zipfile
 
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
+
 from . import expander
 from nnabla.utils import nnabla_pb2
 
