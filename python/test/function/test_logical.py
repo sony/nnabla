@@ -76,7 +76,7 @@ def test_logical_binary_forward_backward(seed, fname, ctx, func_name):
     func = getattr(F, fname)
     ref_func = getattr(np, fname)
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4)) for _ in range(2)]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32) for _ in range(2)]
     function_tester(rng, func, ref_func, inputs,
                     ctx=ctx, backward=[False, False], func_name=func_name)
 
