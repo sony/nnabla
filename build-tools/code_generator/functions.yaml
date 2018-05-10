@@ -757,6 +757,46 @@ Normalization:
     outputs:
       y:
         doc: N-D array.
+  ClipGradByNorm:
+    snake_name: clip_grad_by_norm
+    doc: |2
+
+      In the forward pass, the function behaves like the identity.
+
+      In the backward pass,
+
+      .. math::
+
+          g_x = N \times \frac{g_y}{\|g_y\|_2}.
+
+      where :math:`g_x` is the gradient w.r.t the input, :math:`g_y` is the gradient w.r.t. the output,
+      and :math:`N` is `clip_norm` where the norm of :math:`g_y` becomes. this is the case that `axes` is not set.
+      When `axes` is set, the norm is computed over `axes`.
+
+      A typical case for use is to prevent the gradient explosion through a whole computational graph.
+      For example, if you want to normalize gradient values over feature axis,
+
+      .. code-block:: python
+
+        x = nn.Variable([16, 3, 32, 32])
+        c = F.clip_grad_by_norm(x, axes=(1, ))
+        h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
+
+    inputs:
+      x:
+        doc: N-D array of input.
+    arguments:
+      clip_norm:
+        doc: Clip to the norm of input to `clip_norm` in the backward pass.
+        type: float
+        default: 1.0
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced to scalar. This is used in the forward pass.
+        type: repeated int64
+        default: range(x.ndim)
+    outputs:
+      y:
+        doc: N-D array.
 Reduction:
   Sum:
     snake_name: sum

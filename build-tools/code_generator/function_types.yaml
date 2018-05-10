@@ -67,6 +67,9 @@ MeanSubtraction:
 ClipGradByValue:
   float: [float]
   half: [Half]
+ClipGradByNorm:
+  float: [float]
+  half: [Half]
 Sum:
   float: [float]
   half: [Half]
