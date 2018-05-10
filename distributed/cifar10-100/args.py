@@ -31,6 +31,9 @@ def get_args(monitor_path='tmp.monitor', max_iter=234300, model_save_path='tmp.m
     parser.add_argument("--val-iter", "-j", type=int, default=100)
     parser.add_argument("--weight-decay", "-w",
                         type=float, default=weight_decay)
+    parser.add_argument("--sync-weight-every-itr",
+                        type=int, default=100,
+                        help="Sync weights every specified iteration. NCCL uses the ring all reduce, so gradients in each device are not exactly same. When it is accumulated in the weights, the weight values in each device diverge.")
     parser.add_argument("--device-id", "-d", type=str, default='0',
                         help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
     parser.add_argument("--type-config", "-t", type=str, default='float',
