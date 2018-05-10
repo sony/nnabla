@@ -50,7 +50,8 @@ def train():
       * Execute forwardprop
       * Set parameter gradients zero
       * Execute backprop.
-      * Solver updates parameters by using gradients computed by backprop.
+      * AllReduce for gradients
+      * Solver updates parameters by using gradients computed by backprop and all reduce.
       * Compute training error
     """
     # Parse args
@@ -166,8 +167,8 @@ def train():
         loss_train.backward(clear_buffer=True)
 
         # AllReduce
-        params = [x.grad for x in nn.get_parameters().values()]
-        comm.all_reduce(params, division=False, inplace=False)
+        grads = [x.grad for x in nn.get_parameters().values()]
+        comm.all_reduce(grads, division=False, inplace=False)
 
         # Solvers update
         solver.update()
