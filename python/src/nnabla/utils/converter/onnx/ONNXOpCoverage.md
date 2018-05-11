@@ -49,7 +49,7 @@ that indicates if each operator can be converted to NNP.
 |LeakyRelu|:green_heart:||
 |Less|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Log|:green_heart:||
-|LogSoftmax|:yellow_heart:|Converted to Exp+Sum+Log+Sub2. Only works on input shape like N&ast;C&ast;1&ast;1|
+|LogSoftmax|:yellow_heart:|Converted to Exp+Sum+Log+Sub2. Only works on input shape like N*C*1*1|
 |LpNormalization|:broken_heart:|Operator does not exist in NNabla|
 |LpPool|:broken_heart:|Operator does not exist in NNabla|
 |MatMul|:green_heart:||
@@ -87,7 +87,7 @@ that indicates if each operator can be converted to NNP.
 |Sigmoid|:green_heart:||
 |Size|:broken_heart:|Operator does not exist in NNabla|
 |Slice|:broken_heart:|Operator does not exist in NNabla|
-|Softmax|:yellow_heart:|Only works on input shape like N&ast;C&ast;1&ast;1||
+|Softmax|:yellow_heart:|Only works on input shape like N*C*1*1||
 |Softplus|:purple_heart:|Should be able to map to Exp + AddScalar + Log|
 |Softsign|:purple_heart:|Should be able to map to Abs + AddScalar + Div2|
 |SpaceToDepth|:broken_heart:|Operator does not exist in NNabla|
