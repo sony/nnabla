@@ -81,7 +81,7 @@ onnx_optype_to_nnabla_function_type = {
     "Min": "Minimum2",
     "Reciprocal": "RDivScalar",
     "Neg": "MulScalar",
-    # "LogSoftmax": "Sub2",
+    "LogSoftmax": "Sub2",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -227,25 +227,27 @@ def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_count
     return bt
 
 
-def generate_softmax(node_name, x, out_name, axis, base_name, func_counter):
+def generate_unary(func_name, node_name, x,
+                   out_name,  base_name, func_counter):
     func = nnabla_pb2.Function()
-    func.type = "Softmax"
-    set_function_name(func, node_name, base_name, func_counter)
-    func.input.extend([x])
-    func.output.extend([out_name])
-    scp = func.softmax_param
-    scp.axis = axis
-    return func
-
-
-def generate_log(node_name, x, out_name,  base_name, func_counter):
-    func = nnabla_pb2.Function()
-    func.type = "Log"
+    func.type = func_name
     set_function_name(func, node_name, base_name, func_counter)
     func.input.extend([x])
     func.output.extend([out_name])
     return func
 
+
+def generate_sum(node_name, x, out_name,
+                 axis, keepdims, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "Sum"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    sp = func.sum_param
+    sp.axes.extend([axis])
+    sp.keep_dims = keepdims
+    return func
 
 def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
     """Converts a broadcasting operator to a composite with BroadcastTo"""
@@ -733,35 +735,39 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         mp = func.mul_scalar_param
         mp.val = -1.0  # Neg is achieved by multiplying -1
         func_list.append(func)
-    # LogSoftmax conversion does not work right now
-    # because Sub2 does not accept a variable with unknown size
-    #elif node.op_type == "LogSoftmax":
-    #    logger.warning(SOFTMAX_WARNING)
-    #    # Apply a Softmax+Log to the input,
-    #    # and subtract the result with the original input
-    #    axis = DEFAULT_SOFTMAX_AXIS
-    #    for attr in node.attribute:
-    #        if attr.name == "axis":
-    #            if attr.type != AttributeProto.INT:
-    #                raise ValueError("LogSoftmax axis must be a single integer")
-    #            axis = attr.i
-    #        else:
-    #            raise ValueError("Unsupported attribute {} was specified at {}"
-    #                             .format(attr.name, node.op_type))
-    #    lsin = node.input[0]
-    #    lsout = lsin+"_softmax"
-    #    sm = generate_softmax(node.name, lsin, lsout,
-    #                          axis, base_name, func_counter)
-    #    func_list.append(sm)
-    #    logout = lsout+"_log"
-    #    log = generate_log(node.name, lsout, logout,
-    #                       base_name, func_counter)
-    #    func_list.append(log)
-    #    # Rewire Sub2's input to the original input and
-    #    # Softmax+Log
-    #    del func.input[:]
-    #    func.input.extend([node.input[0], logout])
-    #    func_list.append(func)
+    elif node.op_type == "LogSoftmax":
+        logger.warning(SOFTMAX_WARNING)
+        axis = DEFAULT_SOFTMAX_AXIS
+        for attr in node.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("LogSoftmax axis must be a single integer")
+                axis = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
+        # Apply Exp+Sum+Log to the input,
+        # and subtract the result with the original input
+        lsin = node.input[0]
+        expout = lsin+"_exp"
+        expf = generate_unary("Exp", node.name+"_exp", lsin, expout,
+                              base_name, func_counter)
+        func_list.append(expf)
+        sumout = expout+"_sum"
+        # We keep dimension so the reduced sum can be subtracted
+        # with the original input
+        sumf = generate_sum(node.name+"_sum", expout, sumout,
+                            axis, True, base_name, func_counter)
+        func_list.append(sumf)
+        logout = sumout+"_log"
+        log = generate_unary("Log", node.name+"_log", sumout, logout,
+                             base_name, func_counter)
+        func_list.append(log)
+        # Rewire Sub2's input to the original input and
+        # Exp+Sum+Log
+        del func.input[:]
+        func.input.extend([node.input[0], logout])
+        func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)

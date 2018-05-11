@@ -49,7 +49,7 @@ that indicates if each operator can be converted to NNP.
 |LeakyRelu|:green_heart:||
 |Less|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |Log|:green_heart:||
-|LogSoftmax|:purple_heart:|Should be able to map to Softmax+Log+Sub2|
+|LogSoftmax|:yellow_heart:|Converted to Exp+Sum+Log+Sub2|
 |LpNormalization|:broken_heart:|Operator does not exist in NNabla|
 |LpPool|:broken_heart:|Operator does not exist in NNabla|
 |MatMul|:green_heart:||
