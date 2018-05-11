@@ -26,7 +26,12 @@ from six.moves.urllib.parse import urljoin
 from tqdm import tqdm
 import contextlib
 import csv
+
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
+
 import numpy
 import os
 import six.moves.urllib.request as request

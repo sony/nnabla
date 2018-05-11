@@ -33,7 +33,8 @@ def export_from_nnp(args, nnp, output):
         NnpExporter(nnp, args.batch_size, parameter_type).export(output)
 
     elif output_ext == '.nnb':
-        NnbExporter(nnp, args.batch_size).export(output)
+        NnbExporter(nnp, args.batch_size).export(
+            output, args.settings_template, args.settings, args.default_variable_type)
 
     elif os.path.isdir(output) and args.export_format == 'CSRC':
         CsrcExporter(nnp, args.batch_size).export(output)
