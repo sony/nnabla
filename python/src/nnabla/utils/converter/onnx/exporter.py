@@ -68,6 +68,8 @@ nnabla_function_type_to_onnx_optype = {
     # optype that gets converted
     "Affine": "Gemm",
     "MulScalar": "Neg",
+    "MinimumScalar": "Clip",
+    "MaximumScalar": "Clip",
     # optype that should get merged
     # with other operators
     "BroadcastTo": ""
@@ -354,6 +356,16 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         mp = func.mul_scalar_param
         if mp.val != -1.0:
             raise ValueError("MulScalar can be converted to Neg only if val is -1")
+        nl.append(n)
+    elif func.type == "MinimumScalar":
+        msp = func.minimum_scalar_param
+        m = onnx.helper.make_attribute("max", msp.val)
+        n.attribute.extend([m])
+        nl.append(n)
+    elif func.type == "MaximumScalar":
+        msp = func.maximum_scalar_param
+        m = onnx.helper.make_attribute("min", msp.val)
+        n.attribute.extend([m])
         nl.append(n)
     else:
         # Simply append node to list

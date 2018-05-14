@@ -82,6 +82,10 @@ onnx_optype_to_nnabla_function_type = {
     "Reciprocal": "RDivScalar",
     "Neg": "MulScalar",
     "LogSoftmax": "Sub2",
+    # Clip gets converted to Identity, MaxScalar or MinScalar
+    # or both, depending on the attributes.
+    # We set a temporary name here
+    "Clip": "Clip",
     # Constant does not get converted to a function
     # but we list it here so we can accept it
     "Constant": ""
@@ -247,6 +251,31 @@ def generate_sum(node_name, x, out_name,
     sp.axes.extend([axis])
     sp.keep_dims = keepdims
     return func
+
+
+def generate_minimum_scalar(node_name, x, out_name,
+                            val, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "MinimumScalar"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    msp = func.minimum_scalar_param
+    msp.val = val
+    return func
+
+
+def generate_maximum_scalar(node_name, x, out_name,
+                            val, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "MaximumScalar"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    msp = func.maximum_scalar_param
+    msp.val = val
+    return func
+
 
 def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
     """Converts a broadcasting operator to a composite with BroadcastTo"""
@@ -767,6 +796,50 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         del func.input[:]
         func.input.extend([node.input[0], logout])
         func_list.append(func)
+    elif node.op_type == "Clip":
+        maxval = None
+        minval = None
+        for attr in node.attribute:
+            if attr.name == "max":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("max must be a single float")
+                maxval = attr.f
+            elif attr.name == "min":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("min must be a single float")
+                minval = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
+        if maxval is None and minval is None:
+            # No clipping. Convert to an identity
+            func.type = "Identity"
+            func_list.append(func)
+        elif maxval is None and isinstance(minval, float):
+            # Only min value is specified, so we convert to MaxScalar
+            func.type = "MaximumScalar"
+            msp = func.maximum_scalar_param
+            msp.val = minval
+            func_list.append(func)
+        elif isinstance(maxval, float) and minval is None:
+            # Only max value is specified, so we use MinScalar
+            func.type = "MinimumScalar"
+            msp = func.minimum_scalar_param
+            msp.val = maxval
+            func_list.append(func)
+        else:  # both min and max is specified
+            # Add MinimumScalar and rewire with MaximumScalar
+            minin = node.input[0]
+            minout = minin+"_min"
+            minf = generate_minimum_scalar(node.name, minin, minout,
+                                           maxval, base_name, func_counter)
+            func_list.append(minf)
+            func.type = "MaximumScalar"
+            del func.input[:]
+            func.input.extend([minout])
+            msp = func.maximum_scalar_param
+            msp.val = minval
+            func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)

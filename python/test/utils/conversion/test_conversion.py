@@ -979,6 +979,63 @@ def test_nnp_onnx_conversion_log_softmax(tmpdir, nnp_fixture):
                                     "log_softmax.onnx",
                                     "Block17_Output_0", "exec_0")
 
+
+def test_onnx_nnp_conversion_clip_maxNone_minNone(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_maxNone_minNone.onnx",
+                                    "clip_maxNone_minNone.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_clip_maxNone_minNone(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_maxNone_minNone.nnp",
+                                    "clip_maxNone_minNone.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_clip_max1_0_minNone(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_max1.0_minNone.onnx",
+                                    "clip_max1.0_minNone.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_clip_max1_0_minNone(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_max1.0_minNone.nnp",
+                                    "clip_max1.0_minNone.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_clip_maxNone_min_1_0(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_maxNone_min-1.0.onnx",
+                                    "clip_maxNone_min-1.0.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_clip_maxNone_min_1_0(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_maxNone_min-1.0.nnp",
+                                    "clip_maxNone_min-1.0.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_max1.0_min-1.0.onnx",
+                                    "clip_max1.0_min-1.0.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "clip_max1.0_min-1.0.nnp",
+                                    "clip_max1.0_min-1.0.onnx",
+                                    "out_data_1", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
