@@ -162,7 +162,7 @@ def update_function_counter(func_type, func_counter, count):
     func_counter[func_type] = count+1
 
 
-def generate_function_name(func_type, base_name, func_counter):
+def generate_function_name(func_type, base_name, node_name, func_counter):
     # We are going to generate a name by counting
     # how many times a function was used.
     # (or we might use some kind of random number and hash it)
@@ -171,21 +171,20 @@ def generate_function_name(func_type, base_name, func_counter):
         # This function has been used already.
         # Get the current count
         count = func_counter[func_type]
-    return "{}/{}_{}".format(base_name, func_type, count), count
-
-def set_function_name(func, nodeName, base_name, func_counter):
-    """Set a sufficient name for the function"""
-    # NNabla requires each function to have a unique name.
-    # If the node's name already has something set,
-    # we are going to use it.
-    # If no name is set (which is allowed in ONNX) we
-    # are going to generate a name
-    if nodeName:
-        func.name = nodeName
+    if node_name:
+        # Include the node's name if it was specified.
+        return "{}/{}/{}_{}".format(base_name, node_name, func_type, count), count
     else:
-        # Node name was not specified.
-        func.name, count = generate_function_name(func.type, base_name, func_counter)
-        update_function_counter(func.type, func_counter, count)
+        return "{}/{}_{}".format(base_name, func_type, count), count
+
+
+def set_function_name(func, node_name, base_name, func_counter):
+    """Set a sufficient name for the function"""
+    # NNabla requires each function to have a unique name
+    # so we generate one here.
+    func.name, count = generate_function_name(func.type, base_name, node_name,
+                                              func_counter)
+    update_function_counter(func.type, func_counter, count)
 
 
 def generate_default_function(node, base_name, func_counter):
@@ -750,17 +749,17 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         # and subtract the result with the original input
         lsin = node.input[0]
         expout = lsin+"_exp"
-        expf = generate_unary("Exp", node.name+"_exp", lsin, expout,
+        expf = generate_unary("Exp", node.name, lsin, expout,
                               base_name, func_counter)
         func_list.append(expf)
         sumout = expout+"_sum"
         # We keep dimension so the reduced sum can be subtracted
         # with the original input
-        sumf = generate_sum(node.name+"_sum", expout, sumout,
+        sumf = generate_sum(node.name, expout, sumout,
                             axis, True, base_name, func_counter)
         func_list.append(sumf)
         logout = sumout+"_log"
-        log = generate_unary("Log", node.name+"_log", sumout, logout,
+        log = generate_unary("Log", node.name, sumout, logout,
                              base_name, func_counter)
         func_list.append(log)
         # Rewire Sub2's input to the original input and
