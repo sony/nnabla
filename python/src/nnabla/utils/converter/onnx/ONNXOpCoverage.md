@@ -20,7 +20,7 @@ that indicates if each operator can be converted to NNP.
 |BatchNormalization|:yellow_heart:|is_test=false not supported (only inference)|
 |Cast|:broken_heart:|Operator does not exist in NNabla(No type information is exposed in NNP)|
 |Ceil|:broken_heart:|Operator does not exist in NNabla|
-|Clip|:purple_heart:|Should be able to map to Min + Max|
+|Clip|:yellow_heart:|Converted to Identty, MaximumScalar, MinimumScalar, or both depending on the attribute|
 |Concat|:green_heart:||
 |Constant|:yellow_heart:|Converted to an input parameter|
 |Conv|:yellow_heart:|auto_pad not supported. pads must have same value for begin and end.|
