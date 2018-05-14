@@ -40,6 +40,7 @@ install_requires = setup_requires + [
     'scikit-image',
     'scipy',
     'tqdm',
+    'onnx',
 ]
 
 
