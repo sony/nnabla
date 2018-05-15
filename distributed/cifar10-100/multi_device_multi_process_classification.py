@@ -50,7 +50,8 @@ def train():
       * Execute forwardprop
       * Set parameter gradients zero
       * Execute backprop.
-      * Solver updates parameters by using gradients computed by backprop.
+      * AllReduce for gradients
+      * Solver updates parameters by using gradients computed by backprop and all reduce.
       * Compute training error
     """
     # Parse args
@@ -71,7 +72,7 @@ def train():
 
     # Create Communicator and Context
     extension_module = "cudnn"
-    ctx = get_extension_context(extension_module)
+    ctx = get_extension_context(extension_module, type_config=args.type_config)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
@@ -166,11 +167,16 @@ def train():
         loss_train.backward(clear_buffer=True)
 
         # AllReduce
-        params = [x.grad for x in nn.get_parameters().values()]
-        comm.all_reduce(params, division=False, inplace=False)
+        grads = [x.grad for x in nn.get_parameters().values()]
+        comm.all_reduce(grads, division=False, inplace=False)
 
         # Solvers update
         solver.update()
+
+        # Synchronize by averaging the weights over devices using allreduce
+        if (i+1) % args.sync_weight_every_itr == 0:
+            weights = [x.data for x in nn.get_parameters().values()]
+            comm.all_reduce(weights, division=True, inplace=True)
 
         # Linear Warmup
         if i <= warmup_iter:
