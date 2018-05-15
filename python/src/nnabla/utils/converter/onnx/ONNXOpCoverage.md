@@ -88,7 +88,7 @@ that indicates if each operator can be converted to NNP.
 |Size|:broken_heart:|Operator does not exist in NNabla|
 |Slice|:broken_heart:|Operator does not exist in NNabla|
 |Softmax|:yellow_heart:|Only works on input shape like N*C*1*1||
-|Softplus|:purple_heart:|Should be able to map to Exp + AddScalar + Log|
+|Softplus|:yellow_heart:|Converted to Exp + AddScalar + Log|
 |Softsign|:purple_heart:|Should be able to map to Abs + AddScalar + Div2|
 |SpaceToDepth|:broken_heart:|Operator does not exist in NNabla|
 |Split|:broken_heart:|Operator does not exist in NNabla|

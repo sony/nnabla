@@ -70,6 +70,7 @@ nnabla_function_type_to_onnx_optype = {
     "MulScalar": "Neg",
     "MinimumScalar": "Clip",
     "MaximumScalar": "Clip",
+    "AddScalar": "Add",
     # optype that should get merged
     # with other operators
     "BroadcastTo": ""
@@ -226,13 +227,12 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         nl.append(n)
     elif func.type == "Affine":
         ap = func.affine_param
-        flatten_postfix = "_flatten"
         # Broadcast tensor C by default since it's usually a 1D vector
         b = onnx.helper.make_attribute("broadcast", 1)
         n.attribute.extend([b])
         # We need to flatten tensor A to 2D based on the base_axis
         x = func.input[0]
-        flout = x+flatten_postfix
+        flout = x+"_flatten"
         fl = onnx.helper.make_node(
                 "Flatten",
                 [x],
@@ -366,6 +366,23 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         msp = func.maximum_scalar_param
         m = onnx.helper.make_attribute("min", msp.val)
         n.attribute.extend([m])
+        nl.append(n)
+    elif func.type == "AddScalar":
+        asp = func.add_scalar_param
+        # Convert the scalar param to a Const node and add it with input
+        x = func.input[0]
+        sval = x+"_scalar"
+        t = onnx.helper.make_tensor(func.name+"_scalar",
+                                    data_type=TensorProto.FLOAT,
+                                    dims=[1], vals=[asp.val])
+        c = onnx.helper.make_node(
+                "Constant",
+                [],
+                [sval],
+                value=t)
+        del n.input[:]
+        n.input.extend([x, sval])
+        nl.append(c)
         nl.append(n)
     else:
         # Simply append node to list

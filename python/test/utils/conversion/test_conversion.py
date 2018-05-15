@@ -1036,6 +1036,20 @@ def test_nnp_onnx_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+def test_onnx_nnp_conversion_softplus(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "softplus.onnx",
+                                    "softplus.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_softplus(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "softplus.nnp",
+                                    "softplus.onnx",
+                                    "out_data_1", "exec_0")
+
+
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127

@@ -82,6 +82,7 @@ onnx_optype_to_nnabla_function_type = {
     "Reciprocal": "RDivScalar",
     "Neg": "MulScalar",
     "LogSoftmax": "Sub2",
+    "Softplus": "Log",
     # Clip gets converted to Identity, MaxScalar or MinScalar
     # or both, depending on the attributes.
     # We set a temporary name here
@@ -276,6 +277,17 @@ def generate_maximum_scalar(node_name, x, out_name,
     msp.val = val
     return func
 
+
+def generate_add_scalar(node_name, x, out_name,
+                        val, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "AddScalar"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    asp = func.add_scalar_param
+    asp.val = val
+    return func
 
 def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
     """Converts a broadcasting operator to a composite with BroadcastTo"""
@@ -840,6 +852,21 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             msp = func.maximum_scalar_param
             msp.val = minval
             func_list.append(func)
+    elif node.op_type == "Softplus":
+        # Convert to Exp+AddScalar+Log
+        spin = node.input[0]
+        expout = spin+"_exp"
+        expf = generate_unary("Exp", node.name, spin,
+                              expout, base_name, func_counter)
+        func_list.append(expf)
+        asout = expout+"_adds"
+        asf = generate_add_scalar(node.name, expout, asout, 1.0,
+                                  base_name, func_counter)
+        func_list.append(asf)
+        # rewire Log input to AddScalar output
+        del func.input[:]
+        func.input.extend([asout])
+        func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)
