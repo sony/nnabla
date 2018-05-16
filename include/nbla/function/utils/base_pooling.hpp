@@ -70,7 +70,7 @@ public:
   }
 
   virtual ~BasePooling() {}
-  virtual shared_ptr<Function> copy() const { return NULL; }
+  virtual shared_ptr<Function> copy() const { return nullptr; }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual int min_inputs() { return 1; }
