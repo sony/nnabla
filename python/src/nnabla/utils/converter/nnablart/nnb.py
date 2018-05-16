@@ -142,7 +142,7 @@ class NnbExporter:
                     fixed16_desc = v_name.split('_')
                     if (len(fixed16_desc) == 2) and int(fixed16_desc[1]) <= 15:
                         var.fp_pos = int(fixed16_desc[1])
-                    scale = 2 << var.fp_pos if var.fp_pos > 0 else 1
+                    scale = 1 << var.fp_pos
                     fixed16_n_data = [int(round(x * scale)) for x in param_data]
                     data = struct.pack('{}h'.format(len(fixed16_n_data)), *fixed16_n_data)
                     var.type = Nnb.NN_DATA_TYPE_INT16
@@ -150,7 +150,7 @@ class NnbExporter:
                     fixed8_desc = v_name.split('_')
                     if (len(fixed8_desc) == 2) and int(fixed8_desc[1]) <= 7:
                         var.fp_pos = int(fixed8_desc[1])
-                    scale = 2 << var.fp_pos if var.fp_pos > 0 else 1
+                    scale = 1 << var.fp_pos
                     fixed8_n_data = [int(round(x * scale)) for x in param_data]
                     data = struct.pack('{}b'.format(len(fixed8_n_data)), *fixed8_n_data)
                     var.type = Nnb.NN_DATA_TYPE_INT8
@@ -178,12 +178,10 @@ class NnbExporter:
             #         # TODO set var.type here
             # else:
             #     settings['variables'][v.name] = default_type[0]
-
             variable = struct.pack('IiIBi',
                                    var.id,
                                    var.shape.size, var.shape.list_index,
-                                   (var.type & 0xf << 4) | (
-                                       var.fp_pos & 0xf),
+                                   ((var.fp_pos & 0xf) << 4 | (var.type & 0xf)),
                                    var.data_index)
             index, pointer = self._alloc(data=variable)
             vindexes.append(index)
