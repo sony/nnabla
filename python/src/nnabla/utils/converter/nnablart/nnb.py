@@ -31,8 +31,6 @@ class Nnb:
 
 
 class NnbExporter:
-    NN_DATA_TYPE_FLOAT, NN_DATA_TYPE_INT16, NN_DATA_TYPE_INT8, NN_DATA_TYPE_SIGN = range(4)
-
     def _align(self, size):
         return int(math.ceil(size / 4) * 4)
 
