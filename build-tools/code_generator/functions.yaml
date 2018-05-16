@@ -3461,3 +3461,50 @@ Unsupported, Special Use:
     outputs:
       y:
         doc: Dummy variable.
+  NmsDetection2d:
+    snake_name: nms_detection2d
+    doc: |2
+
+      Non-Maximum Suppression (NMS) to 2D Object detector output.
+      The input is a 3-dimensional tensor with shape of ``(B, N, 5 + C)``
+      where ``B`` denotes batch size, ``N`` denotes the number of detection box
+      candidates, and ``C`` denotes the number of classes of object detection.
+      ``5 + C`` consists of the box coordinates ``x, y, w, h`` in normalized
+      coordinates (size of each x and y are 1.0), objectness
+      (learned to predict IoU value to ground truth box), and the class
+       probabilities of ``C`` classes.
+      It outputs a tensor with the same dimensions as the input, where all
+      values are copied from the input to the output, except the class
+      probabilities are multiplied by objectness, and possibly suppressed to 0
+      by NMS.
+      During NMS, all of combination of pairs of bounding boxes is compared.
+      For each pair, the bounding box with a lower detection score
+      (described below) is suppressed if the overlap ratio (the IoU)
+      is greater than the value of ``nms``.
+
+      There are two suppression modes for NMS.
+
+      1. Suppress by class probability (``nms_per_class`` is ``True``):
+      For each bounding box, the detection score is calculated by
+      ``objectness * probability[class_id]`` for each class.
+      The suppression is done for each class independently.
+
+      2. Suppress by objectness (``nms_per_class`` is ``False``):
+      The suppression is done for each bounding box using ``objectness``
+      as a detection score. All class probabilities becomes 0 for
+      every suppressed boxes.
+
+      References:
+          * `Joseph Redmon, Ali Farhadi, YOLO9000: Better, Faster, Stronger.
+            <https://arxiv.org/abs/1612.08242>`_
+
+    inputs:
+      x:
+        doc: "A 3-dimensional array."
+    arguments:
+      thresh: {doc: "Detection score threshold.", type: float, default: 0.5}
+      nms: {doc: "IoU threshold for Non-maximum suppression (NMS).", type: float, default: 0.45}
+      nms_per_class: {doc: "If true, NMS is applied for each class.", type: bool, default: True}
+    outputs:
+      y:
+        doc: "A 3-dim array with the same dimensions with the input."

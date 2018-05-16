@@ -362,3 +362,6 @@ DepthwiseDeconvolution:
 Round:
   float: [float]
   half: [Half]
+NmsDetection2d:
+  float: [float]
+#  half: [Half]

@@ -206,6 +206,12 @@ Unsupported, Special Use
 .. autofunction:: sink
 
 
+Image Object Detection
+----------------------
+
+.. autofunction:: nms_detection2d
+
+
 Validation
 ----------
 
