@@ -23,11 +23,13 @@ import nnabla.utils.converter
 
 from .utils import create_nnabart_info
 
+
 class Nnb:
     '''
     Nnb is only used as namespace
     '''
-    NN_DATA_TYPE_FLOAT, NN_DATA_TYPE_INT16, NN_DATA_TYPE_INT8, NN_DATA_TYPE_SIGN = range(4)
+    NN_DATA_TYPE_FLOAT, NN_DATA_TYPE_INT16, NN_DATA_TYPE_INT8, NN_DATA_TYPE_SIGN = range(
+        4)
 
 
 class NnbExporter:
@@ -143,8 +145,10 @@ class NnbExporter:
                     if (len(fixed16_desc) == 2) and int(fixed16_desc[1]) <= 15:
                         var.fp_pos = int(fixed16_desc[1])
                     scale = 1 << var.fp_pos
-                    fixed16_n_data = [int(round(x * scale)) for x in param_data]
-                    data = struct.pack('{}h'.format(len(fixed16_n_data)), *fixed16_n_data)
+                    fixed16_n_data = [int(round(x * scale))
+                                      for x in param_data]
+                    data = struct.pack('{}h'.format(
+                        len(fixed16_n_data)), *fixed16_n_data)
                     var.type = Nnb.NN_DATA_TYPE_INT16
                 elif v_name.startswith('FIXED8'):
                     fixed8_desc = v_name.split('_')
@@ -152,7 +156,8 @@ class NnbExporter:
                         var.fp_pos = int(fixed8_desc[1])
                     scale = 1 << var.fp_pos
                     fixed8_n_data = [int(round(x * scale)) for x in param_data]
-                    data = struct.pack('{}b'.format(len(fixed8_n_data)), *fixed8_n_data)
+                    data = struct.pack('{}b'.format(
+                        len(fixed8_n_data)), *fixed8_n_data)
                     var.type = Nnb.NN_DATA_TYPE_INT8
 
                 index, pointer = self._alloc(data=data)
@@ -168,16 +173,6 @@ class NnbExporter:
                     # so that nn_network_t::variables::size is conserved
                     var.data_index = -1
 
-            # if v.name in settings['variables']:
-            #     if settings['variables'][v.name] != default_type[0]:
-            #         if v.type == 'Parameter':
-            #             # TODO convert parameter here.
-            #             print('Convert {} to {}.'.format(
-            #                 v.name, settings['variables'][v.name]))
-            #             pass
-            #         # TODO set var.type here
-            # else:
-            #     settings['variables'][v.name] = default_type[0]
             variable = struct.pack('IiIBi',
                                    var.id,
                                    var.shape.size, var.shape.list_index,
