@@ -83,6 +83,7 @@ onnx_optype_to_nnabla_function_type = {
     "Neg": "MulScalar",
     "LogSoftmax": "Sub2",
     "Softplus": "Log",
+    "Softsign": "Div2",
     # Clip gets converted to Identity, MaxScalar or MinScalar
     # or both, depending on the attributes.
     # We set a temporary name here
@@ -866,6 +867,21 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         # rewire Log input to AddScalar output
         del func.input[:]
         func.input.extend([asout])
+        func_list.append(func)
+    elif node.op_type == "Softsign":
+        # Convert to Abs+AddScalar+Div2
+        ssin = node.input[0]
+        expout = ssin+"_abs"
+        expf = generate_unary("Abs", node.name, ssin,
+                              expout, base_name, func_counter)
+        func_list.append(expf)
+        asout = expout+"_adds"
+        asf = generate_add_scalar(node.name, expout, asout, 1.0,
+                                  base_name, func_counter)
+        func_list.append(asf)
+        # rewire Div2 input to original input and AddScalar output
+        del func.input[:]
+        func.input.extend([ssin, asout])
         func_list.append(func)
     else:
         # Simply add the function for all other conversions
