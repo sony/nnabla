@@ -1,0 +1,35 @@
+<!--
+Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<launch>
+  <!-- Args -->
+  <arg name="image_topic" default="/usb_cam/image_raw"/>
+  <arg name="run_usb_cam" default="true"/>
+  <arg name="video_device" default="/dev/video0"/>
+
+  <!-- NNabla detection node -->
+  <node name="detection" pkg="nnabla_object_detection" type="detection" output="screen">
+    <param name="image_topic" value="$(arg image_topic)"/>
+    <param name="nnp_file" value="$(find nnabla_object_detection)/data/yolov2.nnp"/>
+    <param name="class_meta_file" value="$(find nnabla_object_detection)/data/coco.names"/>
+    <param name="executor_name" value="runtime"/>
+  </node>
+
+  <!--USB camera -->
+  <node if="$(arg run_usb_cam)" name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+    <param name="video_device" value="$(arg video_device)"/>
+  </node>
+</launch>
