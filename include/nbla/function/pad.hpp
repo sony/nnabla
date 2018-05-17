@@ -24,7 +24,7 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_HEADER(Pad, const vector<int> &, const string &, float);
 
 /** Pads given N-D array with specified sizes of dimensions.
-The dimensions that get padded begins with the last dimension and moves forward.
+Padding begins at the last dimension of x and continues for the specified padding dimension.
 
 Inputs:
 - x: N-D array.

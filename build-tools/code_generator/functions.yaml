@@ -2080,7 +2080,7 @@ Array Manipulation:
     doc: |2
 
       Pads given N-D array with specified sizes of dimensions.
-      The dimensions that get padded begins with the last dimension and moves forward.
+      Padding begins at the last dimension of input x and continues for the specified padding dimension.
     inputs:
       x:
         doc: N-D array
