@@ -234,7 +234,7 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   hid_t sp = H5Dget_space(did);
   int rank = H5Sget_simple_extent_ndims(sp);
   hsize_t dims[rank];
-  herr_t err = H5Sget_simple_extent_dims(sp, dims, NULL);
+  herr_t err = H5Sget_simple_extent_dims(sp, dims, nullptr);
   hid_t tid = H5Dget_type(did);
   H5T_class_t t_class = H5Tget_class(tid);
 
