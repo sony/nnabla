@@ -21,6 +21,7 @@ import nnabla.functions as F
 
 from function_benchmark import FunctionBenchmark, Inspec
 
+
 @pytest.mark.parametrize("seed", [313])
 def pad_params():
     inspecs = []
@@ -32,12 +33,9 @@ def pad_params():
 
 
 @pytest.mark.parametrize('inspecs', pad_params())
-
 def test_pad(inspecs, nnabla_opts):
     fb = FunctionBenchmark(
-        F.pad, inspecs, [(10,10,10,10),'constant',0.0], {},
+        F.pad, inspecs, [(10, 10, 10, 10), 'constant', 0.0], {},
         nnabla_opts.ext, nnabla_opts.ext_kwargs)
     fb.benchmark()
     fb.write(writer=nnabla_opts.function_benchmark_writer)
-
-

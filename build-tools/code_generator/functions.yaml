@@ -2064,26 +2064,56 @@ Array Manipulation:
     snake_name: pad
     doc: |2
 
-      Pad arrays with specified sizes for dimensions.
+      Pads given N-D array with specified sizes of dimensions.
+      The dimensions that get padded begins with the last dimension and moves forward.
     inputs:
       x:
         doc: N-D array
     arguments:
       pad_width:
-        doc:  "A tuple of a repeation of 2 consecutive integers composed of padding sizes of after and before edges at each dimension of an input array. The padding dimensions are aligned to the last dimension of the input array. When ``pad_width=(b0, a0, b1, a1)`` and an input ``xx`` with a shape of ``(s0, s1, s2, s3)`` are given, the output ``y`` becomes ``(s0, s1, b0+s2+a0, b1+s3+a1)``."
+        doc: |
+
+             n-elem tuple, where n/2 <= input dimensions and n is even.
+             len(pad_width)/2 represents the padding dimension(e.g. 1D, 2D, 3D etc.).
+             (Currently padding upto 3D is supported)
         type: repeated int64
         default: (0,) * len(x.shape)
       mode:
-        doc: "Padding mode is one of the following. 1) ``constant`` : elements in pad region are filled with ``constant_value``, 2) ``reflect`` : TODO, 3) ``replicate`` : padded elements are filled with the values in nearest edges."
+        doc: |
+
+             Padding mode is one of the following.
+
+             1) constant : Elements in pad region are filled with constant_value.
+             2) replicate : Padded elements are filled with the values in nearest edges.
+             3) reflect : Padded with the reflection of the vector mirrored on the first and last values of the vector along each axis.
+
+             (Currently only `constant` mode is supported)
         type: string
         default: '''constant'''
       constant_value:
-        doc: Constant values filled in padded regions if mode is ``constant``.
+        doc: |
+
+             Constant values filled in padded regions if mode is `constant`.
         type: float
         default: 0
     outputs:
       y:
-        doc: Padded N-D array
+        doc: |
+
+             Padded N-D array (e.g. (B, C, H, W) shape) where dimension depends on pad_width.
+             ndim() of output N-D array will be same as ndim() of input N-D array.
+
+             -for 1D padding :
+                      N-D input array with padding of the form (padLeft, padRight).
+                      The output N-D array dimension (B, C, H, padLeft + W + padRight).
+
+             -for 2D padding :
+                      N-D input array with padding of the form (padTop, padBottom, padLeft, padRight).
+                      The output N-D array dimension (B, C, padTop + H + padBottom, padLeft + W + padRight).
+
+             -for 3D padding :
+                      N-D input array with padding of the form (pasFront, padBack, padTop, padBottom, padLeft, padRight).
+                      The output N-D array dimension (B, padFront + C + padBack, padTop + H + padBottom, padLeft + W + padRight).
   Transpose:
     snake_name: transpose
     doc: |2
