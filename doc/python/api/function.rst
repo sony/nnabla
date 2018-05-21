@@ -139,6 +139,18 @@ Math
 .. autofunction:: matrix_diag
 .. autofunction:: matrix_diag_part
 .. autofunction:: batch_matmul
+.. autofunction:: sin
+.. autofunction:: cos
+.. autofunction:: tan
+.. autofunction:: sinh
+.. autofunction:: cosh
+.. autofunction:: tanh
+.. autofunction:: asin
+.. autofunction:: acos
+.. autofunction:: atan
+.. autofunction:: asinh
+.. autofunction:: acosh
+.. autofunction:: atanh
 
 
 Array Manipulation
