@@ -18,10 +18,11 @@
 #include <fstream>
 #include <iostream>
 
+#include "nbla_train.hpp"
 #include <cmdline.h>
 
 static void print_usage_and_exit(const char *name) {
-  std::cerr << "Usage: " << name << " (infer|dump)" << std::endl;
+  std::cerr << "Usage: " << name << " (infer|dump|train)" << std::endl;
   std::cerr << "    " << name
             << " infer -e EXECUTOR [-b BATCHSIZE] [-o OUTPUT] input_files ..."
             << std::endl;
@@ -44,6 +45,8 @@ static void print_usage_and_exit(const char *name) {
   std::cerr
       << "               input_file must be nnp, nntxt, prototxt, h5, protobuf."
       << std::endl;
+  std::cerr << "    " << name << " train input_files ..." << std::endl;
+  std::cerr << "               input_file must be nnp." << std::endl;
   exit(-1);
 }
 
@@ -238,6 +241,8 @@ int main(int argc, char *argv[]) {
     infer(argc, argv);
   } else if (command == "dump") {
     dump(argc, argv);
+  } else if (command == "train") {
+    nbla_train(argc, argv);
   } else {
     print_usage_and_exit(command_name);
   }
