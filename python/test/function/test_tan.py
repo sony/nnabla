@@ -26,6 +26,7 @@ ctxs = list_context('Tan')
 def test_tan_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    inputs = [np.clip(rng.randn(2, 3, 4).astype(np.float32), -np.pi / 2, np.pi / 2) * 1e-1]
-    function_tester(rng, F.tan, np.tan, inputs, ctx=ctx, func_name=func_name, 
+    inputs = [np.clip(rng.randn(2, 3, 4).astype(
+        np.float32), -np.pi / 2, np.pi / 2) * 1e-1]
+    function_tester(rng, F.tan, np.tan, inputs, ctx=ctx, func_name=func_name,
                     atol_f=1e-3, atol_b=1e-2)

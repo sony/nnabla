@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef NBLA_FUNCTION_COS_HPP
 #define NBLA_FUNCTION_COS_HPP
 
@@ -38,6 +37,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Cos, std::cos(x), -dy *std::sin(x), true);
-
 }
 #endif

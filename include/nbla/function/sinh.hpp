@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef NBLA_FUNCTION_SINH_HPP
 #define NBLA_FUNCTION_SINH_HPP
 
@@ -37,7 +36,6 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Sinh, std::sinh(x), dy * std::cosh(x), true);
-
+NBLA_DEFINE_TRANSFORM_UNARY(Sinh, std::sinh(x), dy *std::cosh(x), true);
 }
 #endif

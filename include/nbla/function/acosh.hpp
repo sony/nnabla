@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef NBLA_FUNCTION_ACOSH_HPP
 #define NBLA_FUNCTION_ACOSH_HPP
 
@@ -37,7 +36,7 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(ACosh, std::acosh(x), dy / std::sqrt(x*x - 1), true);
-
+NBLA_DEFINE_TRANSFORM_UNARY(ACosh, std::acosh(x), dy / std::sqrt(x * x - 1),
+                            true);
 }
 #endif

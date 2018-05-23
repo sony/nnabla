@@ -27,6 +27,5 @@ def test_cosh_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
-    function_tester(rng, F.cosh, np.cosh, inputs, ctx=ctx, func_name=func_name, 
+    function_tester(rng, F.cosh, np.cosh, inputs, ctx=ctx, func_name=func_name,
                     atol_f=1e-3, atol_b=1e-2)
-
