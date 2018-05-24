@@ -1773,6 +1773,161 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+  Sin:
+    snake_name: sin
+    doc: |2+
+
+      Element-wise sine (sin) function.
+
+      .. math::
+          y_i = \sin (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Cos:
+    snake_name: cos
+    doc: |2+
+
+      Element-wise cosine (cos) function.
+
+      .. math::
+          y_i = \cos (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Tan:
+    snake_name: tan
+    doc: |2+
+
+      Element-wise tangent (tan) function.
+
+      .. math::
+          y_i = \tan (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Sinh:
+    snake_name: sinh
+    doc: |2+
+
+      Element-wise hyperbolic sine (sinh) function.
+
+      .. math::
+          y_i = \sinh (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Cosh:
+    snake_name: cosh
+    doc: |2+
+
+      Element-wise hyperbolic cosine (cosh) function.
+
+      .. math::
+          y_i = \cosh (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x        
+  ASin:
+    snake_name: asin
+    doc: |2+
+
+      Element-wise arcsine (asin) function.
+
+      .. math::
+          y_i = \arcsin (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ACos:
+    snake_name: acos
+    doc: |2+
+
+      Element-wise arccosine (acos) function.
+
+      .. math::
+          y_i = \arccos (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ATan:
+    snake_name: atan
+    doc: |2+
+
+      Element-wise arctangent (atan) function.
+
+      .. math::
+          y_i = \arctan (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ASinh:
+    snake_name: asinh
+    doc: |2+
+
+      Element-wise hyperbolic arcsine (asinh) function.
+
+      .. math::
+          y_i = \text{arcsinh} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ACosh:
+    snake_name: acosh
+    doc: |2+
+
+      Element-wise hyperbolic arccosine (acosh) function.
+
+      .. math::
+          y_i = \text{arccosh} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ATanh:
+    snake_name: atanh
+    doc: |2+
+
+      Element-wise hyperbolic arctangent (atanh) function.
+
+      .. math::
+          y_i = \text{arctanh} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+        
 Array Manipulation:
   Concatenate:
     snake_name: concatenate
