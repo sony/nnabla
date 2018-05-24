@@ -204,12 +204,14 @@ def generate_init(function_info, function_types, solver_info, solver_types, ext_
     generate_from_template(template, **kwargs)
 
 
-def generate_version(template=None, rootdir=None):
+def generate_version(template=None, rootdir=None, suffix=None):
     if template is None:
         template = join(base, 'python/src/nnabla/_version.py.tmpl')
     if rootdir is None:
         rootdir = base
     version, short_version = get_version(rootdir)
+    if suffix is not None:
+        version = version + suffix
     generated = render_with_template(filename=template, template_kwargs=dict(
         version=version, short_version=short_version))
     path_o = template.replace('.tmpl', '')
@@ -243,7 +245,8 @@ def generate_skelton_function_impl_one(ext_info, name, func, template, output_di
 
 def generate_skelton_function_impl(function_info, function_types, ext_info={}, template=None, output_dir=None, output_format='%s.cpp'):
     if template is None:
-        template = join(base, 'src/nbla/function/generic/function_impl.cpp.tmpl')
+        template = join(
+            base, 'src/nbla/function/generic/function_impl.cpp.tmpl')
     if output_dir is None:
         output_dir = dirname(template)
 
@@ -252,5 +255,3 @@ def generate_skelton_function_impl(function_info, function_types, ext_info={}, t
             continue
         generate_skelton_function_impl_one(
             ext_info, name, func, template, output_dir, output_format)
-
-

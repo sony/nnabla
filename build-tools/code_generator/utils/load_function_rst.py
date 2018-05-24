@@ -40,7 +40,8 @@ class Functions:
 
     def __init__(self):
 
-        base = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../../..')
+        base = os.path.abspath(os.path.dirname(
+            os.path.abspath(__file__)) + '/../../..')
         filename = '{}/doc/functions.rst'.format(base)
 
         error_exists = False
