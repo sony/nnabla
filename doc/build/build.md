@@ -62,6 +62,15 @@ cmake ../
 make
 ```
 
+If you want to install nnabla for python 3.x, you may need to add `-DPYTHON_COMMAND_NAME=python3.x` to `cmake`. Without it, the installation may fail.
+So replace `cmake ../`. with
+
+```shell
+cmake ../ -DPYTHON_COMMAND_NAME=python3.6  # if you use python 3.6
+```
+
+Be carefull if you have multiple python versions.
+
 Finally, you get the NNabla Python package installer as a wheel file found at `./dist`. You can install nnabla using the wheel file using `pip` command.
 
 ```shell
