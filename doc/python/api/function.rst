@@ -36,7 +36,9 @@ Neural Network Layers
 
 .. autofunction:: affine
 .. autofunction:: convolution
+.. autofunction:: depthwise_convolution
 .. autofunction:: deconvolution
+.. autofunction:: depthwise_deconvolution
 .. autofunction:: max_pooling
 .. autofunction:: average_pooling
 .. autofunction:: sum_pooling
