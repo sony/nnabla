@@ -42,7 +42,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
                         type=float, default=weight_decay,
                         help='Weight decay factor of SGD update.')
     parser.add_argument("--device-id", "-d", type=str, default='0',
-                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
     parser.add_argument("--type-config", "-t", type=str, default='float',
                         help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--model-save-interval", "-s", type=int, default=1000,

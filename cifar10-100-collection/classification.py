@@ -35,7 +35,6 @@ def train():
     Steps:
 
     * Parse command line arguments.
-    * Instantiate a communicator and set parameter variables.
     * Specify contexts for computation.
     * Initialize DataIterator.
     * Construct a computation graph for training and one for validation.
@@ -136,9 +135,7 @@ def train():
 
 if __name__ == '__main__':
     """
-    Call this script with `mpirun` or `mpiexec`
-
-    $ mpirun -n 4 python multi_device_multi_process.py --context "cudnn" -bs 64
+    $ python classification.py --context "cudnn" -b 64
 
     """
     train()

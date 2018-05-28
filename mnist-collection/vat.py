@@ -286,13 +286,13 @@ def get_args():
     parser.add_argument("--xi-for-vat", "-er", type=float, default=10.0)
     parser.add_argument("--eps-for-vat", "-el", type=float, default=1.5)
     parser.add_argument("--device-id", "-d", type=str, default='0',
-                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
     parser.add_argument("--type-config", "-t", type=str, default='float',
                         help='Type of computation. e.g. "float", "half".')
     parser.add_argument("--model-save-path", "-o",
                         type=str, default="tmp.monitor.vat")
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension path. ex) cpu, cuda.cudnn.")
+                        default=None, help="Extension path. ex) cpu, cudnn.")
     return parser.parse_args()
 
 

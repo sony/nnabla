@@ -27,6 +27,6 @@ By default, the script will be executed with CPU.
 If you prefer to run with CUDA GPU, try
 
 ```
-python train.py -c cuda.cudnn
+python train.py -c cudnn
 ```
 

@@ -132,7 +132,7 @@ def create_cache_file(args):
                             height, width), interp='lanczos')
                         # print('after', im.shape)
                     x = np.array(im, dtype=np.uint8).transpose((2, 0, 1))
-                #print x.shape, x.dtype
+                # print x.shape, x.dtype
                 data['x'].append(x)
                 data['y'].append(np.array([class_index], dtype=np.int16))
             else:
