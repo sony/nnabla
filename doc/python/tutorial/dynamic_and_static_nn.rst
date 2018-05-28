@@ -106,10 +106,10 @@ neural network does not change during training.
 
 .. code-block:: python2
 
-    from nnabla.contrib.context import extension_context
+    from nnabla.ext_utils import get_extension_context
     
     # setup cuda extension
-    ctx_cuda = extension_context('cudnn', device_id=GPU)  # replace 'cuda.cudnn' by 'cpu' if you want to run the example on the CPU
+    ctx_cuda = get_extension_context('cudnn', device_id=GPU)  # replace 'cudnn' by 'cpu' if you want to run the example on the CPU
     nn.set_default_context(ctx_cuda)
     
     # create variables for network input and label

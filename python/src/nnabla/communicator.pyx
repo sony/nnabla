@@ -134,8 +134,8 @@ cdef class Communicator:
         .. code-block:: python
 
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessDataParalellCommunicator(ctx)
             comm.init()
 
@@ -202,8 +202,8 @@ cdef class Communicator:
         .. code-block:: python
 
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessDataParalellCommunicator(ctx)
             comm.init()
 
@@ -250,8 +250,8 @@ cdef class Communicator:
         .. code-block:: python
 
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessDataParalellCommunicator(ctx)
             comm.init()
 
@@ -296,8 +296,8 @@ cdef class Communicator:
         .. code-block:: python
 
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessDataParalellCommunicator(ctx)
             comm.init()
 
@@ -336,8 +336,8 @@ cdef class Communicator:
         .. code-block:: python
 
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessDataParalellCommunicator(ctx)
             comm.init()
 
@@ -372,8 +372,8 @@ cdef class Communicator:
         .. code-block:: python
 
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessDataParalellCommunicator(ctx)
             comm.init()
 
@@ -464,7 +464,7 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
 
         # Communicator and Context
         extension_module = "cudnn"
-        ctx = extension_context(extension_module)
+        ctx = get_extension_context(extension_module)
         comm = C.MultiProcessDataParalellCommunicator(ctx)
         comm.init()
         n_devices = comm.size

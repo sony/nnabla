@@ -576,8 +576,8 @@ CUDA by specifying a context before building a graph. We strongly
 recommend using a CUDNN context that is fast. Although the context class
 can be instantiated by ``nn.Context()``, specifying a context descriptor
 might be a bit complicated for users. There for we recommend create a
-context by using a helper function ``extension_context()`` found in the
-``nnabla.contrib.context`` module. NNabla officially supports ``cpu``
+context by using a helper function ``get_extension_context()`` found in the
+``nnabla.ext_utils`` module. NNabla officially supports ``cpu``
 and ``cudnn`` as a context specifier passed to the first argument
 (extension name). NOTE: By setting the cudnn context as a global default
 context, Functions and solves created are instantiated with CUDNN
@@ -589,9 +589,9 @@ for details.
 .. code-block:: python2
 
     # Run on CUDA
-    from nnabla.contrib.context import extension_context
+    from nnabla.ext_utils import get_extension_context
     cuda_device_id = 0
-    ctx = extension_context('cudnn', device_id=cuda_device_id)
+    ctx = get_extension_context('cudnn', device_id=cuda_device_id)
     print "Context:", ctx
     nn.set_default_context(ctx)  # Set CUDA as a default context.
     y, hs = cnn(x)
