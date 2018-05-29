@@ -148,6 +148,135 @@ def affine(inp, n_outmaps,
     return F.affine(inp, w, b, base_axis)
 
 
+@parametric_function_api("svd_affine")
+def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
+               b_init=None, fix_parameters=False, rng=None,
+               with_bias=True):
+    """SVD affine is a low rank approximation of the affine layer. It can
+    be seen as two consecutive affine layers with a bottleneck. It
+    computes:
+
+    .. math::
+        {\\mathbf y} = {\\mathbf U} {\\mathbf V} {\\mathbf x} + {\\mathbf b}.
+
+    where :math:`{\\mathbf x}, {\\mathbf y}` are the inputs and
+    outputs respectively, and :math:`{\\mathbf U}, {\\mathbf V},
+    {\\mathbf b}` are constants.
+
+    The weights :math:`{\\mathbf U}` and :math:`{\\mathbf V}` are
+    aproximated with singular value decomposition (SVD) of the
+    original weight matrix :math:`{\\mathbf W}` and by selecting the
+    :math:`{R}` dominant singular values and the corresponding
+    singular vectors. Therefore the low rank :math:`{R}` is the size
+    of the bottleneck.
+
+    If `uv_init` is a numpy array, :math:`{\\mathbf U}` and
+    :math:`{\\mathbf V}` are computed such that `uv_init` is
+    approximated by :math:`{\\mathbf{UV}}`. If `uv_init` is `None` or
+    an initializer, the product of :math:`{\\mathbf U}` and
+    :math:`{\\mathbf V}` approximates the random initialization.
+
+    If :math:`{\\mathbf U}` and :math:`{\\mathbf V}` exist in the context,
+    they take precedence over `uv_init`.
+
+    Suppose the weight of the affine is of :math:`{I \\times O}` and 
+    the compression rate you want to specify is :math:`{CR}`, then you  
+    set :math:`{R}` as 
+
+    .. math::
+
+        R = \\left\\lfloor \\frac{(1 - CR)OI}{O + I} \\right\\rfloor.
+
+    Args:
+
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0
+          \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots
+          \\times D_N`). Dimensions before and after base_axis are
+          flattened as if it is a matrix.
+
+        n_outmaps (int or tuple): Number of output neurons per data.
+
+        r (int): rank of the factorized layer (size of the bottleneck)
+
+        base_axis (int): Dimensions up to `base_axis` are treated as
+          the sample dimensions.
+
+        uv_init (numpy.ndarray or ~nnabla.initializer.BaseInitializer):
+          Initializer for weight.
+
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+
+        fix_parameters (bool): When set to `True`, the weights
+          and biases will not be updated.
+
+        rng (numpy.random.RandomState): Random generator for Initializer.
+
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        ~nnabla.Variable: :math:`(B + 1)`-D array.
+        (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+    """
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    inmaps = np.prod(inp.shape[base_axis:])
+
+    if uv_init is None:
+        uv_init = UniformInitializer(
+            calc_uniform_lim_glorot(inmaps, n_outmap), rng=rng)
+
+    if type(uv_init) is np.ndarray:
+        # TODO: Assert that size of uv_init is correct
+        # uv is initialize with numpy array
+        uv = uv_init
+    else:
+        # uv is initialize from initializer
+        uv = uv_init([int(np.prod(inp.shape[base_axis:])), ] +
+                     tuple(n_outmaps))
+
+    u = get_parameter('U')
+    v = get_parameter('V')
+
+    if (u is None) or (v is None):
+        assert r > 0, "svd_ffine: The rank must larger than zero"
+        u_, s_, v_ = np.linalg.svd(uv.reshape(inmaps, n_outmap),
+                                   full_matrices=False)
+        u_ = np.dot(u_, np.diag(s_))  # fold s into u
+        u_ = u_[:, :r]
+        v_ = v_[:r, :]
+        v_ = v_.reshape([r] + n_outmaps)
+
+        u = nn.Variable([int(np.prod(inp.shape[base_axis:])), r],
+                        need_grad=not fix_parameters)
+        u.d = u_
+        nn.parameter.set_parameter("U", u)
+
+        v = nn.Variable([r] + n_outmaps, need_grad=not fix_parameters)
+        v.d = v_
+        nn.parameter.set_parameter("V", v)
+    else:
+        if fix_parameters == u.need_grad:
+            u = u.unlinked()
+            u.need_grad = not fix_parameters
+        if fix_parameters == v.need_grad:
+            v = v.unlinked()
+            v.need_grad = not fix_parameters
+
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    b = None
+    if with_bias:
+        b = get_parameter_or_create("b", n_outmaps, b_init, not fix_parameters)
+
+    return F.affine(F.affine(inp, u, bias=None, base_axis=base_axis),
+                    v, bias=b, base_axis=base_axis)
+
+
 @parametric_function_api("bicon_affine")
 def binary_connect_affine(inp, n_outmaps,
                           base_axis=1,
@@ -423,6 +552,299 @@ def convolution(inp, outmaps, kernel,
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, not fix_parameters)
     return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
+
+
+@parametric_function_api("svd_conv")
+def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
+                    dilation=None, uv_init=None, b_init=None, base_axis=1,
+                    fix_parameters=False, rng=None, with_bias=True):
+    """SVD convolution is a low rank approximation of the convolution
+    layer. It can be seen as a depth wise convolution followed by a
+    1x1 convolution.
+
+    The flattened kernels for the i-th input map are expressed by
+    their low rank approximation. The kernels for the i-th input
+    :math:`{\\mathbf W_i}` are aproximated with the singular value
+    decomposition (SVD) and by selecting the :math:`{R}` dominant
+    singular values and the corresponding singular vectors.
+
+    .. math::
+        {\\mathbf W_{:,i,:}} ~ {\\mathbf U_i} {\\mathbf V_i}.
+
+    :math:`{\\mathbf U}` contains the weights of the depthwise
+    convolution with multiplier :math:`{R}` and :math:`{\\mathbf V}`
+    contains the weights of the 1x1 convolution.
+
+    If `uv_init` is a numpy array, :math:`{\\mathbf U}` and
+    :math:`{\\mathbf V}` are computed such that `uv_init` is
+    approximated by :math:`{\\mathbf{UV}}`. If `uv_init` is `None` or
+    an initializer, the product of :math:`{\\mathbf U}` and
+    :math:`{\\mathbf V}` approximates the random initialization.
+
+    If :math:`{\\mathbf U}` and :math:`{\\mathbf V}` exist in the
+    context, they take precedence over `uv_init`.
+
+    Suppose the kernel tensor of the convolution is of :math:`{O \\times I \\times K \\times K}` and 
+    the compression rate you want to specify is :math:`{CR}`, then you  
+    set :math:`{R}` as 
+
+    .. math::
+
+        R = \\left\\lfloor \\frac{(1 - CR)OIK^2}{I(O + K^2)} \\right\\rfloor.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+
+        outmaps (int): Number of convolution kernels (which is equal
+          to the number of output channels). For example, to apply
+          convolution on an input with 16 types of filters, specify
+          16.
+
+        kernel (tuple): Convolution kernel size. For example,
+          to apply convolution on an image with a 3 (height) by 5
+          (width) two-dimensional kernel, specify (3, 5).
+
+        r (int): Rank of the factorized layer.
+
+        pad (tuple): Padding sizes (`int`) for dimensions.
+
+        stride (tuple): Stride sizes (`int`) for dimensions.
+
+        dilation (tuple): Dilation sizes (`int`) for dimensions.
+
+        uv_init (numpy.ndarray or ~nnabla.initializer.BaseInitializer):
+          Initializer for weight.
+
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+
+        base_axis (int): Dimensions up to `base_axis` are treated as the
+          sample dimensions.
+
+        fix_parameters (bool): When set to `True`, the weights and
+          biases will not be updated.
+
+        rng (numpy.random.RandomState): Random generator for Initializer.
+
+        with_bias (bool): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array.
+        (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+    """
+    assert r > 0, "svd_convolution: The rank must larger than zero"
+
+    if uv_init is None:
+        uv_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps,
+                                    tuple(kernel)), rng=rng)
+
+    if type(uv_init) is np.ndarray:
+        # TODO: Assert that size of uv_init is correct
+        # uv is initialize with numpy array
+        uv = uv_init
+    else:
+        # uv is initialize from initializer
+        uv = uv_init((outmaps, inp.shape[base_axis]) + tuple(kernel))
+
+    # flaten kernels
+    uv = uv.reshape((outmaps, inp.shape[base_axis], np.prod(kernel)))
+
+    u = get_parameter('U')
+    v = get_parameter('V')
+
+    if (u is None) or (v is None):
+
+        inmaps = inp.shape[base_axis]
+        u_low_rank = np.zeros((inmaps, np.prod(kernel), r))
+        v_low_rank = np.zeros((inmaps, r, outmaps))
+
+        for i in range(inmaps):
+            K = np.transpose(uv[:, i, :])
+            u_, s_, v_ = np.linalg.svd(K, full_matrices=False)
+            u_low_rank[i, :, :] = np.dot(u_[:, :r], np.diag(s_[:r]))
+            v_low_rank[i, :, :] = v_[:r, :]
+
+        # reshape U : (I,K*K,r) -> (I*r,K,K) for depthwise conv
+        u = nn.Variable((inmaps * r,) + tuple(kernel),
+                        need_grad=not fix_parameters)
+
+        u.d = (np.transpose(u_low_rank, axes=(0, 2, 1))
+               .reshape((inmaps * r,) + tuple(kernel)))
+
+        nn.parameter.set_parameter("U", u)
+
+        # reshape V :  (I,r,O) -> (O,I*r,1,1) for 1X1 conv
+        kernel_one = (1,)*len(kernel)  # 1x1 for 2D convolution
+        v = nn.Variable((outmaps, inmaps * r) + kernel_one,
+                        need_grad=not fix_parameters)
+
+        v.d = (np.transpose(v_low_rank, axes=(2, 0, 1))
+               .reshape((outmaps, inmaps * r) + kernel_one))
+
+        nn.parameter.set_parameter("V", v)
+
+    else:
+        # Use existing parameters
+        if fix_parameters == u.need_grad:
+            u = u.unlinked()
+            u.need_grad = not fix_parameters
+        if fix_parameters == v.need_grad:
+            v = v.unlinked()
+            v.need_grad = not fix_parameters
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+
+    y = F.depthwise_convolution(inp, u, bias=None, base_axis=base_axis,
+                                pad=pad, stride=stride, dilation=dilation,
+                                multiplier=r)
+
+    y = F.convolution(y, v, bias=b, base_axis=base_axis, pad=None,
+                      stride=None, dilation=None, group=1)
+    return y
+
+
+@parametric_function_api("cpd3_conv")
+def cpd3_convolution(inp, outmaps, kernel, r,
+                     pad=None, stride=None, dilation=None,
+                     oik_init=None, b_init=None,
+                     base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                     max_iter=500, stopping_criterion=1e-5):
+    """CP convolution is a low rank approximation of a convolution layer. A 3D tensor containing the parameter is built by collapsing the N-D kernels into 1D, then the tensor is decomposed into three matrices. The decomposed layer can be seen as linear combinations of the input feature maps to :math:`{R}` feature maps followed by a depthwise convolution and followed by linear combinations of the feature maps to compute the output feature maps.
+
+    The CP decomposition allows to approximate the kernel tensor by :math:`{R}` rank-1 tensors of the form:
+
+    .. math::
+
+        \\sum_{r=1}^{R} \\lambda_r {\\mathbf{o}^{(r)} \\otimes \\mathbf{i}^{(r)} \\otimes \\mathbf{k}^{(r)}},
+
+    where :math:`{\\lambda}_r` is the nomalization coefficient and :math:`{\\otimes}` is the outer product. 
+
+
+    If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV  
+    If `oik_init` is None or an initializer, the product of U and V approximate the randomly initialized array  
+
+    If `O`, `I` and `K` exist in context, they are used to initialize the layer and oik_init is not used.
+
+    Suppose the kernel tensor of the affine is of :math:`{I \\times O}` and 
+    the compression rate you want to specify is :math:`{CR}`, then you  
+    set :math:`{R}` as 
+
+    .. math::
+
+        R = \\left\\lfloor \\frac{(1 - CR)OIK^2}{O + I + K^2} \\right\\rfloor.
+
+    References:
+        - Lebedev, Vadim, Yaroslav Ganin, Maksim Rakhuba, Ivan Oseledets, and Victor Lempitsky,  "Speeding-up convolutional neural networks using fine-tuned cp-decomposition.", arXiv preprint arXiv:1412.6553 (2014).
+
+        - Marcella Astrid, Seung-Ik Lee, "CP-decomposition with Tensor Power Method for Convolutional Neural Networks Compression", BigComp 2017.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        r (int): rank of the factorized layer
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        oik_init (numpy array or ~nnabla.initializer.BaseInitializer): Initializer for weight.
+        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        max_iter (int): Max iteration of the ALS.
+        stopping_criterion (float): Threshold for stopping the ALS. 
+                If the value is negative, the convergence check is ignored; 
+                in other words, it may reduce the computation time.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+
+    """
+
+    if oik_init is None:
+        oik_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+
+    if type(oik_init) is np.ndarray:
+        # TODO: Assert that size of uv_init is correct
+        # uv is initialize with numpy array
+        oik = oik_init
+    else:
+        # uv is initialize from initializer
+        oik = oik_init((outmaps, inp.shape[base_axis]) + tuple(kernel))
+
+    # flaten kernels
+    oik = oik.reshape((outmaps, inp.shape[base_axis], np.prod(kernel)))
+
+    o = get_parameter('O')
+    i = get_parameter('I')
+    k = get_parameter('K')
+
+    if (o is None) or (i is None) or (k is None):
+        assert r > 0, "cpd3_convolution: The rank must larger than zero"
+        from nnabla.utils.factorization import cpd
+        als = cpd.ALS()
+        U, lmbda = als.solve(X=oik, rank=r,
+                             max_iter=max_iter,
+                             stopping_criterion=stopping_criterion,
+                             dtype=oik.dtype,
+                             rng=rng)
+
+        o_ = U[0] * lmbda
+        i_ = U[1]
+        k_ = U[2]
+
+        kernel_one = (1,)*len(kernel)  # 1x1 for 2D convolution
+        inmaps = inp.shape[base_axis]
+
+        # reshape I :  (I,r) -> (r,I,1,1)
+        i = nn.Variable((r, inmaps) + kernel_one, need_grad=not fix_parameters)
+        i.d = np.transpose(i_).reshape((r, inmaps) + kernel_one)
+        nn.parameter.set_parameter("I", i)
+
+        # reshape O :  (O,r) -> (O,r,1,1)
+        o = nn.Variable((outmaps, r) + kernel_one,
+                        need_grad=not fix_parameters)
+        o.d = o_.reshape((outmaps, r) + kernel_one)
+        nn.parameter.set_parameter("O", o)
+
+        # reshape K :  (K*K,r) -> (r,K,K)
+        k = nn.Variable((r,) + kernel, need_grad=not fix_parameters)
+        k.d = np.transpose(k_).reshape((r,) + kernel)
+        nn.parameter.set_parameter("K", k)
+    else:
+        # Use existing parameters
+        if fix_parameters == o.need_grad:
+            o = o.unlinked()
+            o.need_grad = not fix_parameters
+        if fix_parameters == i.need_grad:
+            i = i.unlinked()
+            i.need_grad = not fix_parameters
+        if fix_parameters == k.need_grad:
+            k = k.unlinked()
+            k.need_grad = not fix_parameters
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, not fix_parameters)
+
+    y = F.convolution(inp, i, bias=None, base_axis=base_axis, pad=None, stride=None,
+                      dilation=None, group=1)
+    y = F.depthwise_convolution(y, k, bias=None, base_axis=base_axis,
+                                pad=pad, stride=stride, dilation=dilation,
+                                multiplier=1)
+    y = F.convolution(y, o, bias=b, base_axis=base_axis, pad=None, stride=None,
+                      dilation=None, group=1)
+    return y
 
 
 @parametric_function_api("bicon_conv")
