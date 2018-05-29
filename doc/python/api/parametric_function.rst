@@ -52,7 +52,9 @@ Here is the list of parametric functions.
 
 .. autofunction:: affine
 .. autofunction:: convolution
+.. autofunction:: depthwise_convolution
 .. autofunction:: deconvolution
+.. autofunction:: depthwise_deconvolution
 .. autofunction:: batch_normalization
 
 .. autofunction:: embed
