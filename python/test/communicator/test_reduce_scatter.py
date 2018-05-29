@@ -39,6 +39,9 @@ def test_reduce_scatter(seed, division, comm_nccl_opts):
     if comm_nccl_opts is None:
         pytest.skip(
             "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
+    if len(comm_nccl_opts.devices) < 2:
+        pytest.skip(
+            "Communicator test is disabled. Use more than 1 gpus.")
     comm = comm_nccl_opts.comm
     device_id = int(comm_nccl_opts.device_id)
     devices = comm_nccl_opts.devices
@@ -64,4 +67,4 @@ def test_reduce_scatter(seed, division, comm_nccl_opts):
     refs = ref_reduce_scatter(x_data_list, n_devices, division)
 
     # Check
-    assert np.allclose(x.d, refs[device_id])
+    assert np.allclose(x.d, refs[device_id], rtol=1e-3, atol=1e-6)

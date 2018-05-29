@@ -18,6 +18,8 @@
 
 namespace nbla {
 
+namespace ns_fold_from_patches {
+
 inline bool index_in_shape(int index, int shape) {
   return static_cast<unsigned>(index) < static_cast<unsigned>(shape);
 }
@@ -46,8 +48,8 @@ inline void kernel_2d(const T *column_data, const int *outmap_shape,
   for (int outmap_index = 0; outmap_index < *outmap_shape; outmap_index++) {
     if (index_in_shape(sample_index, *sample_shape)) {
       auto outmap_data_ptr = outmap_data + *sample_isize * sample_index;
-      kernel_1d(column_data, outmap_shape + 1, sample_shape + 1,
-                sample_shift + 1, stride + 1, outmap_data_ptr);
+      kernel_1d<T>(column_data, outmap_shape + 1, sample_shape + 1,
+                   sample_shift + 1, stride + 1, outmap_data_ptr);
     }
     column_data += *outmap_isize;
     sample_index += *stride;
@@ -65,18 +67,22 @@ void kernel_nd(const int dimensions, const T *column_data,
     if (index_in_shape(sample_index, *sample_shape)) {
       auto outmap_data_ptr = outmap_data + *sample_isize * sample_index;
       if (dimensions == 2) {
-        kernel_1d(column_data, outmap_shape + 1, sample_shape + 1,
-                  sample_shift + 1, stride + 1, outmap_data_ptr);
+        kernel_1d<T>(column_data, outmap_shape + 1, sample_shape + 1,
+                     sample_shift + 1, stride + 1, outmap_data_ptr);
       } else {
-        kernel_nd(dimensions - 1, column_data, outmap_shape + 1,
-                  outmap_isize + 1, sample_shape + 1, sample_isize + 1,
-                  sample_shift + 1, stride + 1, outmap_data_ptr);
+        kernel_nd<T>(dimensions - 1, column_data, outmap_shape + 1,
+                     outmap_isize + 1, sample_shape + 1, sample_isize + 1,
+                     sample_shift + 1, stride + 1, outmap_data_ptr);
       }
     }
     column_data += *outmap_isize;
     sample_index += *stride;
   }
 }
+
+} // namespace ns_fold_from_patches
+
+using namespace ns_fold_from_patches;
 
 template <typename T>
 void fold_from_patches(const T *column_data, T *outmap_data, const int channels,

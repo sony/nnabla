@@ -65,6 +65,10 @@ Normalization
 
 .. autofunction:: batch_normalization
 .. autofunction:: mean_subtraction
+.. autofunction:: clip_by_value
+.. autofunction:: clip_grad_by_value
+.. autofunction:: clip_by_norm
+.. autofunction:: clip_grad_by_norm
 
 
 Reduction
@@ -135,6 +139,18 @@ Math
 .. autofunction:: matrix_diag
 .. autofunction:: matrix_diag_part
 .. autofunction:: batch_matmul
+.. autofunction:: sin
+.. autofunction:: cos
+.. autofunction:: tan
+.. autofunction:: sinh
+.. autofunction:: cosh
+.. autofunction:: tanh
+.. autofunction:: asin
+.. autofunction:: acos
+.. autofunction:: atan
+.. autofunction:: asinh
+.. autofunction:: acosh
+.. autofunction:: atanh
 
 
 Array Manipulation
@@ -200,6 +216,12 @@ Unsupported, Special Use
 .. autofunction:: vat_noise
 .. autofunction:: unlink
 .. autofunction:: sink
+
+
+Image Object Detection
+----------------------
+
+.. autofunction:: nms_detection2d
 
 
 Validation

@@ -8,6 +8,9 @@
 *.md text
 *.toc text
 
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
 *.png binary
 *.jpeg binary
 *.pgm binary

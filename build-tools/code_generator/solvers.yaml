@@ -225,3 +225,44 @@ Adamax:
       default: 1e-8
       doc: Small value for avoiding zero devision(:math:`\epsilon`).
   
+AMSGRAD:
+  snake_name: amsgrad
+  doc: |
+    AMSGRAD optimizer.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
+        \hat{v_t} = \max(\hat{v_{t-1}}, v_t)\\
+        w_{t+1} &\leftarrow w_t - \alpha
+            \frac{m_t}{\sqrt{\hat{v_t}} + \epsilon}
+
+    where :math:`g_t` denotes a gradient, and let :math:`m_0 \leftarrow 0`
+    and :math:`v_0 \leftarrow 0`.
+
+  references:
+    - |
+      `Reddi et al. On the convergence of ADAM and beyond.
+      <https://openreview.net/pdf?id=ryQu7f-RZ>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 1e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero devision(:math:`\epsilon`). Note this does not appear in the paper.
+    bias_correction:
+      type: bool
+      default: False
+      doc: Apply bias correction to moving averages defined in ADAM. Note this does not appear in the paper.

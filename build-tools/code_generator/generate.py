@@ -148,5 +148,6 @@ def generate():
 
     # TODO: solver skelton generation
 
+
 if __name__ == '__main__':
     generate()

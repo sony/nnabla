@@ -42,3 +42,10 @@ def test_concatenate_forward_backward(seed, axis, different_size, num_inputs, ct
     function_tester(rng, F.concatenate, ref_concatenate, inputs,
                     func_kwargs=dict(axis=axis), ctx=ctx, func_name=func_name,
                     atol_b=1e-2)
+
+
+def test_no_value():
+    a = nn.Variable(())
+    b = nn.Variable(())
+    with pytest.raises(RuntimeError):
+        F.concatenate(*[a, b], axis=0)
