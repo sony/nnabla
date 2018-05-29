@@ -103,12 +103,12 @@ def convert_onnx_to_nnp_and_compare(
     if export_nnp_path:
         shutil.copy2(p, export_nnp_path)
     # read exported nnp and run network
+    # pdb.set_trace()
     nn_net = nnload.load([p])
     if type(in_img) is np.ndarray:
         net = nn_net.executors[exec_name].network
         in_data = net.variables[in_name]
         in_data.variable_instance.d = in_img
-    # pdb.set_trace()
     exe = run_executor(nn_net, exec_name)
     # print_buffer_shape(exe)
     # in_data = exe.variables["in_data_0"]
@@ -1062,6 +1062,14 @@ def test_nnp_onnx_conversion_softsign(tmpdir, nnp_fixture):
                                     "softsign.nnp",
                                     "softsign.onnx",
                                     "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_lrn(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "lrn.onnx",
+                                    "lrn.nnp",
+                                    "out_data_1", "exec_0")
+
 
 # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:

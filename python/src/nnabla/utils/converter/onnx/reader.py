@@ -84,6 +84,7 @@ onnx_optype_to_nnabla_function_type = {
     "LogSoftmax": "Sub2",
     "Softplus": "Log",
     "Softsign": "Div2",
+    "LRN": "Div2",
     # Clip gets converted to Identity, MaxScalar or MinScalar
     # or both, depending on the attributes.
     # We set a temporary name here
@@ -206,9 +207,8 @@ def generate_default_function(node, base_name, func_counter):
     func.output.extend(node.output)
     return func
 
-def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
+def generate_transpose(node_name, in_name, out_name, axes, base_name, func_counter):
     """Generate a Transpose operator to transpose the specified buffer.
-    We assume the buffer is two dimensional.
     """
     trans = nnabla_pb2.Function()
     trans.type = "Transpose"
@@ -216,7 +216,7 @@ def generate_transpose(node_name, in_name, out_name, base_name, func_counter):
     trans.input.extend([in_name])
     trans.output.extend([out_name])
     tp = trans.transpose_param
-    tp.axes.extend([1, 0])  # switch H and W
+    tp.axes.extend(axes)
     return trans
 
 
@@ -290,6 +290,47 @@ def generate_add_scalar(node_name, x, out_name,
     asp.val = val
     return func
 
+
+def generate_pow_scalar(node_name, x, out_name,
+                        val, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "PowScalar"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    psp = func.pow_scalar_param
+    psp.val = val
+    return func
+
+
+def generate_mul_scalar(node_name, x, out_name,
+                        val, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "MulScalar"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    msp = func.mul_scalar_param
+    msp.val = val
+    return func
+
+
+def generate_sum_pooling(node_name, x, out_name,
+                         kernel, stride, ignore_border, pad,
+                         base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "SumPooling"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    spp = func.sum_pooling_param
+    spp.kernel.dim.extend(kernel)
+    spp.stride.dim.extend(stride)
+    spp.ignore_border = ignore_border
+    spp.pad.dim.extend(pad)
+    return func
+
+
 def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
     """Converts a broadcasting operator to a composite with BroadcastTo"""
     broadcasting = False
@@ -323,6 +364,7 @@ def convert_broadcasting_operator(func_list, node, func, base_name, func_counter
     del func.input[:]
     func.input.extend(input)
 
+
 def set_reduction_attrs(p, node):
     p.keep_dims = True  #  keep_dims is default True for ONNX
     for attr in node.attribute:
@@ -353,6 +395,7 @@ def check_padding(pads, dim):
         # If the values match, we set it as the padding for current axis
         padval.append(s)
     return padval
+
 
 def convert_to_functions(pb, network, node, base_name, initializers,
                          func_counter, param_vars, param_list, merged_inputs,
@@ -561,6 +604,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if len(init.dims) != 1:
                     raise ValueError("Only one dimensional input is currently supported for Gemm input tensor C ({})".format(init.name))
 
+        # Switch H and W for transpose
+        # We assume the buffer is two dimensional.
+        axes = [1, 0]
         for attr in node.attribute:
             if attr.name == "transA":
                 if attr.type != AttributeProto.INT:
@@ -571,7 +617,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 # and rewire the buffer as input.
                 ain = node.input[0]
                 aout = ain+transposed_postfix
-                transA = generate_transpose(node.name, ain, aout, base_name, func_counter)
+                transA = generate_transpose(node.name, ain, aout, axes, base_name, func_counter)
                 func_list.append(transA)
                 input[0] = aout  # rewire input to transposed input
             elif attr.name == "transB":
@@ -580,7 +626,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 # same as transA
                 bin = node.input[1]
                 bout = bin+transposed_postfix
-                transB = generate_transpose(node.name, bin, bout, base_name, func_counter)
+                transB = generate_transpose(node.name, bin, bout, axes, base_name, func_counter)
                 func_list.append(transB)
                 input[1] = bout  # rewire input to transposed input
             elif attr.name == "broadcast":
@@ -883,10 +929,95 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         del func.input[:]
         func.input.extend([ssin, asout])
         func_list.append(func)
+    elif node.op_type == "LRN":
+        # Gather attributes.
+        # The following are default values for ONNX
+        alpha = 1e-4
+        beta = 0.75
+        bias = 1.0
+        size = -1
+        for attr in node.attribute:
+            if attr.name == "alpha":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("alpha must be a single float for Op: {}"
+                                     .format(node.op_type))
+                alpha = attr.f
+            elif attr.name == "beta":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("beta must be a single float for Op: {}"
+                                     .format(node.op_type))
+                beta = attr.f
+            elif attr.name == "bias":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("bias must be a single float for Op: {}"
+                                     .format(node.op_type))
+                bias = attr.f
+            elif attr.name == "size":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("size must be a single integer for Op: {}"
+                                     .format(node.op_type))
+                size = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
+        if size < 0:
+            raise ValueError("Size is required for {}"
+                             .format(node.op_type))
+
+        # Convert to PowScalar+Transpose+SumPooling+Transpose+
+        # MulScalar+AddScalar+PowScalar
+        pow0_in = node.input[0]
+        pow0_out = pow0_in+"_pow0"
+        pow0 = generate_pow_scalar(node.name, pow0_in, pow0_out,
+                                   2, base_name, func_counter)
+        func_list.append(pow0)
+        # Transpose the channel axis so we can sumpool along the channels
+        # We are assuming 4D input
+        trans0_out = pow0_out+"_trans0"
+        trans0 = generate_transpose(node.name, pow0_out, trans0_out,
+                                    [0, 2, 3, 1], base_name, func_counter)
+        func_list.append(trans0)
+        # SumPool along channels.
+        # We set ingore_border to false because we want to keep
+        # the channel dimension without using padding.
+        # If we do need to calculate padding depending on channel size here,
+        # LRN will not be possible with current NNabla
+        # because the number of channels will be unknown
+        # until runtime.
+        sp_out = trans0_out+"_sp"
+        sump = generate_sum_pooling(node.name, trans0_out, sp_out,
+                                    [1, size], [1, 1], False, [0, 0],
+                                    base_name, func_counter)
+        func_list.append(sump)
+        # Transpose back
+        trans1_out = sp_out+"_trans1"
+        trans1 = generate_transpose(node.name, sp_out, trans1_out,
+                                    [0, 3, 1, 2], base_name, func_counter)
+        func_list.append(trans1)
+        # MulScalar
+        muls_out = trans1_out+"_muls"
+        muls = generate_mul_scalar(node.name, trans1_out, muls_out,
+                                   alpha/size, base_name, func_counter)
+        func_list.append(muls)
+        # AddScalar
+        adds_out = muls_out+"_adds"
+        adds = generate_add_scalar(node.name, muls_out, adds_out,
+                                   bias, base_name, func_counter)
+        func_list.append(adds)
+        # PowScalar
+        pow1_out = adds_out+"_pow1"
+        pow1 = generate_pow_scalar(node.name, adds_out, pow1_out,
+                                   beta, base_name, func_counter)
+        func_list.append(pow1)
+        # rewire Div2 input to original input and PowScalar output
+        del func.input[:]
+        func.input.extend([pow0_in, pow1_out])
+        func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)
     return func_list
+
 
 def convert_parameter_shape(pb):
     """Convert the shape of some parameters so they fit NNabla's requirements.
