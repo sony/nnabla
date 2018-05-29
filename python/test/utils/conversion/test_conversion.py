@@ -1071,7 +1071,14 @@ def test_onnx_nnp_conversion_lrn(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-# These following tests are invalidated due to a
+#def test_nnp_onnx_conversion_lrn(tmpdir, nnp_fixture):
+#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "lrn.nnp",
+#                                    "lrn.onnx",
+#                                    "out_data_1", "exec_0")
+
+    
+    # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
 #def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
@@ -1154,3 +1161,38 @@ def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "vgg19.nnp", "vgg19.onnx", "prob_1", "exec_0",
         in_name="data_0", in_img=img)
+
+
+@pytest.mark.slow
+def test_onnx_nnp_conversion_vgg16(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "vgg16.onnx", "vgg16.nnp",
+                                    "gpu_0/softmax_1", "exec_0",
+                                    in_name="gpu_0/data_0", in_img=img,
+                                    atol=1e-5)
+
+#@pytest.mark.slow
+#def test_onnx_nnp_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
+#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "bvlc_googlenet.onnx", "bvlc_googlenet.nnp",
+#                                    "prob_1", "exec_0",
+#                                    in_name="data_0", in_img=img)
+#
+#@pytest.mark.slow
+#def test_onnx_nnp_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
+#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "bvlc_caffenet.onnx", "bvlc_caffenet.nnp",
+#                                    "prob_1", "exec_0",
+#                                    in_name="data_0", in_img=img)
+
+#@pytest.mark.slow
+#def test_onnx_nnp_conversion_inception_v1(tmpdir, nnp_fixture):
+#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "inception_v1.onnx", "inception_v1.nnp",
+#                                    "prob_1", "exec_0",
+#                                    in_name="data_0", in_img=img)
+
