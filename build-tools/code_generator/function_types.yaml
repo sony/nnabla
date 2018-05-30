@@ -63,8 +63,14 @@ PReLU:
   half: [Half]
 BatchNormalization:
   float: [float]
-  half: [Half]
+  half: [Half]      
 MeanSubtraction:
+  float: [float]
+  half: [Half]
+ClipGradByValue:
+  float: [float]
+  half: [Half]
+ClipGradByNorm:
   float: [float]
   half: [Half]
 Sum:
@@ -213,7 +219,7 @@ Identity:
   half: [Half]
 BatchMatmul:
   float: [float]
-  half: [Half]
+  half: [Half]  
 Concatenate:
   float: [float]
   half: [Half]
@@ -359,3 +365,39 @@ DepthwiseDeconvolution:
 Round:
   float: [float]
   half: [Half]
+Sin:
+  float: [float]
+  half: [Half]
+Cos:
+  float: [float]
+  half: [Half]
+Tan:
+  float: [float]
+  half: [Half]
+Sinh:
+  float: [float]
+  half: [Half]
+Cosh:
+  float: [float]
+  half: [Half]
+ASin:
+  float: [float]
+  half: [Half]
+ACos:
+  float: [float]
+  half: [Half]
+ATan:
+  float: [float]
+  half: [Half]
+ASinh:
+  float: [float]
+  half: [Half]
+ACosh:
+  float: [float]
+  half: [Half]
+ATanh:
+  float: [float]
+  half: [Half]      
+NmsDetection2d:
+  float: [float]
+#  half: [Half]

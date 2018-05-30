@@ -27,7 +27,26 @@ NBLA_REGISTER_FUNCTION_SOURCE(Reshape, const vector<int> &);
 
 template <typename T>
 void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
+  // A: Shape inference for an axis specified with negative size
   int tsize = inputs[0]->size();
+  int rest_size = 1;
+  int shape_infer_index = -1;
+  for (int s = 0; s < shape_.size(); s++) {
+    if (shape_[s] < 0) {
+      NBLA_CHECK(shape_infer_index < 0, error_code::value,
+                 "The shape option in Reshape function can take negative size "
+                 "only in one axis. Given in %d and %d",
+                 shape_infer_index, s);
+      shape_infer_index = s;
+      continue;
+    }
+    rest_size *= shape_[s];
+  }
+  if (shape_infer_index >= 0) {
+    shape_[shape_infer_index] = tsize / rest_size;
+  }
+
+  // B: Check if product of dimensions is total size of input.
   int tsize2 = 1;
   for (auto s : shape_)
     tsize2 *= s;
@@ -35,8 +54,11 @@ void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
              "Product of dimensions of inputs and outputs must be same. "
              "Inputs: %d != Outputs: %d.",
              tsize, tsize2);
+
+  // C: Reshape output
   outputs[0]->reshape(shape_, true);
-  // Reshape function is always in-place.
+
+  // D: Reshape function is always in-place.
   outputs[0]->data()->set_array(inputs[0]->data()->array());
   outputs[0]->grad()->set_array(inputs[0]->grad()->array());
 }

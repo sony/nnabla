@@ -43,8 +43,8 @@ template <class T>
 void MaxPooling<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
 
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  const T *xx = inputs[0]->get_data_pointer<T>(this->ctx_);
+  T *yy = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   const Shape_t inshape = inputs[0]->shape();
   const Shape_t outshape = outputs[0]->shape();
@@ -64,8 +64,14 @@ void MaxPooling<T>::forward_impl(const Variables &inputs,
   const int hpad = this->pad_[0];
   const int wpad = this->pad_[1];
   const int n_map = inputs[0]->size() / x_stride;
-  int *m = max_idx_.cast_data_and_get_pointer<int>(this->ctx_, true);
+  int *mm = max_idx_.cast_data_and_get_pointer<int>(this->ctx_, true);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
   for (int n = 0; n < n_map; ++n) {
+    const T *x = xx + n * x_stride;
+    T *y = yy + n * y_stride;
+    int *m = mm + n * y_stride;
     for (int iy = 0; iy < hy; ++iy) {
       for (int jy = 0; jy < wy; ++jy) {
         int hstart = iy * hstride - hpad;
@@ -93,9 +99,6 @@ void MaxPooling<T>::forward_impl(const Variables &inputs,
         y[k] = max_val;
       }
     }
-    x += x_stride;
-    y += y_stride;
-    m += y_stride;
   }
   forward_done_ = true;
 }

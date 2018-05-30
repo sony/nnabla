@@ -20,6 +20,9 @@
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
 
+#include <nbla/utils/fold_from_patches.hpp>
+#include <nbla/utils/unfold_to_patches.hpp>
+
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -148,15 +151,8 @@ void Convolution<T>::forward_impl(const Variables &inputs,
   // Sample loop
   for (int n = 0; n < outer_size_; ++n) {
     // Im2col
-    if (spatial_dims_ == 2) {
-      im2col<T>(x + n * inner_size_i_, channels_i_, spatial_shape_i_.data(),
-                kernel_.data(), pad_.data(), stride_.data(), dilation_.data(),
-                col);
-    } else {
-      im2col_nd<T>(x + n * inner_size_i_, channels_i_, spatial_dims_,
-                   spatial_shape_i_.data(), kernel_.data(), pad_.data(),
-                   stride_.data(), dilation_.data(), col);
-    }
+    unfold_to_patches<T>(x + n * inner_size_i_, col, channels_i_,
+                         spatial_shape_i_, kernel_, pad_, stride_, dilation_);
     // Convolution by matrix multiplication
     T *y_n = y + n * inner_size_o_;
     for (int g = 0; g < group_; ++g) {
@@ -188,25 +184,27 @@ void Convolution<T>::backward_impl(const Variables &inputs,
   const T *w;
   T *dx, *dw, *db, *col;
   std::unique_ptr<ColVectorMap<T>> mdb;
+
   if (propagate_down[0] || propagate_down[1]) {
     col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
   }
   if (propagate_down[0]) {
+    if (!accum[0])
+      inputs[0]->grad()->zero();
     w = inputs[1]->get_data_pointer<T>(this->ctx_);
-    dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+    dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   }
   if (propagate_down[1]) {
-    x = inputs[0]->get_data_pointer<T>(this->ctx_);
-    dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
     if (!accum[1])
-      memset(dw, 0, sizeof(*dw) * inputs[1]->size());
+      inputs[1]->grad()->zero();
+    x = inputs[0]->get_data_pointer<T>(this->ctx_);
+    dw = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   }
   if (inputs.size() == 3 && propagate_down[2]) {
-    db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
-    mdb.reset(new ColVectorMap<T>(db, channels_o_));
     if (!accum[2])
-      // mdb = 0; // Results in segfault
-      memset(db, 0, sizeof(*db) * inputs[2]->size());
+      inputs[2]->grad()->zero();
+    db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, false);
+    mdb.reset(new ColVectorMap<T>(db, channels_o_));
   }
   // Sample loop
   for (int n = 0; n < outer_size_; ++n) {
@@ -221,32 +219,14 @@ void Convolution<T>::backward_impl(const Variables &inputs,
         mdx = mw.transpose() * mdy;
       }
       // col2im
-      if (spatial_dims_ == 2) {
-        if (!accum[0])
-          // Remove this by substituting at n=0
-          memset(dx_n, 0, sizeof(*dx_n) * inner_size_i_);
-        col2im(col, channels_i_, spatial_shape_i_.data(), kernel_.data(),
-               pad_.data(), stride_.data(), dilation_.data(), dx_n);
-      } else {
-        if (!accum[0])
-          memset(dx_n, 0, sizeof(*dx_n) * inner_size_i_);
-        col2im_nd(col, channels_i_, spatial_dims_, spatial_shape_i_.data(),
-                  kernel_.data(), pad_.data(), stride_.data(), dilation_.data(),
-                  dx_n);
-      }
+      fold_from_patches<T>(col, dx_n, channels_i_, spatial_shape_i_, kernel_,
+                           pad_, stride_, dilation_);
     }
     if (propagate_down[1]) {
       // Backprop to weights
       // im2col
-      if (spatial_dims_ == 2) {
-        im2col<T>(x + n * inner_size_i_, channels_i_, spatial_shape_i_.data(),
-                  kernel_.data(), pad_.data(), stride_.data(), dilation_.data(),
-                  col);
-      } else {
-        im2col_nd<T>(x + n * inner_size_i_, channels_i_, spatial_dims_,
-                     spatial_shape_i_.data(), kernel_.data(), pad_.data(),
-                     stride_.data(), dilation_.data(), col);
-      }
+      unfold_to_patches<T>(x + n * inner_size_i_, col, channels_i_,
+                           spatial_shape_i_, kernel_, pad_, stride_, dilation_);
       // Weight convolution by matrix multiplication
       for (int g = 0; g < group_; ++g) {
         ConstMatrixMap<T> mdy(dy_n + g * row_y_ * col_y_, row_y_, col_y_);

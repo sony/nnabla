@@ -49,22 +49,23 @@ def core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride
     inputs = [i, k, b]
     function_tester(rng, F.convolution, ref_convolution, inputs,
                     func_args=[base_axis, pad, stride, dilation, group],
-                    atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2,
+                    atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2,
                     ctx=ctx, func_name=func_name)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation",
-                         [((2, 2, 10), (1,), 4, (3,), (2,), (1,)),
-                          ((2, 2, 10), (3,), 2, (0,), (1,), (2,))])
+@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation", [
+    ((2, 2, 10), (1,), 4, (3,), (2,), (1,)),
+    ((2, 2, 10), (3,), 2, (0,), (1,), (2,)),
+])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
 def test_convolution_1d_forward_backward(inshape, kernel, outmaps, pad, stride,
                                          dilation, group, with_bias, seed, ctx,
                                          func_name):
-    if func_name != 'ConvolutionCudaCudnn':
-        pytest.skip('ConvolutionNd is supported only in Cudnn extension so far')
+    if func_name == 'ConvolutionCuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
     core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride,
                                            dilation, group, with_bias, seed, ctx,
                                            func_name)
@@ -72,9 +73,10 @@ def test_convolution_1d_forward_backward(inshape, kernel, outmaps, pad, stride,
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation",
-                         [((2, 2, 10, 10), (3, 2), 4, (3, 0), (1, 2), (2, 1)),
-                          ((2, 2, 10, 10), (3, 2), 4, (0, 0), (1, 1), (1, 1))])
+@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation", [
+    ((2, 2, 10, 10), (3, 2), 4, (3, 0), (1, 2), (2, 1)),
+    ((2, 2, 10, 10), (3, 2), 4, (0, 0), (1, 1), (1, 1)),
+])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
 def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
@@ -87,15 +89,16 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation",
-                         [((2, 2, 7, 8, 5), (2, 3, 2), 4, (3, 0, 0), (1, 2, 1), (2, 1, 1))])
+@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation", [
+    ((2, 2, 7, 8, 5), (2, 3, 2), 4, (3, 0, 0), (1, 2, 1), (2, 1, 1)),
+])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
 def test_convolution_3d_forward_backward(inshape, kernel, outmaps, pad, stride,
                                          dilation, group, with_bias, seed, ctx,
                                          func_name):
-    if func_name != 'ConvolutionCudaCudnn':
-        pytest.skip('ConvolutionNd is supported only in Cudnn extension so far')
+    if func_name == 'ConvolutionCuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
     core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride,
                                            dilation, group, with_bias, seed, ctx,
                                            func_name)

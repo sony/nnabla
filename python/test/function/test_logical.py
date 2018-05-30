@@ -61,7 +61,8 @@ def test_logical_scalar_compare_forward_backward(val, seed, fname, ctx, func_nam
     func = getattr(F, fname)
     ref_func = eval('lambda x, y: x {} y'.format(opstr))
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32) for _ in range(1)]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32)
+              for _ in range(1)]
     inputs[0][..., :2] = val
     function_tester(rng, func, ref_func, inputs, [val],
                     ctx=ctx, backward=[False, False], func_name=func_name)
@@ -78,7 +79,8 @@ def test_logical_binary_forward_backward(seed, fname, ctx, func_name):
     func = getattr(F, fname)
     ref_func = getattr(np, fname)
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32) for _ in range(2)]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32)
+              for _ in range(2)]
     function_tester(rng, func, ref_func, inputs,
                     ctx=ctx, backward=[False, False], func_name=func_name)
 
@@ -96,7 +98,8 @@ def test_logical_binary_compare_forward_backward(seed, fname, ctx, func_name):
     opstr = opstrs[fname]
     ref_func = eval('lambda x, y: x {} y'.format(opstr))
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32) for _ in range(2)]
+    inputs = [rng.randint(0, 2, size=(2, 3, 4)).astype(np.float32)
+              for _ in range(2)]
     inputs[0][..., :2] = inputs[1][..., :2]
     function_tester(rng, func, ref_func, inputs,
                     ctx=ctx, backward=[False, False], func_name=func_name)

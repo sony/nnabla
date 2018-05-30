@@ -219,7 +219,7 @@ class NnbExporter:
         for n, f in enumerate(self._info._network.function):
 
             function_data = struct.pack(
-                'H', list(self._info._function_info.keys()).index(f.type))
+                'H', self._info._function_info[f.type]['id'])
 
             # Default function implementation is 0(float)
             if f.name not in settings['functions']:

@@ -27,7 +27,7 @@ def ref_reshape(x, shape):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape, outshape", [((1, 1, 6), (1, 2, 3)), ((2, 3), (1, 6))])
+@pytest.mark.parametrize("inshape, outshape", [((1, 1, 6), (1, 2, 3)), ((2, 3), (1, 6)), ((2, 4), (-1, 2, 2))])
 def test_reshape_forward_backward(seed, inshape, outshape, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)

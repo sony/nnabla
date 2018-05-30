@@ -1268,6 +1268,81 @@ Note:
      - N-D array.
      - 
 
+ClipGradByValue
+^^^^^^^^^^^^^^^
+
+In forward pass, the function behaves as the identity.
+
+In backward pass, 
+
+.. math::
+	g_x = \begin{cases}
+	        max & (g_y > max) \\
+	        g_y & (otherwise) \\
+	        min & (g_y < min)
+	    \end{cases}.
+
+ClipGradByNorm
+^^^^^^^^^^^^^^^
+
+In the forward pass, the function behaves like the identity.
+
+In the backward pass, 
+
+.. math::
+
+    g_x = clip\_norm \times \frac{g_y}{\|g_y\|_2}
+
+
+where :math:`g_x` is the gradient w.r.t the input, :math:`g_y` is the gradient w.r.t. the output, 
+and :math:`clip\_norm` is the norm of :math:`g_y`. this is the case that `axes` is not set.  
+When `axes` is set, the norm is computed over `axes`.
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array of input.
+     - 
+   * - min
+     - N-D array of minimum input value by which the gradients of the `x` are clipped.
+     - 
+   * - max
+     - N-D array of maximum input value by which the gradients of the `x` are clipped.
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - clip_norm
+     - float
+     - 1.0
+     - Clip to the norm of input to `clip_norm` in the forward pass.
+   * - axes
+     - repeated int64
+     - range(x.ndim)
+     - Axes to be reduced. If empty list is given, all dimensions are reduced to scalar. This is used in the forward pass.
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - N-D array.
+     - 
+
 Reduction
 ---------
 

@@ -2,9 +2,9 @@
 
 .pytest_cache
 .cache
+.pytest_cache
 *.pyc
 
-/build/
 /build-tools/msvc/cmake_cpp_utils.bat
 /doc/?/
 /examples/cpp/mnist_runtime/mnist_runtime
@@ -21,6 +21,7 @@
 /python/setup.cfg-RelWithDebInfo
 /python/setup.cfg-Release
 /python/setup.cfg.in.configured
+/python/src/nnabla/*.lib
 /python/src/nnabla.egg-info/
 /python/src/nnabla/_init.cpp
 /python/src/nnabla/_init.h
@@ -62,8 +63,13 @@
 /third_party/protobuf-3.1.0tar.gz
 /third_party/zlib-1.2.11tar.gz
 
+/build/
+/build-doc/
+/build_wheel_py*/
+
 # Converted ReST
 # doc/python/tutorial/
 *.h5
 tmp.*/
 *.zip
+/docker/development/Dockerfile.build.py*

@@ -78,6 +78,9 @@ public:
 
 template <typename T, typename UnaryOp>
 void transform_unary(int size, const T *x, T *y, UnaryOp op) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
   for (int idx = 0; idx < size; ++idx) {
     y[idx] = op(x[idx]);
   }

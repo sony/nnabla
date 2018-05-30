@@ -363,9 +363,8 @@ Neural Network Layer:
       x0:
         doc: Indices with shape :math:`(I_0, ..., I_N)`
         template: TI
-      w:
+      x1:
         doc: Weights with shape :math:`(W_0, ..., W_M)`
-        parameter: true
     outputs:
       y:
         doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
@@ -728,6 +727,85 @@ Normalization:
         doc: Update running mean during forward execution.
         type: bool
         default: 'True'
+    outputs:
+      y:
+        doc: N-D array.
+  ClipGradByValue:
+    snake_name: clip_grad_by_value
+    doc: |2
+      In forward pass, the function behaves as the identity.
+
+      In backward pass,
+
+          .. math::
+              g_x = \begin{cases}
+                  max & (g_y > max) \\
+                  g_y & (otherwise) \\
+                  min & (g_y < min)
+                 \end{cases}.
+                 
+      A typical case for use is to prevent the gradient explotion through a whole computational graph. 
+      For example, if you want to clip gradient values for each feature map, 
+      
+      .. code-block:: python
+        
+        x = nn.Variable([16, 3, 32, 32])
+        min = F.broadcast(nn.Variable.from_numpy_array(np.tile(-1.0, 64)).reshape((1, 64, 1, 1)), (8, 64, 3, 3))
+        max = F.broadcast(nn.Variable.from_numpy_array(np.tile(1.0, 64)).reshape((1, 64, 1, 1)), (8, 64, 3, 3))
+        c = F.clip_grad_by_value(x, min=min, max=max)
+        h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
+                               
+    inputs:
+      x:
+        doc: N-D array of input.
+      min:
+        doc: N-D array of minimum input value by which the gradients of the `y` are clipped. 
+          Note that the shape of `min` must be the same as `x`'s and the backward to `min`
+          is not performed.
+      max:
+        doc: N-D array of maximum input value by which the gradients of the `y` are clipped.
+          Note that the shape of `max` must be the same as `x`'s and the backward to `max`
+          is not performed.
+    outputs:
+      y:
+        doc: N-D array.
+  ClipGradByNorm:
+    snake_name: clip_grad_by_norm
+    doc: |2
+
+      In the forward pass, the function behaves like the identity.
+
+      In the backward pass,
+
+      .. math::
+
+          g_x = N \times \frac{g_y}{\|g_y\|_2}.
+
+      where :math:`g_x` is the gradient w.r.t the input, :math:`g_y` is the gradient w.r.t. the output,
+      and :math:`N` is `clip_norm` where the norm of :math:`g_y` becomes. this is the case that `axes` is not set.
+      When `axes` is set, the norm is computed over `axes`.
+
+      A typical case for use is to prevent the gradient explosion through a whole computational graph.
+      For example, if you want to normalize gradient values over feature axis,
+
+      .. code-block:: python
+
+        x = nn.Variable([16, 3, 32, 32])
+        c = F.clip_grad_by_norm(x, axes=(1, ))
+        h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
+
+    inputs:
+      x:
+        doc: N-D array of input.
+    arguments:
+      clip_norm:
+        doc: Clip to the norm of input to `clip_norm` in the backward pass.
+        type: float
+        default: 1.0
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced to scalar. This is used in the forward pass.
+        type: repeated int64
+        default: range(x.ndim)
     outputs:
       y:
         doc: N-D array.
@@ -1707,6 +1785,161 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+  Sin:
+    snake_name: sin
+    doc: |2+
+
+      Element-wise sine (sin) function.
+
+      .. math::
+          y_i = \sin (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Cos:
+    snake_name: cos
+    doc: |2+
+
+      Element-wise cosine (cos) function.
+
+      .. math::
+          y_i = \cos (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Tan:
+    snake_name: tan
+    doc: |2+
+
+      Element-wise tangent (tan) function.
+
+      .. math::
+          y_i = \tan (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Sinh:
+    snake_name: sinh
+    doc: |2+
+
+      Element-wise hyperbolic sine (sinh) function.
+
+      .. math::
+          y_i = \sinh (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Cosh:
+    snake_name: cosh
+    doc: |2+
+
+      Element-wise hyperbolic cosine (cosh) function.
+
+      .. math::
+          y_i = \cosh (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x        
+  ASin:
+    snake_name: asin
+    doc: |2+
+
+      Element-wise arcsine (asin) function.
+
+      .. math::
+          y_i = \arcsin (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ACos:
+    snake_name: acos
+    doc: |2+
+
+      Element-wise arccosine (acos) function.
+
+      .. math::
+          y_i = \arccos (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ATan:
+    snake_name: atan
+    doc: |2+
+
+      Element-wise arctangent (atan) function.
+
+      .. math::
+          y_i = \arctan (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ASinh:
+    snake_name: asinh
+    doc: |2+
+
+      Element-wise hyperbolic arcsine (asinh) function.
+
+      .. math::
+          y_i = \text{arcsinh} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ACosh:
+    snake_name: acosh
+    doc: |2+
+
+      Element-wise hyperbolic arccosine (acosh) function.
+
+      .. math::
+          y_i = \text{arccosh} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  ATanh:
+    snake_name: atanh
+    doc: |2+
+
+      Element-wise hyperbolic arctangent (atanh) function.
+
+      .. math::
+          y_i = \text{arctanh} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+        
 Array Manipulation:
   Concatenate:
     snake_name: concatenate
@@ -1906,7 +2139,7 @@ Array Manipulation:
         doc: N-D array.
     arguments:
       shape:
-        doc: Dimensions for each axis
+        doc: Dimensions for each axis. ``-1`` can be specified only in one shape dimension. The value is calculated from the size of the array and remaining dimensions.
         type: Shape
     outputs:
       y:
@@ -3389,6 +3622,11 @@ Unsupported, Special Use:
       and creates a single 0-shape outputs.
       The forward pass does nothing. The backward pass set ones
       to the input grads if one_input_grad is set as true.
+
+      Note:
+          ``sink`` can only be called at the very end of the graph, and
+          ``grad`` of input variables are cleared
+           when ``y.backward(clear_buffer=True)`` is called.
     inputs:
       x:
         doc: Any number of inputs with any shape.
@@ -3402,3 +3640,50 @@ Unsupported, Special Use:
     outputs:
       y:
         doc: Dummy variable.
+  NmsDetection2d:
+    snake_name: nms_detection2d
+    doc: |2
+
+      Non-Maximum Suppression (NMS) to 2D Object detector output.
+      The input is a 3-dimensional tensor with shape of ``(B, N, 5 + C)``
+      where ``B`` denotes batch size, ``N`` denotes the number of detection box
+      candidates, and ``C`` denotes the number of classes of object detection.
+      ``5 + C`` consists of the box coordinates ``x, y, w, h`` in normalized
+      coordinates (size of each x and y are 1.0), objectness
+      (learned to predict IoU value to ground truth box), and the class
+       probabilities of ``C`` classes.
+      It outputs a tensor with the same dimensions as the input, where all
+      values are copied from the input to the output, except the class
+      probabilities are multiplied by objectness, and possibly suppressed to 0
+      by NMS.
+      During NMS, all of combination of pairs of bounding boxes is compared.
+      For each pair, the bounding box with a lower detection score
+      (described below) is suppressed if the overlap ratio (the IoU)
+      is greater than the value of ``nms``.
+
+      There are two suppression modes for NMS.
+
+      1. Suppress by class probability (``nms_per_class`` is ``True``):
+      For each bounding box, the detection score is calculated by
+      ``objectness * probability[class_id]`` for each class.
+      The suppression is done for each class independently.
+
+      2. Suppress by objectness (``nms_per_class`` is ``False``):
+      The suppression is done for each bounding box using ``objectness``
+      as a detection score. All class probabilities becomes 0 for
+      every suppressed boxes.
+
+      References:
+          * `Joseph Redmon, Ali Farhadi, YOLO9000: Better, Faster, Stronger.
+            <https://arxiv.org/abs/1612.08242>`_
+
+    inputs:
+      x:
+        doc: "A 3-dimensional array."
+    arguments:
+      thresh: {doc: "Detection score threshold.", type: float, default: 0.5}
+      nms: {doc: "IoU threshold for Non-maximum suppression (NMS).", type: float, default: 0.45}
+      nms_per_class: {doc: "If true, NMS is applied for each class.", type: bool, default: True}
+    outputs:
+      y:
+        doc: "A 3-dim array with the same dimensions with the input."

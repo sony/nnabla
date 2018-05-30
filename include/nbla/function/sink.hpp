@@ -48,6 +48,9 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  // NOTE: This avoid clearing input buffers by the graph engine during
+  // execution.
+  virtual bool prohibit_clear_input_buffers() const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

@@ -24,3 +24,4 @@ List of solvers
 .. autofunction:: RMSprop
 .. autofunction:: Adam
 .. autofunction:: Adamax
+.. autofunction:: AMSGRAD
