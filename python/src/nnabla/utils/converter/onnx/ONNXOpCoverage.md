@@ -44,7 +44,7 @@ that indicates if each operator can be converted to NNP.
 |Hardmax|:broken_heart:|Operator does not exist in NNabla|
 |Identity|:green_heart:||
 |InstanceNormalization|:broken_heart:|Operator does not exist in NNabla|
-|LRN|:yellow_heart:|Converted to PowScalar+Tranpose+SumPooling+Transpose+MulScalar+AddScalar+PowScalar|
+|LRN|:yellow_heart:|Converted to PowScalar+Tranpose+SumPooling+Transpose+MulScalar+AddScalar+PowScalar. Currently only odd size is allowed.|
 |LSTM|:broken_heart:|Operator does not exist in NNabla|
 |LeakyRelu|:green_heart:||
 |Less|:yellow_heart:|broadcast will be converted to a BroadcastTo|
