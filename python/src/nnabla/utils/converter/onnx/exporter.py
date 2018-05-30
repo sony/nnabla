@@ -72,7 +72,7 @@ nnabla_function_type_to_onnx_optype = {
     "MaximumScalar": "Clip",
     "AddScalar": "Add",
     "PowScalar": "Pow",
-    #"SumPooling": "Mul",
+    "SumPooling": "Mul",
     # optype that should get merged
     # with other operators
     "BroadcastTo": ""
@@ -419,45 +419,39 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         b = onnx.helper.make_attribute("broadcast", 1)
         n.attribute.extend([b])
         nl.append(n)
-    #elif func.type == "SumPooling":
-    #    # SumPooling gets converted to AveragePooling+Mul.
-    #    # Mul is used to counter the division in AveragePooling
-    #    # since SumPooling is just summing the values in each kernel.
-    #    # Copy kernel, stride, and pads values
-    #    spp = func.sum_pooling_param
-    #    attrs = {
-    #        "kernel_shape": spp.kernel.dim,
-    #        "strides": spp.stride.dim,
-    #    }
-    #    if spp.ignore_border:
-    #        attrs["pads"] = spp.pad.dim[:]*2
-    #    else:
-    #        attrs["pads"] = [0,1,0,1]
-    #        # When ignore border is false, we use auto_pad.
-    #        # Since auto_pad is deprecated we may have trouble in the future,
-    #        # but currently there seems no other option.
-    #        #attrs["auto_pad"] = "SAME_LOWER"
-    #        #raise ValueError("SumPooling with ignore_border=False"
-    #        #                 " is not supported")
-    #    apin = func.input[0]
-    #    apout = apin+"_ap"
-    #    ap = onnx.helper.make_node("AveragePool",
-    #                               [apin],
-    #                               [apout],
-    #                               **attrs)
-    #    nl.append(ap)
-    #    # Counter the averaging process by multiplying kernel size
-    #    kernel_size = np.prod(spp.kernel.dim)
-    #    mulout = apin+"_kernel"
-    #    c = generate_scalar_constant(mulout, func.name+"_kernel", kernel_size)
-    #    nl.append(c)
-    #    # Rewire Mul with average pooling output
-    #    del n.input[:]
-    #    n.input.extend([apout, mulout])
-    #    # set broadcast to true
-    #    b = onnx.helper.make_attribute("broadcast", 1)
-    #    n.attribute.extend([b])
-    #    nl.append(n)
+    elif func.type == "SumPooling":
+        # SumPooling gets converted to AveragePooling+Mul.
+        # Mul is used to counter the division in AveragePooling
+        # since SumPooling is just summing the values in each kernel.
+        # Copy kernel, stride, and pads values
+        spp = func.sum_pooling_param
+        if not spp.ignore_border:
+            raise ValueError("SumPooling with ignore_border=False"
+                             " is not supported")
+        attrs = {
+            "kernel_shape": spp.kernel.dim,
+            "strides": spp.stride.dim,
+            "pads": spp.pad.dim[:]*2
+        }
+        apin = func.input[0]
+        apout = apin+"_ap"
+        ap = onnx.helper.make_node("AveragePool",
+                                   [apin],
+                                   [apout],
+                                   **attrs)
+        nl.append(ap)
+        # Counter the averaging process by multiplying kernel size
+        kernel_size = np.prod(spp.kernel.dim)
+        mulout = apin+"_kernel"
+        c = generate_scalar_constant(mulout, func.name+"_kernel", kernel_size)
+        nl.append(c)
+        # Rewire Mul with average pooling output
+        del n.input[:]
+        n.input.extend([apout, mulout])
+        # set broadcast to true
+        b = onnx.helper.make_attribute("broadcast", 1)
+        n.attribute.extend([b])
+        nl.append(n)
     else:
         # Simply append node to list
         nl.append(n)

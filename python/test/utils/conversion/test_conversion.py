@@ -1077,6 +1077,14 @@ def test_onnx_nnp_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
                                     "lrn_c4_s3.nnp",
                                     "out_data_1", "exec_0")
 
+
+def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "lrn_c4_s3.nnp",
+                                    "lrn_c4_s3.onnx",
+                                    "out_data_1", "exec_0",
+                                    atol=1e-4)
+
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
 #def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
@@ -1085,12 +1093,6 @@ def test_onnx_nnp_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 #                                    "lrn_c3_s2.nnp",
 #                                    "out_data_1", "exec_0")
 
-
-#def test_nnp_onnx_conversion_lrn(tmpdir, nnp_fixture):
-#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "lrn.nnp",
-#                                    "lrn.onnx",
-#                                    "out_data_1", "exec_0")
 
     
     # These following tests are invalidated due to a
