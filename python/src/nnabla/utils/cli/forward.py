@@ -258,8 +258,13 @@ def infer_command(args):
     inputs = []
     for e in config.executors:
         for v, d in e.dataset_assign.items():
-            data = np.fromfile(args.inputs[input_file_index], np.float32).reshape(
-                v.variable_instance.d.shape)
+            input_filename = args.inputs[input_file_index]
+            if "int32" in input_filename:
+                data = np.fromfile(input_filename, np.int32).reshape(
+                    v.variable_instance.d.shape)
+            else:
+                data = np.fromfile(input_filename, np.float).reshape(
+                    v.variable_instance.d.shape)
             inputs.append((d, data))
             input_file_index += 1
     data = []
