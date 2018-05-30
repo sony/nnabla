@@ -17,18 +17,21 @@ import shutil
 import pytest
 import nnabla
 import nnabla.utils.load as nnload
-import onnx
 import numpy as np
 import pdb
+import onnx
 from collections import OrderedDict
-import caffe2.python.onnx.backend as oc2
-import cntk
-import cntk.ops.functions as cntkf
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import (
     OnnxReader, OnnxExporter,
     onnx_model_to_nnp_protobuf,
 )
+try:
+    import caffe2.python.onnx.backend as oc2
+    import cntk
+    import cntk.ops.functions as cntkf
+except:
+    print('Need to install Caffe2 and CNTK for testing.')
 
 # The directory of which the input ONNX files will be at
 TEST_DATA_DIR = "nnabla-sample-data/conversion_data"

@@ -67,14 +67,28 @@ nnabla_function_type_to_onnx_optype = {
     "RDivScalar": "Reciprocal",
     # optype that gets converted
     "Affine": "Gemm",
-    "MulScalar": "Neg",
+    "MulScalar": "Mul",
     "MinimumScalar": "Clip",
     "MaximumScalar": "Clip",
     "AddScalar": "Add",
+    "PowScalar": "Pow",
+    #"SumPooling": "Mul",
     # optype that should get merged
     # with other operators
     "BroadcastTo": ""
 }
+
+def generate_scalar_constant(name, tensor_name, scalar):
+    """Convert a scalar value to a Constant buffer.
+    This is mainly used for xxScalar operators."""
+    t = onnx.helper.make_tensor(tensor_name,
+                                data_type=TensorProto.FLOAT,
+                                dims=[1], vals=[scalar])
+    c = onnx.helper.make_node("Constant",
+                              [],
+                              [name],
+                              value=t)
+    return c
 
 def merge_broadcast(node, func, target_name, broadcast_target):
     # Set the broadcast attribute to the operator
@@ -354,8 +368,17 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         nl.append(n)
     elif func.type == "MulScalar":
         mp = func.mul_scalar_param
-        if mp.val != -1.0:
-            raise ValueError("MulScalar can be converted to Neg only if val is -1")
+        if mp.val == -1.0:
+            # Convert to Neg
+            n.op_type = "Neg"
+        else:
+            # Convert the scalar param to a Const node and add it with input
+            x = func.input[0]
+            sval = x+"_scalar"
+            c = generate_scalar_constant(sval, func.name+"_scalar", mp.val)
+            del n.input[:]
+            n.input.extend([x, sval])
+            nl.append(c)
         nl.append(n)
     elif func.type == "MinimumScalar":
         msp = func.minimum_scalar_param
@@ -372,18 +395,25 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # Convert the scalar param to a Const node and add it with input
         x = func.input[0]
         sval = x+"_scalar"
-        t = onnx.helper.make_tensor(func.name+"_scalar",
-                                    data_type=TensorProto.FLOAT,
-                                    dims=[1], vals=[asp.val])
-        c = onnx.helper.make_node(
-                "Constant",
-                [],
-                [sval],
-                value=t)
+        c = generate_scalar_constant(sval, func.name+"_scalar", asp.val)
         del n.input[:]
         n.input.extend([x, sval])
         nl.append(c)
         nl.append(n)
+    elif func.type == "PowScalar":
+        psp = func.pow_scalar_param
+        # Convert the scalar param to a Const node and add it with input
+        x = func.input[0]
+        sval = x+"_scalar"
+        c = generate_scalar_constant(sval, func.name+"_scalar", psp.val)
+        del n.input[:]
+        n.input.extend([x, sval])
+        nl.append(c)
+        nl.append(n)
+    #elif func.type == "SumPooling":
+    #    # SumPooling gets converted to AveragePooling+Mul.
+    #    # Mul is used to counter the division in AveragePooling
+    #    # since SumPooling is just summing the values in each kernel.
     else:
         # Simply append node to list
         nl.append(n)
