@@ -963,6 +963,10 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         if size < 0:
             raise ValueError("Size is required for {}"
                              .format(node.op_type))
+        elif (size % 2) == 0:
+            raise ValueError("Only size with odd values is "
+                             "currently supported for {}"
+                             .format(node.op_type))
 
         # Convert to PowScalar+Transpose+SumPooling+Transpose+
         # MulScalar+AddScalar+PowScalar
@@ -978,15 +982,10 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                                     [0, 2, 3, 1], base_name, func_counter)
         func_list.append(trans0)
         # SumPool along channels.
-        # We set ingore_border to false because we want to keep
-        # the channel dimension without using padding.
-        # If we do need to calculate padding depending on channel size here,
-        # LRN will not be possible with current NNabla
-        # because the number of channels will be unknown
-        # until runtime.
+        padval = (size - 1)//2
         sp_out = trans0_out+"_sp"
         sump = generate_sum_pooling(node.name, trans0_out, sp_out,
-                                    [1, size], [1, 1], False, [0, 0],
+                                    [1, size], [1, 1], True, [0, padval],
                                     base_name, func_counter)
         func_list.append(sump)
         # Transpose back

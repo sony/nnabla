@@ -77,8 +77,8 @@ def convert_onnx_to_nnp_and_compare(
         else:
             c2out = rep.run([])
         # for k in rep.workspace.Blobs():
-        #    v = rep.workspace.FetchBlob(k)
-        #    print(k, v.shape)
+        #     v = rep.workspace.FetchBlob(k)
+        #     print(k, v.shape)
         backend_out = c2out[out_name]
     elif backend == "cntk":
         n = cntkf.Function.load(path, format=cntk.ModelFormat.ONNX)
@@ -161,10 +161,14 @@ def convert_nnp_to_onnx_and_compare(
         print(model)
     # pdb.set_trace()
     c2out = None
+    rep = oc2.prepare(model)
     if type(in_img) is np.ndarray:
-        c2out = oc2.run_model(model, [in_img])
+        c2out = rep.run([in_img])
     else:
-        c2out = oc2.run_model(model, [])
+        c2out = rep.run([])
+    #for k in rep.workspace.Blobs():
+    #    v = rep.workspace.FetchBlob(k)
+    #    print(k, v.shape)
     c2 = c2out[out_name]
     # Compare both naabla and caffe2 results
     if show_output:
@@ -1067,11 +1071,19 @@ def test_nnp_onnx_conversion_softsign(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-def test_onnx_nnp_conversion_lrn(tmpdir, nnp_fixture):
+def test_onnx_nnp_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "lrn.onnx",
-                                    "lrn.nnp",
+                                    "lrn_c4_s3.onnx",
+                                    "lrn_c4_s3.nnp",
                                     "out_data_1", "exec_0")
+
+# Even sized LRN is not tested because we only support
+# Odd sizes for now.
+#def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "lrn_c3_s2.onnx",
+#                                    "lrn_c3_s2.nnp",
+#                                    "out_data_1", "exec_0")
 
 
 #def test_nnp_onnx_conversion_lrn(tmpdir, nnp_fixture):

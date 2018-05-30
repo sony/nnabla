@@ -432,12 +432,13 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
     #    if spp.ignore_border:
     #        attrs["pads"] = spp.pad.dim[:]*2
     #    else:
+    #        attrs["pads"] = [0,1,0,1]
     #        # When ignore border is false, we use auto_pad.
     #        # Since auto_pad is deprecated we may have trouble in the future,
     #        # but currently there seems no other option.
-    #        #attrs["auto_pad"] = "VALID"
-    #        raise ValueError("AveragePooling with ignore_border=False"
-    #                         " is not supported")
+    #        #attrs["auto_pad"] = "SAME_LOWER"
+    #        #raise ValueError("SumPooling with ignore_border=False"
+    #        #                 " is not supported")
     #    apin = func.input[0]
     #    apout = apin+"_ap"
     #    ap = onnx.helper.make_node("AveragePool",
