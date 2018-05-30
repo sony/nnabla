@@ -368,7 +368,8 @@ def _context(proto):
                 else:
                     raise ValueError('Invalid context {}'.format(proto))
             except ImportError:
-                logger.log(99, 'Could not import extension. Fallback into CPU context.')
+                logger.log(
+                    99, 'Could not import extension. Fallback into CPU context.')
                 import nnabla_ext.cpu
                 ctx = nnabla_ext.cpu.context()
         elif proto.backend == 'cpu':
