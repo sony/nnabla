@@ -160,6 +160,7 @@ Array Manipulation
 .. autofunction:: split
 .. autofunction:: stack
 .. autofunction:: slice
+.. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast
 .. autofunction:: flip
