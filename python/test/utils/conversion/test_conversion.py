@@ -1181,19 +1181,19 @@ def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
 
 
 @pytest.mark.slow
-def test_onnx_nnp_conversion_vgg16(tmpdir, nnp_fixture):
+def test_onnx_nnp_conversion_zfnet512(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "vgg16.onnx", "vgg16.nnp",
+                                    "zfnet512.onnx", "zfnet512.nnp",
                                     "gpu_0/softmax_1", "exec_0",
                                     in_name="gpu_0/data_0", in_img=img)
 
 
 @pytest.mark.slow
-def test_nnp_onnx_conversion_vgg16(tmpdir, nnp_fixture):
+def test_nnp_onnx_conversion_zfnet512(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "vgg16.nnp", "vgg16.onnx",
+                                    "zfnet512.nnp", "zfnet512.onnx",
                                     "gpu_0/softmax_1", "exec_0",
                                     in_name="gpu_0/data_0", in_img=img)
 
