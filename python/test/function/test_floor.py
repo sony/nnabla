@@ -18,20 +18,20 @@ import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
-ctxs = list_context('Round')
+ctxs = list_context('Floor')
 
 
-def ref_round(x):
-    return np.round(x)
+def ref_floor(x):
+    return np.floor(x)
 
 
-def ref_grad_round(x, dy):
+def ref_grad_floor(x, dy):
     return dy.flatten()
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_round_forward_backward(seed,
+def test_floor_forward_backward(seed,
                                 ctx, func_name):
     from nbla_test_utils import cap_ignore_region, \
         function_tester
@@ -41,9 +41,9 @@ def test_round_forward_backward(seed,
             rng.randn(2, 3, 4).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
 
-    function_tester(rng, F.round,
-                    ref_round,
+    function_tester(rng, F.floor,
+                    ref_floor,
                     inputs,
                     atol_b=1e-3, backward=[True],
                     ctx=ctx, func_name=func_name,
-                    ref_grad=ref_grad_round)
+                    ref_grad=ref_grad_floor)
