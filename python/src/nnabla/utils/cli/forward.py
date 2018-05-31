@@ -263,7 +263,7 @@ def infer_command(args):
                 data = np.fromfile(input_filename, np.int32).reshape(
                     v.variable_instance.d.shape)
             else:
-                data = np.fromfile(input_filename, np.float).reshape(
+                data = np.fromfile(input_filename, np.float32).reshape(
                     v.variable_instance.d.shape)
             inputs.append((d, data))
             input_file_index += 1
