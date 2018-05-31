@@ -92,6 +92,14 @@ nnabla-install:
 	-pip uninstall -y nnabla
 	pip install $(BUILD_DIRECTORY_WHEEL)/dist/*.whl
 
+########################################################################################################################
+# Shell (for rapid development)
+.PHONY: nnabla-shell
+nnabla-shell:
+	PS1="nnabla-build: " bash --norc -i
+
+########################################################################################################################
+# test
 .PHONY: nnabla-test-cpplib
 nnabla-test-cpplib: nnabla-cpplib
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) cpplibtest
