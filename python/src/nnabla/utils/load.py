@@ -116,7 +116,10 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        reshape_shape = (network.batch_size,) + \
+        batch_size = network.batch_size
+        if network.batch_size < 1:
+            batch_size = 1
+        reshape_shape = (batch_size,) + \
             tuple(f.reshape_param.shape.dim)
         function_instance = F.Reshape(ctx,
                                       shape=reshape_shape)

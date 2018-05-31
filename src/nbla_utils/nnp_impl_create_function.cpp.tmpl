@@ -51,6 +51,14 @@ shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& fu
     ${name}Parameter param = func.${func['snake_name']}_param();
 % for argname, arg in func['arguments'].items():
     ${proto_to_ctype(argname, arg)};
+% if name == 'Reshape' and argname == 'shape':
+    // Add batch_size.
+    int bs = batch_size();
+    if( bs < 1 ) {
+        bs = 1;
+    }
+    arg_shape.insert(arg_shape.begin(), bs);
+% endif
 % endfor
 % endif
     nbla::FunctionPtr fp = create_${name}(ctx_${''.join([', arg_' + argname for argname in func.get('arguments', {}).keys()])});
