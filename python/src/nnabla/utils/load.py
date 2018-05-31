@@ -116,10 +116,12 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        reshape_shape = (network.batch_size,) + \
-            tuple(f.reshape_param.shape.dim)
+        shape = tuple(
+            [d if d >= 0 else network.batch_size for d in f.reshape_param.shape.dim])
+        if numpy.prod(shape) != numpy.prod(inputs[0].shape):
+            shape = (network.batch_size,) + shape
         function_instance = F.Reshape(ctx,
-                                      shape=reshape_shape)
+                                      shape=shape)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":

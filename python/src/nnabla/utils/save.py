@@ -217,7 +217,6 @@ def _create_network(net):
         else:
             v.type = 'Buffer'
             # TODO: The first dimension is always considered as batch size.
-            # No problem?
             if len(shape) > 0:
                 shape[0] = -1
         v.shape.dim.extend(shape)
@@ -241,6 +240,9 @@ def _create_network(net):
 
     for name, function in functions.items():
         f = n.function.add()
+        if function['type'] == 'Reshape':
+            # TODO: The first dimension is always considered as batch size.
+            function['args']['shape'][0] = -1
         _create_function_nntxt(f, name, function)
 
     return n
