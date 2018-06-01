@@ -15,6 +15,8 @@
 #include "nnp_impl.hpp"
 #include <nbla/computation_graph/computation_graph.hpp>
 
+#include <google/protobuf/io/coded_stream.h>
+
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -232,7 +234,7 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   hid_t sp = H5Dget_space(did);
   int rank = H5Sget_simple_extent_ndims(sp);
   hsize_t dims[rank];
-  herr_t err = H5Sget_simple_extent_dims(sp, dims, NULL);
+  herr_t err = H5Sget_simple_extent_dims(sp, dims, nullptr);
   hid_t tid = H5Dget_type(did);
   H5T_class_t t_class = H5Tget_class(tid);
 
@@ -624,9 +626,15 @@ bool NnpImpl::add_protobuf(std::string filename) {
 }
 
 bool NnpImpl::add_protobuf(char *buffer, int size) {
+  constexpr int size_1024_mb = 1024 << 20;
+  constexpr int size_128_mb = 128 << 20;
   NNablaProtoBuf param;
-  std::string buf(buffer, size);
-  param.ParseFromString(buf);
+  std::unique_ptr<google::protobuf::io::ZeroCopyInputStream> input(
+      new google::protobuf::io::ArrayInputStream(buffer, size));
+  std::unique_ptr<google::protobuf::io::CodedInputStream> coded_input(
+      new google::protobuf::io::CodedInputStream(input.get()));
+  coded_input->SetTotalBytesLimit(size_1024_mb, size_128_mb);
+  param.ParseFromCodedStream(coded_input.get());
   proto_->MergeFrom(param);
   update_parameters();
   return true;

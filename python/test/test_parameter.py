@@ -19,6 +19,21 @@ import numpy as np
 import nnabla.parametric_functions as PF
 
 
+def test_get_set_pop_parameter():
+    import nnabla as nn
+    from nnabla.parameter import set_parameter, pop_parameter, get_parameter
+    nn.clear_parameters()
+    x = nn.Variable((2, 3, 4, 5))
+    key = 'a/b/c'
+    set_parameter(key, x)
+    x2 = get_parameter(key)
+    assert x is x2
+    x3 = pop_parameter(key)
+    assert x is x3
+    x4 = get_parameter(key)
+    assert x4 is None
+
+
 def test_get_parameter_or_create_need_grad():
     """Testing if need_grad flag works not not.
     """

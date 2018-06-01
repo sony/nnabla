@@ -20,6 +20,9 @@
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
 
+#include <nbla/utils/fold_from_patches.hpp>
+#include <nbla/utils/unfold_to_patches.hpp>
+
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -166,14 +169,8 @@ void Deconvolution<T>::forward_impl(const Variables &inputs,
     // col2im for w * x
     T *x_n = x + n * inner_size_i_;
     memset(x_n, 0, sizeof(*x_n) * inner_size_i_);
-    if (spatial_dims_ == 2) {
-      col2im<T>(col, channels_i_, spatial_shape_i_.data(), kernel_.data(),
-                pad_.data(), stride_.data(), dilation_.data(), x_n);
-    } else {
-      col2im_nd<T>(col, channels_i_, spatial_dims_, spatial_shape_i_.data(),
-                   kernel_.data(), pad_.data(), stride_.data(),
-                   dilation_.data(), x_n);
-    }
+    fold_from_patches<T>(col, x_n, channels_i_, spatial_shape_i_, kernel_, pad_,
+                         stride_, dilation_);
 
     // adding bias
     if (inputs.size() == 3) {
@@ -227,14 +224,8 @@ void Deconvolution<T>::backward_impl(const Variables &inputs,
 
     if (propagate_down[0] || propagate_down[1]) {
       // im2col
-      if (spatial_dims_ == 2) {
-        im2col<T>(dx_n, channels_i_, spatial_shape_i_.data(), kernel_.data(),
-                  pad_.data(), stride_.data(), dilation_.data(), col);
-      } else {
-        im2col_nd<T>(dx_n, channels_i_, spatial_dims_, spatial_shape_i_.data(),
-                     kernel_.data(), pad_.data(), stride_.data(),
-                     dilation_.data(), col);
-      }
+      unfold_to_patches<T>(dx_n, col, channels_i_, spatial_shape_i_, kernel_,
+                           pad_, stride_, dilation_);
     }
 
     if (propagate_down[0]) {

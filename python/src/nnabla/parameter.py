@@ -121,6 +121,27 @@ def get_parameter(key):
     return param
 
 
+def pop_parameter(key):
+    '''Remove and get parameter by key.
+
+    Args:
+        key(str): Key of parameter.
+
+    Returns: ~nnabla.Variable
+        Parameter if key found, otherwise None.
+
+    '''
+    names = key.split('/')
+    if len(names) > 1:
+        with parameter_scope(names[0]):
+            return pop_parameter('/'.join(names[1:]))
+    global current_scope
+    param = current_scope.get(key, None)
+    if param is not None:
+        del current_scope[key]
+    return param
+
+
 def set_parameter(key, param):
     names = key.split('/')
     if len(names) > 1:

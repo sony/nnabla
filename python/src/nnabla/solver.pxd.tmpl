@@ -41,11 +41,13 @@ cdef extern from "nbla/solver.hpp" namespace "nbla":
         string name() except +
         float learning_rate() except +
         void set_learning_rate(float learning_rate) except +
-
+<%
+from utils.type_conv import type_from_proto
+%>
 %for solver_name, solver in solver_info.items():
 cdef extern from "nbla/solver/${solver['snake_name']}.hpp" namespace "nbla":
     shared_ptr[CSolver] create_${solver_name}Solver(
-        const CContext &, ${', '.join(map(lambda kv: '{} {}'.format(kv[1]['type'], kv[0]), solver['arguments'].items()))}) except +
+        const CContext &, ${', '.join(map(lambda kv: '{} {}'.format(type_from_proto[kv[1]['type']]['pyx'], kv[0]), solver['arguments'].items()))}) except +
 %endfor
 
 cdef class Solver:

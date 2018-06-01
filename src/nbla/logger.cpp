@@ -38,8 +38,8 @@ std::shared_ptr<spdlog::logger> get_logger(void) {
 #ifdef _WIN32
     TCHAR szPath[MAX_PATH];
 
-    if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA | CSIDL_FLAG_CREATE, NULL,
-                                  0, szPath))) {
+    if (SUCCEEDED(SHGetFolderPath(nullptr, CSIDL_APPDATA | CSIDL_FLAG_CREATE,
+                                  nullptr, 0, szPath))) {
       logpath = szPath;
       logpath += "\\NNabla";
       _mkdir(logpath.c_str());
@@ -49,13 +49,13 @@ std::shared_ptr<spdlog::logger> get_logger(void) {
     }
 #else
     const char *homedir = getenv("HOME");
-    if (homedir == NULL) {
+    if (homedir == nullptr) {
       struct passwd *pw = getpwuid(getuid());
-      if (pw != NULL) {
+      if (pw != nullptr) {
         homedir = pw->pw_dir;
       }
     }
-    if (homedir == NULL) {
+    if (homedir == nullptr) {
       logpath = "/tmp_";
       logpath += getuid();
     } else {

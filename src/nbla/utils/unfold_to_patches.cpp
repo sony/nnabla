@@ -24,6 +24,8 @@ using std::thread;
 
 namespace nbla {
 
+namespace ns_unfold_to_patches {
+
 inline bool index_in_shape(int index, int shape) {
   return static_cast<unsigned>(index) < static_cast<unsigned>(shape);
 }
@@ -55,8 +57,8 @@ kernel_2d(const T *sample_data, const int *const outmap_shape,
 
   for (int i = 0; i < *outmap_shape; i++) {
     if (index_in_shape(sample_index, *sample_shape)) {
-      kernel_1d(sample_data, outmap_shape + 1, sample_shape + 1,
-                sample_shift + 1, stride + 1, column_data);
+      kernel_1d<T>(sample_data, outmap_shape + 1, sample_shape + 1,
+                   sample_shift + 1, stride + 1, column_data);
     } else {
       memset(column_data, 0, *outmap_isize * sizeof(T));
     }
@@ -80,18 +82,22 @@ void kernel_nd(const int dimensions, const T *sample_data,
     if (!index_in_shape(sample_index, *sample_shape)) {
       memset(column_data, 0, *outmap_isize * sizeof(T));
     } else if (dimensions > 2) {
-      kernel_nd(dimensions - 1, sample_data, outmap_shape + 1, outmap_isize + 1,
-                sample_shape + 1, sample_isize + 1, sample_shift + 1,
-                stride + 1, column_data);
+      kernel_nd<T>(dimensions - 1, sample_data, outmap_shape + 1,
+                   outmap_isize + 1, sample_shape + 1, sample_isize + 1,
+                   sample_shift + 1, stride + 1, column_data);
     } else {
-      kernel_1d(sample_data, outmap_shape + 1, sample_shape + 1,
-                sample_shift + 1, stride + 1, column_data);
+      kernel_1d<T>(sample_data, outmap_shape + 1, sample_shape + 1,
+                   sample_shift + 1, stride + 1, column_data);
     }
     sample_index += *stride;
     sample_data += sample_stride;
     column_data += *outmap_isize;
   }
 }
+
+} // namespace ns_unfold_to_patches
+
+using namespace ns_unfold_to_patches;
 
 template <typename T>
 void unfold_to_patches(const T *sample_data, T *column_data, const int channels,
@@ -146,37 +152,45 @@ void unfold_to_patches(const T *sample_data, T *column_data, const int channels,
   kernel_isize[0] = kernel_outer_size;
   kernel_outer_size *= channels;
 
-  vector<int> sample_shift(ndim);
-  vector<int> kernel_index(ndim + 1);
+#ifdef _OPENMP
+#pragma omp parallel
+  {
+#endif
+    vector<int> sample_shift(ndim);
+    vector<int> kernel_index(ndim + 1);
+#ifdef _OPENMP
+#pragma omp for
+#endif
+    for (int k = 0; k < kernel_outer_size; k++) {
+      auto column_data_p = column_data + k * outmap_outer_size;
+      for (int i = 0; i < ndim + 1; i++)
+        kernel_index[i] = (k / kernel_isize[i]) % kernel_shape[i];
 
-  for (int k = 0; k < kernel_outer_size; k++) {
+      for (int i = 0; i < ndim; i++)
+        sample_shift[i] = kernel_index[i + 1] * dilation[i] - padding[i];
 
-    for (int i = 0; i < ndim + 1; i++)
-      kernel_index[i] = (k / kernel_isize[i]) % kernel_shape[i];
+      auto sample_data_ptr = sample_data + kernel_index[0] * sample_outer_size;
 
-    for (int i = 0; i < ndim; i++)
-      sample_shift[i] = kernel_index[i + 1] * dilation[i] - padding[i];
-
-    auto sample_data_ptr = sample_data + kernel_index[0] * sample_outer_size;
-
-    switch (ndim) {
-    case 1:
-      kernel_1d<T>(sample_data_ptr, outmap_shape.data(), sample_shape.data(),
-                   sample_shift.data(), stride.data(), column_data);
-      break;
-    case 2:
-      kernel_2d<T>(sample_data_ptr, outmap_shape.data(), outmap_isize.data(),
-                   sample_shape.data(), sample_isize.data(),
-                   sample_shift.data(), stride.data(), column_data);
-      break;
-    default:
-      kernel_nd<T>(ndim, sample_data_ptr, outmap_shape.data(),
-                   outmap_isize.data(), sample_shape.data(),
-                   sample_isize.data(), sample_shift.data(), stride.data(),
-                   column_data);
+      switch (ndim) {
+      case 1:
+        kernel_1d<T>(sample_data_ptr, outmap_shape.data(), sample_shape.data(),
+                     sample_shift.data(), stride.data(), column_data_p);
+        break;
+      case 2:
+        kernel_2d<T>(sample_data_ptr, outmap_shape.data(), outmap_isize.data(),
+                     sample_shape.data(), sample_isize.data(),
+                     sample_shift.data(), stride.data(), column_data_p);
+        break;
+      default:
+        kernel_nd<T>(ndim, sample_data_ptr, outmap_shape.data(),
+                     outmap_isize.data(), sample_shape.data(),
+                     sample_isize.data(), sample_shift.data(), stride.data(),
+                     column_data_p);
+      }
     }
-    column_data += outmap_outer_size;
+#ifdef _OPENMP
   }
+#endif
 }
 
 // Template specialization

@@ -384,3 +384,54 @@ def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fin
     if not quantize:
         return x
     return pow2_quantize_base(x, sign, with_zero, n, m, ste_fine_grained, outputs=outputs)
+
+
+def clip_by_value(x, min, max):
+    r"""Clip inputs by values.
+
+    .. math::
+
+        y = \begin{cases}
+                max & (x > max) \\
+                x & (otherwise) \\
+                min & (x < min)
+            \end{cases}.
+
+    Args:
+        x (Variable): An input variable.
+        min (Variable): A min variable by which `x` is clipped. Note that the shape of `min` must be the same as `x`'s.
+        max (Variable): A max variable by which `x` is clipped. Note that the shape of `max` must be the same as `x`'s
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    """
+    return F.minimum2(F.maximum2(x, min), max)
+
+
+def clip_by_norm(x, clip_norm, axis=None):
+    r"""ClipByNorm
+
+    .. math::
+
+      y = N \times \frac{x}{\|x\|_2}.
+
+    where :math:`x` the input, :math:`y` is the output, 
+    and :math:`N` is `clip_norm` where the norm of :math:`x` becomes. this is the case that `axes` is not set.  
+    When `axes` is set, the norm is computed over `axes`.
+
+    Args:
+        x (Variable): An input variable.
+        clip_norm (`Variable` or `float`): An input scalar variable or float value.
+        axis (None, int or tuple of ints): Axis or axes along which the 
+        reduction is performed. Passing the default value `None` will reduce all dimensions.
+    Returns:
+        ~nnabla.Variable: N-D array.
+    """
+    if axis is None:
+        axis = range(x.ndim)
+    elif not hasattr(axis, '__iter__'):
+        axis = [axis]
+    x_norm = F.pow_scalar(F.sum(x**2, axis=axis, keepdims=True), 0.5)
+    y = clip_norm * x / x_norm
+    return y

@@ -1353,7 +1353,7 @@ def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
         Neural Computation. 1997.
 
     Args:
-        x (~nnabla.Variable): Input N-D array with shape (batch_size, step_size).
+        x (~nnabla.Variable): Input N-D array with shape (batch_size, input_size).
         h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
         c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
         state_size (int): Internal state size is set to `state_size`.
@@ -1413,7 +1413,7 @@ class LSTMCell:
         Updates h and c by calling lstm function.
 
         Args:
-            x (~nnabla.Variable): Input N-D array with shape (batch_size, step_size).
+            x (~nnabla.Variable): Input N-D array with shape (batch_size, input_size).
             w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
             b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
             fix_parameters (bool): When set to `True`, the weights and biases will not be updated.

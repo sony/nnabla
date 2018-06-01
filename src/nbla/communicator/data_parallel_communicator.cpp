@@ -132,4 +132,6 @@ vector<string> DataParallelCommunicator<T>::allowed_array_classes() {
 }
 
 template class DataParallelCommunicator<float>;
+
+template class DataParallelCommunicator<Half>;
 }

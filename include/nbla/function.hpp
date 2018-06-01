@@ -243,6 +243,11 @@ public:
         "This must be implemented for in-place support of this function.");
   }
 
+  /** A flag for preventing that the graph engine clears buffers of
+      input variables even if clear_buffer is true and condition mets.
+   */
+  virtual bool prohibit_clear_input_buffers() const { return false; }
+
   /** Copy another instance of Function with the same context.
   */
   virtual shared_ptr<Function> copy() const = 0;
