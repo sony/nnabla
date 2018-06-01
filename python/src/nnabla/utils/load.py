@@ -116,13 +116,12 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        batch_size = network.batch_size
-        if network.batch_size < 1:
-            batch_size = 1
-        reshape_shape = (batch_size,) + \
-            tuple(f.reshape_param.shape.dim)
+        shape = tuple(
+            [d if d >= 0 else network.batch_size for d in f.reshape_param.shape.dim])
+        if numpy.prod(shape) != numpy.prod(inputs[0].shape):
+            shape = (network.batch_size,) + shape
         function_instance = F.Reshape(ctx,
-                                      shape=reshape_shape)
+                                      shape=shape)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -361,20 +360,14 @@ def _context(proto):
         logger.warn('Old-style context. Updating to new format.')
         # Update from old Context
         if proto.backend == 'cpu|cuda':
-            try:
-                if 'cudnn' in proto.compute_backend:
-                    import nnabla_ext.cudnn
-                    ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
-                elif 'default' in proto.compute_backend:
-                    import nnabla_ext.cuda
-                    ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
-                else:
-                    raise ValueError('Invalid context {}'.format(proto))
-            except ImportError:
-                logger.log(
-                    99, 'Could not import extension. Fallback into CPU context.')
-                import nnabla_ext.cpu
-                ctx = nnabla_ext.cpu.context()
+            if 'cudnn' in proto.compute_backend:
+                import nnabla_ext.cudnn
+                ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+            elif 'default' in proto.compute_backend:
+                import nnabla_ext.cuda
+                ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+            else:
+                raise ValueError('Invalid context {}'.format(proto))
         elif proto.backend == 'cpu':
             import nnabla_ext.cpu
             ctx = nnabla_ext.cpu.context()
@@ -600,8 +593,6 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
         if ext in ['.nntxt', '.prototxt']:
             with open(filename, 'rt') as f:
                 text_format.Merge(f.read(), proto)
-            if len(proto.parameter) > 0:
-                nn.load_parameters(filename)
         elif ext in ['.protobuf', '.h5']:
             nn.load_parameters(filename)
 
@@ -619,8 +610,6 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
                             nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
                                 text_format.Merge(f.read(), proto)
-                            if len(proto.parameter) > 0:
-                                nn.load_parameters(os.path.join(tmpdir, name))
                         elif ext in ['.protobuf', '.h5']:
                             nnp.extract(name, tmpdir)
                             nn.load_parameters(os.path.join(tmpdir, name))
