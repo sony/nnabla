@@ -27,6 +27,7 @@ nnabla_function_type_to_onnx_optype = {
     "Dropout": "Dropout",
     "Softmax": "Softmax",
     "BatchNormalization": "BatchNormalization",
+    "Reshape": "Reshape",
     "Transpose": "Transpose",
     "Abs": "Abs",
     "Sigmoid": "Sigmoid",
@@ -84,6 +85,16 @@ def generate_scalar_constant(output_name, tensor_name, scalar):
     t = onnx.helper.make_tensor(tensor_name,
                                 data_type=TensorProto.FLOAT,
                                 dims=[1], vals=[scalar])
+    c = onnx.helper.make_node("Constant",
+                              [],
+                              [output_name],
+                              value=t)
+    return c
+
+def generate_constant(output_name, tensor_name, data_type, dims, vals):
+    t = onnx.helper.make_tensor(tensor_name,
+                                data_type=data_type,
+                                dims=dims, vals=vals)
     c = onnx.helper.make_node("Constant",
                               [],
                               [output_name],
@@ -233,6 +244,19 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
             m = onnx.helper.make_attribute("momentum", bpp.decay_rate)
             attrs.append(m)
         n.attribute.extend(attrs)
+        nl.append(n)
+    elif func.type == "Reshape":
+        # Convert Reshape size to a constant
+        rp = func.reshape_param
+        x = func.input[0]
+        c_out = x+"_shape"
+        c = generate_constant(c_out, func.name+"_shape",
+                              TensorProto.INT32, [len(rp.shape.dim)],
+                              rp.shape.dim)
+        nl.append(c)
+        # Add resize target shape as the second input
+        del n.input[:]
+        n.input.extend([x, c_out])
         nl.append(n)
     elif func.type == "Transpose":
         tp = func.transpose_param

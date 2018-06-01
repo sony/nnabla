@@ -718,7 +718,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                         rp.shape.dim.extend(init.int64_data)
                     shape_found = True
                     break
-            # stored the merged input so we can igore it later
+            # stored the merged input so we can ignore it later
             merged_inputs.append(shape_input)
             del func.input[1]
         if not shape_found:
