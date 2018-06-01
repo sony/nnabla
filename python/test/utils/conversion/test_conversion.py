@@ -430,17 +430,16 @@ def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
                                     "Pooling33_Output_0", "exec_0")
 
 
-#def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
-#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "reshape.onnx", "reshape.nnp",
-#                                    "out_data_1", "exec_0",
-#                                    export_nnp_path=TEST_DATA_DIR)
-#
-#
-#def test_nnp_onnx_conversion_reshape(tmpdir, nnp_fixture):
-#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "reshape.nnp", "reshape.onnx",
-#                                    "out_data_1", "exec_0")
+def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reshape.onnx", "reshape.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_reshape(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reshape.nnp", "reshape.onnx",
+                                    "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_matmul(tmpdir, nnp_fixture):
