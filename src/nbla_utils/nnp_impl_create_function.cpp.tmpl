@@ -52,12 +52,25 @@ shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& fu
 % for argname, arg in func['arguments'].items():
     ${proto_to_ctype(argname, arg)};
 % if name == 'Reshape' and argname == 'shape':
-    // Add batch_size.
-    int bs = batch_size();
-    if( bs < 1 ) {
-        bs = 1;
+
+    int prod_shape = 1;
+    for( auto &v : arg_shape ) {
+      prod_shape *= v;
+      if( v < 0 ) {
+        v = batch_size();
+      }
     }
-    arg_shape.insert(arg_shape.begin(), bs);
+    int prod_input = 1;
+    for( auto inp : func.input() ) {
+      auto var_it = variable_protos_.find(inp);
+      const ::Variable *var = var_it->second;
+      for ( auto d : var->shape().dim() ) {
+        prod_input *= d;
+      }
+    }
+    if( prod_input != prod_shape ) {
+      arg_shape.insert(arg_shape.begin(), batch_size());
+    }
 % endif
 % endfor
 % endif
