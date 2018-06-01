@@ -284,13 +284,11 @@ def test_onnx_nnp_conversion_maxpool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-# NNP to ONNX conversion for asymmetry maxpool padding
-# currently ends in an unknown error at caffe2 backend
-#def test_nnp_onnx_conversion_maxpool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
-#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "maxpool_p0_0_1_1_s1_k2.nnp",
-#                                    "maxpool_p0_0_1_1_s1_k2.onnx",
-#                                    "out_data_1", "exec_0")
+def test_nnp_onnx_conversion_maxpool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "maxpool_p0_0_1_1_s1_k2.nnp",
+                                    "maxpool_p0_0_1_1_s1_k2.onnx",
+                                    "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
@@ -1144,11 +1142,24 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
                                     in_name="data_0", in_img=img)
 
 
-#def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
-#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-#    convert_onnx_to_nnp_and_compare(
-#        tmpdir, TEST_DATA_DIR, "inception_v2.onnx", "inception_v2.nnp", "prob_1", "exec_0",
-#        in_name="data_0", in_img=img)
+@pytest.mark.slow
+def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "inception_v2.onnx", "inception_v2.nnp",
+                                    "prob_1", "exec_0",
+                                    in_name="data_0", in_img=img,
+                                    export_nnp_path=TEST_DATA_DIR)
+
+
+@pytest.mark.slow
+def test_nnp_onnx_conversion_inception_v2(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "inception_v2.nnp", "inception_v2.onnx",
+                                    "prob_1", "exec_0",
+                                    in_name="data_0", in_img=img)
+
 
 @pytest.mark.slow
 def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):

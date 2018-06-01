@@ -486,9 +486,13 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         }
         # separate pad values to match ONNX format
         # (S0,E0,S1,E1) => (S0,S1,E0,E1)
+        dim = len(pp.pad_width) // 2
+        zero_dim_num = 4-dim  # assuming 4D input
         it = iter(pp.pad_width)
-        starts = []
-        ends = []
+        # We need to fill empty dimensions with zero padding
+        # (at least this is what Caffe2 expects)
+        starts = [0]*zero_dim_num
+        ends = [0]*zero_dim_num
         for x in it:
             starts.append(x)
             ends.append(next(it))
