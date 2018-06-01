@@ -1233,14 +1233,27 @@ def test_nnp_onnx_conversion_zfnet512(tmpdir, nnp_fixture):
                                     in_name="gpu_0/data_0", in_img=img)
 
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
-#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "bvlc_googlenet.onnx", "bvlc_googlenet.nnp",
-#                                    "prob_1", "exec_0",
-#                                    in_name="data_0", in_img=img)
-#
+@pytest.mark.slow
+def test_onnx_nnp_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "bvlc_googlenet.onnx",
+                                    "bvlc_googlenet.nnp",
+                                    "prob_1", "exec_0",
+                                    in_name="data_0", in_img=img)
+
+
+@pytest.mark.slow
+def test_nnp_onnx_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
+    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "bvlc_googlenet.nnp",
+                                    "bvlc_googlenet.onnx",
+                                    "prob_1", "exec_0",
+                                    in_name="data_0", in_img=img,
+                                    atol=1e-5)
+
+
 #@pytest.mark.slow
 #def test_onnx_nnp_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
