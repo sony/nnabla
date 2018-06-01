@@ -118,7 +118,9 @@ def add_value_info_as_buffer(network, info):
     return v
 
 
-def set_kernel_parameter_and_add_padding(node, kp, base_name, func_counter):
+def set_kernel_parameter_and_add_padding(node, kp,
+                                         pad_mode, pad_val,
+                                         base_name, func_counter):
     """Set kernel related parameters(strides, pads, kernel_shape) to the given
     parameter. This function also generates a padding function if we need a
     seperate pad function for asymmetry padding.
@@ -170,7 +172,7 @@ def set_kernel_parameter_and_add_padding(node, kp, base_name, func_counter):
             ends = pads[half:]
             pad_width = [j for i in zip(starts, ends) for j in i]
             padf = generate_pad(node.name, input, padded,
-                                "replicate", pad_width, 0,
+                                pad_mode, pad_width, pad_val,
                                 base_name, func_counter)
         kp.pad.dim.extend(padval)
     else:
@@ -595,7 +597,9 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         func_list.append(func)
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
+        # We simulate replicate mode by padding with negative infinite
         padf = set_kernel_parameter_and_add_padding(node, mpp,
+                                                    "constant", -np.inf,
                                                     base_name, func_counter)
         if padf:
             # append a pad function if we need asymmetry padding.
@@ -610,6 +614,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
     elif node.op_type == "AveragePool":
         app = func.average_pooling_param
         padf = set_kernel_parameter_and_add_padding(node, app,
+                                                    "replicate", 0,
                                                     base_name, func_counter)
         if padf:
             # append a pad function if we need asymmetry padding
