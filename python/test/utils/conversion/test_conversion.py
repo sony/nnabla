@@ -277,6 +277,20 @@ def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+def test_onnx_nnp_conversion_maxpool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "maxpool_p0_0_1_1_s1_k2.onnx",
+                                    "maxpool_p0_0_1_1_s1_k2.nnp",
+                                    "out_data_1", "exec_0")
+
+
+#def test_nnp_onnx_conversion_maxpool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "maxpool_p0_0_1_1_s1_k2.nnp",
+#                                    "maxpool_p0_0_1_1_s1_k2.onnx",
+#                                    "out_data_1", "exec_0")
+
+
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")

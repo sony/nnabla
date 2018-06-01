@@ -117,8 +117,12 @@ def add_value_info_as_buffer(network, info):
     v.type = "Buffer"
     return v
 
-def set_kernel_parameter(node, kp):
-    """Set kernel related parameters(strides, pads, kernel_shape) to the given parameter"""
+
+def set_kernel_parameter_and_add_padding(node, kp, base_name, func_counter):
+    """Set kernel related parameters(strides, pads, kernel_shape) to the given
+    parameter. This function also generates a padding function if we need a
+    seperate pad function for asymmetry padding.
+    """
     dims = []
     strides = []
     pads = []
@@ -148,10 +152,26 @@ def set_kernel_parameter(node, kp):
     # NNabla requires for the dimensions of strides, pads, kernels to match.
     # We align the dimensions for all three attributes to the shortest one.
     dim = min(dims)
+    padf = None
     if strides:
         kp.stride.dim.extend(strides[:])
     if pads:
-        padval = check_padding(pads, dim)
+        padval = []
+        asymmetry = check_padding(pads, dim, padval)
+        if asymmetry:
+            # Add a separate padding function for
+            # asymmetry padding
+            input = node.input[0]
+            padded = input+"_pad"
+            # interleave pad values to match NNabla format
+            # (S0,S1,E0,E1) => (S0,E0,S1,E1)
+            half = len(pads)//2
+            starts = pads[:half]
+            ends = pads[half:]
+            pad_width = [j for i in zip(starts, ends) for j in i]
+            padf = generate_pad(node.name, input, padded,
+                                "replicate", pad_width, 0,
+                                base_name, func_counter)
         kp.pad.dim.extend(padval)
     else:
         # In case we don't have padding set,
@@ -162,6 +182,7 @@ def set_kernel_parameter(node, kp):
         kp.pad.dim.extend([0]*dim)
     if kernel:
         kp.kernel.dim.extend(kernel[:])
+    return padf
 
 
 def update_function_counter(func_type, func_counter, count):
@@ -330,6 +351,20 @@ def generate_sum_pooling(node_name, x, out_name,
     spp.pad.dim.extend(pad)
     return func
 
+def generate_pad(node_name, x, out_name,
+                 mode, pad_width, constant_val,
+                 base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "Pad"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    pp = func.pad_param
+    pp.mode = mode
+    pp.pad_width.extend(pad_width)
+    pp.constant_value = constant_val
+    return func
+
 
 def convert_broadcasting_operator(func_list, node, func, base_name, func_counter):
     """Converts a broadcasting operator to a composite with BroadcastTo"""
@@ -381,20 +416,26 @@ def set_reduction_attrs(p, node):
                              .format(attr.name, node.op_type))
 
 
-def check_padding(pads, dim):
+def check_padding(pads, dim, padval):
     """Check each padding start/end value
-    so that they match, becuase NNabla cannot set
-    different values for start/end per axis."""
-    padval = []
+    and set the sufficient pad value.
+    If we have asymmetry padding, we will return
+    True to indicate the need for a separate padding function"""
+    asymmetry = False
     for i in range(dim):
         s = pads[i]
         e = pads[i+dim]
-        if s != e:
-            raise ValueError("NNabla does not support different padding"
-                             " for start and end of each axis")
-        # If the values match, we set it as the padding for current axis
-        padval.append(s)
-    return padval
+        if s == e:
+            padval.append(s)
+        else:
+            asymmetry = True
+            # We must add a separate pad function for asymmetry padding.
+            # Since the pad function will do all the padding,
+            # we will remove all padding here.
+            del padval[:]
+            padval.extend([0]*dim)
+            break
+    return asymmetry
 
 
 def convert_to_functions(pb, network, node, base_name, initializers,
@@ -520,7 +561,26 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         if strides:
             cp.stride.dim.extend(strides[:])
         if pads:
-            padval = check_padding(pads, dim)
+            padval = []
+            asymmetry = check_padding(pads, dim, padval)
+            if asymmetry:
+                # Add a separate padding function for
+                # asymmetry padding
+                input = node.input[0]
+                padded = input+"_pad"
+                # interleave pad values to match NNabla format
+                # (S0,S1,E0,E1) => (S0,E0,S1,E1)
+                half = len(pads)//2
+                starts = pads[:half]
+                ends = pads[half:]
+                pad_width = [j for i in zip(starts, ends) for j in i]
+                padf = generate_pad(node.name, input, padded,
+                                    "replicate", pad_width, 0,
+                                    base_name, func_counter)
+                func_list.append(padf)
+                # Rewire input to the padded version
+                del func.input[:]
+                func.input.extend(padded)
             cp.pad.dim.extend(padval)
         else:
             # Set default values.
@@ -535,14 +595,28 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         func_list.append(func)
     elif node.op_type == "MaxPool":
         mpp = func.max_pooling_param
-        set_kernel_parameter(node, mpp)
+        padf = set_kernel_parameter_and_add_padding(node, mpp,
+                                                    base_name, func_counter)
+        if padf:
+            # append a pad function if we need asymmetry padding.
+            func_list.append(padf)
+            # Rewire input to the padded version
+            del func.input[:]
+            func.input.extend(padf.output)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         mpp.ignore_border = True
         func_list.append(func)
     elif node.op_type == "AveragePool":
         app = func.average_pooling_param
-        set_kernel_parameter(node, app)
+        padf = set_kernel_parameter_and_add_padding(node, app,
+                                                    base_name, func_counter)
+        if padf:
+            # append a pad function if we need asymmetry padding
+            func_list.append(padf)
+            # Rewire input to the padded version
+            del func.input[:]
+            func.input.extend(padf.output)
         # Always ignore borders in order to match ONNX(caffe2) results?
         # Not quite sure yet.
         app.ignore_border = True

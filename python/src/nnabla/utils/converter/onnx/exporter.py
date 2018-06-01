@@ -38,6 +38,7 @@ nnabla_function_type_to_onnx_optype = {
     "Equal": "Equal",
     "Exp": "Exp",
     "Identity": "Identity",
+    "Pad": "Pad",
     # optype with different names
     "ReLU": "Relu",
     "PReLU": "PRelu",
@@ -475,6 +476,27 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # set broadcast to true
         b = onnx.helper.make_attribute("broadcast", 1)
         n.attribute.extend([b])
+        nl.append(n)
+    elif func.type == "Pad":
+        pp = func.pad_param
+        mode_conv = {
+            "constant": "constant",
+            "replicate": "edge",
+            "reflect": "reflect"
+        }
+        # separate pad values to match ONNX format
+        # (S0,E0,S1,E1) => (S0,S1,E0,E1)
+        it = iter(pp.pad_width)
+        starts = []
+        ends = []
+        for x in it:
+            starts.append(x)
+            ends.append(next(it))
+        starts.extend(ends)
+        pad = onnx.helper.make_attribute("pads", starts)
+        m = onnx.helper.make_attribute("mode", mode_conv[pp.mode])
+        v = onnx.helper.make_attribute("value", pp.constant_value)
+        n.attribute.extend([pad, m, v])
         nl.append(n)
     else:
         # Simply append node to list
