@@ -548,7 +548,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 if attr.type != AttributeProto.INT:
                     raise ValueError(
                         "Only INT is supported for group in Conv op_type")
-                cp.group = attr.int
+                cp.group = attr.i
             elif attr.name == "kernel_shape":
                 # We do not set 'kernel_shape' to NNabla
                 # since NNabla doesn't have a parameter for it
