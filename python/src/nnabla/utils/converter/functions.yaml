@@ -2059,6 +2059,8 @@ Array Manipulation:
 
              (Currently only `constant` mode is supported)
         type: string
+        available_values:
+          - constant
         default: '''constant'''
       constant_value:
         doc: |
