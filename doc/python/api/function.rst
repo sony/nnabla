@@ -137,6 +137,8 @@ Math
 .. autofunction:: exp
 .. autofunction:: log
 .. autofunction:: round
+.. autofunction:: ceil
+.. autofunction:: floor
 .. autofunction:: identity
 .. autofunction:: matrix_diag
 .. autofunction:: matrix_diag_part

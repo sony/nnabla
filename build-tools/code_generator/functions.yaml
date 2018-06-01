@@ -1773,6 +1773,52 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+  Ceil:
+    snake_name: ceil
+    doc: |2+
+
+      Element-wise ceil function.
+
+      In the forward pass, this function simply returns the smallest integer which is not less than the input.
+
+      .. math::
+          y_i = ceil(x_i).
+
+      In the backward pass, the simple Straight-Through Estimator (STE) is applied,
+
+      .. math::
+          \frac{\partial y_i}{\partial x_i} = 1.
+
+    inputs:
+      x:
+        doc: Input variable
+    arguments: {}
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+  Floor:
+    snake_name: floor
+    doc: |2+
+
+      Element-wise floor function.
+
+      In the forward pass, this function simply returns the largest integer which is not greater than the input.
+
+      .. math::
+          y_i = floor(x_i).
+
+      In the backward pass, the simple Straight-Through Estimator (STE) is applied,
+
+      .. math::
+          \frac{\partial y_i}{\partial x_i} = 1.
+
+    inputs:
+      x:
+        doc: Input variable
+    arguments: {}
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
   Sin:
     snake_name: sin
     doc: |2+
