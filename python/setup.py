@@ -220,6 +220,7 @@ if __name__ == '__main__':
                 'nnabla.contrib',
                 'nnabla.utils',
                 'nnabla.utils.cli',
+                'nnabla.utils.factorization',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 

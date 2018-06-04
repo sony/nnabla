@@ -60,6 +60,9 @@ Here is the list of parametric functions.
 .. autofunction:: embed
 .. autofunction:: prelu
 
+.. autofunction:: svd_affine
+.. autofunction:: svd_convolution
+.. autofunction:: cpd3_convolution
 .. autofunction:: binary_connect_affine
 .. autofunction:: binary_connect_convolution
 .. autofunction:: binary_weight_affine
@@ -71,6 +74,7 @@ Here is the list of parametric functions.
 .. autofunction:: fixed_point_quantized_convolution
 .. autofunction:: pow2_quantized_affine
 .. autofunction:: pow2_quantized_convolution
+
 .. autofunction:: lstm
 
 .. autoclass:: LSTMCell
