@@ -335,6 +335,21 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+#def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "average_pool_p0_0_1_1_s1_k2.onnx",
+#                                    "average_pool_p0_0_1_1_s1_k2.nnp",
+#                                    "out_data_1", "exec_0",
+#                                    export_nnp_path=TEST_DATA_DIR)
+#
+#
+#def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "average_pool_p0_0_1_1_s1_k2.nnp",
+#                                    "average_pool_p0_0_1_1_s1_k2.onnx",
+#                                    "out_data_1", "exec_0")
+
+
 def test_onnx_nnp_conversion_sum(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sum.onnx", "sum.nnp",
@@ -1270,6 +1285,15 @@ def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
                                     "bvlc_caffenet.onnx",
                                     "prob_1", "exec_0",
                                     in_name="data_0", in_img=img)
+
+
+#@pytest.mark.slow
+#def test_onnx_nnp_conversion_shufflenet(tmpdir, nnp_fixture):
+#    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "shufflenet.onnx", "shufflenet.nnp",
+#                                    "gpu_0/softmax_1", "exec_0",
+#                                    in_name="gpu_0/data_0", in_img=img)
 
 
 #@pytest.mark.slow
