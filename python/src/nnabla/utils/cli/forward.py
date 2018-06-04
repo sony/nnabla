@@ -63,7 +63,10 @@ def update_result(args, index, result, values, output_index, type_end_names, out
             # Output data
             if vtype == 'col' or not output_image:
                 # Vector type output
-                outputs[data_index].extend(np.ndarray.flatten(d))
+                if np.isscalar(d):
+                    outputs[data_index].extend([d])
+                else:
+                    outputs[data_index].extend(np.ndarray.flatten(d))
             else:
                 for dim_index in range(dim):
                     file_index = index + data_index
@@ -98,7 +101,6 @@ def update_result(args, index, result, values, output_index, type_end_names, out
         output_index += 1
 
     return result, outputs
-
 
 def forward(args, index, config, data, variables, output_image=True):
     class ForwardResult:
