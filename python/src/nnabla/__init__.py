@@ -25,7 +25,8 @@ from ._init import (
 from ._version import (
     __version__,
     __author__,
-    __email__
+    __email__,
+    __build_number__
 )
 from .variable import Variable, Context
 from ._nd_array import NdArray
