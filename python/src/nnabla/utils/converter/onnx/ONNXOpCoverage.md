@@ -63,7 +63,7 @@ that indicates if each operator can be converted to NNP.
 |Not|:green_heart:||
 |Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |PRelu|:green_heart:||
-|Pad|:broken_heart:|Operator does not exist in NNabla|
+|Pad|:purple_heart:|Should map to Pad|
 |Pow|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |RNN|:broken_heart:|Operator does not exist in NNabla|
 |RandomNormal|:purple_heart:|Should be able to map to Randn|
