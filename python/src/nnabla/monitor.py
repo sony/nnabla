@@ -32,8 +32,10 @@ class Monitor(object):
 
     def __init__(self, save_path):
         self._save_path = save_path
-        if not os.path.isdir(save_path):
+        try:
             os.makedirs(save_path)
+        except OSError:
+            pass  # python2 does not support exists_ok arg
 
     @property
     def save_path(self):
@@ -207,8 +209,10 @@ class MonitorImage(object):
             self.normalize_method = self.default_normalize_method
         self.num_images = num_images
         self.save_dir = os.path.join(monitor.save_path, name.replace(' ', '-'))
-        if not os.path.isdir(self.save_dir):
+        try:
             os.makedirs(self.save_dir)
+        except OSError:
+            pass  # python2 does not support exists_ok arg
 
     def default_normalize_method(self, x):
         ma = x.max()
