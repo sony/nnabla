@@ -687,14 +687,10 @@ Normalization:
       .. math::
           \begin{eqnarray}
             \mu &=& \frac{1}{M} \sum x_i \\
-             rm &=& ({\rm decay\_rate}) rm + (1 - {\rm decay\_rate}) \mu \\
-            y_i &=& x_i - rm
+            y_i &=& x_i - \mu
           \end{eqnarray}
 
-      At validation time, it is defined as
-
-      .. math::
-          y_i = x_i - rm
+      At testing time, the mean values used are those that were computed during training by moving average.
 
       Note:
           The backward performs an approximated differentiation that takes into account only the latest mini-batch.

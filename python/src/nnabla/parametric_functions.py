@@ -1263,6 +1263,47 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                                  decay_rate, eps, batch_stat, output_stat)
 
 
+@parametric_function_api("mean_subtraction")
+def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=False):
+    """
+    Mean subtraction layer.
+
+    It subtracts the mean of the elements of the input array,
+    and normalizes it to :math:`0`. Preprocessing arrays with this function has the effect of improving accuracy
+    in various tasks such as image classification.
+
+    At training time, this function is defined as
+
+    .. math::
+
+        \\begin{array}{lcl}
+        \\mu &=& \\frac{1}{M} \\sum x_i \\\\
+        y_i &=& x_i - \\mu
+        \\end{array}
+
+    At testing time, the mean values used are those that were computed during training by moving average.
+
+    Note:
+        The backward performs an approximated differentiation that takes into account only the latest mini-batch.
+
+    Args:
+        inp (~nnabla.Variable): N-D array of input.
+        base_axis (int): Base axis of Mean Subtraction operation. Dimensions up to base_axis is treated as sample dimension.
+        update_running_mean (bool): When set to `True`, the running mean will not be updated.
+        fix_parameters (bool): dummy parameter. This argument dose not affect anything.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+    """
+    assert len(inp.shape) >= base_axis
+    shape = inp.shape[base_axis:]
+    rmean = get_parameter_or_create(
+        "rmean", shape, ConstantInitializer(0), False)
+    t = get_parameter_or_create(
+        "t", (1, ), ConstantInitializer(0), False)
+    return F.mean_subtraction(inp, rmean, t, base_axis=base_axis, update_running_mean=update_running_mean)
+
+
 @parametric_function_api("embed")
 def embed(inp, n_inputs, n_features, fix_parameters=False):
     """ Embed.
