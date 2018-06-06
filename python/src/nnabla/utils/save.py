@@ -423,9 +423,9 @@ def save(filename, contents, include_params=False):
     configurations etc.
 
     Args:
-        filename (str): Filename to store infomation. The file
+        filename (str): Filename to store information. The file
             extension is used to determine the saving file format.
-            ``.nnp``: (Recomended) Creating a zip archive with nntxt (network
+            ``.nnp``: (Recommended) Creating a zip archive with nntxt (network
             definition etc.) and h5 (parameters).
             ``.nntxt``: Protobuf in text format.
             ``.protobuf'': Protobuf in binary format (unsafe in terms of

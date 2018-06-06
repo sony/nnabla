@@ -69,15 +69,15 @@ atexit.register(finalize)
 # TODO: Move  to C++.
 ###############################################################################
 
-__cache_prefered = None
+__cache_preferred = None
 _original_array_classes = _cpu_array_classes()
 _callbacks_prefer_cached_array = []
 _callbacks_reset_array_preference = []
 
 
-def _cached_array_prefered():
-    global __cache_prefered
-    return __cache_prefered
+def _cached_array_preferred():
+    global __cache_preferred
+    return __cache_preferred
 
 
 def _add_callback_prefer_cached_array(func):
@@ -91,11 +91,11 @@ def _add_callback_reset_array_preference(func):
 
 
 def prefer_cached_array(prefer):
-    global __cache_prefered
+    global __cache_preferred
     global _callbacks_prefer_cached_array
-    if __cache_prefered == prefer:
+    if __cache_preferred == prefer:
         return
-    __cache_prefered = prefer
+    __cache_preferred = prefer
 
     a = _cpu_array_classes()
     a = sorted(enumerate(a), key=lambda x: (prefer ^ ('Cached' in x[1]), x[0]))
@@ -111,10 +111,10 @@ def reset_array_preference():
 
     Reset array class preference.
     """
-    global __cache_prefered
+    global __cache_preferred
     global _original_array_classes
     global _callbacks_reset_array_preference
-    __cache_prefered = None
+    __cache_preferred = None
     _cpu_set_array_classes(_original_array_classes)
     for func in _callbacks_reset_array_preference:
         func()

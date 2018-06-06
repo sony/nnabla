@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''
-Search config file and get config infomation from config file.
+Search config file and get config information from config file.
 
 Config file search order is described in following table.
 Each config value is overwrited by the following configs.

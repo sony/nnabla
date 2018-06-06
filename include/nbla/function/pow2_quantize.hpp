@@ -50,7 +50,7 @@ protected:
   const bool
       with_zero_; // Indicate using zero as a quantized value. Default is true.
 
-  const int n_; // Bit width used, take care that `sign` comsumes one-bit.
+  const int n_; // Bit width used, take care that `sign` consumes one-bit.
                 // :math:`n-1` is used for number representation in `signed`
                 // case.
   const int m_; // \f$2^m\f$ is upper bound and \f$-2^m\f$ is lower bound.

@@ -58,7 +58,7 @@ Outputs:
 @tparam T Data type for computation.
 @param base_axis Base axis of mean subtraction operation. Dimensions up to
 base_axis is treated as sample dimension.
-@param update_runing_mean Update running mean during forward execution.
+@param update_running_mean Update running mean during forward execution.
 
 @note The backward performs an approximated differentiation that takes into
       account only the latest mini-batch.
@@ -68,17 +68,17 @@ base_axis is treated as sample dimension.
 template <typename T> class MeanSubtraction : public BaseFunction<int, bool> {
 protected:
   int base_axis_;
-  bool update_runing_mean_;
+  bool update_running_mean_;
   Variable mean_;
   int size0_, size1_;
 
 public:
-  MeanSubtraction(const Context &ctx, int base_axis, bool update_runing_mean)
-      : BaseFunction(ctx, base_axis, update_runing_mean), base_axis_(base_axis),
-        update_runing_mean_(update_runing_mean) {}
+  MeanSubtraction(const Context &ctx, int base_axis, bool update_running_mean)
+      : BaseFunction(ctx, base_axis, update_running_mean),
+        base_axis_(base_axis), update_running_mean_(update_running_mean) {}
   virtual ~MeanSubtraction() {}
   virtual shared_ptr<Function> copy() const {
-    return create_MeanSubtraction(ctx_, base_axis_, update_runing_mean_);
+    return create_MeanSubtraction(ctx_, base_axis_, update_running_mean_);
   }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<int>()};

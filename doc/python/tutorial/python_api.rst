@@ -192,7 +192,7 @@ You can get the shape by:
 
 Since both ``data`` and ``grad`` are ``NdArray``, you can get a
 reference to its values as NdArray with the ``.data`` accessor, but also
-it can be refered by ``.d`` or ``.g`` property for ``data`` and ``grad``
+it can be referred by ``.d`` or ``.g`` property for ``data`` and ``grad``
 respectively.
 
 .. code:: python
@@ -726,7 +726,7 @@ method at the terminal variable.
 
 
 Training a neural networks needs a loss value to be minimized by
-gradient descent with backpop. In NNabla, loss function is also a just
+gradient descent with backprop. In NNabla, loss function is also a just
 function, and packaged in the functions module.
 
 .. code:: python
@@ -757,7 +757,7 @@ variables before backprop (We will show you the easiest way with
     # Collect all parameter variables and init grad.
     for name, param in nn.get_parameters().items():
         param.grad.zero()
-    # Grdients are accumulated to grad of params.
+    # Gradients are accumulated to grad of params.
     loss.backward()
 
 Imperative Mode
@@ -930,8 +930,8 @@ We define a deep prediction neural network.
     loss = F.reduce_mean(F.squared_error(y, label))
 
 We created a 5 layers deep MLP using for-loop. Note that only 3 lines of
-the code pottentially create infinitely deep neural networks. The next
-block adds helper functions to visialize the learned function.
+the code potentially create infinitely deep neural networks. The next
+block adds helper functions to visualize the learned function.
 
 .. code:: python
 
@@ -1026,11 +1026,11 @@ compute the gradient of a function. In a naive implementation, we keep
 all the variable ``data`` and ``grad`` living until the ``NdArray``
 objects are not referenced (i.e. the graph is deleted). The ``clear_*``
 options in ``.forward()`` and ``.backward()`` enables to save memory
-consumptions due to that by clearing (erasing) memory of ``data`` and
+consumption due to that by clearing (erasing) memory of ``data`` and
 ``grad`` when it is not referenced by any subsequent computation. (More
 precisely speaking, it doesn't free memory actually. We use our memory
 pool engine by default to avoid memory alloc/free overhead). The
-unreferenced buffers can be re-used in subequent computation. See the
+unreferenced buffers can be re-used in subsequent computation. See the
 document of ``Variable`` for more details. Note that the following
 ``loss.forward(clear_buffer=True)`` clears ``data`` of any intermediate
 variables. If you are interested in intermediate variables for some
@@ -1040,7 +1040,7 @@ prevent clearing buffer of a specific ``Variable`` like below.
 .. code:: python
 
     loss.forward(clear_buffer=True)
-    print("The prediction `y` is cleared because it's an intermedicate variable.")
+    print("The prediction `y` is cleared because it's an intermediate variable.")
     print(y.d.flatten()[:4])  # to save space show only 4 values
     y.persistent = True
     loss.forward(clear_buffer=True)
@@ -1050,7 +1050,7 @@ prevent clearing buffer of a specific ``Variable`` like below.
 
 .. parsed-literal::
 
-    The prediction `y` is cleared because it's an intermedicate variable.
+    The prediction `y` is cleared because it's an intermediate variable.
     [  2.27279830e-04   6.02164946e-05   5.33679675e-04   2.35557582e-05]
     The prediction `y` is kept by the persistent flag.
     [ 1.0851264   0.87657517  0.79603785  0.40098712]

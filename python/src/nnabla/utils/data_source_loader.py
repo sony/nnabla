@@ -394,7 +394,7 @@ def download(url, output_file=None, open_file=True, allow_overwrite=False):
 
     Args:
         url (str): URL.
-        output_file (str, optional): If given, the downloaded file is writen to the given path.
+        output_file (str, optional): If given, the downloaded file is written to the given path.
         open_file (bool): If True, it returns an opened file stream of the downloaded file.
         allow_overwrite (bool): If True, it overwrites an existing file.
 

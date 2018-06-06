@@ -30,7 +30,7 @@ class Network:
             func.function_instance.setup(
                 func.variable_inputs, func.variable_outputs)
         except:
-            logger.critical('An error occured while setup of function {} (nn.{}) in network {}'.format(
+            logger.critical('An error occurred while setup of function {} (nn.{}) in network {}'.format(
                 func.name, func.function_instance.name, self.name))
             logger.critical('Input variables:')
             for v in func.inputs:
@@ -78,7 +78,7 @@ class Network:
             func.function_instance.forward(
                 func.variable_inputs, func.variable_outputs)
         except:
-            logger.critical('An error occured while executing forward of function {} (nn.{}) in network {}'.format(
+            logger.critical('An error occurred while executing forward of function {} (nn.{}) in network {}'.format(
                 func.name, func.function_instance.name, self.name))
             raise
         # logger.debug('Forward: {} {}'.format(func.name, func.function_instance.name))
@@ -179,7 +179,7 @@ class Network:
             seq.func.function_instance.backward(
                 seq.func.variable_inputs, seq.func.variable_outputs, seq.accum_grad)
         except:
-            logger.critical('An error occured while executing backward of function {} (nn.{}) in network {}'.format(
+            logger.critical('An error occurred while executing backward of function {} (nn.{}) in network {}'.format(
                 seq.func.name, seq.func.function_instance.name, self.name))
             raise
         # logger.debug('Backward: {} {}'.format(func.name, func.function_instance.name))

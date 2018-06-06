@@ -572,7 +572,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
     Args:
         filenames (list): List of filenames.
     Returns:
-        dict: Network infomation.
+        dict: Network information.
     '''
     class Info:
         pass
