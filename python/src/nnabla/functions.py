@@ -223,6 +223,47 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
                                     n_outputs=n_outputs)
 
 
+def mean_subtraction(x, rmean, t, base_axis=1, update_running_mean=True):
+    r"""
+    It subtracts the mean of the elements of the input array,
+    and normalizes it to :math:`0`. Preprocessing arrays with this function has the effect of improving accuracy
+    in various tasks such as image classification.
+
+    At training time, this function is defined as
+
+    .. math::
+        \begin{eqnarray}
+          \mu &=& \frac{1}{M} \sum x_i \\
+          y_i &=& x_i - \mu
+        \end{eqnarray}
+
+    At testing time, the mean values used are those that were computed during training by moving average.
+
+    Note:
+        The backward performs an approximated differentiation that takes into account only the latest mini-batch.
+
+    Args:
+        x(~nnabla.Variable): N-D array of input.
+        rmean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
+        t(~nnabla.Variable): Scalar of num of iteration of running mean (modified during forward execution).
+        base_axis(int): Base axis of Mean Subtraction operation. Dimensions up to base_axis is treated as sample dimension.
+            [default=``1``]
+        update_running_mean(bool): Update running mean during forward execution.
+            [default=``True``]
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    See Also:
+        ``nnabla.function_bases.mean_subtraction``.
+
+    """
+    from .function_bases import mean_subtraction as mean_subtraction_base
+    return mean_subtraction_base(x, rmean, t,
+                                 base_axis=base_axis,
+                                 update_running_mean=update_running_mean)
+
+
 def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine_grained=True, outputs=None):
     r"""Fixed Point Quantize
 
