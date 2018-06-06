@@ -1162,8 +1162,7 @@ def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "inception_v2.onnx", "inception_v2.nnp",
                                     "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img,
-                                    export_nnp_path=TEST_DATA_DIR)
+                                    in_name="data_0", in_img=img)
 
 
 @pytest.mark.slow
