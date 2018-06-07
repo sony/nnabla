@@ -152,3 +152,5 @@ ACosh: 182
 ATanh: 183
 NmsDetection2d_ffB: 231
 Pad_iIif: 123
+Ceil_: 124
+Floor_: 125

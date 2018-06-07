@@ -25,6 +25,8 @@ namespace nbla {
 // float
 template class GlobalAveragePooling<float>;
 
+
 // half
 template class GlobalAveragePooling<Half>;
+
 }
