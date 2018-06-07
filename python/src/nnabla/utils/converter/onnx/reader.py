@@ -49,6 +49,7 @@ onnx_optype_to_nnabla_function_type = {
     "Equal": "Equal",
     "Exp": "Exp",
     "Identity": "Identity",
+    # "Pad": "Pad",
     # optype with different names
     "Relu": "ReLU",
     "PRelu": "PReLU",
@@ -165,12 +166,7 @@ def set_kernel_parameter_and_add_padding(node, kp,
             # asymmetry padding
             input = node.input[0]
             padded = input+"_pad"
-            # interleave pad values to match NNabla format
-            # (S0,S1,E0,E1) => (S0,E0,S1,E1)
-            half = len(pads)//2
-            starts = pads[:half]
-            ends = pads[half:]
-            pad_width = [j for i in zip(starts, ends) for j in i]
+            pad_width = rearrange_pads(pads)
             padf = generate_pad(node.name, input, padded,
                                 pad_mode, pad_width, pad_val,
                                 base_name, func_counter)
@@ -439,6 +435,13 @@ def check_padding(pads, dim, padval):
             break
     return asymmetry
 
+def rearrange_pads(pads):
+    """ Interleave pad values to match NNabla format
+    (S0,S1,E0,E1) => (S0,E0,S1,E1)"""
+    half = len(pads)//2
+    starts = pads[:half]
+    ends = pads[half:]
+    return [j for i in zip(starts, ends) for j in i]
 
 def convert_to_functions(pb, network, node, base_name, initializers,
                          func_counter, param_vars, param_list, merged_inputs,
@@ -570,12 +573,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 # asymmetry padding
                 input = node.input[0]
                 padded = input+"_pad"
-                # interleave pad values to match NNabla format
-                # (S0,S1,E0,E1) => (S0,E0,S1,E1)
-                half = len(pads)//2
-                starts = pads[:half]
-                ends = pads[half:]
-                pad_width = [j for i in zip(starts, ends) for j in i]
+                pad_width = rearrange_pads(pads)
                 padf = generate_pad(node.name, input, padded,
                                     "replicate", pad_width, 0,
                                     base_name, func_counter)
@@ -1091,6 +1089,44 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         del func.input[:]
         func.input.extend([pow0_in, pow1_out])
         func_list.append(func)
+    # Disabling Pad conversion because we haven't tested it properly
+    #elif node.op_type == "Pad":
+    #    mode = "constant"
+    #    pads = []
+    #    value = 0
+    #    for attr in node.attribute:
+    #        if attr.name == "mode":
+    #            if attr.type != AttributeProto.STRING:
+    #                raise ValueError("mode must be a string for Op: {}"
+    #                                 .format(node.op_type))
+    #            mode = attr.s.decode("utf-8")
+    #        elif attr.name == "pads":
+    #            if attr.type != AttributeProto.INTS:
+    #                raise ValueError("pads must be a list of ints for Op: {}"
+    #                                 .format(node.op_type))
+    #            pads = attr.ints
+    #        elif attr.name == "value":
+    #            if attr.type != AttributeProto.FLOAT:
+    #                raise ValueError("value must be a single float for Op: {}"
+    #                                 .format(node.op_type))
+    #            value = attr.f
+    #        else:
+    #            raise ValueError("Unsupported attribute {} was specified at {}"
+    #                             .format(attr.name, node.op_type))
+    #    if len(pads) == 0:
+    #        raise ValueError("Required attribute pads not found for {}"
+    #                         .format(node.op_type))
+    #    mode_conv = {
+    #        "constant": "constant",
+    #        "edge": "replicate",
+    #        "reflect": "reflect"
+    #    }
+    #    pp = func.pad_param
+    #    pp.mode = mode_conv[mode]
+    #    pp.constant_value = value
+    #    pw = rearrange_pads(pads)
+    #    pp.pad_width.extend(pw)
+    #    func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)

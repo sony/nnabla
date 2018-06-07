@@ -1121,6 +1121,16 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0",
                                     atol=1e-4)
 
+# Disabling pad test because CNTK returns wrong results
+#def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
+#                                                            nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "pad_mconstant_v0_pl0_0_0_1_0_1.onnx",
+#                                    "pad_mconstant_v0_pl0_0_0_1_0_1.nnp",
+#                                    "Pad4_Output_0", "exec_0",
+#                                    backend="cntk")
+#
+
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
 #def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
