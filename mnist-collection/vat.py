@@ -380,7 +380,7 @@ def main():
     solver = S.Adam(args.learning_rate)
     solver.set_parameters(nn.get_parameters())
 
-    # Monitor trainig and validation stats.
+    # Monitor training and validation stats.
     import nnabla.monitor as M
     monitor = M.Monitor(args.model_save_path)
     monitor_verr = M.MonitorSeries("Test error", monitor, interval=240)

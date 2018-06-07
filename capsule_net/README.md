@@ -9,7 +9,7 @@ There might be some differences between this implemntation and the original pape
 * We use an Adam optimizer with exponential decay with initial alpha `1e-3` and decay rate `0.9` at each epoch.
 * Gradient computation of dynamic routing iterations is an option (default: enabled). If you want to disable it, use an option `--disable-grad-dyanmic-routing`.
 * The mini-batch size is 100. Adjust the mini-batch size value (e.g. --batch-size=64) to lower value, if you face "out of memory" error.
-* The method of weight initialization is not described in the paper. I chose the initialization method heuristically, and haven't explorered well.
+* The method of weight initialization is not described in the paper. I chose the initialization method heuristically, and haven't explored well.
 
 ## Usage
 

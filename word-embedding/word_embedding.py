@@ -169,7 +169,7 @@ def create_minibatch(dataset, ids, sampler, half_window=3, n_negative=5):
     yp = np.hstack(yp)
     # yp = np.array(dataset)[ids].repeat((half_window - 1) * 2) # is possible but slower than above line
 
-    # postive-label
+    # positive-label
     tp = np.ones(len(xp), dtype=np.int32)
 
     # negative-context
