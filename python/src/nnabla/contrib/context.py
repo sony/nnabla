@@ -34,7 +34,7 @@ def extension_context(extension_name='cpu', **kw):
 
         .. code-block:: python
 
-            ctx = extension_context('cudnn', device_id=0)
+            ctx = extension_context('cuda.cudnn', device_id=0)
             nn.set_default_context(ctx)
 
     """

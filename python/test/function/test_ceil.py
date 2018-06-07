@@ -18,21 +18,21 @@ import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
-ctxs = list_context('Round')
+ctxs = list_context('Ceil')
 
 
-def ref_round(x):
-    return np.round(x)
+def ref_ceil(x):
+    return np.ceil(x)
 
 
-def ref_grad_round(x, dy):
+def ref_grad_ceil(x, dy):
     return dy.flatten()
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_round_forward_backward(seed,
-                                ctx, func_name):
+def test_ceil_forward_backward(seed,
+                               ctx, func_name):
     from nbla_test_utils import cap_ignore_region, \
         function_tester
     rng = np.random.RandomState(seed)
@@ -41,9 +41,9 @@ def test_round_forward_backward(seed,
             rng.randn(2, 3, 4).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
 
-    function_tester(rng, F.round,
-                    ref_round,
+    function_tester(rng, F.ceil,
+                    ref_ceil,
                     inputs,
                     atol_b=1e-3, backward=[True],
                     ctx=ctx, func_name=func_name,
-                    ref_grad=ref_grad_round)
+                    ref_grad=ref_grad_ceil)
