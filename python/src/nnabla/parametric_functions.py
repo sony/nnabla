@@ -1297,11 +1297,11 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
     """
     assert len(inp.shape) >= base_axis
     shape = inp.shape[base_axis:]
-    rmean = get_parameter_or_create(
-        "rmean", shape, ConstantInitializer(0), False)
+    mean = get_parameter_or_create(
+        "mean", shape, ConstantInitializer(0), False)
     t = get_parameter_or_create(
         "t", (1, ), ConstantInitializer(0), False)
-    return F.mean_subtraction(inp, rmean, t, base_axis=base_axis, update_running_mean=update_running_mean)
+    return F.mean_subtraction(inp, mean, t, base_axis=base_axis, update_running_mean=update_running_mean)
 
 
 @parametric_function_api("embed")
