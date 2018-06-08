@@ -35,7 +35,15 @@ nnabla-clean-all:
 # Auto Format
 .PHONY: nnabla-auto-format
 nnabla-auto-format:
-	python $(NNABLA_DIRECTORY)/build-tools/auto_format .
+	python $(NNABLA_DIRECTORY)/build-tools/auto_format . --exclude \
+		'\./src/nbla/(function|solver)/\w+\.cpp' \
+		'\./src/nbla/init.cpp' \
+		'\./python/src/nnabla/\w+\.(cpp|hpp|h|c)' \
+		'\./python/src/nnabla/(solver.pyx|function.pyx|function.pxd|function_bases.py)' \
+		'\./python/src/nnabla/utils/(save|load)_function.py' \
+		'\./src/nbla_utils/nnp_impl_create_function.cpp' \
+		'\./src/nbla_utils/nnabla\.pb\.(h|cc)'
+
 
 ########################################################################################################################
 # Doc
