@@ -62,6 +62,6 @@ TEST_F(ReLUTest, ForwardBackward) {
   relu->setup(Variables{in_.get()}, Variables{out_.get()});
   ASSERT_EQ(in_->shape(), out_->shape());
   relu->forward(Variables{in_.get()}, Variables{out_.get()});
-  relu->backward(Variables{in_.get()}, Variables{out_.get()}, {false});
+  relu->backward(Variables{in_.get()}, Variables{out_.get()}, {true}, {false});
 }
 }

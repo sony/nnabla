@@ -27,7 +27,6 @@ NBLA_REGISTER_FUNCTION_SOURCE(Randn, float, float, const vector<int> &, int);
 template <typename T>
 void Randn<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   outputs[0]->reshape(Shape_t(shape_.cbegin(), shape_.cend()), true);
-  outputs[0]->set_need_grad(false);
   rgen_ = std::mt19937((seed_ == -1 ? std::random_device()() : seed_));
 }
 
