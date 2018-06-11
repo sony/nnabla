@@ -241,6 +241,9 @@ Transpose:
 Broadcast:
   float: [float]
   half: [Half]
+BroadcastTo:
+  float: [float]
+  half: [Half]
 OneHot:
   float: [int, float]
   half: [int, Half]
