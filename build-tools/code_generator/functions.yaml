@@ -2168,6 +2168,10 @@ Array Manipulation:
       shape:
         doc: Dimensions for each axis. ``-1`` can be specified only in one shape dimension. The value is calculated from the size of the array and remaining dimensions.
         type: Shape
+      inplace:
+        doc: The output array is shared with the input array if True. 
+        type: bool
+        default: 'True'         
     outputs:
       y:
         doc: Reshaped N-D array
