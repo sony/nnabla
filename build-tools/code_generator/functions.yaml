@@ -289,6 +289,18 @@ Neural Network Layer:
     outputs:
       y:
         doc: Average values variable
+  GlobalAveragePooling:
+    snake_name: global_average_pooling
+    doc: |2
+
+      Global average pooling. It pools an averaged value from the whole image
+
+    inputs:
+      x:
+        doc: Input variable.
+    outputs:
+      y:
+        doc: Average values variable
   SumPooling:
     snake_name: sum_pooling
     doc: |2
@@ -351,8 +363,9 @@ Neural Network Layer:
       x0:
         doc: Indices with shape :math:`(I_0, ..., I_N)`
         template: TI
-      x1:
+      w:
         doc: Weights with shape :math:`(W_0, ..., W_M)`
+        parameter: true
     outputs:
       y:
         doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
@@ -2060,6 +2073,62 @@ Array Manipulation:
     outputs:
       y:
         doc: Sliced N-D array
+  Pad:
+    snake_name: pad
+    doc: |2
+
+      Pads given N-D array with specified sizes of dimensions.
+      The dimensions that get padded begins with the last dimension and moves forward.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      pad_width:
+        doc: |
+
+             n-elem tuple, where n/2 <= input dimensions and n is even.
+             len(pad_width)/2 represents the padding dimension(e.g. 1D, 2D, 3D etc.).
+             (Currently padding upto 3D is supported)
+        type: repeated int64
+        default: (0,) * len(x.shape)
+      mode:
+        doc: |
+
+             Padding mode is one of the following.
+
+             1) constant : Elements in pad region are filled with constant_value.
+             2) replicate : Padded elements are filled with the values in nearest edges.
+             3) reflect : Padded with the reflection of the vector mirrored on the first and last values of the vector along each axis.
+
+             (Currently only `constant` mode is supported)
+        type: string
+        available_values:
+          - constant
+        default: '''constant'''
+      constant_value:
+        doc: |
+
+             Constant values filled in padded regions if mode is `constant`.
+        type: float
+        default: 0
+    outputs:
+      y:
+        doc: |
+
+             Padded N-D array (e.g. (B, C, H, W) shape) where dimension depends on pad_width.
+             ndim() of output N-D array will be same as ndim() of input N-D array.
+
+             -for 1D padding :
+                      N-D input array with padding of the form (padLeft, padRight).
+                      The output N-D array dimension (B, C, H, padLeft + W + padRight).
+
+             -for 2D padding :
+                      N-D input array with padding of the form (padTop, padBottom, padLeft, padRight).
+                      The output N-D array dimension (B, C, padTop + H + padBottom, padLeft + W + padRight).
+
+             -for 3D padding :
+                      N-D input array with padding of the form (pasFront, padBack, padTop, padBottom, padLeft, padRight).
+                      The output N-D array dimension (B, padFront + C + padBack, padTop + H + padBottom, padLeft + W + padRight).
   Transpose:
     snake_name: transpose
     doc: |2
@@ -2090,6 +2159,24 @@ Array Manipulation:
         type: Shape
     outputs:
       y:
+        doc: Broadcasted N-D array
+  BroadcastTo:
+    snake_name: broadcast_to
+    doc: |2
+
+      Broadcasting ND-array to the specified buffer.
+    inputs:
+      x:
+        doc: N-D array
+      y:
+        doc: N-D array
+    arguments:
+      axis:
+        doc: Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
+        type: int64
+        default: -1
+    outputs:
+      z:
         doc: Broadcasted N-D array
   OneHot:
     snake_name: one_hot
@@ -2146,6 +2233,9 @@ Array Manipulation:
           is copied and used. reflect: Original data reflected      at the ends of
           the original array is used.'
         type: string
+        available_values:
+          - nearest
+          - reflect
         default: '''nearest'''
     outputs:
       y:
@@ -2470,6 +2560,9 @@ Stochasticity:
           array is copied and used. reflect: Original data reflected at   the ends
           of the original array is used.'
         type: string
+        available_values:
+          - nearest
+          - reflect
         default: '''nearest'''
       base_axis:
         doc: No Description
@@ -3191,6 +3284,9 @@ Quantization Neural Network Layers:
         doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
+        available_values:
+          - largest_abs
+          - random
         default: '''largest_abs'''
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
@@ -3271,6 +3367,9 @@ Quantization Neural Network Layers:
         doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
+        available_values:
+          - largest_abs
+          - random
         default: '''largest_abs'''
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.

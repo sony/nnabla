@@ -256,3 +256,15 @@ def train_command(args):
 
     logger.log(99, 'Training Completed.')
     progress(None)
+
+
+def add_train_command(subparsers):
+    # Train
+    subparser = subparsers.add_parser('train')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=train_command)

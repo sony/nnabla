@@ -168,3 +168,32 @@ def create_image_classification_dataset_command(args):
             with open(csv_file_name, 'w') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 writer.writerows(csv_data_2)
+
+
+def add_create_image_classification_dataset_command(subparsers):
+    # Create image classification dataset
+    subparser = subparsers.add_parser(
+        'create_image_classification_dataset')
+    subparser.add_argument(
+        '-i', '--sourcedir', help='source directory with directories for each class', required=True)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '-c', '--channel', help='number of output color channels', required=True)
+    subparser.add_argument(
+        '-w', '--width', help='width of output image', required=True)
+    subparser.add_argument(
+        '-g', '--height', help='height of output image', required=True)
+    subparser.add_argument(
+        '-m', '--mode', help='shaping mode (trimming or padding)', required=True)
+    subparser.add_argument(
+        '-s', '--shuffle', help='shuffle mode (true or false)', required=True)
+    subparser.add_argument(
+        '-f1', '--file1', help='output file name 1', required=True)
+    subparser.add_argument(
+        '-r1', '--ratio1', help='output file ratio(%) 1')
+    subparser.add_argument(
+        '-f2', '--file2', help='output file name 2')
+    subparser.add_argument(
+        '-r2', '--ratio2', help='output file ratio(%) 2')
+    subparser.set_defaults(func=create_image_classification_dataset_command)

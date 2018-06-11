@@ -63,7 +63,10 @@ def update_result(args, index, result, values, output_index, type_end_names, out
             # Output data
             if vtype == 'col' or not output_image:
                 # Vector type output
-                outputs[data_index].extend(np.ndarray.flatten(d))
+                if np.isscalar(d):
+                    outputs[data_index].extend([d])
+                else:
+                    outputs[data_index].extend(np.ndarray.flatten(d))
             else:
                 for dim_index in range(dim):
                     file_index = index + data_index
@@ -98,7 +101,6 @@ def update_result(args, index, result, values, output_index, type_end_names, out
         output_index += 1
 
     return result, outputs
-
 
 def forward(args, index, config, data, variables, output_image=True):
     class ForwardResult:
@@ -160,11 +162,14 @@ def forward_command(args):
     files.append(args.config)
     if args.param:
         files.append(args.param)
+    batch_size = args.batch_size
+    if batch_size < 1:
+        batch_size = None
 
     class ForwardConfig:
         pass
     config = ForwardConfig
-    info = load.load(files, prepare_data_iterator=False, batch_size=1)
+    info = load.load(files, prepare_data_iterator=False, batch_size=batch_size)
     config.global_config = info.global_config
 
     config.executors = info.executors.values()
@@ -236,8 +241,6 @@ def infer_command(args):
     config = ForwardConfig
     info = load.load(files, prepare_data_iterator=False, batch_size=batch_size)
 
-    config.global_config = info.global_config
-
     config.executors = info.executors.values()
 
     config.networks = []
@@ -250,15 +253,20 @@ def infer_command(args):
             return
 
     normalize = True
-    for d in info.datasets.values():
-        normalize = d.normalize
+    #    for d in info.datasets.values():
+    #        normalize = d.normalize
 
     input_file_index = 0
     inputs = []
     for e in config.executors:
         for v, d in e.dataset_assign.items():
-            data = np.fromfile(args.inputs[input_file_index], np.float32).reshape(
-                v.variable_instance.d.shape)
+            input_filename = args.inputs[input_file_index]
+            if "int32" in input_filename:
+                data = np.fromfile(input_filename, np.int32).reshape(
+                    v.variable_instance.d.shape)
+            else:
+                data = np.fromfile(input_filename, np.float32).reshape(
+                    v.variable_instance.d.shape)
             inputs.append((d, data))
             input_file_index += 1
     data = []
@@ -271,6 +279,40 @@ def infer_command(args):
         if args.output is None:
             print(o)
         else:
-            print(o)
             (np.array(o).astype(np.float32)).tofile(
                 "{}_{}.bin".format(args.output, i))
+
+
+def add_infer_command(subparsers):
+    # Infer
+    subparser = subparsers.add_parser('infer')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--output', help='output file prefix', required=False)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-b', '--batch_size',
+        help='Batch size to use batch size in nnp file set -1.',
+        type=int, default=1)
+    subparser.add_argument('inputs', nargs='+')
+    subparser.set_defaults(func=infer_command)
+
+
+def add_forward_command(subparsers):
+    # Forward
+    subparser = subparsers.add_parser('forward')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-d', '--dataset', help='path to CSV dataset', required=False)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '-b', '--batch_size',
+        help='Batch size to use batch size in nnp file set -1.',
+        type=int, default=-1)
+    subparser.set_defaults(func=forward_command)

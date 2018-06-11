@@ -3,8 +3,10 @@ boto3
 h5py
 numpy>=1.10
 protobuf
+pyyaml
 requests
 tqdm
 virtualenv
 
 autopep8
+

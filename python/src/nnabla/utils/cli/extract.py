@@ -35,3 +35,15 @@ def extract_command(args):
             print('Please specify -l or -x')
     else:
         print('[{}] not found.'.format(args.nnp))
+
+
+def add_extract_command(subparsers):
+    # Extract nnp file
+    from nnabla.utils.cli.extract import extract_command
+    subparser = subparsers.add_parser('extract')
+    subparser.add_argument(
+        '-l', '--list', help='list contents.', action='store_true')
+    subparser.add_argument(
+        '-x', '--extract', help='extract contents to current dir.', action='store_true')
+    subparser.add_argument('nnp', help='nnp filename')
+    subparser.set_defaults(func=extract_command)

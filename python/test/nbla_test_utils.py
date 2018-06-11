@@ -337,6 +337,17 @@ def function_tester(rng, func, ref_func, inputs,
             ArrayDiffStats(ref, res))
 
     # Checking function name
+    try:
+        import save_function_test_result
+        save_function_test_result.save_result(
+            vinputs, o, func_name, func_args, func_kwargs)
+    except UnboundLocalError:
+        pass
+    except IndexError:
+        pass
+    except ImportError:
+        pass
+
     # print 'checking function name'
     if func_name is not None:
         assert o[0].parent.name == func_name
