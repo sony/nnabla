@@ -19,14 +19,14 @@
 // - src/nbla/function/function.cpp.tmpl
 // - build-tools/code_generator/generate2.py
 
-#include "./generic/global_average_pooling.cpp"
+#include "./generic/broadcast_to.cpp"
 namespace nbla {
 
 // float
-template class GlobalAveragePooling<float>;
+template class BroadcastTo<float>;
 
 
 // half
-template class GlobalAveragePooling<Half>;
+template class BroadcastTo<Half>;
 
 }
