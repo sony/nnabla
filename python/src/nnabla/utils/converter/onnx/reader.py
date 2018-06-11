@@ -106,12 +106,14 @@ def add_value_info_as_variable(network, info):
     v.shape.dim.extend([x.dim_value for x in t.shape.dim])
     return v
 
+
 def add_value_info_as_parameter(network, info):
     v = add_value_info_as_variable(network, info)
     v.type = "Parameter"
     v.initializer.type = "Constant"
     v.initializer.multiplier = 1.0
     return v
+
 
 def add_value_info_as_buffer(network, info):
     v = add_value_info_as_variable(network, info)
@@ -218,13 +220,15 @@ def generate_default_function(node, base_name, func_counter):
     """
     ft = onnx_optype_to_nnabla_function_type.get(node.op_type)
     if ft is None:
-        raise ValueError("op_type {} is currently not supported for NNP conversion".format(node.op_type))
+        raise ValueError(
+            "op_type {} is currently not supported for NNP conversion".format(node.op_type))
     func = nnabla_pb2.Function()
     func.type = ft
     set_function_name(func, node.name, base_name, func_counter)
     func.input.extend(node.input)
     func.output.extend(node.output)
     return func
+
 
 def generate_transpose(node_name, in_name, out_name, axes, base_name, func_counter):
     """Generate a Transpose operator to transpose the specified buffer.
@@ -349,6 +353,7 @@ def generate_sum_pooling(node_name, x, out_name,
     spp.pad.dim.extend(pad)
     return func
 
+
 def generate_pad(node_name, x, out_name,
                  mode, pad_width, constant_val,
                  base_name, func_counter):
@@ -371,11 +376,13 @@ def convert_broadcasting_operator(func_list, node, func, base_name, func_counter
     for attr in node.attribute:
         if attr.name == "axis":
             if attr.type != AttributeProto.INT:
-                raise ValueError("Only INT is supported for axis in {} op_type".format(node.op_type))
+                raise ValueError(
+                    "Only INT is supported for axis in {} op_type".format(node.op_type))
             broadcast_axis = attr.i
         elif attr.name == "broadcast":
             if attr.type != AttributeProto.INT:
-                raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
+                raise ValueError(
+                    "Only INT is supported for broadcast in {} op_type".format(node.op_type))
             if attr.i == 1:
                 broadcasting = True
         else:
@@ -399,15 +406,17 @@ def convert_broadcasting_operator(func_list, node, func, base_name, func_counter
 
 
 def set_reduction_attrs(p, node):
-    p.keep_dims = True  #  keep_dims is default True for ONNX
+    p.keep_dims = True  # keep_dims is default True for ONNX
     for attr in node.attribute:
         if attr.name == "axes":
             if attr.type != AttributeProto.INTS:
-                raise ValueError("Only INTS is supported for axes in {} op_type".format(node.op_type))
+                raise ValueError(
+                    "Only INTS is supported for axes in {} op_type".format(node.op_type))
             p.axes.extend(attr.ints)
         elif attr.name == "keepdims":
             if attr.type != AttributeProto.INT:
-                raise ValueError("Only INT is supported for keepdims in {} op_type".format(node.op_type))
+                raise ValueError(
+                    "Only INT is supported for keepdims in {} op_type".format(node.op_type))
             p.keep_dims = bool(attr.i)
         else:
             raise ValueError("Unsupported attribute {} was specified at {}"
@@ -435,6 +444,7 @@ def check_padding(pads, dim, padval):
             break
     return asymmetry
 
+
 def rearrange_pads(pads):
     """ Interleave pad values to match NNabla format
     (S0,S1,E0,E1) => (S0,E0,S1,E1)"""
@@ -442,6 +452,7 @@ def rearrange_pads(pads):
     starts = pads[:half]
     ends = pads[half:]
     return [j for i in zip(starts, ends) for j in i]
+
 
 def convert_to_functions(pb, network, node, base_name, initializers,
                          func_counter, param_vars, param_list, merged_inputs,
@@ -630,7 +641,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
         nnp_order = [0, 2, 1, 3, 4]
         if len(node.input) != len(nnp_order):
-            raise ValueError("The number of BatchNormalization input must be {}".format(len(nnp_order)))
+            raise ValueError(
+                "The number of BatchNormalization input must be {}".format(len(nnp_order)))
         nnp_input = [node.input[i] for i in nnp_order]
         del func.input[:]
         func.input.extend(nnp_input)
@@ -641,18 +653,22 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "is_test":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for is_test in BatchNormalization op_type")
+                    raise ValueError(
+                        "Only INT is supported for is_test in BatchNormalization op_type")
                 if attr.i == 0:
-                    raise ValueError("BatchNormalization with is_test=False is currently not supported")
+                    raise ValueError(
+                        "BatchNormalization with is_test=False is currently not supported")
                 is_test = (attr.i == 1)
                 bnp.batch_stat = not is_test
             elif attr.name == "epsilon":
                 if attr.type != AttributeProto.FLOAT:
-                    raise ValueError("Only FLOAT is supported for epsilon in BatchNormalization op_type")
+                    raise ValueError(
+                        "Only FLOAT is supported for epsilon in BatchNormalization op_type")
                 bnp.eps = attr.f
             elif attr.name == "momentum":
                 if attr.type != AttributeProto.FLOAT:
-                    raise ValueError("Only FLOAT is supported for momentum in BatchNormalization op_type")
+                    raise ValueError(
+                        "Only FLOAT is supported for momentum in BatchNormalization op_type")
                 bnp.decay_rate = attr.f
             elif attr.name == "consumed_inputs":
                 # BatchNormalization-1 has this field.
@@ -675,11 +691,13 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             if init.name == x or init.name == weight:
                 # must be two dimensional
                 if len(init.dims) != 2:
-                    raise ValueError("Only two dimensional input is currently supported for Gemm input tensor A and B ({})".format(init.name))
+                    raise ValueError(
+                        "Only two dimensional input is currently supported for Gemm input tensor A and B ({})".format(init.name))
             elif init.name == bias:
                 # Must be one dimensional
                 if len(init.dims) != 1:
-                    raise ValueError("Only one dimensional input is currently supported for Gemm input tensor C ({})".format(init.name))
+                    raise ValueError(
+                        "Only one dimensional input is currently supported for Gemm input tensor C ({})".format(init.name))
 
         # Switch H and W for transpose
         # We assume the buffer is two dimensional.
@@ -687,28 +705,33 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "transA":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for transA in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only INT is supported for transA in {} op_type".format(node.op_type))
                 # We need to transpose the input weight beforehand
                 # since NNabla does not support transpose with Affine.
                 # Add a new intermediate buffer for transposition,
                 # and rewire the buffer as input.
                 ain = node.input[0]
                 aout = ain+transposed_postfix
-                transA = generate_transpose(node.name, ain, aout, axes, base_name, func_counter)
+                transA = generate_transpose(
+                    node.name, ain, aout, axes, base_name, func_counter)
                 func_list.append(transA)
                 input[0] = aout  # rewire input to transposed input
             elif attr.name == "transB":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for transB in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only INT is supported for transB in {} op_type".format(node.op_type))
                 # same as transA
                 bin = node.input[1]
                 bout = bin+transposed_postfix
-                transB = generate_transpose(node.name, bin, bout, axes, base_name, func_counter)
+                transB = generate_transpose(
+                    node.name, bin, bout, axes, base_name, func_counter)
                 func_list.append(transB)
                 input[1] = bout  # rewire input to transposed input
             elif attr.name == "broadcast":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("Only INT is supported for broadcast in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only INT is supported for broadcast in {} op_type".format(node.op_type))
                 # Affine broadcasts Bias vector automatically if the bias is one dimension
                 # so we don't have to do anything here
                 pass
@@ -721,7 +744,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         func_list.append(func)
     elif node.op_type == "Sum":
         if len(func.input) > 2:
-            raise ValueError("Sum operations with more than two input is currently not supported")
+            raise ValueError(
+                "Sum operations with more than two input is currently not supported")
         func_list.append(func)
     elif (node.op_type == "Add" or
           node.op_type == "Mul" or
@@ -734,7 +758,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
           node.op_type == "Less" or
           node.op_type == "Greater" or
           node.op_type == "Equal"):
-        convert_broadcasting_operator(func_list, node, func, base_name, func_counter)
+        convert_broadcasting_operator(
+            func_list, node, func, base_name, func_counter)
         func_list.append(func)
     elif node.op_type == "Constant":
         # Convert a Constant node as an input parameter and not a function
@@ -743,10 +768,12 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "value":
                 if attr.type != AttributeProto.TENSOR:
-                    raise ValueError("Only TESNOR is supported for value in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only TESNOR is supported for value in {} op_type".format(node.op_type))
                 t = attr.t
                 if t is None:
-                    raise ValueError("value attribute must be set for {}".format(node.op_type))
+                    raise ValueError(
+                        "value attribute must be set for {}".format(node.op_type))
                 t.name = name
                 # add tensor as parameter
                 add_tensor_as_parameter(pb, t)
@@ -771,7 +798,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             if attr.name == "shape":
                 # Shape comes as attribute for Reshape-1
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS is supported for shape in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only INTS is supported for shape in {} op_type".format(node.op_type))
                 rp.shape.dim.extend(attr.ints)
                 shape_found = True
             else:
@@ -787,10 +815,12 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             for init in initializers:
                 if init.name == shape_input:
                     if init.data_type != TensorProto.INT64:
-                        raise ValueError("Only INT64 is supported for shape in {} op_type".format(node.op_type))
+                        raise ValueError(
+                            "Only INT64 is supported for shape in {} op_type".format(node.op_type))
                     # copy shape size from initializer
                     if init.raw_data:
-                        rp.shape.dim.extend(np.fromstring(init.raw_data, dtype=np.int64))
+                        rp.shape.dim.extend(np.fromstring(
+                            init.raw_data, dtype=np.int64))
                     elif init.int64_data:
                         rp.shape.dim.extend(init.int64_data)
                     shape_found = True
@@ -799,7 +829,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             merged_inputs.append(shape_input)
             del func.input[1]
         if not shape_found:
-            raise ValueError("Shape information was not found in {} op_type".format(node.op_type))
+            raise ValueError(
+                "Shape information was not found in {} op_type".format(node.op_type))
         func_list.append(func)
     elif node.op_type == "Transpose":
         tp = func.transpose_param
@@ -808,7 +839,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
                 # perm has the same meaning for ONNX and NNabla
                 # so we simply copy the parameter
                 if attr.type != AttributeProto.INTS:
-                    raise ValueError("Only INTS is supported for perm in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only INTS is supported for perm in {} op_type".format(node.op_type))
                 tp.axes.extend(attr.ints)
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -820,7 +852,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "alpha":
                 if attr.type != AttributeProto.FLOAT:
-                    raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
                 lrp.alpha = attr.f
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -832,7 +865,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "alpha":
                 if attr.type != AttributeProto.FLOAT:
-                    raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
                 ep.alpha = attr.f
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -845,11 +879,13 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "alpha":
                 if attr.type != AttributeProto.FLOAT:
-                    raise ValueError("Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only FLOAT is supported for alpha in {} op_type".format(node.op_type))
                 sp.alpha = attr.f
             elif attr.name == "gamma":
                 if attr.type != AttributeProto.FLOAT:
-                    raise ValueError("Only FLOAT is supported for gamma in {} op_type".format(node.op_type))
+                    raise ValueError(
+                        "Only FLOAT is supported for gamma in {} op_type".format(node.op_type))
                 sp.scale = attr.f
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -905,7 +941,8 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         for attr in node.attribute:
             if attr.name == "axis":
                 if attr.type != AttributeProto.INT:
-                    raise ValueError("LogSoftmax axis must be a single integer")
+                    raise ValueError(
+                        "LogSoftmax axis must be a single integer")
                 axis = attr.i
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -1090,7 +1127,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         func.input.extend([pow0_in, pow1_out])
         func_list.append(func)
     # Disabling Pad conversion because we haven't tested it properly
-    #elif node.op_type == "Pad":
+    # elif node.op_type == "Pad":
     #    mode = "constant"
     #    pads = []
     #    value = 0
@@ -1138,7 +1175,8 @@ def convert_parameter_shape(pb):
     We do this as a post conversion because in the future we may be able to
     delete the whole conversion if NNabla's code gets changed"""
     if len(pb.network) != 1:
-        raise ValueError("NNP with more then a single network is currently not supported")
+        raise ValueError(
+            "NNP with more then a single network is currently not supported")
     net = pb.network[0]
     batch_norm_constants = []
     for f in net.function:
@@ -1151,7 +1189,8 @@ def convert_parameter_shape(pb):
             # but NNabla's check currently does not allow this.
             # Thus, we convert the shape of the above input so we can pass NNabla's check.
             # If NNabla lightens the shape check, we should be able to remove this conversion.
-            batch_norm_constants.extend(f.input[1:5])  # copy all input names for scale, bias, mean, variance
+            # copy all input names for scale, bias, mean, variance
+            batch_norm_constants.extend(f.input[1:5])
 
     # This loop should be fairly slow since we loop through all variables and parameters per constant
     for c in batch_norm_constants:
@@ -1169,10 +1208,12 @@ def convert_parameter_shape(pb):
                 p.shape.dim.extend([1, size, 1, 1])
                 break
 
+
 def check_domain(domain):
     # We do not allow any operator from an unknown domain
     if not (domain == '' or domain == NNABLA_DOMAIN):
-        raise ValueError("Unsupported operator from domain {} was found".format(domain))
+        raise ValueError(
+            "Unsupported operator from domain {} was found".format(domain))
 
 
 def add_tensor_as_parameter(pb, tensor):
@@ -1215,6 +1256,7 @@ def add_tensor_as_parameter(pb, tensor):
                          .format(tensor.name, tensor.data_type))
     p.need_grad = False
 
+
 def onnx_graph_to_nnp_protobuf(pb, graph):
     network = pb.network.add()
     network.name = graph.name
@@ -1224,8 +1266,8 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
     param_vars = OrderedDict()  # Dictionary for input parameters.
     all_vars = OrderedDict()  # Dictionary for all variables
     param_list = []  # list of parameter variables
-    merged_inputs = [] # list of input buffers that was merged to a function
-    removed_outputs = [] # list of output buffers that was removed
+    merged_inputs = []  # list of input buffers that was merged to a function
+    removed_outputs = []  # list of output buffers that was removed
     func_counter = {}  # a counter for all functions
     # convert nodes
     for n in graph.node:
@@ -1282,10 +1324,11 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
             # graph.input and graph.initializer,
             # but was not actually used as input for any node.
             # No one is using this buffer so we show a warning and ignore it.
-            logger.warning("Input buffer {} is not used as input for any node.".format(i.name))
+            logger.warning(
+                "Input buffer {} is not used as input for any node.".format(i.name))
     for o in graph.output:
         if o.name in removed_outputs:
-            # This output buffer was removed so we are not going to 
+            # This output buffer was removed so we are not going to
             # use it
             continue
         v = add_value_info_as_buffer(network, o)
@@ -1321,16 +1364,19 @@ def onnx_graph_to_nnp_protobuf(pb, graph):
         p.variable_name = pv.name
     convert_parameter_shape(pb)
 
+
 def onnx_model_to_nnp_protobuf(model):
     pb = nnabla_pb2.NNablaProtoBuf()
     if model.ir_version > ONNX_IR_VERSION:
-        raise ValueError("ONNX IR version newer than {} is currently not supported: {}".format(ONNX_IR_VERSION, model.ir_version))
+        raise ValueError("ONNX IR version newer than {} is currently not supported: {}".format(
+            ONNX_IR_VERSION, model.ir_version))
     for opset in model.opset_import:
         if opset.domain == "":
             # ONNX opset.
             # Check if we have the correct version
             if opset.version > ONNX_OPSET_VERSION:
-                raise ValueError("ONNX opset version newer than {} is currently not supported: {}".format(ONNX_OPSET_VERSION, opset.version))
+                raise ValueError("ONNX opset version newer than {} is currently not supported: {}".format(
+                    ONNX_OPSET_VERSION, opset.version))
         else:
             raise ValueError(
                 "Unsupported opset from domain {}".format(opset.domain))

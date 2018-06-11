@@ -79,7 +79,6 @@ def ref_broadcast_to(x, y, axis):
                 return np.broadcast_to(t, x.shape)
 
 
-
 PARAMS = [
     ((2, 3), (2), 0),
     ((2, 3), (3), 1),
@@ -103,6 +102,7 @@ PARAMS = [
     ((2, 3, 4, 5), (2, 3, 4, 5), -1),
 ]
 
+
 @pytest.mark.parametrize("seed", [314])
 @pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast_to']))
 @pytest.mark.parametrize("xs, ys, axis", PARAMS)
@@ -112,5 +112,5 @@ def test_broadcast_to_forward(xs, ys, axis, seed, fname, ctx, func_name):
     func = getattr(F, fname)
     inputs = [rng.random_sample(xs), rng.random_sample(ys)]
     function_tester(rng, func, ref_func, inputs, [axis],
-                    backward=[False,False],
+                    backward=[False, False],
                     ctx=ctx, func_name=func_name)
