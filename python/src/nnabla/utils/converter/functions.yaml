@@ -2115,6 +2115,24 @@ Array Manipulation:
     outputs:
       y:
         doc: Broadcasted N-D array
+  BroadcastTo:
+    snake_name: broadcast_to
+    doc: |2
+
+      Broadcasting ND-array to the specified buffer.
+    inputs:
+      x:
+        doc: N-D array
+      y:
+        doc: N-D array
+    arguments:
+      axis:
+        doc: Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
+        type: int64
+        default: -1
+    outputs:
+      z:
+        doc: Broadcasted N-D array
   OneHot:
     snake_name: one_hot
     doc: |2
