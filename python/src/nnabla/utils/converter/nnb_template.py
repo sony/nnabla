@@ -20,35 +20,13 @@ from .nnablart import NnbExporter, CsrcExporter
 from .onnx import OnnxReader, OnnxExporter
 
 
-def export_from_nnp(args, nnp, output):
-    output_ext = os.path.splitext(output)[1].lower()
-    if (os.path.isdir(output) and args.export_format == 'NNP') or output_ext == '.nnp':
-        parameter_type = 'protobuf'
-        if args.nnp_parameter_nntxt:
-            parameter_type = 'included'
-        elif args.nnp_parameter_h5:
-            parameter_type = 'h5'
-        if args.nnp_exclude_parameter:
-            parameter_type = 'none'
-        NnpExporter(nnp, args.batch_size, parameter_type).export(output)
-
-    elif output_ext == '.nnb':
-        NnbExporter(nnp, args.batch_size).export(
-            output, None, args.settings, args.default_variable_type)
-
-    elif os.path.isdir(output) and args.export_format == 'CSRC':
-        CsrcExporter(nnp, args.batch_size).export(output)
-
-    elif output_ext == '.onnx':
-        OnnxExporter(nnp).export(output)
-    else:
-        print('Output file ({}) is not supported or output directory does not exist.'.format(
-            output_ext))
-        return False
+def generate_nnb_template(args, nnp, output):
+    NnbExporter(nnp, args.batch_size).export(
+        None, output, None, args.default_variable_type)
     return True
 
 
-def convert_files(args, ifiles, output):
+def nnb_template(args, ifiles, output):
     nnp = None
     if args.read_format == 'NNP':
         # Input file that has unsuported extension store into output nnp archive or directory.
@@ -56,7 +34,7 @@ def convert_files(args, ifiles, output):
     elif args.read_format == 'ONNX':
         nnp = OnnxReader(*ifiles).read()
     if nnp is not None:
-        return export_from_nnp(args, nnp, output)
+        return generate_nnb_template(args, nnp, output)
     else:
         print('Read from [{}] failed.'.format(ifiles))
         return False
