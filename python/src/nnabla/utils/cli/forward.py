@@ -102,6 +102,7 @@ def update_result(args, index, result, values, output_index, type_end_names, out
 
     return result, outputs
 
+
 def forward(args, index, config, data, variables, output_image=True):
     class ForwardResult:
         pass

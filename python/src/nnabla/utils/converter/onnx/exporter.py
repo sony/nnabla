@@ -80,6 +80,7 @@ nnabla_function_type_to_onnx_optype = {
     "BroadcastTo": ""
 }
 
+
 def generate_scalar_constant(output_name, tensor_name, scalar):
     """Convert a scalar value to a Constant buffer.
     This is mainly used for xxScalar operators."""
@@ -92,6 +93,7 @@ def generate_scalar_constant(output_name, tensor_name, scalar):
                               value=t)
     return c
 
+
 def generate_constant(output_name, tensor_name, data_type, dims, vals):
     t = onnx.helper.make_tensor(tensor_name,
                                 data_type=data_type,
@@ -101,6 +103,7 @@ def generate_constant(output_name, tensor_name, data_type, dims, vals):
                               [output_name],
                               value=t)
     return c
+
 
 def merge_broadcast(node, func, target_name, broadcast_target):
     # Set the broadcast attribute to the operator
@@ -127,16 +130,18 @@ def set_reduction_attrs(node, param):
     k = onnx.helper.make_attribute("keepdims", param.keep_dims)
     node.attribute.extend([a, k])
 
+
 def convert_to_nodes(func, variables, input_types, output_types, broadcast_target):
     """Convert a function to a node or a group of nodes"""
     op_type = nnabla_function_type_to_onnx_optype.get(func.type)
     if op_type is None:
-        raise ValueError("function {} is currently not supported for ONNX conversion".format(func.type))
+        raise ValueError(
+            "function {} is currently not supported for ONNX conversion".format(func.type))
     n = onnx.helper.make_node(
-            op_type,
-            func.input,
-            func.output,
-            name=func.name)
+        op_type,
+        func.input,
+        func.output,
+        name=func.name)
     nl = []
     if func.type == "Concatenate":
         # ONNX requires axis setting as a parameter
@@ -214,7 +219,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
     elif func.type == "AveragePooling":
         app = func.average_pooling_param
         if not app.ignore_border:
-            raise ValueError("AveragePooling with ignore_border=False is not supported")
+            raise ValueError(
+                "AveragePooling with ignore_border=False is not supported")
         # Copy kernel, stride, and pads values
         k = onnx.helper.make_attribute("kernel_shape", app.kernel.dim)
         s = onnx.helper.make_attribute("strides", app.stride.dim)
@@ -227,14 +233,16 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # ONNX BatchNormalization input order: X, scale, bias, mean, variance
         onnx_order = [0, 2, 1, 3, 4]
         if len(func.input) != len(onnx_order):
-            raise ValueError("The number of BatchNormalization input must be {}".format(len(onnx_order)))
+            raise ValueError(
+                "The number of BatchNormalization input must be {}".format(len(onnx_order)))
         onnx_input = [func.input[i] for i in onnx_order]
         del n.input[:]
         n.input.extend(onnx_input)
         bpp = func.batch_normalization_param
         if bpp.batch_stat:
             # Batch normalization for training is currently not supported
-            raise ValueError("BatchNormalization with batch_stat=True is currently not supported for ONNX conversion")
+            raise ValueError(
+                "BatchNormalization with batch_stat=True is currently not supported for ONNX conversion")
         t = onnx.helper.make_attribute("is_test", not bpp.batch_stat)
         attrs = [t]
         # Set values if a valid value has been set
@@ -273,9 +281,9 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         x = func.input[0]
         flout = x+"_flatten"
         fl = onnx.helper.make_node(
-                "Flatten",
-                [x],
-                [flout])
+            "Flatten",
+            [x],
+            [flout])
         n.input[0] = flout  # rewire input data
         a = onnx.helper.make_attribute("axis", ap.base_axis)
         fl.attribute.extend([a])
@@ -284,7 +292,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
     elif func.type == "BatchMatmul":
         bmp = func.batch_matmul_param
         if bmp.transpose_a or bmp.transpose_b:
-            raise ValueError("{} with transpose is not supported yet".format(func.type))
+            raise ValueError(
+                "{} with transpose is not supported yet".format(func.type))
         nl.append(n)
     elif func.type == "LeakyReLU":
         lrp = func.leaky_relu_param
@@ -389,7 +398,8 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
     elif func.type == "RDivScalar":
         rp = func.r_div_scalar_param
         if rp.val != 1.0:
-            raise ValueError("RDivScalar can be converted to Reciprocal only if val is 1")
+            raise ValueError(
+                "RDivScalar can be converted to Reciprocal only if val is 1")
         nl.append(n)
     elif func.type == "MulScalar":
         mp = func.mul_scalar_param
@@ -507,11 +517,13 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         nl.append(n)
     return nl
 
+
 def create_dim(val):
     """Create a dimension message for a given dimension"""
     dim = TensorShapeProto.Dimension()
     dim.dim_value = val
     return dim
+
 
 def convert_parameter_shape(graph):
     """Convert the shape of some parameters so they fit ONNX's requirements.
@@ -528,7 +540,8 @@ def convert_parameter_shape(graph):
             # but NNabla's check currently does not allow this.
             # Thus, we convert the shape of the above input so we can pass ONNX's check.
             # If NNabla or ONNX lightens the requirements, we should be able to remove this conversion.
-            batch_norm_constants.extend(n.input[1:5])  # copy all input names for scale, bias, mean, variance
+            # copy all input names for scale, bias, mean, variance
+            batch_norm_constants.extend(n.input[1:5])
 
     # This loop should be fairly slow since we loop through all variables and parameters per constant
     for c in batch_norm_constants:
@@ -539,8 +552,8 @@ def convert_parameter_shape(graph):
                 if not (len(size) == 4 and
                         size[0] == 1 and size[2] == 1 and size[3] == 1):
                     raise ValueError(
-                            "beta, gamma, mean, and variance parameters"
-                            "must have the shape of 1*C*1*1 in {}".format(n.op_type))
+                        "beta, gamma, mean, and variance parameters"
+                        "must have the shape of 1*C*1*1 in {}".format(n.op_type))
                 chan = size[1]
                 del i.dims[:]
                 i.dims.extend([chan])
@@ -553,8 +566,8 @@ def convert_parameter_shape(graph):
                         size[2].dim_value == 1 and
                         size[3].dim_value == 1):
                     raise ValueError(
-                            "beta, gamma, mean, and variance parameters"
-                            "must have the shape of 1*C*1*1 in {}".format(n.op_type))
+                        "beta, gamma, mean, and variance parameters"
+                        "must have the shape of 1*C*1*1 in {}".format(n.op_type))
                 chan = size[1].dim_value
                 del i.type.tensor_type.shape.dim[:]
                 i.type.tensor_type.shape.dim.extend([create_dim(chan)])
@@ -596,7 +609,8 @@ def nnp_model_to_onnx_graph(graph, nnp):
     # so we can check if we can merge it to appropriate operators.
     broadcast_target = {}
     for f in net.function:
-        nl = convert_to_nodes(f, net.variable, input_types, output_types, broadcast_target)
+        nl = convert_to_nodes(f, net.variable, input_types,
+                              output_types, broadcast_target)
         graph.node.extend(nl)
     if len(broadcast_target) > 0:
         # If a broadcast target buffer is not used for any of the supported
@@ -615,7 +629,8 @@ def nnp_model_to_onnx_graph(graph, nnp):
             TensorProto.INT32: np.int32,
             TensorProto.INT64: np.int64,
         }
-        init.raw_data = np.array(param.data, dtype=tensor_type_to_dtype[t]).tostring()
+        init.raw_data = np.array(
+            param.data, dtype=tensor_type_to_dtype[t]).tostring()
         # init.float_data.extend(param.data)
 
     # Add all the constant parameters for all nodes
@@ -623,20 +638,23 @@ def nnp_model_to_onnx_graph(graph, nnp):
     for iv in exe.data_variable:
         i = graph.input.add()
         i.name = iv.variable_name
-        i.type.tensor_type.elem_type = get_tensor_type(iv.variable_name, input_types)
+        i.type.tensor_type.elem_type = get_tensor_type(
+            iv.variable_name, input_types)
         dims = [create_dim(d) for d in var_dict[iv.variable_name].dim]
         i.type.tensor_type.shape.dim.extend(dims)
     for pv in exe.parameter_variable:
         p = graph.input.add()
         p.name = pv.variable_name
-        p.type.tensor_type.elem_type = get_tensor_type(pv.variable_name, input_types)
+        p.type.tensor_type.elem_type = get_tensor_type(
+            pv.variable_name, input_types)
         dims = [create_dim(d) for d in var_dict[pv.variable_name].dim]
         p.type.tensor_type.shape.dim.extend(dims)
     # Add only the final output of the graph as output
     for ov in exe.output_variable:
         o = graph.output.add()
         o.name = ov.variable_name
-        o.type.tensor_type.elem_type = get_tensor_type(ov.variable_name, output_types)
+        o.type.tensor_type.elem_type = get_tensor_type(
+            ov.variable_name, output_types)
         dims = [create_dim(d) for d in var_dict[ov.variable_name].dim]
         o.type.tensor_type.shape.dim.extend(dims)
     convert_parameter_shape(graph)

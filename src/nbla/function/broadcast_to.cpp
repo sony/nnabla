@@ -25,8 +25,6 @@ namespace nbla {
 // float
 template class BroadcastTo<float>;
 
-
 // half
 template class BroadcastTo<Half>;
-
 }

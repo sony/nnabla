@@ -166,7 +166,7 @@ def convert_nnp_to_onnx_and_compare(
         c2out = rep.run([in_img])
     else:
         c2out = rep.run([])
-    #for k in rep.workspace.Blobs():
+    # for k in rep.workspace.Blobs():
     #    v = rep.workspace.FetchBlob(k)
     #    print(k, v.shape)
     c2 = c2out[out_name]
@@ -335,7 +335,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-#def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+# def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "average_pool_p0_0_1_1_s1_k2.onnx",
 #                                    "average_pool_p0_0_1_1_s1_k2.nnp",
@@ -343,7 +343,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
 #                                    export_nnp_path=TEST_DATA_DIR)
 #
 #
-#def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+# def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
 #    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "average_pool_p0_0_1_1_s1_k2.nnp",
 #                                    "average_pool_p0_0_1_1_s1_k2.onnx",
@@ -1122,7 +1122,7 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
                                     atol=1e-4)
 
 # Disabling pad test because CNTK returns wrong results
-#def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
+# def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
 #                                                            nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "pad_mconstant_v0_pl0_0_0_1_0_1.onnx",
@@ -1133,22 +1133,21 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
-#def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
+# def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "lrn_c3_s2.onnx",
 #                                    "lrn_c3_s2.nnp",
 #                                    "out_data_1", "exec_0")
 
-
-    
     # These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
-#def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
+# def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(
 #        tmpdir, TEST_DATA_DIR, "reduce_prod.onnx", "reduce_prod.nnp",
 #        "ReduceElements7_Output_0", "exec_0",
 #        backend="cntk")
+
 
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
@@ -1296,8 +1295,8 @@ def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
                                     in_name="data_0", in_img=img)
 
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_shufflenet(tmpdir, nnp_fixture):
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_shufflenet(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "shufflenet.onnx", "shufflenet.nnp",
@@ -1305,8 +1304,8 @@ def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
 #                                    in_name="gpu_0/data_0", in_img=img)
 
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_mnist(tmpdir, nnp_fixture):
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_mnist(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 1, 28, 28).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "mnist.onnx", "mnist.nnp",
@@ -1315,11 +1314,10 @@ def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
 #                                    backend="cntk",
 #                                    export_nnp_path=TEST_DATA_DIR)
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_inception_v1(tmpdir, nnp_fixture):
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_inception_v1(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "inception_v1.onnx", "inception_v1.nnp",
 #                                    "prob_1", "exec_0",
 #                                    in_name="data_0", in_img=img)
-

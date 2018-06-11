@@ -29,6 +29,7 @@ def ref_global_average_pooling(x):
     newx = np.reshape(x, newshape)
     return np.average(newx, 2)[:, :, np.newaxis, np.newaxis]
 
+
 @pytest.mark.parametrize("seed", [314])
 @pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['global_average_pooling']))
 def test_global_average_pooling_forward_backward(seed, fname, ctx, func_name):
