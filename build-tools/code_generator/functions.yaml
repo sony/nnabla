@@ -2060,6 +2060,60 @@ Array Manipulation:
     outputs:
       y:
         doc: Sliced N-D array
+  Pad:
+    snake_name: pad
+    doc: |2
+
+      Pads given N-D array with specified sizes of dimensions.
+      The dimensions that get padded begins with the last dimension and moves forward.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      pad_width:
+        doc: |
+
+             n-elem tuple, where n/2 <= input dimensions and n is even.
+             len(pad_width)/2 represents the padding dimension(e.g. 1D, 2D, 3D etc.).
+             (Currently padding upto 3D is supported)
+        type: repeated int64
+        default: (0,) * len(x.shape)
+      mode:
+        doc: |
+
+             Padding mode is one of the following.
+
+             1) constant : Elements in pad region are filled with constant_value.
+             2) replicate : Padded elements are filled with the values in nearest edges.
+             3) reflect : Padded with the reflection of the vector mirrored on the first and last values of the vector along each axis.
+
+             (Currently only `constant` mode is supported)
+        type: string
+        default: '''constant'''
+      constant_value:
+        doc: |
+
+             Constant values filled in padded regions if mode is `constant`.
+        type: float
+        default: 0
+    outputs:
+      y:
+        doc: |
+
+             Padded N-D array (e.g. (B, C, H, W) shape) where dimension depends on pad_width.
+             ndim() of output N-D array will be same as ndim() of input N-D array.
+
+             -for 1D padding :
+                      N-D input array with padding of the form (padLeft, padRight).
+                      The output N-D array dimension (B, C, H, padLeft + W + padRight).
+
+             -for 2D padding :
+                      N-D input array with padding of the form (padTop, padBottom, padLeft, padRight).
+                      The output N-D array dimension (B, C, padTop + H + padBottom, padLeft + W + padRight).
+
+             -for 3D padding :
+                      N-D input array with padding of the form (pasFront, padBack, padTop, padBottom, padLeft, padRight).
+                      The output N-D array dimension (B, padFront + C + padBack, padTop + H + padBottom, padLeft + W + padRight).
   Transpose:
     snake_name: transpose
     doc: |2
