@@ -15,9 +15,8 @@
 import os
 import sys
 
-from .nnabla import NnpReader, NnpExporter
-from .nnablart import NnbExporter, CsrcExporter
-from .onnx import OnnxReader, OnnxExporter
+from .nnabla import NnpExporter
+from .utils import read_nnp
 
 
 def generate_nnb_template(args, nnp, output):
@@ -27,12 +26,7 @@ def generate_nnb_template(args, nnp, output):
 
 
 def nnb_template(args, ifiles, output):
-    nnp = None
-    if args.read_format == 'NNP':
-        # Input file that has unsuported extension store into output nnp archive or directory.
-        nnp = NnpReader(*ifiles, expand_network=args.nnp_expand_network).read()
-    elif args.read_format == 'ONNX':
-        nnp = OnnxReader(*ifiles).read()
+    nnp = read_nnp(args, ifiles)
     if nnp is not None:
         return generate_nnb_template(args, nnp, output)
     else:

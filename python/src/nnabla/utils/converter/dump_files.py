@@ -16,8 +16,7 @@ import os
 import sys
 import collections
 
-from .nnabla import NnpReader
-from .onnx import OnnxReader
+from .utils import read_nnp
 
 
 def dump_protobuf(proto, prefix, depth):
@@ -48,12 +47,7 @@ def dump_nnp(args, nnp):
 
 
 def dump_files(args, ifiles):
-    nnp = None
-    if args.read_format == 'NNP':
-        # Input file that has unsuported extension store into output nnp archive or directory.
-        nnp = NnpReader(*ifiles, expand_network=args.nnp_expand_network).read()
-    elif args.read_format == 'ONNX':
-        nnp = OnnxReader(*ifiles).read()
+    nnp = read_nnp(args, ifiles)
     if nnp is not None:
         return dump_nnp(args, nnp)
     else:
