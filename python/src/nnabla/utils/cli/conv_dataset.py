@@ -17,7 +17,6 @@ import shutil
 import sys
 from tqdm import tqdm
 
-from nnabla.logger import logger
 from nnabla.utils.data_source import DataSourceWithFileCache
 from nnabla.utils.data_source_implements import CacheDataSource, CsvDataSource
 

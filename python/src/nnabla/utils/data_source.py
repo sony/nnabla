@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
+import h5py
+
 from shutil import rmtree
 import abc
 import atexit
-import h5py
 import numpy
 import os
 import six

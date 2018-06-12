@@ -74,8 +74,10 @@ def update_result(args, index, result, values, output_index, type_end_names, out
                     file_name += '{}{}'.format(file_index, vtype)
                     full_path = os.path.join(args.outdir, file_name)
                     directory = os.path.dirname(full_path)
-                    if not os.path.exists(directory):
+                    try:
                         os.makedirs(directory)
+                    except OSError:
+                        pass  # python2 does not support exists_ok arg
                     if vtype in ['.bmp', '.jpeg', '.jpg', '.png', '.gif', '.tif']:
                         x = np.array(d, dtype=np.float32) * 256.
                         while len(x.shape) == 4:
