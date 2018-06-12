@@ -374,8 +374,6 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
 #                                    "average_pool_p0_0_1_1_s1_k2.nnp",
 #                                    "average_pool_p0_0_1_1_s1_k2.onnx",
 #                                    "out_data_1", "exec_0")
-
-
 @pytest.mark.skip(reason="Skip until test data location decided.")
 def test_onnx_nnp_conversion_sum(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1265,6 +1263,8 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
                                     atol=1e-4)
 
 # Disabling pad test because CNTK returns wrong results
+
+
 @pytest.mark.skip(reason="Skip until test data location decided.")
 # def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
 #                                                            nnp_fixture):
@@ -1274,7 +1274,6 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 #                                    "Pad4_Output_0", "exec_0",
 #                                    backend="cntk")
 #
-
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
 @pytest.mark.skip(reason="Skip until test data location decided.")
@@ -1283,8 +1282,7 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 #                                    "lrn_c3_s2.onnx",
 #                                    "lrn_c3_s2.nnp",
 #                                    "out_data_1", "exec_0")
-
-    # These following tests are invalidated due to a
+# These following tests are invalidated due to a
 # backend bug? decribed in the following issue:
 # https://github.com/Microsoft/CNTK/issues/3127
 @pytest.mark.skip(reason="Skip until test data location decided.")
@@ -1293,8 +1291,6 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 #        tmpdir, TEST_DATA_DIR, "reduce_prod.onnx", "reduce_prod.nnp",
 #        "ReduceElements7_Output_0", "exec_0",
 #        backend="cntk")
-
-
 @pytest.mark.skip(reason="Skip until test data location decided.")
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
