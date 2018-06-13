@@ -408,7 +408,7 @@ def _context(proto):
                 import nnabla_ext.cudnn
                 ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
             elif 'default' in compute_backends:
-                import nnabla_ext.cudnn
+                import nnabla_ext.cuda
                 ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
             else:
                 raise ValueError(
@@ -421,16 +421,14 @@ def _context(proto):
         ctx.array_class = str(proto.array_class)
         return ctx
     ctx = nn.Context()
-    ctx.backend.extend(proto.backends[:])
-    ctx.array_class = proto.array_class
+    ctx.backend = proto.backends
+    ctx.array_class = str(proto.array_class)
 
     comm = current_communicator()
     if comm:
         ctx.device_id = str(comm.rank)
     else:
         ctx.device_id = str(proto.device_id)
-
-    ctx.compute_backend = proto.compute_backend
 
     return ctx
 
@@ -479,16 +477,13 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                 if single_or_rankzero():
                     logger.log(99, 'Creating cache data for "' + uri + '"')
 
-                    os.makedirs(cache_dir, exist_ok=True)
-                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
-                        index = 0
-                        while index < di.size:
-                            progress('', (1.0 * di.position) / di.size)
-                            di.next()
-                            index += batch_size
+                    try:
+                        os.makedirs(cache_dir)
+                    except OSError:
+                        pass  # python2 does not support exists_ok arg
 
-                if comm:
-                    comm.barrier()
+                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
+                        pass
 
             rng = numpy.random.RandomState(0)
             dataset.data_iterator = (lambda: data_iterator_cache(
@@ -501,7 +496,10 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                 sys.exit(-1)
             else:
                 if cache_dir:
-                    os.makedirs(cache_dir, exist_ok=True)
+                    try:
+                        os.makedirs(cache_dir)
+                    except OSError:
+                        pass  # python2 does not support exists_ok arg
                 dataset.data_iterator = (lambda: data_iterator_csv_dataset(
                     uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
