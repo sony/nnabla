@@ -1,7 +1,7 @@
 Cython>=0.24,<0.26
 boto3
 h5py
-numpy>=1.10
+numpy
 protobuf
 pyyaml
 requests

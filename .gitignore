@@ -7,6 +7,8 @@
 
 /build-tools/msvc/cmake_cpp_utils.bat
 /doc/?/
+/docker/development/Dockerfile.build.py*
+/docker/development/Dockerfile.onnx-test.py*
 /examples/cpp/mnist_runtime/mnist_runtime
 /examples/cpp/mnist_runtime/mnist_runtime_cuda
 /examples/cpp/mnist_runtime/*.nnp
@@ -72,4 +74,3 @@
 *.h5
 tmp.*/
 *.zip
-/docker/development/Dockerfile.build.py*

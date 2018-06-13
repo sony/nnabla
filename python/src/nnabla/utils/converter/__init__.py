@@ -14,9 +14,9 @@
 
 from .supported_info import formats
 from .supported_info import extensions
-from .convert_files import convert_files
-from .dump_files import dump_files
-from .nnb_template import nnb_template
+from .commands import convert_files
+from .commands import dump_files
+from .commands import nnb_template
 from .utils import type_to_pack_format
 from .utils import get_category_info_string
 from .utils import get_category_info_version

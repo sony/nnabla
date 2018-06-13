@@ -20,9 +20,6 @@ import os
 import yaml
 import zlib
 
-from .nnabla import NnpReader
-from .onnx import OnnxReader
-
 
 def type_to_pack_format(typestring):
     fmt = None
@@ -150,16 +147,3 @@ def calc_shape_size(shape, batch_size):
             d = batch_size
         size *= d
     return size
-
-
-def read_nnp(args, ifiles):
-    if len(ifiles) == 1 and os.path.splitext(ifiles[0])[1] == '.nnp':
-        args.read_format = 'NNP'
-    if len(ifiles) == 1 and os.path.splitext(ifiles[0])[1] == '.onnx':
-        args.read_format = 'ONNX'
-    if args.read_format == 'NNP':
-        # Input file that has unsuported extension store into output nnp archive or directory.
-        return NnpReader(*ifiles, expand_network=args.nnp_expand_network).read()
-    elif args.read_format == 'ONNX':
-        return OnnxReader(*ifiles).read()
-    return None
