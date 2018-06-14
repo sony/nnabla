@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/global_average_pooling.hpp>
 #include <nbla/variable.hpp>
+
+#include <algorithm>
+#include <numeric>
 
 namespace nbla {
 
