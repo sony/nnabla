@@ -19,7 +19,14 @@ import nnabla
 import nnabla.utils.load as nnload
 import numpy as np
 import pdb
-import onnx
+
+ONNX_AVAILABLE = False
+try:
+    import onnx
+    ONNX_AVAILABLE = True
+except:
+    pass
+
 from collections import OrderedDict
 from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
 from nnabla.utils.converter.onnx import (
@@ -173,7 +180,7 @@ def nnp_fixture():
 
 @pytest.mark.skip(reason="CNTK output shape is strange.")
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "concat.onnx", "concat.nnp",
@@ -181,7 +188,7 @@ def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "concat.nnp", "concat.onnx",
@@ -190,7 +197,7 @@ def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
 
 @pytest.mark.skip(reason="CNTK does not support convolution without axes.")
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0", show_output=True)
@@ -198,14 +205,14 @@ def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
 
 @pytest.mark.skip(reason="CNTK does not support convolution without axes.")
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0", show_output=True)
 
 
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because a dropout
     # output yield random results
@@ -216,7 +223,7 @@ def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because a dropout
     # output yield random results
@@ -227,7 +234,7 @@ def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "dropout_test.onnx", "dropout_test.nnp",
@@ -235,7 +242,7 @@ def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "dropout_test.nnp", "dropout_test.onnx",
@@ -244,7 +251,7 @@ def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
 
 @pytest.mark.skip(reason="CNTK output shape is strange.")
 def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0", show_output=True)
@@ -252,14 +259,14 @@ def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
 
 @pytest.mark.skip(reason="CNTK output shape is strange.")
 def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0", show_output=True)
 
 
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because CNTK returns strange value.
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -268,7 +275,7 @@ def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because CNTK returns strange value.
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -277,7 +284,7 @@ def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because CNTK returns strange value.
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -287,7 +294,7 @@ def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because CNTK returns strange value.
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -297,21 +304,21 @@ def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because CNTK returns strange value.
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -320,7 +327,7 @@ def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
-    if not CNTK_AVAILABLE:
+    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     # We do not check if the values match because CNTK returns strange value.
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
