@@ -63,8 +63,10 @@ def test_pad_forward_backward_2D(seed, inshape_2d, pad_with_2d, mode, constant_v
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("inshape_Nd", [(2, 2, 2), (3, 5, 7), (2, 3, 2), (2, 2, 2, 2), (3, 5, 7, 1), (2, 3, 4, 6), (2, 2, 2, 2, 2), (3, 1, 5, 7, 3), (2, 3, 1, 1, 4, 5), (2, 2, 2, 2, 2, 2), (3, 3, 1, 5, 7, 3), (2, 2, 3, 1, 1, 4, 5)])
-@pytest.mark.parametrize("pad_with_3d", [(2, 2), (1, 1), (2, 3), (2, 2, 2, 2), (3, 3, 3, 3), (2, 3, 3, 4), (2, 2, 2, 2, 2, 2), (3, 3, 3, 3, 3, 3), (2, 3, 2, 3, 3, 4)])
+@pytest.mark.parametrize("inshape_Nd", [(2, 2, 2), (3, 5, 7), (3, 3, 1, 5, 7, 3), (2, 2, 3, 1, 1, 4, 5)])
+# @pytest.mark.parametrize("inshape_Nd", [(2, 2, 2), (3, 5, 7), (2, 3, 2), (2, 2, 2, 2), (3, 5, 7, 1), (2, 3, 4, 6), (2, 2, 2, 2, 2), (3, 1, 5, 7, 3), (2, 3, 1, 1, 4, 5), (2, 2, 2, 2, 2, 2), (3, 3, 1, 5, 7, 3), (2, 2, 3, 1, 1, 4, 5)])
+@pytest.mark.parametrize("pad_with_3d", [(2, 2), (1, 1), (3, 3, 3, 3, 3, 3), (2, 3, 2, 3, 3, 4)])
+# @pytest.mark.parametrize("pad_with_3d", [(2, 2), (1, 1), (2, 3), (2, 2, 2, 2), (3, 3, 3, 3), (2, 3, 3, 4), (2, 2, 2, 2, 2, 2), (3, 3, 3, 3, 3, 3), (2, 3, 2, 3, 3, 4)])
 @pytest.mark.parametrize("mode, constant_value", [('constant', 0.0), ('constant', 0.2), ('constant', 5.5), ('constant', -0.1)])
 @pytest.mark.parametrize("seed", [313])
 def test_pad_forward_backward_Nd(seed, inshape_Nd, pad_with_3d, mode, constant_value, ctx, func_name):
