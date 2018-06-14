@@ -32,7 +32,7 @@ void CgFunction::set_inputs(const vector<CgVariablePtr> &inputs) {
   // Check need_grad
   need_grad_ = false;
   for (auto i : inputs) {
-    need_grad_ |= i->need_grad();
+    need_grad_ |= i->need_grad_state();
     rank_ = std::max(rank_, i->rank());
     i->increment_function_reference_count();
   }

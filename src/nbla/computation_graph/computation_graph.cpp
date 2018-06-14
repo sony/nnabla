@@ -36,7 +36,8 @@ vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
   }
   vector<CgVariablePtr> outputs(n_outputs);
   for (int i = 0; i < n_outputs; ++i) {
-    auto v = make_shared<CgVariable>(cg_f->need_grad());
+    auto v = make_shared<CgVariable>();
+    v->set_need_grad_state(cg_f->need_grad());
     v->set_parent(cg_f);
     outputs[i] = v;
   }
@@ -84,10 +85,11 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
   auto f = cg_f->function();
   f->setup(finputs, foutputs);
 
+  // TODO: revisit this
   if (cg_f->need_grad()) {
     // Set inplace capability of output variables.
     for (int i = 0; i < inputs.size(); ++i) {
-      if (!inputs[i]->need_grad())
+      if (!inputs[i]->need_grad_state())
         continue;
       if (f->inplace_grad(i)) {
         NBLA_CHECK(f->inplace_grad(i) < Function::INPLACE ||

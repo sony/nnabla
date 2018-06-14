@@ -35,15 +35,20 @@ using std::make_tuple;
 using std::get;
 using std::unique_ptr;
 
-CgVariable::CgVariable(bool need_grad) : need_grad_(need_grad) {
-  var_ = make_shared<Variable>(Shape_t{});
+CgVariable::CgVariable() { var_ = make_shared<Variable>(Shape_t{}); }
+CgVariable::CgVariable(bool need_grad) : CgVariable() {
+  set_need_grad(need_grad);
 }
 
-CgVariable::CgVariable(Shape_t shape, bool need_grad) : need_grad_(need_grad) {
-  var_ = make_shared<Variable>(shape);
+CgVariable::CgVariable(Shape_t shape) { var_ = make_shared<Variable>(shape); }
+CgVariable::CgVariable(Shape_t shape, bool need_grad) : CgVariable(shape) {
+  set_need_grad(need_grad);
 }
 
 CgVariable::CgVariable(VariablePtr var) { var_ = var; }
+CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
+  set_need_grad(need_grad);
+}
 
 class ForwardCallback {
   bool clear_buffer_{false};
@@ -140,7 +145,7 @@ class BackwardCallback {
     vector<bool> accum(inputs.size(), false);
     for (int i = 0; i < inputs.size(); i++) {
       // No need grad.
-      if (!inputs[i]->need_grad())
+      if (!inputs[i]->need_grad_state())
         continue;
 
       // Root variable is always accumulated.
@@ -277,7 +282,7 @@ public:
     // Call backward function
     vector<bool> prop_down(accum.size());
     std::transform(inputs.begin(), inputs.end(), prop_down.begin(),
-                   [](CgVariablePtr v) { return v->need_grad(); });
+                   [](CgVariablePtr v) { return v->need_grad_state(); });
     // std::cout << f->function()->name() << std::endl;
     // std::cout << "  " << string_join(prop_down, ",") << std::endl;
     // std::cout << "  " << string_join(accum, ",") << std::endl;
@@ -306,9 +311,10 @@ void CgVariable::visit_function_recursive(
     if (!parent) {
       // Same as B-3.
       input->set_rank(0);
+      input->unset_need_grad_state();
       // Same as B-4.
       max_rank = std::max(0, max_rank);
-      need_grad |= input->need_grad();
+      need_grad |= input->need_grad_state();
       continue;
     }
 
@@ -320,11 +326,11 @@ void CgVariable::visit_function_recursive(
     // B-3. Update rank and need_grad of this input by propagating from the
     // parent function (backward with a rewired graph requires this).
     input->set_rank(parent->rank());
-    input->set_need_grad(parent->need_grad());
+    input->set_need_grad_state(parent->need_grad());
 
     // B-4. Aggregate rank and need_grad from inputs for func.
     max_rank = std::max(parent->rank(), max_rank);
-    need_grad |= input->need_grad();
+    need_grad |= input->need_grad_state();
   }
 
   // C. Update rank and need_grad of func (backward with a rewired graph
@@ -383,7 +389,7 @@ void CgVariable::visit_function_backward(
     auto inputs = f->inputs();
     for (int i = 0; i < f->num_inputs(); i++) {
       auto inp = inputs[i];
-      if (!inp->need_grad())
+      if (!inp->need_grad_state())
         continue;
       auto p_i = inp->parent();
       if (!p_i)

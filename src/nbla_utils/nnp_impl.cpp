@@ -116,7 +116,7 @@ NetworkImpl::get_cgvariable_or_create(const string &name) {
     shape[0] = batch_size();
   }
   // TODO: set need_grad
-  auto cg_v = std::make_shared<nbla::CgVariable>(shape, false);
+  auto cg_v = std::make_shared<nbla::CgVariable>(shape);
   // Register variable
   variables_.insert({name, cg_v});
   return cg_v;
@@ -251,7 +251,7 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   if (err >= 0) {
     Shape_t shape(dims, dims + rank);
     // TODO: Set need_grad.
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, false);
+    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(kCpuCtx);
     for (int i = 0; i < size / sizeof(float); i++) {

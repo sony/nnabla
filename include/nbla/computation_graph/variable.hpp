@@ -48,9 +48,11 @@ function which creates this variable and some performance optimization clues.
 */
 class CgVariable {
   friend class CgFunction;
-
-  bool need_grad_;  ///< Whether this variable needs grad. This is going to be
-                    /// updated when propagating forward .
+  enum NeedGrad { NG_NONE, NG_FALSE, NG_TRUE };
+  NeedGrad need_grad_{NG_NONE}; ///< Whether the variable requires gradients.
+  NeedGrad need_grad_state_{
+      NG_NONE};     ///< Updated during graph construction or forward
+                    /// propagation.
   VariablePtr var_; /// Variable instance.
   CgFunctionPtr parent_{nullptr};   ///< Function created this variable.
   int rank_{0};                     ///< Longest path from root variable.
@@ -78,15 +80,25 @@ class CgVariable {
 public:
   typedef shared_ptr<CgVariable> Ptr;
 
-  /** Ctor wth need_grad option.
+  /** Create 0-shaped variable with no need_grad flag.
+   */
+  NBLA_API CgVariable();
 
-      The default shape is 0-shaped array (scalar).
+  /** Create 0-shaped variable with need_grad option.
 
       @param[in] need_grad Whether this variable requires gradient computation
                  or not
    */
   NBLA_API CgVariable(bool need_grad);
-  /** Ctor wth variable shape and need_grad option.
+
+  /** Create a variable by shape.
+
+      @param[in] shape Shape passed to Variable object held in the created
+                 instance.
+   */
+  NBLA_API CgVariable(Shape_t shape);
+
+  /** Create a variable by shape with need_grad option.
 
       @param[in] shape Shape passed to Variable object held in the created
                  instance.
@@ -94,19 +106,58 @@ public:
                  or not
    */
   NBLA_API CgVariable(Shape_t shape, bool need_grad);
-  /** Ctor wth Variable object.
+
+  /** Create by a Variable instance.
 
       @param[in] var Reference of an existing Variable object.
    */
   NBLA_API CgVariable(VariablePtr var);
 
+  /** Create by a Variable instance.
+
+      @param[in] var Reference of an existing Variable object.
+      @param[in] need_grad Whether this variable requires gradient computation
+                 or not
+   */
+  NBLA_API CgVariable(VariablePtr var, bool need_grad);
+
   /** Get need grad flag.
    */
-  inline bool need_grad() const { return need_grad_; }
+  inline bool need_grad() const { return need_grad_ == NG_TRUE; }
+
+  /** Check if need grad flag is set.
+   */
+  inline bool need_grad_is_set() const { return need_grad_ != NG_NONE; }
 
   /** Set need grad flag.
    */
-  inline void set_need_grad(bool b) { need_grad_ = b; }
+  inline void set_need_grad(bool b) { need_grad_ = b ? NG_TRUE : NG_FALSE; }
+
+  /** Unset need grad flag.
+   */
+  inline void unset_need_grad() { need_grad_ = NG_NONE; }
+
+  /** Get need grad state flag.
+   */
+  inline bool need_grad_state() const {
+    return (need_grad_ != NG_NONE) ? (need_grad_ == NG_TRUE)
+                                   : (need_grad_state_ == NG_TRUE);
+  }
+  /** Check if need grad state is set
+   */
+  inline bool need_grad_state_is_set() const {
+    return need_grad_state_ != NG_NONE;
+  }
+
+  /** Set need grad state flag.
+   */
+  inline void set_need_grad_state(bool b) {
+    need_grad_state_ = b ? NG_TRUE : NG_FALSE;
+  }
+
+  /** Unset need grad state flag.
+   */
+  inline void unset_need_grad_state() { need_grad_state_ = NG_NONE; }
 
   /** Set parent function.
 

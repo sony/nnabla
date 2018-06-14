@@ -38,7 +38,7 @@ int main() {
   auto affine3 = make_shared<CgFunction>(create_Affine(ctx, 1));
 
   // Variables
-  auto x = make_shared<CgVariable>(shape_x, false);
+  auto x = make_shared<CgVariable>(shape_x);
 
   Shape_t shape_affine_w;
   Shape_t shape_affine_b;

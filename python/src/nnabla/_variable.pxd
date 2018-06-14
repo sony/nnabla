@@ -46,11 +46,20 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         CCommunicatorBackwardCallback() except+
     ctypedef shared_ptr[CCommunicatorBackwardCallback] CommunicatorBackwardCallbackPtr
     cdef cppclass CgVariable:
+        CgVariable() except+
         CgVariable(cpp_bool need_grad) except+
+        CgVariable(Shape_t shape) except+
         CgVariable(Shape_t shape, cpp_bool need_grad) except+
         CgVariable(VariablePtr)
+        CgVariable(VariablePtr, cpp_bool need_grad)
         cpp_bool need_grad() const
+        cpp_bool need_grad_is_set() const
         void set_need_grad(cpp_bool b)
+        void unset_need_grad()
+        cpp_bool need_grad_state() const
+        cpp_bool need_grad_state_is_set() const
+        void set_need_grad_state(cpp_bool b)
+        void unset_need_grad_state()
         void set_parent(CgFunctionPtr func) except+
         CgFunctionPtr parent()
         VariablePtr variable()

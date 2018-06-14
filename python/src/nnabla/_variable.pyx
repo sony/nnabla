@@ -126,9 +126,12 @@ cdef class Variable:
 
     """
 
-    def __cinit__(self, Shape_t shape=[], bint need_grad=False, info=None):
+    def __cinit__(self, Shape_t shape=[], need_grad=None, info=None):
         self.info = info
-        self.var = make_shared[CgVariable](shape, need_grad)
+        if need_grad is None:
+            self.var = make_shared[CgVariable](shape)
+        else:
+            self.var = make_shared[CgVariable](shape, < bint?> need_grad)
         self.varp = self.var.get()
 
     @staticmethod
@@ -147,7 +150,7 @@ cdef class Variable:
         return var
 
     @staticmethod
-    def from_numpy_array(data, grad=None, need_grad=False):
+    def from_numpy_array(data, grad=None, need_grad=None):
         """Create a Variable object from Numpy array(s).
 
         The ``data`` is initialized with the given Numpy array, as well as
@@ -291,7 +294,8 @@ cdef class Variable:
         if unlink:
             var = Variable.create_from_cvariable(
                 self.varp.variable().get().view(shape))
-            var.need_grad = self.need_grad
+            if self.varp.need_grad_is_set():
+                ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -307,7 +311,7 @@ cdef class Variable:
         Returns:
            bool: Whether this variable requires gradient or not.
         """
-        return self.varp.need_grad()
+        return self.varp.need_grad_state()
 
     @need_grad.setter
     def need_grad(self, b):
@@ -505,7 +509,10 @@ cdef class Variable:
 
         """
         var = Variable.create_from_cvariable(self.varp.variable().get().view())
-        var.need_grad = self.need_grad
+        if need_grad is not None:
+            self.need_grad = need_grad
+        elif self.varp.need_grad_is_set():
+            ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
         return var
 
     @property
