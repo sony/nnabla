@@ -18,12 +18,12 @@
 
 from collections import OrderedDict
 from time import sleep
+from six.moves import queue
 import csv
 import numpy
 import os
 import threading
 import atexit
-import queue
 import sys
 
 from .data_source import DataSource
