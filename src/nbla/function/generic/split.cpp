@@ -40,6 +40,8 @@ void Split<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
     outputs[i]->reshape(out_shape, true);
   }
   inner_size_ = outputs[0]->size(axis_);
+  NBLA_CHECK(inner_size_ != 0, error_code::unclassified,
+             "Zero is specified as the input value.");
   outer_size_ = outputs[0]->size() / inner_size_;
   NBLA_CHECK(inner_size_ * num_outputs_ * outer_size_ == inputs[0]->size(),
              error_code::unclassified,
