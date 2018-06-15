@@ -57,16 +57,11 @@ class DataIterator(object):
 
     '''
 
-    def _get_next_data(self):
-        d = self._data_source.next()
-        if self._data_source.position >= self._size:
-            self._reset()
-        return d
-
     def __init__(self,
                  data_source,
                  batch_size,
                  rng=None,
+                 use_thread=True,
                  epoch_begin_callbacks=[],
                  epoch_end_callbacks=[]):
         logger.info('Using DataIterator')
@@ -81,6 +76,7 @@ class DataIterator(object):
         self._shuffle = self._data_source.shuffle
 
         self._variables = data_source.variables
+        self._num_of_variables = len(data_source.variables)
         self._batch_size = batch_size
         self._epoch = -1
 
@@ -92,8 +88,11 @@ class DataIterator(object):
         self._reset()
         self._current_epoch = -1
         self._current_data = None
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
+
+        self._use_thread = use_thread
+        if self._use_thread:
+            self._next_thread = threading.Thread(target=self._next)
+            self._next_thread.start()
 
         self._closed = False
         atexit.register(self.close)
@@ -175,20 +174,23 @@ class DataIterator(object):
         return self._batch_size
 
     def _reset(self):
-
         self._callback_epoch_end()
         self._epoch += 1
         self._callback_epoch_begin()
-
         self._data_source.reset()
 
     def _next(self):
         data = [[] for x in self._variables]
-        batch_size = self._batch_size
-        for b in range(batch_size):
-            d = self._get_next_data()
+
+        for b in range(self._batch_size):
+
+            d = self._data_source.next()
+            if self._data_source.position >= self._size:
+                self._reset()
+
             for i, v in enumerate(self._variables):
                 data[i].append(d[i])
+
         self._current_data = (self._epoch, tuple(
             [numpy.array(x) for x in data]))
 
@@ -199,18 +201,31 @@ class DataIterator(object):
 
         For example,
         if self._variables == ('x', 'y')
-        This method returns, ( [[X] * batch_size], [[Y} * batch_size] )
+        This method returns, ( [[X] * batch_size], [[Y] * batch_size] )
 
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
-        self._next_thread.join()
-        self._current_epoch, data = self._current_data
-        self._next_thread = threading.Thread(target=self._next)
-        self._next_thread.start()
+        if self._use_thread:
+            # Wait for finish previous thread.
+            self._next_thread.join()
+
+            if self._current_data is None:
+                logger.log(99, 'next() got None retrying.')
+                self._next_thread = threading.Thread(target=self._next)
+                self._next_thread.start()
+                self._next_thread.join()
+            self._current_epoch, data = self._current_data
+            # Start next thread.
+            self._next_thread = threading.Thread(target=self._next)
+            self._next_thread.start()
+        else:
+            self._next()
+            self._current_epoch, data = self._current_data
+
         return data
 
-    def slice(self, num_of_slices=None, slice_pos=None,
+    def slice(self, rng, num_of_slices=None, slice_pos=None,
               slice_start=None, slice_end=None,
               cache_dir=None):
         '''
@@ -252,7 +267,7 @@ class DataIterator(object):
                         slice_start=slice_start,
                         slice_end=slice_end),
                     shuffle=self._shuffle,
-                    rng=self._rng),
+                    rng=rng),
                 self._batch_size)
         else:
             return DataIterator(
@@ -268,9 +283,9 @@ class DataIterator(object):
                             slice_start,
                             slice_end),
                         shuffle=self._shuffle,
-                        rng=self._rng),
+                        rng=rng),
                     shuffle=self._shuffle,
-                    rng=self._rng),
+                    rng=rng),
                 self._batch_size)
 
     def _callback_epoch_end(self):

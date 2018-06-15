@@ -22,6 +22,7 @@ import google.protobuf.text_format as text_format
 import itertools
 import numpy
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -36,6 +37,7 @@ from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -99,9 +101,15 @@ def _create_function(ctx, network, f, variable_index):
             input_variable_names = [f.input[0] + variable_index_low_level_name + '_' +
                                     f.recurrent_param.repeat_id + '[' + str(variable_index[-1] - 1) + ']']
     else:
+        v_names = []
+        for v_name in f.input:
+            for index, i in enumerate(variable_index):
+                v_name = v_name.replace(
+                    '{' + f.repeat_id[index] + '}', '[' + str(i) + ']')
+            v_names.append(v_name)
         input_variable_names = [v_name if v_name in network.variables else
                                 v_name + variable_index_name if v_name + variable_index_name in network.variables else
-                                v_name + variable_index_low_level_name for v_name in f.input]
+                                v_name + variable_index_low_level_name for v_name in v_names]
     inputs = [network.variables[v_name] for v_name in input_variable_names]
 
     if f.type == "RecurrentInput":
@@ -116,10 +124,12 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
-        reshape_shape = (network.batch_size,) + \
-            tuple(f.reshape_param.shape.dim)
+        shape = tuple(
+            [d if d >= 0 else network.batch_size for d in f.reshape_param.shape.dim])
+        if numpy.prod(shape) != numpy.prod(inputs[0].shape):
+            shape = (network.batch_size,) + shape
         function_instance = F.Reshape(ctx,
-                                      shape=reshape_shape)
+                                      shape=shape)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -130,6 +140,10 @@ def _create_function(ctx, network, f, variable_index):
         function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
+    elif f.type == "Broadcast":
+        shape = tuple(
+            [d if d >= 0 else network.batch_size for d in f.broadcast_param.shape.dim])
+        function_instance = F.Broadcast(ctx, shape)
     else:
         function_instance = _create_function_instance(ctx, f)
 
@@ -145,7 +159,7 @@ def _create_function(ctx, network, f, variable_index):
     return function, input_variable_names, output_variable_names
 
 
-def _create_variable(v, name, shape):
+def _create_variable(v, name, shape, rng):
     # Create and initialize variables
     class Variable:
         pass
@@ -154,34 +168,34 @@ def _create_variable(v, name, shape):
     variable_instance = None
     if parameter:
         if v.initializer.type == 'Normal':
-            initializer = NormalInitializer(v.initializer.multiplier)
+            initializer = NormalInitializer(v.initializer.multiplier, rng=rng)
         elif v.initializer.type == 'NormalAffineHe' or v.initializer.type == 'NormalAffineHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalAffineHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalAffineGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHe' or v.initializer.type == 'NormalConvolutionHeForward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionHeBackward':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'NormalConvolutionGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Uniform':
             initializer = UniformInitializer(
-                lim=[-v.initializer.multiplier, v.initializer.multiplier])
+                lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
         elif v.initializer.type == 'UniformAffineGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[0], numpy.prod(shape[1:])))(shape) * v.initializer.multiplier)
+                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[1], shape[0], kernel=shape[2:]))(shape) * v.initializer.multiplier)
+                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Constant':
             initializer = ConstantInitializer(value=v.initializer.multiplier)
         else:
@@ -201,7 +215,7 @@ def _create_variable(v, name, shape):
     return variable
 
 
-def _network(proto, default_context, batch_size, all_variables):
+def _network(proto, default_context, batch_size, all_variables, rng):
     network = Network()
     network.name = proto.name
     # Read Repeat Info
@@ -218,14 +232,19 @@ def _network(proto, default_context, batch_size, all_variables):
 
     for v in proto.variable:
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
-            name = v.name + ''.join(['_' + v.repeat_id[index] + '[' +
-                                     str(i) + ']' for index, i in enumerate(variable_index)])
+            name = v.name
+            for index, i in enumerate(variable_index):
+                if ('{' + v.repeat_id[index] + '}' in name):
+                    name = name.replace(
+                        '{' + v.repeat_id[index] + '}', '[' + str(i) + ']')
+                else:
+                    name += '_' + v.repeat_id[index] + '[' + str(i) + ']'
             if name in all_variables:
                 variable = all_variables[name]
             else:
                 shape = tuple(
                     [d if d >= 1 else network.batch_size for d in v.shape.dim])
-                variable = _create_variable(v, name, shape)
+                variable = _create_variable(v, name, shape, rng)
                 all_variables[name] = variable
             network.variables[name] = variable
             logger.debug('{}'.format(
@@ -271,6 +290,18 @@ def _get_generator(proto):
                          proto.type + '" is not supported.')
 
 
+def _get_matching_variable_names(variable, variable_names):
+    r = re.compile('{[^}]*}')
+    key = r.sub('\[[\d+]\]', variable, re.U)
+    r2 = re.compile(key)
+    variable_names = [
+        v_name for v_name in variable_names if re.match(r2, v_name)]
+    if not variable_names:
+        raise ValueError('Variable "' +
+                         variable + '" is not found.')
+    return variable_names
+
+
 def _create_optimizer(ctx, o, networks, datasets):
     class Optimizer:
         pass
@@ -300,8 +331,8 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer.parameter_learning_rate_multipliers = OrderedDict()
     for p in o.parameter_variable:
-        param_variable_names = [v_name for v_name in optimizer.network.variables.keys(
-        ) if v_name.find(p.variable_name) == 0]
+        param_variable_names = _get_matching_variable_names(
+            p.variable_name, optimizer.network.variables.keys())
         for v_name in param_variable_names:
             optimizer.parameter_learning_rate_multipliers[
                 optimizer.network.variables[v_name]] = p.learning_rate_multiplier
@@ -338,12 +369,24 @@ def _create_optimizer(ctx, o, networks, datasets):
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
 
-    optimizer.solver.set_parameters({v.name: v.variable_instance for v,
-                                     local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0})
+    parameters = {v.name: v.variable_instance for v,
+                  local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
+    optimizer.solver.set_parameters(parameters)
+    optimizer.parameters = OrderedDict(
+        sorted(parameters.items(), key=lambda x: x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+
+    optimizer.comm = current_communicator()
+    if optimizer.comm is not None:
+        new_interval = optimizer.lr_decay_interval // optimizer.comm.size
+        if new_interval == 0:
+            new_interval = 1
+        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(
+            optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
+        optimizer.lr_decay_interval = new_interval
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
         optimizer.loss_variables)
@@ -357,16 +400,20 @@ def _context(proto):
     if not proto.backends:
         logger.warn('Old-style context. Updating to new format.')
         # Update from old Context
-        if proto.backend == 'cpu|cuda':
-            if 'cudnn' in proto.compute_backend:
+        backends = [x.strip() for x in proto.backend.split('|')]
+        compute_backends = [x.strip()
+                            for x in proto.compute_backend.split('|')]
+        if 'cuda' in backends:
+            if 'cudnn' in compute_backends:
                 import nnabla_ext.cudnn
                 ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
-            elif 'default' in proto.compute_backend:
+            elif 'default' in compute_backends:
                 import nnabla_ext.cuda
                 ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
             else:
-                raise ValueError('Invalid context {}'.format(proto))
-        elif proto.backend == 'cpu':
+                raise ValueError(
+                    'Invalid compute_backend {}'.format(proto.compute_backend))
+        elif 'cpu' in backends:
             import nnabla_ext.cpu
             ctx = nnabla_ext.cpu.context()
         else:
@@ -376,7 +423,13 @@ def _context(proto):
     ctx = nn.Context()
     ctx.backend = proto.backends
     ctx.array_class = str(proto.array_class)
-    ctx.device_id = str(proto.device_id)
+
+    comm = current_communicator()
+    if comm:
+        ctx.device_id = str(comm.rank)
+    else:
+        ctx.device_id = str(proto.device_id)
+
     return ctx
 
 
@@ -385,6 +438,8 @@ def _global_config(proto):
         pass
     config = GlobalConfig()
     config.default_context = _context(proto.global_config.default_context)
+    nn.set_default_context(config.default_context)
+
     return config
 
 
@@ -405,30 +460,51 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     dataset.uri = uri
     dataset.normalize = not no_image_normalization
 
+    comm = current_communicator()
+
+    # use same random state for each process until slice is called
+    rng = numpy.random.RandomState(0)
+    use_memory_cache = comm.size == 1 if comm else True
+
     if prepare_data_iterator:
         if cache_dir == '':
             cache_dir = None
-        if cache_dir and create_cache_explicitly:
-            if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
-                if not os.path.exists(cache_dir):
-                    os.mkdir(cache_dir)
-                logger.log(99, 'Creating cache data for "' + uri + '"')
-                with data_iterator_csv_dataset(uri, batch_size, shuffle, normalize=False, cache_dir=cache_dir) as di:
-                    index = 0
-                    while index < di.size:
-                        progress('', (1.0 * di.position) / di.size)
-                        di.next()
-                        index += batch_size
+
+        # Disble implicit cache creation when MPI is available.
+        if cache_dir and (create_cache_explicitly or comm):
+            cache_index = os.path.join(cache_dir, "cache_index.csv")
+            if not os.path.exists(cache_index) or overwrite_cache:
+                if single_or_rankzero():
+                    logger.log(99, 'Creating cache data for "' + uri + '"')
+
+                    try:
+                        os.makedirs(cache_dir)
+                    except OSError:
+                        pass  # python2 does not support exists_ok arg
+
+                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
+                        pass
+
+            rng = numpy.random.RandomState(0)
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
-            if cache_dir and not os.path.exists(cache_dir):
-                os.mkdir(cache_dir)
-            dataset.data_iterator = (lambda: data_iterator_csv_dataset(
-                uri, batch_size, shuffle, normalize=dataset.normalize, cache_dir=cache_dir))
+            if comm:
+                logger.critical(
+                    'Implicit cache creation does not support with MPI')
+                import sys
+                sys.exit(-1)
+            else:
+                if cache_dir:
+                    try:
+                        os.makedirs(cache_dir)
+                    except OSError:
+                        pass  # python2 does not support exists_ok arg
+                dataset.data_iterator = (lambda: data_iterator_csv_dataset(
+                    uri, batch_size, shuffle, rng=rng, normalize=dataset.normalize, cache_dir=cache_dir))
         else:
             dataset.data_iterator = (lambda: data_iterator_cache(
-                cache_dir, batch_size, shuffle, normalize=dataset.normalize))
+                cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
     else:
         dataset.data_iterator = None
     return dataset
@@ -447,10 +523,13 @@ def _networks(proto, default_context, batch_size, network_names=None):
     networks = OrderedDict()
     all_variables = {}
 
+    # Random generator for using the same init parameters in all devices
+    rng = numpy.random.RandomState(0)
+
     for np in proto.network:
         if not network_names or np.name in network_names:
             networks[np.name] = _network(
-                np, default_context, batch_size, all_variables)
+                np, default_context, batch_size, all_variables, rng)
 
     return networks
 
@@ -531,8 +610,8 @@ def _executors(executors_proto, networks):
 
         executor.parameters = OrderedDict()
         for p in e.parameter_variable:
-            param_variable_names = [v_name for v_name in executor.network.variables.keys(
-            ) if v_name.find(p.variable_name) == 0]
+            param_variable_names = _get_matching_variable_names(
+                p.variable_name, executor.network.variables.keys())
             for v_name in param_variable_names:
                 executor.parameters[
                     executor.network.variables[v_name]] = v_name
@@ -548,8 +627,8 @@ def _executors(executors_proto, networks):
 
             executor.parameter_learning_rate_multipliers = OrderedDict()
             for p in e.parameter_variable:
-                param_variable_names = [v_name for v_name in executor.network.variables.keys(
-                ) if v_name.find(p.variable_name) == 0]
+                param_variable_names = _get_matching_variable_names(
+                    p.variable_name, executor.network.variables.keys())
                 for v_name in param_variable_names:
                     executor.parameter_learning_rate_multipliers[
                         executor.network.variables[v_name]] = p.learning_rate_multiplier
@@ -565,7 +644,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, batch_size=None):
+def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False):
     '''load
     Load network information from files.
 
@@ -589,10 +668,14 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
         #     it will not loaded.
 
         if ext in ['.nntxt', '.prototxt']:
-            with open(filename, 'rt') as f:
-                text_format.Merge(f.read(), proto)
+            if not parameter_only:
+                with open(filename, 'rt') as f:
+                    text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
-            nn.load_parameters(filename)
+            if not exclude_parameter:
+                nn.load_parameters(filename)
+            else:
+                logger.info('Skip loading parameter.')
 
         elif ext == '.nnp':
             try:
@@ -603,14 +686,18 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
                         if name == 'nnp_version.txt':
                             nnp.extract(name, tmpdir)
                             with open(os.path.join(tmpdir, name), 'rt') as f:
-                                pass  # Currently nnp_version.txt is ignored.
+                                pass  # TODO currently do nothing with version.
                         elif ext in ['.nntxt', '.prototxt']:
                             nnp.extract(name, tmpdir)
-                            with open(os.path.join(tmpdir, name), 'rt') as f:
-                                text_format.Merge(f.read(), proto)
+                            if not parameter_only:
+                                with open(os.path.join(tmpdir, name), 'rt') as f:
+                                    text_format.Merge(f.read(), proto)
                         elif ext in ['.protobuf', '.h5']:
                             nnp.extract(name, tmpdir)
-                            nn.load_parameters(os.path.join(tmpdir, name))
+                            if not exclude_parameter:
+                                nn.load_parameters(os.path.join(tmpdir, name))
+                            else:
+                                logger.info('Skip loading parameter.')
             finally:
                 shutil.rmtree(tmpdir)
 
@@ -618,7 +705,9 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
     if proto.HasField('global_config'):
         info.global_config = _global_config(proto)
         default_context = info.global_config.default_context
-        if 'cuda:float' in default_context.backend:
+        if 'cuda' in default_context.backend:
+            import nnabla_ext.cudnn
+        elif 'cuda:float' in default_context.backend:
             try:
                 import nnabla_ext.cudnn
             except:
@@ -627,6 +716,9 @@ def load(filenames, prepare_data_iterator=True, batch_size=None):
         import nnabla_ext.cpu
         default_context = nnabla_ext.cpu.context()
 
+    comm = current_communicator()
+    if comm:
+        default_context.device_id = str(comm.rank)
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
