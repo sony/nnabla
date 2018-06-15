@@ -22,6 +22,7 @@ from _nd_array cimport *
 from _variable cimport *
 from _array cimport *
 cimport _arithmetic_ops as AOP
+cimport _indexing as IDX
 
 # Numpy
 import numpy as np
@@ -98,7 +99,7 @@ cdef class NdArray:
         '''
         if op == 2:
             try:
-                return ( < NdArray > self).arrp == ( < NdArray ?> other).arrp
+                return (< NdArray > self).arrp == ( < NdArray ?> other).arrp
             except:
                 return False
         elif op == 3:
@@ -108,7 +109,7 @@ cdef class NdArray:
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash( < intptr_t > (( < NdArray > self).arrp))
+        return hash(< intptr_t > (( < NdArray > self).arrp))
 
     @property
     def shape(self):
@@ -193,7 +194,7 @@ cdef class NdArray:
         cdef int type_num = np.dtype(dtype).num
         cdef CContext cctx = <CContext ?> ctx_
         with nogil:
-            self.arrp.cast( < dtypes > type_num, cctx)
+            self.arrp.cast(< dtypes > type_num, cctx)
         if ctx is None:
             return self.data
 
@@ -229,7 +230,7 @@ cdef class NdArray:
         shape_base = self.arrp.shape()
         copy(shape_base.begin(), shape_base.end(), shape.begin())
         with nogil:
-            arr = <ArrayPtr > (self.arrp.cast_sp( < dtypes > type_num, cctx))
+            arr = <ArrayPtr > (self.arrp.cast_sp(< dtypes > type_num, cctx))
         cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
             shape.size(), shape.data(), type_num, arr.get().pointer())
         pyarr = Array.create(arr)
@@ -366,3 +367,6 @@ cdef class NdArray:
         import nnabla.functions as F
         F.identity(arr, outputs=[self])
         return self
+
+    def __getitem__(self, key):
+        return IDX.getitem(self, key)
