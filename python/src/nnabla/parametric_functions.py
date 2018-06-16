@@ -118,8 +118,8 @@ def affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -201,10 +201,10 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
         base_axis (int): Dimensions up to `base_axis` are treated as
           the sample dimensions.
 
-        uv_init (numpy.ndarray or ~nnabla.initializer.BaseInitializer):
+        uv_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
           Initializer for weight.
 
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
 
         fix_parameters (bool): When set to `True`, the weights
           and biases will not be updated.
@@ -321,9 +321,9 @@ def binary_connect_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        wb_init (~nnabla.initializer.BaseInitializer): Initializer for binary weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
 
@@ -400,9 +400,9 @@ def binary_weight_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for the weight.
-        wb_init (~nnabla.initializer.BaseInitializer): Initializer for the binary weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for the bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight.
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the binary weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias.
         fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -469,9 +469,9 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
         inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
         selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
         seed (int): Random seed for INQ algorithm
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for the weight.
-        i_init (~nnabla.initializer.BaseInitializer): Initializer for the indicators (0 ... learnable, 1 ... fixed).
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for the bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight.
+        i_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the indicators (0 ... learnable, 1 ... fixed).
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias.
         fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -528,8 +528,8 @@ def convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -612,10 +612,10 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
 
         dilation (tuple): Dilation sizes (`int`) for dimensions.
 
-        uv_init (numpy.ndarray or ~nnabla.initializer.BaseInitializer):
+        uv_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
           Initializer for weight.
 
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
 
         base_axis (int): Dimensions up to `base_axis` are treated as the
           sample dimensions.
@@ -751,8 +751,8 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
-        oik_init (numpy array or ~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        oik_init (numpy array or :obj:`nnabla.initializer.BaseInitializer`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -896,9 +896,9 @@ def binary_connect_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        wb_init (~nnabla.initializer.BaseInitializer): Initializer for binary weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -978,9 +978,9 @@ def binary_weight_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        wb_init (~nnabla.initializer.BaseInitializer): Initializer for binary weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1044,9 +1044,9 @@ def inq_convolution(inp, outmaps, kernel,
         inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
         selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
         seed (int): Random seed for INQ algorithm
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for the weight.
-        i_init (~nnabla.initializer.BaseInitializer): Initializer for the indicators (0 ... learnable, 1 ... fixed).
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for the bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight.
+        i_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the indicators (0 ... learnable, 1 ... fixed).
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias.
         fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -1093,8 +1093,8 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         multiplier (:obj:`int`): Number of output feature maps per input feature map.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1141,8 +1141,8 @@ def deconvolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1181,8 +1181,8 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         divisor (:obj:`int`): Number of input feature maps per output feature map.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1390,8 +1390,8 @@ def fixed_point_quantized_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -1504,8 +1504,8 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1611,8 +1611,8 @@ def pow2_quantized_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -1725,8 +1725,8 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        w_init (~nnabla.initializer.BaseInitializer): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1820,8 +1820,8 @@ def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
         h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
         c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
         state_size (int): Internal state size is set to `state_size`.
-        w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
-        b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
     Returns:
@@ -1877,8 +1877,8 @@ class LSTMCell:
 
         Args:
             x (~nnabla.Variable): Input N-D array with shape (batch_size, input_size).
-            w_init (~nnabla.initializer.BaseInitializer, optional): Initializer for weight.
-            b_init (~nnabla.initializer.BaseInitializer, optional): Initializer for bias.
+            w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight.
+            b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias.
             fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
         """
