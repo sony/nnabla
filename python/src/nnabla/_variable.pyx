@@ -28,6 +28,7 @@ cimport numpy as np
 np.import_array()
 
 cimport _arithmetic_ops as AOP
+from _computation_graph cimport steal_variable_from_to
 
 
 ctypedef void * voidp
@@ -316,6 +317,41 @@ cdef class Variable:
     @need_grad.setter
     def need_grad(self, b):
         self.varp.set_need_grad(b)
+
+    def rewire_on(self, var):
+        '''Rewire a successor graph of this variable on top of ``var``.
+
+        Args:
+            var (:obj:`nnabla.Variable`):
+                The array elements and the parent function of ``var`` is
+                copied to ```self`` as references.
+                Note that the parent function of ``var`` is removed.
+
+        Example:
+
+            .. code-block:: python
+
+                # A. Create a graph A.
+                xa = nn.Variable((2, 8), need_grad=True)
+                ya = F.tanh(PF.affine(xa, 10, name='a'))
+
+                # B. Create a graph B.
+                xb = nn.Variable((2, 16), need_grad=True)
+                yb = F.tanh(PF.affine(
+                    F.tanh(PF.affine(xb, 8, name='b1')),
+                    8, name='b2'))
+
+                # C. Rewire the graph A on top of B such that
+                #    `xb->B->(yb->)xa->A->ya`. Note `yb` is gone.
+                xa.rewire_on(yb)
+
+                # D. Execute the rewired graph.
+                xb.d = 1
+                ya.forward()
+                ya.backward()
+
+        '''
+        steal_variable_from_to((< Variable?> var).var, self.var)
 
     @property
     def data(self):

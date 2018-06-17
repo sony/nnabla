@@ -14,6 +14,7 @@
 
 #include <nbla/computation_graph/computation_graph.hpp>
 
+#include <algorithm>
 #include <memory>
 
 namespace nbla {
@@ -101,5 +102,40 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
     cg_f->function()->forward(finputs, foutputs);
   }
   return outputs;
+}
+
+void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to) {
+  // A. The shape must the same
+  NBLA_CHECK(
+      to->variable()->shape() == from->variable()->shape(), error_code::value,
+      "Variable shapes of from and to must match. from != to : (%s) != (%s).",
+      string_join(from->variable()->shape(), ", ").c_str(),
+      string_join(to->variable()->shape(), ", ").c_str());
+  // B. Get a parent function of from
+  auto parent = from->parent();
+  NBLA_CHECK(parent != nullptr, error_code::value,
+             "The 1st argument CgVariablePtr must have a parent function (must "
+             "be an output of a function.");
+
+  // C. Forget parent of from and rewire the parent function to to variable.
+  from->set_parent(nullptr);
+  to->set_parent(parent);
+
+  // D. Replace an output variable reference of the parent function with to
+  // variable.
+  auto outputs = parent->outputs();
+  std::replace(outputs.begin(), outputs.end(), from, to);
+  parent->set_outputs(outputs);
+
+  // E. Copy flags.
+  to->set_allow_modify_data(from->allow_modify_data());
+  if (from->need_grad_is_set()) {
+    to->set_need_grad(from->need_grad());
+  } else {
+    to->unset_need_grad();
+  }
+
+  // F. Reference contents
+  to->set_variable(from->variable());
 }
 }

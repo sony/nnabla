@@ -49,5 +49,15 @@ NBLA_API vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                                        const vector<CgVariablePtr> &outputs,
                                        vector<NdArrayPtr> inplace_outputs = {},
                                        bool execute = false);
+
+/** Steal some variable properties from `from` CgVariable to `to` in order to
+   rewire previously constructed graphs.
+
+    It takes parent, need_grad flags, inplace flags, and the variable contents.
+
+    @param[in] from Its parent function is stolen by 'to'.
+    @param[in,out] to A variable 'from''s parent stolen to.
+*/
+NBLA_API void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to);
 }
 #endif

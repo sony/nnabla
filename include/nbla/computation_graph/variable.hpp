@@ -173,6 +173,10 @@ public:
    */
   inline VariablePtr variable() { return var_; }
 
+  /** Set variable reference.
+   */
+  inline void set_variable(VariablePtr var) { var_ = var; }
+
   /** @copydoc rank_
    */
   inline int rank() const { return rank_; }
@@ -241,12 +245,6 @@ public:
       @note User shouldn't call this directly.
    */
   inline void set_allow_modify_data(bool allow) { allow_modify_data_ = allow; }
-
-  /** Take an parent function from a given CgVariable and rewire the graph
-      connection from the parent function to this variable.
-
-      @param[in] var Its parent function is stolen by this variable.
-   */
 
   /** Set persistent flag.
 
