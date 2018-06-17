@@ -339,7 +339,10 @@ void CgVariable::visit_function_recursive(
                                   // because the callback may use this.
   func->set_rank(++max_rank);     // Increment rank at function.
 
-  // D. Call callback function at this function.
+  // D. Verify flags
+  func->verify_during_forward();
+
+  // E. Call callback function at this function.
   forward_callback(func);
   // std::cout << max_rank << " " << func->function()->name() << " " <<
   // func.get() << std::endl;
@@ -416,10 +419,6 @@ void CgVariable::backward(
     NdArrayPtr grad, bool clear_buffer,
     vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
-  NBLA_CHECK(!this->grad_inplaced_, error_code::value,
-             "Backward can not be called at a variable in which grad array is "
-             "in-placed. The grad array is in-placed by '%s' (depth=%d).",
-             parent_->function()->name().c_str(), parent_->rank());
 
   // Scoped context.
   // Set flags used during backward of this variable to avoid clearing

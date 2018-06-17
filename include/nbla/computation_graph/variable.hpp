@@ -57,10 +57,8 @@ class CgVariable {
   CgFunctionPtr parent_{nullptr};   ///< Function created this variable.
   int rank_{0};                     ///< Longest path from root variable.
   int function_reference_count_{0}; ///< Reference count by child functions.
-  bool allow_inplace_data_{true};   ///< Whether the data can be in-placed.
-  bool grad_inplaced_{false}; ///< Gradient is in-placed with any of parent
-                              /// function's inputs grad.
-  bool persistent_{false};    ///<Persistency flag against clearing.
+  bool allow_modify_data_{true};    ///< Whether the data can be in-placed.
+  bool persistent_{false};          ///<Persistency flag against clearing.
 
   /** set rank.
 
@@ -235,25 +233,20 @@ public:
     function_reference_count_++;
   }
 
-  /** @copydoc allow_inplace_data_
+  /** @copydoc allow_modify_data_
    */
-  inline bool allow_inplace_data() const { return allow_inplace_data_; }
+  inline bool allow_modify_data() const { return allow_modify_data_; }
 
   /**
       @note User shouldn't call this directly.
    */
-  inline void set_allow_inplace_data(bool allow) {
-    allow_inplace_data_ = allow;
-  }
+  inline void set_allow_modify_data(bool allow) { allow_modify_data_ = allow; }
 
-  /** @copydoc grad_inplaced_
-   */
-  inline bool grad_inplaced() const { return grad_inplaced_; }
+  /** Take an parent function from a given CgVariable and rewire the graph
+      connection from the parent function to this variable.
 
-  /**
-      @note User shouldn't call this directly.
+      @param[in] var Its parent function is stolen by this variable.
    */
-  inline void set_grad_inplaced(bool inplaced) { grad_inplaced_ = inplaced; }
 
   /** Set persistent flag.
 
