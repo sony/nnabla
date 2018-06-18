@@ -50,6 +50,10 @@ In the above code, the network structure containing parameters and the execution
 The named variables in the network are referenced by the `executors` config. The executor config is used in C++ for executing a network in a more simpler way. The executor `runtime` is added where the newtork `runtime` is executed. The input and output variables are specified by names that are registered in the `networks` field.
 
 ## Build MNIST inference example C++ code
+You can find an executable file 'mnist_runtime' under the build directory located at nnabla/build/bin.
+If you want to build it yourself using Makefile you can refer to the following process in linux environments.
+Also you can build an executable file 'mnist_runtime_cuda', that is not in the build directory,  by following process.
+
 
 ```shell
 make
@@ -78,14 +82,14 @@ Output:
 ```
 Usage: ./mnist_runtime nnp_file input_pgm
 
-Positional arguments: 
+Positional arguments:
   nnp_file  : .nnp file created by examples/vision/mnist/save_nnp_classification.py.
   input_pgm : PGM (P5) file of a 28 x 28 image where pixel values < 256.
 ```
 
 Sample images that I created using GIMP editor are located in this folder.
 
-0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 
+0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 :---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:
 ![0](./original_images/0.png "0")|![1](./original_images/1.png "1")|![2](./original_images/2.png "2")|![3](./original_images/3.png "3")|![4](./original_images/4.png "4")|![5](./original_images/5.png "5")|![6](./original_images/6.png "6")|![7](./original_images/7.png "7")|![8](./original_images/8.png "8")|![9](./original_images/9.png "9")
 
@@ -159,7 +163,7 @@ nbla::CgVariablePtr y = executor->get_output_variables().at(0).variable;
 const float *y_data = y->variable()->get_data_pointer<float>(ctx);
 ```
 
-10. Show prediction scores and the most likely predicted number of the input image. 
+10. Show prediction scores and the most likely predicted number of the input image.
 ```c++
 int prediction = 0;
 float max_score = -1e10;
@@ -174,5 +178,3 @@ for (int i = 0; i < 10; i++) {
 std::cout << std::endl;
 std::cout << "Prediction: " << prediction << std::endl;
 ```
-
-

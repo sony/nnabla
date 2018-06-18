@@ -15,14 +15,17 @@
 from six.moves import map
 from scipy.misc import imsave
 import csv
+import glob
 import numpy as np
 import os
+import zipfile
 
 from nnabla.logger import logger
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_full_path
 import nnabla.utils.load as load
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
+from nnabla.utils.data_source_loader import FileReader
 
 
 def set_initial_values(result, type_and_name, d):
@@ -77,8 +80,10 @@ def update_result(args, index, result, values, output_index, type_end_names, out
                     file_name += '{}{}'.format(file_index, vtype)
                     full_path = os.path.join(args.outdir, file_name)
                     directory = os.path.dirname(full_path)
-                    if not os.path.exists(directory):
+                    try:
                         os.makedirs(directory)
+                    except OSError:
+                        pass  # python2 does not support exists_ok arg
                     if vtype in ['.bmp', '.jpeg', '.jpg', '.png', '.gif', '.tif']:
                         x = np.array(d, dtype=np.float32) * 256.
                         while len(x.shape) == 4:
@@ -189,10 +194,15 @@ def forward_command(args):
         if d.uri == args.dataset:
             normalize = d.normalize
     data_iterator = (lambda: data_iterator_csv_dataset(
-        args.dataset, config.networks[0].batch_size, False, normalize=normalize))
+        uri=args.dataset,
+        batch_size=config.networks[0].batch_size,
+        shuffle=False,
+        normalize=normalize,
+        with_file_cache=False))
 
     # load dataset as csv
-    with open(args.dataset, 'rt') as f:
+    filereader = FileReader(args.dataset)
+    with filereader.open(textmode=True) as f:
         rows = [row for row in csv.reader(f)]
     row0 = rows.pop(0)
     root_path = os.path.dirname(args.dataset)

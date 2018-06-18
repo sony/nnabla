@@ -147,8 +147,11 @@ def create_image_classification_dataset_command(args):
             im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
 
         # output
-        if not os.path.exists(dest_path):
+        try:
             os.makedirs(dest_path)
+        except OSError:
+            pass  # python2 does not support exists_ok arg
+
         scipy.misc.imsave(dest_file_name, im)
 
     logger.log(99, "Creating CSV files...")

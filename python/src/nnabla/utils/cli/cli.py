@@ -13,8 +13,15 @@
 # limitations under the License.
 
 import argparse
-import os
 import sys
+
+import nnabla
+
+
+def version_command(args):
+    import nnabla
+    print('Version {}, Build {}'.format(
+        nnabla.__version__, nnabla.__build_number__))
 
 
 def main():
@@ -56,12 +63,20 @@ def main():
     from nnabla.utils.cli.convert import add_convert_command
     add_convert_command(subparsers)
 
-    args = parser.parse_args()
-    if 'func' in args:
-        args.func(args)
-    else:
-        parser.print_help()
+    # Version
+    subparser = subparsers.add_parser('version')
+    subparser.set_defaults(func=version_command)
 
+    args = parser.parse_args()
+
+    print('NNabla command line interface (Version {}, Build {})'.format(
+        nnabla.__version__, nnabla.__build_number__))
+
+    if 'func' not in args:
+        parser.print_help(sys.stderr)
+        sys.exit(-1)
+
+    args.func(args)
 
 if __name__ == '__main__':
     import six.moves._thread as thread

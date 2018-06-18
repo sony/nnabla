@@ -580,8 +580,8 @@ void NnpImpl::update_parameters() {
        it++) {
     const string &name = it->variable_name();
     Shape_t shape(it->shape().dim().begin(), it->shape().dim().end());
-    // TODO: set need_grad
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, false);
+    bool need_grad = it->need_grad();
+    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, need_grad);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(kCpuCtx);
     auto &p_data = it->data();
@@ -703,6 +703,48 @@ shared_ptr<Executor> NnpImpl::get_executor(const string &name) {
         new Executor(new ExecutorImpl(*it, get_network(it->network_name()))));
   }
   NBLA_ERROR(error_code::value, "Executor `%s` not found", name.c_str());
+}
+
+vector<pair<string, VariablePtr>> NnpImpl::get_parameters() {
+  vector<pair<string, VariablePtr>> parameters;
+  for (auto it = parameters_.begin(); it != parameters_.end(); it++) {
+    std::pair<string, VariablePtr> psv;
+    psv.first = it->first;
+    psv.second = it->second->variable();
+    parameters.push_back(psv);
+  }
+  return parameters;
+}
+
+bool NnpImpl::save_parameters(const string &filename) {
+  std::ofstream ofs(filename.c_str());
+  if (!ofs.is_open()) {
+    std::cout << "Error in opening file";
+    return false;
+  }
+
+  NNablaProtoBuf params;
+  for (auto it = parameters_.begin(); it != parameters_.end(); it++) {
+
+    string name = it->first;
+    VariablePtr variable = it->second->variable();
+
+    Parameter *parameter = params.add_parameter();
+    parameter->set_variable_name(name);
+    parameter->set_need_grad(variable->need_grad());
+
+    float *data = variable->template cast_data_and_get_pointer<float>(kCpuCtx);
+    for (int i = 0; i < variable->size(); i++)
+      parameter->add_data(data[i]);
+
+    Shape *shape = parameter->mutable_shape();
+    for (int i = 0; i < variable->shape().size(); i++)
+      shape->add_dim(variable->shape()[i]);
+  }
+  params.SerializeToOstream(&ofs);
+  NBLA_LOG_INFO("Saved paremeters to {}", filename);
+
+  return true;
 }
 }
 }
