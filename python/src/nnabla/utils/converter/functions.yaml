@@ -363,8 +363,9 @@ Neural Network Layer:
       x0:
         doc: Indices with shape :math:`(I_0, ..., I_N)`
         template: TI
-      x1:
+      w:
         doc: Weights with shape :math:`(W_0, ..., W_M)`
+        parameter: true
     outputs:
       y:
         doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
@@ -2059,6 +2060,8 @@ Array Manipulation:
 
              (Currently only `constant` mode is supported)
         type: string
+        available_values:
+          - constant
         default: '''constant'''
       constant_value:
         doc: |
