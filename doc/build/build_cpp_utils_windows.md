@@ -11,10 +11,11 @@
 ## Build
 
 First, clone [nnabla](https://github.com/sony/nnabla) and go into the root folder.
-There are some additional dependency libraries that are installed automatically by running the following batch script.
+
+Then, the following batch script does everything including setting up the rest of dependencies and compiling libraries.
 
 ```bat
-build-tools\msvc\setup_cpp_utils_deps.bat
+build-tools\msvc\build_cpplib.bat
 ```
 
 This will setup the following dependency libraries of the NNabla C++ utility
@@ -23,10 +24,16 @@ This will setup the following dependency libraries of the NNabla C++ utility
 * ZLib
 * Protobuf
 
-into the `third_party` folder (HDF5 is not supported on Windows so far), and genearte a batch script `cmake_cpp_utils.bat`. You can  build the NNabla core library and the C++ utility library (`nnabla.dll`, `nnabla_utils.dll` and their `.lib` and `.exp` files) by running:
+into the `third_party` folder, and these are used when compiling and running NNabla utility library.
+Note that HDF5 is not supported on Windows so far, which means you can not use a `.h5` parameter file in C++ inference/training.
+(TODO: Write how to create `.protobuf` file from `.nnp` or `.h5`).
+
+It also sets up NNabla core library and the C++ utility library (`nnabla.dll`, `nnabla_utils.dll` and their `.lib` and `.exp` files).
+
+If you want to build with Debug mode, you have to set an environment variable `build_type` as following before running the batch script above.
 
 ```bat
-build-tools\msvc\cmake_cpp_utils.bat
+set build_type=Debug
 ```
 
 ## Use the library in your C++ application
@@ -34,7 +41,7 @@ build-tools\msvc\cmake_cpp_utils.bat
 To build your C++ binary with NNabla C++ utilities, you need:
 
 * Set `<nnabla root>\include` folder as include path
-* Set `nnabla.lib` and `nnabla_utils.lib` as libraries
+* Set `nnabla.lib` and `nnabla_utils.lib` as libraries (use `.dlib` when Debug mode)
 
 At runtime, you will need the following dynamic link libraries located in a right path.
 
