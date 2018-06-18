@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import os
 import sys
 
@@ -101,10 +102,10 @@ def _dump_protobuf(proto, prefix, depth):
                         ':'.join(prefix), desc.name, n, f))
                 else:
                     if depth < 0 or depth > len(prefix)+1:
-                        dump_protobuf(
+                        _dump_protobuf(
                             f, prefix + ['{}[{}]'.format(desc.name, n)], depth)
         else:
-            dump_protobuf(field, prefix + [desc.name], depth)
+            _dump_protobuf(field, prefix + [desc.name], depth)
 
 
 def _dump_nnp(args, nnp):
