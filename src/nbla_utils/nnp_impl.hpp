@@ -180,6 +180,8 @@ public:
   shared_ptr<Network> get_network(const string &name);
   vector<string> get_executor_names();
   shared_ptr<Executor> get_executor(const string &name);
+  vector<pair<string, VariablePtr>> get_parameters();
+  bool save_parameters(const string &filename);
 };
 }
 }
