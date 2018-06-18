@@ -19,11 +19,6 @@
 
 namespace nbla {
 
-static vector<CgVariablePtr>
-connect_core(CgFunctionPtr cg_f, const vector<CgVariablePtr> &inputs,
-             const vector<CgVariablePtr> &outputs,
-             vector<NdArrayPtr> inplace_outputs = {}, bool execute = false);
-
 using std::make_shared;
 
 static void set_function_inputs(CgFunctionPtr func,
@@ -66,24 +61,7 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                               bool execute) {
   set_function_inputs(cg_f, inputs);
   vector<CgVariablePtr> outputs = create_function_outputs(cg_f, n_outputs);
-  return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
-}
 
-vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
-                              const vector<CgVariablePtr> &inputs,
-                              const vector<CgVariablePtr> &outputs,
-                              vector<NdArrayPtr> inplace_outputs,
-                              bool execute) {
-  cg_f->set_inputs(inputs);
-  cg_f->set_outputs(outputs);
-  return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
-}
-
-vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
-                                   const vector<CgVariablePtr> &inputs,
-                                   const vector<CgVariablePtr> &outputs,
-                                   vector<NdArrayPtr> inplace_outputs,
-                                   bool execute) {
   // Setup function.
   cg_f->setup();
 

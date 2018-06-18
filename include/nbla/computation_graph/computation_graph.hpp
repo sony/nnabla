@@ -40,16 +40,6 @@ NBLA_API vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                                        vector<NdArrayPtr> inplace_outputs = {},
                                        bool execute = false);
 
-/** Connect function to network.
-
-    Use allocated outputs vector.
- */
-NBLA_API vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
-                                       const vector<CgVariablePtr> &inputs,
-                                       const vector<CgVariablePtr> &outputs,
-                                       vector<NdArrayPtr> inplace_outputs = {},
-                                       bool execute = false);
-
 /** Steal some variable properties from `from` CgVariable to `to` in order to
    rewire previously constructed graphs.
 
