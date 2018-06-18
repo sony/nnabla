@@ -295,9 +295,10 @@ class NnbExporter:
         memory = struct.pack('{}I'.format(
             len(self._memory_index)), *self._memory_index) + self._memory_data
 
-        if settings_template_filename is not None and len(settings_template_filename) == 1:
-            with open(settings_template_filename[0], 'w') as f:
+        if settings_template_filename is not None:
+            with open(settings_template_filename, 'w') as f:
                 f.write(yaml.dump(settings, default_flow_style=False))
 
-        with open(nnb_output_filename, 'wb') as f:
-            f.write(network + memory)
+        if nnb_output_filename is not None:
+            with open(nnb_output_filename, 'wb') as f:
+                f.write(network + memory)

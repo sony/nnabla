@@ -583,17 +583,19 @@ def get_tensor_type(name, type_dict):
 
 
 def nnp_model_to_onnx_graph(graph, nnp):
-    if len(nnp.network) != 1:
-        raise ValueError(
-            "NNP with only a single network is currently supported")
     if len(nnp.executor) != 1:
         raise ValueError(
             "NNP with only a single executor is currently supported")
-    net = nnp.network[0]
     exe = nnp.executor[0]
-    if exe.network_name != net.name:
+
+    net = None
+    for n in nnp.network:
+        if n.name == exe.network_name:
+            net = n
+    if net is None:
         raise ValueError(
-            "Names of the included network and executor's target network do not match")
+            "Executor network [{}] does not found in this NNP.".format(exe.network_name))
+
     graph.name = net.name
     # store all variable shape info to use later
     var_dict = {}

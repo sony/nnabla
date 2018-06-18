@@ -32,6 +32,7 @@ DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format
 DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc
 DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build
 DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla
+DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test
 
 DOCKER_RUN_OPTS +=--rm
 DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
@@ -60,6 +61,14 @@ docker_image_build:
 	&& make -C docker/development py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) \
 		-f docker/development/Dockerfile.build.py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) .
+
+.PHONY: docker_image_onnx_test
+docker_image_onnx_test:
+	docker pull ubuntu:16.04
+	cd $(NNABLA_DIRECTORY) \
+	&& make -C docker/development py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) \
+	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) \
+		-f docker/development/Dockerfile.onnx-test.py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) .
 
 ########################################################################################################################
 # Auto Format
@@ -94,9 +103,9 @@ bwd-nnabla-wheel: docker_image_build
 	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-wheel
 
 .PHONY: bwd-nnabla-test
-bwd-nnabla-test: docker_image_build
+bwd-nnabla-test: docker_image_onnx_test
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-test-local
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_ONNX_TEST) make -f build-tools/make/build.mk nnabla-test-local
 
 .PHONY: bwd-nnabla-shell
 bwd-nnabla-shell: docker_image_build

@@ -25,13 +25,10 @@ py27:
 		-e 's/{PYENVNAME}/py27/g' \
 		-e 's/{PYENVVERSION}/2.7/g' \
 		>Dockerfile.build.py27
-
-.PHONY: py34
-py34:
-	@cat Dockerfile.build.in |sed \
-		-e 's/{PYENVNAME}/py34/g' \
-		-e 's/{PYENVVERSION}/3.4/g' \
-		>Dockerfile.build.py34
+	@cat Dockerfile.onnx-test.in |sed \
+		-e 's/{PYENVNAME}/py27/g' \
+		-e 's/{PYENVVERSION}/2.7/g' \
+		>Dockerfile.onnx-test.py27
 
 .PHONY: py35
 py35:
@@ -39,6 +36,10 @@ py35:
 		-e 's/{PYENVNAME}/py35/g' \
 		-e 's/{PYENVVERSION}/3.5/g' \
 		>Dockerfile.build.py35
+	@cat Dockerfile.onnx-test.in |sed \
+		-e 's/{PYENVNAME}/py35/g' \
+		-e 's/{PYENVVERSION}/3.5/g' \
+		>Dockerfile.onnx-test.py35
 
 .PHONY: py36
 py36:
@@ -46,3 +47,7 @@ py36:
 		-e 's/{PYENVNAME}/py36/g' \
 		-e 's/{PYENVVERSION}/3.6/g' \
 		>Dockerfile.build.py36
+	@cat Dockerfile.onnx-test.in |sed \
+		-e 's/{PYENVNAME}/py36/g' \
+		-e 's/{PYENVVERSION}/3.6/g' \
+		>Dockerfile.onnx-test.py36
