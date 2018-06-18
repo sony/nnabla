@@ -697,7 +697,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                                     text_format.Merge(f.read(), proto)
                             if len(proto.parameter) > 0:
                                 if not exclude_parameter:
-                                    nn.load_parameters(os.path.join(tmpdir, name))
+                                    nn.load_parameters(
+                                        os.path.join(tmpdir, name))
                         elif ext in ['.protobuf', '.h5']:
                             nnp.extract(name, tmpdir)
                             if not exclude_parameter:
