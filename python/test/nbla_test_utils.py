@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from nnabla.utils import nnabla_pb2
 from six.moves import filter
-import pytest
+import collections
 import copy
-import numpy as np
 import nnabla as nn
-import nnabla.function as F_
-import nnabla.functions as F
 import nnabla.ext_utils as ext_utils
+import nnabla.functions as F
+import nnabla.utils.converter
+import numpy
+import numpy as np
+import pytest
 
 
 def ext_to_camel(ext):
@@ -284,6 +287,153 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
             ArrayDiffStats(ff, hh))
 
 
+def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
+    if func_name is None:
+        return
+
+    for category_name, category in nnabla.utils.converter.get_category_info().items():
+        if func_name in category:
+            function = category[func_name]
+
+    nnp = nnabla_pb2.NNablaProtoBuf()
+    net = nnp.network.add()
+    net.name = 'network1'
+    net.batch_size = 1
+
+    func = net.function.add()
+    func.name = func_name
+    func.type = func_name
+
+    # Prepare input
+    func_inputs = []
+    data_names = []
+    parameter_names = []
+    input_data = []
+    for n, i in enumerate(inputs):
+        if i is not None:
+            input_name, input_info = list(function['inputs'].items())[n]
+            func_inputs.append(input_name)
+            var = net.variable.add()
+            var.name = input_name
+            if 'parameter' in input_info and input_info['parameter']:
+                parameter_names.append(input_name)
+
+                var.type = 'Parameter'
+                shape = list(i.d.shape)[:]
+                if func.name == 'BatchNormalization':
+                    shape = [1] + shape
+                var.shape.dim.extend(shape)
+
+                param = nnp.parameter.add()
+                param.variable_name = input_name
+                param.shape.dim.extend(shape)
+                param.data.extend(i.d.flatten())
+
+            else:
+                input_data.append(i.d.flatten())
+                data_names.append(input_name)
+
+                var.type = 'Buffer'
+                shape = list(i.d.shape)[:]
+                # exclude the cases no need to extend dimension
+                if input_name == 'rmean' or input_name == 't':
+                    pass
+                elif func.name == 'PReLU' and input_name == "x1":
+                    pass
+                elif func.name == 'Transpose':
+                    pass
+                else:
+                    shape = [1] + shape
+                var.shape.dim.extend(shape)
+
+    func.input.extend(func_inputs)
+
+    # Prepare output
+    func_outputs = []
+    output_data = []
+    for n, o in enumerate(outputs):
+        output_name = 'y{}'.format(n)
+        func_outputs.append(output_name)
+        var = net.variable.add()
+        var.name = output_name
+        var.type = 'Buffer'
+        shape = list(o.d.shape)[:]
+        shape = [-1] + shape
+        var.shape.dim.extend(shape)
+        output_data.append(o.d.flatten())
+
+    func.output.extend(func_outputs)
+
+    # Prepare argument
+    if 'arguments' in function:
+        for n, (arg_name, arg) in enumerate(function['arguments'].items()):
+            param = eval('func.{}_param'.format(function['snake_name']))
+            a = func_args[n]
+            # This is used to fix the problem of flip (axes == None)
+            if a is None:
+                if 'axes' in arg_name:
+                    a = len(net.variable[0].shape.dim) - 2
+
+            if a is not None:
+                if 'axis' == arg_name:
+                    a += 1
+
+                if 'axes' in arg_name:
+                    if func.name == 'Transpose':
+                        pass
+                    else:
+                        if isinstance(a, tuple) or isinstance(a, list):
+                            a = list(a)
+                        else:
+                            a = [a]
+                        a = [x + 1 for x in a]
+
+                if isinstance(a, tuple) or isinstance(a, list):
+                    if arg['type'] == 'Shape':
+                        exec('param.{}.dim.extend(list(a))'.format(arg_name))
+                    else:
+                        exec('param.{}.extend(a)'.format(arg_name))
+                elif isinstance(a, numpy.ndarray):
+                    a = a.flatten()
+                    if arg['type'] == 'Shape':
+                        if function['snake_name'] == 'broadcast':
+                            exec(
+                                'param.{}.dim.extend([1] + list(a))'.format(arg_name))
+                        else:
+                            exec('param.{}.dim.extend(list(a))'.format(arg_name))
+                    else:
+                        exec('param.{}.extend(a)'.format(arg_name))
+                else:
+                    if 'repeated' in arg['type']:
+                        exec('param.{}.extend([a])'.format(arg_name))
+                    elif arg['type'] == 'string':
+                        exec('param.{} = "{}"'.format(arg_name, a))
+                    else:
+                        if arg_name == 'base_axis':
+                            a = a + 1
+                        exec('param.{} = {}'.format(arg_name, a))
+
+    # Prepare executor
+    exe = nnp.executor.add()
+    exe.name = 'inference'
+    exe.network_name = 'network1'
+    for d in data_names:
+        dat = exe.data_variable.add()
+        dat.variable_name = d
+        dat.data_name = d
+
+    for o in func_outputs:
+        out = exe.output_variable.add()
+        out.variable_name = o
+        out.data_name = o
+
+    for p in parameter_names:
+        par = exe.parameter_variable.add()
+        par.variable_name = p
+
+    return nnp, input_data, output_data
+
+
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
@@ -339,8 +489,10 @@ def function_tester(rng, func, ref_func, inputs,
     # Checking function name
     try:
         import function_test_callback
-        function_test_callback.callback(
+        result = create_function_nnp(
             vinputs, o, func_name, func_args, func_kwargs)
+        if result is not None:
+            function_test_callback.callback(func_name, *result)
     except UnboundLocalError:
         pass
     except IndexError:
