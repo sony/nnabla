@@ -487,7 +487,22 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # separate pad values to match ONNX format
         # (S0,E0,S1,E1) => (S0,S1,E0,E1)
         dim = len(pp.pad_width) // 2
-        zero_dim_num = 4-dim  # assuming 4D input
+        # If we can get the dimension of the input buffer,
+        # we get it here. If we cannot, we are assuming 4D input
+        in_name = func.input[0]
+        in_var = [v for v in variables if v.name == in_name]
+        in_dim = 4
+        if len(in_var) == 1 and len(in_var[0].shape.dim) > 0:
+            # Found variable with valid shape.
+            # If the shape dimension is zero, it means
+            # that is an intermediate buffer so we can't get
+            # the exact dimension at this point
+            # (thus assuming 4D input).
+            in_dim = len(in_var[0].shape.dim)
+        elif len(in_var) > 1:
+            raise ValueError("More than one buffer with"
+                             " the same buffer name found.")
+        zero_dim_num = in_dim-dim
         it = iter(pp.pad_width)
         # We need to fill empty dimensions with zero padding
         # (at least this is what Caffe2 expects)

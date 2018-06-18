@@ -49,7 +49,7 @@ onnx_optype_to_nnabla_function_type = {
     "Equal": "Equal",
     "Exp": "Exp",
     "Identity": "Identity",
-    # "Pad": "Pad",
+    "Pad": "Pad",
     # optype with different names
     "Relu": "ReLU",
     "PRelu": "PReLU",
@@ -1089,44 +1089,43 @@ def convert_to_functions(pb, network, node, base_name, initializers,
         del func.input[:]
         func.input.extend([pow0_in, pow1_out])
         func_list.append(func)
-    # Disabling Pad conversion because we haven't tested it properly
-    #elif node.op_type == "Pad":
-    #    mode = "constant"
-    #    pads = []
-    #    value = 0
-    #    for attr in node.attribute:
-    #        if attr.name == "mode":
-    #            if attr.type != AttributeProto.STRING:
-    #                raise ValueError("mode must be a string for Op: {}"
-    #                                 .format(node.op_type))
-    #            mode = attr.s.decode("utf-8")
-    #        elif attr.name == "pads":
-    #            if attr.type != AttributeProto.INTS:
-    #                raise ValueError("pads must be a list of ints for Op: {}"
-    #                                 .format(node.op_type))
-    #            pads = attr.ints
-    #        elif attr.name == "value":
-    #            if attr.type != AttributeProto.FLOAT:
-    #                raise ValueError("value must be a single float for Op: {}"
-    #                                 .format(node.op_type))
-    #            value = attr.f
-    #        else:
-    #            raise ValueError("Unsupported attribute {} was specified at {}"
-    #                             .format(attr.name, node.op_type))
-    #    if len(pads) == 0:
-    #        raise ValueError("Required attribute pads not found for {}"
-    #                         .format(node.op_type))
-    #    mode_conv = {
-    #        "constant": "constant",
-    #        "edge": "replicate",
-    #        "reflect": "reflect"
-    #    }
-    #    pp = func.pad_param
-    #    pp.mode = mode_conv[mode]
-    #    pp.constant_value = value
-    #    pw = rearrange_pads(pads)
-    #    pp.pad_width.extend(pw)
-    #    func_list.append(func)
+    elif node.op_type == "Pad":
+        mode = "constant"
+        pads = []
+        value = 0
+        for attr in node.attribute:
+            if attr.name == "mode":
+                if attr.type != AttributeProto.STRING:
+                    raise ValueError("mode must be a string for Op: {}"
+                                     .format(node.op_type))
+                mode = attr.s.decode("utf-8")
+            elif attr.name == "pads":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("pads must be a list of ints for Op: {}"
+                                     .format(node.op_type))
+                pads = attr.ints
+            elif attr.name == "value":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("value must be a single float for Op: {}"
+                                     .format(node.op_type))
+                value = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, node.op_type))
+        if len(pads) == 0:
+            raise ValueError("Required attribute pads not found for {}"
+                             .format(node.op_type))
+        mode_conv = {
+            "constant": "constant",
+            "edge": "replicate",
+            "reflect": "reflect"
+        }
+        pp = func.pad_param
+        pp.mode = mode_conv[mode]
+        pp.constant_value = value
+        pw = rearrange_pads(pads)
+        pp.pad_width.extend(pw)
+        func_list.append(func)
     else:
         # Simply add the function for all other conversions
         func_list.append(func)

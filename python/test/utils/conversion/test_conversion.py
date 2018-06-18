@@ -87,7 +87,7 @@ def convert_onnx_to_nnp_and_compare(
             cntk_out = n.eval({in_name: in_img})
         else:
             cntk_out = n.eval()
-        backend_out = cntk_out[0]
+        backend_out = cntk_out
     else:
         raise ValueError("Unknown backend specified")
     # Process onnx with naabla
@@ -128,6 +128,7 @@ def convert_onnx_to_nnp_and_compare(
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
+        backend="caffe2",
         in_img=None, in_name="", compare_values=True, show_nnp=False,
         show_onnx=False, show_output=False, atol=1e-08):
     """Convert specified NNP to ONNX and compare
@@ -160,22 +161,35 @@ def convert_nnp_to_onnx_and_compare(
     if show_onnx:
         print(model)
     # pdb.set_trace()
-    c2out = None
-    rep = oc2.prepare(model)
-    if type(in_img) is np.ndarray:
-        c2out = rep.run([in_img])
+    backend_out = None
+    if backend == "caffe2":
+        # Process onnx with caffe2 backend
+        c2out = None
+        rep = oc2.prepare(model)
+        if type(in_img) is np.ndarray:
+            c2out = rep.run([in_img])
+        else:
+            c2out = rep.run([])
+        # for k in rep.workspace.Blobs():
+        #     v = rep.workspace.FetchBlob(k)
+        #     print(k, v.shape)
+        backend_out = c2out[out_name]
+    elif backend == "cntk":
+        n = cntkf.Function.load(p, format=cntk.ModelFormat.ONNX)
+        cntk_out = None
+        if type(in_img) is np.ndarray:
+            cntk_out = n.eval({in_name: in_img})
+        else:
+            cntk_out = n.eval()
+        backend_out = cntk_out
     else:
-        c2out = rep.run([])
-    #for k in rep.workspace.Blobs():
-    #    v = rep.workspace.FetchBlob(k)
-    #    print(k, v.shape)
-    c2 = c2out[out_name]
-    # Compare both naabla and caffe2 results
+        raise ValueError("Unknown backend specified")
+    # Compare both naabla and backend out results
     if show_output:
-        print(c2, nnout)
-    assert c2.shape == nnout.shape
+        print(backend_out, nnout)
+    assert backend_out.shape == nnout.shape
     if compare_values:
-        assert np.allclose(c2, nnout, atol=atol)
+        assert np.allclose(backend_out, nnout, atol=atol)
 
 
 @pytest.fixture
@@ -1121,15 +1135,33 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0",
                                     atol=1e-4)
 
-# Disabling pad test because CNTK returns wrong results
-#def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
-#                                                            nnp_fixture):
+def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
+                                                            nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "pad_mconstant_v0_pl0_0_0_1_0_1.onnx",
+                                    "pad_mconstant_v0_pl0_0_0_1_0_1.nnp",
+                                    "Pad4_Output_0", "exec_0",
+                                    backend="cntk")
+
+
+def test_nnp_onnx_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
+                                                            nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "pad_mconstant_v0_pl0_0_0_1_0_1.nnp",
+                                    "pad_mconstant_v0_pl0_0_0_1_0_1.onnx",
+                                    "Pad4_Output_0", "exec_0",
+                                    backend="cntk")
+
+## These following tests are invalidated due to a
+## backend bug? decribed in the following issue:
+## https://github.com/Microsoft/CNTK/issues/3127
+#def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "pad_mconstant_v0_pl0_0_0_1_0_1.onnx",
-#                                    "pad_mconstant_v0_pl0_0_0_1_0_1.nnp",
-#                                    "Pad4_Output_0", "exec_0",
-#                                    backend="cntk")
-#
+#                                    "reduce_prod.onnx", "reduce_prod.nnp",
+#                                    "ReduceElements7_Output_0", "exec_0",
+#                                    backend="cntk",
+#                                    export_nnp_path=TEST_DATA_DIR)
+
 
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
@@ -1141,15 +1173,6 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 
 
     
-    # These following tests are invalidated due to a
-# backend bug? decribed in the following issue:
-# https://github.com/Microsoft/CNTK/issues/3127
-#def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
-#    convert_onnx_to_nnp_and_compare(
-#        tmpdir, TEST_DATA_DIR, "reduce_prod.onnx", "reduce_prod.nnp",
-#        "ReduceElements7_Output_0", "exec_0",
-#        backend="cntk")
-
 def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
