@@ -57,6 +57,7 @@ nnabla_function_type_to_onnx_optype = {
     "Mean": "ReduceMean",
     "Min": "ReduceMin",
     "Max": "ReduceMax",
+    "Prod": "ReduceProd",
     "Mul2": "Mul",
     "Div2": "Div",
     "Pow2": "Pow",
@@ -322,6 +323,10 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
     elif func.type == "Min":
         mp = func.min_param
         set_reduction_attrs(n, mp)
+        nl.append(n)
+    elif func.type == "Prod":
+        pp = func.prod_param
+        set_reduction_attrs(n, pp)
         nl.append(n)
     elif func.type == "BroadcastTo":
         # BroadcastTo conversion only works when the

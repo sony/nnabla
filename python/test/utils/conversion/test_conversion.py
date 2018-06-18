@@ -1135,6 +1135,7 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0",
                                     atol=1e-4)
 
+
 def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
                                                             nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1152,16 +1153,21 @@ def test_nnp_onnx_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
                                     "Pad4_Output_0", "exec_0",
                                     backend="cntk")
 
-## These following tests are invalidated due to a
-## backend bug? decribed in the following issue:
-## https://github.com/Microsoft/CNTK/issues/3127
-#def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
-#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-#                                    "reduce_prod.onnx", "reduce_prod.nnp",
-#                                    "ReduceElements7_Output_0", "exec_0",
-#                                    backend="cntk",
-#                                    export_nnp_path=TEST_DATA_DIR)
 
+def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reduce_prod.onnx",
+                                    "reduce_prod.nnp",
+                                    "ReduceElements7_Output_0", "exec_0",
+                                    backend="cntk")
+
+
+def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reduce_prod.nnp",
+                                    "reduce_prod.onnx",
+                                    "ReduceElements7_Output_0", "exec_0",
+                                    backend="cntk")
 
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
