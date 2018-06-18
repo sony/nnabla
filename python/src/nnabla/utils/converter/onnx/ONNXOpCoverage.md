@@ -63,7 +63,7 @@ that indicates if each operator can be converted to NNP.
 |Not|:green_heart:||
 |Or|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |PRelu|:green_heart:||
-|Pad|:purple_heart:|Should map to Pad|
+|Pad|:yellow_heart:|For NNP to ONNX conversion, input buffer's dimension is assumed to be 4D if the shape cannot be determined.|
 |Pow|:yellow_heart:|broadcast will be converted to a BroadcastTo|
 |RNN|:broken_heart:|Operator does not exist in NNabla|
 |RandomNormal|:purple_heart:|Should be able to map to Randn|
@@ -78,7 +78,7 @@ that indicates if each operator can be converted to NNP.
 |ReduceMax|:green_heart:||
 |ReduceMean|:green_heart:||
 |ReduceMin|:green_heart:||
-|ReduceProd|:purple_heart:|Should be able to map to Prod. No reference implementation in CNTK or Caffe2|
+|ReduceProd|:green_heart:||
 |ReduceSum|:green_heart:||
 |ReduceSumSquare|:broken_heart:|Operator does not exit in NNabla|
 |Relu|:green_heart:||
