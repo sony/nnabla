@@ -24,12 +24,18 @@ using std::make_shared;
 // Just a helper function.
 static inline const char *b2str(bool b) { return b ? "true" : "false"; }
 
-CgFunction::CgFunction(FunctionPtr func) : rank_(0) {
+CgFunction::CgFunction(FunctionPtr func) : rank_(0), func_(func) {}
+
+void CgFunction::setup() {
   // Copy if function is already used.
-  if (func->ask_if_used_and_use()) {
-    func = func->copy();
+  if (func_->ask_if_used_and_use()) {
+    func_ = func_->copy();
   }
-  func_ = func;
+  // Get output variables
+  vector<CgVariablePtr> outputs;
+  vector<Variable *> voutputs;
+  std::tie(outputs, voutputs) = this->function_outputs();
+  func_->setup(this->function_inputs(), voutputs);
 }
 
 void CgFunction::check_data_inplace(int i, CgVariablePtr input,
@@ -98,21 +104,10 @@ void CgFunction::verify_during_forward() {
   }
 }
 
-void CgFunction::set_inputs(const vector<CgVariablePtr> &inputs) {
-  // Check need_grad
-  need_grad_ = false;
-  for (auto i : inputs) {
-    need_grad_ |= i->need_grad_state();
-    rank_ = std::max(rank_, i->rank());
-    i->increment_function_reference_count();
-  }
-  inputs_ = inputs;
-}
-
 void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
   outputs_.resize(outputs.size());
   for (int i = 0; i < outputs.size(); ++i) {
-    outputs[i]->set_rank(rank_ + 1);
+    outputs[i]->set_rank_(rank_ + 1);
     outputs_[i] = outputs[i];
   }
 }

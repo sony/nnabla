@@ -43,10 +43,6 @@ class CgFunction {
   bool need_grad_{false};
   string info_;
 
-  /**
-   */
-  inline void set_rank(int rank) { rank_ = rank; }
-
 public:
   typedef shared_ptr<CgFunction> Ptr;
 
@@ -54,13 +50,24 @@ public:
       @param[in] func shared_ptr of Function.
   */
   NBLA_API CgFunction(FunctionPtr func);
-  /** Set inputs.
-      Check if any of inputs requires gradient computation and store the flag in
-      self. Also, rank will be set according to inputs' ranks.
+
+  /** Set inputs. Note user shouldn't call this directly.
 
       @param[in] inputs Function inputs as CgVariables.
   */
-  NBLA_API void set_inputs(const vector<CgVariablePtr> &inputs);
+  inline void set_inputs_(const vector<CgVariablePtr> &inputs) {
+    inputs_ = inputs;
+  }
+
+  /** Calling setup function of an Function object internally held.
+   */
+  void setup();
+
+  /** Get a weak reference output as a shared reference by index or raise.
+
+      @param[in] i Output index.
+  */
+  inline CgVariablePtr output(int i);
 
   /**
    */
@@ -77,6 +84,10 @@ public:
   /**
    */
   inline int rank() const { return rank_; }
+
+  /**
+   */
+  inline void set_rank_(int rank) { rank_ = rank; }
 
   /** Store outputs as weak references (weak_ptr).
 

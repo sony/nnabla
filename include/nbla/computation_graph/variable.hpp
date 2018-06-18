@@ -20,10 +20,12 @@
 
 #include <functional>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace nbla {
 
+using std::unordered_map;
 using std::unordered_set;
 
 // Forward declaration
@@ -49,22 +51,22 @@ function which creates this variable and some performance optimization clues.
 class CgVariable {
   friend class CgFunction;
   enum NeedGrad { NG_NONE, NG_FALSE, NG_TRUE };
+  struct FunctionReferenceInfo {
+    bool need_setup{false};
+  };
   NeedGrad need_grad_{NG_NONE}; ///< Whether the variable requires gradients.
   NeedGrad need_grad_state_{
       NG_NONE};     ///< Updated during graph construction or forward
                     /// propagation.
   VariablePtr var_; /// Variable instance.
-  CgFunctionPtr parent_{nullptr};   ///< Function created this variable.
-  int rank_{0};                     ///< Longest path from root variable.
-  int function_reference_count_{0}; ///< Reference count by child functions.
-  bool allow_modify_data_{true};    ///< Whether the data can be in-placed.
-  bool persistent_{false};          ///<Persistency flag against clearing.
-
-  /** set rank.
-
-      @note Users shouldn't call this directly.
-   */
-  inline void set_rank(int rank) { rank_ = rank; }
+  CgFunctionPtr parent_{nullptr}; ///< Function created this variable.
+  int rank_{0};                   ///< Longest path from root variable.
+  ///< Holds weak function references. <https://stackoverflow.com/a/22110715>
+  unordered_map<CgFunction *,
+                pair<std::weak_ptr<CgFunction>, FunctionReferenceInfo>>
+      function_references_;
+  bool allow_modify_data_{true}; ///< Whether the data can be in-placed.
+  bool persistent_{false};       ///<Persistency flag against clearing.
 
   void
   visit_function_recursive(CgFunctionPtr func,
@@ -181,6 +183,12 @@ public:
    */
   inline int rank() const { return rank_; }
 
+  /** set rank.
+
+      @note Users shouldn't call this directly.
+   */
+  inline void set_rank_(int rank) { rank_ = rank; }
+
   /** Forward propagation from root iputs to this variable.
 
       The predecessor functions are executed in order of lower rank to higher
@@ -223,19 +231,23 @@ public:
   backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
-  /** @copydoc function_reference_count_
+  /**
    */
   inline int function_reference_count() const {
-    return function_reference_count_;
+    return function_references_.size();
   }
 
-  /** Increment function_reference_count_.
-
-      @note User shouldn't call this directly.
+  /**
    */
-  inline void increment_function_reference_count() {
-    function_reference_count_++;
-  }
+  void insert_function_reference(CgFunctionPtr func);
+
+  /** Mark need_setup flag for all function references.
+   */
+  void mark_need_setup();
+
+  /** Check need_setup signal, and unmark it.
+   */
+  bool check_and_unmark_need_setup(CgFunctionPtr func);
 
   /** @copydoc allow_modify_data_
    */

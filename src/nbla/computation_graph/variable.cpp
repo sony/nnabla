@@ -120,6 +120,22 @@ public:
     }
   }
 
+  void on_outputs(CgFunctionPtr func) {
+#if 0
+    Context ctx{{}, "CpuCachedArray", ""};
+    auto outputs = func->outputs();
+    std::cout << "[" << func->function()->name() << "]" << std::endl;
+    for (int i = 0; i < outputs.size(); i++) {
+      const float *v = outputs[i]->variable()->get_data_pointer<float>(ctx);
+      std::cout << "output " << i << ":";
+      for (int s = 0; s < outputs[i]->variable()->size(); s++) {
+        std::cout << " " << v[s];
+      }
+      std::cout << std::endl;
+    }
+#endif
+  }
+
   void operator()(CgFunctionPtr func) {
     // Execute forward.
     // std::cout << "Call forward of " << func->function()->name() << "."
@@ -128,6 +144,8 @@ public:
     vector<Variable *> voutputs;
     std::tie(outputs, voutputs) = func->function_outputs();
     func->function()->forward(func->function_inputs(), voutputs);
+
+    this->on_outputs(func);
 
     // Clear input buffers where possible.
     auto clear_flags = get_clear_flags(func);
@@ -303,18 +321,19 @@ void CgVariable::visit_function_recursive(
   // B. Open all inputs of the function.
   int max_rank = 0;       // 0 if no inputs in this function.
   bool need_grad = false; // No inputs not require grad
+  bool need_setup = false;
   auto inputs = func->inputs();
   for (auto input : inputs) {
     auto parent = input->parent();
-
     // B-1. Input with no parent doesn't require
     if (!parent) {
       // Same as B-3.
-      input->set_rank(0);
+      input->set_rank_(0);
       input->unset_need_grad_state();
       // Same as B-4.
       max_rank = std::max(0, max_rank);
       need_grad |= input->need_grad_state();
+      need_setup |= input->check_and_unmark_need_setup(func);
       continue;
     }
 
@@ -325,24 +344,36 @@ void CgVariable::visit_function_recursive(
 
     // B-3. Update rank and need_grad of this input by propagating from the
     // parent function (backward with a rewired graph requires this).
-    input->set_rank(parent->rank());
+    input->set_rank_(parent->rank());
     input->set_need_grad_state(parent->need_grad());
 
     // B-4. Aggregate rank and need_grad from inputs for func.
     max_rank = std::max(parent->rank(), max_rank);
     need_grad |= input->need_grad_state();
+    need_setup |= input->check_and_unmark_need_setup(func);
   }
 
   // C. Update rank and need_grad of func (backward with a rewired graph
   // requires this).
   func->set_need_grad(need_grad); // This must be done before calling callback
                                   // because the callback may use this.
-  func->set_rank(++max_rank);     // Increment rank at function.
+  func->set_rank_(++max_rank);    // Increment rank at function.
 
-  // D. Verify flags
+  // D. setup if required
+  if (need_setup) {
+    // std::cout << "setup is called at " << func->function()->name()
+    //           << " as rank " << func->rank() << std::endl;
+    func->setup();
+    // Mark as all outputs require setup function call.
+    for (auto output : func->outputs()) {
+      output->mark_need_setup();
+    }
+  }
+
+  // E. Verify flags
   func->verify_during_forward();
 
-  // E. Call callback function at this function.
+  // F. Call callback function at this function.
   forward_callback(func);
   // std::cout << max_rank << " " << func->function()->name() << " " <<
   // func.get() << std::endl;
@@ -437,5 +468,32 @@ void CgVariable::backward(
   visit_function_backward(
       parent_, [&backward_callback](CgFunctionPtr f) { backward_callback(f); },
       communicator_callbacks);
+}
+
+void CgVariable::insert_function_reference(CgFunctionPtr func) {
+  std::weak_ptr<CgFunction> wp(func);
+  function_references_.insert(
+      {func.get(), {wp, CgVariable::FunctionReferenceInfo()}});
+}
+
+void CgVariable::mark_need_setup() {
+  for (auto it = function_references_.begin(); it != function_references_.end();
+       it++) {
+    auto f = it->second.first.lock();
+    if (!f) {
+      function_references_.erase(it);
+      continue;
+    }
+    it->second.second.need_setup = true;
+  }
+}
+
+bool CgVariable::check_and_unmark_need_setup(CgFunctionPtr func) {
+  auto it = function_references_.find(func.get());
+  NBLA_CHECK(it != function_references_.end(), error_code::value,
+             "Fatal issue: function reference has gone.");
+  auto ret = it->second.second.need_setup;
+  it->second.second.need_setup = false;
+  return ret;
 }
 }

@@ -26,6 +26,21 @@ connect_core(CgFunctionPtr cg_f, const vector<CgVariablePtr> &inputs,
 
 using std::make_shared;
 
+static void set_function_inputs(CgFunctionPtr func,
+                                const vector<CgVariablePtr> &inputs) {
+  // Check need_grad
+  bool need_grad = false;
+  int rank = 0;
+  for (auto i : inputs) {
+    need_grad |= i->need_grad_state();
+    rank = std::max(rank, i->rank());
+    i->insert_function_reference(func);
+  }
+  func->set_need_grad(need_grad);
+  func->set_rank_(rank);
+  func->set_inputs_(inputs);
+}
+
 vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
                                               int n_outputs) {
   // Check inplace outputs size and create outputs.
@@ -49,7 +64,7 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                               const vector<CgVariablePtr> &inputs,
                               int n_outputs, vector<NdArrayPtr> inplace_outputs,
                               bool execute) {
-  cg_f->set_inputs(inputs);
+  set_function_inputs(cg_f, inputs);
   vector<CgVariablePtr> outputs = create_function_outputs(cg_f, n_outputs);
   return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
 }
@@ -69,6 +84,12 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
                                    const vector<CgVariablePtr> &outputs,
                                    vector<NdArrayPtr> inplace_outputs,
                                    bool execute) {
+  // Setup function.
+  cg_f->setup();
+
+  // Verify connections.
+  cg_f->verify_during_forward();
+
   // Function inputs and outputs must be Variables.
   vector<Variable *> finputs(inputs.size());
   vector<Variable *> foutputs(outputs.size());
@@ -78,12 +99,6 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
   for (int i = 0; i < outputs.size(); ++i) {
     foutputs[i] = outputs[i]->variable().get();
   }
-
-  // Setup function.
-  auto f = cg_f->function();
-  f->setup(finputs, foutputs);
-
-  cg_f->verify_during_forward();
 
   // Set array reference to function output buffer if size matches.
   for (int i = 0; i < outputs.size(); ++i) {
@@ -137,5 +152,8 @@ void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to) {
 
   // F. Reference contents
   to->set_variable(from->variable());
+
+  // G. Set setup flag.
+  to->mark_need_setup();
 }
 }
