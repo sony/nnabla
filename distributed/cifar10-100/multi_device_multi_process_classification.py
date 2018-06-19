@@ -31,6 +31,17 @@ import functools
 from models import (resnet23_prediction, categorical_error, loss_function)
 
 
+def backward_and_all_reduce(loss, comm, with_all_reduce_callback=False):
+    params = [x.grad for x in nn.get_parameters().values()]
+    if with_all_reduce_callback:
+        # All-reduce gradients every 2MiB parameters during backward computation
+        loss.backward(clear_buffer=True,
+                      communicator_callbacks=comm.all_reduce_callback(params, 1024 * 1024 * 2))
+    else:
+        loss.backward(clear_buffer=True)
+        comm.all_reduce(params, division=False, inplace=False)
+
+
 def train():
     """
     Naive Multi-Device Training
@@ -158,23 +169,22 @@ def train():
                     nn.save_parameters(os.path.join(
                         args.model_save_path, 'params_%06d.h5' % i))
 
-        # Forward/Zerograd/Backward
+        # Forward/Zerograd
         image, label = tdata.next()
         input_image_train["image"].d = image
         input_image_train["label"].d = label
         loss_error_train.forward(clear_no_need_grad=True)
         solver.zero_grad()
-        loss_train.backward(clear_buffer=True)
 
-        # AllReduce
-        grads = [x.grad for x in nn.get_parameters().values()]
-        comm.all_reduce(grads, division=False, inplace=False)
+        # Backward/AllReduce
+        backward_and_all_reduce(
+            loss_train, comm, with_all_reduce_callback=args.with_all_reduce_callback)
 
         # Solvers update
         solver.update()
 
         # Synchronize by averaging the weights over devices using allreduce
-        if (i+1) % args.sync_weight_every_itr == 0:
+        if (i + 1) % args.sync_weight_every_itr == 0:
             weights = [x.data for x in nn.get_parameters().values()]
             comm.all_reduce(weights, division=True, inplace=True)
 
