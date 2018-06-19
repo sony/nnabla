@@ -126,6 +126,20 @@ void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace,
   NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
+CommunicatorBackwardCallbackPtr
+Communicator::all_reduce_callback(const vector<NdArrayPtr> &ndarray_list,
+                                  size_t pack_size, bool division,
+                                  const string &group) {
+  NBLA_ERROR(error_code::not_implemented,
+             "CPU all_reduce_callback is not implemented")
+}
+CommunicatorBackwardCallbackPtr
+Communicator::all_reduce_callback(NdArrayPtr ndarray, size_t pack_size,
+                                  bool division, const string &group) {
+  return this->all_reduce_callback(vector<NdArrayPtr>{ndarray}, pack_size,
+                                   division, group);
+}
+
 void Communicator::reduce_scatter(const vector<NdArrayPtr> &ndarray_list,
                                   NdArrayPtr ndarray, bool division,
                                   const string &group) {

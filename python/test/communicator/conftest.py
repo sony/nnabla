@@ -82,6 +82,7 @@ def comm_nccl_opts(request):
 
     c = CommOpts()
     c.comm = comm
+    c.ctx = ctx
     c.device_id = ctx.device_id
     c.devices = devices
     c.mpi_rank = mpi_rank
