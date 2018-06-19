@@ -365,6 +365,271 @@ def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
                                     "softmax.nnp", "softmax.onnx",
                                     "out_data_1", "exec_0", compare_values=False)
 
+def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "average_pool.onnx", "average_pool.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "average_pool.nnp", "average_pool.onnx",
+                                    "out_data_1", "exec_0")
+
+
+#def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+#    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "average_pool_p0_0_1_1_s1_k2.onnx",
+#                                    "average_pool_p0_0_1_1_s1_k2.nnp",
+#                                    "out_data_1", "exec_0",
+#                                    export_nnp_path=TEST_DATA_DIR)
+#
+#
+#def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+#    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                    "average_pool_p0_0_1_1_s1_k2.nnp",
+#                                    "average_pool_p0_0_1_1_s1_k2.onnx",
+#                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_sum(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "sum.onnx", "sum.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_sum(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "sum.nnp", "sum.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "batch_norm.onnx", "batch_norm.nnp",
+                                    "out_data_1", "exec_0", atol=1e-05)
+
+
+def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "batch_norm.nnp", "batch_norm.onnx",
+                                    "out_data_1", "exec_0", atol=1e-05)
+
+
+def test_onnx_nnp_conversion_gemm(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "gemm.onnx", "gemm.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_gemm(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "gemm.nnp", "gemm.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_add_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "add_no_broadcast.onnx",
+                                    "add_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_add_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "add_no_broadcast.nnp",
+                                    "add_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "add_broadcast_axis1.onnx",
+                                    "add_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "add_broadcast_axis1.nnp",
+                                    "add_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "mul_no_broadcast.onnx",
+                                    "mul_no_broadcast.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "mul_no_broadcast.nnp",
+                                    "mul_no_broadcast.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_mul_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "mul_broadcast_axis1.onnx",
+                                    "mul_broadcast_axis1.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_mul_broadcast_axis1(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "mul_broadcast_axis1.nnp",
+                                    "mul_broadcast_axis1.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "constant.onnx", "constant.nnp",
+                                    "Pooling33_Output_0", "exec_0")
+
+
+def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reshape.onnx", "reshape.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_reshape(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reshape.nnp", "reshape.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_matmul(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "matmul.onnx", "matmul.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_matmul(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "matmul.nnp", "matmul.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_transpose(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "transpose.onnx", "transpose.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_transpose(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "transpose.nnp", "transpose.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_abs(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "abs.onnx", "abs.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_abs(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "abs.nnp", "abs.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_sigmoid(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "sigmoid.onnx", "sigmoid.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_sigmoid(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "sigmoid.nnp", "sigmoid.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_tanh(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "tanh.onnx", "tanh.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_tanh(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "tanh.nnp", "tanh.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_leaky_relu(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "leaky_relu.onnx", "leaky_relu.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_leaky_relu(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "leaky_relu.nnp", "leaky_relu.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_log(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "log.onnx", "log.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_log(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "log.nnp", "log.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_not(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "not.onnx", "not.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_not(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "not.nnp", "not.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_elu(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "elu.onnx", "elu.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_elu(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "elu.nnp", "elu.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_selu(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(
+        tmpdir, TEST_DATA_DIR, "selu.onnx", "selu.nnp", "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_selu(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(
+        tmpdir, TEST_DATA_DIR, "selu.nnp", "selu.onnx", "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_reduce_sum(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reduce_sum.onnx", "reduce_sum.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_reduce_sum(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reduce_sum.nnp", "reduce_sum.onnx",
+                                    "out_data_1", "exec_0")
+
+
+def test_onnx_nnp_conversion_reduce_mean(tmpdir, nnp_fixture):
+    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reduce_mean.onnx", "reduce_mean.nnp",
+                                    "out_data_1", "exec_0")
+
+
+def test_nnp_onnx_conversion_reduce_mean(tmpdir, nnp_fixture):
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "reduce_mean.nnp", "reduce_mean.onnx",
+                                    "out_data_1", "exec_0")
+
 
 def test_onnx_nnp_conversion_and_no_broadcast(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
