@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from nnabla.utils import nnabla_pb2
 import nnabla.logger as logger
 import numpy as np
 try:
@@ -602,7 +603,21 @@ def get_tensor_type(name, type_dict):
         return TensorProto.FLOAT
 
 
-def nnp_model_to_onnx_graph(graph, nnp):
+def replace_negative_size_with_batch_size(shape, batch_size):
+    """Replace all dimensions with negative values to batch size"""
+    sl = []
+    for d in shape.dim:
+        if d < 0:
+            # Negative size means batch size
+            sl.append(batch_size)
+        else:
+            sl.append(d)
+    out_shape = nnabla_pb2.Shape()
+    out_shape.dim.extend(sl)
+    return out_shape
+
+
+def nnp_model_to_onnx_graph(graph, nnp, batch_size):
     if len(nnp.executor) != 1:
         raise ValueError(
             "NNP with only a single executor is currently supported")
@@ -617,10 +632,16 @@ def nnp_model_to_onnx_graph(graph, nnp):
             "Executor network [{}] does not found in this NNP.".format(exe.network_name))
 
     graph.name = net.name
+    # Determine batch size.
+    # If it is given, we use the given value.
+    # If not, we use the value stored in the network
+    bs = batch_size
+    if bs < 0:
+        bs = net.batch_size
     # store all variable shape info to use later
     var_dict = {}
     for v in net.variable:
-        var_dict[v.name] = v.shape
+        var_dict[v.name] = replace_negative_size_with_batch_size(v.shape, bs)
 
     # Store the names and type of all input/output
     # tensor that must have a type other than float.
@@ -682,7 +703,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
     convert_parameter_shape(graph)
 
 
-def nnp_model_to_onnx_protobuf(nnp):
+def nnp_model_to_onnx_protobuf(nnp, batch_size):
     mp = ModelProto()
     mp.ir_version = ONNX_IR_VERSION
     op = mp.opset_import.add()
@@ -694,15 +715,16 @@ def nnp_model_to_onnx_protobuf(nnp):
     mp.producer_name = PRODUCER_NAME
     mp.producer_version = PRODUCER_VERSION
     mp.domain = NNABLA_DOMAIN
-    nnp_model_to_onnx_graph(mp.graph, nnp)
+    nnp_model_to_onnx_graph(mp.graph, nnp, batch_size)
     return mp
 
 
 class OnnxExporter:
-    def __init__(self, nnp):
+    def __init__(self, nnp, batch_size):
         self._nnp = nnp.protobuf
+        self._batch_size = batch_size
 
     def export(self, file_path):
-        model_proto = nnp_model_to_onnx_protobuf(self._nnp)
+        model_proto = nnp_model_to_onnx_protobuf(self._nnp, self._batch_size)
         with open(file_path, "wb") as f:
             f.write(model_proto.SerializeToString())

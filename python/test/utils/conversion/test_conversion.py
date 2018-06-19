@@ -140,7 +140,8 @@ def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
         backend="caffe2",
         in_img=None, in_name="", compare_values=True, show_nnp=False,
-        show_onnx=False, show_output=False, atol=1e-08):
+        show_onnx=False, show_output=False, atol=1e-08,
+        export_onnx_path=None):
     """Convert specified NNP to ONNX and compare
     each results ran by CNTK and NNabla"""
     # Process nnp with nnabla
@@ -161,10 +162,12 @@ def convert_nnp_to_onnx_and_compare(
     assert nnp.protobuf is not None
     if show_nnp:
         print(nnp.protobuf)
-    onnxex = OnnxExporter(nnp)
+    onnxex = OnnxExporter(nnp, -1)
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), onnx_name)
     onnxex.export(p)
+    if export_onnx_path:
+        shutil.copy2(p, export_onnx_path)
 
     # read exported onnx and run network
     model = onnx.load(p)
@@ -1221,6 +1224,15 @@ def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
                                     "squeezenet.nnp", "squeezenet.onnx",
                                     "softmaxout_1", "exec_0",
                                     in_name="data_0", in_img=img)
+
+
+def test_nnp_onnx_conversion_lenet(tmpdir, nnp_fixture):
+    img = np.random.rand(128, 1, 28, 28).astype(np.float32)
+    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+                                    "lenet_result.nnp",
+                                    "lenet_result.onnx",
+                                    "y", "Runtime",
+                                    in_name="x", in_img=img)
 
 
 @pytest.mark.slow
