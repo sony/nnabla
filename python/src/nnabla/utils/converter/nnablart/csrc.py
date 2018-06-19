@@ -26,6 +26,7 @@ from .csrc_templates import \
 
 from .utils import create_nnabart_info
 
+MAX_VARIDAIC_NUM = 5
 
 class CsrcExporter:
 
@@ -142,8 +143,14 @@ class CsrcExporter:
             finfo = self._info._function_info[f.type]
             internal_defines.append(
                 '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['inputs'])))
+            o_num = 0
+            for y, dict in finfo['outputs'].items():
+                if 'variadic' in dict and dict['variadic']:
+                    o_num += MAX_VARIDAIC_NUM
+                else:
+                    o_num += 1
             internal_defines.append(
-                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(finfo['outputs'])))
+                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, o_num))
             if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 internal_defines.append(
                     '    {}_local_context_t f{}_local_context;'.format(finfo['snake_name'], n))
