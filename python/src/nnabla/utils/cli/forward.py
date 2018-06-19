@@ -53,8 +53,9 @@ def set_initial_values(result, type_and_name, d):
 
 def update_result(args, index, result, values, output_index, type_end_names, output_image):
     outputs = []
+    data_index = 0
     for o, type_and_name in zip(values, type_end_names):
-        for data_index, d in enumerate(o):
+        for d in o:
             if len(result.dims) <= output_index:
                 result = set_initial_values(result, type_and_name, d)
             if len(outputs) <= data_index:
@@ -103,6 +104,7 @@ def update_result(args, index, result, values, output_index, type_end_names, out
                             x = np.array(d, dtype=np.float32)
                             writer.writerows(x)
                     outputs[data_index].append(os.path.join('.', file_name))
+            data_index += 1
         output_index += 1
 
     return result, outputs

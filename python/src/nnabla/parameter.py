@@ -151,7 +151,7 @@ def set_parameter(key, param):
     current_scope[names[0]] = param
 
 
-def get_parameter_or_create(name, shape, initializer=None, need_grad=True):
+def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True):
     """
     Returns an existing parameter variable with the provided name.
     If a variable with the provided name does not exist,
@@ -162,8 +162,8 @@ def get_parameter_or_create(name, shape, initializer=None, need_grad=True):
       name(str): The name under the current scope. If it already exists, the name is queried from the
           parameter manager.
       shape (:obj:`tuple` of :obj:`int`): Shape of created parameter. The shape of the specified
-          parameter must match with this shape.
-      initializer (~nnabla.initializer.BaseInitializer): An initialization function to be applied to the parameter.
+          parameter must match with this shape. The default is None which is only valid if initializer is given as an :obj:`numpy.ndarray`.
+      initializer (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): An initialization function to be applied to the parameter. :obj:`numpy.ndarray` can also be given to initialize parameters from numpy array data.
       need_grad (bool): The value for `need_grad` .
           The default is True.
 
@@ -178,9 +178,21 @@ def get_parameter_or_create(name, shape, initializer=None, need_grad=True):
             pass
         info = VariableInfo()
         info.initializer = initializer
-        param = nn.Variable(shape, need_grad=need_grad)
+
         if initializer is not None:
-            param.d = initializer(shape=param.shape)
+            if isinstance(initializer, numpy.ndarray):  # numpy init
+                param = nn.Variable(initializer.shape, need_grad=need_grad)
+                param.d = initializer
+            elif isinstance(initializer, nn.initializer.BaseInitializer):  # initializer init
+                assert shape is not None
+                param = nn.Variable(shape, need_grad=need_grad)
+                param.d = initializer(shape=param.shape)
+            else:
+                raise ValueError(
+                    "`initializer` must be either the :obj:`numpy.ndarray` or an instance inherited from `nnabla.initializer.BaseInitializer`.")
+        else:  # default init
+            assert shape is not None
+            param = nn.Variable(shape, need_grad=need_grad)
         set_parameter(name, param)
     else:
         assert param.shape == tuple(shape)

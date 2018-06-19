@@ -17,6 +17,7 @@ from six import iterkeys
 import pytest
 import numpy as np
 import nnabla.parametric_functions as PF
+from nnabla.initializer import UniformInitializer
 
 
 def test_get_set_pop_parameter():
@@ -52,6 +53,33 @@ def test_get_parameter_or_create_need_grad():
     assert np.all(param1.d == param1_f.d)
     param1.d = 1
     assert np.all(param1_f.d == 1)
+    nn.clear_parameters()
+
+
+def test_get_parameter_with_initializer():
+    """Testing with initializer
+    """
+    import nnabla as nn
+    from nnabla.parameter import get_parameter_or_create
+    nn.clear_parameters()
+    rng = np.random.RandomState(seed=313)
+    shape = (8, 8, 3, 3)
+
+    # Instnace inherited from BaseInitializer
+    initializer = UniformInitializer(lim=(-1, 1), rng=rng)
+    param1 = get_parameter_or_create(
+        'param1', shape, initializer=initializer, need_grad=True)
+    assert np.min(param1.d > -1) and np.max(param1.d < 1)
+
+    # Numpy array
+    initializer = rng.randn(*shape)
+    param2 = get_parameter_or_create(
+        'param2', initializer=initializer, need_grad=True)
+    np.allclose(initializer, param2.d)
+
+    # Random
+    param3 = get_parameter_or_create('param3', shape, need_grad=True)
+
     nn.clear_parameters()
 
 
