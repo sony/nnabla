@@ -19,7 +19,7 @@ that indicates if each operator can be converted to NNP.
 |AveragePool|:yellow_heart:|autopad not supported. pads must have same value for begin and end.|
 |BatchNormalization|:yellow_heart:|is_test=false not supported (only inference)|
 |Cast|:broken_heart:|Operator does not exist in NNabla(No type information is exposed in NNP)|
-|Ceil|:broken_heart:|Operator does not exist in NNabla|
+|Ceil|:purple_heart:|Should map to Ceil|
 |Clip|:yellow_heart:|Converted to Identity, MaximumScalar, MinimumScalar, or both depending on the attribute|
 |Concat|:green_heart:||
 |Constant|:yellow_heart:|Converted to an input parameter|
@@ -32,7 +32,7 @@ that indicates if each operator can be converted to NNP.
 |Equal|:yellow_heart:|broadcast will be converted to a BroadcastTo. Input data type will all be converted to int64 since NNP does not have type information|
 |Exp|:green_heart:||
 |Flatten|:broken_heart:|Operator does not exist in NNabla|
-|Floor|:broken_heart:|Operator does not exist in NNabla|
+|Floor|:purple_heart:|Should map to Floor|
 |GRU|:broken_heart:|Operator does not exist in NNabla|
 |Gather|:broken_heart:|Operator does not exist in NNabla|
 |Gemm|:yellow_heart:|alpha and beta is not supported. Input A and B must be two dimensional, and input C must be one dimensional. transA, transB will be converted to a separate transpose operator|
