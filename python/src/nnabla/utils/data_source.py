@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
+import h5py
+
+from collections import OrderedDict
+from contextlib import closing
+from contextlib import closing
+from multiprocessing import Queue
+from multiprocessing.pool import ThreadPool
 from shutil import rmtree
 import abc
 import atexit
@@ -21,14 +32,18 @@ import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
+import collections
+import csv
 import numpy
 import os
 import six
 import tempfile
+import threading
 
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
+from nnabla.utils.communicator_util import single_or_rankzero
 
 
 class DataSource(object):
@@ -121,16 +136,44 @@ class DataSourceWithFileCache(DataSource):
         if self._cache_dir is None:
             raise DataSourceWithFileCacheError(
                 'Use this class with "with statement" if you dont specify cache dir.')
+        cache_data = OrderedDict()
 
-        start_position = self.position - len(self._cache_data) + 1
+        def get_data(args):
+            pos = args[0]
+            q = args[1]
+            retry = 1
+            while True:
+                if retry > 10:
+                    logger.log(
+                        99, '_get_current_data() retry count over give up.')
+                    raise
+                d = self._data_source._get_data(pos)
+                if d is not None:
+                    break
+                logger.log(99, '_get_data() fails. retrying count {}/10.'.format(
+                           retry))
+                retry += 1
+
+            q.put((pos, d))
+
+        q = Queue()
+        with closing(ThreadPool(processes=self._num_of_threads)) as pool:
+            pool.map(get_data, [(pos, q) for pos in self._cache_positions])
+
+        while len(cache_data) < len(self._cache_positions):
+            index, data = q.get()
+            cache_data[index] = data
+        start_position = self.position - len(cache_data) + 1
         end_position = self.position
         cache_filename = os.path.join(
-            self._cache_dir, '{}_{:08d}_{:08d}.h5'.format(self._cache_file_name_prefix,
-                                                          start_position,
-                                                          end_position))
+            self._cache_dir, '{}_{:08d}_{:08d}{}'.format(self._cache_file_name_prefix,
+                                                         start_position,
+                                                         end_position,
+                                                         self._cache_file_format))
 
-        data = {n: [] for n in self._data_source.variables}
-        for cd in self._cache_data:
+        data = OrderedDict([(n, []) for n in self._data_source.variables])
+        for pos in sorted(cache_data):
+            cd = cache_data[pos]
             for i, n in enumerate(self._data_source.variables):
                 if isinstance(cd[i], numpy.ndarray):
                     d = cd[i]
@@ -139,24 +182,38 @@ class DataSourceWithFileCache(DataSource):
                 data[n].append(d)
 
         logger.info('Creating cache file {}'.format(cache_filename))
-        h5 = h5py.File(cache_filename, 'w')
-        for k, v in data.items():
-            h5.create_dataset(k, data=v)
-        h5.close()
+        if self._cache_file_format == ".h5":
+            h5 = h5py.File(cache_filename, 'w')
+            for k, v in data.items():
+                h5.create_dataset(k, data=v)
+            h5.close()
+        else:
+            retry_count = 1
+            is_create_cache_imcomplete = True
+            while is_create_cache_imcomplete:
+                try:
+                    with open(cache_filename, 'wb') as f:
+                        for v in data.values():
+                            numpy.save(f, v)
+                    is_create_cache_imcomplete = False
+                except OSError:
+                    retry_count += 1
+                    if retry_count > 10:
+                        raise
+                    logger.info(
+                        'Creating cache retry {}/10'.format(retry_count))
 
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
-        self._cache_file_data_orders.append(list(range(len(self._cache_data))))
-        self._cache_data = []
+        self._cache_file_data_orders.append(list(range(len(cache_data))))
+        self._cache_positions = []
 
     def _store_data_to_cache_buffer(self, position):
-        d = self._data_source._get_data(position)
+        self._cache_positions.append(position)
         if position == self._total_cached_size:
-            self._cache_data.append(d)
             self._total_cached_size += 1
-            if len(self._cache_data) >= self._cache_size or self._total_cached_size >= self.size:
+            if len(self._cache_positions) >= self._cache_size or self._total_cached_size >= self.size:
                 self._save_cache_to_file()
-        return d
 
     def _get_data_from_cache_file(self, position):
         cache_file_index = self._cache_file_positions[position]
@@ -167,38 +224,42 @@ class DataSourceWithFileCache(DataSource):
         if self._current_cache_file_index != cache_file_index:
             self._current_cache_file_index = cache_file_index
 
-            h5 = h5py.File(self._cache_file_names[cache_file_index], 'r')
-            self._current_cache_data = {}
-            for k, v in h5.items():
-                self._current_cache_data[k] = v.value
-            h5.close()
+            if self._cache_file_format == '.npy':
+                self._current_cache_data = {}
+                with open(self._cache_file_names[cache_file_index], 'rb') as f:
+                    for v in self._variables:
+                        self._current_cache_data[v] = numpy.load(f)
+            else:
+                h5 = h5py.File(self._cache_file_names[cache_file_index], 'r')
+                self._current_cache_data = {}
+                for k, v in h5.items():
+                    self._current_cache_data[k] = v.value
+                h5.close()
 
         d = [self._current_cache_data[v][cache_data_position]
              for v in self.variables]
         return d
 
     def _get_data(self, position):
-        self._position = position
-        return self._get_data_from_cache_file(position)
+        with self._thread_lock:
+            self._position = position
+            return self._get_data_from_cache_file(position)
 
     def _create_cache(self):
         # Save all data into cache file(s).
+        self._cache_positions = []
         self._position = 0
-        logger.info('Creating cache start')
 
         percent = 0
         while self._position < self._data_source._size:
-            current_percent = self._position * 10 // self._data_source._size
-            progress('', self._position * 1.0 / self._data_source._size)
-            if current_percent != percent:
-                percent = current_percent
-                logger.info('Creating cache {}0% finished.'.format(percent))
+            if single_or_rankzero():
+                progress('Create cache', self._position *
+                         1.0 / self._data_source._size)
 
             self._store_data_to_cache_buffer(self._position)
             self._position += 1
-        if len(self._cache_data) > 0:
+        if len(self._cache_positions) > 0:
             self._save_cache_to_file()
-        logger.info('Creating cache end')
         # Adjust data size into reseted position. In most case it means
         # multiple of bunch(mini-batch) size.
         num_of_cache_files = int(numpy.ceil(
@@ -210,6 +271,18 @@ class DataSourceWithFileCache(DataSource):
         if self._data_source._size % self._cache_size != 0:
             self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
                 num_of_cache_files - 1][0:self._data_source._size % self._cache_size]
+        index_filename = os.path.join(self._cache_dir, "cache_index.csv")
+        with open(index_filename, 'w') as f:
+            writer = csv.writer(f, lineterminator='\n')
+            for fn, orders in zip(self._cache_file_names, self._cache_file_data_orders):
+                writer.writerow((os.path.basename(fn), len(orders)))
+
+        if self._cache_file_format == ".npy":
+            info_filename = os.path.join(self._cache_dir, "cache_info.csv")
+            with open(info_filename, 'w') as f:
+                writer = csv.writer(f, lineterminator='\n')
+                for variable in self._variables:
+                    writer.writerow((variable, ))
 
     def _create_cache_file_position_table(self):
         # Create cached data position table.
@@ -235,19 +308,32 @@ class DataSourceWithFileCache(DataSource):
                  cache_file_name_prefix='cache',
                  shuffle=False,
                  rng=None):
+        self._tempdir_created = False
         logger.info('Using DataSourceWithFileCache')
         super(DataSourceWithFileCache, self).__init__(shuffle=shuffle, rng=rng)
         self._cache_file_name_prefix = cache_file_name_prefix
         self._cache_dir = cache_dir
         logger.info('Cache Directory is {}'.format(self._cache_dir))
+
         self._cache_size = int(nnabla_config.get(
             'DATA_ITERATOR', 'data_source_file_cache_size'))
         logger.info('Cache size is {}'.format(self._cache_size))
+
+        self._num_of_threads = int(nnabla_config.get(
+            'DATA_ITERATOR', 'data_source_file_cache_num_of_threads'))
+        logger.info('Num of thread is {}'.format(self._num_of_threads))
+
+        self._cache_file_format = nnabla_config.get(
+            'DATA_ITERATOR', 'cache_file_format')
+        logger.info('Cache file format is {}'.format(self._cache_file_format))
+
+        self._thread_lock = threading.Lock()
+
         self._size = data_source._size
         self._variables = data_source.variables
         self._data_source = data_source
         self._generation = -1
-        self._cache_data = []
+        self._cache_positions = []
         self._total_cached_size = 0
         self._cache_file_names = []
         self._cache_file_order = []
@@ -261,7 +347,6 @@ class DataSourceWithFileCache(DataSource):
         self._order = list(range(self._size))
 
         # __enter__
-        self._tempdir_created = False
         if self._cache_dir is None:
             self._tempdir_created = True
             if nnabla_config.get('DATA_ITERATOR', 'data_source_file_cache_location') != '':
@@ -294,20 +379,21 @@ class DataSourceWithFileCache(DataSource):
             self._closed = True
 
     def reset(self):
-        if self._shuffle:
-            self._cache_file_order = list(
-                self._rng.permutation(self._cache_file_order))
-            for i in range(len(self._cache_file_data_orders)):
-                self._cache_file_data_orders[i] = list(
-                    self._rng.permutation(self._cache_file_data_orders[i]))
-            self._order = []
-            for i in self._cache_file_order:
-                self._order += self._cache_file_data_orders[i]
+        with self._thread_lock:
+            if self._shuffle:
+                self._cache_file_order = list(
+                    self._rng.permutation(self._cache_file_order))
+                for i in range(len(self._cache_file_data_orders)):
+                    self._cache_file_data_orders[i] = list(
+                        self._rng.permutation(self._cache_file_data_orders[i]))
+                self._order = []
+                for i in self._cache_file_order:
+                    self._order += self._cache_file_data_orders[i]
 
-        self._create_cache_file_position_table()
-        self._data_source.reset()
-        self._position = 0
-        self._generation += 1
+            self._create_cache_file_position_table()
+            self._data_source.reset()
+            self._position = 0
+            self._generation += 1
 
 
 class DataSourceWithMemoryCache(DataSource):
@@ -401,7 +487,6 @@ class SlicedDataSource(DataSource):
         super(SlicedDataSource, self).__init__(shuffle=shuffle, rng=rng)
 
         self._data_source = data_source
-        self._data_source.shuffle = False
         self._variables = data_source._variables[:]
         self._slice_start = slice_start
         self._slice_end = slice_end

@@ -27,6 +27,24 @@ def function_info_command(args):
             f.write(get_category_info_string())
 
 
+def dump_command(args):
+    if 'read_format' in args:
+        if args.read_format not in nnabla.utils.converter.formats.read:
+            print('Read format ({}) is not supported.'.format(args.read_format))
+            return
+    nnabla.utils.converter.dump_files(args, args.files)
+
+
+def nnb_template_command(args):
+    if 'read_format' in args:
+        if args.read_format not in nnabla.utils.converter.formats.read:
+            print('Read format ({}) is not supported.'.format(args.read_format))
+            return
+    if len(args.files) >= 2:
+        output = args.files.pop()
+        nnabla.utils.converter.nnb_template(args, args.files, output)
+
+
 def convert_command(args):
 
     if 'read_format' in args:
@@ -45,21 +63,47 @@ def convert_command(args):
 
 
 def add_convert_command(subparsers):
+    read_formats_string = ','.join(
+        nnabla.utils.converter.formats.read)
+
     # Function Info
     subparser = subparsers.add_parser('function_info')
     subparser.add_argument('dest', nargs='?', default=None,
                            help='destination filename')
     subparser.set_defaults(func=function_info_command)
 
+    # Dump Network.
+    subparser = subparsers.add_parser('dump')
+    subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
+                           help='File or directory name(s) to convert.')
+    # read option
+    # NNP
+    subparser.add_argument('-I', '--read-format', type=str, default='NNP',
+                           help='[read] read format. (one of [{}])'.format(read_formats_string))
+    subparser.add_argument('--nnp-expand-network', action='store_true',
+                           help='[read][NNP] expand network with repeat or recurrent.')
+    subparser.set_defaults(func=dump_command)
+
+    # Generate NNB template
+    subparser = subparsers.add_parser('nnb_template')
+    subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
+                           help='File or directory name(s) to convert.')
+    subparser.add_argument('-I', '--read-format', type=str, default='NNP',
+                           help='[read] read format. (one of [{}])'.format(read_formats_string))
+    subparser.add_argument('--nnp-expand-network', action='store_true',
+                           help='[read][NNP] expand network with repeat or recurrent.')
+    subparser.add_argument('-b', '--batch-size', type=int, default=-1,
+                           help='[export] overwrite batch size.')
+    subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
+                           help='Default type of variable')
+    subparser.set_defaults(func=nnb_template_command)
+
     # Conveter
     subparser = subparsers.add_parser('convert')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
-    # general option
     # read option
     # NNP
-    read_formats_string = ','.join(
-        nnabla.utils.converter.formats.read)
     subparser.add_argument('-I', '--read-format', type=str, default='NNP',
                            help='[read] read format. (one of [{}])'.format(read_formats_string))
     subparser.add_argument('--nnp-expand-network', action='store_true',
@@ -84,8 +128,6 @@ def add_convert_command(subparsers):
     # Both NNB and CSRC
     subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
                            help='Default type of variable')
-    subparser.add_argument('-G', '--settings-template', type=str, nargs=1, default=None,
-                           help='Get template for settings')
     subparser.add_argument('-s', '--settings', type=str, nargs=1, default=None,
                            help='Settings in YAML format file.')
 

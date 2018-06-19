@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import print_function
-
+from collections import OrderedDict
 from os.path import abspath, join, dirname, exists
-
 from utils.common import check_update, get_version
 from utils.type_conv import type_from_proto
-
+import time
 import yaml
-from collections import OrderedDict
 
 
 def represent_odict(dumper, instance):
@@ -213,7 +210,7 @@ def generate_version(template=None, rootdir=None, suffix=None):
     if suffix is not None:
         version = version + suffix
     generated = render_with_template(filename=template, template_kwargs=dict(
-        version=version, short_version=short_version))
+        version=version, short_version=short_version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime())))
     path_o = template.replace('.tmpl', '')
     check_update(path_o, generated, force=True)
 

@@ -169,7 +169,7 @@ class FileReader:
             return sorted(list)
         elif self._file_type == 'http':
             return None
-        return sorted(os.listdir(self._base_uri))
+        return [f for f in sorted(os.listdir(self._base_uri)) if os.path.splitext(f)[1].lower() == ".h5"]
 
 
 def load_image_imread(file, shape=None, max_range=1.0):
@@ -361,6 +361,7 @@ _load_functions = {
     '.png': load_image,
     '.gif': load_image,
     '.tif': load_image,
+    '.tiff': load_image,
     '.csv': load_csv,
     '.npy': load_npy}
 
@@ -389,8 +390,10 @@ def _download_hook(t):
 def get_data_home():
     import os
     d = os.path.expanduser("~/nnabla_data")
-    if not os.path.isdir(d):
+    try:
         os.makedirs(d)
+    except OSError:
+        pass  # python2 does not support exists_ok arg
     return d
 
 

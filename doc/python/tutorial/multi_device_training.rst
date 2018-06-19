@@ -88,7 +88,7 @@ Prepare the dependencies
     
     import nnabla as nn
     import nnabla.communicators as C
-    from nnabla.contrib.context import extension_context
+    from nnabla.ext_utils import get_extension_context
     import nnabla.functions as F
     from nnabla.initializer import (
         calc_uniform_lim_glorot,
@@ -104,13 +104,13 @@ Define the communicator for gradients exchange.
 
     %%px
     extension_module = "cudnn"
-    ctx = extension_context(extension_module)
+    ctx = get_extension_context(extension_module)
     comm = C.MultiProcessDataParalellCommunicator(ctx)
     comm.init()
     n_devices = comm.size
     mpi_rank = comm.rank
     device_id = mpi_rank
-    ctx = extension_context(extension_module, device_id=device_id)
+    ctx = get_extension_context(extension_module, device_id=device_id)
 
 Check different ranks are assigned to different devices
 

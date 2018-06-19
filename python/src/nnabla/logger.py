@@ -72,8 +72,10 @@ if nnabla_config.get('LOG', 'log_file_name') == '':
         from win32com.shell import shell, shellcon
         log_file_name_base = abspath(join(shell.SHGetFolderPath(
             0, shellcon.CSIDL_APPDATA, None, 0), 'NNabla', 'log', 'nnabla'))
-    if not exists(dirname(log_file_name_base)):
+    try:
         os.makedirs(dirname(log_file_name_base))
+    except OSError:
+        pass  # python2 does not support exists_ok arg
 
     suffix = '_{}.log'.format(os.getpid())
     num = 1

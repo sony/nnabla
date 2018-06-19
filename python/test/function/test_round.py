@@ -31,8 +31,8 @@ def ref_grad_round(x, dy):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_fixed_point_quantize_forward_backward(seed,
-                                               ctx, func_name):
+def test_round_forward_backward(seed,
+                                ctx, func_name):
     from nbla_test_utils import cap_ignore_region, \
         function_tester
     rng = np.random.RandomState(seed)

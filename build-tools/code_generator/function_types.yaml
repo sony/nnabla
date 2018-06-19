@@ -371,6 +371,12 @@ DepthwiseDeconvolution:
 Round:
   float: [float]
   half: [Half]
+Ceil:
+  float: [float]
+  half: [Half]
+Floor:
+  float: [float]
+  half: [Half]
 Sin:
   float: [float]
   half: [Half]

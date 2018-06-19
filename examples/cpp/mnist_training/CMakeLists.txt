@@ -1,0 +1,5 @@
+add_executable(mnist_training main.cpp)
+find_package(ZLIB REQUIRED)
+include_directories(${ZLIB_INCLUDE_DIRS})
+target_link_libraries(mnist_training nnabla nnabla_utils ${ZLIB_LIBRARIES})
+set_property(TARGET mnist_training PROPERTY CXX_STANDARD 11)

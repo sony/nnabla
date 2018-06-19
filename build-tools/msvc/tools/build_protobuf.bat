@@ -20,7 +20,7 @@ SET protobuf_include_dir=%protobuf_folder%\src
 SET protobuf_bin_folder=%protobuf_folder%\build-folder\%build_type%
 SET protobuf_lib_suffix=.lib
 IF [%build_type%] == [Debug] (
-  SET protobuf_lib_suffix=.dlib
+  SET protobuf_lib_suffix=d.lib
 )
 SET protobuf_library=%protobuf_bin_folder%\libprotobuf%protobuf_lib_suffix%
 SET protobuf_lite_library=%protobuf_bin_folder%\libprotobuf-lite%protobuf_lib_suffix%

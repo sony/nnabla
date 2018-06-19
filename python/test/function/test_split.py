@@ -37,3 +37,9 @@ def test_split_forward_backward(seed, axis, ctx, func_name):
     function_tester(rng, F.split, ref_split, inputs,
                     func_args=[axis], ctx=ctx, func_name=func_name,
                     atol_b=1e-2)
+
+
+def test_zero_value():
+    a = nn.Variable((1, 6, 0))
+    with pytest.raises(RuntimeError):
+        F.split(a, axis=1)

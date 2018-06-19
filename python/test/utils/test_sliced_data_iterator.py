@@ -43,7 +43,8 @@ def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_s
 
     all_data = []
     for slice_pos in range(num_of_slices):
-        sliced_di = di.slice(num_of_slices=num_of_slices, slice_pos=slice_pos)
+        sliced_di = di.slice(
+            rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos)
         sliced_data = {}
         while True:
             current_epoch = sliced_di.epoch
