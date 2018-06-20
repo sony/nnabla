@@ -55,6 +55,8 @@ message TrainingConfig {
   int64 iter_per_epoch = 2;
 
   bool save_best = 100;
+
+  int64 monitor_interval = 200;
 }
 
 message Network {
