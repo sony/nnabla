@@ -20,6 +20,13 @@ import nnabla.utils.load as nnload
 import numpy as np
 import pdb
 
+CAFFE2_AVAILABLE = False
+try:
+    import caffe2.python.onnx.backend as oc2
+    CAFFE2_AVAILABLE = True
+except:
+    pass
+
 ONNX_AVAILABLE = False
 try:
     import onnx
@@ -66,6 +73,7 @@ def run_executor(nn_net, exec_name):
 
 def convert_onnx_to_nnp_and_compare(
         tmpdir, onnx_dir, onnx_name, nnp_name, out_name, exec_name,
+        backend="caffe2",
         in_img=None, in_name="",
         compare_values=True, show_onnx=False, show_nnp=False,
         show_output=False, atol=1e-08,
@@ -74,13 +82,31 @@ def convert_onnx_to_nnp_and_compare(
     results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     backend_out = None
-    n = cntkf.Function.load(path, format=cntk.ModelFormat.ONNX)
-    cntk_out = None
-    if type(in_img) is np.ndarray:
-        cntk_out = n.eval({in_name: in_img})
+    if backend == "caffe2" and CAFFE2_AVAILABLE:
+        # Process onnx with caffe2 backend
+        model = onnx.load(path)
+        if show_onnx:
+            print(model)
+        c2out = None
+        rep = oc2.prepare(model)
+        if type(in_img) is np.ndarray:
+            c2out = rep.run([in_img])
+        else:
+            c2out = rep.run([])
+        # for k in rep.workspace.Blobs():
+        #     v = rep.workspace.FetchBlob(k)
+        #     print(k, v.shape)
+        backend_out = c2out[out_name]
+    elif backend == "cntk" and CNTK_AVAILABLE:
+        n = cntkf.Function.load(path, format=cntk.ModelFormat.ONNX)
+        cntk_out = None
+        if type(in_img) is np.ndarray:
+            cntk_out = n.eval({in_name: in_img})
+        else:
+            cntk_out = n.eval()
+        backend_out = cntk_out
     else:
-        cntk_out = n.eval()
-    backend_out = cntk_out
+        raise ValueError("Unknown backend specified")
 
     # Process onnx with naabla
     r = OnnxReader(path)
@@ -120,8 +146,10 @@ def convert_onnx_to_nnp_and_compare(
 
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
+        backend="caffe2",
         in_img=None, in_name="", compare_values=True, show_nnp=False,
-        show_onnx=False, show_output=False, atol=1e-08):
+        show_onnx=False, show_output=False, atol=1e-08,
+        export_onnx_path=None):
     """Convert specified NNP to ONNX and compare
     each results ran by CNTK and NNabla"""
     # Process nnp with nnabla
@@ -146,30 +174,43 @@ def convert_nnp_to_onnx_and_compare(
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), onnx_name)
     onnxex.export(p)
+    if export_onnx_path:
+        shutil.copy2(p, export_onnx_path)
 
     # read exported onnx and run network
     model = onnx.load(p)
     if show_onnx:
         print(model)
     # pdb.set_trace()
-
-    n = cntkf.Function.load(p, format=cntk.ModelFormat.ONNX)
-    cntk_out = None
-    if type(in_img) is np.ndarray:
-        cntk_out = n.eval({in_name: in_img})
+    backend_out = None
+    if backend == "caffe2" and CAFFE2_AVAILABLE:
+        # Process onnx with caffe2 backend
+        c2out = None
+        rep = oc2.prepare(model)
+        if type(in_img) is np.ndarray:
+            c2out = rep.run([in_img])
+        else:
+            c2out = rep.run([])
+        # for k in rep.workspace.Blobs():
+        #     v = rep.workspace.FetchBlob(k)
+        #     print(k, v.shape)
+        backend_out = c2out[out_name]
+    elif backend == "cntk" and CNTK_AVAILABLE:
+        n = cntkf.Function.load(p, format=cntk.ModelFormat.ONNX)
+        cntk_out = None
+        if type(in_img) is np.ndarray:
+            cntk_out = n.eval({in_name: in_img})
+        else:
+            cntk_out = n.eval()
+        backend_out = cntk_out
     else:
-        cntk_out = n.eval()
-
-    # for k in rep.workspace.Blobs():
-    #    v = rep.workspace.FetchBlob(k)
-    #    print(k, v.shape)
-    # Compare both naabla and caffe2 results
+        raise ValueError("Unknown backend specified")
+    # Compare both naabla and backend out results
     if show_output:
-        print(cntk_out, nnout)
-    assert cntk_out.shape == nnout.shape
+        print(backend_out, nnout)
+    assert backend_out.shape == nnout.shape
     if compare_values:
-        assert np.allclose(cntk_out, nnout, atol=atol)
-
+        assert np.allclose(backend_out, nnout, atol=atol)
 
 @pytest.fixture
 def nnp_fixture():
@@ -178,42 +219,39 @@ def nnp_fixture():
     nnabla.clear_parameters()
 
 
-@pytest.mark.skip(reason="CNTK output shape is strange.")
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "concat.onnx", "concat.nnp",
                                     "out_data_1", "exec_0", show_output=True)
 
 
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "concat.nnp", "concat.onnx",
                                     "out_data_1", "exec_0", show_output=True)
 
 
-@pytest.mark.skip(reason="CNTK does not support convolution without axes.")
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0", show_output=True)
 
 
-@pytest.mark.skip(reason="CNTK does not support convolution without axes.")
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0", show_output=True)
 
 
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     # We do not check if the values match because a dropout
     # output yield random results
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -223,8 +261,8 @@ def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     # We do not check if the values match because a dropout
     # output yield random results
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -234,105 +272,97 @@ def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "dropout_test.onnx", "dropout_test.nnp",
                                     "out_data_1", "exec_0", show_output=True)
 
 
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "dropout_test.nnp", "dropout_test.onnx",
                                     "out_data_1", "exec_0", show_output=True)
 
 
-@pytest.mark.skip(reason="CNTK output shape is strange.")
 def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0", show_output=True)
 
 
-@pytest.mark.skip(reason="CNTK output shape is strange.")
 def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0", show_output=True)
 
 
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
-    # We do not check if the values match because CNTK returns strange value.
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool.onnx", "maxpool.nnp",
-                                    "out_data_1", "exec_0", compare_values=False)
+                                    "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
-    # We do not check if the values match because CNTK returns strange value.
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool.nnp", "maxpool.onnx",
-                                    "out_data_1", "exec_0", compare_values=False)
+                                    "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
-    # We do not check if the values match because CNTK returns strange value.
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool_p0_s2_k3.onnx",
                                     "maxpool_p0_s2_k3.nnp",
-                                    "out_data_1", "exec_0", compare_values=False)
+                                    "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
-    # We do not check if the values match because CNTK returns strange value.
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool_p0_s2_k3.nnp",
                                     "maxpool_p0_s2_k3.onnx",
-                                    "out_data_1", "exec_0", compare_values=False)
+                                    "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
-    # We do not check if the values match because CNTK returns strange value.
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softmax.onnx", "softmax.nnp",
-                                    "out_data_1", "exec_0", compare_values=False)
+                                    "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
-        pytest.skip('CNTK does not installed.')
-    # We do not check if the values match because CNTK returns strange value.
+    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+        pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softmax.nnp", "softmax.onnx",
-                                    "out_data_1", "exec_0", compare_values=False)
+                                    "out_data_1", "exec_0")
 
 
 # def test_onnx_nnp_conversion_maxpool_p0_s2_k2(tmpdir, nnp_fixture):
