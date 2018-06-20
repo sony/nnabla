@@ -18,6 +18,7 @@
 #include <string>
 
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -78,6 +79,47 @@ vector<Executor::OutputVariable> Executor::get_output_variables() {
 }
 shared_ptr<Network> Executor::get_network() { return impl_->get_network(); }
 void Executor::execute() { impl_->execute(); }
+
+// ----------------------------------------------------------------------
+// Optimizer
+// ----------------------------------------------------------------------
+Optimizer::Optimizer(OptimizerImpl *impl)
+    : impl_(std::unique_ptr<OptimizerImpl>(impl)) {}
+
+string Optimizer::name() const { return impl_->name(); }
+string Optimizer::network_name() const { return impl_->network_name(); }
+const int Optimizer::update_interval() const {
+  return impl_->update_interval();
+}
+shared_ptr<Network> Optimizer::get_network() { return impl_->get_network(); }
+const float Optimizer::update(const int iter) { return impl_->update(iter); }
+
+// ----------------------------------------------------------------------
+// Monitor
+// ----------------------------------------------------------------------
+Monitor::Monitor(MonitorImpl *impl)
+    : impl_(std::unique_ptr<MonitorImpl>(impl)) {}
+
+string Monitor::name() const { return impl_->name(); }
+string Monitor::network_name() const { return impl_->network_name(); }
+const float Monitor::monitor_epoch() { return impl_->monitor_epoch(); }
+
+// ----------------------------------------------------------------------
+// TrainingConfig
+// ----------------------------------------------------------------------
+TrainingConfig::TrainingConfig(TrainingConfigImpl *impl)
+    : impl_(std::unique_ptr<TrainingConfigImpl>(impl)) {}
+
+const long long int TrainingConfig::max_epoch() const {
+  return impl_->max_epoch();
+}
+
+const long long int TrainingConfig::iter_per_epoch() const {
+  return impl_->iter_per_epoch();
+}
+
+const bool TrainingConfig::save_best() const { return impl_->save_best(); }
+
 // ----------------------------------------------------------------------
 // Nnp
 // ----------------------------------------------------------------------
@@ -111,7 +153,9 @@ bool Nnp::add(const string &filename) {
     int r = ARCHIVE_OK;
     r = archive_read_open_filename(a, filename.c_str(), 10240);
     assert(r == ARCHIVE_OK);
-
+    if (r != ARCHIVE_OK) {
+      return false;
+    }
     while ((r = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
       ssize_t size = (ssize_t)archive_entry_size(entry);
       char *buffer = new char[size];
@@ -132,12 +176,13 @@ bool Nnp::add(const string &filename) {
       } else if (ext == ".h5") {
         impl_->add_hdf5(buffer, size);
       }
-      free(buffer);
+      delete buffer;
     }
     archive_read_free(a);
     return true;
   } else {
-    // TODO: unsupported
+    std::cerr << "Error: No available file." << std::endl;
+    return false;
   }
 
   return false;
@@ -158,8 +203,27 @@ shared_ptr<Executor> Nnp::get_executor(const string &name) {
 vector<pair<string, VariablePtr>> Nnp::get_parameters() {
   return impl_->get_parameters();
 }
+
 bool Nnp::save_parameters(const string &filename) {
   return impl_->save_parameters(filename);
+}
+
+vector<string> Nnp::get_optimizer_names() {
+  return impl_->get_optimizer_names();
+}
+
+shared_ptr<Optimizer> Nnp::get_optimizer(const string &name) {
+  return impl_->get_optimizer(name);
+}
+
+vector<string> Nnp::get_monitor_names() { return impl_->get_monitor_names(); }
+
+shared_ptr<Monitor> Nnp::get_monitor(const string &name) {
+  return impl_->get_monitor(name);
+}
+
+shared_ptr<TrainingConfig> Nnp::get_training_config() {
+  return impl_->get_training_config();
 }
 }
 }
