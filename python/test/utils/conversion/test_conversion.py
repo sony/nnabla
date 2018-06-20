@@ -212,6 +212,7 @@ def convert_nnp_to_onnx_and_compare(
     if compare_values:
         assert np.allclose(backend_out, nnout, atol=atol)
 
+
 @pytest.fixture
 def nnp_fixture():
     # We need to remove all parameters for each test case
