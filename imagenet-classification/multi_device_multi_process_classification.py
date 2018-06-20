@@ -281,6 +281,6 @@ def train():
 if __name__ == '__main__':
     """
     Call this script with `mpirun` or `mpiexec`
-    $ mpirun -n 4 python multi_device_multi_process_classification.py -b 32 -a 2 -L 50 -l 0.1 -i 1000000 -v 10004 -j 1563 -s 10004 -D 300000 -D 600000 -D 900000 -T "The path of training cachefile" -V "The path of validation cache file"
+    $ mpirun -n 4 python multi_device_multi_process_classification.py -b 32 -a 2 -L 50 -l 0.1 -i 2000000 -v 20004 -j 1563 -s 20004 -D 600000 -D 1200000 -D 1800000 -T "The path of training cachefile" -V "The path of validation cache file"
     """
     train()
