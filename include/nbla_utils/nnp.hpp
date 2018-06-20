@@ -36,6 +36,9 @@ namespace nnp {
 class NnpImpl;
 class NetworkImpl;
 class ExecutorImpl;
+class OptimizerImpl;
+class MonitorImpl;
+class TrainingConfigImpl;
 
 // ----------------------------------------------------------------------
 // Network
@@ -218,6 +221,149 @@ public:
 };
 
 // ----------------------------------------------------------------------
+// Optimizer
+// ----------------------------------------------------------------------
+class Optimizer {
+  friend NnpImpl;
+  std::unique_ptr<OptimizerImpl> impl_;
+  Optimizer(OptimizerImpl *impl);
+
+public:
+  /** Optimizer name.
+  */
+  NBLA_API string name() const;
+
+  /** Network name.
+  */
+  NBLA_API string network_name() const;
+
+  /** Update interval.
+  */
+  NBLA_API const int update_interval() const;
+
+  /** Data variable container.
+
+  The string fields corresponds to DataVariable in proto definition.
+  */
+  struct DataVariable {
+    const string variable_name;
+    const string data_name;
+    const CgVariablePtr variable;
+  };
+
+  /** Generator variable container.
+
+  The string fields corresponds to GeneratorVariable in proto definition.
+  */
+  struct GeneratorVariable {
+    const string variable_name;
+    const string type;
+    const float multiplier;
+    const CgVariablePtr variable;
+  };
+
+  /** Loss variable container.
+
+  The string fields corresponds to LossVariable in proto definition.
+  */
+  struct LossVariable {
+    const string variable_name;
+    const CgVariablePtr variable;
+  };
+
+  /** Parameter variable container.
+
+  The string fields corresponds to ParameterVariable in proto definition.
+  */
+  struct ParameterVariable {
+    const string variable_name;
+    const float learning_rate_multiplier;
+    const CgVariablePtr variable;
+  };
+
+  /** Get the reference (shared_ptr) of Network object held in this.
+  */
+  NBLA_API shared_ptr<Network> get_network();
+
+  /** Execute update operations including forward, backward and update.
+  @param iter Number of iteration.
+  @retval loss value.
+   */
+  NBLA_API const float update(const int iter);
+};
+
+// ----------------------------------------------------------------------
+// Monitor
+// ----------------------------------------------------------------------
+class Monitor {
+  friend NnpImpl;
+  std::unique_ptr<MonitorImpl> impl_;
+  Monitor(MonitorImpl *impl);
+
+public:
+  /** Monitor name.
+  */
+  NBLA_API string name() const;
+
+  /** Network name.
+  */
+  NBLA_API string network_name() const;
+
+  /** Data variable container.
+
+  The string fields corresponds to DataVariable in proto definition.
+  */
+  struct DataVariable {
+    const string variable_name;
+    const string data_name;
+    const CgVariablePtr variable;
+  };
+
+  /** Monitor variable container.
+
+  The string fields corresponds to OutputVariable in proto definition.
+  */
+  struct MonitorVariable {
+    const string variable_name;
+    const string type;
+    const string data_name;
+    const float multiplier;
+    const CgVariablePtr variable;
+  };
+
+  /** Get the reference (shared_ptr) of Network object held in this.
+  */
+  shared_ptr<Network> get_network();
+
+  /** Execute monitor operations including forward process.
+  @retval monitored value.
+  */
+  NBLA_API const float monitor_epoch();
+};
+
+// ----------------------------------------------------------------------
+// TrainingConfig
+// ----------------------------------------------------------------------
+class TrainingConfig {
+  friend NnpImpl;
+  std::unique_ptr<TrainingConfigImpl> impl_;
+  TrainingConfig(TrainingConfigImpl *impl);
+
+public:
+  /** Max epoch
+  */
+  NBLA_API const long long int max_epoch() const;
+
+  /** Iteration per epoch
+  */
+  NBLA_API const long long int iter_per_epoch() const;
+
+  /** Save best
+  */
+  NBLA_API const bool save_best() const;
+};
+
+// ----------------------------------------------------------------------
 // Nnp
 // ----------------------------------------------------------------------
 
@@ -302,7 +448,48 @@ public:
    */
   NBLA_API shared_ptr<Executor> get_executor(const string &name);
 
+  /** Get Optimizer name list from added files (nnp, nntxt etc.).
+  @retval A vector of Optimizer instance names.
+  */
+  NBLA_API vector<string> get_optimizer_names();
+
+  /** Get Optimizer object from added files (nnp, nntxt etc.).
+
+  @param[in] name Optimizer name in loaded files (nnp, nntxt etc.)
+
+  @retval A shared pointer of a Optimizer instance.
+  */
+  NBLA_API shared_ptr<Optimizer> get_optimizer(const string &name);
+
+  /** Get Monitor name list from added files (nnp, nntxt etc.).
+  @retval A vector of Monitor instance names.
+  */
+  NBLA_API vector<string> get_monitor_names();
+
+  /** Get Monitor object from added files (nnp, nntxt etc.).
+
+  @param[in] name Monitor name in loaded files (nnp, nntxt etc.)
+
+  @retval A shared pointer of a Monitor instance.
+  */
+  NBLA_API shared_ptr<Monitor> get_monitor(const string &name);
+
+  /** Get TrainingConfig object from added files (nnp, nntxt etc.).
+
+  @retval A shared pointer of a TrainingConfig instance.
+  */
+  NBLA_API shared_ptr<TrainingConfig> get_training_config();
+
+  /** Get parameters
+
+  @retval A vector of string and variable pointer pairs.
+  */
   NBLA_API vector<pair<string, VariablePtr>> get_parameters();
+
+  /** Save parameters
+
+  @param[in] name output binary filename (.protobuf)
+  */
   NBLA_API bool save_parameters(const string &filename);
 };
 }

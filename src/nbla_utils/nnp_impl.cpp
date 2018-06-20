@@ -159,6 +159,7 @@ int NetworkImpl::batch_size() const {
   assert(network_proto_.batch_size() > 0);
   return network_proto_.batch_size();
 }
+
 // ----------------------------------------------------------------------
 // ExecutorImpl
 // ----------------------------------------------------------------------
@@ -256,17 +257,24 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   err = H5Dread(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   if (err >= 0) {
     Shape_t shape(dims, dims + rank);
-    // TODO: Set need_grad.
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape);
+    bool need_grad = false; // default need_grad
+    if (H5Aexists(did, "need_grad")) {
+      hid_t att = H5Aopen(did, "need_grad", H5P_DEFAULT);
+      H5Aread(att, H5T_NATIVE_HBOOL, &need_grad);
+      H5Aclose(att);
+    }
+
+    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, need_grad);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(kCpuCtx);
     for (int i = 0; i < size / sizeof(float); i++) {
       data[i] = buffer[i];
     }
     parameters_.insert({variable_name, cg_v});
+    delete buffer;
     return true;
   }
-  return false;
+  delete buffer;
   NBLA_ERROR(error_code::not_implemented, "HDF5 is not enabled when build.");
   return false;
 }
@@ -297,7 +305,9 @@ bool NnpImpl::parse_hdf5_group(hid_t gid) {
         case H5G_DATASET: {
           hid_t did = H5Dopen(gid, name, H5P_DEFAULT);
           std::string dataset_name(group_name);
-          dataset_name += "/" + std::string(name);
+          if (dataset_name != "/")
+            dataset_name += "/";
+          dataset_name += std::string(name);
           parse_hdf5_dataset(dataset_name, did);
           H5Dclose(did);
           break;
@@ -751,6 +761,75 @@ bool NnpImpl::save_parameters(const string &filename) {
   NBLA_LOG_INFO("Saved paremeters to {}", filename);
 
   return true;
+}
+
+vector<string> NnpImpl::get_optimizer_names() {
+  vector<string> list;
+  for (auto it = proto_->optimizer().begin(); it != proto_->optimizer().end();
+       it++) {
+    list.push_back(it->name());
+  }
+  return list;
+}
+
+shared_ptr<Optimizer> NnpImpl::get_optimizer(const string &name) {
+  for (auto it = proto_->optimizer().begin(); it != proto_->optimizer().end();
+       it++) {
+    if (it->name() != name) {
+      continue;
+    }
+    return shared_ptr<Optimizer>(new Optimizer(
+        new OptimizerImpl(ctx_, *it, get_network(it->network_name()),
+                          get_dataset(it->dataset_name()))));
+  }
+  NBLA_ERROR(error_code::value, "Optimizer `%s` not found", name.c_str());
+}
+
+vector<string> NnpImpl::get_dataset_names() {
+  vector<string> list;
+  for (auto it = proto_->dataset().begin(); it != proto_->dataset().end();
+       it++) {
+    list.push_back(it->name());
+  }
+  return list;
+}
+
+shared_ptr<DatasetImpl> NnpImpl::get_dataset(const string &name) {
+  for (auto it = proto_->dataset().begin(); it != proto_->dataset().end();
+       it++) {
+    if (it->name() != name) {
+      continue;
+    }
+    return shared_ptr<DatasetImpl>(new DatasetImpl(*it));
+  }
+  NBLA_ERROR(error_code::value, "Dataset `%s` not found", name.c_str());
+}
+
+vector<string> NnpImpl::get_monitor_names() {
+  vector<string> list;
+  for (auto it = proto_->monitor().begin(); it != proto_->monitor().end();
+       it++) {
+    list.push_back(it->name());
+  }
+  return list;
+}
+
+shared_ptr<Monitor> NnpImpl::get_monitor(const string &name) {
+  for (auto it = proto_->monitor().begin(); it != proto_->monitor().end();
+       it++) {
+    if (it->name() != name) {
+      continue;
+    }
+    return shared_ptr<Monitor>(
+        new Monitor(new MonitorImpl(ctx_, *it, get_network(it->network_name()),
+                                    get_dataset(it->dataset_name()))));
+  }
+  NBLA_ERROR(error_code::value, "Monitor `%s` not found", name.c_str());
+}
+
+shared_ptr<TrainingConfig> NnpImpl::get_training_config() {
+  return shared_ptr<TrainingConfig>(
+      new TrainingConfig(new TrainingConfigImpl(proto_->training_config())));
 }
 }
 }
