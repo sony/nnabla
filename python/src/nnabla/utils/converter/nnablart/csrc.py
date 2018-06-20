@@ -28,6 +28,7 @@ from .utils import create_nnabart_info
 
 MAX_VARIDAIC_NUM = 5
 
+
 class CsrcExporter:
 
     def __init__(self, nnp, batch_size):
