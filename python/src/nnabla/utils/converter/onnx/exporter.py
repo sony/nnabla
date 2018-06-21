@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from nnabla.utils import nnabla_pb2
 import nnabla.logger as logger
 import numpy as np
 try:
@@ -57,6 +58,7 @@ nnabla_function_type_to_onnx_optype = {
     "Mean": "ReduceMean",
     "Min": "ReduceMin",
     "Max": "ReduceMax",
+    "Prod": "ReduceProd",
     "Mul2": "Mul",
     "Div2": "Div",
     "Pow2": "Pow",
@@ -332,6 +334,10 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         mp = func.min_param
         set_reduction_attrs(n, mp)
         nl.append(n)
+    elif func.type == "Prod":
+        pp = func.prod_param
+        set_reduction_attrs(n, pp)
+        nl.append(n)
     elif func.type == "BroadcastTo":
         # BroadcastTo conversion only works when the
         # broadcasted buffer is used as second input for the following:
@@ -497,7 +503,22 @@ def convert_to_nodes(func, variables, input_types, output_types, broadcast_targe
         # separate pad values to match ONNX format
         # (S0,E0,S1,E1) => (S0,S1,E0,E1)
         dim = len(pp.pad_width) // 2
-        zero_dim_num = 4-dim  # assuming 4D input
+        # If we can get the dimension of the input buffer,
+        # we get it here. If we cannot, we are assuming 4D input
+        in_name = func.input[0]
+        in_var = [v for v in variables if v.name == in_name]
+        in_dim = 4
+        if len(in_var) == 1 and len(in_var[0].shape.dim) > 0:
+            # Found variable with valid shape.
+            # If the shape dimension is zero, it means
+            # that is an intermediate buffer so we can't get
+            # the exact dimension at this point
+            # (thus assuming 4D input).
+            in_dim = len(in_var[0].shape.dim)
+        elif len(in_var) > 1:
+            raise ValueError("More than one buffer with"
+                             " the same buffer name found.")
+        zero_dim_num = in_dim-dim
         it = iter(pp.pad_width)
         # We need to fill empty dimensions with zero padding
         # (at least this is what Caffe2 expects)
@@ -582,7 +603,21 @@ def get_tensor_type(name, type_dict):
         return TensorProto.FLOAT
 
 
-def nnp_model_to_onnx_graph(graph, nnp):
+def replace_negative_size_with_batch_size(shape, batch_size):
+    """Replace all dimensions with negative values to batch size"""
+    sl = []
+    for d in shape.dim:
+        if d < 0:
+            # Negative size means batch size
+            sl.append(batch_size)
+        else:
+            sl.append(d)
+    out_shape = nnabla_pb2.Shape()
+    out_shape.dim.extend(sl)
+    return out_shape
+
+
+def nnp_model_to_onnx_graph(graph, nnp, batch_size):
     if len(nnp.executor) != 1:
         raise ValueError(
             "NNP with only a single executor is currently supported")
@@ -597,10 +632,16 @@ def nnp_model_to_onnx_graph(graph, nnp):
             "Executor network [{}] does not found in this NNP.".format(exe.network_name))
 
     graph.name = net.name
+    # Determine batch size.
+    # If it is given, we use the given value.
+    # If not, we use the value stored in the network
+    bs = batch_size
+    if bs < 0:
+        bs = net.batch_size
     # store all variable shape info to use later
     var_dict = {}
     for v in net.variable:
-        var_dict[v.name] = v.shape
+        var_dict[v.name] = replace_negative_size_with_batch_size(v.shape, bs)
 
     # Store the names and type of all input/output
     # tensor that must have a type other than float.
@@ -662,7 +703,7 @@ def nnp_model_to_onnx_graph(graph, nnp):
     convert_parameter_shape(graph)
 
 
-def nnp_model_to_onnx_protobuf(nnp):
+def nnp_model_to_onnx_protobuf(nnp, batch_size):
     mp = ModelProto()
     mp.ir_version = ONNX_IR_VERSION
     op = mp.opset_import.add()
@@ -674,15 +715,16 @@ def nnp_model_to_onnx_protobuf(nnp):
     mp.producer_name = PRODUCER_NAME
     mp.producer_version = PRODUCER_VERSION
     mp.domain = NNABLA_DOMAIN
-    nnp_model_to_onnx_graph(mp.graph, nnp)
+    nnp_model_to_onnx_graph(mp.graph, nnp, batch_size)
     return mp
 
 
 class OnnxExporter:
-    def __init__(self, nnp):
+    def __init__(self, nnp, batch_size):
         self._nnp = nnp.protobuf
+        self._batch_size = batch_size
 
     def export(self, file_path):
-        model_proto = nnp_model_to_onnx_protobuf(self._nnp)
+        model_proto = nnp_model_to_onnx_protobuf(self._nnp, self._batch_size)
         with open(file_path, "wb") as f:
             f.write(model_proto.SerializeToString())

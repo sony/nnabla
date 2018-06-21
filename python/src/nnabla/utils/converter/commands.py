@@ -54,7 +54,7 @@ def _export_from_nnp(args, nnp, output):
         CsrcExporter(nnp, args.batch_size).export(output)
 
     elif output_ext == '.onnx':
-        OnnxExporter(nnp).export(output)
+        OnnxExporter(nnp, args.batch_size).export(output)
     else:
         print('Output file ({}) is not supported or output directory does not exist.'.format(
             output_ext))
