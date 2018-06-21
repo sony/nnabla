@@ -405,11 +405,21 @@ def _context(proto):
                             for x in proto.compute_backend.split('|')]
         if 'cuda' in backends:
             if 'cudnn' in compute_backends:
-                import nnabla_ext.cudnn
-                ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+                try:
+                    import nnabla_ext.cudnn
+                    ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+                except ImportError:
+                    logger.warn('Fallback to CPU context.')
+                    import nnabla_ext.cpu
+                    ctx = nnabla_ext.cpu.context()
             elif 'default' in compute_backends:
-                import nnabla_ext.cuda
-                ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+                try:
+                    import nnabla_ext.cuda
+                    ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+                except ImportError:
+                    logger.warn('Fallback to CPU context.')
+                    import nnabla_ext.cpu
+                    ctx = nnabla_ext.cpu.context()
             else:
                 raise ValueError(
                     'Invalid compute_backend {}'.format(proto.compute_backend))
