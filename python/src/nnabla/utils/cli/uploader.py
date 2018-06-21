@@ -238,7 +238,8 @@ def upload_command(args):
 def add_upload_command(subparsers):
     # Uploader
     from nnabla.utils.cli.uploader import upload_command
-    subparser = subparsers.add_parser('upload')
+    subparser = subparsers.add_parser(
+        'upload', help='Upload dataset to Neural Network Console.')
     subparser.add_argument(
         '-e', '--endpoint', help='set endpoint uri', type=str)
     subparser.add_argument('token', help='token for upload')
@@ -254,7 +255,8 @@ def create_tar_command(args):
 def add_create_tar_command(subparsers):
     # Create TAR for uploader
     from nnabla.utils.cli.uploader import create_tar_command
-    subparser = subparsers.add_parser('create_tar')
+    subparser = subparsers.add_parser(
+        'create_tar', help='Create tar file for Neural Network COnsole.')
     subparser.add_argument('source', help='CSV dataset')
     subparser.add_argument('destination', help='TAR filename')
     subparser.set_defaults(func=create_tar_command)

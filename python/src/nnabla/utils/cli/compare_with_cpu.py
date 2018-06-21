@@ -281,7 +281,8 @@ def compare_with_cpu_command(args):
 
 def add_compare_with_cpu_command(subparsers):
     # Compare with CPU
-    subparser = subparsers.add_parser('compare_with_cpu')
+    subparser = subparsers.add_parser(
+        'compare_with_cpu', help='Compare performance between two nntxt.')
     subparser.add_argument(
         '-c', '--config', help='path to nntxt', required=True)
     subparser.add_argument(

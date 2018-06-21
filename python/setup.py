@@ -35,12 +35,11 @@ install_requires = setup_requires + [
     'h5py',
     'onnx',
     'protobuf',
-    'requests',
     'pyyaml',
+    'requests',
     'scikit-image',
     'scipy',
     'tqdm',
-    'onnx',
 ]
 
 

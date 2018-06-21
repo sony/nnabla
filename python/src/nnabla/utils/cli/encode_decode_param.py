@@ -95,7 +95,8 @@ def encode_param_command(args, **kwargs):
 
 def add_decode_param_command(subparsers):
     # Decode param
-    subparser = subparsers.add_parser('decode_param')
+    subparser = subparsers.add_parser(
+        'decode_param', help='Decode parameter to plain text.')
     subparser.add_argument(
         '-p', '--param', help='path to parameter file', required=False)
     subparser.add_argument(
@@ -105,7 +106,8 @@ def add_decode_param_command(subparsers):
 
 def add_encode_param_command(subparsers):
     # Encode param
-    subparser = subparsers.add_parser('encode_param')
+    subparser = subparsers.add_parser(
+        'encode_param', help='Encode plain text to parameter format.')
     subparser.add_argument(
         '-i', '--indir', help='input directory', required=True)
     subparser.add_argument(

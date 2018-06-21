@@ -236,7 +236,8 @@ def profile_command(args):
 
 def add_profile_command(subparsers):
     # Profile
-    subparser = subparsers.add_parser('profile')
+    subparser = subparsers.add_parser(
+        'profile', help='Profiling performance with NNP.')
     subparser.add_argument(
         '-c', '--config', help='path to nntxt', required=True)
     subparser.add_argument(

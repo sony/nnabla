@@ -298,7 +298,8 @@ def infer_command(args):
 
 def add_infer_command(subparsers):
     # Infer
-    subparser = subparsers.add_parser('infer')
+    subparser = subparsers.add_parser(
+        'infer', help='Do inference with NNP and binary data file input.')
     subparser.add_argument(
         '-c', '--config', help='path to nntxt', required=True)
     subparser.add_argument(
@@ -315,7 +316,8 @@ def add_infer_command(subparsers):
 
 def add_forward_command(subparsers):
     # Forward
-    subparser = subparsers.add_parser('forward')
+    subparser = subparsers.add_parser(
+        'forward', help='Do evaluation with NNP and test dataset.')
     subparser.add_argument(
         '-c', '--config', help='path to nntxt', required=True)
     subparser.add_argument(

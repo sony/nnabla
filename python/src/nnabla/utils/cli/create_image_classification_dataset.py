@@ -175,8 +175,8 @@ def create_image_classification_dataset_command(args):
 
 def add_create_image_classification_dataset_command(subparsers):
     # Create image classification dataset
-    subparser = subparsers.add_parser(
-        'create_image_classification_dataset')
+    subparser = subparsers.add_parser('create_image_classification_dataset',
+                                      help='Create dataset from image files.')
     subparser.add_argument(
         '-i', '--sourcedir', help='source directory with directories for each class', required=True)
     subparser.add_argument(
@@ -194,9 +194,9 @@ def add_create_image_classification_dataset_command(subparsers):
     subparser.add_argument(
         '-f1', '--file1', help='output file name 1', required=True)
     subparser.add_argument(
-        '-r1', '--ratio1', help='output file ratio(%) 1')
+        '-r1', '--ratio1', help='output file ratio(%%) 1')
     subparser.add_argument(
         '-f2', '--file2', help='output file name 2')
     subparser.add_argument(
-        '-r2', '--ratio2', help='output file ratio(%) 2')
+        '-r2', '--ratio2', help='output file ratio(%%) 2')
     subparser.set_defaults(func=create_image_classification_dataset_command)

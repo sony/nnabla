@@ -260,7 +260,7 @@ def train_command(args):
 
 def add_train_command(subparsers):
     # Train
-    subparser = subparsers.add_parser('train')
+    subparser = subparsers.add_parser('train', help='Training with NNP.')
     subparser.add_argument(
         '-c', '--config', help='path to nntxt', required=True)
     subparser.add_argument(

@@ -66,7 +66,8 @@ def conv_dataset_command(args):
 
 def add_conv_dataset_command(subparsers):
     # Convert dataset
-    subparser = subparsers.add_parser('conv_dataset')
+    subparser = subparsers.add_parser(
+        'conv_dataset', help='Convert CSV dataset to cache.')
     subparser.add_argument('-F', '--force', action='store_true',
                            help='force overwrite destination', required=False)
     subparser.add_argument(

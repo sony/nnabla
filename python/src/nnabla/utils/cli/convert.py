@@ -67,13 +67,15 @@ def add_convert_command(subparsers):
         nnabla.utils.converter.formats.read)
 
     # Function Info
-    subparser = subparsers.add_parser('function_info')
+    subparser = subparsers.add_parser(
+        'function_info', help='Output function info.')
     subparser.add_argument('dest', nargs='?', default=None,
                            help='destination filename')
     subparser.set_defaults(func=function_info_command)
 
     # Dump Network.
-    subparser = subparsers.add_parser('dump')
+    subparser = subparsers.add_parser(
+        'dump', help='Dump network with supported format.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
     # read option
@@ -85,7 +87,8 @@ def add_convert_command(subparsers):
     subparser.set_defaults(func=dump_command)
 
     # Generate NNB template
-    subparser = subparsers.add_parser('nnb_template')
+    subparser = subparsers.add_parser(
+        'nnb_template', help='Generate NNB config file template.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
     subparser.add_argument('-I', '--read-format', type=str, default='NNP',
@@ -99,7 +102,7 @@ def add_convert_command(subparsers):
     subparser.set_defaults(func=nnb_template_command)
 
     # Conveter
-    subparser = subparsers.add_parser('convert')
+    subparser = subparsers.add_parser('convert', help='File format converter.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
     # read option

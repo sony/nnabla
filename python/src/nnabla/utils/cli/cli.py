@@ -25,7 +25,8 @@ def version_command(args):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Command line interface ' +
+                                     'for NNabla(Version {}, Build {})'.format(nnabla.__version__, nnabla.__build_number__))
     subparsers = parser.add_subparsers()
 
     from nnabla.utils.cli.train import add_train_command
@@ -57,20 +58,15 @@ def main():
     from nnabla.utils.cli.uploader import add_create_tar_command
     add_create_tar_command(subparsers)
 
-    from nnabla.utils.cli.extract import add_extract_command
-    add_extract_command(subparsers)
-
     from nnabla.utils.cli.convert import add_convert_command
     add_convert_command(subparsers)
 
     # Version
-    subparser = subparsers.add_parser('version')
+    subparser = subparsers.add_parser(
+        'version', help='Print version and build number.')
     subparser.set_defaults(func=version_command)
 
     args = parser.parse_args()
-
-    print('NNabla command line interface (Version {}, Build {})'.format(
-        nnabla.__version__, nnabla.__build_number__))
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
