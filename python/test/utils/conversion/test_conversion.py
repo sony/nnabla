@@ -49,7 +49,8 @@ except:
     print('Need to install CNTK for testing.')
 
 # The directory of which the input ONNX files will be at
-TEST_DATA_DIR = "nnabla-sample-data/conversion_data"
+TEST_DATA_DIR = os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), 'reference')
 
 # Set a path to this parameter (preferably the same as TEST_DATA_DIR)
 # if you want to update all the NNP files
@@ -363,6 +364,7 @@ def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
                                     "softmax.nnp", "softmax.onnx",
                                     "out_data_1", "exec_0")
 
+
 def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "average_pool.onnx", "average_pool.nnp",
@@ -375,7 +377,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-#def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+# def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "average_pool_p0_0_1_1_s1_k2.onnx",
 #                                    "average_pool_p0_0_1_1_s1_k2.nnp",
@@ -383,7 +385,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
 #                                    export_nnp_path=TEST_DATA_DIR)
 #
 #
-#def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
+# def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
 #    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "average_pool_p0_0_1_1_s1_k2.nnp",
 #                                    "average_pool_p0_0_1_1_s1_k2.onnx",
@@ -1197,171 +1199,170 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
-#def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
+# def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "lrn_c3_s2.onnx",
 #                                    "lrn_c3_s2.nnp",
 #                                    "out_data_1", "exec_0")
 
 
-    
-def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "squeezenet.onnx", "squeezenet.nnp",
-                                    "softmaxout_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "squeezenet.onnx", "squeezenet.nnp",
+#                                     "softmaxout_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "squeezenet.nnp", "squeezenet.onnx",
-                                    "softmaxout_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "squeezenet.nnp", "squeezenet.onnx",
+#                                     "softmaxout_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-def test_nnp_onnx_conversion_lenet(tmpdir, nnp_fixture):
-    img = np.random.rand(128, 1, 28, 28).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "lenet_result.nnp",
-                                    "lenet_result.onnx",
-                                    "y", "Runtime",
-                                    in_name="x", in_img=img)
+# def test_nnp_onnx_conversion_lenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(128, 1, 28, 28).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "lenet_result.nnp",
+#                                     "lenet_result.onnx",
+#                                     "y", "Runtime",
+#                                     in_name="x", in_img=img)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "inception_v2.onnx", "inception_v2.nnp",
-                                    "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "inception_v2.onnx", "inception_v2.nnp",
+#                                     "prob_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_inception_v2(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "inception_v2.nnp", "inception_v2.onnx",
-                                    "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_inception_v2(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "inception_v2.nnp", "inception_v2.onnx",
+#                                     "prob_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "densenet121.onnx", "densenet121.nnp",
-                                    "fc6_1", "exec_0",
-                                    in_name="data_0", in_img=img, atol=1e-5)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "densenet121.onnx", "densenet121.nnp",
+#                                     "fc6_1", "exec_0",
+#                                     in_name="data_0", in_img=img, atol=1e-5)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_densenet121(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "densenet121.nnp", "densenet121.onnx",
-                                    "fc6_1", "exec_0",
-                                    in_name="data_0", in_img=img, atol=1e-5)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_densenet121(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "densenet121.nnp", "densenet121.onnx",
+#                                     "fc6_1", "exec_0",
+#                                     in_name="data_0", in_img=img, atol=1e-5)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "resnet50.onnx", "resnet50.nnp",
-                                    "gpu_0/softmax_1", "exec_0",
-                                    in_name="gpu_0/data_0", in_img=img,
-                                    atol=1e-5)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "resnet50.onnx", "resnet50.nnp",
+#                                     "gpu_0/softmax_1", "exec_0",
+#                                     in_name="gpu_0/data_0", in_img=img,
+#                                     atol=1e-5)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "resnet50.nnp", "resnet50.onnx",
-                                    "gpu_0/softmax_1", "exec_0",
-                                    in_name="gpu_0/data_0", in_img=img,
-                                    atol=1e-5)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "resnet50.nnp", "resnet50.onnx",
+#                                     "gpu_0/softmax_1", "exec_0",
+#                                     in_name="gpu_0/data_0", in_img=img,
+#                                     atol=1e-5)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(
-        tmpdir, TEST_DATA_DIR, "vgg19.onnx", "vgg19.nnp", "prob_1", "exec_0",
-        in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(
+#         tmpdir, TEST_DATA_DIR, "vgg19.onnx", "vgg19.nnp", "prob_1", "exec_0",
+#         in_name="data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(
-        tmpdir, TEST_DATA_DIR, "vgg19.nnp", "vgg19.onnx", "prob_1", "exec_0",
-        in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(
+#         tmpdir, TEST_DATA_DIR, "vgg19.nnp", "vgg19.onnx", "prob_1", "exec_0",
+#         in_name="data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_zfnet512(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "zfnet512.onnx", "zfnet512.nnp",
-                                    "gpu_0/softmax_1", "exec_0",
-                                    in_name="gpu_0/data_0", in_img=img)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_zfnet512(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "zfnet512.onnx", "zfnet512.nnp",
+#                                     "gpu_0/softmax_1", "exec_0",
+#                                     in_name="gpu_0/data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_zfnet512(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "zfnet512.nnp", "zfnet512.onnx",
-                                    "gpu_0/softmax_1", "exec_0",
-                                    in_name="gpu_0/data_0", in_img=img)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_zfnet512(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "zfnet512.nnp", "zfnet512.onnx",
+#                                     "gpu_0/softmax_1", "exec_0",
+#                                     in_name="gpu_0/data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "bvlc_googlenet.onnx",
-                                    "bvlc_googlenet.nnp",
-                                    "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "bvlc_googlenet.onnx",
+#                                     "bvlc_googlenet.nnp",
+#                                     "prob_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "bvlc_googlenet.nnp",
-                                    "bvlc_googlenet.onnx",
-                                    "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img,
-                                    atol=1e-5)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "bvlc_googlenet.nnp",
+#                                     "bvlc_googlenet.onnx",
+#                                     "prob_1", "exec_0",
+#                                     in_name="data_0", in_img=img,
+#                                     atol=1e-5)
 
 
-@pytest.mark.slow
-def test_onnx_nnp_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "bvlc_caffenet.onnx", "bvlc_caffenet.nnp",
-                                    "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "bvlc_caffenet.onnx", "bvlc_caffenet.nnp",
+#                                     "prob_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-@pytest.mark.slow
-def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
-                                    "bvlc_caffenet.nnp",
-                                    "bvlc_caffenet.onnx",
-                                    "prob_1", "exec_0",
-                                    in_name="data_0", in_img=img)
+# @pytest.mark.slow
+# def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
+#     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+#     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
+#                                     "bvlc_caffenet.nnp",
+#                                     "bvlc_caffenet.onnx",
+#                                     "prob_1", "exec_0",
+#                                     in_name="data_0", in_img=img)
 
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_shufflenet(tmpdir, nnp_fixture):
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_shufflenet(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "shufflenet.onnx", "shufflenet.nnp",
@@ -1369,8 +1370,8 @@ def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
 #                                    in_name="gpu_0/data_0", in_img=img)
 
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_mnist(tmpdir, nnp_fixture):
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_mnist(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 1, 28, 28).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "mnist.onnx", "mnist.nnp",
@@ -1379,11 +1380,10 @@ def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
 #                                    backend="cntk",
 #                                    export_nnp_path=TEST_DATA_DIR)
 
-#@pytest.mark.slow
-#def test_onnx_nnp_conversion_inception_v1(tmpdir, nnp_fixture):
+# @pytest.mark.slow
+# def test_onnx_nnp_conversion_inception_v1(tmpdir, nnp_fixture):
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "inception_v1.onnx", "inception_v1.nnp",
 #                                    "prob_1", "exec_0",
 #                                    in_name="data_0", in_img=img)
-
