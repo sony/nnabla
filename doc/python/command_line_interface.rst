@@ -70,7 +70,7 @@ Profile
                             path to nntxt
       -o OUTDIR, --outdir OUTDIR
                             output directory
-                        
+
 
 Forward
 -------
