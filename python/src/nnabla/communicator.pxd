@@ -19,7 +19,7 @@ from libcpp.string cimport string
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 cimport _variable
-from _variable cimport CVariable, CContext, dtypes
+from _variable cimport CVariable, CContext, dtypes, CommunicatorBackwardCallbackPtr
 from _nd_array cimport CNdArray
 
 
@@ -47,6 +47,8 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         void allreduce(cpp_bool division, cpp_bool inplace) nogil except +
         void all_reduce(const vector[shared_ptr[CNdArray]] & ndarray_list, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
         void all_reduce(shared_ptr[CNdArray] data, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
+        CommunicatorBackwardCallbackPtr all_reduce_callback(const vector[shared_ptr[CNdArray]] & ndarray_list, size_t pack_size, cpp_bool division, const string & group) except +
+        CommunicatorBackwardCallbackPtr all_reduce_callback(shared_ptr[CNdArray] data, size_t pack_size, cpp_bool division, const string & group) except +
         void reduce_scatter(const vector[shared_ptr[CNdArray]] & ndarray_list, shared_ptr[CNdArray] ndarray, cpp_bool division, const string & group) nogil except +
         void bcast(const vector[shared_ptr[CNdArray]] & ndarray_list, int src, cpp_bool inplace, const string & group) nogil except +
         void bcast(shared_ptr[CNdArray] ndarray, int src, cpp_bool inplace, const string & group) nogil except +

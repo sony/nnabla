@@ -44,6 +44,9 @@ cdef extern from "nbla/variable.hpp" namespace "nbla":
 cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
     cdef cppclass CgFunction
     ctypedef shared_ptr[CgFunction] CgFunctionPtr
+    cdef cppclass CCommunicatorBackwardCallback "nbla::CommunicatorBackwardCallback":
+        CCommunicatorBackwardCallback() except+
+    ctypedef shared_ptr[CCommunicatorBackwardCallback] CommunicatorBackwardCallbackPtr
     cdef cppclass CgVariable:
         CgVariable(cpp_bool need_grad) except+
         CgVariable(Shape_t shape, cpp_bool need_grad) except+
@@ -54,7 +57,7 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         int rank() const
         void set_rank(int rank) except+
         void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad) nogil except+
-        void backward(NdArrayPtr grad, cpp_bool clear_buffer) nogil except+
+        void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks) nogil except+
         void set_persistent(cpp_bool b)
         cpp_bool persistent()
     ctypedef shared_ptr[CgVariable] CgVariablePtr
@@ -81,6 +84,12 @@ cdef class Context:
     cdef public str array_class
     cdef public str device_id
 
+
+cdef class CommunicatorBackwardCallback:
+    cdef CommunicatorBackwardCallbackPtr var
+
+    @staticmethod
+    cdef create_from_ccallback(CommunicatorBackwardCallbackPtr varsp)
 
 cdef class Variable:
     cdef CgVariablePtr var

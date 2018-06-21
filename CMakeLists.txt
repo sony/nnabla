@@ -279,10 +279,12 @@ if(BUILD_PYTHON_PACKAGE)
       endif()
     endif()
     
+    set(NBLA_LIBRARY_NAME ${CPPLIB_LIBRARY})  # No one sets if !BUILD_CPP_LIB
     set(CPPLIB_LIBRARY_NAME "nnabla")
     set(CPPLIB_TARGET_FILE ${CPPLIB_LIBRARY})
     get_filename_component(CPPLIB_TARGET_FILE_NAME ${CPPLIB_TARGET_FILE} NAME)
-    
+
+    # TODO: Debug mode in windows
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.build-wheel.in
       ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg)
   endif()
@@ -305,7 +307,7 @@ if(BUILD_PYTHON_PACKAGE)
   set(NBLA_PYTHON_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py)
   set(NBLA_PYTHON_OUTPUT ${CMAKE_BINARY_DIR}/build)
   set(NBLA_PYTHON_OUTPUT_WHEEL ${NBLA_PYTHON_OUTPUT}/.timestamp.wheel)
-  
+  set(NBLA_WHEEL_DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME})
   # Wheel
   if(UNIX)
     if(MAKE_MANYLINUX_WHEEL)
@@ -316,14 +318,14 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
-        DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
+        DEPENDS ${NBLA_WHEEL_DEPENDS})
     else()
       add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
         COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
-        DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
+        DEPENDS ${NBLA_WHEEL_DEPENDS})
     endif()
   else()
     add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
@@ -331,13 +333,12 @@ if(BUILD_PYTHON_PACKAGE)
       COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
       COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
       COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
-      DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME} ${NBLA_PYTHON_OUTPUT_BUILD})
+      DEPENDS ${NBLA_WHEEL_DEPENDS})
   endif()
   if(BUILD_CPP_LIB)
-    add_custom_target(wheel ALL DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL} ${NBLA_PYTHON_OUTPUT_BUILD})
-    add_dependencies(wheel ${NBLA_LIBRARY_NAME})
+    add_custom_target(wheel ALL DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL})
   else()
-    add_custom_target(wheel DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL} ${NBLA_PYTHON_OUTPUT_BUILD})
+    add_custom_target(wheel DEPENDS ${NBLA_PYTHON_OUTPUT_WHEEL})
   endif()
 
   if(UNIX OR APPLE)

@@ -183,7 +183,8 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True):
             if isinstance(initializer, numpy.ndarray):  # numpy init
                 param = nn.Variable(initializer.shape, need_grad=need_grad)
                 param.d = initializer
-            elif isinstance(initializer, nn.initializer.BaseInitializer):  # initializer init
+            # initializer init
+            elif isinstance(initializer, nn.initializer.BaseInitializer) or initializer.__name__ == "<lambda>":
                 assert shape is not None
                 param = nn.Variable(shape, need_grad=need_grad)
                 param.d = initializer(shape=param.shape)

@@ -35,7 +35,15 @@ nnabla-clean-all:
 # Auto Format
 .PHONY: nnabla-auto-format
 nnabla-auto-format:
-	python $(NNABLA_DIRECTORY)/build-tools/auto_format .
+	python $(NNABLA_DIRECTORY)/build-tools/auto_format . --exclude \
+		'\./src/nbla/(function|solver)/\w+\.cpp' \
+		'\./src/nbla/init.cpp' \
+		'\./python/src/nnabla/\w+\.(cpp|hpp|h|c)' \
+		'\./python/src/nnabla/(solver.pyx|function.pyx|function.pxd|function_bases.py)' \
+		'\./python/src/nnabla/utils/(save|load)_function.py' \
+		'\./src/nbla_utils/nnp_impl_create_function.cpp' \
+		'\./src/nbla_utils/nnabla\.pb\.(h|cc)'
+
 
 ########################################################################################################################
 # Doc
@@ -46,6 +54,7 @@ nnabla-doc:
 	&& cmake -DBUILD_CPP_LIB=ON \
 		-DBUILD_CPP_UTILS=OFF \
 		-DBUILD_PYTHON_PACKAGE=ON \
+		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	make -C $(DOC_DIRECTORY) -j$(PARALLEL_BUILD_NUM) all wheel doc
 
@@ -64,6 +73,7 @@ nnabla-cpplib:
 		-DNNABLA_UTILS_STATIC_LINK_DEPS=$(NNABLA_UTILS_STATIC_LINK_DEPS) \
 		-DNNABLA_UTILS_WITH_HDF5=$(NNABLA_UTILS_WITH_HDF5) \
 		-DBUILD_PYTHON_PACKAGE=OFF \
+		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) -j$(PARALLEL_BUILD_NUM)
 
@@ -80,6 +90,7 @@ nnabla-wheel:
 		-DMAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL) \
 		-DCPPLIB_BUILD_DIR=$(BUILD_DIRECTORY_CPPLIB) \
 		-DCPPLIB_LIBRARY=$(BUILD_DIRECTORY_CPPLIB)/lib/libnnabla.so \
+		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	@$(MAKE) -C $(BUILD_DIRECTORY_WHEEL) wheel
 

@@ -460,6 +460,7 @@ def _training_config(proto):
     config.max_epoch = proto.training_config.max_epoch
     config.iter_per_epoch = proto.training_config.iter_per_epoch
     config.save_best = proto.training_config.save_best
+    config.monitor_interval = proto.training_config.monitor_interval if proto.training_config.monitor_interval > 0 else 10
     return config
 
 

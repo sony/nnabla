@@ -39,6 +39,7 @@ DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
 DOCKER_RUN_OPTS += -w $$(pwd)
 DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
 DOCKER_RUN_OPTS += -e HOME=/tmp
+DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
 
 ########################################################################################################################
 # Docker images

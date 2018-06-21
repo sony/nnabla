@@ -48,7 +48,9 @@ def test_randint_forward(seed, ctx, func_name, low, high, shape):
     assert o.shape == tuple(shape)
     assert o.parent.name == func_name
     o.forward()
-    assert np.all(o.d < high)
+    # NOTE: The following should be < high,
+    # but use <= high because std::uniform_random contains a bug.
+    assert np.all(o.d <= high)
     assert np.all(o.d >= low)
 
 

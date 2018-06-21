@@ -15,8 +15,11 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <set>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 // #include <iostream>  // TODO: remove
 
@@ -24,7 +27,11 @@ namespace nbla {
 
 using std::make_shared;
 using std::set;
+using std::unordered_map;
 using std::unordered_set;
+using std::tuple;
+using std::make_tuple;
+using std::get;
 
 CgVariable::CgVariable(bool need_grad) {
   var_ = make_shared<Variable>(Shape_t{}, need_grad);
@@ -140,8 +147,11 @@ public:
   inline ~ScopedVariableGrad() { var_->set_grad(backup_); }
 };
 
-void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
-  set<pair<int, CgFunctionPtr>> cand;
+void CgVariable::backward(
+    NdArrayPtr grad, bool clear_buffer,
+    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
+  set<tuple<int, uint64_t, CgFunctionPtr>> cand;
+  unordered_map<CgFunctionPtr, uint64_t> ids;
   unordered_set<CgVariablePtr> branch;
   auto p = parent();
   if (!p)
@@ -158,11 +168,26 @@ void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
   if (grad) {
     grad_scope.reset(new ScopedVariableGrad(this->variable(), grad));
   }
-  cand.insert({-p->rank(), p});
+
+  /* Returns the ID for each function (layer) */
+  auto get_id = [&ids](const CgFunctionPtr &ptr) -> uint64_t {
+    auto it = ids.find(ptr);
+    if (it == ids.end()) {
+      /* Assign an ID to the function */
+      auto id = ids.size();
+      ids.insert({ptr, id});
+      return id;
+    } else {
+      /* Return the previous ID if the ID is already assigned */
+      return it->second;
+    }
+  };
+
+  cand.insert(make_tuple(-p->rank(), get_id(p), p));
   while (!cand.empty()) {
-    auto rank_func = cand.begin();
-    auto f = rank_func->second;
-    cand.erase(rank_func);
+    auto rank_func = *cand.begin();
+    auto f = get<2>(rank_func);
+    cand.erase(cand.begin());
     if (!f->need_grad())
       continue;
     auto outputs_shared = f->function_outputs_shared();
@@ -207,6 +232,9 @@ void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
     // 	      << std::endl;
     f->function()->backward(f->function_inputs(),
                             as_pointer_array(outputs_shared), accum);
+    for (auto &callback : communicator_callbacks) {
+      callback->on_finish_function_backward(f);
+    }
 
     // Clear outputs buffer
     if (clear_buffer) {
@@ -245,8 +273,12 @@ void CgVariable::backward(NdArrayPtr grad, bool clear_buffer) {
       auto p_i = inp->parent();
       if (!p_i)
         continue;
-      cand.insert({-p_i->rank(), p_i});
+      cand.insert(make_tuple(-p_i->rank(), get_id(p_i), p_i));
     }
+  }
+
+  for (auto &callback : communicator_callbacks) {
+    callback->on_finish_backward();
   }
 }
 }
