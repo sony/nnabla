@@ -3444,12 +3444,12 @@ Spectral Operation:
 
       .. math::
 
-        k_i = 0, \ldots, N_i.
+        k_i = 0, \ldots, N_i - 1.
 
-      This function now supports 1-D, 2-D, 3-D DFT with or without the leading batch dimentsion(s).
+      This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimentsion(s).
 
-      Since the input is complex number, a user must set at least `signal_ndim + 1` dimensions, and the last dimension is used for representing a complex number.
-
+      The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
+      The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
 
       Example:
         
@@ -3459,20 +3459,19 @@ Spectral Operation:
         import nnabla as nn
         import nnabla.functions as F
         from nnabla.ext_utils import get_extension_context
-         
+        
         ctx = get_extension_context("cudnn")
         nn.set_default_context(ctx)
-         
-        # Batched unitary 2D-FFT and 2D-IFFT
-        x_data = np.random.rand(2, 4, 3, 2)
-        x = nn.Variable.from_numpy_array(x_data)
+        
+        # Example for a batched 2D-FFT and 2D-IFFT (batch-size: 2, data-size: 4x3)
+        x_data = np.random.rand(2, 4, 3) + 1j * np.random.rand(2, 4, 3)
+        x = nn.Variable.from_numpy_array(np.stack([np.real(x_data), np.imag(x_data)], axis=3))
         y = F.fft(x, signal_ndim=2, normalized=True)
         z = F.ifft(y, signal_ndim=2, normalized=True)
         z.forward()
-         
-        # Confirm the same result
-        np.allclose(z.d, x_data)
-      
+        
+        np.allclose(z.d[..., 0] + 1j*z.d[...,1], x_data)
+
     inputs:
       x:
         doc: Input.
@@ -3487,7 +3486,7 @@ Spectral Operation:
         default: 'False'        
     outputs:
       y:
-        doc: Output.
+        doc: FFT transformed signal.
   IFFT:
     snake_name: ifft
     doc: |2+
@@ -3502,11 +3501,12 @@ Spectral Operation:
 
       .. math::
 
-        k_i = 0, \ldots, N_i.
+        k_i = 0, \ldots, N_i - 1.
 
-      This function now supports 1-D, 2-D, 3-D DFT with or without the leading batch dimentsion(s).
+      This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimentsion(s).
 
-      Since the input is complex number, a user must set at least `signal_ndim + 1` dimensions. and the last dimension is used for representing a complex number.
+      The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
+      The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
       
     inputs:
       x:
@@ -3522,7 +3522,7 @@ Spectral Operation:
         default: 'False'        
     outputs:
       y:
-        doc: Output.
+        doc: IFFT transformed signal.
 Validation:
   TopNError:
     snake_name: top_n_error

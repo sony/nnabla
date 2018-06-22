@@ -18,11 +18,7 @@ import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
-# TODO: implement CPU
-#ctxs = list_context('FFT')
-
-from nnabla.ext_utils import get_extension_context
-ctxs = [(get_extension_context("cudnn", type_config='float'), "IFFTCuda")]
+ctxs = list_context('IFFT')
 
 
 def ref_ifft(x, signal_ndim, normalized):
@@ -65,6 +61,9 @@ def ref_grad_ifft(x, dy, signal_ndim, normalized):
 @pytest.mark.parametrize("normalized", [True, False])
 def test_fft_forward_backward(seed, ctx, func_name, batch_dims,
                               signal_ndim, dims, normalized):
+
+    if func_name == "IFFT":
+        pytest.skip("Not implemented in CPU.")
 
     from nbla_test_utils import function_tester, convert_to_float2_array, convert_to_complex_array
     rng = np.random.RandomState(seed)
