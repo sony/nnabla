@@ -135,7 +135,6 @@ RUN umask 0 \
      && pip install --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
      && pip install --no-cache-dir -U "pytest-pep8" \
      && pip install --no-cache-dir -U "pytest-cov" \
-     && pip install --no-cache-dir -U "Cython<0.25" \
-     && pip install --no-cache-dir -U "numpy<1.11"
+     && pip install --no-cache-dir -U "Cython<0.25"
 
 ENV PATH /opt/miniconda3/envs/{PYENVNAME}/bin:$PATH
