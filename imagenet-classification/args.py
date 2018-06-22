@@ -31,9 +31,12 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
                         help='Parameters are updated by the gradient accumulated by multiple mini-batches.')
     parser.add_argument("--learning-rate", "-l",
                         type=float, default=learning_rate)
-    parser.add_argument("--learning-rate-decay-at", "-D", type=int,
-                        action="append", default=[150000, 300000, 450000],
-                        help='Learning rate will multiplied by 0.1 at the iteration specified.')
+
+    def parse_tuple(x):
+        return tuple(map(int, x.split(',')))
+    parser.add_argument("--learning-rate-decay-at", "-D",
+                        default=(150000, 300000, 450000), type=parse_tuple,
+                        help='Execution point of learning rate decay with format(x1,x2,,xn). Learning rate will multiplied by 0.1 at the iteration specified.')
     parser.add_argument("--monitor-path", "-m",
                         type=str, default=monitor_path,
                         help='Path monitoring logs saved.')
