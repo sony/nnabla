@@ -289,6 +289,18 @@ Neural Network Layer:
     outputs:
       y:
         doc: Average values variable
+  GlobalAveragePooling:
+    snake_name: global_average_pooling
+    doc: |2
+
+      Global average pooling. It pools an averaged value from the whole image
+
+    inputs:
+      x:
+        doc: Input variable.
+    outputs:
+      y:
+        doc: Average values variable
   SumPooling:
     snake_name: sum_pooling
     doc: |2
@@ -351,8 +363,9 @@ Neural Network Layer:
       x0:
         doc: Indices with shape :math:`(I_0, ..., I_N)`
         template: TI
-      x1:
+      w:
         doc: Weights with shape :math:`(W_0, ..., W_M)`
+        parameter: true
     outputs:
       y:
         doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
@@ -2089,6 +2102,8 @@ Array Manipulation:
 
              (Currently only `constant` mode is supported)
         type: string
+        available_values:
+          - constant
         default: '''constant'''
       constant_value:
         doc: |
@@ -2145,6 +2160,24 @@ Array Manipulation:
     outputs:
       y:
         doc: Broadcasted N-D array
+  BroadcastTo:
+    snake_name: broadcast_to
+    doc: |2
+
+      Broadcasting ND-array to the specified buffer.
+    inputs:
+      x:
+        doc: N-D array
+      y:
+        doc: N-D array
+    arguments:
+      axis:
+        doc: Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
+        type: int64
+        default: -1
+    outputs:
+      z:
+        doc: Broadcasted N-D array
   OneHot:
     snake_name: one_hot
     doc: |2
@@ -2200,6 +2233,9 @@ Array Manipulation:
           is copied and used. reflect: Original data reflected      at the ends of
           the original array is used.'
         type: string
+        available_values:
+          - nearest
+          - reflect
         default: '''nearest'''
     outputs:
       y:
@@ -2259,7 +2295,7 @@ Stochasticity:
 
       Dropout.
       Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]` ,
-      and ignores the input if :math:`u \leq p`.
+      and ignores the input if :math:`u > p`.
 
       .. math::
           y = \left\{
@@ -2528,6 +2564,9 @@ Stochasticity:
           array is copied and used. reflect: Original data reflected at   the ends
           of the original array is used.'
         type: string
+        available_values:
+          - nearest
+          - reflect
         default: '''nearest'''
       base_axis:
         doc: No Description
@@ -3249,6 +3288,9 @@ Quantization Neural Network Layers:
         doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
+        available_values:
+          - largest_abs
+          - random
         default: '''largest_abs'''
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
@@ -3329,6 +3371,9 @@ Quantization Neural Network Layers:
         doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
+        available_values:
+          - largest_abs
+          - random
         default: '''largest_abs'''
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
