@@ -21,7 +21,7 @@ from nbla_test_utils import list_context
 ctxs = list_context('Reshape')
 
 
-def ref_reshape(x, shape):
+def ref_reshape(x, shape, inplace):
     return x.reshape(shape).copy()
 
 
@@ -33,5 +33,19 @@ def test_reshape_forward_backward(seed, inshape, outshape, ctx, func_name):
     rng = np.random.RandomState(seed)
     # Input
     inputs = [rng.randn(*inshape).astype(np.float32)]
+    inplace = False
     function_tester(rng, F.reshape, ref_reshape, inputs, func_args=[
-                    outshape], ctx=ctx, func_name=func_name)
+                    outshape, inplace], ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, outshape", [((1, 1, 6), (1, 2, 3)), ((2, 3), (1, 6)), ((2, 4), (-1, 2, 2))])
+def test_reshpae_inplace(seed, ctx, func_name, inshape, outshape):
+    from nbla_test_utils import inplace_function_test_helper
+    rng = np.random.RandomState(seed)
+    inputs = [nn.Variable.from_numpy_array(
+        rng.randn(*inshape).astype(np.float32))]
+    inplace_function_test_helper(
+        inputs, F.reshape, func_args=[
+            outshape], ctx=ctx, rng=np.random.RandomState(seed))
