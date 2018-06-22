@@ -81,7 +81,8 @@ def compute_analytical_and_numerical_grad_graph(terminal, inputs,
 
 
 def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
-                                          vgrads, epsilon=1e-8, rng=None):
+                                          vgrads, epsilon=1e-8, rng=None,
+                                          ref_grad=None):
     """ Compute both analytical grad and numerical grad
     using given function
 
@@ -157,7 +158,9 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
     inputs0_c = np.concatenate([i0.flatten()
                                 for i0 in inputs0 if i0 is not None])
     analytical_grad = grad(inputs0_c)
-    numerical_grad = optimize.approx_fprime(inputs0_c, func, epsilon)
+    numerical_grad = None
+    if not ref_grad:
+        numerical_grad = optimize.approx_fprime(inputs0_c, func, epsilon)
     return analytical_grad, numerical_grad
 
 
@@ -363,11 +366,12 @@ def function_tester(rng, func, ref_func, inputs,
 
     agrads, ngrads = compute_analytical_and_numerical_grad(
         o[0].parent, vinputs, o, rinputs, vgrads, epsilon=dstep,
-        rng=rng)
+        rng=rng, ref_grad=ref_grad)
     if ref_grad is not None:
         rinputs = copy.deepcopy(inputs)
         doutputs = [o_.g for o_ in o]
         ngrads = ref_grad(*(rinputs + doutputs + func_args), **func_kwargs)
+
     assert np.allclose(ngrads, agrads, atol=atol_b), str(
         ArrayDiffStats(ngrads, agrads))
 
@@ -454,3 +458,19 @@ def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx
     grads_i = [inp.g.copy() for inp in inputs]
     for g, g_i in zip(grads, grads_i):
         assert np.allclose(g, g_i), str(ArrayDiffStats(g, g_i))
+
+
+def convert_to_float2_array(x_complex, dtype=np.float32):
+    real = np.real(x_complex)
+    imag = np.imag(x_complex)
+    real_s = real.reshape((real.shape)+(1, ))
+    imag_s = imag.reshape((imag.shape)+(1, ))
+    x_float2 = np.concatenate([real_s, imag_s], axis=len(real_s.shape)-1)
+    return x_float2.astype(dtype)
+
+
+def convert_to_complex_array(x_float2, dtype=np.complex64):
+    x_real = x_float2[..., 0]
+    x_imag = x_float2[..., 1]
+    x_complex = x_real + 1j * x_imag
+    return x_complex
