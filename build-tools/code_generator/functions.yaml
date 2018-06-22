@@ -3429,6 +3429,100 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: N-D array.
+Spectral Operation:
+  FFT:
+    snake_name: fft
+    doc: |2+
+      
+      Complex-to-complex Descrete Fourier Transform,
+
+      .. math::
+
+        X_{k_1, \ldots, k_d} = \sum_{n_1=0}^{N_1-1} \dots \sum_{n_d=0}^{N_d-1} x_{n_1, \ldots, n_d} \exp\left(-2 \pi j \left( \sum_{i=0}^{d} \frac{k_i n_i}{N_i} \right) \right), 
+
+      where
+
+      .. math::
+
+        k_i = 0, \ldots, N_i.
+
+      This function now supports 1-D, 2-D, 3-D DFT with or without the leading batch dimentsion(s).
+
+      Since the input is complex number, a user must set at least `signal_ndim + 1` dimensions, and the last dimension is used for representing a complex number.
+
+
+      Example:
+        
+      .. code-block:: python
+      
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+        from nnabla.ext_utils import get_extension_context
+         
+        ctx = get_extension_context("cudnn")
+        nn.set_default_context(ctx)
+         
+        # Batched unitary 2D-FFT and 2D-IFFT
+        x_data = np.random.rand(2, 4, 3, 2)
+        x = nn.Variable.from_numpy_array(x_data)
+        y = F.fft(x, signal_ndim=2, normalized=True)
+        z = F.ifft(y, signal_ndim=2, normalized=True)
+        z.forward()
+         
+        # Confirm the same result
+        np.allclose(z.d, x_data)
+      
+    inputs:
+      x:
+        doc: Input.
+    
+    arguments:
+      signal_ndim:
+        doc: The number of dimentsions for each signal. It must be 1, 2, or 3.
+        type: int64
+      normalized:
+        doc: Use unitary normalization. If `True`, the normalization constant :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}` is multiplied.
+        type: bool
+        default: 'False'        
+    outputs:
+      y:
+        doc: Output.
+  IFFT:
+    snake_name: ifft
+    doc: |2+
+      
+      Complex-to-complex inverse Descrete Fourier Transform,
+
+      .. math::
+
+        X_{k_1, \ldots, k_d} = \frac{1}{\prod_{i=1}^{d} N_i} \sum_{n_1=0}^{N_1-1} \dots \sum_{n_d=0}^{N_d-1} x_{n_1, \ldots, n_d} \exp\left(2 \pi j \left( \sum_{i=0}^{d} \frac{k_i n_i}{N_i} \right) \right), 
+
+      where
+
+      .. math::
+
+        k_i = 0, \ldots, N_i.
+
+      This function now supports 1-D, 2-D, 3-D DFT with or without the leading batch dimentsion(s).
+
+      Since the input is complex number, a user must set at least `signal_ndim + 1` dimensions. and the last dimension is used for representing a complex number.
+      
+    inputs:
+      x:
+        doc: Input.
+    
+    arguments:
+      signal_ndim:
+        doc: The number of dimentsions for each signal. It must be 1, 2, or 3.
+        type: int64
+      normalized:
+        doc: Use unitary normalization. If `True`, the normalization constant :math:`\frac{1}{\prod_{i=1}^{d} N_i}` becomes :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}`.
+        type: bool
+        default: 'False'        
+    outputs:
+      y:
+        doc: Output.
 Validation:
   TopNError:
     snake_name: top_n_error
