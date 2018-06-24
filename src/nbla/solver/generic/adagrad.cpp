@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <nbla/solver/adagrad.hpp>
+#include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
@@ -53,4 +54,8 @@ void Adagrad<T>::update_impl(const string &key, VariablePtr param) {
 }
 
 NBLA_DEF_WEIGHT_DECAY(Adagrad, weight_decay_cpu);
+NBLA_DEF_CHECK_INF_GRAD(Adagrad, check_inf_grad_cpu);
+NBLA_DEF_CHECK_NAN_GRAD(Adagrad, check_nan_grad_cpu);
+NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Adagrad, check_inf_or_nan_grad_cpu);
+NBLA_DEF_SCALE_GRAD(Adagrad, scale_grad_impl_cpu);
 }

@@ -70,6 +70,10 @@ protected:
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);
   NBLA_DECL_WEIGHT_DECAY();
+  NBLA_DECL_CHECK_INF_GRAD();
+  NBLA_DECL_CHECK_NAN_GRAD();
+  NBLA_DECL_CHECK_INF_OR_NAN_GRAD();
+  NBLA_DECL_SCALE_GRAD();
 };
 }
 #endif
