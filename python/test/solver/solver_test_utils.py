@@ -89,5 +89,32 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
         for p, ref_p in zip(params.values(), ref_s.params.values()):
             assert np.allclose(ref_p, p.d, atol=atol)
 
+    # Check inf, nan, and inf/nan
+    for v, method in zip([[np.inf], [np.nan], [np.inf, np.nan]],
+                         [lambda s: s.check_inf_grad(),
+                          lambda s: s.check_nan_grad(),
+                          lambda s: s.check_inf_or_nan_grad()]):
+        def set_value(p):
+            p.g[...] = rng.choice(v + [-1, 0, 1],
+                                  size=int(np.prod(p.shape)),
+                                  replace=True).reshape(p.shape)
+            if v[0] not in p.g:
+                p.g.flat[rng.choice(np.arange(int(np.prod(p.shape))))] = v[0]
+        for p in params.values():
+            assert method(s) == False
+            g = p.g.copy()
+            set_value(p)
+            assert method(s) == True
+            p.g[...] = g
+
+    # Rescale grad
+    scale = 10.
+    ref_grad = [p.g.copy() for p in params.values()]
+    for p in params.values():
+        p.g *= scale
+    s.scale_grad(1. / scale)
+    for ref, p in zip(ref_grad, params.values()):
+        assert np.allclose(ref, p.g, atol=1e-4)
+
     # Check if remove_state_impl work correctly.
     s.clear_parameters()
