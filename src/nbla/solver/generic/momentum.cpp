@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/momentum.hpp>
 #include <nbla/solver/weight_decay.hpp>
 
@@ -52,4 +53,8 @@ void Momentum<T>::update_impl(const string &key, VariablePtr param) {
 }
 
 NBLA_DEF_WEIGHT_DECAY(Momentum, weight_decay_cpu);
+NBLA_DEF_CHECK_INF_GRAD(Momentum, check_inf_grad_cpu);
+NBLA_DEF_CHECK_NAN_GRAD(Momentum, check_nan_grad_cpu);
+NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Momentum, check_inf_or_nan_grad_cpu);
+NBLA_DEF_SCALE_GRAD(Momentum, scale_grad_impl_cpu);
 }

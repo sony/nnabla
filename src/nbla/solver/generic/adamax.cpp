@@ -16,6 +16,7 @@
 #include <cmath>
 #include <limits>
 #include <nbla/solver/adamax.hpp>
+#include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
@@ -68,4 +69,8 @@ void Adamax<T>::update_impl(const string &key, VariablePtr param) {
 }
 
 NBLA_DEF_WEIGHT_DECAY(Adamax, weight_decay_cpu);
+NBLA_DEF_CHECK_INF_GRAD(Adamax, check_inf_grad_cpu);
+NBLA_DEF_CHECK_NAN_GRAD(Adamax, check_nan_grad_cpu);
+NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Adamax, check_inf_or_nan_grad_cpu);
+NBLA_DEF_SCALE_GRAD(Adamax, scale_grad_impl_cpu);
 }

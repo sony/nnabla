@@ -154,6 +154,45 @@ cdef class Solver:
         with nogil:
             self.solverp.weight_decay(decay_rate)
 
+    def check_inf_grad(self, ):
+        """
+        Check if there is any inf on the gradients which were setup.
+
+        """
+        cdef cpp_bool flag;
+        with nogil:
+            flag = self.solverp.check_inf_grad()
+        return flag
+
+    def check_nan_grad(self, ):
+        """
+        Check if there is any nan on the gradients which were setup.
+
+        """
+        cdef cpp_bool flag;
+        with nogil:
+            flag = self.solverp.check_nan_grad()
+        return flag
+
+    def check_inf_or_nan_grad(self, ):
+        """
+        Check if there is any inf or nan on the gradients which were setup.
+
+        """
+        cdef cpp_bool flag;
+        with nogil:
+            flag = self.solverp.check_inf_or_nan_grad()
+        return flag
+
+    def scale_grad(self, scale):
+        """
+        Rescale gradient
+
+        """
+        cdef float _scale = scale;
+        with nogil:
+            self.solverp.scale_grad(_scale)
+            
     @property
     def name(self):
         """

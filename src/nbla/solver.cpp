@@ -119,6 +119,62 @@ void Solver::weight_decay(float decay_rate) {
   }
 }
 
+bool Solver::check_inf_grad() {
+  for (auto &kv : params_) {
+    SyncedArrayPtr g = kv.second.p->grad()->array();
+    if (kv.second.at == g->modification_count()) {
+      // The gradient is not computed. Skip.
+      continue;
+    }
+    if (check_inf_grad_impl(kv.first, kv.second.p)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// TODO: potential to speed-up
+bool Solver::check_nan_grad() {
+  for (auto &kv : params_) {
+    SyncedArrayPtr g = kv.second.p->grad()->array();
+    if (kv.second.at == g->modification_count()) {
+      // The gradient is not computed. Skip.
+      continue;
+    }
+    if (check_nan_grad_impl(kv.first, kv.second.p)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// TODO: potential to speed-up
+bool Solver::check_inf_or_nan_grad() {
+  for (auto &kv : params_) {
+    SyncedArrayPtr g = kv.second.p->grad()->array();
+    if (kv.second.at == g->modification_count()) {
+      // The gradient is not computed. Skip.
+      continue;
+    }
+    if (check_inf_or_nan_grad_impl(kv.first, kv.second.p)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Methods for the mixed-precision training
+void Solver::scale_grad(float scale) {
+  for (auto &kv : params_) {
+    SyncedArrayPtr g = kv.second.p->grad()->array();
+    if (kv.second.at == g->modification_count()) {
+      // The gradient is not computed. Skip.
+      continue;
+    }
+    scale_grad_impl(kv.first, kv.second.p, scale);
+  }
+}
+
 vector<string> Solver::allowed_array_classes() {
   return SingletonManager::get<Cpu>()->array_classes();
 }

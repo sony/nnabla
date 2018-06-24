@@ -38,6 +38,10 @@ cdef extern from "nbla/solver.hpp" namespace "nbla":
         void clear_parameters() except +
         void update() nogil except +
         void weight_decay(float decay_rate) nogil except +
+        cpp_bool check_inf_grad() nogil except +
+        cpp_bool check_nan_grad() nogil except +
+        cpp_bool check_inf_or_nan_grad() nogil except +
+        void scale_grad(float scale) nogil except +
         string name() except +
         float learning_rate() except +
         void set_learning_rate(float learning_rate) except +
