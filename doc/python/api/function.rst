@@ -233,3 +233,11 @@ Validation
 ----------
 
 .. autofunction:: top_n_error
+
+
+Spectral Operation
+------------------
+
+.. autofunction:: fft
+.. autofunction:: ifft
+
