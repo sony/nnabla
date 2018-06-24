@@ -266,7 +266,7 @@ sets parameters of logistic regression to it.
     # Create a solver (gradient-based optimizer)
     learning_rate = 1e-3
     solver = S.Sgd(learning_rate)
-    solver.set_parameters(nn.get_parameters())  # Set parameter variables to be updatd.
+    solver.set_parameters(nn.get_parameters())  # Set parameter variables to be updated.
 
 In the next block, we demonstrate a single step of optimization loop.
 ``solver.zero_grad()`` line does equivalent to calling ``.grad.zero()``
@@ -484,7 +484,7 @@ for 10 class classification.
     # Copied from the above logreg example.
     def training(steps, learning_rate):
         solver = S.Sgd(learning_rate)
-        solver.set_parameters(nn.get_parameters())  # Set parameter variables to be updatd.
+        solver.set_parameters(nn.get_parameters())  # Set parameter variables to be updated.
         for i in range(steps):
             x.d, t.d = data.next()
             loss.forward()
@@ -581,7 +581,7 @@ context by using a helper function ``get_extension_context()`` found in the
 and ``cudnn`` as a context specifier passed to the first argument
 (extension name). NOTE: By setting the cudnn context as a global default
 context, Functions and solves created are instantiated with CUDNN
-(prefered) mode. You can also specify a context using
+(preferred) mode. You can also specify a context using
 ``with nn.context_scope()``. See `API
 reference <http://nnabla.readthedocs.io/en/latest/python/api/common.html#context>`__
 for details.
@@ -677,7 +677,7 @@ This is an example of recurrent neural network training.
             # Time step loop
             for x in xs:
                 # Note: Parameter scopes are reused over time
-                # which means parametrs are shared over time.
+                # which means parameters are shared over time.
                 with nn.parameter_scope("x2h"):
                     x2h = PF.affine(x, hidden, with_bias=False)
                 with nn.parameter_scope("h2h"):
@@ -714,7 +714,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
     # Copied from the above logreg example.
     def training_rnn(steps, learning_rate):
         solver = S.Sgd(learning_rate)
-        solver.set_parameters(nn.get_parameters())  # Set parameter variables to be updatd.
+        solver.set_parameters(nn.get_parameters())  # Set parameter variables to be updated.
         for i in range(steps):
             minibatch = data.next()
             img, t.d = minibatch
@@ -725,7 +725,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
             loss.forward()
             solver.zero_grad()  # Initialize gradients of all parameters to zero.
             loss.backward()
-            solver.weight_decay(1e-5)  # Applying weight decay as an regulariation
+            solver.weight_decay(1e-5)  # Applying weight decay as an regularization
             solver.update()
             if i % 100 == 0:  # Print for each 10 iterations
                 print i, loss.d
@@ -841,7 +841,7 @@ hierarchy, which means both parameters are shared.
             loss.forward()
             solver.zero_grad()  # Initialize gradients of all parameters to zero.
             loss.backward()
-            solver.weight_decay(1e-5)  # Applying weight decay as an regulariation
+            solver.weight_decay(1e-5)  # Applying weight decay as an regularization
             solver.update()
             if i % 100 == 0:  # Print for each 10 iterations
                 print i, loss.d

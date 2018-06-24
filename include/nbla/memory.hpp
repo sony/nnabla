@@ -54,7 +54,7 @@ public:
 
   /** Returns a void pointer to device memory.
 
-      Note: This will implicitely call allocate() if pointer is not ready, and
+      Note: This will implicitly call allocate() if pointer is not ready, and
      raise if allocation failsd.
    */
   void *ptr();
@@ -113,7 +113,7 @@ public:
 
       @param blocksize Unit size of memory block. Memory will be allocated
      with
-                       lowerbound of a multipe of the blocksize.
+                       lowerbound of a multiple of the blocksize.
    */
   MemoryCache(int blocksize = 512);
   ~MemoryCache();

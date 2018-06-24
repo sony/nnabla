@@ -39,7 +39,7 @@ Momentum:
 Nesterov:
   snake_name: nesterov
   doc: |
-    Nesterov Accellerated Gradient optimizer.
+    Nesterov Accelerated Gradient optimizer.
 
     .. math::
         v_t &\leftarrow \gamma v_{t-1} - \eta \Delta w_t\\
@@ -89,7 +89,7 @@ Adadelta:
     eps:
       type: float
       default: 1e-6
-      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
 
 Adagrad:
   snake_name: adagrad
@@ -115,12 +115,12 @@ Adagrad:
     eps:
       type: float
       default: 1e-8
-      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
   
 RMSprop:
   snake_name: rmsprop
   doc: |
-    RMSprop optimizeer (Geoffery Hinton).
+    RMSprop optimizer (Geoffery Hinton).
 
     .. math::
         g_t &\leftarrow \Delta w_t\\
@@ -145,7 +145,7 @@ RMSprop:
     eps:
       type: float
       default: 1e-8
-      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
               
 Adam:
   snake_name: adam
@@ -183,7 +183,7 @@ Adam:
     eps:
       type: float
       default: 1e-8
-      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
   
 Adamax:
   snake_name: adamax
@@ -223,7 +223,7 @@ Adamax:
     eps:
       type: float
       default: 1e-8
-      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
   
 AMSGRAD:
   snake_name: amsgrad
@@ -261,7 +261,7 @@ AMSGRAD:
     eps:
       type: float
       default: 1e-8
-      doc: Small value for avoiding zero devision(:math:`\epsilon`). Note this does not appear in the paper.
+      doc: Small value for avoiding zero division(:math:`\epsilon`). Note this does not appear in the paper.
     bias_correction:
       type: bool
       default: False

@@ -56,7 +56,7 @@ public:
       @param[in] shape N-d array will be reshaped to this shape.
       @param[in] force If total size doesn't match and true is given, array will
      reset to total size, which means the content of array will become totally
-     diffrent one.
+     different one.
    */
   NBLA_API void reshape(const Shape_t &shape, bool force = false);
 

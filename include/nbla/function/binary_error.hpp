@@ -37,7 +37,7 @@ y_i = \left \{
 
 Inputs:
 - Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
-- Labels N-D array. Usually set as 0 or 1, but, it allows propbability
+- Labels N-D array. Usually set as 0 or 1, but, it allows probability
   (0 to 1) as inputs.
 
 Outputs:

@@ -24,7 +24,7 @@ namespace nbla {
 /* top_k(x, n, k, out) writes the indices of the k largest elements
  * from x[0 ... n-1] into out[0 ... k-1]. The element out[0] is the
  * index of the largest element in x. The elements out[1 ... k-1]
- * are the indices of subsequently smaller or equal elments in x.
+ * are the indices of subsequently smaller or equal elements in x.
  */
 
 template <typename T>

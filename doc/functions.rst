@@ -752,7 +752,7 @@ It is defined as:
    * - alpha
      - float
      - 0.1
-     - The slope value multplied to negative numbers. :math:`\alpha` in the definition.
+     - The slope value multiplied to negative numbers. :math:`\alpha` in the definition.
 
 * Output(s)
 
@@ -1789,7 +1789,7 @@ Element-wise division.
 Pow2
 ^^^^
 
-Element-wise power funtion.
+Element-wise power function.
 
 .. math::
    y_i = {(x^{(0)}_i)} ^ {x^{(1)}_i}
@@ -3968,7 +3968,7 @@ sample (dimensions from `base_axis`) regardless of shape.
    * - k
      - int64
      - 
-     - Number of largest data values to propgate.
+     - Number of largest data values to propagate.
    * - abs
      - bool
      - False
@@ -4026,7 +4026,7 @@ regardless of shape.
    * - k
      - int64
      - 
-     - Number of largest data values to propgate.
+     - Number of largest data values to propagate.
    * - abs
      - bool
      - False
@@ -4518,7 +4518,7 @@ Element-wise cross entropy between `x` and the target variables.
      - Probabilities N-D array. :math:`-\infty` to :math:`\infty`.
      - 
    * - target
-     - N-D array of labels. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy, it allows propbability (0 to 1) as inputs and backpropagation can be done.
+     - N-D array of labels. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy, it allows probability (0 to 1) as inputs and backpropagation can be done.
      - 
 
 * Output(s)
@@ -4755,7 +4755,7 @@ where :math:`d = x^{(0)}_i - x^{(1)}_i`
 EpsilonInsensitiveLoss
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Element-wise Eplision Insensitive Loss
+Element-wise Epsilon Insensitive Loss
 
 .. math::
     y_i= \left\{
@@ -5567,7 +5567,7 @@ In the backward pass when using `ste_fine_grained` as true,
    * - n
      - int64
      - 8
-     - Bit width used. Note that `sign` comsumes one bit. :math:`n-1` is used for number representation in `signed` case.   
+     - Bit width used. Note that `sign` consumes one bit. :math:`n-1` is used for number representation in `signed` case.   
    * - delta
      - float
      - 2**-4
@@ -5713,7 +5713,7 @@ References:
    * - n
      - int64
      - 8
-     - Bit width used, Note that `sign` comsumes one bit. :math:`n-1` is used for number representation in `signed` case. Default is 8.
+     - Bit width used, Note that `sign` consumes one bit. :math:`n-1` is used for number representation in `signed` case. Default is 8.
    * - m
      - int64
      - 1
@@ -5740,7 +5740,7 @@ Validation
 TopNError
 ^^^^^^^^^
 
-Top N error along the dimension specified by the axis, the elment of outputs is 
+Top N error along the dimension specified by the axis, the element of outputs is 
 
 .. math::
 
@@ -5818,7 +5818,7 @@ Elementwise binary error.
      - Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
      - 
    * - target
-     - Labels N-D array. Usually set as 0 or 1, but, it allows propbability (0 to 1) as inputs.
+     - Labels N-D array. Usually set as 0 or 1, but, it allows probability (0 to 1) as inputs.
      - 
 
 * Output(s)

@@ -104,10 +104,10 @@ NetworkImpl::get_cgvariable_or_create(const string &name) {
     return it->second;
   }
   auto var_it = variable_protos_.find(name);
-  NBLA_CHECK(
-      var_it != variable_protos_.end(), error_code::value,
-      "%s could not be found in variable_protos_. This does not usualy happen.",
-      name.c_str());
+  NBLA_CHECK(var_it != variable_protos_.end(), error_code::value,
+             "%s could not be found in variable_protos_. This does not usually "
+             "happen.",
+             name.c_str());
   const ::Variable *var = var_it->second;
   // Create a new on and register to variables_.
   // Create shape

@@ -40,7 +40,7 @@ Outputs:
 
 @tparam T Data type for computation.
 
-@param k Number of largest gradients to back-propgate.
+@param k Number of largest gradients to back-propagate.
 
 @param abs Determine largest gradients by magnitude.
 

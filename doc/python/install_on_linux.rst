@@ -165,4 +165,4 @@ If you do not have the root privilege, please use virtualenv or Anaconda. After 
 Q. I want to use another linux distribution.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We actually tested other linux distributions and versions; Ubuntu 14.04, CentOS 6.9, 7.3, Fedora 23, 25, 26, and RHEL 7.3 on various environments; Baremetal server, AWS instance, and/or Docker machine. Thus, you can install in almost the same way described here. The details of how-to-install for each are comming soon.
+We actually tested other linux distributions and versions; Ubuntu 14.04, CentOS 6.9, 7.3, Fedora 23, 25, 26, and RHEL 7.3 on various environments; Baremetal server, AWS instance, and/or Docker machine. Thus, you can install in almost the same way described here. The details of how-to-install for each are coming soon.

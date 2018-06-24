@@ -54,7 +54,7 @@ class NnpImpl;
 // ----------------------------------------------------------------------
 // NetworkImpl
 // ----------------------------------------------------------------------
-/** Implementation of Netwrok.
+/** Implementation of Network.
  */
 class NetworkImpl {
   friend class NnpImpl;

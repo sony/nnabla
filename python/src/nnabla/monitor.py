@@ -61,7 +61,7 @@ class MonitorSeries(object):
         monitor (~nnabla.monitor.Monitor): Monitor class instance.
         interval (int): Interval of flush the outputs. The values added by
             ``.add()`` are averaged during interval.
-        verbose (bool): Ouput to screen.
+        verbose (bool): Output to screen.
 
     """
 

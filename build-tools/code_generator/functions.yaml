@@ -440,7 +440,7 @@ Neural Network Activation Functions:
         doc: N-D array
     arguments:
       alpha:
-        doc: The slope value multplied to negative numbers. :math:`\alpha` in the
+        doc: The slope value multiplied to negative numbers. :math:`\alpha` in the
           definition.
         type: float
         default: '0.1'
@@ -728,7 +728,7 @@ Normalization:
                   min & (g_y < min)
                  \end{cases}.
                  
-      A typical case for use is to prevent the gradient explotion through a whole computational graph. 
+      A typical case for use is to prevent the gradient explosion through a whole computational graph. 
       For example, if you want to clip gradient values for each feature map, 
       
       .. code-block:: python
@@ -1014,7 +1014,7 @@ Arithmetic:
     snake_name: pow2
     doc: |2
 
-      Element-wise power funtion.
+      Element-wise power function.
 
       .. math::
          y_i = {(x^{(0)}_i)} ^ {x^{(1)}_i}
@@ -2323,7 +2323,7 @@ Stochasticity:
         doc: N-D array
     arguments:
       k:
-        doc: Number of largest data values to propgate.
+        doc: Number of largest data values to propagate.
         type: int64
       abs:
         doc: Determine largest data values by magnitude.
@@ -2357,7 +2357,7 @@ Stochasticity:
         doc: N-D array
     arguments:
       k:
-        doc: Number of largest gradients to propgate.
+        doc: Number of largest gradients to propagate.
         type: int64
       abs:
         doc: Determine largest gradients by magnitude.
@@ -2441,7 +2441,7 @@ Stochasticity:
         type: float
         default: '0'
       sigma:
-        doc: :math:`\sigm` in definition.
+        doc: :math:`\sigma` in definition.
         type: float
         default: '1'
       shape:
@@ -2681,7 +2681,7 @@ Loss Functions:
         doc: Probabilities N-D array. :math:`-\infty` to :math:`\infty`.
       target:
         doc: N-D array of labels. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy,
-          it allows propbability (0 to 1) as inputs and backpropagation can be done.
+          it allows probability (0 to 1) as inputs and backpropagation can be done.
     outputs:
       y:
         doc: N-D array of element-wise losses.
@@ -2809,7 +2809,7 @@ Loss Functions:
     snake_name: epsilon_insensitive_loss
     doc: |2
 
-      Element-wise Eplision Insensitive Loss
+      Element-wise Epsilon Insensitive Loss
 
       .. math::
           y_i= \left\{
@@ -3389,7 +3389,7 @@ Quantization Neural Network Layers:
         type: bool
         default: 'True'
       n:
-        doc: Bit width used. Note that `sign` comsumes one bit. :math:`n-1` is used
+        doc: Bit width used. Note that `sign` consumes one bit. :math:`n-1` is used
           for number representation in `signed` case.
         type: int64
         default: '8'
@@ -3513,7 +3513,7 @@ Quantization Neural Network Layers:
         type: bool
         default: 'True'
       n:
-        doc: Bit width used, Note that `sign` comsumes one bit. :math:`n-1` is used
+        doc: Bit width used, Note that `sign` consumes one bit. :math:`n-1` is used
           for number representation in `signed` case. Default is 8.
         type: int64
         default: '8'
@@ -3628,7 +3628,7 @@ Validation:
     snake_name: top_n_error
     doc: |2
 
-      Top N error along the dimension specified by the axis, the elment of outputs is
+      Top N error along the dimension specified by the axis, the element of outputs is
 
       .. math::
 
@@ -3677,7 +3677,7 @@ Validation:
       x:
         doc: Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
       target:
-        doc: Labels N-D array. Usually set as 0 or 1, but, it allows propbability
+        doc: Labels N-D array. Usually set as 0 or 1, but, it allows probability
           (0 to 1) as inputs.
     outputs:
       output:

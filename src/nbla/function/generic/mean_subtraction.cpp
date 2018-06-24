@@ -30,7 +30,8 @@ template <typename T>
 void MeanSubtraction<T>::setup_impl(const Variables &inputs,
                                     const Variables &outputs) {
   // Check num of inputs and outputs.
-  NBLA_CHECK(inputs.size() == 3 || (inputs.size() == 2 && !update_runing_mean_),
+  NBLA_CHECK(inputs.size() == 3 ||
+                 (inputs.size() == 2 && !update_running_mean_),
              error_code::value, "The Number of inputs must be 3 [x, "
                                 "running_mean, t] or 2 [x, running_mean].");
   NBLA_CHECK(outputs.size() == 1, error_code::value,
@@ -68,7 +69,7 @@ void MeanSubtraction<T>::setup_impl(const Variables &inputs,
 template <class T>
 void MeanSubtraction<T>::forward_impl(const Variables &inputs,
                                       const Variables &outputs) {
-  if (update_runing_mean_) { // Training mode.
+  if (update_running_mean_) { // Training mode.
     forward_impl_batch(inputs, outputs);
   } else { // Testing mode.
     forward_impl_global(inputs, outputs);
@@ -136,7 +137,7 @@ void MeanSubtraction<T>::backward_impl(const Variables &inputs,
                                        const Variables &outputs,
                                        const vector<bool> &propagate_down,
                                        const vector<bool> &accum) {
-  if (update_runing_mean_) { // Training mode.
+  if (update_running_mean_) { // Training mode.
     backward_impl_batch(inputs, outputs, propagate_down, accum);
   } else { // Testing mode.
     backward_impl_global(inputs, outputs, propagate_down, accum);

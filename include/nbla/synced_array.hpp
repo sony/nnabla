@@ -39,7 +39,7 @@ class NBLA_API SyncedArray {
     string array_class;
     dtypes dtype;
   };
-  ArrayDesc head_;   ///< Head desc for transfering content.
+  ArrayDesc head_;   ///< Head desc for transferring content.
   bool zeroing_;     ///< Flag for lazy evaluation of zero() function.
   bool filling_;     ///< Flag for lazy evaluation of fill() function.
   float fill_value_; ///< Filling value used in lazy eval of fill() function.

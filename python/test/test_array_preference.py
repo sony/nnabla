@@ -18,7 +18,7 @@ import pytest
 import nnabla as nn
 
 
-def check_cached_array_prefered(ac, prefer=True):
+def check_cached_array_preferred(ac, prefer=True):
     c = list(map(lambda x: not (prefer ^ ('Cached' in x)), ac))
     assert c == sorted(c, reverse=True)
 
@@ -27,7 +27,7 @@ def test_prefer_cached_array():
     nn.reset_array_preference()
     nn.prefer_cached_array(True)
     ac2 = nn.array_classes()
-    check_cached_array_prefered(ac2)
+    check_cached_array_preferred(ac2)
 
     try:
         from nnabla_ext import cuda
@@ -35,11 +35,11 @@ def test_prefer_cached_array():
         cuda = None
     if cuda is not None:
         ac2 = cuda.array_classes()
-        check_cached_array_prefered(ac2)
+        check_cached_array_preferred(ac2)
 
     nn.prefer_cached_array(False)
     ac2 = nn.array_classes()
-    check_cached_array_prefered(ac2, False)
+    check_cached_array_preferred(ac2, False)
     if cuda is not None:
         ac2 = cuda.array_classes()
-        check_cached_array_prefered(ac2, False)
+        check_cached_array_preferred(ac2, False)
