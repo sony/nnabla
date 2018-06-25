@@ -55,7 +55,7 @@ def get_version(dir):
             version += os.environ["NNABLA_VERSION_SUFFIX"]
         if "NNABLA_SHORT_VERSION" in os.environ:
             return version, os.environ["NNABLA_SHORT_VERSION"]
-    version = default_version = '1.0.0pre1'
+    version = default_version = '1.0.0rc2'
     nearest_tag = default_version
     if os.path.exists('.git'):
         try:
