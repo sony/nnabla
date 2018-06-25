@@ -525,6 +525,7 @@ def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
                                     "Pooling33_Output_0", "exec_0")
 
 
+@pytest.mark.skip(reason="Current version of reshape does not supported yet.")
 def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -533,6 +534,7 @@ def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
+@pytest.mark.skip(reason="Current version of reshape does not supported yet.")
 def test_nnp_onnx_conversion_reshape(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
