@@ -34,7 +34,7 @@ class CsrcExporter:
     def __init__(self, nnp, batch_size):
         self._info = create_nnabart_info(nnp, batch_size)
 
-    def export_csrc_parameters(self, dirname, name, prefix):
+    def _export_csrc_parameters(self, dirname, name, prefix):
         parameters_h_filename = os.path.join(
             dirname, '{}_parameters.h'.format(name))
         contents = []
@@ -69,7 +69,7 @@ class CsrcExporter:
         with open(parameters_c_filename, 'w') as f:
             f.write(parameters_c)
 
-    def export_csrc_defines(self, dirname, name, prefix):
+    def _export_csrc_defines(self, dirname, name, prefix):
         # Input
         input_buffer_size_defines = []
         for n, s in enumerate(self._info._input_buffer_sizes):
@@ -116,7 +116,7 @@ class CsrcExporter:
         with open(header_filename, 'w') as f:
             f.write(header)
 
-    def export_csrc_implements(self, dirname, name, prefix):
+    def _export_csrc_implements(self, dirname, name, prefix):
 
         batch_size = self._info._batch_size
 
@@ -365,7 +365,7 @@ class CsrcExporter:
         with open(source_filename, 'w') as f:
             f.write(source)
 
-    def export_csrc_example(self, dirname, name, prefix):
+    def _export_csrc_example(self, dirname, name, prefix):
         includes = []
         includes.append('#include "{}_inference.h"'.format(name))
         if len(self._info._parameters) > 0:
@@ -420,7 +420,7 @@ class CsrcExporter:
         with open(example_filename, 'w') as f:
             f.write(example)
 
-    def export_csrc_gnumake(self, dirname, name, prefix):
+    def _export_csrc_gnumake(self, dirname, name, prefix):
         param = ''
         if len(self._info._parameters) > 0:
             param = ' {}_parameters.c'.format(name)
@@ -430,18 +430,17 @@ class CsrcExporter:
         with open(gnumake_filename, 'w') as f:
             f.write(gnumake)
 
-    def export_csrc(self, dirname):
+    def _export_csrc(self, dirname):
         name = self._info._network_name
         prefix = 'nnablart_{}'.format(name.lower())
         if len(self._info._parameters) > 0:
-            self.export_csrc_parameters(dirname, name, prefix)
-        self.export_csrc_defines(dirname, name, prefix)
-        self.export_csrc_implements(dirname, name, prefix)
-        self.export_csrc_example(dirname, name, prefix)
-        self.export_csrc_gnumake(dirname, name, prefix)
+            self._export_csrc_parameters(dirname, name, prefix)
+        self._export_csrc_defines(dirname, name, prefix)
+        self._export_csrc_implements(dirname, name, prefix)
+        self._export_csrc_example(dirname, name, prefix)
+        self._export_csrc_gnumake(dirname, name, prefix)
 
-    def export(self, *args):
-        print('CsrcExporter.export')
+    def execute(self, *args):
         if len(args) == 1:
             if os.path.isdir(args[0]):
-                self.export_csrc(args[0])
+                self._export_csrc(args[0])

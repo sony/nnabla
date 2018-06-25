@@ -14,8 +14,9 @@
 
 import collections
 
-_SupportedInfo = collections.namedtuple('_SupportedInfo', 'read export')
-extensions = _SupportedInfo(read=['.nnp', '.onnx'], export=[
+_SupportedInfo = collections.namedtuple(
+    '_SupportedInfo', 'import_name export_name')
+extensions = _SupportedInfo(import_name=['.nnp', '.onnx'], export_name=[
                             '.nnp', '.nnb', '.onnx'])
-formats = _SupportedInfo(read=['NNP', 'ONNX'], export=[
+formats = _SupportedInfo(import_name=['NNP', 'ONNX'], export_name=[
                          'NNP', 'NNB', 'CSRC', 'ONNX'])

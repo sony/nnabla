@@ -28,17 +28,17 @@ def function_info_command(args):
 
 
 def dump_command(args):
-    if 'read_format' in args:
-        if args.read_format not in nnabla.utils.converter.formats.read:
-            print('Read format ({}) is not supported.'.format(args.read_format))
+    if 'import_format' in args:
+        if args.import_format not in nnabla.utils.converter.formats.import_name:
+            print('Import format ({}) is not supported.'.format(args.import_format))
             return
     nnabla.utils.converter.dump_files(args, args.files)
 
 
 def nnb_template_command(args):
-    if 'read_format' in args:
-        if args.read_format not in nnabla.utils.converter.formats.read:
-            print('Read format ({}) is not supported.'.format(args.read_format))
+    if 'import_format' in args:
+        if args.import_format not in nnabla.utils.converter.formats.import_name:
+            print('Import format ({}) is not supported.'.format(args.import_format))
             return
     if len(args.files) >= 2:
         output = args.files.pop()
@@ -47,13 +47,13 @@ def nnb_template_command(args):
 
 def convert_command(args):
 
-    if 'read_format' in args:
-        if args.read_format not in nnabla.utils.converter.formats.read:
-            print('Read format ({}) is not supported.'.format(args.read_format))
+    if 'import_format' in args:
+        if args.import_format not in nnabla.utils.converter.formats.import_name:
+            print('Import format ({}) is not supported.'.format(args.import_format))
             return
 
     if 'export_format' in args:
-        if args.export_format not in nnabla.utils.converter.formats.export:
+        if args.export_format not in nnabla.utils.converter.formats.export_name:
             print('Export format ({}) is not supported.'.format(args.export_format))
             return
 
@@ -63,8 +63,8 @@ def convert_command(args):
 
 
 def add_convert_command(subparsers):
-    read_formats_string = ','.join(
-        nnabla.utils.converter.formats.read)
+    import_formats_string = ','.join(
+        nnabla.utils.converter.formats.import_name)
 
     # Function Info
     subparser = subparsers.add_parser(
@@ -78,12 +78,12 @@ def add_convert_command(subparsers):
         'dump', help='Dump network with supported format.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
-    # read option
+    # import option
     # NNP
-    subparser.add_argument('-I', '--read-format', type=str, default='NNP',
-                           help='[read] read format. (one of [{}])'.format(read_formats_string))
-    subparser.add_argument('--nnp-expand-network', action='store_true',
-                           help='[read][NNP] expand network with repeat or recurrent.')
+    subparser.add_argument('-I', '--import-format', type=str, default='NNP',
+                           help='[import] import format. (one of [{}])'.format(import_formats_string))
+    subparser.add_argument('--nnp-no-expand-network', action='store_true',
+                           help='[import][NNP] expand network with repeat or recurrent.')
     subparser.set_defaults(func=dump_command)
 
     # Generate NNB template
@@ -91,10 +91,10 @@ def add_convert_command(subparsers):
         'nnb_template', help='Generate NNB config file template.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
-    subparser.add_argument('-I', '--read-format', type=str, default='NNP',
-                           help='[read] read format. (one of [{}])'.format(read_formats_string))
-    subparser.add_argument('--nnp-expand-network', action='store_true',
-                           help='[read][NNP] expand network with repeat or recurrent.')
+    subparser.add_argument('-I', '--import-format', type=str, default='NNP',
+                           help='[import] import format. (one of [{}])'.format(import_formats_string))
+    subparser.add_argument('--nnp-no-expand-network', action='store_true',
+                           help='[import][NNP] expand network with repeat or recurrent.')
     subparser.add_argument('-b', '--batch-size', type=int, default=-1,
                            help='[export] overwrite batch size.')
     subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
@@ -105,15 +105,15 @@ def add_convert_command(subparsers):
     subparser = subparsers.add_parser('convert', help='File format converter.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
-    # read option
+    # import option
     # NNP
-    subparser.add_argument('-I', '--read-format', type=str, default='NNP',
-                           help='[read] read format. (one of [{}])'.format(read_formats_string))
-    subparser.add_argument('--nnp-expand-network', action='store_true',
-                           help='[read][NNP] expand network with repeat or recurrent.')
+    subparser.add_argument('-I', '--import-format', type=str, default='NNP',
+                           help='[import] import format. (one of [{}])'.format(import_formats_string))
+    subparser.add_argument('--nnp-no-expand-network', action='store_true',
+                           help='[import][NNP] expand network with repeat or recurrent.')
     # export option
     export_formats_string = ','.join(
-        nnabla.utils.converter.formats.export)
+        nnabla.utils.converter.formats.export_name)
     subparser.add_argument('-O', '--export-format', type=str, default='NNP',
                            help='[export] export format. (one of [{}])'.format(export_formats_string))
     subparser.add_argument('-f', '--force', action='store_true',

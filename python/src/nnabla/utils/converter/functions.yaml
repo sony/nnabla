@@ -292,9 +292,11 @@ Neural Network Layer:
   GlobalAveragePooling:
     snake_name: global_average_pooling
     doc: |2
+      .. WARNING::
+        This function is experimental suppport, so please do not actively use it.
 
       Global average pooling. It pools an averaged value from the whole image
-
+      
     inputs:
       x:
         doc: Input variable.
@@ -2163,6 +2165,8 @@ Array Manipulation:
   BroadcastTo:
     snake_name: broadcast_to
     doc: |2
+      .. WARNING::
+        This function is experimental suppport, so please do not actively use it.
 
       Broadcasting ND-array to the specified buffer.
     inputs:
@@ -2291,7 +2295,7 @@ Stochasticity:
 
       Dropout.
       Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]` ,
-      and ignores the input if :math:`u > p`.
+      and ignores the input if :math:`u \leq p`.
 
       .. math::
           y = \left\{
