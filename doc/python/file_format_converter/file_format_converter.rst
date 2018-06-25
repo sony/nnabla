@@ -23,6 +23,7 @@ NNP
 **NNP** is file format of NNabla.
 
 NNP format is described at :any:`../../format`.
+
 But with this file format converter is work with several variation of NNP.
 
 - Standard NNP format (.nnp)
@@ -65,7 +66,8 @@ Limitation
 
 - Training does not supported
 - Only supports operatior set 3
-- Not all functions are supported
+- Not all functions are supported. See :any:`onnx/operator_coverage`.
+- Only limited Neural Network Console projects supported.  See :any:`onnx/neural_network_console_example_coverage`.
 
 Usage
 +++++
