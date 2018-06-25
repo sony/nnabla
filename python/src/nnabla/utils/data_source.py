@@ -128,7 +128,7 @@ class DataSource(object):
         Returns:
             bool: whether dataset is shuffled.
         '''
- 
+
         return self._shuffle
 
     @shuffle.setter
@@ -448,7 +448,7 @@ class DataSourceWithMemoryCache(DataSource):
              Indicates whether the dataset is shuffled or not.
         rng (None or :obj:`numpy.random.RandomState`): Numpy random number
             generator.
- 
+
     '''
 
     def _get_data_func(self, position):
