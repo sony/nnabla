@@ -29,6 +29,7 @@ it's only tested on Ubuntu host PC.
 
 * [Linux/macOS](build_cpp_utils.md)
 * [Windows](build_cpp_utils_windows.md)
+* [Android](build_android.md)
 
 ### Extensions
 
