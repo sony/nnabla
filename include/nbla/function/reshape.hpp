@@ -69,11 +69,11 @@ public:
   }
   virtual bool grad_depends_output_data(int i, int o) const { return inplace_; }
   virtual int inplace_data(int i) const {
-    return inplace_ ? Function::INPLACE : Function::INPLACE_NOT_MODIFY;
+    return inplace_ ? Function::INPLACE_NOT_MODIFY : Function::NOT_INPLACE;
   }
   virtual int inplace_data_with(int i) const { return 0; }
   virtual int inplace_grad(int i) const {
-    return inplace_ ? Function::INPLACE : Function::INPLACE_NOT_MODIFY;
+    return inplace_ ? Function::INPLACE_NOT_MODIFY : Function::NOT_INPLACE;
   }
   virtual int inplace_grad_with(int i) const { return 0; }
 
