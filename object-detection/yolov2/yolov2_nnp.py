@@ -29,7 +29,7 @@ def get_args():
     p = argparse.ArgumentParser()
     p.add_argument('--width', type=int, default=608)
     p.add_argument('--height', type=int, default=608)
-    p.add_argument('--weights', type=str, default='yolo.h5')
+    p.add_argument('--weights', type=str, default='yolov2.h5')
     p.add_argument('--anchors', type=int, default=5)
     p.add_argument('--classes', type=int, default=80)
     p.add_argument('--thresh', type=float, default=.5)

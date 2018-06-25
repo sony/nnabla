@@ -109,7 +109,7 @@ def capsule_layer(u, num_j=10, out_channels=16, num_routing_iter=3, grad_dynamic
     # Implementing with broadcast and batch_matmul. Maybe not efficient.
 
     # Create a parameter tensor
-    # Note: Consider num input channels multplied by num input capsules
+    # Note: Consider num input channels multiplied by num input capsules
     from nnabla.initializer import UniformInitializer, calc_uniform_lim_glorot
     from nnabla.parameter import get_parameter_or_create
     w_init = UniformInitializer(

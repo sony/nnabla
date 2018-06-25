@@ -51,7 +51,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         help='Path the model parameters loaded.')
     parser.add_argument("--net", "-n", type=str,
                         default='cifar10_binary_connect_resnet23_prediction',
-                        help="Neural network architecure type (used only in classification*.py)"
+                        help="Neural network architecture type (used only in classification*.py)"
                         "classification.py: "
                         "'cifar10_resnet23_prediction'\n"
                         "'cifar10_binary_net_resnet23_prediction'\n"

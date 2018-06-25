@@ -47,7 +47,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234300, model_save_path='tmp.m
                         default=None, help="Extension path. ex) cpu, cudnn.")
     parser.add_argument("--net", type=str,
                         default='cifar10_resnet23',
-                        help="Neural network architecure type (used only in classification.py).\n"
+                        help="Neural network architecture type (used only in classification.py).\n"
                         "'cifar10_resnet23'\n"
                         "'cifar100_resnet23'")
     parser.add_argument("--with-all-reduce-callback", action='store_true',
