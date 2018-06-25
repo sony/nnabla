@@ -68,7 +68,7 @@ a function class template is generated to the following files.
 * `include/nbla/function/${snake_name}.hpp`
 * `src/nbla/function/generic/${snake_name}.cpp`
 
-Although the function template are useful, elementwise operation functions such as an ativation function can be writen by using macro functions.
+Although the function template are useful, elementwise operation functions such as an ativation function can be written by using macro functions.
 
 TODO: Add details of elementwise macro.
 

@@ -130,6 +130,22 @@ public:
   */
   void weight_decay(float decay_rate);
 
+  /** Check if there is any inf on the gradients which were setup.
+   */
+  bool check_inf_grad();
+
+  /** Check if there is any nan on the gradients which were setup.
+   */
+  bool check_nan_grad();
+
+  /** Check if there is any inf or nan on the gradients which were setup.
+   */
+  bool check_inf_or_nan_grad();
+
+  /** Scale gradients,then increase the loss scale
+   */
+  void scale_grad(float scale);
+
   /** Get array classes that are allowed to be specified by Context
   */
   virtual vector<string> allowed_array_classes();
@@ -170,6 +186,24 @@ protected:
   virtual void weight_decay_impl(const string &key, VariablePtr param,
                                  float decay_rate) = 0;
 
+  /** Check if there is any inf on the gradients which were setup.
+   */
+  virtual bool check_inf_grad_impl(const string &key, VariablePtr param) = 0;
+
+  /** Check if there is any nan on the gradients which were setup.
+   */
+  virtual bool check_nan_grad_impl(const string &key, VariablePtr param) = 0;
+
+  /** Check if there is any inf or nan on the gradients which were setup.
+   */
+  virtual bool check_inf_or_nan_grad_impl(const string &key,
+                                          VariablePtr param) = 0;
+
+  /** Scale gradients, then increase the loss scale
+   */
+  virtual void scale_grad_impl(const string &key, VariablePtr param,
+                               float scale) = 0;
+
   DISABLE_COPY_AND_ASSIGN(Solver);
 };
 /*@}*/
@@ -183,6 +217,45 @@ protected:
   void SOLVER<T>::weight_decay_impl(const string &key, VariablePtr param,      \
                                     float decay_rate) {                        \
     WEIGHT_DECAY_FUNC<T>(this->ctx_, param, decay_rate);                       \
+  }
+
+#define NBLA_DECL_CHECK_INF_GRAD()                                             \
+  virtual bool check_inf_grad_impl(const string &key, VariablePtr param)
+
+#define NBLA_DEF_CHECK_INF_GRAD(SOLVER, CHECK_INF_GRAD_FUNC)                   \
+  template <typename T>                                                        \
+  bool SOLVER<T>::check_inf_grad_impl(const string &key, VariablePtr param) {  \
+    return CHECK_INF_GRAD_FUNC<T>(this->ctx_, param);                          \
+  }
+
+#define NBLA_DECL_CHECK_NAN_GRAD()                                             \
+  virtual bool check_nan_grad_impl(const string &key, VariablePtr param)
+
+#define NBLA_DEF_CHECK_NAN_GRAD(SOLVER, CHECK_NAN_GRAD_FUNC)                   \
+  template <typename T>                                                        \
+  bool SOLVER<T>::check_nan_grad_impl(const string &key, VariablePtr param) {  \
+    return CHECK_NAN_GRAD_FUNC<T>(this->ctx_, param);                          \
+  }
+
+#define NBLA_DECL_CHECK_INF_OR_NAN_GRAD()                                      \
+  virtual bool check_inf_or_nan_grad_impl(const string &key, VariablePtr param)
+
+#define NBLA_DEF_CHECK_INF_OR_NAN_GRAD(SOLVER, CHECK_INF_OR_NAN_GRAD_FUNC)     \
+  template <typename T>                                                        \
+  bool SOLVER<T>::check_inf_or_nan_grad_impl(const string &key,                \
+                                             VariablePtr param) {              \
+    return CHECK_INF_OR_NAN_GRAD_FUNC<T>(this->ctx_, param);                   \
+  }
+
+#define NBLA_DECL_SCALE_GRAD()                                                 \
+  virtual void scale_grad_impl(const string &key, VariablePtr param,           \
+                               float scale)
+
+#define NBLA_DEF_SCALE_GRAD(SOLVER, SCALE_GRAD_FUNC)                           \
+  template <typename T>                                                        \
+  void SOLVER<T>::scale_grad_impl(const string &key, VariablePtr param,        \
+                                  float scale) {                               \
+    SCALE_GRAD_FUNC<T>(this->ctx_, param, scale);                              \
   }
 
 /** \defgroup SolverImplGrp Solver list */

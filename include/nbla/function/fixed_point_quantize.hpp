@@ -41,7 +41,7 @@ protected:
   const bool sign_;   // Indicate the signed fixed-point number or the unsigned
                       // fixed-point number. The default is true, use the signed
                       // fixed-point number.
-  const int n_;       // Bit width used, take care that `sign` comsumes one-bit.
+  const int n_;       // Bit width used, take care that `sign` consumes one-bit.
                       // \f$n-1\f$ is used for number representation in `signed`
                       // case.
   const float delta_; // Step size

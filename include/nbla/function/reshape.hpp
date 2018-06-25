@@ -25,7 +25,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Reshape, const vector<int> &);
+NBLA_REGISTER_FUNCTION_HEADER(Reshape, const vector<int> &, bool);
 
 /** Reshaping copy of an input variable.
 
@@ -37,23 +37,27 @@ Outputs:
 
 @tparam T Data type for computation.
 @param shape Target shape.
+@param inplace The output array is will be shared with the input array if true.
 \ingroup FunctionImplGrp
  */
 
-template <typename T> class Reshape : public BaseFunction<const vector<int> &> {
+template <typename T>
+class Reshape : public BaseFunction<const vector<int> &, bool> {
 protected:
   Shape_t shape_;
+  bool inplace_;
 
 public:
-  Reshape(const Context &ctx, const vector<int> &shape)
-      : BaseFunction(ctx, shape), shape_(shape.size()) {
+  Reshape(const Context &ctx, const vector<int> &shape, bool inplace)
+      : BaseFunction(ctx, shape, inplace), shape_(shape.size()),
+        inplace_(inplace) {
     std::copy(shape.begin(), shape.end(), shape_.begin());
   }
   virtual ~Reshape() {}
   virtual shared_ptr<Function> copy() const {
     vector<int> shape(shape_.size());
     std::copy(shape_.begin(), shape_.end(), shape.begin());
-    return create_Reshape(ctx_, shape);
+    return create_Reshape(ctx_, shape, inplace_);
   }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
@@ -63,9 +67,14 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
-  virtual int inplace_data(int i) const { return Function::INPLACE_NOT_MODIFY; }
+  virtual bool grad_depends_output_data(int i, int o) const { return inplace_; }
+  virtual int inplace_data(int i) const {
+    return inplace_ ? Function::INPLACE : Function::INPLACE_NOT_MODIFY;
+  }
   virtual int inplace_data_with(int i) const { return 0; }
-  virtual int inplace_grad(int i) const { return INPLACE_NOT_MODIFY; }
+  virtual int inplace_grad(int i) const {
+    return inplace_ ? Function::INPLACE : Function::INPLACE_NOT_MODIFY;
+  }
   virtual int inplace_grad_with(int i) const { return 0; }
 
 protected:

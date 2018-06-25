@@ -23,7 +23,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Reshape, const vector<int> &);
+NBLA_REGISTER_FUNCTION_SOURCE(Reshape, const vector<int> &, bool);
 
 template <typename T>
 void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
@@ -58,18 +58,52 @@ void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   // C: Reshape output
   outputs[0]->reshape(shape_, true);
 
-  // D: Reshape function is always in-place.
-  outputs[0]->data()->set_array(inputs[0]->data()->array());
-  outputs[0]->grad()->set_array(inputs[0]->grad()->array());
+  // D: Inpalce
+  if (inplace_) {
+    outputs[0]->data()->set_array(inputs[0]->data()->array());
+    outputs[0]->grad()->set_array(inputs[0]->grad()->array());
+  }
 }
 
 template <class T>
 void Reshape<T>::forward_impl(const Variables &inputs,
-                              const Variables &outputs) {}
+                              const Variables &outputs) {
+  if (inplace_) {
+    return;
+  }
+
+  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  for (int s = 0; s < inputs[0]->size(); s++) {
+    y[s] = x[s];
+  }
+}
+
+template <typename T, bool accum>
+void reshape_backward_cpu(int size, T *dx, const T *dy) {
+  for (int s = 0; s < size; ++s) {
+    if (accum)
+      dx[s] += dy[s];
+    else
+      dx[s] = dy[s];
+  }
+}
 
 template <class T>
 void Reshape<T>::backward_impl(const Variables &inputs,
                                const Variables &outputs,
                                const vector<bool> &propagate_down,
-                               const vector<bool> &accum) {}
+                               const vector<bool> &accum) {
+  if (!propagate_down[0]) {
+    return;
+  }
+
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_,
+                                                  !(inplace_ || accum[0]));
+  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  if (dx != dy && accum[0])
+    reshape_backward_cpu<T, true>(inputs[0]->size(), dx, dy);
+  else
+    reshape_backward_cpu<T, false>(inputs[0]->size(), dx, dy);
+}
 }

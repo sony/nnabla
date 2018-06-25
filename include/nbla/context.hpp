@@ -45,7 +45,7 @@ public:
      class. Even if it is not specified an array class is chosen according to
      the default array class of an implementation of Function/Solver. Every
      Funciton/Solver class has a list of array classes that can be used as
-     storages of the computation inputs and ouputs. If the given array_class
+     storages of the computation inputs and outputs. If the given array_class
      doesn't match any of them, the default array class of the implementation
      will be used.
      @param[in] device_id A string expression of device ID of the backend.

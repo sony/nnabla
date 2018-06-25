@@ -41,7 +41,7 @@ Outputs:
 - N-D array with the same shape as input.
 
 @tparam T Data type for computation.
-@param alpha The slope value multplied to negative numbers. @f$\alpha@f$ in the
+@param alpha The slope value multiplied to negative numbers. @f$\alpha@f$ in the
 definition.
 
 \ingroup FunctionImplGrp

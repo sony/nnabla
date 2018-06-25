@@ -413,3 +413,9 @@ ATanh:
 NmsDetection2d:
   float: [float]
 #  half: [Half]
+FFT:
+  float: [float]
+#  half: [Half]
+IFFT:
+  float: [float]
+#  half: [Half]

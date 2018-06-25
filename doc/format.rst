@@ -7,13 +7,13 @@ Here is data format for exchange network structures and trained parameters.
 Network Structure
 -----------------
 
-Network structure and parameter will store with Google Protcol Buffer format internally.
+Network structure and parameter will store with Google Protocol Buffer format internally.
 
 
 Overview
 ^^^^^^^^
 
-Overvire of network structure defined as following.
+Overview of network structure defined as following.
 
 .. uml::
 
@@ -151,7 +151,7 @@ TrainingConfig
 Network
   Network structure.
 Parameter
-  Specieal variable to store train result. (e.g Weight or Bias of affine layer)
+  Special variable to store train result. (e.g Weight or Bias of affine layer)
 Dataset
   Specify dataset for training.
 Optimizer

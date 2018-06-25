@@ -1,4 +1,4 @@
-nnabla==0.9.9
+nnabla==1.0.0rc2
 sphinx-rtd-theme
 sphinxcontrib-actdiag
 sphinxcontrib-blockdiag

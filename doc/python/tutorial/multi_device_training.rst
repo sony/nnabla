@@ -21,7 +21,7 @@ In the optimization process, the objective one tries to minimize is
 where :math:`f` is a neural network, :math:`B \times N` is the batch
 size, :math:`\ell` is a loss function for each data point
 :math:`\mathbf{x} \in X`, and :math:`\mathbf{w}` is the trainable
-parameter of the neural newtwork.
+parameter of the neural network.
 
 When taking the derivative of this objective, one gets,
 
@@ -44,11 +44,11 @@ data points.
     + \frac{1}{B} \sum_{i=B \times (N-1) + 1}^{B \times N} \nabla_{\mathbf{w}} \ell (\mathbf{w}, \mathbf{x}_i)
    \right)
 
-In data parallel distributed training, the following steps are peformed
+In data parallel distributed training, the following steps are performed
 according to the above equation,
 
 1. each term, summation of derivatives (gradients) divided by batch size
-   :math:`B`, is computed on a separated device (tipically GPU),
+   :math:`B`, is computed on a separated device (typically GPU),
 2. take the sum over devices,
 3. divide the result by the number of devices, :math:`N`.
 
@@ -191,7 +191,7 @@ Create a solver.
 Training
 ~~~~~~~~
 
-Recall the basic usage of ``nnabla`` API for training a neural netwrok,
+Recall the basic usage of ``nnabla`` API for training a neural network,
 it is
 
 1. loss.forward()
@@ -311,7 +311,7 @@ Again, check gradients of weights,
     ('affine/b', array([-1.233364 ,  1.2333639], dtype=float32))
 
 
-You can see the same values over the devices because of ``all_reuce``.
+You can see the same values over the devices because of ``all_reduce``.
 
 Update weights,
 

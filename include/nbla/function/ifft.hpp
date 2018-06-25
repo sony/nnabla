@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NBLA_FUNCTION_TOP_K_GRAD_HPP
-#define NBLA_FUNCTION_TOP_K_GRAD_HPP
+#ifndef NBLA_FUNCTION_IFFT_HPP
+#define NBLA_FUNCTION_IFFT_HPP
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
@@ -21,47 +21,29 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(TopKGrad, int, bool, int);
+NBLA_REGISTER_FUNCTION_HEADER(IFFT, int, bool);
 
-/** Select the `k` largest gradients for each sample in `x` to
-back-propagate unmodified and set all other gradients to 0. If
-`abs` is True, the `k` largest gradients are selected by magnitude.
-Dimensions before `base_axis` are treated as number of sample
-dimensions and `k` gradients get selected from all gradients
-of a sample (dimensions from `base_axis`) regardless of shape.
+/**
+    @todo Write doc.
 
 Inputs:
 
-- N-D array
-
 Outputs:
-
-- N-D array with same shape and data as `x`.
-
-@tparam T Data type for computation.
-
-@param k Number of largest gradients to back-propagate.
-
-@param abs Determine largest gradients by magnitude.
-
-@param base_axis First dimension of the sample shape.
 
 \ingroup FunctionImplGrp
  */
-template <typename T> class TopKGrad : public BaseFunction<int, bool, int> {
+template <typename T> class IFFT : public BaseFunction<int, bool> {
 protected:
-  int k_;
-  bool abs_;
-  int base_axis_;
-  Variable top_k_idx_;
+  int signal_ndim_;
+  bool normalized_;
 
 public:
-  TopKGrad(const Context &ctx, int k, bool abs, int base_axis)
-      : BaseFunction(ctx, k, abs, base_axis), k_(k), abs_(abs),
-        base_axis_(base_axis) {}
-  virtual ~TopKGrad() {}
+  IFFT(const Context &ctx, int signal_ndim, bool normalized)
+      : BaseFunction(ctx, signal_ndim, normalized), signal_ndim_(signal_ndim),
+        normalized_(normalized) {}
+  virtual ~IFFT() {}
   virtual shared_ptr<Function> copy() const {
-    return create_TopKGrad(ctx_, k_, abs_, base_axis_);
+    return create_IFFT(ctx_, signal_ndim_, normalized_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -70,7 +52,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
-  virtual string name() { return "TopKGrad"; }
+  virtual string name() { return "IFFT"; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

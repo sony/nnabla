@@ -1,4 +1,4 @@
-C++ Command Line Iterface
+C++ Command Line Interface
 =========================
 
 TODO.

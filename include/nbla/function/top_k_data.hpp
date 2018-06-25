@@ -43,7 +43,7 @@ Outputs:
 
 @tparam T Data type for computation.
 
-@param k Number of largest data values to propgate.
+@param k Number of largest data values to propagate.
 
 @param abs Determine largest data values by magnitude.
 

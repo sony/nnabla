@@ -31,7 +31,7 @@ NNABLA_EXAMPLES_ROOT=<your local path to nnabla-examples> python save_nnp_classi
 
 It reads parameter file, and creates a computation graph using loaded parameters. The computation graph is only used to dump the network structure into NNP file.
 
-```pyton
+```python
     runtime_contents = {
         'networks': [
             {'name': 'runtime',
@@ -45,9 +45,9 @@ It reads parameter file, and creates a computation graph using loaded parameters
              'output': ['y']}]}
     nn.utils.save.save(nnp_file, runtime_contents)
 ```
-In the above code, the network structure containing parameters and the execution configuration is saved into the NNP file `lenet_010000.nnp`. The contents is described in a JSON like format. In the `netoworks` field, you add a newtork with a name of `runtime`. It has a default batch size. The computation graph can be set by the output variable `pred` in the `outputs` field. At the same time, the output variable `pred` of the computation graph is registered as a name `y`. To query an input or intermediate variable in the computation graph via the C++ interface, you should set a filed `names` in a format of `{<name>: <Variable>}`.
+In the above code, the network structure containing parameters and the execution configuration is saved into the NNP file `lenet_010000.nnp`. The contents is described in a JSON like format. In the `networks` field, you add a network with a name of `runtime`. It has a default batch size. The computation graph can be set by the output variable `pred` in the `outputs` field. At the same time, the output variable `pred` of the computation graph is registered as a name `y`. To query an input or intermediate variable in the computation graph via the C++ interface, you should set a filed `names` in a format of `{<name>: <Variable>}`.
 
-The named variables in the network are referenced by the `executors` config. The executor config is used in C++ for executing a network in a more simpler way. The executor `runtime` is added where the newtork `runtime` is executed. The input and output variables are specified by names that are registered in the `networks` field.
+The named variables in the network are referenced by the `executors` config. The executor config is used in C++ for executing a network in a more simpler way. The executor `runtime` is added where the network `runtime` is executed. The input and output variables are specified by names that are registered in the `networks` field.
 
 ## Build MNIST inference example C++ code
 You can find an executable file 'mnist_runtime' under the build directory located at nnabla/build/bin.
@@ -93,7 +93,7 @@ Sample images that I created using GIMP editor are located in this folder.
 :---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:
 ![0](./original_images/0.png "0")|![1](./original_images/1.png "1")|![2](./original_images/2.png "2")|![3](./original_images/3.png "3")|![4](./original_images/4.png "4")|![5](./original_images/5.png "5")|![6](./original_images/6.png "6")|![7](./original_images/7.png "7")|![8](./original_images/8.png "8")|![9](./original_images/9.png "9")
 
-The following command executes image classifiation with the trained model `lenet_010000.nnp` given an input image.
+The following command executes image classification with the trained model `lenet_010000.nnp` given an input image.
 
 ![5](./original_images/5.png "5")
 
@@ -126,7 +126,7 @@ nbla::Context ctx{"cpu", "CpuCachedArray", "0", "default"};
 nbla::utils::nnp::Nnp nnp(ctx);
 ```
 
-4. Set nnp file to the `Nnp` object. It imediately parses the file format and stores the extracted info.
+4. Set nnp file to the `Nnp` object. It immediately parses the file format and stores the extracted info.
 ```c++
 nnp.add(nnp_file);
 ```

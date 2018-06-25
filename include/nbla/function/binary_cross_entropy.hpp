@@ -35,7 +35,7 @@ x^{(1)}_i\right) * \ln \left(1 - x^{(0)}_i\right)\right).
 Inputs:
 - Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
 - Labels N-D array. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy, it
-  allows propbability (0 to 1) as inputs and backpropagation can be done.
+  allows probability (0 to 1) as inputs and backpropagation can be done.
 
 Outputs:
 - Element-wise losses N-D array.
