@@ -724,7 +724,7 @@ class OnnxExporter:
         self._nnp = nnp.protobuf
         self._batch_size = batch_size
 
-    def export(self, file_path):
+    def execute(self, file_path):
         model_proto = nnp_model_to_onnx_protobuf(self._nnp, self._batch_size)
         with open(file_path, "wb") as f:
             f.write(model_proto.SerializeToString())

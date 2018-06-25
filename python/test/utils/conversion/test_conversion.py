@@ -34,11 +34,8 @@ except:
     pass
 
 from collections import OrderedDict
-from nnabla.utils.converter.nnabla import NnpReader, NnpExporter
-from nnabla.utils.converter.onnx import (
-    OnnxReader, OnnxExporter,
-    onnx_model_to_nnp_protobuf,
-)
+from nnabla.utils.converter.nnabla import NnpImporter, NnpExporter
+from nnabla.utils.converter.onnx import OnnxImporter, OnnxExporter
 
 CNTK_AVAILABLE = False
 try:
@@ -49,8 +46,11 @@ except:
     print('Need to install CNTK for testing.')
 
 # The directory of which the input ONNX files will be at
-TEST_DATA_DIR = os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), 'reference')
+REFERENCE_AVAILABLE = False
+TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), *(['..']*5), 'nnabla-sample-data', 'reference', 'onnx'))
+if os.path.exists(TEST_DATA_DIR):
+    REFERENCE_AVAILABLE = True
+print(TEST_DATA_DIR)
 
 # Set a path to this parameter (preferably the same as TEST_DATA_DIR)
 # if you want to update all the NNP files
@@ -108,8 +108,8 @@ def convert_onnx_to_nnp_and_compare(
         raise ValueError("Unknown backend specified")
 
     # Process onnx with naabla
-    r = OnnxReader(path)
-    nnp = r.read()
+    r = OnnxImporter(path)
+    nnp = r.execute()
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
@@ -119,7 +119,7 @@ def convert_onnx_to_nnp_and_compare(
     nnpex = NnpExporter(nnp, batch_size=0)
     nnpdir = tmpdir.mkdir("nnp")
     p = os.path.join(str(nnpdir), nnp_name)
-    nnpex.export_nnp(p)
+    nnpex._export_nnp(p)
     if export_nnp_path:
         shutil.copy2(p, export_nnp_path)
     # read exported nnp and run network
@@ -162,8 +162,8 @@ def convert_nnp_to_onnx_and_compare(
     nnout = exe.variables[out_name].variable_instance.d
 
     # Convert nnp to ONNX
-    r = NnpReader(path)
-    nnp = r.read()
+    r = NnpImporter(path)
+    nnp = r.execute()
     assert nnp is not None
     assert len(nnp.other_files) == 0
     assert nnp.protobuf is not None
@@ -172,7 +172,7 @@ def convert_nnp_to_onnx_and_compare(
     onnxex = OnnxExporter(nnp, -1)
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), onnx_name)
-    onnxex.export(p)
+    onnxex.execute(p)
     if export_onnx_path:
         shutil.copy2(p, export_onnx_path)
 
@@ -220,7 +220,7 @@ def nnp_fixture():
 
 
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "concat.onnx", "concat.nnp",
@@ -228,7 +228,7 @@ def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "concat.nnp", "concat.onnx",
@@ -236,21 +236,21 @@ def test_nnp_onnx_conversion_concat(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "conv.nnp", "conv.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     # We do not check if the values match because a dropout
     # output yield random results
@@ -261,7 +261,7 @@ def test_onnx_nnp_conversion_dropout(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     # We do not check if the values match because a dropout
     # output yield random results
@@ -272,7 +272,7 @@ def test_nnp_onnx_conversion_dropout(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "dropout_test.onnx", "dropout_test.nnp",
@@ -280,7 +280,7 @@ def test_onnx_nnp_conversion_dropout_is_test(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "dropout_test.nnp", "dropout_test.onnx",
@@ -288,21 +288,21 @@ def test_nnp_onnx_conversion_dropout_is_test(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_gap(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.onnx", "gap.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_gap(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gap.nnp", "gap.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool.onnx", "maxpool.nnp",
@@ -310,7 +310,7 @@ def test_onnx_nnp_conversion_maxpool(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool.nnp", "maxpool.onnx",
@@ -318,7 +318,7 @@ def test_nnp_onnx_conversion_maxpool(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool_p0_s2_k3.onnx",
@@ -327,7 +327,7 @@ def test_onnx_nnp_conversion_maxpool_p0_s2_k3(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "maxpool_p0_s2_k3.nnp",
@@ -336,21 +336,21 @@ def test_nnp_onnx_conversion_maxpool_p0_s3_k3(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_relu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.onnx", "relu.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_relu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "relu.nnp", "relu.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softmax.onnx", "softmax.nnp",
@@ -358,7 +358,7 @@ def test_onnx_nnp_conversion_softmax(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softmax.nnp", "softmax.onnx",
@@ -366,7 +366,7 @@ def test_nnp_onnx_conversion_softmax(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "average_pool.onnx", "average_pool.nnp",
@@ -374,7 +374,7 @@ def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "average_pool.nnp", "average_pool.onnx",
@@ -382,7 +382,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
 
 
 # def test_onnx_nnp_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "average_pool_p0_0_1_1_s1_k2.onnx",
@@ -392,7 +392,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
 #
 #
 # def test_nnp_onnx_conversion_average_pool_p0_0_1_1_s1_k2(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #    convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "average_pool_p0_0_1_1_s1_k2.nnp",
@@ -401,7 +401,7 @@ def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_sum(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sum.onnx", "sum.nnp",
@@ -409,14 +409,14 @@ def test_onnx_nnp_conversion_sum(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_sum(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "sum.nnp", "sum.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "batch_norm.onnx", "batch_norm.nnp",
@@ -424,7 +424,7 @@ def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "batch_norm.nnp", "batch_norm.onnx",
@@ -432,21 +432,21 @@ def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_gemm(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.onnx", "gemm.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_gemm(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.nnp", "gemm.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_add_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "add_no_broadcast.onnx",
@@ -455,7 +455,7 @@ def test_onnx_nnp_conversion_add_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_add_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "add_no_broadcast.nnp",
@@ -464,7 +464,7 @@ def test_nnp_onnx_conversion_add_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "add_broadcast_axis1.onnx",
@@ -473,7 +473,7 @@ def test_onnx_nnp_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "add_broadcast_axis1.nnp",
@@ -482,7 +482,7 @@ def test_nnp_onnx_conversion_add_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "mul_no_broadcast.onnx",
@@ -491,7 +491,7 @@ def test_onnx_nnp_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "mul_no_broadcast.nnp",
@@ -500,7 +500,7 @@ def test_nnp_onnx_conversion_mul_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_mul_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "mul_broadcast_axis1.onnx",
@@ -509,7 +509,7 @@ def test_onnx_nnp_conversion_mul_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_mul_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "mul_broadcast_axis1.nnp",
@@ -518,7 +518,7 @@ def test_nnp_onnx_conversion_mul_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "constant.onnx", "constant.nnp",
@@ -526,7 +526,7 @@ def test_onnx_nnp_conversion_constant(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reshape.onnx", "reshape.nnp",
@@ -534,7 +534,7 @@ def test_onnx_nnp_conversion_reshape(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reshape(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reshape.nnp", "reshape.onnx",
@@ -542,7 +542,7 @@ def test_nnp_onnx_conversion_reshape(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_matmul(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "matmul.onnx", "matmul.nnp",
@@ -550,7 +550,7 @@ def test_onnx_nnp_conversion_matmul(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_matmul(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "matmul.nnp", "matmul.onnx",
@@ -558,7 +558,7 @@ def test_nnp_onnx_conversion_matmul(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_transpose(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "transpose.onnx", "transpose.nnp",
@@ -566,7 +566,7 @@ def test_onnx_nnp_conversion_transpose(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_transpose(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "transpose.nnp", "transpose.onnx",
@@ -574,21 +574,21 @@ def test_nnp_onnx_conversion_transpose(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_abs(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "abs.onnx", "abs.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_abs(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "abs.nnp", "abs.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_sigmoid(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sigmoid.onnx", "sigmoid.nnp",
@@ -596,7 +596,7 @@ def test_onnx_nnp_conversion_sigmoid(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_sigmoid(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sigmoid.nnp", "sigmoid.onnx",
@@ -604,21 +604,21 @@ def test_nnp_onnx_conversion_sigmoid(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_tanh(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "tanh.onnx", "tanh.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_tanh(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "tanh.nnp", "tanh.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_leaky_relu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "leaky_relu.onnx", "leaky_relu.nnp",
@@ -626,7 +626,7 @@ def test_onnx_nnp_conversion_leaky_relu(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_leaky_relu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "leaky_relu.nnp", "leaky_relu.onnx",
@@ -634,63 +634,63 @@ def test_nnp_onnx_conversion_leaky_relu(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_log(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "log.onnx", "log.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_log(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "log.nnp", "log.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_not(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "not.onnx", "not.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_not(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "not.nnp", "not.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_elu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "elu.onnx", "elu.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_elu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "elu.nnp", "elu.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_selu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "selu.onnx", "selu.nnp", "out_data_1", "exec_0")
 
 
 def test_nnp_onnx_conversion_selu(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(
         tmpdir, TEST_DATA_DIR, "selu.nnp", "selu.onnx", "out_data_1", "exec_0")
 
 
 def test_onnx_nnp_conversion_reduce_sum(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_sum.onnx", "reduce_sum.nnp",
@@ -698,7 +698,7 @@ def test_onnx_nnp_conversion_reduce_sum(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reduce_sum(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_sum.nnp", "reduce_sum.onnx",
@@ -706,7 +706,7 @@ def test_nnp_onnx_conversion_reduce_sum(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_reduce_mean(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_mean.onnx", "reduce_mean.nnp",
@@ -714,7 +714,7 @@ def test_onnx_nnp_conversion_reduce_mean(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reduce_mean(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_mean.nnp", "reduce_mean.onnx",
@@ -722,7 +722,7 @@ def test_nnp_onnx_conversion_reduce_mean(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_and_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "and_no_broadcast.onnx",
@@ -731,7 +731,7 @@ def test_onnx_nnp_conversion_and_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_and_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "and_no_broadcast.nnp",
@@ -740,7 +740,7 @@ def test_nnp_onnx_conversion_and_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "and_broadcast_axis1.onnx",
@@ -749,7 +749,7 @@ def test_onnx_nnp_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "and_broadcast_axis1.nnp",
@@ -758,7 +758,7 @@ def test_nnp_onnx_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_or_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "or_no_broadcast.onnx",
@@ -767,7 +767,7 @@ def test_onnx_nnp_conversion_or_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_or_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "or_no_broadcast.nnp",
@@ -776,7 +776,7 @@ def test_nnp_onnx_conversion_or_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "or_broadcast_axis1.onnx",
@@ -785,7 +785,7 @@ def test_onnx_nnp_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "or_broadcast_axis1.nnp",
@@ -794,7 +794,7 @@ def test_nnp_onnx_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_xor_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "xor_no_broadcast.onnx",
@@ -803,7 +803,7 @@ def test_onnx_nnp_conversion_xor_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_xor_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "xor_no_broadcast.nnp",
@@ -812,7 +812,7 @@ def test_nnp_onnx_conversion_xor_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "xor_broadcast_axis1.onnx",
@@ -821,7 +821,7 @@ def test_onnx_nnp_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "xor_broadcast_axis1.nnp",
@@ -830,7 +830,7 @@ def test_nnp_onnx_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_div_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "div_no_broadcast.onnx",
@@ -839,7 +839,7 @@ def test_onnx_nnp_conversion_div_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_div_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "div_no_broadcast.nnp",
@@ -848,7 +848,7 @@ def test_nnp_onnx_conversion_div_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "div_broadcast_axis1.onnx",
@@ -857,7 +857,7 @@ def test_onnx_nnp_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "div_broadcast_axis1.nnp",
@@ -866,7 +866,7 @@ def test_nnp_onnx_conversion_div_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_pow_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "pow_no_broadcast.onnx",
@@ -875,7 +875,7 @@ def test_onnx_nnp_conversion_pow_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_pow_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "pow_no_broadcast.nnp",
@@ -884,7 +884,7 @@ def test_nnp_onnx_conversion_pow_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_pow_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "pow_broadcast_axis1.onnx",
@@ -893,7 +893,7 @@ def test_onnx_nnp_conversion_pow_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_pow_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "pow_broadcast_axis1.nnp",
@@ -902,7 +902,7 @@ def test_nnp_onnx_conversion_pow_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_sub_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sub_no_broadcast.onnx",
@@ -911,7 +911,7 @@ def test_onnx_nnp_conversion_sub_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_sub_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sub_no_broadcast.nnp",
@@ -920,7 +920,7 @@ def test_nnp_onnx_conversion_sub_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_sub_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sub_broadcast_axis1.onnx",
@@ -929,7 +929,7 @@ def test_onnx_nnp_conversion_sub_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_sub_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "sub_broadcast_axis1.nnp",
@@ -938,7 +938,7 @@ def test_nnp_onnx_conversion_sub_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_less_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "less_no_broadcast.onnx",
@@ -947,7 +947,7 @@ def test_onnx_nnp_conversion_less_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_less_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "less_no_broadcast.nnp",
@@ -956,7 +956,7 @@ def test_nnp_onnx_conversion_less_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_less_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "less_broadcast_axis1.onnx",
@@ -965,7 +965,7 @@ def test_onnx_nnp_conversion_less_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_less_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "less_broadcast_axis1.nnp",
@@ -974,7 +974,7 @@ def test_nnp_onnx_conversion_less_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_greater_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "greater_no_broadcast.onnx",
@@ -983,7 +983,7 @@ def test_onnx_nnp_conversion_greater_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_greater_no_broadcast(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "greater_no_broadcast.nnp",
@@ -992,7 +992,7 @@ def test_nnp_onnx_conversion_greater_no_broadcast(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "greater_broadcast_axis1.onnx",
@@ -1001,7 +1001,7 @@ def test_onnx_nnp_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "greater_broadcast_axis1.nnp",
@@ -1010,7 +1010,7 @@ def test_nnp_onnx_conversion_greater_broadcast_axis1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_no_broadcast_bool.onnx",
@@ -1019,7 +1019,7 @@ def test_onnx_nnp_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_no_broadcast_bool.nnp",
@@ -1028,7 +1028,7 @@ def test_nnp_onnx_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_broadcast_axis1_bool.onnx",
@@ -1037,7 +1037,7 @@ def test_onnx_nnp_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_broadcast_axis1_bool.nnp",
@@ -1046,7 +1046,7 @@ def test_nnp_onnx_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_no_broadcast_int.onnx",
@@ -1055,7 +1055,7 @@ def test_onnx_nnp_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_no_broadcast_int.nnp",
@@ -1064,7 +1064,7 @@ def test_nnp_onnx_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_broadcast_axis1_int.onnx",
@@ -1073,7 +1073,7 @@ def test_onnx_nnp_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "equal_broadcast_axis1_int.nnp",
@@ -1082,7 +1082,7 @@ def test_nnp_onnx_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_max(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "max.onnx",
@@ -1091,7 +1091,7 @@ def test_onnx_nnp_conversion_max(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_max(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "max.nnp",
@@ -1100,7 +1100,7 @@ def test_nnp_onnx_conversion_max(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_min(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "min.onnx",
@@ -1109,7 +1109,7 @@ def test_onnx_nnp_conversion_min(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_min(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "min.nnp",
@@ -1118,7 +1118,7 @@ def test_nnp_onnx_conversion_min(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_exp(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "exp.onnx",
@@ -1127,7 +1127,7 @@ def test_onnx_nnp_conversion_exp(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_exp(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "exp.nnp",
@@ -1136,7 +1136,7 @@ def test_nnp_onnx_conversion_exp(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_identity(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "identity.onnx",
@@ -1145,7 +1145,7 @@ def test_onnx_nnp_conversion_identity(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_identity(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "identity.nnp",
@@ -1154,7 +1154,7 @@ def test_nnp_onnx_conversion_identity(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_prelu_c1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "prelu_c1.onnx",
@@ -1163,7 +1163,7 @@ def test_onnx_nnp_conversion_prelu_c1(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_prelu_c1(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "prelu_c1.nnp",
@@ -1172,7 +1172,7 @@ def test_nnp_onnx_conversion_prelu_c1(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_prelu_c3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "prelu_c3.onnx",
@@ -1181,7 +1181,7 @@ def test_onnx_nnp_conversion_prelu_c3(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_prelu_c3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "prelu_c3.nnp",
@@ -1190,7 +1190,7 @@ def test_nnp_onnx_conversion_prelu_c3(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_reciprocal(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reciprocal.onnx",
@@ -1199,7 +1199,7 @@ def test_onnx_nnp_conversion_reciprocal(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reciprocal(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reciprocal.nnp",
@@ -1208,7 +1208,7 @@ def test_nnp_onnx_conversion_reciprocal(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_reduce_min(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_min.onnx",
@@ -1217,7 +1217,7 @@ def test_onnx_nnp_conversion_reduce_min(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reduce_min(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_min.nnp",
@@ -1226,7 +1226,7 @@ def test_nnp_onnx_conversion_reduce_min(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_reduce_max(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_max.onnx",
@@ -1235,7 +1235,7 @@ def test_onnx_nnp_conversion_reduce_max(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reduce_max(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_max.nnp",
@@ -1244,7 +1244,7 @@ def test_nnp_onnx_conversion_reduce_max(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_neg(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "neg.onnx",
@@ -1253,7 +1253,7 @@ def test_onnx_nnp_conversion_neg(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_neg(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "neg.nnp",
@@ -1262,7 +1262,7 @@ def test_nnp_onnx_conversion_neg(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_log_softmax(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "log_softmax.onnx",
@@ -1271,7 +1271,7 @@ def test_onnx_nnp_conversion_log_softmax(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_log_softmax(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "log_softmax.nnp",
@@ -1280,7 +1280,7 @@ def test_nnp_onnx_conversion_log_softmax(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_clip_maxNone_minNone(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_maxNone_minNone.onnx",
@@ -1289,7 +1289,7 @@ def test_onnx_nnp_conversion_clip_maxNone_minNone(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_clip_maxNone_minNone(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_maxNone_minNone.nnp",
@@ -1298,7 +1298,7 @@ def test_nnp_onnx_conversion_clip_maxNone_minNone(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_clip_max1_0_minNone(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_max1.0_minNone.onnx",
@@ -1307,7 +1307,7 @@ def test_onnx_nnp_conversion_clip_max1_0_minNone(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_clip_max1_0_minNone(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_max1.0_minNone.nnp",
@@ -1316,7 +1316,7 @@ def test_nnp_onnx_conversion_clip_max1_0_minNone(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_clip_maxNone_min_1_0(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_maxNone_min-1.0.onnx",
@@ -1325,7 +1325,7 @@ def test_onnx_nnp_conversion_clip_maxNone_min_1_0(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_clip_maxNone_min_1_0(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_maxNone_min-1.0.nnp",
@@ -1334,7 +1334,7 @@ def test_nnp_onnx_conversion_clip_maxNone_min_1_0(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_max1.0_min-1.0.onnx",
@@ -1343,7 +1343,7 @@ def test_onnx_nnp_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "clip_max1.0_min-1.0.nnp",
@@ -1352,7 +1352,7 @@ def test_nnp_onnx_conversion_clip_max1_0_min_1_0(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_softplus(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softplus.onnx",
@@ -1361,7 +1361,7 @@ def test_onnx_nnp_conversion_softplus(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_softplus(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softplus.nnp",
@@ -1370,7 +1370,7 @@ def test_nnp_onnx_conversion_softplus(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_softsign(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softsign.onnx",
@@ -1379,7 +1379,7 @@ def test_onnx_nnp_conversion_softsign(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_softsign(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "softsign.nnp",
@@ -1388,7 +1388,7 @@ def test_nnp_onnx_conversion_softsign(tmpdir, nnp_fixture):
 
 
 def test_onnx_nnp_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "lrn_c4_s3.onnx",
@@ -1397,7 +1397,7 @@ def test_onnx_nnp_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "lrn_c4_s3.nnp",
@@ -1408,7 +1408,7 @@ def test_nnp_onnx_conversion_lrn_c4_s3(tmpdir, nnp_fixture):
 
 def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
                                                             nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "pad_mconstant_v0_pl0_0_0_1_0_1.onnx",
@@ -1419,7 +1419,7 @@ def test_onnx_nnp_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
 
 def test_nnp_onnx_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
                                                             nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "pad_mconstant_v0_pl0_0_0_1_0_1.nnp",
@@ -1429,7 +1429,7 @@ def test_nnp_onnx_conversion_pad_mconstant_v0_pl0_0_0_1_0_1(tmpdir,
 
 
 def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_prod.onnx",
@@ -1439,9 +1439,9 @@ def test_onnx_nnp_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 
 def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
-    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
-    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
+    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CNTK_AVAILABLE):
         pytest.skip('CNTK does not installed.')
     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
                                     "reduce_prod.nnp",
@@ -1452,7 +1452,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 # Even sized LRN is not tested because we only support
 # Odd sizes for now.
 # def test_onnx_nnp_conversion_lrn_c3_s2(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
 #                                    "lrn_c3_s2.onnx",
@@ -1461,7 +1461,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 
 # def test_onnx_nnp_conversion_squeezenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1471,7 +1471,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 
 # def test_nnp_onnx_conversion_squeezenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1481,7 +1481,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 
 # def test_nnp_onnx_conversion_lenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(128, 1, 28, 28).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1493,7 +1493,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_inception_v2(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1504,7 +1504,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_inception_v2(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1515,7 +1515,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_densenet121(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1526,7 +1526,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_densenet121(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1537,7 +1537,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_resnet50(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1549,7 +1549,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_resnet50(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1561,7 +1561,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_vgg19(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(
@@ -1571,7 +1571,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_vgg19(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(
@@ -1581,7 +1581,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_zfnet512(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1592,7 +1592,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_zfnet512(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1603,7 +1603,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1615,7 +1615,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_bvlc_googlenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1628,7 +1628,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1639,7 +1639,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_nnp_onnx_conversion_bvlc_caffenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #     img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #     convert_nnp_to_onnx_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1651,7 +1651,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_shufflenet(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1662,7 +1662,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_mnist(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CNTK_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CNTK_AVAILABLE):
 #        pytest.skip('CNTK does not installed.')
 #    img = np.random.rand(1, 1, 28, 28).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,
@@ -1674,7 +1674,7 @@ def test_nnp_onnx_conversion_reduce_prod(tmpdir, nnp_fixture):
 
 # @pytest.mark.slow
 # def test_onnx_nnp_conversion_inception_v1(tmpdir, nnp_fixture):
-#    if (not ONNX_AVAILABLE) or (not CAFFE2_AVAILABLE):
+#    if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
 #        pytest.skip('CAFFE2 does not installed.')
 #    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
 #    convert_onnx_to_nnp_and_compare(tmpdir, TEST_DATA_DIR,

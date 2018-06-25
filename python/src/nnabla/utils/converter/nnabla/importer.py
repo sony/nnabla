@@ -18,15 +18,11 @@ import shutil
 import tempfile
 import zipfile
 
-# TODO temporary work around to suppress FutureWarning message.
-import warnings
-warnings.simplefilter('ignore', category=FutureWarning)
-
 from . import expander
 from nnabla.utils import nnabla_pb2
 
 
-class NnpReader:
+class NnpImporter:
     def __init__(self, *args, **kwargs):
         self._args = args
 
@@ -64,11 +60,11 @@ class NnpReader:
             with open(filename, 'rb') as f:
                 self._nnp.MergeFromString(f.read())
 
-    def read(self):
+    def execute(self):
         self._nnp = nnabla_pb2.NNablaProtoBuf()
         other_files = []
         for ifile in self._args:
-            print('Reading {}'.format(ifile))
+            print('Importing {}'.format(ifile))
             ext = os.path.splitext(ifile)[1].lower()
             if ext == '.nnp':
                 try:
@@ -95,7 +91,7 @@ class NnpReader:
                 other_files.append(ifile)
 
         if self._expand_network:
-            self._nnp = expander.NnpExpander(self._nnp).expand()
+            self._nnp = expander.NnpExpander(self._nnp).execute()
 
         class nnp:
             pass
