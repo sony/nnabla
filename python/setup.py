@@ -230,10 +230,6 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
                 'nnabla.utils.factorization',
-                'nnabla.utils.converter',
-                'nnabla.utils.converter.nnabla',
-                'nnabla.utils.converter.nnablart',
-                'nnabla.utils.converter.onnx',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 

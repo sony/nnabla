@@ -19,7 +19,7 @@ from nnabla.utils import nnabla_pb2
 # Expand repeat and recurrent in nnp file.
 
 
-class TopologicalSort:
+class _TopologicalSort:
     def __init__(self, functions):
         self._orig = functions
         self._flags = {}
@@ -59,22 +59,22 @@ class NnpExpander:
     def __init__(self, nnp):
         self._nnp = nnp
 
-    def sort_functions(self, orig_functions):
-        return TopologicalSort(orig_functions).sorted()
+    def _sort_functions(self, orig_functions):
+        return _TopologicalSort(orig_functions).sorted()
 
-    def expanded_suffixes(self, repeat_ids, index=0, suffix=''):
+    def _expanded_suffixes(self, repeat_ids, index=0, suffix=''):
         suffixes = []
         rid = repeat_ids[index]
         rparam = self.repeat_params[rid]
         for n in range(rparam['length']):
             if index < len(repeat_ids)-1:
-                suffixes += self.expanded_suffixes(
+                suffixes += self._expanded_suffixes(
                     repeat_ids, index+1, ('{}_{}[{}]'.format(suffix, rid, n)))
             else:
                 suffixes.append('{}_{}[{}]'.format(suffix, rid, n))
         return suffixes
 
-    def expand_network(self, network):
+    def _expand_network(self, network):
         print(' Expanding {}.'.format(network.name))
 
         # Get repeat info
@@ -104,7 +104,7 @@ class NnpExpander:
         for variable in network.variable:
             if len(variable.repeat_id) > 0:
                 self.variable_by_name[variable.name] = []
-                for suffix in self.expanded_suffixes(variable.repeat_id):
+                for suffix in self._expanded_suffixes(variable.repeat_id):
                     self.variable_by_name[variable.name].append(
                         variable.name + suffix)
             else:
@@ -146,7 +146,7 @@ class NnpExpander:
                 ftype = 'Split'
                 finput = [n for n in func.input]
                 foutput = []
-                for suffix in self.expanded_suffixes(func.repeat_id):
+                for suffix in self._expanded_suffixes(func.repeat_id):
                     foutput.append(func.output[0] + suffix)
                 functions.append((fname, ftype, finput, foutput,
                                   self.repeat_params[func.recurrent_param.repeat_id]))
@@ -154,7 +154,7 @@ class NnpExpander:
                 fname = 'Stack_' + func.recurrent_param.repeat_id
                 ftype = 'Stack'
                 finput = []
-                for suffix in self.expanded_suffixes([func.recurrent_param.repeat_id]):
+                for suffix in self._expanded_suffixes([func.recurrent_param.repeat_id]):
                     finput.append(func.input[0] + suffix)
                 foutput = [n for n in func.output]
                 functions.append((fname, ftype, finput, foutput,
@@ -164,7 +164,7 @@ class NnpExpander:
             else:
                 if len(func.repeat_id) > 0:
                     prev_suffix = ''
-                    for i, suffix in enumerate(self.expanded_suffixes(func.repeat_id)):
+                    for i, suffix in enumerate(self._expanded_suffixes(func.repeat_id)):
                         fname = func.name + suffix
                         self.func_proto_by_expanded_name[fname] = self.func_proto_by_name[func.name]
                         finput = []
@@ -212,7 +212,7 @@ class NnpExpander:
 
         # for n, (fname, ftype, finput, foutput, repeat_param) in enumerate(functions):
         #     print('orig', fname)
-        functions = self.sort_functions(functions)
+        functions = self._sort_functions(functions)
         # for n, (fname, ftype, finput, foutput, repeat_param) in enumerate(functions):
         #     print('sorted', fname)
 
@@ -239,7 +239,7 @@ class NnpExpander:
             for o in foutput:
                 proto.output.append(o)
 
-    def expand_parameter_variable(self, proto):
+    def _expand_parameter_variable(self, proto):
         names = []
         for pv in proto.parameter_variable:
             if pv.variable_name in self.variable_by_name:
@@ -252,14 +252,14 @@ class NnpExpander:
             pv = proto.parameter_variable.add()
             pv.variable_name = n
 
-    def expand(self):
+    def execute(self):
         nnp = nnabla_pb2.NNablaProtoBuf()
         nnp.CopyFrom(self._nnp)
         for network in nnp.network:
-            self.expand_network(network)
+            self._expand_network(network)
         for optimizer in nnp.optimizer:
-            self.expand_parameter_variable(optimizer)
+            self._expand_parameter_variable(optimizer)
         for executor in nnp.executor:
-            self.expand_parameter_variable(executor)
+            self._expand_parameter_variable(executor)
 
         return nnp

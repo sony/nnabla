@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .reader import NnpReader
+from .importer import NnpImporter
 from .exporter import NnpExporter

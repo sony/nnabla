@@ -84,7 +84,7 @@ class NnbExporter:
             int_bit_num = 1  # 1 is needed to represent sign
         return int_bit_num
 
-    def export(self, nnb_output_filename, settings_template_filename, settings_filename, default_type):
+    def execute(self, nnb_output_filename, settings_template_filename, settings_filename, default_type):
         settings = collections.OrderedDict()
         if settings_filename is not None and len(settings_filename) == 1:
             settings = nnabla.utils.converter.load_yaml_ordered(

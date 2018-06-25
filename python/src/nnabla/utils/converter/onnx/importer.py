@@ -19,7 +19,7 @@ import numpy as np
 try:
     from onnx import (ModelProto, TensorProto, AttributeProto)
 except:
-    print('ONNX read support disabled.')
+    print('ONNX import support disabled.')
 
 from .utils import *
 
@@ -1393,11 +1393,11 @@ def onnx_model_to_nnp_protobuf(model):
     return nnp
 
 
-class OnnxReader:
+class OnnxImporter:
     def __init__(self, file_path):
         self._file_path = file_path
 
-    def read(self):
+    def execute(self):
         model_proto = ModelProto()
         with open(self._file_path, "rb") as f:
             model_proto.ParseFromString(f.read())

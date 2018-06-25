@@ -33,15 +33,15 @@ class NnpExporter:
         self._nnp = nnp.protobuf
         self._other_files = nnp.other_files
 
-    def write_nntxt(self, filename, nnp):
+    def _write_nntxt(self, filename, nnp):
         with open(filename, 'w') as f:
             text_format.PrintMessage(nnp, f)
 
-    def write_protobuf(self, filename, nnp):
+    def _write_protobuf(self, filename, nnp):
         with open(filename, 'wb') as f:
             f.write(nnp.SerializeToString())
 
-    def write_h5(self, filename, nnp):
+    def _write_h5(self, filename, nnp):
         import h5py
         with h5py.File(filename, 'w') as hd:
             for i, param in enumerate(nnp.parameter):
@@ -50,7 +50,7 @@ class NnpExporter:
                 dset.attrs['need_grad'] = param.need_grad
                 dset.attrs['index'] = i
 
-    def export_files(self, outdir):
+    def _export_files(self, outdir):
         with open('{}/nnp_version.txt'.format(outdir), 'w') as f:
             f.write('0.1\n')
         if self._parameter_type == 'included':
@@ -59,7 +59,7 @@ class NnpExporter:
             nnp_wo_parameter = nnabla_pb2.NNablaProtoBuf()
             nnp_wo_parameter.CopyFrom(self._nnp)
             nnp_wo_parameter.ClearField('parameter')
-            self.write_nntxt(
+            self._write_nntxt(
                 '{}/network.nntxt'.format(outdir), nnp_wo_parameter)
 
             if self._parameter_type == 'protobuf':
@@ -67,32 +67,32 @@ class NnpExporter:
                 for param in self._nnp.parameter:
                     parameter = nnp_parameter_only.parameter.add()
                     parameter.CopyFrom(param)
-                self.write_protobuf(
+                self._write_protobuf(
                     '{}/parameter.protobuf'.format(outdir), nnp_parameter_only)
             elif self._parameter_type == 'h5':
-                self.write_h5('{}/parameter.h5'.format(outdir), self._nnp)
+                self._write_h5('{}/parameter.h5'.format(outdir), self._nnp)
             elif self._parameter_type == 'none':
                 pass  # store without param.
             else:
                 print('Unsupported parameter type `{}`.'.format(
                     self._parameter_type))
 
-    def export_nnp(self, ofile):
+    def _export_nnp(self, ofile):
         try:
             tmpdir = tempfile.mkdtemp()
             with zipfile.ZipFile(ofile, 'w') as nnpzip:
-                self.export_files(tmpdir)
+                self._export_files(tmpdir)
                 for f in glob.glob('{}/*'.format(tmpdir)):
                     nnpzip.write(f, os.path.basename(f))
         finally:
             shutil.rmtree(tmpdir)
 
-    def export(self, *args):
+    def execute(self, *args):
         if len(args) == 1:
             if os.path.isdir(args[0]):
-                self.export_files(args[0])
+                self._export_files(args[0])
             else:
                 ofile = args[0]
                 ext = os.path.splitext(ofile)[1].lower()
                 if ext == '.nnp':
-                    self.export_nnp(ofile)
+                    self._export_nnp(ofile)
