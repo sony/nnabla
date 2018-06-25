@@ -428,7 +428,7 @@ def save(filename, contents, include_params=False):
             ``.nnp``: (Recommended) Creating a zip archive with nntxt (network
             definition etc.) and h5 (parameters).
             ``.nntxt``: Protobuf in text format.
-            ``.protobuf'': Protobuf in binary format (unsafe in terms of
+            ``.protobuf``: Protobuf in binary format (unsafe in terms of
              backward compatibility).
         contents (dict): Information to store.
         include_params (bool): Includes parameter into single file. This is
@@ -438,7 +438,9 @@ def save(filename, contents, include_params=False):
         The current supported fields as contents are ``networks`` and
         ``executors``. The following example creates a two inputs and two
         outputs MLP, and save the network structure and the initialized
-        parameters.:: python
+        parameters.
+
+        .. code-block:: python
 
             import nnabla as nn
             import nnabla.functions as F
@@ -465,6 +467,7 @@ def save(filename, contents, include_params=False):
                      'data': ['x0', 'x1'],
                      'output': ['y0', 'y1']}]}
             save('net.nnp', contents)
+
     '''
     _, ext = os.path.splitext(filename)
     if ext == '.nntxt' or ext == '.prototxt':
