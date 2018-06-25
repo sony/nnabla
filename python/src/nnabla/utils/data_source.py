@@ -146,6 +146,7 @@ class DataSourceWithFileCacheError(Exception):
 
 class DataSourceWithFileCache(DataSource):
     '''
+    This class contains properties and methods for data source that can be read from cache files, which are utilized by data iterator.
 
     Args:
         data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
@@ -438,19 +439,11 @@ class DataSourceWithFileCache(DataSource):
 
 class DataSourceWithMemoryCache(DataSource):
     '''
+    This class contains properties and methods for data source that can be read from memory cache, which is utilized by data iterator.
+
     Args:
         data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
              Instance of DataSource class which provides data.
-        cache_dir (str):
-            Location of file_cache.
-            If this value is None, :py:class:`.data_source.DataSourceWithFileCache`
-            creates file caches implicitly on temporary directory and erases them all
-            when data_iterator is finished.
-            Otherwise, :py:class:`.data_source.DataSourceWithFileCache` keeps created cache.
-            Default is None.
-        cache_file_name_prefix (str):
-            Beginning of the filenames of cache files.
-            Default is 'cache'. 
         shuffle (bool):
              Indicates whether the dataset is shuffled or not.
         rng (None or :obj:`numpy.random.RandomState`): Numpy random number
