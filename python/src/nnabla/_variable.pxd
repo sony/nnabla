@@ -25,10 +25,8 @@ from _nd_array cimport *
 
 cdef extern from "nbla/variable.hpp" namespace "nbla":
     cdef cppclass CVariable "nbla::Variable":
-        CVariable(Shape_t, cpp_bool) except +
-        CVariable(NdArrayPtr, cpp_bool) except +
-        cpp_bool need_grad()
-        void set_need_grad(cpp_bool)
+        CVariable(Shape_t) except +
+        CVariable(NdArrayPtr) except +
         Shape_t shape()
         Size_t size(Size_t) except +
         Size_t ndim()
@@ -51,6 +49,8 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         CgVariable(cpp_bool need_grad) except+
         CgVariable(Shape_t shape, cpp_bool need_grad) except+
         CgVariable(VariablePtr)
+        cpp_bool need_grad() const
+        void set_need_grad(cpp_bool b)
         void set_parent(CgFunctionPtr func) except+
         CgFunctionPtr parent()
         VariablePtr variable()
@@ -69,7 +69,6 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         CgFunction(FunctionPtr func) except+
         FunctionPtr function() const
         cpp_bool need_grad() const
-        cpp_bool update_need_grad() except+
         int rank() const
         void set_outputs(const vector[CgVariablePtr] & outputs) except+
         const vector[CgVariablePtr] inputs()

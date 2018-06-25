@@ -17,7 +17,11 @@
 
 #include <nbla/function.hpp>
 
+#include <utility>
+
 namespace nbla {
+
+using std::pair;
 
 // Forward declaration
 class CgVariable;
@@ -31,12 +35,17 @@ A Function object is held in this object, and pointers to inputs and outputs
 also kept.
  */
 class CgFunction {
+  friend class CgVariable;
   int rank_{0};
   vector<CgVariablePtr> inputs_;
   FunctionPtr func_;
   vector<std::weak_ptr<CgVariable>> outputs_;
   bool need_grad_{false};
   string info_;
+
+  /**
+   */
+  inline void set_rank(int rank) { rank_ = rank; }
 
 public:
   typedef shared_ptr<CgFunction> Ptr;
@@ -60,6 +69,10 @@ public:
   /**
    */
   inline bool need_grad() const { return need_grad_; }
+
+  /**
+   */
+  inline void set_need_grad(bool b) { need_grad_ = b; }
 
   /**
    */
@@ -87,12 +100,8 @@ public:
    */
   inline size_t num_outputs() const { return outputs_.size(); }
 
-  /** Update need_grad flag by seeing output variables.
-   */
-  NBLA_API bool update_need_grad();
-
   NBLA_API vector<Variable *> function_inputs();
-  NBLA_API vector<VariablePtr> function_outputs_shared();
+  NBLA_API pair<vector<CgVariablePtr>, vector<Variable *>> function_outputs();
 
   /**
    */

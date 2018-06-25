@@ -41,7 +41,7 @@ vector<NdArrayPtr> execute(FunctionPtr func, const vector<NdArrayPtr> &inputs,
   vector<VariablePtr> vinputs(inputs.size());
   vector<VariablePtr> voutputs(outputs.size());
   for (int i = 0; i < inputs.size(); ++i) {
-    vinputs[i] = make_shared<Variable>(inputs[i], false);
+    vinputs[i] = make_shared<Variable>(inputs[i]);
   }
   for (int i = 0; i < n_outputs; ++i) {
     voutputs[i] = make_shared<Variable>();

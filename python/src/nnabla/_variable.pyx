@@ -291,6 +291,7 @@ cdef class Variable:
         if unlink:
             var = Variable.create_from_cvariable(
                 self.varp.variable().get().view(shape))
+            var.need_grad = self.need_grad
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -306,15 +307,11 @@ cdef class Variable:
         Returns:
            bool: Whether this variable requires gradient or not.
         """
-        return self.varp.variable().get().need_grad()
+        return self.varp.need_grad()
 
     @need_grad.setter
     def need_grad(self, b):
-        cdef CgFunctionPtr parent = self.varp.parent()
-        self.varp.variable().get().set_need_grad(b)
-        # Reset need_grad flag of the parent function.
-        if parent:
-            parent.get().update_need_grad()
+        self.varp.set_need_grad(b)
 
     @property
     def data(self):
@@ -493,12 +490,22 @@ cdef class Variable:
         with nogil:
             self.varp.backward(p, clear_buffer, callback_list)
 
-    def unlinked(self):
+    def unlinked(self, need_grad=None):
         """
         Gets unlinked (forgetting parent) variable that shares a Variable buffer
         instance.
+
+        Args:
+            need_grad (bool, optional):
+                By default, the unlinked variable will have the same need_grad
+                flag with this variable instance. By specifying a boolean value,
+                the new need_grad flags will be set to the unlinked variable.
+
+        Returns: nnabla._variable.Variable
+
         """
         var = Variable.create_from_cvariable(self.varp.variable().get().view())
+        var.need_grad = self.need_grad
         return var
 
     @property

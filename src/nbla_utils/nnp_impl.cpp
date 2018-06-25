@@ -731,7 +731,7 @@ bool NnpImpl::save_parameters(const string &filename) {
 
     Parameter *parameter = params.add_parameter();
     parameter->set_variable_name(name);
-    parameter->set_need_grad(variable->need_grad());
+    parameter->set_need_grad(it->second->need_grad());
 
     float *data = variable->template cast_data_and_get_pointer<float>(kCpuCtx);
     for (int i = 0; i < variable->size(); i++)

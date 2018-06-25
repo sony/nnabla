@@ -87,7 +87,7 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
   if (cg_f->need_grad()) {
     // Set inplace capability of output variables.
     for (int i = 0; i < inputs.size(); ++i) {
-      if (!inputs[i]->variable()->need_grad())
+      if (!inputs[i]->need_grad())
         continue;
       if (f->inplace_grad(i)) {
         NBLA_CHECK(f->inplace_grad(i) < Function::INPLACE ||
@@ -135,14 +135,6 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
         "of `%s` (depth=%d) is inplaced (data: %s, grad: %s).",
         i, f->name().c_str(), cg_f->rank(), b2str(f->inplace_data(i)),
         b2str(f->inplace_grad(i)));
-  }
-
-  // Set clear buffer flags
-  for (int i = 0; i < inputs.size(); ++i) {
-    if (f->inplace_data(i))
-      outputs[f->inplace_data_with(i)]->set_clear_data_in_backward(false);
-    if (f->inplace_grad(i))
-      outputs[f->inplace_grad_with(i)]->set_clear_grad_in_backward(false);
   }
 
   // Set array reference to function output buffer if size matches.

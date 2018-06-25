@@ -18,9 +18,13 @@
 #include <nbla/function.hpp>
 #include <nbla/variable.hpp>
 
+#include <functional>
 #include <memory>
+#include <unordered_set>
 
 namespace nbla {
+
+using std::unordered_set;
 
 // Forward declaration
 class CgFunction;
@@ -43,24 +47,33 @@ graph it belongs to. The information if such as the pointer to the parent
 function which creates this variable and some performance optimization clues.
 */
 class CgVariable {
-  VariablePtr var_;                 /// Variable instance.
+  friend class CgFunction;
+
+  bool need_grad_;  ///< Whether this variable needs grad. This is going to be
+                    /// updated when propagating forward .
+  VariablePtr var_; /// Variable instance.
   CgFunctionPtr parent_{nullptr};   ///< Function created this variable.
   int rank_{0};                     ///< Longest path from root variable.
   int function_reference_count_{0}; ///< Reference count by child functions.
-  int consume_counter_; ///< Consumption counter for clearing variable buffer in
-                        /// forward or backward computation.
-  bool allow_inplace_data_{true}; ///< Whether the data can be in-placed.
-  bool grad_inplaced_{false};     ///< Gradient is in-placed with any of parent
-                                  /// function's inputs grad.
-  /** Data in-placed with any of parents. Used to decide whether to clear
-      intermediate buffers during backward computation.
+  bool allow_inplace_data_{true};   ///< Whether the data can be in-placed.
+  bool grad_inplaced_{false}; ///< Gradient is in-placed with any of parent
+                              /// function's inputs grad.
+  bool persistent_{false};    ///<Persistency flag against clearing.
+
+  /** set rank.
+
+      @note Users shouldn't call this directly.
    */
-  bool clear_data_in_backward_{true};
-  /** Grad in-placed with any of parents. Used to decide whether to clear
-      intermediate buffers during backward computation.
-  */
-  bool clear_grad_in_backward_{true};
-  bool persistent_{false}; ///<Persistency flag against clearing.
+  inline void set_rank(int rank) { rank_ = rank; }
+
+  void
+  visit_function_recursive(CgFunctionPtr func,
+                           unordered_set<CgFunctionPtr> &fclosed,
+                           std::function<void(CgFunctionPtr)> forward_callback);
+
+  void visit_function_backward(
+      CgFunctionPtr func, std::function<void(CgFunctionPtr)> backward_callback,
+      vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
 
 public:
   typedef shared_ptr<CgVariable> Ptr;
@@ -87,6 +100,14 @@ public:
    */
   NBLA_API CgVariable(VariablePtr var);
 
+  /** Get need grad flag.
+   */
+  inline bool need_grad() const { return need_grad_; }
+
+  /** Set need grad flag.
+   */
+  inline void set_need_grad(bool b) { need_grad_ = b; }
+
   /** Set parent function.
 
       @param[in] func Function.
@@ -106,12 +127,6 @@ public:
   /** @copydoc rank_
    */
   inline int rank() const { return rank_; }
-
-  /** set rank.
-
-      @note Users shouldn't call this directly.
-   */
-  inline void set_rank(int rank) { rank_ = rank; }
 
   /** Forward propagation from root iputs to this variable.
 
@@ -188,38 +203,6 @@ public:
       @note User shouldn't call this directly.
    */
   inline void set_grad_inplaced(bool inplaced) { grad_inplaced_ = inplaced; }
-
-  /** @copydoc clear_data_in_backward_
-   */
-  inline bool clear_data_in_backward() const { return clear_data_in_backward_; }
-
-  /**
-     @note User shouldn't call this directly.
-   */
-  inline void set_clear_data_in_backward(bool clear) {
-    clear_data_in_backward_ = clear;
-  }
-  /** @copydoc clear_grad_in_backward_
-   */
-  inline bool clear_grad_in_backward() const { return clear_grad_in_backward_; }
-
-  /**
-     @note User shouldn't call this directly.
-   */
-  inline void set_clear_grad_in_backward(bool clear) {
-    clear_grad_in_backward_ = clear;
-  }
-
-  /**
-     @note User shouldn't call this directly.
-   */
-  inline int consume(bool reset = false) {
-    if (reset)
-      consume_counter_ = 1;
-    else
-      consume_counter_++;
-    return consume_counter_;
-  }
 
   /** Set persistent flag.
 

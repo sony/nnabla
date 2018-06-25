@@ -32,7 +32,7 @@ void CgFunction::set_inputs(const vector<CgVariablePtr> &inputs) {
   // Check need_grad
   need_grad_ = false;
   for (auto i : inputs) {
-    need_grad_ |= i->variable()->need_grad();
+    need_grad_ |= i->need_grad();
     rank_ = std::max(rank_, i->rank());
     i->increment_function_reference_count();
   }
@@ -50,19 +50,15 @@ void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
 vector<CgVariablePtr> CgFunction::outputs() {
   vector<CgVariablePtr> outputs(outputs_.size());
   for (int i = 0; i < outputs_.size(); ++i) {
-    outputs[i] = outputs_[i].lock();
+    auto o = outputs_[i].lock();
+    NBLA_CHECK(o, error_code::value,
+               "Weak reference to outputs[%d] has gone at %s.", i,
+               func_->name().c_str());
+    outputs[i] = o;
   }
   return outputs;
 }
 
-bool CgFunction::update_need_grad() {
-  bool need_grad = false;
-  for (int i = 0; i < outputs_.size(); ++i) {
-    need_grad |= outputs_[i].lock()->variable()->need_grad();
-  }
-  need_grad_ = need_grad;
-  return need_grad;
-}
 vector<Variable *> CgFunction::function_inputs() {
   vector<Variable *> ret(inputs_.size());
   for (int i = 0; i < inputs_.size(); ++i) {
@@ -71,15 +67,12 @@ vector<Variable *> CgFunction::function_inputs() {
   return ret;
 }
 
-vector<VariablePtr> CgFunction::function_outputs_shared() {
-  vector<VariablePtr> ret(outputs_.size());
-  for (int i = 0; i < outputs_.size(); ++i) {
-    auto o = outputs_[i].lock();
-    NBLA_CHECK(o, error_code::value,
-               "Output variable at %d in %s was deleted by someone.", i,
-               func_->name().c_str());
-    ret[i] = o->variable();
-  }
-  return ret;
+pair<vector<CgVariablePtr>, vector<Variable *>> CgFunction::function_outputs() {
+  auto outputs = this->outputs();
+  vector<Variable *> voutputs(outputs.size());
+  std::transform(
+      outputs.begin(), outputs.end(), voutputs.begin(),
+      [](CgVariablePtr v) -> Variable * { return v->variable().get(); });
+  return {outputs, voutputs};
 }
 }

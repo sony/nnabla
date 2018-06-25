@@ -111,21 +111,14 @@ void Function::forward(const Variables &inputs, const Variables &outputs) {
 }
 
 void Function::backward(const Variables &inputs, const Variables &outputs,
+                        const vector<bool> &propagate_down,
                         const vector<bool> &accum) {
   if (fall_back_func_) {
     // Fall back to the specified Function.
-    fall_back_func_->backward(inputs, outputs, accum);
+    fall_back_func_->backward(inputs, outputs, propagate_down, accum);
     return;
   }
   check_shapes(this, inputs, outputs, in_shapes, out_shapes);
-  vector<bool> propagate_down(inputs.size());
-  transform(inputs.begin(), inputs.end(), propagate_down.begin(),
-            [](Variable *v) { return v->need_grad(); });
-  NBLA_CHECK(accum.size() == propagate_down.size(), error_code::value,
-             "The size of the flags of accumulation gradient must be equal to "
-             "the number of inputs (%d != %d). Error in '%s'.",
-             accum.size(), propagate_down.size(), this->name().c_str());
-
   // Always zero-ing gradient buffer when accum is false.
   // NNabla's backward implementation takes an accum flag for each input
   // variable. An accum flag is automatically determined by our graph engine.
