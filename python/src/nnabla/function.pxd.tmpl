@@ -34,7 +34,9 @@ cdef extern from "nbla/function.hpp" namespace "nbla":
     cdef cppclass CFunction "nbla::Function":
         void setup(const Variables&, const Variables&) nogil except +
         void forward(const Variables&, const Variables&) nogil except +
-        void backward(const Variables&, const Variables&, const vector[cpp_bool] &accum) nogil except +
+        void backward(const Variables&, const Variables&,
+                      const vector[cpp_bool] &propagate_down,
+                      const vector[cpp_bool] &accum) nogil except +
         vector[dtypes] in_types()
         vector[dtypes] out_types()
         int min_inputs()
@@ -56,7 +58,6 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         CgFunction(FunctionPtr func) except+
         FunctionPtr function() const
         cpp_bool need_grad() const
-        cpp_bool update_need_grad() except+
         int rank() const
         void set_outputs(const vector[CgVariablePtr] &outputs) except+
         vector[CgVariablePtr] inputs()

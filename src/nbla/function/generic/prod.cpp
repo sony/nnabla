@@ -32,9 +32,9 @@ void Prod<T>::forward_impl_reduce(const T *x, T *y, int outer_size,
 
 template <typename T>
 void Prod<T>::backward_impl(const Variables &inputs, const Variables &outputs,
-                            const vector<bool> &propagate_down,
+                            const vector<bool> &prop_down,
                             const vector<bool> &accum) {
-  if (!propagate_down[0])
+  if (!prop_down[0])
     return;
   auto _get = [this](Variable *v) {
     return v->get_data_pointer<T>(this->ctx_);
@@ -55,7 +55,7 @@ void Prod<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   if (!this->f_transpose_)
     return;
   this->f_transpose_->backward(inputs, Variables{this->o_transpose_.get()},
-                               {accum[0]});
+                               prop_down, {accum[0]});
 }
 
 template <typename T>

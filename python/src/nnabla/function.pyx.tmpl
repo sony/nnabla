@@ -102,6 +102,14 @@ cdef vector[CVariable*] list_to_vector_variable_p(varlist):
         vec[i] = (<_Variable?> varlist[i]).varp.variable().get()
     return vec
 
+cdef vector[cpp_bool] variables_to_prop_down_flags(varlist):
+    cdef int i
+    cdef int size = len(varlist)
+    cdef vector[cpp_bool] ret
+    for i in range(size):
+        ret.push_back((<_Variable?>varlist[i]).varp.need_grad())
+    return ret
+
 cdef tuple vector_to_tuple_nd_array(const vector[NdArrayPtr] &vec):
     cdef int i
     cdef list ret = []
@@ -192,6 +200,7 @@ cdef class Function:
     def backward(self, inputs, outputs, accum=None):
         cdef vector[cpp_bool] caccum
         cdef int i
+        cdef vector[cpp_bool] prop_down = variables_to_prop_down_flags(inputs)
         if accum is None:
             caccum.resize(len(inputs), True)
             # caccum.assign(len(inputs), True)
@@ -202,6 +211,7 @@ cdef class Function:
         self.funp.function().get().backward(
             list_to_vector_variable_p(inputs),
             list_to_vector_variable_p(outputs),
+	    prop_down,
             caccum)
 
     @property

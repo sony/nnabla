@@ -116,25 +116,28 @@ void BinaryWeightConvolution<T>::forward_impl(const Variables &inputs,
 }
 
 template <typename T>
-void BinaryWeightConvolution<T>::backward_impl(
-    const Variables &inputs, const Variables &outputs,
-    const vector<bool> &propagate_down, const vector<bool> &accum) {
-
-  scaled_weights_.set_need_grad(propagate_down[1]);
+void BinaryWeightConvolution<T>::backward_impl(const Variables &inputs,
+                                               const Variables &outputs,
+                                               const vector<bool> &prop_down,
+                                               const vector<bool> &accum) {
 
   // calculate the backward pass using the binarized scaled weights
   if (inputs.size() == 5) { // with bias
     convolution_->backward(Variables{inputs[0], &scaled_weights_, inputs[4]},
-                           outputs, {accum[0], false, accum[4]});
+                           outputs, {prop_down[0], prop_down[1], prop_down[4]},
+                           {accum[0], false, accum[4]});
   } else { // without bias
     convolution_->backward(Variables{inputs[0], &scaled_weights_}, outputs,
-                           {accum[0], false});
+                           {prop_down[0], prop_down[1]}, {accum[0], false});
   }
-
+  if (!prop_down[1]) {
+    return;
+  }
   // add the calculated gradient w.r.t. the binary weights from
   // scaled_weights_ to inputs[1]
   bin_->setup(Variables{inputs[1]}, Variables{&scaled_weights_});
-  bin_->backward(Variables{inputs[1]}, Variables{&scaled_weights_}, {accum[1]});
+  bin_->backward(Variables{inputs[1]}, Variables{&scaled_weights_},
+                 {prop_down[1]}, {accum[1]});
 }
 
 } // namespace nbla

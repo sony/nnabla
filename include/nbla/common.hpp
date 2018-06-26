@@ -22,6 +22,7 @@ maybe because they are uncategorized.
 
 #include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -85,6 +86,17 @@ inline string string_join(const vector<T> &vec, const string &delim) {
   oss << vec[vec.size() - 1];
   return oss.str();
 }
+
+/** Scoped callback
+*/
+class DestructorCallback {
+  std::function<void(void)> callback_;
+
+public:
+  inline DestructorCallback(std::function<void(void)> callback)
+      : callback_(callback) {}
+  inline ~DestructorCallback() { callback_(); }
+};
 
 /** Hash combining function.
 

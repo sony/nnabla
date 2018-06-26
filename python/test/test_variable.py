@@ -82,6 +82,8 @@ def test_unlinked():
     with nn.context_scope(nn.Context()), nn.auto_forward():
         v2 = F.identity(v)
         v2_u = v2.unlinked()
+        assert not v2_u.need_grad
+        v2_u.need_grad = True
         v3 = F.identity(v2_u)
     v2_u.grad.zero()
     v2_g = v2_u.g.copy()

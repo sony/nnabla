@@ -68,7 +68,7 @@ void Sum<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   if (transpose_axes != seq) {
     // Need transpose
     f_transpose_ = create_Transpose(this->ctx_, transpose_axes);
-    o_transpose_ = make_shared<Variable>(Shape_t{}, inputs[0]->need_grad());
+    o_transpose_ = make_shared<Variable>(Shape_t{});
     f_transpose_->setup(inputs, Variables{o_transpose_.get()});
   }
   outputs[0]->reshape(outshape, true);
@@ -90,9 +90,9 @@ void Sum<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 
 template <typename T>
 void Sum<T>::backward_impl(const Variables &inputs, const Variables &outputs,
-                           const vector<bool> &propagate_down,
+                           const vector<bool> &prop_down,
                            const vector<bool> &accum) {
-  if (!propagate_down[0])
+  if (!prop_down[0])
     return;
   auto _gcast = [this](Variable *v, bool wo) {
     return v->cast_grad_and_get_pointer<T>(this->ctx_, wo);
@@ -106,7 +106,8 @@ void Sum<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   // If need un-transpose
   if (!f_transpose_)
     return;
-  f_transpose_->backward(inputs, Variables{o_transpose_.get()}, {accum[0]});
+  f_transpose_->backward(inputs, Variables{o_transpose_.get()}, prop_down,
+                         {accum[0]});
 }
 
 template <typename T>

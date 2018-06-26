@@ -28,6 +28,7 @@ cimport numpy as np
 np.import_array()
 
 cimport _arithmetic_ops as AOP
+from _computation_graph cimport steal_variable_from_to
 
 
 ctypedef void * voidp
@@ -126,9 +127,12 @@ cdef class Variable:
 
     """
 
-    def __cinit__(self, Shape_t shape=[], bint need_grad=False, info=None):
+    def __cinit__(self, Shape_t shape=[], need_grad=None, info=None):
         self.info = info
-        self.var = make_shared[CgVariable](shape, need_grad)
+        if need_grad is None:
+            self.var = make_shared[CgVariable](shape)
+        else:
+            self.var = make_shared[CgVariable](shape, < bint?> need_grad)
         self.varp = self.var.get()
 
     @staticmethod
@@ -147,7 +151,7 @@ cdef class Variable:
         return var
 
     @staticmethod
-    def from_numpy_array(data, grad=None, need_grad=False):
+    def from_numpy_array(data, grad=None, need_grad=None):
         """Create a Variable object from Numpy array(s).
 
         The ``data`` is initialized with the given Numpy array, as well as
@@ -291,6 +295,8 @@ cdef class Variable:
         if unlink:
             var = Variable.create_from_cvariable(
                 self.varp.variable().get().view(shape))
+            if self.varp.need_grad_is_set():
+                ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -306,15 +312,46 @@ cdef class Variable:
         Returns:
            bool: Whether this variable requires gradient or not.
         """
-        return self.varp.variable().get().need_grad()
+        return self.varp.need_grad_state()
 
     @need_grad.setter
     def need_grad(self, b):
-        cdef CgFunctionPtr parent = self.varp.parent()
-        self.varp.variable().get().set_need_grad(b)
-        # Reset need_grad flag of the parent function.
-        if parent:
-            parent.get().update_need_grad()
+        self.varp.set_need_grad(b)
+
+    def rewire_on(self, var):
+        '''Rewire a successor graph of this variable on top of ``var``.
+
+        Args:
+            var (:obj:`nnabla.Variable`):
+                The array elements and the parent function of ``var`` is
+                copied to ```self`` as references.
+                Note that the parent function of ``var`` is removed.
+
+        Example:
+
+            .. code-block:: python
+
+                # A. Create a graph A.
+                xa = nn.Variable((2, 8), need_grad=True)
+                ya = F.tanh(PF.affine(xa, 10, name='a'))
+
+                # B. Create a graph B.
+                xb = nn.Variable((2, 16), need_grad=True)
+                yb = F.tanh(PF.affine(
+                    F.tanh(PF.affine(xb, 8, name='b1')),
+                    8, name='b2'))
+
+                # C. Rewire the graph A on top of B such that
+                #    `xb->B->(yb->)xa->A->ya`. Note `yb` is gone.
+                xa.rewire_on(yb)
+
+                # D. Execute the rewired graph.
+                xb.d = 1
+                ya.forward()
+                ya.backward()
+
+        '''
+        steal_variable_from_to((< Variable?> var).var, self.var)
 
     @property
     def data(self):
@@ -493,12 +530,25 @@ cdef class Variable:
         with nogil:
             self.varp.backward(p, clear_buffer, callback_list)
 
-    def unlinked(self):
+    def unlinked(self, need_grad=None):
         """
         Gets unlinked (forgetting parent) variable that shares a Variable buffer
         instance.
+
+        Args:
+            need_grad (bool, optional):
+                By default, the unlinked variable will have the same need_grad
+                flag with this variable instance. By specifying a boolean value,
+                the new need_grad flags will be set to the unlinked variable.
+
+        Returns: nnabla._variable.Variable
+
         """
         var = Variable.create_from_cvariable(self.varp.variable().get().view())
+        if need_grad is not None:
+            self.need_grad = need_grad
+        elif self.varp.need_grad_is_set():
+            ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
         return var
 
     @property

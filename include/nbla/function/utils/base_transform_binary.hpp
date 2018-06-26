@@ -68,13 +68,13 @@ protected:
     }
     outputs[0]->reshape(oshape, true);
     if (bc0) {
-      o_bc0_ = make_shared<Variable>(Shape_t{}, inputs[0]->need_grad());
+      o_bc0_ = make_shared<Variable>(Shape_t{});
       f_bc0_ = create_Broadcast(this->ctx_,
                                 vector<int>(oshape.cbegin(), oshape.cend()));
       f_bc0_->setup(Variables{inputs[0]}, Variables{o_bc0_.get()});
     }
     if (bc1) {
-      o_bc1_ = make_shared<Variable>(Shape_t{}, inputs[1]->need_grad());
+      o_bc1_ = make_shared<Variable>(Shape_t{});
       f_bc1_ = create_Broadcast(this->ctx_,
                                 vector<int>(oshape.cbegin(), oshape.cend()));
       f_bc1_->setup(Variables{inputs[1]}, Variables{o_bc1_.get()});
@@ -196,9 +196,8 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
       transform_binary_grad0<T, BinaryOp, false>(size, dy, x0, x1, y, dx0,
                                                  binary_op_);
     if (this->f_bc0_) {
-      this->o_bc0_->set_need_grad(true);
       this->f_bc0_->backward(Variables{inputs[0]},
-                             Variables{this->o_bc0_.get()}, {accum[0]});
+                             Variables{this->o_bc0_.get()}, {true}, {accum[0]});
     }
   }
   if (propagate_down[1]) {
@@ -211,9 +210,8 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
       transform_binary_grad1<T, BinaryOp, false>(size, dy, x0, x1, y, dx1,
                                                  binary_op_);
     if (this->f_bc1_) {
-      this->o_bc1_->set_need_grad(true);
       this->f_bc1_->backward(Variables{inputs[1]},
-                             Variables{this->o_bc1_.get()}, {accum[1]});
+                             Variables{this->o_bc1_.get()}, {true}, {accum[1]});
     }
   }
 }

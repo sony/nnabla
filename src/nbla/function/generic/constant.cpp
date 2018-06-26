@@ -27,7 +27,6 @@ void Constant<T>::setup_impl(const Variables &inputs,
                              const Variables &outputs) {
   Shape_t out_shape(shape_.begin(), shape_.end());
   outputs[0]->reshape(out_shape, true);
-  outputs[0]->set_need_grad(false);
 }
 
 template <typename T>

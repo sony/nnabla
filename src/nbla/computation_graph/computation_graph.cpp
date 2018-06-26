@@ -14,19 +14,27 @@
 
 #include <nbla/computation_graph/computation_graph.hpp>
 
+#include <algorithm>
 #include <memory>
 
 namespace nbla {
 
-static vector<CgVariablePtr>
-connect_core(CgFunctionPtr cg_f, const vector<CgVariablePtr> &inputs,
-             const vector<CgVariablePtr> &outputs,
-             vector<NdArrayPtr> inplace_outputs = {}, bool execute = false);
-
 using std::make_shared;
 
-// Just a helper function.
-static inline const char *b2str(bool b) { return b ? "true" : "false"; }
+static void set_function_inputs(CgFunctionPtr func,
+                                const vector<CgVariablePtr> &inputs) {
+  // Check need_grad
+  bool need_grad = false;
+  int rank = 0;
+  for (auto i : inputs) {
+    need_grad |= i->need_grad_state();
+    rank = std::max(rank, i->rank());
+    i->insert_function_reference(func);
+  }
+  func->set_need_grad(need_grad);
+  func->set_rank_(rank);
+  func->set_inputs_(inputs);
+}
 
 vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
                                               int n_outputs) {
@@ -36,7 +44,8 @@ vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
   }
   vector<CgVariablePtr> outputs(n_outputs);
   for (int i = 0; i < n_outputs; ++i) {
-    auto v = make_shared<CgVariable>(cg_f->need_grad());
+    auto v = make_shared<CgVariable>();
+    v->set_need_grad_state(cg_f->need_grad());
     v->set_parent(cg_f);
     outputs[i] = v;
   }
@@ -50,26 +59,15 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                               const vector<CgVariablePtr> &inputs,
                               int n_outputs, vector<NdArrayPtr> inplace_outputs,
                               bool execute) {
-  cg_f->set_inputs(inputs);
+  set_function_inputs(cg_f, inputs);
   vector<CgVariablePtr> outputs = create_function_outputs(cg_f, n_outputs);
-  return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
-}
 
-vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
-                              const vector<CgVariablePtr> &inputs,
-                              const vector<CgVariablePtr> &outputs,
-                              vector<NdArrayPtr> inplace_outputs,
-                              bool execute) {
-  cg_f->set_inputs(inputs);
-  cg_f->set_outputs(outputs);
-  return connect_core(cg_f, inputs, outputs, inplace_outputs, execute);
-}
+  // Setup function.
+  cg_f->setup();
 
-vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
-                                   const vector<CgVariablePtr> &inputs,
-                                   const vector<CgVariablePtr> &outputs,
-                                   vector<NdArrayPtr> inplace_outputs,
-                                   bool execute) {
+  // Verify connections.
+  cg_f->verify_during_forward();
+
   // Function inputs and outputs must be Variables.
   vector<Variable *> finputs(inputs.size());
   vector<Variable *> foutputs(outputs.size());
@@ -78,71 +76,6 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
   }
   for (int i = 0; i < outputs.size(); ++i) {
     foutputs[i] = outputs[i]->variable().get();
-  }
-
-  // Setup function.
-  auto f = cg_f->function();
-  f->setup(finputs, foutputs);
-
-  if (cg_f->need_grad()) {
-    // Set inplace capability of output variables.
-    for (int i = 0; i < inputs.size(); ++i) {
-      if (!inputs[i]->variable()->need_grad())
-        continue;
-      if (f->inplace_grad(i)) {
-        NBLA_CHECK(f->inplace_grad(i) < Function::INPLACE ||
-                       inputs[i]->parent(),
-                   error_code::value,
-                   "A grad array of a root variable in a graph cannot be "
-                   "in-placed with modification (%d-th input "
-                   "of '%s').",
-                   i, f->name().c_str());
-        outputs[f->inplace_grad_with(i)]->set_grad_inplaced(true);
-      }
-      for (int o = 0; o < outputs.size(); ++o) {
-        // If funcition gradient computation at i-th variable depends on o-th
-        // output data, inplacing o-th variable data is prohibited.
-        if (f->grad_depends_output_data(i, o)) {
-          outputs[o]->set_allow_inplace_data(false);
-        }
-      }
-    }
-  }
-  // Check if in-place is properly used.
-  for (int i = 0; i < inputs.size(); ++i) {
-    if (inputs[i]->allow_inplace_data())
-      continue;
-    const int inplace_level = f->inplace_data(i);
-    if (inplace_level == Function::NOT_INPLACE)
-      continue;
-    NBLA_CHECK(inplace_level < Function::INPLACE, error_code::value,
-               "In-place %d-th input data of '%s' (depth=%d) is "
-               "prohibited by the parent function '%s'.",
-               i, f->name().c_str(), cg_f->rank(),
-               inputs[i]->parent()->function()->name().c_str());
-    // Since the in-placed input's data is not modified in this function,
-    // the allow-inplace flag is propagated to the output variable.
-    outputs[f->inplace_data_with(i)]->set_allow_inplace_data(false);
-  }
-
-  // Check if branching doesn't appear in in-placed variables.
-  for (int i = 0; i < inputs.size(); ++i) {
-    bool inplace = f->inplace_data(i) || f->inplace_grad(i);
-    NBLA_CHECK(
-        (!inplace) || inputs[i]->function_reference_count() < 2,
-        error_code::value,
-        "Branching a variable is prohibited if it is in-placed. %d-th input "
-        "of `%s` (depth=%d) is inplaced (data: %s, grad: %s).",
-        i, f->name().c_str(), cg_f->rank(), b2str(f->inplace_data(i)),
-        b2str(f->inplace_grad(i)));
-  }
-
-  // Set clear buffer flags
-  for (int i = 0; i < inputs.size(); ++i) {
-    if (f->inplace_data(i))
-      outputs[f->inplace_data_with(i)]->set_clear_data_in_backward(false);
-    if (f->inplace_grad(i))
-      outputs[f->inplace_grad_with(i)]->set_clear_grad_in_backward(false);
   }
 
   // Set array reference to function output buffer if size matches.
@@ -162,5 +95,43 @@ vector<CgVariablePtr> connect_core(CgFunctionPtr cg_f,
     cg_f->function()->forward(finputs, foutputs);
   }
   return outputs;
+}
+
+void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to) {
+  // A. The shape must the same
+  NBLA_CHECK(
+      to->variable()->shape() == from->variable()->shape(), error_code::value,
+      "Variable shapes of from and to must match. from != to : (%s) != (%s).",
+      string_join(from->variable()->shape(), ", ").c_str(),
+      string_join(to->variable()->shape(), ", ").c_str());
+  // B. Get a parent function of from
+  auto parent = from->parent();
+  NBLA_CHECK(parent != nullptr, error_code::value,
+             "The 1st argument CgVariablePtr must have a parent function (must "
+             "be an output of a function.");
+
+  // C. Forget parent of from and rewire the parent function to to variable.
+  from->set_parent(nullptr);
+  to->set_parent(parent);
+
+  // D. Replace an output variable reference of the parent function with to
+  // variable.
+  auto outputs = parent->outputs();
+  std::replace(outputs.begin(), outputs.end(), from, to);
+  parent->set_outputs(outputs);
+
+  // E. Copy flags.
+  to->set_allow_modify_data(from->allow_modify_data());
+  if (from->need_grad_is_set()) {
+    to->set_need_grad(from->need_grad());
+  } else {
+    to->unset_need_grad();
+  }
+
+  // F. Reference contents
+  to->set_variable(from->variable());
+
+  // G. Set setup flag.
+  to->mark_need_setup();
 }
 }

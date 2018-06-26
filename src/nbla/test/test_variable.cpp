@@ -53,9 +53,6 @@ TEST_F(VariableManipTest, Properties) {
     }
     ASSERT_EQ(size, var_->size(i));
   }
-  ASSERT_FALSE(var_->need_grad());
-  var_->set_need_grad(true);
-  ASSERT_TRUE(var_->need_grad());
 }
 
 TEST_F(VariableManipTest, CastData) {
