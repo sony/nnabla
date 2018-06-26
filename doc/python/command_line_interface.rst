@@ -10,7 +10,7 @@ convert param and dataset, measure performance, file format converter and so on.
                       {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,version}
                       ...
     
-    Command line interface for NNabla(Version 0.9.9, Build 180621013258)
+    Command line interface for NNabla(Version 1.0.0rc2, Build 180626044347)
     
     positional arguments:
       {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,version}
@@ -34,8 +34,6 @@ convert param and dataset, measure performance, file format converter and so on.
     
     optional arguments:
       -h, --help            show this help message and exit
-
-
 
 
 Work with NNP
@@ -259,16 +257,18 @@ Dump content of supported format
 
 .. code-block:: none
 
-    usage: nnabla_cli dump [-h] [-I READ_FORMAT] [--nnp-expand-network] FILE [FILE ...]
+    usage: nnabla_cli dump [-h] [-I IMPORT_FORMAT] [--nnp-no-expand-network]
+                           FILE [FILE ...]
     
     positional arguments:
       FILE                  File or directory name(s) to convert.
     
     optional arguments:
       -h, --help            show this help message and exit
-      -I READ_FORMAT, --read-format READ_FORMAT
-                            [read] read format. (one of [NNP,ONNX])
-      --nnp-expand-network  [read][NNP] expand network with repeat or recurrent.
+      -I IMPORT_FORMAT, --import-format IMPORT_FORMAT
+                            [import] import format. (one of [NNP,ONNX])
+      --nnp-no-expand-network
+                            [import][NNP] expand network with repeat or recurrent.
 
 
 Generate NNB config file template
@@ -276,16 +276,20 @@ Generate NNB config file template
 
 .. code-block:: none
 
-    usage: nnabla_cli nnb_template [-h] [-I READ_FORMAT] [--nnp-expand-network] [-b BATCH_SIZE] [-T DEFAULT_VARIABLE_TYPE] FILE [FILE ...]
+    usage: nnabla_cli nnb_template [-h] [-I IMPORT_FORMAT]
+                                   [--nnp-no-expand-network] [-b BATCH_SIZE]
+                                   [-T DEFAULT_VARIABLE_TYPE]
+                                   FILE [FILE ...]
     
     positional arguments:
       FILE                  File or directory name(s) to convert.
     
     optional arguments:
       -h, --help            show this help message and exit
-      -I READ_FORMAT, --read-format READ_FORMAT
-                            [read] read format. (one of [NNP,ONNX])
-      --nnp-expand-network  [read][NNP] expand network with repeat or recurrent.
+      -I IMPORT_FORMAT, --import-format IMPORT_FORMAT
+                            [import] import format. (one of [NNP,ONNX])
+      --nnp-no-expand-network
+                            [import][NNP] expand network with repeat or recurrent.
       -b BATCH_SIZE, --batch-size BATCH_SIZE
                             [export] overwrite batch size.
       -T DEFAULT_VARIABLE_TYPE, --default-variable-type DEFAULT_VARIABLE_TYPE
@@ -296,8 +300,11 @@ File format converter
 
 .. code-block:: none
 
-    usage: nnabla_cli convert [-h] [-I READ_FORMAT] [--nnp-expand-network] [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE] [--nnp-parameter-h5] [--nnp-parameter-nntxt]
-                              [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE] [-s SETTINGS]
+    usage: nnabla_cli convert [-h] [-I IMPORT_FORMAT] [--nnp-no-expand-network]
+                              [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
+                              [--nnp-parameter-h5] [--nnp-parameter-nntxt]
+                              [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
+                              [-s SETTINGS]
                               FILE [FILE ...]
     
     positional arguments:
@@ -305,9 +312,10 @@ File format converter
     
     optional arguments:
       -h, --help            show this help message and exit
-      -I READ_FORMAT, --read-format READ_FORMAT
-                            [read] read format. (one of [NNP,ONNX])
-      --nnp-expand-network  [read][NNP] expand network with repeat or recurrent.
+      -I IMPORT_FORMAT, --import-format IMPORT_FORMAT
+                            [import] import format. (one of [NNP,ONNX])
+      --nnp-no-expand-network
+                            [import][NNP] expand network with repeat or recurrent.
       -O EXPORT_FORMAT, --export-format EXPORT_FORMAT
                             [export] export format. (one of [NNP,NNB,CSRC,ONNX])
       -f, --force           [export] overwrite output file.
