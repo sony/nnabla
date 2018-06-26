@@ -116,5 +116,8 @@ RUN set -xe \
         && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0.bk /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0 \
         && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0.bk /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0 \
         && cd / \
-        && pip install cntk Cython==0.25 autopep8 requests \
         && rm -rf /tmp/*
+
+
+RUN pip install pyyaml
+RUN pip install cntk Cython==0.25 autopep8 requests \
