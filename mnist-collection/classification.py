@@ -217,6 +217,20 @@ def train():
         args.model_save_path, '{}_params_{:06}.h5'.format(args.net, args.max_iter))
     nn.save_parameters(parameter_file)
 
+    runtime_contents = {
+        'networks': [
+            {'name': 'Validation',
+             'batch_size': args.batch_size,
+             'outputs': {'y': vpred},
+             'names': {'x': vimage}}],
+        'executors': [
+            {'name': 'Runtime',
+             'network': 'Validation',
+             'data': ['x'],
+             'output': ['y']}]}
+    save.save(os.path.join(args.model_save_path,
+                           '{}_result.nnp'.format(args.net)), runtime_contents)
+
 
 if __name__ == '__main__':
     train()
