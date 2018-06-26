@@ -535,7 +535,7 @@ def data_iterator_csv_dataset(uri,
             which takes an epoch index as an argument. These are called
             at the end of an epoch.
 
- 
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
@@ -595,7 +595,7 @@ def data_iterator_cache(uri,
             which takes an epoch index as an argument. These are called
             at the end of an epoch.
 
- 
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
@@ -662,7 +662,7 @@ def data_iterator_concat_datasets(data_source_list,
             which takes an epoch index as an argument. These are called
             at the end of an epoch.
 
- 
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
