@@ -33,7 +33,6 @@ install_requires = setup_requires + [
     'configparser',
     'contextlib2',
     'h5py',
-    'onnx',
     'protobuf',
     'pyyaml',
     'requests',
@@ -240,7 +239,8 @@ if __name__ == '__main__':
                       ["nnabla_cli=nnabla.utils.cli.cli:main"]},
         setup_requires=setup_requires,
         install_requires=install_requires,
-        extras_require={':python_version == "2.7"': ['futures']},
+        extras_require={':python_version == "2.7"': [
+            'futures'], ':python_version != "2.7"': ['onnx']},
         ext_modules=ext_modules,
         package_dir=package_dir,
         packages=packages,
