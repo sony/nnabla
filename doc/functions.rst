@@ -444,6 +444,33 @@ where :math:`x_{i_1 + k_1, i_2 + k_2}` is the input and :math:`y_{i_1, i_2}` is 
      - Average values variable
      - 
 
+GlobalAveragePooling
+^^^^^^^^^^^^^^
+
+Global average pooling. It pools an averaged value from the whole image
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - Input variable.
+     - 
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - y
+     - Average values variable
+     - 
+
 SumPooling
 ^^^^^^^^^^
 
@@ -1123,16 +1150,16 @@ References:
      - 
    * - beta
      - N-D array of beta which is learned.
-     - 
+     - Parameter
    * - gamma
      - N-D array of gamma which is learned.
-     - 
+     - Parameter
    * - mean
      - N-D array of running mean (modified during forward execution).
-     - 
+     - Parameter
    * - variance
      - N-D array of running variance (modified during forward execution).
-     - 
+     - Parameter
 
 * Argument(s)
 
@@ -3348,15 +3375,6 @@ In the backward pass, the simple Straight-Through Estimator (STE) is applied,
      - Input variable
      - 
 
-* Argument(s)
-
-.. list-table::
-
-   * - Name
-     - Type
-     - Default
-     - Description
-
 * Output(s)
 
 .. list-table::
@@ -3634,6 +3652,50 @@ Broadcasting ND-array to the specified shape.
      - Broadcasted N-D array
      - 
 
+BroadcastTo
+^^^^^^^^^^^
+
+Broadcasting ND-array to the specified buffer
+
+* Input(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - x
+     - N-D array
+     - 
+   * - y
+     - N-D array
+     - 
+
+* Argument(s)
+
+.. list-table::
+
+   * - Name
+     - Type
+     - Default
+     - Description
+   * - axis
+     - int64
+     - -1
+     - Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
+
+
+* Output(s)
+
+.. list-table::
+
+   * - Name
+     - Description
+     - Options
+   * - z
+     - Broadcasted N-D array
+     - 
+
 OneHot
 ^^^^^^
 
@@ -3744,7 +3806,7 @@ Shifts the array elements by the specified amount.
      - (0,) * len(x.shape)
      - The amount to shift elements. For example, to shift image data to the right by 2 pixels and up 3 pixels, specify (-3,2).
    * - border_mode
-     - string
+     - string ("nearest" or "reflect")
      - "nearest"
      - Specify how to process the ends of arrays whose values will be undetermined as a result of shifting. nearest: The data at the ends of the original      array is copied and used. reflect: Original data reflected      at the ends of the original array is used.
 
@@ -4330,7 +4392,7 @@ Randomly shifts the array elements within the specified range.
      - (0,) * len(x.shape)
      - Max absolute amount to shift elements. For example, to shift image data horizontally by :math:`\pm 2` pixels and vertically by :math:`\pm 3` pixels, specify (3,2).
    * - border_mode
-     - string
+     - string ("nearest" or "reflect")
      - "nearest"
      - Specify how to process the ends of arrays whose values will be undetermined as a result of shifting. nearest: The data at the ends of the   original array is copied and used. reflect: Original data reflected at   the ends of the original array is used.
    * - base_axis
@@ -5383,7 +5445,7 @@ References:
      - ()
      - List which specifies after how many forward passes we fix 50% of the learnable weights. If we have done as many iterations as specified in the last element of `inq_iterations`, then all weights are fixed.
    * - selection_algorithm
-     - string
+     - string ("largest_abs" or "random")
      - "largest_abs"
      - Chooses algorithm that we use for selecting the weights to fix ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
    * - seed
@@ -5479,7 +5541,7 @@ Reference
      - ()
      - List which specifies after how many forward passes we fix 50% of the learnable weights. If we have done as many iterations as specified in the last element of `inq_iterations`, then all weights are fixed.
    * - selection_algorithm
-     - string
+     - string ("largest_abs" or "random")
      - "largest_abs"
      - Chooses algorithm that we use for selecting the weights to fix ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
    * - seed

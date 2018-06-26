@@ -84,6 +84,11 @@ execute_process(
   ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py
   RESULT_VARIABLE GENERATE_RESULT)
 
+configure_file(
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/functions.yaml
+  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/functions.yaml
+  COPYONLY)
+
 if (NOT ${GENERATE_RESULT} EQUAL 0)
   message(FATAL_ERROR "generate.py failed.")
 endif ()
@@ -170,7 +175,7 @@ if(BUILD_CPP_LIB)
   list(APPEND NBLA_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/third_party/eigen-eigen-de14376a69f8
-    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.13.0/include)
+    ${CMAKE_SOURCE_DIR}/third_party/spdlog-0.16.3/include)
   
   if(BUILD_CPP_UTILS)
     list(APPEND NBLA_INCLUDE_DIRS

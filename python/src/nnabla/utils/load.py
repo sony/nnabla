@@ -405,11 +405,21 @@ def _context(proto):
                             for x in proto.compute_backend.split('|')]
         if 'cuda' in backends:
             if 'cudnn' in compute_backends:
-                import nnabla_ext.cudnn
-                ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+                try:
+                    import nnabla_ext.cudnn
+                    ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+                except ImportError:
+                    logger.warn('Fallback to CPU context.')
+                    import nnabla_ext.cpu
+                    ctx = nnabla_ext.cpu.context()
             elif 'default' in compute_backends:
-                import nnabla_ext.cuda
-                ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+                try:
+                    import nnabla_ext.cuda
+                    ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+                except ImportError:
+                    logger.warn('Fallback to CPU context.')
+                    import nnabla_ext.cpu
+                    ctx = nnabla_ext.cpu.context()
             else:
                 raise ValueError(
                     'Invalid compute_backend {}'.format(proto.compute_backend))
@@ -672,6 +682,9 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
             if not parameter_only:
                 with open(filename, 'rt') as f:
                     text_format.Merge(f.read(), proto)
+            if len(proto.parameter) > 0:
+                if not exclude_parameter:
+                    nn.load_parameters(filename)
         elif ext in ['.protobuf', '.h5']:
             if not exclude_parameter:
                 nn.load_parameters(filename)
@@ -693,6 +706,10 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                             if not parameter_only:
                                 with open(os.path.join(tmpdir, name), 'rt') as f:
                                     text_format.Merge(f.read(), proto)
+                            if len(proto.parameter) > 0:
+                                if not exclude_parameter:
+                                    nn.load_parameters(
+                                        os.path.join(tmpdir, name))
                         elif ext in ['.protobuf', '.h5']:
                             nnp.extract(name, tmpdir)
                             if not exclude_parameter:

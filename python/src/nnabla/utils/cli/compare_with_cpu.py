@@ -277,3 +277,16 @@ def compare_with_cpu_command(args):
 
     logger.log(99, 'Compare with CPU Completed.')
     progress(None)
+
+
+def add_compare_with_cpu_command(subparsers):
+    # Compare with CPU
+    subparser = subparsers.add_parser(
+        'compare_with_cpu', help='Compare performance between two nntxt.')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-c2', '--config2', help='path to cpu nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--outdir', help='output directory', required=True)
+    subparser.set_defaults(func=compare_with_cpu_command)

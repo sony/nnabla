@@ -41,6 +41,7 @@ Neural Network Layers
 .. autofunction:: depthwise_deconvolution
 .. autofunction:: max_pooling
 .. autofunction:: average_pooling
+.. autofunction:: global_average_pooling
 .. autofunction:: sum_pooling
 .. autofunction:: unpooling
 .. autofunction:: embed
@@ -167,6 +168,7 @@ Array Manipulation
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast
+.. autofunction:: broadcast_to
 .. autofunction:: flip
 .. autofunction:: shift
 .. autofunction:: reshape
