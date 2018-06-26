@@ -21,6 +21,8 @@ DOCKER_RUN_OPTS += -v $(HOME)/.ccache:/tmp/.ccache
 
 ## If your environment is under proxy uncomment following lines.
 DOCKER_BUILD_ARGS = --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}
+# DOCKER_BUILD_ARGS += --no-cache
+
 DOCKER_RUN_OPTS += -e http_proxy=${http_proxy}
 DOCKER_RUN_OPTS += -e https_proxy=${https_proxy}
 DOCKER_RUN_OPTS += -e ftp_proxy=${ftp_proxy}
