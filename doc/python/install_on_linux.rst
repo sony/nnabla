@@ -18,7 +18,7 @@ on Ubuntu 16.04 (64bit).
 
 * Recommended software (for NVIDIA GPU users).
 
-  * CUDA Toolkit 8.0 / cuDNN 6.0
+  * CUDA Toolkit 9.2 / cuDNN 7.1
 
 Note: Although this provides the instruction only on Ubuntu 16.04,
 you can install NNabla using pip on many Linux with little extra dependencies installed.
@@ -40,12 +40,12 @@ Then, check if it works by running:
 
 .. code-block:: bash
 
-	 2017-06-22 08:47:27,023 [nnabla][INFO]: Initializing CPU extension...
+   2018-06-26 15:20:16,759 [nnabla][INFO]: Initializing CPU extension...
 
 
 If you are GPU user, follow the following instruction.
 Before installing NNabla extension, make sure that
-you have a machine/env CUDA and cuDNN are installed (See :ref:`install-cuda8-ubuntu16`).
+you have a machine/env CUDA and cuDNN are installed (See :ref:`install-cuda9-ubuntu16`).
 
 Then,
 
@@ -53,23 +53,30 @@ Then,
 
 	sudo pip install -U nnabla_ext_cuda
 
-, and check if all works.
+and check if all works.
 
 .. code-block:: bash
 	
-	 python -c "import nnabla_ext.cuda, nnabla_ext.cudnn"
+  python -c "import nnabla_ext.cuda, nnabla_ext.cudnn"
 
 .. code-block:: bash
 
-	 2017-06-22 08:49:59,493 [nnabla][INFO]: Initializing CPU extension...
-	 2017-06-22 08:49:59,699 [nnabla][INFO]: Initializing CUDA extension...
-	 2017-06-22 08:50:02,684 [nnabla][INFO]: Initializing cuDNN extension...
+  2018-06-26 15:20:36,085 [nnabla][INFO]: Initializing CPU extension...
+  2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing CUDA extension...
+  2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing cuDNN extension...
+
+Note that the CUDA 9.2 and cuDNN 7.1 is fixed, and you can also install the cuda extension among the follows.
+
+- nnabla-ext-cuda80  (CUDA 8.0 x cuDNN 7.1) 
+- nnabla-ext-cuda90  (CUDA 9.0 x cuDNN 7.1) 
+- nnabla-ext-cuda91  (CUDA 9.1 x cuDNN 7.1) 
+- nnabla-ext-cuda92  (CUDA 9.2 x cuDNN 7.1) 
 
 
 Run an Example
 --------------
 
-`Get<https://github.com/sony/nnabla-examples/archive/master.zip>`_ (and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
+Get `the examples <https://github.com/sony/nnabla-examples/archive/master.zip>`_ (, and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
 
 .. code-block:: shell
 
@@ -99,24 +106,24 @@ FAQ
 Q. How do I install CUDA?
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Install CUDA (CUDA 8.0)
+Install CUDA (CUDA 9.2)
 """"""""""""""""""""""""
 
 .. code-block:: bash
 
-	wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
-	sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+	wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.2.88-1_amd64.deb
+	sudo dpkg -i cuda-repo-ubuntu1604_9.2.88-1_amd64.deb
 	sudo apt-get update
 	sudo apt install -y cuda
 
-Install cuDNN (cuDNN version 6.0)
+Install cuDNN (cuDNN version 7.1)
 """"""""""""""""""""""""""""""""
 
 Download cuDNN from `this page <https://developer.nvidia.com/cudnn>`_, then 
 
 .. code-block:: bash
 
-	tar zxvf cudnn-8.0-linux-x64-v6.0.tgz  # here, cudnn version is 6.0 for CUDA version 8.0
+	tar zxvf cudnn-9.2-linux-x64-v7.1.tgz  # here, the cuDNN version is 7.1 for CUDA version 9.2
 	sudo cp cuda/include/cudnn.h /usr/local/cuda/include/
 	sudo cp -P cuda/lib64/* /usr/local/cuda/lib64/
 
@@ -136,30 +143,31 @@ Use libgcc 5 and numpy 1.13.0 or the greater, and note that `numba` depends on t
 Then, you can follow the usual installation workflow.
 
 
-Q. I don't have CUDNN6 in my environment.
+Q. I don't have cuDNN 7.1 in my environment.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When you got the error,
 
 .. code-block:: text
 
-	 ImportError: libcudnn.so.6: cannot open shared object file: No such file or directory
+	 ImportError: libcudnn.so.7: cannot open shared object file: No such file or directory
 
-Please download cuDNN 6 for CUDA 8, put it in `/usr/local/cuda/lib/` or `/usr/local/cuda/lib64/` as the usual workflow, or set `LD_LIBRARY_PATH` as the following,
+Please download cuDNN 7.1 for CUDA 9.2, put it in `/usr/local/cuda/lib/` or `/usr/local/cuda/lib64/` as the usual workflow, or set `LD_LIBRARY_PATH` as the following,
 
 .. code-block:: bash
 								
-	 tar zxvf cudnn-8.0-linux-x64-v6.0.tgz
-	 export LD_LIBRARY_PATH=$(pwd)/cuda/lib64:$LD_LIBRARY_PATH
+  tar zxvf cudnn-9.2-linux-x64-v7.1.tgz
+  export LD_LIBRARY_PATH=$(pwd)/cuda/lib64:$LD_LIBRARY_PATH
 
 Q. I do not have the root privilege.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you do not have the root privilege, please use virtualenv or Anaconda. After you downloaded cuDNN v6, do the following.
+If you do not have the root privilege, please use virtualenv or Anaconda. After you downloaded cuDNN v7, do the following.
 
 .. code-block:: bash
-	tar zxvf cudnn-8.0-linux-x64-v6.0.tgz
-	export LD_LIBRARY_PATH=$(pwd)/cuda/lib64:$LD_LIBRARY_PATH
+
+  tar zxvf cudnn-9.2-linux-x64-v7.1.tgz
+  export LD_LIBRARY_PATH=$(pwd)/cuda/lib64:$LD_LIBRARY_PATH
 
 
 Q. I want to use another linux distribution.
