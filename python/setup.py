@@ -161,7 +161,8 @@ if __name__ == '__main__':
         '_init',
         '_nd_array',
         '_array',
-        '_arithmetic_ops']
+        '_arithmetic_ops',
+        '_indexing']
 
     ext_modules = [Extension('nnabla.{}'.format(mname),
                              [os.path.join(path_pkg,

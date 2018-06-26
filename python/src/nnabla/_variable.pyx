@@ -29,6 +29,7 @@ np.import_array()
 
 cimport _arithmetic_ops as AOP
 from _computation_graph cimport steal_variable_from_to
+cimport _indexing as IDX
 
 
 ctypedef void * voidp
@@ -195,7 +196,7 @@ cdef class Variable:
         '''
         if op == 2:
             try:
-                return (< Variable > self).varp == ( < Variable ?> other).varp
+                return ( < Variable > self).varp == ( < Variable ?> other).varp
             except:
                 return False
         elif op == 3:
@@ -205,7 +206,7 @@ cdef class Variable:
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash(< intptr_t > (( < Variable > self).varp))
+        return hash( < intptr_t > (( < Variable > self).varp))
 
     @property
     def shape(self):
@@ -451,7 +452,7 @@ cdef class Variable:
 
     @parent.setter
     def parent(self, func):
-        cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
+        cdef CgFunctionPtr cg_func = ( < function.Function ?> func).fun
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
@@ -507,18 +508,18 @@ cdef class Variable:
         elif np.isscalar(grad):
             arr = NdArray(self.shape)
             arr.fill(grad)
-            p = ( < NdArray > arr).arr
+            p = (< NdArray > arr).arr
         elif isinstance(grad, NdArray):
-            p = ( < NdArray > grad).arr
+            p = (< NdArray > grad).arr
         elif isinstance(grad, np.ndarray):
             arr = NdArray(grad.shape)
             arr.data = grad
-            p = ( < NdArray > arr).arr
+            p = (< NdArray > arr).arr
         else:
             # Try to interpret as scalar value
             arr = NdArray()
             arr.data = grad
-            p = ( < NdArray > arr).arr
+            p = (< NdArray > arr).arr
 
         cdef vector[CommunicatorBackwardCallbackPtr] callback_list
         if type(communicator_callbacks) == list:
@@ -646,3 +647,6 @@ cdef class Variable:
 
     def __pow__(x, y, z):
         return AOP.pow(x, y, z)
+
+    def __getitem__(self, key):
+        return IDX.getitem(self, key)
