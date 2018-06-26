@@ -26,6 +26,12 @@ from multiprocessing.pool import ThreadPool
 from shutil import rmtree
 import abc
 import atexit
+
+# TODO temporary work around to suppress FutureWarning message.
+import warnings
+warnings.simplefilter('ignore', category=FutureWarning)
+import h5py
+
 import collections
 import csv
 import numpy

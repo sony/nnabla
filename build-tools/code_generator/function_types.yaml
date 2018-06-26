@@ -16,6 +16,9 @@ MaxPooling:
 AveragePooling:
   float: [float]
   half: [Half]
+GlobalAveragePooling:
+  float: [float]
+  half: [Half]
 SumPooling:
   float: [float]
   half: [Half]
@@ -236,6 +239,9 @@ Transpose:
   float: [float]
   half: [Half]
 Broadcast:
+  float: [float]
+  half: [Half]
+BroadcastTo:
   float: [float]
   half: [Half]
 OneHot:

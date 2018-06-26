@@ -51,14 +51,14 @@ def test_broadcast_forward_backward(ndim, broadcast_dim, seed, fname, ctx, func_
     shape = rng.randint(2, 5, size=(ndim,))
     inshape = shape.copy()
     inshape[broadcast_dim] = 1
-    if np.prod(inshape) == 1:
+    if ndim == 0:
         # Performing 0-dim array test too.
-        inputs = [np.array(rng.randn())]
+        inputs = [np.array(rng.randn()).astype("float32")]
         function_tester(rng, func, ref_func, inputs, [shape],
                         ctx=ctx, backward=[True], func_name=func_name,
                         atol_b=4e-3)
 
-    inputs = [np.array(rng.randn(*inshape))]
+    inputs = [np.array(rng.randn(*inshape)).astype("float32")]
     function_tester(rng, func, ref_func, inputs, [shape],
                     ctx=ctx, backward=[True], func_name=func_name,
                     atol_b=6e-3)
