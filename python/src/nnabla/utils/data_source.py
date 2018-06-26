@@ -48,7 +48,14 @@ from nnabla.utils.communicator_util import single_or_rankzero
 
 class DataSource(object):
     '''
-    Detailed documentation is available in :ref:`data_source_design`.
+    This class contains various properties and methods for the data source, which are utilized by py:class:`DataIterator`.
+
+    Args:
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
+
     '''
     __metaclass__ = abc.ABCMeta
 
@@ -89,6 +96,13 @@ class DataSource(object):
 
     @property
     def variables(self):
+        '''variables
+
+        Variable names of the data.
+
+        Returns:
+           tuple: tuple of Variable names
+        '''
         return self._variables
 
     def next(self):
@@ -98,6 +112,13 @@ class DataSource(object):
 
     @property
     def position(self):
+        '''position
+
+        Data position in current epoch.
+
+        Returns:
+            int: Data position
+        '''
         return self._position
 
     @property
@@ -106,6 +127,14 @@ class DataSource(object):
 
     @property
     def shuffle(self):
+        '''
+
+        Whether dataset is shuffled or not.
+
+        Returns:
+            bool: whether dataset is shuffled.
+        '''
+
         return self._shuffle
 
     @shuffle.setter
@@ -123,19 +152,37 @@ class DataSourceWithFileCacheError(Exception):
 
 class DataSourceWithFileCache(DataSource):
     '''
-    Detailed documentation is available in :ref:`data_source_with_file_cache_design`.
+    This class contains properties and methods for data source that can be read from cache files, which are utilized by data iterator.
+
+    Args:
+        data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
+             Instance of DataSource class which provides data.
+        cache_dir (str):
+            Location of file_cache.
+            If this value is None, :py:class:`.data_source.DataSourceWithFileCache`
+            creates file caches implicitly on temporary directory and erases them all
+            when data_iterator is finished.
+            Otherwise, :py:class:`.data_source.DataSourceWithFileCache` keeps created cache.
+            Default is None.
+        cache_file_name_prefix (str):
+            Beginning of the filenames of cache files.
+            Default is 'cache'. 
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
     '''
 
     def _save_cache_to_file(self):
         '''
         Store cache data into file.
 
-        Data will be store with hdf5 format, placed at config..
+        Data will be stored as hdf5 format, placed at config..
         Cache file name format is "cache_START_END.h5"
         '''
         if self._cache_dir is None:
             raise DataSourceWithFileCacheError(
-                'Use this class with "with statement" if you dont specify cache dir.')
+                'Use this class with "with statement" if you don\'t specify cache dir.')
         cache_data = OrderedDict()
 
         def get_data(args):
@@ -398,7 +445,16 @@ class DataSourceWithFileCache(DataSource):
 
 class DataSourceWithMemoryCache(DataSource):
     '''
-    Detailed documentation is available in :ref:`data_source_with_memory_cache_design`.
+    This class contains properties and methods for data source that can be read from memory cache, which is utilized by data iterator.
+
+    Args:
+        data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
+             Instance of DataSource class which provides data.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
+
     '''
 
     def _get_data_func(self, position):
@@ -480,6 +536,10 @@ class DataSourceWithMemoryCache(DataSource):
 class SlicedDataSource(DataSource):
     '''
     Provides sliced data source.
+
+    Args:
+        data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
+             Instance of DataSource class which provides data.
     '''
 
     def __init__(self, data_source, shuffle=False, rng=None, slice_start=None, slice_end=None):
