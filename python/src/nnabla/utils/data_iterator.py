@@ -413,7 +413,7 @@ def data_iterator_simple(load_func,
         num_examples (int): Number of examples in your dataset. Random sequence
             of indexes is generated according to this number.
         batch_size (int): Size of data unit. 
- 
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator.
