@@ -331,11 +331,8 @@ def data_iterator(data_source,
 
     .. code-block:: python
 
-        ds = YourOwnImplementOfDataSource()
-
-        with data_iterator(ds, batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        ds = YourOwnImplementationOfDataSource()
+        batch = data_iterator(ds, batch_size)
 
 
     Args:
@@ -415,7 +412,8 @@ def data_iterator_simple(load_func,
             the same shape.
         num_examples (int): Number of examples in your dataset. Random sequence
             of indexes is generated according to this number.
-
+        batch_size (int): Size of data unit. 
+ 
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator.
@@ -472,12 +470,13 @@ def data_iterator_csv_dataset(uri,
 
     .. code-block:: python
 
-        with data_iterator_csv_dataset('CSV_FILE.csv', batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        batch = data_iterator_csv_dataset('CSV_FILE.csv', batch_size, shuffle=True)
 
     Args:
         uri (str): Location of dataset CSV file.
+        batch_size (int): Size of data unit.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.  
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
@@ -513,12 +512,13 @@ def data_iterator_cache(uri,
 
     .. code-block:: python
 
-        with data_iterator_cache('CACHE_DIR', batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        batch = data_iterator_cache('CACHE_DIR', batch_size, shuffle=True)
 
     Args:
         uri (str): Location of directory with cache files.
+        batch_size (int): Size of data unit.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.  
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
@@ -551,12 +551,11 @@ def data_iterator_concat_datasets(data_source_list,
 
     .. code-block:: python
 
-        with data_iterator_concat_datasets([DataSource0, DataSource1, ...], batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        batch = data_iterator_concat_datasets([DataSource0, DataSource1, ...], batch_size)
 
     Args:
         data_source_list (list of DataSource): list of datasets.
+        batch_size (int): Size of data unit.
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator

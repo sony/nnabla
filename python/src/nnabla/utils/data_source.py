@@ -530,6 +530,10 @@ class DataSourceWithMemoryCache(DataSource):
 class SlicedDataSource(DataSource):
     '''
     Provides sliced data source.
+
+    Args:
+        data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
+             Instance of DataSource class which provides data.
     '''
 
     def __init__(self, data_source, shuffle=False, rng=None, slice_start=None, slice_end=None):
