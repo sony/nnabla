@@ -46,21 +46,6 @@ def get_version(dir):
             return version, os.environ["NNABLA_SHORT_VERSION"]
     version = default_version = '1.0.0rc2'
     nearest_tag = default_version
-    if os.path.exists('.git'):
-        try:
-            nearest_tag = re.sub(r'^v', '', subprocess.check_output(
-                ['git', 'describe', '--abbrev=0', '--tags']).strip().decode('utf-8'))
-            nearest_tag = nearest_tag.replace('/', '_').lower()
-            version = nearest_tag
-            vv = subprocess.check_output(
-                ['git', 'describe', '--tags']).strip().decode('utf-8').split('-')
-            if len(vv) > 1:
-                cid = vv.pop()
-                version = '-'.join(vv) + '+' + cid
-                version = version.replace('/', '_').lower()
-        except:
-            nearest_tag = default_version
-            version = default_version
     if "NNABLA_VERSION_SUFFIX" in os.environ:
             version += os.environ["NNABLA_VERSION_SUFFIX"]
     return version.replace('/', '_').lower(), nearest_tag.replace('/', '_').lower()
