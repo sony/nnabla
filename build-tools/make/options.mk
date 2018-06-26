@@ -34,11 +34,9 @@ DOCKER_RUN_OPTS += -e PYTHON_VERSION_MINOR=$(PYTHON_VERSION_MINOR)
 
 ########################################################################################################################
 # Build options
-export NNABLA_VERSION ?= $(shell git describe --tags 2>/dev/null|sed -e 's/^v//' -e 's/-/.post/' -e 's/-/+/')
 DOCKER_RUN_OPTS += -e NNABLA_VERSION=$(NNABLA_VERSION)
-
-export NNABLA_SHORT_VERSION ?= $(shell git describe --abbrev=0 --tags 2>/dev/null|sed -e 's/^v//' -e 's/\//_/g')
 DOCKER_RUN_OPTS += -e NNABLA_SHORT_VERSION=$(NNABLA_SHORT_VERSION)
+DOCKER_RUN_OPTS += -e NNABLA_VERSION_SUFFIX=$(NNABLA_SHORT_VERSION_SUFFIX)
 
 NNABLA_UTILS_STATIC_LINK_DEPS ?= OFF
 DOCKER_RUN_OPTS += -e NNABLA_UTILS_STATIC_LINK_DEPS=$(NNABLA_UTILS_STATIC_LINK_DEPS)

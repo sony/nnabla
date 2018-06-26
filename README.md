@@ -95,6 +95,21 @@ with nn.auto_forward():
 loss.backward()
 ```
 
+### Command line utility
+
+Neural Network Libraries provides a command line utility `nnabla_cli` for easier use of NNL.
+
+`nnabla_cli` provides following functionality.
+
+- Training, Evaluation or Infernce with NNP file.
+- Dataset and Parameter manipuration.
+- File format converter
+  - From ONNX to NNP and NNP to ONNX.
+  - From ONNX or NNP to NNB or C source code.
+
+For more details see [Documentation](doc/python/command_line_interface.rst)
+
+
 ### Portable and multi-platform
 
 * Python API can be used on Linux and Windows

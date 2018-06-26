@@ -33,7 +33,9 @@ install_requires = setup_requires + [
     'configparser',
     'contextlib2',
     'h5py',
+    'onnx',
     'protobuf',
+    'pyyaml',
     'requests',
     'scikit-image',
     'scipy',
@@ -183,7 +185,10 @@ if __name__ == '__main__':
     # http://stackoverflow.com/questions/6191942/distributing-pre-built-libraries-with-python-modules
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
-    package_data = {"nnabla": [library_file_name, 'nnabla.conf']}
+    package_data = {"nnabla": [
+        library_file_name, 'nnabla.conf',
+                           'utils/converter/functions.yaml',
+                           'utils/converter/function_order.yaml']}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -221,6 +226,10 @@ if __name__ == '__main__':
                 'nnabla.contrib',
                 'nnabla.utils',
                 'nnabla.utils.cli',
+                'nnabla.utils.converter',
+                'nnabla.utils.converter.nnabla',
+                'nnabla.utils.converter.nnablart',
+                'nnabla.utils.converter.onnx',
                 'nnabla.utils.factorization',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
