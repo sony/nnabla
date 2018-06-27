@@ -227,23 +227,31 @@ def train():
         e = 0.0
         solver.zero_grad()
 
+        def accumulate_error(l, e, t_model, t_e):
+            l += t_model.loss.d
+            e += t_e.d
+            return l, e
+
         # Gradient accumulation loop
         for j in range(args.accum_grad):
             images, labels = data.next()
-            # The data loading of the next mini-batch from files is overlapped
-            # with the computation of forward and backward propagation in your CUDA device
-            # because the CUDA stream runs asynchronously and the synchronization happens
-            # when the loss variable is referred by the `.d` accessor.
-            if i != 0:
-                l += t_model.loss.d
-                t_e.forward(clear_buffer=True)
-                e += t_e.d
+            if j != 0:
+                # Update e and l according to previous results of forward
+                # propagation.
+                # The update of last iteration is performed
+                # after solver update to avoid unnecessary CUDA synchronization.
+                # This is performed after data.next() in order to overlap
+                # the data loading and graph execution.
+                # TODO: Move this to the bottom of the loop when prefetch
+                # data loader is available.
+                l, e = accumulate_error(l, e, t_model, t_e)
             t_model.image.d = images
             t_model.label.d = labels
             t_model.image.data.cast(np.uint8, ctx)
             t_model.label.data.cast(np.int32, ctx)
             t_model.loss.forward(clear_no_need_grad=True)
             t_model.loss.backward(clear_buffer=True)  # Accumulating gradients
+            t_e.forward(clear_buffer=True)
 
         # AllReduce
         params = [x.grad for x in nn.get_parameters().values()]
@@ -252,6 +260,9 @@ def train():
         # Update
         solver.weight_decay(args.weight_decay)
         solver.update()
+
+        # Accumulate errors after solver update
+        l, e = accumulate_error(l, e, t_model, t_e)
 
         # Linear Warmup
         if i <= warmup_iter:
@@ -281,6 +292,6 @@ def train():
 if __name__ == '__main__':
     """
     Call this script with `mpirun` or `mpiexec`
-    $ mpirun -n 4 python multi_device_multi_process_classification.py -b 32 -a 2 -L 50 -l 0.1 -i 2000000 -v 20004 -j 1563 -s 20004 -D 600000 -D 1200000 -D 1800000 -T "The path of training cachefile" -V "The path of validation cache file"
+    $ mpirun -n 4 python multi_device_multi_process_classification.py -b 32 -a 2 -L 50 -l 0.1 -i 2000000 -v 20004 -j 1563 -s 20004 -D 600000,1200000,1800000 -T "The path of training cachefile" -V "The path of validation cache file"
     """
     train()
