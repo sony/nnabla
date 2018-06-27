@@ -58,8 +58,11 @@ if(NOT EXISTS ${PYTHON_COMMAND})
   endif()
 endif()
 
-find_program(PROTOC_COMMAND protoc)
 if(NOT EXISTS ${PROTOC_COMMAND})
+  find_program(PROTOC_COMMAND protoc)
+endif()
+if(NOT EXISTS ${PROTOC_COMMAND})
+  # If find_program fails.
   message(FATAL_ERROR, "protoc not found. Please install protocol buffer compiler.")
   error() # Place Unknown command to stop cmake process here.
 endif()
