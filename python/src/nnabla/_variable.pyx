@@ -533,7 +533,7 @@ cdef class Variable:
 
     def unlinked(self, need_grad=None):
         """
-        Gets unlinked (forgetting parent) variable that shares a Variable buffer
+        Gets an unlinked (forgetting parent) variable that shares a Variable buffer
         instance.
 
         Args:
@@ -543,6 +543,23 @@ cdef class Variable:
                 the new need_grad flags will be set to the unlinked variable.
 
         Returns: nnabla._variable.Variable
+
+
+        Example:
+
+            .. code-block:: python
+
+                import numpy as np
+                import nnabla as nn
+                import nnabla.parametric_functions as PF
+
+                x = nn.Variable.from_numpy_array(np.array([[1, 2], [3, 4]]))
+                y = PF.affine(x, 4, name="y")
+                z = y.unlinked()
+                print(y.parent)
+                # Affine
+                print(z.parent)  # z is unlinked from the parent x but shares the buffers of y.
+                # None
 
         """
         var = Variable.create_from_cvariable(self.varp.variable().get().view())
