@@ -47,7 +47,8 @@ except:
 
 # The directory of which the input ONNX files will be at
 REFERENCE_AVAILABLE = False
-TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), *(['..']*5), 'nnabla-sample-data', 'reference', 'onnx'))
+TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(
+    __file__), '..', '..', '..', '..', '..', 'nnabla-sample-data', 'reference', 'onnx'))
 if os.path.exists(TEST_DATA_DIR):
     REFERENCE_AVAILABLE = True
 print(TEST_DATA_DIR)

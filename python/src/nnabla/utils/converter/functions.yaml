@@ -749,8 +749,8 @@ Normalization:
       .. code-block:: python
         
         x = nn.Variable([16, 3, 32, 32])
-        min = F.broadcast(nn.Variable.from_numpy_array(np.tile(-1.0, 64)).reshape((1, 64, 1, 1)), (8, 64, 3, 3))
-        max = F.broadcast(nn.Variable.from_numpy_array(np.tile(1.0, 64)).reshape((1, 64, 1, 1)), (8, 64, 3, 3))
+        min = F.broadcast(nn.Variable.from_numpy_array(np.asarray([-1.0]).reshape((1, 1, 1, 1))), (16, 3, 32, 32))
+        max = F.broadcast(nn.Variable.from_numpy_array(np.asarray([1.0]).reshape((1, 1, 1, 1))), (16, 3, 32, 32))
         c = F.clip_grad_by_value(x, min=min, max=max)
         h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
                                

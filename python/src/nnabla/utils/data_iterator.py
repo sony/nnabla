@@ -119,7 +119,7 @@ class DataIterator(object):
     @property
     def epoch(self):
         '''epoch
-        How many times does the :py:meth:`position` return to zero.
+        The number of times :py:meth:`position` returns to zero.
 
         Returns:
             int: epoch
@@ -142,8 +142,8 @@ class DataIterator(object):
         '''size
 
         Data size that DataIterator will generate.
-        This is largest integer multiple of batch_size not exceeding
-        self._data_source.size
+        This is the largest integer multiple of batch_size not exceeding
+        :py:meth:`self._data_source.size`.
 
         Returns:
             int: Data size
@@ -166,10 +166,10 @@ class DataIterator(object):
     def batch_size(self):
         '''batch_size
 
-        Number of data in :py:meth:`next()` returns.
+        Number of training samples that :py:meth:`next()` returns.
 
         Returns:
-            int: Number of data.
+            int: Number of training samples.
         '''
         return self._batch_size
 
@@ -200,8 +200,8 @@ class DataIterator(object):
         It generates tuple of data.
 
         For example,
-        if self._variables == ('x', 'y')
-        This method returns, ( [[X] * batch_size], [[Y] * batch_size] )
+        if :py:meth:`self._variables == ('x', 'y')`
+        This method returns :py:meth:` ( [[X] * batch_size], [[Y] * batch_size] )`
 
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
@@ -229,7 +229,7 @@ class DataIterator(object):
               slice_start=None, slice_end=None,
               cache_dir=None):
         '''
-        Generate new data iterator that has limited range of original data.
+        Generates a new data iterator that has limited portion of original data.
         '''
         if num_of_slices is not None and slice_pos is not None and slice_start is None and slice_end is None:
             size = self._size // num_of_slices
@@ -248,7 +248,7 @@ class DataIterator(object):
             pass
         else:
             logger.critical(
-                'You must specify position(num_of_slice and slice_pos) nor range(slice_start and slice_end).')
+                'You must specify position(num_of_slice and slice_pos) or range(slice_start and slice_end).')
             return None
 
         if cache_dir is None:
@@ -300,7 +300,7 @@ class DataIterator(object):
         """Register epoch end callback.
 
         Args:
-            callback (function): A function takes an epoch index as a argument.
+            callback (function): A function takes an epoch index as an argument.
         """
         self._epoch_end_callbacks.append(callback)
 
@@ -308,7 +308,7 @@ class DataIterator(object):
         """Register epoch begin callback.
 
         Args:
-            callback (function): A function takes an epoch index as a argument.
+            callback (function): A function takes an epoch index as an argument.
         """
         self._epoch_begin_callbacks.append(callback)
 
@@ -331,41 +331,38 @@ def data_iterator(data_source,
 
     .. code-block:: python
 
-        ds = YourOwnImplementOfDataSource()
-
-        with data_iterator(ds, batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        ds = YourOwnImplementationOfDataSource()
+        batch = data_iterator(ds, batch_size)
 
 
     Args:
         data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
-             Instance of DataSource class witch provides data.
+             Instance of DataSource class which provides data.
         batch_size (int): Batch size.
         rng (None or :obj:`numpy.random.RandomState`): Numpy random number
             generator.
         with_memory_cache (bool):
-            If it is ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
-            to wrap ``data_source``. It is good idea set this always true unless
+            If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
+            to wrap ``data_source``. It is a good idea to set this as true unless
             data_source provides on-memory data.
             Default value is True.
         with_file_cache (bool):
-            If it is True, use :py:class:`.data_source.DataSourceWithFileCache`
+            If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
             to wrap ``data_source``.
-            If ``data_source`` is very slow, enable this option is good idea.
+            If ``data_source`` is slow, enableing this option a is good idea.
             Default value is False.
         cache_dir (str):
             Location of file_cache.
             If this value is None, :py:class:`.data_source.DataSourceWithFileCache`
-            creates file caches implicitly on temporary directory and erase them all
-            when data_iterator was finished.
+            creates file caches implicitly on temporary directory and erases them all
+            when data_iterator is finished.
             Otherwise, :py:class:`.data_source.DataSourceWithFileCache` keeps created cache.
             Default is None.
         epoch_begin_callbacks (list of functions): An item is a function
-            which takes an epoch index as a argument. These are called
+            which takes an epoch index as an argument. These are called
             at the beginning of an epoch.
         epoch_end_callbacks (list of functions): An item is a function
-            which takes an epoch index as a argument. These are called
+            which takes an epoch index as an argument. These are called
             at the end of an epoch.
 
     Returns:
@@ -411,10 +408,40 @@ def data_iterator_simple(load_func,
     Args:
         load_func (function): Takes a single argument `i`, an index of an
             example in your dataset to be loaded, and returns a tuple of data.
-            Every calls by any index `i` must returns a tuple of arrays with
+            Every call by any index `i` must return a tuple of arrays with
             the same shape.
-        num_examples (int): Number of examples of your dataset. Random sequence
+        num_examples (int): Number of examples in your dataset. Random sequence
             of indexes is generated according to this number.
+        batch_size (int): Size of data unit.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+             Default value is False. 
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
+        with_memory_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
+            to wrap ``data_source``. It is a good idea to set this as true unless
+            data_source provides on-memory data.
+            Default value is True.
+        with_file_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
+            to wrap ``data_source``.
+            If ``data_source`` is slow, enableing this option a is good idea.
+            Default value is False.
+        cache_dir (str):
+            Location of file_cache.
+            If this value is None, :py:class:`.data_source.DataSourceWithFileCache`
+            creates file caches implicitly on temporary directory and erases them all
+            when data_iterator is finished.
+            Otherwise, :py:class:`.data_source.DataSourceWithFileCache` keeps created cache.
+            Default is None.
+        epoch_begin_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the beginning of an epoch.
+        epoch_end_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the end of an epoch.
+
 
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
@@ -455,7 +482,7 @@ def data_iterator_simple(load_func,
 
 def data_iterator_csv_dataset(uri,
                               batch_size,
-                              shuffle,
+                              shuffle=False,
                               rng=None,
                               normalize=True,
                               with_memory_cache=True,
@@ -472,12 +499,43 @@ def data_iterator_csv_dataset(uri,
 
     .. code-block:: python
 
-        with data_iterator_csv_dataset('CSV_FILE.csv', batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        batch = data_iterator_csv_dataset('CSV_FILE.csv', batch_size, shuffle=True)
 
     Args:
         uri (str): Location of dataset CSV file.
+        batch_size (int): Size of data unit.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+             Default value is False. 
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
+        normalize (bool): If True, each sample in the data gets normalized by a factor of 255. 
+            Default is True.
+        with_memory_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
+            to wrap ``data_source``. It is a good idea to set this as true unless
+            data_source provides on-memory data.
+            Default value is True.
+        with_file_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
+            to wrap ``data_source``.
+            If ``data_source`` is slow, enableing this option a is good idea.
+            Default value is False.
+        cache_dir (str):
+            Location of file_cache.
+            If this value is None, :py:class:`.data_source.DataSourceWithFileCache`
+            creates file caches implicitly on temporary directory and erases them all
+            when data_iterator is finished.
+            Otherwise, :py:class:`.data_source.DataSourceWithFileCache` keeps created cache.
+            Default is None.
+        epoch_begin_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the beginning of an epoch.
+        epoch_end_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the end of an epoch.
+
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
@@ -498,7 +556,7 @@ def data_iterator_csv_dataset(uri,
 
 def data_iterator_cache(uri,
                         batch_size,
-                        shuffle,
+                        shuffle=False,
                         rng=None,
                         normalize=True,
                         with_memory_cache=True,
@@ -513,12 +571,31 @@ def data_iterator_cache(uri,
 
     .. code-block:: python
 
-        with data_iterator_cache('CACHE_DIR', batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        batch = data_iterator_cache('CACHE_DIR', batch_size, shuffle=True)
 
     Args:
         uri (str): Location of directory with cache files.
+        batch_size (int): Size of data unit.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+             Default value is False. 
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
+        normalize (bool): If True, each sample in the data gets normalized by a factor of 255. 
+            Default is True.
+        with_memory_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
+            to wrap ``data_source``. It is a good idea to set this as true unless
+            data_source provides on-memory data.
+            Default value is True.
+        epoch_begin_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the beginning of an epoch.
+        epoch_end_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the end of an epoch.
+
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator
@@ -537,7 +614,7 @@ def data_iterator_cache(uri,
 
 def data_iterator_concat_datasets(data_source_list,
                                   batch_size,
-                                  shuffle=True,
+                                  shuffle=False,
                                   rng=None,
                                   with_memory_cache=True,
                                   with_file_cache=False,
@@ -551,12 +628,41 @@ def data_iterator_concat_datasets(data_source_list,
 
     .. code-block:: python
 
-        with data_iterator_concat_datasets([DataSource0, DataSource1, ...], batch_size) as di:
-            for data in di:
-                SOME CODE TO USE data.
+        batch = data_iterator_concat_datasets([DataSource0, DataSource1, ...], batch_size)
 
     Args:
-        data_source_list (list of DataSource): list of dataset.
+        data_source_list (list of DataSource): list of datasets.
+        batch_size (int): Size of data unit.
+        shuffle (bool):
+             Indicates whether the dataset is shuffled or not.
+             Default value is False. 
+        rng (None or :obj:`numpy.random.RandomState`): Numpy random number
+            generator.
+        with_memory_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
+            to wrap ``data_source``. It is a good idea to set this as true unless
+            data_source provides on-memory data.
+            Default value is True.
+        with_file_cache (bool):
+            If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
+            to wrap ``data_source``.
+            If ``data_source`` is slow, enableing this option a is good idea.
+            Default value is False.
+        cache_dir (str):
+            Location of file_cache.
+            If this value is None, :py:class:`.data_source.DataSourceWithFileCache`
+            creates file caches implicitly on temporary directory and erases them all
+            when data_iterator is finished.
+            Otherwise, :py:class:`.data_source.DataSourceWithFileCache` keeps created cache.
+            Default is None.
+        epoch_begin_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the beginning of an epoch.
+        epoch_end_callbacks (list of functions): An item is a function
+            which takes an epoch index as an argument. These are called
+            at the end of an epoch.
+
+
     Returns:
         :py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`:
             Instance of DataIterator

@@ -23,7 +23,7 @@ template <typename T>
 void Max<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Sum<T>::setup_impl(inputs, outputs);
   int outer_size = inputs[0]->size() / this->reduction_size_;
-  index_buff_ = make_shared<Variable>(Shape_t{outer_size}, false);
+  index_buff_ = make_shared<Variable>(Shape_t{outer_size});
 }
 
 template <typename T>

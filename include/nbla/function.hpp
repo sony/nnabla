@@ -122,7 +122,7 @@ public:
   @sa setup() arguments.
   */
   void backward(const Variables &inputs, const Variables &outputs,
-                const vector<bool> &acccum);
+                const vector<bool> &propagate_down, const vector<bool> &acccum);
 
   /** Get Context used in this function.
   */

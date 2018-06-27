@@ -20,7 +20,7 @@ The following software are required for installation:
 
 * Recommended.
 
-  * CUDA Toolkit 8.0 / cuDNN 6.0 (for NVIDIA GPU users)
+  * CUDA Toolkit 9.2 / cuDNN 7.1 (for NVIDIA GPU users)
 
 
 Setup environment
@@ -55,7 +55,7 @@ Microsoft Visual C++ 2015 Redistributable
 Get and install from `here <https://www.microsoft.com/en-us/download/details.aspx?id=52685>`_
 
 
-CUDA Toolkit 8.0 / cuDNN 6.0
+CUDA Toolkit 9.2 / cuDNN 7.1
 """"""""""""""""""""""""""""
 
 If you are using a NVIDIA GPU, execution speed will be drastically improved by installing the following software.
@@ -64,7 +64,7 @@ If you are using a NVIDIA GPU, execution speed will be drastically improved by i
 
 `cuDNN <https://developer.nvidia.com/cudnn>`_
 
-To install cuDNN, copy bin, include and lib to C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v8.0
+To install cuDNN, copy bin, include and lib to C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v9.2
 
 
 Install
@@ -82,7 +82,7 @@ If you are using a NVIDIA GPU, you can also install the CUDA/cuDNN package.
 .. code-block:: doscon
 
     > pip install nnabla_ext_cuda
-
+    
 
 Check for running.
 
@@ -113,11 +113,18 @@ Check for running (CUDA/cuDNN).
     
     >
 
+Note that the CUDA 9.2 and cuDNN 7.1 is fixed, and you can also install the cuda extension among the follows.
+
+- nnabla-ext-cuda80  (CUDA 8.0 x cuDNN 7.1) 
+- nnabla-ext-cuda90  (CUDA 9.0 x cuDNN 7.1) 
+- nnabla-ext-cuda91  (CUDA 9.1 x cuDNN 7.1) 
+- nnabla-ext-cuda92  (CUDA 9.2 x cuDNN 7.1) 
+    
 
 Run an Example
 ^^^^^^^^^^^^^^
 
-`Get<https://github.com/sony/nnabla-examples/archive/master.zip>`_ (and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
+Get `the examples <https://github.com/sony/nnabla-examples/archive/master.zip>`_ (, and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
 
 .. code-block:: doscon
 

@@ -181,3 +181,59 @@ def test_graph_clear_buffer(seed):
             else:
                 g2 = list(nn.get_parameters().values())[0].g.copy()
                 assert np.all(g == g2)
+
+
+@pytest.mark.parametrize("seed", [311])
+@pytest.mark.parametrize("clear_buffer", [True, False])
+def test_graph_rewire(seed, clear_buffer):
+    nn.clear_parameters()
+
+    # A. defining graph definition utility
+    def mlp2(x, scope):
+        with nn.parameter_scope(scope):
+            h = F.tanh(PF.affine(x, 10, name='a1'))
+            h = F.tanh(PF.affine(h, 10, name='a1'))
+            return h
+
+    # A. Create a graph A.
+    xa = nn.Variable((2, 10), need_grad=True)
+    ya = mlp2(xa, 'a')
+
+    # B. Create a graph B.
+    xb = nn.Variable((2, 10), need_grad=True)
+    yb = mlp2(xb, 'b')
+
+    # C. Create directly connected graph.
+    xc = nn.Variable((2, 10))
+    yc = mlp2(mlp2(xc, 'a'), 'b')
+
+    # D. Rewire the graphs A and B.
+    xb.rewire_on(ya)
+
+    # E. Check whether the results are the same.
+    rng = np.random.RandomState(seed)
+    data = rng.randn(*xa.shape)
+    xa.d = data
+    xc.d = data
+    params = nn.get_parameters()
+
+    def zero_grad():
+        for p in params.values():
+            p.grad.zero()
+
+    def backup_params():
+        return [p.g.copy() for p in params.values()]
+    # Checking forward
+    yb.forward(clear_no_need_grad=clear_buffer)
+    yc.forward(clear_no_need_grad=clear_buffer)
+    assert np.allclose(yb.d, yc.d)
+    # Checking backward
+    zero_grad()
+    yb.backward(clear_buffer=clear_buffer)
+    gb = backup_params()
+    zero_grad()
+    yc.backward(clear_buffer=clear_buffer)
+    gc = backup_params()
+    assert np.allclose(xa.d, xc.d)
+    for b, c in zip(gb, gc):
+        assert np.allclose(b, c)

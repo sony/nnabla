@@ -58,10 +58,13 @@ void NetworkImpl::build() {
     NBLA_LOG_INFO("      function name:{} type:{}", func.name(), func.type());
 
     std::vector<nbla::CgVariablePtr> finputs;
+    // std::cout << func.name() << ":";
     for (auto inp = func.input().begin(); inp != func.input().end(); inp++) {
+      // std::cout << " " << *inp;
       CgVariablePtr cg_v = get_cgvariable_or_create(*inp);
       finputs.push_back(cg_v);
     }
+
     auto cgfunc = create_cgfunction(func);
 
     if (cgfunc.get() == nullptr) {
@@ -70,24 +73,26 @@ void NetworkImpl::build() {
                  "Function [%s] is not supported yet", func.name().c_str());
     }
 
-    std::vector<nbla::CgVariablePtr> f_tmp_outputs;
+    // Create a graph connection.
+    auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
+
+    // Insert or rewire.
+    // std::cout << " -->";
     for (int j = 0; j < func.output_size(); j++) {
+      // std::cout << " " << func.output(j);
       auto it = variables_.find(func.output(j));
       if (it != variables_.end()) {
+        // Rewire the output to an exisiting variable.
+        // std::cout << "(r)";
         CgVariablePtr cg_v = get_cgvariable_or_create(func.output(j));
-        cg_v->set_parent(cgfunc);
-        f_tmp_outputs.push_back(cg_v);
-      }
-    }
-    // TODO: It may dangerous if output  variable exists.
-    if (f_tmp_outputs.size() == 0) {
-      auto foutputs = nbla::connect(cgfunc, finputs, func.output_size());
-      for (int j = 0; j < func.output_size(); j++) {
+        steal_variable_from_to(foutputs[j], cg_v);
+      } else {
+        // Regiser a newly created variable
+        // std::cout << "(c)";
         variables_.insert({func.output(j), foutputs[j]});
       }
-    } else {
-      nbla::connect(cgfunc, finputs, f_tmp_outputs);
     }
+    // std::cout << std::endl;
   }
 }
 
@@ -116,7 +121,8 @@ NetworkImpl::get_cgvariable_or_create(const string &name) {
     shape[0] = batch_size();
   }
   // TODO: set need_grad
-  auto cg_v = std::make_shared<nbla::CgVariable>(shape, false);
+  // std::cout << "(c)";
+  auto cg_v = std::make_shared<nbla::CgVariable>(shape);
   // Register variable
   variables_.insert({name, cg_v});
   return cg_v;
@@ -251,7 +257,7 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   if (err >= 0) {
     Shape_t shape(dims, dims + rank);
     // TODO: Set need_grad.
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, false);
+    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(kCpuCtx);
     for (int i = 0; i < size / sizeof(float); i++) {
@@ -719,7 +725,7 @@ vector<pair<string, VariablePtr>> NnpImpl::get_parameters() {
 bool NnpImpl::save_parameters(const string &filename) {
   std::ofstream ofs(filename.c_str());
   if (!ofs.is_open()) {
-    std::cout << "Error in opening file";
+    // std::cout << "Error in opening file";
     return false;
   }
 
@@ -731,7 +737,7 @@ bool NnpImpl::save_parameters(const string &filename) {
 
     Parameter *parameter = params.add_parameter();
     parameter->set_variable_name(name);
-    parameter->set_need_grad(variable->need_grad());
+    parameter->set_need_grad(it->second->need_grad());
 
     float *data = variable->template cast_data_and_get_pointer<float>(kCpuCtx);
     for (int i = 0; i < variable->size(); i++)

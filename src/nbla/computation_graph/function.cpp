@@ -21,28 +21,93 @@ namespace nbla {
 
 using std::make_shared;
 
-CgFunction::CgFunction(FunctionPtr func) : rank_(0) {
+// Just a helper function.
+static inline const char *b2str(bool b) { return b ? "true" : "false"; }
+
+CgFunction::CgFunction(FunctionPtr func) : rank_(0), func_(func) {}
+
+void CgFunction::setup() {
   // Copy if function is already used.
-  if (func->ask_if_used_and_use()) {
-    func = func->copy();
+  if (func_->ask_if_used_and_use()) {
+    func_ = func_->copy();
   }
-  func_ = func;
+  // Get output variables
+  vector<CgVariablePtr> outputs;
+  vector<Variable *> voutputs;
+  std::tie(outputs, voutputs) = this->function_outputs();
+  func_->setup(this->function_inputs(), voutputs);
 }
-void CgFunction::set_inputs(const vector<CgVariablePtr> &inputs) {
-  // Check need_grad
-  need_grad_ = false;
-  for (auto i : inputs) {
-    need_grad_ |= i->variable()->need_grad();
-    rank_ = std::max(rank_, i->rank());
-    i->increment_function_reference_count();
+
+void CgFunction::check_data_inplace(int i, CgVariablePtr input,
+                                    const vector<CgVariablePtr> &outputs) {
+  auto f = this->function();
+  // Always not allow modifying data if grad depends the output data.
+  if (input->need_grad_state()) {
+    for (int o = 0; o < outputs.size(); ++o) {
+      // If funcition gradient computation at i-th variable depends on o-th
+      // output data, inplacing o-th variable data is prohibited.
+      if (f->grad_depends_output_data(i, o)) {
+        outputs[o]->set_allow_modify_data(false);
+      }
+    }
   }
-  inputs_ = inputs;
+  int inplace_level = f->inplace_data(i);
+  if (inplace_level == Function::INPLACE) {
+    NBLA_CHECK(input->allow_modify_data(), error_code::value,
+               "Modifying data is prohibitied by the parent function of the "
+               "%d-th input data of '%s' (depth=%d). (Parent is '%s').",
+               i, f->name().c_str(), this->rank(),
+               input->parent()->function()->name().c_str());
+    NBLA_CHECK(input->function_reference_count() < 2, error_code::value,
+               "In-placing at a branching variable is prohibited. %d-th input "
+               "data of `%s` (depth=%d) is inplaced.",
+               i, f->name().c_str(), this->rank());
+  } else if (inplace_level == Function::INPLACE_NOT_MODIFY) {
+    // A variable that branches or requires grad doesn't allow modify data at
+    // the in-placed variable.
+    if (input->function_reference_count() > 1 || input->need_grad_state()) {
+      outputs[f->inplace_data_with(i)]->set_allow_modify_data(false);
+    }
+  }
+}
+
+void CgFunction::check_grad_inplace(int i, CgVariablePtr input) {
+  if (!input->need_grad_state()) {
+    return;
+  }
+  auto f = this->function();
+  int inplace_level = f->inplace_grad(i);
+  if (inplace_level == Function::INPLACE) {
+    NBLA_CHECK(input->parent(), error_code::value,
+               "A grad array of a root variable in a graph cannot be "
+               "in-placed (%d-th input of '%s').",
+               i, f->name().c_str());
+  }
+  if (inplace_level >= Function::INPLACE_NOT_MODIFY) {
+    NBLA_CHECK(input->function_reference_count() < 2, error_code::value,
+               "In-placing grad at a variable which branches"
+               " is prohibited. %d-th input "
+               "grad of `%s` (depth=%d) is inplaced.",
+               i, f->name().c_str(), this->rank());
+  }
+}
+
+void CgFunction::verify_during_forward() {
+  for (auto o : this->outputs()) {
+    o->set_allow_modify_data(true);
+  }
+  auto inputs = this->inputs();
+  auto outputs = this->outputs();
+  for (int i = 0; i < inputs.size(); ++i) {
+    this->check_data_inplace(i, inputs[i], outputs);
+    this->check_grad_inplace(i, inputs[i]);
+  }
 }
 
 void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
   outputs_.resize(outputs.size());
   for (int i = 0; i < outputs.size(); ++i) {
-    outputs[i]->set_rank(rank_ + 1);
+    outputs[i]->set_rank_(rank_ + 1);
     outputs_[i] = outputs[i];
   }
 }
@@ -50,19 +115,15 @@ void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
 vector<CgVariablePtr> CgFunction::outputs() {
   vector<CgVariablePtr> outputs(outputs_.size());
   for (int i = 0; i < outputs_.size(); ++i) {
-    outputs[i] = outputs_[i].lock();
+    auto o = outputs_[i].lock();
+    NBLA_CHECK(o, error_code::value,
+               "Weak reference to outputs[%d] has gone at %s.", i,
+               func_->name().c_str());
+    outputs[i] = o;
   }
   return outputs;
 }
 
-bool CgFunction::update_need_grad() {
-  bool need_grad = false;
-  for (int i = 0; i < outputs_.size(); ++i) {
-    need_grad |= outputs_[i].lock()->variable()->need_grad();
-  }
-  need_grad_ = need_grad;
-  return need_grad;
-}
 vector<Variable *> CgFunction::function_inputs() {
   vector<Variable *> ret(inputs_.size());
   for (int i = 0; i < inputs_.size(); ++i) {
@@ -71,15 +132,12 @@ vector<Variable *> CgFunction::function_inputs() {
   return ret;
 }
 
-vector<VariablePtr> CgFunction::function_outputs_shared() {
-  vector<VariablePtr> ret(outputs_.size());
-  for (int i = 0; i < outputs_.size(); ++i) {
-    auto o = outputs_[i].lock();
-    NBLA_CHECK(o, error_code::value,
-               "Output variable at %d in %s was deleted by someone.", i,
-               func_->name().c_str());
-    ret[i] = o->variable();
-  }
-  return ret;
+pair<vector<CgVariablePtr>, vector<Variable *>> CgFunction::function_outputs() {
+  auto outputs = this->outputs();
+  vector<Variable *> voutputs(outputs.size());
+  std::transform(
+      outputs.begin(), outputs.end(), voutputs.begin(),
+      [](CgVariablePtr v) -> Variable * { return v->variable().get(); });
+  return {outputs, voutputs};
 }
 }

@@ -73,34 +73,23 @@ void BinaryConnectAffine<T>::forward_impl(const Variables &inputs,
 template <class T>
 void BinaryConnectAffine<T>::backward_impl(const Variables &inputs,
                                            const Variables &outputs,
-                                           const vector<bool> &propagate_down,
+                                           const vector<bool> &prop_down,
                                            const vector<bool> &accum) {
-  if (propagate_down[1]) {
-    // reset `grad` part of binary weights to zero
-    // inputs[2]->grad()->zero();
-
-    // set `need_grad` to true for binary weights
-    inputs[2]->set_need_grad(true);
-  } else {
-    // set `need_grad` to false for binary weights
-    inputs[2]->set_need_grad(false);
-  }
-
   // calculate the backward pass using the already binarized weights
   if (inputs.size() == 4) { // with bias
     affine_->backward(Variables{inputs[0], inputs[2], inputs[3]}, outputs,
+                      {prop_down[0], prop_down[1], prop_down[3]},
                       {accum[0], false, accum[3]});
   } else { // without bias
     affine_->backward(Variables{inputs[0], inputs[2]}, outputs,
-                      {accum[0], false});
+                      {prop_down[0], prop_down[1]}, {accum[0], false});
   }
-
+  if (!prop_down[1]) {
+    return;
+  }
   // add the calculated gradient wrt the binary weights from inputs[2] to
   // inputs[1]
-  sign_->backward(Variables{inputs[1]}, Variables{inputs[2]}, {accum[1]});
-
-  inputs[2]->set_need_grad(
-      false); // reset `need_grad` to false as we do not need
-              // backward for binary variables
+  sign_->backward(Variables{inputs[1]}, Variables{inputs[2]}, {prop_down[1]},
+                  {accum[1]});
 }
 }

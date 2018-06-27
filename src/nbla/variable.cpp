@@ -29,19 +29,17 @@ void Variable::update_shape_info() {
   ndim_ = shape_.size();
 }
 
-Variable::Variable(const Shape_t &shape, bool need_grad) : shape_(shape) {
+Variable::Variable(const Shape_t &shape) : shape_(shape) {
   update_shape_info();
   data_.reset(new NdArray(shape_));
   grad_.reset(new NdArray(shape_));
-  set_need_grad(need_grad);
 }
 
-Variable::Variable(NdArrayPtr data, bool need_grad) {
+Variable::Variable(NdArrayPtr data) {
   shape_ = data->shape();
   update_shape_info();
   data_ = data;
   grad_.reset(new NdArray(shape_));
-  set_need_grad(need_grad);
 }
 
 void Variable::reshape(const vector<int64_t> &shape, bool force) {
@@ -65,10 +63,8 @@ void Variable::reshape(const vector<int64_t> &shape, bool force) {
   grad_->reshape(shape_, true);
 }
 
-void Variable::set_need_grad(bool need_grad) { need_grad_ = need_grad; }
-
 VariablePtr Variable::view() {
-  auto v = make_shared<Variable>(shape_, need_grad_);
+  auto v = make_shared<Variable>(shape_);
   v->set_data(data_);
   v->set_grad(grad_);
   return v;
@@ -80,7 +76,7 @@ VariablePtr Variable::view(const Shape_t &shape) {
              "The total size must be the same as the variable. "
              "Given: %d != current: %d.",
              size, size_);
-  auto v = make_shared<Variable>(shape, need_grad_);
+  auto v = make_shared<Variable>(shape_);
   v->set_data(data_->view(shape));
   v->set_grad(grad_->view(shape));
   return v;

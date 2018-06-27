@@ -203,15 +203,16 @@ void INQConvolution<T, T1>::forward_impl(const Variables &inputs,
 template <typename T, typename T1>
 void INQConvolution<T, T1>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
-                                          const vector<bool> &propagate_down,
+                                          const vector<bool> &prop_down,
                                           const vector<bool> &accum) {
   // Calculate the backward pass
   if (inputs.size() == 4) { // with bias
     convolution_->backward(Variables{inputs[0], inputs[1], inputs[3]}, outputs,
+                           {prop_down[0], prop_down[1], prop_down[3]},
                            {accum[0], accum[1], accum[3]});
   } else { // without bias
     convolution_->backward(Variables{inputs[0], inputs[1]}, outputs,
-                           {accum[0], accum[1]});
+                           {prop_down[0], prop_down[1]}, {accum[0], accum[1]});
   }
 }
 

@@ -18,9 +18,15 @@
 #include <nbla/function.hpp>
 #include <nbla/variable.hpp>
 
+#include <functional>
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace nbla {
+
+using std::unordered_map;
+using std::unordered_set;
 
 // Forward declaration
 class CgFunction;
@@ -43,37 +49,56 @@ graph it belongs to. The information if such as the pointer to the parent
 function which creates this variable and some performance optimization clues.
 */
 class CgVariable {
-  VariablePtr var_;                 /// Variable instance.
-  CgFunctionPtr parent_{nullptr};   ///< Function created this variable.
-  int rank_{0};                     ///< Longest path from root variable.
-  int function_reference_count_{0}; ///< Reference count by child functions.
-  int consume_counter_; ///< Consumption counter for clearing variable buffer in
-                        /// forward or backward computation.
-  bool allow_inplace_data_{true}; ///< Whether the data can be in-placed.
-  bool grad_inplaced_{false};     ///< Gradient is in-placed with any of parent
-                                  /// function's inputs grad.
-  /** Data in-placed with any of parents. Used to decide whether to clear
-      intermediate buffers during backward computation.
-   */
-  bool clear_data_in_backward_{true};
-  /** Grad in-placed with any of parents. Used to decide whether to clear
-      intermediate buffers during backward computation.
-  */
-  bool clear_grad_in_backward_{true};
-  bool persistent_{false}; ///<Persistency flag against clearing.
+  friend class CgFunction;
+  enum NeedGrad { NG_NONE, NG_FALSE, NG_TRUE };
+  struct FunctionReferenceInfo {
+    bool need_setup{false};
+  };
+  NeedGrad need_grad_{NG_NONE}; ///< Whether the variable requires gradients.
+  NeedGrad need_grad_state_{
+      NG_NONE};     ///< Updated during graph construction or forward
+                    /// propagation.
+  VariablePtr var_; /// Variable instance.
+  CgFunctionPtr parent_{nullptr}; ///< Function created this variable.
+  int rank_{0};                   ///< Longest path from root variable.
+  ///< Holds weak function references. <https://stackoverflow.com/a/22110715>
+  unordered_map<CgFunction *,
+                pair<std::weak_ptr<CgFunction>, FunctionReferenceInfo>>
+      function_references_;
+  bool allow_modify_data_{true}; ///< Whether the data can be in-placed.
+  bool persistent_{false};       ///<Persistency flag against clearing.
+
+  void
+  visit_function_recursive(CgFunctionPtr func,
+                           unordered_set<CgFunctionPtr> &fclosed,
+                           std::function<void(CgFunctionPtr)> forward_callback);
+
+  void visit_function_backward(
+      CgFunctionPtr func, std::function<void(CgFunctionPtr)> backward_callback,
+      vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
 
 public:
   typedef shared_ptr<CgVariable> Ptr;
 
-  /** Ctor wth need_grad option.
+  /** Create 0-shaped variable with no need_grad flag.
+   */
+  NBLA_API CgVariable();
 
-      The default shape is 0-shaped array (scalar).
+  /** Create 0-shaped variable with need_grad option.
 
       @param[in] need_grad Whether this variable requires gradient computation
                  or not
    */
   NBLA_API CgVariable(bool need_grad);
-  /** Ctor wth variable shape and need_grad option.
+
+  /** Create a variable by shape.
+
+      @param[in] shape Shape passed to Variable object held in the created
+                 instance.
+   */
+  NBLA_API CgVariable(Shape_t shape);
+
+  /** Create a variable by shape with need_grad option.
 
       @param[in] shape Shape passed to Variable object held in the created
                  instance.
@@ -81,11 +106,58 @@ public:
                  or not
    */
   NBLA_API CgVariable(Shape_t shape, bool need_grad);
-  /** Ctor wth Variable object.
+
+  /** Create by a Variable instance.
 
       @param[in] var Reference of an existing Variable object.
    */
   NBLA_API CgVariable(VariablePtr var);
+
+  /** Create by a Variable instance.
+
+      @param[in] var Reference of an existing Variable object.
+      @param[in] need_grad Whether this variable requires gradient computation
+                 or not
+   */
+  NBLA_API CgVariable(VariablePtr var, bool need_grad);
+
+  /** Get need grad flag.
+   */
+  inline bool need_grad() const { return need_grad_ == NG_TRUE; }
+
+  /** Check if need grad flag is set.
+   */
+  inline bool need_grad_is_set() const { return need_grad_ != NG_NONE; }
+
+  /** Set need grad flag.
+   */
+  inline void set_need_grad(bool b) { need_grad_ = b ? NG_TRUE : NG_FALSE; }
+
+  /** Unset need grad flag.
+   */
+  inline void unset_need_grad() { need_grad_ = NG_NONE; }
+
+  /** Get need grad state flag.
+   */
+  inline bool need_grad_state() const {
+    return (need_grad_ != NG_NONE) ? (need_grad_ == NG_TRUE)
+                                   : (need_grad_state_ == NG_TRUE);
+  }
+  /** Check if need grad state is set
+   */
+  inline bool need_grad_state_is_set() const {
+    return need_grad_state_ != NG_NONE;
+  }
+
+  /** Set need grad state flag.
+   */
+  inline void set_need_grad_state(bool b) {
+    need_grad_state_ = b ? NG_TRUE : NG_FALSE;
+  }
+
+  /** Unset need grad state flag.
+   */
+  inline void unset_need_grad_state() { need_grad_state_ = NG_NONE; }
 
   /** Set parent function.
 
@@ -103,6 +175,10 @@ public:
    */
   inline VariablePtr variable() { return var_; }
 
+  /** Set variable reference.
+   */
+  inline void set_variable(VariablePtr var) { var_ = var; }
+
   /** @copydoc rank_
    */
   inline int rank() const { return rank_; }
@@ -111,7 +187,7 @@ public:
 
       @note Users shouldn't call this directly.
    */
-  inline void set_rank(int rank) { rank_ = rank; }
+  inline void set_rank_(int rank) { rank_ = rank; }
 
   /** Forward propagation from root iputs to this variable.
 
@@ -155,71 +231,32 @@ public:
   backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
-  /** @copydoc function_reference_count_
+  /**
    */
   inline int function_reference_count() const {
-    return function_reference_count_;
+    return function_references_.size();
   }
 
-  /** Increment function_reference_count_.
-
-      @note User shouldn't call this directly.
+  /**
    */
-  inline void increment_function_reference_count() {
-    function_reference_count_++;
-  }
+  void insert_function_reference(CgFunctionPtr func);
 
-  /** @copydoc allow_inplace_data_
+  /** Mark need_setup flag for all function references.
    */
-  inline bool allow_inplace_data() const { return allow_inplace_data_; }
+  void mark_need_setup();
+
+  /** Check need_setup signal, and unmark it.
+   */
+  bool check_and_unmark_need_setup(CgFunctionPtr func);
+
+  /** @copydoc allow_modify_data_
+   */
+  inline bool allow_modify_data() const { return allow_modify_data_; }
 
   /**
       @note User shouldn't call this directly.
    */
-  inline void set_allow_inplace_data(bool allow) {
-    allow_inplace_data_ = allow;
-  }
-
-  /** @copydoc grad_inplaced_
-   */
-  inline bool grad_inplaced() const { return grad_inplaced_; }
-
-  /**
-      @note User shouldn't call this directly.
-   */
-  inline void set_grad_inplaced(bool inplaced) { grad_inplaced_ = inplaced; }
-
-  /** @copydoc clear_data_in_backward_
-   */
-  inline bool clear_data_in_backward() const { return clear_data_in_backward_; }
-
-  /**
-     @note User shouldn't call this directly.
-   */
-  inline void set_clear_data_in_backward(bool clear) {
-    clear_data_in_backward_ = clear;
-  }
-  /** @copydoc clear_grad_in_backward_
-   */
-  inline bool clear_grad_in_backward() const { return clear_grad_in_backward_; }
-
-  /**
-     @note User shouldn't call this directly.
-   */
-  inline void set_clear_grad_in_backward(bool clear) {
-    clear_grad_in_backward_ = clear;
-  }
-
-  /**
-     @note User shouldn't call this directly.
-   */
-  inline int consume(bool reset = false) {
-    if (reset)
-      consume_counter_ = 1;
-    else
-      consume_counter_++;
-    return consume_counter_;
-  }
+  inline void set_allow_modify_data(bool allow) { allow_modify_data_ = allow; }
 
   /** Set persistent flag.
 
