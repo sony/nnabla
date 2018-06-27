@@ -65,3 +65,27 @@ docker build -t local/nnabla:dist dist
 ```
 
 TODO: Write more details.
+
+### Android: `Dockerfile`
+Dockerfile for building NNabla using Android NDK is present at docker/development/Dockerfile.android in the NNabla repository.
+Use the following command to build the Docker image.  
+The following must be build at the root directory of NNabla.  
+```
+docker build -t nnabla-android --build-arg http_proxy=http://${proxy}:${port}/ --build-arg https_proxy=http://${proxy}:${port}/ -f docker/development/Dockerfile.android ../../
+```
+The above build will create docker image with tag nnabla-android:latest.
+
+Use following command to run the docker.  
+```
+docker run -v $(pwd):$(pwd) -w$(pwd) -u $(id -u):$(id -g) -e HOME=/tmp nnabla-android:latest ./build-tools/android/build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk -e=arm64-v8a
+```
+#### Note:
+Use the following command if you are behind the proxy.
+```
+docker run -ehttp_proxy=${http_proxy} -ehttps_proxy=${https_proxy} -eftp_proxy=${ftp_proxy} -v $(pwd):$(pwd) -w$(pwd) -u $(id -u):$(id -g) -e HOME=/tmp nnabla-android:latest ./build-tools/android/build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk -e=arm64-v8a
+```
+
+Please refer [here](https://github.com/sony/nnabla/tree/master/doc/build/build_android.md) for detailed instruction on building NNabla using Android NDK.  
+
+
+
