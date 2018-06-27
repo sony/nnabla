@@ -27,6 +27,7 @@ import yolov2
 
 args = utils.parse_args()
 
+
 def valid(weightfile, outfile, outdir):
     valid_images = args.valid
     name_list = args.names
@@ -53,24 +54,26 @@ def valid(weightfile, outfile, outdir):
         yolo_features = yolov2.yolov2(yolo_x, anchors, classes, test=test)
         return yolo_x, yolo_features
 
-    yolo_x_nnabla, yolo_features_nnabla = create_losses(args.valid_batchsize, args.height, args.width, test=True)
+    yolo_x_nnabla, yolo_features_nnabla = create_losses(
+        args.valid_batchsize, args.height, args.width, test=True)
     nnabla.load_parameters(weightfile)
 
     valid_dataset = dataset.listDataset(valid_images, args,
-        batch_size=args.valid_batchsize,
-        train=False,
-        shape=(args.width, args.height), shuffle=False)
+                                        batch_size=args.valid_batchsize,
+                                        train=False,
+                                        shape=(args.width, args.height), shuffle=False)
     assert(args.valid_batchsize > 1)
 
     def batch_iter(it, batch_size):
         def list2np(t):
             imgs, labels = zip(*t)
             retimgs = np.zeros((len(imgs),) + imgs[0].shape, dtype=np.float32)
-            retlabels = np.zeros((len(labels),) + labels[0].shape, dtype=np.float32)
+            retlabels = np.zeros(
+                (len(labels),) + labels[0].shape, dtype=np.float32)
             for i, img in enumerate(imgs):
-                retimgs[i,:,:,:] = img
+                retimgs[i, :, :, :] = img
             for i, label in enumerate(labels):
-                retlabels[i,:] = label
+                retlabels[i, :] = label
             return retimgs, retlabels
         retlist = []
         for i, item in enumerate(it):
@@ -90,7 +93,8 @@ def valid(weightfile, outfile, outdir):
             # if not (np.sum(ret[1].numpy()) == 0):
             yield ret
 
-    valid_loader = batch_iter(iter(valid_dataset), batch_size=args.valid_batchsize)
+    valid_loader = batch_iter(
+        iter(valid_dataset), batch_size=args.valid_batchsize)
 
     fps = [0]*args.num_classes
     if not os.path.exists(outdir):
@@ -98,13 +102,14 @@ def valid(weightfile, outfile, outdir):
     for i in range(args.num_classes):
         buf = '%s/%s%s.txt' % (prefix, outfile, names[i])
         fps[i] = open(buf, 'w')
-   
+
     lineId = -1
-    
+
     for batch_idx, (data, target) in enumerate(valid_loader):
         yolo_x_nnabla.d = data
         yolo_features_nnabla.forward()
-        batch_boxes = utils.get_region_boxes(yolo_features_nnabla.d, args.conf_thresh, args.num_classes, args.anchors, args.num_anchors, 0, 1)
+        batch_boxes = utils.get_region_boxes(
+            yolo_features_nnabla.d, args.conf_thresh, args.num_classes, args.anchors, args.num_anchors, 0, 1)
         for i in range(yolo_features_nnabla.d.shape[0]):
             lineId = lineId + 1
             fileId = os.path.basename(valid_files[lineId]).split('.')[0]
@@ -122,11 +127,13 @@ def valid(weightfile, outfile, outdir):
                 for j in range((len(box)-5)//2):
                     cls_conf = box[5+2*j]
                     cls_id = box[6+2*j]
-                    prob =det_conf * cls_conf
-                    fps[cls_id].write('%s %f %f %f %f %f\n' % (fileId, prob, x1, y1, x2, y2))
+                    prob = det_conf * cls_conf
+                    fps[cls_id].write('%s %f %f %f %f %f\n' %
+                                      (fileId, prob, x1, y1, x2, y2))
 
     for i in range(args.num_classes):
         fps[i].close()
+
 
 if __name__ == '__main__':
     weightfile = args.weight

@@ -5,9 +5,11 @@
 # --------------------------------------------------------------------
 
 import xml.etree.ElementTree as ET
-import os,sys
+import os
+import sys
 import cPickle
 import numpy as np
+
 
 def parse_rec(filename):
     """ Parse a PASCAL VOC xml file """
@@ -27,6 +29,7 @@ def parse_rec(filename):
         objects.append(obj_struct)
 
     return objects
+
 
 def voc_ap(rec, prec, use_07_metric=False):
     """ ap = voc_ap(rec, prec, [use_07_metric])
@@ -60,6 +63,7 @@ def voc_ap(rec, prec, use_07_metric=False):
         # and sum (\Delta recall) * prec
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
+
 
 def voc_eval(detpath,
              annopath,
@@ -198,21 +202,20 @@ def voc_eval(detpath,
     ap = voc_ap(rec, prec, use_07_metric)
 
     return rec, prec, ap
-    
 
 
-def _do_python_eval(res_prefix, output_dir = 'output'):
+def _do_python_eval(res_prefix, output_dir='output'):
     # _devkit_path = '/data/xiaohang/pytorch-yolo2/VOCdevkit'
     _devkit_path = './dataset/VOCdevkit'
     _year = '2007'
-    _classes = ('__background__', # always index 0
-        'aeroplane', 'bicycle', 'bird', 'boat',
-        'bottle', 'bus', 'car', 'cat', 'chair',
-        'cow', 'diningtable', 'dog', 'horse',
-        'motorbike', 'person', 'pottedplant',
-        'sheep', 'sofa', 'train', 'tvmonitor') 
-    
-    #filename = '/data/hongji/darknet/results/comp4_det_test_{:s}.txt' 
+    _classes = ('__background__',  # always index 0
+                'aeroplane', 'bicycle', 'bird', 'boat',
+                'bottle', 'bus', 'car', 'cat', 'chair',
+                'cow', 'diningtable', 'dog', 'horse',
+                'motorbike', 'person', 'pottedplant',
+                'sheep', 'sofa', 'train', 'tvmonitor')
+
+    #filename = '/data/hongji/darknet/results/comp4_det_test_{:s}.txt'
     filename = res_prefix + '{:s}.txt'
     annopath = os.path.join(
         _devkit_path,
@@ -235,7 +238,7 @@ def _do_python_eval(res_prefix, output_dir = 'output'):
     for i, cls in enumerate(_classes):
         if cls == '__background__':
             continue
-        
+
         rec, prec, ap = voc_eval(
             filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
             use_07_metric=use_07_metric)
@@ -260,8 +263,6 @@ def _do_python_eval(res_prefix, output_dir = 'output'):
 
 
 if __name__ == '__main__':
-    #res_prefix = '/data/hongji/darknet/project/voc/results/comp4_det_test_'    
+    #res_prefix = '/data/hongji/darknet/project/voc/results/comp4_det_test_'
     res_prefix = sys.argv[1]
-    _do_python_eval(res_prefix, output_dir = 'output')
-
-
+    _do_python_eval(res_prefix, output_dir='output')
