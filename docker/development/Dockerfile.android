@@ -40,13 +40,8 @@ RUN pip install --upgrade pip
 RUN pip install six
 RUN pip install PyYAML
 RUN pip install Mako
-RUN adduser docker
 
-##### Set work space #####
-WORKDIR /home/docker
-##### Set BUILD_DIR #####
 ENV BUILD_DIR /usr/local/src
-
 
 ##### Install CMAKE #####
 ENV CMAKE_URL https://cmake.org/files/v3.11/cmake-3.11.3.tar.gz
@@ -69,12 +64,13 @@ RUN cd ${BUILD_DIR} && curl -O ${CMAKE_URL} \
 
 
 ##### Download and Install Android NDK #####
-ENV NDK_URL https://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip
+ENV NDK_NAME android-ndk-r16b
+ENV NDK_URL https://dl.google.com/android/repository/${NDK_NAME}-linux-x86_64.zip
 RUN cd ${BUILD_DIR} \
   && curl -O ${NDK_URL} \
-  && unzip android-ndk-*.zip \
-  && rm -f android-ndk-*.zip \
-  && mv android-ndk* android-ndk
+  && unzip ${NDK_NAME}-linux-x86_64.zip \
+  && rm -f ${NDK_NAME}-linux-x86_64.zip \
+  && mv ${NDK_NAME} android-ndk
 ENV NDK_PATH ${BUILD_DIR}/android-ndk
 
 RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \

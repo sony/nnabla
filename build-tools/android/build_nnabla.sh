@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -xe
+
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,8 +110,7 @@ fi
 WORK_DIR=`pwd`
 SYSTEM_PYTHON=`which python`
 SYSTEM_PROTOC=`which protoc`
-TEMP=`dirname "$WORK_DIR"`
-NNABLA_ROOT=`dirname "$TEMP"`
+NNABLA_ROOT=$(pwd)
 WORK_BUILD_DIR=$NNABLA_ROOT/build/android
 
 echo "PLATFORM  = ${PLATFORM}"
@@ -260,4 +261,3 @@ echo "GCC=${GCC}" >> "$destfile"
 echo "GCXX=${GCXX}" >> "$destfile"
 echo "NNABLA_INCLUDE_DIR=${NNABLA_ROOT}/include" >> "$destfile"
 echo "NNABLA_LIBS_DIR=${WORK_BUILD_DIR}/build_${PLATFORM}_${ARCHITECTURE}/${EABI}" >> "$destfile"
-
