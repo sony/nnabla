@@ -154,7 +154,7 @@ def _get_network_sink(outputs):
     return F.sink(*outputs)
 
 
-def _create_network(net):
+def _create_network(net, variable_batch_size):
     n = nnabla_pb2.Network()
     n.name = net['name']
     n.batch_size = net['batch_size']
@@ -206,6 +206,8 @@ def _create_network(net):
 
     sink.visit(collect_info)
 
+    expect_batch_size = None
+
     # ----------------------------------------------------------------------
     # Convert variables and functions into proto
     # ----------------------------------------------------------------------
@@ -217,9 +219,17 @@ def _create_network(net):
             v.type = 'Parameter'
         else:
             v.type = 'Buffer'
-            # TODO: The first dimension is always considered as batch size.
-            if len(shape) > 0:
-                shape[0] = -1
+            if variable_batch_size:
+                # TODO: Temporarily dim 0 of shape expects to be batch size.
+                if len(shape) > 0:
+                    b = shape[0]
+                    if expect_batch_size is None:
+                        expect_batch_size = b
+                    if b != expect_batch_size:
+                        raise ValueError('Variable "{}" has different batch size {} (expected {})'.format(
+                            v.name, b, expect_batch_size))
+                    shape[0] = -1
+
         v.shape.dim.extend(shape)
         # ----------------------------------------------------------------------
         # Add info to variable
@@ -242,8 +252,33 @@ def _create_network(net):
     for name, function in functions.items():
         f = n.function.add()
         if function['type'] == 'Reshape':
-            # TODO: The first dimension is always considered as batch size.
-            function['args']['shape'][0] = -1
+
+            shape = function['args']['shape']
+            input_shape = variables[function['inputs'][0]].shape
+            shape_infer_index = -1
+            rest_size = 1
+            for i, s in enumerate(shape):
+                if s < 0:
+                    if shape_infer_index >= 0:
+                        raise ValueError(
+                            'Rehaps: shape has multiple negative value.')
+                    shape_infer_index = i
+                else:
+                    rest_size *= s
+            if shape_infer_index >= 0:
+                function['args']['shape'][shape_infer_index] = int(numpy.prod(
+                    input_shape) / rest_size)
+
+            if variable_batch_size:
+                # TODO: Temporarily dim 0 of shape expects to be batch size.
+                b = function['args']['shape'][0]
+                if expect_batch_size < 0:
+                    expect_batch_size = b
+                if b != expect_batch_size:
+                    raise ValueError('Variable "{}" has different batch size {} (expected {})'.format(
+                        v.name, b, expect_batch_size))
+                function['args']['shape'][0] = -1
+
         _create_function_nntxt(f, name, function)
 
     return n
@@ -355,7 +390,7 @@ def _create_executor(name, network, data, output, remap=None):
 # ----------------------------------------------------------------------
 
 
-def create_proto(contents, include_params=False):
+def create_proto(contents, include_params=False, variable_batch_size=True):
     proto = nnabla_pb2.NNablaProtoBuf()
     if 'global_config' in contents:
         proto.global_config.MergeFrom(
@@ -371,7 +406,7 @@ def create_proto(contents, include_params=False):
     if 'networks' in contents:
         proto_nets = []
         for net in contents['networks']:
-            networks[net['name']] = _create_network(net)
+            networks[net['name']] = _create_network(net, variable_batch_size)
             proto_nets.append(networks[net['name']])
         proto.network.extend(proto_nets)
     datasets = {}
@@ -417,7 +452,7 @@ def create_proto(contents, include_params=False):
                                  e['data'], e['output'], e.get('remp', {})))
         proto.executor.extend(proto_executors)
 
-    if include_params is True:
+    if include_params:
         params = get_parameters(grad_only=False)
         for variable_name, variable in params.items():
             parameter = proto.parameter.add()
@@ -429,7 +464,7 @@ def create_proto(contents, include_params=False):
     return proto
 
 
-def save(filename, contents, include_params=False):
+def save(filename, contents, include_params=False, variable_batch_size=True):
     '''Save network definition, inference/training execution
     configurations etc.
 
@@ -537,12 +572,12 @@ def save(filename, contents, include_params=False):
     _, ext = os.path.splitext(filename)
     if ext == '.nntxt' or ext == '.prototxt':
         logger.info("Saving {} as prototxt".format(filename))
-        proto = create_proto(contents, include_params)
+        proto = create_proto(contents, include_params, variable_batch_size)
         with open(filename, 'w') as file:
             text_format.PrintMessage(proto, file)
     elif ext == '.protobuf':
         logger.info("Saving {} as protobuf".format(filename))
-        proto = create_proto(contents, include_params)
+        proto = create_proto(contents, include_params, variable_batch_size)
         with open(filename, 'wb') as file:
             file.write(proto.SerializeToString())
     elif ext == '.nnp':
@@ -550,7 +585,7 @@ def save(filename, contents, include_params=False):
         try:
             tmpdir = tempfile.mkdtemp()
             save('{}/network.nntxt'.format(tmpdir),
-                 contents, include_params=False)
+                 contents, include_params=False, variable_batch_size=variable_batch_size)
 
             with open('{}/nnp_version.txt'.format(tmpdir), 'w') as file:
                 file.write('{}\n'.format(nnp_version()))

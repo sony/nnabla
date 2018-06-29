@@ -124,8 +124,16 @@ def _create_function(ctx, network, f, variable_index):
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
     if f.type == "Reshape":
+        # Count negative numbers in shape.
+        negative_count = 0
+        for d in f.reshape_param.shape.dim:
+            if d < 0:
+                negative_count += 1
+        if negative_count > 1:
+            raise ValueError('Reshape: shape has muliple negative number.')
         shape = tuple(
             [d if d >= 0 else network.batch_size for d in f.reshape_param.shape.dim])
+
         if numpy.prod(shape) != numpy.prod(inputs[0].shape):
             shape = (network.batch_size,) + shape
         function_instance = F.Reshape(ctx,
