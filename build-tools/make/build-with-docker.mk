@@ -104,7 +104,7 @@ bwd-nnabla-cpplib: docker_image_build
 .PHONY: bwd-nnabla-cpplib-android
 bwd-nnabla-cpplib-android: docker_image_build_android
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID) ./build-tools/android/build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk -e=arm64-v8a
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID) ./build-tools/android/build_nnabla.sh -p=$(PLATFORM) -a=$(ARCHITECTURE) -n=/usr/local/src/android-ndk -e=$(ABI)
 
 .PHONY: bwd-nnabla-test-cpplib
 bwd-nnabla-test-cpplib: docker_image_build

@@ -35,7 +35,7 @@ if [ $# -lt 3 ]
   then
     echo "Usage: sh build_nnabla.sh -p=android-XX -a=[arm|arm64|x86|x86_64] -n=Path_to_your_ndk_folder -e=[armeabi|armeabi-v7a|arm64-v8a|x86|x86_64] (-e option is optional)"
     echo "Example: sh build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk-r16b -e=arm64-v8a"
-	exit 1
+    exit 1
 fi
 
 for i in "$@"
@@ -105,13 +105,15 @@ then
     fi
 else
     echo "Not valid architecture"
+    echo "If invoking the script from make bwd-nnabla-cpplib-android, then please pass the parameters PLATFORM, ARCHITECTURE, and ABI appropriately to make command."
+    echo "E.g make PLATFORM=android-26 ARCHITECTURE=arm64 ABI=arm64-v8a bwd-nnabla-cpplib-android"
     exit 1
 fi
 WORK_DIR=`pwd`
 SYSTEM_PYTHON=`which python`
 SYSTEM_PROTOC=`which protoc`
 NNABLA_ROOT=$(pwd)
-WORK_BUILD_DIR=$NNABLA_ROOT/build/android
+WORK_BUILD_DIR=$NNABLA_ROOT/build/dependencies
 
 echo "PLATFORM  = ${PLATFORM}"
 echo "ARCHITECTURE     = ${ARCHITECTURE}"
@@ -227,23 +229,10 @@ rm $NNABLA_ROOT/src/nbla/logger.cpp
 mv $WORK_BUILD_DIR/logger_bak.cpp $NNABLA_ROOT/src/nbla/logger.cpp
 
 ###################### post processing (Collect built libraries in result folder) ######################
-cd $WORK_BUILD_DIR
-
-#clean up
-rm -rf build_$PLATFORM\_$ARCHITECTURE
-
-#copy libs to result folder 
-mkdir -p build_$PLATFORM\_$ARCHITECTURE
-cd build_$PLATFORM\_$ARCHITECTURE
-mkdir $EABI
-cd $EABI
-
-cp $TOOLCHAIN_INSTALL_DIR/lib/libarchive.so .
-cp $NNABLA_ROOT/build/lib/libnnabla.so .
-cp $NNABLA_ROOT/build/lib/libnnabla_utils.so .
+cp $TOOLCHAIN_INSTALL_DIR/lib/libarchive.so $NNABLA_ROOT/build/lib/
 
 #Write the contents android configuration details to file for JNI building
-cd $WORK_BUILD_DIR
+cd $NNABLA_ROOT/build
 destfile=android_setup.cfg
 echo "" > "$destfile"
 echo "###############################################################" >> "$destfile"
@@ -260,4 +249,4 @@ echo "SYSROOT=${SYSROOT}" >> "$destfile"
 echo "GCC=${GCC}" >> "$destfile"
 echo "GCXX=${GCXX}" >> "$destfile"
 echo "NNABLA_INCLUDE_DIR=${NNABLA_ROOT}/include" >> "$destfile"
-echo "NNABLA_LIBS_DIR=${WORK_BUILD_DIR}/build_${PLATFORM}_${ARCHITECTURE}/${EABI}" >> "$destfile"
+echo "NNABLA_LIBS_DIR=$NNABLA_ROOT/build/lib" >> "$destfile"
