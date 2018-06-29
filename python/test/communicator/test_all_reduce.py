@@ -16,7 +16,6 @@ import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
 import numpy as np
-from nnabla.contrib.context import extension_context
 
 from six.moves import reduce
 

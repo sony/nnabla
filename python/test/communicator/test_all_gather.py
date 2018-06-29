@@ -17,7 +17,6 @@ import nnabla as nn
 import nnabla.parametric_functions as PF
 import nnabla.communicators as C
 import numpy as np
-from nnabla.contrib.context import extension_context
 
 
 def ref_all_gather(x_data, n_devices):
