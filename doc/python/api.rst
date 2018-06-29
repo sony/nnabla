@@ -18,3 +18,4 @@ Python API Reference
     api/data_iterator
     api/utils
     api/ext
+    api/experimental
