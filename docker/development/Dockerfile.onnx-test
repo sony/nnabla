@@ -51,11 +51,17 @@ RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
 	&& bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
 	&& rm -rf Miniconda3-latest-Linux-x86_64.sh
 
+ARG PYTHON_VERSION_MAJOR
+ARG PYTHON_VERSION_MINOR
+ARG PYTHON_LIB_SUFFIX
+ENV PYENVNAME=py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+
 ENV PATH /opt/miniconda3/bin:$PATH
 RUN set -xe \
 	&& umask 0 \
-	&& conda create -y -n {PYENVNAME} python={PYENVVERSION} \
-	&& bash -c "source activate {PYENVNAME} \
+	&& conda create -y -n ${PYENVNAME} python=${PYVERNAME} \
+	&& bash -c "source activate ${PYENVNAME} \
 		&& conda install \
                 	future \
                 	numpy \
@@ -74,8 +80,8 @@ RUN set -xe \
                         wheel \
 		&& rm -rf /opt/miniconda3/pkgs"
 
-ENV PATH /opt/miniconda3/envs/{PYENVNAME}/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/miniconda3/envs/{PYENVNAME}/lib:$LD_LIBRARY_PATH
+ENV PATH /opt/miniconda3/envs/${PYENVNAME}/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/miniconda3/envs/${PYENVNAME}/lib:$LD_LIBRARY_PATH
 
 RUN set -xe \
 	&& umask 0 \
@@ -84,40 +90,48 @@ RUN set -xe \
         && cd pytorch \
         && git checkout 4e5dec302444143ccea4fbcc651ca55cfa5ea915 \
         && git submodule update --init \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0 /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0.bk \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0 /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0.bk \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0 \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0.bk \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0 \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0.bk \
         && mkdir /tmp/pytorch/build \
         && cd /tmp/pytorch/build \
         && cmake \
-            -DCMAKE_PREFIX_PATH=/opt/miniconda3/envs/{PYENVNAME} \
-            -DCMAKE_INSTALL_PREFIX=/opt/miniconda3/envs/{PYENVNAME} \
-            -DPYTHON_EXECUTABLE=/opt/miniconda3/envs/{PYENVNAME}/bin/python \
-            -DPYTHON_LIBRARY=/opt/miniconda3/envs/{PYENVNAME}/lib/libpython{PYENVVERSIONM}.so \
-            -DPYTHON_INCLUDE_DIR=/opt/miniconda3/envs/{PYENVNAME}/include/python{PYENVVERSIONM} \
+            -DCMAKE_PREFIX_PATH=/opt/miniconda3/envs/${PYENVNAME} \
+            -DCMAKE_INSTALL_PREFIX=/opt/miniconda3/envs/${PYENVNAME} \
+            -DPYTHON_EXECUTABLE=/opt/miniconda3/envs/${PYENVNAME}/bin/python \
+            -DPYTHON_LIBRARY=/opt/miniconda3/envs/${PYENVNAME}/lib/libpython${PYVERNAME}${PYTHON_LIB_SUFFIX}.so \
+            -DPYTHON_INCLUDE_DIR=/opt/miniconda3/envs/${PYENVNAME}/include/python${PYVERNAME}${PYTHON_LIB_SUFFIX} \
             -DBUILD_CUSTOM_PROTOBUF=ON \
             -DUSE_MPI=OFF \
             -DUSE_OPENCV=OFF \
             .. \
         && make -j4 \
         && make install \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0.bk /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0 \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0.bk /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0 \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0.bk \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0 \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0.bk \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0 \
         && rm -rf /tmp/*
 
 RUN set -xe \
         && pip install pytest-runner pybind11 typing typing-extensions \
+	&& umask 0 \
         && cd /tmp \
         && git clone https://github.com/onnx/onnx.git \
         && cd /tmp/onnx \
         && git checkout 3376d4438aaadfba483399fa249b841153152bc0 \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0 /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0.bk \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0 /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0.bk \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0 \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0.bk \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0 \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0.bk \
         && python setup.py install \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0.bk /opt/miniconda3/envs/{PYENVNAME}/lib/libssl.so.1.0.0 \
-        && mv /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0.bk /opt/miniconda3/envs/{PYENVNAME}/lib/libcrypto.so.1.0.0 \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0.bk \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libssl.so.1.0.0 \
+        && mv /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0.bk \
+           /opt/miniconda3/envs/${PYENVNAME}/lib/libcrypto.so.1.0.0 \
         && cd / \
         && rm -rf /tmp/*
-
 
 RUN pip install pyyaml
 RUN pip install cntk Cython==0.25 autopep8 requests \

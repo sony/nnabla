@@ -60,17 +60,15 @@ docker_image_doc:
 docker_image_build:
 	docker pull centos:6
 	cd $(NNABLA_DIRECTORY) \
-	&& make -C docker/development py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) \
-		-f docker/development/Dockerfile.build.py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) .
+		-f docker/development/Dockerfile.build .
 
 .PHONY: docker_image_onnx_test
 docker_image_onnx_test:
 	docker pull ubuntu:16.04
 	cd $(NNABLA_DIRECTORY) \
-	&& make -C docker/development py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) \
-		-f docker/development/Dockerfile.onnx-test.py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) .
+		-f docker/development/Dockerfile.onnx-test .
 
 .PHONY: docker_image_build_android
 docker_image_build_android:
