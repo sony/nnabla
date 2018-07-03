@@ -85,7 +85,7 @@ def get_extension_context(ext_name, **kw):
 
         .. code-block:: python
 
-            ctx = get_extension_context('cudnn', device_id='0')
+            ctx = get_extension_context('cudnn', device_id='0', type_config='half')
             nn.set_default_context(ctx)
 
     """
