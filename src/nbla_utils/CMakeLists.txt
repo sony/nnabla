@@ -12,6 +12,12 @@ add_library(nnabla_utils SHARED
   nnabla.pb.cc
   nnp_impl.cpp
   nnp_impl_create_function.cpp
+  nnp_impl_create_solver.cpp
+  nnp_impl_optimizer.cpp
+  nnp_impl_monitor.cpp
+  nnp_impl_dataset.cpp
+  nnp_impl_configs.cpp
+  data_iterator.cpp
   )
 
 if (WIN32)

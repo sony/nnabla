@@ -121,7 +121,7 @@ def _get_net_variables(net):
 
 def _create_global_config(ctx):
     g = nnabla_pb2.GlobalConfig()
-    g.default_context.backends[:] = ctx.backends
+    g.default_context.backends[:] = ctx.backend
     g.default_context.array_class = ctx.array_class
     g.default_context.device_id = ctx.device_id
     return g
@@ -135,7 +135,7 @@ def _create_training_config(max_epoch, iter_per_epoch, save_best):
     return t
 
 
-def _create_dataset(name, uri, cache_dir, variables, shuffle, batch_size):
+def _create_dataset(name, uri, cache_dir, variables, shuffle, batch_size, no_image_normalization):
     d = nnabla_pb2.Dataset()
     d.name = name
     d.uri = uri
@@ -144,6 +144,7 @@ def _create_dataset(name, uri, cache_dir, variables, shuffle, batch_size):
     d.shuffle = shuffle
     d.batch_size = batch_size
     d.variable.extend(variables)
+    d.no_image_normalization = no_image_normalization
     return d
 
 
@@ -248,7 +249,7 @@ def _create_network(net):
     return n
 
 
-def _create_optimizer(name, solver, network, dataset):
+def _create_optimizer(name, solver, network, dataset, weight_decay, lr_decay, lr_decay_interval, update_interval):
     o = nnabla_pb2.Optimizer()
     o.name = name
     o.network_name = network.name
@@ -284,6 +285,10 @@ def _create_optimizer(name, solver, network, dataset):
     elif o.solver.type == 'Sgd':
         o.solver.sgd_param.lr = solver.info['lr']
     inputs, outputs, params = _get_net_variables(network)
+    o.solver.weight_decay = weight_decay
+    o.solver.lr_decay = lr_decay
+    o.solver.lr_decay_interval = lr_decay_interval
+    o.update_interval = update_interval
     for n, inp in enumerate(inputs):
         d = o.data_variable.add()
         d.variable_name = inp
@@ -298,7 +303,7 @@ def _create_optimizer(name, solver, network, dataset):
     return o
 
 
-def _create_monitor(name, monitor, network, dataset):
+def _create_monitor(name, network, dataset):
     m = nnabla_pb2.Monitor()
     m.name = name
     m.network_name = network.name
@@ -391,12 +396,16 @@ def create_proto(contents, include_params=False):
         for o in contents['optimizers']:
             proto_optimizers.append(_create_optimizer(o['name'], o['solver'],
                                                       networks[o['network']],
-                                                      datasets[o['dataset']]))
+                                                      datasets[o['dataset']],
+                                                      o['weight_decay'],
+                                                      o['lr_decay'],
+                                                      o['lr_decay_interval'],
+                                                      o['update_interval']))
         proto.optimizer.extend(proto_optimizers)
     if 'monitors' in contents:
         proto_monitors = []
         for m in contents['monitors']:
-            proto_monitors.append(_create_monitor(m['name'], m['monitor'],
+            proto_monitors.append(_create_monitor(m['name'],
                                                   networks[m['network']],
                                                   datasets[m['dataset']]))
         proto.monitor.extend(proto_monitors)
@@ -437,8 +446,7 @@ def save(filename, contents, include_params=False):
             ignored when the extension of filename is nnp.
 
     Example:
-        The current supported fields as contents are ``networks`` and
-        ``executors``. The following example creates a two inputs and two
+        The following example creates a two inputs and two
         outputs MLP, and save the network structure and the initialized
         parameters.
 
@@ -469,6 +477,61 @@ def save(filename, contents, include_params=False):
                      'data': ['x0', 'x1'],
                      'output': ['y0', 'y1']}]}
             save('net.nnp', contents)
+
+
+        To get a trainable model, use following code instead.
+
+        .. code-block:: python
+
+            contents = {
+            'global_config': {'default_context': ctx},
+            'training_config':
+                {'max_epoch': args.max_epoch,
+                 'iter_per_epoch': args_added.iter_per_epoch,
+                 'save_best': True},
+            'networks': [
+                {'name': 'training',
+                 'batch_size': args.batch_size,
+                 'outputs': {'loss': loss_t},
+                 'names': {'x': x, 'y': t, 'loss': loss_t}},
+                {'name': 'validation',
+                 'batch_size': args.batch_size,
+                 'outputs': {'loss': loss_v},
+                 'names': {'x': x, 'y': t, 'loss': loss_v}}],
+            'optimizers': [
+                {'name': 'optimizer',
+                 'solver': solver,
+                 'network': 'training',
+                 'dataset': 'mnist_training',
+                 'weight_decay': 0,
+                 'lr_decay': 1,
+                 'lr_decay_interval': 1,
+                 'update_interval': 1}],
+            'datasets': [
+                {'name': 'mnist_training',
+                 'uri': 'MNIST_TRAINING',
+                 'cache_dir': args.cache_dir + '/mnist_training.cache/',
+                 'variables': {'x': x, 'y': t},
+                 'shuffle': True,
+                 'batch_size': args.batch_size,
+                 'no_image_normalization': True},
+                {'name': 'mnist_validation',
+                 'uri': 'MNIST_VALIDATION',
+                 'cache_dir': args.cache_dir + '/mnist_test.cache/',
+                 'variables': {'x': x, 'y': t},
+                 'shuffle': False,
+                 'batch_size': args.batch_size,
+                 'no_image_normalization': True
+                 }],
+            'monitors': [
+                {'name': 'training_loss',
+                 'network': 'validation',
+                 'dataset': 'mnist_training'},
+                {'name': 'validation_loss',
+                 'network': 'validation',
+                 'dataset': 'mnist_validation'}],
+            }
+
 
     '''
     _, ext = os.path.splitext(filename)
