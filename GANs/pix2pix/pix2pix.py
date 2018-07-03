@@ -25,7 +25,6 @@ import nnabla.monitor as nm
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
-from nnabla.contrib.context import extension_context
 
 # import my u-net definition
 import unet

@@ -16,7 +16,6 @@
 
 import argparse
 from nnabla import logger
-from nnabla.contrib.context import extension_context
 import scipy
 import time
 

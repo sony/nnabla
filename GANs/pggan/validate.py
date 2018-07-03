@@ -15,7 +15,7 @@
 
 import argparse
 from nnabla import logger
-from nnabla.contrib.context import extension_context
+from nnabla.ext_utils import get_extension_context
 from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
 from scipy import ndimage
 import time
@@ -38,7 +38,7 @@ def main():
     args = get_args()
 
     # Context
-    ctx = extension_context(
+    ctx = get_extension_context(
         args.context, device_id=args.device_id, type_config=args.type_config)
     logger.info(ctx)
     nn.set_default_context(ctx)

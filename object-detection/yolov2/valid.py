@@ -34,8 +34,8 @@ def valid(weightfile, outfile, outdir):
     prefix = outdir
     names = utils.load_class_names(name_list)
 
-    from nnabla.contrib.context import extension_context
-    ctx = extension_context("cudnn")
+    from nnabla.ext_utils import get_extension_context
+    ctx = get_extension_context("cudnn")
     nnabla.set_default_context(ctx)
 
     with open(valid_images) as fp:

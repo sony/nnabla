@@ -21,7 +21,6 @@ import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
-from nnabla.contrib.context import extension_context
 from nnabla.monitor import Monitor, MonitorImageTile, MonitorSeries
 from nnabla.parameter import get_parameter_or_create, get_parameter
 from nnabla.initializer import (

@@ -40,7 +40,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         type=float, default=weight_decay,
                         help='Weight decay factor of SGD update.')
     parser.add_argument("--device-id", "-d", type=int, default=0,
-                        help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path,
                         help='Path the model parameters saved.')
@@ -56,7 +56,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         "'cifar10_cpd3_factorized_resnet23_prediction'\n"
                         )
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension modules. ex) 'cpu', 'cuda.cudnn'.")
+                        default=None, help="Extension modules. ex) 'cpu', 'cudnn'.")
     parser.add_argument("--compression_ratio", "-cr",
                         type=float, default=0.6,
                         help='compression ratio. (e.g. 0.6 means that the amount of weights are reduced by 60%)')

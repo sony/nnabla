@@ -18,7 +18,6 @@ from PIL import Image
 
 # nnabla imports
 import nnabla as nn
-from nnabla.contrib.context import extension_context
 
 # import my u-net definition
 import unet

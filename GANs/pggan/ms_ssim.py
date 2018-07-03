@@ -17,7 +17,6 @@
 
 import argparse
 from nnabla import logger
-from nnabla.contrib.context import extension_context
 from scipy import signal
 from scipy.ndimage.filters import convolve
 import time

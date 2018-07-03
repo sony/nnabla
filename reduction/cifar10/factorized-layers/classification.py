@@ -38,12 +38,12 @@ def train():
     args = get_args()
 
     # Get context.
-    from nnabla.contrib.context import extension_context
+    from nnabla.ext_utils import get_extension_context
     extension_module = args.context
     if args.context is None:
         extension_module = 'cpu'
     logger.info("Running in %s" % extension_module)
-    ctx = extension_context(extension_module, device_id=args.device_id)
+    ctx = get_extension_context(extension_module, device_id=args.device_id)
     nn.set_default_context(ctx)
 
     # TRAIN

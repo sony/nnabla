@@ -179,8 +179,8 @@ if __name__ == '__main__':
     yolo_x_nnabla, yolo_features_nnabla, yolo_vars, yolo_tvars, loss_nnabla = create_network(
         batch_size, init_height, init_width, args)
 
-    from nnabla.contrib.context import extension_context
-    ctx = extension_context("cudnn")
+    from nnabla.ext_utils import get_extension_context
+    ctx = get_extension_context("cudnn")
     nn.set_default_context(ctx)
 
     # Load parameters

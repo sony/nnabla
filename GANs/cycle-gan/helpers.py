@@ -22,7 +22,6 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 from nnabla.monitor import Monitor, MonitorImage, MonitorSeries
-from nnabla.contrib.context import extension_context
 
 
 class MonitorImageWithName(MonitorImage):

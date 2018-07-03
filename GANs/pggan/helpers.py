@@ -14,7 +14,6 @@
 
 
 import argparse
-from nnabla.contrib.context import extension_context
 from nnabla.monitor import Monitor, MonitorImage, MonitorImageTile, MonitorSeries, tile_images
 from nnabla.utils.data_iterator import data_iterator
 import os

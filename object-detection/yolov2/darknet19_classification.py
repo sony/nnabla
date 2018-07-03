@@ -27,7 +27,7 @@ def get_args():
     import argparse
 
     p = argparse.ArgumentParser()
-    p.add_argument('--context', '-c', default='cpu', help='cpu|cuda.cudnn')
+    p.add_argument('--context', '-c', default='cpu', help='cpu|cudnn')
     p.add_argument('--weights', '-w', default='darknet19.h5',
                    help='NNabla parameters h5')
     p.add_argument('--input', '-i', default='dog.jpg',
@@ -39,8 +39,8 @@ def get_args():
 
 def main():
     args = get_args()
-    from nnabla.contrib.context import extension_context
-    ctx = extension_context(args.context)
+    from nnabla.ext_utils import get_extension_context
+    ctx = get_extension_context(args.context)
     nn.set_default_context(ctx)
 
     nn.load_parameters(args.weights)
