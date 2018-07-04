@@ -146,7 +146,8 @@ def train():
         data = data_iterator_imagenet(
             args.batch_size, args.train_cachefile_dir, rng=rng)
         vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir)
-        vdata = vdata.slice(num_of_slices=n_devices, slice_pos=device_id)
+        vdata = vdata.slice(
+            rng=None, num_of_slices=n_devices, slice_pos=device_id)
         num_classes = 1000
     # Workaround to start with the same initialized weights for all workers.
     np.random.seed(313)
