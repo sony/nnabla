@@ -107,9 +107,10 @@ def get_variadic(inputs):
 
 def has_optional(inputs):
     ret = False
+    opt = False
     for i in inputs.values():
         opt = i.get('optional', False)
-        if ret:
+        if ret and not opt:
             raise ValueError('''Optional input must come at the last of inputs.
             %s
             ''' % inputs)
