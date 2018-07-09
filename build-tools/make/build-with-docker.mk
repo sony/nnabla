@@ -31,6 +31,7 @@ DOCKER_IMAGE_NAME_BASE ?= nnabla-build
 DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format
 DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc
 DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build
+DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android
 DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla
 DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test
 
@@ -59,17 +60,22 @@ docker_image_doc:
 docker_image_build:
 	docker pull centos:6
 	cd $(NNABLA_DIRECTORY) \
-	&& make -C docker/development py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) \
-		-f docker/development/Dockerfile.build.py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) .
+		-f docker/development/Dockerfile.build .
 
 .PHONY: docker_image_onnx_test
 docker_image_onnx_test:
 	docker pull ubuntu:16.04
 	cd $(NNABLA_DIRECTORY) \
-	&& make -C docker/development py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) \
-		-f docker/development/Dockerfile.onnx-test.py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR) .
+		-f docker/development/Dockerfile.onnx-test .
+
+.PHONY: docker_image_build_android
+docker_image_build_android:
+	docker pull ubuntu:16.04
+	cd $(NNABLA_DIRECTORY) \
+	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \
+		-f docker/development/Dockerfile.android .
 
 ########################################################################################################################
 # Auto Format
@@ -92,6 +98,11 @@ bwd-nnabla-doc: docker_image_doc
 bwd-nnabla-cpplib: docker_image_build
 	cd $(NNABLA_DIRECTORY) \
 	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-cpplib
+
+.PHONY: bwd-nnabla-cpplib-android
+bwd-nnabla-cpplib-android: docker_image_build_android
+	cd $(NNABLA_DIRECTORY) \
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID) ./build-tools/android/build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk -e=arm64-v8a
 
 .PHONY: bwd-nnabla-test-cpplib
 bwd-nnabla-test-cpplib: docker_image_build

@@ -17,7 +17,6 @@ import nnabla as nn
 import nnabla.parametric_functions as PF
 import nnabla.communicators as C
 import numpy as np
-from nnabla.contrib.context import extension_context
 
 from six.moves import reduce
 

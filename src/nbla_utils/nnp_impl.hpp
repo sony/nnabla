@@ -18,6 +18,7 @@
 // NNabla
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
+#include <nbla/solver.hpp>
 #include <nbla_utils/nnp.hpp>
 
 // Protobuf
@@ -136,6 +137,224 @@ public:
 };
 
 // ----------------------------------------------------------------------
+// DatasetImpl
+// ----------------------------------------------------------------------
+/** Implementation of Dataset
+*/
+class DatasetImpl {
+  friend class NnpImpl;
+
+private:
+  // Dataset proto
+  const ::Dataset dataset_proto_;
+
+  // ctor
+  DatasetImpl(const ::Dataset &dataset);
+
+  // Number of data
+  int n_data_;
+
+  // Number of stream
+  int n_stream_;
+
+  // Data shapes
+  vector<Shape_t> shapes_;
+
+  // Data names
+  vector<string> data_names_;
+
+  // Cache blocks
+  vector<vector<NdArrayPtr>> cache_blocks_; // cache_block/data_column/data
+
+public:
+  string name() const;
+  string uri() const;
+  string cache_dir() const;
+  bool create_cache_explicitly() const;
+  bool overwrite_cache() const;
+  bool shuffle() const;
+  bool no_image_normalization() const;
+  const int batch_size() const;
+  const int get_num_stream() const;
+  const int get_num_data() const;
+  vector<string> get_data_names();
+  vector<Shape_t> get_shapes();
+  vector<vector<NdArrayPtr>> get_cache_blocks();
+};
+
+class DataIteratorFromCacheFiles {
+public:
+  // ctor
+  DataIteratorFromCacheFiles(shared_ptr<DatasetImpl> dataset);
+  ~DataIteratorFromCacheFiles();
+
+private:
+  vector<string> data_names_;
+  vector<int> shuffle_ids_;
+  vector<NdArrayPtr> dataset_; // data_column/data
+
+  int n_data_;
+  int batch_size_;
+  bool shuffle_;
+  int current_id_;
+
+  void shuffle_index();
+  void shuffle_dataset();
+
+public:
+  const vector<string> get_data_names() const;
+  const int get_batch_size() const;
+  const int get_iter_per_epoch() const;
+  unordered_map<string, NdArrayPtr> next();
+};
+
+// ----------------------------------------------------------------------
+// OptimizerImpl
+// ----------------------------------------------------------------------
+/** Implementation of Optimizer
+*/
+class OptimizerImpl {
+  friend class NnpImpl;
+
+private:
+  // Context
+  const nbla::Context ctx_;
+
+  // Optimizer proto
+  const ::Optimizer optimizer_proto_;
+
+  // Network
+  shared_ptr<Network> network_;
+
+  // Dataset
+  shared_ptr<DatasetImpl> dataset_;
+
+  // DataIterator
+  shared_ptr<DataIteratorFromCacheFiles> data_iterator_;
+
+  // Create Solver from Solver message
+  shared_ptr<Solver> solver_;
+  shared_ptr<nbla::Solver> create_solver(const ::Solver &solver);
+
+  // ctor
+  OptimizerImpl(const nbla::Context &ctx, const ::Optimizer &optimizer,
+                shared_ptr<Network> network, shared_ptr<DatasetImpl> dataset);
+
+public:
+  string name() const;
+  string network_name() const;
+  string dataset_name() const;
+  const int update_interval() const;
+
+  vector<Optimizer::DataVariable> get_data_variables();
+  vector<Optimizer::GeneratorVariable> get_generator_variables();
+  vector<Optimizer::LossVariable> get_loss_variables();
+  vector<Optimizer::ParameterVariable> get_parameter_variables();
+  shared_ptr<Network> get_network();
+
+  string type() const;
+  // Context context() const;
+  float weight_decay_rate() const;
+  float lr_decay() const;
+  long long int lr_decay_interval() const;
+
+  void set_parameters(const vector<Optimizer::ParameterVariable> &params,
+                      bool reset = true, bool retain_state = false);
+  void zero_grad();
+  void update_parameters();
+  float learning_rate() const;
+  void set_learning_rate(float learning_rate);
+  void weight_decay(float decay_rate);
+  void remove_parameters(const vector<string> &keys);
+  void clear_parameters();
+
+  const float update(const int iter);
+};
+
+// ----------------------------------------------------------------------
+// MonitorImpl
+// ----------------------------------------------------------------------
+/** Implementation of Monitor
+*/
+class MonitorImpl {
+  friend class NnpImpl;
+
+private:
+  // Context
+  const nbla::Context ctx_;
+
+  // Monitor proto
+  const ::Monitor monitor_proto_;
+
+  // Network
+  shared_ptr<Network> network_;
+
+  // Dataset
+  shared_ptr<DatasetImpl> dataset_;
+
+  // DataIterator
+  shared_ptr<DataIteratorFromCacheFiles> data_iterator_;
+
+  // ctor
+  MonitorImpl(const nbla::Context &ctx, const ::Monitor &monitor,
+              shared_ptr<Network> network, shared_ptr<DatasetImpl> dataset);
+
+public:
+  string name() const;
+  string network_name() const;
+  string dataset_name() const;
+
+  vector<Monitor::DataVariable> get_data_variables();
+  vector<Monitor::MonitorVariable> get_monitor_variables();
+  shared_ptr<Network> get_network();
+  void monitor(const nbla::Context &ctx);
+
+  const float monitor_epoch();
+};
+
+// ----------------------------------------------------------------------
+// GlobalConfig
+// ----------------------------------------------------------------------
+/** Implementation of GlobalConfig
+*/
+class GlobalConfigImpl {
+  friend class NnpImpl;
+
+private:
+  // GlobalConfig proto
+  const ::GlobalConfig global_config_proto_;
+
+  // Create Context from Context message
+  shared_ptr<nbla::Context> default_context_;
+  shared_ptr<nbla::Context> create_context(const ::Context &ctx);
+
+  // ctor
+  GlobalConfigImpl(const ::GlobalConfig &global_config);
+
+public:
+  shared_ptr<nbla::Context> default_context();
+};
+
+// ----------------------------------------------------------------------
+// TrainingConfig
+// ----------------------------------------------------------------------
+class TrainingConfigImpl {
+  friend class NnpImpl;
+
+private:
+  // TrainingConfig proto
+  const ::TrainingConfig training_config_proto_;
+
+  // ctor
+  TrainingConfigImpl(const ::TrainingConfig &training_config);
+
+public:
+  const long long int max_epoch() const;
+  const long long int iter_per_epoch() const;
+  const bool save_best() const;
+};
+
+// ----------------------------------------------------------------------
 // NnpImpl
 // ----------------------------------------------------------------------
 
@@ -182,6 +401,14 @@ public:
   shared_ptr<Executor> get_executor(const string &name);
   vector<pair<string, VariablePtr>> get_parameters();
   bool save_parameters(const string &filename);
+
+  vector<string> get_dataset_names();
+  vector<string> get_optimizer_names();
+  vector<string> get_monitor_names();
+  shared_ptr<DatasetImpl> get_dataset(const string &name);
+  shared_ptr<Optimizer> get_optimizer(const string &name);
+  shared_ptr<Monitor> get_monitor(const string &name);
+  shared_ptr<TrainingConfig> get_training_config();
 };
 }
 }

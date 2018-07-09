@@ -121,12 +121,19 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
+ARG PYTHON_VERSION_MAJOR
+ARG PYTHON_VERSION_MINOR
+ENV PYENVNAME=py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+
 RUN umask 0 \
      && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
      && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
      && rm -rf Miniconda3-latest-Linux-x86_64.sh \
-     && /opt/miniconda3/bin/conda create -y -n {PYENVNAME} python={PYENVVERSION} \
-     && source /opt/miniconda3/bin/activate {PYENVNAME} \
+     && /opt/miniconda3/bin/conda create -y \
+        -n ${PYENVNAME} \
+        python=${PYVERNAME} \
+     && source /opt/miniconda3/bin/activate ${PYENVNAME} \
      && conda install scandir scikit-image \
      && pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
      && echo Try to install setuptools few times to avoid conda problem. \
@@ -138,4 +145,4 @@ RUN umask 0 \
      && pip install --no-cache-dir -U "Cython<0.25" \
      && pip install --no-cache-dir -U "numpy<1.11"
 
-ENV PATH /opt/miniconda3/envs/{PYENVNAME}/bin:$PATH
+ENV PATH /opt/miniconda3/envs/${PYENVNAME}/bin:$PATH

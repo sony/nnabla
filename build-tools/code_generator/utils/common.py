@@ -44,7 +44,7 @@ def get_version(dir):
             version += os.environ["NNABLA_VERSION_SUFFIX"]
         if "NNABLA_SHORT_VERSION" in os.environ:
             return version, os.environ["NNABLA_SHORT_VERSION"]
-    version = default_version = '1.0.0rc2'
+    version = default_version = '1.0.1'
     nearest_tag = default_version
     if "NNABLA_VERSION_SUFFIX" in os.environ:
             version += os.environ["NNABLA_VERSION_SUFFIX"]

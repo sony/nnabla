@@ -1,0 +1,81 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM ubuntu:16.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        bzip2 \
+        ca-certificates \
+        ccache \
+        clang-format-3.8 \
+        curl \
+        g++ \
+        git \
+        libarchive-dev \
+        libhdf5-dev \
+        libopenmpi-dev \
+        make \
+        openmpi-bin \
+        unzip \
+        wget \
+        zip \
+        emacs \
+        python-pip \
+    && cd / \
+    && rm -rf /tmp/*
+
+RUN pip install setuptools
+RUN pip install --upgrade pip
+RUN pip install six
+RUN pip install PyYAML
+RUN pip install Mako
+
+ENV BUILD_DIR /usr/local/src
+
+##### Install CMAKE #####
+ENV CMAKE_URL https://cmake.org/files/v3.11/cmake-3.11.3.tar.gz
+RUN cd ${BUILD_DIR} && curl -O ${CMAKE_URL} \
+  && tar zxvf cmake*.tar.gz \
+  && rm cmake*.tar.gz \
+  && cd cmake* \
+  && ./bootstrap \
+  && make \
+  && make install
+
+
+##### Download and Install Android NDK #####
+ENV NDK_NAME android-ndk-r16b
+ENV NDK_URL https://dl.google.com/android/repository/${NDK_NAME}-linux-x86_64.zip
+RUN cd ${BUILD_DIR} \
+  && curl -O ${NDK_URL} \
+  && unzip ${NDK_NAME}-linux-x86_64.zip \
+  && rm -f ${NDK_NAME}-linux-x86_64.zip \
+  && mv ${NDK_NAME} android-ndk
+ENV NDK_PATH ${BUILD_DIR}/android-ndk
+
+RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
+    && cd /tmp \
+    && tar xvf protobuf-v3.1.0.tar.gz \
+    && cd protobuf-3.1.0 \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -Dprotobuf_BUILD_TESTS=OFF \
+        ../cmake \
+    && make \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
+

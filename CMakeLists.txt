@@ -58,8 +58,11 @@ if(NOT EXISTS ${PYTHON_COMMAND})
   endif()
 endif()
 
-find_program(PROTOC_COMMAND protoc)
 if(NOT EXISTS ${PROTOC_COMMAND})
+  find_program(PROTOC_COMMAND protoc)
+endif()
+if(NOT EXISTS ${PROTOC_COMMAND})
+  # If find_program fails.
   message(FATAL_ERROR, "protoc not found. Please install protocol buffer compiler.")
   error() # Place Unknown command to stop cmake process here.
 endif()
@@ -84,14 +87,14 @@ execute_process(
   ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py
   RESULT_VARIABLE GENERATE_RESULT)
 
+if (NOT ${GENERATE_RESULT} EQUAL 0)
+  message(FATAL_ERROR "generate.py failed.")
+endif ()
+
 configure_file(
   ${CMAKE_SOURCE_DIR}/build-tools/code_generator/functions.yaml
   ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/functions.yaml
   COPYONLY)
-
-if (NOT ${GENERATE_RESULT} EQUAL 0)
-  message(FATAL_ERROR "generate.py failed.")
-endif ()
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN

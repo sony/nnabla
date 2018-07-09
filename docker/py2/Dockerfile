@@ -4,4 +4,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-pip python-setuptools python-wheel gcc python-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install nnabla
+RUN pip install onnx nnabla
