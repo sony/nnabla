@@ -473,11 +473,10 @@ def clip_by_norm(x, clip_norm, axis=None):
     """
     from .function_bases import pow_scalar as pow_scalar_base
     from .function_bases import sum as sum_base
-
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = pow_scalar_base(sum_base(x**2, axis=axis, keepdims=True), 0.5)
+    x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
     y = clip_norm * x / x_norm
     return y
