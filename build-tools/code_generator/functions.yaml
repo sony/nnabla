@@ -83,8 +83,19 @@ Neural Network Layer:
         default: '1'
     outputs:
       y:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
-          C' \times L'_1 \times ... \times L'_N`).
+        doc: |2
+
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
+          
+          A spatial size of the output is calculated as
+          
+          .. math:: 
+            
+            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
+            
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
+          
+            
   DepthwiseConvolution:
     snake_name: depthwise_convolution
     doc: |2
@@ -129,8 +140,27 @@ Neural Network Layer:
         default: '1'
     outputs:
       y:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
-          C \times L'_1 \times ... \times L'_N`).
+        doc: |2
+
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
+          
+          The output map size :math:`C'` is :math:`C` multiplied by :math:`m`
+          
+          .. math::
+          
+            C' =  m \times C, 
+            
+          where :math:`m` is the multiplier.
+          
+          A spatial size of the output is calculated as
+          
+          .. math:: 
+            
+            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
+            
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
+          
+
   Deconvolution:
     snake_name: deconvolution
     doc: |2
@@ -176,8 +206,18 @@ Neural Network Layer:
         default: '1'
     outputs:
       y:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
-          C' \times L'_1 \times ... \times L'_N`).
+        doc: |2
+        
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
+          
+          A spatial size of the output is calculated as
+
+          .. math:: 
+
+            L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
+            
+          where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.  
+          
   DepthwiseDeconvolution:
     snake_name: depthwise_deconvolution
     doc: |2
@@ -217,8 +257,25 @@ Neural Network Layer:
         default: '1'
     outputs:
       y:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
-          C \times L'_1 \times ... \times L'_N`).
+        doc: |2
+
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
+          
+          The output map size :math:`C'` is :math:`C` multiplied by :math:`m`
+          
+          .. math::
+          
+            C' =  \frac{C}{d}, 
+            
+          where :math:`d` is the divisor.
+          
+          A spatial size of the output is calculated as
+   
+          .. math:: 
+            L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
+                      
+          where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
+          
   MaxPooling:
     snake_name: max_pooling
     doc: |2
