@@ -447,7 +447,9 @@ def clip_by_value(x, min, max):
         ~nnabla.Variable: N-D array.
 
     """
-    return F.minimum2(F.maximum2(x, min), max)
+    from .function_bases import maximum2 as maximum2_base
+    from .function_bases import minimum2 as minimum2_base
+    return minimum2_base(maximum2_base(x, min), max)
 
 
 def clip_by_norm(x, clip_norm, axis=None):
@@ -469,10 +471,13 @@ def clip_by_norm(x, clip_norm, axis=None):
     Returns:
         ~nnabla.Variable: N-D array.
     """
+    from .function_bases import pow_scalar as pow_scalar_base
+    from .function_bases import sum as sum_base
+
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = F.pow_scalar(F.sum(x**2, axis=axis, keepdims=True), 0.5)
+    x_norm = pow_scalar_base(sum_base(x**2, axis=axis, keepdims=True), 0.5)
     y = clip_norm * x / x_norm
     return y
