@@ -120,6 +120,16 @@ cdef class Communicator:
         """
         self.communicatorp.init()
 
+    def barrier(self):
+        """Blocks until all processes in the communicator have reached this routine. 
+        """
+        self.communicatorp.barrier()
+    
+    def abort(self):
+        """Terminates MPI execution environment
+        """
+        self.communicatorp.abort()
+
     def new_group(self, name_ranks):
         """
         Args:
