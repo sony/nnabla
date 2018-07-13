@@ -124,7 +124,7 @@ cdef class Communicator:
         """Blocks until all processes in the communicator have reached this routine. 
         """
         self.communicatorp.barrier()
-    
+
     def abort(self):
         """Terminates MPI execution environment
         """
