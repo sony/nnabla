@@ -107,7 +107,7 @@ cdef vector[cpp_bool] variables_to_prop_down_flags(varlist):
     cdef int size = len(varlist)
     cdef vector[cpp_bool] ret
     for i in range(size):
-        ret.push_back((<_Variable?>varlist[i]).varp.need_grad())
+        ret.push_back((<_Variable?>varlist[i]).varp.need_grad_state())
     return ret
 
 cdef tuple vector_to_tuple_nd_array(const vector[NdArrayPtr] &vec):
