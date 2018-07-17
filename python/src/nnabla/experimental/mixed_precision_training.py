@@ -25,7 +25,7 @@ class DynamicLossScalingUpdater(object):
         N (:obj:`int`): Interval, the number of iterations in training for increasing `loss scale` by `scaling_factor`.
         clear_buffer (:obj:`bool`): Clears the no longer referenced variables during backpropagation to save memory.
         accum_grad (:obj:`int`): Number of accumulation of gradients. Update method of the `solver` is called after the `accum_grad` number of the forward and backward is called.
-        weight_decay (:obj: `float`): Decay constant. Default is `None`, not applying the weight decay.
+        weight_decay (:obj:`float`): Decay constant. Default is `None`, not applying the weight decay.
         comm (:obj:`nnabla.communicators.Communicator`): Communicator when to do distributed training. Defalt is :obj:`None`.
         grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`): The list of gradients to be exchanged when to do distributed training. Defalt is the empty :obj:`list`.
 
@@ -38,7 +38,7 @@ class DynamicLossScalingUpdater(object):
         N (:obj:`int`): Interval, the number of iterations in training for increasing `loss scale` by `scaling_factor`.
         clear_buffer (:obj:`bool`): Clears the no longer referenced variables during backpropagation to save memory.
         accum_grad (:obj:`int`): Number of accumulation of gradients. Update method of the `solver` is called after the `accum_grad` number of the forward and backward is called.
-        weight_decay (:obj: `float`): Decay constant. 
+        weight_decay (:obj:`float`): Decay constant. Default is `None`, not applying the weight decay.
         comm (:obj:`nnabla.communicators.Communicator`): Communicator when to do distributed training.
         grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`): The list of gradients to be exchanged when to do distributed training.
 
@@ -124,7 +124,7 @@ class DynamicLossScalingUpdater(object):
             self._recursive_count += 1
             if self._recursive_count > self._max_recursive_count:
                 self._recursive_count = 0
-                continue  # skip
+                return  # skip
             return self.update()
         self._recursive_count = 0
 
