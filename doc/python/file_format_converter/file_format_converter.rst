@@ -15,7 +15,13 @@ File format converter has following functions.
 - Convert ONNX to NNP
 - Convert NNP to ONNX
 - Convert NNP to NNB(Binary format for NNabla C Runtime)
-- Convert NNP to C Source code for NNabla C Runtime
+- Experimental: Convert NNP to C Source code for NNabla C Runtime
+
+**IMPORTANT NOTICE**: This file format converter still has some known problems.
+
+- Supported ONNX operater is limited. See :any:`onnx/operator_coverage`.
+- Converting NNP to C Source code is still experimental. It should work but did not tested well.
+
   
 NNP
 ---
