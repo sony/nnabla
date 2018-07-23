@@ -30,6 +30,9 @@ TENSOR_TYPE_TO_DTYPE = {
 }
 
 
+random_seed = 0
+R_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
 # Helper functions
 def generate_scalar_constant(output_name, tensor_name, scalar):
     """Convert a scalar value to a Constant buffer.
@@ -174,7 +177,11 @@ def replace_negative_size_with_batch_size(shape, batch_size):
 
 
 def fork_name(name):
-    return name + '_t'
+    global random_seed
+    random_seed += 1
+    rng = np.random.RandomState(random_seed)
+    ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
+    return ret
 
 
 # OnnxExporter class
