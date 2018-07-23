@@ -140,11 +140,11 @@ def affine(inp, n_outmaps,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.affine(inp, w, b, base_axis)
 
 
@@ -251,27 +251,27 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
         v_ = v_.reshape([r] + n_outmaps)
 
         u = nn.Variable([int(np.prod(inp.shape[base_axis:])), r],
-                        need_grad=not fix_parameters)
+                        need_grad=True)
         u.d = u_
         nn.parameter.set_parameter("U", u)
 
-        v = nn.Variable([r] + n_outmaps, need_grad=not fix_parameters)
+        v = nn.Variable([r] + n_outmaps, need_grad=True)
         v.d = v_
         nn.parameter.set_parameter("V", v)
-    else:
-        if fix_parameters == u.need_grad:
-            u = u.unlinked()
-            u.need_grad = not fix_parameters
-        if fix_parameters == v.need_grad:
-            v = v.unlinked()
-            v.need_grad = not fix_parameters
+    if fix_parameters == u.need_grad:
+        u = u.unlinked()
+        u.need_grad = not fix_parameters
+    if fix_parameters == v.need_grad:
+        v = v.unlinked()
+        v.need_grad = not fix_parameters
 
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
 
     b = None
     if with_bias:
-        b = get_parameter_or_create("b", n_outmaps, b_init, not fix_parameters)
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, True, not fix_parameters)
 
     return F.affine(F.affine(inp, u, bias=None, base_axis=base_axis),
                     v, bias=b, base_axis=base_axis)
@@ -347,14 +347,14 @@ def binary_connect_affine(inp, n_outmaps,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        wb_init, not fix_parameters)
+        wb_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.binary_connect_affine(inp, w, wb, b, base_axis)
 
 
@@ -427,16 +427,16 @@ def binary_weight_affine(inp, n_outmaps,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        wb_init, not fix_parameters)
+        wb_init, False)
     alpha = get_parameter_or_create(
-        "alpha", n_outmaps, ConstantInitializer(0), False)
+        "alpha", n_outmaps, n_outmaps, ConstantInitializer(0), False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.binary_weight_affine(inp, w, wb, alpha, b, base_axis)
 
 
@@ -495,14 +495,14 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     i = get_parameter_or_create(
         "I", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
         i_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.inq_affine(inp, w, i, b, base_axis, num_bits, inq_iterations, selection_algorithm, seed)
 
 
@@ -546,11 +546,11 @@ def convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
@@ -667,7 +667,7 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
 
         # reshape U : (I,K*K,r) -> (I*r,K,K) for depthwise conv
         u = nn.Variable((inmaps * r,) + tuple(kernel),
-                        need_grad=not fix_parameters)
+                        need_grad=True)
 
         u.d = (np.transpose(u_low_rank, axes=(0, 2, 1))
                .reshape((inmaps * r,) + tuple(kernel)))
@@ -675,29 +675,27 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         nn.parameter.set_parameter("U", u)
 
         # reshape V :  (I,r,O) -> (O,I*r,1,1) for 1X1 conv
-        kernel_one = (1,)*len(kernel)  # 1x1 for 2D convolution
+        kernel_one = (1,) * len(kernel)  # 1x1 for 2D convolution
         v = nn.Variable((outmaps, inmaps * r) + kernel_one,
-                        need_grad=not fix_parameters)
+                        need_grad=True)
 
         v.d = (np.transpose(v_low_rank, axes=(2, 0, 1))
                .reshape((outmaps, inmaps * r) + kernel_one))
 
         nn.parameter.set_parameter("V", v)
 
-    else:
-        # Use existing parameters
-        if fix_parameters == u.need_grad:
-            u = u.unlinked()
-            u.need_grad = not fix_parameters
-        if fix_parameters == v.need_grad:
-            v = v.unlinked()
-            v.need_grad = not fix_parameters
+    if fix_parameters == u.need_grad:
+        u = u.unlinked()
+        u.need_grad = not fix_parameters
+    if fix_parameters == v.need_grad:
+        v = v.unlinked()
+        v.need_grad = not fix_parameters
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
 
     y = F.depthwise_convolution(inp, u, bias=None, base_axis=base_axis,
                                 pad=pad, stride=stride, dilation=dilation,
@@ -801,41 +799,40 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         i_ = U[1]
         k_ = U[2]
 
-        kernel_one = (1,)*len(kernel)  # 1x1 for 2D convolution
+        kernel_one = (1,) * len(kernel)  # 1x1 for 2D convolution
         inmaps = inp.shape[base_axis]
 
         # reshape I :  (I,r) -> (r,I,1,1)
-        i = nn.Variable((r, inmaps) + kernel_one, need_grad=not fix_parameters)
+        i = nn.Variable((r, inmaps) + kernel_one, need_grad=True)
         i.d = np.transpose(i_).reshape((r, inmaps) + kernel_one)
         nn.parameter.set_parameter("I", i)
 
         # reshape O :  (O,r) -> (O,r,1,1)
         o = nn.Variable((outmaps, r) + kernel_one,
-                        need_grad=not fix_parameters)
+                        need_grad=True)
         o.d = o_.reshape((outmaps, r) + kernel_one)
         nn.parameter.set_parameter("O", o)
 
         # reshape K :  (K*K,r) -> (r,K,K)
-        k = nn.Variable((r,) + kernel, need_grad=not fix_parameters)
+        k = nn.Variable((r,) + kernel, need_grad=True)
         k.d = np.transpose(k_).reshape((r,) + kernel)
         nn.parameter.set_parameter("K", k)
-    else:
-        # Use existing parameters
-        if fix_parameters == o.need_grad:
-            o = o.unlinked()
-            o.need_grad = not fix_parameters
-        if fix_parameters == i.need_grad:
-            i = i.unlinked()
-            i.need_grad = not fix_parameters
-        if fix_parameters == k.need_grad:
-            k = k.unlinked()
-            k.need_grad = not fix_parameters
+
+    if fix_parameters == o.need_grad:
+        o = o.unlinked()
+        o.need_grad = not fix_parameters
+    if fix_parameters == i.need_grad:
+        i = i.unlinked()
+        i.need_grad = not fix_parameters
+    if fix_parameters == k.need_grad:
+        k = k.unlinked()
+        k.need_grad = not fix_parameters
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
 
     y = F.convolution(inp, i, bias=None, base_axis=base_axis, pad=None, stride=None,
                       dilation=None, group=1)
@@ -918,14 +915,14 @@ def binary_connect_convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        wb_init, not fix_parameters)
+        wb_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.binary_connect_convolution(inp, w, wb, b, base_axis, pad, stride, dilation, group)
 
 
@@ -1000,16 +997,16 @@ def binary_weight_convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        wb_init, not fix_parameters)
+        wb_init, False)
     alpha = get_parameter_or_create(
         "alpha", (outmaps, ), ConstantInitializer(0), False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.binary_weight_convolution(inp, w, wb, alpha, b, base_axis, pad, stride, dilation, group)
 
 
@@ -1064,14 +1061,14 @@ def inq_convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     i = get_parameter_or_create(
         "I", (outmaps, inp.shape[base_axis]) + tuple(kernel),
         i_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.inq_convolution(inp, w, i, b, base_axis, pad, stride, dilation, group, num_bits, inq_iterations, selection_algorithm, seed)
 
 
@@ -1115,12 +1112,12 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis] * multiplier,) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (inp.shape[base_axis] * multiplier,),
-            b_init, not fix_parameters)
+            b_init, True, not fix_parameters)
     return F.depthwise_convolution(inp, w, b, base_axis, pad, stride, dilation,
                                    multiplier)
 
@@ -1159,11 +1156,11 @@ def deconvolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis], outmaps / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
@@ -1203,12 +1200,12 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis],) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (inp.shape[base_axis] // divisor,),
-            b_init, not fix_parameters)
+            b_init, True, not fix_parameters)
     return F.depthwise_deconvolution(inp, w, b, base_axis, pad, stride,
                                      dilation, divisor)
 
@@ -1252,9 +1249,9 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     shape_stat = [1 for _ in inp.shape]
     shape_stat[axes[0]] = inp.shape[axes[0]]
     beta = get_parameter_or_create(
-        "beta", shape_stat, ConstantInitializer(0), not fix_parameters)
+        "beta", shape_stat, ConstantInitializer(0), True, not fix_parameters)
     gamma = get_parameter_or_create(
-        "gamma", shape_stat, ConstantInitializer(1), not fix_parameters)
+        "gamma", shape_stat, ConstantInitializer(1), True, not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, ConstantInitializer(0), False)
     var = get_parameter_or_create(
@@ -1321,7 +1318,7 @@ def embed(inp, n_inputs, n_features, fix_parameters=False):
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
     w = get_parameter_or_create("W", [n_inputs, n_features],
-                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), not fix_parameters)
+                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True, not fix_parameters)
     return F.embed(inp, w)
 
 
@@ -1349,7 +1346,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     """
     shape = tuple() if shared else (inp.shape[base_axis],)
     w = get_parameter_or_create("slope", shape,
-                                ConstantInitializer(-1), not fix_parameters)
+                                ConstantInitializer(-1), True, not fix_parameters)
     return F.prelu(inp, w, base_axis)
 
 
@@ -1424,13 +1421,13 @@ def fixed_point_quantized_affine(inp, n_outmaps,
     # Floating Weight
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-            w_init, not fix_parameters)
+            w_init, False)
         # Link computation graph
         real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
                                           sign=sign_w, n=n_w, delta=delta_w,
@@ -1447,10 +1444,10 @@ def fixed_point_quantized_affine(inp, n_outmaps,
     real_b_q = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", n_outmaps, b_init, not fix_parameters)
+                "b_q", n_outmaps, b_init, False)
             # Link computation graph
             real_b_q = F.fixed_point_quantize(b, quantize=quantize_b,
                                               sign=sign_b, n=n_b, delta=delta_b,
@@ -1534,13 +1531,13 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
     # Floating Weight
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-            w_init, not fix_parameters)
+            w_init, False)
         # Link computation graph
         real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
                                           sign=sign_w, n=n_w, delta=delta_w,
@@ -1558,10 +1555,10 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
 
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", (outmaps,), b_init, not fix_parameters)
+                "b_q", (outmaps,), b_init, False)
             # Link computation graph
             real_b_q = F.fixed_point_quantize(b, quantize=quantize_b,
                                               sign=sign_b, n=n_b, delta=delta_b,
@@ -1646,13 +1643,13 @@ def pow2_quantized_affine(inp, n_outmaps,
     # Floating Weight
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-            w_init, not fix_parameters)
+            w_init, False)
         # Link computation graph
         real_w_q = F.pow2_quantize(w, quantize=quantize_w,
                                    sign=sign_w, with_zero=with_zero_w,
@@ -1669,10 +1666,10 @@ def pow2_quantized_affine(inp, n_outmaps,
     real_b_q = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", n_outmaps, b_init, not fix_parameters)
+                "b_q", n_outmaps, b_init, False)
             real_b_q = F.pow2_quantize(b, quantize=quantize_b,
                                        sign=sign_b, with_zero=with_zero_b,
                                        n=n_b, m=m_b, ste_fine_grained=ste_fine_grained_b,
@@ -1755,13 +1752,13 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
     # Floating Weight
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-            w_init, not fix_parameters)
+            w_init, False)
 
         # Link computation graph
         real_w_q = F.pow2_quantize(w, quantize=quantize_w,
@@ -1780,10 +1777,10 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
 
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", (outmaps,), b_init, not fix_parameters)
+                "b_q", (outmaps,), b_init, False)
             # Link computation graph
             real_b_q = F.pow2_quantize(b, quantize=quantize_b,
                                        sign=sign_b, with_zero=with_zero_b,
