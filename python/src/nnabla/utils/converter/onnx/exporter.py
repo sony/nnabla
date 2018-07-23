@@ -323,31 +323,51 @@ class OnnxExporter:
     def Affine(self, func):
         """
         Affine is decomposed as 3 steps:
-            Flatten
+            Flatten inputs
             Gemm
             Reshape
         """
         nl = []
-        out = fork_name(func.input[0])
+        out_a = fork_name(func.input[0])
+        out_b = fork_name(func.input[1])
+        out_c = fork_name(func.input[2])
 
         n = onnx.helper.make_node(
             "Flatten",
             [func.input[0]],
-            [out],
+            [out_a],
             name="Flatten" + func.input[0])
         a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
         n.attribute.extend([a])
         nl.append(n)
 
-        func.input[0] = out
+        n = onnx.helper.make_node(
+            "Flatten",
+            [func.input[1]],
+            [out_b],
+            name="Flatten" + func.input[1])
+        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
+        n.attribute.extend([a])
+        nl.append(n)
+
+        n = onnx.helper.make_node(
+            "Flatten",
+            [func.input[2]],
+            [out_c],
+            name="Flatten" + func.input[2])
+        a = onnx.helper.make_attribute("axis", 0)
+        n.attribute.extend([a])
+        nl.append(n)
+
         out = fork_name(func.output[0])
         n = onnx.helper.make_node(
             "Gemm",
-            func.input,
+            [out_a, out_b, out_c],
             [out],
+            alpha = 1.0,
+            beta = 1.0,
+            broadcast=1,
             name='Gemm' + func.input[0])
-        b = onnx.helper.make_attribute("broadcast", 1)
-        n.attribute.extend([b])
         nl.append(n)
 
         param_name = func.output[0] + '_shape'
