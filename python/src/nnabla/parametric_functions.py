@@ -536,7 +536,7 @@ def convolution(inp, outmaps, kernel,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.convolution` for the output shape.
 
     """
     if w_init is None:
@@ -1101,7 +1101,7 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.depthwise_convolution` for the output shape.
 
     """
     if w_init is None:
@@ -1149,7 +1149,7 @@ def deconvolution(inp, outmaps, kernel,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.deconvolution` for the output shape.
 
     """
     if w_init is None:
@@ -1189,7 +1189,7 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.depthwise_deconvolution` for the output shape.
 
     """
     if w_init is None:
