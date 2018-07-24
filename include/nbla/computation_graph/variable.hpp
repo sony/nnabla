@@ -243,6 +243,11 @@ public:
    */
   void insert_function_reference(CgFunctionPtr func);
 
+  /**
+   */
+  NBLA_API
+  void remove_function_reference(CgFunction *funcp);
+
   /** Mark need_setup flag for all function references.
    */
   void mark_need_setup();

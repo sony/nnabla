@@ -174,3 +174,43 @@ def test_name_all_variables():
     pred.backward(clear_buffer=True)
     pred.visit(Confirmer())
 
+
+def test_clear_all_graph_links():
+    import nnabla.functions as F
+    import nnabla.parametric_functions as PF
+
+    class OneStepRNN(object):
+        def __init__(self, batch_size=8, state_size=8):
+            self.lstm0 = PF.LSTMCell(batch_size, state_size, name="lsmt0")
+            self.lstm1 = PF.LSTMCell(batch_size, state_size, name="lsmt1")
+            self.affine = PF.affine
+
+        def __call__(self, x, n_class=10):
+            h = self.lstm0(x)
+            h = self.lstm1(h)
+            h = self.affine(h, n_class)
+            return h
+    T = 3
+    batch_size = 2
+    dims = 4
+    state_size = 8
+    one_step_rnn = OneStepRNN(batch_size, state_size)
+    # Forward: unroll over time
+    loss = 0
+    for t in range(T):
+        x = nn.Variable.from_numpy_array(
+            np.random.randn(batch_size, dims))
+        y = nn.Variable.from_numpy_array(
+            np.random.choice(np.arange(10), batch_size, replace=True)).reshape((batch_size, 1))
+        pred = one_step_rnn(x)
+        l = F.mean(F.softmax_cross_entropy(pred, y))
+        loss += l
+    loss /= T
+    # Backward then truncate
+    loss.backward()
+    loss.clear_all_graph_links()
+
+    assert one_step_rnn.lstm0.h.parent == None
+    assert one_step_rnn.lstm0.c.parent == None
+    assert one_step_rnn.lstm1.h.parent == None
+    assert one_step_rnn.lstm1.c.parent == None

@@ -59,6 +59,7 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         FunctionPtr function() const
         cpp_bool need_grad() const
         int rank() const
+        void set_inputs_(const vector[CgVariablePtr] &intpus) except+
         void set_outputs(const vector[CgVariablePtr] &outputs) except+
         vector[CgVariablePtr] inputs()
         vector[CgVariablePtr] outputs()

@@ -71,6 +71,7 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         cpp_bool persistent()
         string name() except +
         void set_name(string name) except +
+        void remove_function_reference(CgFunction * func) except+
     ctypedef shared_ptr[CgVariable] CgVariablePtr
 
 cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":

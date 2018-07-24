@@ -659,6 +659,25 @@ cdef class Variable:
         seen = set()
         return _recursive_visit_functions(self.parent, seen)
 
+    def clear_all_graph_links(self, ):
+        """Clear all intermediate functions and variables.
+
+        This method clear all intermediate functions and variables up to this variable 
+        in forward pass and is useful for the truncated backpropergation through time 
+        (truncated BPTT) in dynamic graph.
+        """
+        def _clear_all_graph_links(func):
+            for v in func.inputs:
+                v._clear_parent()
+            for v in func.outputs:
+                v._clear_parent()
+            func._clear_inputs()
+            func._clear_outputs()
+        self.visit(_clear_all_graph_links)
+
+    def _clear_parent(self, ):
+        self.varp.set_parent(< CgFunctionPtr?> NULL)
+
     def __pos__(self):
         return AOP.pos(self)
 

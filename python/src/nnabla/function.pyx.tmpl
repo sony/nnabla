@@ -23,12 +23,13 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp.memory cimport shared_ptr, make_shared
+from cython.operator cimport dereference
 from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t, intptr_t
 cimport function
 from function cimport CFunction, Variables, CgFunction
 cimport _variable
-from _variable cimport Variable as _Variable, CVariable, CContext
+from _variable cimport Variable as _Variable, CVariable, CgVariable, CContext
 from _nd_array cimport NdArray
 from _nd_array import NdArray
 from _imperative cimport *
@@ -280,8 +281,28 @@ cdef class Function:
                     return self._imperative_call(inputs, n_outputs, outputs)
         return self._cg_call(inputs, n_outputs, outputs, auto_forward)
 
+    def _clear_inputs(self):
+        """
+        """
+        inputs = self.funp.inputs()
+        cdef vector[CgVariablePtr] empty
+        self.funp.set_inputs_(empty)
         
+        # clear forward references also
+        cdef CgVariablePtr cgv
+        cdef CgFunction *funp 
+        for inp in inputs:
+            cgv = <CgVariablePtr>inp
+            funp = (<Function>self).funp
+            (<CgVariable>dereference(cgv)).remove_function_reference(funp)
+    
+    def _clear_outputs(self):
+      """
+      """
+      cdef vector[CgVariablePtr] empty
+      self.funp.set_outputs(empty)
 
+			
     """
     @property
     def in_types(self):
