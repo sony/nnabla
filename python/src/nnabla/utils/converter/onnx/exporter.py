@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from nnabla.utils import nnabla_pb2
+from functools import partial
 import nnabla.logger as logger
 import numpy as np
 try:
@@ -237,12 +238,14 @@ class OnnxExporter:
             "Div2": "Div",
             "Pow2": "Pow",
             "Sub2": "Sub",
+            "RSubScalar": partial(self.ScalarOperator, 'RSubScalar'),
+            "RDivScalar": partial(self.ScalarOperator, 'RDivScalar'),
+            "RPowScalar": partial(self.ScalarOperator, 'RPowScalar'),
             "LogicalAnd": "And",
             "LogicalOr": "Or",
             "LogicalXor": "Xor",
             "Maximum2": "Max",
             "Minimum2": "Min",
-            "RDivScalar": "Reciprocal",
             # optype that gets converted
             "Affine": self.Affine,
             "MulScalar": "Mul",
@@ -258,6 +261,44 @@ class OnnxExporter:
             "Stack": self.Stack,
             "Slice": self.Slice
         }
+
+    def _elem_op(self, func, op_name, val):
+        # Todo: how to exploit broadcasting feature to shrink
+        #       the size of val is a topic remained to the
+        #       future.
+        v = np.ones(self._var_dict[func.input[0]].dim) * val
+        param_name = fork_name(func.input[0])
+        init = self._model_proto.graph.initializer.add()
+        init.name = param_name
+        init.data_type = TensorProto.FLOAT
+        init.dims.extend(list(v.shape))
+        init.raw_data = v.astype(np.float32).tostring()
+
+        i = self._model_proto.graph.input.add()
+        i.name = param_name
+        i.type.tensor_type.elem_type = TensorProto.FLOAT
+        dims = [create_dim(d) for d in v.shape]
+        i.type.tensor_type.shape.dim.extend(dims)
+        inputs = [i for i in func.input]
+        n = onnx.helper.make_node(
+            op_name,
+            [param_name] + inputs,
+            func.output,
+            name=func.name
+        )
+        return [n]
+
+    def ScalarOperator(self, nn_funcname, func):
+        if nn_funcname == 'RSubScalar':
+            val = func.r_sub_scalar_param.val
+            return self._elem_op(func, 'Sub', val)
+        elif nn_funcname == 'RDivScalar':
+            val = func.r_div_scalar.val
+            return self._elem_op(func, 'Div', val)
+        elif nn_funcname == 'RPowScalar':
+            val = func.r_pow_scalar.val
+            return self._elem_op(func, 'Pow', val)
+        return []
 
     def Slice(self, func):
         """
@@ -737,12 +778,12 @@ class OnnxExporter:
                 # Set the given parameter name as BOOL
                 input_types[n.input[1]] = intype
             nl.append(n)
-        elif func.type == "RDivScalar":
-            rp = func.r_div_scalar_param
-            if rp.val != 1.0:
-                raise ValueError(
-                    "RDivScalar can be converted to Reciprocal only if val is 1")
-            nl.append(n)
+        # elif func.type == "RDivScalar":
+        #     rp = func.r_div_scalar_param
+        #     if rp.val != 1.0:
+        #         raise ValueError(
+        #             "RDivScalar can be converted to Reciprocal only if val is 1")
+        #     nl.append(n)
         elif func.type == "MulScalar":
             mp = func.mul_scalar_param
             if mp.val == -1.0:
@@ -908,13 +949,18 @@ class OnnxExporter:
 
     def dump_nnp(self, fn):
         import os
-        fn = os.path.splitext(fn)[0] + '.nnp.dump'
-        with open(fn, "w") as f:
+        keyname = os.path.splitext(fn)[0]
+        nnp_fn = keyname + '.nnp.dump'
+        onnx_dump = keyname + '.onnx.dump'
+        with open(nnp_fn, "w") as f:
             f.write(str(self._nnp))
+        with open(onnx_dump, "w") as f:
+            f.write(str(self._model_proto))
 
     def execute(self, file_path):
-        #self.dump_nnp(file_path)
         self.create_model()
         self.create_graph()
         with open(file_path, "wb") as f:
             f.write(self._model_proto.SerializeToString())
+        # if debug, please uncomment it.
+        # self.dump_nnp(file_path)
