@@ -479,6 +479,11 @@ def save(filename, contents, include_params=False, variable_batch_size=True):
         contents (dict): Information to store.
         include_params (bool): Includes parameter into single file. This is
             ignored when the extension of filename is nnp.
+        variable_batch_size (bool):
+            By ``True``, the first dimension of all variables is considered
+            as batch size, and left as a placeholder
+            (more specifically ``-1``). The placeholder dimension will be
+            filled during/after loading.
 
     Example:
         The following example creates a two inputs and two
