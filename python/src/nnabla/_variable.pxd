@@ -32,7 +32,7 @@ cdef extern from "nbla/variable.hpp" namespace "nbla":
         Size_t ndim()
         void reshape(Shape_t, cpp_bool) except +
         shared_ptr[CVariable] view() except +
-        shared_ptr[CVariable] view(const Shape_t &) except +
+        shared_ptr[CVariable] view(const Shape_t & ) except +
         NdArrayPtr data() except +
         NdArrayPtr grad() except +
         void set_data(NdArrayPtr) except +
@@ -84,7 +84,7 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         int rank() const
         void set_outputs(const vector[CgVariablePtr] & outputs) except+
         const vector[CgVariablePtr] inputs()
-        vector[CVariable * ] function_inputs() except+
+        vector[CVariable *] function_inputs() except+
         vector[VariablePtr] function_outputs_shared() except+
         string info() const
         void set_info(const string & info)

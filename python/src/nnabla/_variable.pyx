@@ -196,7 +196,7 @@ cdef class Variable:
         '''
         if op == 2:
             try:
-                return ( < Variable > self).varp == ( < Variable ?> other).varp
+                return (< Variable > self).varp == ( < Variable ?> other).varp
             except:
                 return False
         elif op == 3:
@@ -206,7 +206,8 @@ cdef class Variable:
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash( < intptr_t > (( < Variable > self).varp))
+        return hash(< intptr_t > (( < Variable > self).varp))
+
     def apply(self, **kwargs):
         '''Helper for setting property, then return self.
         '''
@@ -303,7 +304,7 @@ cdef class Variable:
             var = Variable.create_from_cvariable(
                 self.varp.variable().get().view(shape))
             if self.varp.need_grad_is_set():
-                ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
+                (< Variable > var).varp.set_need_grad(self.varp.need_grad())
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -358,7 +359,7 @@ cdef class Variable:
                 ya.backward()
 
         '''
-        steal_variable_from_to((< Variable?> var).var, self.var)
+        steal_variable_from_to(( < Variable?> var).var, self.var)
 
     @property
     def data(self):
@@ -458,7 +459,7 @@ cdef class Variable:
 
     @parent.setter
     def parent(self, func):
-        cdef CgFunctionPtr cg_func = ( < function.Function ?> func).fun
+        cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
@@ -514,25 +515,25 @@ cdef class Variable:
         elif np.isscalar(grad):
             arr = NdArray(self.shape)
             arr.fill(grad)
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         elif isinstance(grad, NdArray):
-            p = (< NdArray > grad).arr
+            p = ( < NdArray > grad).arr
         elif isinstance(grad, np.ndarray):
             arr = NdArray(grad.shape)
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         else:
             # Try to interpret as scalar value
             arr = NdArray()
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
 
         cdef vector[CommunicatorBackwardCallbackPtr] callback_list
         if type(communicator_callbacks) == list:
             for x in communicator_callbacks:
-                callback_list.push_back(( < CommunicatorBackwardCallback?> x).var)
+                callback_list.push_back((< CommunicatorBackwardCallback?> x).var)
         elif type(communicator_callbacks) != type(None):
-            callback_list.push_back(( < CommunicatorBackwardCallback?> communicator_callbacks).var)
+            callback_list.push_back((< CommunicatorBackwardCallback?> communicator_callbacks).var)
 
         with nogil:
             self.varp.backward(p, clear_buffer, callback_list)
@@ -582,7 +583,7 @@ cdef class Variable:
         if need_grad is not None:
             self.need_grad = need_grad
         elif self.varp.need_grad_is_set():
-            ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
+            (< Variable > var).varp.set_need_grad(self.varp.need_grad())
         return var
 
     @property
