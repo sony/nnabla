@@ -533,6 +533,16 @@ cdef class Variable:
 
     def unlinked(self, need_grad=None):
         """
+        This function is `deprecated`, use get_unlinked_variable instead.
+        """
+        import nnabla as nn
+        nn.logger.warn(
+            "This function is `deprecated`, use get_unlinked_variable instead.")
+
+        return self.get_unlinked_variable(need_grad)
+
+    def get_unlinked_variable(self, need_grad=None):
+        """
         Gets an unlinked (forgetting parent) variable that shares a Variable buffer
         instance.
 

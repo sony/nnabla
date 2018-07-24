@@ -73,7 +73,7 @@ def test_data_grad():
     assert not np.all(v.d == v.g)
 
 
-def test_unlinked():
+def test_get_unlinked_variable():
     v = nn.Variable([2, 3, 4], need_grad=True)
     grad = np.random.randn(*v.shape).astype(np.float32)
     v.g = grad
@@ -81,7 +81,7 @@ def test_unlinked():
     import nnabla.functions as F
     with nn.context_scope(nn.Context()), nn.auto_forward():
         v2 = F.identity(v)
-        v2_u = v2.unlinked()
+        v2_u = v2.get_unlinked_variable()
         assert not v2_u.need_grad
         v2_u.need_grad = True
         v3 = F.identity(v2_u)
