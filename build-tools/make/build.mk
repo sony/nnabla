@@ -125,4 +125,4 @@ nnabla-test:
 .PHONY: nnabla-test-local
 nnabla-test-local: nnabla-install
 	@cd $(BUILD_DIRECTORY_WHEEL) \
-	&& python -m pytest $(NNABLA_DIRECTORY)/python/test
+	&& PATH=$(PYTEST_PATH_EXTRA):$(PATH) python -m pytest $(NNABLA_DIRECTORY)/python/test
