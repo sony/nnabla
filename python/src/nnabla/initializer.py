@@ -51,7 +51,7 @@ class NormalInitializer(BaseInitializer):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -90,7 +90,7 @@ class UniformInitializer(BaseInitializer):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -129,7 +129,7 @@ class UniformIntInitializer(BaseInitializer):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -164,7 +164,7 @@ class ConstantInitializer(BaseInitializer):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -198,7 +198,7 @@ def calc_normal_std_he_forward(inmaps, outmaps, kernel=(1, 1)):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -234,7 +234,7 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -270,7 +270,7 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -307,7 +307,7 @@ def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
     Example:
 
     .. code-block:: python
- 
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
