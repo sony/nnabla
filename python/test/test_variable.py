@@ -127,3 +127,50 @@ def test_persistent():
     y.backward(clear_buffer=True)
     assert np.allclose(x3.d, 3)
     assert np.allclose(x3.g, 1)
+
+
+def test_name():
+    x = nn.Variable([2, 3])
+    x.name = "VariableName"
+    assert x.name == "VariableName"
+
+
+def test_name_all_variables():
+    def net(h):
+        import nnabla.functions as F
+        import nnabla.parametric_functions as PF
+        h = PF.convolution(h, 3, (3, 3), name="conv1")
+        h = PF.batch_normalization(h, name="bn1")
+        h = F.relu(h)
+        h = F.max_pooling(h, (2, 2))
+        h = PF.convolution(h, 3, (3, 3), name="conv2")
+        h = PF.batch_normalization(h, name="bn2")
+        pred = F.relu(h)
+        return pred
+
+    class Namer(object):
+        def __init__(self, ):
+            self.counter = 0
+
+        def __call__(self, nnabla_func):
+            for v in nnabla_func.outputs:
+                v.name = "{}_output_{:05d}".format(
+                    nnabla_func.name, self.counter)
+                self.counter += 1
+
+    class Confirmer(object):
+        def __init__(self, ):
+            self.counter = 0
+
+        def __call__(self, nnabla_func):
+            for v in nnabla_func.outputs:
+                assert v.name == "{}_output_{:05d}".format(
+                    nnabla_func.name, self.counter)
+                self.counter += 1
+    x = nn.Variable([2, 3, 8, 8])
+    pred = net(x)
+    pred.visit(Namer())
+    pred.forward(clear_no_need_grad=True)
+    pred.backward(clear_buffer=True)
+    pred.visit(Confirmer())
+

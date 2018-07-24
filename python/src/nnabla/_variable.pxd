@@ -69,6 +69,8 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks) nogil except+
         void set_persistent(cpp_bool b)
         cpp_bool persistent()
+        string name() except +
+        void set_name(string name) except +
     ctypedef shared_ptr[CgVariable] CgVariablePtr
 
 cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":

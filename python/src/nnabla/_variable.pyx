@@ -591,6 +591,14 @@ cdef class Variable:
     def persistent(self, cpp_bool b):
         self.varp.set_persistent(b)
 
+    @property
+    def name(self):
+        return self.varp.name()
+
+    @name.setter
+    def name(self, string name):
+        self.varp.set_name(name)
+
     def visit(self, f):
         '''Visit functions recursively in forward order.
 
