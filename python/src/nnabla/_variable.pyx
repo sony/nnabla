@@ -207,6 +207,12 @@ cdef class Variable:
         '''Returns hash of the integer address of holding C++ object.
         '''
         return hash( < intptr_t > (( < Variable > self).varp))
+    def apply(self, **kwargs):
+        '''Helper for setting property, then return self.
+        '''
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        return self
 
     @property
     def shape(self):
