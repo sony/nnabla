@@ -181,7 +181,8 @@ def fork_name(name):
     global random_seed
     random_seed += 1
     rng = np.random.RandomState(random_seed)
-    ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
+    #ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
+    ret = name + '_{:04}'.format(random_seed)
     return ret
 
 
@@ -259,8 +260,123 @@ class OnnxExporter:
             "BroadcastTo": "",
             "Split": self.Split,
             "Stack": self.Stack,
-            "Slice": self.Slice
+            "Slice": self.Slice,
+            "Deconvolution": self.Deconvolution,
+            "Flip": self.Flip
         }
+
+    def _add_param(self, param_name, dtype, shape, raw_data):
+        init = self._model_proto.graph.initializer.add()
+        init.name = param_name
+        init.data_type = dtype
+        init.dims.extend(shape)
+        init.raw_data = raw_data
+
+        i = self._model_proto.graph.input.add()
+        i.name = param_name
+        i.type.tensor_type.elem_type = dtype
+        dims = [create_dim(d) for d in shape]
+        i.type.tensor_type.shape.dim.extend(dims)
+
+
+    def Flip(self, func):
+        i = func.input[0]
+        input_shape = self._var_dict[i].dim
+        nl = []
+        for axis in func.flip_param.axes:
+            s = np.arange(len(input_shape))
+            # Step 1: transpose
+            perm = np.roll(s, -axis)
+            o = fork_name('TransposeFlip')
+            n = onnx.helper.make_node(
+                'Transpose',
+                [i],
+                [o],
+                perm=perm.tolist()
+            )
+            nl.append(n)
+
+            #Step 2: gather
+            index_name = fork_name('GatherFlip')
+            gather_name = fork_name('GatherFlipOutput')
+            raw_data = np.arange(input_shape[axis])[::-1].astype(np.int32).tostring()
+            index_shape = [input_shape[axis]]
+            self._add_param(index_name, TensorProto.INT32, index_shape, raw_data)
+            n = onnx.helper.make_node(
+                'Gather',
+                [o, index_name],
+                [gather_name],
+                axis=0  # Some backend limits axis<2
+            )
+            nl.append(n)
+
+            # Step 3: transpose
+            perm = np.roll(s, axis)
+            o = fork_name('TransposeFlip')
+            n = onnx.helper.make_node(
+                'Transpose',
+                [gather_name],
+                [o],
+                perm=perm.tolist()
+            )
+            nl.append(n)
+            i = o
+        n = onnx.helper.make_node(
+            'Identity',
+            [o],
+            func.output
+        )
+        nl.append(n)
+        return nl
+
+
+    def Deconvolution(self, func):
+        output_name = fork_name(func.output[0])
+        input_shape = self._var_dict[func.input[0]].dim
+        if len(input_shape) != 4:
+            raise ValueError("Currently, the input shape != 4 dims is not supported "
+                             "by most of ConvTranspose function implementation.")
+        kernel_shape = self._var_dict[func.input[1]].dim
+        if len(kernel_shape) != 4:
+            raise ValueError("Currently, the weight shape != 4 dims is not supported "
+                             "by most of ConvTranspose function implementation.")
+        kernel_shape = kernel_shape[2:]
+        strides = func.deconvolution_param.stride.dim
+        pads = func.deconvolution_param.pad.dim
+        # ONNX requires (begin, end, begin, end) style
+        pads = np.repeat(pads, 2)
+        if func.deconvolution_param.dilation.dim != [1, 1]:
+            raise ValueError("Currently, dilation != [1, 1] is not supported "
+                             "by most of ConvTranspose function implementation.")
+        if func.deconvolution_param.group != 1:
+            raise ValueError("Currently, group != 1 is not supported "
+                             "by most of ConvTranspose function implementation.")
+        b_dims = self._var_dict[func.input[2]].dim
+        b_shape = nnabla_pb2.Shape()
+        b_shape.dim.extend([1, b_dims[0], 1, 1])
+        self._var_dict[func.input[2]] = b_shape
+
+        node_conv_transpose = onnx.helper.make_node(
+            "ConvTranspose",
+            [func.input[0], func.input[1]],
+            [output_name],
+            pads=pads,
+            strides=strides,
+            kernel_shape=kernel_shape,
+            name=func.name
+        )
+
+        node_add = onnx.helper.make_node(
+            "Add",
+            [output_name, func.input[2]],
+            func.output,
+            broadcast=1,
+            name=func.name + "_add_bias"
+        )
+
+        return [node_conv_transpose, node_add]
+
+
 
     def _elem_op(self, func, op_name, val):
         # Todo: how to exploit broadcasting feature to shrink
@@ -474,7 +590,8 @@ class OnnxExporter:
         for param in self._nnp.parameter:
             init = graph.initializer.add()
             init.name = param.variable_name
-            init.dims.extend(param.shape.dim)
+            dims = [d for d in self._var_dict[init.name].dim]
+            init.dims.extend(dims)
             t = get_tensor_type(param.variable_name, self._input_types)
             init.data_type = t
             init.raw_data = np.array(
@@ -778,12 +895,6 @@ class OnnxExporter:
                 # Set the given parameter name as BOOL
                 input_types[n.input[1]] = intype
             nl.append(n)
-        # elif func.type == "RDivScalar":
-        #     rp = func.r_div_scalar_param
-        #     if rp.val != 1.0:
-        #         raise ValueError(
-        #             "RDivScalar can be converted to Reciprocal only if val is 1")
-        #     nl.append(n)
         elif func.type == "MulScalar":
             mp = func.mul_scalar_param
             if mp.val == -1.0:
@@ -951,16 +1062,24 @@ class OnnxExporter:
         import os
         keyname = os.path.splitext(fn)[0]
         nnp_fn = keyname + '.nnp.dump'
-        onnx_dump = keyname + '.onnx.dump'
         with open(nnp_fn, "w") as f:
             f.write(str(self._nnp))
+
+    def dump_onnx(self, fn):
+        import os
+        keyname = os.path.splitext(fn)[0]
+        onnx_dump = keyname + '.onnx.dump'
         with open(onnx_dump, "w") as f:
             f.write(str(self._model_proto))
 
     def execute(self, file_path):
+        # if debug, please uncomment it.
+        # self.dump_nnp(file_path)
+
         self.create_model()
         self.create_graph()
         with open(file_path, "wb") as f:
             f.write(self._model_proto.SerializeToString())
+
         # if debug, please uncomment it.
-        # self.dump_nnp(file_path)
+        # self.dump_onnx(file_path)
