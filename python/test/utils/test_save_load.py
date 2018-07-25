@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
@@ -43,4 +45,25 @@ def test_save_load_parameters():
              'data': ['x0', 'x1'],
              'output': ['y0', 'y1']}]}
     nnabla.utils.save.save('tmp.nnp', contents)
+    nnabla.utils.load.load('tmp.nnp')
+
+
+@pytest.mark.parametrize("variable_batch_size", [False, True])
+@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
+def test_save_load_reshape(variable_batch_size, shape):
+    x = nn.Variable([10, 1, 28, 28, 10, 10])
+    y = F.reshape(x, shape=shape)
+    contents = {
+        'networks': [
+            {'name': 'Validation',
+             'batch_size': 1,
+             'outputs': {'y': y},
+             'names': {'x': x}}],
+        'executors': [
+            {'name': 'Runtime',
+             'network': 'Validation',
+             'data': ['x'],
+             'output': ['y']}]}
+    nnabla.utils.save.save('tmp_reshape.nnp', contents,
+                           variable_batch_size=variable_batch_size)
     nnabla.utils.load.load('tmp.nnp')

@@ -52,23 +52,37 @@ shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& fu
 % for argname, arg in func['arguments'].items():
     ${proto_to_ctype(argname, arg)};
 % if name == 'Reshape' and argname == 'shape':
-
+    // There are 2 exceptional cases.
+    // A. Negative dimension is batch dimension
     int prod_shape = 1;
+    int nneg = 0;
     for( auto &v : arg_shape ) {
-      prod_shape *= v;
       if( v < 0 ) {
+        NBLA_CHECK(nneg == 0, error_code::value, "Reshape must not have "
+                                                 "multiple negative dimension "
+                                                 "in shape parameter.");
         v = batch_size();
+        nneg += 1;
       }
+      prod_shape *= v;
     }
+
+    // B. Console ommits batch dimensions (the first dimension) during saving.
     int prod_input = 1;
     for( auto inp : func.input() ) {
       auto var_it = variable_protos_.find(inp);
       const ::Variable *var = var_it->second;
       for ( auto d : var->shape().dim() ) {
+	if (d < 0) {
+	  d = batch_size();
+	}
         prod_input *= d;
       }
     }
     if( prod_input != prod_shape ) {
+      NBLA_CHECK(prod_shape * batch_size() == prod_input, error_code::value,
+                 "Shape after filling batch dimension does not match the input "
+                 "shape.");
       arg_shape.insert(arg_shape.begin(), batch_size());
     }
 % endif
