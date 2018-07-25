@@ -73,7 +73,7 @@ def test_data_grad():
     assert not np.all(v.d == v.g)
 
 
-def test_unlinked():
+def test_get_unlinked_variable():
     v = nn.Variable([2, 3, 4], need_grad=True)
     grad = np.random.randn(*v.shape).astype(np.float32)
     v.g = grad
@@ -81,7 +81,7 @@ def test_unlinked():
     import nnabla.functions as F
     with nn.context_scope(nn.Context()), nn.auto_forward():
         v2 = F.identity(v)
-        v2_u = v2.unlinked()
+        v2_u = v2.get_unlinked_variable()
         assert not v2_u.need_grad
         v2_u.need_grad = True
         v3 = F.identity(v2_u)
@@ -127,3 +127,90 @@ def test_persistent():
     y.backward(clear_buffer=True)
     assert np.allclose(x3.d, 3)
     assert np.allclose(x3.g, 1)
+
+
+def test_name():
+    x = nn.Variable([2, 3])
+    x.name = "VariableName"
+    assert x.name == "VariableName"
+
+
+def test_name_all_variables():
+    def net(h):
+        import nnabla.functions as F
+        import nnabla.parametric_functions as PF
+        h = PF.convolution(h, 3, (3, 3), name="conv1")
+        h = PF.batch_normalization(h, name="bn1")
+        h = F.relu(h)
+        h = F.max_pooling(h, (2, 2))
+        h = PF.convolution(h, 3, (3, 3), name="conv2")
+        h = PF.batch_normalization(h, name="bn2")
+        pred = F.relu(h)
+        return pred
+
+    class Namer(object):
+        def __init__(self, ):
+            self.counter = 0
+
+        def __call__(self, nnabla_func):
+            for v in nnabla_func.outputs:
+                v.name = "{}_output_{:05d}".format(
+                    nnabla_func.name, self.counter)
+                self.counter += 1
+
+    class Confirmer(object):
+        def __init__(self, ):
+            self.counter = 0
+
+        def __call__(self, nnabla_func):
+            for v in nnabla_func.outputs:
+                assert v.name == "{}_output_{:05d}".format(
+                    nnabla_func.name, self.counter)
+                self.counter += 1
+    x = nn.Variable([2, 3, 8, 8])
+    pred = net(x)
+    pred.visit(Namer())
+    pred.forward(clear_no_need_grad=True)
+    pred.backward(clear_buffer=True)
+    pred.visit(Confirmer())
+
+
+def test_clear_all_graph_links():
+    import nnabla.functions as F
+    import nnabla.parametric_functions as PF
+
+    class OneStepRNN(object):
+        def __init__(self, batch_size=8, state_size=8):
+            self.lstm0 = PF.LSTMCell(batch_size, state_size, name="lsmt0")
+            self.lstm1 = PF.LSTMCell(batch_size, state_size, name="lsmt1")
+            self.affine = PF.affine
+
+        def __call__(self, x, n_class=10):
+            h = self.lstm0(x)
+            h = self.lstm1(h)
+            h = self.affine(h, n_class)
+            return h
+    T = 3
+    batch_size = 2
+    dims = 4
+    state_size = 8
+    one_step_rnn = OneStepRNN(batch_size, state_size)
+    # Forward: unroll over time
+    loss = 0
+    for t in range(T):
+        x = nn.Variable.from_numpy_array(
+            np.random.randn(batch_size, dims))
+        y = nn.Variable.from_numpy_array(
+            np.random.choice(np.arange(10), batch_size, replace=True)).reshape((batch_size, 1))
+        pred = one_step_rnn(x)
+        l = F.mean(F.softmax_cross_entropy(pred, y))
+        loss += l
+    loss /= T
+    # Backward then truncate
+    loss.backward()
+    loss.clear_all_graph_links()
+
+    assert one_step_rnn.lstm0.h.parent == None
+    assert one_step_rnn.lstm0.c.parent == None
+    assert one_step_rnn.lstm1.h.parent == None
+    assert one_step_rnn.lstm1.c.parent == None

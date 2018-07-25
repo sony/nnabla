@@ -1839,7 +1839,7 @@ def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
 
 
 class LSTMCell:
-    def __init__(self, batch_size, state_size, h=None, c=None):
+    def __init__(self, batch_size, state_size, h=None, c=None, name=None):
         """
         Initializes an LSTM cell.
 
@@ -1848,10 +1848,11 @@ class LSTMCell:
             state_size (int): Internal state size is set to `state_size`.
             h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
             c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
-
+            name (str): Name for this LSTM Cell.
         """
         self.batch_size = batch_size
         self.state_size = state_size
+        self.name = name
         if h:  # when user defines h
             self.h = h
         else:
@@ -1883,5 +1884,7 @@ class LSTMCell:
 
         """
         self.h, self.c = lstm(
-            x, self.h, self.c, self.state_size, w_init, b_init, fix_parameters=fix_parameters)
+            x, self.h, self.c, self.state_size,
+            w_init, b_init,
+            fix_parameters=fix_parameters, name=self.name)
         return self.h

@@ -476,6 +476,13 @@ void CgVariable::insert_function_reference(CgFunctionPtr func) {
       {func.get(), {wp, CgVariable::FunctionReferenceInfo()}});
 }
 
+void CgVariable::remove_function_reference(CgFunction *funcp) {
+  auto it = function_references_.find(funcp);
+  if (it == function_references_.end())
+    return;
+  function_references_.erase(funcp);
+}
+
 void CgVariable::mark_need_setup() {
   for (auto it = function_references_.begin(); it != function_references_.end();
        it++) {

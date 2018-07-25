@@ -27,6 +27,7 @@ namespace nbla {
 
 using std::unordered_map;
 using std::unordered_set;
+using std::string;
 
 // Forward declaration
 class CgFunction;
@@ -67,6 +68,7 @@ class CgVariable {
       function_references_;
   bool allow_modify_data_{true}; ///< Whether the data can be in-placed.
   bool persistent_{false};       ///<Persistency flag against clearing.
+  string name_{""};
 
   void
   visit_function_recursive(CgFunctionPtr func,
@@ -241,6 +243,11 @@ public:
    */
   void insert_function_reference(CgFunctionPtr func);
 
+  /**
+   */
+  NBLA_API
+  void remove_function_reference(CgFunction *funcp);
+
   /** Mark need_setup flag for all function references.
    */
   void mark_need_setup();
@@ -271,6 +278,14 @@ public:
   /** Get persistent flag.
    */
   inline bool persistent() const { return persistent_; }
+
+  /** Set variable name
+   */
+  inline void set_name(string name) { name_ = name; }
+
+  /** Get variable name
+   */
+  inline string name() const { return name_; }
 };
 
 /** shared_ptr typedef of CGVariable
