@@ -41,12 +41,13 @@ def test_get_parameter_or_create_need_grad():
     import nnabla as nn
     from nnabla.parameter import get_parameter_or_create
     nn.clear_parameters()
-    param1 = get_parameter_or_create('param1', (2, 3, 4, 5), need_grad=True)
+    param1 = get_parameter_or_create('p/param1', (2, 3, 4, 5), need_grad=True)
     p1d = np.random.randn(*param1.shape).astype(np.float32)
     p1g = np.random.randn(*param1.shape).astype(np.float32)
     param1.d = p1d
     param1.g = p1g
-    param1_f = get_parameter_or_create('param1', param1.shape, need_grad=False)
+    param1_f = get_parameter_or_create(
+        'p/param1', param1.shape, need_grad=False)
     assert not param1_f.need_grad
     assert not param1.need_grad
     assert np.all(param1.d == p1d)
@@ -54,7 +55,7 @@ def test_get_parameter_or_create_need_grad():
     param1.d = 1
     assert np.all(param1_f.d == 1)
     param1_f2 = get_parameter_or_create(
-        'param1', param1.shape, need_grad=True, as_need_grad=False)
+        'p/param1', param1.shape, need_grad=True, as_need_grad=False)
     assert param1.need_grad
     assert param1_f.need_grad
     assert not param1_f2.need_grad

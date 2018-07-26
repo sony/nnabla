@@ -36,6 +36,7 @@ def command_exists(command):
 
 @pytest.mark.parametrize('batch_size', [1])
 def test_examples_cpp_mnist_runtime(tmpdir, nnabla_examples_root, batch_size):
+    nn.clear_parameters()
 
     # A. Check this test can run
     if not nnabla_examples_root.available:

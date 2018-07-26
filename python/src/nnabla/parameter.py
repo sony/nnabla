@@ -182,7 +182,7 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
     names = name.split('/')
     if len(names) > 1:
         with parameter_scope(names[0]):
-            return get_parameter_or_create('/'.join(names[1:]), shape, initializer, need_grad)
+            return get_parameter_or_create('/'.join(names[1:]), shape, initializer, need_grad, as_need_grad)
     param = get_parameter(names[0])
     if param is None:
         class VariableInfo:

@@ -99,10 +99,24 @@ class NnpNetwork(object):
 
     '''
 
-    def _get_variable_or_create(self, name, shape):
-        # Returns if name found in parameter.
-        param = get_parameter(name)
-        if param is not None:
+    def _get_variable_or_create(self, name, shape, var_type):
+
+        # The variable is a parameter, then get from parameter registry.
+        if var_type == 'Parameter':
+            try:
+                param = get_parameter(name)
+                assert param is not None, \
+                    "A parameter `{}` is not found.".format(name)
+            except:
+                import sys
+                import traceback
+                raise ValueError(
+                    'An error occurs during creation of a variable `{}` as a'
+                    ' parameter variable. The error was:\n----\n{}\n----\n'
+                    'The parameters registered was {}'.format(
+                        name, traceback.format_exc(),
+                        '\n'.join(
+                            list(nn.get_parameters(grad_only=False).keys()))))
             assert shape == param.shape
             return param
 
@@ -130,7 +144,7 @@ class NnpNetwork(object):
             shape = tuple(shape)
             assert np.all(np.array(shape) >
                           0), "Shape must be positive. Given {}.".format(shape)
-            var = self._get_variable_or_create(name, shape)
+            var = self._get_variable_or_create(name, shape, pvar.type)
             inputs.append(var)
         return inputs
 
