@@ -133,7 +133,7 @@ def convert_parameter_shape(graph):
                 if not (len(size) == 4 and
                         size[0] == 1 and size[2] == 1 and size[3] == 1):
                     raise ValueError(
-                        "beta, gamma, mean, and variance parameters"
+                        "beta, gamma, mean, and variance parameters "
                         "must have the shape of 1*C*1*1 in {}".format(n.op_type))
                 chan = size[1]
                 del i.dims[:]
@@ -147,7 +147,7 @@ def convert_parameter_shape(graph):
                         size[2].dim_value == 1 and
                         size[3].dim_value == 1):
                     raise ValueError(
-                        "beta, gamma, mean, and variance parameters"
+                        "beta, gamma, mean, and variance parameters "
                         "must have the shape of 1*C*1*1 in {}".format(n.op_type))
                 chan = size[1].dim_value
                 del i.type.tensor_type.shape.dim[:]
@@ -180,7 +180,7 @@ def replace_negative_size_with_batch_size(shape, batch_size):
 def fork_name(name):
     global random_seed
     random_seed += 1
-    rng = np.random.RandomState(random_seed)
+    #rng = np.random.RandomState(random_seed)
     #ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
     ret = name + '_{:04}'.format(random_seed)
     return ret
@@ -193,6 +193,7 @@ class OnnxExporter:
         self._batch_size = batch_size
         self._model_proto = None
         self._net = None
+        self._onehot_table = {}
         self._var_dict = {}
         self._input_types = {}
         self._output_types = {}
@@ -262,7 +263,9 @@ class OnnxExporter:
             "Stack": self.Stack,
             "Slice": self.Slice,
             "Deconvolution": self.Deconvolution,
-            "Flip": self.Flip
+            "Flip": self.Flip,
+            "OneHot": self.OneHot,
+            "Unpooling": self.Unpooling
         }
 
     def _add_param(self, param_name, dtype, shape, raw_data):
@@ -278,6 +281,63 @@ class OnnxExporter:
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
 
+    def Unpooling(self, func):
+        if len(func.unpooling_param.kernel.dim) != 2:
+            raise ValueError("kernel.dim != 2 is not supported.")
+        dims = func.unpooling_param.kernel.dim
+        n = onnx.helper.make_node(
+            'Upsample',
+            func.input,
+            func.output,
+            height_scale=dims[0] * 1.0,
+            width_scale=dims[1] * 1.0
+        )
+        return [n]
+
+    def OneHot(self, func):
+        nl = []
+        output_shape = self._var_dict[func.output[0]].dim
+        if len(output_shape) != 2:
+            raise ValueError('onehot dimension != 2 is not supported!')
+        if output_shape[1] in self._onehot_table:
+            onehot_table_name = self._onehot_table[output_shape[1]]
+        else:
+            onehot_table = np.zeros((output_shape[1], output_shape[1]))
+            idx = np.arange(output_shape[1])
+            onehot_table[idx, idx] = 1
+            onehot_table_name = fork_name('onehot_table')
+            raw_data = onehot_table.astype(np.float32).tostring()
+            self._add_param(onehot_table_name, TensorProto.FLOAT, onehot_table.shape, raw_data)
+            self._onehot_table[output_shape[1]] = onehot_table_name
+
+        flatten_output = fork_name('onehotflatten')
+        n = onnx.helper.make_node(
+            'Flatten',
+            [func.input[0]],
+            [flatten_output],
+            axis=0
+        )
+        nl.append(n)
+
+        gather_out = fork_name('onehotgatherout')
+        n = onnx.helper.make_node(
+            'Gather',
+            [onehot_table_name, flatten_output],
+            [gather_out],
+            axis=0
+        )
+        nl.append(n)
+
+        shape_name = fork_name('onehotoutputshape')
+        raw_data = np.array(output_shape).astype(np.int32).tostring()
+        self._add_param(shape_name, TensorProto.INT32, (len(output_shape),), raw_data)
+        n = onnx.helper.make_node(
+            'Reshape',
+            [gather_out, shape_name],
+            func.output
+        )
+        nl.append(n)
+        return nl
 
     def Flip(self, func):
         i = func.input[0]
@@ -351,30 +411,41 @@ class OnnxExporter:
         if func.deconvolution_param.group != 1:
             raise ValueError("Currently, group != 1 is not supported "
                              "by most of ConvTranspose function implementation.")
-        b_dims = self._var_dict[func.input[2]].dim
-        b_shape = nnabla_pb2.Shape()
-        b_shape.dim.extend([1, b_dims[0], 1, 1])
-        self._var_dict[func.input[2]] = b_shape
+        if len(func.input) > 2:
+            b_dims = self._var_dict[func.input[2]].dim
+            b_shape = nnabla_pb2.Shape()
+            b_shape.dim.extend([1, b_dims[0], 1, 1])
+            self._var_dict[func.input[2]] = b_shape
 
-        node_conv_transpose = onnx.helper.make_node(
-            "ConvTranspose",
-            [func.input[0], func.input[1]],
-            [output_name],
-            pads=pads,
-            strides=strides,
-            kernel_shape=kernel_shape,
-            name=func.name
-        )
+            node_conv_transpose = onnx.helper.make_node(
+                "ConvTranspose",
+                [func.input[0], func.input[1]],
+                [output_name],
+                pads=pads,
+                strides=strides,
+                kernel_shape=kernel_shape,
+                name=func.name
+            )
 
-        node_add = onnx.helper.make_node(
-            "Add",
-            [output_name, func.input[2]],
-            func.output,
-            broadcast=1,
-            name=func.name + "_add_bias"
-        )
-
-        return [node_conv_transpose, node_add]
+            node_add = onnx.helper.make_node(
+                "Add",
+                [output_name, func.input[2]],
+                func.output,
+                broadcast=1,
+                name=func.name + "_add_bias"
+            )
+            return [node_conv_transpose, node_add]
+        else:
+            node_conv_transpose = onnx.helper.make_node(
+                "ConvTranspose",
+                func.input,
+                func.output,
+                pads=pads,
+                strides=strides,
+                kernel_shape=kernel_shape,
+                name=func.name
+            )
+            return [node_conv_transpose]
 
 
 
@@ -494,7 +565,6 @@ class OnnxExporter:
         nl = []
         out_a = fork_name(func.input[0])
         out_b = fork_name(func.input[1])
-        out_c = fork_name(func.input[2])
 
         n = onnx.helper.make_node(
             "Flatten",
@@ -514,14 +584,20 @@ class OnnxExporter:
         n.attribute.extend([a])
         nl.append(n)
 
-        n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[2]],
-            [out_c],
-            name="Flatten" + func.input[2])
-        a = onnx.helper.make_attribute("axis", 0)
-        n.attribute.extend([a])
-        nl.append(n)
+        out_c = fork_name('Affine')
+        if len(func.input) <= 2:
+            shape = (1, )
+            raw_data = np.zeros(shape).astype(np.float32).tostring()
+            self._add_param(out_c, TensorProto.FLOAT, shape, raw_data)
+        else:
+            n = onnx.helper.make_node(
+                "Flatten",
+                [func.input[2]],
+                [out_c],
+                name="Flatten" + func.input[2])
+            a = onnx.helper.make_attribute("axis", 0)
+            n.attribute.extend([a])
+            nl.append(n)
 
         out = fork_name(func.output[0])
         n = onnx.helper.make_node(
@@ -588,14 +664,15 @@ class OnnxExporter:
         exe = self._executor
         graph = self._model_proto.graph
         for param in self._nnp.parameter:
-            init = graph.initializer.add()
-            init.name = param.variable_name
-            dims = [d for d in self._var_dict[init.name].dim]
-            init.dims.extend(dims)
-            t = get_tensor_type(param.variable_name, self._input_types)
-            init.data_type = t
-            init.raw_data = np.array(
-                param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
+            if param.variable_name in self._var_dict:
+                init = graph.initializer.add()
+                init.name = param.variable_name
+                dims = [d for d in self._var_dict[init.name].dim]
+                init.dims.extend(dims)
+                t = get_tensor_type(param.variable_name, self._input_types)
+                init.data_type = t
+                init.raw_data = np.array(
+                    param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
 
         for iv in exe.data_variable:
             i = graph.input.add()
@@ -1042,7 +1119,7 @@ class OnnxExporter:
         self.set_variables()
 
         # post process of graph
-        convert_parameter_shape(self._model_proto.graph)
+        #convert_parameter_shape(self._model_proto.graph)
 
     def create_model(self):
         mp = ModelProto()
@@ -1082,4 +1159,4 @@ class OnnxExporter:
             f.write(self._model_proto.SerializeToString())
 
         # if debug, please uncomment it.
-        # self.dump_onnx(file_path)
+        #self.dump_onnx(file_path)
