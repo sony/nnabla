@@ -1,6 +1,20 @@
 import collections
+import numpy as np
 
 import nnabla.utils.converter
+
+
+def generate_value(type, dims, multiplier):
+    if type == 'Normal':
+        ret = np.random.randn(*dims) * multiplier
+    elif type == 'Uniform':
+        ret = np.random.uniform(-multiplier, multiplier, size=dims)
+    elif type == 'Constant':
+        ret = np.ones(dims) * multiplier
+    else:
+        raise ValueError('Generator type "' +
+                         type + '" is not supported.')
+    return ret.astype(np.float32)
 
 
 def create_nnabart_info(nnp, batch_size):
@@ -30,6 +44,14 @@ def create_nnabart_info(nnp, batch_size):
     variables = collections.OrderedDict()
     for v in network.variable:
         variables[v.name] = v
+
+    info._generator_variables = {}
+    info._num_of_gen_variables = len(executor.generator_variable)
+    for v in executor.generator_variable:
+        v_info = variables[v.variable_name]
+        shape = [ d if d > 0 else info._batch_size for d in v_info.shape.dim]
+        data = generate_value(v.type, shape, v.multiplier)
+        info._generator_variables[v.variable_name] = data
 
     info._input_variables = []
     info._num_of_inputs = len(executor.data_variable)
