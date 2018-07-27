@@ -211,9 +211,29 @@ def visualize(args):
     plt.savefig(os.path.join(args.monitor_path, "embed.png"))
 
 
+def save_nnp(args):
+    image = nn.Variable([1, 1, 28, 28])
+    feature = mnist_lenet_feature(image, test=True)
+    runtime_contents = {
+        'networks': [
+            {'name': 'Embedding',
+             'batch_size': 1,
+             'outputs': {'f': feature},
+             'names': {'image': image}}],
+        'executors': [
+            {'name': 'Executor',
+             'network': 'Embedding',
+             'data': ['image'],
+             'output': ['f']}]}
+    import nnabla.utils.save as save
+    save.save(os.path.join(args.monitor_path,
+                           'embedding.nnp'), runtime_contents)
+
+
 if __name__ == '__main__':
     monitor_path = 'tmp.monitor.siamese'
     args = get_args(monitor_path=monitor_path,
                     model_save_path=monitor_path, max_iter=5000)
     train(args)
     visualize(args)
+    save_nnp(args)
