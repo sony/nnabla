@@ -20,10 +20,18 @@ from datetime import datetime, timedelta
 state_file_name = ''
 last_state_datetime = datetime.now()
 
+state_callback = None
+
 
 def configure_progress(file_name):
     global state_file_name
     state_file_name = file_name
+    progress(None)
+
+
+def configure_progress_callback(callback):
+    global state_callback
+    state_callback = callback
     progress(None)
 
 
@@ -35,3 +43,5 @@ def progress(state, progress=0.0):
             with open(state_file_name, 'w') as f:
                 if state is not None:
                     f.write(state + ' ({0:3.2f}%)'.format(progress * 100))
+    if state_callback is not None:
+        state_callback(state, progress)
