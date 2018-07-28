@@ -136,6 +136,31 @@ def _create_validation_cache(archive, output, names, ground_truth, args):
         source, cache_dir=output, shuffle=args.shuffle)
 
 
+_pbar = None
+_prev_progress = None
+
+
+def _progress(state, progress=0.0):
+    global _pbar
+    global _prev_progress
+
+    if state is None:
+        if _pbar is not None:
+            _pbar.close()
+        _pbar = None
+        _prev_progress = None
+    else:
+        if _pbar is None:
+            _pbar = tqdm.tqdm(desc=state, total=100, unit='%')
+        else:
+            if _prev_progress is None:
+                _prev_progress = 0
+            update = int((progress - _prev_progress) * 100)
+            if update > 0:
+                _pbar.update(update)
+                _prev_progress = progress
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, nargs='+',
@@ -144,21 +169,21 @@ def main():
                         help='Destination directory.')
     parser.add_argument('-D', '--devkit', type=str, required=True,
                         help='Devkit filename')
-    parser.add_argument('-W', '--width', type=int, required=True,
-                        help='width of output image')
-    parser.add_argument('-H', '--height', type=int, required=True,
-                        help='height of output image')
+    parser.add_argument('-W', '--width', type=int, default=320,
+                        help='width of output image (default:320)')
+    parser.add_argument('-H', '--height', type=int, default=320,
+                        help='height of output image (default:320)')
     parser.add_argument('-m', '--mode', default='trimming',
                         choices=['trimming', 'padding'],
-                        help='shaping mode (trimming or padding)')
+                        help='shaping mode (trimming or padding)  (default:trimming)')
     parser.add_argument('-S', '--shuffle', choices=['True', 'False'],
                         help='shuffle mode if not specified, train:True, val:False.' +
                         ' Otherwise specified value will be used for both.')
     parser.add_argument('-N', '--file-cache-size', type=int, default=100,
-                        help='num of data in cache file')
+                        help='num of data in cache file (default:100)')
     parser.add_argument('-C', '--cache-type', default='npy',
                         choices=['h5', 'npy'],
-                        help='h5 or npy(default)')
+                        help='cache format (h5 or npy) (default:npy)')
     parser.add_argument('--thinning', type=int, default=1,
                         help='Thinning rate')
 
@@ -259,73 +284,8 @@ def main():
 
     ############################################################################
     # Prepare status monitor
-    #  Currently launch a thread to monitor logs and display progress.
-    #  Since this is very bad, we plan to add a mechanism to call back Progress
-    #  to DataSource.
-
-    import threading
-    _finish = False
-
-    # Watch log file and display progress.
-    def _progress_monitor():
-        import time
-        import re
-        import sys
-        count = 0
-        linenum = 0
-        messages = {}
-        pbar = None
-        num_of_data = None
-        progress = 0
-        while not _finish:
-            if count > 100:
-                count = 0
-                with open(logfilename) as f:
-                    lines = f.readlines()
-                    lines = lines[linenum:]
-                    linenum += len(lines)
-                    for l in lines:
-                        messagetype, message = l.rstrip().split(' : ', 1)
-                        if message == 'StartCreatingCache':
-                            num_of_data = None
-                            progress = 0
-                            if pbar is not None:
-                                pbar.close()
-                                pbar = None
-                            for messagetype in messages:
-                                messages[messagetype] = []
-
-                        if messagetype not in messages:
-                            messages[messagetype] = []
-                        messages[messagetype].append(message)
-                if '_save_cache_to_file' in messages and len(messages['_save_cache_to_file']) > 0:
-                    if num_of_data is None:
-                        for l in messages['__init__']:
-                            print('INFO: {}'.format(l))
-                        if '_create_train_cache' in messages and len(messages['_create_train_cache']) > 0:
-                            num_of_data = int(
-                                messages['_create_train_cache'][0].split(' : ')[1])
-                        if '_create_validation_cache' in messages and len(messages['_create_validation_cache']) > 0:
-                            num_of_data = int(
-                                messages['_create_validation_cache'][0].split(' : ')[1])
-                        print('INFO: Num of data : {}'.format(num_of_data))
-                        pbar = tqdm.tqdm(total=num_of_data, unit='%')
-                    last = messages['_save_cache_to_file'][len(
-                        messages['_save_cache_to_file'])-1]
-                    m = re.search(r'([0-9]+)_([0-9]+)', last)
-                    if m:
-                        current_start, current_end = int(
-                            m.group(1)), int(m.group(2))
-                        if pbar is not None:
-                            pbar.update(current_end - progress)
-                        progress = current_end
-
-            time.sleep(0.01)
-            count += 1
-        if pbar is not None:
-            pbar.close()
-    th = threading.Thread(target=_progress_monitor)
-    th.start()
+    from nnabla.utils.progress import configure_progress_callback
+    configure_progress_callback(_progress)
 
     ############################################################################
     # Converter
@@ -367,7 +327,6 @@ def main():
     ############################################################################
     # Finish
     _finish = True
-    th.join()
     shutil.rmtree(tmpdir, ignore_errors=True)
 
 

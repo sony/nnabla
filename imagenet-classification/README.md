@@ -32,11 +32,15 @@ To create catche files requires approximately 400[GBytes] of disk capacity.
 
 We provides the tool for creating dataset cache.
 
-    usage: create_cache.py [-h] -D DEVKIT -W WIDTH -H HEIGHT -m {trimming,padding}
-                           [-S {True,False}] [-N FILE_CACHE_SIZE] [-C {h5,npy}]
+    usage: create_cache.py [-h] -D DEVKIT
+                           [-W WIDTH] [-H HEIGHT]
+                           [-m {trimming,padding}]
+                           [-S {True,False}]
+                           [-N FILE_CACHE_SIZE]
+                           [-C {h5,npy}]
                            [--thinning THINNING]
                            input [input ...] output
-    
+
     positional arguments:
       input                 Source file or directory.
       output                Destination directory.
@@ -46,31 +50,31 @@ We provides the tool for creating dataset cache.
       -D DEVKIT, --devkit DEVKIT
                             Devkit filename
       -W WIDTH, --width WIDTH
-                            width of output image
+                            width of output image (default:320)
       -H HEIGHT, --height HEIGHT
-                            height of output image
+                            height of output image (default:320)
       -m {trimming,padding}, --mode {trimming,padding}
-                            shaping mode (trimming or padding)
+                            shaping mode (trimming or padding) (default:trimming)
       -S {True,False}, --shuffle {True,False}
-                            shuffle mode if not specified, train:True, val:False.
-                            Otherwise specified value will be used for both.
+                            shuffle mode if not specified, train:True, val:False. Otherwise specified value will be used for both.
       -N FILE_CACHE_SIZE, --file-cache-size FILE_CACHE_SIZE
-                            num of data in cache file
+                            num of data in cache file (default:100)
       -C {h5,npy}, --cache-type {h5,npy}
-                            h5 or npy(default)
+                            cache format (h5 or npy) (default:npy)
       --thinning THINNING   Thinning rate
 
 This tools creates dataset cache directory from ImageNet data tar
-archive.  It auto detect contents of tar archive, so you can change
-file name end add/remove images from train tar archive.  Currently,
+archive. 
+
+It auto detect contents of tar archive, so you can change image file
+name and add/remove images from train tar archive.  Currently,
 converting validation archive includes hard coded information, then
-you rename but cannot change contents of tar archive.
- 
+you can rename but cannot change contents order of tar archive.
 
 For example
 
 ```
-$ python create_cache.py -W 320 -H 320 -m trimming -N 25 \
+$ python create_cache.py \
     -D ImageNet/ILSVRC2012_devkit_t12.tar.gz \
     ImageNet/ILSVRC2012_img_train.tar \
     ImageNet/ILSVRC2012_img_val.tar \
