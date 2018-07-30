@@ -176,19 +176,13 @@ def visualize(args):
 
     batch_size = 500
 
-    # Create default context.
-    ctx = nn.Context(backend="cpu|cuda",
-                     compute_backend="default|cudnn",
-                     array_class="CudaArray",
-                     device_id="{}".format(args.device_id))
-
     # Load parameters
     nn.load_parameters(os.path.join(args.model_save_path,
                                     'params_%06d.h5' % args.max_iter))
 
     # Create embedder network
     image = nn.Variable([batch_size, 1, 28, 28])
-    feature = mnist_lenet_feature(image, test=False)
+    feature = mnist_lenet_feature(image, test=True)
 
     # Process all images
     features = []
@@ -212,9 +206,28 @@ def visualize(args):
         c = plt.cm.Set1(i / 10.)
         plt.plot(features[labels.flat == i, 0].flatten(), features[
                  labels.flat == i, 1].flatten(), '.', c=c)
-    plt.legend(map(str, range(10)))
+    plt.legend(list(map(str, range(10))))
     plt.grid()
     plt.savefig(os.path.join(args.monitor_path, "embed.png"))
+
+
+def save_nnp(args):
+    image = nn.Variable([1, 1, 28, 28])
+    feature = mnist_lenet_feature(image, test=True)
+    runtime_contents = {
+        'networks': [
+            {'name': 'Embedding',
+             'batch_size': 1,
+             'outputs': {'f': feature},
+             'names': {'image': image}}],
+        'executors': [
+            {'name': 'Executor',
+             'network': 'Embedding',
+             'data': ['image'],
+             'output': ['f']}]}
+    import nnabla.utils.save as save
+    save.save(os.path.join(args.monitor_path,
+                           'embedding.nnp'), runtime_contents)
 
 
 if __name__ == '__main__':
@@ -223,3 +236,4 @@ if __name__ == '__main__':
                     model_save_path=monitor_path, max_iter=5000)
     train(args)
     visualize(args)
+    save_nnp(args)
