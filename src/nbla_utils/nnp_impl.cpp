@@ -666,7 +666,9 @@ bool NnpImpl::add_hdf5(char *buffer, int size) {
     }
   }
 #else
-  NBLA_LOG_WARN("HDF5 not enabled during build.");
+  NBLA_ERROR(error_code::io, "HDF5 is not enabled during build. Use "
+                             "`nnabla_cli convert` command to convert "
+                             "parameter format.");
 #endif
   return false;
 }
