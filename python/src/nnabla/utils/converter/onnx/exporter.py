@@ -105,56 +105,6 @@ def create_dim(val):
     dim.dim_value = val
     return dim
 
-
-def convert_parameter_shape(graph):
-    """Convert the shape of some parameters so they fit ONNX's requirements.
-    We do this as a post conversion because in the future we may be able to
-    delete the whole conversion if NNabla's code gets changed"""
-    batch_norm_constants = []
-    for n in graph.node:
-        if n.op_type == "BatchNormalization":
-            # BatchNormalization in ONNX requires the scale, bias, mean, and variance input to be
-            # one dimensional (https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization).
-            # However in NNabla these input must have a specific shape that matches the input shape.
-            # For example if the input shape is (1,3,3,3), the above variables must have the shape (1,3,1,1) and not (3).
-            # (1,3,1,1) is actually the same as a one-dimensional tensor of size 3,
-            # but NNabla's check currently does not allow this.
-            # Thus, we convert the shape of the above input so we can pass ONNX's check.
-            # If NNabla or ONNX lightens the requirements, we should be able to remove this conversion.
-            # copy all input names for scale, bias, mean, variance
-            batch_norm_constants.extend(n.input[1:5])
-
-    # This loop should be fairly slow since we loop through all variables and parameters per constant
-    for c in batch_norm_constants:
-        # Reshape all BatchNormalization constant inputs assuming the size is (1,size,1,1)
-        for i in graph.initializer:
-            if i.name == c:
-                size = i.dims
-                if not (len(size) == 4 and
-                        size[0] == 1 and size[2] == 1 and size[3] == 1):
-                    raise ValueError(
-                        "beta, gamma, mean, and variance parameters "
-                        "must have the shape of 1*C*1*1 in {}".format(n.op_type))
-                chan = size[1]
-                del i.dims[:]
-                i.dims.extend([chan])
-                break
-        for i in graph.input:
-            if i.name == c:
-                size = i.type.tensor_type.shape.dim
-                if not (len(size) == 4 and
-                        size[0].dim_value == 1 and
-                        size[2].dim_value == 1 and
-                        size[3].dim_value == 1):
-                    raise ValueError(
-                        "beta, gamma, mean, and variance parameters "
-                        "must have the shape of 1*C*1*1 in {}".format(n.op_type))
-                chan = size[1].dim_value
-                del i.type.tensor_type.shape.dim[:]
-                i.type.tensor_type.shape.dim.extend([create_dim(chan)])
-                break
-
-
 def get_tensor_type(name, type_dict):
     if name in type_dict:
         return type_dict[name]
@@ -180,8 +130,8 @@ def replace_negative_size_with_batch_size(shape, batch_size):
 def fork_name(name):
     global random_seed
     random_seed += 1
-    #rng = np.random.RandomState(random_seed)
-    #ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
+    # rng = np.random.RandomState(random_seed)
+    # ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
     ret = name + '_{:04}'.format(random_seed)
     return ret
 
@@ -204,7 +154,7 @@ class OnnxExporter:
             # optype with same names
             "Dropout": "Dropout",
             "Softmax": "Softmax",
-            "BatchNormalization": "BatchNormalization",
+            "BatchNormalization": self.BatchNormalization,
             "Reshape": "Reshape",
             "Transpose": "Transpose",
             "Abs": "Abs",
@@ -221,7 +171,7 @@ class OnnxExporter:
             "ReLU": "Relu",
             "PReLU": "PRelu",
             "LeakyReLU": "LeakyRelu",
-            "Concatenate": "Concat",
+            "Concatenate": self.Concatenate,
             "Convolution": "Conv",
             "GlobalAveragePooling": "GlobalAveragePool",
             "MaxPooling": "MaxPool",
@@ -280,6 +230,43 @@ class OnnxExporter:
         i.type.tensor_type.elem_type = dtype
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
+
+    def BatchNormalization(self, func):
+        onnx_order = [0, 2, 1, 3, 4]
+        if len(func.input) != len(onnx_order):
+            raise ValueError(
+                "The number of BatchNormalization input must be {}".format(len(onnx_order)))
+        onnx_input = [func.input[i] for i in onnx_order]
+        if func.batch_normalization_param.batch_stat:
+            # Batch normalization for training is currently not supported
+            raise ValueError(
+                "BatchNormalization with batch_stat=True is "
+                "currently not supported for ONNX conversion")
+        n = onnx.helper.make_node(
+            'BatchNormalization',
+            onnx_input,
+            func.output,
+            is_test=True,
+            epsilon=func.batch_normalization_param.eps,
+            momentum=func.batch_normalization_param.decay_rate
+            #spatial=1 different from SPEC.
+        )
+
+        for p in func.input[1:]:
+            d = sum([d if d > 1 else 0 for d in self._var_dict[p].dim])
+            b_shape = nnabla_pb2.Shape()
+            b_shape.dim.extend([d])
+            self._var_dict[p] = b_shape
+        return [n]
+
+    def Concatenate(self, func):
+        n = onnx.helper.make_node(
+            'Concat',
+            func.input,
+            func.output,
+            axis=func.concatenate_param.axis
+        )
+        return [n]
 
     def Unpooling(self, func):
         if len(func.unpooling_param.kernel.dim) != 2:
@@ -619,18 +606,7 @@ class OnnxExporter:
         nl.append(n)
 
         output_shape = np.array(self._var_dict[func.output[0]].dim).astype(np.int64)
-
-        init = self._model_proto.graph.initializer.add()
-        init.name = param_name
-        init.data_type = TensorProto.INT64
-        init.dims.extend(list(output_shape.shape))
-        init.raw_data = output_shape.tostring()
-
-        i = self._model_proto.graph.input.add()
-        i.name = param_name
-        i.type.tensor_type.elem_type = TensorProto.INT64
-        dims = [create_dim(d) for d in output_shape.shape]
-        i.type.tensor_type.shape.dim.extend(dims)
+        self._add_param(param_name, TensorProto.INT64, list(output_shape.shape), output_shape.tostring())
 
         return nl
 
@@ -673,6 +649,7 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
+                assert len(init.raw_data) / 4 == np.prod(np.array(init.dims))
 
         for iv in exe.data_variable:
             i = graph.input.add()
@@ -709,7 +686,7 @@ class OnnxExporter:
             i = graph.input.add()
             i.name = gv.variable_name
             i.type.tensor_type.elem_type = init.data_type
-            dims = [create_dim(d) for d in self._var_dict[pv.variable_name].dim]
+            dims = [create_dim(d) for d in self._var_dict[gv.variable_name].dim]
             i.type.tensor_type.shape.dim.extend(dims)
 
 
@@ -733,15 +710,7 @@ class OnnxExporter:
             func.output,
             name=func.name)
         nl = []
-        if func.type == "Concatenate":
-            # ONNX requires axis setting as a parameter
-            # for the concat op_type.
-            # If no value is set for axis,
-            # the default value 0 will be set
-            attr = onnx.helper.make_attribute("axis", func.concatenate_param.axis)
-            n.attribute.extend([attr])
-            nl.append(n)
-        elif func.type == "Dropout":
+        if func.type == "Dropout":
             # NNP Dropout is always is_test=false
             # since we always apply dropout when it is
             # included in a network.
@@ -816,33 +785,6 @@ class OnnxExporter:
             s = onnx.helper.make_attribute("strides", app.stride.dim)
             p = onnx.helper.make_attribute("pads", app.pad.dim[:] * 2)
             n.attribute.extend([k, s, p])
-            nl.append(n)
-        elif func.type == "BatchNormalization":
-            # We need to rearrange the input data order.
-            # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
-            # ONNX BatchNormalization input order: X, scale, bias, mean, variance
-            onnx_order = [0, 2, 1, 3, 4]
-            if len(func.input) != len(onnx_order):
-                raise ValueError(
-                    "The number of BatchNormalization input must be {}".format(len(onnx_order)))
-            onnx_input = [func.input[i] for i in onnx_order]
-            del n.input[:]
-            n.input.extend(onnx_input)
-            bpp = func.batch_normalization_param
-            if bpp.batch_stat:
-                # Batch normalization for training is currently not supported
-                raise ValueError(
-                    "BatchNormalization with batch_stat=True is currently not supported for ONNX conversion")
-            t = onnx.helper.make_attribute("is_test", not bpp.batch_stat)
-            attrs = [t]
-            # Set values if a valid value has been set
-            if bpp.eps != 0.0:
-                e = onnx.helper.make_attribute("epsilon", bpp.eps)
-                attrs.append(e)
-            if bpp.decay_rate != 0.0:
-                m = onnx.helper.make_attribute("momentum", bpp.decay_rate)
-                attrs.append(m)
-            n.attribute.extend(attrs)
             nl.append(n)
         elif func.type == "Reshape":
             # Convert Reshape size to a constant
@@ -1118,8 +1060,6 @@ class OnnxExporter:
                              " with certain operators in order to get converted to ONNX")
         self.set_variables()
 
-        # post process of graph
-        #convert_parameter_shape(self._model_proto.graph)
 
     def create_model(self):
         mp = ModelProto()
@@ -1159,4 +1099,5 @@ class OnnxExporter:
             f.write(self._model_proto.SerializeToString())
 
         # if debug, please uncomment it.
-        #self.dump_onnx(file_path)
+        # self.dump_onnx(file_path)
+
