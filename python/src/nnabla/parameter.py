@@ -213,8 +213,7 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
     if as_need_grad is None:
         return param
     if param.need_grad != as_need_grad:
-        param = param.unlinked()
-        param.need_grad = as_need_grad
+        param = param.get_unlinked_variable(need_grad=as_need_grad)
     return param
 
 
