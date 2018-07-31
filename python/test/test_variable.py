@@ -82,8 +82,7 @@ def test_get_unlinked_variable():
     with nn.context_scope(nn.Context()), nn.auto_forward():
         v2 = F.identity(v)
         v2_u = v2.get_unlinked_variable()
-        assert not v2_u.need_grad
-        v2_u.need_grad = True
+        assert v2_u.need_grad
         v3 = F.identity(v2_u)
     v2_u.grad.zero()
     v2_g = v2_u.g.copy()
@@ -92,6 +91,10 @@ def test_get_unlinked_variable():
     assert np.all(v.g == grad)
     assert np.all(v2_u.g == v2.g)
     assert np.all(v2_u.g == v2_g + 1)
+
+    # Check need_grad option
+    assert v2.get_unlinked_variable(need_grad=True).need_grad
+    assert not v2.get_unlinked_variable(need_grad=False).need_grad
 
 
 def test_rehape():
@@ -111,6 +114,15 @@ def test_rehape():
     assert np.all(v2_s.d == 1)
     v2.g = 1.5
     assert np.all(v2_s.g == 1.5)
+
+    # Check unlink
+    v2_su = v2.reshape((3, 4, 2), unlink=True)
+    assert v2_su.need_grad
+    assert v2_su.parent is None
+    v2_su.need_grad = False
+    v2_su2 = v2_su.reshape((3, 4, 2), unlink=True)
+    assert not v2_su2.need_grad
+    assert v2_su2.parent is None
 
 
 def test_persistent():
