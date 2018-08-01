@@ -19,7 +19,8 @@ import numpy as np
 try:
     from onnx import (ModelProto, TensorProto, AttributeProto)
 except:
-    print('ONNX import support disabled.')
+    print('ONNX import support disabled because onnx python package does not found.')
+    print(' You may install onnx package with "pip install onnx".')
 
 from .utils import *
 

@@ -20,7 +20,8 @@ try:
     from .utils import *
     from onnx import (ModelProto, TensorProto, TensorShapeProto)
 except:
-    print('ONNX export support disabled.')
+    print('ONNX export support disabled because onnx python package does not found.')
+    print(' You may install onnx package with "pip install onnx".')
 
 # Dictionary used to convert NNabla function names to ONNX op_type
 nnabla_function_type_to_onnx_optype = {
