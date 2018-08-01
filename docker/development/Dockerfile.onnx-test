@@ -14,6 +14,10 @@
 
 FROM ubuntu:16.04
 
+ENV LC_ALL C
+ENV LANG C
+ENV LANGUAGE C
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        build-essential \
