@@ -234,7 +234,9 @@ def vat(x, r, eps, predict, distance):
     y = predict(x)
 
     # For stoping the backprop from this path.
-    y1 = y.unlinked()
+    # TODO: need_grad should be passed to get_unlinked_variable after v1.0.3 fix.
+    y1 = y.get_unlinked_variable()
+    y1.need_grad = False
 
     # Calculate log(p(y|x+n))
     y2 = predict(x + eps * r)
