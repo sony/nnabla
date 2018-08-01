@@ -174,8 +174,8 @@ class OnnxExporter:
             "Concatenate": self.Concatenate,
             "Convolution": "Conv",
             "GlobalAveragePooling": "GlobalAveragePool",
-            "MaxPooling": "MaxPool",
-            "AveragePooling": "AveragePool",
+            "MaxPooling":     partial(self.BasePooling, 'MaxPool'),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool'),
             "Add2": "Add",
             "BatchMatmul": "MatMul",
             "LogicalNot": "Not",
@@ -230,6 +230,41 @@ class OnnxExporter:
         i.type.tensor_type.elem_type = dtype
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
+
+    def BasePooling(self, onnx_func, func):
+        input_shape = self._var_dict[func.input[0]].dim
+        len_input_shape = len(input_shape)
+        if len_input_shape != 4:
+            raise ValueError("shape({}) mismatch for onnx"
+                             " {} func!".format(len_input_shape, onnx_func))
+
+        if onnx_func == 'MaxPool':
+            k = func.max_pooling_param.kernel.dim
+            s = func.max_pooling_param.stride.dim
+            pads = func.max_pooling_param.pad.dim
+        elif onnx_func == 'AveragePool':
+            k = func.average_pooling_param.kernel.dim
+            s = func.average_pooling_param.stride.dim
+            pads = func.average_pooling_param.pad.dim
+        else:
+            raise ValueError('Internal error!')
+
+        if func.max_pooling_param.ignore_border:
+            pads = [d for d in pads]
+            pads = [pads[0], pads[1], pads[0], pads[1]]
+        else:
+            pads = [0, 0,
+                    k[0] - input_shape[0] % s[0],
+                    k[1] - input_shape[1] % s[1]]
+        n = onnx.helper.make_node(
+            onnx_func,
+            func.input,
+            func.output,
+            kernel_shape=k,
+            strides=s,
+            pads=pads
+        )
+        return [n]
 
     def BatchNormalization(self, func):
         onnx_order = [0, 2, 1, 3, 4]
@@ -390,8 +425,8 @@ class OnnxExporter:
         kernel_shape = kernel_shape[2:]
         strides = func.deconvolution_param.stride.dim
         pads = func.deconvolution_param.pad.dim
-        # ONNX requires (begin, end, begin, end) style
-        pads = np.repeat(pads, 2)
+        # ONNX requires (x1_b, x2_b, x1_e, x2_e) style
+        pads = [pads[0], pads[1], pads[0], pads[1]]
         if func.deconvolution_param.dilation.dim != [1, 1]:
             raise ValueError("Currently, dilation != [1, 1] is not supported "
                              "by most of ConvTranspose function implementation.")
@@ -717,17 +752,6 @@ class OnnxExporter:
             attr = onnx.helper.make_attribute("is_test", 0)
             n.attribute.extend([attr])
             nl.append(n)
-        elif func.type == "MaxPooling":
-            mpp = func.max_pooling_param
-            if not mpp.ignore_border:
-                raise ValueError(
-                    "MaxPooling with ignore_border=False is not supported")
-            # Copy kernel, stride, and pads values
-            k = onnx.helper.make_attribute("kernel_shape", mpp.kernel.dim)
-            s = onnx.helper.make_attribute("strides", mpp.stride.dim)
-            p = onnx.helper.make_attribute("pads", mpp.pad.dim[:] * 2)
-            n.attribute.extend([k, s, p])
-            nl.append(n)
         elif func.type == "Convolution":
             cp = func.convolution_param
             # Calculate the kernel_shape from input weight data.
@@ -774,17 +798,6 @@ class OnnxExporter:
             logger.warning(SOFTMAX_WARNING)
             attr = onnx.helper.make_attribute("axis", func.softmax_param.axis)
             n.attribute.extend([attr])
-            nl.append(n)
-        elif func.type == "AveragePooling":
-            app = func.average_pooling_param
-            if not app.ignore_border:
-                raise ValueError(
-                    "AveragePooling with ignore_border=False is not supported")
-            # Copy kernel, stride, and pads values
-            k = onnx.helper.make_attribute("kernel_shape", app.kernel.dim)
-            s = onnx.helper.make_attribute("strides", app.stride.dim)
-            p = onnx.helper.make_attribute("pads", app.pad.dim[:] * 2)
-            n.attribute.extend([k, s, p])
             nl.append(n)
         elif func.type == "Reshape":
             # Convert Reshape size to a constant
