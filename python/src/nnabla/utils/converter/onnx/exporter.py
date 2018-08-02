@@ -253,9 +253,9 @@ class OnnxExporter:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:
-            pads = [0, 0,
-                    k[0] - input_shape[0] % s[0],
-                    k[1] - input_shape[1] % s[1]]
+            subs = [k - i % s if i % s != 0 else k -s
+                    for k, s, i in zip(k, s, input_shape[-2:])]
+            pads = [0, 0] + subs
         n = onnx.helper.make_node(
             onnx_func,
             func.input,
@@ -513,21 +513,41 @@ class OnnxExporter:
         """
         nnabla slice assume a batch dimension existed in
         the shape of input data.
+        Onnx caffe2 implementation only support one dimension
+        for each slice, hence, we connect multiple slice
+        node to implement slice with multiple axis
         """
-        n = onnx.helper.make_node(
-            "Slice",
-            func.input,
-            func.output,
-            name=func.name
-        )
-        starts = [d for d in func.slice_param.start]
-        starts = [0] + starts
-        ends = [d for d in func.slice_param.stop]
-        ends = [self._batch_size] + ends
-        starts = onnx.helper.make_attribute("starts", starts)
-        ends = onnx.helper.make_attribute("ends", ends)
-        n.attribute.extend([starts, ends])
-        return [n]
+        s0 = [d for d in func.slice_param.start]
+        s0 = [0] + s0
+        e0 = [d for d in func.slice_param.stop]
+        e0 = [self._batch_size] + e0
+        s1 = [0] * len(self._var_dict[func.input[0]].dim)
+        e1 = [d for d in self._var_dict[func.input[0]].dim]
+        nl = []
+        for i, (m, n, s, e) in enumerate(zip(s0, e0, s1, e1)):
+            if m > s or n < e:
+                starts = s1[:]
+                ends = e1[:]
+                starts[i] = m
+                ends[i] = n
+                n = onnx.helper.make_node(
+                    "Slice",
+                    func.input,
+                    func.output,
+                    name=func.name,
+                    starts=starts,
+                    ends=ends,
+                )
+                nl.append(n)
+
+        for i in range(len(nl)-1):
+            fork = fork_name("SliceIter")
+            del nl[i].output[:]
+            nl[i].output.extend([fork])
+            del nl[i+1].input[:]
+            nl[i+1].input.extend([fork])
+
+        return nl
 
     def Stack(self, func):
         nl = []
