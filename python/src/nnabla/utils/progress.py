@@ -20,18 +20,18 @@ from datetime import datetime, timedelta
 state_file_name = ''
 last_state_datetime = datetime.now()
 
+# callback
+# ============
 state_callback = None
 
 
-def configure_progress(file_name):
-    global state_file_name
-    state_file_name = file_name
-    progress(None)
-
-
-def configure_progress_callback(callback):
-    global state_callback
-    state_callback = callback
+def configure_progress(file_name, callback=None):
+    if file_name is not None:
+        global state_file_name
+        state_file_name = file_name
+    if callback is not None:
+        global state_callback
+        state_callback = callback
     progress(None)
 
 
