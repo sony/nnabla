@@ -94,7 +94,8 @@ Limitation
 - Only supports operatior set 3
 - Not all functions are supported. See :any:`onnx/operator_coverage`.
 - Only limited Neural Network Console projects supported.  See :any:`onnx/neural_network_console_example_coverage`.
-
+- In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
+  
 Usage
 +++++
 
