@@ -76,7 +76,7 @@ VariablePtr Variable::view(const Shape_t &shape) {
              "The total size must be the same as the variable. "
              "Given: %d != current: %d.",
              size, size_);
-  auto v = make_shared<Variable>(shape_);
+  auto v = make_shared<Variable>(shape);
   v->set_data(data_->view(shape));
   v->set_grad(grad_->view(shape));
   return v;

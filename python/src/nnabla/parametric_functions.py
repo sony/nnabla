@@ -290,10 +290,9 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
         v.d = v_
         nn.parameter.set_parameter("V", v)
     if fix_parameters == u.need_grad:
-        u = u.unlinked()
-        u.need_grad = not fix_parameters
+        u = u.get_unlinked_variable(need_grad=not fix_parameters)
     if fix_parameters == v.need_grad:
-        v = v.unlinked()
+        v = v.get_unlinked_variable(need_grad=not fix_parameters)
         v.need_grad = not fix_parameters
 
     if with_bias and b_init is None:
@@ -738,11 +737,9 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         nn.parameter.set_parameter("V", v)
 
     if fix_parameters == u.need_grad:
-        u = u.unlinked()
-        u.need_grad = not fix_parameters
+        u = u.get_unlinked_variable(need_grad=not fix_parameters)
     if fix_parameters == v.need_grad:
-        v = v.unlinked()
-        v.need_grad = not fix_parameters
+        v = v.get_unlinked_variable(need_grad=not fix_parameters)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     b = None
@@ -880,14 +877,11 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         nn.parameter.set_parameter("K", k)
 
     if fix_parameters == o.need_grad:
-        o = o.unlinked()
-        o.need_grad = not fix_parameters
+        o = o.get_unlinked_variable(need_grad=not fix_parameters)
     if fix_parameters == i.need_grad:
-        i = i.unlinked()
-        i.need_grad = not fix_parameters
+        i = i.get_unlinked_variable(need_grad=not fix_parameters)
     if fix_parameters == k.need_grad:
-        k = k.unlinked()
-        k.need_grad = not fix_parameters
+        k = k.get_unlinked_variable(need_grad=not fix_parameters)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     b = None

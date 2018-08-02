@@ -303,8 +303,7 @@ cdef class Variable:
         if unlink:
             var = Variable.create_from_cvariable(
                 self.varp.variable().get().view(shape))
-            if self.varp.need_grad_is_set():
-                (< Variable > var).varp.set_need_grad(self.varp.need_grad())
+            (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -558,6 +557,8 @@ cdef class Variable:
                 By default, the unlinked variable will have the same need_grad
                 flag with this variable instance. By specifying a boolean value,
                 the new need_grad flags will be set to the unlinked variable.
+                It is recommended to explicitly specify this option to avoid an
+                unintented behavior.
 
         Returns: nnabla._variable.Variable
 
@@ -572,7 +573,11 @@ cdef class Variable:
 
                 x = nn.Variable.from_numpy_array(np.array([[1, 2], [3, 4]]))
                 y = PF.affine(x, 4, name="y")
-                z = y.unlinked()
+
+                # Create a new variable of which graph connection is unlinked.
+                # Recommened to specify need_grad option explicitly .
+                z = y.get_unlinked_variable(need_grad=False)
+
                 print(y.parent)
                 # Affine
                 print(z.parent)  # z is unlinked from the parent x but shares the buffers of y.
@@ -581,9 +586,9 @@ cdef class Variable:
         """
         var = Variable.create_from_cvariable(self.varp.variable().get().view())
         if need_grad is not None:
-            self.need_grad = need_grad
-        elif self.varp.need_grad_is_set():
-            (< Variable > var).varp.set_need_grad(self.varp.need_grad())
+            var.need_grad = need_grad
+        else:
+            (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
         return var
 
     @property
