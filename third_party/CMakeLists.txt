@@ -31,8 +31,10 @@ function(download_and_extract_library NAME EXT URL)
   endif()
 endfunction()
 
-download_and_extract_library(eigen-eigen-de14376a69f8 .zip https://bitbucket.org/eigen/eigen/get/de14376a69f8.zip)
+
+download_and_extract_library(eigen-git-mirror-3.3.5 .zip https://github.com/eigenteam/eigen-git-mirror/archive/3.3.5.zip)
 download_and_extract_library(spdlog-0.16.3 .zip https://github.com/gabime/spdlog/archive/v0.16.3.zip)
+
 if(BUILD_TEST)
   download_and_extract_library(googletest-release-1.7.0 .zip https://github.com/google/googletest/archive/release-1.7.0.zip)
   add_subdirectory(googletest-release-1.7.0)

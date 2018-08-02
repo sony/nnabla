@@ -14,9 +14,9 @@
 
 FROM centos:6
 
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
+ENV LC_ALL C
+ENV LANG C
+ENV LANGUAGE C
 
 RUN yum install -y \
         centos-release-scl \
@@ -42,10 +42,10 @@ ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH
 ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
 
-RUN mkdir -p /tmp/deps \
-    && yum install -y cmake \
-    && yum clean all \
+################################################## cmake
+RUN mkdir /tmp/deps \
     && cd /tmp/deps \
+    && yum install -y cmake \
     && curl -L https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz -o cmake-3.9.0.tar.gz \
     && tar xf cmake-3.9.0.tar.gz \
     && cd cmake-3.9.0 \
@@ -54,11 +54,16 @@ RUN mkdir -p /tmp/deps \
     && cmake -DBUILD_TESTING=FALSE .. \
     && make \
     && make install \
+    && yum remove -y cmake libarchive \
+    && yum clean all \
+    && rm -rf /var/cache/yum/* \
     && cd / \
     && rm -rf /tmp/*
 
-RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
-    && cd /tmp \
+################################################## protobuf
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o protobuf-v3.1.0.tar.gz \
     && tar xvf protobuf-v3.1.0.tar.gz \
     && cd protobuf-3.1.0 \
     && mkdir build \
@@ -72,40 +77,29 @@ RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/pro
     && cd / \
     && rm -rf /tmp/*
 
-RUN cd /tmp \
+################################################## libarchive
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
     && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
     && tar xfa libarchive-3.3.2.tar.gz \
     && mkdir libarchive-build \
     && cd libarchive-build \
     && cmake \
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-        -DENABLE_NETTLE=FALSE \
-        -DENABLE_OPENSSL=FALSE \
-        -DENABLE_LZO=FALSE \
-        -DENABLE_LZMA=FALSE \
-        -DENABLE_BZip2=FALSE \
-        -DENABLE_LIBXML2=FALSE \
-        -DENABLE_EXPAT=FALSE \
-        -DENABLE_PCREPOSIX=FALSE \
-        -DENABLE_LibGCC=FALSE \
-        -DENABLE_CNG=FALSE \
-        -DENABLE_TAR=FALSE \
-        -DENABLE_TAR_SHARED=FALSE \
-        -DENABLE_CPIO=FALSE \
-        -DENABLE_CPIO_SHARED=FALSE \
-        -DENABLE_CAT=FALSE \
-        -DENABLE_CAT_SHARED=FALSE \
-        -DENABLE_XATTR=FALSE \
-        -DENABLE_ACL=FALSE \
-        -DENABLE_ICONV=FALSE \
-        -DENABLE_TEST=FALSE \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_NETTLE=FALSE -DENABLE_OPENSSL=FALSE \
+        -DENABLE_LZO=FALSE -DENABLE_LZMA=FALSE -DENABLE_BZip2=FALSE \
+        -DENABLE_LIBXML2=FALSE -DENABLE_EXPAT=FALSE -DENABLE_PCREPOSIX=FALSE -DENABLE_LibGCC=FALSE \
+        -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
+        -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
+        -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
         ../libarchive-3.3.2 \
     && make \
     && make install \
     && cd / \
     && rm -rf /tmp/*
 
-RUN cd /tmp \
+################################################## patchelf
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
     && wget http://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 \
     && tar xfa patchelf-0.9.tar.bz2 \
     && cd patchelf-0.9 \
@@ -115,34 +109,36 @@ RUN cd /tmp \
     && cd / \
     && rm -rf /tmp/*
 
-# Conda environment
+################################################## miniconda3
+ARG PYTHON_VERSION_MAJOR
+ARG PYTHON_VERSION_MINOR
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-ARG PYTHON_VERSION_MAJOR
-ARG PYTHON_VERSION_MINOR
-ENV PYENVNAME=py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}
-ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
-
 RUN umask 0 \
-     && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
-     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
-     && /opt/miniconda3/bin/conda create -y \
-        -n ${PYENVNAME} \
-        python=${PYVERNAME} \
-     && source /opt/miniconda3/bin/activate ${PYENVNAME} \
-     && conda install scandir scikit-image \
-     && pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
-     && echo Try to install setuptools few times to avoid conda problem. \
-     && (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
-     && pip install --no-cache-dir -U -r /tmp/deps/requirements.txt \
-     && pip install --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
-     && pip install --no-cache-dir -U "pytest-pep8" \
-     && pip install --no-cache-dir -U "pytest-cov" \
-     && pip install --no-cache-dir -U "Cython<0.25" \
-     && pip install --no-cache-dir -U "numpy<1.11"
+    && mkdir -p /tmp/deps \
+    && cd /tmp/deps \
+    && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
+    && rm -rf Miniconda3-latest-Linux-x86_64.sh \
+    && PATH=/opt/miniconda3/bin:$PATH \
+    && conda install python=${PYVERNAME} \
+    && conda update -y --all \
+    && conda install scandir scikit-image \
+    && pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
+    && echo Try to install setuptools few times to avoid conda problem. \
+    && (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
+    && pip install --no-cache-dir -U -r /tmp/deps/requirements.txt \
+    && pip install --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
+    && pip install --no-cache-dir -U "pytest-pep8" \
+    && pip install --no-cache-dir -U "pytest-cov" \
+    && pip install --no-cache-dir -U "Cython<0.25" \
+    && pip install --no-cache-dir -U "numpy<1.11" \
+    && conda clean -y --all \
+    && cd / \
+    && rm -rf /tmp/*
 
-ENV PATH /opt/miniconda3/envs/${PYENVNAME}/bin:$PATH
+ENV PATH /opt/miniconda3/bin:$PATH
