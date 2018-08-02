@@ -284,8 +284,8 @@ def main():
 
     ############################################################################
     # Prepare status monitor
-    from nnabla.utils.progress import configure_progress_callback
-    configure_progress_callback(_progress)
+    from nnabla.utils.progress import configure_progress
+    configure_progress(None, _progress)
 
     ############################################################################
     # Converter
