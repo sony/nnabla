@@ -129,7 +129,8 @@ def train(args):
     pred_fake = discriminator(fake)
     loss_gen = F.mean(F.sigmoid_cross_entropy(
         pred_fake, F.constant(1, pred_fake.shape)))
-    fake_dis = fake.unlinked()
+    fake_dis = fake.get_unlinked_variable(need_grad=True)
+    fake_dis.need_grad = True  # TODO: Workaround until v1.0.2
     pred_fake_dis = discriminator(fake_dis)
     loss_dis = F.mean(F.sigmoid_cross_entropy(
         pred_fake_dis, F.constant(0, pred_fake_dis.shape)))

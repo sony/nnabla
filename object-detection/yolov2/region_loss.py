@@ -142,8 +142,12 @@ def create_network(batchsize, imheight, imwidth, args):
     nH = yolo_features.shape[2]
     nW = yolo_features.shape[3]
 
-    output = yolo_features.unlinked()
-    output = output.reshape((nB, nA, (5+nC), nH, nW))
+    output = yolo_features.get_unlinked_variable(need_grad=True)
+    # TODO: Workaround until v1.0.2.
+    # Explicitly enable grad since need_grad option above didn't work.
+    output.need_grad = True
+
+    output = F.reshape(output, (nB, nA, (5 + nC), nH, nW))
     output_splitted = F.split(output, 2)
     x, y, w, h, conf = [v.reshape((nB, nA, nH, nW))
                         for v in output_splitted[0:5]]

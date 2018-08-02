@@ -154,12 +154,20 @@ def train():
     t_model = get_model(
         args, num_classes, test=False, tiny=args.tiny_mode)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
-    t_pred2 = t_model.pred.unlinked()
+
+    # TODO: need_grad should be passed to get_unlinked_variable after v1.0.3 fix.
+    t_pred2 = t_model.pred.get_unlinked_variable()
+    t_pred2.need_grad = False
+
     t_e = F.mean(F.top_n_error(t_pred2, t_model.label))
     v_model = get_model(
         args, num_classes, test=True, tiny=args.tiny_mode)
     v_model.pred.persistent = True  # Not clearing buffer of pred in forward
-    v_pred2 = v_model.pred.unlinked()
+
+    # TODO: need_grad should be passed to get_unlinked_variable after v1.0.3 fix.
+    v_pred2 = v_model.pred.get_unlinked_variable()
+    v_pred2.need_grad = False
+
     v_e = F.mean(F.top_n_error(v_pred2, v_model.label))
 
     # Add parameters to communicator.
