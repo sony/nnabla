@@ -78,7 +78,7 @@ void read_pgm_mnist(const std::string &filename, uint8_t *data) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 3) {
+  if (!(argc == 3 || argc == 4)) {
     std::cerr << "Usage: " << argv[0] << " nnp_file input_pgm" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Positional arguments: " << std::endl;
@@ -88,10 +88,16 @@ int main(int argc, char *argv[]) {
     std::cerr << "  input_pgm : PGM (P5) file of a 28 x 28 image where pixel "
                  "values < 256."
               << std::endl;
+    std::cerr << "  executor (optional) : Executor name in nnp file."
+              << std::endl;
     return -1;
   }
   const std::string nnp_file(argv[1]);
   const std::string input_bin(argv[2]);
+  std::string executor_name("runtime");
+  if (argc == 4) {
+    executor_name = argv[3];
+  }
 
   // Create a context (the following setting is recommended.)
   nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
@@ -110,8 +116,7 @@ int main(int argc, char *argv[]) {
   nnp.add(nnp_file);
 
   // Get an executor instance.
-  // Suppose the nnp file contains an executor with name "runtime".
-  auto executor = nnp.get_executor("runtime");
+  auto executor = nnp.get_executor(executor_name);
   executor->set_batch_size(1); // Use batch_size = 1.
 
   // Get input data as a CPU array.

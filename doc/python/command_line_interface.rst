@@ -1,7 +1,7 @@
 Python Command Line Interface
 =============================
 
-Nnabla has commandline interface utility whitch can do train, forward(inference),
+Nnabla has command line interface utility which can do train, forward(inference),
 convert param and dataset, measure performance, file format converter and so on.
 
 .. code-block:: none

@@ -151,7 +151,8 @@ def set_parameter(key, param):
     current_scope[names[0]] = param
 
 
-def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True):
+def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
+                            as_need_grad=None):
     """
     Returns an existing parameter variable with the provided name.
     If a variable with the provided name does not exist,
@@ -164,14 +165,24 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True):
       shape (:obj:`tuple` of :obj:`int`): Shape of created parameter. The shape of the specified
           parameter must match with this shape. The default is None which is only valid if initializer is given as an :obj:`numpy.ndarray`.
       initializer (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): An initialization function to be applied to the parameter. :obj:`numpy.ndarray` can also be given to initialize parameters from numpy array data.
-      need_grad (bool): The value for `need_grad` .
-          The default is True.
+      need_grad (bool):
+          Register the parameter with the specified ``need_grad`` flag.
+          The default is True. If the flag is different from the previously
+          specified one, the flag will be overwritten, but the values will be
+          kept.
+      as_need_grad (bool):
+          Get a parameter variable with the specified ``need_grad`` flag.
+          Note that this doesn't overwrite the flag of the registered parameter
+          variable with the provided name. Instead, if the given flag
+          mismatches with the previously registered ``need_grad`` flag, it
+          returns a new variable referring to the same array contents but with
+          ``need_grad=as_need_grad``.
 
     """
     names = name.split('/')
     if len(names) > 1:
         with parameter_scope(names[0]):
-            return get_parameter_or_create('/'.join(names[1:]), shape, initializer, need_grad)
+            return get_parameter_or_create('/'.join(names[1:]), shape, initializer, need_grad, as_need_grad)
     param = get_parameter(names[0])
     if param is None:
         class VariableInfo:
@@ -198,8 +209,11 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True):
     else:
         assert param.shape == tuple(shape)
         if need_grad != param.need_grad:
-            param = param.unlinked()
             param.need_grad = need_grad
+    if as_need_grad is None:
+        return param
+    if param.need_grad != as_need_grad:
+        param = param.get_unlinked_variable(need_grad=as_need_grad)
     return param
 
 

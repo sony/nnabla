@@ -20,6 +20,7 @@ import nnabla.function as F
 from nnabla.utils import nnabla_pb2
 from nnabla.parameter import get_parameter
 from nnabla.utils.load_function import _create_function_instance
+from nnabla.utils.load import resolve_reshape_params
 
 
 def _load_nnp_to_proto(nnp_path):
@@ -49,13 +50,14 @@ def _load_nnp_to_proto(nnp_path):
     return proto
 
 
-def _create_function(ctx, funtion_proto, batch_size):
+def _create_function(ctx, inputs, funtion_proto, batch_size):
     # todo: arrange weight name for NNC
 
     if funtion_proto.type == "Reshape":  # if batch_size = -1, something wrong?
-        reshape_shape = (batch_size,) + \
-            tuple(funtion_proto.reshape_param.shape.dim)
-        function_instance = F.Reshape(ctx, shape=reshape_shape)
+        reshape_shape = resolve_reshape_params(
+            inputs, funtion_proto, batch_size)
+        function_instance = F.Reshape(
+            ctx, shape=reshape_shape, inplace=funtion_proto.reshape_param.inplace)
     elif funtion_proto.type == "RepeatStart":
         raise NotImplementedError("Repeat not supported.")
         function_instance = F.Identity(ctx)
@@ -97,10 +99,24 @@ class NnpNetwork(object):
 
     '''
 
-    def _get_variable_or_create(self, name, shape):
-        # Returns if name found in parameter.
-        param = get_parameter(name)
-        if param is not None:
+    def _get_variable_or_create(self, name, shape, var_type):
+
+        # The variable is a parameter, then get from parameter registry.
+        if var_type == 'Parameter':
+            try:
+                param = get_parameter(name)
+                assert param is not None, \
+                    "A parameter `{}` is not found.".format(name)
+            except:
+                import sys
+                import traceback
+                raise ValueError(
+                    'An error occurs during creation of a variable `{}` as a'
+                    ' parameter variable. The error was:\n----\n{}\n----\n'
+                    'The parameters registered was {}'.format(
+                        name, traceback.format_exc(),
+                        '\n'.join(
+                            list(nn.get_parameters(grad_only=False).keys()))))
             assert shape == param.shape
             return param
 
@@ -128,15 +144,15 @@ class NnpNetwork(object):
             shape = tuple(shape)
             assert np.all(np.array(shape) >
                           0), "Shape must be positive. Given {}.".format(shape)
-            var = self._get_variable_or_create(name, shape)
+            var = self._get_variable_or_create(name, shape, pvar.type)
             inputs.append(var)
         return inputs
 
     def _create_function(self, function_proto):
-        function_instance = _create_function(
-            nn.get_current_context(), function_proto, self.batch_size)
-
         inputs = self._create_inputs(function_proto.input)
+
+        function_instance = _create_function(
+            nn.get_current_context(), inputs, function_proto, self.batch_size)
 
         outputs = function_instance(*inputs)
         if not isinstance(outputs, tuple):

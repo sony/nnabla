@@ -66,3 +66,43 @@ def test_nnp_graph(seed):
     y2.forward(clear_buffer=True)
     from nbla_test_utils import ArrayDiffStats
     assert np.allclose(y.d, y2.d), str(ArrayDiffStats(y.d, y2.d))
+
+
+@pytest.mark.parametrize('variable_batch_size', [False, True])
+@pytest.mark.parametrize('batch_size', [1, 4])
+@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
+def test_nnp_graph_reshape(tmpdir, variable_batch_size, batch_size, shape):
+    x = nn.Variable([10, 1, 28, 28, 10, 10])
+    y = F.reshape(x, shape=shape)
+    contents = {
+        'networks': [
+            {'name': 'graph',
+             'batch_size': 1,
+             'outputs': {'y': y},
+             'names': {'x': x}}]}
+    from nnabla.utils.save import save
+    tmppath = tmpdir.join('tmp_reshape.nnp')
+    tmppath.ensure()
+    nnp_file = tmppath.strpath
+    save(nnp_file, contents,
+         variable_batch_size=variable_batch_size)
+
+    from nnabla.utils import nnp_graph
+    nnp = nnp_graph.NnpLoader(nnp_file)
+    graph = nnp.get_network('graph', batch_size=batch_size)
+    x2 = graph.inputs['x']
+    y2 = graph.outputs['y']
+    if not variable_batch_size:
+        assert x2.shape == x.shape
+        assert y2.shape == y.shape
+        return
+
+    assert x2.shape[0] == batch_size
+    assert y2.shape[0] == batch_size
+    x2.d = np.random.randn(*x2.shape)
+    shape2 = list(shape)
+    shape2[0] = batch_size
+    shape2[1:] = y.shape[1:]
+
+    y2.forward()
+    assert np.all(y2.d == x2.d.reshape(shape2))

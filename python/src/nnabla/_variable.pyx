@@ -196,7 +196,7 @@ cdef class Variable:
         '''
         if op == 2:
             try:
-                return ( < Variable > self).varp == ( < Variable ?> other).varp
+                return (< Variable > self).varp == ( < Variable ?> other).varp
             except:
                 return False
         elif op == 3:
@@ -206,7 +206,14 @@ cdef class Variable:
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash( < intptr_t > (( < Variable > self).varp))
+        return hash(< intptr_t > (( < Variable > self).varp))
+
+    def apply(self, **kwargs):
+        '''Helper for setting property, then return self.
+        '''
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        return self
 
     @property
     def shape(self):
@@ -296,8 +303,7 @@ cdef class Variable:
         if unlink:
             var = Variable.create_from_cvariable(
                 self.varp.variable().get().view(shape))
-            if self.varp.need_grad_is_set():
-                ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
+            (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -352,7 +358,7 @@ cdef class Variable:
                 ya.backward()
 
         '''
-        steal_variable_from_to((< Variable?> var).var, self.var)
+        steal_variable_from_to(( < Variable?> var).var, self.var)
 
     @property
     def data(self):
@@ -452,7 +458,7 @@ cdef class Variable:
 
     @parent.setter
     def parent(self, func):
-        cdef CgFunctionPtr cg_func = ( < function.Function ?> func).fun
+        cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
@@ -508,30 +514,40 @@ cdef class Variable:
         elif np.isscalar(grad):
             arr = NdArray(self.shape)
             arr.fill(grad)
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         elif isinstance(grad, NdArray):
-            p = (< NdArray > grad).arr
+            p = ( < NdArray > grad).arr
         elif isinstance(grad, np.ndarray):
             arr = NdArray(grad.shape)
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
         else:
             # Try to interpret as scalar value
             arr = NdArray()
             arr.data = grad
-            p = (< NdArray > arr).arr
+            p = ( < NdArray > arr).arr
 
         cdef vector[CommunicatorBackwardCallbackPtr] callback_list
         if type(communicator_callbacks) == list:
             for x in communicator_callbacks:
-                callback_list.push_back(( < CommunicatorBackwardCallback?> x).var)
+                callback_list.push_back((< CommunicatorBackwardCallback?> x).var)
         elif type(communicator_callbacks) != type(None):
-            callback_list.push_back(( < CommunicatorBackwardCallback?> communicator_callbacks).var)
+            callback_list.push_back((< CommunicatorBackwardCallback?> communicator_callbacks).var)
 
         with nogil:
             self.varp.backward(p, clear_buffer, callback_list)
 
     def unlinked(self, need_grad=None):
+        """
+        This function is `deprecated`, use get_unlinked_variable instead.
+        """
+        import nnabla as nn
+        nn.logger.warn(
+            "This function is `deprecated`, use get_unlinked_variable instead.")
+
+        return self.get_unlinked_variable(need_grad)
+
+    def get_unlinked_variable(self, need_grad=None):
         """
         Gets an unlinked (forgetting parent) variable that shares a Variable buffer
         instance.
@@ -541,6 +557,8 @@ cdef class Variable:
                 By default, the unlinked variable will have the same need_grad
                 flag with this variable instance. By specifying a boolean value,
                 the new need_grad flags will be set to the unlinked variable.
+                It is recommended to explicitly specify this option to avoid an
+                unintented behavior.
 
         Returns: nnabla._variable.Variable
 
@@ -555,7 +573,11 @@ cdef class Variable:
 
                 x = nn.Variable.from_numpy_array(np.array([[1, 2], [3, 4]]))
                 y = PF.affine(x, 4, name="y")
-                z = y.unlinked()
+
+                # Create a new variable of which graph connection is unlinked.
+                # Recommened to specify need_grad option explicitly .
+                z = y.get_unlinked_variable(need_grad=False)
+
                 print(y.parent)
                 # Affine
                 print(z.parent)  # z is unlinked from the parent x but shares the buffers of y.
@@ -564,9 +586,9 @@ cdef class Variable:
         """
         var = Variable.create_from_cvariable(self.varp.variable().get().view())
         if need_grad is not None:
-            self.need_grad = need_grad
-        elif self.varp.need_grad_is_set():
-            ( < Variable > var).varp.set_need_grad(self.varp.need_grad())
+            var.need_grad = need_grad
+        else:
+            (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
         return var
 
     @property
@@ -590,6 +612,14 @@ cdef class Variable:
     @persistent.setter
     def persistent(self, cpp_bool b):
         self.varp.set_persistent(b)
+
+    @property
+    def name(self):
+        return self.varp.name()
+
+    @name.setter
+    def name(self, string name):
+        self.varp.set_name(name)
 
     def visit(self, f):
         '''Visit functions recursively in forward order.
@@ -640,6 +670,25 @@ cdef class Variable:
 
         seen = set()
         return _recursive_visit_functions(self.parent, seen)
+
+    def clear_all_graph_links(self, ):
+        """Clear all intermediate functions and variables.
+
+        This method clear all intermediate functions and variables up to this variable 
+        in forward pass and is useful for the truncated backpropergation through time 
+        (truncated BPTT) in dynamic graph.
+        """
+        def _clear_all_graph_links(func):
+            for v in func.inputs:
+                v._clear_parent()
+            for v in func.outputs:
+                v._clear_parent()
+            func._clear_inputs()
+            func._clear_outputs()
+        self.visit(_clear_all_graph_links)
+
+    def _clear_parent(self, ):
+        self.varp.set_parent(< CgFunctionPtr?> NULL)
 
     def __pos__(self):
         return AOP.pos(self)

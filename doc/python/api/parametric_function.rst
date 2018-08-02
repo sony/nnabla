@@ -42,6 +42,20 @@ Like functions listed in :ref:`functions`, they take :obj:`~nnabla.Variable` (s)
 first argument(s) followed by options specific to a parametric function. In addition,
 they register parameter :obj:`~nnabla.Variable` (s) into the parameter scope.
 
+The parameter variables are registered with ``need_grad`` properties specific
+to a parametric function. The variables with ``need_grad=False`` flag will not
+be updated by gradient descent. Hence, backward computation is not executed for
+those variables. ``False`` is usually specified when the parameters are updated
+during foward pass and/or backward pass, e.g., batch normalization.
+
+All parametric functions take an optional argument ``fix_parameters=False``.
+By giving ``True``, the associated parameter variables are connected to a
+computation graph with a property ``need_grad=False`` regardless properties
+of the registered variables, then backward gradient
+computation is not executed for those variables. This is useful when you create
+a computation graph for evaluation purpose, fixing parameters partially in a
+graph, and so on.
+
 All parametric functions listed below are decorated with the following decorator.
 
 .. autofunction:: parametric_function_api

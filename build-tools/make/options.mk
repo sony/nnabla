@@ -73,6 +73,12 @@ DOCKER_RUN_OPTS += -e BUILD_DIRECTORY_WHEEL=$(BUILD_DIRECTORY_WHEEL)
 export DOC_DIRECTORY ?= $(NNABLA_DIRECTORY)/build-doc
 DOCKER_RUN_OPTS += -e DOC_DIRECTORY=$(DOC_DIRECTORY)
 
+###############################################################################
+# Test options
+DOCKER_RUN_OPTS += -e PYTEST_PATH_EXTRA=$(PYTEST_PATH_EXTRA)
+DOCKER_RUN_OPTS += -e PYTEST_LD_LIBRARY_PATH_EXTRA=$(PYTEST_LD_LIBRARY_PATH_EXTRA)
+
+
 export DOCKER_RUN_OPTS
 
 ########################################################################################################################
