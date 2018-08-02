@@ -249,8 +249,8 @@ class CacheDataSource(DataSource):
                     length = len(v)
                 else:
                     assert(length == len(v))
-                self._cache_files.append((filename, length))
-                logger.info('{} {}'.format(filename, length))
+            self._cache_files.append((filename, length))
+            logger.info('{} {}'.format(filename, length))
             if length > self._max_length:
                 self._max_length = length
 
