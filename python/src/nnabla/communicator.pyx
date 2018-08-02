@@ -555,12 +555,22 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
 
     """
 
-    # There is the known bug in python used with MPI
-    # described in https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
     import platform
     import ctypes
     if platform.system() == 'Linux':
-        ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
+        try:
+            # There is the known bug in python used with MPI
+            # described in https://xrunhprof.wordpress.com/2014/11/04/an-openmpi-python-and-dlopen-issue/
+            ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL)
+        except:
+            import nnabla as nn
+            msg = '\n' \
+                '###########################################################################\n' \
+                '# ctypes.CDLL("libmpi.so", mode=ctypes.RTLD_GLOBAL) failed. \n' \
+                '# This is the workaround for "An OpenMPI, python and dlopen issue", \n' \
+                '# but it may not necessary for Open MPI versions other than Open MPI 1.x.\n' \
+                '###########################################################################\n'
+            nn.logger.warn(msg)
     else:
         raise Exception(
             "MultiProcessDataParalellCommunicator is not supported other than linux.")
