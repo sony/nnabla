@@ -502,10 +502,10 @@ class OnnxExporter:
             val = func.r_sub_scalar_param.val
             return self._elem_op(func, 'Sub', val)
         elif nn_funcname == 'RDivScalar':
-            val = func.r_div_scalar.val
+            val = func.r_div_scalar_param.val
             return self._elem_op(func, 'Div', val)
         elif nn_funcname == 'RPowScalar':
-            val = func.r_pow_scalar.val
+            val = func.r_pow_scalar_param.val
             return self._elem_op(func, 'Pow', val)
         return []
 
