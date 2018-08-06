@@ -15,7 +15,13 @@ File format converter has following functions.
 - Convert ONNX to NNP
 - Convert NNP to ONNX
 - Convert NNP to NNB(Binary format for NNabla C Runtime)
-- Convert NNP to C Source code for NNabla C Runtime
+- Experimental: Convert NNP to C Source code for NNabla C Runtime
+
+**IMPORTANT NOTICE**: This file format converter still has some known problems.
+
+- Supported ONNX operater is limited. See :any:`onnx/operator_coverage`.
+- Converting NNP to C Source code is still experimental. It should work but did not tested well.
+
   
 NNP
 ---
@@ -88,7 +94,8 @@ Limitation
 - Only supports operatior set 3
 - Not all functions are supported. See :any:`onnx/operator_coverage`.
 - Only limited Neural Network Console projects supported.  See :any:`onnx/neural_network_console_example_coverage`.
-
+- In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
+  
 Usage
 +++++
 

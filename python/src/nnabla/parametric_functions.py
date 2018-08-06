@@ -23,7 +23,7 @@ from nnabla.initializer import (
     ConstantInitializer, NormalInitializer, UniformInitializer)
 
 
-def parametric_function_api(scope_name=None):
+def parametric_function_api(scope_name=None, param_desc=None):
     """Decorator for parametric functions.
 
     The decorated function is always called under
@@ -37,6 +37,10 @@ def parametric_function_api(scope_name=None):
     Args:
         scope_name (str, optional): The original function will be called
             under a parameter scope named by ``scope_name``.
+        param_desc (list, optional):
+            Descriptions of parameters will be automatically included into docstring.
+            This must be a list of tuples with 4 elements composed of
+            (name (str), description (str), shape info (str), need_grad (bool)).
 
     Returns:
         function: A decorated parametric function.
@@ -49,7 +53,27 @@ def parametric_function_api(scope_name=None):
         import inspect
 
         name = func.__name__
-        doc = func.__doc__ + """
+        doc = func.__doc__
+
+        if param_desc:
+            indent = 8
+            try:
+                desc = map(lambda d: ' ' * indent +
+                           '* {} (``need_grad={}``) : {}. (shape: ``{}``)'.format(d[0], d[3], d[1], d[2]), param_desc)
+            except:
+                ValueError(
+                    'param_desc argument of parametric_function_api must be '
+                    'None or a list of tuple with three elements composed of '
+                    '(name(str), description(str), need_grad(bool)).')
+            doc += '''
+    Parameters to be registered
+        The following variables are registered in a parameter scope ``"{}"``;
+
+{}
+
+            '''.format(scope_name, '\n'.join(desc))
+
+        doc += """
     Note:
 
         If the ``name`` option is passed, the parameters become wrapped inside the parameter scope
@@ -100,7 +124,10 @@ def {name}{signature}:
     return parametric_function_api_inside
 
 
-@parametric_function_api("affine")
+@parametric_function_api("affine", [
+    ('W', 'Weight matrix', '(inmaps, outmaps)', True),
+    ('b', 'bias vector', '(outputs,)', True),
+])
 def affine(inp, n_outmaps,
            base_axis=1,
            w_init=None, b_init=None,
@@ -140,15 +167,19 @@ def affine(inp, n_outmaps,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.affine(inp, w, b, base_axis)
 
 
-@parametric_function_api("svd_affine")
+@parametric_function_api("svd_affine", [
+    ('U', ':math:`{\\mathbf U}`', '(inmaps, r)', True),
+    ('V', ':math:`{\\mathbf V}`', '(r, outmaps)', True),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
                b_init=None, fix_parameters=False, rng=None,
                with_bias=True):
@@ -251,33 +282,36 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
         v_ = v_.reshape([r] + n_outmaps)
 
         u = nn.Variable([int(np.prod(inp.shape[base_axis:])), r],
-                        need_grad=not fix_parameters)
+                        need_grad=True)
         u.d = u_
         nn.parameter.set_parameter("U", u)
 
-        v = nn.Variable([r] + n_outmaps, need_grad=not fix_parameters)
+        v = nn.Variable([r] + n_outmaps, need_grad=True)
         v.d = v_
         nn.parameter.set_parameter("V", v)
-    else:
-        if fix_parameters == u.need_grad:
-            u = u.unlinked()
-            u.need_grad = not fix_parameters
-        if fix_parameters == v.need_grad:
-            v = v.unlinked()
-            v.need_grad = not fix_parameters
+    if fix_parameters == u.need_grad:
+        u = u.get_unlinked_variable(need_grad=not fix_parameters)
+    if fix_parameters == v.need_grad:
+        v = v.get_unlinked_variable(need_grad=not fix_parameters)
+        v.need_grad = not fix_parameters
 
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
 
     b = None
     if with_bias:
-        b = get_parameter_or_create("b", n_outmaps, b_init, not fix_parameters)
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, True, not fix_parameters)
 
     return F.affine(F.affine(inp, u, bias=None, base_axis=base_axis),
                     v, bias=b, base_axis=base_axis)
 
 
-@parametric_function_api("bicon_affine")
+@parametric_function_api("bicon_affine", [
+    ('W', 'Weight matrix in floating type', '(inmaps, outmaps)', True),
+    ('Wb', 'Binarized weights', '(inmaps, outmaps)', False),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def binary_connect_affine(inp, n_outmaps,
                           base_axis=1,
                           w_init=None, wb_init=None, b_init=None,
@@ -347,18 +381,23 @@ def binary_connect_affine(inp, n_outmaps,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        wb_init, not fix_parameters)
+        wb_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.binary_connect_affine(inp, w, wb, b, base_axis)
 
 
-@parametric_function_api("bwn_affine")
+@parametric_function_api("bwn_affine", [
+    ('W', 'Weight matrix in floating type', '(inmaps, outmaps)', True),
+    ('Wb', 'Binarized weights', '(inmaps, outmaps)', False),
+    ('alpha', 'Scaling factor :math:`\\alpha`', '(outmaps,)', False),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def binary_weight_affine(inp, n_outmaps,
                          base_axis=1,
                          w_init=None, wb_init=None, b_init=None,
@@ -427,20 +466,24 @@ def binary_weight_affine(inp, n_outmaps,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        wb_init, not fix_parameters)
+        wb_init, False)
     alpha = get_parameter_or_create(
-        "alpha", n_outmaps, ConstantInitializer(0), False)
+        "alpha", n_outmaps, n_outmaps, ConstantInitializer(0), False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.binary_weight_affine(inp, w, wb, alpha, b, base_axis)
 
 
-@parametric_function_api("inq_affine")
+@parametric_function_api("inq_affine", [
+    ('W', 'Weight matrix in floating type', '(inmaps, outmaps)', True),
+    ('I', 'Binary indicator matrix of fixed weights', '(inmaps, outmaps)', False),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
                inq_iterations=(), selection_algorithm='random',
                seed=-1, w_init=None, i_init=None, b_init=None,
@@ -495,18 +538,21 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     i = get_parameter_or_create(
         "I", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
         i_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
     return F.inq_affine(inp, w, i, b, base_axis, num_bits, inq_iterations, selection_algorithm, seed)
 
 
-@parametric_function_api("conv")
+@parametric_function_api("conv", [
+    ('W', 'Filter weights', '(outmaps, inmaps / group, *kernel)', True),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def convolution(inp, outmaps, kernel,
                 pad=None, stride=None, dilation=None, group=1,
                 w_init=None, b_init=None,
@@ -536,7 +582,7 @@ def convolution(inp, outmaps, kernel,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.convolution` for the output shape.
 
     """
     if w_init is None:
@@ -546,15 +592,21 @@ def convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
-@parametric_function_api("svd_conv")
+@parametric_function_api("svd_conv", [
+    ('U',
+     'Decomposed filter weights :math:`{\\mathbf U}`', '(inmaps * r, *kernel)', True),
+    ('V', 'Decomposed filter weights :math:`{\\mathbf V}`',
+     '(outmaps, inmaps * r, 1, ...)', True),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
                     dilation=None, uv_init=None, b_init=None, base_axis=1,
                     fix_parameters=False, rng=None, with_bias=True):
@@ -667,7 +719,7 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
 
         # reshape U : (I,K*K,r) -> (I*r,K,K) for depthwise conv
         u = nn.Variable((inmaps * r,) + tuple(kernel),
-                        need_grad=not fix_parameters)
+                        need_grad=True)
 
         u.d = (np.transpose(u_low_rank, axes=(0, 2, 1))
                .reshape((inmaps * r,) + tuple(kernel)))
@@ -675,29 +727,25 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         nn.parameter.set_parameter("U", u)
 
         # reshape V :  (I,r,O) -> (O,I*r,1,1) for 1X1 conv
-        kernel_one = (1,)*len(kernel)  # 1x1 for 2D convolution
+        kernel_one = (1,) * len(kernel)  # 1x1 for 2D convolution
         v = nn.Variable((outmaps, inmaps * r) + kernel_one,
-                        need_grad=not fix_parameters)
+                        need_grad=True)
 
         v.d = (np.transpose(v_low_rank, axes=(2, 0, 1))
                .reshape((outmaps, inmaps * r) + kernel_one))
 
         nn.parameter.set_parameter("V", v)
 
-    else:
-        # Use existing parameters
-        if fix_parameters == u.need_grad:
-            u = u.unlinked()
-            u.need_grad = not fix_parameters
-        if fix_parameters == v.need_grad:
-            v = v.unlinked()
-            v.need_grad = not fix_parameters
+    if fix_parameters == u.need_grad:
+        u = u.get_unlinked_variable(need_grad=not fix_parameters)
+    if fix_parameters == v.need_grad:
+        v = v.get_unlinked_variable(need_grad=not fix_parameters)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
 
     y = F.depthwise_convolution(inp, u, bias=None, base_axis=base_axis,
                                 pad=pad, stride=stride, dilation=dilation,
@@ -708,7 +756,15 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
     return y
 
 
-@parametric_function_api("cpd3_conv")
+@parametric_function_api("cpd3_conv", [
+    ('I',
+     'Decomposed filter weights :math:`{\\mathbf I}`', '(r, inmaps, 1, ...)', True),
+    ('K',
+     'Decomposed filter weights :math:`{\\mathbf K}`', '(r, *kernel)', True),
+    ('O',
+     'Decomposed filter weights :math:`{\\mathbf O}`', '(outmaps, r, 1, ...)', True),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def cpd3_convolution(inp, outmaps, kernel, r,
                      pad=None, stride=None, dilation=None,
                      oik_init=None, b_init=None,
@@ -801,41 +857,37 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         i_ = U[1]
         k_ = U[2]
 
-        kernel_one = (1,)*len(kernel)  # 1x1 for 2D convolution
+        kernel_one = (1,) * len(kernel)  # 1x1 for 2D convolution
         inmaps = inp.shape[base_axis]
 
         # reshape I :  (I,r) -> (r,I,1,1)
-        i = nn.Variable((r, inmaps) + kernel_one, need_grad=not fix_parameters)
+        i = nn.Variable((r, inmaps) + kernel_one, need_grad=True)
         i.d = np.transpose(i_).reshape((r, inmaps) + kernel_one)
         nn.parameter.set_parameter("I", i)
 
         # reshape O :  (O,r) -> (O,r,1,1)
         o = nn.Variable((outmaps, r) + kernel_one,
-                        need_grad=not fix_parameters)
+                        need_grad=True)
         o.d = o_.reshape((outmaps, r) + kernel_one)
         nn.parameter.set_parameter("O", o)
 
         # reshape K :  (K*K,r) -> (r,K,K)
-        k = nn.Variable((r,) + kernel, need_grad=not fix_parameters)
+        k = nn.Variable((r,) + kernel, need_grad=True)
         k.d = np.transpose(k_).reshape((r,) + kernel)
         nn.parameter.set_parameter("K", k)
-    else:
-        # Use existing parameters
-        if fix_parameters == o.need_grad:
-            o = o.unlinked()
-            o.need_grad = not fix_parameters
-        if fix_parameters == i.need_grad:
-            i = i.unlinked()
-            i.need_grad = not fix_parameters
-        if fix_parameters == k.need_grad:
-            k = k.unlinked()
-            k.need_grad = not fix_parameters
+
+    if fix_parameters == o.need_grad:
+        o = o.get_unlinked_variable(need_grad=not fix_parameters)
+    if fix_parameters == i.need_grad:
+        i = i.get_unlinked_variable(need_grad=not fix_parameters)
+    if fix_parameters == k.need_grad:
+        k = k.get_unlinked_variable(need_grad=not fix_parameters)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
 
     y = F.convolution(inp, i, bias=None, base_axis=base_axis, pad=None, stride=None,
                       dilation=None, group=1)
@@ -847,7 +899,11 @@ def cpd3_convolution(inp, outmaps, kernel, r,
     return y
 
 
-@parametric_function_api("bicon_conv")
+@parametric_function_api("bicon_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps, *kernel)', True),
+    ('Wb', 'Binarized filter weights', '(outmaps, inmaps, *kernel)', False),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def binary_connect_convolution(inp, outmaps, kernel,
                                pad=None, stride=None, dilation=None, group=1,
                                w_init=None, wb_init=None, b_init=None,
@@ -918,18 +974,23 @@ def binary_connect_convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        wb_init, not fix_parameters)
+        wb_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.binary_connect_convolution(inp, w, wb, b, base_axis, pad, stride, dilation, group)
 
 
-@parametric_function_api("bwn_conv")
+@parametric_function_api("bwn_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps, *kernel)', True),
+    ('Wb', 'Binarized filter weights', '(outmaps, inmaps, *kernel)', False),
+    ('alpha', 'Scaling factor :math:`\\alpha`', '(outmaps,)', False),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def binary_weight_convolution(inp, outmaps, kernel,
                               pad=None, stride=None, dilation=None, group=1,
                               w_init=None, wb_init=None, b_init=None,
@@ -1000,20 +1061,25 @@ def binary_weight_convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     wb = get_parameter_or_create(
         "Wb", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        wb_init, not fix_parameters)
+        wb_init, False)
     alpha = get_parameter_or_create(
         "alpha", (outmaps, ), ConstantInitializer(0), False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.binary_weight_convolution(inp, w, wb, alpha, b, base_axis, pad, stride, dilation, group)
 
 
-@parametric_function_api("inq_conv")
+@parametric_function_api("inq_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps, *kernel)', True),
+    ('I', 'Binary indicator matrix of fixed weights',
+     '(outmaps, inmaps, *kernel)', False),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def inq_convolution(inp, outmaps, kernel,
                     pad=None, stride=None, dilation=None, group=1,
                     num_bits=4, inq_iterations=(), selection_algorithm='random',
@@ -1064,18 +1130,21 @@ def inq_convolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis]) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     i = get_parameter_or_create(
         "I", (outmaps, inp.shape[base_axis]) + tuple(kernel),
         i_init, False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.inq_convolution(inp, w, i, b, base_axis, pad, stride, dilation, group, num_bits, inq_iterations, selection_algorithm, seed)
 
 
-@parametric_function_api("depthwise_conv")
+@parametric_function_api("depthwise_conv", [
+    ('W', 'Filter weights', '(inmaps * multiplier, *kernel)', True),
+    ('b', 'Bias vector', '(inmaps * multiplier,)', True),
+])
 def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
                           multiplier=1, w_init=None, b_init=None, base_axis=1,
                           fix_parameters=False, rng=None, with_bias=True):
@@ -1101,7 +1170,7 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.depthwise_convolution` for the output shape.
 
     """
     if w_init is None:
@@ -1115,17 +1184,20 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis] * multiplier,) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (inp.shape[base_axis] * multiplier,),
-            b_init, not fix_parameters)
+            b_init, True, not fix_parameters)
     return F.depthwise_convolution(inp, w, b, base_axis, pad, stride, dilation,
                                    multiplier)
 
 
-@parametric_function_api("deconv")
+@parametric_function_api("deconv", [
+    ('W', 'Filter weights', '(inmaps, outmaps / group, *kernel)', True),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
 def deconvolution(inp, outmaps, kernel,
                   pad=None, stride=None, dilation=None, group=1,
                   w_init=None, b_init=None,
@@ -1149,7 +1221,7 @@ def deconvolution(inp, outmaps, kernel,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.deconvolution` for the output shape.
 
     """
     if w_init is None:
@@ -1159,15 +1231,18 @@ def deconvolution(inp, outmaps, kernel,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis], outmaps / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
     return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
-@parametric_function_api("depthwise_deconv")
+@parametric_function_api("depthwise_deconv", [
+    ('W', 'Filter weights', '(inmaps,) + kernel', True),
+    ('b', 'Bias vector', '(inmaps / divisor,)', True),
+])
 def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
                             divisor=1, w_init=None, b_init=None, base_axis=1,
                             fix_parameters=False, rng=None, with_bias=True):
@@ -1189,7 +1264,7 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
         with_bias (bool): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: N-D array.
+        :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.depthwise_deconvolution` for the output shape.
 
     """
     if w_init is None:
@@ -1203,17 +1278,22 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis],) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (inp.shape[base_axis] // divisor,),
-            b_init, not fix_parameters)
+            b_init, True, not fix_parameters)
     return F.depthwise_deconvolution(inp, w, b, base_axis, pad, stride,
                                      dilation, divisor)
 
 
-@parametric_function_api("bn")
+@parametric_function_api("bn", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+    ('mean', 'Moving avearge of batch mean', '<see above>', False),
+    ('var', 'Moving avearge of batch variance', '<see above>', False),
+])
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                         batch_stat=True, output_stat=False, fix_parameters=False):
     """
@@ -1233,7 +1313,12 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
 
     Args:
         inp (~nnabla.Variable): N-D array of input.
-        axes (:obj:`tuple` of :obj:`int`): Axes mean and variance are taken.
+        axes (:obj:`tuple` of :obj:`int`):
+            Mean and variance for each element in ``axes`` are calculated using
+            elements on the rest axes. For example, if an input is 4 dimensions,
+            and ``axes`` is ``[1]``,  batch mean is calculated as
+            ``np.mean(inp.d, axis=(0, 2, 3), keepdims=True)``
+            (using numpy expression as an example).
         decay_rate (float): Decay rate of running mean and variance.
         eps (float): Tiny value to avoid zero division by std.
         batch_stat (bool): Use mini-batch statistics rather than running ones.
@@ -1247,14 +1332,20 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
 
         - Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. https://arxiv.org/abs/1502.03167
 
+    The shape of parameters has the same number of dimensions with the input
+    data, and the shapes in ``axes`` has the same dimensions with the input, while the rest has ``1``.
+    If an input is 4-dim and ``axes=[1]``, the parameter shape will be
+    ``param_shape  = np.mean(inp.d, axis=(0, 2, 3), keepdims=True).shape``
+    (using numpy expression as an example).
+
     """
     assert len(axes) == 1
     shape_stat = [1 for _ in inp.shape]
     shape_stat[axes[0]] = inp.shape[axes[0]]
     beta = get_parameter_or_create(
-        "beta", shape_stat, ConstantInitializer(0), not fix_parameters)
+        "beta", shape_stat, ConstantInitializer(0), True, not fix_parameters)
     gamma = get_parameter_or_create(
-        "gamma", shape_stat, ConstantInitializer(1), not fix_parameters)
+        "gamma", shape_stat, ConstantInitializer(1), True, not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, ConstantInitializer(0), False)
     var = get_parameter_or_create(
@@ -1263,7 +1354,10 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                                  decay_rate, eps, batch_stat, output_stat)
 
 
-@parametric_function_api("mean_subtraction")
+@parametric_function_api("mean_subtraction", [
+    ('mean', 'Moving average', 'inp.shape[base_axis:]', False),
+    ('t', 'Minibatch counter used in forward pass', '(1,)', False),
+])
 def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=False):
     """
     Mean subtraction layer.
@@ -1304,7 +1398,9 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
     return F.mean_subtraction(inp, mean, t, base_axis=base_axis, update_running_mean=update_running_mean)
 
 
-@parametric_function_api("embed")
+@parametric_function_api("embed", [
+    ('W', 'Embedding matrix', '(n_inputs, n_features)', True),
+])
 def embed(inp, n_inputs, n_features, fix_parameters=False):
     """ Embed.
 
@@ -1321,11 +1417,14 @@ def embed(inp, n_inputs, n_features, fix_parameters=False):
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
     w = get_parameter_or_create("W", [n_inputs, n_features],
-                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), not fix_parameters)
+                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True, not fix_parameters)
     return F.embed(inp, w)
 
 
-@parametric_function_api("prelu")
+@parametric_function_api("prelu", [
+    ('slope', 'Negative slope',
+     'tuple() if shared else (inp.shape[base_axis],)', True),
+])
 def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     """
     Parametrized Rectified Linear Unit function defined as
@@ -1349,11 +1448,16 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     """
     shape = tuple() if shared else (inp.shape[base_axis],)
     w = get_parameter_or_create("slope", shape,
-                                ConstantInitializer(-1), not fix_parameters)
+                                ConstantInitializer(-1), True, not fix_parameters)
     return F.prelu(inp, w, base_axis)
 
 
-@parametric_function_api("fp_quantized_affine")
+@parametric_function_api("fp_quantized_affine", [
+    ('W', 'Weight matrix in float', '(inmaps, outmaps)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Qunatized weights', '(inmaps, outmaps)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+])
 def fixed_point_quantized_affine(inp, n_outmaps,
                                  base_axis=1,
                                  w_init=None, b_init=None,
@@ -1424,13 +1528,13 @@ def fixed_point_quantized_affine(inp, n_outmaps,
     # Floating Weight
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-            w_init, not fix_parameters)
+            w_init, False)
         # Link computation graph
         real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
                                           sign=sign_w, n=n_w, delta=delta_w,
@@ -1447,10 +1551,10 @@ def fixed_point_quantized_affine(inp, n_outmaps,
     real_b_q = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", n_outmaps, b_init, not fix_parameters)
+                "b_q", n_outmaps, b_init, False)
             # Link computation graph
             real_b_q = F.fixed_point_quantize(b, quantize=quantize_b,
                                               sign=sign_b, n=n_b, delta=delta_b,
@@ -1463,7 +1567,12 @@ def fixed_point_quantized_affine(inp, n_outmaps,
     return F.affine(inp, real_w_q, real_b_q, base_axis)
 
 
-@parametric_function_api("fp_quantized_conv")
+@parametric_function_api("fp_quantized_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps / group, *kernel)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Qunatized weights', '(outmaps, inmaps / group, *kernel)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+])
 def fixed_point_quantized_convolution(inp, outmaps, kernel,
                                       pad=None, stride=None, dilation=None, group=1,
                                       w_init=None, b_init=None,
@@ -1534,13 +1643,13 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
     # Floating Weight
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-            w_init, not fix_parameters)
+            w_init, False)
         # Link computation graph
         real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
                                           sign=sign_w, n=n_w, delta=delta_w,
@@ -1558,10 +1667,10 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
 
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", (outmaps,), b_init, not fix_parameters)
+                "b_q", (outmaps,), b_init, False)
             # Link computation graph
             real_b_q = F.fixed_point_quantize(b, quantize=quantize_b,
                                               sign=sign_b, n=n_b, delta=delta_b,
@@ -1574,7 +1683,12 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
     return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
 
 
-@parametric_function_api("pow2_quantized_affine")
+@parametric_function_api("pow2_quantized_affine", [
+    ('W', 'Weight matrix in float', '(inmaps, outmaps)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Qunatized weights', '(inmaps, outmaps)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+])
 def pow2_quantized_affine(inp, n_outmaps,
                           base_axis=1,
                           w_init=None, b_init=None,
@@ -1646,13 +1760,13 @@ def pow2_quantized_affine(inp, n_outmaps,
     # Floating Weight
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
-            w_init, not fix_parameters)
+            w_init, False)
         # Link computation graph
         real_w_q = F.pow2_quantize(w, quantize=quantize_w,
                                    sign=sign_w, with_zero=with_zero_w,
@@ -1669,10 +1783,10 @@ def pow2_quantized_affine(inp, n_outmaps,
     real_b_q = None
     if with_bias:
         b = get_parameter_or_create(
-            "b", n_outmaps, b_init, not fix_parameters)
+            "b", n_outmaps, b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", n_outmaps, b_init, not fix_parameters)
+                "b_q", n_outmaps, b_init, False)
             real_b_q = F.pow2_quantize(b, quantize=quantize_b,
                                        sign=sign_b, with_zero=with_zero_b,
                                        n=n_b, m=m_b, ste_fine_grained=ste_fine_grained_b,
@@ -1684,7 +1798,12 @@ def pow2_quantized_affine(inp, n_outmaps,
     return F.affine(inp, real_w_q, real_b_q, base_axis)
 
 
-@parametric_function_api("pow2_quantized_conv")
+@parametric_function_api("pow2_quantized_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps / group, *kernel)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Qunatized weights', '(outmaps, inmaps / group, *kernel)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+])
 def pow2_quantized_convolution(inp, outmaps, kernel,
                                pad=None, stride=None, dilation=None, group=1,
                                w_init=None, b_init=None,
@@ -1755,13 +1874,13 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
     # Floating Weight
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-        w_init, not fix_parameters)
+        w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
             "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
-            w_init, not fix_parameters)
+            w_init, False)
 
         # Link computation graph
         real_w_q = F.pow2_quantize(w, quantize=quantize_w,
@@ -1780,10 +1899,10 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
 
     if with_bias:
         b = get_parameter_or_create(
-            "b", (outmaps,), b_init, not fix_parameters)
+            "b", (outmaps,), b_init, True, not fix_parameters)
         if quantize_b:
             b_q = get_parameter_or_create(
-                "b_q", (outmaps,), b_init, not fix_parameters)
+                "b_q", (outmaps,), b_init, False)
             # Link computation graph
             real_b_q = F.pow2_quantize(b, quantize=quantize_b,
                                        sign=sign_b, with_zero=with_zero_b,
@@ -1796,7 +1915,11 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
     return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
 
 
-@parametric_function_api("lstm")
+@parametric_function_api("lstm", [
+    ('affine/W', 'Stacked weight matrixes of LSTM block',
+     '(inmaps, 4, state_size)', True),
+    ('affine/b', 'Stacked bias vectors of LSTM block', '(4, state_size,)', True),
+])
 def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
     """Long Short-Term Memory.
 
@@ -1839,7 +1962,7 @@ def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
 
 
 class LSTMCell:
-    def __init__(self, batch_size, state_size, h=None, c=None):
+    def __init__(self, batch_size, state_size, h=None, c=None, name=None):
         """
         Initializes an LSTM cell.
 
@@ -1848,10 +1971,11 @@ class LSTMCell:
             state_size (int): Internal state size is set to `state_size`.
             h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
             c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size). If not specified, it is initialized to zero by default.
-
+            name (str): Name for this LSTM Cell.
         """
         self.batch_size = batch_size
         self.state_size = state_size
+        self.name = name
         if h:  # when user defines h
             self.h = h
         else:
@@ -1883,5 +2007,7 @@ class LSTMCell:
 
         """
         self.h, self.c = lstm(
-            x, self.h, self.c, self.state_size, w_init, b_init, fix_parameters=fix_parameters)
+            x, self.h, self.c, self.state_size,
+            w_init, b_init,
+            fix_parameters=fix_parameters, name=self.name)
         return self.h

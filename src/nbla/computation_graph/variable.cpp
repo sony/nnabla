@@ -22,7 +22,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
-// #include <iostream> // TODO: remove
+// #define NNABLA_DUMP_ON_OUTPUTS_FORWARD
+// #define NNABLA_DUMP_ON_INPUTS_FORWARD
+#if defined(NNABLA_DUMP_ON_OUTPUTS_FORWARD) ||                                 \
+    defined(NNBLA_DUMP_INPUTS_FORWARD)
+#include <iostream>
+#endif
 
 namespace nbla {
 
@@ -121,7 +126,7 @@ public:
   }
 
   void on_outputs(CgFunctionPtr func) {
-#if 0
+#if defined(NNABLA_DUMP_ON_OUTPUTS_FORWARD)
     Context ctx{{}, "CpuCachedArray", ""};
     auto outputs = func->outputs();
     std::cout << "[" << func->function()->name() << "]" << std::endl;
@@ -136,10 +141,28 @@ public:
 #endif
   }
 
+  void on_inputs(CgFunctionPtr func) {
+#if defined(NNABLA_DUMP_ON_INPUTS_FORWARD)
+    Context ctx{{}, "CpuCachedArray", ""};
+    auto inputs = func->inputs();
+    std::cout << "[" << func->function()->name() << "]" << std::endl;
+    for (int i = 0; i < inputs.size(); i++) {
+      const float *v = inputs[i]->variable()->get_data_pointer<float>(ctx);
+      std::cout << "input " << i << ":";
+      for (int s = 0; s < inputs[i]->variable()->size(); s++) {
+        std::cout << " " << v[s];
+      }
+      std::cout << std::endl;
+    }
+#endif
+  }
+
   void operator()(CgFunctionPtr func) {
     // Execute forward.
     // std::cout << "Call forward of " << func->function()->name() << "."
     //           << std::endl;
+    this->on_inputs(func);
+
     vector<CgVariablePtr> outputs; // Get shared reference of outputs.
     vector<Variable *> voutputs;
     std::tie(outputs, voutputs) = func->function_outputs();
@@ -474,6 +497,13 @@ void CgVariable::insert_function_reference(CgFunctionPtr func) {
   std::weak_ptr<CgFunction> wp(func);
   function_references_.insert(
       {func.get(), {wp, CgVariable::FunctionReferenceInfo()}});
+}
+
+void CgVariable::remove_function_reference(CgFunction *funcp) {
+  auto it = function_references_.find(funcp);
+  if (it == function_references_.end())
+    return;
+  function_references_.erase(funcp);
 }
 
 void CgVariable::mark_need_setup() {

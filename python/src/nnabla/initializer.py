@@ -49,6 +49,9 @@ class NormalInitializer(BaseInitializer):
         rng (numpy.random.RandomState): Random number generator.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -85,6 +88,9 @@ class UniformInitializer(BaseInitializer):
         rng (numpy.random.RandomState): Random number generator.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -121,6 +127,9 @@ class UniformIntInitializer(BaseInitializer):
         rng (numpy.random.RandomState): Random number generator.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -153,6 +162,9 @@ class ConstantInitializer(BaseInitializer):
         value (float): A constant value.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -184,6 +196,9 @@ def calc_normal_std_he_forward(inmaps, outmaps, kernel=(1, 1)):
             In Affine, the default value should be used.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -217,6 +232,9 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
             In Affine, the default value should be used.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -250,6 +268,9 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
             In Affine, the default value should be used.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
@@ -284,6 +305,9 @@ def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
             In Affine, the default value should be used.
 
     Example:
+
+    .. code-block:: python
+
         import nnabla as nn
         import nnabla.parametric_functions as PF
         import nnabla.initializer as I
