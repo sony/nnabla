@@ -1,22 +1,59 @@
 FROM centos:6
 
-RUN yum install -y yum-utils
-RUN yum install -y centos-release-scl
-RUN yum-config-manager --enable rhel-server-rhscl-7-rpms
-RUN yum install -y devtoolset-4-gcc
-RUN yum install -y devtoolset-4-gcc-c++
-RUN yum install -y devtoolset-4-gcc-gfortran
-RUN yum install -y devtoolset-4-binutils
-RUN yum install -y git19
-RUN yum install -y python27
-ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/python27/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH 
-ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH 
-ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:/opt/rh/python27/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
+ENV LC_ALL C
+ENV LANG C
+ENV LANGUAGE C
 
-RUN yum install -y wget curl zip unzip
-RUN yum install -y zlib-static
-RUN yum install -y epel-release
-RUN yum install -y hdf5 hdf5-devel
+RUN yum install -y \
+        epel-release \
+        yum-utils \
+    && yum install -y \
+        curl \
+        hdf5 \
+        hdf5-devel \
+        unzip \
+        wget \
+        zip \
+        zlib-static \
+    && yum clean all
+
+# ----------------------------------------------------------------------------
+# TODO: More sustainable way of installing gcc 5.x.
+# ----------------------------------------------------------------------------
+# It seems like devtoolset-4 is no longer provided in SCL repository,
+# but RPM packages for devtoolset-4 are still available in centos SCL
+# repoitory. We directly install these packages and their dependencies
+# from RPMs using yum command.
+# Packages we want to install are as follows:
+#   devtoolset-4-gcc
+#   devtoolset-4-gcc-c++
+#   devtoolset-4-gcc-gfortran
+#   git19
+# ----------------------------------------------------------------------------
+
+# Installing devtoolset-4 directly from RPMs.
+RUN PKGS="\
+    devtoolset-4-runtime-4.1-3.el6.x86_64.rpm \
+    devtoolset-4-binutils-2.25.1-8.el6.x86_64.rpm \
+    devtoolset-4-gcc-5.3.1-6.1.el6.x86_64.rpm \
+    devtoolset-4-libstdc++-devel-5.3.1-6.1.el6.x86_64.rpm \
+    devtoolset-4-gcc-c++-5.3.1-6.1.el6.x86_64.rpm \
+    devtoolset-4-libquadmath-devel-5.3.1-6.1.el6.x86_64.rpm \
+    devtoolset-4-gcc-gfortran-5.3.1-6.1.el6.x86_64.rpm" \
+    && for pkg in $PKGS; do yum install -y http://mirror.centos.org/centos/6/sclo/x86_64/rh/devtoolset-4/$pkg; done \
+    && yum clean all
+
+# Installing git19 directly from RPMs.
+RUN REPO_BASE=http://mirror.centos.org/centos/6/sclo/x86_64/rh/git19 \
+    && yum install -y \
+       $REPO_BASE/git19-runtime-1.2-4.el6.x86_64.rpm \
+       $REPO_BASE/git19-perl-Git-1.9.4-4.el6.1.noarch.rpm \
+       $REPO_BASE/git19-git-1.9.4-4.el6.1.x86_64.rpm \
+    && yum clean all
+
+ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH
+ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
 
 RUN mkdir -p /tmp/deps \
     && yum install -y cmake \
@@ -103,19 +140,18 @@ RUN set -xe \
     ; for PYV in 2.7.14 3.4.5 3.5.3 3.6.2 \
     ; do PY=${PYV%.*} \
     ; echo Setup Python $PYV \
-    ; conda create -y -n py$PY python=$PYV \
+    ; conda create -y -n py$PY python=$PY \
     ; source activate py$PY \
-    ; conda install -y virtualenv \
-    ; conda install -y setuptools \
-    ; conda install -y "pytest-pep8" \
-    ; conda install -y "pytest-cov" \
-    ; (conda install -y "Cython<0.25" || pip install -U "Cython<0.25") \
-    ; conda install -y "numpy<1.11" \
-    ; pip install -r /tmp/deps/setup_requirements.txt \
+    ; conda install scandir scikit-image virtualenv \
+    ; pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
     ; echo Try to install setuptools few times to avoid conda problem. \
-    ; (pip install setuptools || pip install setuptools || pip install setuptools || true) \
-    ; pip install -r /tmp/deps/requirements.txt \
-    ; pip install -r /tmp/deps/test_requirements.txt \
+    ; (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
+    ; pip install --no-cache-dir -U -r /tmp/deps/requirements.txt \
+    ; pip install --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
+    ; pip install --no-cache-dir -U "pytest-pep8" \
+    ; pip install --no-cache-dir -U "pytest-cov" \
+    ; pip install --no-cache-dir -U "Cython<0.25" \
+    ; pip install --no-cache-dir -U "numpy<1.11" \
     ; source deactivate \
     ; done
 

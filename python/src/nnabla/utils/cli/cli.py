@@ -25,6 +25,16 @@ def version_command(args):
 
 
 def main():
+    import six.moves._thread as thread
+    import threading
+    thread.stack_size(128 * 1024 * 1024)
+    sys.setrecursionlimit(0x3fffffff)
+    main_thread = threading.Thread(target=cli_main)
+    main_thread.start()
+    main_thread.join()
+
+
+def cli_main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -211,10 +221,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import six.moves._thread as thread
-    import threading
-    thread.stack_size(128 * 1024 * 1024)
-    sys.setrecursionlimit(0x3fffffff)
-    main_thread = threading.Thread(target=main)
-    main_thread.start()
-    main_thread.join()
+    main()
