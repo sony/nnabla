@@ -550,7 +550,7 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
 
 
 @parametric_function_api("conv", [
-    ('W', 'Filter weights', '(outmaps, inmaps / group, *kernel)', True),
+    ('W', 'Filter weights', '(outmaps, inmaps // group, *kernel)', True),
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def convolution(inp, outmaps, kernel,
@@ -591,7 +591,7 @@ def convolution(inp, outmaps, kernel,
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
         w_init, True, not fix_parameters)
     b = None
     if with_bias:
@@ -1195,7 +1195,7 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
 
 
 @parametric_function_api("deconv", [
-    ('W', 'Filter weights', '(inmaps, outmaps / group, *kernel)', True),
+    ('W', 'Filter weights', '(inmaps, outmaps // group, *kernel)', True),
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def deconvolution(inp, outmaps, kernel,
@@ -1230,7 +1230,7 @@ def deconvolution(inp, outmaps, kernel,
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (inp.shape[base_axis], outmaps / group) + tuple(kernel),
+        "W", (inp.shape[base_axis], outmaps // group) + tuple(kernel),
         w_init, True, not fix_parameters)
     b = None
     if with_bias:
@@ -1568,9 +1568,9 @@ def fixed_point_quantized_affine(inp, n_outmaps,
 
 
 @parametric_function_api("fp_quantized_conv", [
-    ('W', 'Filter weights in float', '(outmaps, inmaps / group, *kernel)', True),
+    ('W', 'Filter weights in float', '(outmaps, inmaps // group, *kernel)', True),
     ('b', 'Bias vector in float', '(outmaps,)', True),
-    ('W_q', 'Qunatized weights', '(outmaps, inmaps / group, *kernel)', False),
+    ('W_q', 'Qunatized weights', '(outmaps, inmaps // group, *kernel)', False),
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def fixed_point_quantized_convolution(inp, outmaps, kernel,
@@ -1642,13 +1642,13 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
 
     # Floating Weight
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
         w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
-            "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+            "W_q", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
             w_init, False)
         # Link computation graph
         real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
@@ -1799,9 +1799,9 @@ def pow2_quantized_affine(inp, n_outmaps,
 
 
 @parametric_function_api("pow2_quantized_conv", [
-    ('W', 'Filter weights in float', '(outmaps, inmaps / group, *kernel)', True),
+    ('W', 'Filter weights in float', '(outmaps, inmaps // group, *kernel)', True),
     ('b', 'Bias vector in float', '(outmaps,)', True),
-    ('W_q', 'Qunatized weights', '(outmaps, inmaps / group, *kernel)', False),
+    ('W_q', 'Qunatized weights', '(outmaps, inmaps // group, *kernel)', False),
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def pow2_quantized_convolution(inp, outmaps, kernel,
@@ -1873,13 +1873,13 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
 
     # Floating Weight
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
         w_init, True, not fix_parameters)
 
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
-            "W_q", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+            "W_q", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
             w_init, False)
 
         # Link computation graph
