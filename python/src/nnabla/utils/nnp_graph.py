@@ -20,7 +20,9 @@ import nnabla.function as F
 from nnabla.utils import nnabla_pb2
 from nnabla.parameter import get_parameter
 from nnabla.utils.load_function import _create_function_instance
-from nnabla.utils.load import resolve_reshape_params
+from nnabla.utils.load import (
+    resolve_reshape_params,
+    resolve_broadcast_params)
 
 
 def _load_nnp_to_proto(nnp_path):
@@ -58,6 +60,9 @@ def _create_function(ctx, inputs, funtion_proto, batch_size):
             inputs, funtion_proto, batch_size)
         function_instance = F.Reshape(
             ctx, shape=reshape_shape, inplace=funtion_proto.reshape_param.inplace)
+    elif funtion_proto.type == 'Broadcast':
+        shape = resolve_broadcast_params(inputs, funtion_proto, batch_size)
+        function_instance = F.Broadcast(ctx, shape=shape)
     elif funtion_proto.type == "RepeatStart":
         raise NotImplementedError("Repeat not supported.")
         function_instance = F.Identity(ctx)
