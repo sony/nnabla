@@ -35,15 +35,11 @@ def command_exists(command):
     return not retval
 
 
-@pytest.mark.parametrize('batch_size', [1, 4])
-@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
-def test_nbla_reshape(tmpdir, batch_size, shape):
+def check_nbla_infer(tmpdir, x, y, batch_size):
     if not command_exists('nbla'):
         pytest.skip('An executable `nbla` is not in path.')
 
-    # A. create graph and save nnp.
-    x = nn.Variable([10, 1, 28, 28, 10, 10])
-    y = F.reshape(x, shape=shape)
+    # A. save a created braph to nnp.
     contents = {
         'networks': [
             {'name': 'graph',
@@ -56,9 +52,10 @@ def test_nbla_reshape(tmpdir, batch_size, shape):
              'data': ['x'],
              'output': ['y']}
         ]}
+
     from nnabla.utils.save import save
-    tmppath = tmpdir.join('tmp_reshape.nnp')
-    tmppath.ensure()
+    tmpdir.ensure(dir=True)
+    tmppath = tmpdir.join('tmp.nnp')
     nnp_file = tmppath.strpath
     save(nnp_file, contents)
 
@@ -73,12 +70,10 @@ def test_nbla_reshape(tmpdir, batch_size, shape):
 
     # C. Get result with nbla
     input_bin = tmpdir.join('tmp_in.bin')
-    input_bin.ensure()
     input_bin_file = input_bin.strpath
     x2.d.tofile(input_bin_file)
 
     output_bin = tmpdir.join('tmp_out')
-    output_bin.ensure()
     check_call(['nbla', 'infer', '-e', 'runtime', '-b', str(batch_size),
                 '-o', output_bin.strpath, nnp_file, input_bin_file])
 
@@ -86,3 +81,20 @@ def test_nbla_reshape(tmpdir, batch_size, shape):
     y3 = np.fromfile(output_bin.strpath + '_0.bin',
                      dtype=np.float32).reshape(y2.shape)
     assert np.allclose(y2.d, y3)
+
+
+@pytest.mark.parametrize('batch_size', [1, 4])
+@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
+def test_nbla_reshape(tmpdir, batch_size, shape):
+
+    x = nn.Variable([10, 1, 28, 28, 10, 10])
+    y = F.reshape(x, shape=shape)
+    check_nbla_infer(tmpdir, x, y, batch_size)
+
+
+@pytest.mark.parametrize('batch_size', [1, 4])
+def test_nbla_broadcast(tmpdir, batch_size):
+
+    x = nn.Variable([10, 1, 4, 1, 5])
+    y = F.broadcast(x, shape=[10, 8, 4, 1, 5])
+    check_nbla_infer(tmpdir, x, y, batch_size)
