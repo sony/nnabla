@@ -47,6 +47,14 @@ void Communicator::add_context_and_parameters(
   total_params_ = sum_;
 }
 
+void Communicator::barrier() {
+  NBLA_ERROR(error_code::not_implemented, "Barrier is not implemented in CPU.")
+}
+
+void Communicator::abort() {
+  NBLA_ERROR(error_code::not_implemented, "Abort is not implemented in CPU.")
+}
+
 int Communicator::rank() { return rank_; }
 
 int Communicator::local_rank() { return local_rank_; }

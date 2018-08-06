@@ -142,8 +142,14 @@ class CsrcExporter:
             internal_defines.append(
                 '    rt_function_t f{}; ///< {}'.format(n, f.type))
             finfo = self._info._function_info[f.type]
+            i_num = 0
+            for x, dict in finfo['inputs'].items():
+                if 'variadic' in dict and dict['variadic']:
+                    i_num += MAX_VARIDAIC_NUM
+                else:
+                    i_num += 1
             internal_defines.append(
-                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(finfo['inputs'])))
+                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, i_num))
             o_num = 0
             for y, dict in finfo['outputs'].items():
                 if 'variadic' in dict and dict['variadic']:
