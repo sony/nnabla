@@ -98,7 +98,7 @@ def check_nnp_graph_save_load(tmpdir, x, y, batch_size, variable_batch_size):
 
 @pytest.mark.parametrize('variable_batch_size', [False, True])
 @pytest.mark.parametrize('batch_size', [1, 4])
-@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
+@pytest.mark.parametrize("shape", [(10, 56, -1), (-1, 56, 7, 20, 10)])
 def test_nnp_graph_reshape(tmpdir, variable_batch_size, batch_size, shape):
     x = nn.Variable([10, 1, 28, 28, 10, 10])
     y = F.reshape(x, shape=shape)

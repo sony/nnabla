@@ -84,7 +84,7 @@ def check_nbla_infer(tmpdir, x, y, batch_size):
 
 
 @pytest.mark.parametrize('batch_size', [1, 4])
-@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
+@pytest.mark.parametrize("shape", [(10, 56, -1), (-1, 56, 7, 20, 10)])
 def test_nbla_reshape(tmpdir, batch_size, shape):
 
     x = nn.Variable([10, 1, 28, 28, 10, 10])
