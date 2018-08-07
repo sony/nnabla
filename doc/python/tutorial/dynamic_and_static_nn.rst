@@ -144,7 +144,7 @@ Create data iterator
     loss = []
     def epoch_end_callback(epoch):
         global loss
-        print("[", epoch, np.mean(loss), itr, "]")
+        print("[{} {} {}]".format(epoch, np.mean(loss), itr))
         loss = []
     
     data = data_iterator_tiny_digits(digits, batch_size=16, shuffle=True)
@@ -208,7 +208,7 @@ First, we setup the solver and the data iterator for the training:
     loss = []
     def epoch_end_callback(epoch):
         global loss
-        print("[", epoch, np.mean(loss), itr, "]")
+        print("[{} {} {}]".format(epoch, np.mean(loss), itr))
         loss = []
     data = data_iterator_tiny_digits(digits, batch_size=16, shuffle=True)
     data.register_epoch_end_callback(epoch_end_callback)
