@@ -21,7 +21,7 @@ import nnabla.parametric_functions as PF
 
 
 @pytest.mark.parametrize("seed", [313])
-def test_nnp_graph(seed):
+def test_nnp_graph(seed, tmpdir):
 
     rng = np.random.RandomState(seed)
 
@@ -43,18 +43,14 @@ def test_nnp_graph(seed):
              'outputs': {'y': y},
              'names': {'x': x}}],
     }
-    import tempfile
-    tmpdir = tempfile.mkdtemp()
-    import os
-    nnp_file = os.path.join(tmpdir, 'tmp.nnp')
-    try:
-        from nnabla.utils.save import save
-        save(nnp_file, runtime_contents)
-        from nnabla.utils import nnp_graph
-        nnp = nnp_graph.NnpLoader(nnp_file)
-    finally:
-        import shutil
-        shutil.rmtree(tmpdir)
+    tmpdir.ensure(dir=True)
+    nnp_file = tmpdir.join('tmp.nnp').strpath
+
+    from nnabla.utils.save import save
+    save(nnp_file, runtime_contents)
+    from nnabla.utils import nnp_graph
+    nnp = nnp_graph.NnpLoader(nnp_file)
+
     graph = nnp.get_network('graph')
     x2 = graph.inputs['x']
     y2 = graph.outputs['y']
