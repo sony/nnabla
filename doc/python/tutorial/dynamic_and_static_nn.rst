@@ -175,7 +175,7 @@ Perform training iterations and output training loss:
             solver.update()
             loss.append(static_l.d.copy())
             itr += 1
-    print('')
+    print()
 
 
 .. parsed-literal::
@@ -239,7 +239,7 @@ First, we setup the solver and the data iterator for the training:
             solver.update()
             loss.append(dynamic_l.d.copy())
             itr += 1
-    print('')
+    print()
 
 
 .. parsed-literal::

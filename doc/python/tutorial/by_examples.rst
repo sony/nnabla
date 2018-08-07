@@ -96,8 +96,8 @@ A minibatch is as follows. ``img`` and ``label`` are in
 
     img, label = data.next()
     plt.imshow(tile_images(img), **imshow_opt)
-    print("labels:", label.reshape(8, 8))
-    print("Label shape:", label.shape)
+    print("labels: {}".format(label.reshape(8, 8)))
+    print("Label shape: {}".format(label.shape))
 
 
 .. parsed-literal::
@@ -189,8 +189,8 @@ accessor. It will borrow CPU array references as ``numpy.ndarray``.
     # Execute a forward pass
     loss.forward()
     # Showing results
-    print("Prediction score of 0-th image:", y.d[0])
-    print("Loss:", loss.d)
+    print("Prediction score of 0-th image: {}".format(y.d[0]))
+    print("Loss: {}".format(loss.d))
 
 
 .. parsed-literal::
@@ -392,7 +392,7 @@ globally.)
     with nn.auto_forward():  # Graph are executed 
         y = logreg_forward(x)
         loss = logreg_loss(y, t)
-    print("Loss:", loss.d)
+    print("Loss: {}".format(loss.d))
     plt.imshow(tile_images(x.d), **imshow_opt)
     print("prediction:")
     print(y.d.argmax(axis=1).reshape(8, 8))
@@ -460,10 +460,10 @@ for 10 class classification.
 .. code-block:: python
 
     print("Printing shapes")
-    print("x:", x.shape)
+    print("x: {}".format(x.shape))
     for i, h in enumerate(hs):
         print("h{}:".format(i + 1), h.shape)
-    print("y:", y.shape)
+    print("y: {}".format(y.shape))
 
 
 .. parsed-literal::
@@ -592,7 +592,7 @@ for details.
     from nnabla.ext_utils import get_extension_context
     cuda_device_id = 0
     ctx = get_extension_context('cudnn', device_id=cuda_device_id)
-    print("Context:", ctx)
+    print("Context: {}".format(ctx))
     nn.set_default_context(ctx)  # Set CUDA as a default context.
     y, hs = cnn(x)
     loss = logreg_loss(y, t)
