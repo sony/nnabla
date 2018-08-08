@@ -12,7 +12,7 @@ environment.
 
 First let us prepare some dependencies.
 
-.. code-block:: python2
+.. code-block:: python
 
     import nnabla as nn
     
@@ -54,7 +54,7 @@ Preparing a Toy Dataset
 This section just prepares a dataset to be used for demonstration of
 NNabla usage.
 
-.. code-block:: python2
+.. code-block:: python
 
     digits = tiny_digits.load_digits(n_class=10)
     tiny_digits.plot_stats(digits)
@@ -75,7 +75,7 @@ The next block creates a dataset loader which is a generator providing
 images and labels as minibatches. Note that this dataset is just an
 example purpose and not a part of NNabla.
 
-.. code-block:: python2
+.. code-block:: python
 
     data = tiny_digits.data_iterator_tiny_digits(digits, batch_size=64, shuffle=True)
 
@@ -92,12 +92,12 @@ example purpose and not a part of NNabla.
 A minibatch is as follows. ``img`` and ``label`` are in
 ``numpy.ndarray``.
 
-.. code-block:: python2
+.. code-block:: python
 
     img, label = data.next()
     plt.imshow(tile_images(img), **imshow_opt)
-    print "labels:", label.reshape(8, 8)
-    print "Label shape:", label.shape 
+    print("labels: {}".format(label.reshape(8, 8)))
+    print("Label shape: {}".format(label.shape))
 
 
 .. parsed-literal::
@@ -124,7 +124,7 @@ NNabla provides two different ways for backprop-based gradient descent
 optimization. One is with a static graph, and another is with a dynamic
 graph. We are going to show a static version first.
 
-.. code-block:: python2
+.. code-block:: python
 
     # Forward pass
     x = nn.Variable(img.shape)  # Define an image variable
@@ -144,7 +144,7 @@ functions as **parametric functions**. The parameters are created and
 initialized randomly at function call, and registered by a name
 "affine1" using ``parameter_scope`` context.
 
-.. code-block:: python2
+.. code-block:: python
 
     # Building a loss graph
     t = nn.Variable(label.shape)  # Define an target variable
@@ -156,13 +156,13 @@ build doesn't execute any computation, but the shapes of output
 variables are inferred. Therefore, we can inspect the shapes of each
 variable at this time:
 
-.. code-block:: python2
+.. code-block:: python
 
-    print "Printing shapes of variables"
-    print x.shape
-    print y.shape
-    print t.shape
-    print loss.shape  # empty tuple means scalar
+    print("Printing shapes of variables")
+    print(x.shape)
+    print(y.shape)
+    print(t.shape)
+    print(loss.shape)  # empty tuple means scalar
 
 
 .. parsed-literal::
@@ -181,7 +181,7 @@ You can execute the computation of the graph by calling the
 ``forward()`` method in a sink variable. Inputs can be set via ``.d``
 accessor. It will borrow CPU array references as ``numpy.ndarray``.
 
-.. code-block:: python2
+.. code-block:: python
 
     # Set data
     x.d = img
@@ -189,8 +189,8 @@ accessor. It will borrow CPU array references as ``numpy.ndarray``.
     # Execute a forward pass
     loss.forward()
     # Showing results
-    print "Prediction score of 0-th image:", y.d[0]
-    print "Loss:", loss.d
+    print("Prediction score of 0-th image: {}".format(y.d[0]))
+    print("Loss: {}".format(loss.d))
 
 
 .. parsed-literal::
@@ -209,9 +209,9 @@ Backward propagation through the graph
 The parameters registered by ``parameter_scope`` management function can
 be queried by ``get_parameters()`` as a dict format.
 
-.. code-block:: python2
+.. code-block:: python
 
-    print nn.get_parameters()
+    print(nn.get_parameters())
 
 
 .. parsed-literal::
@@ -222,7 +222,7 @@ be queried by ``get_parameters()`` as a dict format.
 Before executing backpropagation, we should initialize gradient buffers
 of all parameter to zeros.
 
-.. code-block:: python2
+.. code-block:: python
 
     for param in nn.get_parameters().values():
         param.grad.zero()
@@ -230,13 +230,13 @@ of all parameter to zeros.
 Then, you can execute backprop by calling ``backward()`` method at the
 sink variable.
 
-.. code-block:: python2
+.. code-block:: python
 
     # Compute backward
     loss.backward()
     # Showing gradients.
     for name, param in nn.get_parameters().items():
-        print name, param.shape, param.g.flat[:20]  # Showing first 20.
+        print(name, param.shape, param.g.flat[:20])  # Showing first 20.
 
 
 .. parsed-literal::
@@ -261,7 +261,7 @@ The solver module contains a bunch of optimizer implementations such as
 SGD, SGD with momentum, Adam etc. The below block creates SGD solver and
 sets parameters of logistic regression to it.
 
-.. code-block:: python2
+.. code-block:: python
 
     # Create a solver (gradient-based optimizer)
     learning_rate = 1e-3
@@ -281,7 +281,7 @@ solver class as follows
 
 where :math:`\eta` denotes learning rate.
 
-.. code-block:: python2
+.. code-block:: python
 
     # One step of training
     x.d, t.d = data.next()
@@ -290,7 +290,7 @@ where :math:`\eta` denotes learning rate.
     loss.backward()
     solver.weight_decay(1e-5)  # Applying weight decay as an regularization
     solver.update()
-    print loss.d
+    print(loss.d)
 
 
 .. parsed-literal::
@@ -300,7 +300,7 @@ where :math:`\eta` denotes learning rate.
 
 Next block iterates optimization steps, and shows the loss decreases.
 
-.. code-block:: python2
+.. code-block:: python
 
     for i in range(1000):
         x.d, t.d = data.next()
@@ -310,7 +310,7 @@ Next block iterates optimization steps, and shows the loss decreases.
         solver.weight_decay(1e-5)  # Applying weight decay as an regularization
         solver.update()
         if i % 100 == 0:  # Print for each 10 iterations
-            print i, loss.d
+            print(i, loss.d)
 
 
 .. parsed-literal::
@@ -332,13 +332,13 @@ Show prediction
 
 The following code displays training results.
 
-.. code-block:: python2
+.. code-block:: python
 
     x.d, t.d = data.next()  # Here we predict images from training set although it's useless. 
     y.forward()  # You can execute a sub graph.
     plt.imshow(tile_images(x.d), **imshow_opt)
-    print "prediction:"
-    print y.d.argmax(axis=1).reshape(8, 8)  # Taking a class index based on prediction score.
+    print("prediction:")
+    print(y.d.argmax(axis=1).reshape(8, 8))  # Taking a class index based on prediction score.
 
 
 .. parsed-literal::
@@ -367,7 +367,7 @@ doesn't show how useful dynamic graph is, but shows a bit of flavor.
 The next block just define computation graph building as functions for
 later use.
 
-.. code-block:: python2
+.. code-block:: python
 
     def logreg_forward(x):
         with nn.parameter_scope("affine1"):
@@ -384,7 +384,7 @@ this, computation is fired immediately at functions are called. (You can
 also use ``nnabla.set_auto_forward(auto)`` to set the auto-forward state
 globally.)
 
-.. code-block:: python2
+.. code-block:: python
 
     x = nn.Variable(img.shape)
     t = nn.Variable(label.shape)
@@ -392,10 +392,10 @@ globally.)
     with nn.auto_forward():  # Graph are executed 
         y = logreg_forward(x)
         loss = logreg_loss(y, t)
-    print "Loss:", loss.d
+    print("Loss: {}".format(loss.d))
     plt.imshow(tile_images(x.d), **imshow_opt)
-    print "prediction:"
-    print y.d.argmax(axis=1).reshape(8, 8)
+    print("prediction:")
+    print(y.d.argmax(axis=1).reshape(8, 8))
 
 
 .. parsed-literal::
@@ -418,7 +418,7 @@ globally.)
 
 Backward computation can be done on a dynamically constructed graph.
 
-.. code-block:: python2
+.. code-block:: python
 
     solver.zero_grad()
     loss.backward()
@@ -431,14 +431,14 @@ In this section, you see an example of MLP graph building and training.
 Before starting, we clear all parameters registered in the logistic
 regression example.
 
-.. code-block:: python2
+.. code-block:: python
 
     nn.clear_parameters()  # Clear all parameters
 
 Here is the function that builds a MLP with an arbitrary depth and width
 for 10 class classification.
 
-.. code-block:: python2
+.. code-block:: python
 
     def mlp(x, hidden=[16, 32, 16]):
         hs = []
@@ -452,18 +452,18 @@ for 10 class classification.
                 y = PF.affine(h, 10)
         return y, hs
 
-.. code-block:: python2
+.. code-block:: python
 
     # Construct a MLP graph
     y, hs = mlp(x)
 
-.. code-block:: python2
+.. code-block:: python
 
-    print "Printing shapes"
-    print "x:", x.shape
+    print("Printing shapes")
+    print("x: {}".format(x.shape))
     for i, h in enumerate(hs):
-        print "h{}:".format(i + 1), h.shape
-    print "y:", y.shape
+        print("h{}:".format(i + 1), h.shape)
+    print("y: {}".format(y.shape))
 
 
 .. parsed-literal::
@@ -476,7 +476,7 @@ for 10 class classification.
     y: (64, 10)
 
 
-.. code-block:: python2
+.. code-block:: python
 
     # Training
     loss = logreg_loss(y, t)  # Reuse logreg loss function.
@@ -493,7 +493,7 @@ for 10 class classification.
             solver.weight_decay(1e-5)  # Applying weight decay as an regularization
             solver.update()
             if i % 100 == 0:  # Print for each 10 iterations
-                print i, loss.d
+                print(i, loss.d)
                 
     
     # Training
@@ -514,7 +514,7 @@ for 10 class classification.
     900 0.555113613605
 
 
-.. code-block:: python2
+.. code-block:: python
 
     # Showing responses for each layer
     num_plot = len(hs) + 2
@@ -547,11 +547,11 @@ Convolutional Neural Network with CUDA acceleration
 
 Here we demonstrates a CNN with CUDA GPU acceleration.
 
-.. code-block:: python2
+.. code-block:: python
 
     nn.clear_parameters()
 
-.. code-block:: python2
+.. code-block:: python
 
     def cnn(x):
         with nn.parameter_scope("cnn"):  # Parameter scope can be nested
@@ -586,13 +586,13 @@ context, Functions and solves created are instantiated with CUDNN
 reference <http://nnabla.readthedocs.io/en/latest/python/api/common.html#context>`__
 for details.
 
-.. code-block:: python2
+.. code-block:: python
 
     # Run on CUDA
     from nnabla.ext_utils import get_extension_context
     cuda_device_id = 0
     ctx = get_extension_context('cudnn', device_id=cuda_device_id)
-    print "Context:", ctx
+    print("Context: {}".format(ctx))
     nn.set_default_context(ctx)  # Set CUDA as a default context.
     y, hs = cnn(x)
     loss = logreg_loss(y, t)
@@ -609,7 +609,7 @@ for details.
     Context: Context(backend='cpu|cuda', array_class='CudaCachedArray', device_id='0', compute_backend='default|cudnn')
 
 
-.. code-block:: python2
+.. code-block:: python
 
     training(1000, 1e-1)
 
@@ -628,7 +628,7 @@ for details.
     900 0.121101222932
 
 
-.. code-block:: python2
+.. code-block:: python
 
     # Showing responses for each layer
     num_plot = len(hs) + 2
@@ -648,7 +648,7 @@ for details.
 ``nn.save_parameters`` writes parameters registered in
 ``parameter_scope`` system in HDF5 format. We use it a later example.
 
-.. code-block:: python2
+.. code-block:: python
 
     path_cnn_params = "tmp.params.cnn.h5"
     nn.save_parameters(path_cnn_params)
@@ -664,11 +664,11 @@ Recurrent Neural Network (Elman RNN)
 
 This is an example of recurrent neural network training.
 
-.. code-block:: python2
+.. code-block:: python
 
     nn.clear_parameters()
 
-.. code-block:: python2
+.. code-block:: python
 
     def rnn(xs, h0, hidden=32):
         hs = []
@@ -691,7 +691,7 @@ This is an example of recurrent neural network training.
 It is not meaningful, but just a demonstration purpose. We split an
 image into 2 by 2 grids, and feed them sequentially into RNN.
 
-.. code-block:: python2
+.. code-block:: python
 
     def split_grid4(x):
         x0 = x[..., :4, :4]
@@ -700,7 +700,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
         x3 = x[..., 4:, 4:]
         return x0, x1, x2, x3
 
-.. code-block:: python2
+.. code-block:: python
 
     hidden = 32
     seq_img = split_grid4(img)
@@ -709,7 +709,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
     y, hs = rnn(seq_x, h0, hidden)
     loss = logreg_loss(y, t)
 
-.. code-block:: python2
+.. code-block:: python
 
     # Copied from the above logreg example.
     def training_rnn(steps, learning_rate):
@@ -728,7 +728,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
             solver.weight_decay(1e-5)  # Applying weight decay as an regularization
             solver.update()
             if i % 100 == 0:  # Print for each 10 iterations
-                print i, loss.d
+                print(i, loss.d)
     
     training_rnn(1000, 1e-1)
 
@@ -747,7 +747,7 @@ image into 2 by 2 grids, and feed them sequentially into RNN.
     900 0.0925596579909
 
 
-.. code-block:: python2
+.. code-block:: python
 
     # Showing responses for each layer
     num_plot = len(hs) + 2
@@ -772,7 +772,7 @@ pretrained network.
 
 First, we load parameters learned in the CNN example.
 
-.. code-block:: python2
+.. code-block:: python
 
     nn.clear_parameters()
     # Loading CNN pretrained parameters.
@@ -788,7 +788,7 @@ We define embedding function. Note that the network structure and
 parameter hierarchy is identical to the previous CNN example. That
 enables you to reuse the saved parameters and finetune from it.
 
-.. code-block:: python2
+.. code-block:: python
 
     def cnn_embed(x, test=False):
         # Note: Identical configuration with the CNN example above.
@@ -818,7 +818,7 @@ We build two stream CNNs and compare them with the contrastive loss
 function defined above. Note that both CNNs have the same parameter
 hierarchy, which means both parameters are shared.
 
-.. code-block:: python2
+.. code-block:: python
 
     x0 = nn.Variable(img.shape)
     x1 = nn.Variable(img.shape)
@@ -827,7 +827,7 @@ hierarchy, which means both parameters are shared.
     e1, hs1 = cnn_embed(x1)  # NOTE: parameters are shared
     loss = siamese_loss(e0, e1, t)
 
-.. code-block:: python2
+.. code-block:: python
 
     def training_siamese(steps):
         for i in range(steps):
@@ -844,7 +844,7 @@ hierarchy, which means both parameters are shared.
             solver.weight_decay(1e-5)  # Applying weight decay as an regularization
             solver.update()
             if i % 100 == 0:  # Print for each 10 iterations
-                print i, loss.d
+                print(i, loss.d)
     learning_rate = 1e-2
     solver = S.Sgd(learning_rate)
     with nn.parameter_scope("embed2d"):
@@ -903,22 +903,22 @@ hierarchy, which means both parameters are shared.
 We visualize embedded training images as following. You see the images
 from the same class embedded near each other.
 
-.. code-block:: python2
+.. code-block:: python
 
     all_image = digits.images[:512, None]
     all_label = digits.target[:512]
 
-.. code-block:: python2
+.. code-block:: python
 
     x_all = nn.Variable(all_image.shape)
     x_all.d = all_image
 
-.. code-block:: python2
+.. code-block:: python
 
     with nn.auto_forward():
         embed, _ = cnn_embed(x_all, test=True)
 
-.. code-block:: python2
+.. code-block:: python
 
     plt.figure(figsize=(16, 9))
     for i in range(10):
