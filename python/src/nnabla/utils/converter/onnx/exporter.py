@@ -216,7 +216,8 @@ class OnnxExporter:
             "Deconvolution": self.Deconvolution,
             "Flip": self.Flip,
             "OneHot": self.OneHot,
-            "Unpooling": self.Unpooling
+            "Unpooling": self.Unpooling,
+            "DepthwiseConvolution": self.DepthwiseConvolution
         }
 
     def _add_param(self, param_name, dtype, shape, raw_data):
@@ -231,6 +232,32 @@ class OnnxExporter:
         i.type.tensor_type.elem_type = dtype
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
+
+    def DepthwiseConvolution(self, func):
+        cp = func.depthwise_convolution_param
+        in_shape = [d for d in self._var_dict[func.input[0]].dim]
+        w = [d for d in self._var_dict[func.input[1]].dim]
+        out_shape = [d for d in self._var_dict[func.output[0]].dim]
+        assert in_shape[cp.base_axis] * cp.multiplier == out_shape[cp.base_axis]
+        assert w[0] == in_shape[cp.base_axis] * cp.multiplier
+        group = int(out_shape[cp.base_axis] / cp.multiplier)
+        w = [int(w[0] / cp.multiplier), int(w[0] / group), w[1], w[2]]
+        w_shape = nnabla_pb2.Shape()
+        w_shape.dim.extend(w)
+        self._var_dict[func.input[1]] = w_shape
+        multiple = out_shape[cp.base_axis] / in_shape[cp.base_axis]
+        assert multiple == cp.multiplier, "Invalid input/ouput shape!"
+        n = onnx.helper.make_node(
+            'Conv',
+            func.input,
+            func.output,
+            kernel_shape=w[2:],
+            dilations=cp.dilation.dim,
+            strides=cp.stride.dim,
+            pads=cp.pad.dim[:] * 2,
+            group=group
+        )
+        return [n]
 
     def BasePooling(self, onnx_func, func):
         input_shape = self._var_dict[func.input[0]].dim
@@ -706,6 +733,8 @@ class OnnxExporter:
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
                 assert len(init.raw_data) / 4 == np.prod(np.array(init.dims))
+            else:
+                print("Not in: {}".format(param.variable_name))
 
         for iv in exe.data_variable:
             i = graph.input.add()
@@ -716,12 +745,15 @@ class OnnxExporter:
             i.type.tensor_type.shape.dim.extend(dims)
 
         for pv in exe.parameter_variable:
-            p = graph.input.add()
-            p.name = pv.variable_name
-            p.type.tensor_type.elem_type = get_tensor_type(
-                pv.variable_name, self._input_types)
-            dims = [create_dim(d) for d in self._var_dict[pv.variable_name].dim]
-            p.type.tensor_type.shape.dim.extend(dims)
+            if pv.variable_name in self._var_dict:
+                p = graph.input.add()
+                p.name = pv.variable_name
+                p.type.tensor_type.elem_type = get_tensor_type(
+                    pv.variable_name, self._input_types)
+                dims = [create_dim(d) for d in self._var_dict[pv.variable_name].dim]
+                p.type.tensor_type.shape.dim.extend(dims)
+            else:
+                print("param: {} not in dict.".format(pv.variable_name))
 
         # Add only the final output of the graph as output
         for ov in exe.output_variable:
