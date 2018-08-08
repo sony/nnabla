@@ -61,8 +61,8 @@ def test_mean_subtraction_forward_backward(seed, inshape, base_axis, ctx, func_n
             *(inputs + [base_axis, batch_stat]))
         with nn.auto_forward():
             y = F.mean_subtraction(*(vinputs + [base_axis, batch_stat]))
-        # print 'vinput[1].d', vinputs[1].d, vinputs[2].d
-        # print 'inputs[1]', inputs[1], inputs[2]
+        # print('vinput[1].d', vinputs[1].d, vinputs[2].d)
+        # print('inputs[1]', inputs[1], inputs[2])
         assert np.allclose(vinputs[1].d, inputs[1])
 
     # Check if global stat mode works

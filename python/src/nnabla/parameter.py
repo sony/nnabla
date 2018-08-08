@@ -105,8 +105,10 @@ def parameter_scope(name):
         assert isinstance(scope, dict)
         parent_scope[name] = scope
     current_scope = scope
-    yield
-    current_scope = prev_scope
+    try:
+        yield
+    finally:
+        current_scope = prev_scope
 
 
 def get_parameter(key):
@@ -207,7 +209,10 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
             param = nn.Variable(shape, need_grad=need_grad)
         set_parameter(name, param)
     else:
-        assert param.shape == tuple(shape)
+        if param.shape != tuple(shape):
+            raise ValueError(
+                'The size of existing parameter "{}" {} is different from the size of new parameter {}.\n'
+                'To clear all parameters, call nn.clear_parameters().'.format(name, param.shape, tuple(shape)))
         if need_grad != param.need_grad:
             param.need_grad = need_grad
     if as_need_grad is None:

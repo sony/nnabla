@@ -80,6 +80,25 @@ def resolve_reshape_params(inputs, function_proto, batch_size):
     return shape
 
 
+def resolve_broadcast_params(inputs, function_proto, batch_size):
+    '''Resolve shape parameter and returns shape.
+    '''
+    f = function_proto  # alias
+
+    # A. Detect multiple negative dimensions (not allowed).
+    negative_count = 0
+    for d in f.broadcast_param.shape.dim:
+        if d < 0:
+            negative_count += 1
+    if negative_count > 1:
+        raise ValueError('Reshape: shape has muliple negative number.')
+
+    # B. Fill nagative dimensions with batch size.
+    shape = tuple(
+        [d if d >= 0 else batch_size for d in f.broadcast_param.shape.dim])
+    return shape
+
+
 ##########################################################################
 # Private functions.
 #
@@ -172,8 +191,7 @@ def _create_function(ctx, network, f, variable_index):
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
     elif f.type == "Broadcast":
-        shape = tuple(
-            [d if d >= 0 else network.batch_size for d in f.broadcast_param.shape.dim])
+        shape = resolve_broadcast_params(inputs, f, network.batch_size)
         function_instance = F.Broadcast(ctx, shape)
     else:
         function_instance = _create_function_instance(ctx, f)

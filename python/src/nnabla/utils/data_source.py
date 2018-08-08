@@ -298,7 +298,12 @@ class DataSourceWithFileCache(DataSource):
         self._position = 0
 
         percent = 0
+
+        if single_or_rankzero():
+            progress(None)
+
         while self._position < self._data_source._size:
+
             if single_or_rankzero():
                 progress('Create cache', self._position *
                          1.0 / self._data_source._size)
@@ -307,6 +312,10 @@ class DataSourceWithFileCache(DataSource):
             self._position += 1
         if len(self._cache_positions) > 0:
             self._save_cache_to_file()
+
+        if single_or_rankzero():
+            progress(None)
+
         # Adjust data size into reseted position. In most case it means
         # multiple of bunch(mini-batch) size.
         num_of_cache_files = int(numpy.ceil(

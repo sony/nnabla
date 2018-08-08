@@ -86,6 +86,19 @@ shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& fu
       arg_shape.insert(arg_shape.begin(), batch_size());
     }
 % endif
+% if name == 'Broadcast' and argname == 'shape':
+    // Negative dimension is batch dimension
+    int nneg = 0;
+    for( auto &v : arg_shape ) {
+      if( v < 0 ) {
+        NBLA_CHECK(nneg == 0, error_code::value, "Reshape must not have "
+                                                 "multiple negative dimension "
+                                                 "in shape parameter.");
+        v = batch_size();  // Fill negative by batch_size.
+        nneg += 1;
+      }
+    }
+% endif
 % endfor
 % endif
     nbla::FunctionPtr fp = create_${name}(ctx_${''.join([', arg_' + argname for argname in func.get('arguments', {}).keys()])});

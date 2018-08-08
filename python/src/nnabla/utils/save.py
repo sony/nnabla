@@ -279,6 +279,20 @@ def _create_network(net, variable_batch_size):
                         v.name, b, expect_batch_size))
                 function['args']['shape'][0] = -1
 
+        if function['type'] == 'Broadcast':
+
+            shape = function['args']['shape']
+
+            if variable_batch_size:
+                # TODO: Temporarily dim 0 of shape expects to be batch size.
+                b = function['args']['shape'][0]
+                if expect_batch_size < 0:
+                    expect_batch_size = b
+                if b != expect_batch_size:
+                    raise ValueError('Variable "{}" has different batch size {} (expected {})'.format(
+                        v.name, b, expect_batch_size))
+                function['args']['shape'][0] = -1
+
         _create_function_nntxt(f, name, function)
 
     return n

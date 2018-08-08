@@ -9,7 +9,7 @@ computation graph, e.g., randomly dropping layers for each minibatch.
 
 This tutorial compares both computation graphs.
 
-.. code-block:: python2
+.. code-block:: python
 
     %matplotlib inline
     import nnabla as nn
@@ -33,7 +33,7 @@ Dataset loading
 
 We will first setup the digits dataset from scikit-learn:
 
-.. code-block:: python2
+.. code-block:: python
 
     from tiny_digits import *
     
@@ -53,10 +53,10 @@ We will first setup the digits dataset from scikit-learn:
 Each sample in this dataset is a grayscale image of size 8x8 and belongs
 to one of the ten classes ``0``, ``1``, ..., ``9``.
 
-.. code-block:: python2
+.. code-block:: python
 
     img, label = data.next()
-    print img.shape, label.shape
+    print(img.shape, label.shape)
 
 
 .. parsed-literal::
@@ -69,7 +69,7 @@ Network definition
 
 As an example, we define a (unnecessarily) deep CNN:
 
-.. code-block:: python2
+.. code-block:: python
 
     def cnn(x):
         """Unnecessarily Deep CNN.
@@ -104,7 +104,7 @@ Static computation graph
 First, we will look at the case of a static computation graph where the
 neural network does not change during training.
 
-.. code-block:: python2
+.. code-block:: python
 
     from nnabla.ext_utils import get_extension_context
     
@@ -132,19 +132,19 @@ neural network does not change during training.
 
 Setup solver for training
 
-.. code-block:: python2
+.. code-block:: python
 
     solver = S.Adam(alpha=1e-3)
     solver.set_parameters(nn.get_parameters())
 
 Create data iterator
 
-.. code-block:: python2
+.. code-block:: python
 
     loss = []
     def epoch_end_callback(epoch):
         global loss
-        print "[", epoch, np.mean(loss), itr, "]",
+        print("[{} {} {}]".format(epoch, np.mean(loss), itr))
         loss = []
     
     data = data_iterator_tiny_digits(digits, batch_size=16, shuffle=True)
@@ -162,7 +162,7 @@ Create data iterator
 
 Perform training iterations and output training loss:
 
-.. code-block:: python2
+.. code-block:: python
 
     %%time
     for epoch in range(30):
@@ -175,7 +175,7 @@ Perform training iterations and output training loss:
             solver.update()
             loss.append(static_l.d.copy())
             itr += 1
-    print ''
+    print()
 
 
 .. parsed-literal::
@@ -199,7 +199,7 @@ dropout layers.
 
 First, we setup the solver and the data iterator for the training:
 
-.. code-block:: python2
+.. code-block:: python
 
     nn.clear_parameters()
     solver = S.Adam(alpha=1e-3)
@@ -208,7 +208,7 @@ First, we setup the solver and the data iterator for the training:
     loss = []
     def epoch_end_callback(epoch):
         global loss
-        print "[", epoch, np.mean(loss), itr, "]",
+        print("[{} {} {}]".format(epoch, np.mean(loss), itr))
         loss = []
     data = data_iterator_tiny_digits(digits, batch_size=16, shuffle=True)
     data.register_epoch_end_callback(epoch_end_callback)
@@ -223,7 +223,7 @@ First, we setup the solver and the data iterator for the training:
     2017-06-26 23:10:28,451 [nnabla][INFO]: Using DataIterator
 
 
-.. code-block:: python2
+.. code-block:: python
 
     %%time
     for epoch in range(30):
@@ -239,7 +239,7 @@ First, we setup the solver and the data iterator for the training:
             solver.update()
             loss.append(dynamic_l.d.copy())
             itr += 1
-    print ''
+    print()
 
 
 .. parsed-literal::

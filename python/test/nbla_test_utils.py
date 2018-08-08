@@ -475,7 +475,7 @@ def function_tester(rng, func, ref_func, inputs,
         backward = [True for _ in inputs]
 
     # Create Variables
-    # print 'create_variable'
+    # print('create_variable')
 
     def create_variables(inputs, backward):
         vinputs = []
@@ -496,7 +496,7 @@ def function_tester(rng, func, ref_func, inputs,
 
     vinputs = create_variables(inputs, backward)
     # Checking forward
-    # print 'checking forward'
+    # print('checking forward')
     with nn.context_scope(ctx), nn.auto_forward():
         o = func(*(vinputs + func_args), **func_kwargs)
     rinputs = copy.deepcopy(inputs)  # inputs for ref_func
@@ -524,12 +524,12 @@ def function_tester(rng, func, ref_func, inputs,
     except ImportError:
         pass
 
-    # print 'checking function name'
+    # print('checking function name')
     if func_name is not None:
         assert o[0].parent.name == func_name
 
     # Checking backward
-    # print 'checking backward'
+    # print('checking backward')
     if not True in backward:
         return
 
