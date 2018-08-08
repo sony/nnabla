@@ -48,11 +48,8 @@ def test_save_load_parameters():
     nnabla.utils.load.load('tmp.nnp')
 
 
-@pytest.mark.parametrize("variable_batch_size", [False, True])
-@pytest.mark.parametrize("shape", [(10, 56, -1), (10, 56, 7, 20, 10)])
-def test_save_load_reshape(variable_batch_size, shape):
-    x = nn.Variable([10, 1, 28, 28, 10, 10])
-    y = F.reshape(x, shape=shape)
+def check_save_load(tmpdir, x, y, variable_batch_size):
+
     contents = {
         'networks': [
             {'name': 'Validation',
@@ -64,6 +61,24 @@ def test_save_load_reshape(variable_batch_size, shape):
              'network': 'Validation',
              'data': ['x'],
              'output': ['y']}]}
-    nnabla.utils.save.save('tmp_reshape.nnp', contents,
+    tmpdir.ensure(dir=True)
+    tmppath = tmpdir.join('tmp.nnp')
+    nnp_file = tmppath.strpath
+    nnabla.utils.save.save(nnp_file, contents,
                            variable_batch_size=variable_batch_size)
-    nnabla.utils.load.load('tmp.nnp')
+    nnabla.utils.load.load(nnp_file)
+
+
+@pytest.mark.parametrize("variable_batch_size", [False, True])
+@pytest.mark.parametrize("shape", [(10, 56, -1), (-1, 56, 7, 20, 10)])
+def test_save_load_reshape(tmpdir, variable_batch_size, shape):
+    x = nn.Variable([10, 1, 28, 28, 10, 10])
+    y = F.reshape(x, shape=shape)
+    check_save_load(tmpdir, x, y, variable_batch_size)
+
+
+@pytest.mark.parametrize("variable_batch_size", [False, True])
+def test_save_load_broadcast(tmpdir, variable_batch_size):
+    x = nn.Variable([10, 1, 4, 1, 8])
+    y = F.broadcast(x, shape=[10, 1, 4, 3, 8])
+    check_save_load(tmpdir, x, y, variable_batch_size)
