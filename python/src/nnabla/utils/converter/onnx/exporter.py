@@ -802,7 +802,7 @@ class OnnxExporter:
             # NNP Dropout is always is_test=false
             # since we always apply dropout when it is
             # included in a network.
-            attr = onnx.helper.make_attribute("is_test", 0)
+            attr = onnx.helper.make_attribute("is_test", 1)
             n.attribute.extend([attr])
             nl.append(n)
         elif func.type == "Convolution":
@@ -1155,6 +1155,24 @@ class OnnxExporter:
         with open(onnx_dump, "w") as f:
             f.write(str(self._model_proto))
 
+    def dump_graph(self):
+        in_d = {}
+        init_d = {}
+        for input in self._model_proto.graph.input:
+            in_d[input.name] = [d.dim_value for d in input.type.tensor_type.shape.dim]
+        for init in self._model_proto.graph.initializer:
+            init_d[init.name] = [d for d in init.dims]
+        for node in self._model_proto.graph.node:
+            for i in node.input:
+                if i in in_d:
+                    if i in init_d:
+                        print("{} : {} <- {}".format(i, in_d[i], init_d[i]))
+                    else:
+                        print("{} : {}".format(i, in_d[i]))
+            print(node)
+
+
+
     def execute(self, file_path):
         # if debug, please uncomment it.
         # self.dump_nnp(file_path)
@@ -1166,4 +1184,5 @@ class OnnxExporter:
 
         # if debug, please uncomment it.
         # self.dump_onnx(file_path)
+        # self.dump_graph()
 
