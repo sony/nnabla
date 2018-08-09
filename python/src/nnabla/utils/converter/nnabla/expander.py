@@ -226,7 +226,7 @@ class NnpExpander:
                     for n, v in enumerate(func.input):
                         vname = None
                         if v in self._parameter_original_names:
-                            if len(self._parameter_original_names[v]) > 0:
+                            if len(self._parameter_original_names[v]) == ri.times:
                                 vname = self._parameter_original_names[v][i]
                             else:
                                 vname = v
