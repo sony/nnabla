@@ -32,6 +32,7 @@ def get_args():
     p.add_argument('--anchors', type=int, default=5)
     p.add_argument('--classes', type=int, default=80)
     p.add_argument('--width', type=int, default=608)
+    p.add_argument('--header', type=int, default=4)
     args = p.parse_args()
     if args.output is None:
         args.output = args.input.replace('.weights', '.h5')
@@ -51,7 +52,7 @@ def main():
     params = nn.get_parameters(grad_only=False)
 
     # Parse network parameters
-    dn_weights = np.fromfile(args.input, dtype=np.float32)[4:]
+    dn_weights = np.fromfile(args.input, dtype=np.float32)[args.header:]
     cursor = 0
     for i in range(1, 19):  # 1 to 18
         cursor = parser.load_convolutional_and_get_next_cursor(

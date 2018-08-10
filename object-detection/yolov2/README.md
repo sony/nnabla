@@ -1,79 +1,23 @@
 # YOLO v2 : Image object detection
 
-## Training
-The training code was forked from [https://github.com/marvis/pytorch-yolo2](https://github.com/marvis/pytorch-yolo2). See the License section for details.
+Welcome to YOLO-v2-NNabla! YOLO-v2-NNabla allows you to run image object detection on NNabla, producing an image like what is shown below.
 
-### Prepare the dataset
-Follow the steps in "Training YOLO on VOC" from https://pjreddie.com/darknet/yolov2/ .
+For a quick start on running image object detection on a given image using pre-trained network weights, please see the [quick start guide](./quickstart.md)!
 
-### Download the pretrained parameters
-Follow the steps in "Download Pretrained Convolutional Weights" from https://pjreddie.com/darknet/yolo/ .
+(TODO: insert image)
 
-### Convert the pretrained parameters
-Run the following:
-
-```bash
-python convert_darknet19_448_conv_23_weights_to_nnabla.py --input darknet19_448.conv.23
-```
-
-### Train
-Run the following:
-
-```bash
-python train.py -w ./darknet19_448.conv.23.h5 -o backup
-```
-
-For details on optional arguments, run the following command, or see inside `utils.py` .
-
-```bash
-python train.py --help
-```
-
-Currently, the logs for the loss function values do not get saved by default. If you are working in a Linux environment, use `tee`, such as `python train.py ... | tee log.txt` to save the output log.
-
-### Evaluate the mAP
-Run the following:
-
-```bash
-python valid.py -w backup/000310.h5 -o results
-python2 scripts/voc_eval.py results/comp4_det_test_
-```
-
-Edit the `results` argument to change the output directory of the preprocessed calculations. For more details on optional arguments, run the following command, or see inside valid.py.
-
-```bash
-python valid.py --help
-```
+- For details on training and evaluating your network's mAP (Mean Average Precision), see [Tutorial: Training the YOLO v2 Network with YOLO-v2-NNabla](./tutorial/tutorial_training.md).
+- For details on training and evaluating your network using your own image feature extractor, see [Tutorial: Training the YOLO v2 Network with a Custom Feature Extractor](./tutorial/tutorial_custom_features.md).
+- For details on training and evaluating your network using your own dataset, see [Tutorial: Training the YOLO v2 Network with a Custom Dataset](./tutorial/tutorial_custom_dataset.md).
 
 
-## Inference
+## Running Image Object Detection
+YOLO-v2-NNabla currently runs on Python, or on ROS C++ nodes.
 
-TODO: Add requirements.txt
+### On Python
+For instructions on running image object detection the Python API, please see the [quick start guide](./quickstart.md). This tutorial covers the instructions on how to run image object detection on a given image, using pre-trained network weights.
 
-This example demonstrates YOLO v2 object detection inference on NNabla with pretrained weights available at [the original author's website](https://pjreddie.com/darknet/yolo/).
-
-There are two examples that run the object detection model. One is on Python API, another is on ROS C++ node.
-
-### On Python API
-
-This reqruires Python OpenCV. We would recommend you to install Python OpenCV to your Python by building from source using CMake command.
-
-1. Download the darknet model file from the web site.
-```
-python download_darknet_yolo.py
-```
-
-1. Convert the Darknet weight file to NNabla weights.
-```
-python convert_yolov2_weights_to_nnabla.py
-```
-
-1. Run detection. It runs YOLOv2 trained on MS COCO dataset given an image (`dog.jpg`), and outputs an image with bounding boxes `detect.dog.jpg` to the current folder.
-```
-python yolov2_detection.py [-c cudnn] dog.jpg
-```
-
-## On ROS C++ node
+### On ROS C++ nodes
 
 NOTE: See [this page](https://github.com/sony/nnabla/tree/master/doc/build/README.md) for a build instruction of C++ libraries.
 
@@ -85,6 +29,12 @@ python yolov2_nnp.py
 1. Create a symbolic link to `nnabla_object_detection` at your catkin_workspace.
 1. Build your catkin workspace. The headers and so files of nnabla, nnabla_utils and nnabla_ext_cuda must be in paths. If you don't use a CUDA extension of NNabla, add `-DWITH_CUDA=OFF` to `catkin_make` command.
 1. Launch `roslaunch nnabla_object_detection demo.launch` with appropriate args. See the launch file for options.
+
+
+## Training, Evaluating, and Detection Using Trained Parameters
+The training code was forked from [https://github.com/marvis/pytorch-yolo2](https://github.com/marvis/pytorch-yolo2). See the License section for details.
+
+For details on training and evaluating your network's mAP (Mean Average Precision), see [Tutorial: Training the YOLO v2 Network with YOLO-v2-NNabla](./tutorial/tutorial_training.md).
 
 ---
 ## License
