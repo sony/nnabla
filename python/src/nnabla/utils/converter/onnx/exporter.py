@@ -36,6 +36,8 @@ random_seed = 0
 R_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # Helper functions
+
+
 def generate_scalar_constant(output_name, tensor_name, scalar):
     """Convert a scalar value to a Constant buffer.
     This is mainly used for xxScalar operators."""
@@ -105,6 +107,7 @@ def create_dim(val):
     dim = TensorShapeProto.Dimension()
     dim.dim_value = val
     return dim
+
 
 def get_tensor_type(name, type_dict):
     if name in type_dict:
@@ -238,7 +241,8 @@ class OnnxExporter:
         in_shape = [d for d in self._var_dict[func.input[0]].dim]
         w = [d for d in self._var_dict[func.input[1]].dim]
         out_shape = [d for d in self._var_dict[func.output[0]].dim]
-        assert in_shape[cp.base_axis] * cp.multiplier == out_shape[cp.base_axis]
+        assert in_shape[cp.base_axis] * \
+            cp.multiplier == out_shape[cp.base_axis]
         assert w[0] == in_shape[cp.base_axis] * cp.multiplier
         group = int(out_shape[cp.base_axis] / cp.multiplier)
         w = [int(w[0] / cp.multiplier), int(w[0] / group), w[1], w[2]]
@@ -281,7 +285,7 @@ class OnnxExporter:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:
-            subs = [k - i % s if i % s != 0 else k -s
+            subs = [k - i % s if i % s != 0 else k - s
                     for k, s, i in zip(k, s, input_shape[-2:])]
             pads = [0, 0] + subs
         n = onnx.helper.make_node(
@@ -312,7 +316,7 @@ class OnnxExporter:
             is_test=True,
             epsilon=func.batch_normalization_param.eps,
             momentum=func.batch_normalization_param.decay_rate
-            #spatial=1 different from SPEC.
+            # spatial=1 different from SPEC.
         )
 
         for p in func.input[1:]:
@@ -357,7 +361,8 @@ class OnnxExporter:
             onehot_table[idx, idx] = 1
             onehot_table_name = fork_name('onehot_table')
             raw_data = onehot_table.astype(np.float32).tostring()
-            self._add_param(onehot_table_name, TensorProto.FLOAT, onehot_table.shape, raw_data)
+            self._add_param(onehot_table_name, TensorProto.FLOAT,
+                            onehot_table.shape, raw_data)
             self._onehot_table[output_shape[1]] = onehot_table_name
 
         flatten_output = fork_name('onehotflatten')
@@ -380,7 +385,8 @@ class OnnxExporter:
 
         shape_name = fork_name('onehotoutputshape')
         raw_data = np.array(output_shape).astype(np.int32).tostring()
-        self._add_param(shape_name, TensorProto.INT32, (len(output_shape),), raw_data)
+        self._add_param(shape_name, TensorProto.INT32,
+                        (len(output_shape),), raw_data)
         n = onnx.helper.make_node(
             'Reshape',
             [gather_out, shape_name],
@@ -406,12 +412,14 @@ class OnnxExporter:
             )
             nl.append(n)
 
-            #Step 2: gather
+            # Step 2: gather
             index_name = fork_name('GatherFlip')
             gather_name = fork_name('GatherFlipOutput')
-            raw_data = np.arange(input_shape[axis])[::-1].astype(np.int32).tostring()
+            raw_data = np.arange(input_shape[axis])[
+                ::-1].astype(np.int32).tostring()
             index_shape = [input_shape[axis]]
-            self._add_param(index_name, TensorProto.INT32, index_shape, raw_data)
+            self._add_param(index_name, TensorProto.INT32,
+                            index_shape, raw_data)
             n = onnx.helper.make_node(
                 'Gather',
                 [o, index_name],
@@ -438,7 +446,6 @@ class OnnxExporter:
         )
         nl.append(n)
         return nl
-
 
     def Deconvolution(self, func):
         output_name = fork_name(func.output[0])
@@ -496,8 +503,6 @@ class OnnxExporter:
                 name=func.name
             )
             return [node_conv_transpose]
-
-
 
     def _elem_op(self, func, op_name, val):
         # Todo: how to exploit broadcasting feature to shrink
@@ -674,8 +679,8 @@ class OnnxExporter:
             "Gemm",
             [out_a, out_b, out_c],
             [out],
-            alpha = 1.0,
-            beta = 1.0,
+            alpha=1.0,
+            beta=1.0,
             broadcast=1,
             name='Gemm' + func.input[0])
         nl.append(n)
@@ -688,8 +693,10 @@ class OnnxExporter:
             name='Reshape' + func.input[0])
         nl.append(n)
 
-        output_shape = np.array(self._var_dict[func.output[0]].dim).astype(np.int64)
-        self._add_param(param_name, TensorProto.INT64, list(output_shape.shape), output_shape.tostring())
+        output_shape = np.array(
+            self._var_dict[func.output[0]].dim).astype(np.int64)
+        self._add_param(param_name, TensorProto.INT64, list(
+            output_shape.shape), output_shape.tostring())
 
         return nl
 
@@ -717,7 +724,8 @@ class OnnxExporter:
         self._batch_size = bs
         # store all variable shape info to use later
         for v in self._net.variable:
-            self._var_dict[v.name] = replace_negative_size_with_batch_size(v.shape, bs)
+            self._var_dict[v.name] = replace_negative_size_with_batch_size(
+                v.shape, bs)
 
     def set_variables(self):
         exe = self._executor
@@ -741,7 +749,8 @@ class OnnxExporter:
             i.name = iv.variable_name
             i.type.tensor_type.elem_type = get_tensor_type(
                 iv.variable_name, self._input_types)
-            dims = [create_dim(d) for d in self._var_dict[iv.variable_name].dim]
+            dims = [create_dim(d)
+                    for d in self._var_dict[iv.variable_name].dim]
             i.type.tensor_type.shape.dim.extend(dims)
 
         for pv in exe.parameter_variable:
@@ -750,7 +759,8 @@ class OnnxExporter:
                 p.name = pv.variable_name
                 p.type.tensor_type.elem_type = get_tensor_type(
                     pv.variable_name, self._input_types)
-                dims = [create_dim(d) for d in self._var_dict[pv.variable_name].dim]
+                dims = [create_dim(d)
+                        for d in self._var_dict[pv.variable_name].dim]
                 p.type.tensor_type.shape.dim.extend(dims)
             else:
                 print("param: {} not in dict.".format(pv.variable_name))
@@ -761,22 +771,25 @@ class OnnxExporter:
             o.name = ov.variable_name
             o.type.tensor_type.elem_type = get_tensor_type(
                 ov.variable_name, self._output_types)
-            dims = [create_dim(d) for d in self._var_dict[ov.variable_name].dim]
+            dims = [create_dim(d)
+                    for d in self._var_dict[ov.variable_name].dim]
             o.type.tensor_type.shape.dim.extend(dims)
 
         for gv in exe.generator_variable:
             init = graph.initializer.add()
             init.name = gv.variable_name
-            init.data_type = get_tensor_type(gv.variable_name, self._input_types)
+            init.data_type = get_tensor_type(
+                gv.variable_name, self._input_types)
             dims = self._var_dict[gv.variable_name].dim
             init.dims.extend(dims)
-            init.raw_data = generate_value(gv.type, dims, init.data_type, gv.multiplier)
+            init.raw_data = generate_value(
+                gv.type, dims, init.data_type, gv.multiplier)
             i = graph.input.add()
             i.name = gv.variable_name
             i.type.tensor_type.elem_type = init.data_type
-            dims = [create_dim(d) for d in self._var_dict[gv.variable_name].dim]
+            dims = [create_dim(d)
+                    for d in self._var_dict[gv.variable_name].dim]
             i.type.tensor_type.shape.dim.extend(dims)
-
 
     def set_nodes(self, func):
         """Convert a function to a node or a group of nodes"""
@@ -812,14 +825,14 @@ class OnnxExporter:
             if len(func.input) < 2:
                 raise ValueError(
                     "Weight input is missing for convolution {}"
-                        .format(func.name))
+                    .format(func.name))
             weight = func.input[1]
             weight_var = [v for v in variables if v.name == weight]
             if len(weight_var) != 1:
                 raise ValueError(
                     "No weight input was found, or multiple weight inputs were found"
                     " for convolution {} where there should be only one."
-                        .format(func.name))
+                    .format(func.name))
             weight_shape = weight_var[0].shape
             # The base axis for weights is the next axis from the data's base axis
             weight_base = cp.base_axis + 1
@@ -989,7 +1002,8 @@ class OnnxExporter:
                 # Convert the scalar param to a Const node and add it with input
                 x = func.input[0]
                 sval = x + "_scalar"
-                c = generate_scalar_constant(sval, func.name + "_scalar", mp.val)
+                c = generate_scalar_constant(
+                    sval, func.name + "_scalar", mp.val)
                 del n.input[:]
                 n.input.extend([x, sval])
                 nl.append(c)
@@ -1057,7 +1071,8 @@ class OnnxExporter:
             # Counter the averaging process by multiplying kernel size
             kernel_size = np.prod(spp.kernel.dim)
             mulout = apin + "_kernel"
-            c = generate_scalar_constant(mulout, func.name + "_kernel", kernel_size)
+            c = generate_scalar_constant(
+                mulout, func.name + "_kernel", kernel_size)
             nl.append(c)
             # Rewire Mul with average pooling output
             del n.input[:]
@@ -1126,7 +1141,6 @@ class OnnxExporter:
                              " with certain operators in order to get converted to ONNX")
         self.set_variables()
 
-
     def create_model(self):
         mp = ModelProto()
         mp.ir_version = ONNX_IR_VERSION
@@ -1159,7 +1173,8 @@ class OnnxExporter:
         in_d = {}
         init_d = {}
         for input in self._model_proto.graph.input:
-            in_d[input.name] = [d.dim_value for d in input.type.tensor_type.shape.dim]
+            in_d[input.name] = [
+                d.dim_value for d in input.type.tensor_type.shape.dim]
         for init in self._model_proto.graph.initializer:
             init_d[init.name] = [d for d in init.dims]
         for node in self._model_proto.graph.node:
@@ -1170,8 +1185,6 @@ class OnnxExporter:
                     else:
                         print("{} : {}".format(i, in_d[i]))
             print(node)
-
-
 
     def execute(self, file_path):
         # if debug, please uncomment it.
@@ -1185,4 +1198,3 @@ class OnnxExporter:
         # if debug, please uncomment it.
         # self.dump_onnx(file_path)
         # self.dump_graph()
-
