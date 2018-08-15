@@ -23,12 +23,42 @@ from nnabla.utils import nnabla_pb2
 
 
 class NnpImporter:
+
+    def _shrink_with_executor(self, executor):
+        print(' Try to leave only executor[{}].'.format(executor.name))
+        network = None
+        for n in self._nnp.network:
+            if n.name == executor.network_name:
+                network = n
+        if network is None:
+            return None
+
+        nnp = nnabla_pb2.NNablaProtoBuf()
+        nnp.CopyFrom(self._nnp)
+
+        nnp.ClearField('optimizer')
+        nnp.ClearField('monitor')
+
+        nnp.ClearField('network')
+        net = nnp.network.add()
+        net.CopyFrom(network)
+
+        nnp.ClearField('executor')
+        exe = nnp.executor.add()
+        exe.CopyFrom(executor)
+
+        return nnp
+
     def __init__(self, *args, **kwargs):
         self._args = args
 
         self._expand_network = False
         if 'expand_network' in kwargs:
             self._expand_network = kwargs['expand_network']
+
+        self._executor_index = None
+        if 'executor_index' in kwargs:
+            self._executor_index = kwargs['executor_index']
 
     def load_parameters(self, filename):
         e = os.path.splitext(filename)[1].lower()
@@ -89,6 +119,11 @@ class NnpImporter:
                 self.load_parameters(ifile)
             else:
                 other_files.append(ifile)
+
+        if self._executor_index is not None:
+            if self._executor_index < len(self._nnp.executor):
+                self._nnp = self._shrink_with_executor(
+                    self._nnp.executor[self._executor_index])
 
         if self._expand_network:
             self._nnp = expander.NnpExpander(self._nnp).execute()

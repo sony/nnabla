@@ -65,7 +65,6 @@ class NnpExpander:
             self._parameters[param.variable_name] = True
 
     def _expand_repeat(self, network):
-#        self._parameter_original_names = collections.OrderedDict()
 
         def _search_repeat_id(mes, rid):
             return list(mes.repeat_id).index(rid) if rid in mes.repeat_id else None
