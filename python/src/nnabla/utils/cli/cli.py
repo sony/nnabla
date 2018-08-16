@@ -14,14 +14,19 @@
 
 import argparse
 import sys
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 
-import nnabla
+
+def _nnabla_version():
+    import nnabla
+    return 'Version {}'.format(nnabla.__version__) + \
+           ', ' + \
+           'Build {}'.format(nnabla.__build_number__)
 
 
 def version_command(args):
-    import nnabla
-    print('Version {}, Build {}'.format(
-        nnabla.__version__, nnabla.__build_number__))
+    print(_nnabla_version())
 
 
 def main():
@@ -35,8 +40,9 @@ def main():
 
 
 def cli_main():
+    import nnabla
     parser = argparse.ArgumentParser(description='Command line interface ' +
-                                     'for NNabla(Version {}, Build {})'.format(nnabla.__version__, nnabla.__build_number__))
+                                     'for NNabla({})'.format(_nnabla_version()))
     subparsers = parser.add_subparsers()
 
     from nnabla.utils.cli.train import add_train_command

@@ -158,7 +158,14 @@ class NnbExporter:
 
             # set var.type, var.data_index, and var.fp_pos in this paragraph
             var.type = Nnb.from_type_name[type_name]
-            if v.type == 'Parameter':
+            if v.name in self._info._generator_variables:
+                data = self._info._generator_variables[v.name]
+                data = data.flatten().tolist()
+                fmt = '{}f'.format(len(data))
+                raw_data = struct.pack(fmt, *data)
+                index, pointer = self._alloc(data=raw_data)
+                var.data_index = index
+            elif v.type == 'Parameter':
                 # store parameter into NNB
                 array = np.array(self._info._parameters[v.name].data)
                 if type_name == 'FLOAT32':

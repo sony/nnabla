@@ -65,7 +65,6 @@ class NnpExpander:
             self._parameters[param.variable_name] = True
 
     def _expand_repeat(self, network):
-        self._parameter_original_names = collections.OrderedDict()
 
         def _search_repeat_id(mes, rid):
             return list(mes.repeat_id).index(rid) if rid in mes.repeat_id else None
@@ -115,6 +114,8 @@ class NnpExpander:
                     v.name = name
                     del v.repeat_id[pos]
             else:
+                if var.type == 'Parameter' and len(var.repeat_id) == 0 and len(self._parameter_original_names[var.name]) == 0:
+                    self._parameter_original_names[var.name].append(var.name)
                 v = net.variable.add()
                 v.CopyFrom(var)
 
@@ -224,7 +225,7 @@ class NnpExpander:
                     for n, v in enumerate(func.input):
                         vname = None
                         if v in self._parameter_original_names:
-                            if len(self._parameter_original_names[v]) > 0:
+                            if len(self._parameter_original_names[v]) == ri.times:
                                 vname = self._parameter_original_names[v][i]
                             else:
                                 vname = v
@@ -252,6 +253,7 @@ class NnpExpander:
         return self._expand_repeat(net)
 
     def _expand_network(self, network):
+        self._parameter_original_names = collections.OrderedDict()
 
         print(' Expanding {}.'.format(network.name))
 

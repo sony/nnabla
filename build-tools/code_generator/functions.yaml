@@ -2052,7 +2052,6 @@ Array Manipulation:
       x:
         doc: N-D arrays.
         variadic: true
-        parameter: true
     arguments:
       axis:
         doc: Axis
@@ -2097,7 +2096,6 @@ Array Manipulation:
       x:
         doc: N-D arrays. The sizes of all the arrays to be stacked must be the same.
         variadic: true
-        parameter: true
     arguments:
       axis:
         doc: The axis on which to concatenate arrays. Axis indices take on values

@@ -314,7 +314,12 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
     input_data = []
     for n, i in enumerate(inputs):
         if i is not None:
-            input_name, input_info = list(function['inputs'].items())[n]
+            if len(list(function['inputs'].items())) == 1:
+                input_name, input_info = list(function['inputs'].items())[0]
+                if 'variadic' in input_info and input_info['variadic']:
+                    input_name += str(n)
+            else:
+                input_name, input_info = list(function['inputs'].items())[n]
             func_inputs.append(input_name)
             var = net.variable.add()
             var.name = input_name
@@ -345,6 +350,8 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
                     pass
                 elif func.name == 'Transpose':
                     pass
+                elif func.name == 'Concatenate':
+                    pass
                 else:
                     shape = [1] + shape
                 var.shape.dim.extend(shape)
@@ -371,16 +378,31 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
     if 'arguments' in function:
         for n, (arg_name, arg) in enumerate(function['arguments'].items()):
             param = eval('func.{}_param'.format(function['snake_name']))
-            a = func_args[n]
+            if not func_args and not func_kwargs:
+                continue
+            if n < len(func_args):
+                a = func_args[n]
+            else:
+                if func.name == 'Concatenate' or func.name == 'Stack':
+                    a = func_kwargs['axis']
+                else:
+                    a = func_kwargs['keepdims']
             # This is used to fix the problem of flip (axes == None)
             if a is None:
+                f = ['Sum', 'Mean', 'Max', 'Min', 'Prod']
                 if 'axes' in arg_name:
-                    a = len(net.variable[0].shape.dim) - 2
+                    if func.name in f:
+                        a = net.variable[0].shape.dim[:-1]
+                        a = [x - 1 for x in a]
+                    else:
+                        a = len(net.variable[0].shape.dim) - 2
 
             if a is not None:
                 if 'axis' == arg_name:
-                    a += 1
-
+                    if func.name == 'Concatenate':
+                        pass
+                    else:
+                        a += 1
                 if 'axes' in arg_name:
                     if func.name == 'Transpose':
                         pass
@@ -390,7 +412,6 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
                         else:
                             a = [a]
                         a = [x + 1 for x in a]
-
                 if isinstance(a, tuple) or isinstance(a, list):
                     if arg['type'] == 'Shape':
                         exec('param.{}.dim.extend(list(a))'.format(arg_name))
