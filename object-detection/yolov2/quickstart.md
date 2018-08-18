@@ -6,7 +6,7 @@ Welcome to YOLO-v2-NNabla! This tutorial will explain in detail on how to run im
 YOLO-v2-NNabla requires the following software and Python packages installed in your system:
 
 - Python
-  - OpenCV 2 (`cv2`) package
+  - OpenCV Python package (This is **optional** for better drawing of detected bounding boxes. PIL is used if it is not available on your system.)
 - CUDA
 - cuDNN
 
@@ -33,10 +33,6 @@ pip install -u nnabla-ext-cuda90
 # Please replace `nnabla-ext-cuda90`
 # according to the CUDA and cuDNN version installed in your system!
 ```
-
-### Installing OpenCV 2
-(TODO)
-
 
 ## Step 1: Clone This Repository
 If you have git installed on your system, simply run:
