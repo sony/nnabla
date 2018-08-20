@@ -170,15 +170,16 @@ This will produce a file named `darknet19_448.conv.23.h5`, which can be loaded i
 We are now ready to train the YOLO v2 Network!
 
 ```
-python train.py -w ./darknet19_448.conv.23.h5 -o backup \
+python train.py -w ./darknet19_448.conv.23.h5 -t {path-to-dataset}/train.txt -o backup \
 --accum-times 8 --batch-size 8
 ```
 - **Remarks:**
+  - The `-t` option must specify the training dataset, i.e. the `train.txt` file created in step 1-4.
   - The `-o backup` specifies **the output directory for the intermediate weight files during training, and the final weight files.** By default, weight files are saved every 10 epochs, where the training lasts for 310 epochs by default (actually, plus a few more, to be exact - however, only the weights of 310 epochs are saved by the training script, which is an issue). To save the intermediate and final weight results in a different directory, change this `-o` argument to something different, such as `-o weight_output_dir`.
   - **Currently, training logs are not saved!!** This means that *all information such as the loss values is not saved as logs, and will be discarded after training.* Only the intermediate and final weight values are saved during training. To save logs, one must manually stream the terminal output to a log file. To do this:
     - If you are running on Linux, use the `tee` command like the following:
       ```
-      python train.py -w ./darknet19_448.conv.23.h5 -o backup | tee train.log
+      python train.py -w ./darknet19_448.conv.23.h5 -o backup -t {path-to-dataset}/train.txt | tee train.log
       ```
       the `tee` command allows you to see the contents on the terminal while saving the terminal output inside a specified file (here, `train.log`) at the same time.
     - If you are running on Windows, (TODO)
@@ -218,9 +219,11 @@ In the original YOLO v2 paper (TODO: cite), the network's image object detection
 ### Step 4-1:
 The first step of evaluating the mAP for the trained network is to run `valid.py`. To do this, run the following command on your terminal:
 ```
-python valid.py -w backup/000310.h5 -o results
+python valid.py -w backup/000310.h5 -v {path-to-dataset}/2007_test.txt -o results
 ```
-- **Remark:** `backup/000310.h5` is the name of the final network weight file obtained after training. If it has a different filepath (for example, you have specified a different weight output directory name instead of `backup`), please specify the path for the network weight file that you want to perform evaluation on.
+- **Remark:**
+  - The `-v` option must specify the validation dataset, i.e. the `2007_test.txt` file created in step 1-3.
+  - `backup/000310.h5` is the name of the final network weight file obtained after training. If it has a different filepath (for example, you have specified a different weight output directory name instead of `backup`), please specify the path for the network weight file that you want to perform evaluation on.
 
 After running this on the terminal, `valid.py` will produce 20 text files (which is the number of classes in the training dataset - note that `valid.py` assumes Pascal VOC 2007+2012 as the default dataset) under the directory `results`. Each of the 20 text files has the name of the format `comp4_det_test_*.txt`. The argument `results` in the command above is the output directory for these output text files. To change the output directory, simply change this argument, `results`, to the directory name of your choice.
 
