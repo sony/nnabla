@@ -294,7 +294,7 @@ def get_args():
     parser.add_argument("--model-save-path", "-o",
                         type=str, default="tmp.monitor.vat")
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension path. ex) cpu, cudnn.")
+                        default="cpu", help="Extension path. ex) cpu, cudnn.")
     return parser.parse_args()
 
 
