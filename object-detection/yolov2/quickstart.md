@@ -77,11 +77,8 @@ Once you have downloaded the network parameters, the parameters must be converte
   ```
 - yolov2-voc.weights :
   ```
-  python convert_yolov2_weights_to_nnabla.py --input yolov2-voc.weights --header 5 --classes 20
+  python convert_yolov2_weights_to_nnabla.py --input yolov2-voc.weights --classes 20
   ```
-  - **Remark:** The `--header 5` argument is required due to the fact that:
-    - The \*.weights has a header that must be skipped when reading the stored float values.
-    - The header byte size is different for yolov2.weights and yolov2-voc.weights.
 
 After running these conversion scripts, you will get an \*.h5 file, named yolov2.h5 or yolov2-voc.h5, depending on the weight file that you have chosen. We will be using this file later for running object detection.
 
