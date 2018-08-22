@@ -18,6 +18,28 @@ used inside functions in darknet19.py or yolov2.py.
 '''
 
 
+def load_weights_raw(filename):
+    '''
+    Load float32 flattened weights from .weights file.
+    '''
+    from struct import unpack
+    import numpy as np
+    with open(filename, 'rb') as fd:
+        # Reading header
+        # <https://github.com/pjreddie/darknet/blob/b13f67bfdd87434e141af532cdb5dc1b8369aa3b/src/parser.c#L1230-L1242>
+        major, minor, revision = unpack('<iii', fd.read(4 * 3))
+        if (major * 10 + minor >= 2) and (major < 1000) and (minor < 1000):
+            # Reading `size_t seen;`
+            fd.read(8)
+        else:
+            # Reading `int seen;`
+            fd.read(4)
+
+        # Reading weights in float32
+        dn_weights = np.fromfile(fd, dtype=np.float32)
+    return dn_weights
+
+
 def get_convolutional_params(params, prefix, no_bn=False):
     '''
     Returns conv/W, bn/beta, bn/gamma, bn/mean, bn/var

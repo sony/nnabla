@@ -14,7 +14,7 @@
 
 
 import yolov2
-import cv2
+from draw_utils import DrawBoundingBoxes
 
 import nnabla as nn
 import nnabla.functions as F
@@ -43,7 +43,7 @@ def get_args():
     p.add_argument(
         '--biases', nargs='*',
         default=[0.57273, 0.677385, 1.87446, 2.06253, 3.33843,
-                 5.47434, 7.88282, 3.52778, 9.77052, 9.16828])
+                 5.47434, 7.88282, 3.52778, 9.77052, 9.16828], type=float)
     p.add_argument('input', type=str, default='dog.jpg')
     args = p.parse_args()
     assert args.width % 32 == 0
@@ -56,7 +56,7 @@ def get_args():
 
 
 def draw_bounding_boxes(img, bboxes, im_w, im_h, names, colors, sub_w, sub_h, thresh):
-    img_draw = img.copy()
+    draw = DrawBoundingBoxes(img, colors)
     for bb in bboxes:
         if bb[4] <= 0:
             continue
@@ -81,11 +81,8 @@ def draw_bounding_boxes(img, bboxes, im_w, im_h, names, colors, sub_w, sub_h, th
         label = ', '.join("{}: {:.2f}%".format(
             names[det_ind[j]], prob[j] * 100) for j in range(len(det_ind)))
         print("[INFO] {}".format(label))
-        cv2.rectangle(img_draw, (x0, y0), (x1, y1), colors[det_ind[0]], 2)
-        text_y0 = y0 - 15 if y0 - 15 > 15 else y0 + 15
-        cv2.putText(img_draw, label, (x0, text_y0),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[det_ind[0]], 2)
-    return img_draw
+        draw.draw((x0, y0, x1, y1), det_ind[0], label)
+    return draw.get()
 
 
 def main():

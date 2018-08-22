@@ -51,7 +51,7 @@ def main():
     params = nn.get_parameters(grad_only=False)
 
     # Parse network parameters
-    dn_weights = np.fromfile(args.input, dtype=np.float32)[4:]
+    dn_weights = parser.load_weights_raw(args.input)
     cursor = 0
     for i in range(1, 19):  # 1 to 18
         cursor = parser.load_convolutional_and_get_next_cursor(
