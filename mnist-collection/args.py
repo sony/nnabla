@@ -52,7 +52,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
                         help='Path the model parameters saved.')
     parser.add_argument("--net", "-n", type=str,
                         default='lenet',
-                        help="Neural network architecture type (used only in classification*.py).\n  classification.py: ('lenet'|'resnet'),  classification_bnn.py: ('bincon'|'binnet'|'bwn'|'bwn'|'bincon_resnet'|'binnet_resnet'|'bwn_resnet')")
+                        help="Neural network architecture type (used only in classification*.py).\n  classification.py: ('lenet'|'resnet'),  classification_bnn.py: ('bincon'|'binnet'|'bwn'|'bincon_resnet'|'binnet_resnet'|'bwn_resnet')")
     parser.add_argument('--context', '-c', type=str,
                         default='cpu', help="Extension modules. ex) 'cpu', 'cudnn'.")
     parser.add_argument('--augment-train', action='store_true',
