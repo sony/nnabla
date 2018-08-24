@@ -274,14 +274,16 @@ class OnnxExporter:
             k = func.max_pooling_param.kernel.dim
             s = func.max_pooling_param.stride.dim
             pads = func.max_pooling_param.pad.dim
+            ignore_border = func.max_pooling_param.ignore_border
         elif onnx_func == 'AveragePool':
             k = func.average_pooling_param.kernel.dim
             s = func.average_pooling_param.stride.dim
             pads = func.average_pooling_param.pad.dim
+            ignore_border = func.average_pooling_param.ignore_border
         else:
             raise ValueError('Internal error!')
 
-        if func.max_pooling_param.ignore_border:
+        if ignore_border:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:

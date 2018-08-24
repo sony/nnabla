@@ -148,7 +148,6 @@ def convert_onnx_to_nnp_and_compare(
     if compare_values:
         assert np.allclose(backend_out, nnout, atol=atol)
 
-
 def convert_nnp_to_onnx_and_compare(
         tmpdir, nnp_dir, nnp_name, onnx_name, out_name, exec_name,
         backend="caffe2",
@@ -379,7 +378,6 @@ def test_onnx_nnp_conversion_average_pool(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_average_pool(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
