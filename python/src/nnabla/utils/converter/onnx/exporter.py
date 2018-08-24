@@ -740,7 +740,6 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
-                assert len(init.raw_data) / 4 == np.prod(np.array(init.dims))
             else:
                 print("Not in: {}".format(param.variable_name))
 
