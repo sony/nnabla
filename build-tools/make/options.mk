@@ -86,7 +86,7 @@ export DOCKER_RUN_OPTS
 # Functions for makefile
 define with-virtualenv
 	rm -rf $(2)
-	virtualenv --system-site-packages $(2)
+	python$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR) -m virtualenv --system-site-packages $(2)
 	. $(2)/bin/activate \
 	&& $(MAKE) -C $(1) $(2) $(3) $(4)\
 	&& deactivate
