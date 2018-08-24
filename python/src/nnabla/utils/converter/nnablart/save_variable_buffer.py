@@ -37,8 +37,12 @@ def __make_buf_var_lives(info):
     name_to_var = {v.name: v for v in info._network.variable}
 
     # set _LifeSpan.begin_func_idx and .end_func_idx along info._network
+    final_func_idx = len(info._network.function)
     for func_idx, func in enumerate(info._network.function):
         for var_name in list(func.input) + list(func.output):
+            if var_name in info._generator_variables:
+                # no need to assign buffer for generator data
+                pass
             if name_to_var[var_name].type == 'Buffer':
                 var_idx = name_to_vidx[var_name]
                 buf_idx = info._buffer_ids[var_idx]
@@ -48,7 +52,10 @@ def __make_buf_var_lives(info):
                 else:
                     # only identify a Function which first refers to the Variable
                     pass
-                buf_var_life.end_func_idx = func_idx
+                if var_name not in info._output_variables:
+                    buf_var_life.end_func_idx = func_idx
+                else:
+                    buf_var_life.end_func_idx = final_func_idx
             else:
                 pass  # ignore 'Parameter'
 
