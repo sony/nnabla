@@ -49,7 +49,7 @@ def create_nnabart_info(nnp, batch_size):
     info._num_of_gen_variables = len(executor.generator_variable)
     for v in executor.generator_variable:
         v_info = variables[v.variable_name]
-        shape = [ d if d > 0 else info._batch_size for d in v_info.shape.dim]
+        shape = [d if d > 0 else info._batch_size for d in v_info.shape.dim]
         data = generate_value(v.type, shape, v.multiplier)
         info._generator_variables[v.variable_name] = data
 

@@ -26,6 +26,7 @@ from .csrc_templates import \
 
 from .utils import create_nnabart_info
 
+
 class CsrcExporter:
 
     def __init__(self, nnp, batch_size):
@@ -124,8 +125,10 @@ class CsrcExporter:
         # Internal definitions for context.
         internal_defines = []
         internal_defines.append('typedef struct {')
-        internal_defines.append('    void *buffer_pool[{}];'.format(len(actual_buf_sizes)))
-        internal_defines.append('    void *param_pool[{}];'.format(len(self._info._parameters)))
+        internal_defines.append(
+            '    void *buffer_pool[{}];'.format(len(actual_buf_sizes)))
+        internal_defines.append(
+            '    void *param_pool[{}];'.format(len(self._info._parameters)))
         internal_defines.append(
             '    rt_buffer_allocate_type_t variable_buffers_allocate_type[{}];'.format(len(self._info._variable_sizes)))
         internal_defines.append('')
@@ -162,7 +165,8 @@ class CsrcExporter:
 
         internal_defines.append('}} {}_local_context_t;'.format(prefix))
         internal_defines.append('')
-        internal_defines.append('int actual_buf_sizes[{}] = {{'.format(len(actual_buf_sizes)))
+        internal_defines.append(
+            'int actual_buf_sizes[{}] = {{'.format(len(actual_buf_sizes)))
         for s in actual_buf_sizes:
             internal_defines.append('    {},'.format(s))
         internal_defines.append('};')
@@ -171,8 +175,10 @@ class CsrcExporter:
         # NAME_allocate_context
         initialize_context = []
         initialize_context.append('    // Variable buffer')
-        initialize_context.append('    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
-        initialize_context.append('        c->buffer_pool[i] = malloc(sizeof(float) * actual_buf_sizes[i]);')
+        initialize_context.append(
+            '    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
+        initialize_context.append(
+            '        c->buffer_pool[i] = malloc(sizeof(float) * actual_buf_sizes[i]);')
         initialize_context.append('    }')
         initialize_context.append('    if(params) {')
         param_id_start = 0
@@ -220,15 +226,16 @@ class CsrcExporter:
             if v.name in self._info._generator_variables:
                 data = self._info._generator_variables[v.name]
                 data = data.flatten()
-                internal_defines.append('float {}[{}] = {{'.format(v.name, len(data)))
+                internal_defines.append(
+                    'float {}[{}] = {{'.format(v.name, len(data)))
                 for value in data:
                     internal_defines.append('    {},'.format(value))
                 internal_defines.append('};')
                 initialize_context.append(
-                        '    (c->v{}).data = {};'.format(n, v.name))
+                    '    (c->v{}).data = {};'.format(n, v.name))
             elif v.type == 'Parameter':
                 initialize_context.append(
-                        '    (c->v{}).data = c->param_pool[{}];'.format(n, param_id_start))
+                    '    (c->v{}).data = c->param_pool[{}];'.format(n, param_id_start))
                 param_id_start += 1
             else:
                 if n in vidx_to_abidx:
@@ -311,7 +318,8 @@ class CsrcExporter:
         # NAME_free_context
         free_context = []
         free_context.append('')
-        free_context.append('    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
+        free_context.append(
+            '    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
         free_context.append('        free(c->buffer_pool[i]);')
         free_context.append('    }')
         param_id_start = 0
