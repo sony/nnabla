@@ -35,8 +35,8 @@ void SingletonManager::erase_by_id(int id) {
   if (it == s.singletons_.end())
     return;
   it->second.second(); // Call deleter.
-  s.singletons_.erase(it);
   s.adr2id_.erase(it->second.first);
+  s.singletons_.erase(it);
 }
 
 SingletonManager &SingletonManager::get_self() {
