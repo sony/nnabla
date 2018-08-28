@@ -85,7 +85,7 @@ def _create_train_cache(archive, output, names, synsets_id, args):
         y, name, marchive, mname = images[index]
         im = scipy.misc.imread(marchive.extractfile(mname), mode='RGB')
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
-        return x, np.array([y]).astype(np.int32)
+        return x, np.array([y - 1]).astype(np.int32)
 
     from nnabla.utils.data_source import DataSourceWithFileCache
     from nnabla.utils.data_source_implements import SimpleDataSource
@@ -121,7 +121,7 @@ def _create_validation_cache(archive, output, names, ground_truth, args):
         y, name = ground_truth[index], images[index]
         im = scipy.misc.imread(archive.extractfile(name), mode='RGB')
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
-        return x, np.array([y]).astype(np.int32)
+        return x, np.array([y - 1]).astype(np.int32)
 
     from nnabla.utils.data_source import DataSourceWithFileCache
     from nnabla.utils.data_source_implements import SimpleDataSource
