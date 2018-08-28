@@ -311,13 +311,17 @@ class OnnxExporter:
             raise ValueError(
                 "BatchNormalization with batch_stat=True is "
                 "currently not supported for ONNX conversion")
+        eps = 1e-5 if func.batch_normalization_param.eps == 0.0 \
+            else func.batch_normalization_param.eps
+        decay_rate = 0.9 if func.batch_normalization_param.decay_rate == 0.0 \
+            else func.batch_normalization_param.decay_rate
         n = onnx.helper.make_node(
             'BatchNormalization',
             onnx_input,
             func.output,
             is_test=True,
-            epsilon=func.batch_normalization_param.eps,
-            momentum=func.batch_normalization_param.decay_rate
+            epsilon=eps,
+            momentum=decay_rate
             # spatial=1 different from SPEC.
         )
 

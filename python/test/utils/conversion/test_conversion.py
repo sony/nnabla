@@ -428,7 +428,6 @@ def test_onnx_nnp_conversion_batch_normalization(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0", atol=1e-05)
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -662,7 +661,6 @@ def test_onnx_nnp_conversion_not(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "not.onnx", "not.nnp", "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_not(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -739,7 +737,6 @@ def test_onnx_nnp_conversion_and_no_broadcast(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_and_no_broadcast(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -758,7 +755,6 @@ def test_onnx_nnp_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_and_broadcast_axis1(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -777,7 +773,6 @@ def test_onnx_nnp_conversion_or_no_broadcast(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_or_no_broadcast(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -796,7 +791,6 @@ def test_onnx_nnp_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_or_broadcast_axis1(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -815,7 +809,6 @@ def test_onnx_nnp_conversion_xor_no_broadcast(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_xor_no_broadcast(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -834,7 +827,6 @@ def test_onnx_nnp_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_xor_broadcast_axis1(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -1033,7 +1025,6 @@ def test_onnx_nnp_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_equal_no_broadcast_bool(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -1052,7 +1043,6 @@ def test_onnx_nnp_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_equal_broadcast_axis1_bool(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -1071,7 +1061,6 @@ def test_onnx_nnp_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_equal_no_broadcast_int(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
@@ -1090,7 +1079,6 @@ def test_onnx_nnp_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
                                     "out_data_1", "exec_0")
 
 
-@pytest.mark.xfail(reason='Unknown fix ASAP.')
 def test_nnp_onnx_conversion_equal_broadcast_axis1_int(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
