@@ -24,8 +24,6 @@ NNABLA_BUILD_WITH_DOCKER_INCLUDED = True
 NNABLA_DIRECTORY ?= $(shell pwd)
 include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
-MAKE_MANYLINUX_WHEEL = ON
-
 DOCKER_IMAGE_NAME_BASE ?= nnabla-build
 
 DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format
