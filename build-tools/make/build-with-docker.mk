@@ -110,7 +110,7 @@ bwd-nnabla-test-cpplib: docker_image_build
 .PHONY: bwd-nnabla-wheel
 bwd-nnabla-wheel: docker_image_build
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-wheel
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=ON nnabla-wheel
 
 .PHONY: bwd-nnabla-test
 bwd-nnabla-test: docker_image_onnx_test
