@@ -154,7 +154,7 @@ RUN umask 0 \
     && PATH=/opt/miniconda3/bin:$PATH \
     && conda install python=${PYVERNAME} \
     && conda update -y --all \
-    && conda install scandir scikit-image \
+    && conda install scandir \
     && pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
     && echo Try to install setuptools few times to avoid conda problem. \
     && (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
@@ -163,7 +163,7 @@ RUN umask 0 \
     && pip install --no-cache-dir -U "pytest-pep8" \
     && pip install --no-cache-dir -U "pytest-cov" \
     && pip install --no-cache-dir -U "Cython<0.25" \
-    && pip install --no-cache-dir -U "numpy<1.11" \
+    && pip install --no-cache-dir -U "numpy<1.13" \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
