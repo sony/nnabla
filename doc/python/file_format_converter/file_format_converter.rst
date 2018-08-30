@@ -42,7 +42,7 @@ Console) workflow with ONNX file format, and also NNabla C Runtime.
 
 File format converter has following functions.
 
-- Convert NNP valiations to valid NNP
+- Convert NNP variations to valid NNP
 - Convert ONNX to NNP
 - Convert NNP to ONNX
 - Convert NNP to NNB(Binary format for NNabla C Runtime)
@@ -50,11 +50,11 @@ File format converter has following functions.
 
 **IMPORTANT NOTICE**: This file format converter still has some known problems.
 
-- Supported ONNX operater is limited. See :any:`onnx/operator_coverage`.
+- Supported ONNX operator is limited. See :any:`onnx/operator_coverage`.
 - Converting NNP to C Source code is still experimental. It should work but did not tested well.
 
 
-Archietecture
+Architecture
 +++++++++++++
 
 
@@ -80,11 +80,11 @@ Archietecture
 
 This file format converter uses protobuf defined in Neural Network Libraries as intermediate format.
 
-Then this is not a generic file format conveter, but this is specified converter for Neural Network Libraries.
+While this is not a generic file format converter, this is the specified converter for Neural Network Libraries.
 
-It mean this converter can specify ONNX file both input and output, but if ONNX file contains the function that unsupported by Neural Network Libraries, it may cause error or something wrong in conversion.
+This converter can specify both inputs and outputs for ONNX file, but if ONNX file contains a function unsupported by Neural Network Libraries, it may cause error in conversion.
 
-And conveter provides some intermediate process functionality. See :ref:`Process`.
+This converter also provides some intermediate process functionalities. See :ref:Process.
 
 Conversion
 ++++++++++
@@ -111,8 +111,8 @@ ONNX
 Limitation
 ++++++++++
 
-- Training does not supported
-- Only supports operatior set 3
+- Training is not supported
+- Only supports operator set 3
 - Not all functions are supported. See :any:`onnx/operator_coverage`.
 - Only limited Neural Network Console projects supported.  See :any:`onnx/neural_network_console_example_coverage`.
 - In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
@@ -141,7 +141,7 @@ Neural Network Console supports `LoopControl` pseudo functions `RepeatStart`_,  
 
 Currently, these functions are not supported by Neural Network Libraries directly.
 
-Then file format converter expand network and remove these pseud functions by default.
+The file format converter expands the network and removes these pseudo functions by default.
 
 .. _RepeatStart: https://support.dl.sony.com/docs/layer_reference/#RepeatStart
 .. _RepeatEnd: https://support.dl.sony.com/docs/layer_reference/#RepeatEnd
@@ -169,7 +169,7 @@ NNP Operation
 Convert NNP to NNP
 ^^^^^^^^^^^^^^^^^^
 
-Sometimes we neeed convert NNP to NNP.
+Sometimes we need convert NNP to NNP.
 
 Most major usecase, expand repeat or recurrent network supported by
 Neural Network Console but does not supported by C++ API.
@@ -252,12 +252,12 @@ Convert NNP to C source code.
 Splitting network
 +++++++++++++++++
 
-Splitting network is little bit complicated and troublesome.
+Splitting network is a bit complicated and can be troublesome.
 
 
-NNP file could have multiple Executor network, but Split support only single network to splitting.
+NNP file could have multiple Executor networks, but Split supports only single network to split.
 
-Then at first you must confirm how many Executers in the NNP and specify what executor to split with `nnabla_cli dump`.
+First, you must confirm how many Executors there are in the NNP, and specify what executor to split with `nnabla_cli dump`.
 
 .. code-block:: none
    
@@ -269,10 +269,10 @@ Then at first you must confirm how many Executers in the NNP and specify what ex
      Expanding Top5Error.
      Expanding Top1Error.
      Expanding Runtime.
-      Optimizor[0]: Optimizer
-      Optimizor[0]:  (In) Data      variable[0]: Name:TrainingInput                  Shape:[-1, 3, 480, 480]
-      Optimizor[0]:  (In) Data      variable[1]: Name:SoftmaxCrossEntropy_T          Shape:[-1, 1]
-      Optimizor[0]:  (Out)Loss      variable[0]: Name:SoftmaxCrossEntropy            Shape:[-1, 1]
+      Optimizer[0]: Optimizer
+      Optimizer[0]:  (In) Data      variable[0]: Name:TrainingInput                  Shape:[-1, 3, 480, 480]
+      Optimizer[0]:  (In) Data      variable[1]: Name:SoftmaxCrossEntropy_T          Shape:[-1, 1]
+      Optimizer[0]:  (Out)Loss      variable[0]: Name:SoftmaxCrossEntropy            Shape:[-1, 1]
       Monitor  [0]: train_error
       Monitor  [0]:  (In) Data      variable[0]: Name:Input                          Shape:[-1, 3, 320, 320]
       Monitor  [0]:  (In) Data      variable[1]: Name:Top5Error_T                    Shape:[-1, 1]
@@ -335,8 +335,8 @@ You can get list of function adding `-F` option.
       Executor [0]:   Function[ 69  ]: Type: Reshape              Name: SqueezeNet/Reshape
       Executor [0]:   Function[ 70  ]: Type: Identity             Name: y'
 
-If you want to get network without Image Augumentation, according to above output, ImageAugumentation is placed on index 2.
-With splitting after index 3, you can get network without ImageAugumentation.
+If you want to get network without Image Augmentation, according to above output, ImageAugmentation is placed on index 2.
+With splitting after index 3, you can get network without ImageAugmentation.
 You must specify `-E0 -S 3-` option to `nnabla_cli convert`
 This command rename output to `XXX_S_E.nnp`, XXX is original name, S is start function index, and E is end function index.
 
@@ -352,8 +352,8 @@ This command rename output to `XXX_S_E.nnp`, XXX is original name, S is start fu
         Output to [splitted_3_70.nnp]
 
 
-Finaly you got `splitted_3_70.nnp` as splitted output.
-You can check splitted NNP with `nnable_cli dump`
+Finally you got `splitted_3_70.nnp` as splitted output.
+You can check splitted NNP with `nnabla_cli dump`
 
 NOTE: Input shape is changed from original network. New input shape is same as start function's input.
 
@@ -367,3 +367,4 @@ NOTE: Input shape is changed from original network. New input shape is same as s
       Executor [0]:  (In) Data      variable[0]: Name:SqueezeNet/MulScalar           Shape:[-1, 3, 227, 227]
       Executor [0]:  (Out)Output    variable[0]: Name:y'                             Shape:[-1, 1000]
     
+Done.
