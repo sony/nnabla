@@ -101,9 +101,6 @@ def _create_train_cache(archive, output, names, synsets_id, args):
 
 
 def _create_validation_cache(archive, output, names, ground_truth, args):
-    categories = []
-    category_list = {}
-
     # ILSVRC2012_devkit_t12/readme.txt
     #     The ground truth of the validation images is in
     #     data/ILSVRC2012_validation_ground_truth.txt, where each line contains
