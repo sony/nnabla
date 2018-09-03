@@ -274,14 +274,16 @@ class OnnxExporter:
             k = func.max_pooling_param.kernel.dim
             s = func.max_pooling_param.stride.dim
             pads = func.max_pooling_param.pad.dim
+            ignore_border = func.max_pooling_param.ignore_border
         elif onnx_func == 'AveragePool':
             k = func.average_pooling_param.kernel.dim
             s = func.average_pooling_param.stride.dim
             pads = func.average_pooling_param.pad.dim
+            ignore_border = func.average_pooling_param.ignore_border
         else:
             raise ValueError('Internal error!')
 
-        if func.max_pooling_param.ignore_border:
+        if ignore_border:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:
@@ -309,13 +311,17 @@ class OnnxExporter:
             raise ValueError(
                 "BatchNormalization with batch_stat=True is "
                 "currently not supported for ONNX conversion")
+        eps = 1e-5 if func.batch_normalization_param.eps == 0.0 \
+            else func.batch_normalization_param.eps
+        decay_rate = 0.9 if func.batch_normalization_param.decay_rate == 0.0 \
+            else func.batch_normalization_param.decay_rate
         n = onnx.helper.make_node(
             'BatchNormalization',
             onnx_input,
             func.output,
             is_test=True,
-            epsilon=func.batch_normalization_param.eps,
-            momentum=func.batch_normalization_param.decay_rate
+            epsilon=eps,
+            momentum=decay_rate
             # spatial=1 different from SPEC.
         )
 
@@ -740,7 +746,6 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
-                assert len(init.raw_data) / 4 == np.prod(np.array(init.dims))
             else:
                 print("Not in: {}".format(param.variable_name))
 
