@@ -146,10 +146,22 @@ class CsrcExporter:
             internal_defines.append(
                 '    rt_function_t f{}; ///< {}'.format(n, f.type))
             finfo = self._info._function_info[f.type]
+            i_num = 0
+            for x, dict in finfo['inputs'].items():
+                if 'variadic' in dict and dict['variadic']:
+                    i_num += MAX_VARIDAIC_NUM
+                else:
+                    i_num += 1
             internal_defines.append(
-                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, len(f.input)))
+                '    rt_variable_t* f{0}_inputs[{1}];'.format(n, i_num))
+            o_num = 0
+            for y, dict in finfo['outputs'].items():
+                if 'variadic' in dict and dict['variadic']:
+                    o_num += MAX_VARIDAIC_NUM
+                else:
+                    o_num += 1
             internal_defines.append(
-                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(f.output)))
+                '    rt_variable_t* f{0}_outputs[{1}];'.format(n, o_num))
             if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 internal_defines.append(
                     '    {}_local_context_t f{}_local_context;'.format(finfo['snake_name'], n))
