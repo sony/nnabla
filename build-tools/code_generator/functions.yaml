@@ -2351,6 +2351,33 @@ Array Manipulation:
     outputs:
       y:
         doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
+Signal Processing:
+  Interpolate:
+    snake_name: interpolate
+    doc: |2
+
+      Resize an ND array with interpolation.
+
+      The last ``len(output_size)`` dimensions of the input ``x`` are considered as the spatial dimensions to be resized.
+
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      output_size:
+        doc: Output size.
+        type: repeated int64
+      mode:
+        doc: Interpolation mode chosen from ('nearest'|'linear').
+        type: string
+      align_corners:
+        doc: If true, the corner pixels of input and output arrays are aligned, such that the output corner pixels have the same values with the input corner pixels.
+        type: bool
+        default: False if mode == 'nearest' else True
+    outputs:
+      y:
+        doc: N-D array.
+
 Stochasticity:
   Dropout:
     snake_name: dropout

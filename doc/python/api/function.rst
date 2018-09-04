@@ -203,6 +203,10 @@ Loss Functions
 .. autofunction:: epsilon_insensitive_loss
 .. autofunction:: kl_multinomial
 
+Signal Processing
+-----------------
+
+.. autofunction:: interpolate
 
 Quantized Neural Network Layers
 ----------------------------------
