@@ -287,8 +287,8 @@ class OnnxExporter:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:
-            subs = [k - i % s if i % s != 0 else k - s
-                    for k, s, i in zip(k, s, input_shape[-2:])]
+            subs = [kk - i % ss if i % ss != 0 else kk - ss
+                    for kk, ss, i in zip(k, s, input_shape[-2:])]
             pads = [0, 0] + subs
         n = onnx.helper.make_node(
             onnx_func,
@@ -645,7 +645,6 @@ class OnnxExporter:
         """
         nl = []
         out_a = fork_name(func.input[0])
-        out_b = fork_name(func.input[1])
 
         n = onnx.helper.make_node(
             "Flatten",
@@ -656,34 +655,15 @@ class OnnxExporter:
         n.attribute.extend([a])
         nl.append(n)
 
-        n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[1]],
-            [out_b],
-            name="Flatten" + func.input[1])
-        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
-        n.attribute.extend([a])
-        nl.append(n)
-
-        out_c = fork_name('Affine')
         if len(func.input) <= 2:
             shape = (1, )
             raw_data = np.zeros(shape).astype(np.float32).tostring()
             self._add_param(out_c, TensorProto.FLOAT, shape, raw_data)
-        else:
-            n = onnx.helper.make_node(
-                "Flatten",
-                [func.input[2]],
-                [out_c],
-                name="Flatten" + func.input[2])
-            a = onnx.helper.make_attribute("axis", 0)
-            n.attribute.extend([a])
-            nl.append(n)
 
         out = fork_name(func.output[0])
         n = onnx.helper.make_node(
             "Gemm",
-            [out_a, out_b, out_c],
+            [out_a] + func.input[1:],
             [out],
             alpha=1.0,
             beta=1.0,
