@@ -24,8 +24,6 @@ NNABLA_BUILD_WITH_DOCKER_INCLUDED = True
 NNABLA_DIRECTORY ?= $(shell pwd)
 include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
-MAKE_MANYLINUX_WHEEL = ON
-
 DOCKER_IMAGE_NAME_BASE ?= nnabla-build
 
 DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format
@@ -112,7 +110,7 @@ bwd-nnabla-test-cpplib: docker_image_build
 .PHONY: bwd-nnabla-wheel
 bwd-nnabla-wheel: docker_image_build
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-wheel
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=ON nnabla-wheel
 
 .PHONY: bwd-nnabla-test
 bwd-nnabla-test: docker_image_onnx_test
