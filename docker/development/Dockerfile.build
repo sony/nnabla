@@ -22,6 +22,7 @@ RUN yum install -y \
         epel-release \
         yum-utils \
     && yum install -y \
+        cmake3 \
         curl \
         hdf5 \
         hdf5-devel \
@@ -29,7 +30,8 @@ RUN yum install -y \
         wget \
         zip \
         zlib-static \
-    && yum clean all
+    && yum clean all \
+    && ln -s /usr/bin/cmake3 /usr/local/bin/cmake
 
 # ----------------------------------------------------------------------------
 # TODO: More sustainable way of installing gcc 5.x.
@@ -68,24 +70,6 @@ RUN REPO_BASE=http://mirror.centos.org/centos/6/sclo/x86_64/rh/git19 \
 ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH
 ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
-
-################################################## cmake
-RUN mkdir /tmp/deps \
-    && cd /tmp/deps \
-    && yum install -y cmake \
-    && curl -L https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz -o cmake-3.9.0.tar.gz \
-    && tar xf cmake-3.9.0.tar.gz \
-    && cd cmake-3.9.0 \
-    && mkdir build \
-    && cd build \
-    && cmake -DBUILD_TESTING=FALSE .. \
-    && make \
-    && make install \
-    && yum remove -y cmake libarchive \
-    && yum clean all \
-    && rm -rf /var/cache/yum/* \
-    && cd / \
-    && rm -rf /tmp/*
 
 ################################################## protobuf
 RUN mkdir /tmp/deps \
