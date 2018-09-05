@@ -509,7 +509,9 @@ def save(filename, contents, include_params=False, variable_batch_size=True):
             import nnabla as nn
             import nnabla.functions as F
             import nnabla.parametric_functions as PF
+            from nnabla.utils.save import save
 
+            batch_size = 16
             x0 = nn.Variable([batch_size, 100])
             x1 = nn.Variable([batch_size, 100])
             h1_0 = PF.affine(x0, 100, name='affine1_0')

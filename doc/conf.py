@@ -15,6 +15,7 @@
 from recommonmark.transform import AutoStructify
 
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosectionlabel',
               'sphinx.ext.mathjax',
               'sphinx.ext.napoleon',
               'sphinx.ext.todo',
@@ -62,6 +63,7 @@ intersphinx_mapping = {
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 
+blockdiag_html_image_format = "SVG"
 
 # At the bottom of conf.py
 def setup(app):
