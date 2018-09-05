@@ -122,16 +122,16 @@ def affine_transpose_weight(info, func):
 
 
 NNB_PREPROCESS_LIST = {
-    'Affine' : affine_transpose_weight
+    'Affine': affine_transpose_weight
 }
 
 CSRC_PREPROCESS_LIST = {
-    'Affine' : affine_transpose_weight
+    'Affine': affine_transpose_weight
 }
 
 PREPROCESS_DICT = {
     'CSRC': CSRC_PREPROCESS_LIST,
-    'NNB' : NNB_PREPROCESS_LIST
+    'NNB': NNB_PREPROCESS_LIST
 }
 
 

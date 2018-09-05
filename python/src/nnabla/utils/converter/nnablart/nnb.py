@@ -26,6 +26,7 @@ from .utils import preprocess_for_exporter
 
 NN_BINARY_FORMAT_VERSION = 2
 
+
 class Nnb:
     '''
     Nnb is only used as namespace
