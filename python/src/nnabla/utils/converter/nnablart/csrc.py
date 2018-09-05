@@ -25,12 +25,14 @@ from .csrc_templates import \
     csrc_gnumake
 
 from .utils import create_nnabart_info
+from .utils import preprocess_for_exporter
 
 
 class CsrcExporter:
 
     def __init__(self, nnp, batch_size):
         self._info = create_nnabart_info(nnp, batch_size)
+        preprocess_for_exporter(self._info, 'CSRC')
 
     def _export_csrc_parameters(self, dirname, name, prefix):
         parameters_h_filename = os.path.join(

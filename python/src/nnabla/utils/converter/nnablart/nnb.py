@@ -22,7 +22,9 @@ import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import nnabla.utils.converter
 
 from .utils import create_nnabart_info
+from .utils import preprocess_for_exporter
 
+NN_BINARY_FORMAT_VERSION = 2
 
 class Nnb:
     '''
@@ -54,6 +56,7 @@ class NnbExporter:
 
     def __init__(self, nnp, batch_size):
         self._info = create_nnabart_info(nnp, batch_size)
+        preprocess_for_exporter(self._info, 'NNB')
 
         self._List = collections.namedtuple('List', ('size', 'list_index'))
 
@@ -285,7 +288,8 @@ class NnbExporter:
             '{}I'.format(len(findexes)), *findexes))
         functions = self._List(len(findexes), index)
 
-        network = struct.pack('IiIiIiIiIiIII',
+        network = struct.pack('IIiIiIiIiIiIII',
+                              NN_BINARY_FORMAT_VERSION,
                               version,
                               buffers.size,
                               buffers.list_index,
