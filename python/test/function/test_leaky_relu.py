@@ -37,3 +37,13 @@ def test_leaky_relu_forward_backward(seed, alpha, ctx, func_name):
             (-1e-3, 1e-3))]
     function_tester(rng, F.leaky_relu, ref_leaky_relu, inputs,
                     func_args=[alpha], ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("alpha", [0, 0.2])
+def test_leaky_relu_inplace(seed, alpha, ctx, func_name):
+    from nbla_test_utils import inplace_function_test_helper
+    x = nn.Variable([2, 3, 4], need_grad=True)
+    inplace_function_test_helper(
+        [x], F.leaky_relu, ctx=ctx, rng=np.random.RandomState(seed))

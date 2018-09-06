@@ -17,37 +17,78 @@
 #ifndef __NBLA_FUNCTION_LEAKYRELU_HPP__
 #define __NBLA_FUNCTION_LEAKYRELU_HPP__
 
-#include <nbla/function/utils/base_transform_unary.hpp>
+#include <nbla/cpu.hpp>
+#include <nbla/function.hpp>
+#include <nbla/function_registry.hpp>
+
+#include <memory>
+#include <string>
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(LeakyReLU, float);
+using std::string;
 
-/** @class LeakyReLU
-@brief Leaky Rectified Linear Unit (ReLU) defined as
+NBLA_REGISTER_FUNCTION_HEADER(LeakyReLU, float, bool);
 
+/** Leaky Rectified Linear Unit (LeakyReLU) defined as
 @f[
-   y_i= \left\{
-    \begin{array}{ll}
-      x_i & (x \geq 0)\\
-      \alpha x_i & (x < 0)
-    \end{array} \right..
+y_i= \left\{
+           \begin{array}{ll}
+                        x_i & if x_i > 0  \\
+                alpha * x_i & otherwise
+           \end{array} \right.,
 @f]
 
 Inputs:
 - N-D array.
 
 Outputs:
-- N-D array with the same shape as input.
+- N-D array.
 
 @tparam T Data type for computation.
-@param alpha The slope value multiplied to negative numbers. @f$\alpha@f$ in the
-definition.
-
+@param alpha Leakage parameter.
+@param inplace The output array is will be shared with the input array if true.
 \ingroup FunctionImplGrp
-
  */
-NBLA_DEFINE_TRANSFORM_UNARY_1(LeakyReLU, x >= (T)0 ? x : (T)a0 * x,
-                              x >= (T)0 ? dy : (T)a0 * dy, false, float);
+template <typename T> class LeakyReLU : public BaseFunction<float, bool> {
+protected:
+  float alpha_;
+  bool inplace_;
+
+public:
+  LeakyReLU(const Context &ctx, float alpha, bool inplace)
+      : BaseFunction(ctx, alpha, inplace), alpha_(alpha), inplace_(inplace) {}
+  virtual ~LeakyReLU() {}
+  virtual shared_ptr<Function> copy() const {
+    return create_LeakyReLU(ctx_, alpha_, inplace_);
+  }
+  virtual int min_inputs() { return 1; }
+  virtual int min_outputs() { return 1; }
+  virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual string name() { return "LeakyReLU"; }
+  virtual vector<string> allowed_array_classes() {
+    return SingletonManager::get<Cpu>()->array_classes();
+  }
+  virtual bool grad_depends_output_data(int i, int o) const { return inplace_; }
+  virtual int inplace_data(int i) const {
+    return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
+  }
+  virtual int inplace_data_with(int i) const { return 0; }
+  virtual int inplace_grad(int i) const {
+    return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
+  }
+  virtual int inplace_grad_with(int i) const { return 0; }
+
+protected:
+  NBLA_API virtual void setup_impl(const Variables &inputs,
+                                   const Variables &outputs);
+  NBLA_API virtual void forward_impl(const Variables &inputs,
+                                     const Variables &outputs);
+  NBLA_API virtual void backward_impl(const Variables &inputs,
+                                      const Variables &outputs,
+                                      const vector<bool> &propagate_down,
+                                      const vector<bool> &accum);
+};
 }
 #endif
