@@ -42,5 +42,7 @@ Utilities
 
 .. autofunction:: nnabla.utils.data_iterator.data_iterator_cache
 
+.. autofunction:: nnabla.utils.data_iterator.data_iterator_concat_datasets
+
 .. automodule:: nnabla.utils
 
