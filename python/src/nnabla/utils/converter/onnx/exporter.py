@@ -766,6 +766,15 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
+
+                p = graph.input.add()
+                p.name = param.variable_name
+                p.type.tensor_type.elem_type = get_tensor_type(
+                    param.variable_name, self._input_types)
+                dims = [create_dim(d)
+                        for d in self._var_dict[param.variable_name].dim]
+                p.type.tensor_type.shape.dim.extend(dims)
+
             else:
                 print("Not in: {}".format(param.variable_name))
 
@@ -777,18 +786,6 @@ class OnnxExporter:
             dims = [create_dim(d)
                     for d in self._var_dict[iv.variable_name].dim]
             i.type.tensor_type.shape.dim.extend(dims)
-
-        for pv in exe.parameter_variable:
-            if pv.variable_name in self._var_dict:
-                p = graph.input.add()
-                p.name = pv.variable_name
-                p.type.tensor_type.elem_type = get_tensor_type(
-                    pv.variable_name, self._input_types)
-                dims = [create_dim(d)
-                        for d in self._var_dict[pv.variable_name].dim]
-                p.type.tensor_type.shape.dim.extend(dims)
-            else:
-                print("param: {} not in dict.".format(pv.variable_name))
 
         # Add only the final output of the graph as output
         for ov in exe.output_variable:
