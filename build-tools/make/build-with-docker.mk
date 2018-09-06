@@ -52,7 +52,7 @@ docker_image_auto_format:
 docker_image_doc:
 	docker pull ubuntu:16.04
 	cd $(NNABLA_DIRECTORY) \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.doc .
+	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .
 
 .PHONY: docker_image_build
 docker_image_build:

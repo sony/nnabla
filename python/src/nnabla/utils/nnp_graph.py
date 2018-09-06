@@ -199,8 +199,10 @@ class NnpLoader(object):
 
         .. code-block:: python
 
+            from nnabla.utils.nnp_graph import NnpLoader
+
             # Read a .nnp file.
-            nnp = Nnp('/path/to/nnp.nnp')
+            nnp = NnpLoader('/path/to/nnp.nnp')
             # Assume a graph `graph_a` is in the nnp file.
             net = nnp.get_network(network_name, batch_size=1)
             # `x` is an input of the graph.

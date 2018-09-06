@@ -1,6 +1,9 @@
 Operator support status
 =======================
 
+Support status importing from ONNX
+----------------------------------
+
 This is a status list of [ONNX operators](https://github.com/onnx/onnx/blob/master/docs/Operators.md)
 that indicates if each operator can be converted to NNP.
 
@@ -99,7 +102,7 @@ ReduceMean                               OK
 ReduceMin                                OK
 ReduceProd                               OK
 ReduceSum                                OK
-ReduceSumSquare                          Not in NNabla   Operator does not exit in NNabla
+ReduceSumSquare                          Not in NNabla   Operator does not exist in NNabla
 Relu                                     OK
 Reshape                                  Not finished    implementing
 Selu                                     OK
@@ -138,4 +141,277 @@ experimental Scale                       Not started
 experimental ScaledTanh                  Not started
 experimental ThresholdedRelu             Not started
 experimental Upsample                    Not started
+======================================== =============== =================================================
+
+Support status exporting from ONNX
+----------------------------------
+
+# Implement status
+
+Total 60/136
+
+Neural Network Layer
+++++++++++++++++++++
+
+Count 9/11
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Affine                                   OK              Convert to Gemm + Reshape
+Convolution                              OK              Rename to Conv
+DepthwiseConvolution                     OK              Convert to Convolution (with group)           
+Deconvolution                            OK              Convert to ConvTranspose and Add
+DepthwiseDeconvolution                   NG
+MaxPooling                               OK              Rename to MaxPool
+AveragePooling                           OK              Rename to AveragePool
+GlobalAveragePooling                     OK              Rename to GlobalAveragePool
+SumPooling                               OK              Convert to Mul
+Unpooling                                OK              Convert to Upsample
+Embed                                    NG
+======================================== =============== =================================================
+
+Neural Network Activation Functions
++++++++++++++++++++++++++++++++++++
+
+Count 8/11
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Sigmoid                                  OK
+Swish                                    NG
+Tanh                                     OK
+ReLU                                     OK              Rename to Relu
+LeakyReLU                                OK              Rename to LearkyRelu
+Softmax                                  OK
+ELU                                      OK              Rename to Elu
+SELU                                     OK              Rename to Selu
+CReLU                                    NG
+CELU                                     NG
+PReLU                                    OK              Rename to PRelu
+======================================== =============== =================================================
+
+Normalization
++++++++++++++
+
+Count 1/4
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+BatchNormalization                       OK
+MeanSubtraction                          NG
+ClipGradByValue                          NG
+ClipGradByNorm                           NG
+======================================== =============== =================================================
+
+Reduction
++++++++++
+
+Count 5/7
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Sum                                      OK              Rename to ReduceSum
+Mean                                     OK              Rename to ReduceMean
+Max                                      OK              Rename to ReduceMax
+Min                                      OK              Rename to ReduceMin
+Prod                                     OK              Rename to ReduceProd
+ReduceSum                                NG
+ReduceMean                               NG
+======================================== =============== =================================================
+
+Arithmetic
+++++++++++
+
+Count 10/12
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Add2                                     NG
+BcAdd2                                   NG
+Sub2                                     OK              Rename to Sub
+Mul2                                     OK              Rename to Mul
+Div2                                     OK              Rename to Div
+Pow2                                     OK              Rename to Pow
+AddScalar                                OK              Convert to Add
+MulScalar                                OK              Convert to Mul
+PowScalar                                OK              Convert to Pow
+RSubScalar                               OK              Convert to Sub
+RDivScalar                               OK              Convert to Div
+RPowScalar                               OK              Convert to Pow
+======================================== =============== =================================================
+
+Logical
++++++++
+
+Count 12/24
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Sign
+Minimum2                                 OK              Rename to Min
+Maximum2                                 OK              Rename to Max
+MinimumScalar                            OK              Convert to Clip
+MaximumScalar                            OK              Convert to Clip
+LogicalAnd                               OK              Rename to And
+LogicalOr                                OK              Rename to Or
+LogicalXor                               OK              Rename to Xor
+Equal                                    OK
+NotEqual                                 NG
+GreaterEqual                             NG
+Greater                                  OK
+LessEqual                                NG
+Less                                     OK
+LogicalAndScalar                         NG
+LogicalOrScalar                          NG
+LogicalXorScalar                         NG
+EqualScalar                              NG
+NotEqualScalar                           NG
+GreaterEqualScalar                       NG
+GreaterScalar                            NG
+LessEqualScalar                          NG
+LessScalar                               NG
+LogicalNot                               OK              Rename to Not
+======================================== =============== =================================================
+
+Math
+++++
+
+Count 5/18
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Constant                                 NG
+Abs                                      OK
+Exp                                      OK
+Log                                      OK
+Identity                                 OK
+BatchMatmul                              OK              Rename to MatMul
+Round                                    NG
+Sin                                      NG
+Cos                                      NG
+Tan                                      NG
+Sinh                                     NG
+Cosh                                     NG
+ASin                                     NG
+ACos                                     NG
+ATan                                     NG
+ASinh                                    NG
+ACosh                                    NG
+ATanh                                    NG
+======================================== =============== =================================================
+
+Array Manipulation
+++++++++++++++++++
+
+Count 9/13
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Concatenate                              OK              Convert to Concat and Squeeze
+Split                                    OK
+Stack                                    OK              Convert to Unsqueeze
+Slice                                    OK
+Pad                                      OK
+Transpose                                OK
+Broadcast                                NG
+OneHot                                   OK              Convert to Flatten, Gather and Reshape
+Flip                                     OK              Convert to Transpose and Gather
+Shift                                    NG
+Reshape                                  OK
+MatrixDiag                               NG
+MatrixDiagPart                           NG
+======================================== =============== =================================================
+
+Stochasticity
++++++++++++++
+
+Count 1/10
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Dropout                                  OK
+TopKData                                 NG
+TopKGrad                                 NG
+Rand                                     NG
+Randint                                  NG
+Randn                                    NG
+RandomCrop                               NG
+RandomFlip                               NG
+RandomShift                              NG
+ImageAugmentation                        NG
+======================================== =============== =================================================
+
+Loss Functions
+++++++++++++++
+
+Count 0/9
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+SigmoidCrossEntropy                      NG
+BinaryCrossEntropy                       NG
+SoftmaxCrossEntropy                      NG
+CategoricalCrossEntropy                  NG
+SquaredError                             NG
+AbsoluteError                            NG
+HuberLoss                                NG
+EpsilonInsensitiveLoss                   NG
+KLMultinomial                            NG
+======================================== =============== =================================================
+
+Quantization Neural Network Layers
+++++++++++++++++++++++++++++++++++
+
+Count 0/10
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+BinarySigmoid                            NG
+BinaryTanh                               NG
+BinaryConnectAffine                      NG
+BinaryConnectConvolution                 NG
+BinaryWeightAffine                       NG
+BinaryWeightConvolution                  NG
+INQAffine                                NG
+INQConvolution                           NG
+FixedPointQuantize                       NG
+Pow2Quantize                             NG
+======================================== =============== =================================================
+
+Validation
+++++++++++
+
+Count 0/3
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+TopNError                                NG
+BinaryError                              NG
+ConfusionMatrix                          NG
+======================================== =============== =================================================
+
+Unsupported,SpecialUse
+++++++++++++++++++++++
+
+Count 0/4
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+VATNoise                                 NG
+Unlink                                   NG
+Sink                                     NG
+NmsDetection2d                           NG
 ======================================== =============== =================================================

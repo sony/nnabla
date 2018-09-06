@@ -298,7 +298,7 @@ def _dump_protobuf(args, proto, prefix, depth):
 
         for i, opt in enumerate(proto.optimizer):
             net = nets[opt.network_name]
-            prefix = '  Optimizor[{}]: '.format(i)
+            prefix = '  Optimizer[{}]: '.format(i)
             print('{}{}'.format(prefix, opt.name))
 
             _dump_network_arg(prefix, ' (In) Data     ', opt.data_variable)
