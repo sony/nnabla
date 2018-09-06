@@ -516,6 +516,10 @@ Neural Network Activation Functions:
           definition.
         type: float
         default: '0.1'
+      inplace:
+        doc: The output array is shared with the input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array with the same shape as x
