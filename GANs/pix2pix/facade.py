@@ -71,7 +71,7 @@ class FacadeDataSource(DataSource):
                 tsize = int(requests.get(
                     url, stream=True).headers['Content-Length'])
                 with tqdm.tqdm(total=tsize) as bar:
-                    update_bar = lambda bcount, bsize, total, bar=bar: bar.update(
+                    def update_bar(bcount, bsize, total, bar=bar): return bar.update(
                         bsize)
                     six.moves.urllib.request.urlretrieve(
                         url, download_path, reporthook=update_bar)
