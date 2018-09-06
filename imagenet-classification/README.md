@@ -18,35 +18,90 @@ In this example, "Residual Neural Network" (also called "ResNet") is trained on 
 
 ImageNet consists of 1000 categories and each category has 1280 of images in training set.
 The ImageNet dataset(training and validation) requires 150[GBytes] of disk capacity.
+
+#### Prepare datasets
+
 To create catche files requires approximately 400[GBytes] of disk capacity.
 
-1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/). The following setup procedure requires the following two files.
-  - Training dataset: ILSVRC2012_img_train.tar
-  - Validation dataset: ILSVRC2012_img_val.tar
+1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/). The following setup procedure requires the following three files.
+  - Development kit: `ILSVRC2012_devkit_t12.tar.gz`
+  - Training dataset: `ILSVRC2012_img_train.tar`
+  - Validation dataset: `ILSVRC2012_img_val.tar`
 
-2. Create a directory for the data set.
-  - For the trainning data.
-      - mkdir "directory name"
-          - [ex):mkdir train_data]
-      - python create_train_dir.py -t "tar file(trainning) of ImageNet" -o "directory name"
-          - [ex):python create_train_dir.py -t ILSVRC2012_img_train.tar -o train_data]
-  - For the validation data.
-      - mkdir "directory name"
-          - [ex):mkdir val_data]
-      - python create_val_dir.py -t "tar file(validation) of ImageNet" -o "directory name"
-          - [ex):python create_val_dir.py -t ILSVRC2012_img_val.tar -o val_data]
+2. Create the cache files of the datasets that improve the disk I/O overhead.
 
-3. Create the cache files of the datasets that improve the disk I/O overhead.
-  - For the trainning data.
-      - mkdir "directory name"
-          - [ex):mkdir train_cache]
-      - python create_cache_file.py -i "directory of the trainning data" -o "directory of the trainning cache file" -w "width of output image" -g "height of output image" -m "shaping mode (trimming or padding)" -s "shuffle mode (true or false)"
-          - [ex):[python create_cache_file.py -i train_data -o train_cache -w 320 -g 320 -m trimming -s true]
-  - For the validation data.
-      - mkdir "directory name"
-          - [ex):mkdir val_cache]
-      - python create_cache_file.py -i "directory of the validation data" -o "directory of the validatio cache file" -w "width of output image" -g "height of output image" -m "shaping mode (trimming or padding)" -s "shuffle mode (true or false)"
-          - [ex):python create_cache_file.py -i val_data -o val_cache -w 320 -g 320 -m trimming -s false]
+We provides the tool for creating dataset cache.
+
+    usage: create_cache.py [-h] -D DEVKIT
+                           [-W WIDTH] [-H HEIGHT]
+                           [-m {trimming,padding}]
+                           [-S {True,False}]
+                           [-N FILE_CACHE_SIZE]
+                           [-C {h5,npy}]
+                           [--thinning THINNING]
+                           input [input ...] output
+
+    positional arguments:
+      input                 Source file or directory.
+      output                Destination directory.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -D DEVKIT, --devkit DEVKIT
+                            Devkit filename
+      -W WIDTH, --width WIDTH
+                            width of output image (default:320)
+      -H HEIGHT, --height HEIGHT
+                            height of output image (default:320)
+      -m {trimming,padding}, --mode {trimming,padding}
+                            shaping mode (trimming or padding) (default:trimming)
+      -S {True,False}, --shuffle {True,False}
+                            shuffle mode if not specified, train:True, val:False. Otherwise specified value will be used for both.
+      -N FILE_CACHE_SIZE, --file-cache-size FILE_CACHE_SIZE
+                            num of data in cache file (default:100)
+      -C {h5,npy}, --cache-type {h5,npy}
+                            cache format (h5 or npy) (default:npy)
+      --thinning THINNING   Thinning rate
+
+This tools creates dataset cache directory from ImageNet data tar
+archive. 
+
+It auto detect contents of tar archive, so you can change image file
+name and add/remove images from train tar archive.  Currently,
+converting validation archive includes hard coded information, then
+you can rename but cannot change contents order of tar archive.
+
+For example
+
+```
+$ python create_cache.py \
+    -D ImageNet/ILSVRC2012_devkit_t12.tar.gz \
+    ImageNet/ILSVRC2012_img_train.tar \
+    ImageNet/ILSVRC2012_img_val.tar \
+    ImageNet/imagenet-320-320-trimming-npy
+```
+
+It will create cache data from 
+
+- ImageNet/ILSVRC2012_devkit_t12.tar.gz
+    - Meta data
+- ImageNet/ILSVRC2012_img_train.tar
+    - Training images
+- ImageNet/ILSVRC2012_img_val.tar
+    - Validation images
+
+Outputs are followings
+
+- ImageNet/imagenet-train-320-320-trimming-npy/synsets_id_name.csv
+    - SYNSET_ID name list.
+- ImageNet/imagenet-train-320-320-trimming-npy/synsets_id_word.csv
+    - SYNSET_ID word list.
+- ImageNet/imagenet-train-320-320-trimming-npy/train
+    - Cache for training dataset. Shuffled.
+- ImageNet/imagenet-train-320-320-trimming-npy/val
+    - Cache for validation dataset. Not shuffled.
+
+#### Training
 
 The following line executes the ImageNet training (See more options in the help by the `-h` option.).
 
