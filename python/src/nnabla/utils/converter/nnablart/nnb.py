@@ -100,7 +100,7 @@ class NnbExporter:
 
         ####################################################################
         # Version
-        version = nnabla.utils.converter.get_category_info_version()
+        binary_format_revision = nnabla.utils.converter.get_category_info_version()
 
         ####################################################################
         # Varibles name index
@@ -291,7 +291,7 @@ class NnbExporter:
 
         network = struct.pack('IIiIiIiIiIiIII',
                               NN_BINARY_FORMAT_VERSION,
-                              version,
+                              binary_format_revision,
                               buffers.size,
                               buffers.list_index,
                               variables.size,
