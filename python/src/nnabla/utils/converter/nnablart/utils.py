@@ -104,3 +104,45 @@ def create_nnabart_info(nnp, batch_size):
     info._network = network
     info._function_info = nnabla.utils.converter.get_function_info()
     return info
+
+
+def affine_transpose_weight(info, func):
+    weight_name = func.input[1]
+    w_shape = info._variables[weight_name].shape.dim[:]
+    if weight_name in info._parameters:
+        w_data = info._parameters[weight_name]
+    else:
+        print("WARNING: affine weight is not transposed. Since it is not included in .nntxt/.nnp")
+    i_num = w_shape[0]
+    data = np.array(w_data.data[:])
+    data = data.reshape(int(i_num), -1)
+    data = np.transpose(data)
+    del w_data.data[:]
+    w_data.data.extend(list(data.flatten()))
+
+
+NNB_PREPROCESS_LIST = {
+    'Affine': affine_transpose_weight
+}
+
+CSRC_PREPROCESS_LIST = {
+    'Affine': affine_transpose_weight
+}
+
+PREPROCESS_DICT = {
+    'CSRC': CSRC_PREPROCESS_LIST,
+    'NNB': NNB_PREPROCESS_LIST
+}
+
+
+def preprocess_for_exporter(info, exporter_name):
+    if exporter_name in PREPROCESS_DICT:
+        preprocess_list = PREPROCESS_DICT[exporter_name]
+    else:
+        return
+
+    for func in info._network.function:
+        if func.type in preprocess_list:
+            preprocessor = preprocess_list[func.name]
+            if callable(preprocessor):
+                preprocessor(info, func)
