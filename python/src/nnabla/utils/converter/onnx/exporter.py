@@ -639,31 +639,63 @@ class OnnxExporter:
     def Affine(self, func):
         """
         Affine is decomposed as 3 steps:
-            Flatten inputs
+            Reshape inputs
             Gemm
             Reshape
         """
         nl = []
         out_a = fork_name(func.input[0])
+        out_b = fork_name(func.input[1])
+        out_c = fork_name("affine_bias")
+        base_axis = func.affine_param.base_axis
+
+        x_shape = list(self._var_dict[func.input[0]].dim[:])
+        x_shape_dims = [np.prod(x_shape[:base_axis]), np.prod(x_shape[base_axis:])]
+        x_shape_dims_name = fork_name('x_shape_dims')
+        x_shape_dims_raw = np.array(x_shape_dims).astype(np.int64)
+        self._add_param(x_shape_dims_name, TensorProto.INT64, list(
+            x_shape_dims_raw.shape), x_shape_dims_raw.tostring())
 
         n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[0]],
-            [out_a],
-            name="Flatten" + func.input[0])
-        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
-        n.attribute.extend([a])
+            "Reshape",
+            [func.input[0], x_shape_dims_name],
+            [out_a]
+            )
         nl.append(n)
 
+        w_shape = list(self._var_dict[func.input[1]].dim[:])
+        w_shape_dims = [w_shape[0], np.prod(w_shape) / w_shape[0]]
+        w_shape_dims_name = fork_name('w_shape_dims')
+        w_shape_dims_raw = np.array(w_shape_dims).astype(np.int64)
+        self._add_param(w_shape_dims_name, TensorProto.INT64, list(
+            w_shape_dims_raw.shape), w_shape_dims_raw.tostring())
+
+        n = onnx.helper.make_node(
+            "Reshape",
+            [func.input[1], w_shape_dims_name],
+            [out_b]
+            )
+        nl.append(n)
+
+        out_c = fork_name('Affine')
         if len(func.input) <= 2:
             shape = (1, )
             raw_data = np.zeros(shape).astype(np.float32).tostring()
             self._add_param(out_c, TensorProto.FLOAT, shape, raw_data)
+        else:
+            n = onnx.helper.make_node(
+                "Flatten",
+                [func.input[2]],
+                [out_c],
+                name="Flatten" + func.input[2])
+            a = onnx.helper.make_attribute("axis", 0)
+            n.attribute.extend([a])
+            nl.append(n)
 
         out = fork_name(func.output[0])
         n = onnx.helper.make_node(
             "Gemm",
-            [out_a] + func.input[1:],
+            [out_a, out_b, out_c],
             [out],
             alpha=1.0,
             beta=1.0,
