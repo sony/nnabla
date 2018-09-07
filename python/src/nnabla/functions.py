@@ -480,3 +480,76 @@ def clip_by_norm(x, clip_norm, axis=None):
     x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
     y = clip_norm * x / x_norm
     return y
+
+
+def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None):
+    '''
+    Resize an ND array with interpolation.
+
+    Scaling factors for spatial dimensions are determined by either
+    ``scale`` or ``output_size``.
+
+    ``nd = len(scale)`` or ``nd = len(output_size)`` determines the number of
+    spatial dimensions, and the last ``nd`` dimensions of the input ``x`` are    
+    considered as the spatial dimensions to be resized.
+
+
+    If ``scale`` is given, the ``output_size`` is calculated by
+    ``output_size[i] = floor(scale[i] * x.shape[i - len(scale)])``.
+
+    Example:
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        x_data = np.random.rand(64, 3, 224, 224)
+        x = nn.Variable.from_numpy_array(x_data)
+
+        # Resize by scales
+        y = F.interpolate(x, scale=(2, 2), mode='linear')
+        print(y.shape)  # (64, 3, 448, 448)
+        y.forward()
+        print(y.d)  # Print output
+
+        # Resize to a size
+        y2 = F.interpolate(x, output_size=(320, 257), mode='linear')
+        print(y2.shape)  # (64, 3, 320, 257)
+        y2.forward()
+        print(y2.d)  # Print output
+
+    Args:
+        x(~nnabla.Variable): N-D array with an arbitrary number of dimensions.
+        scale(tuple of ints): Scale factors along axes. The default is
+            ``None``, and if this is omitted, ``output_size`` must be specified.
+        output_size(tuple of ints): The output sizes for axes. If this is
+            given, the scale factors are determined by the output sizes and the
+            input sizes. The default is ``None``, and if this is omitted,
+            ``scale`` must be specified.
+        mode(str): Interpolation mode chosen from ('linear'|'nearest').
+            The default is 'linear'.
+        align_corners(bool): If true, the corner pixels of input and output
+            arrays are aligned, such that the output corner pixels have the
+            same values with the input corner pixels.
+            The default is ``None``, and it becomes ``True`` if mode is
+            'linear', otherwise ``False``.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    '''
+    from .function_bases import interpolate as interpolate_base
+    import math
+    if scale is None and output_size is None:
+        raise ValueError('Either scale or output_size must be given')
+    elif output_size is None:
+        output_size = [int(math.floor(s * d))
+                       for d, s in zip(x.shape[-len(scale):], scale)]
+    if align_corners is None:
+        if mode == 'linear':
+            align_corners = True
+        else:
+            align_corners = False
+    return interpolate_base(x, output_size, mode, align_corners)

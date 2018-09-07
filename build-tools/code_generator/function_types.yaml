@@ -262,6 +262,9 @@ MatrixDiag:
 MatrixDiagPart:
   float: [float]
   half: [Half]
+Interpolate:
+  float: [float]
+  half: [Half]
 Dropout:
   float: [float]
   half: [Half]

@@ -203,6 +203,12 @@ Loss Functions
 .. autofunction:: epsilon_insensitive_loss
 .. autofunction:: kl_multinomial
 
+Signal Processing
+-----------------
+
+.. autofunction:: interpolate
+.. autofunction:: fft
+.. autofunction:: ifft
 
 Quantized Neural Network Layers
 ----------------------------------
@@ -235,11 +241,3 @@ Validation
 ----------
 
 .. autofunction:: top_n_error
-
-
-Spectral Operation
-------------------
-
-.. autofunction:: fft
-.. autofunction:: ifft
-

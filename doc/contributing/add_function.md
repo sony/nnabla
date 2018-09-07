@@ -130,41 +130,38 @@ Embed:
 
 ## Generate code template and interfaces by CMake
 After editing the `.yaml` files, next step is to generate the template class for new function.  
-By running cmake command in an usual way when we build NNabla, our build system will create the following files using the function definition.  
-Following files are created if they do not exist. It does not overwrite existing files.
-
-* Function class template
-  * `include/nbla/function/${snake_name}.hpp`
-  * `src/nbla/function/generic/${snake_name}.cpp`
-
-* Template type instantiation of functions 
-  * `src/nbla/function/${snake_name}.cpp`
-
-* Initialization, function registration to factories 
-  * `src/nbla/init.cpp`
-
-* Python interfaces at `python/src/nnabla`
-  * `_version.py`
-  * `function.pxd`
-  * `function.pyx`
-  * `function_bases.py`
-
-* Serializer/Deserializer
-  * `python/src/nnabla/utils/load_function.py`
-  * `python/src/nnabla/utils/save_function.py`
-  * `src/nbla_utils/nnp_impl_create_function.cpp`
-
-
-By running cmake as described in the build instruction (Please refer [Build Manuals](https://github.com/sony/nnabla/tree/master/doc/build/README.md).),  
+By running cmake as described in the build instruction (Please refer [Build Manuals](https://github.com/sony/nnabla/tree/master/doc/build/README.md).),
+our build system will create the following files using the function definition.
 
 ```shell
 cd build
 cmake ..
 ```
-new function class template is generated at the following locations.  
 
-* `include/nbla/function/${snake_name}.hpp`
-* `src/nbla/function/generic/${snake_name}.cpp`
+* Function class template (created only if they don't exist, and should be added to the Git version control)
+  * `include/nbla/function/${snake_name}.hpp`
+  * `src/nbla/function/generic/${snake_name}.cpp`
+
+* Template type instantiation of functions (overwriten)
+  * `src/nbla/function/${snake_name}.cpp`
+
+* Initialization, function registration to factories (overwriten)
+  * `src/nbla/init.cpp`
+
+* Python interfaces at `python/src/nnabla` (overwriten)
+  * `_version.py`
+  * `function.pxd`
+  * `function.pyx`
+  * `function_bases.py`
+
+* Serializer/Deserializer (overwriten)
+  * `python/src/nnabla/utils/load_function.py`
+  * `python/src/nnabla/utils/save_function.py`
+  * `src/nbla_utils/nnp_impl_create_function.cpp`
+
+* Format definition for C-runtime (overwritten, and should be added to the Git version control)
+  * `python/src/nnabla/utils/converter/function_order.yaml`
+
 
 Although the function template are useful, element-wise operation functions such as an activation function can be written by using macro functions.  
 Various macros are provided for easily defining functions with common structures. Please look inside existing functions for examples of these macros.  
