@@ -650,7 +650,8 @@ class OnnxExporter:
         base_axis = func.affine_param.base_axis
 
         x_shape = list(self._var_dict[func.input[0]].dim[:])
-        x_shape_dims = [np.prod(x_shape[:base_axis]), np.prod(x_shape[base_axis:])]
+        x_shape_dims = [np.prod(x_shape[:base_axis]),
+                        np.prod(x_shape[base_axis:])]
         x_shape_dims_name = fork_name('x_shape_dims')
         x_shape_dims_raw = np.array(x_shape_dims).astype(np.int64)
         self._add_param(x_shape_dims_name, TensorProto.INT64, list(
@@ -660,7 +661,7 @@ class OnnxExporter:
             "Reshape",
             [func.input[0], x_shape_dims_name],
             [out_a]
-            )
+        )
         nl.append(n)
 
         w_shape = list(self._var_dict[func.input[1]].dim[:])
@@ -674,7 +675,7 @@ class OnnxExporter:
             "Reshape",
             [func.input[1], w_shape_dims_name],
             [out_b]
-            )
+        )
         nl.append(n)
 
         out_c = fork_name('Affine')
