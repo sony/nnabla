@@ -471,7 +471,7 @@ def binary_weight_affine(inp, n_outmaps,
         "Wb", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
         wb_init, False)
     alpha = get_parameter_or_create(
-        "alpha", n_outmaps, n_outmaps, ConstantInitializer(0), False)
+        "alpha", n_outmaps, ConstantInitializer(0), False)
     b = None
     if with_bias:
         b = get_parameter_or_create(
