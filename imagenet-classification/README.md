@@ -21,7 +21,7 @@ The ImageNet dataset(training and validation) requires 150[GBytes] of disk capac
 
 #### Prepare datasets
 
-To create catche files requires approximately 400[GBytes] of disk capacity.
+To create cache files requires approximately 400[GBytes] of disk capacity.
 
 1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/). The following setup procedure requires the following three files.
   - Development kit: `ILSVRC2012_devkit_t12.tar.gz`
@@ -44,7 +44,7 @@ We provides the tool for creating dataset cache.
     positional arguments:
       input                 Source file or directory.
       output                Destination directory.
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       -D DEVKIT, --devkit DEVKIT
@@ -64,7 +64,7 @@ We provides the tool for creating dataset cache.
       --thinning THINNING   Thinning rate
 
 This tools creates dataset cache directory from ImageNet data tar
-archive. 
+archive.
 
 It auto detect contents of tar archive, so you can change image file
 name and add/remove images from train tar archive.  Currently,
@@ -81,7 +81,7 @@ $ python create_cache.py \
     ImageNet/imagenet-320-320-trimming-npy
 ```
 
-It will create cache data from 
+It will create cache data from
 
 - ImageNet/ILSVRC2012_devkit_t12.tar.gz
     - Meta data
