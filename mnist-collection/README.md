@@ -28,7 +28,7 @@ you will see the training progress in the console (decreasing training and
 validation error). The model will eventually reach around 1% validation error
 rate.
 
-Training can be dramatically sped up by using a CUDA GPU when the
+Training can be dramatically speed up by using a CUDA GPU when the
 nnabla_ext-cuda extension is installed. Run the above command with `-c
 cudnn` option to let NNabla use GPU acceleration.
 
