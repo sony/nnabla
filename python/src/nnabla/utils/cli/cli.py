@@ -43,6 +43,9 @@ def cli_main():
     import nnabla
     parser = argparse.ArgumentParser(description='Command line interface ' +
                                      'for NNabla({})'.format(_nnabla_version()))
+    parser.add_argument(
+        '-m', '--mpi', help='exec with mpi.', action='store_true')
+
     subparsers = parser.add_subparsers()
 
     from nnabla.utils.cli.train import add_train_command
@@ -82,13 +85,26 @@ def cli_main():
         'version', help='Print version and build number.')
     subparser.set_defaults(func=version_command)
 
+    print('NNabla command line interface (Version {}, Build {})'.format(
+        nnabla.__version__, nnabla.__build_number__))
+
     args = parser.parse_args()
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
         sys.exit(-1)
 
-    args.func(args)
+    if args.mpi:
+        from nnabla.utils.communicator_util import create_communicator
+        comm = create_communicator()
+        try:
+            args.func(args)
+        except:
+            import traceback
+            print(traceback.format_exc())
+            comm.abort()
+    else:
+        args.func(args)
 
 
 if __name__ == '__main__':
