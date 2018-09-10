@@ -20,7 +20,7 @@ The following software are required for installation:
 
 * Recommended.
 
-  * CUDA Toolkit 9.2 / cuDNN 7.1 (for NVIDIA GPU users)
+  * CUDA Toolkit and CUDNN (if you have CUDA GPUs).
 
 
 Setup environment
@@ -55,8 +55,8 @@ Microsoft Visual C++ 2015 Redistributable
 Get and install from `here <https://www.microsoft.com/en-us/download/details.aspx?id=52685>`_
 
 
-CUDA Toolkit 9.2 / cuDNN 7.1
-""""""""""""""""""""""""""""
+CUDA and CUDNN library
+""""""""""""""""""""""
 
 If you are using a NVIDIA GPU, execution speed will be drastically improved by installing the following software.
 
@@ -64,85 +64,15 @@ If you are using a NVIDIA GPU, execution speed will be drastically improved by i
 
 `cuDNN <https://developer.nvidia.com/cudnn>`_
 
-To install cuDNN, copy bin, include and lib to C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v9.2
+To install cuDNN, copy bin, include and lib to C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v{CUDA_VERSION}
+
+See :ref:`a list of compatible CUDNN versions of CUDA extension packages <cuda-cudnn-compatibility>`.
 
 
 Install
 ^^^^^^^
 
-Install CPU package.
-
-.. code-block:: doscon
-
-    > pip install nnabla
-
-
-If you are using a NVIDIA GPU, you can also install the CUDA/cuDNN package.
-
-.. code-block:: doscon
-
-    > pip install nnabla_ext_cuda
-    
-
-Check for running.
-
-.. code-block:: doscon
-
-    > ipython
-    
-    In [1]: import nnabla
-    2017-06-06 21:36:07,101 [nnabla][Level 99]: Initializing CPU extension...
-    
-    In [2]: exit
-    
-    >
-
-
-Check for running (CUDA/cuDNN).
-
-.. code-block:: doscon
-
-    > ipython
-    
-    In [1]: import nnabla_ext.cudnn
-    2017-06-16 18:42:18,881 [nnabla][Level 99]: Initializing CPU extension...
-    2017-06-16 18:42:19,923 [nnabla][Level 99]: Initializing CUDA extension...
-    2017-06-16 18:42:20,243 [nnabla][Level 99]: Initializing cuDNN extension...
-    
-    In [2]: exit
-    
-    >
-
-Note that the CUDA 9.2 and cuDNN 7.1 is fixed, and you can also install the cuda extension among the follows.
-
-- nnabla-ext-cuda80  (CUDA 8.0 x cuDNN 7.1) 
-- nnabla-ext-cuda90  (CUDA 9.0 x cuDNN 7.1) 
-- nnabla-ext-cuda91  (CUDA 9.1 x cuDNN 7.1) 
-- nnabla-ext-cuda92  (CUDA 9.2 x cuDNN 7.1) 
-    
-
-Run an Example
-^^^^^^^^^^^^^^
-
-Get `the examples <https://github.com/sony/nnabla-examples/archive/master.zip>`_ (, and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
-
-.. code-block:: doscon
-
-    > cd nnabla-examples\mnist-collection
-
-Run MNIST classification
-
-.. code-block:: doscon
-
-    nnabla-examples\mnist-collection > python classification.py
-
-
-Run MNIST classification with CUDA/cuDNN
-
-.. code-block:: doscon
-
-    nnabla-examples\mnist-collection > python classification.py -c cudnn
-
+See :ref:`pip-installation-workflow`.
 
 FAQ
 ^^^
