@@ -101,8 +101,8 @@ Neural Network Libraries provides a command line utility `nnabla_cli` for easier
 
 `nnabla_cli` provides following functionality.
 
-- Training, Evaluation or Infernce with NNP file.
-- Dataset and Parameter manipuration.
+- Training, Evaluation or Inference with NNP file.
+- Dataset and Parameter manipulation.
 - File format converter
   - From ONNX to NNP and NNP to ONNX.
   - From ONNX or NNP to NNB or C source code.
