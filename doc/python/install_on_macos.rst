@@ -5,7 +5,7 @@ Installation on macOS
    :local:
    :depth: 1
 
-NOTE: Our testing coverage in terms of environments and machines on macOS is very limited. Please submit an issue if you have any trouble.
+NOTE: Our testing coverage in terms of environments and machines on macOS is very limited. Please submit an issue if you face any issue.
 
 
 Prerequisites
@@ -15,7 +15,7 @@ We test the installation on macOS Sierra.
 
 The following software are required for installation:
 
-* Python 2.7 or Python>=3.4 (We'd recommend you to setup Python using Anaconda or `Miniconda <https://conda.io/miniconda.html>`_).
+* Python 2.7 or Python>=3.5 (We'd recommend you to setup Python using Anaconda or `Miniconda <https://conda.io/miniconda.html>`_).
 
   * pip (bundled in Conda Python)
   * wheel (bundled in Conda Python)
@@ -24,34 +24,4 @@ The following software are required for installation:
 Install
 ^^^^^^^
 
-.. code-block:: shell
-
-    pip install nnabla
-
-NOTE: Binary package installation for the CUDA extension is not provided so far.
-
-The following block naively checks if installation succeeds:
-
-.. code-block:: shell
-
-    python -c "import nnabla"
-
-
-.. code-block::
-
-    2017-09-21 15:01:43,035 [nnabla][INFO]: Initializing CPU extension...
-
-Run an Example
-^^^^^^^^^^^^^^
-
-`Get<https://github.com/sony/nnabla-examples/archive/master.zip>`_ (and unzip) or clone `NNabla Examples repository <https://github.com/sony/nnabla-examples/>`_, and go to the MNIST folder.
-
-.. code-block:: shell
-
-    cd nnabla-examples/mnist-collection/
-
-Then, run an MNIST classification:
-
-.. code-block:: shell
-
-    python classification.py
+See :ref:`pip-installation-workflow` (note that the binary packages for the CUDA extension are not available for macOS. Please `build it from source <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_).
