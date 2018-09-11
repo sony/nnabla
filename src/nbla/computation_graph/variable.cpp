@@ -460,12 +460,15 @@ void CgVariable::visit_function_backward(
   }
 }
 
-void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad) {
+void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
+                         unordered_set<CgFunctionPtr> *fclosed) {
+  if (fclosed == nullptr) {
+    fclosed = new unordered_set<CgFunctionPtr>;
+  }
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
-  unordered_set<CgFunctionPtr> fclosed;
   ForwardCallback forward_callback(clear_buffer, clear_no_need_grad);
   visit_function_recursive(
-      parent_, fclosed,
+      parent_, *fclosed,
       [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
 }
 
