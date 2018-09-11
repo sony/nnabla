@@ -620,6 +620,10 @@ cdef class Variable:
     @name.setter
     def name(self, string name):
         self.varp.set_name(name)
+        
+    @property
+    def rank(self, ):
+        return self.varp.rank()
 
     def visit(self, f):
         '''Visit functions recursively in forward order.
