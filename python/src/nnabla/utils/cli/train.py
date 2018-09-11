@@ -179,10 +179,10 @@ def _update(iter, config, cost):
             if o.comm:  # Updated param with communicator
                 params = [x.grad for x in o.parameters.values()]
                 _all_reduce(o.comm, params, division=True, inplace=True)
-            o.solver.update()
 
-        if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
-            o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
+            if o.scheduler is not None:
+                o.solver.set_learning_rate(o.scheduler.get_learning_rate(iter))
+            o.solver.update()
 
         # Sync w sometimes
         if iter % 10 == 9:  # TODO: change the interval
@@ -411,14 +411,14 @@ def _train(args, config):
                     # Evaluation
                     error_str = ''
                     if epoch % config.training_config.monitor_interval == 0 or epoch <= 5:
-                        best_error, error_str = _evaluate(
-                            args, config, monitoring_report, best_error, epoch)
+                best_error, error_str = _evaluate(
+                    args, config, monitoring_report, best_error, epoch)
 
-                    if single_or_rankzero():
-                        # Write to monitoring_report.yml
-                        f = open(os.path.join(
-                            args.outdir, 'monitoring_report.yml'), 'a')
-                        f.write('{}:\n'.format(epoch - 1))
+            if single_or_rankzero():
+                # Write to monitoring_report.yml
+                f = open(os.path.join(
+                    args.outdir, 'monitoring_report.yml'), 'a')
+                f.write('{}:\n'.format(epoch - 1))
                         f.write('  cost: {}\n'.format(cost_avg_epoch))
                         for s in monitoring_report:
                             f.write(s)
