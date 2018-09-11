@@ -82,7 +82,7 @@ class CachePrefetcher(object):
                 raise
             result = {}
             try:
-                with open(file_name, 'rb') as f:
+                with FileReader(file_name).open(textmode=False) as f:
                     for v in variables:
                         result[v] = numpy.load(f)
                 if set(result.keys()) == set(variables):
@@ -91,7 +91,7 @@ class CachePrefetcher(object):
                     logger.log(
                         99, 'read_cache() fails retrying count {}/10.'.format(retry))
                     retry += 1
-            except FileNotFoundError:
+            except:
                 logger.log(
                     99, 'Cache file {} not found.'.format(file_name))
                 logger.log(99, 'Fatal Error! send SIGKILL to myself.')
@@ -257,26 +257,36 @@ class CacheDataSource(DataSource):
     def initialize_cache_files_with_index(self, index_filename):
         self._filenames = []
         self._cache_files = []
-        with open(index_filename, 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                file_name = os.path.join(self._cachedir, row[0])
-                self._filenames.append(file_name)
-                length = int(row[1])
-                self._cache_files.append((file_name, length))
-                if length > self._max_length:
-                    self._max_length = length
-                if self._variables is None:
-                    with self._filereader.open_cache(file_name) as cache:
-                        # Check variables.
-                        self._variables = list(cache.keys())
+        try:
+            with FileReader(index_filename).open(textmode=True) as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    file_name = os.path.join(self._cachedir, row[0])
+                    self._filenames.append(file_name)
+                    length = int(row[1])
+                    self._cache_files.append((file_name, length))
+                    if length > self._max_length:
+                        self._max_length = length
+                    if self._variables is None:
+                        with self._filereader.open_cache(file_name) as cache:
+                            # Check variables.
+                            self._variables = list(cache.keys())
+        except:
+            self._filenames = [f for f in self._filereader.listdir() if os.path.splitext(f)[
+                1].lower() == ".h5"]
+            for filename in self._filenames:
+                self.initialize_cache_files(filename)
 
     def initialize_cache_info(self, info_filename):
-        with open(info_filename, 'r') as f:
-            self._variables = []
-            reader = csv.reader(f)
-            for row in reader:
-                self._variables.append(row[0])
+        try:
+            with FileReader(info_filename).open(textmode=True) as f:
+                self._variables = []
+                reader = csv.reader(f)
+                for row in reader:
+                    self._variables.append(row[0])
+            self._cache_type = '.npy'
+        except:
+            self._cache_type = '.h5'
 
     def __init__(self, cachedir, shuffle=False, rng=None, normalize=False):
         super(CacheDataSource, self).__init__(shuffle=shuffle, rng=rng)
@@ -296,25 +306,22 @@ class CacheDataSource(DataSource):
         self._max_length = 1
 
         info_filename = os.path.join(self._cachedir, "cache_info.csv")
-        if os.path.exists(info_filename):
-            self.initialize_cache_info(info_filename)
-            self._cache_type = '.npy'
-        else:
-            self._cache_type = '.h5'
+        self.initialize_cache_info(info_filename)
+
         index_filename = os.path.join(self._cachedir, "cache_index.csv")
-        if os.path.exists(index_filename):
-            self.initialize_cache_files_with_index(index_filename)
-        else:
-            self._filenames = [f for f in self._filereader.listdir() if os.path.splitext(f)[
-                1].lower() == ".h5"]
-            for filename in self._filenames:
-                self.initialize_cache_files(filename)
+        self.initialize_cache_files_with_index(index_filename)
 
         logger.info('{}'.format(len(self._cache_files)))
 
         self._cache_reader_with_prefetch = CacheReaderWithPrefetch(
             self._cachedir, self._num_of_threads, self._variables)
         self._thread_lock = threading.Lock()
+
+        self._original_order = []
+        for i in range(len(self._cache_files)):
+            filename, length = self._cache_files[i]
+            for j in range(length):
+                self._original_order.append((filename, j))
 
         self.reset()
 
@@ -423,6 +430,8 @@ class CsvDataSource(DataSource):
                 else:
                     self._rows.append(row)
                     self._size += 1
+        self._original_source_uri = self._filename
+        self._original_order = list(range(self._size))
         self._order = list(range(self._size))
         self._variables = tuple(self._variables_dict.keys())
         self.reset()

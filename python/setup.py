@@ -226,6 +226,9 @@ if __name__ == '__main__':
                 'nnabla.experimental',
                 'nnabla.utils',
                 'nnabla.utils.cli',
+                # Console only start
+                'nnabla.utils.console',
+                # Console only end
                 'nnabla.utils.converter',
                 'nnabla.utils.converter.nnabla',
                 'nnabla.utils.converter.nnablart',

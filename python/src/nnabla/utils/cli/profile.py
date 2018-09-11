@@ -28,6 +28,9 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
+# Console only start
+import nnabla.utils.console.status as status
+# Console only end
 
 
 def profile(config, name, func, result_dict):
@@ -116,11 +119,12 @@ def profile_optimizer(config, result_array):
                     v.name, generate_data, result_dict)
 
         # Setup (detail)
-        for func in o.forward_sequence:
-            def setup():
-                o.network.setup_function(func)
-            profile(config, 'setup_function (%s : %s)' % (
-                func.name, func.function_instance.name), setup, result_dict)
+        # CSXENA-5470 disable profiling setup method.
+        # for func in o.forward_sequence:
+        # def setup():
+        # o.network.setup_function(func)
+        # profile(config, 'setup_function (%s : %s)' % (
+        # func.name, func.function_instance.name), setup, result_dict)
 
         # Forward (detail)
         for func in o.forward_sequence:
@@ -185,6 +189,10 @@ def profile_optimizer(config, result_array):
 
 
 def profile_command(args):
+    # Console only start
+    status.init(args)
+    # Console only end
+
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     files = []
     files.append(args.config)
@@ -217,6 +225,11 @@ def profile_command(args):
 
     result_array = [['time in ms']]
 
+    # Console only start
+    status.start_process()
+    status.dump(status='processing')
+    # Console only end
+
     # Profile Optimizer
     with ExitStack() as stack:
         for name, o in config.optimizers.items():
@@ -232,6 +245,9 @@ def profile_command(args):
 
     logger.log(99, 'Profile Completed.')
     progress(None)
+    # Console only start
+    status.dump(status='finished')
+    # Console only end
 
 
 def add_profile_command(subparsers):
