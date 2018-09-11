@@ -303,7 +303,7 @@ def load_parameters(path, proto=None, proto_only=False):
                 parameter.variable_name = key
                 parameter.shape.dim.extend(ds.shape)
                 parameter.data.extend(numpy.array(ds[...]).flatten().tolist())
-                parameter.need_grad = ds.attrs['need_grad']
+                parameter.need_grad = ds.attrs['need_grad'] is True
     elif ext == '.protobuf':
         with open(path, 'rb') as f:
             proto.MergeFromString(f.read())
