@@ -301,36 +301,43 @@ class OnnxExporter:
         return [n]
 
     def BatchNormalization(self, func):
+        nl = []
+        bnp = func.batch_normalization_param
         onnx_order = [0, 2, 1, 3, 4]
         if len(func.input) != len(onnx_order):
             raise ValueError(
                 "The number of BatchNormalization input must be {}".format(len(onnx_order)))
-        onnx_input = [func.input[i] for i in onnx_order]
-        if func.batch_normalization_param.batch_stat:
-            # Batch normalization for training is currently not supported
-            raise ValueError(
-                "BatchNormalization with batch_stat=True is "
-                "currently not supported for ONNX conversion")
-        eps = 1e-5 if func.batch_normalization_param.eps == 0.0 \
-            else func.batch_normalization_param.eps
-        decay_rate = 0.9 if func.batch_normalization_param.decay_rate == 0.0 \
-            else func.batch_normalization_param.decay_rate
-        n = onnx.helper.make_node(
-            'BatchNormalization',
-            onnx_input,
-            func.output,
-            is_test=True,
-            epsilon=eps,
-            momentum=decay_rate
-            # spatial=1 different from SPEC.
-        )
-
         for p in func.input[1:]:
             d = sum([d if d > 1 else 0 for d in self._var_dict[p].dim])
             b_shape = nnabla_pb2.Shape()
             b_shape.dim.extend([d])
             self._var_dict[p] = b_shape
-        return [n]
+        if func.batch_normalization_param.batch_stat:
+            bn_input = [func.input[i] for i in onnx_order[:3]]
+            bn_output = [func.output[0]]
+            n = onnx.helper.make_node(
+                'InstanceNormalization',
+                bn_input,
+                bn_output,
+                epsilon=1e-5
+            )
+        else:
+            bn_input = [func.input[i] for i in onnx_order]
+            eps = 1e-5 if bnp.eps == 0.0 else bnp.eps
+            decay_rate = 0.9 if bnp.decay_rate == 0.0 \
+                else bnp.decay_rate
+            n = onnx.helper.make_node(
+                'BatchNormalization',
+                bn_input,
+                [func.output[0]],
+                is_test=True,
+                epsilon=eps,
+                momentum=decay_rate
+                #spatial=1 # say: "Don't know map unexpected argument spatial."
+                        # different from SPEC.
+            )
+        nl.append(n)
+        return nl
 
     def Concatenate(self, func):
         n = onnx.helper.make_node(
@@ -1179,6 +1186,7 @@ class OnnxExporter:
         nnp_fn = keyname + '.nnp.dump'
         with open(nnp_fn, "w") as f:
             f.write(str(self._nnp))
+        print('{} is written.'.format(nnp_fn))
 
     def dump_onnx(self, fn):
         import os
@@ -1186,6 +1194,7 @@ class OnnxExporter:
         onnx_dump = keyname + '.onnx.dump'
         with open(onnx_dump, "w") as f:
             f.write(str(self._model_proto))
+        print('{} is written.'.format(onnx_dump))
 
     def dump_graph(self):
         in_d = {}
