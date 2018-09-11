@@ -76,7 +76,7 @@ cdef class Context:
         return getattr(self, key)
 
     def __repr__(self):
-        return "Context(backend='{}', array_class='{}'"\
+        return "Context(backend={}, array_class='{}'"\
             ", device_id='{}')".format(
                 self.backend, self.array_class,
                 self.device_id)
