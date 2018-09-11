@@ -333,8 +333,8 @@ class OnnxExporter:
                 is_test=True,
                 epsilon=eps,
                 momentum=decay_rate
-                #spatial=1 # say: "Don't know map unexpected argument spatial."
-                        # different from SPEC.
+                # spatial=1 # say: "Don't know map unexpected argument spatial."
+                # different from SPEC.
             )
         nl.append(n)
         return nl
