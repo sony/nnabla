@@ -419,26 +419,26 @@ def _train(args, config):
                 f = open(os.path.join(
                     args.outdir, 'monitoring_report.yml'), 'a')
                 f.write('{}:\n'.format(epoch - 1))
-                        f.write('  cost: {}\n'.format(cost_avg_epoch))
-                        for s in monitoring_report:
-                            f.write(s)
-                        f.close()
+                  f.write('  cost: {}\n'.format(cost_avg_epoch))
+                   for s in monitoring_report:
+                        f.write(s)
+                    f.close()
 
-                        # Console only start
-                        status.set_val(['monitoring_report', epoch, 'cost'],
-                                       cost_avg_epoch)
-                        # Console only end
+                    # Console only start
+                    status.set_val(['monitoring_report', epoch, 'cost'],
+                                   cost_avg_epoch)
+                    # Console only end
 
-                        _save_parameters(args, 'current', epoch)
+                    _save_parameters(args, 'current', epoch)
 
-                        # Console only start
-                        status.set_val('epoch.current', epoch)
-                        status.dump()
-                        # Console only end
+                    # Console only start
+                    status.set_val('epoch.current', epoch)
+                    status.dump()
+                    # Console only end
 
-                        logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s)'.format(
-                            epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
-                            timeinfo.past_time, timeinfo.estimate_time))
+                    logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s)'.format(
+                        epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
+                        timeinfo.past_time, timeinfo.estimate_time))
 
             if single_or_rankzero():
                 _save_parameters(args, 'current', epoch, True)
