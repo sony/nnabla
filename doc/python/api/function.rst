@@ -173,6 +173,7 @@ Array Manipulation
 .. autofunction:: shift
 .. autofunction:: reshape
 .. autofunction:: one_hot
+.. autofunction:: assign
 
 
 Stochasticity
