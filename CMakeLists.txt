@@ -317,7 +317,9 @@ if(BUILD_PYTHON_PACKAGE)
       add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
-        COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${CMAKE_COMMAND} -E env
+                WHEEL_SUFFIX=${WHEEL_SUFFIX}
+                ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
         COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
@@ -326,7 +328,9 @@ if(BUILD_PYTHON_PACKAGE)
       add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
-        COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${CMAKE_COMMAND} -E env
+                WHEEL_SUFFIX=${WHEEL_SUFFIX}
+                ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
         DEPENDS ${NBLA_WHEEL_DEPENDS})
     endif()

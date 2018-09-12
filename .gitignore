@@ -3,6 +3,7 @@
 .pytest_cache
 .cache
 .pytest_cache
+*.egg-info
 *.pyc
 
 /build-tools/msvc/cmake_cpp_utils.bat
@@ -21,7 +22,6 @@
 /python/setup.cfg-RelWithDebInfo
 /python/setup.cfg-Release
 /python/setup.cfg.in.configured
-/python/src/nnabla.egg-info/
 /python/src/nnabla/*.lib
 /python/src/nnabla/_arithmetic_ops.cpp
 /python/src/nnabla/_array.cpp

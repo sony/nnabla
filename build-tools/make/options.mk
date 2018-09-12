@@ -61,6 +61,9 @@ DOCKER_RUN_OPTS += -e MAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL)
 PARALLEL_BUILD_NUM ?= 8
 DOCKER_RUN_OPTS += -e PARALLEL_BUILD_NUM=$(PARALLEL_BUILD_NUM)
 
+WHEEL_SUFFIX ?=
+DOCKER_RUN_OPTS += -e WHEEL_SUFFIX=$(WHEEL_SUFFIX)
+
 ########################################################################################################################
 # Output directories
 
