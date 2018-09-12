@@ -143,6 +143,6 @@ def preprocess_for_exporter(info, exporter_name):
 
     for func in info._network.function:
         if func.type in preprocess_list:
-            preprocessor = preprocess_list[func.name]
+            preprocessor = preprocess_list[func.type]
             if callable(preprocessor):
                 preprocessor(info, func)
