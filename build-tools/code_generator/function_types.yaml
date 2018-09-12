@@ -422,3 +422,6 @@ FFT:
 IFFT:
   float: [float]
 #  half: [Half]
+Assign:
+  float: [float]
+  half: [Half]

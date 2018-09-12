@@ -3990,3 +3990,17 @@ Unsupported, Special Use:
     outputs:
       y:
         doc: "A 3-dim array with the same dimensions with the input."
+  Assign:
+    snake_name: assign
+    doc: |2
+
+      Assign source array to destination array just like tf.assign
+
+    inputs:
+      dst:
+        doc: "A destination N-D array"
+      src:
+        doc: "A source N-D array"
+    outputs:
+      y:
+        doc: "A assigned array"
