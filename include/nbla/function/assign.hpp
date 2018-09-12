@@ -31,11 +31,11 @@ y_i = x_i
 @f]
 
 Inputs:
-- N-D array
-- N-D array
+- destination N-D array
+- source N-D array
 
 Outputs:
-- N-D array
+- N-D array identical to source array
 
 \ingroup FunctionImplGrp
  */
