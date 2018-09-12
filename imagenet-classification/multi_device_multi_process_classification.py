@@ -170,9 +170,6 @@ def train():
 
     v_e = F.mean(F.top_n_error(v_pred2, v_model.label))
 
-    # Add parameters to communicator.
-    comm.add_context_and_parameters((ctx, nn.get_parameters()))
-
     # Create Solver.
     solver = S.Momentum(args.learning_rate, 0.9)
     solver.set_parameters(nn.get_parameters())
