@@ -149,6 +149,7 @@ if(BUILD_CPP_LIB)
     else()
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
     endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
   endif()
   
   if(UNIX OR APPLE)
