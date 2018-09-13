@@ -25,14 +25,14 @@ from .csrc_templates import \
     csrc_gnumake
 
 from .utils import create_nnabart_info
-
-MAX_VARIDAIC_NUM = 5
+from .utils import preprocess_for_exporter
 
 
 class CsrcExporter:
 
     def __init__(self, nnp, batch_size):
         self._info = create_nnabart_info(nnp, batch_size)
+        preprocess_for_exporter(self._info, 'CSRC')
 
     def _export_csrc_parameters(self, dirname, name, prefix):
         parameters_h_filename = os.path.join(
@@ -49,18 +49,20 @@ class CsrcExporter:
             dirname, '{}_parameters.c'.format(name))
 
         contents = []
-        for n, (param_name, param) in enumerate(self._info._parameters.items()):
-            contents.append('')
-            contents.append('// {}'.format(param_name))
-            contents.append('float {}_parameter{}[] = {{'.format(name, n))
-            for d in param.data:
-                contents.append('    {:>20},'.format(str(d)))
-            contents.append('};')
+        for n, v in enumerate(self._info._network.variable):
+            if v.type == 'Parameter':
+                contents.append('')
+                contents.append('// {}'.format(v.name))
+                contents.append('float {}_parameter{}[] = {{'.format(name, n))
+                for d in self._info._parameters[v.name].data:
+                    contents.append('    {:>20},'.format(str(d)))
+                contents.append('};')
 
         contents.append('')
         contents.append('void* {}_parameters[] ={{'.format(name))
-        for n, (param_name, param) in enumerate(self._info._parameters.items()):
-            contents.append('    (void*){}_parameter{},'.format(name, n))
+        for n, v in enumerate(self._info._network.variable):
+            if v.type == 'Parameter':
+                contents.append('    (void*){}_parameter{},'.format(name, n))
         contents.append('};')
 
         parameters_c = csrc_parameters_implements.format(
@@ -117,6 +119,8 @@ class CsrcExporter:
             f.write(header)
 
     def _export_csrc_implements(self, dirname, name, prefix):
+        from .save_variable_buffer import save_variable_buffer
+        actual_buf_sizes, vidx_to_abidx = save_variable_buffer(self._info)
 
         batch_size = self._info._batch_size
 
@@ -124,7 +128,9 @@ class CsrcExporter:
         internal_defines = []
         internal_defines.append('typedef struct {')
         internal_defines.append(
-            '    float* variable_buffers[{}];'.format(len(self._info._variable_sizes)))
+            '    void *buffer_pool[{}];'.format(len(actual_buf_sizes)))
+        internal_defines.append(
+            '    void *param_pool[{}];'.format(len(self._info._parameters)))
         internal_defines.append(
             '    rt_buffer_allocate_type_t variable_buffers_allocate_type[{}];'.format(len(self._info._variable_sizes)))
         internal_defines.append('')
@@ -172,45 +178,49 @@ class CsrcExporter:
                             '    int f{}_local_context_shape_{}[{}];'.format(n, arg_name, len(val)))
 
         internal_defines.append('}} {}_local_context_t;'.format(prefix))
-        param_id_start = 0
+        internal_defines.append('')
+        internal_defines.append(
+            'int actual_buf_sizes[{}] = {{'.format(len(actual_buf_sizes)))
+        for s in actual_buf_sizes:
+            internal_defines.append('    {},'.format(s))
+        internal_defines.append('};')
+        internal_defines.append('')
+
         # NAME_allocate_context
         initialize_context = []
         initialize_context.append('    // Variable buffer')
-        for bid, vids in self._info._variable_buffer_index.items():
-            initialize_context.append(
-                '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(bid))
-            initialize_context.append(
-                '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(bid,
-                                                                                       self._info._variable_buffer_size[bid]))
-            param_id_start += 1
-
-        initialize_context.append('    if(params) {')
-        n = param_id_start
-        for vname in self._info._parameters:
-            vid = list(self._info._variables.keys()).index(vname)
-            self._info._buffer_ids[vid] = n
-            initialize_context.append(
-                '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_ALLOCATED;'.format(n))
-            initialize_context.append(
-                '        c->variable_buffers[{}] = *params++;'.format(n))
-            n += 1
-        initialize_context.append('    } else {')
-        n = param_id_start
-        for vname in self._info._parameters:
-            size = self._info._variable_sizes[n]
-            initialize_context.append(
-                '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(n))
-            initialize_context.append(
-                '        c->variable_buffers[{}] = *params++;'.format(n))
-            initialize_context.append(
-                '        c->variable_buffers[{}] = malloc(sizeof(float) * {});'.format(n, size))
-            n += 1
+        initialize_context.append(
+            '    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
+        initialize_context.append(
+            '        c->buffer_pool[i] = malloc(sizeof(float) * actual_buf_sizes[i]);')
         initialize_context.append('    }')
-
+        initialize_context.append('    if(params) {')
+        param_id_start = 0
+        for n, v in enumerate(self._info._network.variable):
+            if v.type == 'Parameter':
+                initialize_context.append(
+                    '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_ALLOCATED;'.format(n))
+                initialize_context.append(
+                    '        c->param_pool[{}] = *params++;'.format(param_id_start))
+                param_id_start += 1
+        initialize_context.append('    } else {')
+        param_id_start = 0
+        for n, v in enumerate(self._info._network.variable):
+            if v.type == 'Parameter':
+                size = self._info._variable_sizes[n]
+                initialize_context.append(
+                    '        c->variable_buffers_allocate_type[{}] = RT_BUFFER_ALLOCATE_TYPE_MALLOC;'.format(n))
+                initialize_context.append(
+                    '        c->param_pool[{}] = *params++;'.format(param_id_start))
+                initialize_context.append(
+                    '        c->param_pool[{}] = malloc(sizeof(float) * {});'.format(param_id_start, size))
+                param_id_start += 1
+        initialize_context.append('    }')
         variable_buffers = {}
         variables = {}
         initialize_context.append('')
         initialize_context.append('    // Variables')
+        param_id_start = 0
         for n, v in enumerate(self._info._network.variable):
             initialize_context.append('    // {}'.format(v.name))
             initialize_context.append(
@@ -227,8 +237,27 @@ class CsrcExporter:
 
             initialize_context.append(
                 '    (c->v{0}).shape.data = c->v{0}_shape;'.format(n))
-            initialize_context.append(
-                '    (c->v{}).data = c->variable_buffers[{}];'.format(n, self._info._buffer_ids[n]))
+            if v.name in self._info._generator_variables:
+                data = self._info._generator_variables[v.name]
+                data = data.flatten()
+                internal_defines.append(
+                    'float {}[{}] = {{'.format(v.name, len(data)))
+                for value in data:
+                    internal_defines.append('    {},'.format(value))
+                internal_defines.append('};')
+                initialize_context.append(
+                    '    (c->v{}).data = {};'.format(n, v.name))
+            elif v.type == 'Parameter':
+                initialize_context.append(
+                    '    (c->v{}).data = c->param_pool[{}];'.format(n, param_id_start))
+                param_id_start += 1
+            else:
+                if n in vidx_to_abidx:
+                    initialize_context.append(
+                        '    (c->v{}).data = c->buffer_pool[{}];'.format(n, vidx_to_abidx[n]))
+                else:
+                    initialize_context.append(
+                        '    (c->v{}).data = c->buffer_pool[{}];'.format(n, 0))
             variable_buffers[v.name] = '(c->v{}).data'.format(n)
             variables[v.name] = '(c->v{})'.format(n)
 
@@ -303,13 +332,19 @@ class CsrcExporter:
         # NAME_free_context
         free_context = []
         free_context.append('')
-        for n, size in enumerate(variable_buffers):
-            free_context.append(
-                '    if(c->variable_buffers_allocate_type[{}] == RT_BUFFER_ALLOCATE_TYPE_MALLOC) {{'.format(n))
-            free_context.append(
-                '        free(c->variable_buffers[{}]);'.format(n))
-            free_context.append('    }')
-
+        free_context.append(
+            '    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
+        free_context.append('        free(c->buffer_pool[i]);')
+        free_context.append('    }')
+        param_id_start = 0
+        for n, v in enumerate(self._info._network.variable):
+            if v.type == 'Parameter':
+                free_context.append(
+                    '    if(c->variable_buffers_allocate_type[{}] == RT_BUFFER_ALLOCATE_TYPE_MALLOC) {{'.format(n))
+                free_context.append(
+                    '        free(c->param_pool[{}]);'.format(param_id_start))
+                free_context.append('    }')
+                param_id_start += 1
         # NAME_input_buffer
         input_buffer = []
         input_buffer.append('    switch(index) {')

@@ -274,19 +274,21 @@ class OnnxExporter:
             k = func.max_pooling_param.kernel.dim
             s = func.max_pooling_param.stride.dim
             pads = func.max_pooling_param.pad.dim
+            ignore_border = func.max_pooling_param.ignore_border
         elif onnx_func == 'AveragePool':
             k = func.average_pooling_param.kernel.dim
             s = func.average_pooling_param.stride.dim
             pads = func.average_pooling_param.pad.dim
+            ignore_border = func.average_pooling_param.ignore_border
         else:
             raise ValueError('Internal error!')
 
-        if func.max_pooling_param.ignore_border:
+        if ignore_border:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:
-            subs = [k - i % s if i % s != 0 else k - s
-                    for k, s, i in zip(k, s, input_shape[-2:])]
+            subs = [kk - i % ss if i % ss != 0 else kk - ss
+                    for kk, ss, i in zip(k, s, input_shape[-2:])]
             pads = [0, 0] + subs
         n = onnx.helper.make_node(
             onnx_func,
@@ -309,13 +311,17 @@ class OnnxExporter:
             raise ValueError(
                 "BatchNormalization with batch_stat=True is "
                 "currently not supported for ONNX conversion")
+        eps = 1e-5 if func.batch_normalization_param.eps == 0.0 \
+            else func.batch_normalization_param.eps
+        decay_rate = 0.9 if func.batch_normalization_param.decay_rate == 0.0 \
+            else func.batch_normalization_param.decay_rate
         n = onnx.helper.make_node(
             'BatchNormalization',
             onnx_input,
             func.output,
             is_test=True,
-            epsilon=func.batch_normalization_param.eps,
-            momentum=func.batch_normalization_param.decay_rate
+            epsilon=eps,
+            momentum=decay_rate
             # spatial=1 different from SPEC.
         )
 
@@ -633,30 +639,43 @@ class OnnxExporter:
     def Affine(self, func):
         """
         Affine is decomposed as 3 steps:
-            Flatten inputs
+            Reshape inputs
             Gemm
             Reshape
         """
         nl = []
         out_a = fork_name(func.input[0])
         out_b = fork_name(func.input[1])
+        out_c = fork_name("affine_bias")
+        base_axis = func.affine_param.base_axis
+
+        x_shape = list(self._var_dict[func.input[0]].dim[:])
+        x_shape_dims = [np.prod(x_shape[:base_axis]),
+                        np.prod(x_shape[base_axis:])]
+        x_shape_dims_name = fork_name('x_shape_dims')
+        x_shape_dims_raw = np.array(x_shape_dims).astype(np.int64)
+        self._add_param(x_shape_dims_name, TensorProto.INT64, list(
+            x_shape_dims_raw.shape), x_shape_dims_raw.tostring())
 
         n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[0]],
-            [out_a],
-            name="Flatten" + func.input[0])
-        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
-        n.attribute.extend([a])
+            "Reshape",
+            [func.input[0], x_shape_dims_name],
+            [out_a]
+        )
         nl.append(n)
 
+        w_shape = list(self._var_dict[func.input[1]].dim[:])
+        w_shape_dims = [w_shape[0], np.prod(w_shape) / w_shape[0]]
+        w_shape_dims_name = fork_name('w_shape_dims')
+        w_shape_dims_raw = np.array(w_shape_dims).astype(np.int64)
+        self._add_param(w_shape_dims_name, TensorProto.INT64, list(
+            w_shape_dims_raw.shape), w_shape_dims_raw.tostring())
+
         n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[1]],
-            [out_b],
-            name="Flatten" + func.input[1])
-        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
-        n.attribute.extend([a])
+            "Reshape",
+            [func.input[1], w_shape_dims_name],
+            [out_b]
+        )
         nl.append(n)
 
         out_c = fork_name('Affine')
@@ -740,7 +759,6 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
-                assert len(init.raw_data) / 4 == np.prod(np.array(init.dims))
             else:
                 print("Not in: {}".format(param.variable_name))
 
