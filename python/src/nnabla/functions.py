@@ -602,3 +602,47 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
         else:
             align_corners = False
     return interpolate_base(x, output_size, mode, align_corners)
+
+
+def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
+    """Sorts the elements of `x` along a given `axis` in ascending order
+    by value. A negative `axis` counts from the last dimension of `x`,
+    so the default of -1 sorts along the last dimension. If `reverse`
+    is True, then the elements are soreted in descending order.
+
+    If `with_index` is True, result is a tuple ``(sorted, indices)``
+    or only ``indices`` if `only_index` is True. Setting `only_index`
+    to True implies that `with_index` is also True.
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+
+        sorted = F.sort(x)
+        assert np.allclose(sorted.d, np.sort(x.d))
+
+        sorted, indices = F.sort(x, with_index=True)
+        assert np.allclose(sorted.d, np.sort(x.d))
+        assert np.all(indices.d == np.argsort(x.d))
+
+        indices = F.sort(x, only_index=True)
+        assert np.all(indices.d == np.argsort(x.d))
+
+    Args:
+        x(~nnabla.Variable): N-D array
+        axis(int): Axis along which to sort.
+        reverse(bool): Sort in descending order.
+        with_index(bool): Return sorted values and index.
+        only_index(bool): Return only the sort index.
+
+    Returns: :obj:`~nnabla.Variable` `sorted` or :obj:`~nnabla.Variable` `indices` or (:obj:`~nnabla.Variable` `sorted`, :obj:`~nnabla.Variable` `indices`)
+
+    """
+    from .function_bases import sort as sort_base
+    n_outputs = 2 if with_index and not only_index else 1
+    return sort_base(x, axis, reverse, with_index, only_index, n_outputs)

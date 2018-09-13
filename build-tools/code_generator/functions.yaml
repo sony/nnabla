@@ -2303,6 +2303,44 @@ Array Manipulation:
     outputs:
       y:
         doc: N-D array.
+  Sort:
+    snake_name: sort
+    doc: |2
+
+      Sorts the elements of `x` along a given `axis` in ascending
+      order by value. A negative `axis` counts from the last dimension
+      of `x`, so the default of -1 sorts along the last dimension. If
+      `reverse` is True, then the elements are soreted in descending
+      order.
+
+      If `with_index` is True, result is a tuple ``(sorted, indices)``
+      or only ``indices`` if `only_index` is True. Setting
+      `only_index` to True implies that `with_index` is also True.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axis:
+        doc: Axis along which to sort.
+        type: int64
+        default: '-1'
+      reverse:
+        doc: Sort in descending order.
+        type: bool
+        default: 'False'
+      with_index:
+        doc: Return sorted values and index.
+        type: bool
+        default: 'False'
+      only_index:
+        doc: Return only the sort index.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: list of N-D arrays
+        variadic: true
+        parameter: true
   Reshape:
     snake_name: reshape
     doc: |2

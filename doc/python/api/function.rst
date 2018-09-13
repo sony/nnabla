@@ -171,6 +171,7 @@ Array Manipulation
 .. autofunction:: broadcast_to
 .. autofunction:: flip
 .. autofunction:: shift
+.. autofunction:: sort
 .. autofunction:: reshape
 .. autofunction:: one_hot
 

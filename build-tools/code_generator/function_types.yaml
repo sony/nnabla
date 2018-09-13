@@ -253,6 +253,9 @@ Flip:
 Shift:
   float: [float]
   half: [Half]
+Sort:
+  float: [float]
+  half: [Half]
 Reshape:
   float: [float]
   half: [Half]
