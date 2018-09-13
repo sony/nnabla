@@ -101,8 +101,13 @@ if __name__ == '__main__':
 
     ############################################################################
     # Package information
+
+    pkg_name = "nnabla"
+    if 'WHEEL_SUFFIX' in os.environ:
+        pkg_name += os.environ['WHEEL_SUFFIX']
+
     pkg_info = dict(
-        name="nnabla",
+        name=pkg_name,
         description='Neural Network Libraries',
         version=__version__,
         author_email=__email__,
