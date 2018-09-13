@@ -31,7 +31,8 @@ RUN yum install -y \
         zip \
         zlib-static \
     && yum clean all \
-    && ln -s /usr/bin/cmake3 /usr/local/bin/cmake
+    && ln -s /usr/bin/cmake3 /usr/local/bin/cmake \
+    && ln -s /usr/bin/ctest3 /usr/local/bin/ctest
 
 # ----------------------------------------------------------------------------
 # TODO: More sustainable way of installing gcc 5.x.
