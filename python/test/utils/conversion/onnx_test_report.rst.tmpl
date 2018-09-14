@@ -1,0 +1,418 @@
+Operator support status
+=======================
+
+Support status importing from ONNX
+----------------------------------
+
+This is a status list of [ONNX operators](https://github.com/onnx/onnx/blob/master/docs/Operators.md)
+that indicates if each operator can be converted to NNP.
+
+- OK The ONNX operator can map to a NNabla operator.
+- Not test means the ONNX operator has not been verified. It might be one of the following cases:
+    - The ONNX operator hasn't been checked if it can be converted to NNabla.
+    - The ONNX operator has been checked if it can be converted to NNabla, but the implementation has not started.
+    - The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
+    - Hard to find a solution with existing NNabla operators.
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Abs                                      OK
+Add                                      OK              broadcast will be converted to a BroadcastTo
+And                                      OK              broadcast will be converted to a BroadcastTo
+ArgMax                                   OK              Operator does not exist in NNabla
+ArgMin                                   OK              Operator does not exist in NNabla
+AveragePool                              OK              autopad not supported. pads must have same
+                                                         value for begin and end.
+BatchNormalization                       OK              is_test=false not supported (only inference)
+Cast                                     OK              Operator does not exist in NNabla(No type
+                                                         information is exposed in NNP)
+Ceil                                     OK              Should map to Ceil
+Clip                                     OK              Converted to Identity, MaximumScalar,
+                                                         MinimumScalar, or both depending on the attribute
+Concat                                   OK
+Constant                                 OK              Converted to an input parameter
+Conv                                     OK              auto_pad not supported. pads must have same value
+                                                         for begin and end.
+ConvTranspose                            OK              Should map to Deconvolution?
+DepthToSpace                             OK              Operator does not exist in NNabla
+Div                                      OK              broadcast will be converted to a BroadcastTo
+Dropout                                  OK              mask output will be removed since NNabla does
+                                                         not produce mask output.
+Elu                                      OK
+Equal                                    OK              broadcast will be converted to a BroadcastTo.
+                                                         Input data type will all be converted to int64
+                                                         since NNP does not have type information
+Exp                                      OK
+Flatten                                  OK              Operator does not exist in NNabla
+Floor                                    OK              Should map to Floor
+GRU                                      OK              Operator does not exist in NNabla
+Gather                                   OK              Operator does not exist in NNabla
+Gemm                                     OK              alpha and beta is not supported.
+                                                         Input A and B must be two dimensional,
+                                                         and input C must be one dimensional.
+                                                         transA, transB will be converted to
+                                                         a separate transpose operator
+GlobalAveragePool                        OK
+GlobalLpPool                             OK              Operator does not exist in NNabla
+GlobalMaxPool                            OK              Operator does not exist in NNabla
+Greater                                  OK              broadcast will be converted to a BroadcastTo
+HardSigmoid                              OK              Should be able to map to
+                                                         MulScalar+AddScalar+MinimumScalar+ReLU
+Hardmax                                  OK              Operator does not exist in NNabla
+Identity                                 OK
+InstanceNormalization                    OK              Operator does not exist in NNabla
+LRN                                      OK              Converted to
+                                                         PowScalar+Tranpose+SumPooling+Transpose+MulScalar+AddScalar+PowScalar.
+                                                         Currently only odd size is allowed.
+LSTM                                     OK              Operator does not exist in NNabla
+LeakyRelu                                OK
+Less                                     OK              broadcast will be converted to a BroadcastTo
+Log                                      OK
+LogSoftmax                               OK              Converted to Exp+Sum+Log+Sub2.
+                                                         Only works on input shape like N*C*1*1
+LpNormalization                          OK              Operator does not exist in NNabla
+LpPool                                   OK              Operator does not exist in NNabla
+MatMul                                   OK
+Max                                      OK              Only input of two tensors is currently supported
+MaxPool                                  OK              auto_pad is not supported.
+                                                         pads must have same value for begin and end.
+MaxRoiPool                               OK              Operator does not exist in NNabla
+Mean                                     OK              Operator does not exist in NNabla
+Min                                      OK              Only input of two tensors is currently supported
+Mul                                      OK              broadcast will be converted to a BroadcastTo
+Neg                                      OK              Converted to MulScalar
+Not                                      OK
+Or                                       OK              broadcast will be converted to a BroadcastTo
+PRelu                                    OK
+Pad                                      OK              For NNP to ONNX conversion, input buffer's
+                                                         dimension is assumed to be 4D if the shape cannot be determined.
+Pow                                      OK              broadcast will be converted to a BroadcastTo
+RNN                                      OK              Operator does not exist in NNabla
+RandomNormal                             OK              Should be able to map to Randn
+RandomNormalLike                         OK              Operator does not exist in NNabla
+RandomUniform                            OK              Should be able to map to Rand
+RandomUniformLike                        OK              Operator does not exist in NNabla
+Reciprocal                               OK              Converted to RDivScalar
+ReduceL1                                 OK              Operator does not exist in NNabla
+ReduceL2                                 OK              Operator does not exist in NNabla
+ReduceLogSum                             OK              Operator does not exist in NNabla
+ReduceLogSumExp                          OK              Operator does not exist in NNabla
+ReduceMax                                OK
+ReduceMean                               OK
+ReduceMin                                OK
+ReduceProd                               OK
+ReduceSum                                OK
+ReduceSumSquare                          OK              Operator does not exist in NNabla
+Relu                                     OK
+Reshape                                  OK              Not completedly supported.
+Selu                                     OK
+Sigmoid                                  OK
+Size                                     OK              Operator does not exist in NNabla
+Slice                                    OK              Operator does not exist in NNabla
+Softmax                                  OK              Only works on input shape like N*C*1*1
+Softplus                                 OK              Converted to Exp + AddScalar + Log
+Softsign                                 OK              Converted to Abs + AddScalar + Div2
+SpaceToDepth                             OK              Operator does not exist in NNabla
+Split                                    OK              Operator does not exist in NNabla
+Sqrt                                     OK              Operator does not exist in NNabla
+Squeeze                                  OK              Operator does not exist in NNabla
+Sub                                      OK              broadcast will be converted to a BroadcastTo
+Sum                                      OK              Supporting two inputs only
+Tanh                                     OK
+Tile                                     OK              Operator does not exist in NNabla
+TopK                                     OK              Operator does not exist in NNabla
+Transpose                                OK
+Unsqueeze                                OK              Operator does not exist in NNabla
+Xor                                      OK              broadcast will be converted to a BroadcastTo
+experimental ATen                        OK
+experimental Affine                      OK
+experimental ConstantFill                OK
+experimental Crop                        OK
+experimental FC                          OK
+experimental GRUUnit                     OK
+experimental GivenTensorFill             OK
+experimental If                          OK
+experimental ImageScaler                 OK
+experimental Loop                        OK
+experimental LoopIndexTensor             OK
+experimental MeanVarianceNormalization   OK
+experimental ParametricSoftplus          OK
+experimental Scale                       OK
+experimental ScaledTanh                  OK
+experimental ThresholdedRelu             OK
+experimental Upsample                    OK
+======================================== =============== =================================================
+
+Support status exporting from ONNX
+----------------------------------
+
+# Implement status
+
+Total 60/136
+
+Neural Network Layer
+++++++++++++++++++++
+
+Count 9/11
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Affine                                   OK              Convert to Gemm + Reshape
+Convolution                              OK              Rename to Conv
+DepthwiseConvolution                     OK              Convert to Convolution (with group)           
+Deconvolution                            OK              Convert to ConvTranspose and Add
+DepthwiseDeconvolution                   NG
+MaxPooling                               OK              Rename to MaxPool
+AveragePooling                           OK              Rename to AveragePool
+GlobalAveragePooling                     OK              Rename to GlobalAveragePool
+SumPooling                               OK              Convert to Mul
+Unpooling                                OK              Convert to Upsample
+Embed                                    NG
+======================================== =============== =================================================
+
+Neural Network Activation Functions
++++++++++++++++++++++++++++++++++++
+
+Count 8/11
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Sigmoid                                  OK
+Swish                                    NG
+Tanh                                     OK
+ReLU                                     OK              Rename to Relu
+LeakyReLU                                OK              Rename to LearkyRelu
+Softmax                                  OK
+ELU                                      OK              Rename to Elu
+SELU                                     OK              Rename to Selu
+CReLU                                    NG
+CELU                                     NG
+PReLU                                    OK              Rename to PRelu
+======================================== =============== =================================================
+
+Normalization
++++++++++++++
+
+Count 1/4
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+BatchNormalization                       OK
+MeanSubtraction                          NG
+ClipGradByValue                          NG
+ClipGradByNorm                           NG
+======================================== =============== =================================================
+
+Reduction
++++++++++
+
+Count 5/7
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Sum                                      OK              Rename to ReduceSum
+Mean                                     OK              Rename to ReduceMean
+Max                                      OK              Rename to ReduceMax
+Min                                      OK              Rename to ReduceMin
+Prod                                     OK              Rename to ReduceProd
+ReduceSum                                NG
+ReduceMean                               NG
+======================================== =============== =================================================
+
+Arithmetic
+++++++++++
+
+Count 10/12
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Add2                                     NG
+BcAdd2                                   NG
+Sub2                                     OK              Rename to Sub
+Mul2                                     OK              Rename to Mul
+Div2                                     OK              Rename to Div
+Pow2                                     OK              Rename to Pow
+AddScalar                                OK              Convert to Add
+MulScalar                                OK              Convert to Mul
+PowScalar                                OK              Convert to Pow
+RSubScalar                               OK              Convert to Sub
+RDivScalar                               OK              Convert to Div
+RPowScalar                               OK              Convert to Pow
+======================================== =============== =================================================
+
+Logical
++++++++
+
+Count 12/24
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Sign
+Minimum2                                 OK              Rename to Min
+Maximum2                                 OK              Rename to Max
+MinimumScalar                            OK              Convert to Clip
+MaximumScalar                            OK              Convert to Clip
+LogicalAnd                               OK              Rename to And
+LogicalOr                                OK              Rename to Or
+LogicalXor                               OK              Rename to Xor
+Equal                                    OK
+NotEqual                                 NG
+GreaterEqual                             NG
+Greater                                  OK
+LessEqual                                NG
+Less                                     OK
+LogicalAndScalar                         NG
+LogicalOrScalar                          NG
+LogicalXorScalar                         NG
+EqualScalar                              NG
+NotEqualScalar                           NG
+GreaterEqualScalar                       NG
+GreaterScalar                            NG
+LessEqualScalar                          NG
+LessScalar                               NG
+LogicalNot                               OK              Rename to Not
+======================================== =============== =================================================
+
+Math
+++++
+
+Count 5/18
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Constant                                 NG
+Abs                                      OK
+Exp                                      OK
+Log                                      OK
+Identity                                 OK
+BatchMatmul                              OK              Rename to MatMul
+Round                                    NG
+Sin                                      NG
+Cos                                      NG
+Tan                                      NG
+Sinh                                     NG
+Cosh                                     NG
+ASin                                     NG
+ACos                                     NG
+ATan                                     NG
+ASinh                                    NG
+ACosh                                    NG
+ATanh                                    NG
+======================================== =============== =================================================
+
+Array Manipulation
+++++++++++++++++++
+
+Count 9/13
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Concatenate                              OK              Convert to Concat and Squeeze
+Split                                    OK
+Stack                                    OK              Convert to Unsqueeze
+Slice                                    OK
+Pad                                      OK
+Transpose                                OK
+Broadcast                                NG
+OneHot                                   OK              Convert to Flatten, Gather and Reshape
+Flip                                     OK              Convert to Transpose and Gather
+Shift                                    NG
+Reshape                                  OK
+MatrixDiag                               NG
+MatrixDiagPart                           NG
+======================================== =============== =================================================
+
+Stochasticity
++++++++++++++
+
+Count 1/10
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+Dropout                                  OK
+TopKData                                 NG
+TopKGrad                                 NG
+Rand                                     NG
+Randint                                  NG
+Randn                                    NG
+RandomCrop                               NG
+RandomFlip                               NG
+RandomShift                              NG
+ImageAugmentation                        NG
+======================================== =============== =================================================
+
+Loss Functions
+++++++++++++++
+
+Count 0/9
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+SigmoidCrossEntropy                      NG
+BinaryCrossEntropy                       NG
+SoftmaxCrossEntropy                      NG
+CategoricalCrossEntropy                  NG
+SquaredError                             NG
+AbsoluteError                            NG
+HuberLoss                                NG
+EpsilonInsensitiveLoss                   NG
+KLMultinomial                            NG
+======================================== =============== =================================================
+
+Quantization Neural Network Layers
+++++++++++++++++++++++++++++++++++
+
+Count 0/10
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+BinarySigmoid                            NG
+BinaryTanh                               NG
+BinaryConnectAffine                      NG
+BinaryConnectConvolution                 NG
+BinaryWeightAffine                       NG
+BinaryWeightConvolution                  NG
+INQAffine                                NG
+INQConvolution                           NG
+FixedPointQuantize                       NG
+Pow2Quantize                             NG
+======================================== =============== =================================================
+
+Validation
+++++++++++
+
+Count 0/3
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+TopNError                                NG
+BinaryError                              NG
+ConfusionMatrix                          NG
+======================================== =============== =================================================
+
+Unsupported,SpecialUse
+++++++++++++++++++++++
+
+Count 0/4
+
+======================================== =============== =================================================
+Operator                                 Status          Description	
+======================================== =============== =================================================
+VATNoise                                 NG
+Unlink                                   NG
+Sink                                     NG
+NmsDetection2d                           NG
+======================================== =============== =================================================

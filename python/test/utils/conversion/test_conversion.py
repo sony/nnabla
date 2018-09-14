@@ -62,6 +62,15 @@ print(TEST_DATA_DIR)
 # if you want to update all the NNP files
 DEFAULT_NNP_EXPORT_PATH = None
 
+try:
+    from gen_report import gen_report
+except:
+    print("Cannot generate report since no gen_report module.")
+    def gen_report(import_result, export_result):
+        pass
+
+import_result = {}
+export_result = {}
 
 def print_buffer_shape(net):
     for k, v in net.functions.items():
@@ -87,9 +96,11 @@ def convert_onnx_to_nnp_and_compare(
     results ran by Caffe2 and NNabla"""
     path = os.path.join(onnx_dir, onnx_name)
     backend_out = None
+    func_name = ''
     if backend == "caffe2" and CAFFE2_AVAILABLE:
         # Process onnx with caffe2 backend
         model = onnx.load(path)
+        func_name = model.graph.node[0].op_type
         if show_onnx:
             print(model)
         c2out = None
@@ -112,6 +123,7 @@ def convert_onnx_to_nnp_and_compare(
         backend_out = cntk_out
     else:
         raise ValueError("Unknown backend specified")
+    import_result[func_name] = 'NG'
 
     # Process onnx with naabla
     r = OnnxImporter(path)
@@ -147,6 +159,7 @@ def convert_onnx_to_nnp_and_compare(
     assert backend_out.shape == nnout.shape
     if compare_values:
         assert np.allclose(backend_out, nnout, atol=atol)
+        import_result[func_name] = 'OK'
 
 
 def convert_nnp_to_onnx_and_compare(
@@ -175,6 +188,9 @@ def convert_nnp_to_onnx_and_compare(
     assert nnp.protobuf is not None
     if show_nnp:
         print(nnp.protobuf)
+    func_name = nnp.protobuf.network[0].function[0].type
+    print(func_name)
+    export_result[func_name] = 'NG'
     onnxex = OnnxExporter(nnp, -1)
     onnxdir = tmpdir.mkdir("onnx")
     p = os.path.join(str(onnxdir), onnx_name)
@@ -216,6 +232,7 @@ def convert_nnp_to_onnx_and_compare(
     assert backend_out.shape == nnout.shape
     if compare_values:
         assert np.allclose(backend_out, nnout, atol=atol)
+        export_result[func_name] = 'OK'
 
 
 @pytest.fixture
@@ -223,6 +240,11 @@ def nnp_fixture():
     # We need to remove all parameters for each test case
     # because the buffer shape will differ while having same names
     nnabla.clear_parameters()
+
+@pytest.fixture(scope="module", autouse=True)
+def my_fixture():
+    yield
+    gen_report(import_result, export_result)
 
 
 def test_onnx_nnp_conversion_concat(tmpdir, nnp_fixture):
