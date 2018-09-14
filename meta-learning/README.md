@@ -4,8 +4,8 @@
 
 ## Overview
 
-Thie example script implements one-shot and few-shot learning of hand-written characters on Omniglot dataset.
-It learns to classify a query image of character to its correct class from support classes, upon seeing only a few sample images from each support classe.
+This example script implements one-shot and few-shot learning of hand-written characters on Omniglot dataset.
+It learns to classify a query image of character to its correct class from support classes, upon seeing only a few sample images from each support classes.
 
 ---
 
@@ -61,7 +61,7 @@ Example of options are as follows.
 -nst:	Number of shots per class in meta-training, typically same as meta-test
 -nqt:	Number of queries per class in meta-test, typically same as meta-test
 -d  :   Similarity metric, you can select "cosine" or "euclid".
--n  ;   Network tpye, you can select "matching" and "prototypical".
+-n  ;   Network type, you can select "matching" and "prototypical".
 
 ### Prototypical networks
 The default setting of this script is a prototypical network with euclid distance.
@@ -69,12 +69,12 @@ The embedding architecture follows the typical network with 4 convolutions writt
 To avoid all zero output from the embedding network, we omitted the last relu activation.
 You can refer the paper in the following site.
 https://arxiv.org/abs/1703.05175
-Following the recommendation in this paper, we adoptted 60-way episodes for training instead of 1 or 5-way.
+Following the recommendation in this paper, we adopted 60-way episodes for training instead of 1 or 5-way.
 
 ### Matching networks
 You can also select matching networks by setting -n option to matching.
 However, since we are interested in the aspect of the metric learning,
-we implemented only the softmax attention part which works as soft nearest neighber search.
+we implemented only the softmax attention part which works as soft nearest neighbor search.
 You can refer the paper in the following site.
 https://arxiv.org/abs/1606.04080
 We omitted the full context embedding in this paper, which uses the context by using a LSTM module.

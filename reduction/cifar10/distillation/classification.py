@@ -66,7 +66,7 @@ def train():
     # Create input variables.
     vimage = nn.Variable([args.batch_size, c, h, w])
     vlabel = nn.Variable([args.batch_size, 1])
-    # Create teacher predition graph.
+    # Create teacher prediction graph.
     vpred = model_prediction(vimage, net=teacher, maps=maps, test=True)
 
     # Create Solver.

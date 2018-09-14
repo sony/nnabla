@@ -30,7 +30,7 @@ import nnabla.solvers as S
 import unet
 # import my data iterator
 import facade
-# importgeneration funcitons
+# import generation functions
 from generator import generate, normalize_image, label_to_image
 
 from args import get_args

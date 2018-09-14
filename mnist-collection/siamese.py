@@ -56,7 +56,7 @@ def mnist_lenet_siamese(x0, x1, test=False):
 
 def contrastive_loss(sd, l, margin=1.0, eps=1e-4):
     """
-    This implements contrustive loss function given squared difference `sd` and labels `l` in {0, 1}.
+    This implements contrastive loss function given squared difference `sd` and labels `l` in {0, 1}.
 
     f(sd, l) = l * sd + (1 - l) * max(0, margin - sqrt(sd))^2
 
@@ -109,7 +109,7 @@ def train(args):
     image0 = nn.Variable([args.batch_size, 1, 28, 28])
     image1 = nn.Variable([args.batch_size, 1, 28, 28])
     label = nn.Variable([args.batch_size])
-    # Create predition graph.
+    # Create prediction graph.
     pred = mnist_lenet_siamese(image0, image1, test=False)
     # Create loss function.
     loss = F.mean(contrastive_loss(pred, label, margin))
@@ -119,7 +119,7 @@ def train(args):
     vimage0 = nn.Variable([args.batch_size, 1, 28, 28])
     vimage1 = nn.Variable([args.batch_size, 1, 28, 28])
     vlabel = nn.Variable([args.batch_size])
-    # Create predition graph.
+    # Create prediction graph.
     vpred = mnist_lenet_siamese(vimage0, vimage1, test=True)
     vloss = F.mean(contrastive_loss(vpred, vlabel, margin))
 
@@ -180,7 +180,7 @@ def visualize(args):
     nn.load_parameters(os.path.join(args.model_save_path,
                                     'params_%06d.h5' % args.max_iter))
 
-    # Create embedder network
+    # Create embedded network
     image = nn.Variable([batch_size, 1, 28, 28])
     feature = mnist_lenet_feature(image, test=True)
 

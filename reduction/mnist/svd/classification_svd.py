@@ -65,7 +65,7 @@ def classification_svd():
     # Create input variables.
     vimage = nn.Variable([args.batch_size, 1, 28, 28])
     vlabel = nn.Variable([args.batch_size, 1])
-    # Create reference predition graph.
+    # Create reference prediction graph.
     vpred = mnist_cnn_prediction(vimage, scope=slim, rrate=rrate, test=True)
 
     # Create Solver.

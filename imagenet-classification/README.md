@@ -107,11 +107,11 @@ The following line executes the ImageNet training (See more options in the help 
 
 ```
 4-1．Execute the example of ImageNet about Single GPU.
-  - python classification.py -c "device id" -b"batch size" -a"accumulate gradient" -L"number of layers" -T "directory of the trainning cache file" -V "directory of the validation cache file"
+  - python classification.py -c "device id" -b"batch size" -a"accumulate gradient" -L"number of layers" -T "directory of the training cache file" -V "directory of the validation cache file"
     [ex):python classification.py -c cudnn -b64 -a4 -L34 -T train_cache -V val_cache]
 
 4-2．Execute the example of ImageNet about Multi GPU.
-  - mpirun -n "Number of GPUs" multi_device_multi_process_classification.py -b"batch size" -a"accumulate gradient" -L"number of layers" -l"learning rate" -i"max iteration of training" -v"validation interval" -j"mini-batch iteration of validation" -s"interval of saving model parameters" -D"interval of learning rate decay" -T "directory of the trainning cache file" -V "directory of the validation cache file"
+  - mpirun -n "Number of GPUs" multi_device_multi_process_classification.py -b"batch size" -a"accumulate gradient" -L"number of layers" -l"learning rate" -i"max iteration of training" -v"validation interval" -j"mini-batch iteration of validation" -s"interval of saving model parameters" -D"interval of learning rate decay" -T "directory of the training cache file" -V "directory of the validation cache file"
     [ex):mpirun -n 4 python multi_device_multi_process_classification.py -b 32 -a 2 -L 50 -l 0.1 -i 2000000 -v 20004 -j 1563 -s 20004 -D 600000,1200000,1800000 -T train_cache -V val_cache]
 ```
 

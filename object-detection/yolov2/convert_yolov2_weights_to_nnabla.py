@@ -45,7 +45,7 @@ def main():
     # Parse arguments
     args = get_args()
 
-    # Create YOLOv2 detection newtork
+    # Create YOLOv2 detection network
     x = nn.Variable((1, 3, args.width, args.width))
     y = yolov2.yolov2(x, args.anchors, args.classes, test=True)
     params = nn.get_parameters(grad_only=False)

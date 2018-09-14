@@ -41,7 +41,7 @@ def generator(z, maxh=256, test=False, output_hidden=False):
         return PF.batch_normalization(x, batch_stat=not test)
 
     def upsample2(x, c):
-        # Twise upsampling with deconvolution.
+        # Twice upsampling with deconvolution.
         return PF.deconvolution(x, c, kernel=(4, 4), pad=(1, 1), stride=(2, 2), with_bias=False)
 
     assert maxh / 4 > 0

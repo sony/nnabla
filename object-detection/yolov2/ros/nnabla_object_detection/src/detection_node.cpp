@@ -45,7 +45,7 @@ class NnablaObjectDetector {
 #ifdef WITHOUT_CUDA
   nbla::Context ctx_{{"cpu:float"}, "CpuCachedArray", "0"};
 #else
-  // TODO: devcie ID.
+  // TODO: device ID.
   // Replace with the following context if you want to use half type (FP16)
   // and TensorCore (available since Volta)
   // nbla::Context ctx_{

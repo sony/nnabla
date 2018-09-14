@@ -66,7 +66,7 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
                         help='Number of layers of ResNet.')
     parser.add_argument("--shortcut-type", "-S", type=str,
                         choices=['b', 'c', ''], default='b',
-                        help='Skip connection type. See `resnet_imagenet()` in model_resenet.py for description.')
+                        help='Skip connection type. See `resnet_imagenet()` in model_resent.py for description.')
     parser.add_argument("--tiny-mode", "-M", type=bool, default=tiny_mode,
                         help='The dataset is tiny imagenet.')
     parser.add_argument("--train-cachefile-dir", "-T", type=str, default=train_cachefile_dir,

@@ -102,7 +102,7 @@ def cifar10_resnet23_prediction(image, net="teacher", maps=64,
 def cifar10_shift_prediction(image, maps=64,
                              test=False, p=0, module="sc2"):
     """
-    Construct ShifNet
+    Construct ShiftNet
     """
 
     # Shift

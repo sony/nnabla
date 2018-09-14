@@ -24,7 +24,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     if model_save_path is None:
         model_save_path = monitor_path
     if description is None:
-        description = "Examples on MNIST dataset. The following help shared among examples in this folder. Some argumetns are valid or invalid in some examples."
+        description = "Examples on MNIST dataset. The following help shared among examples in this folder. Some arguments are valid or invalid in some examples."
     parser = argparse.ArgumentParser(description)
     parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
     parser.add_argument("--learning-rate", "-l",
@@ -60,7 +60,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     parser.add_argument('--reduction-rate', type=float,
                         default=0.25, help="Reduction rate, should be less than 1.")
     parser.add_argument('--use-batch', type=int,
-                        default=1, help="Use batch stats in teacher net when distiling, detault is true.")
+                        default=1, help="Use batch stats in teacher net when distilling, default is true.")
     parser.add_argument('--weight-ce', type=float,
                         default=0.5, help="Weight for cross entropy.")
     parser.add_argument('--weight-ce-soft', type=float,

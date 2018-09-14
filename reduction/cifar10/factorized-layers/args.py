@@ -24,7 +24,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     if model_save_path is None:
         model_save_path = monitor_path
     if description is None:
-        description = "Examples on CIFAR-10 dataset. The following help shared among examples in this folder. Some argumetns are valid or invalid in some examples."
+        description = "Examples on CIFAR-10 dataset. The following help shared among examples in this folder. Some arguments are valid or invalid in some examples."
     parser = argparse.ArgumentParser(description)
     parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
     parser.add_argument("--learning-rate", "-l",
@@ -46,10 +46,10 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         help='Path the model parameters saved.')
     parser.add_argument("--model-load-path", "-t",
                         type=str, default=model_save_path,
-                        help='Path the model parameters loaded. This can be a large pre-trained model. It will be used to inititialize the factorized model')
+                        help='Path the model parameters loaded. This can be a large pre-trained model. It will be used to initialize the factorized model')
     parser.add_argument("--net", "-n", type=str,
                         default='cifar10_cpd3_factorized_resnet23_prediction',
-                        help="Neural network architecure type (used only in classification*.py)"
+                        help="Neural network architecture type (used only in classification*.py)"
                         "classification.py: "
                         "'cifar10_resnet23_prediction'\n"
                         "'cifar10_svd_factorized_resnet23_prediction'\n"

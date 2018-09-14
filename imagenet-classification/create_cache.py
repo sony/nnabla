@@ -186,7 +186,7 @@ def main():
 
     args = parser.parse_args()
     ############################################################################
-    # Analize tar
+    # Analyze tar
     # If it consists only of members corresponding to regular expression
     # 'n[0-9]{8}\.tar', it is judged as train data archive.
     # If it consists only of members corresponding to regular expression
@@ -211,7 +211,7 @@ def main():
                     exit(-1)
                 is_val = True
             else:
-                print('Invalid menber {} includes in tar file'.format(name))
+                print('Invalid member {} includes in tar file'.format(name))
                 exit(-1)
             names.append(name)
         if is_train:

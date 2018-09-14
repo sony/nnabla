@@ -41,7 +41,7 @@ def main():
     nn.set_default_context(ctx)
     nn.set_auto_forward(True)
 
-    # Data Itrator
+    # Data Iterator
     di = data_iterator(args.img_path, args.batch_size,
                        imsize=(args.imsize, args.imsize),
                        num_samples=args.train_samples,
@@ -71,7 +71,7 @@ def main():
                                                   num_images=4,
                                                   normalize_method=lambda x: (x + 1.) / 2.)
 
-    # TODO: use argment
+    # TODO: use argument
     resolution_list = [4, 8, 16, 32, 64, 128]
     channel_list = [512, 512, 256, 128, 64, 32]
 

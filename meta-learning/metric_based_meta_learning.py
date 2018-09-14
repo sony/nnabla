@@ -28,7 +28,7 @@ def conv_initializer(f_in, n_out, base_axis, kernel, mode):
         Args:
             f_in (~nnabla.Variable): input variable.
             n_out (int) : number of output neurons per data.
-            base_axis (int): dimensions up to base_axis are treated as the sample dimenisons.
+            base_axis (int): dimensions up to base_axis are treated as the sample dimensions.
             kernel (tuple of int) : convolution kernel size.
             mode (str) : type of initialization to use.
         Returns:
@@ -102,18 +102,18 @@ def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='protot
         This function implements the network with settings as specified.
 
         Args:
-            n_class (int): number of classes. Typical seeting is 5 or 20.
+            n_class (int): number of classes. Typical setting is 5 or 20.
             xs (~nnabla.Variable): support images.
-            xq (~nnabla.Variable): queyr images.
+            xq (~nnabla.Variable): query images.
             init_type (str, optional): initialization type for weights and bias parameters. See conv_initializer function.
             embedding(str, optional): embedding network.
             distance (str, optional): similarity metric to use. See similarity function.
             test (bool, optional): switch flag for training dataset and test dataset
         Returns:
-            h (~nnabla.Variable): output variable indicaitng similarity between support and query.
+            h (~nnabla.Variable): output variable indicating similarity between support and query.
     '''
 
-    # feature embeddings for supports and queries
+    # feature embedding for supports and queries
     n_shot = xs.shape[0] / n_class
     n_query = xq.shape[0] / n_class
     if embedding == 'conv4':
@@ -132,7 +132,7 @@ def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='protot
             h = F.softmax(h)
             h = F.reshape(h, (h.shape[0], n_class, n_shot))
             h = F.mean(h, axis=2)
-            # Reverse to logits to use same softmax cross entopy
+            # Reverse to logit to use same softmax cross entropy
             h = F.log(h)
     elif net_type == 'prototypical':
         if 1 < n_shot:
@@ -250,9 +250,9 @@ class EpisodeGenerator:
         """
         Create episode function
             Args:
-                n_class (int): number of support classes, generally called n_way in one-shot literatuer
+                n_class (int): number of support classes, generally called n_way in one-shot litterateur
                 n_shot (int): number of shots per class
-                n_query (int): numper of queries per class.
+                n_query (int): number of queries per class.
                 shape_x : dimension of the input image.
                 dataset(nd_array): nd_array of (class, sample, shape)
         """
@@ -267,9 +267,9 @@ class EpisodeGenerator:
         """
         Create episode function
             Args:
-                n_class (int): number of support classes, generally called n_way in one-shot literatuer
+                n_class (int): number of support classes, generally called n_way in one-shot litterateur
                 n_shot (int): number of shots per class
-                n_query (int): numper of queries per class.
+                n_query (int): number of queries per class.
                 shape_x : dimension of the input image.
                 dataset_mode (str, optional): data split to use.
             Returns:

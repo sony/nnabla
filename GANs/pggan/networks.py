@@ -77,7 +77,7 @@ class Generator:
         return h
 
     def grow(self, resolution, channel):
-        """Add resoltution and channel.
+        """Add resolution and channel.
         """
         self.resolution_list.append(resolution)
         self.channel_list.append(channel)
@@ -200,7 +200,7 @@ class Discriminator:
         return h
 
     def grow(self, resolution, channel):
-        """Add resoltution and channel.
+        """Add resolution and channel.
         """
         self.resolution_list.append(resolution)
         self.channel_list.append(channel)

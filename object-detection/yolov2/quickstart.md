@@ -41,7 +41,7 @@ git clone https://github.com/sony/nnabla-examples/
 ```
 This will clone the whole nnabla-examples repository, including YOLO-v2-NNabla, to your system.
 
-If you don't have git installed on your system, please access the [GitHub repository for nnabla-examples](https://github.com/sony/nnabla-examples/). After you have opend the nnabla-examples page, please click on the "Clone or Download" button, which will allow you to download the whole nnabla-examples repository, including YOLO-v2-NNabla, as a zip archive.
+If you don't have git installed on your system, please access the [GitHub repository for nnabla-examples](https://github.com/sony/nnabla-examples/). After you have opened the nnabla-examples page, please click on the "Clone or Download" button, which will allow you to download the whole nnabla-examples repository, including YOLO-v2-NNabla, as a zip archive.
 
 
 ## Step 2: Download the Pretrained Network Parameters and Category Descriptions

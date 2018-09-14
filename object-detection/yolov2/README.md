@@ -40,4 +40,4 @@ For details on training and evaluating your network's mAP (Mean Average Precisio
 ## License
 `dataset.py`, `image.py`, `region_loss.py`, `train.py`, `utils.py`, and `valid.py` were forked from  [https://github.com/marvis/pytorch-yolo2](https://github.com/marvis/pytorch-yolo2), licensed under the MIT License (see [./LICENSE.external](./LICENSE.external) for more details).
 
-`scripts/voc_eval.py` was forked from [https://github.com/rbgirshick/py-faster-rcnn](https://github.com/rbgirshick/py-faster-rcnn), licenced under the MIT License (see [./LICENSE.external](./LICENSE.external) for more details).
+`scripts/voc_eval.py` was forked from [https://github.com/rbgirshick/py-faster-rcnn](https://github.com/rbgirshick/py-faster-rcnn), licensed under the MIT License (see [./LICENSE.external](./LICENSE.external) for more details).
