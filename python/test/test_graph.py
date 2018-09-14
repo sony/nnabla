@@ -34,7 +34,7 @@ def test_graph_logreg(seed):
 
     nn.set_default_context(nn.Context())
 
-    # Forwardprop by definintion
+    # Forwardprop by definition
     with nn.auto_forward():
         z = F.affine(x, w, b, 1)
         l = F.softmax_cross_entropy(z, t, 1)
@@ -68,7 +68,7 @@ def test_graph_model(model, seed):
 
     nn.set_default_context(nn.Context())
 
-    # Forwardprop by definintion
+    # Forwardprop by definition
     nn.clear_parameters()
     if model == "mlp":
         with nn.parameter_scope('fc1'):

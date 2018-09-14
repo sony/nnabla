@@ -401,7 +401,7 @@ cdef class Variable:
         """
         Returns the values held by this variable, as a :class:`numpy.ndarray`.
         Note that the values are referenced (not copied). Therefore, the
-        modification of the returned ndarray will affet the data of the
+        modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the value held by this variable.
 
@@ -422,7 +422,7 @@ cdef class Variable:
         """
         Returns the gradient values held by this variable, as a :class:`numpy.ndarray`.
         Note that the values are referenced (not copied). Therefore, the
-        modification of the returned ndarray will affet the data of the
+        modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the gradient held by this variable.        
 
@@ -558,7 +558,7 @@ cdef class Variable:
                 flag with this variable instance. By specifying a boolean value,
                 the new need_grad flags will be set to the unlinked variable.
                 It is recommended to explicitly specify this option to avoid an
-                unintented behavior.
+                unintended behavior.
 
         Returns: nnabla._variable.Variable
 
@@ -575,7 +575,7 @@ cdef class Variable:
                 y = PF.affine(x, 4, name="y")
 
                 # Create a new variable of which graph connection is unlinked.
-                # Recommened to specify need_grad option explicitly .
+                # Recommend to specify need_grad option explicitly .
                 z = y.get_unlinked_variable(need_grad=False)
 
                 print(y.parent)
@@ -675,7 +675,7 @@ cdef class Variable:
         """Clear all intermediate functions and variables.
 
         This method clear all intermediate functions and variables up to this variable 
-        in forward pass and is useful for the truncated backpropergation through time 
+        in forward pass and is useful for the truncated backpropagation through time 
         (truncated BPTT) in dynamic graph.
         """
         def _clear_all_graph_links(func):

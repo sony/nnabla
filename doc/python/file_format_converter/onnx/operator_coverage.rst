@@ -62,7 +62,7 @@ Hardmax                                  Not in NNabla   Operator does not exist
 Identity                                 OK
 InstanceNormalization                    Not in NNabla   Operator does not exist in NNabla
 LRN                                      Not finished    Converted to
-                                                         PowScalar+Tranpose+SumPooling+Transpose+MulScalar+AddScalar+PowScalar.
+                                                         PowScalar+Transpose+SumPooling+Transpose+MulScalar+AddScalar+PowScalar.
                                                          Currently only odd size is allowed.
 LSTM                                     Not in NNabla   Operator does not exist in NNabla
 LeakyRelu                                OK

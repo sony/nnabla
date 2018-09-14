@@ -39,7 +39,7 @@ template <typename SINGLETON> SINGLETON *SingletonManager::get() {
     // std::cout << "Deleting a singleton \"" << typeid(SINGLETON).name() <<
     // "\""
     //          << std::endl;
-    delete r; // Static variable doen't require capturing.
+    delete r; // Static variable doesn't require capturing.
     r = nullptr;
   };
   int id = s.count_;

@@ -142,7 +142,7 @@ For more details see [Documentation](doc/python/command_line_interface.rst)
 
 * We also provide some more sophisticated examples at [`nnabla-examples`](https://github.com/sony/nnabla-examples) repository.
 
-* C++ API examples are avaiailable in [`examples/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).
+* C++ API examples are available in [`examples/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).
 
 
 ## Contribution guide

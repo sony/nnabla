@@ -6,13 +6,13 @@ Introduction
 ------------
 
 Traditionally, for training a neural network, we used to use ``FP32``
-for weights and activations; however computation costs for trainig a
+for weights and activations; however computation costs for training a
 neural network rapidly increase over years as the success of deep
-learning and the growing size of a neural nework. It indiates that we
+learning and the growing size of a neural network. It indicates that we
 need to spend much more time for training a huge size of a neural
 network while we would like to do lots of trials before a product
-launch. To address this problem, companys (e.g., NVIDIA) introduced an
-accelarator for speeding up computation. For example, NVIDIA Volta has
+launch. To address this problem, companies (e.g., NVIDIA) introduced an
+accelerator for speeding up computation. For example, NVIDIA Volta has
 `Tensor
 Cores <https://devblogs.nvidia.com/programming-tensor-cores-cuda-9/>`__
 to speed up computation.
@@ -38,11 +38,11 @@ Step-by-Step Instruction
 
 Basically, the mixed precision training are composed of three parts.
 
-1. Use the accelarator for computation (here we assume Tensor Cores)
+1. Use the accelerator for computation (here we assume Tensor Cores)
 2. Use loss scaling to prevent underflow
-3. Use dynamic loss caling to prevent overflow/underflow
+3. Use dynamic loss calling to prevent overflow/underflow
 
-In NNabla, we can do the correspondinces as follows.
+In NNabla, we can do the correspondences as follows.
 
 1. Use Tensor Cores
 ~~~~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ In NNabla, we can do the correspondinces as follows.
 
     loss_scale = 8
     loss.backward(loss_scale)
-    solver.scale_grad(1. / loss_scale)  # do some graident clipping, etc. after this
+    solver.scale_grad(1. / loss_scale)  # do some gradient clipping, etc. after this
     solver.update()
 
 3. Use dynamic loss scaling to prevent overflow/underflow
@@ -77,7 +77,7 @@ In NNabla, we can do the correspondinces as follows.
         loss_scale /= scaling_factor
         counter = 0
     else:
-        solver.scale_grad(1. / loss_scale) # do some graident clipping, etc. after this
+        solver.scale_grad(1. / loss_scale) # do some gradient clipping, etc. after this
         solver.update()
         if counter > interval:
             loss_scale *= scaling_factor
@@ -86,7 +86,7 @@ In NNabla, we can do the correspondinces as follows.
 
 **Note** that currently the procedures of 2nd (Use loss scaling to
 prevent underflow) and 3rd (Use loss scaling to prevent overflow) are
-exprimental, and we are now trying to speed up the mixed precision
+experimental, and we are now trying to speed up the mixed precision
 training, so API might change for future use, especially 3rd.
 
 All-in-one Instruction
@@ -110,8 +110,8 @@ training loop, thus we can write a wrapper class like the following.
             clear_buffer (:obj:`bool`): Clears the no longer referenced variables during backpropagation to save memory.
             accum_grad (:obj:`int`): Number of accumulation of gradients. Update method of the `solver` is called after the `accum_grad` number of the forward and backward is called.
             weight_decay (:obj:`float`): Decay constant. Default is `None`, not applying the weight decay.
-            comm (:obj:`nnabla.communicators.Communicator`): Communicator when to do distributed training. Defalt is :obj:`None`.
-            grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`): The list of gradients to be exchanged when to do distributed training. Defalt is the empty :obj:`list`.
+            comm (:obj:`nnabla.communicators.Communicator`): Communicator when to do distributed training. Default is :obj:`None`.
+            grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`): The list of gradients to be exchanged when to do distributed training. Default is the empty :obj:`list`.
     
         Attributes:
             solver (:obj:`nnabla.solvers.Solver`): Solver object. E.g., Momentum or Adam.
@@ -215,7 +215,7 @@ training loop, thus we can write a wrapper class like the following.
             # Rescale grads
             self.solver.scale_grad(1. / self.scale)
     
-            # Do some graident clipping, etc.
+            # Do some gradient clipping, etc.
             if self.weight_decay is not None:
                 self.solver.weight_decay(self.weight_decay)
             

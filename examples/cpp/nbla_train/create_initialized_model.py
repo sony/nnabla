@@ -104,7 +104,7 @@ def main():
 
     # Save NNP file (used in C++ inference later.).
     nnp_file = '{}_initialized.nnp'.format(args.net)
-    trainin_contents = {
+    training_contents = {
         'global_config': {'default_context': ctx},
         'training_config':
             {'max_epoch': args.max_epoch,
@@ -152,7 +152,7 @@ def main():
              'network': 'validation',
              'dataset': 'mnist_validation'}],
     }
-    nn.utils.save.save(nnp_file, trainin_contents)
+    nn.utils.save.save(nnp_file, training_contents)
 
 
 if __name__ == '__main__':

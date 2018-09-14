@@ -16,7 +16,7 @@
 Search config file and get config information from config file.
 
 Config file search order is described in following table.
-Each config value is overwrited by the following configs.
+Each config value is overwritten by the following configs.
 
 +-------------+-----------------------------------------------------------------+--------------------+
 | Type        | Windows                                                         | Posix              |
@@ -77,7 +77,7 @@ def _get_nnabla_config():
 
     config = configparser.RawConfigParser()
     for filename in config_files:
-        # print(' Cheking {}'.format(filename))
+        # print(' Checking {}'.format(filename))
         if exists(filename):
             # print(' Read from {}'.format(filename))
             config.read(filename)

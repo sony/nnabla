@@ -44,7 +44,7 @@ void CgFunction::check_data_inplace(int i, CgVariablePtr input,
   // Always not allow modifying data if grad depends the output data.
   if (input->need_grad_state()) {
     for (int o = 0; o < outputs.size(); ++o) {
-      // If funcition gradient computation at i-th variable depends on o-th
+      // If function gradient computation at i-th variable depends on o-th
       // output data, inplacing o-th variable data is prohibited.
       if (f->grad_depends_output_data(i, o)) {
         outputs[o]->set_allow_modify_data(false);
@@ -54,7 +54,7 @@ void CgFunction::check_data_inplace(int i, CgVariablePtr input,
   int inplace_level = f->inplace_data(i);
   if (inplace_level == Function::INPLACE) {
     NBLA_CHECK(input->allow_modify_data(), error_code::value,
-               "Modifying data is prohibitied by the parent function of the "
+               "Modifying data is prohibited by the parent function of the "
                "%d-th input data of '%s' (depth=%d). (Parent is '%s').",
                i, f->name().c_str(), this->rank(),
                input->parent()->function()->name().c_str());

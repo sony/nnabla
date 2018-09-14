@@ -216,7 +216,7 @@ void BatchNormalization<T>::backward_impl_batch(
     batch_var = outputs[2];
   }
 
-  // Commont inputs wrt. gradient.
+  // Common inputs wrt. gradient.
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const T *m = batch_mean->get_data_pointer<T>(this->ctx_);
   const T *v = batch_var->get_data_pointer<T>(this->ctx_);

@@ -200,7 +200,7 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
             will be returned as Variables. They are also differentiable.
 
     Returns:
-        Retruns batch normalization output as :obj:`~nnabla.Variable`.
+        Returns batch normalization output as :obj:`~nnabla.Variable`.
         If ``output_stat=True``, it also returns the mean and variance
         of the mini-batch
 

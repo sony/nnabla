@@ -56,7 +56,7 @@ def function_api(func):
     # e.g. (x, weights, biases=None, n_outputs=None)
     signature = inspect.formatargspec(
         spec.args[1:], spec.varargs, spec.keywords, defaults)
-    # Creating signature without parans and defaults
+    # Creating signature without params and defaults
     # e.g. x, weights, biases, n_outputs
     shortsignature = inspect.formatargspec(
         spec.args[1:], spec.varargs, spec.keywords, None)[1:-1]

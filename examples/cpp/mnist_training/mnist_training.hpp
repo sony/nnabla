@@ -162,7 +162,7 @@ bool mnist_training(nbla::Context ctx, string nnp_file_name) {
   // Get filename of the initialized model.
   const std::string nnp_file(nnp_file_name);
 
-  // Create a Nnp objct
+  // Create a Nnp object
   nbla::utils::nnp::Nnp nnp(ctx);
 
   // Set nnp file to Nnp object.
@@ -202,7 +202,7 @@ bool mnist_training(nbla::Context ctx, string nnp_file_name) {
     float_t *x_d = x->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx);
     uint8_t *t_d = t->variable()->cast_data_and_get_pointer<uint8_t>(cpu_ctx);
 
-    // The followng stride represents the tensor size less than the specified
+    // The following stride represents the tensor size less than the specified
     // index.
     // e.g. If the tensor size of x is (b, c, w, h) then stride_x becomes c * w
     // * h

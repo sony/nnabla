@@ -33,7 +33,7 @@ np.import_array()
 cdef class NdArray:
     """
     :class:`nnabla._nd_array.NdArray` is a device-agnostic data container for multi-dimensional arrays (tensors).
-    :class:`nnabla._nd_array.NdArray` can also implictly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
+    :class:`nnabla._nd_array.NdArray` can also implicitly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
     See `Python API Tutorial <http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_ for more details.
 
     :class:`~nnabla.NdArray` overrides some arithmetic operators
@@ -124,7 +124,7 @@ cdef class NdArray:
     def size(self):
         """Total size of the N-d array.
 
-        Retuns: int
+        Returns: int
 
         """
         return self.arrp.size(-1)

@@ -58,7 +58,7 @@ except ImportError:
 class FileReader:
     '''FileReader
 
-    Read dataset from sevaral data sources.
+    Read dataset from several data sources.
     Supported data sources are,
 
     * Local file (file or directory name)

@@ -87,7 +87,7 @@ def create_image_classification_dataset_command(args):
         im = scipy.misc.imread(src_file_name)
         if len(im.shape) < 2 or len(im.shape) > 3:
             logger.warning(
-                "Illigal image file format %s.".format(src_file_name))
+                "Illegal image file format %s.".format(src_file_name))
             csv_data.remove(data)
             continue
         elif len(im.shape) == 3:

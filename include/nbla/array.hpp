@@ -39,7 +39,7 @@ This is extended to implement a new array class (see CpuArray, CudaArray etc.).
 
 NOTE for developers: Do not directly access object_ from anywhere except
 `allocate` and `deallocate` functions. Use `pointer<T>()` or
-`const_pointer<T>()`. Objects are layzily allocated when they are called.
+`const_pointer<T>()`. Objects are lazily allocated when they are called.
 */
 class Array {
 protected:

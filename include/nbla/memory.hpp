@@ -55,7 +55,7 @@ public:
   /** Returns a void pointer to device memory.
 
       Note: This will implicitly call allocate() if pointer is not ready, and
-     raise if allocation failsd.
+     raise if allocation failed.
    */
   void *ptr();
   DISABLE_COPY_AND_ASSIGN(Memory);

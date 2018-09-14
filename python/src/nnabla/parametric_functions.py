@@ -32,7 +32,7 @@ def parametric_function_api(scope_name=None, param_desc=None):
     default is ``None``) at the end. If ``name`` is specified, the
     scope ``scope_name`` comes under a scope ``name``. This feature
     could reduce vertical space usage of the source code.
-    Any parametric function should be decoreated by this.
+    Any parametric function should be decorated by this.
 
     Args:
         scope_name (str, optional): The original function will be called
@@ -195,7 +195,7 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
     {\\mathbf b}` are constants.
 
     The weights :math:`{\\mathbf U}` and :math:`{\\mathbf V}` are
-    aproximated with singular value decomposition (SVD) of the
+    approximated with singular value decomposition (SVD) of the
     original weight matrix :math:`{\\mathbf W}` and by selecting the
     :math:`{R}` dominant singular values and the corresponding
     singular vectors. Therefore the low rank :math:`{R}` is the size
@@ -560,7 +560,7 @@ def convolution(inp, outmaps, kernel,
     """
     N-D Convolution with a bias term.
 
-    For Dilated Convolution (a.k.a. Atrous Convolusion), refer to:
+    For Dilated Convolution (a.k.a. Atrous Convolution), refer to:
 
     - Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs. https://arxiv.org/abs/1606.00915
 
@@ -616,7 +616,7 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
 
     The flattened kernels for the i-th input map are expressed by
     their low rank approximation. The kernels for the i-th input
-    :math:`{\\mathbf W_i}` are aproximated with the singular value
+    :math:`{\\mathbf W_i}` are approximated with the singular value
     decomposition (SVD) and by selecting the :math:`{R}` dominant
     singular values and the corresponding singular vectors.
 
@@ -699,7 +699,7 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         # uv is initialize from initializer
         uv = uv_init((outmaps, inp.shape[base_axis]) + tuple(kernel))
 
-    # flaten kernels
+    # flatten kernels
     uv = uv.reshape((outmaps, inp.shape[base_axis], np.prod(kernel)))
 
     u = get_parameter('U')
@@ -778,7 +778,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
 
         \\sum_{r=1}^{R} \\lambda_r {\\mathbf{o}^{(r)} \\otimes \\mathbf{i}^{(r)} \\otimes \\mathbf{k}^{(r)}},
 
-    where :math:`{\\lambda}_r` is the nomalization coefficient and :math:`{\\otimes}` is the outer product. 
+    where :math:`{\\lambda}_r` is the normalization coefficient and :math:`{\\otimes}` is the outer product. 
 
 
     If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV  
@@ -836,7 +836,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         # uv is initialize from initializer
         oik = oik_init((outmaps, inp.shape[base_axis]) + tuple(kernel))
 
-    # flaten kernels
+    # flatten kernels
     oik = oik.reshape((outmaps, inp.shape[base_axis], np.prod(kernel)))
 
     o = get_parameter('O')
@@ -1149,7 +1149,7 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
                           multiplier=1, w_init=None, b_init=None, base_axis=1,
                           fix_parameters=False, rng=None, with_bias=True):
     """
-    N-D Deptwise Convolution with a bias term.
+    N-D Depthwise Convolution with a bias term.
 
     Reference:
 
@@ -1291,8 +1291,8 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
 @parametric_function_api("bn", [
     ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
     ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
-    ('mean', 'Moving avearge of batch mean', '<see above>', False),
-    ('var', 'Moving avearge of batch variance', '<see above>', False),
+    ('mean', 'Moving average of batch mean', '<see above>', False),
+    ('var', 'Moving average of batch variance', '<see above>', False),
 ])
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                         batch_stat=True, output_stat=False, fix_parameters=False):
@@ -1432,7 +1432,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     .. math::
         y_i = \max(0, x_i) + w_i \min(0, -x_i)
 
-    where nagative slope :math:`w` is learned and can vary accros channels (an
+    where negative slope :math:`w` is learned and can vary across channels (an
     axis specified with base_axis).
 
     Args:
@@ -1455,7 +1455,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
 @parametric_function_api("fp_quantized_affine", [
     ('W', 'Weight matrix in float', '(inmaps, outmaps)', True),
     ('b', 'Bias vector in float', '(outmaps,)', True),
-    ('W_q', 'Qunatized weights', '(inmaps, outmaps)', False),
+    ('W_q', 'Quantized weights', '(inmaps, outmaps)', False),
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def fixed_point_quantized_affine(inp, n_outmaps,
@@ -1501,11 +1501,11 @@ def fixed_point_quantized_affine(inp, n_outmaps,
         with_bias (bool): Specify whether to include the bias term.
         quantize_w (bool): Quantize weights if `True`.
         sign_w (bool): Use signed quantization if `True`.
-        n_w (int): Bit witdh used for weight.
+        n_w (int): Bit width used for weight.
         delta_w (float): Step size for weight.
         ste_fine_grained_w (bool): STE is fine-grained if `True`.
         quantize_b (bool): Quantize bias if `True`.
-        n_b (int): Bit witdh used for bias.
+        n_b (int): Bit width used for bias.
         delta_w (float): Step size for bias.
         ste_fine_grained_b (bool): STE is fine-grained if `True`.
 
@@ -1570,7 +1570,7 @@ def fixed_point_quantized_affine(inp, n_outmaps,
 @parametric_function_api("fp_quantized_conv", [
     ('W', 'Filter weights in float', '(outmaps, inmaps // group, *kernel)', True),
     ('b', 'Bias vector in float', '(outmaps,)', True),
-    ('W_q', 'Qunatized weights', '(outmaps, inmaps // group, *kernel)', False),
+    ('W_q', 'Quantized weights', '(outmaps, inmaps // group, *kernel)', False),
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def fixed_point_quantized_convolution(inp, outmaps, kernel,
@@ -1622,11 +1622,11 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
         quantize_w (bool): Quantize weights if `True`.
         quantize_bias (bool): Quantize bias if `True`.
         sign_w (bool): Use signed quantization if `True`.
-        n_w (int): Bit witdh used for weight.
+        n_w (int): Bit width used for weight.
         delta_w (float): Step size for weight.
         ste_fine_grained_w (bool): STE is fine-grained if `True`.
         quantize_b (bool): Quantize bias if `True`.
-        n_b (int): Bit witdh used for bias.
+        n_b (int): Bit width used for bias.
         delta_w (float): Step size for bias.
         ste_fine_grained_b (bool): STE is fine-grained if `True`.
 
@@ -1686,7 +1686,7 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
 @parametric_function_api("pow2_quantized_affine", [
     ('W', 'Weight matrix in float', '(inmaps, outmaps)', True),
     ('b', 'Bias vector in float', '(outmaps,)', True),
-    ('W_q', 'Qunatized weights', '(inmaps, outmaps)', False),
+    ('W_q', 'Quantized weights', '(inmaps, outmaps)', False),
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def pow2_quantized_affine(inp, n_outmaps,
@@ -1733,12 +1733,12 @@ def pow2_quantized_affine(inp, n_outmaps,
         quantize_w (bool): Quantize weights if `True`.
         sign_w (bool): Use signed quantization if `True`.
         with_zero_w (bool): Indicate using zero as a quantized value. Default is false.
-        n_w (int): Bit witdh used for weight.
+        n_w (int): Bit width used for weight.
         m_w (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for weights. Default is 2.
         ste_fine_grained_w (bool): STE is fine-grained if `True`.
         quantize_b (bool): Quantize bias if `True`.
         with_zero_b (bool): Indicate using zero as a quantized value. Default is false.
-        n_b (int): Bit witdh used for bias.
+        n_b (int): Bit width used for bias.
         m_b (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for bias. Default is 2.
         ste_fine_grained_b (bool): STE is fine-grained if `True`.  
     Returns:
@@ -1801,7 +1801,7 @@ def pow2_quantized_affine(inp, n_outmaps,
 @parametric_function_api("pow2_quantized_conv", [
     ('W', 'Filter weights in float', '(outmaps, inmaps // group, *kernel)', True),
     ('b', 'Bias vector in float', '(outmaps,)', True),
-    ('W_q', 'Qunatized weights', '(outmaps, inmaps // group, *kernel)', False),
+    ('W_q', 'Quantized weights', '(outmaps, inmaps // group, *kernel)', False),
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def pow2_quantized_convolution(inp, outmaps, kernel,
@@ -1852,12 +1852,12 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
         with_bias (bool): Specify whether to include the bias term.
         quantize_w (bool): Quantize weights if `True`.
         sign_w (bool): Use signed quantization if `True`.
-        n_w (int): Bit witdh used for weight.
+        n_w (int): Bit width used for weight.
         m_w (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for weights. Default is 2.
         ste_fine_grained_w (bool): STE is fine-grained if `True`.
         quantize_b (bool): Quantize bias if `True`.
         sign_b (bool): Use signed quantization if `True`.
-        n_b (int): Bit witdh used for bias.
+        n_b (int): Bit width used for bias.
         m_b (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for bias. Default is 2.
         ste_fine_grained_b (bool): STE is fine-grained if `True`.
 

@@ -224,7 +224,7 @@ def unique_ordered(*lists):
     return ret
 
 
-def generate_skelton_function_impl_one(ext_info, name, func, template, output_dir, output_format):
+def generate_skeleton_function_impl_one(ext_info, name, func, template, output_dir, output_format):
     path_o = join(output_dir, output_format % func['snake_name'])
     if exists(path_o):
         return
@@ -240,7 +240,7 @@ def generate_skelton_function_impl_one(ext_info, name, func, template, output_di
     check_update(path_o, generated, force=False)
 
 
-def generate_skelton_function_impl(function_info, function_types, ext_info={}, template=None, output_dir=None, output_format='%s.cpp'):
+def generate_skeleton_function_impl(function_info, function_types, ext_info={}, template=None, output_dir=None, output_format='%s.cpp'):
     if template is None:
         template = join(
             base, 'src/nbla/function/generic/function_impl.cpp.tmpl')
@@ -250,5 +250,5 @@ def generate_skelton_function_impl(function_info, function_types, ext_info={}, t
     for name, func in function_info.items():
         if name not in function_types:
             continue
-        generate_skelton_function_impl_one(
+        generate_skeleton_function_impl_one(
             ext_info, name, func, template, output_dir, output_format)

@@ -53,7 +53,7 @@ void INQConvolution<T, T1>::setup_impl(const Variables &inputs,
                          "Valid values are \"largest_abs\" and \"random\".",
       selection_algorithm_.c_str());
 
-  // C: Initialize internal `convoluton` function
+  // C: Initialize internal `convolution` function
   convolution_ =
       create_Convolution(this->ctx_, this->base_axis_, this->pad_,
                          this->stride_, this->dilation_, this->group_);

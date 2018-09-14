@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   nbla::Context ctx = cpu_ctx;
 #endif
 
-  // Create a Nnp objct
+  // Create a Nnp object
   nbla::utils::nnp::Nnp nnp(ctx);
 
   // Set nnp file to Nnp object.

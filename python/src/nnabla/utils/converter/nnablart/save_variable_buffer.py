@@ -119,7 +119,7 @@ def __compute_actual_buf_sizes(info, buf_var_lives):
 
 
 def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
-    # create a dictionary to store assiginment of actual buffers to Variables
+    # create a dictionary to store assignment of actual buffers to Variables
 
     # vidx_to_abidx is short for variable index to actual buffer index
     vidx_to_abidx = {}
@@ -142,9 +142,9 @@ def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
                 abidx = vidx_to_abidx[vidx]
                 actual_assigned_flags[abidx] = True
             else:
-                pass  # determine assigment for this vidx in the follwoing for loop
+                pass  # determine assignment for this vidx in the following for loop
 
-        # determine new assigments of actual buffers to Variables
+        # determine new assignments of actual buffers to Variables
         for ref_crsr in range(actual_buf_num):
             # minus buf_idx means the corresponding buffer is not needed
             buf_idx = buf_var_refs[func_idx][ref_crsr]
@@ -183,7 +183,7 @@ def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
 
 def save_variable_buffer(info):
     # make the followings to save memory usage for Variable Buffer:
-    #  - actual_buf_sizes(list): sizes of actual buffers, which lie unfer Variable Buffer.
+    #  - actual_buf_sizes(list): sizes of actual buffers, which lie under Variable Buffer.
     #                            indices in this list are hereinafter called 'actual buffer index'
     #  - vidx_to_abidx(dict): assignment of actual buffers to Variable Buffer.
     #                         the key and the value are Variable index and actual buffer index, respectively

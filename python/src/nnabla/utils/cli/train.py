@@ -28,19 +28,19 @@ import nnabla.utils.load as load
 
 
 def _update(iter, config, cost):
-    loaded_datas = {}
+    loaded_data = {}
     is_first_optimizer = True
     for opt in config.optimizers.values():
         o = opt.optimizer
         # Load dataset
         di = opt.data_iterator
-        if o.data_iterator not in loaded_datas:
-            loaded_datas[o.data_iterator] = di.next()
-        datas = loaded_datas[o.data_iterator]
+        if o.data_iterator not in loaded_data:
+            loaded_data[o.data_iterator] = di.next()
+        data = loaded_data[o.data_iterator]
         for v, d in o.dataset_assign.items():
             dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
                 0].inputs else None
-            let_data_to_variable(v.variable_instance, datas[
+            let_data_to_variable(v.variable_instance, data[
                                  di.variables.index(d)], ctx=dest_context)
 
         # Generate data
@@ -102,11 +102,11 @@ def _evaluate(args, config, monitoring_report, best_error):
         dp_epoch = di.epoch
         while dp_epoch == di.epoch:
             # Set data to variable
-            datas = di.next()
+            data = di.next()
             for v, d in m.dataset_assign.items():
                 dest_context = config.global_config.default_context if not m.forward_sequence or v not in m.forward_sequence[
                     0].inputs else None
-                let_data_to_variable(v.variable_instance, datas[
+                let_data_to_variable(v.variable_instance, data[
                                      di.variables.index(d)], ctx=dest_context)
 
             # Generate data

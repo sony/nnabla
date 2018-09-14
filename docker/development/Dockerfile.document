@@ -41,7 +41,7 @@ RUN pip install -U -r /tmp/deps/requirements.txt
 ADD python/test_requirements.txt /tmp/deps/
 RUN pip install -U -r /tmp/deps/test_requirements.txt
 
-# Optioinal
+# Optional
 RUN pip install -U ipython
 
 RUN apt-get -yqq update \

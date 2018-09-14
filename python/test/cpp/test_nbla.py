@@ -39,7 +39,7 @@ def check_nbla_infer(tmpdir, x, y, batch_size):
     if not command_exists('nbla'):
         pytest.skip('An executable `nbla` is not in path.')
 
-    # A. save a created braph to nnp.
+    # A. save a created graph to nnp.
     contents = {
         'networks': [
             {'name': 'graph',

@@ -30,7 +30,7 @@ Solver::~Solver() {}
 void Solver::setup() {
   if (setup_called_)
     return;
-  // Check if specifiedd array_class by context matches to allowed array
+  // Check if specified array_class by context matches to allowed array
   // classes.
   int array_class_index =
       0; // Default array is 0-th array_class in allowed_array_classes().
@@ -57,7 +57,7 @@ void Solver::set_parameters(const vector<pair<string, VariablePtr>> &params,
         if (retain_state) {
           NBLA_CHECK(kv.second->shape() == it->second.p->shape(),
                      error_code::value,
-                     "Could ont retain state. The shapes of %s didn't match. "
+                     "Could not retain state. The shapes of %s didn't match. "
                      "Given: (%s) != previously: (%s)",
                      kv.first.c_str(),
                      string_join(kv.second->shape(), string(", ")).c_str(),

@@ -52,36 +52,36 @@ def _load_nnp_to_proto(nnp_path):
     return proto
 
 
-def _create_function(ctx, inputs, funtion_proto, batch_size):
+def _create_function(ctx, inputs, function_proto, batch_size):
     # todo: arrange weight name for NNC
 
-    if funtion_proto.type == "Reshape":  # if batch_size = -1, something wrong?
+    if function_proto.type == "Reshape":  # if batch_size = -1, something wrong?
         reshape_shape = resolve_reshape_params(
-            inputs, funtion_proto, batch_size)
+            inputs, function_proto, batch_size)
         function_instance = F.Reshape(
-            ctx, shape=reshape_shape, inplace=funtion_proto.reshape_param.inplace)
-    elif funtion_proto.type == 'Broadcast':
-        shape = resolve_broadcast_params(inputs, funtion_proto, batch_size)
+            ctx, shape=reshape_shape, inplace=function_proto.reshape_param.inplace)
+    elif function_proto.type == 'Broadcast':
+        shape = resolve_broadcast_params(inputs, function_proto, batch_size)
         function_instance = F.Broadcast(ctx, shape=shape)
-    elif funtion_proto.type == "RepeatStart":
+    elif function_proto.type == "RepeatStart":
         raise NotImplementedError("Repeat not supported.")
         function_instance = F.Identity(ctx)
-    elif funtion_proto.type == "RepeatEnd":
+    elif function_proto.type == "RepeatEnd":
         raise NotImplementedError("Repeat not supported.")
         function_instance = F.Identity(ctx)
-    elif funtion_proto.type == "RecurrentOutput":
+    elif function_proto.type == "RecurrentOutput":
         raise NotImplementedError("Recurrent not supported.")
         function_instance = F.Stack(
-            ctx, axis=funtion_proto.recurrent_param.axis)
-    elif funtion_proto.type == "RecurrentInput":
+            ctx, axis=function_proto.recurrent_param.axis)
+    elif function_proto.type == "RecurrentInput":
         raise NotImplementedError("Recurrent not supported.")
         function_instance = F.Split(
-            ctx, axis=funtion_proto.recurrent_param.axis)
-    elif funtion_proto.type == "Delay":
+            ctx, axis=function_proto.recurrent_param.axis)
+    elif function_proto.type == "Delay":
         raise NotImplementedError("Recurrent not supported.")
         function_instance = F.Identity(ctx)
     else:
-        function_instance = _create_function_instance(ctx, funtion_proto)
+        function_instance = _create_function_instance(ctx, function_proto)
 
     return function_instance
 
@@ -229,7 +229,7 @@ class NnpLoader(object):
             network.name: network for network in proto.network}
 
     def get_network_names(self):
-        '''Returns network names availble.
+        '''Returns network names available.
         '''
         return list(self.network_dict.keys())
 

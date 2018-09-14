@@ -349,7 +349,7 @@ def data_iterator(data_source,
         with_file_cache (bool):
             If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
             to wrap ``data_source``.
-            If ``data_source`` is slow, enableing this option a is good idea.
+            If ``data_source`` is slow, enabling this option a is good idea.
             Default value is False.
         cache_dir (str):
             Location of file_cache.
@@ -426,7 +426,7 @@ def data_iterator_simple(load_func,
         with_file_cache (bool):
             If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
             to wrap ``data_source``.
-            If ``data_source`` is slow, enableing this option a is good idea.
+            If ``data_source`` is slow, enabling this option a is good idea.
             Default value is False.
         cache_dir (str):
             Location of file_cache.
@@ -493,7 +493,7 @@ def data_iterator_csv_dataset(uri,
     '''data_iterator_csv_dataset
     Get data directly from a dataset provided as a CSV file.
 
-    You can read files located on the local file system, http(s) servers or Amazon AWS S3 storages.
+    You can read files located on the local file system, http(s) servers or Amazon AWS S3 storage.
 
     For example,
 
@@ -519,7 +519,7 @@ def data_iterator_csv_dataset(uri,
         with_file_cache (bool):
             If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
             to wrap ``data_source``.
-            If ``data_source`` is slow, enableing this option a is good idea.
+            If ``data_source`` is slow, enabling this option a is good idea.
             Default value is False.
         cache_dir (str):
             Location of file_cache.
@@ -646,7 +646,7 @@ def data_iterator_concat_datasets(data_source_list,
         with_file_cache (bool):
             If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
             to wrap ``data_source``.
-            If ``data_source`` is slow, enableing this option a is good idea.
+            If ``data_source`` is slow, enabling this option a is good idea.
             Default value is False.
         cache_dir (str):
             Location of file_cache.

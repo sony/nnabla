@@ -55,7 +55,7 @@ def set_auto_forward(auto):
     """Set the default mode for automatic forward propagation.
 
     When it is set to `True` , forward propagation is invoked immediately when the computation graph
-    is updted.
+    is updated.
 
     Args:
         auto (bool): Whether forward computation is executed when the

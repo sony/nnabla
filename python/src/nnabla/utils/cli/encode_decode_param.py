@@ -56,7 +56,7 @@ def decode_param_command(args, **kwargs):
     except OSError:
         pass  # python2 does not support exists_ok arg
 
-    # Load prameter
+    # Load parameter
     logger.log(99, 'Loading parameters...')
     load_parameters(args.param)
 
@@ -86,7 +86,7 @@ def encode_param_command(args, **kwargs):
         load_param_in_txt(os.path.splitext(file_path)[0].replace(
             '~', '/'), os.path.join(args.indir, file_path))
 
-    # Save prameter
+    # Save parameter
     logger.log(99, 'Saving parameters...')
     save_parameters(args.param)
 

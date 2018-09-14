@@ -71,7 +71,7 @@ def test_get_parameter_with_initializer():
     rng = np.random.RandomState(seed=313)
     shape = (8, 8, 3, 3)
 
-    # Instnace inherited from BaseInitializer
+    # Instance inherited from BaseInitializer
     initializer = UniformInitializer(lim=(-1, 1), rng=rng)
     param1 = get_parameter_or_create(
         'param1', shape, initializer=initializer, need_grad=True)
@@ -107,7 +107,7 @@ def test_parameter_scope_slash():
     nn.clear_parameters()
 
 
-# Dummy parametric function for test_parameteric_function
+# Dummy parametric function for test_parametric_function
 @PF.parametric_function_api("dummy")
 def dummy_parametric_function(shape, f=10, i=1, s="dummy",
                               fix_parameters=False):

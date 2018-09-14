@@ -96,7 +96,7 @@ class UniformInitializer(BaseInitializer):
         import nnabla.initializer as I
 
         x = nn.Variable([60,1,28,28])
-        w = I.UniformInitializer() # this generates uniform distribution within the defalut range of (-1,1)
+        w = I.UniformInitializer() # this generates uniform distribution within the default range of (-1,1)
         b = I.UniformInitializer((-0.5,0.5))
         h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
     """
@@ -135,7 +135,7 @@ class UniformIntInitializer(BaseInitializer):
         import nnabla.initializer as I
 
         x = nn.Variable([60,1,28,28])
-        w = I.UniformIntInitializer() # this generates uniform integer distribution within the defalut range of (0,10)
+        w = I.UniformIntInitializer() # this generates uniform integer distribution within the default range of (0,10)
         b = I.UniformIntInitializer((-1,1))
         h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
     """

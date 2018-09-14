@@ -103,7 +103,7 @@ class NnbExporter:
         binary_format_revision = nnabla.utils.converter.get_category_info_version()
 
         ####################################################################
-        # Varibles name index
+        # Variables name index
         vindexes_by_name = {}
         for n, v in enumerate(self._info._network.variable):
             vindexes_by_name[v.name] = n
@@ -130,14 +130,14 @@ class NnbExporter:
         actual_buf_sizes, vidx_to_abidx = save_variable_buffer(self._info)
 
         ####################################################################
-        # Varible buffers
+        # Variable buffers
         blist = actual_buf_sizes
         index, pointer = self._alloc(
             data=struct.pack('{}I'.format(len(blist)), *blist))
         buffers = self._List(len(blist), index)
 
         ####################################################################
-        # Varibles
+        # Variables
         self._Variable = collections.namedtuple(
             'Variable', ('id', 'shape', 'type', 'fp_pos', 'data_index'))
         vindexes = []
