@@ -4,6 +4,8 @@ import re
 import fnmatch
 
 # from https://github.com/woodylee1974/simple_sm by Woody
+
+
 class StateMachine():
     def __init__(self, name, handler, **kwargs):
         self.transit_map_ = {}
@@ -17,13 +19,13 @@ class StateMachine():
         self.default_handle = None
         if 'start' in kwargs:
             self.current_state_ = kwargs['start']
-        self.parser_ = re.compile(\
+        self.parser_ = re.compile(
             r'^([^ \t\n\r\f\v\->]*)[\s]*[\-]+[>]?[\s]*([^ \t\n\r\f\v\->]*)[\s]*[\-]+>[\s]*([^ \t\n\r\f\v\->]*)$')
         cls = handler.__class__
         for k, v in cls.__dict__.items():
             if hasattr(v, '__call__') and v.__doc__ is not None:
                 self._add_transit_by(v, v.__doc__)
-    
+
     def _event_func(self, *args, **kwargs):
         self.handle_event(self.event, *args, **kwargs)
 
@@ -32,8 +34,8 @@ class StateMachine():
             tran = tran.strip()
             trans_line = self.parser_.match(tran)
             if trans_line:
-                self.add_transit(trans_line.group(1), trans_line.group(2), \
-                                trans_line.group(3), v)
+                self.add_transit(trans_line.group(1), trans_line.group(2),
+                                 trans_line.group(3), v)
                 if self.current_state_ is None:
                     self.current_state_ = trans_line.group(1)
                 self.events_.add(trans_line.group(2))
@@ -69,40 +71,40 @@ class StateMachine():
                     current_state = self.current_state_
                     transit_done = True
                     if ret is None:
-                        self.current_state_= self.next_state
+                        self.current_state_ = self.next_state
                     elif ret == True:
-                        self.current_state_= self.next_state
+                        self.current_state_ = self.next_state
                     else:
                         transit_done = False
                     handled = True
                     if self.debug:
                         if transit_done:
                             print("[%s][%s -- %s --> %s]" % (self.name_,
-                                                                 current_state,
-                                                                 e,
-                                                                 self.current_state_))
+                                                             current_state,
+                                                             e,
+                                                             self.current_state_))
                         else:
                             print("[%s][%s -- %s --> %s[%s]][Transition is refused]" % (self.name_,
-                                                                 current_state,
-                                                                 e,
-                                                                 self.current_state_,
-                                                                 self.next_state))
-                        # for a in args:                                
+                                                                                        current_state,
+                                                                                        e,
+                                                                                        self.current_state_,
+                                                                                        self.next_state))
+                        # for a in args:
                         #     print(a)
                         # for k, v in kwargs.items():
                         #     print('%s=%o' %(k,v))
         if not handled:
             if self.debug:
                 print("[%s][%s -- %s <-- %s]" % (self.name_,
-                                                        self.current_state_,
-                                                        e,
-                                                        'not handled'))
+                                                 self.current_state_,
+                                                 e,
+                                                 'not handled'))
             if self.default_handle:
                 self.default_handle(self.handler_, *args, **kwargs)
 
     def get_state(self):
         return self.current_state_
-        
+
     def set_next_state(self, next_state):
         self.next_state = next_state
 
@@ -122,11 +124,11 @@ class StatusHandler:
     def parse_upper_line(self, input_line):
         'start -- equal_line --> upper_line_found'
         self.output_buffer += [input_line]
-    
+
     def parse_operator(self, input_line):
         'upper_line_found -- accept_operator --> operator_found'
         self.output_buffer += [input_line]
-    
+
     def parse_lower_line(self, input_line):
         'operator_found -- equal_line --> import_table'
         self.field_lens = [len(f) + 1 for f in input_line.split(' ')]
@@ -142,30 +144,33 @@ class StatusHandler:
             if fields[0] in self.test_result:
                 if self.test_result[fields[0]] == 'OK':
                     self.ok += 1
-                line = output_line.format(fields[0], self.test_result[fields[0]], ' '.join(fields[2:]))
+                line = output_line.format(
+                    fields[0], self.test_result[fields[0]], ' '.join(fields[2:]))
                 self.output_buffer += [line]
                 self.output_buffer += '\n'
             else:
-                line = output_line.format(fields[0], 'Not test', ' '.join(fields[2:]))
+                line = output_line.format(
+                    fields[0], 'Not test', ' '.join(fields[2:]))
                 self.output_buffer += [line]
                 self.output_buffer += '\n'
         else:
             self.output_buffer += [input_line]
-    
+
     def default_handle(self, input_line):
         '''
         default_handle
         finish_table-->process_line-->finish_table
         '''
         self.output_buffer += [input_line]
-    
+
     def finish_import_table(self, input_line):
         'import_table --> equal_line --> finish_table'
         self.output_buffer += [input_line]
         if self.count_line > 0:
-            self.output_buffer[self.count_line] = 'Count {}/{}\n'.format(self.ok, self.count)
+            self.output_buffer[self.count_line] = 'Count {}/{}\n'.format(
+                self.ok, self.count)
         self.count_line = -1
-    
+
     def process_count(self, input_line):
         'start --> accept_count --> start'
         self.count_line = len(self.output_buffer)
@@ -174,24 +179,27 @@ class StatusHandler:
         self.ok = 0
 
 
+CURRENT_PATH = os.path.dirname(__file__)
+TEMPALTE_FILE = os.path.join(CURRENT_PATH, 'onnx_test_report.rst.tmpl')
+OUTPUT_FILE = os.path.join(
+    CURRENT_PATH, '../../../../doc/python/file_format_converter/onnx/operator_coverage.rst')
 
-CURRENT_PATH=os.path.dirname(__file__)
-TEMPALTE_FILE=os.path.join(CURRENT_PATH, 'onnx_test_report.rst.tmpl')
-OUTPUT_FILE=os.path.join(CURRENT_PATH, '../../../../doc/python/file_format_converter/onnx/operator_coverage.rst')
 
 def gen_report(import_result, export_result):
     with open(TEMPALTE_FILE, 'r') as f:
         line_buffer = []
         importer_status_handler = StateMachine('ImporterSM',
-                                        StatusHandler(line_buffer, import_result),
-                                        start='start', debug=False)
+                                               StatusHandler(
+                                                   line_buffer, import_result),
+                                               start='start', debug=False)
         exporter_status_handler = StateMachine('ExporterSM',
-                                        StatusHandler(line_buffer, export_result),
-                                        start='start', debug=False)
+                                               StatusHandler(
+                                                   line_buffer, export_result),
+                                               start='start', debug=False)
         for line in f.readlines():
             field = line[:8]
             if exporter_status_handler.get_state() == 'finish_table':
-                exporter_status_handler.start_state('start')            
+                exporter_status_handler.start_state('start')
             if importer_status_handler.get_state() != 'finish_table':
                 if field == '=' * 8:
                     importer_status_handler.equal_line(line)
@@ -199,7 +207,7 @@ def gen_report(import_result, export_result):
                     importer_status_handler.accept_operator(line)
                 else:
                     importer_status_handler.process_line(line)
-            else: 
+            else:
                 if field == '=' * 8:
                     exporter_status_handler.equal_line(line)
                 elif field == 'Operator':
@@ -212,6 +220,3 @@ def gen_report(import_result, export_result):
             line_buffer = ''.join(line_buffer)
             of.write(line_buffer)
             print('\n{} is updated.'.format(os.path.basename(OUTPUT_FILE)))
-
-
-

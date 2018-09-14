@@ -66,11 +66,13 @@ try:
     from gen_report import gen_report
 except:
     print("Cannot generate report since no gen_report module.")
+
     def gen_report(import_result, export_result):
         pass
 
 import_result = {}
 export_result = {}
+
 
 def print_buffer_shape(net):
     for k, v in net.functions.items():
@@ -241,8 +243,9 @@ def nnp_fixture():
     # because the buffer shape will differ while having same names
     nnabla.clear_parameters()
 
+
 @pytest.fixture(scope="module", autouse=True)
-def my_fixture():
+def gen_report_fixture():
     yield
     gen_report(import_result, export_result)
 
