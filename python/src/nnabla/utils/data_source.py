@@ -273,6 +273,8 @@ class DataSourceWithFileCache(DataSource):
 
             if self._cache_file_format == '.npy':
                 self._current_cache_data = {}
+                if not os.path.exists(self._cache_file_names[cache_file_index]):
+                    return None
                 with open(self._cache_file_names[cache_file_index], 'rb') as f:
                     for v in self._variables:
                         self._current_cache_data[v] = numpy.load(f)

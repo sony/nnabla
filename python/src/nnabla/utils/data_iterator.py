@@ -185,6 +185,10 @@ class DataIterator(object):
         for b in range(self._batch_size):
 
             d = self._data_source.next()
+            if d is None:
+                self._current_data = None
+                return
+
             if self._data_source.position >= self._size:
                 self._reset()
 
