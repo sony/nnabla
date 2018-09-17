@@ -57,14 +57,42 @@ def mean(x, axis=None, keepdims=False):
     return mean_base(x, axis, keepdims)
 
 
-def max(x, axis=None, keepdims=False):
-    """Reduction along axes with max operation.
+def max(x, axis=None, keepdims=False, with_index=False, only_index=False):
+    """Reduce the input N-D array `x` along the given `axis` using the max
+    operation. The `axis` argument may be a single integer to reduce
+    over one axis, a tuple of integers to reduce over multiple axes,
+    or ``None`` to reduce over all axes. If `keepdims` is ``True``,
+    the output will keep all reduced dimensions with size 1. If
+    `with_index` is True, result is a tuple ``(sorted, indices)`` or
+    only ``indices`` if `only_index` is True. Setting `only_index` to
+    True implies that `with_index` is also True.
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+
+        maxval = F.max(x, axis=1)
+        assert np.allclose(maxval.d, np.max(x.d, axis=1))
+
+        maxval, indices = F.max(x, axis=1, with_index=True)
+        assert np.allclose(maxval.d, np.max(x.d, axis=1))
+        assert np.all(indices.d == np.argmax(x.d, axis=1))
+
+        indices = F.max(x, axis=1, only_index=True)
+        assert np.all(indices.d == np.argmax(x.d, axis=1))
 
     Args:
         x (Variable): An input variable.
         axis (None, int or tuple of ints): Axis or axes along which max is
-            calculated. Passing the default value `None` will reduce all dimensions.
-        keepdims (bool): Flag whether the reduced axes are kept as a dimension with 1 element.
+            calculated. The default value `None` will reduce all dimensions.
+        keepdims(bool): Keep reduced axes as dimension with 1 element.
+        with_index(bool): Return tuple of max values and index.
+        only_index(bool): Return only the index of max values.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -75,17 +103,46 @@ def max(x, axis=None, keepdims=False):
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    return max_base(x, axis, keepdims)
+    n_outputs = 2 if with_index and not only_index else 1
+    return max_base(x, axis, keepdims, with_index, only_index, n_outputs)
 
 
-def min(x, axis=None, keepdims=False):
-    """Reduction along axes with min operation.
+def min(x, axis=None, keepdims=False, with_index=False, only_index=False):
+    """Reduce the input N-D array `x` along the given `axis` using the min
+    operation. The `axis` argument may be a single integer to reduce
+    over one axis, a tuple of integers to reduce over multiple axes,
+    or ``None`` to reduce over all axes. If `keepdims` is ``True``,
+    the output will keep all reduced dimensions with size 1. If
+    `with_index` is True, result is a tuple ``(sorted, indices)`` or
+    only ``indices`` if `only_index` is True. Setting `only_index` to
+    True implies that `with_index` is also True.
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+
+        minval = F.min(x, axis=1)
+        assert np.allclose(minval.d, np.min(x.d, axis=1))
+
+        minval, indices = F.min(x, axis=1, with_index=True)
+        assert np.allclose(minval.d, np.min(x.d, axis=1))
+        assert np.all(indices.d == np.argmin(x.d, axis=1))
+
+        indices = F.min(x, axis=1, only_index=True)
+        assert np.all(indices.d == np.argmin(x.d, axis=1))
 
     Args:
         x (Variable): An input variable.
         axis (None, int or tuple of ints): Axis or axes along which min is
-            calculated. Passing the default value `None` will reduce all dimensions.
-        keepdims (bool): Flag whether the reduced axes are kept as a dimension with 1 element.
+            calculated. The default value `None` will reduce all dimensions.
+        keepdims(bool): Keep reduced axes as dimension with 1 element.
+        with_index(bool): Return tuple of min values and index.
+        only_index(bool): Return only the index of min values.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -96,7 +153,8 @@ def min(x, axis=None, keepdims=False):
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    return min_base(x, axis, keepdims)
+    n_outputs = 2 if with_index and not only_index else 1
+    return min_base(x, axis, keepdims, with_index, only_index, n_outputs)
 
 
 def prod(x, axis=None, keepdims=False):

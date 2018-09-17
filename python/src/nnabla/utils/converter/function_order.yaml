@@ -162,3 +162,5 @@ Interpolate_iIiB: 127
 LeakyReLU_fB: 128
 Sort_iBBB: 129
 Prune_f: 135
+Max_iIBBB: 129
+Min_iIBBB: 130
