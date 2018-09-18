@@ -458,7 +458,7 @@ def data_iterator_simple(load_func,
     .. code-block:: python
 
         import numpy as np
-        from scipy.misc import imread
+        from nnabla.utils.image_utils import imread
         image_paths = load_image_paths()
         labels = load_labels()
         def my_load_func(i):

@@ -67,8 +67,8 @@ def test_examples_cpp_mnist_runtime(tmpdir, nnabla_examples_root, batch_size):
     graph = nnp.get_network('Validation', batch_size=batch_size)
     x = graph.inputs['x']
     y = graph.outputs['y']
-    from scipy.misc import imread
-    img = imread(pgm_file)
-    x.d = img[np.newaxis, np.newaxis]
+    from nnabla.utils.image_utils import imread
+    img = imread(pgm_file, grayscale=True)
+    x.d = img
     y.forward()
     assert np.allclose(y.d.flatten(), cpp_result)

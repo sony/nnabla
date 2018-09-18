@@ -36,9 +36,10 @@ install_requires = setup_requires + [
     'protobuf>=3.6',
     'pyyaml',
     'requests',
-    'scikit-image',
     'scipy',
     'tqdm',
+    'imageio',
+    'pillow'
 ]
 
 
@@ -236,6 +237,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
                 'nnabla.utils.factorization',
+                'nnabla.utils.image_utils',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 

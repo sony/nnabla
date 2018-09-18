@@ -17,11 +17,12 @@ import pytest
 
 from contextlib import contextmanager
 from shutil import rmtree
-from skimage.io import imsave
 import numpy
 import os
 import tempfile
 import warnings
+
+from nnabla.utils.image_utils import imsave
 
 
 @contextmanager

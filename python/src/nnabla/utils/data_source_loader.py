@@ -18,7 +18,6 @@ Contents loader functions for DataSource.
 '''
 
 from six.moves import map
-from scipy.misc import imresize, imread
 from shutil import rmtree
 from six import BytesIO
 from six import StringIO
@@ -38,6 +37,7 @@ import six.moves.urllib.request as request
 import six
 import tempfile
 
+from nnabla.utils.image_utils import imresize, imread
 from nnabla.logger import logger
 
 pypng_available = False
@@ -259,7 +259,7 @@ def load_image_pypng(file, shape=None, max_range=1.0):
         return img.transpose(2, 0, 1) * max_range
     else:
         out_n_color, out_height, out_width = shape
-        return imresize(img, (out_height, out_width, out_n_color)).transpose((2, 0, 1)) * max_range / 255.0
+        return imresize(img, (out_height, out_width)).transpose((2, 0, 1)) * max_range / 255.0
 
 
 def load_image_cv2(file, shape=None, max_range=1.0):
