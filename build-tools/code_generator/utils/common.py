@@ -38,14 +38,12 @@ def check_update(filename, generated, force=False):
 
 def get_version(dir):
     os.chdir(dir)
-    if "NNABLA_VERSION" in os.environ and os.environ["NNABLA_VERSION"] != "":
-        version = os.environ["NNABLA_VERSION"]
-        if "NNABLA_VERSION_SUFFIX" in os.environ:
-            version += os.environ["NNABLA_VERSION_SUFFIX"]
-        if "NNABLA_SHORT_VERSION" in os.environ:
-            return version, os.environ["NNABLA_SHORT_VERSION"]
-    version = default_version = '1.0.4'
+
+    if 'NNABLA_VERSION' in os.environ and len(os.environ['NNABLA_VERSION']) > 0:
+        default_version = os.environ['NNABLA_VERSION']
+    else:
+        default_version = '1.0.5.console'
+    
     nearest_tag = default_version
-    if "NNABLA_VERSION_SUFFIX" in os.environ:
-            version += os.environ["NNABLA_VERSION_SUFFIX"]
+    version = default_version
     return version.replace('/', '_').lower(), nearest_tag.replace('/', '_').lower()
