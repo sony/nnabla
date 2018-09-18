@@ -321,7 +321,8 @@ def _get_current_parameter(args):
 
         last_epoch = sorted(ex_list.keys())[0]
         last_parameter = ex_list[last_epoch]
-        logger.log(99, "Load parameter from [{}]".format(last_parameter))
+        logger.log(99, "Load parameter from [{}]".format(
+            os.path.basename(last_parameter)))
         load.load([last_parameter], parameter_only=True)
         return last_epoch
 
@@ -344,7 +345,7 @@ def _train(args, config):
     last_epoch = 0
     if args.resume:
         last_epoch = _get_current_parameter(args)
-        logger.log(99, "Resume from epoch {}".format(last_epoch))
+        logger.log(99, "Resume from epoch {}".format(last_epoch + 1))
 
     # Console only start
     status.set_val('epoch.max', config.training_config.max_epoch)
@@ -356,7 +357,7 @@ def _train(args, config):
     max_iteration = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
     if single_or_rankzero():
-        logger.log(99, 'Training epoch {} of {} begin'.format(last_epoch,
+        logger.log(99, 'Training epoch {} of {} begin'.format(last_epoch + 1,
                                                               config.training_config.max_epoch))
 
     class Cost:
