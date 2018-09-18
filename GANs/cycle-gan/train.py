@@ -253,8 +253,6 @@ def train(args):
         solver_gen.zero_grad()
         loss_gen.backward(clear_buffer=True)
         solver_gen.update()
-        # forward again since the generator is updated.
-        loss_gen.forward(clear_no_need_grad=False)
 
         # Insert and Get to/from pool
         x_history.d = pool_x.insert_then_get(x_fake.d)
