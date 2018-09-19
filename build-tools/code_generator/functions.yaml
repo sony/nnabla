@@ -2194,58 +2194,76 @@ Array Manipulation:
     snake_name: pad
     doc: |2
 
-      Pads given N-D array with specified sizes of dimensions.
-      Padding begins at the last dimension of input x and continues for the specified padding dimension.
+      Pad the input N-D array `x` over the number of dimensions given
+      by half the length of the `pad_width` iterable, where every two
+      values in `pad_width` determine the before and after pad size of
+      an axis. The `pad_width` iterable must hold an even number of
+      positive values which may cover all or fewer dimensions of the
+      input variable `x`. If `pad_width` covers fewer dimensions then
+      it applies to the innermost dimensions of `x`.
+
+      .. code-block:: python
+
+        x = nn.Variable.from_numpy_array(np.ones((2, 3, 4)))
+        assert F.pad(x, (1, 1, 2, 2)).shape == (2, 5, 8)
+
+      Padding is performed according to the requested `mode`:
+
+      constant
+        Pads with a value given by the keyword argument `constant_value`.
+
+        .. code-block:: python
+
+          x = nn.Variable.from_numpy_array(np.array([1, 2, 3, 4], dtype=np.int))
+          y = F.pad(x, (3, 3), 'constant', constant_value = -1)
+          y.forward()
+          assert np.all(y.d == np.array([-1, -1, -1, 1, 2, 3, 4, -1, -1, -1]))
+
+      reflect
+        Pads with the reflection of the vector mirrored on the first
+        and last values of the vector along each axis.
+        
+        .. code-block:: python
+
+          x = nn.Variable.from_numpy_array(np.array([1, 2, 3, 4], dtype=np.int))
+          y = F.pad(x, (3, 3), 'reflect')
+          y.forward()
+          assert np.all(y.d == np.array([4, 3, 2, 1, 2, 3, 4, 3, 2, 1]))
+
     inputs:
       x:
         doc: N-D array
     arguments:
       pad_width:
-        doc: |
-
-             n-elem tuple, where n/2 <= input dimensions and n is even.
-             len(pad_width)/2 represents the padding dimension(e.g. 1D, 2D, 3D etc.).
-             (Currently padding upto 3D is supported)
+        doc: Iterable of *before* and *after* pad values.
         type: repeated int64
-        default: (0,) * len(x.shape)
       mode:
-        doc: |
-
-             Padding mode is one of the following.
-
-             1) constant : Elements in pad region are filled with constant_value.
-             2) replicate : Padded elements are filled with the values in nearest edges.
-             3) reflect : Padded with the reflection of the vector mirrored on the first and last values of the vector along each axis.
-
-             (Currently only `constant` mode is supported)
+        doc: Padding mode string.
         type: string
         available_values:
           - constant
+          - reflect
         default: '''constant'''
       constant_value:
-        doc: |
-
-             Constant values filled in padded regions if mode is `constant`.
+        doc: Fill value if mode is `constant`.
         type: float
-        default: 0
+        default: '0'
     outputs:
       y:
-        doc: |
+        doc: |2
 
-             Padded N-D array (e.g. (B, C, H, W) shape) where dimension depends on pad_width.
-             ndim() of output N-D array will be same as ndim() of input N-D array.
+          Padded N-D array with the same number of dimensions as the input.
 
-             -for 1D padding :
-                      N-D input array with padding of the form (padLeft, padRight).
-                      The output N-D array dimension (B, C, H, padLeft + W + padRight).
+          .. code-block:: python
 
-             -for 2D padding :
-                      N-D input array with padding of the form (padTop, padBottom, padLeft, padRight).
-                      The output N-D array dimension (B, C, padTop + H + padBottom, padLeft + W + padRight).
+            x = nn.Variable((3, 3, 4, 2))  # a shape like (B, C, H, W)
+            # 1-D padding: last dim by 1 left and 2 on the right side
+            assert F.pad(x, (1, 2)).shape == (3, 3, 4, 5)
+            # 2-D padding: last dim by (1, 1) and 2nd to last by (2, 2)
+            assert F.pad(x, (2, 2, 1, 1)).shape == (3, 3, 8, 4)
+            # 3-D padding: dims C by (0, 1), H by (2, 1), and W by (3, 3)
+            assert F.pad(x, (0, 1, 2, 1, 3, 3)).shape == (3, 4, 7, 8)
 
-             -for 3D padding :
-                      N-D input array with padding of the form (pasFront, padBack, padTop, padBottom, padLeft, padRight).
-                      The output N-D array dimension (B, padFront + C + padBack, padTop + H + padBottom, padLeft + W + padRight).
   Transpose:
     snake_name: transpose
     doc: |2

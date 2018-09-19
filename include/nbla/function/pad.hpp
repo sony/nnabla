@@ -23,66 +23,59 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(Pad, const vector<int> &, const string &, float);
 
-/** Pads given N-D array with specified sizes of dimensions.
-Padding begins at the last dimension of x and continues for the specified
-padding dimension.
+/** Pad the input N-D array `x` over the number dimensions given by
+half the length of the `pad_width` iterable, where every two values in
+`pad_width` determine the before and after pad size of an axis
+starting from the last (innermost) dimension and continuing towards
+the first (outermost) dimension. The `pad_width` iterable must hold an
+even number of positive values which may cover all or fewer dimensions
+of the input variable `x`.
+
+Padding is performed according to the requested `mode`. If pad mode is
+"constant" then all padded elements are set to `constant_value`. If
+pad mode is "reflect" then the padded alements are populated with the
+reflection of the vector mirrored on the first and last values of the
+vector along each axis.
 
 Inputs:
-- x: N-D array.
-- pad_width: n-elem tuple, where n/2 <= input dimensions and n is even.
-  len(pad_width)/2 represents the padding dimension. (e.g. 1D, 2D, 3D etc.)
-  (Currently padding upto 3D is supported)
-- mode - Padding mode is one of the following. Default: constant.
-          1)constant : Elements in pad region are filled with constant_value.
-          2)replicate : Padded elements are filled with the values in nearest
-edges.
-          3)reflect : Padded with the reflection of the vector mirrored on the
-first and last values of the vector along each axis.
-          (Currently only constant mode is supported)
-- constant_value - Constant values filled in padded regions if mode is constant.
-Default: 0
+- x: N-D array variable.
+- pad_width: Vector with an even number of padding values.
+- mode: Padding mode string, either 'constant' or 'reflect'.
+- constant_value - Fill value if mode is 'constant'.
 
 Outputs:
-- Padded N-D array (e.g. (B, C, H, W) shape) where dimension depends on
-pad_width.
-ndim() of output N-D array will be same as ndim() of input N-D array.
-for 1D padding:
-    N-D input array with padding of the form (padLeft, padRight)
-    output N-D array dimension (B, C, H, padLeft + W + padRight)
-for 2D padding:
-    N-D input array with padding of the form (padTop, padBottom, padLeft,
-padRight).
-    output N-D array dimension (B, C, padTop + H + padBottom, padLeft + W +
-padRight)
-for 3D padding:
-    N-D input array with padding of the form (pasFront, padBack, padTop,
-padBottom, padLeft, padRight).
-    output N-D array dimension (B, padFront + C + padBack, padTop + H +
-padBottom, padLeft + W + padRight)
+- Padded N-D array with the same number of dimensions as the input.
 
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
 
+typedef struct { int first, second; } PadItem;
+typedef std::vector<PadItem> PadList;
+
 template <typename T>
 class Pad : public BaseFunction<const vector<int> &, const string &, float> {
 protected:
   const vector<int> pad_width_;
-  const string mode_;
-  float constant_value_;
+  const string mode_string_;
+  const T constant_value_;
+
+  enum { PAD_CONSTANT, PAD_REFLECT } pad_mode_;
+  Variable index_map_;
+  PadList padding_;
+  Shape_t x_stride_;
+  Shape_t y_stride_;
+  Shape_t y_shape_;
 
 public:
   Pad(const Context &ctx, const vector<int> &pad_width, const string &mode,
       float constant_value)
       : BaseFunction(ctx, pad_width, mode, constant_value),
-        pad_width_(pad_width), mode_(mode), constant_value_(constant_value) {
-    pad_mode_["constant"] = p_constant;
-    pad_mode_["replicate"] = p_replicate;
-    pad_mode_["reflect"] = p_reflect;
-  }
+        pad_width_(pad_width), mode_string_(mode),
+        constant_value_(constant_value) {}
   virtual ~Pad() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Pad(ctx_, pad_width_, mode_, constant_value_);
+    return create_Pad(ctx_, pad_width_, mode_string_, constant_value_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -92,9 +85,6 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "Pad"; }
-
-  typedef enum pad_mode { p_constant, p_replicate, p_reflect } pad_mode;
-  std::map<std::string, pad_mode> pad_mode_;
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
