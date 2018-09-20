@@ -75,6 +75,8 @@ def _save_parameters(args, suffix, epoch, force=False):
     exists = glob.glob(globname)
 
     base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
+    if suffix == 'best':
+        base = os.path.join(args.outdir, 'results')
     filename = base + '.nnp'
 
     if not os.path.exists(filename) and \
@@ -300,7 +302,8 @@ def _get_current_parameter(args):
 
         last_epoch = sorted(ex_list.keys())[0]
         last_parameter = ex_list[last_epoch]
-        logger.log(99, "Load parameter from [{}]".format(last_parameter))
+        logger.log(99, "Load parameter from [{}]".format(
+            os.path.basename(last_parameter)))
         load.load([last_parameter], parameter_only=True)
         return last_epoch
 
@@ -323,12 +326,12 @@ def _train(args, config):
     last_epoch = 0
     if args.resume:
         last_epoch = _get_current_parameter(args)
-        logger.log(99, "Resume from epoch {}".format(last_epoch))
+        logger.log(99, "Resume from epoch {}".format(last_epoch + 1))
 
     max_iteration = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
     if single_or_rankzero():
-        logger.log(99, 'Training epoch {} of {} begin'.format(last_epoch,
+        logger.log(99, 'Training epoch {} of {} begin'.format(last_epoch + 1,
                                                               config.training_config.max_epoch))
 
     class Cost:
@@ -421,8 +424,6 @@ def train_command(args):
     config.timelimit = -1
     if args.param:
         load.load([args.param], parameter_only=True)
-
-    logger.log(99, 'Train with contexts {}'.format(available_contexts))
 
     config.global_config = info.global_config
     config.training_config = info.training_config
