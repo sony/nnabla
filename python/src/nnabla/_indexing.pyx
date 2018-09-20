@@ -71,7 +71,6 @@ def _force_to_same_len_list(object key, shape):
         key, shape = _align_key_and_shape(key, shape)
         cnt = 0
         for i, ks in enumerate(zip(key, shape)):
-            print(i)
             k, s = ks
             if isinstance(k, int):
                 keys.append(slice(k, k + 1, 1))
@@ -118,7 +117,6 @@ cdef object getitem(object self, object key):
     # Reshape
     shape = x_sliced.shape
     shape_new = []
-    print(shape, reshape_hint, shape_new)
     new_axis_cnt = 0
     for rh in reshape_hint:
         if rh == np.newaxis:
