@@ -5,6 +5,7 @@
 .pytest_cache
 *.pyc
 
+/build_*
 /build-tools/msvc/cmake_cpp_utils.bat
 /doc/?/
 /docker/development/Dockerfile.build.py*
