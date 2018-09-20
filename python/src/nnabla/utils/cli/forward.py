@@ -25,7 +25,6 @@ from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_full_path
 import nnabla.utils.load as load
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
-from nnabla.utils.data_iterator import data_iterator_cache
 from nnabla.utils.data_source_loader import FileReader
 
 
@@ -191,61 +190,22 @@ def forward_command(args):
     for d in info.datasets.values():
         if d.uri == args.dataset:
             normalize = d.normalize
+    data_iterator = (lambda: data_iterator_csv_dataset(
+        uri=args.dataset,
+        batch_size=config.networks[0].batch_size,
+        shuffle=False,
+        normalize=normalize,
+        with_file_cache=False))
 
-    orders = {}
-    # With CSV
-    if os.path.splitext(args.dataset)[1] == '.csv':
-        data_iterator = (lambda: data_iterator_csv_dataset(
-            uri=args.dataset,
-            batch_size=config.networks[0].batch_size,
-            shuffle=False,
-            normalize=normalize,
-            with_file_cache=False))
-
-        # load dataset as csv
-        filereader = FileReader(args.dataset)
-        with filereader.open(textmode=True) as f:
-            rows = [row for row in csv.reader(f)]
-        row0 = rows.pop(0)
-        root_path = '.'
-        rows = list(map(lambda row: list(map(lambda x: x if is_float(
-            x) else compute_full_path(root_path, x), row)), rows))
-        for i in range(len(rows)):
-            orders[i] = i
-    # With Cache
-    elif os.path.splitext(args.dataset)[1] == '.cache':
-        data_iterator = (lambda: data_iterator_cache(
-            uri=args.dataset,
-            batch_size=config.networks[0].batch_size,
-            shuffle=False,
-            normalize=normalize))
-
-        # Get original CSV
-        original_csv = os.path.join(args.dataset, 'original.csv')
-        try:
-            # load dataset as csv
-            filereader = FileReader(original_csv)
-            with filereader.open(textmode=True) as f:
-                rows = [row for row in csv.reader(f)]
-            row0 = rows.pop(0)
-            root_path = '.'
-            rows = list(map(lambda row: list(map(lambda x: x if is_float(
-                x) else compute_full_path(root_path, x), row)), rows))
-        except:
-            print('Cannot open', original_csv)
-            pass
-
-        # Get original Data order.
-        order_csv = os.path.join(args.dataset, 'order.csv')
-        try:
-            filereader = FileReader(order_csv)
-            with filereader.open(textmode=True) as f:
-                for original, shuffled in [[int(x) for x in row] for row in csv.reader(f)]:
-                    orders[original] = shuffled
-        except:
-            print('Cannot open', order_csv)
-            for i in range(len(rows)):
-                orders[i] = i
+    # load dataset as csv
+    filereader = FileReader(args.dataset)
+    with filereader.open(textmode=True) as f:
+        rows = [row for row in csv.reader(f)]
+    row0 = rows.pop(0)
+    root_path = os.path.dirname(args.dataset)
+    root_path = os.path.abspath(root_path.replace('/|\\', os.path.sep))
+    rows = list(map(lambda row: list(map(lambda x: x if is_float(
+        x) else compute_full_path(root_path, x), row)), rows))
 
     with data_iterator() as di:
         index = 0
@@ -261,7 +221,7 @@ def forward_command(args):
                             row0.append(name + '__' + str(d))
             for i, output in enumerate(outputs):
                 if index + i < len(rows):
-                    rows[orders[index + i]].extend(output)
+                    rows[index + i].extend(output)
             index += len(outputs)
             logger.log(
                 99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
