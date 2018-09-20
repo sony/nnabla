@@ -106,7 +106,7 @@ The output shows it makes a prediction. In my case, it's correct.
 Prediction scores: -24.1875 -14.0103 -13.2646 7.52215 -13.7401 31.1683 -0.501035 -4.69472 6.2626 1.87513
 Prediction: 5
 ```
-NOTE: The recognition performance is not perfect for the real hand-written digit images (i.e. the digit images contained in this example). For example, it often miss-classifies the digit 6 as 5.
+NOTE: The recognition performance is not perfect for the real hand-written digit images (i.e. the digit images contained in this example). For example, it often misclassifies the digit 6 as 5.
 
 ## Walk through the example code
 
