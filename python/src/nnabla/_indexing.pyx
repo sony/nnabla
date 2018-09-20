@@ -7,18 +7,8 @@ cimport numpy as np
 np.import_array()
 
 
-def _fill_slice(_slice, s):
-    _slice = slice(_slice.start if _slice.start is not None else 0,
-                   _slice.stop if _slice.stop is not None else s,
-                   _slice.step if _slice.step is not None else 1)
-    return _slice
-
-
-def _infer_size(_slice):
-    return (_slice.stop - _slice.start) // _slice.step + (0 if _slice.step == 1 else 1)
-
-
 def _align_key_and_shape(key, shape):
+    # TODO: refactor
     if Ellipsis in key:  # it must be a single ellipsis ('...')
         i = [i for i, k in enumerate(key) if k == Ellipsis][0]
         n_newaxis = len([k for k in key if k == np.newaxis])
@@ -49,52 +39,55 @@ def _align_key_and_shape(key, shape):
     elif len(key) > len(shape):
         raise IndexError("too many indices for array")
     else:
-        _shape = shape
-    return key, _shape
+        return key, shape
 
 
 def _force_to_same_len_list(object key, shape):
-    reshape = []
+    reshape_hint = []
     keys = []
     if isinstance(key, int):
         keys.append(slice(key, key + 1, 1))
-        for s in shape[1:]:
+        # Do NOT add k to shape hint
+        for i, s in enumerate(shape[1:]):
             keys.append(slice(0, s, 1))
-            reshape.append(s)
+            reshape_hint.append(i + 1)
     elif isinstance(key, slice):
-        _slice = _fill_slice(key, shape[0])
+        _slice = key
         keys.append(_slice)
-        s = _infer_size(_slice)
-        reshape.append(s)
-        for s in shape[1:]:
+        reshape_hint.append(0)
+        for i, s in enumerate(shape[1:]):
             keys.append(slice(0, s, 1))
-            reshape.append(s)
+            reshape_hint.append(i + 1)
     elif key == Ellipsis:
-        for s in shape:
+        for i, s in enumerate(shape):
             keys.append(slice(0, s, 1))
-            reshape.append(s)
-    elif key == np.newaxis:  # np.newaxis
-        reshape.append(1)
-        for s in shape:
+            reshape_hint.append(i)
+    elif key == np.newaxis:
+        reshape_hint.append(np.newaxis)
+        for i, s in enumerate(shape):
             keys.append(slice(0, s, 1))
-            reshape.append(s)
+            reshape_hint.append(i)
     elif isinstance(key, tuple):
         key, shape = _align_key_and_shape(key, shape)
-        for k, s in zip(key, shape):
+        cnt = 0
+        for i, ks in enumerate(zip(key, shape)):
+            print(i)
+            k, s = ks
             if isinstance(k, int):
                 keys.append(slice(k, k + 1, 1))
+                # Do NOT add k to shape hint
             elif isinstance(k, slice):
-                _slice = _fill_slice(k, s)
+                _slice = k
                 keys.append(_slice)
-                s = _infer_size(_slice)
-                reshape.append(s)
-            elif k == np.newaxis:  # np.newaxis
-                reshape.append(1)
+                reshape_hint.append(i - cnt)
+            elif k == np.newaxis:
+                reshape_hint.append(np.newaxis)
+                cnt += 1
     else:
         raise IndexError(
             "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`)")
 
-    return keys, reshape  # list of slice, list of integer
+    return keys, reshape_hint  # list of slice, list of integer
 
 
 cdef object getitem(object self, object key):
@@ -105,21 +98,32 @@ cdef object getitem(object self, object key):
     import nnabla.functions as F
     # Get shape
     if isinstance(self, NdArray):
-        shape = ( < NdArray > self).shape
+        shape = (< NdArray > self).shape
     elif isinstance(self, Variable):
-        shape = ( < Variable > self).shape
+        shape = (< Variable > self).shape
     else:
-        raise ValueError("self should be NdArray or Variable")
+        raise IndexError("self should be NdArray or Variable")
 
-    # TODO: Negative Indexing
     # TODO: Advanced Indexing
-    # Basic Slicing and Indexing without negative index
-
     start, stop, step = [], [], []
-    keys, reshape = _force_to_same_len_list(key, shape)
+    keys, reshape_hint = _force_to_same_len_list(key, shape)
+
+    # Slice first
     for key in keys:
         start.append(key.start)
         stop.append(key.stop)
         step.append(key.step)
+    x_sliced = F.slice(self, start, stop, step)
 
-    return F.reshape(F.slice(self, start, stop, step), reshape)
+    # Reshape
+    shape = x_sliced.shape
+    shape_new = []
+    print(shape, reshape_hint, shape_new)
+    new_axis_cnt = 0
+    for rh in reshape_hint:
+        if rh == np.newaxis:
+            shape_new.append(1)
+        else:
+            shape_new.append(shape[rh])
+
+    return F.reshape(x_sliced, shape_new)
