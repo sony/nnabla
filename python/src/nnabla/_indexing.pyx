@@ -34,6 +34,20 @@ def _align_key_and_shape(key, shape):
                 continue
             _shape.append(shape[cnt])
             cnt += 1
+        return key, _shape
+    elif len(key) < len(shape):
+        _key = []
+        _shape = []
+        for i in range(len(shape)):
+            if i < len(key):
+                _key.append(key[i])
+                _shape.append(shape[i])
+            else:
+                _key.append(slice(None))
+                _shape.append(shape[i])
+        return _key, _shape
+    elif len(key) > len(shape):
+        raise IndexError("too many indices for array")
     else:
         _shape = shape
     return key, _shape
