@@ -14,7 +14,7 @@ Note: this example requires zlib and NNabla Python package installed.
 This example requires cached MNIST dataset files.
 We provide an example script which creates them with utils in mnist-example collections.
 ```shell
-python create_cached_dates.py
+python create_cached_dataset.py
 ```
 This command create 'cache' directory in the current directory.
 
