@@ -33,7 +33,7 @@ install_requires = setup_requires + [
     'configparser',
     'contextlib2',
     'h5py',
-    'protobuf>=3.6.1',
+    'protobuf>=3.6',
     'pyyaml',
     'requests',
     'scikit-image',
