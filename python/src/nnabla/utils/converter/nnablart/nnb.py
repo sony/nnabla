@@ -185,6 +185,10 @@ class NnbExporter:
                     # convert float to fixed point values
                     scale = 1 << fp_pos
                     array = np.round(array * scale).astype(int)
+                    if type_name == 'FIXED16':
+                        array = np.clip(array, -0x7fff - 1, 0x7fff)
+                    elif type_name == 'FIXED8':
+                        array = np.clip(array, -128, 127)
                 fmt = fmt_base.format(len(array))
                 data = struct.pack(fmt, *array)
                 index, pointer = self._alloc(data=data)
