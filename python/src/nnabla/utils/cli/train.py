@@ -297,12 +297,11 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
            (not best_error) or \
            (best_error is not None and valid_error <= best_error):
             best_error = valid_error
+            # Console only start
+            status.set_val('best.valid_error', best_error)
+            status.set_val('best.epoch', epoch)
+            # Console only end
             _save_parameters(args, 'best', epoch, True)
-
-    # Console only start
-    status.set_val('best.valid_error', best_error)
-    status.set_val('best.epoch', epoch)
-    # Console only end
 
     return best_error, error_str
 
@@ -412,34 +411,34 @@ def _train(args, config):
                     # Evaluation
                     error_str = ''
                     if epoch % config.training_config.monitor_interval == 0 or epoch <= 5:
-                best_error, error_str = _evaluate(
-                    args, config, monitoring_report, best_error, epoch)
+                        best_error, error_str = _evaluate(
+                            args, config, monitoring_report, best_error, epoch)
 
-            if single_or_rankzero():
-                # Write to monitoring_report.yml
-                f = open(os.path.join(
-                    args.outdir, 'monitoring_report.yml'), 'a')
-                f.write('{}:\n'.format(epoch - 1))
-                  f.write('  cost: {}\n'.format(cost_avg_epoch))
-                   for s in monitoring_report:
-                        f.write(s)
-                    f.close()
+                    if single_or_rankzero():
+                        # Write to monitoring_report.yml
+                        f = open(os.path.join(
+                            args.outdir, 'monitoring_report.yml'), 'a')
+                        f.write('{}:\n'.format(epoch - 1))
+                        f.write('  cost: {}\n'.format(cost_avg_epoch))
+                        for s in monitoring_report:
+                            f.write(s)
+                        f.close()
 
-                    # Console only start
-                    status.set_val(['monitoring_report', epoch, 'cost'],
-                                   cost_avg_epoch)
-                    # Console only end
+                        # Console only start
+                        status.set_val(['monitoring_report', epoch, 'cost'],
+                                       cost_avg_epoch)
+                        # Console only end
 
-                    _save_parameters(args, 'current', epoch)
+                        _save_parameters(args, 'current', epoch)
 
-                    # Console only start
-                    status.set_val('epoch.current', epoch)
-                    status.dump()
-                    # Console only end
+                        # Console only start
+                        status.set_val('epoch.current', epoch)
+                        status.dump()
+                        # Console only end
 
-                    logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s)'.format(
-                        epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
-                        timeinfo.past_time, timeinfo.estimate_time))
+                        logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s)'.format(
+                            epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
+                            timeinfo.past_time, timeinfo.estimate_time))
 
             if single_or_rankzero():
                 _save_parameters(args, 'current', epoch, True)
