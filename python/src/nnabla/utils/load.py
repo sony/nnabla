@@ -791,21 +791,16 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
-    if len(proto.dataset) > 0:
-        info.datasets = _datasets(proto, prepare_data_iterator)
+    info.datasets = _datasets(proto, prepare_data_iterator)
 
-    if len(proto.network) > 0:
-        info.networks = _networks(proto, default_context, batch_size)
+    info.networks = _networks(proto, default_context, batch_size)
 
-    if len(proto.optimizer) > 0:
-        info.optimizers = _optimizers(
-            proto, default_context, info.networks, info.datasets)
+    info.optimizers = _optimizers(
+        proto, default_context, info.networks, info.datasets)
 
-    if len(proto.monitor) > 0:
-        info.monitors = _monitors(
-            proto, default_context, info.networks, info.datasets)
+    info.monitors = _monitors(
+        proto, default_context, info.networks, info.datasets)
 
-    if len(proto.executor) > 0:
-        info.executors = _executors(proto, info.networks)
+    info.executors = _executors(proto, info.networks)
 
     return info
