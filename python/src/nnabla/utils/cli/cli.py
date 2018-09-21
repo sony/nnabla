@@ -29,7 +29,11 @@ def version_command(args):
     print(_nnabla_version())
 
 
+return_value = None
+
+
 def main():
+    global return_value
     import six.moves._thread as thread
     import threading
     thread.stack_size(128 * 1024 * 1024)
@@ -37,9 +41,14 @@ def main():
     main_thread = threading.Thread(target=cli_main)
     main_thread.start()
     main_thread.join()
+    if not return_value:
+        sys.exit(-1)
 
 
 def cli_main():
+    global return_value
+    return_value = False
+
     import nnabla
     parser = argparse.ArgumentParser(description='Command line interface ' +
                                      'for NNabla({})'.format(_nnabla_version()))
@@ -92,19 +101,22 @@ def cli_main():
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
-        sys.exit(-1)
+        return
 
     if args.mpi:
         from nnabla.utils.communicator_util import create_communicator
         comm = create_communicator()
         try:
-            args.func(args)
+            return_value = args.func(args)
         except:
             import traceback
             print(traceback.format_exc())
             comm.abort()
     else:
-        args.func(args)
+        try:
+            return_value = args.func(args)
+        except:
+            return_value = False
 
 
 if __name__ == '__main__':

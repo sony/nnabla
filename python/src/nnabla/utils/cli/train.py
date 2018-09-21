@@ -416,7 +416,7 @@ def train_command(args):
             dataset_error = True
     if dataset_error:
         logger.log(99, 'Fatal error. Dataset URI is empty.')
-        return
+        return False
 
     class TrainConfig:
         pass
@@ -501,6 +501,8 @@ def train_command(args):
             logger.log(99, 'Training Incompleted.')
     if single_or_rankzero():
         progress(None)
+
+    return True
 
 
 def add_train_command(subparsers):

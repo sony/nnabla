@@ -277,6 +277,7 @@ def compare_with_cpu_command(args):
 
     logger.log(99, 'Compare with CPU Completed.')
     progress(None)
+    return True
 
 
 def add_compare_with_cpu_command(subparsers):

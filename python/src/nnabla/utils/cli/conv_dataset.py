@@ -40,7 +40,7 @@ def conv_dataset_command(args):
         if not args.force:
             print(
                 'File or directory [{}] is exists use `-F` option to overwrite it.'.format(args.destination))
-            sys.exit(-1)
+            return False
         elif os.path.isdir(args.destination):
             print('Overwrite destination [{}].'.format(args.destination))
             shutil.rmtree(args.destination, ignore_errors=True)
@@ -48,7 +48,7 @@ def conv_dataset_command(args):
         else:
             print('Cannot overwrite file [{}] please delete it.'.format(
                 args.destination))
-            sys.exit(-1)
+            return False
     else:
         os.mkdir(args.destination)
     datasource = None
@@ -61,6 +61,7 @@ def conv_dataset_command(args):
             _convert(args, source)
     else:
         print('Command `conv_dataset` only supports CSV or CACHE as source.')
+    return True
 
 
 def add_conv_dataset_command(subparsers):

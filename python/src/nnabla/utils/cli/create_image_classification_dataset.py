@@ -128,7 +128,7 @@ def create_image_classification_dataset_command(args):
 
     if args.sourcedir == args.outdir:
         logger.critical("Input directory and output directory are same.")
-        return
+        return False
 
     # create file list
     logger.log(99, "Creating file list...")
@@ -202,6 +202,7 @@ def create_image_classification_dataset_command(args):
                 writer.writerows(csv_data_2)
 
     logger.log(99, "Dataset was successfully created.")
+    return True
 
 
 def add_create_image_classification_dataset_command(subparsers):

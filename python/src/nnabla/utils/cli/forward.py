@@ -184,7 +184,7 @@ def forward_command(args):
         else:
             logger.critical('Network {} does not found.'.format(
                 config.executor.network.name))
-            return
+            return False
 
     normalize = True
     for d in info.datasets.values():
@@ -233,6 +233,7 @@ def forward_command(args):
 
     logger.log(99, 'Forward Completed.')
     progress(None)
+    return True
 
 
 def infer_command(args):
@@ -258,7 +259,7 @@ def infer_command(args):
         else:
             logger.critical('Network {} does not found.'.format(
                 config.executor.network.name))
-            return
+            return False
 
     normalize = True
     for d in info.datasets.values():
@@ -287,6 +288,7 @@ def infer_command(args):
         if args.output is not None:
             (np.array(o).astype(np.float32)).tofile(
                 "{}_{}.bin".format(args.output, i))
+    return True
 
 
 def add_infer_command(subparsers):

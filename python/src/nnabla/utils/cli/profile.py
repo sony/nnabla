@@ -232,6 +232,7 @@ def profile_command(args):
 
     logger.log(99, 'Profile Completed.')
     progress(None)
+    return True
 
 
 def add_profile_command(subparsers):

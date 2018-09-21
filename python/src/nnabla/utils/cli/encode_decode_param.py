@@ -74,6 +74,7 @@ def decode_param_command(args, **kwargs):
         save_param_in_txt(variable.d, file_path)
 
     logger.log(99, 'Decode Parameter Completed.')
+    return True
 
 
 def encode_param_command(args, **kwargs):
@@ -91,6 +92,7 @@ def encode_param_command(args, **kwargs):
     save_parameters(args.param)
 
     logger.log(99, 'Encode Parameter Completed.')
+    return True
 
 
 def add_decode_param_command(subparsers):
