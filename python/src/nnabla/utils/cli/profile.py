@@ -86,18 +86,18 @@ def profile_optimizer(config, result_array):
 
         # Load dataset
         def load_dataset():
-            loaded_datas = {}
+            loaded_data = {}
             di = opt.data_iterator
-            loaded_datas[di] = di.next()
-            return loaded_datas
+            loaded_data[di] = di.next()
+            return loaded_data
         profile(config, 'load_dataset', load_dataset, result_dict)
 
         # Let data
-        loaded_datas = load_dataset()
+        loaded_data = load_dataset()
         for v, d in o.dataset_assign.items():
             def let_data():
                 try:
-                    data = loaded_datas[opt.data_iterator][
+                    data = loaded_data[opt.data_iterator][
                         opt.data_iterator.variables.index(d)]
                 except:
                     print(opt.data_iterator.variables)

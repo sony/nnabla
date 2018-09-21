@@ -120,7 +120,7 @@ def add_convert_command(subparsers):
     subparser.set_defaults(func=nnb_template_command)
 
     ################################################################################
-    # Conveter
+    # Converter
     subparser = subparsers.add_parser('convert', help='File format converter.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')

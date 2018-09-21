@@ -41,7 +41,7 @@ Outputs:
 @note Only 2D pooling supported so far.
 @tparam T Data type for computation.
 @param kernel Shapes of kernel.
-@param stride Subsamling factors of pooling.
+@param stride Subsampling factors of pooling.
 @param ignore_border If false, a kernel overlapping border is also considered
                      for output unlike convolution.
 @param pad Border padding values of dimensions. Padding will be added both sides

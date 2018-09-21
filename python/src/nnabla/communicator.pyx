@@ -89,7 +89,7 @@ cdef class Communicator:
         Args: 
             ctx_param_dict (:obj:`tuple` of :obj:`Context`, :obj:`dict`): 
                 Key of the dictionary is :obj:`string` and value of the
-                dictionry is :obj:`Varible`.  
+                dictionary is :obj:`Variable`.  
         """
         if type(ctx_param_dict) != tuple:
             raise Exception("ctx_param_dict must be tuple of two elements")
@@ -245,7 +245,7 @@ cdef class Communicator:
 
         Args:
             data (:obj:`NdArray` or list of :obj:`NdArray`)
-            dst (int): Distination rank where the result is saved.
+            dst (int): Destination rank where the result is saved.
             division (bool): Flag to divide the reduce data by the 
                 number of `contexts` added, or the number of devices. 
             inplace (bool): Flag to use a packed array. Default is false.

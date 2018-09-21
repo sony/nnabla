@@ -54,7 +54,7 @@ def comm_nccl_opts(request):
                     raise ValueError('')
         except ValueError as e:
             raise ValueError(
-                "GPU IDs must be comma sperated integers of available GPUs. Given {}. Avaiable GPUs are {}.".format(gpus, n_devices))
+                "GPU IDs must be comma separated integers of available GPUs. Given {}. Available GPUs are {}.".format(gpus, n_devices))
 
     extension_module = "cuda"
     type_config = request.config.getoption('--type-config')

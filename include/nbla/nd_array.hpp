@@ -19,7 +19,7 @@
 
 namespace nbla {
 
-/** Dtype and backend agnotic multi-dimensional array.
+/** Dtype and backend agnostic multi-dimensional array.
  */
 class NdArray {
   SyncedArrayPtr array_;
@@ -45,7 +45,7 @@ public:
 
   /** Ctor given previously created SyncedArray and shape.
 
-      @param[in] array Previouly created SyncedArray.
+      @param[in] array Previously created SyncedArray.
       @param[in] shape Shape of N-d array. Total size must be the same as
      SyncedArray.
    */
@@ -90,7 +90,7 @@ public:
    */
   NBLA_API SyncedArrayPtr array();
 
-  /** Replace SyncedArray instance with previously creatd another one.
+  /** Replace SyncedArray instance with previously created another one.
    */
   NBLA_API void set_array(SyncedArrayPtr array);
 

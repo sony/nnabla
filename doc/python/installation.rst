@@ -9,7 +9,7 @@ There are three ways to install NNabla Python package.
 Install From Binary
 -------------------
 
-The NNabla python packages are hosted on PYPI for many platforms. For people who are familar with Python and its package management system ``pip`` (and  optionally CUDA, but recommended), the following pip installation guide will be satisfactory when you install NNabla Python. To see the a bit more detailed OS specific setup guide, go to the next section.
+The NNabla python packages are hosted on PYPI for many platforms. For people who are familiar with Python and its package management system ``pip`` (and  optionally CUDA, but recommended), the following pip installation guide will be satisfactory when you install NNabla Python. To see the a bit more detailed OS specific setup guide, go to the next section.
 
 .. toctree::
     :maxdepth: 1

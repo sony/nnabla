@@ -112,7 +112,7 @@ if __name__ == '__main__':
         version=__version__,
         author_email=__email__,
         url="https://github.com/sony/nnabla",
-        license='Apache Licence 2.0',
+        license='Apache License 2.0',
         classifiers=[
             'Development Status :: 4 - Beta',
             'Intended Audience :: Developers',

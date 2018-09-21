@@ -147,7 +147,7 @@ class Uploader:
 
     def convert(self, source, destination):
         tmpdir = tempfile.mkdtemp()
-        self._log('Temprary dir {} created'.format(tmpdir))
+        self._log('Temporary dir {} created'.format(tmpdir))
 
         try:
             self._log('Prepare csv data')
@@ -162,14 +162,14 @@ class Uploader:
                 shutil.copyfile(tarfile, destination)
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
-            self._log('Temprary dir removed')
+            self._log('Temporary dir removed')
 
     def upload(self, token, filename, name, finishCallback=None, endpoint=None):
 
         _, ext = os.path.splitext(filename)
         if ext == '.csv':
             tmpdir = tempfile.mkdtemp()
-            self._log('Temprary dir {} created'.format(tmpdir))
+            self._log('Temporary dir {} created'.format(tmpdir))
 
             try:
                 self._log('Prepare csv data')
@@ -183,7 +183,7 @@ class Uploader:
                 res = self.uploadFile(endpoint, token, tarfile, name)
             finally:
                 shutil.rmtree(tmpdir, ignore_errors=True)
-                self._log('Temprary dir removed')
+                self._log('Temporary dir removed')
 
             if res:
                 self._log('Finished')
@@ -256,7 +256,7 @@ def add_create_tar_command(subparsers):
     # Create TAR for uploader
     from nnabla.utils.cli.uploader import create_tar_command
     subparser = subparsers.add_parser(
-        'create_tar', help='Create tar file for Neural Network COnsole.')
+        'create_tar', help='Create tar file for Neural Network Console.')
     subparser.add_argument('source', help='CSV dataset')
     subparser.add_argument('destination', help='TAR filename')
     subparser.set_defaults(func=create_tar_command)

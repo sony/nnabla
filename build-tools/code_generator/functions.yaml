@@ -350,7 +350,7 @@ Neural Network Layer:
     snake_name: global_average_pooling
     doc: |2
       .. WARNING::
-        This function is experimental suppport, so please do not actively use it.
+        This function is experimental support, so please do not actively use it.
 
       Global average pooling. It pools an averaged value from the whole image
       
@@ -2225,7 +2225,7 @@ Array Manipulation:
     snake_name: broadcast_to
     doc: |2
       .. WARNING::
-        This function is experimental suppport, so please do not actively use it.
+        This function is experimental support, so please do not actively use it.
 
       Broadcasting ND-array to the specified buffer.
     inputs:
@@ -2381,7 +2381,7 @@ Signal Processing:
     snake_name: fft
     doc: |2+
       
-      Complex-to-complex Descrete Fourier Transform,
+      Complex-to-complex Discrete Fourier Transform,
 
       .. math::
 
@@ -2393,7 +2393,7 @@ Signal Processing:
 
         k_i = 0, \ldots, N_i - 1.
 
-      This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimentsion(s).
+      This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimension(s).
 
       The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
       The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
@@ -2425,7 +2425,7 @@ Signal Processing:
     
     arguments:
       signal_ndim:
-        doc: The number of dimentsions for each signal. It must be 1, 2, or 3.
+        doc: The number of dimensions for each signal. It must be 1, 2, or 3.
         type: int64
       normalized:
         doc: Use unitary normalization. If `True`, the normalization constant :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}` is multiplied.
@@ -2438,7 +2438,7 @@ Signal Processing:
     snake_name: ifft
     doc: |2+
       
-      Complex-to-complex inverse Descrete Fourier Transform,
+      Complex-to-complex inverse Discrete Fourier Transform,
 
       .. math::
 
@@ -2450,7 +2450,7 @@ Signal Processing:
 
         k_i = 0, \ldots, N_i - 1.
 
-      This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimentsion(s).
+      This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimension(s).
 
       The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
       The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
@@ -2461,7 +2461,7 @@ Signal Processing:
     
     arguments:
       signal_ndim:
-        doc: The number of dimentsions for each signal. It must be 1, 2, or 3.
+        doc: The number of dimensions for each signal. It must be 1, 2, or 3.
         type: int64
       normalized:
         doc: Use unitary normalization. If `True`, the normalization constant :math:`\frac{1}{\prod_{i=1}^{d} N_i}` becomes :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}`.

@@ -137,7 +137,7 @@ if(BUILD_CPP_LIB)
   
   if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Build type release is default on single-configuration build system like GnuMake."
+      "Build type release is default on single-configuration build system like GNU make."
       FORCE)
   endif()
   
@@ -229,7 +229,7 @@ if(BUILD_CPP_LIB)
       message(FATAL_ERROR
         "Python build_ext compiler inference is only supported on Win, Unix or Apple.")
     endif()
-    message("Python build_ext compiler is infered as '${NBLA_PYTHON_BUILD_EXT_COMPILER}'.")
+    message("Python build_ext compiler is inferred as '${NBLA_PYTHON_BUILD_EXT_COMPILER}'.")
     message("You can specify a compiler manually setting a variable"
       " NBLA_PYTHON_BUILD_EXT_COMPILER. You can see a list of supported"
       " compiler by `python setup.py build_ext --help-compiler`.")

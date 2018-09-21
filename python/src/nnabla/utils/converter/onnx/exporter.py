@@ -90,7 +90,7 @@ def merge_broadcast(node, func, target_name, broadcast_target):
     node.input.extend([func.input[0], before_broadcast])
     # Remove the used target.
     # We may have a problem if the same parameter is used from
-    # multipler operators.
+    # multiplier operators.
     del broadcast_target[target_name]
     # Return the merged input's name so we can use it if we need to
     return before_broadcast
@@ -250,7 +250,7 @@ class OnnxExporter:
         w_shape.dim.extend(w)
         self._var_dict[func.input[1]] = w_shape
         multiple = out_shape[cp.base_axis] / in_shape[cp.base_axis]
-        assert multiple == cp.multiplier, "Invalid input/ouput shape!"
+        assert multiple == cp.multiplier, "Invalid input/output shape!"
         n = onnx.helper.make_node(
             'Conv',
             func.input,
@@ -868,7 +868,7 @@ class OnnxExporter:
             # "Conv" or "Pool" contained.
             # Caffe2 issue is here:
             # https://github.com/caffe2/caffe2/issues/1971
-            # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the
+            # Because a GlobalAveragePooling operator does not contain a kernel, we get an error at the
             # following code if we have a specific name.
             # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
             # The above caffe2 code should be checking the node's operator name and not the node's name.
@@ -876,7 +876,7 @@ class OnnxExporter:
             nl.append(n)
         elif func.type == "Softmax":
             # Softmax on NNabla does softmax ONLY along the specified axis.
-            # ONNX first squashes the input dimensions to 2D based on the specifed axis,
+            # ONNX first squashes the input dimensions to 2D based on the specified axis,
             # and then calculates the Softmax.
             # Since these two slightly differ, we show a warning here.
             logger.warning(SOFTMAX_WARNING)

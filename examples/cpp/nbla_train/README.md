@@ -14,11 +14,11 @@ Note: this example requires zlib and NNabla Python package installed.
 This example requires cached MNIST dataset files.
 We provide an example script which creates them with utils in mnist-example collections.
 ```shell
-python create_cached_datase.py
+python create_cached_dates.py
 ```
 This command create 'cache' directory in the current directory.
 
-## Create NNP file of an initialized model for MNIST classifcation.
+## Create NNP file of an initialized model for MNIST classification.
 This example requires initialized model parameters and a network definition saved as an NNP file.
 We provide an example script which creates the NNP file from a classification example in mnist-example collections.
 
@@ -31,7 +31,7 @@ Following code specifies the information necessary for the network definition.
 
 ```python
     nnp_file = '{}_initialized.nnp'.format(args.net)
-    trainin_contents = {
+    training_contents = {
         'global_config': {'default_context': ctx},
         'training_config':
             {'max_epoch': args_added.max_epoch,
@@ -81,7 +81,7 @@ Following code specifies the information necessary for the network definition.
              'dataset': 'mnist_validation'}],
     }
 
-    nn.utils.save.save(nnp_file, trainin_contents)
+    nn.utils.save.save(nnp_file, training_contents)
 
 ```
 

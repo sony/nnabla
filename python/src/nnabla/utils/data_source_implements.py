@@ -466,7 +466,7 @@ class ConcatDataSource(DataSource):
         return None
 
     def reset(self):
-        # reset method initilize self._indexes
+        # reset method initialize self._indexes
         if self._shuffle:
             self._indexes = self._rng.permutation(self._size)
         else:

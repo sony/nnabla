@@ -25,7 +25,7 @@ convert param and dataset, measure performance, file format converter and so on.
         create_image_classification_dataset
                             Create dataset from image files.
         upload              Upload dataset to Neural Network Console.
-        create_tar          Create tar file for Neural Network COnsole.
+        create_tar          Create tar file for Neural Network Console.
         function_info       Output function info.
         dump                Dump network with supported format.
         nnb_template        Generate NNB config file template.
@@ -250,7 +250,7 @@ File format converter
 ~~~~~~~~~~~~~~~~~~~~~
 
 
-For detailed infomation please see :any:`file_format_converter/file_format_converter`.
+For detailed information please see :any:`file_format_converter/file_format_converter`.
 
 Dump content of supported format
 --------------------------------
@@ -335,7 +335,7 @@ File format converter
 Development
 ~~~~~~~~~~~
 
-Generate function infomation
+Generate function information
 ----------------------------
 
 .. code-block:: none

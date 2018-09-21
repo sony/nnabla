@@ -45,7 +45,7 @@ void ${name}<${targs}>::setup_impl(const Variables &inputs,
 % endfor
 
   /* TODO: Any preparation comes here.
-     Note that, although it is called only when a compuation graph is
+     Note that, although it is called only when a computation graph is
      constructed in a static computation graph, in a dynamic computation graph,
      it's called every time. Keep the setup computation light for the performance
      (caching heavy computation, device synchronization in GPU etc.)
@@ -62,12 +62,12 @@ void ${name}<${targs}>::forward_impl(const Variables &inputs,
 
   /* TODO: remove this help message.
     The type `Variables` is a typedef of `vector<Variable*>`.
-    The `Variable` class owns storages of data (storage for forward propagation)
+    The `Variable` class owns storage of data (storage for forward propagation)
     and grad (for backprop) respectively.
     
     You can get a raw pointer of a scalar type of the storage using:
 
-    - `cosnt T* Variable::get_{data|grad}_pointer<T>(ctx)` for read-only access.
+    - `const T* Variable::get_{data|grad}_pointer<T>(ctx)` for read-only access.
     - `T* Variable::cast_{data|grad}_and_get_pointer<T>(ctx)` for r/w access.
 
     By this, automatic type conversion would occur if data was held in a different type.
@@ -134,7 +134,7 @@ pp = '!(%s)' % ' || '.join(pp)
 
   /** TODO: remove this help message.
       The backward error signals are propagated through the graph, and the
-      error from decsendant functions are set in the grad region of the output variables.
+      error from descendant functions are set in the grad region of the output variables.
    */
   // Gradient of outputs
 % for i, (vout_name, vout) in enumerate(outputs.items()):

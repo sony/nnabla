@@ -36,7 +36,7 @@ class ALS(object):
 
         Args:
             X (numpy.ndarray): Target tensor of CPD.
-            rank (int): Rank of the approximate tesnor.
+            rank (int): Rank of the approximate tensor.
             max_iter (int): Max iteration of the ALS.
             stopping_criterion (float): Threshold for stopping the ALS. 
                 If the value is negative, the convergence check is ignored; 
@@ -100,7 +100,7 @@ class ALS(object):
         return A, lmbda
 
     def khatrirao_product(self, X, Y):
-        """Column-wise Katri-Rao product.
+        """Column-wise Khatri-Rao product.
 
         Khatri-Rao product is the column-wise matching Kroncker product.
         For examples, suppose matrices X and Y each of which dimensions
@@ -152,7 +152,7 @@ class ALS(object):
 
         Args:
             A (list of numpy.ndarray): matrices where the number of columns for each matrix is the same.
-            n (int): N-th matrix which is ommited when computing Khatri-Rao product.
+            n (int): N-th matrix which is omitted when computing Khatri-Rao product.
 
         Returns:
             numpy.ndarray: Result of the reduction of Khatri-Rao product for `A`. 
@@ -168,7 +168,7 @@ class ALS(object):
 
         Args:
             A (list of numpy.ndarray): matrices where the number of columns for each matrix is the same.
-            n (int): N-th matrix which is ommited when computing Gramian matrix.
+            n (int): N-th matrix which is omitted when computing Gramian matrix.
 
         """
         order = list(range(n)) + list(range(n + 1, len(A)))

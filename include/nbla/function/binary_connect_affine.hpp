@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// binary_connnect_affine.hpp
+// binary_connect_affine.hpp
 
 #ifndef __NBLA_FUNCTION_BINARY_CONNECT_AFFINE_HPP__
 #define __NBLA_FUNCTION_BINARY_CONNECT_AFFINE_HPP__

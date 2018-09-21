@@ -31,7 +31,7 @@ The last output_size.size() dimensions of the input are considered as the
 spatial dimensions.
 
 Inputs:
-- x: N-D array with an anbitrary number of dimensions.
+- x: N-D array with an arbitrary number of dimensions.
 
 Outputs:
 - y: N-D array. The shape are the same as the input except that the last

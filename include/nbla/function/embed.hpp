@@ -28,7 +28,7 @@ NBLA_REGISTER_FUNCTION_HEADER(Embed);
 /** Embed slices a matrix/tensor with indexing array/tensor.
 
 Inputs:
-- Indeces with shape @f$(I_0, ..., I_N)@f$
+- Indexes with shape @f$(I_0, ..., I_N)@f$
 - Weights with shape @f$(W_0, ..., W_M)@f$
 
 Outputs:

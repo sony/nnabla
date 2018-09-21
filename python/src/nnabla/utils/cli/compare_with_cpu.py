@@ -55,7 +55,7 @@ def calc_norm_diff(data1, data2):
 
 
 def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_array):
-    loaded_datas = {}
+    loaded_data = {}
     for opt, opt_cpu in zip(config.optimizers.values(), config_cpu.optimizers.values()):
         o = opt.optimizer
         o_cpu = opt_cpu.optimizer
@@ -74,15 +74,15 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
 
         # Load dataset
         di = opt.data_iterator
-        if di not in loaded_datas:
-            loaded_datas[di] = di.next()
-        datas = loaded_datas[di]
+        if di not in loaded_data:
+            loaded_data[di] = di.next()
+        data = loaded_data[di]
 
         for v, d in o.dataset_assign.items():
-            let_data_to_variable(v.variable_instance, datas[
+            let_data_to_variable(v.variable_instance, data[
                                  di.variables.index(d)])
         for v, d in o_cpu.dataset_assign.items():
-            let_data_to_variable(v.variable_instance, datas[
+            let_data_to_variable(v.variable_instance, data[
                                  di.variables.index(d)])
 
         # Generate data

@@ -8,7 +8,7 @@ This is demonstration of DataIterator in NNabla.
 
 ### Usage
 
-This example can test many functionalty of data_iterator.
+This example can test many functionality of data_iterator.
 
 ```
 $ python examples/data_iterator/dataiteretor.py --help
@@ -50,7 +50,7 @@ Before document comes, please see python/src/nnabla/utils/data-iterator.py
 
 ### Example
 
-Here is demonstoration with MNIST dataset.
+Here is demonstration with MNIST dataset.
 
 ```
 $ python examples/data_iterator/dataiteretor.py MNIST_TRAIN

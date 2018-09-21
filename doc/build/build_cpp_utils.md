@@ -6,7 +6,7 @@ and training. The following instruction demonstrates the build
 procedure on Ubuntu 16.04, but we successfully build C++ libraries on
 macOS and Windows ([manual](./build_cpp_utils_windows.md)) too in a
 similar way (the differences lie in the installation of some
-dependencies). We may add build instractions on another platform in
+dependencies). We may add build instructions on another platform in
 the future.
 
 Most of the procedure is the same as [Build Python Package from
@@ -44,7 +44,7 @@ sudo make install  # See a note below if you want your system clean.
 
 NOTE: Installing protobuf on your system with sudo may harm a protobuf
 library previously installed on your system. It is recommended to
-install a protobuf to a user folder. Sepecify a cmake option
+install a protobuf to a user folder. Specify a cmake option
 `-DCMAKE_INSTALL_PREFIX=<installation path>` to set your preferred
 installation path (e.g. `$HOME/nnabla_build_deps`), and run `make
 install` without sudo. In the NNabla C++ library compilation described
@@ -80,7 +80,7 @@ make
 
 Some optional arguments for `cmake`:
 
-* `-DNNABLA_UTILS_WITH_HDF5=OFF` to turn off HDF5 feature if you stacked in HDF5 intallation.
+* `-DNNABLA_UTILS_WITH_HDF5=OFF` to turn off HDF5 feature if you stacked in HDF5 installation.
 * `-DBUILD_PYTHON_PACKAGE=ON` to build Python package too.
 
 The following command will install the libraries, the command line

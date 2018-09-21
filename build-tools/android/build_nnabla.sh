@@ -25,7 +25,7 @@ set -xe
 # x86
 # x86_64
 
-# Compiler for diffrent ARCHITECTURE and ABI:
+# Compiler for different ARCHITECTURE and ABI:
 # CMAKE_SYSTEM_NAME = arm-linux-androideabi  ==> ARCHITECTURE = arm 	 , ABI=armeabi or ABI=armeabi-v7a
 # CMAKE_SYSTEM_NAME = aarch64-linux-android  ==> ARCHITECTURE = arm64 	 , ABI=arm64-v8a
 # CMAKE_SYSTEM_NAME = i686-linux-android     ==> ARCHITECTURE = x86 	 , ABI=x86

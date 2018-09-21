@@ -26,8 +26,8 @@ class DynamicLossScalingUpdater(object):
         clear_buffer (:obj:`bool`): Clears the no longer referenced variables during backpropagation to save memory.
         accum_grad (:obj:`int`): Number of accumulation of gradients. Update method of the `solver` is called after the `accum_grad` number of the forward and backward is called.
         weight_decay (:obj:`float`): Decay constant. Default is `None`, not applying the weight decay.
-        comm (:obj:`nnabla.communicators.Communicator`): Communicator when to do distributed training. Defalt is :obj:`None`.
-        grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`): The list of gradients to be exchanged when to do distributed training. Defalt is the empty :obj:`list`.
+        comm (:obj:`nnabla.communicators.Communicator`): Communicator when to do distributed training. Default is :obj:`None`.
+        grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`): The list of gradients to be exchanged when to do distributed training. Default is the empty :obj:`list`.
 
     Attributes:
         solver (:obj:`nnabla.solvers.Solver`): Solver object. E.g., Momentum or Adam.
@@ -131,7 +131,7 @@ class DynamicLossScalingUpdater(object):
         # Rescale grads
         self.solver.scale_grad(1. / self.scale)
 
-        # Do some graident clipping, etc.
+        # Do some gradient clipping, etc.
         if self.weight_decay is not None:
             self.solver.weight_decay(self.weight_decay)
 

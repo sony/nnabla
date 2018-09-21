@@ -317,7 +317,7 @@ cdef class Function:
 # Python Function
 # ---------------
 #
-# Python function uses Callback function implemneted in C++.
+# Python function uses Callback function implemented in C++.
 # Callback function calls setup/forward/backward function registered ctor.
 # From Python side, PythonFunction adds the following
 # setup_callback, forward_callback and backward_callback functions at
@@ -325,7 +325,7 @@ cdef class Function:
 # derived from PythonFunction.
 # ==============================================================================
 cdef class UnsafeVariable:
-    """This is a Python wapper class for Variable class in C++.
+    """This is a Python wrapper class for Variable class in C++.
 
     Note:
         that it is intended to be used only in PythonFunction. Copying
@@ -481,7 +481,7 @@ cdef void backward_callback(void *cself, const Variables &cinputs,
                        [accum[i] for i in range(accum.size())])
 
 cdef void cleanup_callback(void *cself) with gil:
-    """Decrese a reference count of PythonFunction.
+    """Decrease a reference count of PythonFunction.
     """
     Py_DECREF(<object> cself)
     
@@ -505,19 +505,19 @@ cdef class PythonFunction(Function):
 
     @property
     def name(self):
-        raise NotImplementedError("Impelment `name`.")
+        raise NotImplementedError("Implement `name`.")
 
     def min_outputs(self):
-        raise NotImplementedError("Impelment `min_outputs`.")
+        raise NotImplementedError("Implement `min_outputs`.")
 
     def setup_impl(self, inputs, outputs):
-        raise NotImplementedError("Impelment `setup`.")
+        raise NotImplementedError("Implement `setup`.")
 
     def forward_impl(self, inputs, outputs):
-        raise NotImplementedError("Impelment `forward`.")
+        raise NotImplementedError("Implement `forward`.")
 
     def backward_impl(self, inputs, outputs, propagate_down, accum):
-        raise NotImplementedError("Impelment `backward`.")
+        raise NotImplementedError("Implement `backward`.")
 # ==============================================================================
 # Python Function End
 # ==============================================================================

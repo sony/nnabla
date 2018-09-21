@@ -23,7 +23,7 @@ nnabla-ext-cuda91 9.1          7.1
 nnabla-ext-cuda92 9.2          7.2
 ================= ============ =============
 
-The latest CUDA version is always prefered if your GPU accepts.
+The latest CUDA version is always preferred if your GPU accepts.
 
 Installation
 ------------

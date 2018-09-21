@@ -40,12 +40,12 @@ public:
      first matched one is used. For each element, it describes the backend of
      computation and the data type config in a format of `<backend>:<data type
      config>`. If only `backend` is given (`:<data type configuration>` is
-     ommited), the default data type config (`:float`)is automatically added.
+     omitted), the default data type config (`:float`)is automatically added.
      @param[in] array_class Optional: A string expression of a preferred array
      class. Even if it is not specified an array class is chosen according to
      the default array class of an implementation of Function/Solver. Every
-     Funciton/Solver class has a list of array classes that can be used as
-     storages of the computation inputs and outputs. If the given array_class
+     Function/Solver class has a list of array classes that can be used as
+     storage of the computation inputs and outputs. If the given array_class
      doesn't match any of them, the default array class of the implementation
      will be used.
      @param[in] device_id A string expression of device ID of the backend.

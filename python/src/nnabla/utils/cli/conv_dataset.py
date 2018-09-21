@@ -47,7 +47,7 @@ def conv_dataset_command(args):
             shutil.rmtree(args.destination, ignore_errors=True)
             os.mkdir(args.destination)
         else:
-            print('Cannnot overwrite file [{}] please delete it.'.format(
+            print('Cannot overwrite file [{}] please delete it.'.format(
                 args.destination))
             sys.exit(-1)
     else:

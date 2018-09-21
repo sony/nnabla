@@ -26,7 +26,7 @@ The problem was `,##__VA_ARGS__` only works in GCC, but not works in MSVC
 compiler. On the other hand, the workaround by NBLA_VA_ARGS for MSVC breaks
 GCC preprocessor. I decided to branch very big portion of source code, but
 I understand this approach is very inefficient and not maintainable. If anybody
-has an idea, please let me know or PR is wellcome.
+has an idea, please let me know or PR is welcome.
 */
 #ifdef _MSC_VER
 /**

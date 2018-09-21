@@ -55,7 +55,8 @@ protected:
      */
     VariablePtr p;
 
-    /** Moficiation count of p.grad_, which tells whether or not the grad region
+    /** Modification count of p.grad_, which tells whether or not the grad
+     * region
      * is modified after the previous update.
      */
     size_t at;
@@ -75,10 +76,10 @@ public:
   ///< Name of Solver class, usually class name.
   virtual string name() = 0;
 
-  ///< Lerning rate
+  ///< Learning rate
   virtual float learning_rate() = 0;
 
-  ///< Set lerning rate
+  ///< Set learning rate
   virtual void set_learning_rate(float learning_rate) = 0;
 
   /** Zeroing grads for all #params_. This is usually called before running

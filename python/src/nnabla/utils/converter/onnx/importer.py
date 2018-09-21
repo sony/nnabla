@@ -770,7 +770,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             if attr.name == "value":
                 if attr.type != AttributeProto.TENSOR:
                     raise ValueError(
-                        "Only TESNOR is supported for value in {} op_type".format(node.op_type))
+                        "Only TENSOR is supported for value in {} op_type".format(node.op_type))
                 t = attr.t
                 if t is None:
                     raise ValueError(

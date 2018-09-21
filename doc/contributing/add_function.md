@@ -142,19 +142,19 @@ cmake ..
   * `include/nbla/function/${snake_name}.hpp`
   * `src/nbla/function/generic/${snake_name}.cpp`
 
-* Template type instantiation of functions (overwriten)
+* Template type instantiation of functions (overwritten)
   * `src/nbla/function/${snake_name}.cpp`
 
-* Initialization, function registration to factories (overwriten)
+* Initialization, function registration to factories (overwritten)
   * `src/nbla/init.cpp`
 
-* Python interfaces at `python/src/nnabla` (overwriten)
+* Python interfaces at `python/src/nnabla` (overwritten)
   * `_version.py`
   * `function.pxd`
   * `function.pyx`
   * `function_bases.py`
 
-* Serializer/Deserializer (overwriten)
+* Serializer/Deserializer (overwritten)
   * `python/src/nnabla/utils/load_function.py`
   * `python/src/nnabla/utils/save_function.py`
   * `src/nbla_utils/nnp_impl_create_function.cpp`

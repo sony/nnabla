@@ -90,10 +90,10 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
     using given function
 
     f: function to test
-    inputs: funcion input variable 
+    inputs: function input variable 
     outputs: function output variable
     inputs0: function inputs to calculate numerical grad
-    vgrads: initianl grads of output variable
+    vgrads: initial grads of output variable
     epsilon: small value to calculate numerical grad
     rng: random number generator
     """
@@ -465,7 +465,7 @@ def function_tester(rng, func, ref_func, inputs,
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
-    Syntax of `ref_func`: inputs, parametes
+    Syntax of `ref_func`: inputs, parameters
     Syntax of `ref_grad`: inputs, output grads, parameters
     """
 
