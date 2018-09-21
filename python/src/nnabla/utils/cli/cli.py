@@ -116,6 +116,8 @@ def cli_main():
         try:
             return_value = args.func(args)
         except:
+            import traceback
+            print(traceback.format_exc())
             return_value = False
 
 

@@ -44,8 +44,7 @@ def convert_image(args):
         if len(im.shape) < 2 or len(im.shape) > 3:
             logger.warning(
                 "Illegal image file format %s.".format(src_file_name))
-            csv_data.remove(data)
-            continue
+            raise
         elif len(im.shape) == 3:
             # RGB image
             if im.shape[2] != 3:

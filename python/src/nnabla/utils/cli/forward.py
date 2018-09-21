@@ -283,7 +283,7 @@ def infer_command(args):
     for v, d in inputs:
         variables.append(v)
         data.append(d)
-    result, outputs = forward(args, 0, config, data, variables, False)
+    result, outputs = _forward(args, 0, config, data, variables, False)
     for i, o in enumerate(outputs):
         if args.output is not None:
             (np.array(o).astype(np.float32)).tofile(
