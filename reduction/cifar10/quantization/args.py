@@ -24,7 +24,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     if model_save_path is None:
         model_save_path = monitor_path
     if description is None:
-        description = "Examples on MNIST dataset. The following help shared among examples in this folder. Some argumetns are valid or invalid in some examples."
+        description = "Examples on MNIST dataset. The following help shared among examples in this folder. Some arguments are valid or invalid in some examples."
     parser = argparse.ArgumentParser(description)
     parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
     parser.add_argument("--learning-rate", "-l",
@@ -66,7 +66,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         default=None, help="Extension modules. ex) 'cpu', 'cudnn'.")
     parser.add_argument("--bit-width",
                         type=int, default=8,
-                        help='Bitwidth used, correspnding to n.')
+                        help='Bitwidth used, corresponding to n.')
     parser.add_argument("--upper-bound",
                         type=int, default=1,
                         help='Upper bound for pow-of-2 quantization, corresponding to m')

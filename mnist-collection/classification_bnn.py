@@ -273,7 +273,7 @@ def train():
     # Create input variables.
     image = nn.Variable([args.batch_size, 1, 28, 28])
     label = nn.Variable([args.batch_size, 1])
-    # Create predition graph.
+    # Create prediction graph.
     pred = mnist_cnn_prediction(image / 255, test=False)
     pred.persistent = True
     # Create loss function.
@@ -283,7 +283,7 @@ def train():
     # Create input variables.
     vimage = nn.Variable([args.batch_size, 1, 28, 28])
     vlabel = nn.Variable([args.batch_size, 1])
-    # Create predition graph.
+    # Create prediction graph.
     vpred = mnist_cnn_prediction(vimage / 255, test=True)
 
     # Create Solver.

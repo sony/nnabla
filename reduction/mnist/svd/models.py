@@ -118,7 +118,7 @@ def decompose_network_and_set_params(model_load_path,
         v_slim = slim_params[n]
         v_slim.d = v.d
     # set decomposed parameters and original bias
-    # a new bias is introcuded due to decomposition
+    # a new bias is introduced due to decomposition
     slim_params["fc-d0/affine/W"].d = U_approx
     slim_params["fc-d1/affine/W"].d = SV_approx
     b = trained_params["fc3/affine/b"]

@@ -29,7 +29,7 @@ import os
 
 def split_dataset(x, t, n_labeled, n_class):
     """
-    Function for spliting a labeled dataset to labeled and unlabeled dataset
+    Function for splitting a labeled dataset to labeled and unlabeled dataset
     """
 
     # Create datasets regarding to each class
@@ -122,7 +122,7 @@ class DataIterator(object):
         # Temporal index
         self.current = end
 
-        # If index reachs to the end then reset index and data shuffle
+        # If index reaches to the end then reset index and data shuffle
         if self.current == self.idxs.size:
             self._reset()
 
@@ -170,7 +170,7 @@ def calc_validation_error(di_v, xv, tv, pv, val_iter):
         xv: N-D array
         tv: N array
         pv: N-D array
-        val_iter: numver of iteration
+        val_iter: number of iteration
 
     Returns:
         error rate
@@ -233,7 +233,7 @@ def vat(x, r, eps, predict, distance):
     # Calculate log(p(y|x))
     y = predict(x)
 
-    # For stoping the backprop from this path.
+    # For stopping the backprop from this path.
     # TODO: need_grad should be passed to get_unlinked_variable after v1.0.3 fix.
     y1 = y.get_unlinked_variable()
     y1.need_grad = False
@@ -334,7 +334,7 @@ def main():
     n_h = args.n_units
     n_y = args.n_class
 
-    # Load MNist Dataset
+    # Load MNIST Dataset
     from mnist_data import MnistDataSource
     with MnistDataSource(train=True) as d:
         x_t = d.images
@@ -373,7 +373,7 @@ def main():
     eps = nn.Variable((args.batchsize_u,) + shape_x, need_grad=False)
     loss_u, yu = vat(xu, r, eps, forward, distance)
 
-    # Net for evaluating valiation data
+    # Net for evaluating validation data
     xv = nn.Variable((args.batchsize_v,) + shape_x, need_grad=False)
     hv = forward(xv, test=True)
     tv = nn.Variable((args.batchsize_v, 1), need_grad=False)
@@ -445,7 +445,7 @@ def main():
             loss_u.forward(clear_no_need_grad=True)
             loss_u.backward(clear_buffer=True)
 
-            # Normalize gradinet vector and input to variable
+            # Normalize gradient vector and input to variable
             r.d = get_direction(r.g)
 
         ##### Calculate loss for unlabeled data #####

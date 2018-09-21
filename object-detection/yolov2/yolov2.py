@@ -78,7 +78,7 @@ def reorg(x, stride):
     assert h % stride == 0
     assert w % stride == 0
     C, H, W = stride * stride * c, int(h / stride), int(w / stride)
-    # Reorg opration in Darknet can be done by transpose and reshape.
+    # Reorg operation in Darknet can be done by transpose and reshape.
     r = F.reshape(x, (b, c, H, stride, W, stride))
     r = F.transpose(r, (0, 3, 5, 1, 2, 4))
     r = F.reshape(r, (b, C, H, W))

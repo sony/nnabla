@@ -202,7 +202,7 @@ def capsule_reconstruction(caps, t_onehot, noise=None):
 
 def capsule_loss(v_norm, t_onehot, recon=None, x=None, m_pos=0.9, m_neg=0.1, wn=0.5, wr=0.0005):
     '''
-    Compute a margin loss given a length vector of  output capsules and one-hot labels, and.optionally comptues a reconstruction loss.
+    Compute a margin loss given a length vector of  output capsules and one-hot labels, and.optionally computes a reconstruction loss.
 
     Margin loss is given in eq 4. Reconstruction loss is given in Sec 4.1.
 

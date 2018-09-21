@@ -21,7 +21,7 @@ digraph G {
 ```
 ![A detailed description of the YOLO v2 Network.](./nw_fig_1.png)
 
-Non-Maximum Suppression (NMS) is a non-differentiable process (at least in the current implementation of YOLO-v2-NNabla). Therefore, regression cannot be directly performed on the final bounding boxes. In YOLO v2, instead of this, regression is perfomed on the "Bounding Box Tensor." Therefore, the resulting YOLO v2 training network is composed as follows:
+Non-Maximum Suppression (NMS) is a non-differentiable process (at least in the current implementation of YOLO-v2-NNabla). Therefore, regression cannot be directly performed on the final bounding boxes. In YOLO v2, instead of this, regression is performed on the "Bounding Box Tensor." Therefore, the resulting YOLO v2 training network is composed as follows:
 
 ### Remarks on the "reorg" Step
 In the "YOLO v2 Network" part in the diagram above, there is a part where the network branches off and is concatenated later to produce the final output. In this branched-off pass, there is a composition of network functions called the "reorg" function. This function appears in the original Darknet implementation of YOLO v2, and is composed by convolution and reshaping functions.

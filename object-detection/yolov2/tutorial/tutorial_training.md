@@ -227,7 +227,7 @@ python valid.py -w backup/000310.h5 -v {path-to-dataset}/2007_test.txt -o result
 
 After running this on the terminal, `valid.py` will produce 20 text files (which is the number of classes in the training dataset - note that `valid.py` assumes Pascal VOC 2007+2012 as the default dataset) under the directory `results`. Each of the 20 text files has the name of the format `comp4_det_test_*.txt`. The argument `results` in the command above is the output directory for these output text files. To change the output directory, simply change this argument, `results`, to the directory name of your choice.
 
-- **Remark (issue):** Currently, `valid.py` calculates the bounding boxes using its own NMS (Non-maximum suppression) implentation, instead of `nnabla.functions.nms_detection2d`. It has been experimentally confirmed that there are times when these two implementations output different results, although most of the time they output the same results.
+- **Remark (issue):** Currently, `valid.py` calculates the bounding boxes using its own NMS (Non-maximum suppression) implementation, instead of `nnabla.functions.nms_detection2d`. It has been experimentally confirmed that there are times when these two implementations output different results, although most of the time they output the same results.
 
 ### Step 4-2:
 After producing `results/comp4_det_test_*.txt` using `valid.py`, we must post-process these text files to calculate the actual mAP values.
@@ -267,7 +267,7 @@ Mean AP = 0.[number]
 ```
 Here, each `0.[number]` in this example will be outputted as an actual number.
 
-Each line in the output, such as "AP for aeroplane," indicates the Average Precision (AP) for the given class name, here, "aeroplane." The final line in the first half, "Mean AP = 0.[number]," is the Mean Average Precition (mAP) score for the network.
+Each line in the output, such as "AP for aeroplane," indicates the Average Precision (AP) for the given class name, here, "aeroplane." The final line in the first half, "Mean AP = 0.[number]," is the Mean Average Precision (mAP) score for the network.
 
 After this output, the script will also output a list of numbers:
 ```

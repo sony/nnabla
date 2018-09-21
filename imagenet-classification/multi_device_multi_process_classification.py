@@ -122,7 +122,7 @@ def train():
     ctx.device_id = str(device_id)
     nn.set_default_context(ctx)
 
-    # workarond to start with the same parameters.
+    # workaround to start with the same parameters.
     rng = np.random.RandomState(device_id)
     if args.tiny_mode:
         # We use Tiny ImageNet from Stanford CS231N class.

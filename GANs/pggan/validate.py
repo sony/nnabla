@@ -53,7 +53,7 @@ def main():
     num_images = args.valid_samples
     num_batches = num_images // args.batch_size
 
-    # dataiterator
+    # DataIterator
     di = data_iterator(args.img_path, args.batch_size,
                        imsize=(args.imsize, args.imsize),
                        num_samples=args.valid_samples,
@@ -80,7 +80,7 @@ def main():
         monitor_metric = MonitorSeries("SWD", monitor, interval=1)
         nhoods_per_image = 128
         nhood_size = 7
-        level_list = [128, 64, 32, 16]  # TODO: use argment
+        level_list = [128, 64, 32, 16]  # TODO: use argument
         dir_repeats = 4
         dirs_per_repeat = 128
         from sliced_wasserstein import compute_metric

@@ -73,7 +73,7 @@ class Trainer:
         self.monitor_time = monitor_time
         self.monitor_image_tile = monitor_image_tile
 
-    def train(self, ecpoch_per_resolution):
+    def train(self, epoch_per_resolution):
         # Add new resolution and channel
         self.gen.grow(self.resolution_list[0], self.channel_list[0])
         self.dis.grow(self.resolution_list[0], self.channel_list[0])
@@ -85,7 +85,7 @@ class Trainer:
         # TODO: change batchsize when the spatial size is greater than 128.
         for i in range(len(self.resolution_list) - 1):
             # Train at this resolution
-            self._train(ecpoch_per_resolution)
+            self._train(epoch_per_resolution)
             self.gen.save_parameters(
                 self.monitor_path, "Gen_phase_{}".format(self.resolution_list[i]))
             self.dis.save_parameters(
@@ -98,7 +98,7 @@ class Trainer:
                 self.resolution_list[i + 1], self.channel_list[i + 1])
 
             # Train in transition period
-            self._transition(ecpoch_per_resolution)
+            self._transition(epoch_per_resolution)
 
             # Monitor
             self.monitor_time.add(i)
@@ -114,10 +114,10 @@ class Trainer:
             nnabla_ext.cuda.clear_memory_cache()
 
         # Train at the final resolution
-        self._train(ecpoch_per_resolution, each_save=True)
+        self._train(epoch_per_resolution, each_save=True)
         self.monitor_time.add(i)
 
-    def _train(self, ecpoch_per_resolution, each_save=False):
+    def _train(self, epoch_per_resolution, each_save=False):
         batch_size = self.di.batch_size
         resolution = self.gen.resolution_list[-1]
         logger.info("phase : {}".format(resolution))
@@ -129,7 +129,7 @@ class Trainer:
         img, _ = self.di.next()
         self.monitor_image_tile.add(img_name, img)
 
-        for epoch in range(ecpoch_per_resolution):
+        for epoch in range(epoch_per_resolution):
             logger.info("epoch : {}".format(epoch + 1))
             itr = 0
             current_epoch = self.di.epoch
@@ -203,7 +203,7 @@ class Trainer:
                 self.dis.save_parameters(self.monitor_path, "Dis_phase_{}_epoch_{}".format(
                     self.resolution_list[-1], epoch+1))
 
-    def _transition(self, ecpoch_per_resolution):
+    def _transition(self, epoch_per_resolution):
         batch_size = self.di.batch_size
         resolution = self.gen.resolution_list[-1]
         phase = "{}to{}".format(
@@ -213,11 +213,11 @@ class Trainer:
         kernel_size = self.resolution_list[-1] // resolution
         kernel = (kernel_size, kernel_size)
 
-        total_itr = (self.di.size // batch_size + 1) * ecpoch_per_resolution
+        total_itr = (self.di.size // batch_size + 1) * epoch_per_resolution
         global_itr = 1.
         alpha = global_itr / total_itr
 
-        for epoch in range(ecpoch_per_resolution):
+        for epoch in range(epoch_per_resolution):
             logger.info("epoch : {}".format(epoch + 1))
             itr = 0
             current_epoch = self.di.epoch

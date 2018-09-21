@@ -62,7 +62,7 @@ def vae(x, shape_z, test=False):
 
     # The prior variable and the reparameterization trick
     if not test:
-        # traingin with reparameterization trick
+        # training with reparameterization trick
         epsilon = F.randn(mu=0, sigma=1, shape=(batch_size,) + shape_z)
         z = mu + sigma * epsilon
     else:

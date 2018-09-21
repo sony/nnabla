@@ -65,7 +65,7 @@ def get_args(batch_size=16):
     parser.add_argument("--not-use-wscale", action='store_false',
                         help="Not use the equalized learning rate.")
     parser.add_argument("--use-he-backward", action='store_true',
-                        help="Use the He initializaiton using the so-caled `fan_in`. Default is the backward.")
+                        help="Use the He initialization using the so-called `fan_in`. Default is the backward.")
     parser.add_argument("--leaky-alpha", type=float, default=0.2,
                         help="Leaky alpha value.")
     parser.add_argument("--learning-rate", type=float, default=0.001,

@@ -146,7 +146,7 @@ def main():
     l1.share_data()
     l2.share_data()
 
-    # validaiton graph
+    # validation graph
 
     vx = nn.Variable((batch_size, num_steps))
     vt = nn.Variable((batch_size, num_steps))

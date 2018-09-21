@@ -81,7 +81,7 @@ def voc_eval(detpath,
 
     Top level function that does the PASCAL VOC evaluation.
 
-    detpath: Path to detections
+    detpath: Path to detection
         detpath.format(classname) should produce the detection results file.
     annopath: Path to annotations
         annopath.format(imagename) should be the xml annotations file.
@@ -92,7 +92,7 @@ def voc_eval(detpath,
     [use_07_metric]: Whether to use VOC07's 11 point AP computation
         (default False)
     """
-    # assumes detections are in detpath.format(classname)
+    # assumes detection are in detpath.format(classname)
     # assumes annotations are in annopath.format(imagename)
     # assumes imagesetfile is a text file with each line an image name
     # cachedir caches the annotations in a pickle file

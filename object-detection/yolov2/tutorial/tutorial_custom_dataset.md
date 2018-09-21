@@ -14,7 +14,7 @@ The bias values represent the width-height pairs of a default-size box, called "
 
 As mentioned in [Quick Start: Image Object Detection with YOLO-v2-NNabla](../quickstart.md), the bias values (passed by the `--biases` argument in `yolov2_detection.py`, and `--anchors` argument in `train.py`) are tailored for the specific dataset that was used at training time. The values used in the aforementioned tutorial is provided by the author of the YOLO v2 paper (TODO:cite), and are the biases for the MS COCO Dataset (or the VOC 2007+2012 dataset).
 
-Thererore, when using a custom dataset, it is best to calculate the bias values for the anchor boxes tailored for the dataset. However, it is also not impossible to reuse the anchor box sizes provided in the code, although this could be a compromise for the performance. If you wish to calculate your own bias values, please proceed to the next section. If you wish to use the default bias values provided inside YOLO-v2-NNabla, please proceed to the second next section.
+Therefore, when using a custom dataset, it is best to calculate the bias values for the anchor boxes tailored for the dataset. However, it is also not impossible to reuse the anchor box sizes provided in the code, although this could be a compromise for the performance. If you wish to calculate your own bias values, please proceed to the next section. If you wish to use the default bias values provided inside YOLO-v2-NNabla, please proceed to the second next section.
 
 ### Calculating the Bias Values
 This section will describe how to calculate the bias for the custom dataset.

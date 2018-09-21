@@ -24,7 +24,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     if model_save_path is None:
         model_save_path = monitor_path
     if description is None:
-        description = "Examples on CIFAR-10 dataset. The following help shared among examples in this folder. Some argumetns are valid or invalid in some examples."
+        description = "Examples on CIFAR-10 dataset. The following help shared among examples in this folder. Some arguments are valid or invalid in some examples."
     parser = argparse.ArgumentParser(description)
     parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
     parser.add_argument("--learning-rate", "-l",

@@ -73,7 +73,7 @@ def train():
     # Create input variables.
     vimage = nn.Variable([args.batch_size, c, h, w])
     vlabel = nn.Variable([args.batch_size, 1])
-    # Create predition graph.
+    # Create prediction graph.
     vpred = model_prediction(vimage, maps=maps, test=True)
 
     # Create Solver.

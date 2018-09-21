@@ -63,7 +63,7 @@ class CategoricalSampler(object):
 
     def calc_random_method_selection_rate(self, k, histogram, gamma):
         """
-        Calculate 2 rondom type selection rate
+        Calculate 2 random type selection rate
            In this example, the sampler combines 2 random method
              - sample from dataset
              - sample from uniform random of n_category
@@ -71,10 +71,10 @@ class CategoricalSampler(object):
         powered histogram.
 
         This function calculate the rate of 2 random method
-        minimising the difference between real distribution and combined distribution
+        minimizing the difference between real distribution and combined distribution
 
         Args:
-            k: number of categgory
+            k: number of category
             histogram : histogram
             gamma : power of histogram in negative sampling
 
@@ -142,7 +142,7 @@ def create_minibatch(dataset, ids, sampler, half_window=3, n_negative=5):
         ids: indices
         sampler: sampler functions
         half_window: half window size
-        n_negative: numper of negative samples
+        n_negative: number of negative samples
 
     Returns:
         list of x(word) y(context) t(positive, negative)

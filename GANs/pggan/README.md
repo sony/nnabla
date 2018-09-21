@@ -37,7 +37,7 @@ the log of losses, and etc in the `<monitor path>`.
 
 ### Generation
 
-For generaing images, run
+For generating images, run
 
 ```python
 python generate.py --device-id 0 \
@@ -71,7 +71,7 @@ The log of the validation metric is located in the `<monitor path>`.
 - https://github.com/tkarras/progressive_growing_of_gans
 - https://github.com/tkarras/progressive_growing_of_gans/tree/original-theano-version
 
-## Acknowledgement
+## Acknowledgment
 
 This work was mostly done by the intern.
 
