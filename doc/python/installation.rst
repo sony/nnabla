@@ -32,7 +32,7 @@ OS specific workflows
 Install From Source
 -------------------
 
-Documentation of build from source has been moved to `Github repository <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_.
+Documentation of build from source has been moved to `Github repository <https://github.com/sony/nnabla-ext-cuda/tree/master/doc/build>`_ (`build <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_ or `build_distributed <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_).
 
 
 Running On Docker
