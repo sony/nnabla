@@ -1,5 +1,6 @@
 Cython>=0.24,<0.26
 boto3
+requests
 h5py
 numpy>=1.12
 onnx

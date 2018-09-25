@@ -233,6 +233,7 @@ def upload_command(args):
     name = os.path.splitext(os.path.basename(args.filename))[0]
     uploader.upload(args.token, args.filename, name,
                     endpoint=args.endpoint)
+    return True
 
 
 def add_upload_command(subparsers):

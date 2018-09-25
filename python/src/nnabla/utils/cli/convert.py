@@ -50,16 +50,20 @@ def convert_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
-            return
+            return False
 
     if 'export_format' in args:
         if args.export_format not in nnabla.utils.converter.formats.export_name:
             print('Export format ({}) is not supported.'.format(args.export_format))
-            return
+            return False
 
     if len(args.files) >= 2:
         output = args.files.pop()
         nnabla.utils.converter.convert_files(args, args.files, output)
+        return True
+
+    print('Input and Output arg is mandatory.')
+    return False
 
 
 def add_convert_command(subparsers):
