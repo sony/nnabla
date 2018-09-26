@@ -76,7 +76,7 @@ cdef class Context:
         return getattr(self, key)
 
     def __repr__(self):
-        return "Context(backend='{}', array_class='{}'"\
+        return "Context(backend={}, array_class='{}'"\
             ", device_id='{}')".format(
                 self.backend, self.array_class,
                 self.device_id)
@@ -620,6 +620,10 @@ cdef class Variable:
     @name.setter
     def name(self, string name):
         self.varp.set_name(name)
+        
+    @property
+    def rank(self, ):
+        return self.varp.rank()
 
     def visit(self, f):
         '''Visit functions recursively in forward order.
