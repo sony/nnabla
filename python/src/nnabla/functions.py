@@ -166,6 +166,55 @@ def split(x, axis=0):
     return split_base(x, axis, x.shape[axis])
 
 
+@function_api
+def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
+    r"""
+    Slice arrays along specified axis. This function 
+    complies with python slice wherre `slice(None, None, -1)` and 
+    `slice(-1, None, -1)` are the special case, which flips the 
+    input array and results in the output array from the end to the beginning
+    of the input array along the corresponding dimension.
+
+
+    Args:
+        x(~nnabla.Variable): N-D array
+        start(repeated int64): Start indices for each axis
+            [default=``(0,) * len(x.shape)``]
+        stop(repeated int64): Stop indices for each axis
+            [default=``tuple(x.shape)``]
+        step(repeated int64): Step indices for each axis
+            [default=``(1,) * len(x.shape)``]
+
+    Returns:
+        ~nnabla.Variable: Sliced N-D array
+    """
+    import copy
+    start = copy.copy(start)
+    stop = copy.copy(stop)
+    step = copy.copy(step)
+
+    from .function_bases import slice as slice_base
+    if start is None:
+        start = (0,) * len(x.shape)
+    if stop is None:
+        stop = tuple(x.shape)
+    if step is None:
+        step = (1,) * len(x.shape)
+
+    shape = x.shape
+    for i, sss in enumerate(zip(start, stop, step)):
+        s0, s1, s2 = sss
+        # SPECIAL CASE: slice(-1, None, <0) or slice(None, None, <0)
+        SLICE_NONE = 0x7fffffff
+        if s0 == None:
+            start[i] = SLICE_NONE
+        if s1 == None:
+            stop[i] = SLICE_NONE
+        if s2 == None:
+            step[i] = SLICE_NONE
+    return slice_base(x, start, stop, step, n_outputs, outputs)
+
+
 def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
     r"""
     Batch normalization.
