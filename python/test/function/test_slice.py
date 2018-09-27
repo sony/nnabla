@@ -41,7 +41,8 @@ def ref_slice(x, start, stop, step):
                           ((6, 7, 6, 5), (0, 0, 1, 2),
                            (6, -1, -2, -3), (1, 1, 1, 1))
                           ])
-@pytest.mark.xfail(raises=RuntimeError, reason="Empty-NdArray raises error as NNabla specification")
+# @pytest.mark.xfail(raises=RuntimeError, reason="Empty-NdArray raises error as NNabla specification")
+@pytest.mark.skip(reason="Empty-NdArray raises error as NNabla specification")
 def test_slice_forward_backward(seed, inshape, start, stop, step, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)
@@ -64,7 +65,8 @@ def test_slice_forward_backward(seed, inshape, start, stop, step, ctx, func_name
                           # TODO: Empty-cases
                           ((4, ), [0, ], [2, ], [-1, ])
                           ])
-@pytest.mark.xfail(raises=RuntimeError, reason="Empty-NdArray raises error as NNabla specification")
+# @pytest.mark.xfail(raises=RuntimeError, reason="Empty-NdArray raises error as NNabla specification")
+@pytest.mark.skip(reason="Empty-NdArray raises error as NNabla specification")
 def test_slice_forward_special_case(seed, inshape, start, stop, step, ctx, func_name):
     x_data = np.random.rand(*inshape)
 

@@ -620,7 +620,7 @@ cdef class Variable:
     @name.setter
     def name(self, string name):
         self.varp.set_name(name)
-        
+
     @property
     def rank(self, ):
         return self.varp.rank()
