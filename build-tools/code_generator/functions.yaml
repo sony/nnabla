@@ -2370,6 +2370,9 @@ Signal Processing:
       mode:
         doc: Interpolation mode chosen from ('nearest'|'linear').
         type: string
+        available_values:
+          - nearest
+          - linear
       align_corners:
         doc: If true, the corner pixels of input and output arrays are aligned, such that the output corner pixels have the same values with the input corner pixels.
         type: bool
