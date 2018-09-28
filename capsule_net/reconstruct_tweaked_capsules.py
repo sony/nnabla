@@ -139,7 +139,7 @@ def main():
     results = np.array(results).reshape((noise.shape[2], -1) + image.shape)
 
     # Draw tweaked images
-    from skimage.io import imsave
+    from nnabla.utils.image_utils import imsave
     for i in range(10):
         adigit = (results[:, :, i] * 255).astype(np.uint8)
         drawn = draw_images(adigit)

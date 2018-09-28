@@ -17,7 +17,7 @@ import glob
 from nnabla import logger
 from nnabla.utils.data_iterator import data_iterator_simple
 import os
-from scipy.misc import imread, imresize
+from nnabla.utils.image_utils import imread, imresize
 import sys
 
 import numpy as np

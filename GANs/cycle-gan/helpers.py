@@ -32,7 +32,7 @@ class MonitorImageWithName(MonitorImage):
 
     def add(self, name, var):
         import nnabla as nn
-        from scipy.misc import imsave
+        from nnabla.utils.image_utils import imsave
 
         if isinstance(var, nn.Variable):
             data = var.d.copy()
