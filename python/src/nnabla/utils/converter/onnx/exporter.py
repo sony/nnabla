@@ -176,7 +176,6 @@ class OnnxExporter:
             "PReLU": "PRelu",
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
-            "Convolution": "Conv",
             "GlobalAveragePooling": "GlobalAveragePool",
             "MaxPooling":     partial(self.BasePooling, 'MaxPool'),
             "AveragePooling": partial(self.BasePooling, 'AveragePool'),
@@ -220,7 +219,10 @@ class OnnxExporter:
             "Flip": self.Flip,
             "OneHot": self.OneHot,
             "Unpooling": self.Unpooling,
-            "DepthwiseConvolution": self.DepthwiseConvolution
+            "DepthwiseConvolution": self.DepthwiseConvolution,
+            "BinaryConnectConvolution": partial(self.BaseConvolution, 'BinaryConnectConvolution'),
+            "Convolution": partial(self.BaseConvolution, 'Convolution'),
+            "BinarySigmoid": self.BinarySigmoid
         }
 
     def _add_param(self, param_name, dtype, shape, raw_data):
@@ -235,6 +237,151 @@ class OnnxExporter:
         i.type.tensor_type.elem_type = dtype
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
+
+    def BinarySigmoid(self, func):
+        '''
+        Currently, caffe2 does not support this function.
+        '''
+        n = onnx.helper.make_node(
+            'HardSigmoid',
+            func.input,
+            func.output,
+            alpha=1.0,
+            beta=0.0
+        )
+        return [n]
+
+    def _conv1d(self, weight_base, weight_shape, func, func_input, cp):
+        nl = []
+        kernel_shape = weight_shape[weight_base:] + [1]
+        dilations = cp.dilation.dim[:] + [1]
+        strides = cp.stride.dim[:] + [1]
+        pads = cp.pad.dim[:] + [0]
+        input_x_shape_name = fork_name("input_x_shape_name")
+        input_x_shape = np.array(
+            [d for d in self._var_dict[func_input[0]].dim])
+        input_x_shape = np.array([np.prod(
+            input_x_shape) / np.prod(input_x_shape[-2:]), input_x_shape[-2], input_x_shape[-1], 1])
+        input_x_shape_shape = [len(input_x_shape)]
+        self._add_param(input_x_shape_name, TensorProto.INT32,
+                        input_x_shape_shape,
+                        input_x_shape.astype(np.int32).tostring())
+        output_x_reshape = fork_name("output_x_reshape")
+        n = onnx.helper.make_node(
+            'Reshape',
+            [func_input[0], input_x_shape_name],
+            [output_x_reshape]
+        )
+        nl.append(n)
+        inputs = [output_x_reshape]
+
+        input_w_shape_name = fork_name("input_w_shape_name")
+        input_w_shape = np.array(
+            [d for d in self._var_dict[func_input[1]].dim] + [1])
+        input_w_shape_shape = [len(input_w_shape)]
+        self._add_param(input_w_shape_name, TensorProto.INT32,
+                        input_w_shape_shape,
+                        input_w_shape.astype(np.int32).tostring())
+        output_w_reshape = fork_name("output_w_reshape")
+        n = onnx.helper.make_node(
+            'Reshape',
+            [func_input[1], input_w_shape_name],
+            [output_w_reshape]
+        )
+        nl.append(n)
+        inputs.append(output_w_reshape)
+
+        if len(func_input) == 3:
+            inputs.append(func_input[2])
+        output_1d_conv = fork_name('ouput_1d_conv')
+        outputs = [output_1d_conv]
+
+        n = onnx.helper.make_node(
+            'Conv',
+            inputs,
+            outputs,
+            kernel_shape=kernel_shape,
+            dilations=dilations,
+            strides=strides,
+            pads=pads * 2,
+            group=cp.group
+        )
+        nl.append(n)
+
+        output_y_shape_name = fork_name("output_y_shape_name")
+        output_y_shape = np.array(
+            [d for d in self._var_dict[func.output[0]].dim])
+        output_y_shape_shape = [len(output_y_shape)]
+        self._add_param(output_y_shape_name, TensorProto.INT32,
+                        output_y_shape_shape,
+                        output_y_shape.astype(np.int32).tostring())
+        n = onnx.helper.make_node(
+            'Reshape',
+            [output_1d_conv, output_y_shape_name],
+            func.output
+        )
+        nl.append(n)
+        return nl
+
+    def BaseConvolution(self, func_name, func):
+        nl = []
+        if func_name == 'Convolution':
+            cp = func.convolution_param
+            inputs = func.input
+        elif func_name == 'BinaryConnectConvolution':
+            cp = func.binary_connect_convolution_param
+            inputs = [func.input[0], func.input[2]]
+            if len(func.input) > 3:
+                inputs += [func.input[3]]
+        else:
+            raise ValueError('Internal error!')
+        weight_shape = [d for d in self._var_dict[func.input[1]].dim]
+        weight_base = cp.base_axis + 1
+
+        if len(cp.pad.dim[:]) == 1:  # 1-D convolution
+            return self._conv1d(weight_base, weight_shape, func, inputs, cp)
+        elif len(cp.pad.dim[:]) == 2:  # 2-D convolution:
+            kernel_shape = weight_shape[weight_base:]
+            dilations = cp.dilation.dim[:]
+            strides = cp.stride.dim[:]
+            pads = cp.pad.dim[:]
+            input_shape = [d for d in self._var_dict[func.input[0]].dim]
+            input_shape = [
+                int(np.prod(input_shape) / np.prod(input_shape[-3:]))] + input_shape[-3:]
+            x_shape = nnabla_pb2.Shape()
+            x_shape.dim.extend(input_shape)
+            self._var_dict[func.input[0]] = x_shape
+        else:
+            raise ValueError('N(>2)-D convolution is not supported.')
+
+        output_y_name = fork_name('output_y_name')
+        n = onnx.helper.make_node(
+            'Conv',
+            inputs,
+            [output_y_name],
+            kernel_shape=kernel_shape,
+            dilations=dilations,
+            strides=strides,
+            pads=pads * 2,
+            group=cp.group
+        )
+        nl.append(n)
+
+        output_y_shape_name = fork_name("output_y_shape_name")
+        output_y_shape = np.array(
+            [d for d in self._var_dict[func.output[0]].dim])
+        output_y_shape_shape = [len(output_y_shape)]
+        self._add_param(output_y_shape_name, TensorProto.INT32,
+                        output_y_shape_shape,
+                        output_y_shape.astype(np.int32).tostring())
+        n = onnx.helper.make_node(
+            'Reshape',
+            [output_y_name, output_y_shape_name],
+            func.output
+        )
+        nl.append(n)
+
+        return nl
 
     def DepthwiseConvolution(self, func):
         cp = func.depthwise_convolution_param
