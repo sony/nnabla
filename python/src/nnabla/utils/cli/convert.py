@@ -25,24 +25,27 @@ def function_info_command(args):
     else:
         with open(args.dest, 'w') as f:
             f.write(get_category_info_string())
+    return True
 
 
 def dump_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
-            return
+            return False
     nnabla.utils.converter.dump_files(args, args.files)
+    return True
 
 
 def nnb_template_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
-            return
+            return False
     if len(args.files) >= 2:
         output = args.files.pop()
         nnabla.utils.converter.nnb_template(args, args.files, output)
+    return True
 
 
 def convert_command(args):
