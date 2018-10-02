@@ -14,7 +14,7 @@ then
     ABSDIR=$(cd $(dirname $1) && pwd)
     unzip -q -d $TMPDIR $ABSDIR/$INPUT
     cd $TMPDIR
-
+    chmod -R u+r .
     # Replace tag linux to manylinux1 to fool the pip installer.
     for WHEEL in *dist-info/WHEEL
     do
