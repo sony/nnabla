@@ -217,11 +217,12 @@ def train():
         args.model_save_path, '{}_params_{:06}.h5'.format(args.net, args.max_iter))
     nn.save_parameters(parameter_file)
 
+    # append F.Softmax to the prediction graph so users see intuitive outputs
     runtime_contents = {
         'networks': [
             {'name': 'Validation',
              'batch_size': args.batch_size,
-             'outputs': {'y': vpred},
+             'outputs': {'y': F.softmax(vpred)},
              'names': {'x': vimage}}],
         'executors': [
             {'name': 'Runtime',
