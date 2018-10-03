@@ -116,7 +116,8 @@ class FileReader:
                 result = self._s3_bucket.Object(key).get()['Body'].read()
                 break
             except:
-                logger.log(99, 'read_s3_object() fails retrying count {}/10.'.format(retry))
+                logger.log(
+                    99, 'read_s3_object() fails retrying count {}/10.'.format(retry))
                 retry += 1
 
         return result
