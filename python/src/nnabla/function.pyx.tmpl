@@ -34,6 +34,7 @@ from _nd_array cimport NdArray
 from _nd_array import NdArray
 from _imperative cimport *
 from _computation_graph cimport connect
+from communicator cimport Communicator
 # Numpy
 import numpy as np
 cimport numpy as np
@@ -564,7 +565,15 @@ def ${name}(CContext ctx${''.join([', {} {}'.format(type_from_proto[v['type']]['
 %endfor
     info.type_name = '${name}'
     info.tags = {}
-    f = Function.create(create_${name}(ctx${''.join([', %s' % k for k in func.get('arguments', {}).keys()])}), info)
+    f = Function.create(create_${name}(ctx
+%for k, v in func.get('arguments', {}).items():
+%if v['type'] == 'Communicator':
+                        , ${k}.communicator
+%else:
+                        , ${k}
+%endif
+%endfor
+                        ), info)
     return f
 %endfor
 
