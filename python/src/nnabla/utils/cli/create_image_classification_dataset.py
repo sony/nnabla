@@ -17,10 +17,11 @@ import re
 import time
 import multiprocessing as mp
 import numpy as np
-import scipy.misc
 import nnabla.logger as logger
 import csv
 import tqdm
+
+from nnabla.utils.image_utils import imsave, imread, imresize
 
 
 def convert_image(args):
@@ -40,7 +41,7 @@ def convert_image(args):
 
     # open source image
     try:
-        im = scipy.misc.imread(src_file_name, mode='RGB' if ch == 3 else 'L')
+        im = imread(src_file_name)
         if len(im.shape) < 2 or len(im.shape) > 3:
             logger.warning(
                 "Illegal image file format %s.".format(src_file_name))
@@ -86,8 +87,7 @@ def convert_image(args):
                     pad = pad + ((0, 0),)
                 im = np.pad(im, pad, 'constant')
                 # print('before', im.shape)
-            im = scipy.misc.imresize(arr=im, size=(
-                height, width), interp='lanczos')
+            im = imresize(im, size=(height, width))
             # print('after', im.shape)
 
         # change color ch
@@ -104,7 +104,7 @@ def convert_image(args):
         except OSError:
             pass  # python2 does not support exists_ok arg
 
-        scipy.misc.imsave(dest_file_name, im)
+        imsave(dest_file_name, im)
     except:
         logger.warning(
             "Failed to convert %s." % (src_file_name))

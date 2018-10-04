@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from six.moves import map
-from scipy.misc import imsave
 import csv
 import glob
 import numpy as np
@@ -26,6 +25,7 @@ from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_ful
 import nnabla.utils.load as load
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
 from nnabla.utils.data_source_loader import FileReader
+from nnabla.utils.image_utils import imsave
 
 
 def _set_initial_values(result, type_and_name, d):

@@ -231,7 +231,7 @@ class MonitorImage(object):
 
         """
         import nnabla as nn
-        from scipy.misc import imsave
+        from nnabla.utils.image_utils import imsave
         if index != 0 and (index + 1) % self.interval != 0:
             return
         if isinstance(var, nn.Variable):
@@ -310,7 +310,7 @@ class MonitorImageTile(MonitorImage):
 
         """
         import nnabla as nn
-        from scipy.misc import imsave
+        from nnabla.utils.image_utils import imsave
         if index != 0 and (index + 1) % self.interval != 0:
             return
         if isinstance(var, nn.Variable):

@@ -8,6 +8,8 @@ protobuf
 pyyaml
 requests
 tqdm
+imageio
+pillow
 virtualenv
 
 autopep8
