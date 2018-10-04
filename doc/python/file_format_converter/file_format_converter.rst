@@ -234,19 +234,23 @@ Convert ONNX to NNP
 C Runtime Operation
 +++++++++++++++++++
 
+Generally, it is better to set the batch size to 1 when convert file to C runtime.
+If the batch size is larger than 1, it is necessary to process the batch size data collectively
+To make the batch size 1, add `-b 1` to command line option.
+
 Convert NNP to NNB
 ^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
-   $ nnabla_cli convert input.nnp output.nnb
+   $ nnabla_cli convert -b 1 input.nnp output.nnb
 
 Convert NNP to C source code.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
-   $ nnabla_cli convert -O CSRC input.onnx output-dir
+   $ nnabla_cli convert -b 1 -O CSRC input.onnx output-dir
 
 
 Splitting network

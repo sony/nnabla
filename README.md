@@ -7,6 +7,7 @@ clusters, embedded devices and production servers.
 
 * [Neural Network Libraries - CUDA extension](https://github.com/sony/nnabla-ext-cuda): An extension library of Neural Network Libraries that allows users to speed-up the computation on CUDA-capable GPUs.
 * [Neural Network Libraries - Examples](https://github.com/sony/nnabla-examples): Working examples of Neural Network Libraries from basic to state-of-the-art.
+* [Neural Network Libraries - C Runtime](https://github.com/sony/nnabla-c-runtime):  Runtime library for inference Neural Network created by Neural Network Libraries.
 * [Neural Network Console](https://dl.sony.com/): A Windows GUI app for neural network development.
 
 
