@@ -560,8 +560,12 @@ from utils.type_conv import type_from_proto
 def ${name}(CContext ctx${''.join([', {} {}'.format(type_from_proto[v['type']]['pyx'], k) for k, v in func.get('arguments', {}).items()])}):
     info = Info()
     info.args = {}
-%for arg in func.get('arguments', {}).keys():
+%for arg, v in func.get('arguments', {}).items():
+%if v['type'] == 'Communicator':
+    info.args['${arg}'] = '<Communicator>'
+%else:
     info.args['${arg}'] = ${arg}
+%endif
 %endfor
     info.type_name = '${name}'
     info.tags = {}

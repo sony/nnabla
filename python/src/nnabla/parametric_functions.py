@@ -1682,6 +1682,77 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                                  decay_rate, eps, batch_stat, output_stat)
 
 
+@parametric_function_api("bn", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+    ('mean', 'Moving average of batch mean', '<see above>', False),
+    ('var', 'Moving average of batch variance', '<see above>', False),
+])
+def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-5,
+                             output_stat=False, fix_parameters=False):
+    """
+    Synchronized batch normalization layer.
+
+    For some tasks (e.g., semantic segmentation), batch size will be too small and BatchNormalization layer might not work well.
+    SyncBatchNorlization layer solves these problems by synchronizing batch stats (mean and var) between multiple processes.
+
+    .. math::
+
+        \\begin{array}{lcl}
+        \\mu &=& \\frac{1}{M} \\sum x_i\\\\
+        \\sigma^2 &=& \\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\
+        \\hat{x}_i &=& \\frac{x_i - \\mu}{\\sqrt{\\sigma^2 + \\epsilon }}\\\\
+        y_i &= & \\hat{x}_i \\gamma + \\beta.
+        \\end{array}
+
+    where :math:`x_i, y_i` are the inputs.
+
+    Args:
+        inp (~nnabla.Variable): N-D array of input.
+        comm (~nnabla.Communicator): The communicator
+        group (string): The name of the communicator group
+        axes (:obj:`tuple` of :obj:`int`):
+            Mean and variance for each element in ``axes`` are calculated using
+            elements on the rest axes. For example, if an input is 4 dimensions,
+            and ``axes`` is ``[1]``,  batch mean is calculated as
+            ``np.mean(inp.d, axis=(0, 2, 3), keepdims=True)``
+            (using numpy expression as an example).
+        decay_rate (float): Decay rate of running mean and variance.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat (bool): Output batch mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    References:
+
+        - Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+
+    The shape of parameters has the same number of dimensions with the input
+    data, and the shapes in ``axes`` has the same dimensions with the input, while the rest has ``1``.
+    If an input is 4-dim and ``axes=[1]``, the parameter shape will be
+    ``param_shape  = np.mean(inp.d, axis=(0, 2, 3), keepdims=True).shape``
+    (using numpy expression as an example).
+
+    """
+
+    assert len(axes) == 1
+    shape_stat = [1 for _ in inp.shape]
+    shape_stat[axes[0]] = inp.shape[axes[0]]
+    beta = get_parameter_or_create(
+        "beta", shape_stat, ConstantInitializer(0), True, not fix_parameters)
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, ConstantInitializer(1), True, not fix_parameters)
+    mean = get_parameter_or_create(
+        "mean", shape_stat, ConstantInitializer(0), False)
+    var = get_parameter_or_create(
+        "var", shape_stat, ConstantInitializer(0), False)
+
+    return F.sync_batch_normalization(inp, beta, gamma, mean, var, comm, group,
+                                      axes, decay_rate, eps, output_stat)
+
+
 @parametric_function_api("mean_subtraction", [
     ('mean', 'Moving average', 'inp.shape[base_axis:]', False),
     ('t', 'Minibatch counter used in forward pass', '(1,)', False),

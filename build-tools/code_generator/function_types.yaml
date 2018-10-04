@@ -100,6 +100,9 @@ Sinc:
 BatchNormalization:
   float: [float]
   half: [Half]      
+SyncBatchNormalization:
+  float: [float]
+  half: [Half]
 MeanSubtraction:
   float: [float]
   half: [Half]
