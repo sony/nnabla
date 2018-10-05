@@ -20,7 +20,7 @@ import darknet19
 
 import numpy as np
 import time
-from scipy.misc import imread, imresize
+from nnabla.utils.image_utils import imread, imresize
 
 
 def get_args():

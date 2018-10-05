@@ -18,7 +18,6 @@ Provide data iterator for horse2zebra examples.
 """
 
 import os
-import scipy
 import zipfile
 from contextlib import contextmanager
 import numpy as np
@@ -27,6 +26,7 @@ from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
 from nnabla.utils.data_source_loader import download
+from nnabla.utils.image_utils import imread
 
 
 def load_cyclegan_dataset(dataset="horse2zebra", train=True, domain="A",
@@ -69,8 +69,7 @@ def load_cyclegan_dataset(dataset="horse2zebra", train=True, domain="A",
                 logger.info('loading {}'.format(filename))
 
                 # load image
-                image = scipy.misc.imread(fp, mode="RGB")
-                #image = scipy.misc.imread(fp)
+                image = imread(fp)
                 image = np.transpose(image, (2, 0, 1))
                 image = normalize_method(image)
                 image_name, ext = os.path.splitext(filename.split("/")[-1])

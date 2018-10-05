@@ -16,12 +16,13 @@ import argparse
 import numpy as np
 import os
 import re
-import scipy.misc
 import scipy.io
 import shutil
 import tarfile
 import tempfile
 import tqdm
+
+from nnabla.utils.image_utils import imresize, imread
 
 
 def _resize_image(im, width, height, padding):
@@ -52,8 +53,7 @@ def _resize_image(im, width, height, padding):
                                 target_w - (target_w - w) // 2 - w))
             pad = pad + ((0, 0),)
             im = np.pad(im, pad, 'constant')
-        im = scipy.misc.imresize(arr=im, size=(
-            height, width), interp='lanczos')
+        im = imresize(im, (height, width))
 
     x = np.array(im, dtype=np.uint8).transpose((2, 0, 1))
     return x
@@ -83,7 +83,7 @@ def _create_train_cache(archive, output, names, synsets_id, args):
 
     def _load_func(index):
         y, name, marchive, mname = images[index]
-        im = scipy.misc.imread(marchive.extractfile(mname), mode='RGB')
+        im = imread(marchive.extractfile(mname))
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
         return x, np.array([y - 1]).astype(np.int32)
 
@@ -116,7 +116,7 @@ def _create_validation_cache(archive, output, names, ground_truth, args):
 
     def _load_func(index):
         y, name = ground_truth[index], images[index]
-        im = scipy.misc.imread(archive.extractfile(name), mode='RGB')
+        im = imread(archive.extractfile(name))
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
         return x, np.array([y - 1]).astype(np.int32)
 

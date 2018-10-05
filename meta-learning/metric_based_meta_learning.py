@@ -229,12 +229,12 @@ def load_omniglot(dataset_root):
     x_train, _ = np.load(dataset_root + "/train.npy")
     x_valid, _ = np.load(dataset_root + "/val.npy")
     x = np.r_[x_train, x_valid]
-    from scipy.misc import imresize
+    from nnabla.utils.image_utils import imresize
     shape_x = (1, 28, 28)
     x_resized = np.zeros([1623, 20, 28, 28])
     for xi, ri in zip(x, x_resized):
         for xij, rij in zip(xi, ri):
-            rij[:] = imresize(xij, size=shape_x[1:], interp='nearest') / 255.
+            rij[:] = imresize(xij, size=shape_x[1:]) / 255.
     data = augmentation(x_resized)
     rng = np.random.RandomState(706)
     data = rng.permutation(data)
