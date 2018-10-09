@@ -210,9 +210,9 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
     If :math:`{\\mathbf U}` and :math:`{\\mathbf V}` exist in the context,
     they take precedence over `uv_init`.
 
-    Suppose the weight of the affine is of :math:`{I \\times O}` and 
-    the compression rate you want to specify is :math:`{CR}`, then you  
-    set :math:`{R}` as 
+    Suppose the weight of the affine is of :math:`{I \\times O}` and
+    the compression rate you want to specify is :math:`{CR}`, then you
+    set :math:`{R}` as
 
     .. math::
 
@@ -266,7 +266,7 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
     else:
         # uv is initialize from initializer
         uv = uv_init([int(np.prod(inp.shape[base_axis:])), ] +
-                     tuple(n_outmaps))
+                     list(n_outmaps))
 
     u = get_parameter('U')
     v = get_parameter('V')
@@ -635,9 +635,9 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
     If :math:`{\\mathbf U}` and :math:`{\\mathbf V}` exist in the
     context, they take precedence over `uv_init`.
 
-    Suppose the kernel tensor of the convolution is of :math:`{O \\times I \\times K \\times K}` and 
-    the compression rate you want to specify is :math:`{CR}`, then you  
-    set :math:`{R}` as 
+    Suppose the kernel tensor of the convolution is of :math:`{O \\times I \\times K \\times K}` and
+    the compression rate you want to specify is :math:`{CR}`, then you
+    set :math:`{R}` as
 
     .. math::
 
@@ -768,7 +768,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
                      pad=None, stride=None, dilation=None,
                      oik_init=None, b_init=None,
                      base_axis=1, fix_parameters=False, rng=None, with_bias=True,
-                     max_iter=500, stopping_criterion=1e-5):
+                     max_iter=500, stopping_criterion=1e-5, lambda_reg=0.0):
     """CP convolution is a low rank approximation of a convolution layer. A 3D tensor containing the parameter is built by collapsing the N-D kernels into 1D, then the tensor is decomposed into three matrices. The decomposed layer can be seen as linear combinations of the input feature maps to :math:`{R}` feature maps followed by a depthwise convolution and followed by linear combinations of the feature maps to compute the output feature maps.
 
     The CP decomposition allows to approximate the kernel tensor by :math:`{R}` rank-1 tensors of the form:
@@ -777,17 +777,17 @@ def cpd3_convolution(inp, outmaps, kernel, r,
 
         \\sum_{r=1}^{R} \\lambda_r {\\mathbf{o}^{(r)} \\otimes \\mathbf{i}^{(r)} \\otimes \\mathbf{k}^{(r)}},
 
-    where :math:`{\\lambda}_r` is the normalization coefficient and :math:`{\\otimes}` is the outer product. 
+    where :math:`{\\lambda}_r` is the normalization coefficient and :math:`{\\otimes}` is the outer product.
 
 
-    If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV  
-    If `oik_init` is None or an initializer, the product of U and V approximate the randomly initialized array  
+    If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV
+    If `oik_init` is None or an initializer, the product of U and V approximate the randomly initialized array
 
     If `O`, `I` and `K` exist in context, they are used to initialize the layer and oik_init is not used.
 
-    Suppose the kernel tensor of the affine is of :math:`{I \\times O}` and 
-    the compression rate you want to specify is :math:`{CR}`, then you  
-    set :math:`{R}` as 
+    Suppose the kernel tensor of the affine is of :math:`{I \\times O}` and
+    the compression rate you want to specify is :math:`{CR}`, then you
+    set :math:`{R}` as
 
     .. math::
 
@@ -813,9 +813,11 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
         max_iter (int): Max iteration of the ALS.
-        stopping_criterion (float): Threshold for stopping the ALS. 
-                If the value is negative, the convergence check is ignored; 
+        stopping_criterion (float): Threshold for stopping the ALS.
+                If the value is negative, the convergence check is ignored;
                 in other words, it may reduce the computation time.
+        lambda_reg (float): regularization parameter for the ALS. Larger
+                lambda_reg means larger regularization.
 
     Returns:
         :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
@@ -849,6 +851,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         U, lmbda = als.solve(X=oik, rank=r,
                              max_iter=max_iter,
                              stopping_criterion=stopping_criterion,
+                             lambda_reg=lambda_reg,
                              dtype=oik.dtype,
                              rng=rng)
 
@@ -910,7 +913,7 @@ def binary_connect_convolution(inp, outmaps, kernel,
                                with_bias=True):
     """Binary Connect Convolution, multiplier-less inner-product.
 
-    Binary Connect Convolution is the convolution function, 
+    Binary Connect Convolution is the convolution function,
     except the definition of the inner product is modified.
     The input-output relation of this function is as follows:
 
@@ -1437,7 +1440,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     Args:
         x(~nnabla.Variable): N-D array as input
         base_axis(int): Dimensions up to base_axis is treated as sample dimension.
-        shared(bool): Use shared weight value or not 
+        shared(bool): Use shared weight value or not
         fix_parameters (bool): When set to `True`, the negative slope values
             will not be updated.
 
@@ -1465,13 +1468,13 @@ def fixed_point_quantized_affine(inp, n_outmaps,
                                  quantize_b=True, sign_b=True, n_b=8, delta_b=2**-4, ste_fine_grained_b=True):
     """Fixed-Point Quantized Affine.
 
-    Fixed-Point Quantized Affine is the affine function, 
+    Fixed-Point Quantized Affine is the affine function,
     except the definition of the inner product is modified.
     The input-output relation of this function is as follows:
 
     .. math::
 
-        y_j = \sum_{i} Q(w_{ji}) x_i, 
+        y_j = \sum_{i} Q(w_{ji}) x_i,
 
     where :math:`Q(w_{ji})` is the fixed-point quantization function.
 
@@ -1580,13 +1583,13 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
                                       quantize_b=True, sign_b=True, n_b=8, delta_b=2**-4, ste_fine_grained_b=True,):
     """Fixed-Point Quantized Convolution.
 
-    Fixed-Point Quantized Convolution is the convolution function, 
+    Fixed-Point Quantized Convolution is the convolution function,
     except the definition of the inner product is modified.
     The input-output relation of this function is as follows:
 
     .. math::
 
-        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j}, 
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j},
 
     where :math:`Q(w_{n, m, i, j})` is the fixed-point quantization function.
 
@@ -1696,13 +1699,13 @@ def pow2_quantized_affine(inp, n_outmaps,
                           quantize_b=True, sign_b=True, with_zero_b=False, n_b=8, m_b=2, ste_fine_grained_b=True):
     """Pow2 Quantized Affine.
 
-    Pow2 Quantized Affine is the affine function, 
+    Pow2 Quantized Affine is the affine function,
     except the definition of the inner product is modified.
     The input-output relation of this function is as follows:
 
     .. math::
 
-        y_j = \sum_{i} Q(w_{ji}) x_i, 
+        y_j = \sum_{i} Q(w_{ji}) x_i,
 
     where :math:`Q(w_{ji})` is the power-of-2 quantization function.
 
@@ -1739,7 +1742,7 @@ def pow2_quantized_affine(inp, n_outmaps,
         with_zero_b (bool): Indicate using zero as a quantized value. Default is false.
         n_b (int): Bit width used for bias.
         m_b (int): :math:`2^m` is upper bound and :math:`-2^m` is lower bound for bias. Default is 2.
-        ste_fine_grained_b (bool): STE is fine-grained if `True`.  
+        ste_fine_grained_b (bool): STE is fine-grained if `True`.
     Returns:
         :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
 
@@ -1811,13 +1814,13 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
                                quantize_b=True, with_zero_b=False, sign_b=True, n_b=8, m_b=2, ste_fine_grained_b=True,):
     """Pow2 Quantized Convolution.
 
-    Pow2 Quantized Convolution is the convolution function, 
+    Pow2 Quantized Convolution is the convolution function,
     except the definition of the inner product is modified.
     The input-output relation of this function is as follows:
 
     .. math::
 
-        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j}, 
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j},
 
     where :math:`Q(w_{n, m, i, j})` is the power-of-2 quantization function.
 
