@@ -60,6 +60,9 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
     parser.add_argument("--compression_ratio", "-cr",
                         type=float, default=0.6,
                         help='compression ratio. (e.g. 0.6 means that the amount of weights are reduced by 60%)')
+    parser.add_argument("--lambda_regression", "-lr",
+                        type=float, default=0.0,
+                        help='regularization parameter for CP factorization')
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
         os.makedirs(args.model_save_path)
