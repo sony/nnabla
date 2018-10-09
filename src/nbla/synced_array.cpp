@@ -78,9 +78,13 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
 }
 
 const Array *SyncedArray::get(dtypes dtype, const Context &ctx) {
+  return get_sp(dtype, ctx).get();
+}
+
+shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx) {
   ArrayDesc desc = sync(dtype, ctx); // get() does not change head.
   array_[desc.key].second = true;    // Set as at-head.
-  return array_[desc.key].first.get();
+  return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
 
 void SyncedArray::zero() {

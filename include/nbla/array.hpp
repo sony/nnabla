@@ -112,6 +112,9 @@ protected:
 ///< Shared pointer of NdArray
 typedef Array::Ptr ArrayPtr;
 
+typedef const Array ConstArray;
+typedef shared_ptr<ConstArray> ConstArrayPtr;
+
 /*@}*/
 /** \defgroup ArrayImplGrp Array list */
 /*@{*/

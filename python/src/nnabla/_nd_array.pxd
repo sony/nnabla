@@ -24,9 +24,9 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
 
     cdef cppclass CSyncedArray "nbla::SyncedArray":
         CSyncedArray(Size_t size) except +
-        CArray * cast(dtypes dtype, const CContext & ctx) except+
-        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) except+
-        const CArray * get(dtypes dtype, const CContext & ctx) except+
+        CArray * cast(dtypes dtype, const CContext & ctx) nogil except+
+        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) nogil except+
+        const CArray * get(dtypes dtype, const CContext & ctx) nogil except+
         dtypes dtype() except+
         Size_t size() except+
         void zero() except+
@@ -52,9 +52,10 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
         void set_array(SyncedArrayPtr array) except+
         void zero() except+
         void fill(double v) except+
-        const CArray * get(dtypes dtype, const CContext & ctx) except+
-        CArray * cast(dtypes dtype, const CContext & ctx) nogil except +
-        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) nogil except +
+        const CArray * get(dtypes dtype, const CContext & ctx) nogil except+
+        shared_ptr[const CArray] get_sp(dtypes dtype, const CContext & ctx) nogil except+
+        CArray * cast(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
+        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
 
     ctypedef shared_ptr[CNdArray] NdArrayPtr
 
