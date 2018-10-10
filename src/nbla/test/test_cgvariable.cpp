@@ -58,11 +58,11 @@ TEST_F(CgVariableTest, OrderOfBackwardForGraphWithoutBranches) {
   };
 
   /* Generate network */
-  auto a = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto a = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("A"), ignore2);
-  auto b = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto b = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("B"), ignore2);
-  auto c = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto c = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("C"), ignore2);
   auto input = make_shared<CgVariable>(Shape_t{1, 1, 1}, true);
   auto h1 = connect(make_shared<CgFunction>(a), {input}, 1);
@@ -85,15 +85,15 @@ TEST_F(CgVariableTest, OrderOfBackwardForGraphWithBranches) {
   };
 
   /* Generate network */
-  auto a = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto a = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("A"), ignore2);
-  auto b = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto b = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("B"), ignore2);
-  auto c = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto c = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("C"), ignore2);
-  auto d = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto d = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("D"), ignore2);
-  auto e = make_shared<Callback>(this->ctx_, nullptr, ignore1, ignore1,
+  auto e = make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
                                  generate_backward("E"), ignore2);
   auto input = make_shared<CgVariable>(Shape_t{1, 1, 1}, true);
   auto h1 = connect(make_shared<CgFunction>(a), {input}, 1);
@@ -116,12 +116,15 @@ TEST_F(CgVariableTest, CommunicatorBackwardCallback) {
   };
 
   /* Generate network */
-  auto a = make_shared<CgFunction>(make_shared<Callback>(
-      this->ctx_, nullptr, ignore1, ignore1, generate_backward("A"), ignore2));
-  auto b = make_shared<CgFunction>(make_shared<Callback>(
-      this->ctx_, nullptr, ignore1, ignore1, generate_backward("B"), ignore2));
-  auto c = make_shared<CgFunction>(make_shared<Callback>(
-      this->ctx_, nullptr, ignore1, ignore1, generate_backward("C"), ignore2));
+  auto a = make_shared<CgFunction>(
+      make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
+                            generate_backward("A"), ignore2));
+  auto b = make_shared<CgFunction>(
+      make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
+                            generate_backward("B"), ignore2));
+  auto c = make_shared<CgFunction>(
+      make_shared<Callback>(this->ctx_, nullptr, 1, ignore1, ignore1,
+                            generate_backward("C"), ignore2));
   auto in = make_shared<CgVariable>(Shape_t{1, 1, 1}, false);
   auto p1 = make_shared<CgVariable>(Shape_t{1, 1, 1}, true);
   auto p2 = make_shared<CgVariable>(Shape_t{1, 1, 1}, true);

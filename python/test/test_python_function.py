@@ -51,14 +51,10 @@ class Add2(PythonFunction):
                 inputs[1].g = outputs[0].g
 
 
-@F.function_api
-def add2(ctx, x0, x1, n_outputs=-1, outputs=None):
-    return Add2()(x0, x1, n_outputs=n_outputs, auto_forward=nn.get_auto_forward(), outputs=outputs)
-
-
 @pytest.mark.parametrize("seed", [314])
 def test_python_add2_forward_backward(seed):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    add2 = Add2()
     function_tester(rng, add2, lambda x, y: x + y, inputs, atol_b=2e-3)
