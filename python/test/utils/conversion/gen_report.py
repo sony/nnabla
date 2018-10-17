@@ -1,10 +1,145 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import sys
 import re
 import fnmatch
+import yaml
 
-# from https://github.com/woodylee1974/simple_sm by Woody
+### Below code is only used to initially create yaml ###
 
+#header_file_path = "/opt/miniconda3/envs/py35/lib/python3.5/site-packages/onnx-1.2.2-py3.5-linux-x86_64.egg/onnx/defs/operator_sets.h"
+header_file_path = "../../../../../../onnx/onnx/defs/operator_sets.h"
+
+def obtain_opset_defs(header_file):
+    func_opset_dict = {}
+    opset_dict = {}
+    parser = re.compile(
+        r'class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME\(Onnx, (\d*), (.*)\)'
+    )
+    with open(header_file, "r") as f:
+        for line in f.readlines():
+            opset_extractor = parser.match(line)
+            if opset_extractor:
+                opset = opset_extractor.group(1)
+                func  = opset_extractor.group(2)
+                if func in func_opset_dict:
+                    func_opset_dict[func].add(opset)
+                else:
+                    func_opset_dict[func] = set({opset})
+                if opset in opset_dict:
+                    opset_dict[opset].add(func)
+                else:
+                    opset_dict[opset] = set({func})
+    return func_opset_dict, opset_dict
+
+def initial_write_import_func_opver_yaml():
+    import yaml
+    import_func_opset_d, opset_d = obtain_opset_defs(header_file_path)
+    with open("importer_funcs_opset.yaml", "w") as f:
+        refine_d = {}
+        for k, v in import_func_opset_d.items():
+            d = {}
+            for opv in sorted(v):
+                d[opv] = True
+            refine_d[k] = d
+        f.write(yaml.dump(refine_d, default_flow_style=False))
+
+
+def generate_initial_nnabla_funcs_yaml():
+    from collections import OrderedDict
+    import yaml
+
+    def type_to_pack_format(typestring):
+        fmt = None
+        if typestring == 'bool':
+            fmt = 'B'
+        elif typestring == 'double' or typestring == 'float':
+            fmt = 'f'
+        elif typestring == 'int64':
+            fmt = 'i'
+        elif typestring == 'repeated int64' or typestring == 'Shape':
+            fmt = 'iI'
+        elif typestring == 'string':
+            fmt = 'i'
+        return fmt
+
+    def represent_odict(dumper, instance):
+        return dumper.represent_mapping('tag:yaml.org,2002:map', instance.items())
+
+    yaml.add_representer(OrderedDict, represent_odict)
+
+    def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+        '''
+        Load function with keeping the order of dictionaries.
+        '''
+        class OrderedLoader(Loader):
+            pass
+
+        def construct_mapping(loader, node):
+            loader.flatten_mapping(node)
+            return object_pairs_hook(loader.construct_pairs(node))
+        OrderedLoader.add_constructor(
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+            construct_mapping)
+        return yaml.load(stream, OrderedLoader)
+
+    def write_initial_nnabla_func_list():
+        funcs_yaml = "../../../../build-tools/code_generator/functions.yaml"
+        string = open(funcs_yaml, 'r').read()
+        info = load_yaml_ordered(string)
+        func_info_d = {}
+        for cat, cat_info in info.items():
+            for func, func_info in cat_info.items():
+                func_info_d[func] = ["Not implemented"]
+        with open("exporter_funcs_opset.yaml", "w") as f:
+            f.write(yaml.dump(func_info_d, default_flow_style=False))
+    write_initial_nnabla_func_list()
+
+### Above code is only used to initially create yaml file ###
+
+
+    def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+        '''
+        Load function with keeping the order of dictionaries.
+        '''
+        class OrderedLoader(Loader):
+            pass
+
+        def construct_mapping(loader, node):
+            loader.flatten_mapping(node)
+            return object_pairs_hook(loader.construct_pairs(node))
+        OrderedLoader.add_constructor(
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+            construct_mapping)
+        return yaml.load(stream, OrderedLoader)
+
+
+    def write_initial_nnabla_func_list():
+        funcs_yaml = "../../../../build-tools/code_generator/functions.yaml"
+        string = open(funcs_yaml, 'r').read()
+        info = load_yaml_ordered(string)
+        func_info_d = {}
+        for cat, cat_info in info.items():
+            for func, func_info in cat_info.items():
+                func_info_d[func] = ["Not implemented"]
+        with open("exporter_funcs_opset.yaml", "w") as f:
+            f.write(yaml.dump(func_info_d, default_flow_style=False))
+    write_initial_nnabla_func_list()
+
+### Above code is only used to initially create yaml file ###
 
 class StateMachine():
     def __init__(self, name, handler, **kwargs):
@@ -114,12 +249,13 @@ class StateMachine():
 
 
 class StatusHandler:
-    def __init__(self, output_buffer, test_result):
+    def __init__(self, output_buffer, test_result, opset_d):
         self.output_buffer = output_buffer
         self.test_result = test_result
         self.count = 0
         self.ok = 0
         self.count_line = -1
+        self.opset_d = opset_d
 
     def parse_upper_line(self, input_line):
         'start -- equal_line --> upper_line_found'
@@ -136,23 +272,34 @@ class StatusHandler:
 
     def handle_import_table(self, input_line):
         'import_table --> process_line --> import_table'
-        output_line = '{{:<{}}}{{:<{}}}{{:<{}}}'.format(*self.field_lens)
+        output_line = '{{:<{}}}{{:<{}}}{{:<{}}}{{:<{}}}'.format(
+            *self.field_lens)
         if input_line[0] != ' ':
             fields = filter(lambda x: x != '', input_line.split('  '))
             fields = [f.strip() for f in fields]
             self.count += 1
+            opset = self.opset_d.get(fields[0], [])
+            if isinstance(opset, list):
+                opset_s = ','.join(sorted(opset))
+                desc = ' '.join(fields[3:])
+            elif isinstance(opset, dict):
+                opset_s = ','.join(sorted(opset['version']))
+                desc = opset['functions']
             if fields[0] in self.test_result:
                 if self.test_result[fields[0]] == 'OK':
                     self.ok += 1
                 line = output_line.format(
-                    fields[0], self.test_result[fields[0]], ' '.join(fields[2:]))
-                self.output_buffer += [line]
-                self.output_buffer += '\n'
+                    fields[0], opset_s, self.test_result[fields[0]], desc)
             else:
-                line = output_line.format(
-                    fields[0], 'Not test', ' '.join(fields[2:]))
-                self.output_buffer += [line]
-                self.output_buffer += '\n'
+                if opset:
+                    line = output_line.format(
+                        fields[0], opset_s, 'Not test', desc)
+                else:
+                    line = output_line.format(
+                        fields[0], opset_s, 'Unimplemented', desc)
+            line = line.strip()
+            self.output_buffer += [line]
+            self.output_buffer += '\n'
         else:
             self.output_buffer += [input_line]
 
@@ -184,17 +331,67 @@ TEMPALTE_FILE = os.path.join(CURRENT_PATH, 'onnx_test_report.rst.tmpl')
 OUTPUT_FILE = os.path.join(
     CURRENT_PATH, '../../../../doc/python/file_format_converter/onnx/operator_coverage.rst')
 
+def obtain_import_opset_d():
+    funcs_opset_d = yaml.load(open('importer_funcs_opset.yaml', 'r'))
+    refine_d = {}
+    for k, v in funcs_opset_d.items():
+        op_ver = []
+        for kk, vv in v.items():
+            if vv:
+                op_ver.append(kk)
+        refine_d[k] = op_ver
+    return refine_d
+
+def obtain_export_opset_d():
+    funcs_opset_d = yaml.load(open('exporter_funcs_opset.yaml', 'r'))
+    refine_d = {}
+    for func, impl in funcs_opset_d.items():
+        if impl and '@' in impl[0]:
+            op_ver = {func_decl.split('@')[1] for func_decl in impl}
+            func_list = [func_decl.split('@')[0] for func_decl in impl]
+            refine_d[func] = {'version': op_ver, 'functions': "Implemented by {}".format(','.join(func_list))}
+        else:
+            refine_d[func] = {'version': [], 'functions': 'Unimplemented'}
+    return refine_d
+
+def obtain_import_opset_d():
+    funcs_opset_d = yaml.load(open('importer_funcs_opset.yaml', 'r'))
+    refine_d = {}
+    for k, v in funcs_opset_d.items():
+        op_ver = []
+        for kk, vv in v.items():
+            if vv:
+                op_ver.append(kk)
+        refine_d[k] = op_ver
+    return refine_d
+
+
+def obtain_export_opset_d():
+    funcs_opset_d = yaml.load(open('exporter_funcs_opset.yaml', 'r'))
+    refine_d = {}
+    for func, impl in funcs_opset_d.items():
+        if impl and '@' in impl[0]:
+            op_ver = {func_decl.split('@')[1] for func_decl in impl}
+            func_list = [func_decl.split('@')[0] for func_decl in impl]
+            refine_d[func] = {
+                'version': op_ver, 'functions': "Implemented by {}".format(','.join(func_list))}
+        else:
+            refine_d[func] = {'version': [], 'functions': 'Not implemented'}
+    return refine_d
+
 
 def gen_report(import_result, export_result):
+    import_opset_d = obtain_import_opset_d()
+    export_opset_d = obtain_export_opset_d()
     with open(TEMPALTE_FILE, 'r') as f:
         line_buffer = []
         importer_status_handler = StateMachine('ImporterSM',
                                                StatusHandler(
-                                                   line_buffer, import_result),
+                                                   line_buffer, import_result, import_opset_d),
                                                start='start', debug=False)
         exporter_status_handler = StateMachine('ExporterSM',
                                                StatusHandler(
-                                                   line_buffer, export_result),
+                                                   line_buffer, export_result, export_opset_d),
                                                start='start', debug=False)
         for line in f.readlines():
             field = line[:8]
@@ -220,3 +417,9 @@ def gen_report(import_result, export_result):
             line_buffer = ''.join(line_buffer)
             of.write(line_buffer)
             print('\n{} is updated.'.format(os.path.basename(OUTPUT_FILE)))
+
+
+if __name__ == '__main__':
+    import_d = {}
+    export_d = {}
+    gen_report(import_d, export_d)
