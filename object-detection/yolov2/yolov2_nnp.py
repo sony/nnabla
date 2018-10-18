@@ -20,7 +20,7 @@ import nnabla.functions as F
 
 import time
 import numpy as np
-from scipy.misc import imread, imresize, imsave
+from nnabla.utils.image_utils import imread, imresize, imsave
 
 
 def get_args():
