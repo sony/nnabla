@@ -16,12 +16,18 @@ There might be some differences between this implementation and the original pap
 To train a CapsNet, run:
 
 ```shell
-python train.py [-c cudnn] [-d <device_id>] [--disable-grad-dynamic-routing]
+python train.py  [-d <device_id>] [--disable-grad-dynamic-routing]
 ```
 
 You can see the list of options by running command with `-h` option.
 
-By default, it runs 50 epochs of training on MNIST dataset. On my GTX 1080, it took about `116s / epoch` and used around 5GB memory.　The implementation is not so efficient. We may need the special layer implementation for the rounding matrix application.
+By default, the script will be executed with GPU.  It runs 50 epochs of training on MNIST dataset. On my GTX 1080, it took about `116s / epoch` and used around 5GB memory.  The implementation is not so efficient. We may need the special layer implementation for the rounding matrix application.
+
+If you prefer to run with CPU, try
+
+```shell
+python train.py -c cpu
+```
 
 ## Results
 

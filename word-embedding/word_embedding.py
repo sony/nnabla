@@ -272,7 +272,7 @@ def get_args():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension path. ex) cpu, cudnn.")
+                        default='cudnn', help="Extension path. ex) cpu, cudnn.")
     parser.add_argument("--device-id", "-d", type=str, default='0',
                         help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
     parser.add_argument("--type-config", "-t", type=str, default='float',
