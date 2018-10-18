@@ -23,10 +23,10 @@ Training perplexity will be displayed throughout the training process, and valid
 displayed at the end of every epoch (1 epoch is roughly about 1300 iterations).
 After training, perplexity on test split will be reported, which should be around 82~83. 
 
-By default, the script will be executed with CPU.
-If you prefer to run with CUDA GPU, try
+By default, the script will be executed with CUDA GPU.
+If you prefer to run with CPU, try
 
 ```
-python train.py -c cudnn
+python train.py -c cpu
 ```
 
