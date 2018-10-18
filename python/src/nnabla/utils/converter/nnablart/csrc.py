@@ -154,7 +154,7 @@ class CsrcExporter:
                 '    rt_variable_t* f{0}_outputs[{1}];'.format(n, len(f.output)))
             if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 internal_defines.append(
-                    '    {}_local_context_t f{}_local_context;'.format(finfo['snake_name'], n))
+                    '    {}_local_context_t *f{}_local_context;'.format(finfo['snake_name'], n))
                 for arg_name, arg in finfo['arguments'].items():
                     val = eval('f.{}_param.{}'.format(
                         finfo['snake_name'], arg_name))
@@ -173,6 +173,12 @@ class CsrcExporter:
             internal_defines.append('    {},'.format(s))
         internal_defines.append('};')
         internal_defines.append('')
+        internal_defines.append('void *(*rt_variable_malloc_func)(size_t size) = malloc;')
+        internal_defines.append('void (*rt_variable_free_func)(void *ptr) = free;')
+        internal_defines.append('')
+        internal_defines.append('void *(*rt_malloc_func)(size_t size) = malloc;')
+        internal_defines.append('void (*rt_free_func)(void *ptr) = free;')
+        internal_defines.append('')
 
         # NAME_allocate_context
         initialize_context = []
@@ -181,6 +187,8 @@ class CsrcExporter:
             '    for (int i = 0; i < {}; i++) {{'.format(len(actual_buf_sizes)))
         initialize_context.append(
             '        c->buffer_pool[i] = malloc(sizeof(float) * actual_buf_sizes[i]);')
+        initialize_context.append(
+            '        memset(c->buffer_pool[i], 0, sizeof(float) * actual_buf_sizes[i]);')
         initialize_context.append('    }')
         initialize_context.append('    if(params) {')
         param_id_start = 0
@@ -254,6 +262,9 @@ class CsrcExporter:
         for n, f in enumerate(self._info._network.function):
             finfo = self._info._function_info[f.type]
             initialize_context.append('    // {}'.format(f.type))
+            if 'arguments' in finfo and len(finfo['arguments']) > 0:
+                initialize_context.append(
+                    '    c->f{}_local_context = malloc(sizeof({}_local_context_t));'.format(n, finfo['snake_name']))
             initialize_context.append(
                 '    (c->f{}).num_of_inputs = {};'.format(n, len(f.input)))
             for ni, i in enumerate(f.input):
@@ -270,7 +281,7 @@ class CsrcExporter:
                 '    (c->f{0}).outputs = c->f{0}_outputs;'.format(n))
             if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 initialize_context.append(
-                    '    (c->f{0}).local_context = &(c->f{0}_local_context);'.format(n))
+                    '    (c->f{0}).local_context = c->f{0}_local_context;'.format(n))
                 for arg_name, arg in finfo['arguments'].items():
                     val = eval('f.{}_param.{}'.format(
                         finfo['snake_name'], arg_name))
@@ -285,7 +296,7 @@ class CsrcExporter:
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
                         initialize_context.append(
-                            '    (c->f{0}_local_context).{1} = arg_f{0}_{1};'.format(n, arg_name))
+                            '    (c->f{0}_local_context)->{1} = arg_f{0}_{1};'.format(n, arg_name))
                     elif arg['type'] == 'repeated int64':
                         initialize_context.append(
                             '    rt_list_t arg_f{}_{};'.format(n, arg_name))
@@ -297,7 +308,7 @@ class CsrcExporter:
                             initialize_context.append(
                                 '    arg_f{}_{}.data[{}] = {};'.format(n, arg_name, vn, v))
                         initialize_context.append(
-                            '    (c->f{0}_local_context).{1} = arg_f{0}_{1};'.format(n, arg_name))
+                            '    (c->f{0}_local_context)->{1} = arg_f{0}_{1};'.format(n, arg_name))
 
                     elif arg['type'] == 'bool':
                         if val:
@@ -305,15 +316,18 @@ class CsrcExporter:
                         else:
                             val = 0
                         initialize_context.append(
-                            '    (c->f{}_local_context).{} = {};'.format(n, arg_name, val))
+                            '    (c->f{}_local_context)->{} = {};'.format(n, arg_name, val))
                     elif 'available_values' in arg:
                         valname = '{}_{}_{}'.format(
                             finfo['snake_name'].upper(), arg_name.upper(), val.upper())
                         initialize_context.append(
-                            '    (c->f{}_local_context).{} = {};'.format(n, arg_name, valname))
+                            '    (c->f{}_local_context)->{} = {};'.format(n, arg_name, valname))
                     else:
                         initialize_context.append(
-                            '    (c->f{}_local_context).{} = {};'.format(n, arg_name, val))
+                            '    (c->f{}_local_context)->{} = {};'.format(n, arg_name, val))
+            else:
+                initialize_context.append(
+                    '    (c->f{}).local_context = 0;'.format(n))
             initialize_context.append(
                 '    allocate_{}_local_context(&(c->f{}));'.format(finfo['snake_name'], n))
 
@@ -353,6 +367,13 @@ class CsrcExporter:
             finfo = self._info._function_info[f.type]
             free_context.append(
                 '    free_{}_local_context(&(c->f{}));'.format(finfo['snake_name'], n))
+            free_context.append(
+                '    if (c->f{}.local_context != 0) {{'.format(n))
+            free_context.append(
+                '        rt_free_func(c->f{}.local_context);'.format(n))
+            free_context.append(
+                '        c->f{}.local_context = 0;'.format(n))
+            free_context.append('    }')
 
         # NAME_param_buffer
         param_buffer = []
