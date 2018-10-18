@@ -40,7 +40,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.mo
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path)
     parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension path. ex) cpu, cudnn.")
+                        default='cudnn', help="Extension path. ex) cpu, cudnn.")
     parser.add_argument("--net", "-n", type=str,
                         default='cifar10_resnet23',
                         help="Neural network architecture type (used only in classification.py).\n"
