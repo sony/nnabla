@@ -49,25 +49,27 @@ public:
 
 private:
   void *obj_;
+  int min_outputs_;
   setup_callback_type setup_callback_;
   forward_callback_type forward_callback_;
   backward_callback_type backward_callback_;
   cleanup_callback_type cleanup_callback_;
 
 public:
-  Callback(const Context &ctx, void *obj, setup_callback_type s,
-           forward_callback_type f, backward_callback_type b,
-           cleanup_callback_type c)
-      : BaseFunction(ctx), obj_(obj), setup_callback_(s), forward_callback_(f),
-        backward_callback_(b), cleanup_callback_(c) {}
+  Callback(const Context &ctx, void *obj, int min_outputs,
+           setup_callback_type s, forward_callback_type f,
+           backward_callback_type b, cleanup_callback_type c)
+      : BaseFunction(ctx), obj_(obj), min_outputs_(min_outputs),
+        setup_callback_(s), forward_callback_(f), backward_callback_(b),
+        cleanup_callback_(c) {}
   virtual ~Callback() { cleanup_callback_(obj_); }
   virtual shared_ptr<Function> copy() const {
-    return std::make_shared<Callback>(ctx_, obj_, setup_callback_,
+    return std::make_shared<Callback>(ctx_, obj_, min_outputs_, setup_callback_,
                                       forward_callback_, backward_callback_,
                                       cleanup_callback_);
   }
   virtual int min_inputs() { return 1; }
-  virtual int min_outputs() { return 1; }
+  virtual int min_outputs() { return min_outputs_; }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<float>()};
   }
