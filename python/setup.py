@@ -79,7 +79,7 @@ def extopts(library_name, library_dir):
         ))
     else:
         # Assume Windows.
-        ext_opts.update(dict(extra_compile_args=['/W0']))
+        ext_opts.update(dict(extra_compile_args=['/W0', '/EHsc']))
     return ext_opts
 
 ################################################################################

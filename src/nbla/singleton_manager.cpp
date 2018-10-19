@@ -35,8 +35,8 @@ void SingletonManager::erase_by_id(int id) {
   if (it == s.singletons_.end())
     return;
   it->second.second(); // Call deleter.
-  s.singletons_.erase(it);
   s.adr2id_.erase(it->second.first);
+  s.singletons_.erase(it);
 }
 
 SingletonManager &SingletonManager::get_self() {
@@ -65,14 +65,14 @@ const void *NNabla::ones(Size_t size, dtypes dtype, const Context &ctx) {
   if (it == ones_.end()) {
     ones = std::make_shared<SyncedArray>(size);
     ones->fill(1);
-    ones_.insert({tid, ones});
+    ones_[tid] = ones;
     return ones->get(dtype, ctx)->const_pointer<void>();
   }
   ones = it->second;
   if (size > ones->size()) {
     ones = std::make_shared<SyncedArray>(size);
     ones->fill(1);
-    ones_.insert({tid, ones});
+    ones_[tid] = ones;
   }
   return ones->get(dtype, ctx)->const_pointer<void>();
 }
@@ -85,14 +85,14 @@ const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
   if (it == zeros_.end()) {
     zeros = std::make_shared<SyncedArray>(size);
     zeros->zero();
-    zeros_.insert({tid, zeros});
+    ones_[tid] = zeros;
     return zeros->get(dtype, ctx)->const_pointer<void>();
   }
   zeros = it->second;
   if (size > zeros->size()) {
     zeros = std::make_shared<SyncedArray>(size);
     zeros->zero();
-    zeros_.insert({tid, zeros});
+    ones_[tid] = zeros;
   }
   return zeros->get(dtype, ctx)->const_pointer<void>();
 }
