@@ -81,6 +81,10 @@ public:
   */
   const Array *get(dtypes dtype, const Context &ctx);
 
+  /** Get array as a shared pointer.
+   */
+  shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
+
   /** Get dtype
   */
   inline dtypes dtype() const {

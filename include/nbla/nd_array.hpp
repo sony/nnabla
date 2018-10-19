@@ -115,6 +115,12 @@ public:
    */
   NBLA_API const Array *get(dtypes dtype, const Context &ctx);
 
+  /** Get const array as a shared_ptr.
+
+      @sa get
+   */
+  NBLA_API shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
+
   /** Get mutable array with specified dtype and backend description.
 
       @param[in] dtype Enum of data type.

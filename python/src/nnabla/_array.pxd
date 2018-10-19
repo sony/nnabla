@@ -20,12 +20,14 @@ cdef extern from "nbla/array.hpp" namespace "nbla":
 
     cdef cppclass CArray "nbla::Array":
         void * pointer "nbla::Array::pointer<void>" ()
-        void * const_pointer "nbla::Array::const_pointer<void>" ()
+        const void * const_pointer "nbla::Array::const_pointer<const void>" () const
 
     ctypedef shared_ptr[CArray] ArrayPtr
+    ctypedef const CArray ConstArray
+    ctypedef shared_ptr[ConstArray] ConstArrayPtr
 
 cdef class Array:
-    cdef ArrayPtr arr
+    cdef shared_ptr[const CArray] arr
 
     @staticmethod
-    cdef object create(ArrayPtr arr)
+    cdef object create(shared_ptr[const CArray] arr)
