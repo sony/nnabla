@@ -23,7 +23,7 @@ ctxs = list_context('CELU')
 
 
 def ref_celu(x, alpha, axis):
-    elu1 = np.maximum(0.,  x) + alpha * (np.exp(np.minimum(0,  x)) - 1)
+    elu1 = np.maximum(0., x) + alpha * (np.exp(np.minimum(0, x)) - 1)
     elu2 = np.maximum(0., -x) + alpha * (np.exp(np.minimum(0, -x)) - 1)
     return np.concatenate([elu1, elu2], axis=axis)
 

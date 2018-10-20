@@ -177,7 +177,7 @@ class OnnxExporter:
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
             "GlobalAveragePooling": "GlobalAveragePool",
-            "MaxPooling":     partial(self.BasePooling, 'MaxPool'),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool'),
             "AveragePooling": partial(self.BasePooling, 'AveragePool'),
             "Add2": "Add",
             "BatchMatmul": "MatMul",
