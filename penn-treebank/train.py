@@ -15,7 +15,7 @@ from args import get_args
 
 class LSTMWrapper(PF.LSTMCell, object):
     def __init__(self, batch_size, state_size, h=None, c=None):
-        super(LSTMWrapper, self).__init__(batch_size, state_size,  h, c)
+        super(LSTMWrapper, self).__init__(batch_size, state_size, h, c)
         self.h0 = self.h
         self.c0 = self.c
         self.h0.data.zero()
