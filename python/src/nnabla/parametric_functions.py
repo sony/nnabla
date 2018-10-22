@@ -665,7 +665,7 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
 
         uv_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
           Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`. 
-  
+
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
 
         base_axis (int): Dimensions up to `base_axis` are treated as the
