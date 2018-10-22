@@ -65,8 +65,8 @@ def ref_grad_fixed_point_quantize(x, dy, sign, n, delta,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("sign", [False, True])
-@pytest.mark.parametrize("n",  [3, 8])
-@pytest.mark.parametrize("delta",  [2**-7, 0.005])
+@pytest.mark.parametrize("n", [3, 8])
+@pytest.mark.parametrize("delta", [2**-7, 0.005])
 @pytest.mark.parametrize("quantize", [False, True])
 @pytest.mark.parametrize("ste_fine_grained", [False, True])
 def test_fixed_point_quantize_forward_backward(seed,

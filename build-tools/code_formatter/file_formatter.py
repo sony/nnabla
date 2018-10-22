@@ -20,10 +20,19 @@ c_extensions = ['.c', '.h', '.cpp', '.hpp', '.cxx', '.hxx', '.cu', '.cuh']
 c_exclude = [
 ]
 
-python_extensions = ['.py', '.pxd', '.pyx']
+python_extensions = ['.py']
+cython_extensions = ['.pxd', '.pyx']
 python_exclude = [
     'nnabla_pb2.py'
 ]
+
+# See list of PEP8 errors at
+# http://pycodestyle.pycqa.org/en/latest/intro.html#error-codes
+# The base ignore list is modified from the default list obtained from;
+# https://github.com/PyCQA/pycodestyle/blob/2.4.0/docs/intro.rst
+pep8_base_ignores = 'E121,E123,E126,E133,E226,E704,W503,W504'
+pep8_ignores = pep8_base_ignores + ',E402'
+pep8_cython_ignores = pep8_ignores + ',E901,E225,E226,E227'
 
 # Files with the following extensions will have 644 file permission.
 doc_extensions = ['.md', '.rst', '.txt', '.toc']
@@ -82,7 +91,9 @@ def format_file(file_ext, input):
     if file_ext in c_extensions:
         cmd = [search_clang_format(), '--style=llvm']
     elif file_ext in python_extensions:
-        cmd = [search_autopep8(), '-']
+        cmd = [search_autopep8(), '--ignore={}'.format(pep8_ignores), '-']
+    elif file_ext in cython_extensions:
+        cmd = [search_autopep8(), '--ignore={}'.format(pep8_cython_ignores), '-']
     else:
         return input
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
