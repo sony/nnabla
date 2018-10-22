@@ -145,8 +145,8 @@ def affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -233,10 +233,9 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
           the sample dimensions.
 
         uv_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
-          Initializer for weight.
+          Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
 
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
-
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weights
           and biases will not be updated.
 
@@ -355,9 +354,9 @@ def binary_connect_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight. By default, it is initialized with uniform distribution proposed by Glrot et al. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
 
@@ -439,9 +438,9 @@ def binary_weight_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight.
-        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the binary weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the binary weight. By default, it is initialized with uniform distribution proposed by Glrot et al. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias. By defalut, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -512,9 +511,9 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
         inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
         selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
         seed (int): Random seed for INQ algorithm
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight.
-        i_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the indicators (0 ... learnable, 1 ... fixed).
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
+        i_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for indicators (0 ... learnable, 1 ... fixed). By default, it is initialized with zeros.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -574,8 +573,8 @@ def convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -665,9 +664,9 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         dilation (tuple): Dilation sizes (`int`) for dimensions.
 
         uv_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
-          Initializer for weight.
-
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+          Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.
+  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
 
         base_axis (int): Dimensions up to `base_axis` are treated as the
           sample dimensions.
@@ -747,150 +746,6 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
 
-    y = F.depthwise_convolution(inp, u, bias=None, base_axis=base_axis,
-                                pad=pad, stride=stride, dilation=dilation,
-                                multiplier=r)
-
-    y = F.convolution(y, v, bias=b, base_axis=base_axis, pad=None,
-                      stride=None, dilation=None, group=1)
-    return y
-
-
-@parametric_function_api("cpd3_conv", [
-    ('I',
-     'Decomposed filter weights :math:`{\\mathbf I}`', '(r, inmaps, 1, ...)', True),
-    ('K',
-     'Decomposed filter weights :math:`{\\mathbf K}`', '(r, *kernel)', True),
-    ('O',
-     'Decomposed filter weights :math:`{\\mathbf O}`', '(outmaps, r, 1, ...)', True),
-    ('b', 'Bias vector', '(outmaps,)', True),
-])
-def cpd3_convolution(inp, outmaps, kernel, r,
-                     pad=None, stride=None, dilation=None,
-                     oik_init=None, b_init=None,
-                     base_axis=1, fix_parameters=False, rng=None, with_bias=True,
-                     max_iter=500, stopping_criterion=1e-5):
-    """CP convolution is a low rank approximation of a convolution layer. A 3D tensor containing the parameter is built by collapsing the N-D kernels into 1D, then the tensor is decomposed into three matrices. The decomposed layer can be seen as linear combinations of the input feature maps to :math:`{R}` feature maps followed by a depthwise convolution and followed by linear combinations of the feature maps to compute the output feature maps.
-
-    The CP decomposition allows to approximate the kernel tensor by :math:`{R}` rank-1 tensors of the form:
-
-    .. math::
-
-        \\sum_{r=1}^{R} \\lambda_r {\\mathbf{o}^{(r)} \\otimes \\mathbf{i}^{(r)} \\otimes \\mathbf{k}^{(r)}},
-
-    where :math:`{\\lambda}_r` is the normalization coefficient and :math:`{\\otimes}` is the outer product. 
-
-
-    If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV  
-    If `oik_init` is None or an initializer, the product of U and V approximate the randomly initialized array  
-
-    If `O`, `I` and `K` exist in context, they are used to initialize the layer and oik_init is not used.
-
-    Suppose the kernel tensor of the affine is of :math:`{I \\times O}` and 
-    the compression rate you want to specify is :math:`{CR}`, then you  
-    set :math:`{R}` as 
-
-    .. math::
-
-        R = \\left\\lfloor \\frac{(1 - CR)OIK^2}{O + I + K^2} \\right\\rfloor.
-
-    References:
-        - Lebedev, Vadim, Yaroslav Ganin, Maksim Rakhuba, Ivan Oseledets, and Victor Lempitsky,  "Speeding-up convolutional neural networks using fine-tuned cp-decomposition.", arXiv preprint arXiv:1412.6553 (2014).
-
-        - Marcella Astrid, Seung-Ik Lee, "CP-decomposition with Tensor Power Method for Convolutional Neural Networks Compression", BigComp 2017.
-
-    Args:
-        inp (~nnabla.Variable): N-D array.
-        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
-        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
-        r (int): rank of the factorized layer
-        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
-        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
-        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
-        oik_init (numpy array or :obj:`nnabla.initializer.BaseInitializer`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
-        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
-        rng (numpy.random.RandomState): Random generator for Initializer.
-        with_bias (bool): Specify whether to include the bias term.
-        max_iter (int): Max iteration of the ALS.
-        stopping_criterion (float): Threshold for stopping the ALS. 
-                If the value is negative, the convergence check is ignored; 
-                in other words, it may reduce the computation time.
-
-    Returns:
-        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
-
-
-    """
-
-    if oik_init is None:
-        oik_init = UniformInitializer(
-            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
-
-    if type(oik_init) is np.ndarray:
-        # TODO: Assert that size of uv_init is correct
-        # uv is initialize with numpy array
-        oik = oik_init
-    else:
-        # uv is initialize from initializer
-        oik = oik_init((outmaps, inp.shape[base_axis]) + tuple(kernel))
-
-    # flatten kernels
-    oik = oik.reshape((outmaps, inp.shape[base_axis], np.prod(kernel)))
-
-    o = get_parameter('O')
-    i = get_parameter('I')
-    k = get_parameter('K')
-
-    if (o is None) or (i is None) or (k is None):
-        assert r > 0, "cpd3_convolution: The rank must larger than zero"
-        from nnabla.utils.factorization import cpd
-        als = cpd.ALS()
-        U, lmbda = als.solve(X=oik, rank=r,
-                             max_iter=max_iter,
-                             stopping_criterion=stopping_criterion,
-                             dtype=oik.dtype,
-                             rng=rng)
-
-        o_ = U[0] * lmbda
-        i_ = U[1]
-        k_ = U[2]
-
-        kernel_one = (1,) * len(kernel)  # 1x1 for 2D convolution
-        inmaps = inp.shape[base_axis]
-
-        # reshape I :  (I,r) -> (r,I,1,1)
-        i = nn.Variable((r, inmaps) + kernel_one, need_grad=True)
-        i.d = np.transpose(i_).reshape((r, inmaps) + kernel_one)
-        nn.parameter.set_parameter("I", i)
-
-        # reshape O :  (O,r) -> (O,r,1,1)
-        o = nn.Variable((outmaps, r) + kernel_one,
-                        need_grad=True)
-        o.d = o_.reshape((outmaps, r) + kernel_one)
-        nn.parameter.set_parameter("O", o)
-
-        # reshape K :  (K*K,r) -> (r,K,K)
-        k = nn.Variable((r,) + kernel, need_grad=True)
-        k.d = np.transpose(k_).reshape((r,) + kernel)
-        nn.parameter.set_parameter("K", k)
-
-    if fix_parameters == o.need_grad:
-        o = o.get_unlinked_variable(need_grad=not fix_parameters)
-    if fix_parameters == i.need_grad:
-        i = i.get_unlinked_variable(need_grad=not fix_parameters)
-    if fix_parameters == k.need_grad:
-        k = k.get_unlinked_variable(need_grad=not fix_parameters)
-    if with_bias and b_init is None:
-        b_init = ConstantInitializer()
-    b = None
-    if with_bias:
-        b = get_parameter_or_create(
-            "b", (outmaps,), b_init, True, not fix_parameters)
-
-    y = F.convolution(inp, i, bias=None, base_axis=base_axis, pad=None, stride=None,
-                      dilation=None, group=1)
     y = F.depthwise_convolution(y, k, bias=None, base_axis=base_axis,
                                 pad=pad, stride=stride, dilation=dilation,
                                 multiplier=1)
@@ -952,9 +807,9 @@ def binary_connect_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight. By default, it is initialized with uniform distribution proposed by Glrot et al. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1039,9 +894,9 @@ def binary_weight_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
+        wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight. By default, it is initialized with uniform distribution proposed by Glrot et al. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1110,9 +965,9 @@ def inq_convolution(inp, outmaps, kernel,
         inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
         selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
         seed (int): Random seed for INQ algorithm
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight.
-        i_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the indicators (0 ... learnable, 1 ... fixed).
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_. 
+        i_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the indicators (0 ... learnable, 1 ... fixed). By default, it is initialized with zeros.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weight and bias will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -1162,8 +1017,8 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         multiplier (:obj:`int`): Number of output feature maps per input feature map.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.  By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1213,8 +1068,8 @@ def deconvolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1256,8 +1111,8 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         divisor (:obj:`int`): Number of input feature maps per output feature map.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1404,7 +1259,7 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
 def embed(inp, n_inputs, n_features, fix_parameters=False):
     """ Embed.
 
-    Embed slices a matrix/tensor with indexing array/tensor
+    Embed slices a matrix/tensor with indexing array/tensor. Weights are initialized with uniform distribution within the range of :math:`-sqrt(3.)` and :math:`sqrt(3.)`.
 
     Args:
         x(~nnabla.Variable): [Integer] Indices with shape :math:`(I_0, ..., I_N)`
@@ -1433,7 +1288,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
         y_i = \max(0, x_i) + w_i \min(0, -x_i)
 
     where negative slope :math:`w` is learned and can vary across channels (an
-    axis specified with base_axis).
+    axis specified with base_axis). Weights are initialized with :math:`-1`.
 
     Args:
         x(~nnabla.Variable): N-D array as input
@@ -1494,8 +1349,8 @@ def fixed_point_quantized_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -1613,8 +1468,8 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1725,8 +1580,8 @@ def pow2_quantized_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
@@ -1844,8 +1699,8 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
@@ -1943,8 +1798,8 @@ def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
         h (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
         c (~nnabla.Variable): Input N-D array with shape (batch_size, state_size).
         state_size (int): Internal state size is set to `state_size`.
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight.
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
     Returns:
@@ -2001,8 +1856,8 @@ class LSTMCell:
 
         Args:
             x (~nnabla.Variable): Input N-D array with shape (batch_size, input_size).
-            w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight.
-            b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias.
+            w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight. By default, it is initialized with `uniform distribution proposed by Glrot et al <https://nnabla.readthedocs.io/en/latest/python/api/parametric_function.html#nnabla.initializer.calc_uniform_lim_glorot>`_.  
+            b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
             fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
         """
