@@ -95,11 +95,11 @@ def downscale_minibatch(minibatch, lod):
 
 
 gaussian_filter = np.float32([
-    [1, 4,  6,  4,  1],
+    [1, 4, 6, 4, 1],
     [4, 16, 24, 16, 4],
     [6, 24, 36, 24, 6],
     [4, 16, 24, 16, 4],
-    [1, 4,  6,  4,  1]]) / 256.0
+    [1, 4, 6, 4, 1]]) / 256.0
 
 
 def pyr_down(minibatch):  # matches cv2.pyrDown()

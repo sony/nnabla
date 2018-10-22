@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ def vae(x, shape_z, test=False):
 
     # E_q(z|x)[log(p(z))]
     # without some constant terms that will canceled after summation of loss
-    logpz = 0.5 * F.sum(mu * mu + sigma * sigma,  axis=1)
+    logpz = 0.5 * F.sum(mu * mu + sigma * sigma, axis=1)
 
     # E_q(z|x)[log(p(x|z))]
     logpx = F.sum(F.sigmoid_cross_entropy(prob, xb), axis=(1, 2, 3))
