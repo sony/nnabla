@@ -874,7 +874,6 @@ def cpd3_convolution(inp, outmaps, kernel, r,
 
     y = F.convolution(inp, i, bias=None, base_axis=base_axis, pad=None, stride=None,
                       dilation=None, group=1)
-
     y = F.depthwise_convolution(y, k, bias=None, base_axis=base_axis,
                                 pad=pad, stride=stride, dilation=dilation,
                                 multiplier=1)
