@@ -795,6 +795,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
 
     References:
         - Lebedev, Vadim, Yaroslav Ganin, Maksim Rakhuba, Ivan Oseledets, and Victor Lempitsky,  "Speeding-up convolutional neural networks using fine-tuned cp-decomposition.", arXiv preprint arXiv:1412.6553 (2014).
+
         - Marcella Astrid, Seung-Ik Lee, "CP-decomposition with Tensor Power Method for Convolutional Neural Networks Compression", BigComp 2017.
 
     Args:
