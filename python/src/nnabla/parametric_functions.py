@@ -746,6 +746,135 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
 
+    y = F.depthwise_convolution(inp, u, bias=None, base_axis=base_axis,
+                                pad=pad, stride=stride, dilation=dilation,
+                                multiplier=r)
+
+    y = F.convolution(y, v, bias=b, base_axis=base_axis, pad=None,
+                      stride=None, dilation=None, group=1)
+    return y
+
+
+@parametric_function_api("cpd3_conv", [
+    ('I',
+     'Decomposed filter weights :math:`{\\mathbf I}`', '(r, inmaps, 1, ...)', True),
+    ('K',
+     'Decomposed filter weights :math:`{\\mathbf K}`', '(r, *kernel)', True),
+    ('O',
+     'Decomposed filter weights :math:`{\\mathbf O}`', '(outmaps, r, 1, ...)', True),
+    ('b', 'Bias vector', '(outmaps,)', True),
+])
+def cpd3_convolution(inp, outmaps, kernel, r,
+                     pad=None, stride=None, dilation=None,
+                     oik_init=None, b_init=None,
+                     base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                     max_iter=500, stopping_criterion=1e-5):
+    """CP convolution is a low rank approximation of a convolution layer. A 3D tensor containing the parameter is built by collapsing the N-D kernels into 1D, then the tensor is decomposed into three matrices. The decomposed layer can be seen as linear combinations of the input feature maps to :math:`{R}` feature maps followed by a depthwise convolution and followed by linear combinations of the feature maps to compute the output feature maps.
+    The CP decomposition allows to approximate the kernel tensor by :math:`{R}` rank-1 tensors of the form:
+    .. math::
+        \\sum_{r=1}^{R} \\lambda_r {\\mathbf{o}^{(r)} \\otimes \\mathbf{i}^{(r)} \\otimes \\mathbf{k}^{(r)}},
+    where :math:`{\\lambda}_r` is the normalization coefficient and :math:`{\\otimes}` is the outer product. 
+    If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV  
+    If `oik_init` is None or an initializer, the product of U and V approximate the randomly initialized array  
+    If `O`, `I` and `K` exist in context, they are used to initialize the layer and oik_init is not used.
+    Suppose the kernel tensor of the affine is of :math:`{I \\times O}` and 
+    the compression rate you want to specify is :math:`{CR}`, then you  
+    set :math:`{R}` as 
+    .. math::
+        R = \\left\\lfloor \\frac{(1 - CR)OIK^2}{O + I + K^2} \\right\\rfloor.
+    References:
+        - Lebedev, Vadim, Yaroslav Ganin, Maksim Rakhuba, Ivan Oseledets, and Victor Lempitsky,  "Speeding-up convolutional neural networks using fine-tuned cp-decomposition.", arXiv preprint arXiv:1412.6553 (2014).
+        - Marcella Astrid, Seung-Ik Lee, "CP-decomposition with Tensor Power Method for Convolutional Neural Networks Compression", BigComp 2017.
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        r (int): rank of the factorized layer
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        oik_init (numpy array or :obj:`nnabla.initializer.BaseInitializer`): Initializer for weight. Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. It is initialized with zeros if `with_bias` is `True`.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        max_iter (int): Max iteration of the ALS.
+        stopping_criterion (float): Threshold for stopping the ALS. 
+                If the value is negative, the convergence check is ignored; 
+                in other words, it may reduce the computation time.
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+    """
+
+    if oik_init is None:
+        oik_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+
+    if type(oik_init) is np.ndarray:
+        # TODO: Assert that size of uv_init is correct
+        # uv is initialize with numpy array
+        oik = oik_init
+    else:
+        # uv is initialize from initializer
+        oik = oik_init((outmaps, inp.shape[base_axis]) + tuple(kernel))
+
+    # flatten kernels
+    oik = oik.reshape((outmaps, inp.shape[base_axis], np.prod(kernel)))
+
+    o = get_parameter('O')
+    i = get_parameter('I')
+    k = get_parameter('K')
+
+    if (o is None) or (i is None) or (k is None):
+        assert r > 0, "cpd3_convolution: The rank must larger than zero"
+        from nnabla.utils.factorization import cpd
+        als = cpd.ALS()
+        U, lmbda = als.solve(X=oik, rank=r,
+                             max_iter=max_iter,
+                             stopping_criterion=stopping_criterion,
+                             dtype=oik.dtype,
+                             rng=rng)
+
+        o_ = U[0] * lmbda
+        i_ = U[1]
+        k_ = U[2]
+
+        kernel_one = (1,) * len(kernel)  # 1x1 for 2D convolution
+        inmaps = inp.shape[base_axis]
+
+        # reshape I :  (I,r) -> (r,I,1,1)
+        i = nn.Variable((r, inmaps) + kernel_one, need_grad=True)
+        i.d = np.transpose(i_).reshape((r, inmaps) + kernel_one)
+        nn.parameter.set_parameter("I", i)
+
+        # reshape O :  (O,r) -> (O,r,1,1)
+        o = nn.Variable((outmaps, r) + kernel_one,
+                        need_grad=True)
+        o.d = o_.reshape((outmaps, r) + kernel_one)
+        nn.parameter.set_parameter("O", o)
+
+        # reshape K :  (K*K,r) -> (r,K,K)
+        k = nn.Variable((r,) + kernel, need_grad=True)
+        k.d = np.transpose(k_).reshape((r,) + kernel)
+        nn.parameter.set_parameter("K", k)
+
+    if fix_parameters == o.need_grad:
+        o = o.get_unlinked_variable(need_grad=not fix_parameters)
+    if fix_parameters == i.need_grad:
+        i = i.get_unlinked_variable(need_grad=not fix_parameters)
+    if fix_parameters == k.need_grad:
+        k = k.get_unlinked_variable(need_grad=not fix_parameters)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    b = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, True, not fix_parameters)
+
+    y = F.convolution(inp, i, bias=None, base_axis=base_axis, pad=None, stride=None,
+                      dilation=None, group=1)
+
     y = F.depthwise_convolution(y, k, bias=None, base_axis=base_axis,
                                 pad=pad, stride=stride, dilation=dilation,
                                 multiplier=1)
