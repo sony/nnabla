@@ -26,13 +26,34 @@ from .context import get_current_context
 from . import function as F
 from .auto_forward import get_auto_forward
 
+import sys
 import inspect
-
+from collections import namedtuple
 
 # Templates for function_api source building.
 FUNCTION_API_HEADER = "def {name}{signature}:"
 FUNCTION_API_BODY = '''ctx = get_current_context()
 return _func_(ctx, {shortsignature})'''
+
+
+# avoid deprecation warning for inspect.getargspec in python3
+if sys.version_info.major == 3:
+    ArgSpec = namedtuple("ArgSpec", ("args", "varargs", "keywords", "defaults"))
+    def getargspec_py3(func):
+        """
+        This function wraps insepct.getfullargspec and return namedtuple whose properties are same as the result of conventional inspect.getargspec.
+
+        Currently, it is assumed that all functions have no keyword-only arguments.
+        If the function which has keyword-only arguments is passed, this function dose not work correctly.
+
+        """
+        spec = inspect.getfullargspec(func)
+
+        return ArgSpec(args=spec.args, varargs=spec.varargs, keywords=spec.varkw, defaults=spec.defaults)
+
+    getargspec = getargspec_py3
+else:
+    getargspec = inspect.getargspec
 
 
 def function_api(func):
@@ -46,7 +67,7 @@ def function_api(func):
         doc = "No docstring."
 
     # Parsing argspecs
-    spec = inspect.getargspec(func)
+    spec = getargspec(func)
     defaults = spec.defaults
     if spec.defaults is None:
         defaults = None
