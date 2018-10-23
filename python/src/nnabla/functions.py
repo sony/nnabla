@@ -264,6 +264,9 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     from .function_bases import batch_normalization as batch_normalization_base
     n_outputs = 3 if output_stat else 1
     assert batch_stat or (not output_stat)
+    if batch_stat and (mean.parent or variance.parent) is not None:
+        raise ValueError(
+            "if batch_stat is True, mean and variable must not have a parent function")
     return batch_normalization_base(x, beta, gamma, mean, variance,
                                     axes=axes,
                                     decay_rate=decay_rate,
