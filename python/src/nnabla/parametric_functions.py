@@ -770,21 +770,33 @@ def cpd3_convolution(inp, outmaps, kernel, r,
                      base_axis=1, fix_parameters=False, rng=None, with_bias=True,
                      max_iter=500, stopping_criterion=1e-5):
     """CP convolution is a low rank approximation of a convolution layer. A 3D tensor containing the parameter is built by collapsing the N-D kernels into 1D, then the tensor is decomposed into three matrices. The decomposed layer can be seen as linear combinations of the input feature maps to :math:`{R}` feature maps followed by a depthwise convolution and followed by linear combinations of the feature maps to compute the output feature maps.
+
     The CP decomposition allows to approximate the kernel tensor by :math:`{R}` rank-1 tensors of the form:
+
     .. math::
+
         \\sum_{r=1}^{R} \\lambda_r {\\mathbf{o}^{(r)} \\otimes \\mathbf{i}^{(r)} \\otimes \\mathbf{k}^{(r)}},
+
     where :math:`{\\lambda}_r` is the normalization coefficient and :math:`{\\otimes}` is the outer product. 
+
+
     If `oik_init` is a numpy array, U and V are computed so that uv_init can be approximates from UV  
     If `oik_init` is None or an initializer, the product of U and V approximate the randomly initialized array  
+
     If `O`, `I` and `K` exist in context, they are used to initialize the layer and oik_init is not used.
+
     Suppose the kernel tensor of the affine is of :math:`{I \\times O}` and 
     the compression rate you want to specify is :math:`{CR}`, then you  
     set :math:`{R}` as 
+
     .. math::
+
         R = \\left\\lfloor \\frac{(1 - CR)OIK^2}{O + I + K^2} \\right\\rfloor.
+
     References:
         - Lebedev, Vadim, Yaroslav Ganin, Maksim Rakhuba, Ivan Oseledets, and Victor Lempitsky,  "Speeding-up convolutional neural networks using fine-tuned cp-decomposition.", arXiv preprint arXiv:1412.6553 (2014).
         - Marcella Astrid, Seung-Ik Lee, "CP-decomposition with Tensor Power Method for Convolutional Neural Networks Compression", BigComp 2017.
+
     Args:
         inp (~nnabla.Variable): N-D array.
         outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
@@ -803,8 +815,11 @@ def cpd3_convolution(inp, outmaps, kernel, r,
         stopping_criterion (float): Threshold for stopping the ALS. 
                 If the value is negative, the convergence check is ignored; 
                 in other words, it may reduce the computation time.
+
     Returns:
         :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+
     """
 
     if oik_init is None:
