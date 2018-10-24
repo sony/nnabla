@@ -26,6 +26,12 @@ static inline const char *b2str(bool b) { return b ? "true" : "false"; }
 
 CgFunction::CgFunction(FunctionPtr func) : rank_(0), func_(func) {}
 
+CgFunction::~CgFunction() {
+  for (auto i : this->inputs()) {
+    i->remove_function_reference(this);
+  }
+}
+
 void CgFunction::setup() {
   // Copy if function is already used.
   if (func_->ask_if_used_and_use()) {
