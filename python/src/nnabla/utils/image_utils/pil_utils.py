@@ -22,12 +22,18 @@ from .common import rescale_pixel_intensity
 
 interpolations_map = {
     "nearest": Image.NEAREST,
-    "box": Image.BOX,
     "bilinear": Image.BILINEAR,
-    "hamming": Image.HAMMING,
     "bicubic": Image.BICUBIC,
-    "lanczos": Image.LANCZOS
 }
+
+if hasattr(Image, "HAMMING"):  # version >3.4.0
+    interpolations_map["hamming"] = Image.HAMMING
+
+if hasattr(Image, "BOX"):  # version >3.4.0
+    interpolations_map["box"] = Image.BOX
+
+if hasattr(Image, "LANCZOS"):  # version >1.1.3
+    interpolations_map["lanczos"] = Image.LANCZOS
 
 
 def get_byte_image(img):
