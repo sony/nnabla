@@ -97,7 +97,7 @@ def test_get_unlinked_variable():
     assert not v2.get_unlinked_variable(need_grad=False).need_grad
 
 
-def test_rehape():
+def test_reshape():
     v = nn.Variable([2, 3, 4], need_grad=True)
     grad = np.random.randn(*v.shape).astype(np.float32)
     v.g = grad
@@ -226,3 +226,32 @@ def test_clear_all_graph_links():
     assert one_step_rnn.lstm0.c.parent == None
     assert one_step_rnn.lstm1.h.parent == None
     assert one_step_rnn.lstm1.c.parent == None
+
+
+def test_function_references():
+    import nnabla as nn
+    import nnabla.parametric_functions as PF
+
+    v = nn.Variable.from_numpy_array(np.random.randn(2, 4))
+
+    assert len(v.function_references) == 0
+
+    h1 = PF.affine(v, 10, name="affine1")
+
+    assert len(v.function_references) == 1
+    assert h1.parent in v.function_references
+
+    h2 = PF.affine(v, 10, name="affine2")
+
+    assert len(v.function_references) == 2
+    assert h1.parent in v.function_references
+    assert h2.parent in v.function_references
+
+    del h1
+
+    assert len(v.function_references) == 1
+    assert h2.parent in v.function_references
+
+    del h2
+
+    assert len(v.function_references) == 0
