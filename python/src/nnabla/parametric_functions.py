@@ -556,14 +556,29 @@ def convolution(inp, outmaps, kernel,
                 pad=None, stride=None, dilation=None, group=1,
                 w_init=None, b_init=None,
                 base_axis=1, fix_parameters=False, rng=None, with_bias=True):
-    """
-    N-D Convolution with a bias term.
+    """N-D Convolution with a bias term.
 
     For Dilated Convolution (a.k.a. Atrous Convolution), refer to:
 
     - Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs. https://arxiv.org/abs/1606.00915
 
     - Yu et al., Multi-Scale Context Aggregation by Dilated Convolutions. https://arxiv.org/abs/1511.07122
+
+    Note:
+
+        Convolution is a computationally intensive operation that
+        should preferrably be run with the `cudnn` backend. NNabla
+        then uses CuDNN library functions to determine and cache the
+        fastest algorithm for the given set of convolution parameters,
+        which results in additional memory consumption which may pose
+        a problem for GPUs with insufficient memory size. In that
+        case, the `NNABLA_CUDNN_WORKSPACE_LIMIT` environment variable
+        can be used to restrict the choice of algorithms to those that
+        fit the given workspace memory limit, expressed in bytes. In
+        some cases it may also be desired to restrict the automatic
+        search to algorithms that produce deterministic (reproducable)
+        results. This can be requested by setting the the environment
+        variable `NNABLA_CUDNN_DETERMINISTIC` to a non-zero value.
 
     Args:
         inp (~nnabla.Variable): N-D array.
