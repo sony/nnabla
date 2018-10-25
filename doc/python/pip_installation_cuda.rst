@@ -46,6 +46,8 @@ and check if all works.
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing CUDA extension...
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing cuDNN extension...
 
+**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla_ext_cuda92`` beforehand.
+
 
 Installation with Multi-GPU supported
 -------------------------------------
