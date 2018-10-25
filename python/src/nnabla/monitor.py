@@ -373,3 +373,50 @@ def tile_images(data, padsize=1, padval=0):
         # Return as (H, W)
         return data.reshape(data.shape[:2])
     return data
+
+
+def plot_series(filename, plot_kwargs=None):
+    '''Plot series data from MonitorSeries output text file.
+
+    Args:
+        filename (str): Path to *.series.txt file produced by :obj:`~nnabla.MonitorSeries` class.
+        plot_kwags (dict, optional):
+            Keyward arguments passed to :function:`matplotlib.pyplot.plot`.
+
+    Note:
+        matplotlib package is required.
+
+    '''
+    import matplotlib.pyplot as plt
+
+    if plot_kwargs is None:
+        plot_kwargs = {}
+
+    data = np.genfromtxt(filename, dtype='i8,f4', names=['k', 'v'])
+    index = data['k']
+    values = data['v']
+    plt.plot(index, values, **plot_kwargs)
+
+
+def plot_time_elapsed(filename, plot_kwargs=None):
+    '''Plot series data from MonitorTimeElapsed output text file.
+
+    Args:
+        filename (str): Path to *.series.txt file produced by :obj:`~nnabla.MonitorSeries` class.
+        plot_kwags (dict, optional):
+            Keyward arguments passed to :function:`matplotlib.pyplot.plot`.
+
+    Note:
+        matplotlib package is required.
+
+    '''
+    import matplotlib.pyplot as plt
+
+    if plot_kwargs is None:
+        plot_kwargs = {}
+
+    data = np.genfromtxt(filename, dtype='i8,f4',
+                         usecols=(0, 1), names=['k', 'v'])
+    index = data['k']
+    values = data['v']
+    plt.plot(index, values, **plot_kwargs)

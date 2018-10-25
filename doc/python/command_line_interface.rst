@@ -6,14 +6,14 @@ convert param and dataset, measure performance, file format converter and so on.
 
 .. code-block:: none
 
-    usage: nnabla_cli [-h]
-                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,version}
+    usage: nnabla_cli [-h] [-m]
+                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,version}
                       ...
     
-    Command line interface for NNabla(Version 1.0.0rc2, Build 180626044347)
+    Command line interface for NNabla(Version 1.0.9.dev1, Build 181025154033)
     
     positional arguments:
-      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,version}
+      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,version}
         train               Training with NNP.
         infer               Do inference with NNP and binary data file input.
         forward             Do evaluation with NNP and test dataset.
@@ -30,10 +30,13 @@ convert param and dataset, measure performance, file format converter and so on.
         dump                Dump network with supported format.
         nnb_template        Generate NNB config file template.
         convert             File format converter.
+        plot_series         Plot *.series.txt files.
+        plot_timer          Plot *.timer.txt files.
         version             Print version and build number.
     
     optional arguments:
       -h, --help            show this help message and exit
+      -m, --mpi             exec with mpi.
 
 
 Work with NNP
@@ -330,6 +333,99 @@ File format converter
                             Default type of variable
       -s SETTINGS, --settings SETTINGS
                             Settings in YAML format file.
+
+
+Plot Monitor class output files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Note**:
+
+- Plotting subcommands require matplotlib package.
+- By default, the following commands show a plot on your display using a
+  backend rendering engine of matplotlib depending on your environment.
+  If you want to save a plot as an image or a vector data, use ``-o`` option to
+  specifiy a file name where a plot is saved.
+
+MonitorSeries
+-------------
+
+.. code-block:: none
+
+    usage: nnabla_cli plot_series [-h] [-l LABEL] [-o OUTFILE] [-x XLABEL]
+                                  [-y YLABEL] [-t TITLE] [-T YLIM_MAX]
+                                  [-B YLIM_MIN] [-R XLIM_MAX] [-L XLIM_MIN]
+                                  infile [infile ...]
+    
+    Plot *.series.txt files produced by nnabla.monitor.MonitorSeries class.
+    
+    Example:
+    
+        nnabla_cli plot_series -x "Epochs" -y "Squared error loss" -T 10 -l "config A" -l "config B" result_a/Training-loss.series.txt result_b/Training-loss.series.txt
+    
+    positional arguments:
+      infile                Path to input file.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -l LABEL, --label LABEL
+                            Label of each plot.
+      -o OUTFILE, --outfile OUTFILE
+                            Path to output file.
+      -x XLABEL, --xlabel XLABEL
+                            X-axis label of plot.
+      -y YLABEL, --ylabel YLABEL
+                            Y-axis label of plot.
+      -t TITLE, --title TITLE
+                            Title of plot.
+      -T YLIM_MAX, --ylim-max YLIM_MAX
+                            Y-axis plot range max.
+      -B YLIM_MIN, --ylim-min YLIM_MIN
+                            Y-axis plot range min.
+      -R XLIM_MAX, --xlim-max XLIM_MAX
+                            X-axis plot range max.
+      -L XLIM_MIN, --xlim-min XLIM_MIN
+                            X-axis plot range min.
+
+
+MonitorTimeElapsed
+------------------
+
+.. code-block:: none
+
+    usage: nnabla_cli plot_timer [-h] [-l LABEL] [-o OUTFILE] [-x XLABEL]
+                                 [-y YLABEL] [-t TITLE] [-T YLIM_MAX]
+                                 [-B YLIM_MIN] [-R XLIM_MAX] [-L XLIM_MIN]
+                                 infile [infile ...]
+    
+    Plot *.timer.txt files produced by nnabla.monitor.MonitorTimeElapsed class.
+    
+    Example:
+    
+        nnabla_cli plot_timer -x "Epochs" -l "config A" -l "config B" result_a/Epoch-time.timer.txt result_b/Epoch-time.timer.txt
+    
+    positional arguments:
+      infile                Path to input file.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -l LABEL, --label LABEL
+                            Label of each plot.
+      -o OUTFILE, --outfile OUTFILE
+                            Path to output file.
+      -x XLABEL, --xlabel XLABEL
+                            X-axis label of plot.
+      -y YLABEL, --ylabel YLABEL
+                            Y-axis label of plot.
+      -t TITLE, --title TITLE
+                            Title of plot.
+      -T YLIM_MAX, --ylim-max YLIM_MAX
+                            Y-axis plot range max.
+      -B YLIM_MIN, --ylim-min YLIM_MIN
+                            Y-axis plot range min.
+      -R XLIM_MAX, --xlim-max XLIM_MAX
+                            X-axis plot range max.
+      -L XLIM_MIN, --xlim-min XLIM_MIN
+                            X-axis plot range min.
 
 
 Development
