@@ -234,6 +234,10 @@ public:
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
   /**
+  */
+  NBLA_API vector<CgFunctionPtr> function_references();
+
+  /**
    */
   inline int function_reference_count() const {
     return function_references_.size();

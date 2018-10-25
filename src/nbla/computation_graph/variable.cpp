@@ -493,6 +493,17 @@ void CgVariable::backward(
       communicator_callbacks);
 }
 
+vector<CgFunctionPtr> CgVariable::function_references() {
+  vector<CgFunctionPtr> ret(this->function_reference_count(), nullptr);
+  int i = 0;
+  for (auto pair : function_references_) {
+    if (auto shared = pair.second.first.lock())
+      ret[i++] = shared;
+  }
+
+  return ret;
+}
+
 void CgVariable::insert_function_reference(CgFunctionPtr func) {
   std::weak_ptr<CgFunction> wp(func);
   function_references_.insert(
@@ -503,7 +514,7 @@ void CgVariable::remove_function_reference(CgFunction *funcp) {
   auto it = function_references_.find(funcp);
   if (it == function_references_.end())
     return;
-  function_references_.erase(funcp);
+  function_references_.erase(it);
 }
 
 void CgVariable::mark_need_setup() {

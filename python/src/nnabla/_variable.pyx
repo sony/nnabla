@@ -462,6 +462,21 @@ cdef class Variable:
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
 
+    @property
+    def function_references(self):
+        """
+        Returns a list of functions which take this variable as an input.
+        This method can be called only as a getter.
+
+        Returns:
+            list of `nnabla.function.Function`
+
+        """
+        cdef vector[CgFunctionPtr] fs = self.varp.function_references()
+
+        return [function.Function.create_from_c(f) for f in fs]
+
+
     def forward(self, cpp_bool clear_buffer=False, cpp_bool clear_no_need_grad=False):
         """
         Performs a forward propagation from the root node to this variable.
