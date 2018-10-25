@@ -89,6 +89,8 @@ Here is the list of parametric functions.
 .. autofunction:: fixed_point_quantized_convolution
 .. autofunction:: pow2_quantized_affine
 .. autofunction:: pow2_quantized_convolution
+.. autofunction:: pruned_affine
+.. autofunction:: pruned_convolution
 
 .. autofunction:: lstm
 

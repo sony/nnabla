@@ -1914,6 +1914,208 @@ def pow2_quantized_convolution(inp, outmaps, kernel,
     return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
 
 
+@parametric_function_api("pruned_affine", [
+    ('W', 'Weight matrix in float', '(inmaps, outmaps)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Qunatized weights', '(inmaps, outmaps)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+])
+def pruned_affine(inp, n_outmaps,
+                  base_axis=1,
+                  w_init=None, b_init=None,
+                  fix_parameters=False, rng=None, with_bias=True,
+                  prune_w=True, rate_w=0.9, prune_b=True, rate_b=0.9):
+    """Pruned Affine.
+
+    Pruned Affine is the affine function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_j = \sum_{i} Q(w_{ji}) x_i, 
+
+    where :math:`Q(w_{ji})` is the pruning function, i.e., `F.prune`.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        prune_w (bool): Quantize weights if `True`.
+        rate_w (float): Pruning rate for weights.
+        prune_b (bool): Quantize bias if `True`.
+        rate_b (float): Pruning rate for bias.
+
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
+
+    """
+
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        inmaps = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inmaps, n_outmap), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, True, not fix_parameters)
+
+    # sparsed Weight
+    if prune_w:
+        w_q = get_parameter_or_create(
+            "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+            w_init, False)
+        # Link computation graph
+        real_w_q = F.prune(w, rate=rate_w, outputs=[w_q.data])
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    real_b_q = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, True, not fix_parameters)
+        if prune_b:
+            b_q = get_parameter_or_create(
+                "b_q", n_outmaps, b_init, False)
+            # Link computation graph
+            real_b_q = F.prune(b, rate=rate_b, outputs=[b_q.data])
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.affine(inp, real_w_q, real_b_q, base_axis)
+
+
+@parametric_function_api("pruned_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps // group, *kernel)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Qunatized weights', '(outmaps, inmaps // group, *kernel)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+])
+def pruned_convolution(inp, outmaps, kernel,
+                       pad=None, stride=None, dilation=None, group=1,
+                       w_init=None, b_init=None,
+                       base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                       prune_w=True, rate_w=0.9, prune_b=True, rate_b=0.9):
+    """Pruned Convolution.
+
+    Pruned Convolution is the convolution function, 
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j}, 
+
+    where :math:`Q(w_{ji})` is the pruning function, i.e., `F.prune`.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        prune_w (bool): Quantize weights if `True`.
+        rate_w (float): Pruning rate for weights.
+        prune_b (bool): Quantize bias if `True`.
+        rate_b (float): Pruning rate for bias.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
+        w_init, True, not fix_parameters)
+
+    # Quantized Weight
+    if prune_w:
+        w_q = get_parameter_or_create(
+            "W_q", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
+            w_init, False)
+        # Link computation graph
+        real_w_q = F.prune(w, rate=rate_w, outputs=[w_q.data])
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    real_b_q = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, True, not fix_parameters)
+        if prune_b:
+            b_q = get_parameter_or_create(
+                "b_q", (outmaps,), b_init, False)
+            # Link computation graph
+            real_b_q = F.prune(b, rate=rate_b, outputs=[b_q.data])
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
+
+
 @parametric_function_api("lstm", [
     ('affine/W', 'Stacked weight matrixes of LSTM block',
      '(inmaps, 4, state_size)', True),

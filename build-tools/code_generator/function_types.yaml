@@ -425,3 +425,6 @@ FFT:
 IFFT:
   float: [float]
 #  half: [Half]
+Prune:
+  float: [float]
+  Half: [Half]
