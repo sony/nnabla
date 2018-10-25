@@ -3797,6 +3797,37 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: N-D array.
+
+  Prune:
+    snake_name: prune
+    doc: |2
+      
+      Prune the input as the following equation,
+
+      .. math::
+
+          q_i = \left \{
+            \begin{array}{ll}
+            0   & abs(x_i) < threshold \\
+            x_i & otherwise
+            \end{array}
+            \right.
+      
+      where :math:`threshold` is determined by `threshold = np.sort(np.abs(x))[int((x.size - 1) * rate)]`.
+
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      rate:
+        doc: Sparse rate, or pruning rate.
+        type: float
+        default: '0.9'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+
+
 Validation:
   TopNError:
     snake_name: top_n_error
