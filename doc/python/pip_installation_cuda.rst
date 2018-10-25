@@ -49,6 +49,8 @@ and check if all works.
 **Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla_ext_cuda92`` beforehand.
 
 
+.. _pip-installation-distributed:
+
 Installation with Multi-GPU supported
 -------------------------------------
 
