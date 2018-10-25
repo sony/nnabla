@@ -233,8 +233,37 @@ class DataIterator(object):
               slice_start=None, slice_end=None,
               cache_dir=None):
         '''
-        Generates a new data iterator that has limited portion of original data.
+        Slices the data iterator so that newly generated data iterator has access to limited portion of the original data.
+
+        Args:
+            rng (numpy.random.RandomState): Random generator for Initializer.
+            num_of_slices(int): Total number of slices to be made. Muts be used together with `slice_pos`. 
+            slice_pos(int): Position of the slice to be assigned to the new data iterator. Must be used together with `num_of_slices`.
+            slice_start(int): Starting position of the range to be sliced into new data iterator. Must be used together with `slice_end`.
+            slice_end(int) : End position of the range to be sliced into new data iterator. Must be used together with `slice_start`.
+            cache_dir(str) : Directory to save cache files
+
+        Example:
+
+        .. code-block:: python
+
+            from nnabla.utils.data_iterator import data_iterator_simple
+            import numpy as np
+
+            def load_func1(index):
+                d = np.ones((2, 2)) * index
+                return d
+
+            di = data_iterator_simple(load_func1, 1000, batch_size=3)
+
+            di_s1 = di.slice(None, num_of_slices=10, slice_pos=0)
+            di_s2 = di.slice(None, num_of_slices=10, slice_pos=1)
+
+            di_s3 = di.slice(None, slice_start=100, slice_end=200)
+            di_s4 = di.slice(None, slice_start=300, slice_end=400) 
+
         '''
+
         if num_of_slices is not None and slice_pos is not None and slice_start is None and slice_end is None:
             size = self._size // num_of_slices
             amount = self._size % num_of_slices
