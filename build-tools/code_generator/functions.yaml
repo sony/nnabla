@@ -928,6 +928,14 @@ Reduction:
         doc: Flag whether the reduced axis is kept.
         type: bool
         default: 'False'
+      with_index:
+        doc: Return values and indices.
+        type: bool
+        default: 'False'
+      only_index:
+        doc: Return only indices.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
@@ -946,6 +954,14 @@ Reduction:
         default: range(x.ndim)
       keep_dims:
         doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+      with_index:
+        doc: Return values and indices.
+        type: bool
+        default: 'False'
+      only_index:
+        doc: Return only indices.
         type: bool
         default: 'False'
     outputs:

@@ -24,7 +24,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Min, const vector<int> &, bool);
+NBLA_REGISTER_FUNCTION_HEADER(Min, const vector<int> &, bool, bool, bool);
 
 /** Reduction along axes with min operation.
 
@@ -36,11 +36,13 @@ NBLA_REGISTER_FUNCTION_HEADER(Min, const vector<int> &, bool);
  */
 template <typename T> class Min : public Max<T> {
 public:
-  Min(const Context &ctx, const vector<int> &axes, bool keep_dims)
-      : Max<T>(ctx, axes, keep_dims) {}
+  Min(const Context &ctx, const vector<int> &axes, bool keep_dims,
+      bool with_index, bool only_index)
+      : Max<T>(ctx, axes, keep_dims, with_index, only_index) {}
   virtual ~Min() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Min(this->ctx_, this->axes_, this->keep_dims_);
+    return create_Min(this->ctx_, this->axes_, this->keep_dims_,
+                      this->with_index_, this->only_index_);
   }
   virtual string name() { return "Min"; }
 
