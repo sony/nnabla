@@ -1,2 +1,2 @@
-nnabla>=0.9.9
+nnabla>=1.0.3
 tqdm

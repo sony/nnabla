@@ -145,6 +145,8 @@ def train():
         # Please check README.
         data = data_iterator_imagenet(
             args.batch_size, args.train_cachefile_dir, rng=rng)
+        data = data.slice(
+            rng=rng, num_of_slices=n_devices, slice_pos=device_id)
         vdata = data_iterator_imagenet(args.batch_size, args.val_cachefile_dir)
         vdata = vdata.slice(
             rng=None, num_of_slices=n_devices, slice_pos=device_id)
