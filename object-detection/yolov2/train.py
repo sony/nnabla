@@ -17,14 +17,19 @@
 # licensed under the MIT License (see LICENSE.external for more details).
 
 
+from __future__ import division
+
 import dataset
 from utils import *
-import region_loss
+from arg_utils import Yolov2OptionTraining
 import os
 
 import nnabla as nn
 import nnabla.solvers as S
-from region_loss import create_network
+
+from train_graph import TrainGraph
+
+from multiprocessing.pool import ThreadPool
 
 import random
 random.seed(0)
@@ -32,178 +37,194 @@ import numpy as np
 np.seterr(**{key: 'raise' for key in ['divide', 'over', 'invalid']})
 
 
+def get_current_batch(seen, args):
+    '''
+    Get the current batch number from number of processed examples.
+    '''
+    return int(seen // (args.batch_size * args.accum_times))
 
-def adjust_learning_rate(solver, batch):
-    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    lr = learning_rate
-    for i in range(len(args.steps)):
-        scale = args.scales[i] if i < len(args.scales) else 1
-        if batch >= args.steps[i]:
-            lr = lr * scale
-            if batch == args.steps[i]:
+
+class PrefetchIterator(object):
+    '''
+    Creator of prefetch iterator from an iterable object.
+    '''
+
+    def __init__(self):
+        self.pool = ThreadPool(1)
+
+    def create(self, it):
+        future_data = self.pool.apply_async(
+            raise_info_thread(next), (it, None))
+        while True:
+            curr_data = future_data
+            future_data = self.pool.apply_async(
+                raise_info_thread(next), (it, None))
+            data = curr_data.get()
+            if data is None:
                 break
-        else:
-            break
-    solver.set_learning_rate(lr/(batch_size*args.accum_times))
-    return lr
+            yield data
 
 
-def train(epoch):
-    global processed_batches
-    global seen
-    global region_loss_seen
+class YoloSolver(object):
+    def __init__(self, args):
 
-    t0 = time.time()
+        # Create solvers (only Convolution kernels require weight decay).
+        param_convweights = {
+            k: v for k, v in nn.get_parameters().items() if k.endswith("conv/W")}
+        param_others = {k: v for k, v in nn.get_parameters().items()
+                        if not k.endswith("conv/W")}
+        convweights = S.Momentum(args.learning_rate, args.momentum)
+        others = S.Momentum(args.learning_rate, args.momentum)
+        convweights.set_parameters(param_convweights)
+        others.set_parameters(param_others)
 
-    def batch_iter(it, batch_size):
-        def list2np(t):
-            imgs, labels = zip(*t)
-            retimgs = np.zeros((len(imgs),) + imgs[0].shape, dtype=np.float32)
-            retlabels = np.zeros(
-                (len(labels),) + labels[0].shape, dtype=np.float32)
-            for i, img in enumerate(imgs):
-                retimgs[i, :, :, :] = img
-            for i, label in enumerate(labels):
-                retlabels[i, :] = label
-            return retimgs, retlabels
-        retlist = []
-        for i, item in enumerate(it):
-            retlist.append(item)
-            if i % batch_size == batch_size - 1:
-                ret = list2np(retlist)
-                # Don't train for batches that contain no labels
-                if not (np.sum(ret[1]) == 0):
-                    yield ret
-                retlist = []
-        # Excess data is discarded
-        if len(retlist) > 0:
-            ret = list2np(retlist)
-            # Don't train for batches that contain no labels
-            if not (np.sum(ret[1]) == 0):
-                yield ret
+        # Init parameter gradients.
+        convweights.zero_grad()
+        others.zero_grad()
 
-    train_loader_base = dataset.listDataset(args.train, args, shape=(init_width, init_height),
-                                            shuffle=True,
-                                            train=True,
-                                            seen=seen,
-                                            batch_size=batch_size,
-                                            num_workers=num_workers)
-    train_loader = batch_iter(iter(train_loader_base), batch_size=batch_size)
+        # Set attributes.
+        self.convweights = convweights
+        self.others = others
+        self.args = args
+        self.batch_size = args.batch_size * args.accum_times
+        self.rate = args.accum_times
+        self.count = 0
 
-    lr = adjust_learning_rate(solver_convweights, processed_batches)
-    lr = adjust_learning_rate(solver_others, processed_batches)
-    logging('epoch %d, processed %d samples, lr %f' %
-            (epoch, epoch * len(train_loader_base), lr))
+    def get_current_lr(self, seen):
+        '''
+        Get the current learning rate by the current number of processed examples.
 
-    yolo_x_nnabla, yolo_features_nnabla, yolo_vars, yolo_tvars, loss_nnabla = create_network(
-        batch_size, init_height, init_width, args)
+        Burn-in and step learning rate scheduling are employed.
+        '''
+        args = self.args
+        batch_num = get_current_batch(seen, args)
+        lr = float(args.learning_rate)
 
-    t1 = time.time()
-    step_called = False
-    solver_convweights.zero_grad()
-    solver_others.zero_grad()
-    for batch_idx, (data_tensor, target_tensor) in enumerate(train_loader):
-        dn = data_tensor
-        tn = target_tensor
-        if dn.shape != yolo_x_nnabla.shape:
-            del(yolo_x_nnabla)
-            del(yolo_features_nnabla)
-            yolo_x_nnabla, yolo_features_nnabla, yolo_vars, yolo_tvars, loss_nnabla = create_network(
-                dn.shape[0], dn.shape[2], dn.shape[3], args)
-        yolo_x_nnabla.d = dn
-        yolo_features_nnabla.forward()
+        # Burn-in (burn_in=1000, burn_in_power=4 by default)
+        if batch_num < args.burn_in:
+            return lr * ((float(batch_num) / args.burn_in) ** args.burn_in_power)
 
-        for v in yolo_vars:
-            v.forward()
+        # Steps is only implemented
+        for step, scale in zip(args.steps, args.scales):
+            if step > batch_num:
+                return lr
+            lr *= scale
+        return lr
 
-        region_loss_seen += data_tensor.shape[0]
+    def update_at_rate(self, lr, force=False):
+        '''
 
-        nGT, nCorrect, nProposals = region_loss.forward_nnabla(
-            args, region_loss_seen, yolo_features_nnabla, target_tensor, yolo_vars, yolo_tvars)
-        loss_nnabla.forward()
-        loss_nnabla.backward()
-        print('%d: nGT %d, recall %d, proposals %d, loss: total %f' %
-              (region_loss_seen, nGT, nCorrect, nProposals, loss_nnabla.d))
+        Returns: int
+            Current learning rate
+        '''
+        if force and self.count > 0:
+            self.update(lr)
+            return True
+        self.count = (self.count + 1) % self.rate
+        if self.count == 0:
+            self.update(lr)
+            return True
+        return False
 
-        yolo_features_nnabla.backward(grad=None, clear_buffer=True)
-        if batch_idx % args.accum_times == args.accum_times - 1:
-            step_called = True
-            solver_convweights.weight_decay(args.decay*batch_size)
-            solver_convweights.update()
-            solver_convweights.zero_grad()
-            solver_others.update()
-            solver_others.zero_grad()
+    def update(self, lr):
+        # Get current learning rate and set to solvers
+        self.convweights.set_learning_rate(lr / self.batch_size)
+        self.others.set_learning_rate(lr / self.batch_size)
 
-            processed_batches = processed_batches + 1
-            adjust_learning_rate(solver_convweights, processed_batches)
-            adjust_learning_rate(solver_others, processed_batches)
-        t1 = time.time()
-    if not step_called:
-        solver_convweights.weight_decay(args.decay*batch_size)
-        solver_convweights.update()
-        solver_convweights.zero_grad()
-        solver_others.update()
-        solver_others.zero_grad()
+        # Update
+        self.convweights.weight_decay(self.args.decay * self.batch_size)
+        self.convweights.update()
+        self.others.update()
+
+        # Reset parameter gradients and accumulation count
+        self.convweights.zero_grad()
+        self.others.zero_grad()
+        self.count = 0
+
+
+def train(args, epoch, max_epochs, train_graph, yolo_solver,
+          prefetch_iterator, on_memory_data):
+
+    sample_iter = dataset.listDataset(
+        args.train, args,
+        shuffle=True,
+        train=True,
+        seen=train_graph.seen,
+        image_sizes=args.size_aug,
+        image_size_change_freq=args.batch_size * args.accum_times * 10,
+        on_memory_data=on_memory_data,
+        use_cv2=not args.disable_cv2)
+    batch_iter = dataset.create_batch_iter(
+        iter(sample_iter), batch_size=args.batch_size)
+
+    total_loss = []
+    epoch_seen = 0
+    tic = time.time()
+    for batch_idx, ((data_tensor, target_tensor), preprocess_time) \
+            in enumerate(prefetch_iterator.create(batch_iter)):
+        lr = yolo_solver.get_current_lr(train_graph.seen)
+        nB = data_tensor.shape[0]
+        print('size={}, '.format(sample_iter.shape[0]), end='')
+        stats = train_graph.forward_backward(data_tensor, target_tensor)
+        print('s=%d/%d, b=%d/%d, e=%d/%d, lr %g, mIoU %.3f, nGT %d, recall %d,'
+              ' proposals %d, loss: %.3f, pre: %.1f [ms], exec: %.1f [ms]' % (
+                  stats.seen, len(sample_iter), get_current_batch(
+                      stats.seen, args),
+                  args.max_batches, epoch, max_epochs, lr, stats.mIoU, stats.nGT,
+                  stats.nCorrect, stats.nProposals, stats.loss,
+                  preprocess_time, stats.time))
+        epoch_seen += nB
+        total_loss.append(float(stats.loss))
+
+        # Update parameters for every accum_times iterations.
+        updated = yolo_solver.update_at_rate(lr)
+
+    # Update if gradients are computed from previous update.
+    yolo_solver.update_at_rate(lr, force=True)
     print()
-    t1 = time.time()
-    logging('training with %f samples/s' % (len(train_loader_base)/(t1-t0)))
     if (epoch+1) % args.save_interval == 0:
         logging('save weights to %s/%06d.h5' % (args.output, epoch+1))
-        seen = (epoch + 1) * len(train_loader_base)
         nn.save_parameters('%s/%06d.h5' % (args.output, epoch+1))
+    return np.sum(total_loss) / epoch_seen
 
 
-if __name__ == '__main__':
+def main():
     # Training settings
-    args = parse_args()
+    args = Yolov2OptionTraining().parse_args()
 
     nsamples = file_lines(args.train)
-    ngpus = len(args.gpus.split(','))
-    num_workers = args.num_workers
 
-    batch_size = args.batch_size
-    learning_rate = args.learning_rate
+    set_default_context_by_args(args)
 
     # Training parameters
-    max_epochs = args.max_batches*batch_size*args.accum_times/nsamples+1
-    use_cuda = args.use_cuda
-    seed = args.seed
+    max_epochs = args.max_batches * args.batch_size * args.accum_times / nsamples + 1
 
     if not os.path.exists(args.output):
         os.mkdir(args.output)
 
     ###############
 
-    seen = 0
-    region_loss_seen = 0
-    processed_batches = 0/(batch_size*args.accum_times)
-
-    init_width = args.width
-    init_height = args.height
-    init_epoch = seen/nsamples
-
-    yolo_x_nnabla, yolo_features_nnabla, yolo_vars, yolo_tvars, loss_nnabla = create_network(
-        batch_size, init_height, init_width, args)
-
-    from nnabla.ext_utils import get_extension_context
-    ctx = get_extension_context("cudnn")
-    nn.set_default_context(ctx)
+    train_graph = TrainGraph(args, (args.size_aug[-1], args.size_aug[-1]))
 
     # Load parameters
     print("Load", args.weight, "...")
     nn.load_parameters(args.weight)
-    print(nn.get_parameters())
+    yolo_solver = YoloSolver(args)
 
-    param_convweights = {
-        k: v for k, v in nn.get_parameters().items() if k.endswith("conv/W")}
-    param_others = {k: v for k, v in nn.get_parameters().items()
-                    if not k.endswith("conv/W")}
+    if args.on_memory_data:
+        on_memory_data = dataset.load_on_memory_data(args.train)
+    else:
+        on_memory_data = None
 
-    solver_convweights = S.Momentum(learning_rate, args.momentum)
-    solver_others = S.Momentum(learning_rate, args.momentum)
-    solver_convweights.set_parameters(param_convweights)
-    solver_others.set_parameters(param_others)
-    print(init_epoch, max_epochs)
+    prefetch_iterator = PrefetchIterator()
 
-    for epoch in range(int(init_epoch), int(max_epochs)):
-        train(epoch)
+
+    # Epoch loop
+    for epoch in range(0, int(max_epochs)):
+        loss = train(args, epoch, max_epochs, train_graph,
+                     yolo_solver, prefetch_iterator, on_memory_data)
+
+
+
+if __name__ == '__main__':
+    main()
