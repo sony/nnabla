@@ -31,21 +31,23 @@ class ALS(object):
         pass
 
     def solve(self, X, rank, max_iter=500, stopping_criterion=1e-5,
-              dtype=np.float32, rng=None):
+              lambda_reg=0.0, dtype=np.float32, rng=None):
         """Solve CPD
 
         Args:
             X (numpy.ndarray): Target tensor of CPD.
             rank (int): Rank of the approximate tensor.
             max_iter (int): Max iteration of the ALS.
-            stopping_criterion (float): Threshold for stopping the ALS. 
-                If the value is negative, the convergence check is ignored; 
-                in other words, it may reduce the computation time. 
-            dtype (numpy.dtype): Data type 
+            stopping_criterion (float): Threshold for stopping the ALS.
+                If the value is negative, the convergence check is ignored;
+                in other words, it may reduce the computation time.
+            lambda_reg (float): regularization parameter. Larger lambda_reg
+                means larger regularization.
+            dtype (numpy.dtype): Data type
 
         Returns:
             list of numpy.ndarray: Decomposed matrices.
-            numpy.ndarray: Lambda of the CPD. 
+            numpy.ndarray: Lambda of the CPD.
 
         """
 
@@ -75,6 +77,9 @@ class ALS(object):
                     axes=(
                         [o for o in range(N) if o != n],
                         np.arange(N-1)[::-1]))
+                # L2 regularization
+                V = V+np.eye(rank)*lambda_reg
+
                 A_n = A_n.dot(pinv(V))
 
                 # Normalize
@@ -106,20 +111,20 @@ class ALS(object):
         For examples, suppose matrices X and Y each of which dimensions
         is (I, K) and (J, K).
 
-        Khatri-Rao product between X and Y is defined by 
+        Khatri-Rao product between X and Y is defined by
 
         .. math::
 
             X \odot Y = [a_1 \otimes b_1   a_2 \otimes b_2  \ldots a_K \otimes b_K ].
 
 
-        Khatri-Rao product usually returns a matrix, or 2-dimensional array, 
+        Khatri-Rao product usually returns a matrix, or 2-dimensional array,
         but in this function, it returns 3-dimensional array for the next use for
         tensor-dot product efficiently.
 
         Args:
-            X (numpy.ndarray): the matrix which the number of the columns is the same as Y's. 
-            Y (numpy.ndarray): the matrix which the number of the columns is the same as X's. 
+            X (numpy.ndarray): the matrix which the number of the columns is the same as Y's.
+            Y (numpy.ndarray): the matrix which the number of the columns is the same as X's.
 
         Returns:
             numpy.ndarray: the 3-dimensional array with the shape (I x J x K).
@@ -155,7 +160,7 @@ class ALS(object):
             n (int): N-th matrix which is omitted when computing Khatri-Rao product.
 
         Returns:
-            numpy.ndarray: Result of the reduction of Khatri-Rao product for `A`. 
+            numpy.ndarray: Result of the reduction of Khatri-Rao product for `A`.
         """
         order = list(range(n)) + list(range(n + 1, len(A)))
         order = sorted(order, reverse=reverse)
