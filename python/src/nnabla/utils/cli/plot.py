@@ -22,10 +22,27 @@ def plot_series_command(args):
 
 def plot_timer_command(args):
     import nnabla.monitor as M
-    plot_any_command(args, M.plot_time_elapsed)
+    format_unit = dict(
+        s='seconds',
+        m='minutes',
+        h='hours',
+        d='days',
+        )
+
+    if not args.ylabel:
+        if args.elapsed:
+            args.ylabel = 'Total elapsed time [{}]'.format(
+                format_unit[args.time_unit])
+        else:
+            args.ylabel = 'Elapsed time [{}/iter]'.format(
+                format_unit[args.time_unit])
+    plot_any_command(args, M.plot_time_elapsed, dict(
+        elapsed=args.elapsed, unit=args.time_unit))
 
 
-def plot_any_command(args, plot_func):
+def plot_any_command(args, plot_func, plot_func_kwargs=None):
+    if plot_func_kwargs is None:
+        plot_func_kwargs = {}
     if args.outfile:
         import matplotlib
         matplotlib.use('Agg')
@@ -34,7 +51,7 @@ def plot_any_command(args, plot_func):
     plt.figure()
     for i, inp in enumerate(args.inputs):
         label = args.label[i] if len(args.label) > i else inp
-        plot_func(inp, dict(label=label))
+        plot_func(inp, plot_kwargs=dict(label=label), **plot_func_kwargs)
     plt.legend(loc='best')
     if args.title:
         plt.title(args.title)
@@ -85,6 +102,7 @@ def add_plot_any_command(subparsers, subcommand, help, description, plot_command
     subparser.add_argument(
         '-L', '--xlim-min', help='X-axis plot range min.', type=float, default=None)
     subparser.set_defaults(func=plot_command)
+    return subparser
 
 
 def add_plot_series_command(subparsers):
@@ -105,5 +123,9 @@ Example:
 
     nnabla_cli plot_timer -x "Epochs" -l "config A" -l "config B" result_a/Epoch-time.timer.txt result_b/Epoch-time.timer.txt'''
 
-    add_plot_any_command(
-        subparsers, 'plot_timer', 'Plot *.timer.txt files.', desc, plot_timer_command, ylabel_default='Elapsed [sec]')
+    subparser = add_plot_any_command(
+        subparsers, 'plot_timer', 'Plot *.timer.txt files.', desc, plot_timer_command)
+    subparser.add_argument(
+        '-e', '--elapsed', help='Plot total elapsed time. By default, it plots elapsed time per iteration.', action='store_true')
+    subparser.add_argument(
+        '-u', '--time-unit', help='Time unit chosen from {s|m|h|d}.', default='s')

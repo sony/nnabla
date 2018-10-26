@@ -394,10 +394,11 @@ MonitorTimeElapsed
 
     usage: nnabla_cli plot_timer [-h] [-l LABEL] [-o OUTFILE] [-x XLABEL]
                                  [-y YLABEL] [-t TITLE] [-T YLIM_MAX]
-                                 [-B YLIM_MIN] [-R XLIM_MAX] [-L XLIM_MIN]
+                                 [-B YLIM_MIN] [-R XLIM_MAX] [-L XLIM_MIN] [-e]
+                                 [-u TIME_UNIT]
                                  infile [infile ...]
     
-    Plot *.timer.txt files produced by nnabla.monitor.MonitorTimeElapsed class.
+    Plot *.timer.txt files produced by nnabla.MonitorTimeElapsed class.
     
     Example:
     
@@ -426,6 +427,9 @@ MonitorTimeElapsed
                             X-axis plot range max.
       -L XLIM_MIN, --xlim-min XLIM_MIN
                             X-axis plot range min.
+      -e, --elapsed         Plot total elapsed time. By default, it plots elapsed time per iteration.
+      -u TIME_UNIT, --time-unit TIME_UNIT
+                            Time unit chosen from {s|m|h|d}.
 
 
 Development
