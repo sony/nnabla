@@ -4,4 +4,7 @@ imagenet.shortname.list
 *.h5
 *.nnp
 *.jpg
-
+backup*/
+results*/
+dataset
+output/
