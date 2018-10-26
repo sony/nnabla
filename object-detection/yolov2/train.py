@@ -26,6 +26,10 @@ import nnabla as nn
 import nnabla.solvers as S
 from region_loss import create_network
 
+import numpy as np
+np.seterr(**{key: 'raise' for key in ['divide', 'over', 'invalid']})
+
+
 
 def adjust_learning_rate(solver, batch):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
