@@ -25,7 +25,8 @@ import nnabla
 import nnabla_ext.cuda
 import yolov2
 
-args = utils.parse_args()
+from arg_utils import Yolov2OptionValid
+args = Yolov2OptionValid().parse_args()
 
 
 def valid(weightfile, outfile, outdir):
@@ -34,9 +35,7 @@ def valid(weightfile, outfile, outdir):
     prefix = outdir
     names = utils.load_class_names(name_list)
 
-    from nnabla.ext_utils import get_extension_context
-    ctx = get_extension_context("cudnn")
-    nnabla.set_default_context(ctx)
+    utils.set_default_context_by_args(args)
 
     with open(valid_images) as fp:
         tmp_files = fp.readlines()
@@ -59,7 +58,6 @@ def valid(weightfile, outfile, outdir):
     nnabla.load_parameters(weightfile)
 
     valid_dataset = dataset.listDataset(valid_images, args,
-                                        batch_size=args.valid_batchsize,
                                         train=False,
                                         shape=(args.width, args.height), shuffle=False)
     assert(args.valid_batchsize > 1)

@@ -23,6 +23,9 @@ import numpy as np
 from nnabla.utils.image_utils import imread, imresize, imsave
 
 
+from arg_utils import get_anchors_by_name_or_parse
+
+
 def get_args():
     import argparse
     from os.path import dirname, basename, join
@@ -30,21 +33,20 @@ def get_args():
     p.add_argument('--width', type=int, default=608)
     p.add_argument('--height', type=int, default=608)
     p.add_argument('--weights', type=str, default='yolov2.h5')
-    p.add_argument('--anchors', type=int, default=5)
     p.add_argument('--classes', type=int, default=80)
     p.add_argument('--thresh', type=float, default=.5)
     p.add_argument('--nms', type=float, default=.45)
     p.add_argument('--nms-per-class', type=bool, default=True)
     p.add_argument(
-        '--biases', nargs='*',
-        default=[0.57273, 0.677385, 1.87446, 2.06253, 3.33843,
-                 5.47434, 7.88282, 3.52778, 9.77052, 9.16828])
+        '--anchors', type=str,
+        default='coco')
     p.add_argument('--nnp', type=str, default='yolov2.nnp')
     args = p.parse_args()
     assert args.width % 32 == 0
     assert args.height % 32 == 0
-    assert len(args.biases) == args.anchors * 2
-    args.biases = np.array(args.biases).reshape(-1, 2)
+    args.anchors = get_anchors_by_name_or_parse(args.anchors)
+    args.num_anchors = int(len(args.anchors) // 2)
+    args.anchors = np.array(args.anchors).reshape(-1, 2)
     return args
 
 
@@ -56,8 +58,8 @@ def main():
 
     # Build a YOLO v2 network
     x = nn.Variable((1, 3, args.height, args.width))
-    y = yolov2.yolov2(x / 255.0, args.anchors, args.classes, test=True)
-    y = yolov2.yolov2_activate(y, args.anchors, args.biases)
+    y = yolov2.yolov2(x / 255.0, args.num_anchors, args.classes, test=True)
+    y = yolov2.yolov2_activate(y, args.num_anchors, args.anchors)
     y = F.nms_detection2d(y, args.thresh, args.nms, args.nms_per_class)
 
     # Save NNP file (used in C++ inference later.).

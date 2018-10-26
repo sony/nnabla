@@ -21,7 +21,6 @@ import time
 import math
 import numpy as np
 import nnabla
-import argparse
 
 import struct  # get_image_size
 import imghdr  # get_image_size
@@ -357,89 +356,14 @@ def logging(message):
     print(('%s %s' % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), message)))
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-iw', '--width', type=int,
-                        help='Input image width', default=416)
-    parser.add_argument('-ih', '--height', type=int,
-                        help='Input image height', default=416)
-    parser.add_argument('-nc', '--num-classes', type=int,
-                        help='Number of classes', default=20)
-    parser.add_argument('-a', '--anchors', type=str, help='Anchors',
-                        default="1.3221,1.73145,3.19275,4.00944,5.05587,8.09892,9.47112,4.84053,11.2364,10.0071")
-    parser.add_argument('-w', '--weight', type=str,
-                        help='Initial weight file', required=True)
-    parser.add_argument('-t', '--train', type=str,
-                        help='Training dataset list', default="dataset/train.txt")
-    parser.add_argument('-v', '--valid', type=str,
-                        help='Validation dataset list', default="dataset/2007_test.txt")
-    parser.add_argument('-n', '--names', type=str,
-                        help='Class name list', default="data/voc.names")
-    parser.add_argument('-o', '--output', type=str,
-                        help='Weight output directory', default="backup")
-    parser.add_argument('-g', '--gpus', type=str,
-                        help='GPU IDs to be used', default="0")
-    parser.add_argument('-nw', '--num-workers', type=int,
-                        help='Number of workers', default=1)
+def set_default_context_by_args(args):
+    ngpus = len(args.gpus.split(','))
+    assert ngpus == 1, 'muti-gpu training is not supported so far. Given {} (size={})'.format(
+        args.gpus, ngpus)
 
-    parser.add_argument('-b', '--batch-size', type=int,
-                        help='Batch size', default=16)
-    parser.add_argument('-at', '--accum-times', type=int,
-                        help='Number of times of batch accumulation. e.g. when batch_size == 64 and accum_times == 2, the gradient is calculated by accumulating a minibatch of size 32 twice.', default=4)
-    # TODO
-    parser.add_argument('-mb', '--max-batches', type=int,
-                        help='Maximum number of batches', default=80200)
-    parser.add_argument('-lr', '--learning-rate', type=float,
-                        help='Learning rate', default=0.001)
-    parser.add_argument('-mo', '--momentum', type=float,
-                        help='Momentum', default=0.9)
-    parser.add_argument('-wd', '--decay', type=float,
-                        help='Weight decay coefficient', default=0.0005)
-    parser.add_argument('-st', '--steps', type=str,
-                        help='Steps', default="-1,500,40000,60000")
-    parser.add_argument('-sc', '--scales', type=str,
-                        help='Scales', default="0.1, 10, .1, .1")
-
-    parser.add_argument('-s', '--seed', type=int,
-                        help='Seed', default=int(time.time()))
-    parser.add_argument('-save', '--save-interval', type=int,
-                        help='Interval of epochs to save weight files', default=10)
-
-    # Data augmentation parameters
-    parser.add_argument('-daj', '--jitter', type=float,
-                        help='Data augmentation: jitter', default=0.2)
-    parser.add_argument('-dah', '--hue', type=float,
-                        help='Data augmentation: hue', default=0.1)
-    parser.add_argument('-das', '--saturation', type=float,
-                        help='Data augmentation: saturation', default=1.5)
-    parser.add_argument('-dae', '--exposure', type=float,
-                        help='Data augmentation: exposure', default=1.5)
-
-    # Loss function parameters
-    parser.add_argument('-nwos', '--object-scale', type=float,
-                        help='Object Scale', default=5.0)
-    parser.add_argument('-nwnos', '--noobject-scale',
-                        type=float, help='No-object Scale', default=1.0)
-    parser.add_argument('-nwcs', '--class-scale', type=float,
-                        help='Class Scale', default=1.0)
-    parser.add_argument('-nwcos', '--coord-scale',
-                        type=float, help='Coord Scale', default=1.0)
-    parser.add_argument('-nwabs', '--absolute', type=float, default=1.0)
-    parser.add_argument('-nwthr', '--thresh', type=float, default=0.6)
-
-    # Validation parameters
-    parser.add_argument('-vct', '--conf-thresh', type=float,
-                        help='Confidence threshhold', default=0.005)
-    parser.add_argument('-vnt', '--nms-thresh', type=float,
-                        help='IOU threshhold for non-maximum suppression', default=0.45)
-    parser.add_argument('-vb', '--valid-batchsize',
-                        type=int, help='Batch size', default=2)
-
-    argdict = parser.parse_args()
-    argdict.anchors = [float(x.strip()) for x in argdict.anchors.split(",")]
-    argdict.num_anchors = len(argdict.anchors)//2
-
-    argdict.steps = [int(x.strip()) for x in argdict.steps.split(",")]
-    argdict.scales = [float(x.strip()) for x in argdict.scales.split(",")]
-    argdict.use_cuda = argdict.gpus != "-1"
-    return argdict
+    from nnabla.ext_utils import get_extension_context
+    ext = 'cpu'
+    if args.use_cuda:
+        ext = 'cudnn'
+    ctx = get_extension_context(ext, device_id=args.gpus)
+    nnabla.set_default_context(ctx)
