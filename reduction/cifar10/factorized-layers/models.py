@@ -123,7 +123,8 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
         rank = int(np.floor((1-cr)*inshape*outshape/(inshape+outshape)))
 
         # Initialize bias to existing b in affine if exists
-        if b is not None:
+        b_new =  get_parameter('svd_affine/b')
+        if b is not None and b_new is None:
             b_new = get_parameter_or_create(
                 'svd_affine/b', b.d.shape, need_grad=b.need_grad)
             b_new.d = b.d.copy()
@@ -151,7 +152,8 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
                             Ksize/(inmaps+outmaps+Ksize)))
 
         # Initialize bias to existing b in affine if exists
-        if b is not None:
+        b_new =  get_parameter('cpd3_conv/b')
+        if b is not None and b_new is None:
             b_new = get_parameter_or_create(
                 'cpd3_conv/b', b.d.shape, need_grad=b.need_grad)
             b_new.d = b.d.copy()
