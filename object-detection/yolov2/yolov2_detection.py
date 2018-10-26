@@ -124,7 +124,7 @@ def main():
         new_h = h
         new_w = int((im_w * h) / im_h)
 
-    patch = imresize(img_orig, (new_h, new_w)) / 255.
+    patch = imresize(img_orig, (new_w, new_h)) / 255.
     img = np.ones((h, w, 3), np.float32) * 0.5
     # resize
     x0 = int((w - new_w) / 2)
