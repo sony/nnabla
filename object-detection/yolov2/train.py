@@ -218,11 +218,17 @@ def main():
 
     prefetch_iterator = PrefetchIterator()
 
+    from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
+    monitor = Monitor(args.output)
+    monitor_loss = MonitorSeries('Training loss', monitor, interval=1)
+    monitor_time = MonitorTimeElapsed('Time per epoch', monitor, interval=1)
 
     # Epoch loop
     for epoch in range(0, int(max_epochs)):
         loss = train(args, epoch, max_epochs, train_graph,
                      yolo_solver, prefetch_iterator, on_memory_data)
+        monitor_loss.add(epoch, loss)
+        monitor_time.add(epoch)
 
 
 
