@@ -10,9 +10,9 @@ If possible, please first follow "Step 1: Prepare the Dataset" in [Tutorial: Tra
 
 
 ## Calculating the Anchor Box Biases
-The bias values represent the width-height pairs of a default-size box, called "anchor boxes" in the original YOLO v2 paper (or YOLO v1? TODO:cite). These width-height pairs represent the most common box sizes that appear in the training dataset. In the original paper, the bias values are determined by running k-means clustering (with instructions given later) on the bounding boxes.
+The bias values represent the width-height pairs of a default-size box, called "anchor boxes" in [the original YOLO v2 paper][1]. These width-height pairs represent the most common box sizes that appear in the training dataset. In the original paper, the bias values are determined by running k-means clustering (with instructions given later) on the bounding boxes.
 
-As mentioned in [Quick Start: Image Object Detection with YOLO-v2-NNabla](../quickstart.md), the bias values (passed by the `--biases` argument in `yolov2_detection.py`, and `--anchors` argument in `train.py`) are tailored for the specific dataset that was used at training time. The values used in the aforementioned tutorial is provided by the author of the YOLO v2 paper (TODO:cite), and are the biases for the MS COCO Dataset (or the VOC 2007+2012 dataset).
+As mentioned in [Quick Start: Image Object Detection with YOLO-v2-NNabla](../quickstart.md), the bias values (passed by the `--anchors` argument in `yolov2_detection.py`, `train.py` and `valid.py`) are tailored for the specific dataset that was used at training time. The values used in the aforementioned tutorial is provided by the author of [the YOLO v2 paper][1], and are the biases for the MS COCO Dataset (or the VOC 2007+2012 dataset).
 
 Therefore, when using a custom dataset, it is best to calculate the bias values for the anchor boxes tailored for the dataset. However, it is also not impossible to reuse the anchor box sizes provided in the code, although this could be a compromise for the performance. If you wish to calculate your own bias values, please proceed to the next section. If you wish to use the default bias values provided inside YOLO-v2-NNabla, please proceed to the second next section.
 
@@ -46,3 +46,6 @@ Please follow the filename format... (TODO)
 ## The Class Name Format
 This is straightforward - simply list the names delimited by a newline in a single text file...
 (TODO)
+
+
+[1]: https://arxiv.org/abs/1612.08242 "YOLOv2 arxiv"
