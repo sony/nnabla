@@ -230,6 +230,9 @@ def main():
         monitor_loss.add(epoch, loss)
         monitor_time.add(epoch)
 
+    # Save the final parameters
+    logging('save weights to %s/%06d.h5' % (args.output, epoch+1))
+    nn.save_parameters('%s/%06d.h5' % (args.output, epoch+1))
 
 
 if __name__ == '__main__':
