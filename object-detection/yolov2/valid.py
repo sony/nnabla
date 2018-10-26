@@ -21,6 +21,8 @@ import dataset
 import utils
 import numpy as np
 import os
+import itertools
+from multiprocessing.pool import ThreadPool
 import nnabla
 import nnabla_ext.cuda
 import yolov2
@@ -30,6 +32,7 @@ args = Yolov2OptionValid().parse_args()
 
 
 def valid(weightfile, outfile, outdir):
+    pool = ThreadPool(1)
     valid_images = args.valid
     name_list = args.names
     prefix = outdir
@@ -103,9 +106,18 @@ def valid(weightfile, outfile, outdir):
 
     lineId = -1
 
-    for batch_idx, (data, target) in enumerate(valid_loader):
+    future_data = pool.apply_async(
+        utils.raise_info_thread(next), (valid_loader, None))
+    for batch_idx in itertools.count():
+        curr_data = future_data
+        future_data = pool.apply_async(
+            utils.raise_info_thread(next), (valid_loader, None))
+        ret = curr_data.get()
+        if ret is None:
+            break
+        data, target = ret
         yolo_x_nnabla.d = data
-        yolo_features_nnabla.forward()
+        yolo_features_nnabla.forward(clear_buffer=True)
         batch_boxes = utils.get_region_boxes(
             yolo_features_nnabla.d, args.conf_thresh, args.num_classes, args.anchors, args.num_anchors, 0, 1)
         for i in range(yolo_features_nnabla.d.shape[0]):

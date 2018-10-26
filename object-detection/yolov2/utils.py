@@ -26,6 +26,18 @@ import struct  # get_image_size
 import imghdr  # get_image_size
 
 
+def raise_info_thread(f):
+
+    def decorated(*args, **kw):
+        try:
+            return f(*args, **kw)
+        except:
+            import sys
+            import traceback
+            raise sys.exc_info()[0](traceback.format_exc())
+    return decorated
+
+
 def sigmoid(x):
     return 1.0/(math.exp(-x)+1.)
 
