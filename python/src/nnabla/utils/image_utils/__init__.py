@@ -32,7 +32,7 @@ except ImportError:
 try:
     from . import pil_utils
 except ImportError:
-    raise ModuleNotFoundError(
+    raise ImportError(
         "imageio and pillow must be installed. Check your environment.")
 
 if cv2_utils is not None:

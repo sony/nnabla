@@ -89,6 +89,11 @@ def cli_main():
     from nnabla.utils.cli.convert import add_convert_command
     add_convert_command(subparsers)
 
+    from nnabla.utils.cli.plot import (
+        add_plot_series_command, add_plot_timer_command)
+    add_plot_series_command(subparsers)
+    add_plot_timer_command(subparsers)
+
     # Version
     subparser = subparsers.add_parser(
         'version', help='Print version and build number.')
