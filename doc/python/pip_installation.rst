@@ -11,6 +11,8 @@ Install NNabla package via pip:
 
 	pip install nnabla
 
+**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla`` beforehand.
+
 Then, check if it works by running:
 
 .. code-block:: bash
