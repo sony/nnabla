@@ -26,6 +26,8 @@ import nnabla as nn
 import nnabla.solvers as S
 from region_loss import create_network
 
+import random
+random.seed(0)
 import numpy as np
 np.seterr(**{key: 'raise' for key in ['divide', 'over', 'invalid']})
 
