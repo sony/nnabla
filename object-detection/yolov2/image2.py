@@ -19,7 +19,7 @@
 
 import random
 import os
-from PIL import Image
+import cv2
 import numpy as np
 
 
@@ -30,24 +30,49 @@ def scale_image_channel(im, c, v):
     return out
 
 
+def convert_to_hsv(img):
+    return cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+
+def convert_to_rgb(img):
+    return cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
+
+
+def scale_clip_inplace(x, scale, upper=255):
+    '''
+    Note:
+    Very slow computation is occasionally observed when a equivalent
+    ``np.clip(x * scale, 0, upper, out=x)`` is used.
+    It only happens if the image size is large like 608x608.
+    A small test using %time in ipython shown ``sys`` time is dominant
+    rather than ``cpu`` time.
+    By using this alternative equivalent, it is not happening so far.
+    '''
+    tmp = x * np.float32(scale)
+    tmp[tmp > upper] = upper
+    x[...] = tmp
+
+
+def distort_h(im, hue):
+    tim = im[..., 0] + np.float32(255 * hue + 256)
+    np.fmod(tim, 256, out=tim)
+    im[..., 0] = tim
+
+
+def distort_s(im, sat):
+    scale_clip_inplace(im[..., 1], sat, 255)
+
+
+def distort_v(im, val):
+    scale_clip_inplace(im[..., 2], val, 255)
+
+
 def distort_image(im, hue, sat, val):
-    im = im.convert('HSV')
-    cs = list(im.split())
-    cs[1] = cs[1].point(lambda i: i * sat)
-    cs[2] = cs[2].point(lambda i: i * val)
-
-    def change_hue(x):
-        x += hue*255
-        if x > 255:
-            x -= 255
-        if x < 0:
-            x += 255
-        return x
-    cs[0] = cs[0].point(change_hue)
-    im = Image.merge(im.mode, tuple(cs))
-
-    im = im.convert('RGB')
-    return im
+    im = convert_to_hsv(im)
+    distort_h(im, hue)
+    distort_s(im, sat)
+    distort_v(im, val)
+    return convert_to_rgb(im)
 
 
 def rand_scale(s):
@@ -65,9 +90,37 @@ def random_distort_image(im, hue, saturation, exposure):
     return res
 
 
+def crop_image(img, l, t, r, b):
+    w = r - l + 1
+    h = b - t + 1
+    M = np.array([[1, 0, l], [0, 1, t]], dtype=np.float32)
+    return cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_REPLICATE)
+
+    # This was slower.
+    # ind_x = np.clip(np.arange(l, r + 1), 0, img.shape[1] - 1)
+    # ind_y = np.clip(np.arange(t, b + 1), 0, img.shape[0] - 1)
+    # return img[np.ix_(ind_y, ind_x)]
+
+
+def resize_image(img, shape):
+    return cv2.resize(img, shape, interpolation=cv2.INTER_NEAREST)
+
+
+def crop_resize_image(img, l, t, r, b, shape, flip):
+    w, h = shape
+    pts1 = np.float32([[l, t], [r, t], [l, b], [r, b]])
+    pts2 = np.float32([[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]])
+    # This was wrong
+    # pts1 = np.float32([[l, t], [r + 1, t], [l, b + 1], [r + 1, b + 1]])
+    # pts2 = np.float32([[0, 0], [w, 0], [0, h], [w, h]])
+    if flip:
+        pts2[:, 0] = pts2[::-1, 0]
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+    return cv2.warpPerspective(img, M, shape, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+
+
 def data_augmentation(img, shape, jitter, hue, saturation, exposure):
-    oh = img.height
-    ow = img.width
+    oh, ow = img.shape[:2]
 
     dw = int(ow*jitter)
     dh = int(oh*jitter)
@@ -84,15 +137,21 @@ def data_augmentation(img, shape, jitter, hue, saturation, exposure):
     sy = float(sheight) / oh
 
     flip = random.randint(1, 10000) % 2
-    cropped = img.crop((pleft, ptop, pleft + swidth - 1, ptop + sheight - 1))
 
     dx = (float(pleft)/ow)/sx
     dy = (float(ptop) / oh)/sy
 
-    sized = cropped.resize(shape)
+    # cropped = crop_image(img, pleft, ptop, pleft +
+    #                      swidth - 1, ptop + sheight - 1)
+    # sized = resize_image(cropped, shape)
 
-    if flip:
-        sized = sized.transpose(Image.FLIP_LEFT_RIGHT)
+    # if flip:
+    #     sized = sized[:, ::-1]
+
+    sized = crop_resize_image(img, pleft, ptop, pleft +
+                              swidth - 1, ptop + sheight - 1, shape,
+                              flip)
+
     img = random_distort_image(sized, hue, saturation, exposure)
 
     return img, flip, dx, dy, sx, sy
@@ -101,8 +160,13 @@ def data_augmentation(img, shape, jitter, hue, saturation, exposure):
 def fill_truth_detection(labpath, w, h, flip, dx, dy, sx, sy):
     max_boxes = 50
     label = np.zeros((max_boxes, 5))
-    if os.path.getsize(labpath):
-        bs = np.loadtxt(labpath)
+    if labpath is not None or (isinstance(labpath, str) and os.path.getsize(labpath)):
+        if isinstance(labpath, str):
+            bs = np.loadtxt(labpath)
+        else:
+            if labpath is None:
+                return label
+            bs = labpath.copy()
         if bs is None:
             return label
         bs = np.reshape(bs, (-1, 5))
@@ -138,14 +202,14 @@ def fill_truth_detection(labpath, w, h, flip, dx, dy, sx, sy):
 
 
 def load_data_detection(imgpath, labpath, shape, jitter, hue, saturation, exposure):
-    assert isinstance(
-        imgpath, str), 'on_memory_data is active only when cv2 is available'
-    assert isinstance(
-        labpath, str), 'on_memory_data is active only when cv2 is available'
+
     # data augmentation
-    img = Image.open(imgpath).convert('RGB')
+    if isinstance(imgpath, str):
+        img = cv2.imread(imgpath)
+    else:
+        img = imgpath
     img, flip, dx, dy, sx, sy = data_augmentation(
         img, shape, jitter, hue, saturation, exposure)
     label = fill_truth_detection(
-        labpath, img.width, img.height, flip, dx, dy, 1./sx, 1./sy)
-    return img, label
+        labpath, img.shape[1], img.shape[0], flip, dx, dy, 1./sx, 1./sy)
+    return img[..., ::-1], label

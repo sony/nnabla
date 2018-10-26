@@ -5,14 +5,14 @@ Welcome to YOLO-v2-NNabla! This tutorial will explain in detail on NNabla using 
 This tutorial will cover the following four topics:
 
 1. Prepare the **dataset.**
-   - In the original YOLO v2 paper (TODO:cite), one of the training datasets that are being used is a composition of two datasets, PASCAL VOC 2007 and VOC 2012. This tutorial will use this composed dataset. Since this involves various steps, It will be described in detail in this tutorial.
+   - In [the original YOLO v2 paper][1], one of the training datasets that are being used is a composition of two datasets, PASCAL VOC 2007 and VOC 2012. This tutorial will use this composed dataset. Since this involves various steps, It will be described in detail in this tutorial.
 2. **Train** the network.
    - `train.py` will be mainly used for this purpose.
 3. Run image object detection **using the trained parameters**.
    - `yolov2_detection.py` will be mainly used for this purpose.
    - This is mostly the same as [Quick Start: Image Object Detection with YOLO-v2-NNabla](./quickstart.md), until the final step, where the trained network weights are used instead of the pretrained network weights.
 4. **Evaluate the network's mAP** (Mean Average Precision).
-   - Mean Average Precision is the score used for evaluating the image object detection performance in the original YOLO v2 paper (TODO:cite).
+   - Mean Average Precision is the score used for evaluating the image object detection performance in [the original YOLO v2 paper][1].
    - `valid.py` and `scripts/voc_eval.py` will be mainly used for this purpose.
 
 
@@ -35,9 +35,9 @@ In the next section, we will download and prepare the dataset (images, bounding 
 
 
 ## Part 1: Preparing the Dataset
-In the original paper (TODO:cite), the Pascal VOC Dataset is used as one of the training datasets. This tutorial will first cover how to use the Pascal VOC Dataset for YOLO-v2-NNabla as an example. Training the network on the MS COCO Dataset can be done by mostly following similar steps as training on VOC - for details, see the "Training YOLO on COCO" section on the [YOLO v2 paper author's website](https://pjreddie.com/darknet/yolov2/). To train the network on your own dataset, see [Tutorial: Training the YOLO v2 Network with a Custom Dataset](tutorial_custom_dataset.md).
+In [the original paper][1], the Pascal VOC Dataset is used as one of the training datasets. This tutorial will first cover how to use the Pascal VOC Dataset for YOLO-v2-NNabla as an example. Training the network on the MS COCO Dataset can be done by mostly following similar steps as training on VOC - for details, see the "Training YOLO on COCO" section on the [YOLO v2 paper author's website](https://pjreddie.com/darknet/yolov2/). To train the network on your own dataset, see [Tutorial: Training the YOLO v2 Network with a Custom Dataset](tutorial_custom_dataset.md).
 
-To prepare the dataset, follow the steps on the "Training YOLO on VOC" section [on this website ](https://pjreddie.com/darknet/yolov2/), written by the original author of the YOLO v2 paper^[TODO: cite]. This tutorial will cover the same content in somewhat more detail.
+To prepare the dataset, follow the steps on the "Training YOLO on VOC" section [on this website ](https://pjreddie.com/darknet/yolov2/), written by the original author of [the YOLO v2 paper][1]. This tutorial will cover the same content in somewhat more detail.
 
 ### Step 1-1: Get the Pascal VOC 2007 and 2012 Datasets
 This section follows the first half of the "Get The Pascal VOC Data" section in [the original YOLO v2 project website](https://pjreddie.com/darknet/yolov2/).
@@ -170,23 +170,23 @@ This will produce a file named `darknet19_448.conv.23.h5`, which can be loaded i
 We are now ready to train the YOLO v2 Network!
 
 ```
-python train.py -w ./darknet19_448.conv.23.h5 -t {path-to-dataset}/train.txt -o backup \
---accum-times 8 --batch-size 8
+python train.py -w ./darknet19_448.conv.23.h5 -t {path-to-dataset}/train.txt -o backup -g {GPU number}
 ```
+
 - **Remarks:**
+  - The `-g` option specifies the GPU ID where the training runs.
   - The `-t` option must specify the training dataset, i.e. the `train.txt` file created in step 1-4.
   - The `-o backup` specifies **the output directory for the intermediate weight files during training, and the final weight files.** By default, weight files are saved every 10 epochs, where the training lasts for 310 epochs by default (actually, plus a few more, to be exact - however, only the weights of 310 epochs are saved by the training script, which is an issue). To save the intermediate and final weight results in a different directory, change this `-o` argument to something different, such as `-o weight_output_dir`.
-  - **Currently, training logs are not saved!!** This means that *all information such as the loss values is not saved as logs, and will be discarded after training.* Only the intermediate and final weight values are saved during training. To save logs, one must manually stream the terminal output to a log file. To do this:
-    - If you are running on Linux, use the `tee` command like the following:
-      ```
-      python train.py -w ./darknet19_448.conv.23.h5 -o backup -t {path-to-dataset}/train.txt | tee train.log
-      ```
-      the `tee` command allows you to see the contents on the terminal while saving the terminal output inside a specified file (here, `train.log`) at the same time.
-    - If you are running on Windows, (TODO)
-  - The `--accum-times 8` and `--batch-size 8` arguments indicate options for gradient accumulation. Currently, YOLO-v2-NNabla assumes a total batch size of 64 images per batch. To virtually realize a batch size of 64, YOLO-v2-NNabla uses batch accumulation, i.e. it accumulates the gradients of several mini-batches to emulate a larger batch size. `--batch-size 8` indicates that each mini-batch will contain 8 images. `--accum-times 8` indicates that the mini-batch will be accumulated 8 times to create one whole batch.
+  - The default arguments related to batch size are set as  `--accum-times 8` and `--batch-size 8`. Those arguments indicate options for gradient accumulation. Currently, YOLO-v2-NNabla assumes a total batch size of 64 images per batch. To virtually realize a batch size of 64, YOLO-v2-NNabla uses batch accumulation, i.e. it accumulates the gradients of several mini-batches to emulate a larger batch size. `--batch-size 8` indicates that each mini-batch will contain 8 images. `--accum-times 8` indicates that the mini-batch will be accumulated 8 times to create one whole batch.
+  - The OpenCV Python package can optionally be used to speed up data preprocessing. If Anaconda Python is used, you can install OpenCV by executing `conda install -y opencv` in most cases. If it is installed, the training script automatically detects and uses OpenCV package. **We recommend disabling multi threading in OpenCV by setting an environment variable** `OMP_NUM_THREADS=1`**.** Also, if large RAM space (>10GB if VOC dataset) is available on your machine, an option `--on-memory-data` will load entire dataset onto the host RAM, that will reduce the image loading overhead during training, hence speedup. With this setting, the training completes in 33 hours on GTX1080.
+  - The `--anchors` option which specifies anchor box biases is ommited because the default bias setting is for the Pascal VOC dataset. Please make sure to specify this when you train on another dataset.
 
 **Troubleshooting:**
 - If you have saved `darknet19_448.conv.23.h5` with a different filename in the previous section, make sure to specify the correct filename.
+
+The command line tool `nnabla_cli plot_series` bundled with nnabla package will plot a training loss curve like the following;
+
+![A training curve plot on VOC training.](./training_curve_voc.png)
 
 
 ### Step 2-4: Get the Final Trained Network Weights
@@ -206,26 +206,23 @@ python yolov2_detection.py input_image.jpg \
 --weights ./backup/000310.h5 \
 --class-names ./data/voc.names \
 --classes 20 \
---biases 1.3221 1.73145 3.19275 4.00944 \
-         5.05587 8.09892 9.47112 4.84053 11.2364 10.0071
+--anchors 'voc'
 ```
-Among these arguments, the `--biases` argument is the most complicated. Quoting from [the quickstart documentation](../quickstart.md),
-> - **Remark:** The `--biases` argument is may be tricky when using yolov2-voc.h5. These numbers represent a fixed parameter determined at training-time, which is dependent on the dataset. By default, `yolov2_detection.py` expects to use yolov2.h5, which are weights that are trained on the MS COCO dataset. The corresponding `--biases` argument is set by default by `yolov2_detection.py`. On the other hand, when using yolov2-voc.h5, you must specify these parameters manually. Since these parameters depend on the dataset that is being used (to be precise, it is determined by which fixed parameters were used when the training was done for the given weights), the `--biases` corresponding to yolov2-voc.h5 must be manually specified. These values are taken from [line 369 from `utils.py`](https://github.com/sony/nnabla-examples/blob/master/object-detection/yolov2/utils.py#L369). Although `yolov2_detection.py` expects MS COCO as the default dataset, the training script, `train.py`, expects Pascal VOC 2007+2012 as the default dataset. Therefore, using the `--biases` from `utils.py` (which is the utility function file for `train.py`) will allow you to specify the correct `--biases` (which is called `--anchors` in `utils.py`) for yolov2-voc.h5.
-
 
 ## Part 4: Evaluate the YOLO v2 Network
-In the original YOLO v2 paper (TODO: cite), the network's image object detection performance is evaluated under its mAP (Mean Average Precision). In YOLO-v2-NNabla, the mAP of the trained network can be evaluated in two steps by running two scripts, `valid.py` and `scripts/voc_eval.py`.
+In [the original YOLO v2 paper][1], the network's image object detection performance is evaluated under its mAP (Mean Average Precision). In YOLO-v2-NNabla, the mAP of the trained network can be evaluated in two steps by running two scripts, `valid.py` and `scripts/voc_eval.py`.
 
 ### Step 4-1:
 The first step of evaluating the mAP for the trained network is to run `valid.py`. To do this, run the following command on your terminal:
 ```
-python valid.py -w backup/000310.h5 -v {path-to-dataset}/2007_test.txt -o results
+python valid.py -w backup/000310.h5 -v {path-to-dataset}/2007_test.txt -o results -g {GPU ID}
 ```
 - **Remark:**
   - The `-v` option must specify the validation dataset, i.e. the `2007_test.txt` file created in step 1-3.
   - `backup/000310.h5` is the name of the final network weight file obtained after training. If it has a different filepath (for example, you have specified a different weight output directory name instead of `backup`), please specify the path for the network weight file that you want to perform evaluation on.
 
 After running this on the terminal, `valid.py` will produce 20 text files (which is the number of classes in the training dataset - note that `valid.py` assumes Pascal VOC 2007+2012 as the default dataset) under the directory `results`. Each of the 20 text files has the name of the format `comp4_det_test_*.txt`. The argument `results` in the command above is the output directory for these output text files. To change the output directory, simply change this argument, `results`, to the directory name of your choice.
+  - The `--anchors` option is ommited by the same reason in `train.py`. See above.
 
 - **Remark (issue):** Currently, `valid.py` calculates the bounding boxes using its own NMS (Non-maximum suppression) implementation, instead of `nnabla.functions.nms_detection2d`. It has been experimentally confirmed that there are times when these two implementations output different results, although most of the time they output the same results.
 
@@ -234,10 +231,9 @@ After producing `results/comp4_det_test_*.txt` using `valid.py`, we must post-pr
 
 To do this, simply run:
 ```
-python2 scripts/voc_eval.py results/comp4_det_test_
+python scripts/voc_eval.py -d {path-to-dataset} results/comp4_det_test_
 ```
 - **Remarks:**
-  - This script must be run on Python 2.
   - This Python script is ported from a MATLAB script included in the PASCAL VOC Development Kit, which can be found in the same location mentioned in the section "Part 1: Preparing the Dataset." The license for this script can be found in the [LICENSE.external](../LICENSE.external) file under the YOLO-v2-NNabla directory.
 
 This script will output data in the following format:
@@ -295,3 +291,9 @@ Results:
 0.[number]
 ```
 The contents of this output are basically the same as the first half, except the text is excluded, and the number is rounded to the third decimal place.
+
+
+If the training works, you should get a mean AP around 72. That is a bit far from the reported number in the YOLOv2 paper, however, we have observed that [DarkNet detector training for YOLOv2](https://pjreddie.com/darknet/yolov2/#train-voc) produces a model gets the similar number (around 72 mean AP) although we get a mean AP 75.97 [by the officially provided YOLOv2 VOC model](https://pjreddie.com/media/files/yolov2-voc.weights).
+
+
+[1]: https://arxiv.org/abs/1612.08242 "YOLOv2 arxiv"

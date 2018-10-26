@@ -7,7 +7,7 @@
 import xml.etree.ElementTree as ET
 import os
 import sys
-import cPickle
+import pickle
 import numpy as np
 
 
@@ -112,16 +112,16 @@ def voc_eval(detpath,
         for i, imagename in enumerate(imagenames):
             recs[imagename] = parse_rec(annopath.format(imagename))
             if i % 100 == 0:
-                print 'Reading annotation for {:d}/{:d}'.format(
-                    i + 1, len(imagenames))
+                print('Reading annotation for {:d}/{:d}'.format(
+                    i + 1, len(imagenames)))
         # save
-        print 'Saving cached annotations to {:s}'.format(cachefile)
-        with open(cachefile, 'w') as f:
-            cPickle.dump(recs, f)
+        print('Saving cached annotations to {:s}'.format(cachefile))
+        with open(cachefile, 'wb') as f:
+            pickle.dump(recs, f)
     else:
         # load
-        with open(cachefile, 'r') as f:
-            recs = cPickle.load(f)
+        with open(cachefile, 'rb') as f:
+            recs = pickle.load(f)
 
     # extract gt objects for this class
     class_recs = {}
@@ -204,9 +204,8 @@ def voc_eval(detpath,
     return rec, prec, ap
 
 
-def _do_python_eval(res_prefix, output_dir='output'):
-    # _devkit_path = '/data/xiaohang/pytorch-yolo2/VOCdevkit'
-    _devkit_path = './dataset/VOCdevkit'
+def _do_python_eval(res_prefix, dataset_dir, output_dir='output'):
+    _devkit_path = os.path.join(dataset_dir, 'VOCdevkit')
     _year = '2007'
     _classes = ('__background__',  # always index 0
                 'aeroplane', 'bicycle', 'bird', 'boat',
@@ -215,7 +214,6 @@ def _do_python_eval(res_prefix, output_dir='output'):
                 'motorbike', 'person', 'pottedplant',
                 'sheep', 'sofa', 'train', 'tvmonitor')
 
-    #filename = '/data/hongji/darknet/results/comp4_det_test_{:s}.txt'
     filename = res_prefix + '{:s}.txt'
     annopath = os.path.join(
         _devkit_path,
@@ -232,7 +230,7 @@ def _do_python_eval(res_prefix, output_dir='output'):
     aps = []
     # The PASCAL VOC metric changed in 2010
     use_07_metric = True if int(_year) < 2010 else False
-    print 'VOC07 metric? ' + ('Yes' if use_07_metric else 'No')
+    print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     for i, cls in enumerate(_classes):
@@ -243,15 +241,15 @@ def _do_python_eval(res_prefix, output_dir='output'):
             filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
             use_07_metric=use_07_metric)
         aps += [ap]
-        print('AP for {} = {:.4f}'.format(cls, ap))
-        with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
-            cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
-    print('Mean AP = {:.4f}'.format(np.mean(aps)))
+        print(('AP for {} = {:.4f}'.format(cls, ap)))
+        with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
+            pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
+    print(('Mean AP = {:.4f}'.format(np.mean(aps))))
     print('~~~~~~~~')
     print('Results:')
     for ap in aps:
-        print('{:.3f}'.format(ap))
-    print('{:.3f}'.format(np.mean(aps)))
+        print(('{:.3f}'.format(ap)))
+    print(('{:.3f}'.format(np.mean(aps))))
     print('~~~~~~~~')
     print('')
     print('--------------------------------------------------------------')
@@ -262,7 +260,17 @@ def _do_python_eval(res_prefix, output_dir='output'):
     print('--------------------------------------------------------------')
 
 
+def get_args():
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-d', '--dataset', help='Dataset location (default="./dataset/").', default='./dataset/')
+    parser.add_argument(
+        'res_prefix', help='Prefix to the files produced by the `valid.py` script.')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    #res_prefix = '/data/hongji/darknet/project/voc/results/comp4_det_test_'
-    res_prefix = sys.argv[1]
-    _do_python_eval(res_prefix, output_dir='output')
+    args = get_args()
+    _do_python_eval(args.res_prefix, args.dataset, output_dir='output')

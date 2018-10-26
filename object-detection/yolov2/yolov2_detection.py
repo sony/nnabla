@@ -24,6 +24,9 @@ import numpy as np
 from nnabla.utils.image_utils import imread, imresize, imsave
 
 
+from arg_utils import get_anchors_by_name_or_parse
+
+
 def get_args():
     import argparse
     from os.path import dirname, basename, join
@@ -34,24 +37,22 @@ def get_args():
     p.add_argument('--device-id', '-d', type=str, default='0')
     p.add_argument('--type-config', '-t', type=str, default='float')
     p.add_argument('--output', type=str, default=None)
-    p.add_argument('--anchors', type=int, default=5)
     p.add_argument('--classes', type=int, default=80)
     p.add_argument('--class-names', type=str, default='coco.names')
     p.add_argument('--thresh', type=float, default=.5)
     p.add_argument('--nms', type=float, default=.45)
     p.add_argument('--nms-per-class', type=bool, default=True)
     p.add_argument(
-        '--biases', nargs='*',
-        default=[0.57273, 0.677385, 1.87446, 2.06253, 3.33843,
-                 5.47434, 7.88282, 3.52778, 9.77052, 9.16828], type=float)
+        '--anchors', type=str,
+        default='coco')
     p.add_argument('input', type=str, default='dog.jpg')
     args = p.parse_args()
     assert args.width % 32 == 0
-    assert len(args.biases) == args.anchors * 2
-    args.biases = np.array(args.biases).reshape(-1, 2)
+    args.anchors = get_anchors_by_name_or_parse(args.anchors)
+    args.num_anchors = int(len(args.anchors) // 2)
+    args.anchors = np.array(args.anchors).reshape(-1, 2)
     if args.output is None:
-        args.output = join(dirname(args.input),
-                           'detect.' + basename(args.input))
+        args.output = join('.', 'detect.' + basename(args.input))
     return args
 
 
@@ -104,9 +105,9 @@ def main():
     # Build a YOLO v2 network
     feature_dict = {}
     x = nn.Variable((1, 3, args.width, args.width))
-    y = yolov2.yolov2(x, args.anchors, args.classes,
+    y = yolov2.yolov2(x, args.num_anchors, args.classes,
                       test=True, feature_dict=feature_dict)
-    y = yolov2.yolov2_activate(y, args.anchors, args.biases)
+    y = yolov2.yolov2_activate(y, args.num_anchors, args.anchors)
     y = F.nms_detection2d(y, args.thresh, args.nms, args.nms_per_class)
 
     # Read image

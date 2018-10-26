@@ -11,28 +11,7 @@ YOLO-v2-NNabla requires the following software and Python packages installed in 
 - cuDNN
 
 ### Installing Python and NNabla
-Details on installing NNabla on Linux is explained in [the NNabla Documentation](https://nnabla.readthedocs.io/en/latest/python/install_on_linux.html). If you are running on Windows, details on installing NNabla on Windows is can be found in [the NNabla Documentation](https://nnabla.readthedocs.io/en/latest/python/install_on_windows.html). This tutorial will cover a summary of the steps that are relevant on running YOLO-v2-NNabla on Windows.
-
-Following the documentation, please first install the following software on your system:
-
-- Python
-- CUDA
-- cuDNN
-
-Next, check the version for CUDA and cuDNN installed on your system. As of the time of this writing, NNabla is currently compatible with the following combinations of CUDA and cuDNN versions:
-
-- nnabla-ext-cuda80 (CUDA 8.0 x cuDNN 7.1)
-- nnabla-ext-cuda90 (CUDA 9.0 x cuDNN 7.1)
-- nnabla-ext-cuda91 (CUDA 9.1 x cuDNN 7.1)
-- nnabla-ext-cuda92 (CUDA 9.2 x cuDNN 7.1)
-
-Once you have checked the CUDA version on your system, NNabla can be installed using `pip` by the following commands:
-```
-pip install -u nnabla
-pip install -u nnabla-ext-cuda90
-# Please replace `nnabla-ext-cuda90`
-# according to the CUDA and cuDNN version installed in your system!
-```
+Details on installing NNabla is explained in [the NNabla Documentation](https://nnabla.readthedocs.io/en/latest/python/installation.html).
 
 ## Step 1: Clone This Repository
 If you have git installed on your system, simply run:
@@ -100,10 +79,9 @@ python yolov2_detection.py input_image.jpg \
 --weights yolov2-voc.h5 \
 --class-names ./data/voc.names \
 --classes 20 \
---biases 1.3221 1.73145 3.19275 4.00944 \
-         5.05587 8.09892 9.47112 4.84053 11.2364 10.0071
+--anchors voc
 ```
-- **Remark:** The `--biases` argument is may be tricky when using yolov2-voc.h5. These numbers represent a fixed parameter determined at training-time, which is dependent on the dataset. By default, `yolov2_detection.py` expects to use yolov2.h5, which are weights that are trained on the MS COCO dataset. The corresponding `--biases` argument is set by default by `yolov2_detection.py`. On the other hand, when using yolov2-voc.h5, you must specify these parameters manually. Since these parameters depend on the dataset that is being used (to be precise, it is determined by which fixed parameters were used when the training was done for the given weights), the `--biases` corresponding to yolov2-voc.h5 must be manually specified. These values are taken from [line 369 from `utils.py`](https://github.com/sony/nnabla-examples/blob/master/object-detection/yolov2/utils.py#L369). Although `yolov2_detection.py` expects MS COCO as the default dataset, the training script, `train.py`, expects Pascal VOC 2007+2012 as the default dataset. Therefore, using the `--biases` from `utils.py` (which is the utility function file for `train.py`) will allow you to specify the correct `--biases` (which is called `--anchors` in `utils.py`) for yolov2-voc.h5.
+- **Remark:** The `--anchors` argument spcifies the anchor box biases by the following format; `--anchors="<w0>,<h0>,<w1>,<h1>,...,<wN>,<hN>"`. As special cases, if a string `voc` or `coco` is specified to `--anchors`, the preset numbers described in `arg_utils.py:get_anchors_by_name_or_parse` are used. These numbers represent a fixed parameter determined at training-time, which is dependent on the dataset. By default, `yolov2_detection.py` expects to use yolov2.h5, which are weights that are trained on the MS COCO dataset. The corresponding `--anchors` argument `coco` is set by default by `yolov2_detection.py`. On the other hand, when using yolov2-voc.h5, you must specify `voc`. Although `yolov2_detection.py` expects MS COCO as the default dataset, the training script and the validation script, `train.py` and `valid.py` respectively, expects Pascal VOC 2007+2012 as the default dataset, i.e., `coco`.
 
 If your image file has another name, change the `input_image.jpg` part to the image name to detect for that image. This will output an image file named `detect.input_image.jpg`, or something else that matches your input filename. `detect.input_image.jpg` should look like this:
 
@@ -112,7 +90,7 @@ If your image file has another name, change the `input_image.jpg` part to the im
 **Troubleshooting:**
 - If the weight file cannot be found, make sure you have specified the correct filename for the `--weights` argument.
 - Check if you are specifying `--classes` and `--class-names` correctly if you are using yolov2-voc.h5. As mentioned earlier, yolov2.h5 and yolov2-voc.h5 are trained on different datasets with a different number of classes.
-- If the output bounding boxes are off, make sure you have specified the `--biases` argument correctly. Make sure that there are 10 numbers (this is the same for both yolov2.h5 and yolov2-voc.h5).
+- If the output bounding boxes are off, make sure you have specified the `--anchors` argument correctly.
 
 
 ## Other Topics
