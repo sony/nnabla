@@ -47,6 +47,23 @@ Neural Network Layer:
 
           * `Yu et al., Multi-Scale Context Aggregation by Dilated Convolutions.
             <https://arxiv.org/abs/1511.07122>`_
+
+      Note:
+
+        Convolution is a computationally intensive operation that
+        should preferrably be run with the `cudnn` backend. NNabla
+        then uses CuDNN library functions to determine and cache the
+        fastest algorithm for the given set of convolution parameters,
+        which results in additional memory consumption which may pose
+        a problem for GPUs with insufficient memory size. In that
+        case, the `NNABLA_CUDNN_WORKSPACE_LIMIT` environment variable
+        can be used to restrict the choice of algorithms to those that
+        fit the given workspace memory limit, expressed in bytes. In
+        some cases it may also be desired to restrict the automatic
+        search to algorithms that produce deterministic (reproducable)
+        results. This can be requested by setting the the environment
+        variable `NNABLA_CUDNN_DETERMINISTIC` to a non-zero value.
+
     inputs:
       x:
         doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
