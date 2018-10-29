@@ -1753,6 +1753,29 @@ Math:
     outputs:
       y:
         doc: N-D array where all values are the specified constant.
+  Arange:
+    snake_name: arange
+    doc: |2
+
+      Generate a range of values within the half-open interval
+      ``[start, stop)`` (the interval including start but excluding
+      stop) with `step` increments.
+
+    inputs: {}
+    arguments:
+      start:
+        doc: Start value.
+        type: float
+      stop:
+        doc: End value.
+        type: float
+      step:
+        doc: Step value.
+        type: float
+        default: '1'
+    outputs:
+      y:
+        doc: 1-D array with the generated values.
   Abs:
     snake_name: abs
     doc: |2

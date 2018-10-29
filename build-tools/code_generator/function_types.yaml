@@ -205,6 +205,9 @@ LogicalNot:
 Constant:
   float: [float]
   half: [Half]
+Arange:
+  float: [float]
+  half: [Half]
 Abs:
   float: [float]
   half: [Half]

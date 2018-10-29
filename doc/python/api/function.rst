@@ -134,6 +134,7 @@ Math
 ----
 
 .. autofunction:: constant
+.. autofunction:: arange
 .. autofunction:: abs
 .. autofunction:: exp
 .. autofunction:: log
