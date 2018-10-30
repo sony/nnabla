@@ -234,7 +234,7 @@ def load_omniglot(dataset_root):
     x_resized = np.zeros([1623, 20, 28, 28])
     for xi, ri in zip(x, x_resized):
         for xij, rij in zip(xi, ri):
-            rij[:] = imresize(xij, size=shape_x[1:]) / 255.
+            rij[:] = imresize(xij, size=(shape_x[2], shape_x[1])) / 255.
     data = augmentation(x_resized)
     rng = np.random.RandomState(706)
     data = rng.permutation(data)

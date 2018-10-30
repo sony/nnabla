@@ -53,7 +53,7 @@ def _resize_image(im, width, height, padding):
                                 target_w - (target_w - w) // 2 - w))
             pad = pad + ((0, 0),)
             im = np.pad(im, pad, 'constant')
-        im = imresize(im, (height, width))
+        im = imresize(im, (width, height))
 
     x = np.array(im, dtype=np.uint8).transpose((2, 0, 1))
     return x
