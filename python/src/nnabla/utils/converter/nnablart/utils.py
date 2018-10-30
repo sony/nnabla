@@ -1,5 +1,6 @@
 import collections
 import numpy as np
+from functools import partial
 
 import nnabla.utils.converter
 
@@ -103,4 +104,62 @@ def create_nnabart_info(nnp, batch_size):
     info._variables = variables
     info._network = network
     info._function_info = nnabla.utils.converter.get_function_info()
+    info._convert_context = {}
     return info
+
+
+def affine_transpose_weight(params, info, func):
+    if 'Affine' in info._convert_context:
+        transposed = info._convert_context['Affine']
+    else:
+        transposed = set()
+
+    for idx in params:
+        weight_name = func.input[idx]
+        if weight_name in transposed:
+            return
+        w_shape = info._variables[weight_name].shape.dim[:]
+        if weight_name in info._parameters:
+            w_data = info._parameters[weight_name]
+            transposed.add(weight_name)
+            info._convert_context['Affine'] = transposed
+        else:
+            print(
+                "WARNING: affine weight is not transposed. Since it is not included in .nntxt/.nnp")
+        i_num = w_shape[0]
+        data = np.array(w_data.data[:])
+        data = data.reshape(int(i_num), -1)
+        data = np.transpose(data)
+        del info._parameters[weight_name].data[:]
+        info._parameters[weight_name].data.extend(data.flatten())
+
+
+NNB_PREPROCESS_LIST = {
+    'Affine': partial(affine_transpose_weight, [1]),
+    'BinaryConnectAffine': partial(affine_transpose_weight, [1, 2]),
+    'BinaryWeightAffine': partial(affine_transpose_weight, [1, 2])
+}
+
+CSRC_PREPROCESS_LIST = {
+    'Affine': partial(affine_transpose_weight, [1]),
+    'BinaryConnectAffine': partial(affine_transpose_weight, [1, 2]),
+    'BinaryWeightAffine': partial(affine_transpose_weight, [1, 2])
+}
+
+PREPROCESS_DICT = {
+    'CSRC': CSRC_PREPROCESS_LIST,
+    'NNB': NNB_PREPROCESS_LIST
+}
+
+
+def preprocess_for_exporter(info, exporter_name):
+    if exporter_name in PREPROCESS_DICT:
+        preprocess_list = PREPROCESS_DICT[exporter_name]
+    else:
+        return
+
+    for func in info._network.function:
+        if func.type in preprocess_list:
+            preprocessor = preprocess_list[func.type]
+            if callable(preprocessor):
+                preprocessor(info, func)
