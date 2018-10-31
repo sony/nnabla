@@ -101,6 +101,7 @@ csrc_implements = _header + """
 #include "{name}_inference.h"
 
 #include <nnablart/functions.h>
+#include <string.h>
 
 {internal_defines}
 
