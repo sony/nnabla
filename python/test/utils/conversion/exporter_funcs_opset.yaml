@@ -1,0 +1,295 @@
+ACos:
+    - 'Not implemented'
+ACosh:
+    - 'Not implemented'
+ASin:
+    - 'Not implemented'
+ASinh:
+    - 'Not implemented'
+ATan:
+    - 'Not implemented'
+ATanh:
+    - 'Not implemented'
+Abs:
+    - Abs@6
+AbsoluteError:
+    - 'Not implemented'
+Add2:
+    - Add@6
+AddScalar:
+    - Add@6
+Affine:
+    - Reshape@5
+    - Flatten@1
+    - Gemm@6
+AveragePooling:
+    - AveragePool@1
+BatchMatmul:
+    - Matmul@1
+BatchNormalization:
+    - InstanceNormalization@6
+    - BatchNormalization@6
+BcAdd2:
+    - 'Not implemented'
+BinaryConnectAffine:
+    - 'Not implemented'
+BinaryConnectConvolution:
+    - Conv@1
+    - Reshape@5
+BinaryCrossEntropy:
+    - 'Not implemented'
+BinaryError:
+    - 'Not implemented'
+BinarySigmoid:
+    - HardSigmoid@6
+BinaryTanh:
+    - 'Not implemented'
+BinaryWeightAffine:
+    - 'Not implemented'
+BinaryWeightConvolution:
+    - 'Not implemented'
+Broadcast:
+    - 'Not implemented'
+BroadcastTo:
+    - 'Not implemented'
+CELU:
+    - 'Not implemented'
+CReLU:
+    - 'Not implemented'
+CategoricalCrossEntropy:
+    - 'Not implemented'
+Ceil:
+    - 'Not implemented'
+ClipGradByNorm:
+    - 'Not implemented'
+ClipGradByValue:
+    - 'Not implemented'
+Concatenate:
+    - Concat@4
+ConfusionMatrix:
+    - 'Not implemented'
+Constant:
+    - 'Not implemented'
+Convolution:
+    - Conv@1
+Cos:
+    - 'Not implemented'
+Cosh:
+    - 'Not implemented'
+Deconvolution:
+    - ConvTranspose@1
+    - Add@6
+DepthwiseConvolution:
+    - Conv@1
+DepthwiseDeconvolution:
+    - 'Not implemented'
+Div2:
+    - Div@6
+Dropout:
+    - Dropout@6
+ELU:
+    - ELU@6
+Embed:
+    - 'Not implemented'
+EpsilonInsensitiveLoss:
+    - 'Not implemented'
+Equal:
+    - Equal@1
+EqualScalar:
+    - 'Not implemented'
+Exp:
+    - Exp@6
+FFT:
+    - 'Not implemented'
+FixedPointQuantize:
+    - 'Not implemented'
+Flip:
+    - Gather@1
+    - Transpose@1
+    - Identity@1
+Floor:
+    - 'Not implemented'
+GlobalAveragePooling:
+    - GlobalAveragePool@1
+Greater:
+    - Greater@1
+GreaterEqual:
+    - 'Not implemented'
+GreaterEqualScalar:
+    - 'Not implemented'
+GreaterScalar:
+    - 'Not implemented'
+HuberLoss:
+    - 'Not implemented'
+IFFT:
+    - 'Not implemented'
+INQAffine:
+    - 'Not implemented'
+INQConvolution:
+    - 'Not implemented'
+Identity:
+    - Identity@1
+ImageAugmentation:
+    - 'Not implemented'
+Interpolate:
+    - 'Not implemented'
+KLMultinomial:
+    - 'Not implemented'
+LeakyReLU:
+    - LeakyRelu@6
+Less:
+    - Less@1
+LessEqual:
+    - 'Not implemented'
+LessEqualScalar:
+    - 'Not implemented'
+LessScalar:
+    - 'Not implemented'
+Log:
+    - Log@6
+LogicalAnd:
+    - And@1
+LogicalAndScalar:
+    - 'Not implemented'
+LogicalNot:
+    - Not@1
+LogicalOr:
+    - Or@1
+LogicalOrScalar:
+    - 'Not implemented'
+LogicalXor:
+    - Xor@1
+LogicalXorScalar:
+    - 'Not implemented'
+MatrixDiag:
+    - 'Not implemented'
+MatrixDiagPart:
+    - 'Not implemented'
+Max:
+    - ReduceMax@1
+MaxPooling:
+    - MaxPool@1
+Maximum2:
+    - Max@6
+MaximumScalar:
+    - Clip@6
+Mean:
+    - ReduceMean@1
+MeanSubtraction:
+    - 'Not implemented'
+Min:
+    - ReduceMin@1
+Minimum2:
+    - Min@6
+MinimumScalar:
+    - Clip@6
+Mul2:
+    - Mul@1
+MulScalar:
+    - Mul@1
+NmsDetection2d:
+    - 'Not implemented'
+NotEqual:
+    - 'Not implemented'
+NotEqualScalar:
+    - 'Not implemented'
+OneHot:
+    - Flatten@1
+    - Gather@1
+    - Reshape@5
+PReLU:
+    - PRelu@6
+Pad:
+    - Pad@2
+Pow2:
+    - Pow@1
+Pow2Quantize:
+    - 'Not implemented'
+PowScalar:
+    - Pow@1
+Prod:
+    - ReduceProd@1
+RDivScalar:
+    - Div@6
+RPowScalar:
+    - Pow@1
+RSubScalar:
+    - Sub@6
+Rand:
+    - 'Not implemented'
+Randint:
+    - 'Not implemented'
+Randn:
+    - 'Not implemented'
+RandomCrop:
+    - 'Not implemented'
+RandomFlip:
+    - 'Not implemented'
+RandomShift:
+    - 'Not implemented'
+ReLU:
+    - Relu@6
+ReduceMean:
+    - 'Not implemented'
+ReduceSum:
+    - 'Not implemented'
+Reshape:
+    - Reshape@5
+Round:
+    - 'Not implemented'
+SELU:
+    - SELU@6
+Shift:
+    - 'Not implemented'
+Sigmoid:
+    - Sigmoid@6
+SigmoidCrossEntropy:
+    - 'Not implemented'
+Sign:
+    - 'Not implemented'
+Sin:
+    - 'Not implemented'
+Sinh:
+    - 'Not implemented'
+Sink:
+    - 'Not implemented'
+Slice:
+    - Slice@1
+Softmax:
+    - Softmax@1
+SoftmaxCrossEntropy:
+    - 'Not implemented'
+Split:
+    - Split@2
+    - Squeeze@1
+SquaredError:
+    - 'Not implemented'
+Stack:
+    - Unsqueeze@1
+    - Concat@4
+Sub2:
+    - Sub@1
+Sum:
+    - ReduceSum@1
+SumPooling:
+    - Mul@1
+Swish:
+    - 'Not implemented'
+Tan:
+    - 'Not implemented'
+Tanh:
+    - Tanh@6
+TopKData:
+    - 'Not implemented'
+TopKGrad:
+    - 'Not implemented'
+TopNError:
+    - 'Not implemented'
+Transpose:
+    - Transpose@1
+Unlink:
+    - 'Not implemented'
+Unpooling:
+    - 'Not implemented'
+VATNoise:
+    - 'Not implemented'
