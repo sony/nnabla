@@ -22,6 +22,9 @@ import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import nnabla.utils.converter
 
 from .utils import create_nnabart_info
+from .utils import preprocess_for_exporter
+
+NN_BINARY_FORMAT_VERSION = 2
 
 
 class Nnb:
@@ -54,6 +57,7 @@ class NnbExporter:
 
     def __init__(self, nnp, batch_size):
         self._info = create_nnabart_info(nnp, batch_size)
+        preprocess_for_exporter(self._info, 'NNB')
 
         self._List = collections.namedtuple('List', ('size', 'list_index'))
 
@@ -96,10 +100,10 @@ class NnbExporter:
 
         ####################################################################
         # Version
-        version = nnabla.utils.converter.get_category_info_version()
+        binary_format_revision = nnabla.utils.converter.get_category_info_version()
 
         ####################################################################
-        # Varibles name index
+        # Variables name index
         vindexes_by_name = {}
         for n, v in enumerate(self._info._network.variable):
             vindexes_by_name[v.name] = n
@@ -126,14 +130,14 @@ class NnbExporter:
         actual_buf_sizes, vidx_to_abidx = save_variable_buffer(self._info)
 
         ####################################################################
-        # Varible buffers
+        # Variable buffers
         blist = actual_buf_sizes
         index, pointer = self._alloc(
             data=struct.pack('{}I'.format(len(blist)), *blist))
         buffers = self._List(len(blist), index)
 
         ####################################################################
-        # Varibles
+        # Variables
         self._Variable = collections.namedtuple(
             'Variable', ('id', 'shape', 'type', 'fp_pos', 'data_index'))
         vindexes = []
@@ -285,8 +289,9 @@ class NnbExporter:
             '{}I'.format(len(findexes)), *findexes))
         functions = self._List(len(findexes), index)
 
-        network = struct.pack('IiIiIiIiIiIII',
-                              version,
+        network = struct.pack('IIiIiIiIiIiIII',
+                              NN_BINARY_FORMAT_VERSION,
+                              binary_format_revision,
                               buffers.size,
                               buffers.list_index,
                               variables.size,
