@@ -23,6 +23,7 @@ import yaml
 #header_file_path = "/opt/miniconda3/envs/py35/lib/python3.5/site-packages/onnx-1.2.2-py3.5-linux-x86_64.egg/onnx/defs/operator_sets.h"
 header_file_path = "../../../../../../onnx/onnx/defs/operator_sets.h"
 
+
 def obtain_opset_defs(header_file):
     func_opset_dict = {}
     opset_dict = {}
@@ -34,7 +35,7 @@ def obtain_opset_defs(header_file):
             opset_extractor = parser.match(line)
             if opset_extractor:
                 opset = opset_extractor.group(1)
-                func  = opset_extractor.group(2)
+                func = opset_extractor.group(2)
                 if func in func_opset_dict:
                     func_opset_dict[func].add(opset)
                 else:
@@ -44,6 +45,7 @@ def obtain_opset_defs(header_file):
                 else:
                     opset_dict[opset] = set({func})
     return func_opset_dict, opset_dict
+
 
 def initial_write_import_func_opver_yaml():
     import yaml
@@ -110,7 +112,6 @@ def generate_initial_nnabla_funcs_yaml():
 
 ### Above code is only used to initially create yaml file ###
 
-
     def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
         '''
         Load function with keeping the order of dictionaries.
@@ -126,7 +127,6 @@ def generate_initial_nnabla_funcs_yaml():
             construct_mapping)
         return yaml.load(stream, OrderedLoader)
 
-
     def write_initial_nnabla_func_list():
         funcs_yaml = "../../../../build-tools/code_generator/functions.yaml"
         string = open(funcs_yaml, 'r').read()
@@ -140,6 +140,7 @@ def generate_initial_nnabla_funcs_yaml():
     write_initial_nnabla_func_list()
 
 ### Above code is only used to initially create yaml file ###
+
 
 class StateMachine():
     def __init__(self, name, handler, **kwargs):
@@ -331,31 +332,10 @@ TEMPALTE_FILE = os.path.join(CURRENT_PATH, 'onnx_test_report.rst.tmpl')
 OUTPUT_FILE = os.path.join(
     CURRENT_PATH, '../../../../doc/python/file_format_converter/onnx/operator_coverage.rst')
 
-def obtain_import_opset_d():
-    funcs_opset_d = yaml.load(open('importer_funcs_opset.yaml', 'r'))
-    refine_d = {}
-    for k, v in funcs_opset_d.items():
-        op_ver = []
-        for kk, vv in v.items():
-            if vv:
-                op_ver.append(kk)
-        refine_d[k] = op_ver
-    return refine_d
-
-def obtain_export_opset_d():
-    funcs_opset_d = yaml.load(open('exporter_funcs_opset.yaml', 'r'))
-    refine_d = {}
-    for func, impl in funcs_opset_d.items():
-        if impl and '@' in impl[0]:
-            op_ver = {func_decl.split('@')[1] for func_decl in impl}
-            func_list = [func_decl.split('@')[0] for func_decl in impl]
-            refine_d[func] = {'version': op_ver, 'functions': "Implemented by {}".format(','.join(func_list))}
-        else:
-            refine_d[func] = {'version': [], 'functions': 'Unimplemented'}
-    return refine_d
 
 def obtain_import_opset_d():
-    funcs_opset_d = yaml.load(open('importer_funcs_opset.yaml', 'r'))
+    funcs_opset_d = yaml.load(
+        open(os.path.join(CURRENT_PATH, 'importer_funcs_opset.yaml'), 'r'))
     refine_d = {}
     for k, v in funcs_opset_d.items():
         op_ver = []
@@ -367,7 +347,8 @@ def obtain_import_opset_d():
 
 
 def obtain_export_opset_d():
-    funcs_opset_d = yaml.load(open('exporter_funcs_opset.yaml', 'r'))
+    funcs_opset_d = yaml.load(
+        open(os.path.join(CURRENT_PATH, 'exporter_funcs_opset.yaml'), 'r'))
     refine_d = {}
     for func, impl in funcs_opset_d.items():
         if impl and '@' in impl[0]:

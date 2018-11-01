@@ -461,11 +461,13 @@ def test_nnp_onnx_conversion_batch_normalization(tmpdir, nnp_fixture):
                                     "batch_norm.nnp", "batch_norm.onnx",
                                     "out_data_1", "exec_0", atol=1e-05)
 
+
 def test_onnx_nnp_conversion_gemm(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')
     convert_onnx_to_nnp_and_compare(
         tmpdir, TEST_DATA_DIR, "gemm.onnx", "gemm.nnp", "out_data_1", "exec_0")
+
 
 @pytest.mark.skip
 def test_nnp_onnx_conversion_gemm(tmpdir, nnp_fixture):
