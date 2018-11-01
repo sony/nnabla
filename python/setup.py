@@ -233,6 +233,7 @@ if __name__ == '__main__':
     packages = ['nnabla',
                 'nnabla.contrib',
                 'nnabla.experimental',
+                'nnabla.experimental.graph_converters',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
