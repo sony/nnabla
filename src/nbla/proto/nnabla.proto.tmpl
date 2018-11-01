@@ -147,14 +147,21 @@ message Solver {
 
   float weight_decay = 20;
 
-  float lr_decay = 30;
-  int64 lr_decay_interval = 31;
-
   oneof parameter {
 % for i, (name, solver) in enumerate(solver_info.items()):
     ${name}Parameter ${solver['snake_name']}_param = ${i + 100};
 % endfor
   }
+
+  string lr_scheduler_type = 200;
+  PolynomialSchedulerParameter polynomial_scheduler_param = 210;
+  CosineSchedulerParameter cosine_scheduler_param = 211;
+  ExponentialSchedulerParameter exponential_scheduler_param = 212;
+  StepSchedulerParameter step_scheduler_param = 213;
+  CustomSchedulerParameter custom_scheduler_param = 299;
+
+  float lr_decay = 30;  // Obsolete
+  int64 lr_decay_interval = 31;  // Obsolete
 }
 % for name, solver in solver_info.items():
 
@@ -164,6 +171,33 @@ message ${name}Parameter {
 % endfor
 }
 % endfor
+
+message PolynomialSchedulerParameter {
+  float max_iter = 1;
+  float power = 2;
+}
+
+message CosineSchedulerParameter {
+  float max_iter = 1;
+}
+
+message ExponentialSchedulerParameter {
+  float gamma = 1;
+  int64 iter_interval = 2;
+}
+
+message StepSchedulerParameter {
+  float gamma = 1;
+  repeated int64 iter_steps = 2;
+}
+
+message CustomSchedulerParameter {
+  float max_iter = 1;
+  string network_name = 10;
+
+  repeated DataVariable data_variable = 50;
+  repeated OutputVariable output_variable = 80;
+}
 
 message DataVariable {
   string variable_name = 1;
