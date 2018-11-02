@@ -134,10 +134,18 @@ def _export_from_nnp(args, nnp, output, output_ext):
         NnpExporter(nnp, args.batch_size, parameter_type).execute(output)
 
     elif output_ext == '.nnb':
+        if args.batch_size < 0:
+            print('NNB: Batch size adjust to 1.')
+            print('NNB: If you want to use with other size use `-b` option.')
+            args.batch_size = 1
         NnbExporter(nnp, args.batch_size).execute(
             output, None, args.settings, args.default_variable_type)
 
     elif os.path.isdir(output) and args.export_format == 'CSRC':
+        if args.batch_size < 0:
+            print('CSRC: Batch size adjust to 1.')
+            print('CSRC: If you want to use with other size use `-b` option.')
+            args.batch_size = 1
         CsrcExporter(nnp, args.batch_size).execute(output)
 
     elif output_ext == '.onnx':
