@@ -173,10 +173,13 @@ class CsrcExporter:
             internal_defines.append('    {},'.format(s))
         internal_defines.append('};')
         internal_defines.append('')
-        internal_defines.append('void *(*rt_variable_malloc_func)(size_t size) = malloc;')
-        internal_defines.append('void (*rt_variable_free_func)(void *ptr) = free;')
+        internal_defines.append(
+            'void *(*rt_variable_malloc_func)(size_t size) = malloc;')
+        internal_defines.append(
+            'void (*rt_variable_free_func)(void *ptr) = free;')
         internal_defines.append('')
-        internal_defines.append('void *(*rt_malloc_func)(size_t size) = malloc;')
+        internal_defines.append(
+            'void *(*rt_malloc_func)(size_t size) = malloc;')
         internal_defines.append('void (*rt_free_func)(void *ptr) = free;')
         internal_defines.append('')
 
