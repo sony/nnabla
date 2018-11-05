@@ -201,16 +201,16 @@ def generate_init(function_info, function_types, solver_info, solver_types, ext_
     generate_from_template(template, **kwargs)
 
 
-def generate_version(template=None, rootdir=None, suffix=None):
-    if template is None:
-        template = join(base, 'python/src/nnabla/_version.py.tmpl')
-    if rootdir is None:
-        rootdir = base
+def generate_version(template, rootdir, suffix=None, short_suffix=None, **kwargs):
     version, short_version = get_version(rootdir)
+    if short_suffix is not None:
+        short_version = short_version + short_suffix
     if suffix is not None:
         version = version + suffix
-    generated = render_with_template(filename=template, template_kwargs=dict(
-        version=version, short_version=short_version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime())))
+    tmpl_kwargs = dict(
+        version=version, short_version=short_version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime()))
+    tmpl_kwargs.update(kwargs)
+    generated = render_with_template(filename=template, template_kwargs=tmpl_kwargs)
     path_o = template.replace('.tmpl', '')
     check_update(path_o, generated, force=True)
 

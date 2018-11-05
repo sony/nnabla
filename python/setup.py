@@ -97,6 +97,8 @@ if __name__ == '__main__':
                            '_version.py')).read(), globals(), a)
     if '__version__' in a:
         __version__ = a['__version__']
+    if '__author__' in a:
+        __author__ = a['__author__']
     if '__email__' in a:
         __email__ = a['__email__']
 
@@ -111,11 +113,12 @@ if __name__ == '__main__':
         name=pkg_name,
         description='Neural Network Libraries',
         version=__version__,
+        author=__author__,
         author_email=__email__,
         url="https://github.com/sony/nnabla",
         license='Apache License 2.0',
         classifiers=[
-            'Development Status :: 4 - Beta',
+            'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'Intended Audience :: Education',
             'Intended Audience :: Science/Research',
@@ -126,15 +129,15 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: Implementation :: CPython',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX :: Linux',
+            'Operating System :: MacOS :: MacOS X'
         ],
         keywords="deep learning artificial intelligence machine learning neural network",
-        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
     )
 
     ############################################################################
