@@ -1280,7 +1280,7 @@ Logical:
       alpha:
         doc: Value in case of :math:`x = 0`.
         type: float
-        default: '0.0'
+        default: '1.0'
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -3309,6 +3309,10 @@ Quantization Neural Network Layers:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
         default: '1'
+      quantize_zero_to:
+        doc: Input value at zero is quantized to this value.
+        type: float
+        default: '1.0'
     outputs:
       y:
         doc: Output.
@@ -3387,6 +3391,10 @@ Quantization Neural Network Layers:
           sparser, by grouping connections along the mapping direction.
         type: int64
         default: '1'
+      quantize_zero_to:
+        doc: Input value at zero is quantized to this value.
+        type: float
+        default: '1.0'
     outputs:
       y:
         doc: Output
@@ -3448,6 +3456,10 @@ Quantization Neural Network Layers:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
         default: '1'
+      quantize_zero_to:
+        doc: Input value at zero is quantized to this value.
+        type: float
+        default: '1.0'
     outputs:
       y:
         doc: Output.
@@ -3527,6 +3539,10 @@ Quantization Neural Network Layers:
           sparser, by grouping connections along the mapping direction.
         type: int64
         default: '1'
+      quantize_zero_to:
+        doc: Input value at zero is quantized to this value.
+        type: float
+        default: '1.0'
     outputs:
       y:
         doc: Output

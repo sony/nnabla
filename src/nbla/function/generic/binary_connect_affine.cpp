@@ -23,14 +23,14 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(BinaryConnectAffine, int);
+NBLA_REGISTER_FUNCTION_SOURCE(BinaryConnectAffine, int, float);
 
 template <typename T>
 void BinaryConnectAffine<T>::setup_impl(const Variables &inputs,
                                         const Variables &outputs) {
   // Initialize function to binarize (we use the `sign` function with alpha =
-  // -1.0)
-  sign_ = create_Sign(this->ctx_, -1.0);
+  // 1.0)
+  sign_ = create_Sign(this->ctx_, quantize_zero_to_);
   sign_->setup(Variables{inputs[1]}, Variables{inputs[2]});
 
   // Initialize internal `affine` function

@@ -35,7 +35,8 @@ NBLA_REGISTER_FUNCTION_HEADER(BinaryConnectConvolution,
                               const vector<int> &, // pad
                               const vector<int> &, // stride
                               const vector<int> &, // dilation
-                              int);                // group
+                              int,                 // group
+                              float);
 
 /** N-D BinaryConnect Convolution with bias.
 
@@ -77,6 +78,7 @@ is treated as sample dimension.
 @param dilation Dilation sizes for dimensions.
 @param group Number of groups of channels. This makes connections across
 channels sparser by grouping connections along map direction.
+@param quantize_zero_to Input value at zero is quantized to this value.
 
 @sa For Dilated Convolution (a.k.a a trous), refer to:
 - Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional
@@ -90,7 +92,7 @@ https://arxiv.org/abs/1511.07122
 template <typename T>
 class BinaryConnectConvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
-                          const vector<int> &, int> {
+                          const vector<int> &, int, float> {
 protected:
   shared_ptr<Function> sign_;
   shared_ptr<Function> convolution_;
@@ -101,17 +103,21 @@ protected:
   vector<int> dilation_;
   int group_;
 
+  float quantize_zero_to_;
+
 public:
   BinaryConnectConvolution(const Context &ctx, int base_axis,
                            const vector<int> &pad, const vector<int> &stride,
-                           const vector<int> &dilation, int group)
-      : BaseFunction(ctx, base_axis, pad, stride, dilation, group),
+                           const vector<int> &dilation, int group,
+                           float quantize_zero_to)
+      : BaseFunction(ctx, base_axis, pad, stride, dilation, group,
+                     quantize_zero_to),
         base_axis_(base_axis), pad_(pad), stride_(stride), dilation_(dilation),
-        group_(group) {}
+        group_(group), quantize_zero_to_(quantize_zero_to) {}
 
   virtual shared_ptr<Function> copy() const {
-    return create_BinaryConnectConvolution(ctx_, base_axis_, pad_, stride_,
-                                           dilation_, group_);
+    return create_BinaryConnectConvolution(
+        ctx_, base_axis_, pad_, stride_, dilation_, group_, quantize_zero_to_);
   }
 
   virtual vector<dtypes> in_types() {

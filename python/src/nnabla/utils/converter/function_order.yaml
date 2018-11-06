@@ -165,3 +165,7 @@ ACosh: 182
 ATanh: 183
 BroadcastTo_i: 184
 NmsDetection2d_ffB: 231
+BinaryConnectAffine_if: 232
+BinaryConnectConvolution_iiIiIiIif: 233
+BinaryWeightAffine_if: 234
+BinaryWeightConvolution_iiIiIiIif: 235
