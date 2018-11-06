@@ -1372,7 +1372,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     beta_init = param_init.get('beta', ConstantInitializer(0))
     gamma_init = param_init.get('gamma', ConstantInitializer(1))
     mean_init = param_init.get('mean', ConstantInitializer(0))
-    var_init = param_init.get('var', ConstantInitializer(0))
+    var_init = param_init.get('var', ConstantInitializer(1))
     beta = get_parameter_or_create(
         "beta", shape_stat, beta_init, True, not fix_parameters)
     gamma = get_parameter_or_create(
