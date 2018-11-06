@@ -14,14 +14,14 @@ Several pip packages of NNabla CUDA extension are provided for each CUDA version
 CUDA vs CUDNN Compatibility
 ---------------------------
 
-================= ============ =============
-Package name      CUDA version CUDNN version
-================= ============ =============
-nnabla-ext-cuda80 8.0          7.2
-nnabla-ext-cuda90 9.0          7.2
-nnabla-ext-cuda91 9.1          7.1
-nnabla-ext-cuda92 9.2          7.2
-================= ============ =============
+================== ============ =============
+Package name       CUDA version CUDNN version
+================== ============ =============
+nnabla-ext-cuda80  8.0          7.1
+nnabla-ext-cuda90  9.0          7.3
+nnabla-ext-cuda92  9.2          7.3
+nnabla-ext-cuda100 10.0         7.3
+================== ============ =============
 
 The latest CUDA version is always preferred if your GPU accepts.
 
@@ -62,10 +62,10 @@ Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+, you can
   pip install nnabla-ext-cuda92-nccl2-ubuntu16
 
 
-If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, virtualenv, or pyenv. 
+If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, virtualenv, or pyenv.
 
 
-You should also install OpenMPI, 
+You should also install OpenMPI,
 
 .. code-block:: bash
 
@@ -89,3 +89,21 @@ Q. How do I install NCCL
 Please visit `NCCL <https://developer.nvidia.com/nccl>`_, then follow the instruction.
 
 
+Q. How do I check proper version of cuDNN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Enter the following command:
+
+.. code-block:: bash
+
+  python -c "import nnabla_ext.cuda, nnabla_ext.cudnn"
+
+If there is a version mismatch on your machine, you can see proper versions in the error message.
+Following is a sample error message.
+
+.. code-block:: bash
+
+  [nnabla][INFO]: Initializing CPU extension...
+  Please install CUDA version 9.2.
+    and CUDNN version 7.3.1.
+    Or install correct nnabla_ext_cuda for installed version of CUDA/CUDNN.
