@@ -59,7 +59,7 @@ html_static_path = ['_static']
 nitpicky = True
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.4', None),
+    'python': ('https://docs.python.org/3.6', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 
