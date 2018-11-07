@@ -8,4 +8,5 @@ Utils
     utils/image_utils.rst
     utils/data_iterator.rst
     utils/profiling.rst
+    utils/misc.rst
 
