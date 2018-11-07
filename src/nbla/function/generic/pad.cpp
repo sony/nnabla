@@ -12,164 +12,212 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/pad.hpp>
+#include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
+
+#include <iostream>
 
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(Pad, const vector<int> &, const string &, float);
 
-template <typename T>
-int get_shape_from_last(const vector<T> &shape, int index,
-                        int default_value = 1) {
-  int axis = shape.size() - 1 + index;
-  if (axis < 0) {
-    return default_value;
+inline void init_index_map(const Shape_t &dst_ndi, Size_t *idx_map,
+                           const Shape_t &src_stride, const Shape_t &dst_stride,
+                           const Shape_t &dst_shape, const PadList &padding) {
+  const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
+  Shape_t::value_type src_idx = 0;
+  for (int axis = 0; axis < dst_shape.size(); axis++) {
+    if ((dst_ndi[axis] < padding[axis].first) ||
+        (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second)) {
+      return;
+    }
+    src_idx += (dst_ndi[axis] - padding[axis].first) * src_stride[axis];
   }
-  return shape[axis];
+  idx_map[dst_idx] = src_idx;
 }
+
+namespace pad_constant_impl {
+
+template <typename T>
+inline void pad_forward(const Shape_t &dst_ndi, const T *src, T *dst,
+                        const Shape_t &src_stride, const Shape_t &dst_stride,
+                        const Shape_t &dst_shape, const PadList &padding,
+                        const T constant_value) {
+  const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
+  Shape_t::value_type src_idx = 0;
+  for (int axis = 0; axis < dst_shape.size(); axis++) {
+    if ((dst_ndi[axis] < padding[axis].first) ||
+        (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second)) {
+      dst[dst_idx] = constant_value;
+      return;
+    }
+    src_idx += (dst_ndi[axis] - padding[axis].first) * src_stride[axis];
+  }
+  dst[dst_idx] = src[src_idx];
+}
+
+template <typename T, bool ACCUMULATE>
+inline void pad_backward(const Shape_t &src_ndi, const T *src, T *dst,
+                         const Shape_t &dst_stride, const Shape_t &src_stride,
+                         const Shape_t &src_shape, const PadList &padding) {
+  const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
+  Shape_t::value_type dst_idx = 0;
+  for (int axis = 0; axis < src_shape.size(); axis++) {
+    if ((src_ndi[axis] < padding[axis].first) ||
+        (src_ndi[axis] >= src_shape[axis] - padding[axis].second)) {
+      return;
+    }
+    dst_idx += (src_ndi[axis] - padding[axis].first) * dst_stride[axis];
+  }
+  dst[dst_idx] = ACCUMULATE ? dst[dst_idx] + src[src_idx] : src[src_idx];
+}
+} // namespace pad_constant_impl
+
+namespace pad_reflect_impl {
+
+template <typename INT> inline INT reflect_index(INT idx, INT len) {
+  // Returns an index that is within the inclusive interval [0, len]
+  // and reverses direction at 0 and len. The direction is determined
+  // by the last bit of the idx divided by len. Example:
+  // len=3 idx=[0, 1, 2, 3, 4, 5, 6, 7] => [0, 1, 2, 3, 2, 1, 0, 1]
+  return len > 0 ? std::abs(((idx / len) & 1) * len - (idx % len)) : 0;
+}
+
+inline void pad_index_map(const Shape_t &dst_ndi, const Shape_t &dst_stride,
+                          const Shape_t &dst_shape, const int axis,
+                          const PadList &padding, Size_t *idx_map) {
+  const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
+  const auto pad_sum = padding.at(axis).first + padding.at(axis).second;
+  const auto src_len = dst_shape.at(axis) - pad_sum;
+
+  if (dst_ndi[axis] < padding[axis].first) {
+    const auto p = padding[axis].first;
+    const auto r = reflect_index(p - dst_ndi[axis], src_len - 1);
+    auto src_idx = ndi::nd2flat(dst_ndi, dst_stride, axis);
+    src_idx += (p + r) * dst_stride[axis];
+    src_idx += ndi::nd2flat(dst_ndi, dst_stride, {axis + 1, dst_shape.size()});
+    idx_map[dst_idx] = idx_map[src_idx];
+    return;
+  }
+
+  if (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second) {
+    const auto p = padding[axis].first + src_len;
+    const auto r = reflect_index(dst_ndi[axis] - p + 1, src_len - 1);
+    auto src_idx = ndi::nd2flat(dst_ndi, dst_stride, axis);
+    src_idx += (p - r - 1) * dst_stride[axis];
+    src_idx += ndi::nd2flat(dst_ndi, dst_stride, {axis + 1, dst_shape.size()});
+    idx_map[dst_idx] = idx_map[src_idx];
+    return;
+  }
+}
+
+} // namespace pad_reflect_impl
 
 template <typename T>
 void Pad<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
-  Shape_t shape_x = inputs[0]->shape();
+  Variable &x = *inputs[0];
+  Variable &y = *outputs[0];
+
+  if (this->mode_string_ == "constant") {
+    this->pad_mode_ = PAD_CONSTANT;
+  } else if (this->mode_string_ == "reflect") {
+    this->pad_mode_ = PAD_REFLECT;
+  } else {
+    NBLA_ERROR(error_code::value, "Unsupported pad mode '%s'.",
+               mode_string_.c_str());
+  }
 
   NBLA_CHECK(pad_width_.size() % 2 == 0, error_code::value,
-             "pad_with should be even number.");
-  NBLA_CHECK(pad_width_.size() / 2 <= shape_x.size(), error_code::value,
-             "pad_with %d dimensions does not match with input %d dimensions.",
-             pad_width_.size() / 2, shape_x.size());
-  NBLA_CHECK(mode_.compare("constant") == 0, error_code::value,
-             "Only constant padding is supported currently.");
-  NBLA_CHECK(pad_width_.size() / 2 <= 3, error_code::value,
-             "pad_with of size %d is not supported currently.",
-             pad_width_.size());
+             "pad_width must hold an even number of elements.");
 
-  Shape_t shape_y = shape_x;
+  NBLA_CHECK(pad_width_.size() <= 2 * x.shape().size(), error_code::value,
+             "pad_width has more values than allowed by input dimensions.");
 
-  // Calculate output shape
-  int j = pad_width_.size() - 1, pad_pair_size = pad_width_.size() / 2;
-  int modifiable_output_size = shape_x.size() - pad_pair_size;
-  for (int i = shape_x.size() - 1; i >= modifiable_output_size; i--) {
-    if (j >= 0) {
-      shape_y[i] = pad_width_[j] + shape_x[i] + pad_width_[j - 1];
-    }
-    j = j - 2;
-  }
-  outputs[0]->reshape(shape_y, true);
-}
+  auto greater_zero = [](int v) { return v >= 0; };
+  NBLA_CHECK(std::all_of(pad_width_.begin(), pad_width_.end(), greater_zero),
+             error_code::value, "All pad_width values must be positive.");
 
-// For ND input, 1D, 2D and 3D constant padding.
-template <typename T>
-void constant_pad_forward_impl_cpu(int out_size, int in_size, T *y, const T *x,
-                                   float value, int p_front, int p_top,
-                                   int p_left, int i_channel, int i_height,
-                                   int i_width, int o_channel, int o_height,
-                                   int o_width) {
-
-  for (int i = 0; i < out_size; i++) {
-    int b = i / (o_channel * o_height * o_width);
-    int c = (i / (o_height * o_width)) % o_channel;
-    int h = (i / o_width) % o_height;
-    int w = i % o_width;
-
-    // Calculate input index
-    int ib = b;
-    int ic = c - p_front;
-    int ih = h - p_top;
-    int iw = w - p_left;
-    int j = ((ib * i_channel + ic) * i_height + ih) * i_width + iw;
-
-    if ((c >= p_front && c < (p_front + i_channel)) &&
-        (w >= p_left && w < (p_left + i_width)) &&
-        (h >= p_top && h < (p_top + i_height))) {
-      NBLA_CHECK(j <= in_size, error_code::value,
-                 " Internal error: Input array index out of bound exception.");
-      y[i] = x[j];
-    } else {
-      y[i] = value;
+  PadList padding(x.ndim());
+  { // Copy pairs of pad_width values starting at last dimension.
+    // Additional outer dimensions are initialized to zero.
+    auto it = padding.rbegin();
+    for (int i = this->pad_width_.size() - 2; i >= 0; i -= 2) {
+      *it++ = {this->pad_width_.at(i), this->pad_width_.at(i + 1)};
     }
   }
+
+  Shape_t y_shape;
+  y_shape.reserve(x.ndim());
+
+  for (int axis = 0; axis < x.ndim(); axis++) {
+    auto size = x.shape().at(axis);
+    size += padding.at(axis).first;
+    size += padding.at(axis).second;
+    y_shape.push_back(size);
+  }
+
+  y.reshape(y_shape, true);
+  this->index_map_.reshape(y_shape, true);
+
+  const auto ndim_pad = this->pad_width_.size() / 2 + 1;
+  const auto ndim_out = y_shape.size();
+  auto x_stride = x.strides();
+  auto y_stride = y.strides();
+
+  if (ndim_out > ndim_pad) {
+    padding.erase(padding.begin(), padding.end() - ndim_pad);
+    x_stride.erase(x_stride.begin(), x_stride.begin() + ndim_out - ndim_pad);
+    y_stride.erase(y_stride.begin(), y_stride.begin() + ndim_out - ndim_pad);
+    y_shape.erase(y_shape.begin(), y_shape.begin() + ndim_out - ndim_pad);
+    x_stride.front() = ndi::inner_size(x.shape(), ndim_out - ndim_pad + 1);
+    y_stride.front() = ndi::inner_size(y.shape(), ndim_out - ndim_pad + 1);
+    y_shape.front() = ndi::outer_size(y.shape(), ndim_out - ndim_pad + 1);
+  }
+
+  this->padding_ = padding;
+  this->x_stride_ = x_stride;
+  this->y_stride_ = y_stride;
+  this->y_shape_ = y_shape;
 }
 
 template <typename T>
 void Pad<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
+  Variable &x_var = *inputs[0];
+  Variable &y_var = *outputs[0];
 
-  // Inputs
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  const auto &x_stride = this->x_stride_;
+  const auto &y_stride = this->y_stride_;
+  const auto &y_shape = this->y_shape_;
+  const auto &padding = this->padding_;
 
-  // If output NDarray is not the size of 4D, then convert to 4D by adding dummy
-  // dimensions (i.e. 1) or
-  // if dimension is more than 4D then squeeze first dimensions by
-  // multiplication except last 3 dimensions.
-  int o_channel = get_shape_from_last(outputs[0]->shape(), -2);
-  int o_height = get_shape_from_last(outputs[0]->shape(), -1);
-  int o_width = get_shape_from_last(outputs[0]->shape(), 0);
-  int o_batch = outputs[0]->size() / (o_channel * o_height * o_width);
+  auto y_ndi = ndi::flat2nd(Shape_t::value_type(0), y_stride);
+  auto x = x_var.get_data_pointer<T>(this->ctx_);
+  auto y = y_var.cast_data_and_get_pointer<T>(this->ctx_, true);
 
-  int i_channel = get_shape_from_last(inputs[0]->shape(), -2);
-  int i_height = get_shape_from_last(inputs[0]->shape(), -1);
-  int i_width = get_shape_from_last(inputs[0]->shape(), 0);
-  int i_batch = inputs[0]->size() / (i_channel * i_height * i_width);
-
-  NBLA_CHECK(
-      i_batch == o_batch, error_code::value,
-      " Internal error: Input array and output array batch size not same.");
-
-  // If pad_width_ not of size 3D, then convert to 3D by adding dummy padding
-  // (i.e. 0).
-  int p_front = get_shape_from_last(pad_width_, -5, 0);
-  int p_top = get_shape_from_last(pad_width_, -3, 0);
-  int p_left = get_shape_from_last(pad_width_, -1, 0);
-
-  switch (pad_mode_[mode_]) {
-  case p_constant:
-    constant_pad_forward_impl_cpu<T>(outputs[0]->size(), inputs[0]->size(), y,
-                                     x, constant_value_, p_front, p_top, p_left,
-                                     i_channel, i_height, i_width, o_channel,
-                                     o_height, o_width);
-    break;
-  case p_replicate: // TODO
-  case p_reflect:   // TODO
-  default:
-    NBLA_CHECK(false, error_code::value,
-               " Internal error: pad mode is not supported.");
-    break;
+  if (this->pad_mode_ == this->PAD_CONSTANT) {
+    using namespace pad_constant_impl;
+    const auto val = this->constant_value_;
+    do {
+      pad_forward<T>(y_ndi, x, y, x_stride, y_stride, y_shape, padding, val);
+    } while (ndi::increment(y_ndi, y_shape));
   }
-}
 
-// For ND input, 1D, 2D and 3D constant padding.
-template <typename T, bool accum>
-void constant_pad_backward_impl_cpu(int out_size, int in_size, const T *dy,
-                                    T *dx, int p_front, int p_top, int p_left,
-                                    int i_channel, int i_height, int i_width,
-                                    int o_channel, int o_height, int o_width) {
-
-  for (int i = 0; i < out_size; i++) {
-    int b = i / (o_channel * o_height * o_width);
-    int c = (i / (o_height * o_width)) % o_channel;
-    int h = (i / o_width) % o_height;
-    int w = i % o_width;
-
-    // Calculate input index
-    int ib = b;
-    int ic = c - p_front;
-    int ih = h - p_top;
-    int iw = w - p_left;
-    int j = ((ib * i_channel + ic) * i_height + ih) * i_width + iw;
-
-    if ((c >= p_front && c < (p_front + i_channel)) &&
-        (w >= p_left && w < (p_left + i_width)) &&
-        (h >= p_top && h < (p_top + i_height))) {
-      NBLA_CHECK(j <= in_size, error_code::value,
-                 " Internal error: Input array index out of bound exception.");
-      if (accum) {
-        dx[j] += dy[i];
-      } else {
-        dx[j] = dy[i];
-      }
+  else if (this->pad_mode_ == this->PAD_REFLECT) {
+    using namespace pad_reflect_impl;
+    Variable &index_map = this->index_map_;
+    auto idx = index_map.cast_data_and_get_pointer<Size_t>(this->ctx_, false);
+    do {
+      init_index_map(y_ndi, idx, x_stride, y_stride, y_shape, padding);
+    } while (ndi::increment(y_ndi, y_shape));
+    for (int axis = y_ndi.size() - 1; axis >= 0; --axis) {
+      do {
+        pad_index_map(y_ndi, y_stride, y_shape, axis, padding, idx);
+      } while (ndi::increment(y_ndi, y_shape));
+    }
+    for (Size_t i = 0; i < y_var.size(); i++) {
+      y[i] = x[idx[i]];
     }
   }
 }
@@ -178,55 +226,40 @@ template <typename T>
 void Pad<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                            const vector<bool> &propagate_down,
                            const vector<bool> &accum) {
-  if (!(propagate_down[0])) {
-    return;
-  }
+  if (propagate_down[0]) {
+    Variable &x_var = *inputs[0];
+    Variable &y_var = *outputs[0];
 
-  // Gradient of outputs
-  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+    const auto &x_stride = this->x_stride_;
+    const auto &y_stride = this->y_stride_;
+    const auto &y_shape = this->y_shape_;
+    const auto &padding = this->padding_;
 
-  // If output NDarray is not the size of 4D, then convert to 4D by adding dummy
-  // dimensions (i.e. 1) or
-  // if dimension is more than 4D then squeeze first dimensions by
-  // multiplication except last 3 dimensions.
-  int o_channel = get_shape_from_last(outputs[0]->shape(), -2);
-  int o_height = get_shape_from_last(outputs[0]->shape(), -1);
-  int o_width = get_shape_from_last(outputs[0]->shape(), 0);
-  int o_batch = outputs[0]->size() / (o_channel * o_height * o_width);
+    auto y_ndi = ndi::flat2nd(Shape_t::value_type(0), y_stride);
+    auto dy = y_var.get_grad_pointer<T>(this->ctx_);
 
-  int i_channel = get_shape_from_last(inputs[0]->shape(), -2);
-  int i_height = get_shape_from_last(inputs[0]->shape(), -1);
-  int i_width = get_shape_from_last(inputs[0]->shape(), 0);
-  int i_batch = inputs[0]->size() / (i_channel * i_height * i_width);
+    if (this->pad_mode_ == this->PAD_CONSTANT) {
+      using namespace pad_constant_impl;
+      auto dx = x_var.cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+      auto backward = accum[0] ? pad_backward<T, true> : pad_backward<T, false>;
+      do {
+        backward(y_ndi, dy, dx, x_stride, y_stride, y_shape, padding);
+      } while (ndi::increment(y_ndi, y_shape));
+    }
 
-  NBLA_CHECK(
-      i_batch == o_batch, error_code::value,
-      " Internal error: Input array and output array batch size not same.");
-
-  // If pad_width_ not of size 3D, then convert to 3D by adding dummy padding
-  // (i.e. 0).
-  int p_front = get_shape_from_last(pad_width_, -5, 0);
-  int p_top = get_shape_from_last(pad_width_, -3, 0);
-  int p_left = get_shape_from_last(pad_width_, -1, 0);
-
-  switch (pad_mode_[mode_]) {
-  case p_constant:
-    if (accum[0])
-      constant_pad_backward_impl_cpu<T, true>(
-          outputs[0]->size(), inputs[0]->size(), dy, dx, p_front, p_top, p_left,
-          i_channel, i_height, i_width, o_channel, o_height, o_width);
-    else
-      constant_pad_backward_impl_cpu<T, false>(
-          outputs[0]->size(), inputs[0]->size(), dy, dx, p_front, p_top, p_left,
-          i_channel, i_height, i_width, o_channel, o_height, o_width);
-    break;
-  case p_replicate: // TODO
-  case p_reflect:   // TODO
-  default:
-    NBLA_CHECK(false, error_code::value,
-               " Internal error: pad mode is not supported.");
-    break;
+    else if (this->pad_mode_ == this->PAD_REFLECT) {
+      using namespace pad_reflect_impl;
+      if (!accum[0]) {
+        x_var.grad()->zero();
+      }
+      Variable &index_map = this->index_map_;
+      auto idx = index_map.get_data_pointer<Size_t>(this->ctx_);
+      auto dx = x_var.cast_grad_and_get_pointer<T>(this->ctx_, false);
+      for (Size_t i = 0; i < y_var.size(); i++) {
+        dx[idx[i]] += dy[i];
+      }
+    }
   }
 }
-}
+
+} // namespace nbla
