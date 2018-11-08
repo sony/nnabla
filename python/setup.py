@@ -25,7 +25,7 @@ import copy
 setup_requires = [
     'setuptools',
     'numpy>=1.12',
-    'Cython>=0.24,<0.26',  # Requires python-dev.
+    'Cython',  # Requires python-dev.
 ]
 
 install_requires = setup_requires + [
@@ -250,8 +250,10 @@ if __name__ == '__main__':
                       ["nnabla_cli=nnabla.utils.cli.cli:main"]},
         setup_requires=setup_requires,
         install_requires=install_requires,
-        extras_require={':python_version == "2.7"': [
-            'futures'], ':python_version != "2.7"': ['onnx']},
+        extras_require={
+            ':python_version == "2.7"': ['futures'],
+            ':(python_version != "2.7" and python_version != "3.7")': ['onnx']
+            },
         ext_modules=ext_modules,
         package_dir=package_dir,
         packages=packages,
