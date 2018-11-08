@@ -71,14 +71,17 @@ class FunctionProfile(object):
             return profiler.runcall(self.fn, *args, **kw)
         finally:
             FunctionProfile.profiling = False
-            self.stats.add(profiler)
+            if self.stats is None:
+                self.stats = pstats.Stats(profiler)
+            else:
+                self.stats.add(profiler)
             if self.print_freq and (self.ncalls % self.print_freq == 0):
                 self.print_stats()
 
     def reset_stats(self):
         '''Manually reset the profiling statistics collected so far.
         '''
-        self.stats = pstats.Stats()
+        self.stats = None
         self.ncalls = 0
 
     def print_stats(self, reset=True):
