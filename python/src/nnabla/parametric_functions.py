@@ -50,6 +50,7 @@ def parametric_function_api(scope_name=None, param_desc=None):
         scope_name = name
 
     def parametric_function_api_inside(func):
+        from nnabla.utils.py23_compatible import getargspec
         import inspect
 
         name = func.__name__
@@ -87,7 +88,7 @@ def parametric_function_api(scope_name=None, param_desc=None):
 
         """.format(name=name)
 
-        spec = inspect.getargspec(func)
+        spec = getargspec(func)
         defaults = spec.defaults
         if defaults is None:
             defaults = tuple()  # None will be appended later
