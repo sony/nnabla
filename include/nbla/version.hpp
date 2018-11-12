@@ -20,7 +20,6 @@ namespace nbla {
 using std::string;
 
 const string nbla_version(void);
-const string nbla_short_version(void);
 const string nbla_author(void);
 const string nbla_author_email(void);
 const string nbla_build_number(void);

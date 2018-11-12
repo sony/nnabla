@@ -46,8 +46,6 @@ endif
 ########################################################################################################################
 # Build options
 DOCKER_RUN_OPTS += -e NNABLA_VERSION=$(NNABLA_VERSION)
-DOCKER_RUN_OPTS += -e NNABLA_SHORT_VERSION=$(NNABLA_SHORT_VERSION)
-DOCKER_RUN_OPTS += -e NNABLA_VERSION_SUFFIX=$(NNABLA_SHORT_VERSION_SUFFIX)
 
 NNABLA_UTILS_STATIC_LINK_DEPS ?= OFF
 DOCKER_RUN_OPTS += -e NNABLA_UTILS_STATIC_LINK_DEPS=$(NNABLA_UTILS_STATIC_LINK_DEPS)

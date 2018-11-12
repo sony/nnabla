@@ -57,6 +57,7 @@
 /src/nbla/init.cpp
 /src/nbla/proto/nnabla.proto
 /src/nbla/solver/*.cpp
+/src/nbla/version.cpp
 /src/nbla_utils/nnabla.pb.cc
 /src/nbla_utils/nnabla.pb.h
 /src/nbla_utils/nnp_impl_create_function.cpp

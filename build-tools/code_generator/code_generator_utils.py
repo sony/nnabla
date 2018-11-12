@@ -15,7 +15,7 @@
 from __future__ import print_function
 from collections import OrderedDict
 from os.path import abspath, join, dirname, exists
-from utils.common import check_update, get_version
+from utils.common import check_update
 from utils.type_conv import type_from_proto
 import time
 import yaml
@@ -201,14 +201,11 @@ def generate_init(function_info, function_types, solver_info, solver_types, ext_
     generate_from_template(template, **kwargs)
 
 
-def generate_version(template, rootdir, suffix=None, short_suffix=None, **kwargs):
-    version, short_version = get_version(rootdir)
-    if short_suffix is not None:
-        short_version = short_version + short_suffix
+def generate_version(template, rootdir, version = None, suffix=None, **kwargs):
     if suffix is not None:
         version = version + suffix
     tmpl_kwargs = dict(
-        version=version, short_version=short_version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime()))
+        version=version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime()))
     tmpl_kwargs.update(kwargs)
     generated = render_with_template(filename=template, template_kwargs=tmpl_kwargs)
     path_o = template.replace('.tmpl', '')
