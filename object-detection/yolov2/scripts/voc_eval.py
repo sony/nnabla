@@ -3,36 +3,42 @@
 # Licensed under The MIT License [see ./LICENSE.external for details]
 # Written by Bharath Hariharan
 # --------------------------------------------------------------------
+'''
+Terminal commands For MSCOCO:
+python voc_eval.py -d /valsub.txt  --dataset-classes-name /cocosub.names --dataset-name MSCOCO 
+--anno-dirpath /mscoco2014/ --res-prefix results/comp4_det_test_
 
+Terminal commands FOR VOC:
+python voc_eval.py -d dataset/ --dataset-classes-name /voc.names --dataset-name VOC --res-prefix results/comp4_det_test_
+'''
 import xml.etree.ElementTree as ET
 import os
 import sys
-import pickle
+import six.moves.cPickle as pickle
 import numpy as np
+import argparse
 
 
 def parse_rec(filename):
-    """ Parse a PASCAL VOC xml file """
+    """ Parse a dataset xml file """
     tree = ET.parse(filename)
     objects = []
     for obj in tree.findall('object'):
         obj_struct = {}
         obj_struct['name'] = obj.find('name').text
-        obj_struct['pose'] = obj.find('pose').text
-        obj_struct['truncated'] = int(obj.find('truncated').text)
         obj_struct['difficult'] = int(obj.find('difficult').text)
         bbox = obj.find('bndbox')
-        obj_struct['bbox'] = [int(bbox.find('xmin').text),
-                              int(bbox.find('ymin').text),
-                              int(bbox.find('xmax').text),
-                              int(bbox.find('ymax').text)]
+        obj_struct['bbox'] = [float(bbox.find('xmin').text),
+                              float(bbox.find('ymin').text),
+                              float(bbox.find('xmax').text),
+                              float(bbox.find('ymax').text)]
         objects.append(obj_struct)
 
     return objects
 
 
-def voc_ap(rec, prec, use_07_metric=False):
-    """ ap = voc_ap(rec, prec, [use_07_metric])
+def dataset_ap(rec, prec, use_07_metric=False):
+    """ ap = dataset_eval(rec, prec, [use_07_metric])
     Compute VOC AP given precision and recall.
     If use_07_metric is true, uses the
     VOC 07 11 point method (default:False).
@@ -65,14 +71,15 @@ def voc_ap(rec, prec, use_07_metric=False):
     return ap
 
 
-def voc_eval(detpath,
-             annopath,
-             imagesetfile,
-             classname,
-             cachedir,
-             ovthresh=0.5,
-             use_07_metric=False):
-    """rec, prec, ap = voc_eval(detpath,
+def dataset_eval(detpath,
+                 annopath,
+                 imagesetfile,
+                 classname,
+                 cachedir,
+                 dataset_name,
+                 ovthresh=0.5,
+                 use_07_metric=False):
+    """rec, prec, ap = dataset_eval(detpath,
                                 annopath,
                                 imagesetfile,
                                 classname,
@@ -106,6 +113,9 @@ def voc_eval(detpath,
         lines = f.readlines()
     imagenames = [x.strip() for x in lines]
 
+    if (dataset_name == "MSCOCO"):
+        imagenames = [x.split("/")[-1].split('.')[0]
+                      for x in imagenames]  # For MSCOCO
     if not os.path.isfile(cachefile):
         # load annots
         recs = {}
@@ -199,46 +209,48 @@ def voc_eval(detpath,
     # avoid divide by zero in case the first detection matches a difficult
     # ground truth
     prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-    ap = voc_ap(rec, prec, use_07_metric)
+    ap = dataset_ap(rec, prec, use_07_metric)
 
     return rec, prec, ap
 
 
-def _do_python_eval(res_prefix, dataset_dir, output_dir='output'):
-    _devkit_path = os.path.join(dataset_dir, 'VOCdevkit')
-    _year = '2007'
-    _classes = ('__background__',  # always index 0
-                'aeroplane', 'bicycle', 'bird', 'boat',
-                'bottle', 'bus', 'car', 'cat', 'chair',
-                'cow', 'diningtable', 'dog', 'horse',
-                'motorbike', 'person', 'pottedplant',
-                'sheep', 'sofa', 'train', 'tvmonitor')
+def _do_python_eval(res_prefix, anno_prefix, dataset_dir, dataset_classes_name, dataset_name, output_dir='output'):
+    with open(dataset_classes_name, 'r') as myfile:
+        data = myfile.read()
+    _classes = ['__background__']
+    _classes = _classes + data.split('\n')
+    _classes = _classes[:-1]
+    if dataset_name == "VOC":
+        _devkit_path = os.path.join(dataset_dir, 'VOCdevkit')
+        _year = '2007'
 
-    filename = res_prefix + '{:s}.txt'
-    annopath = os.path.join(
-        _devkit_path,
-        'VOC' + _year,
-        'Annotations',
-        '{:s}.xml')
-    imagesetfile = os.path.join(
-        _devkit_path,
-        'VOC' + _year,
-        'ImageSets',
-        'Main',
-        'test.txt')
-    cachedir = os.path.join(_devkit_path, 'annotations_cache')
-    aps = []
-    # The PASCAL VOC metric changed in 2010
-    use_07_metric = True if int(_year) < 2010 else False
-    print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+        filename = res_prefix + '{:s}.txt'
+        annopath = os.path.join(_devkit_path, 'VOC' +
+                                _year, 'Annotations', '{:s}.xml')
+        imagesetfile = os.path.join(
+            _devkit_path, 'VOC' + _year, 'ImageSets', 'Main', 'test.txt')
+        cachedir = os.path.join(_devkit_path, 'annotations_cache')
+        aps = []
+        # The PASCAL VOC metric changed in 2010
+        use_07_metric = True if int(_year) < 2010 else False
+        print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+    elif dataset_name == "MSCOCO":
+        filename = res_prefix + '{:s}.txt'
+        annopath = anno_prefix + '{:s}.xml'
+        imagesetfile = os.path.join(dataset_dir)
+        cachedir = os.path.join('', 'annotations_cache')
+        aps = []
+        use_07_metric = False
+    else:
+        print("Dataset provided is not supported")
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     for i, cls in enumerate(_classes):
         if cls == '__background__':
             continue
 
-        rec, prec, ap = voc_eval(
-            filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
+        rec, prec, ap = dataset_eval(
+            filename, annopath, imagesetfile, cls, cachedir, dataset_name, ovthresh=0.5,
             use_07_metric=use_07_metric)
         aps += [ap]
         print(('AP for {} = {:.4f}'.format(cls, ap)))
@@ -267,10 +279,16 @@ def get_args():
     parser.add_argument(
         '-d', '--dataset', help='Dataset location (default="./dataset/").', default='./dataset/')
     parser.add_argument(
-        'res_prefix', help='Prefix to the files produced by the `valid.py` script.')
+        '--res-prefix', help='Prefix to the files produced by the `valid.py` script.', default="results/comp4_det_test_")
+    parser.add_argument("--dataset-classes-name",
+                        help="path to file with class names with suffix .names", default="data/voc.names")
+    parser.add_argument("--dataset-name", help="VOC or MSCOCO", default="VOC")
+    parser.add_argument(
+        "--anno-dirpath", help="annotations directory path for object instance")
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = get_args()
-    _do_python_eval(args.res_prefix, args.dataset, output_dir='output')
+    _do_python_eval(args.res_prefix, args.anno_dirpath, args.dataset,
+                    args.dataset_classes_name, args.dataset_name, output_dir='output')
