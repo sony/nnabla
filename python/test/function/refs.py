@@ -27,14 +27,8 @@ def get_deconv_out_size(w, k, p, s, d):
     return s * (w - 1) - 2 * p + (d * (k - 1) + 1)
 
 
-def get_pool_ignore_border_out_size(w, k, p, s):
-    return int(np.ceil((w + 2 * p) * 1.0 / s))
-
-
-def get_pool_ignore_border_in_out_size(w, k, p, s):
-    o = get_pool_ignore_border_out_size(w, k, p, s)
-    i = k + (o - 1) * s
-    return i, o
+def get_pool_out_size(w, k, p, s, ignore_border):
+    return (w + p - (k - p if ignore_border else 1)) // s + 1
 
 
 def convolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
@@ -161,49 +155,91 @@ def deconvolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     return x
 
 
-def pooling_2d(x, mode, kernel, stride, pad, ignore_border=True, including_pad=True, dtype=np.float32):
+def pooling_2d(x, mode, kernel, stride, pad, ignore_border=True,
+               including_pad=True, dtype=np.float32):
     """
     """
     assert mode in ['average', 'sum', 'max']
 
     C, H, W = x.shape
-    if ignore_border:
-        Ho = get_conv_out_size(H, kernel[0], pad[0], stride[0])
-        Wo = get_conv_out_size(W, kernel[1], pad[1], stride[1])
-        Hi = H + 2 * pad[0]
-        Wi = W + 2 * pad[1]
-    else:
-        Hi, Ho = get_pool_ignore_border_in_out_size(
-            H, kernel[0], pad[0], stride[0])
-        Wi, Wo = get_pool_ignore_border_in_out_size(
-            W, kernel[1], pad[1], stride[1])
-    if mode == 'max':
-        x_pad = np.ones((C, Hi, Wi), dtype=dtype) * x.min()
-    else:
-        x_pad = np.zeros((C, Hi, Wi), dtype=dtype) * x.min()
+    Ho = get_pool_out_size(H, kernel[0], pad[0], stride[0], ignore_border)
+    Wo = get_pool_out_size(W, kernel[1], pad[1], stride[1], ignore_border)
+    Hi = H + pad[0] + (pad[0] if ignore_border else kernel[0] - 1)
+    Wi = W + pad[1] + (pad[1] if ignore_border else kernel[1] - 1)
+
+    x_pad = np.ones((C, Hi, Wi), dtype=dtype)
+    x_pad *= x.min() if mode == 'max' else 0
     x_pad[:, pad[0]:pad[0] + H, pad[1]:pad[1] + W] = x
 
     if mode == 'average' and not including_pad:
-        b_pad = np.zeros((C, Hi, Wi), dtype=np.uint8)
+        b_pad = np.zeros((C, Hi, Wi), dtype=np.uint)
         b_pad[:, pad[0]:pad[0] + H, pad[1]:pad[1] + W] = 1
+
     y = np.zeros((C, Ho, Wo), dtype=dtype)
-    for ho in range(Ho):
-        for wo in range(Wo):
-            for c in range(C):
+
+    for c in range(C):
+        for ho in range(Ho):
+            for wo in range(Wo):
                 hi = ho * stride[0] + np.arange(0, kernel[0])
                 wi = wo * stride[1] + np.arange(0, kernel[1])
                 yy = y[c]
                 xx = x_pad[c]
                 if mode == "max":
                     yy[ho, wo] = xx[np.ix_(hi, wi)].max()
+                elif mode == "sum":
+                    yy[ho, wo] = xx[np.ix_(hi, wi)].sum()
                 elif mode == "average":
                     if including_pad:
                         yy[ho, wo] = xx[np.ix_(hi, wi)].mean()
                     else:
-                        yy[ho, wo] = xx[np.ix_(hi, wi)].sum(
-                        ) / b_pad[c][np.ix_(hi, wi)].sum()
-                elif mode == "sum":
-                    yy[ho, wo] = xx[np.ix_(hi, wi)].sum()
-                else:
-                    raise ValueError("Unknown mode.")
+                        pad_sum = xx[np.ix_(hi, wi)].sum()
+                        pad_cnt = b_pad[c][np.ix_(hi, wi)].sum()
+                        yy[ho, wo] = pad_sum / pad_cnt
+    return y
+
+
+def pooling_3d(x, mode, kernel, stride, pad, ignore_border=True,
+               including_pad=True, dtype=np.float32):
+    """
+    """
+    assert mode in ['average', 'sum', 'max']
+
+    C, Z, H, W = x.shape
+    Zo = get_pool_out_size(Z, kernel[0], pad[0], stride[0], ignore_border)
+    Ho = get_pool_out_size(H, kernel[1], pad[1], stride[1], ignore_border)
+    Wo = get_pool_out_size(W, kernel[2], pad[2], stride[2], ignore_border)
+    Zi = Z + pad[0] + (pad[0] if ignore_border else kernel[0] - 1)
+    Hi = H + pad[1] + (pad[1] if ignore_border else kernel[1] - 1)
+    Wi = W + pad[2] + (pad[2] if ignore_border else kernel[2] - 1)
+
+    x_pad = np.ones((C, Zi, Hi, Wi), dtype=dtype)
+    x_pad *= x.min() if mode == 'max' else 0
+    x_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = x
+
+    if mode == 'average' and not including_pad:
+        b_pad = np.zeros((C, Zi, Hi, Wi), dtype=np.uint8)
+        b_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = 1
+
+    y = np.zeros((C, Zo, Ho, Wo), dtype=dtype)
+
+    for c in range(C):
+        for zo in range(Zo):
+            for ho in range(Ho):
+                for wo in range(Wo):
+                    zi = zo * stride[0] + np.arange(0, kernel[0])
+                    hi = ho * stride[1] + np.arange(0, kernel[1])
+                    wi = wo * stride[2] + np.arange(0, kernel[2])
+                    yy = y[c]
+                    xx = x_pad[c]
+                    if mode == "max":
+                        yy[zo, ho, wo] = xx[np.ix_(zi, hi, wi)].max()
+                    elif mode == "sum":
+                        yy[zo, ho, wo] = xx[np.ix_(zi, hi, wi)].sum()
+                    elif mode == "average":
+                        if including_pad:
+                            yy[zo, ho, wo] = xx[np.ix_(zi, hi, wi)].mean()
+                        else:
+                            pad_sum = xx[np.ix_(zi, hi, wi)].sum()
+                            pad_cnt = b_pad[c][np.ix_(zi, hi, wi)].sum()
+                            yy[zo, ho, wo] = pad_sum / pad_cnt
     return y

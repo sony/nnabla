@@ -21,8 +21,7 @@ from nbla_test_utils import list_context
 ctxs = list_context('AveragePooling')
 
 
-def ref_average_pooling(x, kernel, stride, ignore_border, pad, including_pad):
-    # Only 2d
+def ref_average_pooling_2d(x, kernel, stride, ignore_border, pad, including_pad):
     y = []
     for xx in x.reshape((-1,) + x.shape[-3:]):
         if xx.ndim == 2:
@@ -33,6 +32,21 @@ def ref_average_pooling(x, kernel, stride, ignore_border, pad, including_pad):
     if x.ndim == 2:
         y = np.squeeze(y, 1)
     return y.reshape(x.shape[:-3] + y.shape[1:])
+
+
+def ref_average_pooling_3d(x, kernel, stride, ignore_border, pad, including_pad):
+    print(x)
+    y = []
+    for xx in x.reshape((-1,) + x.shape[-4:]):
+        if xx.ndim == 3:
+            xx = xx[np.newaxis]
+        y += [refs.pooling_3d(xx, 'average', kernel, stride,
+                              pad, ignore_border, including_pad)[np.newaxis]]
+    y = np.vstack(y)
+    if x.ndim == 3:
+        y = np.squeeze(y, 1)
+    print(y.reshape(x.shape[:-4] + y.shape[1:]))
+    return y.reshape(x.shape[:-4] + y.shape[1:])
 
 
 ''' 
@@ -46,21 +60,46 @@ Do not use the conditions of
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape", [(2, 3), (2, 4, 6), (2, 2, 4, 6), (2, 2, 2, 4, 6)])
+@pytest.mark.parametrize("inshape", [
+    (2, 3), (2, 4, 6), (2, 2, 4, 6), (2, 2, 2, 4, 6)
+])
 # pool shape might be smaller than inshape in theano's pool_2d
 @pytest.mark.parametrize("kernel", [(2, 3)])
 @pytest.mark.parametrize("stride", [(2, 3)])
 # pad must be 0 when ignore_border=false
-@pytest.mark.parametrize("pad, ignore_border", [((0, 0), False), ((1, 2), True)])
+@pytest.mark.parametrize("pad, ignore_border", [
+    ((0, 0), False), ((1, 2), True)
+])
 @pytest.mark.parametrize("including_pad", [(True), (False)])
-def test_average_pooling_forward_backward(seed, inshape, kernel, stride, pad, ignore_border, including_pad, ctx, func_name):
+def test_average_pooling_2d(seed, inshape, kernel, stride, pad, ignore_border,
+                            including_pad, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    function_tester(rng,
-                    F.average_pooling, ref_average_pooling,
-                    inputs=inputs,
-                    func_args=[kernel, stride,
-                               ignore_border, pad, including_pad],
-                    ctx=ctx, func_name=func_name,
-                    atol_f=1e-6, atol_b=1e-2)
+    func_args = [kernel, stride, ignore_border, pad, including_pad]
+    function_tester(rng, F.average_pooling, ref_average_pooling_2d,
+                    inputs=inputs, func_args=func_args, func_name=func_name,
+                    ctx=ctx, atol_f=1e-6, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape", [
+    (2, 4, 6), (2, 2, 4, 6), (2, 2, 2, 4, 6), (2, 2, 2, 2, 4, 6)
+])
+@pytest.mark.parametrize("kernel", [(2, 2, 3)])
+@pytest.mark.parametrize("stride", [(2, 2, 3)])
+# pad must be 0 when ignore_border=false
+@pytest.mark.parametrize("pad, ignore_border", [
+    ((0, 0, 0), False), ((1, 1, 2), True)
+])
+@pytest.mark.parametrize("including_pad", [(True), (False)])
+def test_average_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border,
+                            including_pad, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [kernel, stride, ignore_border, pad, including_pad]
+    function_tester(rng, F.average_pooling, ref_average_pooling_3d,
+                    inputs=inputs, func_args=func_args, func_name=func_name,
+                    ctx=ctx, atol_f=1e-6, atol_b=1e-2)
