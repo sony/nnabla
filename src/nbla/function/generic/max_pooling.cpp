@@ -19,6 +19,7 @@
 #include <nbla/variable.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 
 namespace nbla {
@@ -29,6 +30,8 @@ using std::ceil;
 
 NBLA_REGISTER_FUNCTION_SOURCE(MaxPooling, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &);
+
+namespace max_pooling_impl {
 
 template <typename TI, typename TO, int NDIM>
 inline const std::array<TO, NDIM> v2a(const std::vector<TI> &v,
@@ -43,10 +46,10 @@ typedef std::array<int, 2> Array2D;
 typedef std::array<int, 3> Array3D;
 
 template <typename T>
-inline void forward(const T *x, T *y, int *m, const Array2D &x_stride,
-                    const Array2D &x_shape, const Array2D &y_shape,
-                    const Array2D &kernel, const Array2D &stride,
-                    const Array2D &pad) {
+inline void forward_map(const T *x, T *y, int *m, const Array2D &x_stride,
+                        const Array2D &x_shape, const Array2D &y_shape,
+                        const Array2D &kernel, const Array2D &stride,
+                        const Array2D &pad) {
   Array2D y_idx, pool_start, pool_end;
 
   for (y_idx[0] = 0; y_idx[0] < y_shape[0]; ++y_idx[0]) {
@@ -75,10 +78,10 @@ inline void forward(const T *x, T *y, int *m, const Array2D &x_stride,
 }
 
 template <typename T>
-inline void forward(const T *x, T *y, int *m, const Array3D &x_stride,
-                    const Array3D &x_shape, const Array3D &y_shape,
-                    const Array3D &kernel, const Array3D &stride,
-                    const Array3D &pad) {
+inline void forward_map(const T *x, T *y, int *m, const Array3D &x_stride,
+                        const Array3D &x_shape, const Array3D &y_shape,
+                        const Array3D &kernel, const Array3D &stride,
+                        const Array3D &pad) {
   Array3D y_idx, pool_start, pool_end;
 
   for (y_idx[0] = 0; y_idx[0] < y_shape[0]; ++y_idx[0]) {
@@ -112,6 +115,20 @@ inline void forward(const T *x, T *y, int *m, const Array3D &x_stride,
 }
 
 template <typename T>
+inline void backward_map(T *dx, const T *dy, const int *m, const int size) {
+  for (int k = 0; k < size; k++) {
+    dx[m[k]] += dy[k];
+  }
+}
+} // namespace max_pooling_impl
+
+using max_pooling_impl::v2a;
+using max_pooling_impl::Array2D;
+using max_pooling_impl::Array3D;
+using max_pooling_impl::forward_map;
+using max_pooling_impl::backward_map;
+
+template <typename T>
 void MaxPooling<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
   BasePooling<T, const vector<int> &, const vector<int> &, bool,
@@ -120,7 +137,7 @@ void MaxPooling<T>::setup_impl(const Variables &inputs,
   forward_done_ = false;
 }
 
-template <class T>
+template <typename T>
 void MaxPooling<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
@@ -147,8 +164,8 @@ void MaxPooling<T>::forward_impl(const Variables &inputs,
 #pragma omp parallel for schedule(static)
 #endif
     for (int n = 0; n < n_map; ++n) {
-      forward<T>(x + n * x_map_size, y + n * y_map_size, m + n * y_map_size,
-                 x_stride, x_shape, y_shape, kernel, stride, pad);
+      forward_map(x + n * x_map_size, y + n * y_map_size, m + n * y_map_size,
+                  x_stride, x_shape, y_shape, kernel, stride, pad);
     }
   }
 
@@ -163,19 +180,14 @@ void MaxPooling<T>::forward_impl(const Variables &inputs,
 #pragma omp parallel for schedule(static)
 #endif
     for (int n = 0; n < n_map; ++n) {
-      forward<T>(x + n * x_map_size, y + n * y_map_size, m + n * y_map_size,
-                 x_stride, x_shape, y_shape, kernel, stride, pad);
+      forward_map(x + n * x_map_size, y + n * y_map_size, m + n * y_map_size,
+                  x_stride, x_shape, y_shape, kernel, stride, pad);
     }
   }
   forward_done_ = true;
 }
 
 template <typename T>
-inline void backward(T *dx, const T *dy, const int *m, const int size) {
-  for (int k = 0; k < size; k++) { dx[m[k]] += dy[k]; }
-}
-
-template <class T>
 void MaxPooling<T>::backward_impl(const Variables &inputs,
                                   const Variables &outputs,
                                   const vector<bool> &propagate_down,
@@ -201,7 +213,7 @@ void MaxPooling<T>::backward_impl(const Variables &inputs,
   int n_map = outputs[0]->size() / y_map_size;
 
   while (n_map--) {
-    backward<T>(dx, dy, m, y_map_size);
+    backward_map(dx, dy, m, y_map_size);
     dx += x_map_size;
     dy += y_map_size;
     m += y_map_size;

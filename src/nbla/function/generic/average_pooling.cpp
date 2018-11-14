@@ -19,6 +19,7 @@
 #include <nbla/variable.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 
 namespace nbla {
@@ -29,6 +30,8 @@ NBLA_REGISTER_FUNCTION_SOURCE(AveragePooling, const vector<int> &,
 
 using std::min;
 using std::max;
+
+namespace avg_pooling_impl {
 
 template <typename TI, typename TO, int NDIM>
 inline const std::array<TO, NDIM> v2a(const std::vector<TI> &v,
@@ -43,14 +46,14 @@ typedef std::array<int, 2> Array2D;
 typedef std::array<int, 3> Array3D;
 
 template <typename T>
-inline void forward(const T *x, T *y, bool including_pad,
-                    const Array2D &x_stride, const Array2D &x_shape,
-                    const Array2D &y_shape, const Array2D &kernel,
-                    const Array2D &stride, const Array2D &pad) {
+inline void forward_map(const T *x, T *y, bool including_pad,
+                        const Array2D &x_stride, const Array2D &x_shape,
+                        const Array2D &y_shape, const Array2D &kernel,
+                        const Array2D &stride, const Array2D &pad) {
   Array2D y_idx, pool_start, pool_end;
 
-  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; ++y_idx[0]) {
-    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; ++y_idx[1]) {
+  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; y_idx[0]++) {
+    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; y_idx[1]++) {
       for (int a = 0; a < 2; a++) {
         pool_start[a] = y_idx[a] * stride[a] - pad[a];
         pool_end[a] = min(pool_start[a] + kernel[a], x_shape[a] + pad[a]);
@@ -70,8 +73,8 @@ inline void forward(const T *x, T *y, bool including_pad,
         }
       }
       T pool_sum = 0;
-      for (int i0 = pool_start[0]; i0 < pool_end[0]; ++i0) {
-        for (int i1 = pool_start[1]; i1 < pool_end[1]; ++i1) {
+      for (int i0 = pool_start[0]; i0 < pool_end[0]; i0++) {
+        for (int i1 = pool_start[1]; i1 < pool_end[1]; i1++) {
           pool_sum += x[i0 * x_stride[0] + i1];
         }
       }
@@ -81,15 +84,15 @@ inline void forward(const T *x, T *y, bool including_pad,
 }
 
 template <typename T>
-inline void forward(const T *x, T *y, bool including_pad,
-                    const Array3D &x_stride, const Array3D &x_shape,
-                    const Array3D &y_shape, const Array3D &kernel,
-                    const Array3D &stride, const Array3D &pad) {
+inline void forward_map(const T *x, T *y, bool including_pad,
+                        const Array3D &x_stride, const Array3D &x_shape,
+                        const Array3D &y_shape, const Array3D &kernel,
+                        const Array3D &stride, const Array3D &pad) {
   Array3D y_idx, pool_start, pool_end;
 
-  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; ++y_idx[0]) {
-    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; ++y_idx[1]) {
-      for (y_idx[2] = 0; y_idx[2] < y_shape[2]; ++y_idx[2]) {
+  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; y_idx[0]++) {
+    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; y_idx[1]++) {
+      for (y_idx[2] = 0; y_idx[2] < y_shape[2]; y_idx[2]++) {
         for (int a = 0; a < 3; a++) {
           pool_start[a] = y_idx[a] * stride[a] - pad[a];
           pool_end[a] = min(pool_start[a] + kernel[a], x_shape[a] + pad[a]);
@@ -109,9 +112,9 @@ inline void forward(const T *x, T *y, bool including_pad,
           }
         }
         T pool_sum = 0;
-        for (int i0 = pool_start[0]; i0 < pool_end[0]; ++i0) {
-          for (int i1 = pool_start[1]; i1 < pool_end[1]; ++i1) {
-            for (int i2 = pool_start[2]; i2 < pool_end[2]; ++i2) {
+        for (int i0 = pool_start[0]; i0 < pool_end[0]; i0++) {
+          for (int i1 = pool_start[1]; i1 < pool_end[1]; i1++) {
+            for (int i2 = pool_start[2]; i2 < pool_end[2]; i2++) {
               pool_sum += x[i0 * x_stride[0] + i1 * x_stride[1] + i2];
             }
           }
@@ -122,7 +125,92 @@ inline void forward(const T *x, T *y, bool including_pad,
   }
 }
 
-template <class T>
+template <typename T>
+inline void backward_map(T *dx, const T *dy, bool including_pad,
+                         const Array2D &x_stride, const Array2D &x_shape,
+                         const Array2D &y_shape, const Array2D &kernel,
+                         const Array2D &stride, const Array2D &pad) {
+  Array2D y_idx, pool_start, pool_end;
+
+  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; y_idx[0]++) {
+    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; y_idx[1]++) {
+      for (int a = 0; a < 2; a++) {
+        pool_start[a] = y_idx[a] * stride[a] - pad[a];
+        pool_end[a] = min(pool_start[a] + kernel[a], x_shape[a] + pad[a]);
+      }
+      int pool_size = 1;
+      for (int a = 0; a < 2; a++) {
+        pool_size *= pool_end[a] - pool_start[a];
+      }
+      for (int a = 0; a < 2; a++) {
+        pool_start[a] = max(pool_start[a], 0);
+        pool_end[a] = min(pool_end[a], x_shape[a]);
+      }
+      if (including_pad == false) {
+        pool_size = 1;
+        for (int a = 0; a < 2; a++) {
+          pool_size *= pool_end[a] - pool_start[a];
+        }
+      }
+      T pool_grad = *dy++ / pool_size;
+      for (int i0 = pool_start[0]; i0 < pool_end[0]; i0++) {
+        for (int i1 = pool_start[1]; i1 < pool_end[1]; i1++) {
+          dx[i0 * x_stride[0] + i1] += pool_grad;
+        }
+      }
+    }
+  }
+}
+
+template <typename T>
+inline void backward_map(T *dx, const T *dy, bool including_pad,
+                         const Array3D &x_stride, const Array3D &x_shape,
+                         const Array3D &y_shape, const Array3D &kernel,
+                         const Array3D &stride, const Array3D &pad) {
+  Array3D y_idx, pool_start, pool_end;
+
+  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; y_idx[0]++) {
+    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; y_idx[1]++) {
+      for (y_idx[2] = 0; y_idx[2] < y_shape[2]; y_idx[2]++) {
+        for (int a = 0; a < 3; a++) {
+          pool_start[a] = y_idx[a] * stride[a] - pad[a];
+          pool_end[a] = min(pool_start[a] + kernel[a], x_shape[a] + pad[a]);
+        }
+        int pool_size = 1;
+        for (int a = 0; a < 3; a++) {
+          pool_size *= pool_end[a] - pool_start[a];
+        }
+        for (int a = 0; a < 3; a++) {
+          pool_start[a] = max(pool_start[a], 0);
+          pool_end[a] = min(pool_end[a], x_shape[a]);
+        }
+        if (including_pad == false) {
+          pool_size = 1;
+          for (int a = 0; a < 3; a++) {
+            pool_size *= pool_end[a] - pool_start[a];
+          }
+        }
+        T pool_grad = *dy++ / pool_size;
+        for (int i0 = pool_start[0]; i0 < pool_end[0]; i0++) {
+          for (int i1 = pool_start[1]; i1 < pool_end[1]; i1++) {
+            for (int i2 = pool_start[2]; i2 < pool_end[2]; i2++) {
+              dx[i0 * x_stride[0] + i1 * x_stride[1] + i2] += pool_grad;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+} // namespace avg_pooling_impl
+
+using avg_pooling_impl::v2a;
+using avg_pooling_impl::Array2D;
+using avg_pooling_impl::Array3D;
+using avg_pooling_impl::forward_map;
+using avg_pooling_impl::backward_map;
+
+template <typename T>
 void AveragePooling<T>::forward_impl(const Variables &inputs,
                                      const Variables &outputs) {
   auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
@@ -144,11 +232,12 @@ void AveragePooling<T>::forward_impl(const Variables &inputs,
     const auto kernel = v2a<int, int, 2>(this->kernel_);
     const auto stride = v2a<int, int, 2>(this->stride_);
     const auto pad = v2a<int, int, 2>(this->pad_);
-    for (int n = 0; n < n_map; ++n) {
-      forward<T>(x, y, this->including_pad_, x_stride, x_shape, y_shape, kernel,
-                 stride, pad);
-      x += x_map_size;
-      y += y_map_size;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int n = 0; n < n_map; n++) {
+      forward_map(x + n * x_map_size, y + n * y_map_size, this->including_pad_,
+                  x_stride, x_shape, y_shape, kernel, stride, pad);
     }
   }
 
@@ -159,96 +248,17 @@ void AveragePooling<T>::forward_impl(const Variables &inputs,
     const auto kernel = v2a<int, int, 3>(this->kernel_);
     const auto stride = v2a<int, int, 3>(this->stride_);
     const auto pad = v2a<int, int, 3>(this->pad_);
-    for (int n = 0; n < n_map; ++n) {
-      forward<T>(x, y, this->including_pad_, x_stride, x_shape, y_shape, kernel,
-                 stride, pad);
-      x += x_map_size;
-      y += y_map_size;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int n = 0; n < n_map; n++) {
+      forward_map(x + n * x_map_size, y + n * y_map_size, this->including_pad_,
+                  x_stride, x_shape, y_shape, kernel, stride, pad);
     }
   }
 }
 
-template <typename T, bool accum>
-inline void backward(const T *dy, T *dx, bool including_pad,
-                     const Array2D &dx_stride, const Array2D &dx_shape,
-                     const Array2D &dy_shape, const Array2D &kernel,
-                     const Array2D &stride, const Array2D &pad) {
-  Array2D dy_idx, pool_start, pool_end;
-
-  for (dy_idx[0] = 0; dy_idx[0] < dy_shape[0]; ++dy_idx[0]) {
-    for (dy_idx[1] = 0; dy_idx[1] < dy_shape[1]; ++dy_idx[1]) {
-      for (int a = 0; a < 2; a++) {
-        pool_start[a] = dy_idx[a] * stride[a] - pad[a];
-        pool_end[a] = min(pool_start[a] + kernel[a], dx_shape[a] + pad[a]);
-      }
-      int pool_size = 1;
-      for (int a = 0; a < 2; a++) {
-        pool_size *= pool_end[a] - pool_start[a];
-      }
-      for (int a = 0; a < 2; a++) {
-        pool_start[a] = max(pool_start[a], 0);
-        pool_end[a] = min(pool_end[a], dx_shape[a]);
-      }
-      if (including_pad == false) {
-        pool_size = 1;
-        for (int a = 0; a < 2; a++) {
-          pool_size *= pool_end[a] - pool_start[a];
-        }
-      }
-      T pool_grad = *dy++ / pool_size;
-      for (int i0 = pool_start[0]; i0 < pool_end[0]; ++i0) {
-        for (int i1 = pool_start[1]; i1 < pool_end[1]; ++i1) {
-          int index = i0 * dx_stride[0] + i1;
-          dx[index] = accum ? dx[index] + pool_grad : pool_grad;
-        }
-      }
-    }
-  }
-}
-
-template <typename T, bool accum>
-inline void backward(const T *dy, T *dx, bool including_pad,
-                     const Array3D &dx_stride, const Array3D &dx_shape,
-                     const Array3D &dy_shape, const Array3D &kernel,
-                     const Array3D &stride, const Array3D &pad) {
-  Array3D dy_idx, pool_start, pool_end;
-
-  for (dy_idx[0] = 0; dy_idx[0] < dy_shape[0]; ++dy_idx[0]) {
-    for (dy_idx[1] = 0; dy_idx[1] < dy_shape[1]; ++dy_idx[1]) {
-      for (dy_idx[2] = 0; dy_idx[2] < dy_shape[2]; ++dy_idx[2]) {
-        for (int a = 0; a < 3; a++) {
-          pool_start[a] = dy_idx[a] * stride[a] - pad[a];
-          pool_end[a] = min(pool_start[a] + kernel[a], dx_shape[a] + pad[a]);
-        }
-        int pool_size = 1;
-        for (int a = 0; a < 3; a++) {
-          pool_size *= pool_end[a] - pool_start[a];
-        }
-        for (int a = 0; a < 3; a++) {
-          pool_start[a] = max(pool_start[a], 0);
-          pool_end[a] = min(pool_end[a], dx_shape[a]);
-        }
-        if (including_pad == false) {
-          pool_size = 1;
-          for (int a = 0; a < 3; a++) {
-            pool_size *= pool_end[a] - pool_start[a];
-          }
-        }
-        T pool_grad = *dy++ / pool_size;
-        for (int i0 = pool_start[0]; i0 < pool_end[0]; ++i0) {
-          for (int i1 = pool_start[1]; i1 < pool_end[1]; ++i1) {
-            for (int i2 = pool_start[2]; i2 < pool_end[2]; ++i2) {
-              int index = i0 * dx_stride[0] + i1 * dx_stride[1] + i2;
-              dx[index] = accum ? dx[index] + pool_grad : pool_grad;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-template <class T>
+template <typename T>
 void AveragePooling<T>::backward_impl(const Variables &inputs,
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
@@ -256,7 +266,10 @@ void AveragePooling<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
 
-  auto dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  if (!accum[0])
+    inputs[0]->grad()->zero();
+
+  auto dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   auto dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
 
   const Shape_t &inshape = inputs[0]->shape();
@@ -269,50 +282,34 @@ void AveragePooling<T>::backward_impl(const Variables &inputs,
   const int n_map = outputs[0]->size() / y_map_size;
 
   if (this->kernel_.size() == 2) {
-    const auto dx_stride = v2a<Size_t, int, 2>(instrides, s);
-    const auto dx_shape = v2a<Size_t, int, 2>(inshape, s);
-    const auto dy_shape = v2a<Size_t, int, 2>(outshape, s);
+    const auto x_stride = v2a<Size_t, int, 2>(instrides, s);
+    const auto x_shape = v2a<Size_t, int, 2>(inshape, s);
+    const auto y_shape = v2a<Size_t, int, 2>(outshape, s);
     const auto kernel = v2a<int, int, 2>(this->kernel_);
     const auto stride = v2a<int, int, 2>(this->stride_);
     const auto pad = v2a<int, int, 2>(this->pad_);
-    if (accum[0]) {
-      for (int n = 0; n < n_map; ++n) {
-        backward<T, true>(dy, dx, this->including_pad_, dx_stride, dx_shape,
-                          dy_shape, kernel, stride, pad);
-        dx += x_map_size;
-        dy += y_map_size;
-      }
-    } else {
-      for (int n = 0; n < n_map; ++n) {
-        backward<T, false>(dy, dx, this->including_pad_, dx_stride, dx_shape,
-                           dy_shape, kernel, stride, pad);
-        dx += x_map_size;
-        dy += y_map_size;
-      }
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int n = 0; n < n_map; n++) {
+      backward_map(dx + n * x_map_size, dy + n * y_map_size, including_pad_,
+                   x_stride, x_shape, y_shape, kernel, stride, pad);
     }
   }
 
   else if (this->kernel_.size() == 3) {
-    const auto dx_stride = v2a<Size_t, int, 3>(instrides, s);
-    const auto dx_shape = v2a<Size_t, int, 3>(inshape, s);
-    const auto dy_shape = v2a<Size_t, int, 3>(outshape, s);
+    const auto x_stride = v2a<Size_t, int, 3>(instrides, s);
+    const auto x_shape = v2a<Size_t, int, 3>(inshape, s);
+    const auto y_shape = v2a<Size_t, int, 3>(outshape, s);
     const auto kernel = v2a<int, int, 3>(this->kernel_);
     const auto stride = v2a<int, int, 3>(this->stride_);
     const auto pad = v2a<int, int, 3>(this->pad_);
-    if (accum[0]) {
-      for (int n = 0; n < n_map; ++n) {
-        backward<T, true>(dy, dx, this->including_pad_, dx_stride, dx_shape,
-                          dy_shape, kernel, stride, pad);
-        dx += x_map_size;
-        dy += y_map_size;
-      }
-    } else {
-      for (int n = 0; n < n_map; ++n) {
-        backward<T, false>(dy, dx, this->including_pad_, dx_stride, dx_shape,
-                           dy_shape, kernel, stride, pad);
-        dx += x_map_size;
-        dy += y_map_size;
-      }
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int n = 0; n < n_map; n++) {
+      backward_map(dx + n * x_map_size, dy + n * y_map_size, including_pad_,
+                   x_stride, x_shape, y_shape, kernel, stride, pad);
     }
   }
 }

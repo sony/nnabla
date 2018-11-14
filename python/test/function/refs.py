@@ -171,9 +171,13 @@ def pooling_2d(x, mode, kernel, stride, pad, ignore_border=True,
     x_pad *= x.min() if mode == 'max' else 0
     x_pad[:, pad[0]:pad[0] + H, pad[1]:pad[1] + W] = x
 
-    if mode == 'average' and not including_pad:
+    if mode == 'average':
         b_pad = np.zeros((C, Hi, Wi), dtype=np.uint)
-        b_pad[:, pad[0]:pad[0] + H, pad[1]:pad[1] + W] = 1
+        h_beg = int(not including_pad) * pad[0]
+        w_beg = int(not including_pad) * pad[1]
+        h_end = H + (1 + int(including_pad)) * pad[0]
+        w_end = W + (1 + int(including_pad)) * pad[1]
+        b_pad[:, h_beg:h_end, w_beg:w_end] = 1
 
     y = np.zeros((C, Ho, Wo), dtype=dtype)
 
@@ -189,12 +193,9 @@ def pooling_2d(x, mode, kernel, stride, pad, ignore_border=True,
                 elif mode == "sum":
                     yy[ho, wo] = xx[np.ix_(hi, wi)].sum()
                 elif mode == "average":
-                    if including_pad:
-                        yy[ho, wo] = xx[np.ix_(hi, wi)].mean()
-                    else:
-                        pad_sum = xx[np.ix_(hi, wi)].sum()
-                        pad_cnt = b_pad[c][np.ix_(hi, wi)].sum()
-                        yy[ho, wo] = pad_sum / pad_cnt
+                    pad_sum = xx[np.ix_(hi, wi)].sum()
+                    pad_cnt = b_pad[c][np.ix_(hi, wi)].sum()
+                    yy[ho, wo] = pad_sum / pad_cnt
     return y
 
 
@@ -216,9 +217,16 @@ def pooling_3d(x, mode, kernel, stride, pad, ignore_border=True,
     x_pad *= x.min() if mode == 'max' else 0
     x_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = x
 
-    if mode == 'average' and not including_pad:
-        b_pad = np.zeros((C, Zi, Hi, Wi), dtype=np.uint8)
-        b_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = 1
+    if mode == 'average':
+        b_pad = np.zeros((C, Zi, Hi, Wi), dtype=np.uint)
+        z_beg = int(not including_pad) * pad[0]
+        h_beg = int(not including_pad) * pad[1]
+        w_beg = int(not including_pad) * pad[2]
+        z_end = Z + (1 + int(including_pad)) * pad[0]
+        h_end = H + (1 + int(including_pad)) * pad[1]
+        w_end = W + (1 + int(including_pad)) * pad[2]
+        b_pad[:, z_beg:z_end, h_beg:h_end, w_beg:w_end] = 1
+        #b_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = 1
 
     y = np.zeros((C, Zo, Ho, Wo), dtype=dtype)
 
@@ -236,10 +244,7 @@ def pooling_3d(x, mode, kernel, stride, pad, ignore_border=True,
                     elif mode == "sum":
                         yy[zo, ho, wo] = xx[np.ix_(zi, hi, wi)].sum()
                     elif mode == "average":
-                        if including_pad:
-                            yy[zo, ho, wo] = xx[np.ix_(zi, hi, wi)].mean()
-                        else:
-                            pad_sum = xx[np.ix_(zi, hi, wi)].sum()
-                            pad_cnt = b_pad[c][np.ix_(zi, hi, wi)].sum()
-                            yy[zo, ho, wo] = pad_sum / pad_cnt
+                        pool_sum = xx[np.ix_(zi, hi, wi)].sum()
+                        pool_cnt = b_pad[c][np.ix_(zi, hi, wi)].sum()
+                        yy[zo, ho, wo] = pool_sum / pool_cnt
     return y
