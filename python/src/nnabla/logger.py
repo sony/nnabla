@@ -34,6 +34,27 @@ With the default settings, it should yield the following output:
     $ python scripts/logger_test.py
     [nnabla][ERROR]: logger_test.py : <module> : 5 : Log message(ERROR)
     [nnabla][CRITICAL]: logger_test.py : <module> : 6 : Log message(CRITICAL)
+
+
+If you want to output log to file.
+You must create `nnabla.conf` file and put following entry.
+
+See :py:mod:`nnabla.config` for more information about config file.
+
+.. code-block:: ini
+
+    [LOG]
+    log_file_name = /tmp/nbla.log
+
+
+After this you can get following output.
+
+.. code-block:: shell
+
+
+    $ python scripts/logger_test.py
+    [nnabla][ERROR]: logger_test.py : <module> : 5 : Log message(ERROR)
+    [nnabla][CRITICAL]: logger_test.py : <module> : 6 : Log message(CRITICAL)
     $ cat /tmp/nbla.log
     2017-01-19 14:41:35,132 [nnabla][DEBUG]: scripts/logger_test.py : <module> : 3 : Log message(DEBUG)
     2017-01-19 14:41:35,132 [nnabla][INFO]: scripts/logger_test.py : <module> : 4 : Log message(INFO)
@@ -64,47 +85,20 @@ def _string_to_level(string):
     return None
 
 
-if nnabla_config.get('LOG', 'log_file_name') == '':
-    if os.name == 'posix':
-        log_file_name_base = abspath(
-            join(expanduser('~'), 'nnabla_data', 'log', 'nnabla'))
-    elif os.name == 'nt':
-        from win32com.shell import shell, shellcon
-        log_file_name_base = abspath(join(shell.SHGetFolderPath(
-            0, shellcon.CSIDL_APPDATA, None, 0), 'NNabla', 'log', 'nnabla'))
-    try:
-        os.makedirs(dirname(log_file_name_base))
-    except OSError:
-        pass  # python2 does not support exists_ok arg
-
-    suffix = '_{}.log'.format(os.getpid())
-    num = 1
-    while exists(log_file_name_base + suffix):
-        suffix = '_{}_{}.log'.format(os.getpid(), num)
-        num += 1
-    log_file_name = log_file_name_base + suffix
-else:
-    log_file_name = nnabla_config.get('LOG', 'log_file_name')
-
 log_console_level = _string_to_level(
     nnabla_config.get('LOG', 'log_console_level'))
 log_console_format = nnabla_config.get('LOG', 'log_console_format')
 
-log_file_level = _string_to_level(nnabla_config.get('LOG', 'log_file_level'))
-log_file_format = nnabla_config.get('LOG', 'log_file_format')
+logging.basicConfig(level=log_console_level, format=log_console_format)
 
-# set up logging to file - see previous section for more details
-logging.basicConfig(level=log_file_level,
-                    format=log_file_format,
-                    filename=log_file_name,
-                    filemode='w+')
-# define a Handler which writes INFO messages or higher to the sys.stderr
-console = logging.StreamHandler()
-console.setLevel(log_console_level)
-# set a format which is simpler for console use
-formatter = logging.Formatter(log_console_format)
-# tell the handler to use this format
-console.setFormatter(formatter)
-# add the handler to the root logger
-logging.getLogger('').addHandler(console)
+if nnabla_config.get('LOG', 'log_file_name') != '':
+    log_file_name = nnabla_config.get('LOG', 'log_file_name')
+    log_file_level = _string_to_level(
+        nnabla_config.get('LOG', 'log_file_level'))
+    log_file_format = nnabla_config.get('LOG', 'log_file_format')
+    handler = logging.FileHandler(log_file_name)
+    handler.setLevel(log_file_level)
+    handler.setFormatter(logging.Formatter(log_file_format))
+    logging.getLogger('').addHandler(handler)
+
 logger = logging.getLogger('nnabla')
