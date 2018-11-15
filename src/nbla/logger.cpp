@@ -48,21 +48,21 @@ std::shared_ptr<spdlog::logger> get_logger(void) {
       logfile = logpath + "\\nbla_lib.log";
     }
 #else
-    const char *homedir = getenv("HOME");
+    const char *homedir = nullptr;
     if (homedir == nullptr) {
       struct passwd *pw = getpwuid(getuid());
       if (pw != nullptr) {
         homedir = pw->pw_dir;
+        logpath = homedir;
+        logpath += "/nnabla_data";
+        mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       }
     }
     if (homedir == nullptr) {
-      logpath = "/tmp_";
+      logpath = "/tmp/nnabla_";
       logpath += getuid();
-    } else {
-      logpath = homedir;
+      mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-    logpath += "/nnabla_data";
-    mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     logpath += "/log";
     mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     logfile = logpath + "/nbla_lib.log";
