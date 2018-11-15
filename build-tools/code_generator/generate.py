@@ -14,6 +14,7 @@
 
 import io
 import os
+import sys
 from os.path import abspath, dirname, join, exists
 
 here = abspath(dirname(abspath(__file__)))
@@ -142,6 +143,8 @@ def generate_function_order(function_info):
             f.write('{}: {}\n'.format(orders[func_id][0], func_id))
 
 def generate():
+    version = sys.argv[1]
+    
     function_info = utils.load_function_info(flatten=True)
     solver_info = utils.load_solver_info()
     function_types = utils.load_yaml_ordered(open(
@@ -152,8 +155,9 @@ def generate():
                         solver_info, solver_types)
     utils.generate_function_types(function_info, function_types)
     utils.generate_solver_types(solver_info, solver_types)
-    utils.generate_version(join(base, 'python/src/nnabla/_version.py.tmpl'), base)
-    utils.generate_version(join(base, 'src/nbla/version.cpp.tmpl'), base)
+    utils.generate_version(join(base, 'python/src/nnabla/_version.py.tmpl'), base, version=version)
+    utils.generate_version(join(base, 'src/nbla/version.cpp.tmpl'), base, version=version)
+    utils.generate_version(join(base, 'doc/requirements.txt.tmpl'), base, version=version)
     generate_solver_python_interface(solver_info)
     generate_function_python_interface(function_info)
     generate_python_utils(function_info)

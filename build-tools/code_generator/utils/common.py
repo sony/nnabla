@@ -34,18 +34,3 @@ def check_update(filename, generated, force=False):
             write_content = write_content.replace(b'\r\n', b'\n')
             write_content = write_content.replace(b'\r', b'\n')
             f.write(write_content)
-
-
-def get_version(dir):
-    os.chdir(dir)
-    if "NNABLA_VERSION" in os.environ and os.environ["NNABLA_VERSION"] != "":
-        version = os.environ["NNABLA_VERSION"]
-        if "NNABLA_VERSION_SUFFIX" in os.environ:
-            version += os.environ["NNABLA_VERSION_SUFFIX"]
-        if "NNABLA_SHORT_VERSION" in os.environ:
-            return version, os.environ["NNABLA_SHORT_VERSION"]
-    version = default_version = '1.0.10.dev1'
-    nearest_tag = default_version
-    if "NNABLA_VERSION_SUFFIX" in os.environ:
-            version += os.environ["NNABLA_VERSION_SUFFIX"]
-    return version.replace('/', '_').lower(), nearest_tag.replace('/', '_').lower()
