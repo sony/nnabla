@@ -343,7 +343,7 @@ def _get_matching_variable_names(variable, variable_names):
     if variable in variable_names:
         return [variable]
     r = re.compile('{[^}]*}')
-    key = r.sub('\[[\d+]\]', variable, re.U)
+    key = r.sub(r'\\[[\\d+]\\]', variable, re.U)
     r2 = re.compile(key)
     variable_names = [
         v_name for v_name in variable_names if re.match(r2, v_name)]

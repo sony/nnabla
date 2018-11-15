@@ -22,7 +22,7 @@ from _variable cimport *
 cdef extern from "nbla/computation_graph/computation_graph.hpp" namespace "nbla":
     vector[CgVariablePtr] connect(
         CgFunctionPtr,
-        const vector[CgVariablePtr] & ,
+        vector[CgVariablePtr] & ,
         int,
         vector[NdArrayPtr],
         cpp_bool) except+
