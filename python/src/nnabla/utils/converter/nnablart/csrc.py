@@ -39,7 +39,7 @@ class CsrcExporter:
             dirname, '{}_parameters.h'.format(name))
         contents = []
         contents.append(
-            'void* {}_parameters[{}];'.format(name, len(self._info._parameters)))
+            'extern void* {}_parameters[{}];'.format(name, len(self._info._parameters)))
         parameters_h = csrc_parameters_defines.format(name_upper=name.upper(),
                                                       parameter_defines='\n'.join(contents))
         with open(parameters_h_filename, 'w') as f:
