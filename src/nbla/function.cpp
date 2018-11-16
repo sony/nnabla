@@ -146,13 +146,14 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
   // zero() function is lazily evaluated and write_only option in
   // Variable::cast* function resets all lazy-evaluation flags before getting an
   // array instance.
-  for (int i = 0; i < inputs.size(); i++) {
-    if (propagate_down[i] && !accum[i] &&
-        (this->inplace_grad(i) == Function::NOT_INPLACE)) {
-      inputs[i]->grad()->zero();
+  if (!this->prohibit_clear_input_buffers()) {
+    for (int i = 0; i < inputs.size(); i++) {
+      if (propagate_down[i] && !accum[i] &&
+          (this->inplace_grad(i) == Function::NOT_INPLACE)) {
+        inputs[i]->grad()->zero();
+      }
     }
   }
-
   // Calling the sub-class implementation of backward.
   this->backward_impl(inputs, outputs, propagate_down, accum);
 }
