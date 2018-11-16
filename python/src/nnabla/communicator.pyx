@@ -147,7 +147,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             # New group
@@ -215,7 +215,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             # Data
@@ -263,7 +263,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             # Data
@@ -309,7 +309,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             # Data
@@ -349,7 +349,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             # Data
@@ -385,7 +385,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             # Data
@@ -428,7 +428,7 @@ cdef class Communicator:
             # Communicator and Context
             extension_module = "cuda.cudnn"
             ctx = extension_context(extension_module)
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
             n_class = 2
@@ -458,7 +458,7 @@ cdef class Communicator:
             self.communicatorp.all_reduce_callback(cndarray_list, pack_size, division, group))
 
 
-def DataParalellCommunicator(CContext ctx):
+def DataParallelCommunicator(CContext ctx):
     """Data Parallel Communicator for Distributed Training.
 
     This class does collectives in a single-process in a machine.
@@ -474,7 +474,7 @@ def DataParalellCommunicator(CContext ctx):
 
         # Networks and Solvers building comes above
         import nnabla.communicators as C
-        comm = C.DataParalellCommunicator(ctx)
+        comm = C.DataParallelCommunicator(ctx)
 
         # Add contexts and parameters to the communicator 
         for i in range(n_devices):
@@ -506,12 +506,12 @@ def DataParalellCommunicator(CContext ctx):
     import ctypes
     if platform.system() != 'Linux':
         raise Exception(
-            "DataParalellCommunicator is not supported other than linux.")
+            "DataParallelCommunicator is not supported other than linux.")
 
     return Communicator.create(create_DataParallelCommunicatorCommunicator(ctx))
 
 
-def MultiProcessDataParalellCommunicator(CContext ctx):
+def MultiProcessDataParallelCommunicator(CContext ctx):
     """
     Multi Process Data Parallel Communicator for Distributed Training.
 
@@ -527,7 +527,7 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
         # Communicator and Context
         extension_module = "cudnn"
         ctx = get_extension_context(extension_module)
-        comm = C.MultiProcessDataParalellCommunicator(ctx)
+        comm = C.MultiProcessCommunicator(ctx)
         comm.init()
         n_devices = comm.size
         mpi_rank = comm.rank
@@ -543,7 +543,7 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
         # Training loop
         for itr in range(num_itr):
             # Forward, zerograd, backward
-            losse.forward()
+            loss.forward()
             solver.zero_grad()
             loss.backward()
 
@@ -573,5 +573,14 @@ def MultiProcessDataParalellCommunicator(CContext ctx):
             nn.logger.warn(msg)
     else:
         raise Exception(
-            "MultiProcessDataParalellCommunicator is not supported other than linux.")
+            "MultiProcessDataParallelCommunicator is not supported other than linux.")
     return Communicator.create(create_MultiProcessDataParallelCommunicatorCommunicator(ctx))
+
+
+# Aliases 
+## backward compatibility
+MultiProcessDataParalellCommunicator = MultiProcessDataParallelCommunicator
+# More suitable name since `MultiProcessDataParallelCommunicator` is not limited to the data parallel distributed training
+MultiProcessCommunicator = MultiProcessDataParallelCommunicator
+Comm = MultiProcessDataParallelCommunicator
+Dist = MultiProcessDataParallelCommunicator
