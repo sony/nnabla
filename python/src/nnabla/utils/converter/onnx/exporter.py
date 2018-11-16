@@ -354,30 +354,15 @@ class OnnxExporter:
         else:
             raise ValueError('N(>2)-D convolution is not supported.')
 
-        output_y_name = fork_name('output_y_name')
         n = onnx.helper.make_node(
             'Conv',
             inputs,
-            [output_y_name],
+            func.output,
             kernel_shape=kernel_shape,
             dilations=dilations,
             strides=strides,
             pads=pads * 2,
             group=cp.group
-        )
-        nl.append(n)
-
-        output_y_shape_name = fork_name("output_y_shape_name")
-        output_y_shape = np.array(
-            [d for d in self._var_dict[func.output[0]].dim])
-        output_y_shape_shape = [len(output_y_shape)]
-        self._add_param(output_y_shape_name, TensorProto.INT32,
-                        output_y_shape_shape,
-                        output_y_shape.astype(np.int32).tostring())
-        n = onnx.helper.make_node(
-            'Reshape',
-            [output_y_name, output_y_shape_name],
-            func.output
         )
         nl.append(n)
 

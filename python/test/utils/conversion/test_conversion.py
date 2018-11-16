@@ -63,7 +63,7 @@ print(TEST_DATA_DIR)
 DEFAULT_NNP_EXPORT_PATH = None
 
 try:
-    from gen_report import gen_report
+    from .gen_report import gen_report
 except:
     print("Cannot generate report since no gen_report module.")
 
@@ -273,7 +273,6 @@ def test_onnx_nnp_conversion_conv(tmpdir, nnp_fixture):
         tmpdir, TEST_DATA_DIR, "conv.onnx", "conv.nnp", "out_data_1", "exec_0")
 
 
-@pytest.mark.skip  # Tepmporarily skip at 20181113
 def test_nnp_onnx_conversion_conv(tmpdir, nnp_fixture):
     if not (REFERENCE_AVAILABLE and ONNX_AVAILABLE and CAFFE2_AVAILABLE):
         pytest.skip('CAFFE2 does not installed.')

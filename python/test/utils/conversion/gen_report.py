@@ -256,6 +256,9 @@ class StatusHandler:
         self.count = 0
         self.ok = 0
         self.count_line = -1
+        self.total_line = -1
+        self.total_ok = 0
+        self.total = 0
         self.opset_d = opset_d
 
     def parse_upper_line(self, input_line):
@@ -318,6 +321,11 @@ class StatusHandler:
             self.output_buffer[self.count_line] = 'Count {}/{}\n'.format(
                 self.ok, self.count)
         self.count_line = -1
+        self.total += self.count
+        self.total_ok += self.ok
+        if self.total_line > 0:
+            self.output_buffer[self.total_line] = 'Total {}/{}\n'.format(
+                self.total_ok, self.total)
 
     def process_count(self, input_line):
         'start --> accept_count --> start'
@@ -325,6 +333,16 @@ class StatusHandler:
         self.output_buffer += ['']
         self.count = 0
         self.ok = 0
+
+    def process_total(self, input_line):
+        '''
+        start-->accept_total-->start
+        upper_line_found-->accept_total-->start
+        '''
+        self.total_line = len(self.output_buffer)
+        self.output_buffer += ['']
+        self.total = 0
+        self.total_ok = 0
 
 
 CURRENT_PATH = os.path.dirname(__file__)
@@ -381,6 +399,8 @@ def gen_report(import_result, export_result):
             if importer_status_handler.get_state() != 'finish_table':
                 if field == '=' * 8:
                     importer_status_handler.equal_line(line)
+                elif field[:5] == 'Total':
+                    importer_status_handler.accept_total(line)
                 elif field == 'Operator':
                     importer_status_handler.accept_operator(line)
                 else:
@@ -392,6 +412,8 @@ def gen_report(import_result, export_result):
                     exporter_status_handler.accept_operator(line)
                 elif field[:5] == 'Count':
                     exporter_status_handler.accept_count(line)
+                elif field[:5] == 'Total':
+                    exporter_status_handler.accept_total(line)
                 else:
                     exporter_status_handler.process_line(line)
         with open(OUTPUT_FILE, 'w') as of:
