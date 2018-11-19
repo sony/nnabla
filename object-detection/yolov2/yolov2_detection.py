@@ -111,7 +111,7 @@ def main():
     y = F.nms_detection2d(y, args.thresh, args.nms, args.nms_per_class)
 
     # Read image
-    img_orig = imread(args.input)
+    img_orig = imread(args.input, num_channels=3)
     im_h, im_w, _ = img_orig.shape
     # letterbox
     w = args.width

@@ -103,8 +103,10 @@ def train(args):
     x_fake = models.f(y_real, unpool=args.unpool, init_method=init_method)
     y_fake.persistent, x_fake.persistent = True, True
     # Reconstruct
-    x_recon = models.f(y_fake, unpool=args.unpool, init_method=init_method)
-    y_recon = models.g(x_fake, unpool=args.unpool, init_method=init_method)
+    x_recon = models.f(y_fake, unpool=args.unpool,
+                       init_method=init_method).apply(persistent=True)
+    y_recon = models.g(x_fake, unpool=args.unpool,
+                       init_method=init_method).apply(persistent=True)
     # Discriminate
     d_y_fake = models.d_y(y_fake, init_method=init_method)
     d_x_fake = models.d_x(x_fake, init_method=init_method)
@@ -184,7 +186,7 @@ def train(args):
 
     def make_monitor_image(name):
         return MonitorImage(name, monitor, interval=1,
-                            normalize_method=lambda x: (x + 1.0) * 127.5)
+                            normalize_method=lambda x: (x + 1.) / 2.)
     monitor_train_gx = make_monitor_image('fake_images_train_A')
     monitor_train_fy = make_monitor_image('fake_images_train_B')
     monitor_train_x_recon = make_monitor_image('fake_images_B_recon_train')

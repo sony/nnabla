@@ -45,7 +45,7 @@ def data_iterator_celeba(img_path, batch_size, imsize=(128, 128), num_samples=10
     def load_func(i):
         cx = 89
         cy = 121
-        img = imread(imgs[i])
+        img = imread(imgs[i], num_channels=3)
         img = img[cy - 64: cy + 64, cx - 64: cx +
                   64, :].transpose(2, 0, 1) / 255.
         img = img * 2. - 1.

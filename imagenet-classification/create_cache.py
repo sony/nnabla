@@ -83,7 +83,7 @@ def _create_train_cache(archive, output, names, synsets_id, args):
 
     def _load_func(index):
         y, name, marchive, mname = images[index]
-        im = imread(marchive.extractfile(mname))
+        im = imread(marchive.extractfile(mname), num_channels=3)
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
         return x, np.array([y - 1]).astype(np.int32)
 
@@ -116,7 +116,7 @@ def _create_validation_cache(archive, output, names, ground_truth, args):
 
     def _load_func(index):
         y, name = ground_truth[index], images[index]
-        im = imread(archive.extractfile(name))
+        im = imread(archive.extractfile(name), num_channels=3)
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
         return x, np.array([y - 1]).astype(np.int32)
 

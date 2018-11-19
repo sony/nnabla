@@ -69,8 +69,7 @@ def load_cyclegan_dataset(dataset="horse2zebra", train=True, domain="A",
                 logger.info('loading {}'.format(filename))
 
                 # load image
-                image = imread(fp)
-                image = np.transpose(image, (2, 0, 1))
+                image = imread(fp, num_channels=3, channel_first=True)
                 image = normalize_method(image)
                 image_name, ext = os.path.splitext(filename.split("/")[-1])
                 images.append(image)
