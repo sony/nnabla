@@ -248,6 +248,11 @@ public:
    */
   virtual bool prohibit_clear_input_buffers() const { return false; }
 
+  /** A flag for preventing that the graph engine sets input gradient buffer as
+   * 0 even when accum is true.
+   */
+  virtual bool prohibit_zero_input_grad() const { return false; }
+
   /** Copy another instance of Function with the same context.
   */
   virtual shared_ptr<Function> copy() const = 0;

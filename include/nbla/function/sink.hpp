@@ -51,6 +51,9 @@ public:
   // NOTE: This avoid clearing input buffers by the graph engine during
   // execution.
   virtual bool prohibit_clear_input_buffers() const { return true; }
+  // This avoids zero-ing grad buffers if one_input_grad_ is false
+  // (i.e., use external gradients).
+  virtual bool prohibit_zero_input_grad() const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
