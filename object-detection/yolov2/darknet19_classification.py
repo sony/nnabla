@@ -50,7 +50,7 @@ def main():
     label_names = np.loadtxt('imagenet.shortnames.list',
                              dtype=str, delimiter=',')[:1000]
 
-    img = imread(args.input)
+    img = imread(args.input, num_channels=3)
     img = imresize(img, (args.size, args.size))
 
     x.d = img.transpose(2, 0, 1).reshape(1, 3, args.size, args.size)
