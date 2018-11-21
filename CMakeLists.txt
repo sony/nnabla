@@ -97,11 +97,6 @@ if (NOT ${GENERATE_RESULT} EQUAL 0)
   message(FATAL_ERROR "generate.py failed.")
 endif ()
 
-configure_file(
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/functions.yaml
-  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/functions.yaml
-  COPYONLY)
-
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN
     ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils//nnabla_pb2.py)
@@ -390,4 +385,3 @@ if(BUILD_PYTHON_PACKAGE)
   endif()
 
 endif() # BUILD_PYTHON_PACKAGE
-

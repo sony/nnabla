@@ -195,8 +195,7 @@ if __name__ == '__main__':
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [
         library_file_name, 'nnabla.conf',
-                           'utils/converter/functions.yaml',
-                           'utils/converter/function_order.yaml']}
+                           'utils/converter/functions.pkl']}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:

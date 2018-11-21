@@ -122,9 +122,9 @@ class MyDumper(yaml.Dumper):
         super(MyDumper, self).process_scalar()
 
 
-def dump_yaml(data, stream, default_flow_style=None):
+def dump_yaml(data, stream, default_flow_style=None, width=None):
     dumper = MyDumper(stream, default_flow_style=default_flow_style, indent=2,
-                      default_style=None)
+                      default_style=None, width=width)
     dumper.open()
     dumper.represent(data)
     dumper.close()

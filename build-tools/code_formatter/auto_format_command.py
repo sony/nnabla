@@ -49,6 +49,11 @@ def command(arg):
     # Format codes and do chmod
     for exclude in arg.exclude:
         print('Skipping files matching `{}`.'.format(exclude))
+    # 0. Functions.yaml
+    functions_yaml = os.path.join(arg.base, 'build-tools/code_generator/functions.yaml')
+    if os.path.exists(functions_yaml):
+        _convert_file('.yaml', functions_yaml)
+
     for root in arg.subfolder:
         for dirname, _, filenames in os.walk(os.path.join(arg.base, root)):
             for filename in filenames:
