@@ -64,3 +64,20 @@ def test_sink(seed):
     assert np.all(h0d == h0.d)
     assert np.all(h1d == h1.d)
     assert np.all(vg == v.g)
+
+    # Check if one_input_grad=False works
+    dummy = F.sink(h0, h1, one_input_grad=False)
+    g0 = rng.randn(*h0.shape).astype(np.float32)
+    g1 = rng.randn(*h1.shape).astype(np.float32)
+    h0.g = g0
+    h1.g = g1
+    dummy.forward()
+    # Compute reference
+    v.grad.zero()
+    h0.backward(grad=g0)
+    h1.backward(grad=g1)
+    gv = v.g.copy()
+    # Compute with sink
+    v.grad.zero()
+    dummy.backward()
+    assert np.allclose(v.g, gv)
