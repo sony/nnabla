@@ -14,7 +14,11 @@ that indicates if each operator can be converted to NNP.
     - The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
     - Hard to find a solution with existing NNabla operators.
 
-As the following table, Opset column means which opset specifications are supported to convert to NNP.
+Total 44/108
+
+As the following table, Opset column means the maximal opset version are supported to convert to NNP.
+In user's model, if there is any function opset version exceed the maximal opset(as the following table), the importer
+might fail to convert NNP model due to this function.
 
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
@@ -149,7 +153,12 @@ experimental Upsample                                    Unimplemented
 Support status exporting to ONNX
 ----------------------------------
 
-Total 60/136
+The column of opset means current operator is mapped with which the opset specifications. For example,
+Affine() is converted to 3 onnx functions, Reshape@5, Flatten@1, Gemm@6 and so on. Hence, the exporter
+will generate the onnx model which require the executor at least support opset 6, when the model contains
+Affine() function.
+
+Total 45/136
 
 Neural Network Layer
 ++++++++++++++++++++
