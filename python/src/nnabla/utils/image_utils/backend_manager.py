@@ -19,7 +19,7 @@ import importlib
 from nnabla.logger import logger
 
 
-class ImageUtilsBackendManager:
+class ImageUtilsBackendManager(object):
     _instance = None
     _loaded = False
     _backend = None
