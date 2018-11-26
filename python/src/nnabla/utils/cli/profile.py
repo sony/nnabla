@@ -29,6 +29,9 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
+# Console only start
+import nnabla.utils.console.status as status
+# Console only end
 
 
 def profile(config, name, func, result_dict, synchromize):
@@ -197,6 +200,10 @@ def profile_optimizer(config, result_array, synchronize):
 
 
 def profile_command(args):
+    # Console only start
+    status.init(args)
+    # Console only end
+
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     files = []
     files.append(args.config)
@@ -235,6 +242,11 @@ def profile_command(args):
 
     result_array = [['time in ms']]
 
+    # Console only start
+    status.start_process()
+    status.dump(status='processing')
+    # Console only end
+
     # Profile Optimizer
     with ExitStack() as stack:
         for name, o in config.optimizers.items():
@@ -250,6 +262,9 @@ def profile_command(args):
 
     logger.log(99, 'Profile Completed.')
     progress(None)
+    # Console only start
+    status.dump(status='finished')
+    # Console only end
     return True
 
 

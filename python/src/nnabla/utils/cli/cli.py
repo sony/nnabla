@@ -112,7 +112,7 @@ def cli_main():
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
-        return
+        sys.exit(-1)
 
     if args.mpi:
         from nnabla.utils.communicator_util import create_communicator

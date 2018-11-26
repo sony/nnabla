@@ -32,6 +32,86 @@ from nnabla.utils.communicator_util import current_communicator, single_or_rankz
 
 import nnabla.utils.load as load
 
+# Console only start
+import nnabla.utils.console.status as status
+from nnabla.utils.console.utils import get_info_from_sdcproj
+# Console only end
+
+
+_save_parameter_info = {}
+
+
+def _all_reduce(comm, var, division, inplace):
+    import threading
+    _finish = False
+
+    def _wait():
+        import time
+        import sys
+        count = 0
+        while not _finish:
+            if count > 10000:
+                logger.log(99, "STALLED MPI RANK {}".format(comm.rank))
+                sys.exit(-1)
+            time.sleep(0.01)
+            count += 1
+
+    th = threading.Thread(target=_wait)
+    th.start()
+
+    comm.all_reduce(var, division=division, inplace=inplace)
+    _finish = True
+    th.join()
+
+
+def _save_parameters(args, suffix, epoch, force=False):
+    global _save_parameter_info
+
+    if suffix not in _save_parameter_info:
+        _save_parameter_info[suffix] = {}
+        _save_parameter_info[suffix]['epoch'] = 0
+        _save_parameter_info[suffix]['time'] = 0
+
+    current_time = time.time()
+    timediff = current_time - _save_parameter_info[suffix]['time']
+    epochdiff = epoch - _save_parameter_info[suffix]['epoch']
+
+    globname = os.path.join(args.outdir, 'results_{}_*.nnp'.format(suffix))
+    exists = glob.glob(globname)
+
+    base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
+    filename = base + '.nnp'
+
+    if not os.path.exists(filename) and \
+       (force or timediff > 180.0 or epochdiff > 10):
+
+        version_filename = base + '_version.txt'
+
+        with open(version_filename, 'w') as file:
+            file.write('{}\n'.format(nnp_version()))
+
+        param_filename = base + '_param.protobuf'
+        save_parameters(param_filename)
+
+        with zipfile.ZipFile(filename, 'w') as nnp:
+            nnp.write(version_filename, 'nnp_version.txt')
+            nnp.write(_save_parameter_info['config'], os.path.basename(
+                _save_parameter_info['config']))
+            nnp.write(param_filename, 'parameter.protobuf')
+
+        os.unlink(version_filename)
+        os.unlink(param_filename)
+
+        for exist in exists:
+            os.unlink(exist)
+
+        _save_parameter_info[suffix]['epoch'] = epoch
+        _save_parameter_info[suffix]['time'] = current_time
+
+        # Console only start
+        status.save_train_snapshot()
+        # Console only end
+
 
 _save_parameter_info = {}
 
@@ -106,6 +186,7 @@ def _save_parameters(args, suffix, epoch, force=False):
 
 def _update(iter, config, cost):
     comm = current_communicator()
+
     loaded_data = {}
     is_first_optimizer = True
 
@@ -171,6 +252,10 @@ def _update(iter, config, cost):
             if o.comm:  # Updated param with communicator
                 params = [x.grad for x in o.parameters.values()]
                 _all_reduce(o.comm, params, division=True, inplace=True)
+
+            if o.scheduler is not None:
+                o.solver.set_learning_rate(o.scheduler.get_learning_rate(iter))
+            o.solver.update()
 
             if o.scheduler is not None:
                 o.solver.set_learning_rate(o.scheduler.get_learning_rate(iter))
@@ -267,6 +352,12 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         else:
             error = error_sum_monitor / error_count
         monitoring_report.append('  {}: {}\n'.format(name, error))
+
+        # Console only start
+        status.set_val(['monitoring_report', epoch, name], error)
+        status.set_val(['last', name], error)  # save last value
+        # Console only end
+
         if error_str != '':
             error_str += ', '
         else:
@@ -284,8 +375,16 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
            (not best_error) or \
            (best_error is not None and valid_error <= best_error):
             best_error = valid_error
+            # Console only start
+            status.set_val('best.valid_error', best_error)
+            status.set_val('best.epoch', epoch)
+            # Console only end
             _save_parameters(args, 'best', epoch, True)
 
+    # Console only start
+    status.set_val('best.valid_error', best_error)
+    status.set_val('best.epoch', epoch)
+    # Console only end
     return best_error, error_str
 
 
@@ -329,6 +428,13 @@ def _train(args, config):
         last_epoch = _get_current_parameter(args)
         logger.log(99, "Resume from epoch {}".format(last_epoch + 1))
 
+    # Console only start
+    status.set_val('epoch.max', config.training_config.max_epoch)
+    status.set_val('epoch.current', last_epoch + 1
+                   if last_epoch < config.training_config.max_epoch
+                   else config.training_config.max_epoch)
+    # Console only end
+
     max_iteration = config.training_config.max_epoch * \
         config.training_config.iter_per_epoch
     if single_or_rankzero():
@@ -356,16 +462,24 @@ def _train(args, config):
 
             timeinfo.start_time = time.time()
 
+            # Console only start
+            status.start_process(start_time=timeinfo.start_time)
+            status.dump(status='processing')
+            # Console only end
+
             for iteration in range(last_iteration, max_iteration):
 
                 cost = _update(iteration, config, cost)
                 if (iteration - last_iteration) > 0:
                     timeinfo = _calc_estimate_time(
                         timeinfo, max_iteration, last_iteration, iteration)
+                    # Console only start
+                    status.update_time_train(prediction=timeinfo.estimate_time)
+                    # Console only end
                     if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
                         logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
                             timeinfo.estimate_time, config.timelimit))
-                        return False
+                        return False, False
 
                 if (iteration + 1) % config.training_config.iter_per_epoch == 0:
                     last_past_time = -1
@@ -392,18 +506,49 @@ def _train(args, config):
                             f.write(s)
                         f.close()
 
+                        # Console only start
+                        status.set_val(['monitoring_report', epoch, 'cost'],
+                                       cost_avg_epoch)
+                        # Console only end
+
                         _save_parameters(args, 'current', epoch)
+
+                        # Console only start
+                        status.set_val('epoch.current', epoch)
+                        status.dump()
+                        # Console only end
 
                         logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s)'.format(
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
                             timeinfo.past_time, timeinfo.estimate_time))
 
+                        if epoch < config.training_config.max_epoch:
+                            elapsed_time = timeinfo.start_time - \
+                                status.get_val('start_time') + \
+                                timeinfo.past_time
+                            avg_time_per_epoch = timeinfo.past_time / \
+                                (epoch - last_epoch)
+
+                            if args.time_limit is not None and (elapsed_time + avg_time_per_epoch) >= float(args.time_limit):
+                                f = open(os.path.join(
+                                    args.outdir, 'force_restart'), 'a')
+                                f.write('remain_time: {}\n'.format(
+                                    timeinfo.remain_time))
+                                f.close()
+
+                                _save_parameters(args, 'current', epoch, True)
+
+                                return False, True
+
             if single_or_rankzero():
                 _save_parameters(args, 'current', epoch, True)
-    return True
+    return True, False
 
 
 def train_command(args):
+    # Console only start
+    status.init(args)
+    # Console only end
 
     if single_or_rankzero():
         configure_progress(os.path.join(args.outdir, 'progress.txt'))
@@ -425,6 +570,10 @@ def train_command(args):
     config.timelimit = -1
     if args.param:
         load.load([args.param], parameter_only=True)
+
+    # Console only start
+    config.timelimit = get_info_from_sdcproj(args)
+    # Console only end
 
     config.global_config = info.global_config
     config.training_config = info.training_config
@@ -471,6 +620,7 @@ def train_command(args):
                         args.outdir, name)
 
     result = False
+    restart = False
     if max_iteration > 0:
         data_iterators = {'optimizer': {}, 'monitor': {}}
         rng = np.random.RandomState(comm.rank if comm else 0)
@@ -487,7 +637,7 @@ def train_command(args):
                 if comm and comm.size > 1:
                     m.data_iterator = m.data_iterator.slice(
                         rng, comm.size, comm.rank)
-            result = _train(args, config)
+            result, restart = _train(args, config)
     else:
         # save parameters without training (0 epoch learning)
         logger.log(99, '0 epoch learning. (Just save parameter.)')
@@ -495,20 +645,27 @@ def train_command(args):
             _save_parameters(args, 'current', 0, True)
         result = True
 
-    if single_or_rankzero():
+    if single_or_rankzero() and not restart:
         if result:
             logger.log(99, 'Training Completed.')
+            # Console only start
+            status.dump(status='finished')
+            # Console only end
         else:
             logger.log(99, 'Training Incompleted.')
+            # Console only start
+            status.dump(status='failed')
+            # Console only end
     if single_or_rankzero():
         progress(None)
-
     return True
 
 
 def add_train_command(subparsers):
     # Train
     subparser = subparsers.add_parser('train', help='Training with NNP.')
+    subparser.add_argument(
+        '-a', '--assign', help='csv file that defines parameter assignment.')
     subparser.add_argument(
         '-r', '--resume', help='resume from last saved parameter.', action='store_true')
     subparser.add_argument(
@@ -517,4 +674,12 @@ def add_train_command(subparsers):
         '-p', '--param', help='path to parameter file', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    # Console only start
+    subparser.add_argument(
+        '-s', '--sdcproj', help='path to sdcproj', required=False)
+    subparser.add_argument(
+        '-j', '--job_url_list', help='path to job url list', required=False)
+    subparser.add_argument(
+        '-t', '--time_limit', help='exec time limit', required=False)
+    # Console only end
     subparser.set_defaults(func=train_command)

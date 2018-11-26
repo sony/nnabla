@@ -44,6 +44,11 @@ from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
 from nnabla.utils.communicator_util import single_or_rankzero
+from .data_source_loader import FileReader
+
+# Console only start
+import nnabla.utils.console.status as status
+# Console only end
 
 
 class DataSource(object):
@@ -77,6 +82,9 @@ class DataSource(object):
         self._position = 0
         self._size = 0
         self._closed = False
+        self._order = None
+        self._original_order = None
+        self._original_source_uri = None
         atexit.register(self.close)
 
     def __next__(self):
@@ -254,12 +262,29 @@ class DataSourceWithFileCache(DataSource):
             logger.critical(
                 'An error occurred while creating cache file from dataset.')
             for k, v in data.items():
-                size = v[0].shape
-                for d in v:
-                    if size != d.shape:
-                        logger.critical('The sizes of data "{}" are not the same. ({} != {})'.format(
-                            k, size, d.shape))
-            raise
+                # Console only start
+                status.dump()
+                # Console only end
+                h5.create_dataset(k, data=v)
+            h5.close()
+        else:
+            retry_count = 1
+            is_create_cache_imcomplete = True
+            while is_create_cache_imcomplete:
+                try:
+                    with open(cache_filename, 'wb') as f:
+                        for v in data.values():
+                            # Console only start
+                            status.dump()  # Console only
+                            # Console only end
+                            numpy.save(f, v)
+                    is_create_cache_imcomplete = False
+                except OSError:
+                    retry_count += 1
+                    if retry_count > 10:
+                        raise
+                    logger.info(
+                        'Creating cache retry {}/10'.format(retry_count))
 
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
@@ -340,18 +365,37 @@ class DataSourceWithFileCache(DataSource):
         if self._data_source._size % self._cache_size != 0:
             self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
                 num_of_cache_files - 1][0:self._data_source._size % self._cache_size]
+
+        # Create Index
         index_filename = os.path.join(self._cache_dir, "cache_index.csv")
         with open(index_filename, 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
             for fn, orders in zip(self._cache_file_names, self._cache_file_data_orders):
                 writer.writerow((os.path.basename(fn), len(orders)))
-
+        # Create Info
         if self._cache_file_format == ".npy":
             info_filename = os.path.join(self._cache_dir, "cache_info.csv")
             with open(info_filename, 'w') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 for variable in self._variables:
                     writer.writerow((variable, ))
+
+        # Create original.csv
+        if self._data_source._original_source_uri is not None:
+            fr = FileReader(self._data_source._original_source_uri)
+            with fr.open() as f:
+                csv_lines = [x.decode('utf-8') for x in f.readlines()]
+                with open(os.path.join(self._cache_dir, "original.csv"), 'w') as o:
+                    for l in csv_lines:
+                        o.write(l)
+
+        # Create order.csv
+        if self._data_source._order is not None and \
+                self._data_source._original_order is not None:
+            with open(os.path.join(self._cache_dir, "order.csv"), 'w') as o:
+                writer = csv.writer(o, lineterminator='\n')
+                for orders in zip(self._data_source._original_order, self._data_source._order):
+                    writer.writerow(list(orders))
 
     def _create_cache_file_position_table(self):
         # Create cached data position table.
@@ -413,6 +457,7 @@ class DataSourceWithFileCache(DataSource):
         self._current_cache_data = None
 
         self.shuffle = shuffle
+        self._original_order = list(range(self._size))
         self._order = list(range(self._size))
 
         # __enter__

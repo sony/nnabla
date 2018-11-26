@@ -14,7 +14,6 @@
 
 import os
 import sys
-from tqdm import tqdm
 
 from nnabla.utils.data_source import DataSourceWithFileCache
 from nnabla.utils.data_source_implements import CacheDataSource, CsvDataSource
@@ -27,10 +26,8 @@ def _convert(args, source):
             print('Number of Data: {}'.format(ds.size))
             print('Shuffle:        {}'.format(args.shuffle))
             print('Normalize:      {}'.format(args.normalize))
-            pbar = tqdm(total=ds.size)
             for i in range(ds.size):
                 ds._get_data(i)
-                pbar.update(1)
     else:
         print('Command `conv_dataset` only supports CACHE as destination.')
 
