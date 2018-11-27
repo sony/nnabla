@@ -49,30 +49,27 @@ def get_info_from_sdcproj(args):
                     job_url_list[ls[0]] = ls[1]
 
         param_list = {}
-        with open(args.sdcproj) as f:
-            is_file_property = False
-            for line in f.readlines():
-                ls = line.strip().split('=')
-                if len(ls) == 2:
-                    var, val = ls
-                    vsr = var.split('_')
-                    if(len(vsr) == 3 and vsr[0] == 'Property' and vsr[2] == 'Name'):
-                        vsl = val.rsplit('.', 1)
-                        if vsl[-1] == 'File':
-                            is_file_property = True
-                            continue
-                if is_file_property:
-                    job_id, param = ls[1].split('/', 1)
-                    if job_id in job_url_list:
-                        uri = job_url_list[job_id]
-                        if uri not in param_list:
-                            param_list[uri] = []
-                        param_list[uri].append(param)
-                is_file_property = False
+        if args.assign is not None:
+            with open(args.assign) as f:
+                for line in f.readlines():
+                    ls = line.strip().split(',')
+                    if len(ls) == 2:
+                        src, dst = ls
+                        src = src.strip()
+                        dst = dst.strip()
+                        job_id, param = src.split('/', 1)
+                        if job_id in job_url_list:
+                            uri = job_url_list[job_id]
+                            if uri not in param_list:
+                                param_list[uri] = {}
+                            if param in param_list[uri] and param_list[uri][param] != dst:
+                                logger.log(99, '{} in {} duplicated between {} and {}'.format(
+                                    param, uri, dst, param_list[uri][param]))
+                                sys.exit(-1)
+                            param_list[uri][param] = dst
 
         for uri, params in param_list.items():
             param_proto = None
-
             param_fn = None
             if uri[0:5].lower() == 's3://':
                 uri_header, uri_body = uri.split('://', 1)
@@ -112,12 +109,13 @@ def get_info_from_sdcproj(args):
                 for param in param_proto.parameter:
                     pn = param.variable_name.replace('/', '~')
                     if pn in params:
-                        logger.log(99, 'Update variable {} from {}'.format(
-                            param.variable_name, param_fn))
-                        var = get_parameter_or_create(
-                            param.variable_name, param.shape.dim)
+                        dst = params[pn]
+                        logger.log(99, 'Update variable {} from {}({})'.format(
+                            dst, param_fn, pn))
+                        var = get_parameter_or_create(dst, param.shape.dim)
                         var.d = np.reshape(param.data, param.shape.dim)
                         var.need_grad = param.need_grad
+
     timelimit = -1
     if args.sdcproj:
         with open(args.sdcproj) as f:

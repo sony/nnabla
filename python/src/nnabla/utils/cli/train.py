@@ -563,6 +563,8 @@ def add_train_command(subparsers):
     # Train
     subparser = subparsers.add_parser('train', help='Training with NNP.')
     subparser.add_argument(
+        '-a', '--assign', help='csv file that defines parameter assignment.')
+    subparser.add_argument(
         '-r', '--resume', help='resume from last saved parameter.', action='store_true')
     subparser.add_argument(
         '-c', '--config', help='path to nntxt', required=True)
