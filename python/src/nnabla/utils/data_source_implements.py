@@ -79,7 +79,11 @@ class CachePrefetcher(object):
         while True:
             if retry > 10:
                 logger.log(99, 'read_cache() retry count over give up.')
-                raise
+                logger.log(
+                    99, 'Cache file {} not found.'.format(file_name))
+                logger.log(99, 'Fatal Error! send SIGKILL to myself.')
+                os.kill(os.getpid(), 9)
+
             result = {}
             try:
                 with FileReader(file_name).open(textmode=False) as f:
@@ -93,10 +97,9 @@ class CachePrefetcher(object):
                     retry += 1
             except:
                 logger.log(
-                    99, 'Cache file {} not found.'.format(file_name))
-                logger.log(99, 'Fatal Error! send SIGKILL to myself.')
-                os.kill(os.getpid(), 9)
-
+                    99, 'Cache file {} not found, retry count {}.'.format(file_name, retry))
+                retry += 1
+            
         return result
 
     def _worker(self):
@@ -475,7 +478,7 @@ class ConcatDataSource(DataSource):
         return None
 
     def reset(self):
-        # reset method initilize self._indexes
+        # reset method initialize self._indexes
         if self._shuffle:
             self._indexes = self._rng.permutation(self._size)
         else:
