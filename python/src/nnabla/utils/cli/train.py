@@ -444,7 +444,7 @@ def _train(args, config):
                             elapsed_time = timeinfo.start_time - status.get_val('start_time') + timeinfo.past_time
                             avg_time_per_epoch = timeinfo.past_time / (epoch - last_epoch)
 
-                            if (elapsed_time + avg_time_per_epoch) >= float(args.time_limit):
+                            if args.time_limit is not None and (elapsed_time + avg_time_per_epoch) >= float(args.time_limit):
                                 f = open(os.path.join(
                                     args.outdir, 'force_restart'), 'a')
                                 f.write('remain_time: {}\n'.format(timeinfo.remain_time))
