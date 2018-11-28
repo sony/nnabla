@@ -18,6 +18,9 @@ def _get_best_param(paramlist):
     h5list = []
     bestlist = {}
     currentlist = {}
+    # with newest spec best param store as 'results.nnp'
+    if 'results.nnp' in paramlist:
+        return 'results.nnp'
     for fn in paramlist:
         name, ext = os.path.splitext(fn)
         if ext == '.h5':
