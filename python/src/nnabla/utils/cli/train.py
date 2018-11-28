@@ -397,7 +397,7 @@ def _train(args, config):
                     if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
                         logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
                             timeinfo.estimate_time, config.timelimit))
-                        return False
+                        return False, False
 
                 if (iteration + 1) % config.training_config.iter_per_epoch == 0:
                     last_past_time = -1
@@ -440,9 +440,23 @@ def _train(args, config):
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
                             timeinfo.past_time, timeinfo.estimate_time))
 
+                        if epoch < config.training_config.max_epoch:
+                            elapsed_time = timeinfo.start_time - status.get_val('start_time') + timeinfo.past_time
+                            avg_time_per_epoch = timeinfo.past_time / (epoch - last_epoch)
+
+                            if (elapsed_time + avg_time_per_epoch) >= float(args.time_limit):
+                                f = open(os.path.join(
+                                    args.outdir, 'force_restart'), 'a')
+                                f.write('remain_time: {}\n'.format(timeinfo.remain_time))
+                                f.close()
+
+                                _save_parameters(args, 'current', epoch, True)
+
+                                return False, True
+
             if single_or_rankzero():
                 _save_parameters(args, 'current', epoch, True)
-    return True
+    return True, False
 
 
 def train_command(args):
@@ -520,6 +534,7 @@ def train_command(args):
                         args.outdir, name)
 
     result = False
+    restart = False
     if max_iteration > 0:
         data_iterators = {'optimizer': {}, 'monitor': {}}
         rng = np.random.RandomState(comm.rank if comm else 0)
@@ -536,7 +551,7 @@ def train_command(args):
                 if comm and comm.size > 1:
                     m.data_iterator = m.data_iterator.slice(
                         rng, comm.size, comm.rank)
-            result = _train(args, config)
+            result, restart = _train(args, config)
     else:
         # save parameters without training (0 epoch learning)
         logger.log(99, '0 epoch learning. (Just save parameter.)')
@@ -544,7 +559,7 @@ def train_command(args):
             _save_parameters(args, 'current', 0, True)
         result = True
 
-    if single_or_rankzero():
+    if single_or_rankzero() and not restart:
         if result:
             logger.log(99, 'Training Completed.')
             # Console only start
@@ -577,5 +592,7 @@ def add_train_command(subparsers):
         '-s', '--sdcproj', help='path to sdcproj', required=False)
     subparser.add_argument(
         '-j', '--job_url_list', help='path to job url list', required=False)
+    subparser.add_argument(
+        '-t', '--time_limit', help='exec time limit', required=False)
     # Console only end
     subparser.set_defaults(func=train_command)
