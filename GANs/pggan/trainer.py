@@ -141,7 +141,6 @@ class Trainer:
                     z) if self.hyper_sphere else z
                 y = self.gen(z, test=True)
 
-                y.clear_all_graph_links()
                 y.need_grad = False
                 x_r = F.average_pooling(x, kernel=kernel)
 
@@ -229,7 +228,7 @@ class Trainer:
                 z = pixel_wise_feature_vector_normalization(
                     z) if self.hyper_sphere else z
                 y = self.gen.transition(z, alpha, test=True)
-                y.clear_all_graph_links()
+
                 y.need_grad = False
                 x_r = F.average_pooling(x, kernel=kernel)
 
