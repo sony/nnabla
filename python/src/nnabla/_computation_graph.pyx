@@ -26,4 +26,5 @@ def forward_all(variables, cpp_bool clear_buffer=False, cpp_bool clear_no_need_g
     cg_variables.resize(size)
     for i in range(size):
         cg_variables[i] = (<_Variable?> variables[i]).var
-    cforward_all(cg_variables, clear_buffer, clear_no_need_grad)
+    with nogil:
+        cforward_all(cg_variables, clear_buffer, clear_no_need_grad)
