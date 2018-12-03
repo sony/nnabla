@@ -23,15 +23,15 @@ from nbla_test_utils import list_context
 ctxs = list_context('BinaryWeightConvolution')
 
 
-def binarize_kernel(x):
+def binarize_kernel(x, quantize_zero_to):
     """ Performs binarization of one kernel """
     y = np.sign(x)
-    y[y == 0] = -1.0
+    y[y == 0] = quantize_zero_to
     y = (y.T * np.mean(np.abs(x), tuple(range(1, x.ndim))).T).T
     return y
 
 
-def ref_convolution(x, w, b, base_axis, pad, stride, dilation, group):
+def ref_convolution(x, w, b, base_axis, pad, stride, dilation, group, quantize_zero_to):
     y = []
     for xx in x.reshape((-1,) + x.shape[base_axis:]):
         y += [refs.convolution_2d(xx, w, b, pad, stride,
@@ -40,17 +40,17 @@ def ref_convolution(x, w, b, base_axis, pad, stride, dilation, group):
     return y.reshape(x.shape[:base_axis] + y.shape[1:])
 
 
-def ref_binary_weight_convolution(x, w, wb, alpha, b, base_axis, pad, stride, dilation, group):
-    return ref_convolution(x, binarize_kernel(w), b, base_axis, pad, stride, dilation, group)
+def ref_binary_weight_convolution(x, w, wb, alpha, b, base_axis, pad, stride, dilation, group, quantize_zero_to):
+    return ref_convolution(x, binarize_kernel(w, quantize_zero_to), b, base_axis, pad, stride, dilation, group, quantize_zero_to)
 
 
-def ref_grad_binary_weight_convolution(x, w, wb, alpha, b, dy, base_axis, pad, stride, dilation, group):
+def ref_grad_binary_weight_convolution(x, w, wb, alpha, b, dy, base_axis, pad, stride, dilation, group, quantize_zero_to):
     # Set variables
     vx = nn.Variable(x.shape, need_grad=True)
     vx.d = x
     vx.grad.zero()
     vw = nn.Variable(w.shape, need_grad=True)
-    vw.d = binarize_kernel(w)
+    vw.d = binarize_kernel(w, quantize_zero_to)
     vw.grad.zero()
     vb = None
     if b is not None:
@@ -75,8 +75,10 @@ def ref_grad_binary_weight_convolution(x, w, wb, alpha, b, dy, base_axis, pad, s
                          [((2, 2, 10, 10), (3, 2), 4, (3, 0), (1, 2), (2, 1)), ])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("quantize_zero_to", [0.0, -1.0, 1.0])
 def test_binary_weight_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                                       dilation, group, with_bias, seed, ctx,
+                                                       dilation, group, with_bias, quantize_zero_to,
+                                                       seed, ctx,
                                                        func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
@@ -90,6 +92,7 @@ def test_binary_weight_convolution_2d_forward_backward(inshape, kernel, outmaps,
         b = rng.randn(outmaps).astype(np.float32)
     inputs = [i, k, np.zeros_like(k), np.zeros(outmaps), b]
     function_tester(rng, F.binary_weight_convolution, ref_binary_weight_convolution, inputs,
-                    func_args=[base_axis, pad, stride, dilation, group],
+                    func_args=[base_axis, pad, stride,
+                               dilation, group, quantize_zero_to],
                     atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2, backward=[True, True, False, False, True],
                     ctx=ctx, func_name=func_name, ref_grad=ref_grad_binary_weight_convolution)

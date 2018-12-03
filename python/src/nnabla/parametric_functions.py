@@ -313,7 +313,7 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def binary_connect_affine(inp, n_outmaps,
-                          base_axis=1,
+                          base_axis=1, quantize_zero_to=1.0,
                           w_init=None, wb_init=None, b_init=None,
                           fix_parameters=False, rng=None, with_bias=True):
     """Binary Connect Affine, multiplier-less inner-product.
@@ -355,6 +355,7 @@ def binary_connect_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        quantize_zero_to (float): Input value at zero is quantized to this value.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.  
         wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.   
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
@@ -389,7 +390,7 @@ def binary_connect_affine(inp, n_outmaps,
     if with_bias:
         b = get_parameter_or_create(
             "b", n_outmaps, b_init, True, not fix_parameters)
-    return F.binary_connect_affine(inp, w, wb, b, base_axis)
+    return F.binary_connect_affine(inp, w, wb, b, base_axis, quantize_zero_to)
 
 
 @parametric_function_api("bwn_affine", [
@@ -399,7 +400,7 @@ def binary_connect_affine(inp, n_outmaps,
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def binary_weight_affine(inp, n_outmaps,
-                         base_axis=1,
+                         base_axis=1, quantize_zero_to=1.0,
                          w_init=None, wb_init=None, b_init=None,
                          fix_parameters=False, rng=None, with_bias=True):
     """Binary Weight Affine, multiplier-less inner-product with a scale factor.
@@ -439,6 +440,7 @@ def binary_weight_affine(inp, n_outmaps,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        quantize_zero_to (float): Input value at zero is quantized to this value.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`. 
         wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the binary weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the bias. By defalut, it is initialized with zeros if `with_bias` is `True`.
@@ -476,7 +478,7 @@ def binary_weight_affine(inp, n_outmaps,
     if with_bias:
         b = get_parameter_or_create(
             "b", n_outmaps, b_init, True, not fix_parameters)
-    return F.binary_weight_affine(inp, w, wb, alpha, b, base_axis)
+    return F.binary_weight_affine(inp, w, wb, alpha, b, base_axis, quantize_zero_to)
 
 
 @parametric_function_api("inq_affine", [
@@ -508,6 +510,7 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
         inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \\times \ldots \\times M_{B-1} \\times D_B \\times \ldots \\times D_N`). Dimensions before and after base_axis are flattened as if it was a matrix.
         n_outmaps (int or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        quantize_zero_to (float): Input value at zero is quantized to this value.
         num_bits (int): Number of bits per weight. Value has to be larger than 1 as one bit is already used to code the value "0"
         inq_iterations (tuple of int): Tuple of iteration numbers at which we fix half of the weights.
         selection_algorithm (str): Chooses algorithm that is used to decide which weights are fixed. ("largest_abs" ... fix weights with largest absolute value, "random" ... fix weights randomly)
@@ -924,6 +927,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
 ])
 def binary_connect_convolution(inp, outmaps, kernel,
                                pad=None, stride=None, dilation=None, group=1,
+                               quantize_zero_to=1.0,
                                w_init=None, wb_init=None, b_init=None,
                                base_axis=1, fix_parameters=False, rng=None,
                                with_bias=True):
@@ -970,6 +974,7 @@ def binary_connect_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
+        quantize_zero_to (float): Input value at zero is quantized to this value.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`. 
         wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.   
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
@@ -1000,7 +1005,7 @@ def binary_connect_convolution(inp, outmaps, kernel,
     if with_bias:
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
-    return F.binary_connect_convolution(inp, w, wb, b, base_axis, pad, stride, dilation, group)
+    return F.binary_connect_convolution(inp, w, wb, b, base_axis, pad, stride, dilation, group, quantize_zero_to)
 
 
 @parametric_function_api("bwn_conv", [
@@ -1011,6 +1016,7 @@ def binary_connect_convolution(inp, outmaps, kernel,
 ])
 def binary_weight_convolution(inp, outmaps, kernel,
                               pad=None, stride=None, dilation=None, group=1,
+                              quantize_zero_to=1.0,
                               w_init=None, wb_init=None, b_init=None,
                               base_axis=1, fix_parameters=False, rng=None,
                               with_bias=True):
@@ -1057,6 +1063,7 @@ def binary_weight_convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels sparser by grouping connections along map direction.
+        quantize_zero_to (float): Input value at zero is quantized to this value.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`. 
         wb_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for binary weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.  
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
@@ -1089,7 +1096,7 @@ def binary_weight_convolution(inp, outmaps, kernel,
     if with_bias:
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
-    return F.binary_weight_convolution(inp, w, wb, alpha, b, base_axis, pad, stride, dilation, group)
+    return F.binary_weight_convolution(inp, w, wb, alpha, b, base_axis, pad, stride, dilation, group, quantize_zero_to)
 
 
 @parametric_function_api("inq_conv", [

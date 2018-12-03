@@ -34,7 +34,7 @@ y = \left\{
     \end{array} \right.
 @f]
 where the gradient is a `full` straight through, i.e., the gradient
-is not modified by this function. By default, @f$ \alpha @f$ = 0.0 .
+is not modified by this function. By default, @f$ \alpha @f$ = 1.0 .
 
 Inputs:
 - N-D array.
@@ -42,7 +42,7 @@ Inputs:
 Outputs:
 - N-D array.
 
-@param alpha Value for x == 0
+@param alpha Value for x == 0.0
 */
 NBLA_DEFINE_TRANSFORM_UNARY_1(Sign,
                               (x > (T)0) ? (T)1 : ((x < (T)0) ? (T)-1 : (T)a0),
