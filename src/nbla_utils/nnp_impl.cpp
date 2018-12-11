@@ -780,9 +780,12 @@ shared_ptr<Optimizer> NnpImpl::get_optimizer(const string &name) {
     if (it->name() != name) {
       continue;
     }
+    if (it->dataset_name_size() != 1) {
+      NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
+    }
     return shared_ptr<Optimizer>(new Optimizer(
         new OptimizerImpl(ctx_, *it, get_network(it->network_name()),
-                          get_dataset(it->dataset_name()))));
+                          get_dataset(it->dataset_name()[0]))));
   }
   NBLA_ERROR(error_code::value, "Optimizer `%s` not found", name.c_str());
 }
@@ -822,9 +825,12 @@ shared_ptr<Monitor> NnpImpl::get_monitor(const string &name) {
     if (it->name() != name) {
       continue;
     }
+    if (it->dataset_name_size() != 1) {
+      NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
+    }
     return shared_ptr<Monitor>(
         new Monitor(new MonitorImpl(ctx_, *it, get_network(it->network_name()),
-                                    get_dataset(it->dataset_name()))));
+                                    get_dataset(it->dataset_name()[0]))));
   }
   NBLA_ERROR(error_code::value, "Monitor `%s` not found", name.c_str());
 }

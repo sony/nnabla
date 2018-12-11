@@ -129,7 +129,7 @@ message Optimizer {
   int64 order = 3;
 
   string network_name = 10;
-  string dataset_name = 20;
+  repeated string dataset_name = 20;
 
   Solver solver = 30;
   int64 update_interval = 40;
@@ -223,7 +223,7 @@ message Monitor {
   string name = 1;
 
   string network_name = 10;
-  string dataset_name = 20;
+  repeated string dataset_name = 20;
 
   repeated DataVariable data_variable = 50;
   repeated GeneratorVariable generator_variable = 60;

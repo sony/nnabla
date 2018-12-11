@@ -179,7 +179,7 @@ def _create_function(ctx, network, f, variable_index):
     if f.type == "Reshape":
         shape = resolve_reshape_params(inputs, f, network.batch_size)
         function_instance = F.Reshape(
-            ctx, shape=shape, inplace=f.reshape_param.inplace)
+            ctx, shape=shape, inplace=True)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
     elif f.type == "RepeatEnd":
@@ -363,7 +363,10 @@ def _create_optimizer(ctx, o, networks, datasets):
     optimizer.order = o.order
     optimizer.update_interval = o.update_interval if o.update_interval > 0 else 1
     optimizer.network = networks[o.network_name]
-    optimizer.data_iterator = datasets[o.dataset_name].data_iterator
+    optimizer.data_iterator = OrderedDict()
+    for d in o.dataset_name:
+        optimizer.data_iterator[d] = datasets[d].data_iterator
+    optimizer.data_iterator = list(optimizer.data_iterator.values())[0]  # Todo
 
     optimizer.dataset_assign = OrderedDict()
     for d in o.data_variable:
@@ -617,7 +620,10 @@ def _monitors(proto, default_context, networks, datasets):
         monitor = Monitor()
 
         monitor.network = networks[m.network_name]
-        monitor.data_iterator = datasets[m.dataset_name].data_iterator
+        monitor.data_iterator = OrderedDict()
+        for d in m.dataset_name:
+            monitor.data_iterator[d] = datasets[d].data_iterator
+        monitor.data_iterator = list(monitor.data_iterator.values())[0]  # Todo
 
         monitor.dataset_assign = OrderedDict()
         for d in m.data_variable:
@@ -732,7 +738,13 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         if ext in ['.nntxt', '.prototxt']:
             if not parameter_only:
                 with open(filename, 'rt') as f:
-                    text_format.Merge(f.read(), proto)
+                    try:
+                        text_format.Merge(f.read(), proto)
+                    except:
+                        logger.critical('Failed to read {}.'.format(filename))
+                        logger.critical(
+                            '2 byte characters may be used for file name or folder name.')
+                        raise
             if len(proto.parameter) > 0:
                 if not exclude_parameter:
                     nn.load_parameters(filename)

@@ -78,9 +78,7 @@ def _save_parameters(args, suffix, epoch, force=False):
     if suffix == 'best':
         base = os.path.join(args.outdir, 'results')
     filename = base + '.nnp'
-
-    if not os.path.exists(filename) and \
-       (force or timediff > 180.0 or epochdiff > 10):
+    if force or timediff > 180.0 or epochdiff > 10:
 
         version_filename = base + '_version.txt'
 
@@ -134,14 +132,16 @@ def _update(iter, config, cost):
             dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
                 0].inputs else None
             let_data_to_variable(v.variable_instance, data[
-                                 di.variables.index(d)], ctx=dest_context)
+                                 di.variables.index(d)], ctx=dest_context,
+                                 data_name=d, variable_name=v.name)
 
         # Generate data
         for v, generator in o.generator_assign.items():
             dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
                 0].inputs else None
             let_data_to_variable(v.variable_instance,
-                                 data=generator(v.shape), ctx=dest_context)
+                                 data=generator(v.shape), ctx=dest_context,
+                                 variable_name=v.name)
 
         # Monitor loss before forward to prepare input data while processing on
         # GPU
@@ -227,14 +227,16 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                 dest_context = config.global_config.default_context if not m.forward_sequence or v not in m.forward_sequence[
                     0].inputs else None
                 let_data_to_variable(v.variable_instance, data[
-                                     di.variables.index(d)], ctx=dest_context)
+                                     di.variables.index(d)], ctx=dest_context,
+                                     data_name=d, variable_name=v.name)
 
             # Generate data
             for v, generator in m.generator_assign.items():
                 dest_context = config.global_config.default_context if not m.forward_sequence or v not in m.forward_sequence[
                     0].inputs else None
                 let_data_to_variable(v.variable_instance,
-                                     data=generator(v.shape), ctx=dest_context)
+                                     data=generator(v.shape), ctx=dest_context,
+                                     variable_name=v.name)
 
             # Sum error before forward to prepare input data while processing
             # on GPU

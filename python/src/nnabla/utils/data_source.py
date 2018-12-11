@@ -229,26 +229,37 @@ class DataSourceWithFileCache(DataSource):
                 data[n].append(d)
 
         logger.info('Creating cache file {}'.format(cache_filename))
-        if self._cache_file_format == ".h5":
-            h5 = h5py.File(cache_filename, 'w')
+        try:
+            if self._cache_file_format == ".h5":
+                h5 = h5py.File(cache_filename, 'w')
+                for k, v in data.items():
+                    h5.create_dataset(k, data=v)
+                h5.close()
+            else:
+                retry_count = 1
+                is_create_cache_imcomplete = True
+                while is_create_cache_imcomplete:
+                    try:
+                        with open(cache_filename, 'wb') as f:
+                            for v in data.values():
+                                numpy.save(f, v)
+                        is_create_cache_imcomplete = False
+                    except OSError:
+                        retry_count += 1
+                        if retry_count > 10:
+                            raise
+                        logger.info(
+                            'Creating cache retry {}/10'.format(retry_count))
+        except:
+            logger.critical(
+                'An error occurred while creating cache file from dataset.')
             for k, v in data.items():
-                h5.create_dataset(k, data=v)
-            h5.close()
-        else:
-            retry_count = 1
-            is_create_cache_imcomplete = True
-            while is_create_cache_imcomplete:
-                try:
-                    with open(cache_filename, 'wb') as f:
-                        for v in data.values():
-                            numpy.save(f, v)
-                    is_create_cache_imcomplete = False
-                except OSError:
-                    retry_count += 1
-                    if retry_count > 10:
-                        raise
-                    logger.info(
-                        'Creating cache retry {}/10'.format(retry_count))
+                size = v[0].shape
+                for d in v:
+                    if size != d.shape:
+                        logger.critical('The sizes of data "{}" are not the same. ({} != {})'.format(
+                            k, size, d.shape))
+            raise
 
         self._cache_file_names.append(cache_filename)
         self._cache_file_order.append(len(self._cache_file_order))
@@ -469,6 +480,7 @@ class DataSourceWithMemoryCache(DataSource):
     '''
 
     def _get_data_func(self, position):
+        # return self._data_source._get_data(position)
         return [numpy.array(x, dtype=numpy.float32) for x in self._data_source._get_data(position)]
 
     def _get_data(self, position):

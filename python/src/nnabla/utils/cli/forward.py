@@ -97,7 +97,7 @@ def _update_result(args, index, result, values, output_index, type_end_names, ou
                         # CSV type
                         with open(full_path, 'w') as f:
                             writer = csv.writer(f, lineterminator='\n')
-                            x = np.array(d, dtype=np.float32)
+                            x = np.array(d)
                             writer.writerows(x)
                     outputs[data_index].append(os.path.join('.', file_name))
         output_index += 1
@@ -120,17 +120,22 @@ def _forward(args, index, config, data, variables, output_image=True):
             vind = variables.index(d)
             if v.variable_instance.d.shape != data[vind].shape:
                 let_data_to_variable(v.variable_instance,
-                                     np.reshape(data[vind], v.variable_instance.d.shape))
+                                     np.reshape(
+                                         data[vind], v.variable_instance.d.shape),
+                                     data_name=d, variable_name=v.name)
             else:
                 let_data_to_variable(v.variable_instance,
-                                     data[vind].astype(v.variable_instance.d.dtype))
+                                     data[vind].astype(
+                                         v.variable_instance.d.dtype),
+                                     data_name=d, variable_name=v.name)
 
         # Generate data
         for v, generator in e.generator_assign.items():
             v.variable_instance.d = generator(v.shape)
 
         # Forward recursive
-        sum = [np.zeros(o.shape) for o in e.output_assign.keys()]
+        sum = [np.zeros(o.shape, dtype=o.variable_instance.d.dtype)
+               for o in e.output_assign.keys()]
         for i in range(e.num_evaluations):
             e.network.forward(e.forward_sequence)
             if e.need_back_propagation:
@@ -195,6 +200,7 @@ def forward_command(args):
         batch_size=config.networks[0].batch_size,
         shuffle=False,
         normalize=normalize,
+        with_memory_cache=False,
         with_file_cache=False))
 
     # load dataset as csv
@@ -207,29 +213,31 @@ def forward_command(args):
     rows = list(map(lambda row: list(map(lambda x: x if is_float(
         x) else compute_full_path(root_path, x), row)), rows))
 
-    with data_iterator() as di:
-        index = 0
-        while index < di.size:
-            data = di.next()
-            result, outputs = _forward(args, index, config, data, di.variables)
-            if index == 0:
-                for name, dim in zip(result.names, result.dims):
-                    if dim == 1:
-                        row0.append(name)
-                    else:
-                        for d in range(dim):
-                            row0.append(name + '__' + str(d))
-            for i, output in enumerate(outputs):
-                if index + i < len(rows):
-                    rows[index + i].extend(output)
-            index += len(outputs)
-            logger.log(
-                99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
-
     with open(os.path.join(args.outdir, 'output_result.csv'), 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
-        writer.writerow(row0)
-        writer.writerows(rows)
+        with data_iterator() as di:
+            index = 0
+            while index < di.size:
+                data = di.next()
+                result, outputs = _forward(
+                    args, index, config, data, di.variables)
+                if index == 0:
+                    for name, dim in zip(result.names, result.dims):
+                        if dim == 1:
+                            row0.append(name)
+                        else:
+                            for d in range(dim):
+                                row0.append(name + '__' + str(d))
+                    writer.writerow(row0)
+                for i, output in enumerate(outputs):
+                    if index + i < len(rows):
+                        import copy
+                        row = copy.deepcopy(rows[index + i])
+                        row.extend(output)
+                        writer.writerow(row)
+                index += len(outputs)
+                logger.log(
+                    99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
 
     logger.log(99, 'Forward Completed.')
     progress(None)

@@ -48,7 +48,10 @@ string MonitorImpl::network_name() const {
   return monitor_proto_.network_name();
 }
 string MonitorImpl::dataset_name() const {
-  return monitor_proto_.dataset_name();
+  if (monitor_proto_.dataset_name_size() != 1) {
+    NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
+  }
+  return monitor_proto_.dataset_name()[0];
 }
 
 vector<Monitor::DataVariable> MonitorImpl::get_data_variables() {
