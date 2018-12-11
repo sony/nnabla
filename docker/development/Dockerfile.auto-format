@@ -23,8 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install -U setuptools
-RUN pip install -U wheel
-RUN pip install -U autopep8
-RUN pip install -U future
-RUN pip install -U six
+RUN pip install -U \
+    autopep8 \
+    future \
+    pyyaml \
+    setuptools \
+    six \
+    wheel

@@ -17,6 +17,7 @@ from collections import OrderedDict
 import json
 from os.path import abspath, join, dirname
 import os
+import pickle
 import yaml
 import zlib
 
@@ -60,26 +61,8 @@ def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict)
 
 
 def get_category_info_string():
-    order = load_yaml_ordered(
-        open(join(dirname(abspath(__file__)), 'function_order.yaml'), 'r'))
-    string = open(join(dirname(abspath(__file__)),
-                       'functions.yaml'), 'r').read()
-    info = load_yaml_ordered(string)
-    for cat, cat_info in info.items():
-        for func, func_info in cat_info.items():
-            if 'arguments' in func_info:
-                for a, a_info in func_info['arguments'].items():
-                    if 'default' in a_info:
-                        a_info.pop('default')
-                    if 'doc' in a_info:
-                        a_info.pop('doc')
-            for n, n_info in func_info['inputs'].items():
-                if 'doc' in n_info:
-                    n_info.pop('doc')
-            for n, n_info in func_info['outputs'].items():
-                if 'doc' in n_info:
-                    n_info.pop('doc')
-            func_info.pop('doc')
+    f = open(join(dirname(abspath(__file__)), 'functions.pkl'), 'rb')
+    info = pickle.load(f)
 
     for cat, cat_info in info.items():
         for func, func_info in cat_info.items():
@@ -89,7 +72,7 @@ def get_category_info_string():
                 for a, a_info in func_info['arguments'].items():
                     fmt += type_to_pack_format(a_info['type'])
             func_info['uniq_name'] = func + fmt
-            func_info['id'] = order[func+fmt]
+            func_info['id'] = list(func_info['function_ids'].items()).pop()[1]
 
     header = '# Copyright (c) 2017 Sony Corporation. All Rights Reserved.\n' \
         + '#\n' \

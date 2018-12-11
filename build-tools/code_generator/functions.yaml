@@ -31,6 +31,8 @@ Neural Network Layer:
       y:
         doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
           L`)
+    function_ids:
+      i: 0
   Convolution:
     snake_name: convolution
     doc: |2
@@ -63,7 +65,6 @@ Neural Network Layer:
         search to algorithms that produce deterministic (reproducable)
         results. This can be requested by setting the the environment
         variable `NNABLA_CUDNN_DETERMINISTIC` to a non-zero value.
-
     inputs:
       x:
         doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
@@ -103,16 +104,18 @@ Neural Network Layer:
         doc: |2
 
           :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
-          
+
           A spatial size of the output is calculated as
-          
+
           .. math:: 
             
             L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
             
           where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
-          
+
             
+    function_ids:
+      iiIiIiIi: 1
   DepthwiseConvolution:
     snake_name: depthwise_convolution
     doc: |2
@@ -160,24 +163,24 @@ Neural Network Layer:
         doc: |2
 
           :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
-          
+
           The output map size :math:`C'` is :math:`C` multiplied by :math:`m`
-          
+
           .. math::
-          
+
             C' =  m \times C, 
             
           where :math:`m` is the multiplier.
-          
+
           A spatial size of the output is calculated as
-          
+
           .. math:: 
             
             L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
             
           where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
-          
-
+    function_ids:
+      iiIiIiIi: 2
   Deconvolution:
     snake_name: deconvolution
     doc: |2
@@ -224,9 +227,9 @@ Neural Network Layer:
     outputs:
       y:
         doc: |2
-        
+
           :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
-          
+
           A spatial size of the output is calculated as
 
           .. math:: 
@@ -234,7 +237,8 @@ Neural Network Layer:
             L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
             
           where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.  
-          
+    function_ids:
+      iiIiIiIi: 3
   DepthwiseDeconvolution:
     snake_name: depthwise_deconvolution
     doc: |2
@@ -277,22 +281,23 @@ Neural Network Layer:
         doc: |2
 
           :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
-          
+
           The output map size :math:`C'` is :math:`C` multiplied by :math:`m`
-          
+
           .. math::
-          
+
             C' =  \frac{C}{d}, 
             
           where :math:`d` is the divisor.
-          
+
           A spatial size of the output is calculated as
-   
+
           .. math:: 
             L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
                       
           where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
-          
+    function_ids:
+      iiIiIiIi: 4
   MaxPooling:
     snake_name: max_pooling
     doc: |2
@@ -326,6 +331,8 @@ Neural Network Layer:
     outputs:
       y:
         doc: Maximum values variable
+    function_ids:
+      iIiIBiI: 5
   AveragePooling:
     snake_name: average_pooling
     doc: |2
@@ -363,20 +370,23 @@ Neural Network Layer:
     outputs:
       y:
         doc: Average values variable
+    function_ids:
+      iIiIBiIB: 6
   GlobalAveragePooling:
     snake_name: global_average_pooling
-    doc: |2
+    doc: |
       .. WARNING::
         This function is experimental support, so please do not actively use it.
 
       Global average pooling. It pools an averaged value from the whole image
-      
     inputs:
       x:
         doc: Input variable.
     outputs:
       y:
         doc: Average values variable
+    function_ids:
+      Empty: 7
   SumPooling:
     snake_name: sum_pooling
     doc: |2
@@ -410,6 +420,8 @@ Neural Network Layer:
     outputs:
       y:
         doc: Summed values variable
+    function_ids:
+      iIiIBiI: 8
   Unpooling:
     snake_name: unpooling
     doc: |2
@@ -430,6 +442,8 @@ Neural Network Layer:
     outputs:
       y:
         doc: Spread values variable
+    function_ids:
+      iI: 9
   Embed:
     snake_name: embed
     doc: |2
@@ -445,6 +459,8 @@ Neural Network Layer:
     outputs:
       y:
         doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
+    function_ids:
+      Empty: 10
 Neural Network Activation Functions:
   Sigmoid:
     snake_name: sigmoid
@@ -461,6 +477,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: Output
+    function_ids:
+      Empty: 11
   Swish:
     snake_name: swish
     doc: |2-
@@ -480,6 +498,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: Output
+    function_ids:
+      Empty: 12
   Tanh:
     snake_name: tanh
     doc: |2
@@ -494,6 +514,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 13
   ReLU:
     snake_name: relu
     doc: |2
@@ -513,6 +535,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      B: 14
   LeakyReLU:
     snake_name: leaky_relu
     doc: |2+
@@ -540,6 +564,9 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 15
+      fB: 128
   Softmax:
     snake_name: softmax
     doc: |2
@@ -561,6 +588,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      i: 16
   ELU:
     snake_name: elu
     doc: |2
@@ -588,6 +617,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 17
   SELU:
     snake_name: selu
     doc: |2
@@ -642,6 +673,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      ff: 18
   CReLU:
     snake_name: crelu
     doc: |2
@@ -668,6 +701,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array where axis dimension is doubled by concatenating.
+    function_ids:
+      i: 19
   CELU:
     snake_name: celu
     doc: |2
@@ -690,6 +725,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array where axis dimension is doubled by concatenating.
+    function_ids:
+      fi: 20
   PReLU:
     snake_name: prelu
     doc: |2
@@ -714,6 +751,8 @@ Neural Network Activation Functions:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      i: 21
 Normalization:
   BatchNormalization:
     snake_name: batch_normalization
@@ -767,6 +806,8 @@ Normalization:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIffB: 22
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
@@ -807,9 +848,11 @@ Normalization:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      iB: 23
   ClipGradByValue:
     snake_name: clip_grad_by_value
-    doc: |2
+    doc: |
       In forward pass, the function behaves as the identity.
 
       In backward pass,
@@ -823,7 +866,7 @@ Normalization:
                  
       A typical case for use is to prevent the gradient explosion through a whole computational graph. 
       For example, if you want to clip gradient values for each feature map, 
-      
+
       .. code-block:: python
         
         x = nn.Variable([16, 3, 32, 32])
@@ -836,16 +879,18 @@ Normalization:
       x:
         doc: N-D array of input.
       min:
-        doc: N-D array of minimum input value by which the gradients of the `y` are clipped. 
-          Note that the shape of `min` must be the same as `x`'s and the backward to `min`
-          is not performed.
+        doc: N-D array of minimum input value by which the gradients of the `y` are
+          clipped. Note that the shape of `min` must be the same as `x`'s and the
+          backward to `min` is not performed.
       max:
-        doc: N-D array of maximum input value by which the gradients of the `y` are clipped.
-          Note that the shape of `max` must be the same as `x`'s and the backward to `max`
-          is not performed.
+        doc: N-D array of maximum input value by which the gradients of the `y` are
+          clipped. Note that the shape of `max` must be the same as `x`'s and the
+          backward to `max` is not performed.
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      Empty: 121
   ClipGradByNorm:
     snake_name: clip_grad_by_norm
     doc: |2
@@ -870,7 +915,6 @@ Normalization:
         x = nn.Variable([16, 3, 32, 32])
         c = F.clip_grad_by_norm(x, axes=(1, ))
         h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
-
     inputs:
       x:
         doc: N-D array of input.
@@ -880,12 +924,15 @@ Normalization:
         type: float
         default: 1.0
       axes:
-        doc: Axes to be reduced. If empty list is given, all dimensions are reduced to scalar. This is used in the forward pass.
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced
+          to scalar. This is used in the forward pass.
         type: repeated int64
         default: range(x.ndim)
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      fiI: 122
 Reduction:
   Sum:
     snake_name: sum
@@ -908,6 +955,8 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIB: 24
   Mean:
     snake_name: mean
     doc: |2
@@ -928,6 +977,8 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIB: 25
   Max:
     snake_name: max
     doc: |2
@@ -956,6 +1007,9 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIB: 26
+      iIBBB: 132
   Min:
     snake_name: min
     doc: |2
@@ -984,6 +1038,9 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIB: 27
+      iIBBB: 130
   Prod:
     snake_name: prod
     doc: |2
@@ -1007,6 +1064,8 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIB: 28
   ReduceSum:
     snake_name: reduce_sum
     doc: |2
@@ -1021,6 +1080,8 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 29
   ReduceMean:
     snake_name: reduce_mean
     doc: |2
@@ -1035,6 +1096,8 @@ Reduction:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 30
 Arithmetic:
   Add2:
     snake_name: add2
@@ -1057,6 +1120,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      B: 31
   BcAdd2:
     snake_name: bc_add2
     doc: |2+
@@ -1071,6 +1136,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 32
   Sub2:
     snake_name: sub2
     doc: |2
@@ -1087,6 +1154,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 33
   Mul2:
     snake_name: mul2
     doc: |2
@@ -1103,6 +1172,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 34
   Div2:
     snake_name: div2
     doc: |2
@@ -1119,6 +1190,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 35
   Pow2:
     snake_name: pow2
     doc: |2
@@ -1135,6 +1208,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 36
   AddScalar:
     snake_name: add_scalar
     doc: |2+
@@ -1155,6 +1230,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 37
   MulScalar:
     snake_name: mul_scalar
     doc: |2
@@ -1174,6 +1251,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 38
   PowScalar:
     snake_name: pow_scalar
     doc: |2
@@ -1193,6 +1272,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 39
   RSubScalar:
     snake_name: r_sub_scalar
     doc: |2
@@ -1212,6 +1293,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 40
   RDivScalar:
     snake_name: r_div_scalar
     doc: |2
@@ -1231,6 +1314,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 41
   RPowScalar:
     snake_name: r_pow_scalar
     doc: |2
@@ -1250,6 +1335,8 @@ Arithmetic:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 42
 Logical:
   Sign:
     snake_name: sign
@@ -1284,6 +1371,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 43
   Minimum2:
     snake_name: minimum2
     doc: |2
@@ -1300,6 +1389,8 @@ Logical:
     outputs:
       y:
         doc: N-D array of min value
+    function_ids:
+      Empty: 44
   Maximum2:
     snake_name: maximum2
     doc: |2
@@ -1316,6 +1407,8 @@ Logical:
     outputs:
       y:
         doc: N-D array of max value
+    function_ids:
+      Empty: 45
   MinimumScalar:
     snake_name: minimum_scalar
     doc: |2
@@ -1335,6 +1428,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 46
   MaximumScalar:
     snake_name: maximum_scalar
     doc: |2
@@ -1354,6 +1449,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 47
   LogicalAnd:
     snake_name: logical_and
     doc: |2
@@ -1373,6 +1470,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 48
   LogicalOr:
     snake_name: logical_or
     doc: |2-
@@ -1392,6 +1491,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 49
   LogicalXor:
     snake_name: logical_xor
     doc: |2
@@ -1412,6 +1513,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 50
   Equal:
     snake_name: equal
     doc: |2
@@ -1431,6 +1534,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 51
   NotEqual:
     snake_name: not_equal
     doc: |2
@@ -1451,6 +1556,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 52
   GreaterEqual:
     snake_name: greater_equal
     doc: |2
@@ -1471,6 +1578,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 53
   Greater:
     snake_name: greater
     doc: |2
@@ -1491,6 +1600,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 54
   LessEqual:
     snake_name: less_equal
     doc: |2+
@@ -1512,6 +1623,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 55
   Less:
     snake_name: less
     doc: |2+
@@ -1533,6 +1646,8 @@ Logical:
     outputs:
       y:
         doc: No Description
+    function_ids:
+      Empty: 56
   LogicalAndScalar:
     snake_name: logical_and_scalar
     doc: |2
@@ -1554,6 +1669,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      B: 57
   LogicalOrScalar:
     snake_name: logical_or_scalar
     doc: |2-
@@ -1575,6 +1692,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      B: 58
   LogicalXorScalar:
     snake_name: logical_xor_scalar
     doc: |2
@@ -1597,6 +1716,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      B: 59
   EqualScalar:
     snake_name: equal_scalar
     doc: |2
@@ -1619,6 +1740,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 60
   NotEqualScalar:
     snake_name: not_equal_scalar
     doc: |2
@@ -1641,6 +1764,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 61
   GreaterEqualScalar:
     snake_name: greater_equal_scalar
     doc: |2
@@ -1664,6 +1789,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 62
   GreaterScalar:
     snake_name: greater_scalar
     doc: |2
@@ -1687,6 +1814,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 63
   LessEqualScalar:
     snake_name: less_equal_scalar
     doc: |2+
@@ -1711,6 +1840,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 64
   LessScalar:
     snake_name: less_scalar
     doc: |2
@@ -1734,6 +1865,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      f: 65
   LogicalNot:
     snake_name: logical_not
     doc: |2
@@ -1751,6 +1884,8 @@ Logical:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 66
 Math:
   Constant:
     snake_name: constant
@@ -1770,6 +1905,8 @@ Math:
     outputs:
       y:
         doc: N-D array where all values are the specified constant.
+    function_ids:
+      fiI: 67
   Arange:
     snake_name: arange
     doc: |2
@@ -1777,7 +1914,6 @@ Math:
       Generate a range of values within the half-open interval
       ``[start, stop)`` (the interval including start but excluding
       stop) with `step` increments.
-
     inputs: {}
     arguments:
       start:
@@ -1793,6 +1929,8 @@ Math:
     outputs:
       y:
         doc: 1-D array with the generated values.
+    function_ids:
+      fff: 131
   Abs:
     snake_name: abs
     doc: |2
@@ -1807,6 +1945,8 @@ Math:
     outputs:
       y:
         doc: Element-wise absolute variable
+    function_ids:
+      Empty: 68
   Exp:
     snake_name: exp
     doc: |2
@@ -1821,6 +1961,8 @@ Math:
     outputs:
       y:
         doc: Element-wise exp variable
+    function_ids:
+      Empty: 69
   Log:
     snake_name: log
     doc: |2
@@ -1835,6 +1977,8 @@ Math:
     outputs:
       y:
         doc: Element-wise log variable
+    function_ids:
+      Empty: 70
   Identity:
     snake_name: identity
     doc: |2
@@ -1849,6 +1993,8 @@ Math:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      Empty: 71
   BatchMatmul:
     snake_name: batch_matmul
     doc: |2
@@ -1878,6 +2024,8 @@ Math:
         doc: Output of sample-wise matrix multiplication in a batch. When ``a`` is
           of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose
           options are all False, the output will be a shape of [N, P, R].
+    function_ids:
+      BB: 72
   Round:
     snake_name: round
     doc: |2+
@@ -1901,6 +2049,8 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 73
   Ceil:
     snake_name: ceil
     doc: |2+
@@ -1924,6 +2074,8 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 124
   Floor:
     snake_name: floor
     doc: |2+
@@ -1947,9 +2099,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 125
   Sin:
     snake_name: sin
-    doc: |2+
+    doc: |2
 
       Element-wise sine (sin) function.
 
@@ -1961,9 +2115,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 173
   Cos:
     snake_name: cos
-    doc: |2+
+    doc: |2
 
       Element-wise cosine (cos) function.
 
@@ -1975,9 +2131,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 174
   Tan:
     snake_name: tan
-    doc: |2+
+    doc: |2
 
       Element-wise tangent (tan) function.
 
@@ -1989,9 +2147,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 175
   Sinh:
     snake_name: sinh
-    doc: |2+
+    doc: |2
 
       Element-wise hyperbolic sine (sinh) function.
 
@@ -2003,9 +2163,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 176
   Cosh:
     snake_name: cosh
-    doc: |2+
+    doc: |2
 
       Element-wise hyperbolic cosine (cosh) function.
 
@@ -2016,10 +2178,12 @@ Math:
         doc: N-D array
     outputs:
       y:
-        doc: N-D array with the same shape as x        
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 177
   ASin:
     snake_name: asin
-    doc: |2+
+    doc: |2
 
       Element-wise arcsine (asin) function.
 
@@ -2031,9 +2195,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 178
   ACos:
     snake_name: acos
-    doc: |2+
+    doc: |2
 
       Element-wise arccosine (acos) function.
 
@@ -2045,9 +2211,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 179
   ATan:
     snake_name: atan
-    doc: |2+
+    doc: |2
 
       Element-wise arctangent (atan) function.
 
@@ -2059,9 +2227,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 180
   ASinh:
     snake_name: asinh
-    doc: |2+
+    doc: |2
 
       Element-wise hyperbolic arcsine (asinh) function.
 
@@ -2073,9 +2243,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 181
   ACosh:
     snake_name: acosh
-    doc: |2+
+    doc: |2
 
       Element-wise hyperbolic arccosine (acosh) function.
 
@@ -2087,9 +2259,11 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 182
   ATanh:
     snake_name: atanh
-    doc: |2+
+    doc: |2
 
       Element-wise hyperbolic arctangent (atanh) function.
 
@@ -2101,7 +2275,8 @@ Math:
     outputs:
       y:
         doc: N-D array with the same shape as x
-        
+    function_ids:
+      Empty: 183
 Array Manipulation:
   Concatenate:
     snake_name: concatenate
@@ -2120,6 +2295,8 @@ Array Manipulation:
     outputs:
       y:
         doc: Concatenate variable
+    function_ids:
+      i: 74
   Split:
     snake_name: split
     doc: |2
@@ -2143,6 +2320,8 @@ Array Manipulation:
         doc: list of N-D arrays
         variadic: true
         parameter: true
+    function_ids:
+      i: 75
   Stack:
     snake_name: stack
     doc: |2
@@ -2166,6 +2345,8 @@ Array Manipulation:
     outputs:
       y:
         doc: Output
+    function_ids:
+      i: 76
   Slice:
     snake_name: slice
     doc: |2
@@ -2190,6 +2371,8 @@ Array Manipulation:
     outputs:
       y:
         doc: Sliced N-D array
+    function_ids:
+      iIiIiI: 77
   Pad:
     snake_name: pad
     doc: |2
@@ -2229,7 +2412,6 @@ Array Manipulation:
           y = F.pad(x, (3, 3), 'reflect')
           y.forward()
           assert np.all(y.d == np.array([4, 3, 2, 1, 2, 3, 4, 3, 2, 1]))
-
     inputs:
       x:
         doc: N-D array
@@ -2241,8 +2423,8 @@ Array Manipulation:
         doc: Padding mode string.
         type: string
         available_values:
-          - constant
-          - reflect
+        - constant
+        - reflect
         default: '''constant'''
       constant_value:
         doc: Fill value if mode is `constant`.
@@ -2263,7 +2445,8 @@ Array Manipulation:
             assert F.pad(x, (2, 2, 1, 1)).shape == (3, 3, 8, 4)
             # 3-D padding: dims C by (0, 1), H by (2, 1), and W by (3, 3)
             assert F.pad(x, (0, 1, 2, 1, 3, 3)).shape == (3, 4, 7, 8)
-
+    function_ids:
+      iIif: 123
   Transpose:
     snake_name: transpose
     doc: |2
@@ -2279,6 +2462,8 @@ Array Manipulation:
     outputs:
       y:
         doc: Transposed N-D array.
+    function_ids:
+      iI: 78
   Broadcast:
     snake_name: broadcast
     doc: |2
@@ -2295,9 +2480,11 @@ Array Manipulation:
     outputs:
       y:
         doc: Broadcasted N-D array
+    function_ids:
+      iI: 79
   BroadcastTo:
     snake_name: broadcast_to
-    doc: |2
+    doc: |
       .. WARNING::
         This function is experimental support, so please do not actively use it.
 
@@ -2309,12 +2496,15 @@ Array Manipulation:
         doc: N-D array
     arguments:
       axis:
-        doc: Target axis to start broadcasting. If this is not set, broadcast will try to fit y to x starting from the last dimension
+        doc: Target axis to start broadcasting. If this is not set, broadcast will
+          try to fit y to x starting from the last dimension
         type: int64
         default: -1
     outputs:
       z:
         doc: Broadcasted N-D array
+    function_ids:
+      i: 184
   OneHot:
     snake_name: one_hot
     doc: |2
@@ -2331,6 +2521,8 @@ Array Manipulation:
     outputs:
       output:
         doc: N-D array
+    function_ids:
+      iI: 80
   Flip:
     snake_name: flip
     doc: |2
@@ -2350,6 +2542,8 @@ Array Manipulation:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iI: 81
   Shift:
     snake_name: shift
     doc: |2
@@ -2371,12 +2565,14 @@ Array Manipulation:
           the original array is used.'
         type: string
         available_values:
-          - nearest
-          - reflect
+        - nearest
+        - reflect
         default: '''nearest'''
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      iIi: 82
   Sort:
     snake_name: sort
     doc: |2
@@ -2415,6 +2611,8 @@ Array Manipulation:
         doc: list of N-D arrays
         variadic: true
         parameter: true
+    function_ids:
+      iBBB: 129
   Reshape:
     snake_name: reshape
     doc: |2
@@ -2431,15 +2629,19 @@ Array Manipulation:
         doc: N-D array.
     arguments:
       shape:
-        doc: Dimensions for each axis. ``-1`` can be specified only in one shape dimension. The value is calculated from the size of the array and remaining dimensions.
+        doc: Dimensions for each axis. ``-1`` can be specified only in one shape dimension.
+          The value is calculated from the size of the array and remaining dimensions.
         type: Shape
       inplace:
-        doc: The output array is shared with the input array if True. 
+        doc: The output array is shared with the input array if True.
         type: bool
-        default: 'True'         
+        default: 'True'
     outputs:
       y:
         doc: Reshaped N-D array
+    function_ids:
+      iI: 83
+      iIB: 126
   MatrixDiag:
     snake_name: matrix_diag
     doc: |2
@@ -2451,6 +2653,8 @@ Array Manipulation:
     outputs:
       y:
         doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`).
+    function_ids:
+      Empty: 84
   MatrixDiagPart:
     snake_name: matrix_diag_part
     doc: |2
@@ -2463,6 +2667,8 @@ Array Manipulation:
     outputs:
       y:
         doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
+    function_ids:
+      Empty: 85
 Signal Processing:
   Interpolate:
     snake_name: interpolate
@@ -2471,7 +2677,6 @@ Signal Processing:
       Resize an ND array with interpolation.
 
       The last ``len(output_size)`` dimensions of the input ``x`` are considered as the spatial dimensions to be resized.
-
     inputs:
       x:
         doc: N-D array.
@@ -2483,19 +2688,23 @@ Signal Processing:
         doc: Interpolation mode chosen from ('nearest'|'linear').
         type: string
         available_values:
-          - nearest
-          - linear
+        - nearest
+        - linear
       align_corners:
-        doc: If true, the corner pixels of input and output arrays are aligned, such that the output corner pixels have the same values with the input corner pixels.
+        doc: If true, the corner pixels of input and output arrays are aligned, such
+          that the output corner pixels have the same values with the input corner
+          pixels.
         type: bool
         default: False if mode == 'nearest' else True
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      iIiB: 127
   FFT:
     snake_name: fft
     doc: |2+
-      
+
       Complex-to-complex Discrete Fourier Transform,
 
       .. math::
@@ -2516,7 +2725,7 @@ Signal Processing:
       Example:
         
       .. code-block:: python
-      
+
         import numpy as np
         import nnabla as nn
         import nnabla.functions as F
@@ -2537,22 +2746,24 @@ Signal Processing:
     inputs:
       x:
         doc: Input.
-    
     arguments:
       signal_ndim:
         doc: The number of dimensions for each signal. It must be 1, 2, or 3.
         type: int64
       normalized:
-        doc: Use unitary normalization. If `True`, the normalization constant :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}` is multiplied.
+        doc: Use unitary normalization. If `True`, the normalization constant :math:`\sqrt{\frac{1}{\prod_{i=1}^{d}
+          N_i}}` is multiplied.
         type: bool
-        default: 'False'        
+        default: 'False'
     outputs:
       y:
         doc: FFT transformed signal.
+    function_ids:
+      iB: 158
   IFFT:
     snake_name: ifft
     doc: |2+
-      
+
       Complex-to-complex inverse Discrete Fourier Transform,
 
       .. math::
@@ -2569,22 +2780,24 @@ Signal Processing:
 
       The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
       The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
-      
+
     inputs:
       x:
         doc: Input.
-    
     arguments:
       signal_ndim:
         doc: The number of dimensions for each signal. It must be 1, 2, or 3.
         type: int64
       normalized:
-        doc: Use unitary normalization. If `True`, the normalization constant :math:`\frac{1}{\prod_{i=1}^{d} N_i}` becomes :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}`.
+        doc: Use unitary normalization. If `True`, the normalization constant :math:`\frac{1}{\prod_{i=1}^{d}
+          N_i}` becomes :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}`.
         type: bool
-        default: 'False'        
+        default: 'False'
     outputs:
       y:
         doc: IFFT transformed signal.
+    function_ids:
+      iB: 159
 Stochasticity:
   Dropout:
     snake_name: dropout
@@ -2627,6 +2840,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array with the same shape as x
+    function_ids:
+      fi: 86
   TopKData:
     snake_name: top_k_data
     doc: |2
@@ -2650,7 +2865,6 @@ Stochasticity:
       (4, 3)
       >>> F.top_k_data(x, 3, reduce=True, base_axis=2).shape
       (4, 5, 3)
-
     inputs:
       x:
         doc: N-D array
@@ -2673,6 +2887,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      iBBi: 87
   TopKGrad:
     snake_name: top_k_grad
     doc: |2
@@ -2684,7 +2900,6 @@ Stochasticity:
       of sample dimensions and `k` gradients get selected from all
       gradients of a sample (dimensions from `base_axis`) regardless
       of shape.
-
     inputs:
       x:
         doc: N-D array
@@ -2703,6 +2918,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array with same shape and data as `x`.
+    function_ids:
+      iBi: 88
   Rand:
     snake_name: rand
     doc: |2
@@ -2731,6 +2948,8 @@ Stochasticity:
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
+    function_ids:
+      ffiIi: 89
   Randint:
     snake_name: randint
     doc: |2
@@ -2760,6 +2979,8 @@ Stochasticity:
       y:
         doc: Variable with the shape specified in the argument. The dtype is int32.
         template: TI
+    function_ids:
+      iiiIi: 90
   Randn:
     snake_name: randn
     doc: |2
@@ -2788,6 +3009,8 @@ Stochasticity:
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
+    function_ids:
+      ffiIi: 91
   RandomCrop:
     snake_name: random_crop
     doc: |2
@@ -2813,6 +3036,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIii: 92
   RandomFlip:
     snake_name: random_flip
     doc: |2
@@ -2840,6 +3065,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      iIii: 93
   RandomShift:
     snake_name: random_shift
     doc: |2
@@ -2862,8 +3089,8 @@ Stochasticity:
           of the original array is used.'
         type: string
         available_values:
-          - nearest
-          - reflect
+        - nearest
+        - reflect
         default: '''nearest'''
       base_axis:
         doc: No Description
@@ -2876,6 +3103,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      iIiii: 94
   ImageAugmentation:
     snake_name: image_augmentation
     doc: |2
@@ -2975,6 +3204,8 @@ Stochasticity:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      iIiIfffffBBfBffBfi: 95
 Loss Functions:
   SigmoidCrossEntropy:
     snake_name: sigmoid_cross_entropy
@@ -3003,6 +3234,8 @@ Loss Functions:
     outputs:
       y:
         doc: N-D array of element-wise losses.
+    function_ids:
+      Empty: 96
   BinaryCrossEntropy:
     snake_name: binary_cross_entropy
     doc: |2
@@ -3021,6 +3254,8 @@ Loss Functions:
     outputs:
       y:
         doc: N-D array of element-wise losses.
+    function_ids:
+      Empty: 97
   SoftmaxCrossEntropy:
     snake_name: softmax_cross_entropy
     doc: |2
@@ -3053,6 +3288,8 @@ Loss Functions:
       y:
         doc: N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
           ... \times D_N)`
+    function_ids:
+      i: 98
   CategoricalCrossEntropy:
     snake_name: categorical_cross_entropy
     doc: |2
@@ -3082,6 +3319,8 @@ Loss Functions:
       y:
         doc: N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
           ... \times D_N)`
+    function_ids:
+      i: 99
   SquaredError:
     snake_name: squared_error
     doc: |2
@@ -3098,6 +3337,8 @@ Loss Functions:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      Empty: 100
   AbsoluteError:
     snake_name: absolute_error
     doc: |2
@@ -3114,6 +3355,8 @@ Loss Functions:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      Empty: 101
   HuberLoss:
     snake_name: huber_loss
     doc: |2
@@ -3141,6 +3384,8 @@ Loss Functions:
     outputs:
       y:
         doc: N-D array of element-wise losses.
+    function_ids:
+      f: 102
   EpsilonInsensitiveLoss:
     snake_name: epsilon_insensitive_loss
     doc: |2
@@ -3165,6 +3410,8 @@ Loss Functions:
     outputs:
       y:
         doc: N-D array of element-wise losses.
+    function_ids:
+      f: 103
   KLMultinomial:
     snake_name: kl_multinomial
     doc: |2
@@ -3186,6 +3433,8 @@ Loss Functions:
     outputs:
       D:
         doc: Kullback Leibler divergence :math:`KL(p \parallel q)`.
+    function_ids:
+      i: 104
 Quantization Neural Network Layers:
   BinarySigmoid:
     snake_name: binary_sigmoid
@@ -3220,6 +3469,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output.
+    function_ids:
+      Empty: 105
   BinaryTanh:
     snake_name: binary_tanh
     doc: |2
@@ -3252,6 +3503,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output.
+    function_ids:
+      Empty: 106
   BinaryConnectAffine:
     snake_name: binary_connect_affine
     doc: |2
@@ -3316,6 +3569,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output.
+    function_ids:
+      i: 107
   BinaryConnectConvolution:
     snake_name: binary_connect_convolution
     doc: |2
@@ -3398,6 +3653,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output
+    function_ids:
+      iiIiIiIi: 108
   BinaryWeightAffine:
     snake_name: binary_weight_affine
     doc: |2
@@ -3463,6 +3720,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output.
+    function_ids:
+      i: 109
   BinaryWeightConvolution:
     snake_name: binary_weight_convolution
     doc: |2
@@ -3546,6 +3805,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output
+    function_ids:
+      iiIiIiIi: 110
   INQAffine:
     snake_name: inq_affine
     doc: |2
@@ -3602,8 +3863,8 @@ Quantization Neural Network Layers:
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
         available_values:
-          - largest_abs
-          - random
+        - largest_abs
+        - random
         default: '''largest_abs'''
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
@@ -3612,6 +3873,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output.
+    function_ids:
+      iiiIii: 111
   INQConvolution:
     snake_name: inq_convolution
     doc: |2
@@ -3685,8 +3948,8 @@ Quantization Neural Network Layers:
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
         available_values:
-          - largest_abs
-          - random
+        - largest_abs
+        - random
         default: '''largest_abs'''
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
@@ -3695,6 +3958,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: Output
+    function_ids:
+      iiIiIiIiiiIii: 112
   FixedPointQuantize:
     snake_name: fixed_point_quantize
     doc: |+
@@ -3762,6 +4027,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      BifB: 113
   Pow2Quantize:
     snake_name: pow2_quantize
     doc: |2+
@@ -3887,11 +4154,12 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: N-D array.
-
+    function_ids:
+      BBiiB: 114
   Prune:
     snake_name: prune
     doc: |2
-      
+
       Prune the input as the following equation,
 
       .. math::
@@ -3902,9 +4170,8 @@ Quantization Neural Network Layers:
             x_i & otherwise
             \end{array}
             \right.
-      
-      where :math:`threshold` is determined by `threshold = np.sort(np.abs(x))[int((x.size - 1) * rate)]`.
 
+      where :math:`threshold` is determined by `threshold = np.sort(np.abs(x))[int((x.size - 1) * rate)]`.
     inputs:
       x:
         doc: N-D array
@@ -3916,8 +4183,8 @@ Quantization Neural Network Layers:
     outputs:
       y:
         doc: N-D array with the same shape as x
-
-
+    function_ids:
+      f: 135
 Validation:
   TopNError:
     snake_name: top_n_error
@@ -3954,6 +4221,8 @@ Validation:
       output:
         doc: Element-wise error N-D array. (:math:`D_1 \times ... \times 1 \times
           ... \times D_N`)
+    function_ids:
+      ii: 115
   BinaryError:
     snake_name: binary_error
     doc: |2+
@@ -3972,11 +4241,13 @@ Validation:
       x:
         doc: Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
       target:
-        doc: Labels N-D array. Usually set as 0 or 1, but, it allows probability
-          (0 to 1) as inputs.
+        doc: Labels N-D array. Usually set as 0 or 1, but, it allows probability (0
+          to 1) as inputs.
     outputs:
       output:
         doc: Element-wise errors N-D array.
+    function_ids:
+      Empty: 116
   ConfusionMatrix:
     snake_name: confusion_matrix
     doc: |2
@@ -3999,6 +4270,8 @@ Validation:
       output:
         doc: Confusion matrix 2-D array. Col index is estimated class. Row index is
           label class.
+    function_ids:
+      i: 117
 Unsupported, Special Use:
   VATNoise:
     snake_name: vat_noise
@@ -4048,6 +4321,8 @@ Unsupported, Special Use:
     outputs:
       y:
         doc: N-D array
+    function_ids:
+      if: 118
   Unlink:
     snake_name: unlink
     doc: |2
@@ -4076,6 +4351,8 @@ Unsupported, Special Use:
     outputs:
       y:
         doc: N-D array.
+    function_ids:
+      Empty: 119
   Sink:
     snake_name: sink
     doc: |2
@@ -4105,6 +4382,8 @@ Unsupported, Special Use:
     outputs:
       y:
         doc: Dummy variable.
+    function_ids:
+      B: 120
   NmsDetection2d:
     snake_name: nms_detection2d
     doc: |2
@@ -4141,14 +4420,24 @@ Unsupported, Special Use:
       References:
           * `Joseph Redmon, Ali Farhadi, YOLO9000: Better, Faster, Stronger.
             <https://arxiv.org/abs/1612.08242>`_
-
     inputs:
       x:
-        doc: "A 3-dimensional array."
+        doc: A 3-dimensional array.
     arguments:
-      thresh: {doc: "Detection score threshold.", type: float, default: 0.5}
-      nms: {doc: "IoU threshold for Non-maximum suppression (NMS).", type: float, default: 0.45}
-      nms_per_class: {doc: "If true, NMS is applied for each class.", type: bool, default: True}
+      thresh:
+        doc: Detection score threshold.
+        type: float
+        default: 0.5
+      nms:
+        doc: IoU threshold for Non-maximum suppression (NMS).
+        type: float
+        default: 0.45
+      nms_per_class:
+        doc: If true, NMS is applied for each class.
+        type: bool
+        default: true
     outputs:
       y:
-        doc: "A 3-dim array with the same dimensions with the input."
+        doc: A 3-dim array with the same dimensions with the input.
+    function_ids:
+      ffB: 231

@@ -15,6 +15,7 @@
 import io
 import os
 import sys
+from collections import OrderedDict
 from os.path import abspath, dirname, join, exists
 
 here = abspath(dirname(abspath(__file__)))
@@ -70,89 +71,105 @@ def generate_solver_python_interface(solver_info):
     utils.generate_from_template(
         join(base, 'python/src/nnabla/solver.pxd.tmpl'), solver_info=solver_info)
 
-def generate_function_order(function_info):
-    with open(join(base, 'python/src/nnabla/utils/converter/utils.py')) as f:
-        exec(f.read())
-    order_yaml = join(base, 'python/src/nnabla/utils/converter/function_order.yaml')
-    order_info= None
-    if exists(order_yaml):
-        with open(order_yaml, 'r') as f:
-            order_info = utils.load_yaml_ordered(f)
+def update_function_order_in_functsions_yaml():
+    d = utils.load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
 
-    if order_info is None:
-        order_info= OrderedDict()    
+    order_info_by_id = {}
+    order_info = OrderedDict()
 
-    func_id = 0
-    for func, func_info in function_info.items():
-        fmt = ''
-        if 'arguments' in func_info:
-            fmt = '_'
-            for arg, arg_info in func_info['arguments'].items():
-                fmt += type_to_pack_format(arg_info['type'])
+    duplicated = {}
+    missing = {}
+    
+    for cat_name, cat_info in d.items():
+        for func_name, func_info in d[cat_name].items():
+            order_info[func_name] = OrderedDict()
 
-        name = func+fmt
-        if name not in order_info:
-            while func_id in order_info.values():
-                func_id += 1
-            order_info[name] = func_id
-        
-        func_id += 1
+            default_full_name = func_name
+            default_arg = ''
+            if 'arguments' in func_info:
+                for arg, arg_info in func_info['arguments'].items():
+                    default_arg += type_to_pack_format(arg_info['type'])
+            if default_arg == '':
+                default_arg = 'Empty'
+            else:
+                default_full_name = func_name + '_' + default_arg 
 
-    ############### Check duplicated function ID.
-    orders = {}
-    result = True
-    for func, func_id in order_info.items():
-        if func_id not in orders:
-            orders[func_id] = []
-        else:
-            result = False
-        orders[func_id].append(func)
-    if not result:
+            if 'function_ids' in func_info and func_info['function_ids'] is not None:
+                for func_arg, func_id in func_info['function_ids'].items():
+                    full_name = func_name
+                    if func_arg != 'Empty':
+                        full_name = func_name + '_' + func_arg
+
+                    if func_id in order_info_by_id:
+                        if func_id not in duplicated:
+                            duplicated[func_id] = [order_info_by_id[func_id]]
+                        duplicated[func_id].append(full_name)
+                        
+                    order_info_by_id[func_id] = full_name
+                    order_info[func_name][full_name] = func_id
+                if default_full_name not in order_info[func_name]:
+                    if cat_name not in missing:
+                        missing[cat_name] = {}
+                    if func_name not in missing[cat_name]:
+                        missing[cat_name][func_name] = []
+                    missing[cat_name][func_name].append(default_arg)
+            else:
+                if cat_name not in missing:
+                    missing[cat_name] = {}
+                if func_name not in missing[cat_name]:
+                    missing[cat_name][func_name] = []
+                missing[cat_name][func_name].append(default_arg)
+
+    current_id = sorted(order_info_by_id.keys()).pop() + 1
+    for cat_name in missing:
+        for func_name in missing[cat_name]:
+            for arg in missing[cat_name][func_name]:
+                if 'function_ids' not in d[cat_name][func_name] or d[cat_name][func_name]['function_ids'] is None:
+                    d[cat_name][func_name]['function_ids'] = OrderedDict()
+                d[cat_name][func_name]['function_ids'][arg] = current_id
+                current_id += 1
+
+    if len(duplicated):
         print('')
-        print('############################################## Errors in function_order.yaml(START)')
-    for func_id, functions in orders.items():
-        if len(functions) > 1:
-            print('ID {} duplicated between [{}].'.format(func_id, functions))
-    if not result:
-        print('Correct ID in "python/src/nnabla/utils/converter/function_order.yaml" manually.')
-        print('############################################## Errors in function_order.yaml(END)')
+        print('############################################## Errors in functions.yaml(START)')
+        for func_id, functions in duplicated.items():
+            if len(functions) > 1:
+                print('ID {} duplicated between {}.'.format(func_id, functions))
+        print('Correct ID in "build-tools/code_generator/functions.yaml" manually.')
+        print('############################################## Errors in functions.yaml(END)')
         print('')
         import sys
         sys.exit(-1)
+        
+    utils.dump_yaml(d, open(join(here, 'functions.yaml'), 'w'), default_flow_style=False, width=80)
 
-    with open(order_yaml, 'w') as f:
-        f.write('# Copyright (c) 2017 Sony Corporation. All Rights Reserved.\n')
-        f.write('#\n')
-        f.write('# Licensed under the Apache License, Version 2.0 (the "License");\n')
-        f.write('# you may not use this file except in compliance with the License.\n')
-        f.write('# You may obtain a copy of the License at\n')
-        f.write('#\n')
-        f.write('#     http://www.apache.org/licenses/LICENSE-2.0\n')
-        f.write('#\n')
-        f.write('# Unless required by applicable law or agreed to in writing, software\n')
-        f.write('# distributed under the License is distributed on an "AS IS" BASIS,\n')
-        f.write('# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n')
-        f.write('# See the License for the specific language governing permissions and\n')
-        f.write('# limitations under the License.\n')
-        f.write('#\n')
-        f.write('# DO NOT EDIT THIS FILE!\n')
-        f.write('# THIS FILE IS GENERATED BY CODE GENERATOR BUT ITS COMMITTED INTO\n')
-        f.write('# SOURCE TREE TO MAKE FUNCTION ID PERSIST.\n')
-        f.write('\n')
-        for func_id in sorted(orders.keys()):
-            f.write('{}: {}\n'.format(orders[func_id][0], func_id))
+def generate_functions_pkl():
+    import pickle
+    d = utils.load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
+    
+    for cat_name, cat_info in d.items():
+        for func_name, func_info in d[cat_name].items():
+            if 'doc' in func_info:
+                del func_info['doc']
+            for a in ['inputs', 'arguments', 'outputs']:
+                if a in func_info:
+                    for b in func_info[a]:
+                        if 'doc' in func_info[a][b]:
+                            del func_info[a][b]['doc']
+
+    with open(join(base, 'python/src/nnabla/utils/converter/functions.pkl'), 'wb') as f:
+        pickle.dump(d, f, 2)
 
 def generate():
     version = sys.argv[1]
+    update_function_order_in_functsions_yaml()
+    generate_functions_pkl()
     
     function_info = utils.load_function_info(flatten=True)
     solver_info = utils.load_solver_info()
-    function_types = utils.load_yaml_ordered(open(
-        join(here, 'function_types.yaml'), 'r'))
-    solver_types = utils.load_yaml_ordered(open(
-        join(here, 'solver_types.yaml'), 'r'))
-    utils.generate_init(function_info, function_types,
-                        solver_info, solver_types)
+    function_types = utils.load_yaml_ordered(open(join(here, 'function_types.yaml'), 'r'))
+    solver_types = utils.load_yaml_ordered(open(join(here, 'solver_types.yaml'), 'r'))
+    utils.generate_init(function_info, function_types, solver_info, solver_types)
     utils.generate_function_types(function_info, function_types)
     utils.generate_solver_types(solver_info, solver_types)
     utils.generate_version(join(base, 'python/src/nnabla/_version.py.tmpl'), base, version=version)
@@ -163,7 +180,6 @@ def generate():
     generate_python_utils(function_info)
     generate_proto(function_info, solver_info)
     generate_cpp_utils(function_info)
-    generate_function_order(function_info)
 
     # Generate function skeletons if new ones are added to functions.yaml and function_types.yaml.
     utils.generate_skeleton_function_impl(

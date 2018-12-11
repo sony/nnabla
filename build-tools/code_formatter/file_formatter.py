@@ -94,8 +94,19 @@ def format_file(file_ext, input):
         cmd = [search_autopep8(), '--ignore={}'.format(pep8_ignores), '-']
     elif file_ext in cython_extensions:
         cmd = [search_autopep8(), '--ignore={}'.format(pep8_cython_ignores), '-']
+    if cmd is not None:
+        p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        output, output_err = p.communicate(input.encode('utf-8'))
+        return output.decode('utf_8')
     else:
-        return input
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    output, output_err = p.communicate(input.encode('utf-8'))
-    return output.decode('utf_8')
+        from six import StringIO
+        import sys
+        sys.path.append(os.path.join(os.path.dirname(__file__), '../code_generator'))
+        from collections import OrderedDict
+        import code_generator_utils as utils
+        d = utils.load_yaml_ordered(StringIO(input))
+        output = StringIO()
+        utils.dump_yaml(d, output, default_flow_style=False, width=80)
+        return output.getvalue()
+
+    return input
