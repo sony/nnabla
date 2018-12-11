@@ -48,14 +48,17 @@ def __make_buf_var_lives(info):
                 buf_idx = info._buffer_ids[var_idx]
                 buf_var_life = buf_var_lives[buf_idx]
                 if buf_var_life.begin_func_idx < 0:
-                    buf_var_life.begin_func_idx = func_idx
+                    if var_name in info._input_variables:
+                        buf_var_life.begin_func_idx = 0
+                    else:
+                        buf_var_life.begin_func_idx = func_idx
                 else:
                     # only identify a Function which first refers to the Variable
                     pass
-                if var_name not in info._output_variables:
-                    buf_var_life.end_func_idx = func_idx
-                else:
+                if var_name in info._output_variables:
                     buf_var_life.end_func_idx = final_func_idx
+                else:
+                    buf_var_life.end_func_idx = func_idx
             else:
                 pass  # ignore 'Parameter'
 
