@@ -69,6 +69,7 @@
 /third_party/zlib-1.2.11tar.gz
 
 /build/
+/build-android/
 /build-doc/
 /build_wheel_py*/
 
