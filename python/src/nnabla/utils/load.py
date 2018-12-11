@@ -38,6 +38,8 @@ from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
+from nnabla.utils.learning_rate_scheduler import (
+    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler)
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -392,30 +394,43 @@ def _create_optimizer(ctx, o, networks, datasets):
         if o.solver.type == 'Adagrad':
             optimizer.solver = S.Adagrad(
                 o.solver.adagrad_param.lr, o.solver.adagrad_param.eps)
+            init_lr = o.solver.adagrad_param.lr
         elif o.solver.type == 'Adadelta':
             optimizer.solver = S.Adadelta(
                 o.solver.adadelta_param.lr, o.solver.adadelta_param.decay, o.solver.adadelta_param.eps)
+            init_lr = o.solver.adadelta_param.lr
         elif o.solver.type == 'Adam':
             optimizer.solver = S.Adam(o.solver.adam_param.alpha, o.solver.adam_param.beta1,
                                       o.solver.adam_param.beta2, o.solver.adam_param.eps)
+            init_lr = o.solver.adam_param.alpha
         elif o.solver.type == 'Adamax':
             optimizer.solver = S.Adamax(o.solver.adamax_param.alpha, o.solver.adamax_param.beta1,
                                         o.solver.adamax_param.beta2, o.solver.adamax_param.eps)
+            init_lr = o.solver.adamax_param.alpha
+        elif o.solver.type == 'AMSGRAD':
+            optimizer.solver = S.AMSGRAD(o.solver.amsgrad_param.alpha, o.solver.amsgrad_param.beta1,
+                                         o.solver.amsgrad_param.beta2, o.solver.amsgrad_param.eps)
+            init_lr = o.solver.amsgrad_param.alpha
         elif o.solver.type == 'Eve':
             p = o.solver.eve_param
             optimizer.solver = S.Eve(
                 p.alpha, p.beta1, p.beta2, p.beta3, p.k, p.k2, p.eps)
+            init_lr = p.alpha
         elif o.solver.type == 'Momentum':
             optimizer.solver = S.Momentum(
                 o.solver.momentum_param.lr, o.solver.momentum_param.momentum)
+            init_lr = o.solver.momentum_param.lr
         elif o.solver.type == 'Nesterov':
             optimizer.solver = S.Nesterov(
                 o.solver.nesterov_param.lr, o.solver.nesterov_param.momentum)
+            init_lr = o.solver.nesterov_param.lr
         elif o.solver.type == 'RMSprop':
             optimizer.solver = S.RMSprop(
                 o.solver.rmsprop_param.lr, o.solver.rmsprop_param.decay, o.solver.rmsprop_param.eps)
+            init_lr = o.solver.rmsprop_param.lr
         elif o.solver.type == 'Sgd' or o.solver.type == 'SGD':
             optimizer.solver = S.Sgd(o.solver.sgd_param.lr)
+            init_lr = o.solver.sgd_param.lr
         else:
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
@@ -427,10 +442,34 @@ def _create_optimizer(ctx, o, networks, datasets):
         sorted(parameters.items(), key=lambda x: x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
-    optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
-    optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
-
     optimizer.comm = current_communicator()
+    optimizer.scheduler = None
+    if o.solver.lr_scheduler_type == 'Polynomial':
+        if o.solver.polynomial_scheduler_param.power != 0.0:
+            optimizer.scheduler = PolynomialScheduler(
+                init_lr, o.solver.polynomial_scheduler_param.max_iter // (optimizer.comm.size if optimizer.comm else 1), o.solver.polynomial_scheduler_param.power)
+    elif o.solver.lr_scheduler_type == 'Cosine':
+        optimizer.scheduler = CosineScheduler(
+            init_lr, o.solver.cosine_scheduler_param.max_iter // (optimizer.comm.size if optimizer.comm else 1))
+    elif o.solver.lr_scheduler_type == 'Exponential':
+        if o.solver.exponential_scheduler_param.gamma != 1.0:
+            optimizer.scheduler = ExponentialScheduler(
+                init_lr, o.solver.exponential_scheduler_param.gamma, o.solver.exponential_scheduler_param.iter_interval if o.solver.exponential_scheduler_param.iter_interval > 0 else 1)
+    elif o.solver.lr_scheduler_type == 'Step':
+        if o.solver.step_scheduler_param.gamma != 1.0 and len(o.solver.step_scheduler_param.iter_steps) > 0:
+            optimizer.scheduler = StepScheduler(
+                init_lr, o.solver.step_scheduler_param.gamma, o.solver.step_scheduler_param.iter_steps)
+    elif o.solver.lr_scheduler_type == 'Custom':
+        # ToDo
+        raise NotImplementedError()
+    elif o.solver.lr_scheduler_type == '':
+        if o.solver.lr_decay_interval != 0 or o.solver.lr_decay != 0.0:
+            optimizer.scheduler = ExponentialScheduler(
+                init_lr, o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0, o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1)
+    else:
+        raise ValueError('Learning Rate Scheduler "' + o.solver.lr_scheduler_type +
+                         '" is not supported.')
+
     if optimizer.comm is not None:
         new_interval = optimizer.lr_decay_interval // optimizer.comm.size
         if new_interval == 0:
