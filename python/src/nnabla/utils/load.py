@@ -442,6 +442,11 @@ def _create_optimizer(ctx, o, networks, datasets):
         sorted(parameters.items(), key=lambda x: x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
+
+    # keep following 2 lines for backward compatibility
+    optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
+    optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+
     optimizer.comm = current_communicator()
     optimizer.scheduler = None
     if o.solver.lr_scheduler_type == 'Polynomial':
