@@ -70,7 +70,8 @@ def train():
         nn.load_parameters(args.model_load_path)
         model_prediction = functools.partial(
             cifar10_cpd3_factorized_resnet23_prediction,
-            compression_ratio=args.compression_ratio)
+            compression_ratio=args.compression_ratio,
+            lambda_reg=args.lambda_regression)
 
     # Create model_prediction graph.
     pred = model_prediction(image, maps=maps, test=False)

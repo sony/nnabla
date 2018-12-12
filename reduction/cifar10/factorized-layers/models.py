@@ -101,7 +101,9 @@ def cifar10_resnet23_prediction(image, maps=64,
 
 
 def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
-                                                test=False, compression_ratio=0.0):
+                                                test=False,
+                                                compression_ratio=0.0,
+                                                lambda_reg=0.0):
     """
     Construct Resnet23 with factorized affine and convolution
     """
@@ -121,7 +123,8 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
         rank = int(np.floor((1-cr)*inshape*outshape/(inshape+outshape)))
 
         # Initialize bias to existing b in affine if exists
-        if b is not None:
+        b_new =  get_parameter('svd_affine/b')
+        if b is not None and b_new is None:
             b_new = get_parameter_or_create(
                 'svd_affine/b', b.d.shape, need_grad=b.need_grad)
             b_new.d = b.d.copy()
@@ -132,7 +135,7 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
         return PF.svd_affine(x, n_outputs, rank, uv_init=UV)
 
     # CP convolution
-    def cpd3_convolution(x, n_outputs, kernel, pad, with_bias, cr):
+    def cpd3_convolution(x, n_outputs, kernel, pad, with_bias, cr, lambda_reg):
         W = get_parameter('conv/W')
 
         if W is None:
@@ -149,15 +152,18 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
                             Ksize/(inmaps+outmaps+Ksize)))
 
         # Initialize bias to existing b in affine if exists
-        if b is not None:
+        b_new =  get_parameter('cpd3_conv/b')
+        if b is not None and b_new is None:
             b_new = get_parameter_or_create(
                 'cpd3_conv/b', b.d.shape, need_grad=b.need_grad)
             b_new.d = b.d.copy()
-        logger.info("CP convolution created: inmaps = {}; outmaps = {}; compression = {}; rank = {};".format(
-            inmaps, outmaps, cr, rank))
+        logger.info("CP convolution created: inmaps = {}; outmaps = {}; compression = {}; rank = {}; lambda_reg = {};".format(
+            inmaps, outmaps, cr, rank, lambda_reg))
 
         # create cpd3_convolution  initialized from W in current context if it exists
-        return PF.cpd3_convolution(x, n_outputs, kernel=kernel, r=rank, pad=pad, with_bias=with_bias, oik_init=OIK)
+        return PF.cpd3_convolution(x, n_outputs, kernel=kernel, r=rank, pad=pad,
+                                   with_bias=with_bias, oik_init=OIK,
+                                   lambda_reg=lambda_reg)
 
     # Residual Unit
     def res_unit(x, scope_name, dn=False):
@@ -173,7 +179,8 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
                 h = cpd3_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
-                                     with_bias=False, cr=compression_ratio)
+                                     with_bias=False, cr=compression_ratio,
+                                     lambda_reg=lambda_reg)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN
@@ -202,7 +209,8 @@ def cifar10_cpd3_factorized_resnet23_prediction(image, maps=64,
                                          flip_lr=True)
             image.need_grad = False
         h = cpd3_convolution(image, maps, kernel=(3, 3), pad=(1, 1),
-                             with_bias=False, cr=compression_ratio)
+                             with_bias=False, cr=compression_ratio,
+                             lambda_reg=lambda_reg)
         h = PF.batch_normalization(h, batch_stat=not test)
         h = F.relu(h)
 
