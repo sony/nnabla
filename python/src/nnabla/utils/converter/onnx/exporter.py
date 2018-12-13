@@ -16,6 +16,7 @@ from nnabla.utils import nnabla_pb2
 from functools import partial
 import nnabla.logger as logger
 import numpy as np
+import re
 try:
     import onnx
     from .utils import *
@@ -140,21 +141,30 @@ def fork_name(name):
     return ret
 
 
+class ParameterState:
+    TRANSPOSED = 1
+
+
 # OnnxExporter class
 class OnnxExporter:
-    def __init__(self, nnp, batch_size):
+    def __init__(self, nnp, batch_size, opset="6"):
         self._nnp = nnp.protobuf
         self._batch_size = batch_size
         self._model_proto = None
         self._net = None
         self._onehot_table = {}
         self._var_dict = {}
+        self._parameters = {}
+        self._parameters_state = {}
         self._input_types = {}
         self._output_types = {}
         self._broadcast_target = {}
         self._executor = None
+        self._opset = int(re.sub("\D", "", opset))
         # Dictionary used to convert NNabla function names to ONNX op_type
-        self.nnabla_function_type_to_onnx_optype = {
+
+        # opset_6 default op table
+        table_op_set_6 = {
             # optype with same names
             "Dropout": "Dropout",
             "Softmax": "Softmax",
@@ -202,7 +212,7 @@ class OnnxExporter:
             "Maximum2": "Max",
             "Minimum2": "Min",
             # optype that gets converted
-            "Affine": self.Affine,
+            "Affine": partial(self.Affine, '6'),
             "MulScalar": "Mul",
             "MinimumScalar": "Clip",
             "MaximumScalar": "Clip",
@@ -214,16 +224,44 @@ class OnnxExporter:
             "BroadcastTo": "",
             "Split": self.Split,
             "Stack": self.Stack,
-            "Slice": self.Slice,
+            "Slice": self.Slice_6,
             "Deconvolution": self.Deconvolution,
             "Flip": self.Flip,
             "OneHot": self.OneHot,
-            "Unpooling": self.Unpooling,
+            "Unpooling": self.Unpooling_6,
             "DepthwiseConvolution": self.DepthwiseConvolution,
             "BinaryConnectConvolution": partial(self.BaseConvolution, 'BinaryConnectConvolution'),
             "Convolution": partial(self.BaseConvolution, 'Convolution'),
             "BinarySigmoid": self.BinarySigmoid
         }
+
+        # opset_9 table
+        table_op_set_9 = {
+            **table_op_set_6,
+            "Affine": partial(self.Affine, '9'),
+            "Slice": self.Slice_9,
+            "Unpooling": self.Unpooling_9
+        }
+
+        # opset_ support for SNPE
+        table_op_set_9_x = {
+            **table_op_set_9,
+            "Affine": partial(self.Affine, '9x')
+        }
+
+        opver_impl_map = {
+            "6": table_op_set_6,
+            "9": table_op_set_9,
+            "9x": table_op_set_9_x
+        }
+        try:
+            opset = int(opset)
+            if opset <= 6:
+                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get("6")
+            else:
+                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(str(opset), table_op_set_9_x)
+        except:
+            self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(opset, table_op_set_9_x)
 
     def _add_param(self, param_name, dtype, shape, raw_data):
         init = self._model_proto.graph.initializer.add()
@@ -480,7 +518,38 @@ class OnnxExporter:
         )
         return [n]
 
-    def Unpooling(self, func):
+    def Unpooling_9(self, func):
+        scales = list(map(lambda f: float(f), [1.0, 1.0] + func.unpooling_param.kernel.dim[:]))
+        n = onnx.helper.make_node(
+            'Upsample',
+            func.input,
+            func.output,
+            name=func.name,
+            scales=scales
+        )
+        return [n]
+
+    def Unpooling_7(self, func):
+        scales = np.array([1.0, 1.0] + func.unpooling_param.kernel.dim[:])
+        scale_shape = (len(scales), )
+        scale_param_name = fork_name("UpsampleScales")
+        self._add_param(scale_param_name,
+                        TensorProto.FLOAT,
+                        scale_shape,
+                        scales.astype(np.float32).tostring()
+                        )
+        inputs = list(func.input) + [scale_param_name]
+
+        n = onnx.helper.make_node(
+            'Upsample',
+            inputs,
+            func.output,
+            name=func.name
+        )
+        return [n]
+
+
+    def Unpooling_6(self, func):
         if len(func.unpooling_param.kernel.dim) != 2:
             raise ValueError("kernel.dim != 2 is not supported.")
         dims = func.unpooling_param.kernel.dim
@@ -489,7 +558,8 @@ class OnnxExporter:
             func.input,
             func.output,
             height_scale=dims[0] * 1.0,
-            width_scale=dims[1] * 1.0
+            width_scale=dims[1] * 1.0,
+            name=func.name
         )
         return [n]
 
@@ -687,7 +757,7 @@ class OnnxExporter:
             return self._elem_op(func, 'Pow', val)
         return []
 
-    def Slice(self, func):
+    def Slice_6(self, func):
         """
         nnabla slice assume a batch dimension existed in
         the shape of input data.
@@ -718,6 +788,22 @@ class OnnxExporter:
                 )
                 nl.append(n)
 
+        if not nl:
+            # full equal, no slice
+            # we have to create a node
+            # to pass the data
+            starts = s1[:]
+            ends = e1[:]
+            n = onnx.helper.make_node(
+                "Slice",
+                func.input,
+                func.output,
+                name=func.name,
+                starts=starts,
+                ends=ends,
+            )
+            nl.append(n)
+
         for i in range(len(nl)-1):
             fork = fork_name("SliceIter")
             del nl[i].output[:]
@@ -726,6 +812,42 @@ class OnnxExporter:
             nl[i+1].input.extend([fork])
 
         return nl
+
+    def Slice_9(self, func):
+        """
+        nnabla slice assume a batch dimension existed in
+        the shape of input data.
+        Onnx caffe2 implementation only support one dimension
+        for each slice, hence, we connect multiple slice
+        node to implement slice with multiple axis
+        """
+        s0 = [d for d in func.slice_param.start]
+        s0 = [0] + s0
+        e0 = [d for d in func.slice_param.stop]
+        e0 = [self._batch_size] + e0
+        s1 = [0] * len(self._var_dict[func.input[0]].dim)
+        e1 = [d for d in self._var_dict[func.input[0]].dim]
+        nl = []
+
+        starts = s1[:]
+        ends = e1[:]
+        for i, (m, n, s, e) in enumerate(zip(s0, e0, s1, e1)):
+            if m > s:
+                starts[i] = m
+            if n < e:
+                ends[i] = n
+        n = onnx.helper.make_node(
+            "Slice",
+            func.input,
+            func.output,
+            name=func.name,
+            starts=starts,
+            ends=ends,
+        )
+        nl.append(n)
+
+        return nl
+
 
     def Stack(self, func):
         nl = []
@@ -775,7 +897,7 @@ class OnnxExporter:
             nl.append(n)
         return nl
 
-    def Affine(self, func):
+    def Affine(self, opver, func):
         """
         Affine is decomposed as 3 steps:
             Reshape inputs
@@ -784,8 +906,6 @@ class OnnxExporter:
         """
         nl = []
         out_a = fork_name(func.input[0])
-        out_b = fork_name(func.input[1])
-        out_c = fork_name("affine_bias")
         base_axis = func.affine_param.base_axis
 
         x_shape = list(self._var_dict[func.input[0]].dim[:])
@@ -803,44 +923,74 @@ class OnnxExporter:
         )
         nl.append(n)
 
-        w_shape = list(self._var_dict[func.input[1]].dim[:])
-        w_shape_dims = [w_shape[0], np.prod(w_shape) / w_shape[0]]
-        w_shape_dims_name = fork_name('w_shape_dims')
-        w_shape_dims_raw = np.array(w_shape_dims).astype(np.int64)
-        self._add_param(w_shape_dims_name, TensorProto.INT64, list(
-            w_shape_dims_raw.shape), w_shape_dims_raw.tostring())
+        # To support SNPE, default set to `transB=1`
+        if func.input[1] not in self._parameters:
+            raise ValueError(
+                "{} is not in network's parameters.".format(func.input[1]))
 
-        n = onnx.helper.make_node(
-            "Reshape",
-            [func.input[1], w_shape_dims_name],
-            [out_b]
-        )
-        nl.append(n)
+        transB = 0
+        if opver == '9x':
+            state = self._parameters_state.get(func.input[1], 0)
+            if not state & ParameterState.TRANSPOSED:
+                # make it to `transB=1`
+                w_shape = list(self._var_dict[func.input[1]].dim[:])
+                w_shape_dims = [int(np.prod(w_shape) / w_shape[0]), w_shape[0]]
+                proto_w_shape = self._var_dict[func.input[1]]
+                del proto_w_shape.dim[:]
+                proto_w_shape.dim.extend(w_shape_dims)
+                param = self._parameters[func.input[1]]
+                w_data = np.array(param.data).reshape(
+                    w_shape[0], int(np.prod(w_shape) / w_shape[0]))
+                d = list(np.transpose(w_data).astype(np.float32).flatten())
+                del param.data[:]
+                param.data.extend(d)
+                self._parameters_state[func.input[1]] = state | ParameterState.TRANSPOSED
+            transB = 1
+        else:
+            w_shape = list(self._var_dict[func.input[1]].dim[:])
+            w_shape_dims = [w_shape[0], int(np.prod(w_shape) / w_shape[0])]
+            proto_w_shape = self._var_dict[func.input[1]]
+            del proto_w_shape.dim[:]
+            proto_w_shape.dim.extend(w_shape_dims)
 
-        out_c = fork_name('Affine')
         if len(func.input) <= 2:
+            out_c = fork_name("affine_bias")
             shape = (1, )
             raw_data = np.zeros(shape).astype(np.float32).tostring()
             self._add_param(out_c, TensorProto.FLOAT, shape, raw_data)
         else:
-            n = onnx.helper.make_node(
-                "Flatten",
-                [func.input[2]],
-                [out_c],
-                name="Flatten" + func.input[2])
-            a = onnx.helper.make_attribute("axis", 0)
-            n.attribute.extend([a])
-            nl.append(n)
+            bias_shape = list(self._var_dict[func.input[2]].dim[:])
+            new_bias_shape = [np.prod(bias_shape)]
+            proto_bias_shape = nnabla_pb2.Shape()
+            proto_bias_shape.dim.extend(new_bias_shape)
+            self._var_dict[func.input[2]] = proto_bias_shape
+            out_c = func.input[2]
 
         out = fork_name(func.output[0])
-        n = onnx.helper.make_node(
-            "Gemm",
-            [out_a, out_b, out_c],
-            [out],
-            alpha=1.0,
-            beta=1.0,
-            broadcast=1,
-            name='Gemm' + func.input[0])
+
+        if opver == '6':
+            # broadcast is needed.
+            n = onnx.helper.make_node(
+                "Gemm",
+                [out_a, func.input[1], out_c],
+                [out],
+                alpha=1.0,
+                beta=1.0,
+                transA=0,
+                transB=transB,
+                broadcast=1,
+                name='Gemm' + func.input[0])
+        else:
+            # broadcast cannot appear for opset > 6
+            n = onnx.helper.make_node(
+                "Gemm",
+                [out_a, func.input[1], out_c],
+                [out],
+                alpha=1.0,
+                beta=1.0,
+                transA=0,
+                transB=transB,
+                name='Gemm' + func.input[0])
         nl.append(n)
 
         param_name = func.output[0] + '_shape'
@@ -884,6 +1034,9 @@ class OnnxExporter:
         for v in self._net.variable:
             self._var_dict[v.name] = replace_negative_size_with_batch_size(
                 v.shape, bs)
+
+        for p in self._nnp.parameter:
+            self._parameters[p.variable_name] = p
 
     def set_variables(self):
         exe = self._executor
@@ -1300,7 +1453,7 @@ class OnnxExporter:
         mp.ir_version = ONNX_IR_VERSION
         op = mp.opset_import.add()
         op.domain = ""  # empty string indicates ONNX domain
-        op.version = ONNX_OPSET_VERSION
+        op.version = self._opset
         # nn_opset = mp.opset_import.add()
         # nn_opset.domain = NNABLA_DOMAIN
         # nn_opset.version = NNABLA_OPSET_VERSION
