@@ -157,7 +157,7 @@ def train(args):
         "Discriminator loss", monitor, interval=10)
     monitor_time = M.MonitorTimeElapsed("Time", monitor, interval=100)
     monitor_fake = M.MonitorImageTile(
-        "Fake images", monitor, normalize_method=lambda x: x + 1 / 2.)
+        "Fake images", monitor, normalize_method=lambda x: (x + 1) / 2.)
 
     data = data_iterator_mnist(args.batch_size, True)
     # Training loop.
