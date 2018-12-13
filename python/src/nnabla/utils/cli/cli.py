@@ -89,6 +89,9 @@ def cli_main():
     from nnabla.utils.cli.convert import add_convert_command
     add_convert_command(subparsers)
 
+    from nnabla.utils.cli.func_info import add_function_info_command
+    add_function_info_command(subparsers)
+
     from nnabla.utils.cli.plot import (
         add_plot_series_command, add_plot_timer_command)
     add_plot_series_command(subparsers)
