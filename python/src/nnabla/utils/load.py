@@ -560,6 +560,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
         pass
     dataset = Dataset()
     dataset.uri = uri
+    dataset.cache_dir = cache_dir
     dataset.normalize = not no_image_normalization
 
     comm = current_communicator()
@@ -615,8 +616,16 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
 def _datasets(proto, prepare_data_iterator=True):
     datasets = OrderedDict()
     for d in proto.dataset:
-        datasets[d.name] = _create_dataset(
-            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator)
+        if d.name not in datasets:
+            datasets[d.name] = _create_dataset(
+                d.uri,
+                d.batch_size,
+                d.shuffle,
+                d.no_image_normalization,
+                d.cache_dir,
+                d.overwrite_cache,
+                d.create_cache_explicitly,
+                prepare_data_iterator)
     return datasets
 
 
