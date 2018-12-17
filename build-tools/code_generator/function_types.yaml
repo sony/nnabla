@@ -202,6 +202,12 @@ LessScalar:
 LogicalNot:
   float: [float]
   half: [Half]
+IsNaN:
+  float: [float]
+  half: [Half]
+IsInf:
+  float: [float]
+  half: [Half]
 Constant:
   float: [float]
   half: [Half]

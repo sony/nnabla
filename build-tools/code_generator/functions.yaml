@@ -1955,6 +1955,32 @@ Logical:
     function_ids:
       Empty: 66
     c_runtime: not support
+  IsNaN:
+    snake_name: isnan
+    doc: |2
+
+      Test element-wise for NaN and return a ``0/1`` array.
+    inputs:
+      x0:
+        doc: Input variable
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 236
+  IsInf:
+    snake_name: isinf
+    doc: |2
+
+      Test element-wise for ``inf/-inf`` and return a ``0/1`` array.
+    inputs:
+      x0:
+        doc: Input variable
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 237
 Math:
   Constant:
     snake_name: constant
