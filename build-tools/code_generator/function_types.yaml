@@ -214,6 +214,9 @@ ResetNaN:
 ResetInf:
   float: [float]
   half: [Half]
+Where:
+  float: [float]
+  half: [Half]
 Constant:
   float: [float]
   half: [Half]

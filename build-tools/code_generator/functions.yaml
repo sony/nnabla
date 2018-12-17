@@ -2017,6 +2017,44 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 239
+  Where:
+    snake_name: where
+    doc: |2
+
+      Return elements, either from ``x_true`` or ``x_false``, depending on ``condition``.
+
+      If rank of ``condition`` is higher than those of ``x_true`` and ``x_false``, the first dimensions of ``x_true`` and ``x_false`` must match the dimensions of ``condition``.
+
+      Example:
+
+      .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        a = nn.Variable.from_numpy_array(np.random.rand(2, 3))
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+        y = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+        z = F.where(F.greater_scalar(a, 0.5), x, y)
+        z.forward()
+
+        # Numpy equivalent
+        z_numpy = np.where(a.d > 0.5, x.d, y.d)
+        assert np.allclose(z_numpy, z.d)
+    inputs:
+      condition:
+        doc: N-d array. For all i, when ``condition[i] == true``, yield ``x_true[i]``,
+          otherwise ``x_false[i]``.
+      x_true:
+        doc: N-d array with higher or equal rank to ``condition``.
+      x_false:
+        doc: N-d array with higher or equal rank to ``condition``.
+    outputs:
+      y:
+        doc: N-D array with the same shape as condition
+    function_ids:
+      Empty: 240
 Math:
   Constant:
     snake_name: constant
