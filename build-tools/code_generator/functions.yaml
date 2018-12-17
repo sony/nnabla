@@ -1981,6 +1981,42 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 237
+  ResetNaN:
+    snake_name: reset_nan
+    doc: |2
+
+      Replace NaNs with a scalar value specified by ``val``.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      f: 238
+  ResetInf:
+    snake_name: reset_inf
+    doc: |2
+
+      Replace ``-inf/inf`` with a scalar value specified by ``val``.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      f: 239
 Math:
   Constant:
     snake_name: constant

@@ -208,6 +208,12 @@ IsNaN:
 IsInf:
   float: [float]
   half: [Half]
+ResetNaN:
+  float: [float]
+  half: [Half]
+ResetInf:
+  float: [float]
+  half: [Half]
 Constant:
   float: [float]
   half: [Half]
