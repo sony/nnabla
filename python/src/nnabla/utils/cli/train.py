@@ -372,6 +372,8 @@ def _train(args, config):
     class TimeInfo:
         pass
     timeinfo = TimeInfo()
+    timeinfo.past_time = 0
+    timeinfo.estimate_time = 0
     timeinfo.last_past_time = None
 
     if max_iteration > 0:
@@ -388,20 +390,20 @@ def _train(args, config):
             for iteration in range(last_iteration, max_iteration):
 
                 cost = _update(iteration, config, cost)
+
                 if np.isnan(cost.sum_epoch) or np.isinf(cost.sum_epoch):
                     logger.log(99, 'Cost is Nan')
                     return False, False
 
-                if (iteration - last_iteration) > 0:
-                    timeinfo = _calc_estimate_time(
-                        timeinfo, max_iteration, last_iteration, iteration)
-                    # Console only start
-                    status.update_time_train(prediction=timeinfo.estimate_time)
-                    # Console only end
-                    if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
-                        logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
-                            timeinfo.estimate_time, config.timelimit))
-                        return False, False
+                timeinfo = _calc_estimate_time(
+                    timeinfo, max_iteration, last_iteration, iteration+1)
+                # Console only start
+                status.update_time_train(prediction=timeinfo.estimate_time)
+                # Console only end
+                if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
+                    logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
+                        timeinfo.estimate_time, config.timelimit))
+                    return False, False
 
                 if (iteration + 1) % config.training_config.iter_per_epoch == 0:
                     last_past_time = -1
