@@ -26,7 +26,7 @@ import nnabla.utils.save as save
 from nnabla.ext_utils import get_extension_context
 from args import get_args, save_args
 
-from helpers import (generate_random_class, generate_one_class, 
+from helpers import (generate_random_class, generate_one_class,
                      get_input_and_output, preprocess, resample)
 from models import generator, discriminator, gan_loss
 from imagenet_data import data_iterator_imagenet
@@ -53,7 +53,7 @@ def match(args):
     z = nn.Variable([batch_size, latent])
     y_fake = nn.Variable([batch_size])
     x_fake = generator(z, y_fake, maps=maps, n_classes=n_classes, test=True, sn=not_sn)\
-             .apply(persistent=True)
+        .apply(persistent=True)
 
     # Model (Inception model) from nnp file
     nnp = NnpLoader(args.nnp_inception_model_load_path)
@@ -61,7 +61,7 @@ def match(args):
 
     # DataIterator for a given class_id
     di = data_iterator_imagenet(args.train_dir, args.dirname_to_label_path,
-                                batch_size=batch_size, n_classes=args.n_classes, 
+                                batch_size=batch_size, n_classes=args.n_classes,
                                 noise=False,
                                 class_id=args.class_id)
 
@@ -69,11 +69,11 @@ def match(args):
     monitor = Monitor(args.monitor_path)
     name = "Matched Image {}".format(args.class_id)
     monitor_image = MonitorImage(name, monitor, interval=1,
-                                 num_images=batch_size, 
+                                 num_images=batch_size,
                                  normalize_method=lambda x: (x + 1.) / 2. * 255.)
     name = "Matched Image Tile {}".format(args.class_id)
     monitor_image_tile = MonitorImageTile(name, monitor, interval=1,
-                                          num_images=batch_size + args.top_n, 
+                                          num_images=batch_size + args.top_n,
                                           normalize_method=lambda x: (x + 1.) / 2. * 255.)
 
     # Generate and p(h|x).forward
@@ -85,7 +85,8 @@ def match(args):
     x_fake.forward(clear_buffer=True)
     # p(h|x).forward
     x_fake_d = x_fake.d.copy()
-    x_fake_d = preprocess(x_fake_d, (args.image_size, args.image_size), args.nnp_preprocess)
+    x_fake_d = preprocess(
+        x_fake_d, (args.image_size, args.image_size), args.nnp_preprocess)
     x.d = x_fake_d
     h.forward(clear_buffer=True)
     h_fake_d = h.d.copy()
@@ -98,7 +99,8 @@ def match(args):
         # forward for real data
         x_d, _ = di.next()
         x_data_list.append(x_d)
-        x_d = preprocess(x_d, (args.image_size, args.image_size), args.nnp_preprocess)
+        x_d = preprocess(
+            x_d, (args.image_size, args.image_size), args.nnp_preprocess)
         x.d = x_d
         h.forward(clear_buffer=True)
         h_real_d = h.d.copy()
@@ -121,7 +123,6 @@ def main():
 
     match(args)
 
-if __name__ == '__main__':
-    main() 
 
-                        
+if __name__ == '__main__':
+    main()

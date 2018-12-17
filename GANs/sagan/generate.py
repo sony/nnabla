@@ -50,7 +50,7 @@ def generate(args):
     z = nn.Variable([batch_size, latent])
     y_fake = nn.Variable([batch_size])
     x_fake = generator(z, y_fake, maps=maps, n_classes=n_classes, test=True, sn=not_sn)\
-             .apply(persistent=True)
+        .apply(persistent=True)
 
     # Generate All
     if args.generate_all:
@@ -60,13 +60,13 @@ def generate(args):
         monitor_image = MonitorImageTile(name, monitor, interval=1,
                                          num_images=args.batch_size,
                                          normalize_method=normalize_method)
-    
+
         # Generate images for all classes
         for class_id in range(args.n_classes):
             # Generate
             z_data = resample(batch_size, latent, threshold)
             y_data = generate_one_class(class_id, batch_size)
-                     
+
             z.d = z_data
             y_fake.d = y_data
             x_fake.forward(clear_buffer=True)
@@ -75,23 +75,25 @@ def generate(args):
 
     # Generate Indivisually
     monitor = Monitor(args.monitor_path)
-    name = "Generated Image Tile {}".format(args.class_id) if args.class_id != -1 else "Generated Image Tile"
+    name = "Generated Image Tile {}".format(
+        args.class_id) if args.class_id != -1 else "Generated Image Tile"
     monitor_image_tile = MonitorImageTile(name, monitor, interval=1,
-                                     num_images=args.batch_size,
-                                     normalize_method=normalize_method)
-    name = "Generated Image {}".format(args.class_id) if args.class_id != -1 else "Generated Image"
+                                          num_images=args.batch_size,
+                                          normalize_method=normalize_method)
+    name = "Generated Image {}".format(
+        args.class_id) if args.class_id != -1 else "Generated Image"
     monitor_image = MonitorImage(name, monitor, interval=1,
                                  num_images=args.batch_size,
                                  normalize_method=normalize_method)
     z_data = resample(batch_size, latent, threshold)
     y_data = generate_random_class(n_classes, batch_size) if args.class_id == -1 else \
-             generate_one_class(args.class_id, batch_size)
+        generate_one_class(args.class_id, batch_size)
     z.d = z_data
     y_fake.d = y_data
     x_fake.forward(clear_buffer=True)
     monitor_image.add(0, x_fake.d)
     monitor_image_tile.add(0, x_fake.d)
-    
+
 
 def main():
     args = get_args()
@@ -99,7 +101,6 @@ def main():
 
     generate(args)
 
-if __name__ == '__main__':
-    main() 
 
-                        
+if __name__ == '__main__':
+    main()

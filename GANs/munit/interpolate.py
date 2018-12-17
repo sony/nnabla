@@ -49,32 +49,34 @@ def interpolate(args):
 
     # Model
     maps = args.maps
-    ## content/style (domain A)
+    # content/style (domain A)
     x_content_a = content_encoder(x_real_a, maps, name="content-encoder-a")
     x_style_a = style_encoder(x_real_a, maps, name="style-encoder-a")
-    ## content/style (domain B)
+    # content/style (domain B)
     x_content_b = content_encoder(x_real_b, maps, name="content-encoder-b")
     x_style_b = style_encoder(x_real_b, maps, name="style-encoder-b")
-    ## generate over domains and reconstruction of content and style (domain A)
-    z_style_a = nn.Variable(x_style_a.shape) if not args.example_guided else x_style_a
+    # generate over domains and reconstruction of content and style (domain A)
+    z_style_a = nn.Variable(
+        x_style_a.shape) if not args.example_guided else x_style_a
     z_style_a = z_style_a.apply(persistent=True)
     x_fake_a = decoder(x_content_b, z_style_a, name="decoder-a")
-    ## generate over domains and reconstruction of content and style (domain B)
-    z_style_b = nn.Variable(x_style_b.shape) if not args.example_guided else x_style_b
+    # generate over domains and reconstruction of content and style (domain B)
+    z_style_b = nn.Variable(
+        x_style_b.shape) if not args.example_guided else x_style_b
     z_style_b = z_style_b.apply(persistent=True)
     x_fake_b = decoder(x_content_a, z_style_b, name="decoder-b")
 
     # Monitor
-    file_names = lambda path: path.split("/")[-1].rstrip("_AB.jpg")
+    def file_names(path): return path.split("/")[-1].rstrip("_AB.jpg")
     suffix = "Stochastic" if not args.example_guided else "Example-guided"
     monitor = Monitor(args.monitor_path)
     monitor_image_tile_a = MonitorImageTile("Fake Image Tile {} B to A {} Interpolation".format(
-        "-".join([file_names(path) for path in args.img_files_b]), suffix), monitor, 
+        "-".join([file_names(path) for path in args.img_files_b]), suffix), monitor,
                                             interval=1, num_images=len(args.img_files_b))
     monitor_image_tile_b = MonitorImageTile("Fake Image Tile {} A to B {} Interpolation".format(
-        "-".join([file_names(path) for path in args.img_files_a]), suffix), monitor, 
+        "-".join([file_names(path) for path in args.img_files_a]), suffix), monitor,
                                             interval=1, num_images=len(args.img_files_a))
-    
+
     # DataIterator
     di_a = munit_data_iterator(args.img_files_a, b, shuffle=False)
     di_b = munit_data_iterator(args.img_files_b, b, shuffle=False)
@@ -121,4 +123,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

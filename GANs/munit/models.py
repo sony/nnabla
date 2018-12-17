@@ -98,6 +98,7 @@ def INByBatchNorm(inp, axes=[1], decay_rate=0.9, eps=1e-5, fix_parameters=True):
     return F.batch_normalization(inp, beta, gamma, mean, var, axes,
                                  decay_rate, eps, batch_stat=True, output_stat=False)
 
+
 @parametric_function_api("adain")
 def AdaIN(h, style, fix_parameters=False):
     """Adaptive Instance Normalization
@@ -143,10 +144,12 @@ def convolution(x, maps, kernel=(3, 3), pad=(0, 0, 0, 0), stride=(1, 1),
 
     h = x
     #s = nn.initializer.calc_normal_std_glorot(h.shape[1], maps, kernel=kernel)
-    s = nn.initializer.calc_normal_std_he_backward(h.shape[1], maps, kernel=kernel)
+    s = nn.initializer.calc_normal_std_he_backward(
+        h.shape[1], maps, kernel=kernel)
     init = nn.initializer.NormalInitializer(s)
     h = F.pad(h, pad, mode=pad_mode)
-    h = PF.convolution(h, maps, kernel, stride=stride, with_bias=True, w_init=init, name=name)
+    h = PF.convolution(h, maps, kernel, stride=stride,
+                       with_bias=True, w_init=init, name=name)
     return h
 
 
@@ -206,18 +209,26 @@ def content_encoder(x, maps=64, pad_mode="reflect", name="content-encoder"):
     h = x
     with nn.parameter_scope("generator"):
         with nn.parameter_scope(name):
-            h = convblock(h, maps * 1, 7, 3, 1, norm="in", pad_mode=pad_mode, name="convblock-1")
-            h = convblock(h, maps * 2, 4, 1, 2, norm="in", pad_mode=pad_mode, name="convblock-2")
-            h = convblock(h, maps * 4, 4, 1, 2, norm="in", pad_mode=pad_mode, name="convblock-3")
-            h = resblock(h, None, maps * 4, norm="in", pad_mode=pad_mode, name="resblock-1")
-            h = resblock(h, None, maps * 4, norm="in", pad_mode=pad_mode, name="resblock-2")
-            h = resblock(h, None, maps * 4, norm="in", pad_mode=pad_mode, name="resblock-3")
-            h = resblock(h, None, maps * 4, norm="in", pad_mode=pad_mode, name="resblock-4")
+            h = convblock(h, maps * 1, 7, 3, 1, norm="in",
+                          pad_mode=pad_mode, name="convblock-1")
+            h = convblock(h, maps * 2, 4, 1, 2, norm="in",
+                          pad_mode=pad_mode, name="convblock-2")
+            h = convblock(h, maps * 4, 4, 1, 2, norm="in",
+                          pad_mode=pad_mode, name="convblock-3")
+            h = resblock(h, None, maps * 4, norm="in",
+                         pad_mode=pad_mode, name="resblock-1")
+            h = resblock(h, None, maps * 4, norm="in",
+                         pad_mode=pad_mode, name="resblock-2")
+            h = resblock(h, None, maps * 4, norm="in",
+                         pad_mode=pad_mode, name="resblock-3")
+            h = resblock(h, None, maps * 4, norm="in",
+                         pad_mode=pad_mode, name="resblock-4")
     return h
 
 
 def resblock(x, style=None, maps=256, pad_mode="reflect", norm="", name="resblock"):
     h = x
+
     def style_func(pos):
         if style is None:
             return None
@@ -241,10 +252,12 @@ def decoder(content, style, maps=256, num_res=4, num_layers=2, pad_mode="reflect
         with nn.parameter_scope(name):
             for i in range(num_res):
                 s = styles[:, i*maps*num_layers*2:(i+1)*maps*num_layers*2]
-                h = resblock(h, s, maps, norm="adain", pad_mode=pad_mode, 
+                h = resblock(h, s, maps, norm="adain", pad_mode=pad_mode,
                              name="resblock-{}".format(i + 1))
-            h = upsample(h, maps // 2, norm="ln", pad_mode=pad_mode, name="upsample-1")
-            h = upsample(h, maps // 4, norm="ln", pad_mode=pad_mode, name="upsample-2")
+            h = upsample(h, maps // 2, norm="ln",
+                         pad_mode=pad_mode, name="upsample-1")
+            h = upsample(h, maps // 4, norm="ln",
+                         pad_mode=pad_mode, name="upsample-2")
             h = convolution(h, 3, 7, 3, 1, pad_mode=pad_mode, name="to-RGB")
             h = F.tanh(h)
     return h
@@ -277,7 +290,8 @@ def discriminators(x, maps=64, n=3):
         for i in range(n):
             h = discriminator(x, maps, name="discriminator-{}x".format(2 ** i))
             discriminators.append(h)
-            x = F.average_pooling(x, kernel=(3, 3), stride=(2, 2), pad=(1, 1), including_pad=False)
+            x = F.average_pooling(x, kernel=(3, 3), stride=(
+                2, 2), pad=(1, 1), including_pad=False)
     return discriminators
 
 
@@ -300,15 +314,16 @@ def main():
     # Input
     b, c, h, w = 1, 3, 256, 256
     x_real = nn.Variable([b, c, h, w])
-        
+
     # Conent Encoder
-    content = content_encoder(x_real, maps=64, pad_mode="reflect", name="content-encoder")
+    content = content_encoder(
+        x_real, maps=64, pad_mode="reflect", name="content-encoder")
     print("Content shape: ", content.shape)
 
     # Style Encoder
     style = style_encoder(x_real, maps=64, name="style-encoder")
     print("Style shape: ", style.shape)
-    
+
     # Decoder
     x_fake = decoder(content, style, name="decoder")
     print("X_fake shape: ", x_fake.shape)

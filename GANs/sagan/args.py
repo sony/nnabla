@@ -53,7 +53,7 @@ def get_args(batch_size=32, accum_grad=2, image_size=128, n_classes=1000, max_it
                         help="Monitor path.")
     parser.add_argument("--model-load-path", type=str,
                         help="Model load path to a h5 file used in generation and validation.")
-    parser.add_argument("--lrg", type=float, default=1e-4, #4e-4
+    parser.add_argument("--lrg", type=float, default=1e-4,  # 4e-4
                         help="Learning rate for generator")
     parser.add_argument("--lrd", type=float, default=4e-4,
                         help="Learning rate for discriminator")
@@ -80,7 +80,7 @@ def get_args(batch_size=32, accum_grad=2, image_size=128, n_classes=1000, max_it
                         help="Class id in the imagenet dataset. See *.txt file in the directory.")
     parser.add_argument("--generate-all", action='store_true',
                         help="Generate images for all classes.")
-    parser.add_argument("--truncation-threshold", type=float, default=float("inf"),  
+    parser.add_argument("--truncation-threshold", type=float, default=float("inf"),
                         help="Threshold of the truncation trick.")
 
     # Morphing
@@ -90,7 +90,7 @@ def get_args(batch_size=32, accum_grad=2, image_size=128, n_classes=1000, max_it
                         help="Class id used for class morphing in the imagenet dataset. See *.txt file in the directory.")
     parser.add_argument("--n-morphs", type=int, default=8,
                         help="Number of morphing.")
-    
+
     # Validation
     parser.add_argument("--val-iter", "-v", type=int, default=10000,
                         help="Max iterations for validation.")

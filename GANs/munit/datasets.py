@@ -32,6 +32,7 @@ from nnabla.utils.data_source_loader import download, get_data_home
 import tarfile
 import glob
 
+
 def load_pix2pix_dataset(dataset="edges2shoes", train=True, num_samples=-1):
     image_uri = 'https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz'\
                 .format(dataset)
@@ -133,8 +134,8 @@ def pix2pix_data_iterator(data_source, batch_size):
                          with_file_cache=False)
 
 
-def edges2shoes_data_iterator(img_path, batch_size=1, 
-                              normalize_method=lambda x: (x - 127.5) / 127.5, 
+def edges2shoes_data_iterator(img_path, batch_size=1,
+                              normalize_method=lambda x: (x - 127.5) / 127.5,
                               num_samples=-1):
     imgs = glob.glob("{}/*.jpg".format(img_path))
 
@@ -152,7 +153,7 @@ def edges2shoes_data_iterator(img_path, batch_size=1,
         img_B = img[:, w // 2:, :].transpose((2, 0, 1))
         return img_A, img_B
 
-    return data_iterator_simple(load_func, num_samples, batch_size, 
+    return data_iterator_simple(load_func, num_samples, batch_size,
                                 shuffle=shuffle, rng=rng, with_file_cache=False)
 
 
@@ -178,7 +179,7 @@ def prepare_pix2pix_dataset(dataset="edges2shoes", train=True):
 
 
 def munit_data_iterator(img_path, batch_size=1, image_size=256, num_samples=-1,
-                        normalize_method=lambda x: (x - 127.5) / 127.5, 
+                        normalize_method=lambda x: (x - 127.5) / 127.5,
                         shuffle=True,
                         rng=None):
     imgs = []
@@ -193,11 +194,12 @@ def munit_data_iterator(img_path, batch_size=1, image_size=256, num_samples=-1,
         imgs += glob.glob("{}/*.png".format(img_path))
         imgs += glob.glob("{}/*.PNG".format(img_path))
     elif img_path.endswith(".jpg") or img_path.endswith(".JPG") \
-         or img_path.endswith(".jpeg") or img_path.endswith(".JPEG") \
-         or img_path.endswith(".png") or img_path.endswith(".PNG"):
+            or img_path.endswith(".jpeg") or img_path.endswith(".JPEG") \
+            or img_path.endswith(".png") or img_path.endswith(".PNG"):
         imgs.append(img_path)
     else:
-        raise ValueError("Path specified is not `directory path` or `list of files`.")
+        raise ValueError(
+            "Path specified is not `directory path` or `list of files`.")
 
     if num_samples == -1:
         num_samples = len(imgs)
@@ -212,9 +214,9 @@ def munit_data_iterator(img_path, batch_size=1, image_size=256, num_samples=-1,
         img = img.transpose((2, 0, 1))
         return img, None
 
-    return data_iterator_simple(load_func, num_samples, batch_size, 
+    return data_iterator_simple(load_func, num_samples, batch_size,
                                 shuffle=shuffle, rng=rng, with_file_cache=False)
-    
+
 
 if __name__ == '__main__':
     # Hand-made test

@@ -44,10 +44,10 @@ def get_args(monitor_path="tmp.monitor"):
                         type=str,
                         help='Path where inception model parameters are loaded. One does not necessarily use the inception-model, e.g., InceptionV3.')
     parser.add_argument("--img-path-a",
-                        type=str, 
+                        type=str,
                         help='Path to dataset in domain A')
     parser.add_argument("--img-path-b",
-                        type=str, 
+                        type=str,
                         help='Path to dataset in domain B')
     parser.add_argument("--img-files-a",
                         type=str, nargs='+',
