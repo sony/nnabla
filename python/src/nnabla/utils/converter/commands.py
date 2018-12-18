@@ -235,7 +235,7 @@ def convert_files(args, ifiles, output):
                 support_set = func_set_import_config(args.config)
             else:
                 support_set = func_set_nnabla_support()
-        if _need_split(nnp, args, support_set):
+        if _need_split(nnp, args, support_set) and args.config:
             ranges = _get_split_ranges(nnp, args, support_set)
             nnb_info = collections.OrderedDict()
             for pos_start, pos_end in ranges:
