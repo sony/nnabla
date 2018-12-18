@@ -388,6 +388,10 @@ def _train(args, config):
             for iteration in range(last_iteration, max_iteration):
 
                 cost = _update(iteration, config, cost)
+                if np.isnan(cost.sum_epoch) or np.isinf(cost.sum_epoch):
+                    logger.log(99, 'Cost is Nan')
+                    return False, False
+
                 if (iteration - last_iteration) > 0:
                     timeinfo = _calc_estimate_time(
                         timeinfo, max_iteration, last_iteration, iteration)
