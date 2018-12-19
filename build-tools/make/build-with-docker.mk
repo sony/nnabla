@@ -65,6 +65,7 @@ docker_image_onnx_test$(DOCKER_IMAGE_TARGET_SUFFIX):
 
 
 
+# for Android
 # Compiler for diffrent ARCHITECTURE and ABI:
 # CMAKE_SYSTEM_NAME = arm-linux-androideabi  ==> ARCHITECTURE = arm 	 , ABI=armeabi or ABI=armeabi-v7a
 # CMAKE_SYSTEM_NAME = aarch64-linux-android  ==> ARCHITECTURE = arm64 	 , ABI=arm64-v8a
@@ -89,6 +90,14 @@ docker_image_build_android$(DOCKER_IMAGE_TARGET_SUFFIX):
 			--build-arg ANDROID_EABI=$(ANDROID_EABI) \
 			-f docker/development/Dockerfile.android .) \
 	fi
+
+.PHONY: docker_image_build_android_emulator
+docker_image_build_android_emulator:
+	docker pull gradle:4.10.0-jdk8
+	cd $(NNABLA_DIRECTORY) \
+	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID)_test \
+		-f docker/development/Dockerfile.android-test .
+
 ########################################################################################################################
 # Auto Format
 
@@ -115,6 +124,11 @@ bwd-nnabla-cpplib: docker_image_build
 bwd-nnabla-cpplib-android: docker_image_build_android
 	cd $(NNABLA_DIRECTORY) \
 	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID) make -f build-tools/make/build.mk nnabla-cpplib-android
+
+.PHONY: bwd-nnabla-cpplib-android-test
+bwd-nnabla-cpplib-android-test: docker_image_build_android_emulator
+	cd $(NNABLA_DIRECTORY) \
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID)_test make -f build-tools/make/build.mk nnabla-cpplib-android-test
 
 .PHONY: bwd-nnabla-test-cpplib
 bwd-nnabla-test-cpplib: docker_image_build

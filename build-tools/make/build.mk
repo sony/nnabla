@@ -14,7 +14,7 @@
 
 ########################################################################################################################
 # Suppress most of make message.
-.SILENT:
+#.SILENT:
 
 NNABLA_BUILD_INCLUDED = True
 
@@ -101,6 +101,12 @@ nnabla-cpplib-android:
 	@cp $(TOOLCHAIN_INSTALL_DIR)/lib/libarchive.so $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
 	@cp $(BUILD_DIRECTORY_CPPLIB_ANDROID)/lib/libnnabla.so $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
 	@cp $(BUILD_DIRECTORY_CPPLIB_ANDROID)/lib/libnnabla_utils.so $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
+
+
+.PHONY: nnabla-cpplib-android-test
+nnabla-cpplib-android-test:
+# Execute the binary on emulator
+
 
 .PHONY: nnabla-wheel
 nnabla-wheel:
