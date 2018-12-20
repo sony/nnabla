@@ -157,6 +157,9 @@ def _need_split(nnp, args, supported_set):
             sys.exit(-1)
         return True
 
+    if not args.config:
+        return False
+
     if func_set_import_nnp(nnp) <= supported_set:
         return False
 
@@ -232,7 +235,7 @@ def convert_files(args, ifiles, output):
                 support_set = func_set_import_config(args.config)
             else:
                 support_set = func_set_nnabla_support()
-        if _need_split(nnp, args, support_set) and args.config:
+        if _need_split(nnp, args, support_set):
             for _net in nnp.protobuf.network[:]:
                 if _net.name != network_name:
                     nnp.protobuf.network.remove(_net)
