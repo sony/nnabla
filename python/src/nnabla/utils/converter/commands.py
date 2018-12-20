@@ -215,9 +215,6 @@ def convert_files(args, ifiles, output):
     output_ext = os.path.splitext(output)[1].lower()
     nnp = _import_file(args, ifiles)
     network_name = nnp.protobuf.executor[0].network_name
-    for _net in nnp.protobuf.network[:]:
-        if _net.name != network_name:
-            nnp.protobuf.network.remove(_net)
     if nnp is not None:
         if output_ext == '.onnx':
             if args.config:
@@ -236,6 +233,9 @@ def convert_files(args, ifiles, output):
             else:
                 support_set = func_set_nnabla_support()
         if _need_split(nnp, args, support_set) and args.config:
+            for _net in nnp.protobuf.network[:]:
+                if _net.name != network_name:
+                    nnp.protobuf.network.remove(_net)
             ranges = _get_split_ranges(nnp, args, support_set)
             nnb_info = collections.OrderedDict()
             for pos_start, pos_end in ranges:
