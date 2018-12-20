@@ -21,7 +21,8 @@
 #include "internal.hpp"
 
 std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
-                                          std::vector<std::string> files) {
+                                          std::vector<std::string> files,
+                                          bool on_memory) {
   std::vector<std::string> input_files;
 
   for (int i = 0; i < files.size(); i++) {
@@ -33,7 +34,19 @@ std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
         ext == ".prototxt") {
       nnp.add(arg);
     } else if (ext == ".nnp") {
-      nnp.add(arg);
+      if (on_memory) {
+
+        std::ifstream file(arg, std::ios::binary | std::ios::ate);
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<char> buffer(size);
+        if (file.read(buffer.data(), size)) {
+          nnp.add(buffer.data(), size);
+        }
+      } else {
+        nnp.add(arg);
+      }
     } else {
       input_files.push_back(arg);
     }

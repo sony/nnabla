@@ -34,14 +34,23 @@ bool nbla_infer(int argc, char *argv[]) {
       "Output filename prefix, if not specified print output to stdout.", false,
       std::string());
   p.add<int>("help", 0, "Print help", false);
+  p.add("on_memory", 'O', "On memory");
+
+  bool on_memory = false;
+
   if (!p.parse(argc, argv) || p.exist("help")) {
     std::cout << p.error_full() << p.usage();
     return false;
   }
 
+  if (p.exist("on_memory")) {
+    on_memory = true;
+  }
+
   nbla::Context ctx{{"cpu:float"}, "CpuCachedArray", "0"};
   nbla::utils::nnp::Nnp nnp(ctx);
-  std::vector<std::string> input_files = add_files_to_nnp(nnp, p.rest());
+  std::vector<std::string> input_files =
+      add_files_to_nnp(nnp, p.rest(), on_memory);
 
   int batch_size = p.get<int>("batch_size");
   std::string exec_name = p.get<std::string>("executor");

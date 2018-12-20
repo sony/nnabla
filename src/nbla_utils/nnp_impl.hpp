@@ -35,6 +35,10 @@
 #include <hdf5_hl.h>
 #endif
 
+// Lib archive
+#include <archive.h>
+#include <archive_entry.h>
+
 #include "nnabla.pb.h"
 
 #include <memory>
@@ -390,6 +394,7 @@ class NnpImpl {
 public:
   ~NnpImpl() {}
 
+  bool add_archive(struct archive *archive);
   bool add_prototxt(std::string filename);
   bool add_prototxt(char *buffer, int size);
   bool add_protobuf(std::string filename);

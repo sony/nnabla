@@ -16,6 +16,7 @@
 #define H_INTERNAL_HPP_
 
 std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
-                                          std::vector<std::string> files);
+                                          std::vector<std::string> files,
+                                          bool on_memory = false);
 
 #endif // H_INTERNAL_HPP_

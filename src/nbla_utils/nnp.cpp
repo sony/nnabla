@@ -149,37 +149,15 @@ bool Nnp::add(const string &filename) {
     struct archive *a = archive_read_new();
     assert(a);
     archive_read_support_format_zip(a);
-    struct archive_entry *entry;
     int r = ARCHIVE_OK;
     r = archive_read_open_filename(a, filename.c_str(), 10240);
     assert(r == ARCHIVE_OK);
     if (r != ARCHIVE_OK) {
       return false;
     }
-    while ((r = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
-      ssize_t size = (ssize_t)archive_entry_size(entry);
-      char *buffer = new char[size];
-      assert(buffer);
-      ssize_t read_size = archive_read_data(a, buffer, size);
-      if (read_size != size) {
-        return false;
-      }
-      std::string entryname(archive_entry_pathname(entry));
-
-      int ep = entryname.find_last_of(".");
-      std::string ext = entryname.substr(ep, entryname.size() - ep);
-
-      if (ext == ".prototxt" || ext == ".nntxt") {
-        impl_->add_prototxt(buffer, size);
-      } else if (ext == ".protobuf") {
-        impl_->add_protobuf(buffer, size);
-      } else if (ext == ".h5") {
-        impl_->add_hdf5(buffer, size);
-      }
-      delete buffer;
-    }
+    bool ret = impl_->add_archive(a);
     archive_read_free(a);
-    return true;
+    return ret;
   } else {
     std::cerr << "Error: No available file." << std::endl;
     return false;
@@ -188,7 +166,19 @@ bool Nnp::add(const string &filename) {
   return false;
 }
 
-bool Nnp::add(char *buffer, unsigned int size) { return true; }
+bool Nnp::add(char *buffer, unsigned int size) {
+  struct archive *a = archive_read_new();
+  assert(a);
+  archive_read_support_format_zip(a);
+  int r = ARCHIVE_OK;
+  r = archive_read_open_memory(a, buffer, size);
+  if (r != ARCHIVE_OK) {
+    return false;
+  }
+  bool ret = impl_->add_archive(a);
+  archive_read_free(a);
+  return ret;
+}
 
 vector<string> Nnp::get_network_names() { return impl_->get_network_names(); }
 
