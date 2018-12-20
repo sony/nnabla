@@ -188,6 +188,8 @@ bool Nnp::add(const string &filename) {
   return false;
 }
 
+bool Nnp::add(char *buffer, unsigned int size) { return true; }
+
 vector<string> Nnp::get_network_names() { return impl_->get_network_names(); }
 
 shared_ptr<Network> Nnp::get_network(const string &name) {

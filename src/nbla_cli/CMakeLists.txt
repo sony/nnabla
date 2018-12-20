@@ -24,7 +24,13 @@ include_directories(${HDF5_INCLUDE_DIRS})
 endif()
 
 
-add_executable(nbla nbla.cpp)
+add_executable(nbla
+  internal.cpp
+  nbla.cpp
+  nbla_dump.cpp
+  nbla_infer.cpp
+  nbla_train.cpp)
+
 target_link_libraries(nbla nnabla nnabla_utils)
 set_property(TARGET nbla PROPERTY CXX_STANDARD 11)
 
