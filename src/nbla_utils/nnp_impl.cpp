@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef _WIN32
+typedef int ssize_t;
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #include "nnp_impl.hpp"
 #include <nbla/computation_graph/computation_graph.hpp>
 
@@ -20,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+
 #include <nbla/function/sink.hpp>
 #include <nbla/logger.hpp>
 
@@ -29,6 +37,9 @@
 #define open _open
 #define O_RDONLY _O_RDONLY
 #endif
+// Lib archive
+#include <archive.h>
+#include <archive_entry.h>
 
 namespace nbla {
 namespace utils {
@@ -612,7 +623,8 @@ void NnpImpl::update_parameters() {
   proto_->clear_parameter(); // Reset all parameters consumed.
 }
 
-bool NnpImpl::add_archive(struct archive *a) {
+bool NnpImpl::add_archive(void *archive) {
+  struct archive *a = (struct archive *)archive;
   struct archive_entry *entry;
   int r = ARCHIVE_OK;
   while ((r = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {

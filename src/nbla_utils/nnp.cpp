@@ -22,13 +22,6 @@
 #include <string>
 #include <vector>
 
-#ifdef _WIN32
-typedef int ssize_t;
-#else
-#include <fcntl.h>
-#include <unistd.h>
-#endif
-
 #include "nnp_impl.hpp"
 
 #include <archive.h>
