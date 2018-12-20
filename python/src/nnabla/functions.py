@@ -563,32 +563,44 @@ def clip_by_value(x, min, max):
 
 
 def clip_by_norm(x, clip_norm, axis=None):
-    r"""ClipByNorm
+    r"""
+    Clip inputs by its L2 norm when the L2 norm is larger than the threshold value (defined by clip_norm).
+    If it is less than the threshold, inputs are not modified. If it is applied, the operation is represented as
 
     .. math::
-
       y = N \times \frac{x}{\|x\|_2}.
 
-    where :math:`x` the input, :math:`y` is the output, 
-    and :math:`N` is `clip_norm` where the norm of :math:`x` becomes. this is the case that `axes` is not set.  
+    where :math:`x` is the input, :math:`y` is the output,
+    and :math:`N` is `clip_norm`. this is the case that `axes` is not set.
     When `axes` is set, the norm is computed over `axes`.
 
     Args:
         x (Variable): An input variable.
-        clip_norm (`Variable` or `float`): An input scalar variable or float value.
-        axis (None, int or tuple of ints): Axis or axes along which the 
-        reduction is performed. Passing the default value `None` will reduce all dimensions.
+        clip_norm (`Variable` or `float`): An input scalar variable or float value. Must be positive.
+        axis (None, int or tuple of ints): Axis or axes along which the reduction is performed. Passing the default value `None` will reduce all dimensions.
+
     Returns:
         ~nnabla.Variable: N-D array.
+
     """
     from .function_bases import pow_scalar as pow_scalar_base
+    from .function_bases import maximum2 as maximum2_base
+    from .function_bases import maximum_scalar as maximum_scalar_base
     from .function_bases import sum as sum_base
+    from ._variable import Variable as Variable_base
+    from ._nd_array import NdArray as NdArray_base
+
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
     x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
-    y = clip_norm * x / x_norm
+    if isinstance(clip_norm, (Variable_base, NdArray_base)):
+        y = x * clip_norm / maximum2_base(x_norm, clip_norm)
+    else:
+        if clip_norm <= 0:
+            raise ValueError("clip_norm must be positive.")
+        y = x * clip_norm / maximum_scalar_base(x_norm, clip_norm)
     return y
 
 
