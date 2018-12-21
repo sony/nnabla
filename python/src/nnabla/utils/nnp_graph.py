@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import weakref
 import numpy as np
 
 import nnabla as nn
@@ -52,7 +53,10 @@ def _load_nnp_to_proto(nnp_path):
     return proto
 
 
-def _create_function(ctx, inputs, function_proto, batch_size):
+def _create_function(inputs, f, batch_size):
+    ctx = nn.get_current_context()
+    function_proto = f
+
     # todo: arrange weight name for NNC
 
     if function_proto.type == "Reshape":  # if batch_size = -1, something wrong?
@@ -86,6 +90,76 @@ def _create_function(ctx, inputs, function_proto, batch_size):
     return function_instance
 
 
+class VariableProto:
+
+    def __init__(self, v):
+        self.proto = v
+        self.parent = None
+        self._referrers = []
+        self.variable = None
+
+    def add_referrer(self, f):
+        assert isinstance(f, FunctionProto)
+        self._referrers.append(weakref.ref(f))
+
+    @property
+    def referrers(self):
+        referrers = [r() for r in self.referrers]
+        assert all([r is not None for r in referrers])
+        return referrers
+
+    @property
+    def num_referrers(self):
+        return len(self._referrers)
+
+
+class FunctionProto:
+    def __init__(self, proto):
+        self.proto = proto
+        self._inputs = []
+        self._outputs = []
+        self.function = None
+
+    @property
+    def inputs(self):
+        return self._inputs
+
+    @inputs.setter
+    def inputs(self, inputs):
+        for i in inputs:
+            assert isinstance(i, VariableProto)
+            i.add_referrer(self)
+        self._inputs = list(inputs)
+
+    @property
+    def outputs(self):
+        outputs = [o() for o in self._outputs]
+        assert all([os is not None for o in outputs])
+        return outputs
+
+    @outputs.setter
+    def outputs(self, outputs):
+        for o in outputs:
+            assert isinstance(o, VariableProto)
+        self._outputs = [weakref.ref(o) for o in outputs]
+        for o in outputs:
+            o.parent = self
+
+
+def visit_forward(variables, callback, fclosed=None):
+    if fclosed is None:
+        fclosed = set()
+    for v in variables:
+        f = v.parent
+        if f is None:
+            continue
+        if f in fclosed:
+            continue
+        fclosed.add(f)
+        visit_forward(f.inputs, callback, fclosed)
+        callback(f)
+
+
 class NnpNetwork(object):
     '''A graph object which is read from nnp file.
 
@@ -104,10 +178,22 @@ class NnpNetwork(object):
 
     '''
 
-    def _get_variable_or_create(self, name, shape, var_type):
+    def _get_variable_or_create(self, v):
+
+        if v.variable is not None:
+            return v.variable
+
+        pvar = v.proto
+        name = pvar.name
+        shape = list(pvar.shape.dim)
+        if shape[0] < 0:
+            shape[0] = self.batch_size
+        shape = tuple(shape)
+        assert np.all(np.array(shape) >
+                      0), "Shape must be positive. Given {}.".format(shape)
 
         # The variable is a parameter, then get from parameter registry.
-        if var_type == 'Parameter':
+        if pvar.type == 'Parameter':
             try:
                 param = get_parameter(name)
                 assert param is not None, \
@@ -123,73 +209,57 @@ class NnpNetwork(object):
                         '\n'.join(
                             list(nn.get_parameters(grad_only=False).keys()))))
             assert shape == param.shape
+            v.variable = param
             return param
 
-        # Returns if variable is already created.
-        try:
-            var, count = self.vseen[name]
-            count[0] += 1
-        except:
-            # Create a new one and returns.
-            var = nn.Variable(shape)
-            self.vseen[name] = (var, [1])
-            return var
-
-        # Found already created variable.
-        assert var.shape == shape
+        # Create a new one and returns.
+        var = nn.Variable(shape)
+        v.variable = var
         return var
 
-    def _create_inputs(self, input_names):
-        inputs = []
-        for name in input_names:
-            pvar = self.variable_proto[name]
-            shape = list(pvar.shape.dim)
-            if shape[0] < 0:
-                shape[0] = self.batch_size
-            shape = tuple(shape)
-            assert np.all(np.array(shape) >
-                          0), "Shape must be positive. Given {}.".format(shape)
-            var = self._get_variable_or_create(name, shape, pvar.type)
-            inputs.append(var)
-        return inputs
+    def _create_inputs(self, inputs):
+        input_vars = []
+        for i in inputs:
+            input_vars.append(self._get_variable_or_create(i))
+        return input_vars
 
-    def _create_function(self, function_proto):
-        inputs = self._create_inputs(function_proto.input)
+    def _create_function(self, f):
+        inputs = self._create_inputs(f.inputs)
 
-        function_instance = _create_function(
-            nn.get_current_context(), inputs, function_proto, self.batch_size)
+        function_instance = _create_function(inputs, f.proto, self.batch_size)
 
         outputs = function_instance(*inputs)
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
 
-        for i, name in enumerate(function_proto.output):
-            try:
-                var, _ = self.vseen[name]
-            except:
-                self.vseen[name] = (outputs[i], [0])
-                continue
-            var.rewire_on(outputs[i])
+        for o, ovar in zip(f.outputs, outputs):
+            o.variable = ovar
 
-    def __init__(self, network_proto, batch_size=None):
+    def __init__(self, network_proto, batch_size=None, callbacks=None):
         if batch_size is None:
             batch_size = network_proto.batch_size
         self.batch_size = batch_size
 
         # Variable proto messages as a dictionary with name as a key
-        self.variable_proto = {v.name: v for v in network_proto.variable}
-        self.vseen = {}
+        variables = {v.name: VariableProto(v) for v in network_proto.variable}
+        functions = [FunctionProto(f) for f in network_proto.function]
 
-        # Create function graph
-        for function_proto in network_proto.function:
-            self._create_function(function_proto)
+        for f in functions:
+            inputs = [variables[name] for name in f.proto.input]
+            outputs = [variables[name] for name in f.proto.output]
+            f.inputs = inputs
+            f.outputs = outputs
+
+        # get outputs
+        inputs = [v for v in variables.values() if v.parent is None]
+        outputs = [v for v in variables.values() if v.num_referrers == 0]
+
+        visit_forward(outputs, self._create_function)
 
         # Get input variables
-        self.variables = {name: v for name, (v, c) in self.vseen.items()}
-        self.inputs = {name: v for name,
-                       (v, c) in self.vseen.items() if v.parent is None}
-        self.outputs = {name: v for name,
-                        (v, c) in self.vseen.items() if c[0] == 0}
+        self.variables = {v.proto.name: v.variable for v in variables.values()}
+        self.inputs = {i.proto.name: i.variable for i in inputs}
+        self.outputs = {o.proto.name: o.variable for o in outputs}
 
 
 class NnpLoader(object):
@@ -233,10 +303,10 @@ class NnpLoader(object):
         '''
         return list(self.network_dict.keys())
 
-    def get_network(self, name, batch_size=None):
+    def get_network(self, name, batch_size=None, callbacks=None):
         '''Create a variable graph given  network by name
 
         Returns: NnpNetwork
 
         '''
-        return NnpNetwork(self.network_dict[name], batch_size)
+        return NnpNetwork(self.network_dict[name], batch_size, callbacks)
