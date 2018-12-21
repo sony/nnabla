@@ -27,8 +27,8 @@ from nnabla.utils.nnp_graph import NnpLoader
 
 from imagenet_data import data_iterator_imagenet
 from models import generator
-from helpers import (generate_random_class, generate_one_class, 
-                     get_input_and_output, 
+from helpers import (generate_random_class, generate_one_class,
+                     get_input_and_output,
                      preprocess)
 from args import get_args, save_args
 
@@ -49,7 +49,8 @@ def compute_inception_score(z, y_fake, x_fake, x, y, args):
         x_fake.forward(clear_buffer=True)
         # Predict
         x_fake_d = x_fake.d.copy()
-        x_fake_d = preprocess(x_fake_d, (args.image_size, args.image_size), args.nnp_preprocess)
+        x_fake_d = preprocess(
+            x_fake_d, (args.image_size, args.image_size), args.nnp_preprocess)
         x.d = x_fake_d
         y.forward(clear_buffer=True)
         preds.append(y.d.copy())
@@ -59,8 +60,8 @@ def compute_inception_score(z, y_fake, x_fake, x, y, args):
     kld = np.sum(p_yx * (np.log(p_yx) - np.log(p_y)), axis=1)
     score = np.exp(np.mean(kld))
     return score
-        
-        
+
+
 def compute_frechet_inception_distance(z, y_fake, x_fake, x, y, args, di=None):
     h_fakes = []
     h_reals = []
@@ -72,13 +73,15 @@ def compute_frechet_inception_distance(z, y_fake, x_fake, x, y, args, di=None):
         x_fake.forward(clear_buffer=True)
         # Predict for fake
         x_fake_d = x_fake.d.copy()
-        x_fake_d = preprocess(x_fake_d, (args.image_size, args.image_size), args.nnp_preprocess)
+        x_fake_d = preprocess(
+            x_fake_d, (args.image_size, args.image_size), args.nnp_preprocess)
         x.d = x_fake_d
         y.forward(clear_buffer=True)
         h_fakes.append(y.d.copy().squeeze())
         # Predict for real
         x_d, _ = di.next()
-        x_d = preprocess(x_d, (args.image_size, args.image_size), args.nnp_preprocess)
+        x_d = preprocess(
+            x_d, (args.image_size, args.image_size), args.nnp_preprocess)
         x.d = x_d
         y.forward(clear_buffer=True)
         h_reals.append(y.d.copy().squeeze())
@@ -86,12 +89,13 @@ def compute_frechet_inception_distance(z, y_fake, x_fake, x, y, args, di=None):
     h_reals = np.concatenate(h_reals)
 
     # FID score
-    ave_h_real = np.mean(h_reals, axis=0)    
+    ave_h_real = np.mean(h_reals, axis=0)
     ave_h_fake = np.mean(h_fakes, axis=0)
     cov_h_real = np.cov(h_reals, rowvar=False)
     cov_h_fake = np.cov(h_fakes, rowvar=False)
     score = np.sum((ave_h_real - ave_h_fake) ** 2) \
-            + np.trace(cov_h_real + cov_h_fake - 2.0 * sqrtm(np.dot(cov_h_real, cov_h_fake)))
+        + np.trace(cov_h_real + cov_h_fake - 2.0 *
+                   sqrtm(np.dot(cov_h_real, cov_h_fake)))
     return score
 
 
@@ -108,7 +112,7 @@ def evaluate(args):
     image_size = args.image_size
     n_classes = args.n_classes
     not_sn = args.not_sn
-    
+
     # Model (Inception model) from nnp file
     nnp = NnpLoader(args.nnp_inception_model_load_path)
     x, y = get_input_and_output(nnp, args.batch_size, name=args.variable_name)
@@ -117,21 +121,24 @@ def evaluate(args):
         is_model = None
         compute_metric = compute_inception_score
     if args.evaluation_metric == "FID":
-        di = data_iterator_imagenet(args.valid_dir, args.dirname_to_label_path, 
-                                    batch_size=args.batch_size, 
-                                    ih=args.image_size, iw=args.image_size, 
+        di = data_iterator_imagenet(args.valid_dir, args.dirname_to_label_path,
+                                    batch_size=args.batch_size,
+                                    ih=args.image_size, iw=args.image_size,
                                     shuffle=True, train=False, noise=False)
-        compute_metric = functools.partial(compute_frechet_inception_distance, di=di)
+        compute_metric = functools.partial(
+            compute_frechet_inception_distance, di=di)
 
     # Monitor
     monitor = Monitor(args.monitor_path)
-    monitor_metric = MonitorSeries("{}".format(args.evaluation_metric), monitor, interval=1)
+    monitor_metric = MonitorSeries("{}".format(
+        args.evaluation_metric), monitor, interval=1)
 
     # Compute the evaluation metric for all models
-    cmp_func = lambda path: int(path.split("/")[-1].strip("params_").rstrip(".h5"))
+    def cmp_func(path): return int(path.split(
+        "/")[-1].strip("params_").rstrip(".h5"))
     model_load_path = sorted(glob.glob("{}/*.h5".format(args.model_load_path)), key=cmp_func) \
-                      if os.path.isdir(args.model_load_path) else \
-                         [args.model_load_path]
+        if os.path.isdir(args.model_load_path) else \
+        [args.model_load_path]
 
     for path in model_load_path:
         # Model (SAGAN)
@@ -139,7 +146,7 @@ def evaluate(args):
         z = nn.Variable([batch_size, latent])
         y_fake = nn.Variable([batch_size])
         x_fake = generator(z, y_fake, maps=maps, n_classes=n_classes, test=True, sn=not_sn)\
-                 .apply(persistent=True)
+            .apply(persistent=True)
         # Compute the evaluation metric
         score = compute_metric(z, y_fake, x_fake, x, y, args)
         itr = cmp_func(path)
@@ -151,9 +158,7 @@ def main():
     save_args(args, "evaluate")
 
     evaluate(args)
-    
+
 
 if __name__ == '__main__':
     main()
-
-                        

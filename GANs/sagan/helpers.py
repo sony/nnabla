@@ -27,6 +27,7 @@ import nnabla.solvers as S
 import numpy as np
 from scipy import linalg
 
+
 def generate_random_class(n_classes, batch_size):
     return np.random.choice(np.arange(n_classes),
                             batch_size,
@@ -35,7 +36,7 @@ def generate_random_class(n_classes, batch_size):
 
 def generate_one_class(class_id, batch_size):
     return np.repeat(class_id, batch_size)
-    
+
 
 def get_input_and_output(nnp, batch_size, name=""):
     network_name = nnp.get_network_names()[0]

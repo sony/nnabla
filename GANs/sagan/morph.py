@@ -51,9 +51,9 @@ def morph(args):
     alpha = nn.Variable.from_numpy_array(np.zeros([1, 1]))
     beta = (nn.Variable.from_numpy_array(np.ones([1, 1])) - alpha)
     y_fake_a = nn.Variable([batch_size])
-    
+
     y_fake_b = nn.Variable([batch_size])
-    x_fake = generator(z, [y_fake_a, y_fake_b], maps=maps, n_classes=n_classes, 
+    x_fake = generator(z, [y_fake_a, y_fake_b], maps=maps, n_classes=n_classes,
                        test=True, sn=not_sn, coefs=[alpha, beta]).apply(persistent=True)
     b, c, h, w = x_fake.shape
 
@@ -63,7 +63,7 @@ def morph(args):
     monitor_image = MonitorImage(name, monitor, interval=1,
                                  num_images=1,
                                  normalize_method=normalize_method)
-    
+
     # Morph
     images = []
     z_data = resample(batch_size, latent, threshold)
@@ -74,7 +74,7 @@ def morph(args):
         y_fake_b.d = generate_one_class(args.to_class_id, batch_size)
         x_fake.forward(clear_buffer=True)
         monitor_image.add(i, x_fake.d)
-            
+
 
 def main():
     args = get_args()
@@ -84,6 +84,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main() 
-
-                        
+    main()

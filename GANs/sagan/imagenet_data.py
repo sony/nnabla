@@ -37,17 +37,18 @@ class dummy_iterator_imagenet():
     def __init__(self, batch_size, n_classes=1000):
         self.batch_size = batch_size
         self.n_classes = n_classes
+
     def next(self, ):
         x = np.random.rand(self.batch_size, 3, 128, 128)
         y = np.random.choice(np.arange(self.n_classes), self.batch_size)
         return x, y
-    
+
 
 def data_iterator_imagenet(img_path, dirname_to_label_path,
-                           batch_size=16, ih=128, iw=128, n_classes=1000, 
+                           batch_size=16, ih=128, iw=128, n_classes=1000,
                            class_id=-1,
-                           noise=True, 
-                           normalize=lambda x: x / 128.0 - 1.0, 
+                           noise=True,
+                           normalize=lambda x: x / 128.0 - 1.0,
                            train=True, shuffle=True, rng=None):
     # ------
     # Valid
@@ -65,7 +66,8 @@ def data_iterator_imagenet(img_path, dirname_to_label_path,
 
         def load_func(i):
             # image
-            img = Image.open(imgs[i]).resize((iw, ih), Image.BILINEAR).convert("RGB")
+            img = Image.open(imgs[i]).resize(
+                (iw, ih), Image.BILINEAR).convert("RGB")
             img = np.asarray(img)
             img = img.transpose((2, 0, 1))
             img = img / 128.0 - 1.0
@@ -81,15 +83,16 @@ def data_iterator_imagenet(img_path, dirname_to_label_path,
     dir_paths = glob.glob("{}/*".format(img_path))
     dir_paths.sort()
     dir_paths = dir_paths[0:n_classes]
-    
+
     # Images
     imgs = []
     for dir_path in dir_paths:
         imgs += glob.glob("{}/*.JPEG".format(dir_path))
-    #np.random.shuffle(imgs)
-    
+    # np.random.shuffle(imgs)
+
     # Dirname to Label map
-    dirname_to_label, label_to_dirname = create_dirname_label_maps(dirname_to_label_path)
+    dirname_to_label, label_to_dirname = create_dirname_label_maps(
+        dirname_to_label_path)
 
     # Filter by class_id
     if class_id != -1:
@@ -98,7 +101,8 @@ def data_iterator_imagenet(img_path, dirname_to_label_path,
 
     def load_func(i):
         # image
-        img = Image.open(imgs[i]).resize((iw, ih), Image.BILINEAR).convert("RGB")
+        img = Image.open(imgs[i]).resize(
+            (iw, ih), Image.BILINEAR).convert("RGB")
         img = np.asarray(img)
         img = img.transpose((2, 0, 1))
         img = img / 128.0 - 1.0
@@ -109,7 +113,7 @@ def data_iterator_imagenet(img_path, dirname_to_label_path,
         dname = elms[-2]
         label = dirname_to_label[dname]
         return img, label
-        
+
     di = data_iterator_simple(
         load_func, len(imgs), batch_size, shuffle=shuffle, rng=rng, with_file_cache=False)
     return di
@@ -128,6 +132,7 @@ def main():
             for i, u in enumerate(x):
                 print(i, u.shape)
             break
+
 
 if __name__ == '__main__':
     main()
