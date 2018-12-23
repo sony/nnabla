@@ -32,9 +32,9 @@ bash preprocess.sh <path to the top directory of imagenet dataset> <path to save
 
 Top directory of imagenet dataset is one that contains directories each of which represents the class id.
 
-# Pre-trained model
+# Pre-trained weights
 
-You can download the pre-trained model [here](https://nnabla.org/pretrained-models/nnabla-examples/GANs/sagan/params_999999.h5). If so, you can skip the next section.
+You can download the pre-trained weights [here](https://nnabla.org/pretrained-models/nnabla-examples/GANs/sagan/params_999999.h5). If so, you can skip the next section.
 
 
 # Training
