@@ -137,7 +137,10 @@ def calc_shape_size(shape, batch_size):
 
 
 def func_set_import_nnp(nnp):
-    return set([f.type for f in nnp.protobuf.network[0].function])
+    network_name = nnp.protobuf.executor[0].network_name
+    for _net in nnp.protobuf.network:
+        if _net.name == network_name:
+            return set([f.type for f in _net.function])
 
 
 @func_set_init
@@ -299,14 +302,12 @@ def func_set_export_yaml(func_dict, yaml_file):
 
 
 @func_set_init
-def func_set_exporter_funcs_opset_yaml(func_set, yaml_file):
+def func_set_exporter_funcs_opset_yaml(func_set):
     if len(list(func_set)[0].split('@')) == 1:
         yaml_data = {}
         for nnabla_func, impl_funcs in _onnx_func_info.items():
             if nnabla_func in func_set:
                 yaml_data[nnabla_func] = impl_funcs
-        with open(yaml_file, 'w') as f:
-            f.write(yaml.dump(yaml_data, default_flow_style=False))
+        return yaml.dump(yaml_data, default_flow_style=False)
     else:
-        with open(yaml_file, 'w') as f:
-            f.write(yaml.dump(list(func_set), default_flow_style=False))
+        return yaml.dump(list(func_set), default_flow_style=False)

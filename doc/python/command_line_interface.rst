@@ -443,7 +443,7 @@ Generate function information
 .. code-block:: none
 
     usage: nnabla_cli function_info [-h] [-o OUTFILE] [-f FUNC_SET] [-c CONFIG]
-                                    [-t TARGET] [--nnp-no-expand-network]
+                                    [-t TARGET] [-q --query] [--nnp-no-expand-network]
                                     [FILE] [FILE ...]
 
     positional arguments:
@@ -460,6 +460,8 @@ Generate function information
                           function list or the "opset_" args.
       -t, --target
                           output target function list.
+      -q, --query
+                          query the detail of a function.
       --nnp-no-expand-network
                           [import][NNP] expand network with repeat or recurrent.
 

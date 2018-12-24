@@ -18,25 +18,40 @@ import sys
 import nnabla.utils.converter as cvt
 
 
+class FuncInfo:
+    params = None
+
+
 class NnablaHandler:
-    def __init__(self, config):
+    def __init__(self):
         self._func_set = cvt.func_set_nnabla_support()
-        if config:
-            self._config_set = cvt.func_set_import_config(config)
+        if FuncInfo.params.files:
+            self._nnp_set = set()
+            for f in FuncInfo.params.files:
+                nnp = cvt.nnabla.NnpImporter(
+                    f, expand_network=not FuncInfo.params.nnp_no_expand_network).execute()
+                self._nnp_set |= cvt.func_set_import_nnp(nnp)
+            self._func_set &= self._nnp_set
+        if FuncInfo.params.config:
+            self._config_set = cvt.func_set_import_config(
+                FuncInfo.params.config)
             self._func_set &= self._config_set
-            self._func_dict = cvt.func_dict_import_config(config)
+            self._func_dict = cvt.func_dict_import_config(
+                FuncInfo.params.config)
             self._func_dict = {
                 k: v for k, v in self._func_dict.items() if k in self._func_set}
         else:
             self._func_dict = {k: ['ALL'] for k in self._func_set}
 
-    def execute(self, output):
-        if output:
-            output_ext = os.path.splitext(output)[1].lower()
+    def execute(self):
+        if FuncInfo.params.output:
+            output_ext = os.path.splitext(
+                FuncInfo.params.output)[1].lower()
             if output_ext == '.yaml':
-                cvt.func_set_export_yaml(self._func_dict, output)
+                cvt.func_set_export_yaml(
+                    self._func_dict, FuncInfo.params.output)
             else:
-                with open(output, 'w') as f:
+                with open(FuncInfo.params.output, 'w') as f:
                     f.write('\n'.join(list(self._func_set)))
         else:
             sys.stdout.write('\n'.join(list(self._func_set)))
@@ -44,34 +59,38 @@ class NnablaHandler:
 
 
 class NncrHandler:
-    def __init__(self, files, config, nnp_no_expand_network):
+    def __init__(self):
         self._func_set = cvt.func_set_nncr_support()
         self._nonsupport_set = set()
-        if files:
+        if FuncInfo.params.files:
             self._nnp_set = set()
-            for f in files:
+            for f in FuncInfo.params.files:
                 nnp = cvt.nnabla.NnpImporter(
-                    f, expand_network=not nnp_no_expand_network).execute()
+                    f, expand_network=not FuncInfo.params.nnp_no_expand_network).execute()
                 self._nnp_set |= cvt.func_set_import_nnp(nnp)
             self._func_set &= self._nnp_set
             self._nonsupport_set = self._nnp_set - self._func_set
-        if config:
-            self._config_set = cvt.func_set_import_config(config)
+        if FuncInfo.params.config:
+            self._config_set = cvt.func_set_import_config(
+                FuncInfo.params.config)
             self._func_set &= self._config_set
-            self._func_dict = cvt.func_dict_import_config(config)
+            self._func_dict = cvt.func_dict_import_config(
+                FuncInfo.params.config)
             self._func_dict = {
                 k: v for k, v in self._func_dict.items() if k in self._func_set}
             self._nonsupport_set = self._config_set - self._func_set
         else:
             self._func_dict = {k: ['ALL'] for k in self._func_set}
 
-    def execute(self, output):
-        if output:
-            output_ext = os.path.splitext(output)[1].lower()
+    def execute(self):
+        if FuncInfo.params.output:
+            output_ext = os.path.splitext(
+                FuncInfo.params.output)[1].lower()
             if output_ext == '.yaml':
-                cvt.func_set_export_yaml(self._func_dict, output)
+                cvt.func_set_export_yaml(
+                    self._func_dict, FuncInfo.params.output)
             else:
-                with open(output, 'w') as f:
+                with open(FuncInfo.params.output, 'w') as f:
                     f.write('\n'.join(list(self._func_set)))
         else:
             sys.stdout.write(
@@ -86,39 +105,52 @@ class NncrHandler:
 
 
 class OnnxHandler:
-    def __init__(self, files, config, target, nnp_no_expand_network):
+    def __init__(self):
         self._func_set = cvt.func_set_onnx_support()
-        self._target = target
         self._nonsupport_set = set()
-        if files:
+        if FuncInfo.params.files:
             self._nnp_set = set()
-            for f in files:
+            for f in FuncInfo.params.files:
                 nnp = cvt.nnabla.NnpImporter(
-                    f, expand_network=not nnp_no_expand_network).execute()
+                    f, expand_network=not FuncInfo.params.nnp_no_expand_network).execute()
                 self._nnp_set |= cvt.func_set_import_nnp(nnp)
             self._func_set &= self._nnp_set
             self._nonsupport_set = self._nnp_set - self._func_set
-        if config:
-            if os.path.exists(config):
-                self._config_set = cvt.func_set_import_onnx_config(config)
+        if FuncInfo.params.config:
+            if os.path.exists(FuncInfo.params.config):
+                self._config_set = cvt.func_set_import_onnx_config(
+                    FuncInfo.params.config)
                 self._func_set &= self._config_set
-            elif config.startswith('opset_'):
-                self._config_set = cvt.func_set_import_onnx_opset(config)
+            elif FuncInfo.params.config.startswith('opset_'):
+                self._config_set = cvt.func_set_import_onnx_opset(
+                    FuncInfo.params.config)
                 self._func_set &= self._config_set
             else:
                 print("ERROR: config file not found!")
             self._nonsupport_set = self._config_set - self._func_set
-        if self._target:
+            if FuncInfo.params.files:
+                self._nonsupport_set = self._nnp_set - self._func_set
+        if FuncInfo.params.target:
             self._func_set = cvt.func_set_onnx_output_target_list(
                 self._func_set)
 
-    def execute(self, output):
-        if output:
-            output_ext = os.path.splitext(output)[1].lower()
+    def execute(self):
+        if FuncInfo.params.query and not FuncInfo.params.target:
+            yaml_data = cvt.func_set_exporter_funcs_opset_yaml(
+                set([FuncInfo.params.query]))
+            sys.stdout.write(yaml_data)
+            sys.stdout.write('\n')
+            return
+        if FuncInfo.params.output:
+            output_ext = os.path.splitext(
+                FuncInfo.params.output)[1].lower()
             if output_ext == '.yaml':
-                cvt.func_set_exporter_funcs_opset_yaml(self._func_set, output)
+                yaml_data = cvt.func_set_exporter_funcs_opset_yaml(
+                    self._func_set)
+                with open(FuncInfo.params.output, 'w') as f:
+                    f.write(yaml_data)
             else:
-                with open(output, 'w') as f:
+                with open(FuncInfo.params.output, 'w') as f:
                     f.write('\n'.join(list(self._func_set)))
         else:
             sys.stdout.write(
@@ -133,15 +165,17 @@ class OnnxHandler:
 
 
 def function_info_command(args):
+    FuncInfo.params = args
     if args.all_support:
-        if args.all_support == 'NNB':
-            NncrHandler(args.files, args.config,
-                        args.nnp_no_expand_network).execute(args.output)
-        elif args.all_support == 'ONNX':
-            OnnxHandler(args.files, args.config, args.target,
-                        args.nnp_no_expand_network).execute(args.output)
+        if args.all_support.upper() == 'NNB':
+            NncrHandler().execute()
+        elif args.all_support.upper() == 'ONNX':
+            OnnxHandler().execute()
+        else:
+            print("Unsupport args: {}".format(args.all_support))
+            return False
     else:
-        NnablaHandler(args.config).execute(args.output)
+        NnablaHandler().execute()
     return True
 
 
@@ -160,6 +194,8 @@ def add_function_info_command(subparsers):
                            help='user config file for target constraint')
     subparser.add_argument('-t', '--target', action='store_true',
                            help='specify function set is output for target format/device')
+    subparser.add_argument('-q', '--query', default=None,
+                           help='query the detail of a function')
     subparser.add_argument('--nnp-no-expand-network', action='store_true',
                            help='[import][NNP] expand network with repeat or recurrent.')
     subparser.set_defaults(func=function_info_command)
