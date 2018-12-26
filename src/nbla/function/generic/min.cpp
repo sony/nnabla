@@ -16,7 +16,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Min, const vector<int> &, bool);
+NBLA_REGISTER_FUNCTION_SOURCE(Min, const vector<int> &, bool, bool, bool);
 
 template <typename T>
 void Min<T>::forward_impl_reduce(const T *x, T *y, int outer_size,

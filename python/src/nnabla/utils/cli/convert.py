@@ -25,24 +25,27 @@ def function_info_command(args):
     else:
         with open(args.dest, 'w') as f:
             f.write(get_category_info_string())
+    return True
 
 
 def dump_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
-            return
+            return False
     nnabla.utils.converter.dump_files(args, args.files)
+    return True
 
 
 def nnb_template_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
-            return
+            return False
     if len(args.files) >= 2:
         output = args.files.pop()
         nnabla.utils.converter.nnb_template(args, args.files, output)
+    return True
 
 
 def convert_command(args):
@@ -50,16 +53,20 @@ def convert_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
-            return
+            return False
 
     if 'export_format' in args:
         if args.export_format not in nnabla.utils.converter.formats.export_name:
             print('Export format ({}) is not supported.'.format(args.export_format))
-            return
+            return False
 
     if len(args.files) >= 2:
         output = args.files.pop()
         nnabla.utils.converter.convert_files(args, args.files, output)
+        return True
+
+    print('Input and Output arg is mandatory.')
+    return False
 
 
 def add_convert_command(subparsers):
@@ -120,7 +127,7 @@ def add_convert_command(subparsers):
     subparser.set_defaults(func=nnb_template_command)
 
     ################################################################################
-    # Conveter
+    # Converter
     subparser = subparsers.add_parser('convert', help='File format converter.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')

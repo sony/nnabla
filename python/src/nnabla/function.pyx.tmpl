@@ -317,7 +317,7 @@ cdef class Function:
 # Python Function
 # ---------------
 #
-# Python function uses Callback function implemneted in C++.
+# Python function uses Callback function implemented in C++.
 # Callback function calls setup/forward/backward function registered ctor.
 # From Python side, PythonFunction adds the following
 # setup_callback, forward_callback and backward_callback functions at
@@ -325,7 +325,7 @@ cdef class Function:
 # derived from PythonFunction.
 # ==============================================================================
 cdef class UnsafeVariable:
-    """This is a Python wapper class for Variable class in C++.
+    """This is a Python wrapper class for Variable class in C++.
 
     Note:
         that it is intended to be used only in PythonFunction. Copying
@@ -481,43 +481,50 @@ cdef void backward_callback(void *cself, const Variables &cinputs,
                        [accum[i] for i in range(accum.size())])
 
 cdef void cleanup_callback(void *cself) with gil:
-    """Decrese a reference count of PythonFunction.
+    """Decrement a reference count of PythonFunction.
     """
     Py_DECREF(<object> cself)
     
 
-cdef class PythonFunction(Function):
+class PythonFunction:
     """
     """
-    def __cinit__(self):
-        # Need to increment reference count of Python Function object because
-        # The Function Object in Python is deallocated when Python side holds explicitly
-        # the object instance even if the function graph (C++ side) is alive.
+    def __call__(self, *inputs, n_outputs=-1, outputs=None):
+        from .auto_forward import get_auto_forward
+        info = Info()
+        info.type_name = 'PythonFunction'
+        from pickle import dumps
+        info.args = {'pickle': dumps(self)}
+        # Increment reference count to prevent deleting this object as long as
+        # the CgFunction instance created below exists.
+        # The reference count is decremented at the cleanup_callback function
+        # which will be called when the Callback function created below is
+        # deleted.
         Py_INCREF(self)
-        self.fun = make_shared[CgFunction](
-            create_Callback(CContext(), <void*>self,
+        f = Function.create(create_Callback(CContext(), <void*>self,
+                            self.min_outputs(),
                             setup_callback,
                             forward_callback,
                             backward_callback,
-                            cleanup_callback))
-        self.funp = self.fun.get()
-        self.funp.set_info(repr({'name': 'PythonFunction (cannot save/load)', 'args': {}}).encode('ascii'))
+                            cleanup_callback), info)
+        return f(*inputs, n_outputs=n_outputs,
+                 auto_forward=get_auto_forward(), outputs=outputs)
 
     @property
     def name(self):
-        raise NotImplementedError("Impelment `name`.")
+        raise NotImplementedError("Implement `name`.")
 
     def min_outputs(self):
-        raise NotImplementedError("Impelment `min_outputs`.")
+        raise NotImplementedError("Implement `min_outputs`.")
 
     def setup_impl(self, inputs, outputs):
-        raise NotImplementedError("Impelment `setup`.")
+        raise NotImplementedError("Implement `setup`.")
 
     def forward_impl(self, inputs, outputs):
-        raise NotImplementedError("Impelment `forward`.")
+        raise NotImplementedError("Implement `forward`.")
 
     def backward_impl(self, inputs, outputs, propagate_down, accum):
-        raise NotImplementedError("Impelment `backward`.")
+        raise NotImplementedError("Implement `backward`.")
 # ==============================================================================
 # Python Function End
 # ==============================================================================

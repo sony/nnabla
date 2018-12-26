@@ -35,9 +35,14 @@ def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_s
     di = data_iterator_simple(test_load_func, size,
                               batch_size, shuffle=shuffle)
 
-    import fractions
+    import six
+    if six.PY2:
+        from fractions import gcd
+    else:
+        from math import gcd
 
-    def lcm(a, b): return abs(a * b) / fractions.gcd(a, b) if a and b else 0
+    def lcm(a, b):
+        return abs(a * b) / gcd(a, b) if a and b else 0
 
     max_epoch = lcm(batch_size, size) / size
 

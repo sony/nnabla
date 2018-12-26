@@ -85,7 +85,7 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
     NBLA_CHECK(inplace_outputs[i]->size() == foutputs[i]->size(),
                error_code::value,
                "In-place array size and function output size must match. "
-               "inplace_outouts[%d]: %d != function_output[%d]: %d.",
+               "inplace_outputs[%d]: %d != function_output[%d]: %d.",
                inplace_outputs[i]->size(), foutputs[i]->size());
     foutputs[i]->data()->set_array(inplace_outputs[i]->array());
   }

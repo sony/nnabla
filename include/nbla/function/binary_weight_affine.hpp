@@ -23,7 +23,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(BinaryWeightAffine, int);
+NBLA_REGISTER_FUNCTION_HEADER(BinaryWeightAffine, int, float);
 
 /** Binary weight network version of an affine layer, using
     deterministic quantization to -1 and 1 (with scaling).
@@ -64,6 +64,7 @@ Outputs:
 @param base_axis Base axis of BinaryConnectAffine operation. Dimensions up to
 base_axis
 is treated as sample dimension.
+@param quantize_zero_to Input value at zero is quantized to this value.
 
 \ingroup FunctionImplGrp
  */
@@ -79,14 +80,16 @@ protected:
   Variable scaled_weights_;
 
   int base_axis_;
+  float quantize_zero_to_;
   Size_t w_row_, w_col_;
 
 public:
-  BinaryWeightAffine(const Context &ctx, int base_axis)
-      : BaseFunction(ctx, base_axis), base_axis_(base_axis) {}
+  BinaryWeightAffine(const Context &ctx, int base_axis, float quantize_zero_to)
+      : BaseFunction(ctx, base_axis), base_axis_(base_axis),
+        quantize_zero_to_(quantize_zero_to) {}
   virtual ~BinaryWeightAffine() {}
   virtual shared_ptr<Function> copy() const {
-    return create_BinaryWeightAffine(ctx_, base_axis_);
+    return create_BinaryWeightAffine(ctx_, base_axis_, quantize_zero_to_);
   }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<T>(),

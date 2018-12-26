@@ -194,7 +194,7 @@ class BackwardCallback {
         accum[i] = true;
         continue;
       }
-      // First visit graidents are copied.
+      // First visit gradients are copied.
       if (first_visit_flags[i]) {
         continue;
       }
@@ -208,7 +208,7 @@ class BackwardCallback {
     for (int i = 0; i < outputs.size(); i++) {
       auto o = outputs[i];
       if (first_visit[i]) {
-        // The ouput variable has not been seen during this backprop, which
+        // The output variable has not been seen during this backprop, which
         // means no one sets the gradient previously. To prevent to propagate
         // uninitialized gradient, the output gradients are filled as 0.
         // std::cout << "Zero-ing output grad of "
@@ -262,7 +262,7 @@ class BackwardCallback {
         // Terminal variable always doesn't allow to clear buffers.
         prohibit_clear[i] = true;
       } else {
-        // Propagte prohibit_clear_inputs_buffers flag from the previous seen
+        // Propagate prohibit_clear_inputs_buffers flag from the previous seen
         // inputs.
         prohibit_clear[i] = it->second;
       }
@@ -493,6 +493,17 @@ void CgVariable::backward(
       communicator_callbacks);
 }
 
+vector<CgFunctionPtr> CgVariable::function_references() {
+  vector<CgFunctionPtr> ret(this->function_reference_count(), nullptr);
+  int i = 0;
+  for (auto pair : function_references_) {
+    if (auto shared = pair.second.first.lock())
+      ret[i++] = shared;
+  }
+
+  return ret;
+}
+
 void CgVariable::insert_function_reference(CgFunctionPtr func) {
   std::weak_ptr<CgFunction> wp(func);
   function_references_.insert(
@@ -503,7 +514,7 @@ void CgVariable::remove_function_reference(CgFunction *funcp) {
   auto it = function_references_.find(funcp);
   if (it == function_references_.end())
     return;
-  function_references_.erase(funcp);
+  function_references_.erase(it);
 }
 
 void CgVariable::mark_need_setup() {

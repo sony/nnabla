@@ -199,7 +199,7 @@ template <typename T> struct float_bits : public nbits<T> {
       return tsign_bit | texp_bits | tsig_bits;
     }
 
-    // 3. Normlized.
+    // 3. Normalized.
     return tsign_bit | ((tbit_t)(signed_exp + float_bits<U>::exp_bias)
                         << float_bits<U>::nsig) |
            ((tbit_t)(sig_bits) << dsig);

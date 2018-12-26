@@ -3,6 +3,11 @@ Common
 
 .. automodule:: nnabla
 
+Config
+------
+
+.. automodule:: nnabla.config
+
 Logger
 ------
 

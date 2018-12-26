@@ -24,7 +24,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Max, const vector<int> &, bool);
+NBLA_REGISTER_FUNCTION_HEADER(Max, const vector<int> &, bool, bool, bool);
 
 /** Reduction along axes with max operation.
 
@@ -36,20 +36,27 @@ NBLA_REGISTER_FUNCTION_HEADER(Max, const vector<int> &, bool);
  */
 template <typename T> class Max : public Sum<T> {
 protected:
+  bool with_index_;
+  bool only_index_;
   shared_ptr<Variable> index_buff_;
 
 public:
-  Max(const Context &ctx, const vector<int> &axes, bool keep_dims)
-      : Sum<T>(ctx, axes, keep_dims) {}
+  Max(const Context &ctx, const vector<int> &axes, bool keep_dims,
+      bool with_index, bool only_index)
+      : Sum<T>(ctx, axes, keep_dims), with_index_(with_index),
+        only_index_(only_index) {}
   virtual ~Max() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Max(this->ctx_, this->axes_, this->keep_dims_);
+    return create_Max(this->ctx_, this->axes_, this->keep_dims_,
+                      this->with_index_, this->only_index_);
   }
   virtual string name() { return "Max"; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs);
+  NBLA_API virtual void forward_impl(const Variables &inputs,
+                                     const Variables &outputs);
   NBLA_API virtual void forward_impl_reduce(const T *x, T *y, int outer_size,
                                             int reduction_size);
   NBLA_API virtual void backward_impl_reduce(const T *dy, T *dx, int outer_size,

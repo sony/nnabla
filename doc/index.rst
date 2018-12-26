@@ -12,6 +12,7 @@ This document describes how to use the Python API and C++ API, the contribution 
 
     python.rst
     cpp.rst
+    data_exchange_file_format
     format.rst
     python/file_format_converter/file_format_converter.rst
     contributing.rst

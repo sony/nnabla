@@ -74,8 +74,8 @@ def ref_grad_pow2_quantize(x, dy, sign,
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("sign", [False, True])
 @pytest.mark.parametrize("with_zero", [False, True])
-@pytest.mark.parametrize("n",  [3, 5])
-@pytest.mark.parametrize("m",  [0, 1])
+@pytest.mark.parametrize("n", [3, 5])
+@pytest.mark.parametrize("m", [0, 1])
 @pytest.mark.parametrize("quantize", [False, True])
 @pytest.mark.parametrize("ste_fine_grained", [False, True])
 def test_pow2_quantize_forward_backward(seed,

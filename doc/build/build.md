@@ -75,7 +75,8 @@ Finally, you get the NNabla Python package installer as a wheel file found at `.
 
 ```shell
 cd dist
-sudo pip install -U nnabla-<package version>-<package-arch>.whl # a name depends on a version and an environment
+sudo pip uninstall -y nnabla
+sudo pip install nnabla-<package version>-<package-arch>.whl # a name depends on a version and an environment
 ```
 
 ## Verify installation by unit testing

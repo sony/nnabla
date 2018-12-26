@@ -102,7 +102,8 @@ Build and install.
 (nnabla) > cmake -G "Visual Studio 14 Win64" ..
 (nnabla) > msbuild ALL_BUILD.vcxproj /p:Configuration=Release
 (nnabla) > cd dist
-(nnabla) > pip install -U nnabla-<package version>-<package-arch>.whl
+(nnabla) > pip uninstall -y nnabla
+(nnabla) > pip install nnabla-<package version>-<package-arch>.whl
 ```
 
 ## Unit test

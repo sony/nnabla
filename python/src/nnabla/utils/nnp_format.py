@@ -16,7 +16,7 @@ Current version of .nnp file is just a ZIP format archive file but filename exte
   * Trained parameter in Protocol buffer binary format.
 * '*.h5'
 
-  * Trained parameter in HDF5 format.(Will be obsolute soon.)
+  * Trained parameter in HDF5 format.(Will be obsolete soon.)
 
 
 

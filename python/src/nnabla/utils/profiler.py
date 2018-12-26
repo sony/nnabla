@@ -37,6 +37,14 @@ def convert_time_scale(sec, format="m"):
     return sec * converter[format]
 
 
+def _zero_variables(variables):
+    for v in variables:
+        if v.parent is None:
+            continue
+        v.data.zero()
+        v.grad.zero()
+
+
 class GraphProfilerCsvWriter:
     """GraphProfilerCsvWriter
     csv writer for GraphProfiler class.
@@ -251,9 +259,16 @@ class GraphProfiler:
         else:
             raise NotImplementedError(
                 "target process must be [forward, backward]")
-
+        # Zero-ing to avoid invalid memory access in some layers
+        # such as softmax cross entropy.
+        _zero_variables(f.inputs)
+        _zero_variables(f.outputs)
         mean_time, measured_count = self._measure_execution_time(
             process, f.inputs, f.outputs)
+        # Releasing array memory to avoid the increasing memory usage
+        # (`NdArray.zero()` releases any device memory internally.)
+        _zero_variables(f.inputs)
+        _zero_variables(f.outputs)
 
         parameter_scope = None
         if len(f.inputs) > 1:
@@ -284,9 +299,9 @@ class GraphProfiler:
         self.graph.visit(func)
 
     def training_function(self):
-        self.graph.forward()
+        self.graph.forward(clear_no_need_grad=True)
         self.solver.zero_grad()
-        self.graph.backward()
+        self.graph.backward(clear_buffer=True)
         self.solver.update()
 
     def time_profiling_whole_graph(self):

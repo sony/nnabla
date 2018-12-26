@@ -26,9 +26,6 @@ from .context import get_current_context
 from . import function as F
 from .auto_forward import get_auto_forward
 
-import inspect
-
-
 # Templates for function_api source building.
 FUNCTION_API_HEADER = "def {name}{signature}:"
 FUNCTION_API_BODY = '''ctx = get_current_context()
@@ -40,13 +37,16 @@ def function_api(func):
     Decorator for making function called with current context.
     Some tricky things are done here so that signature and docstring are available.
     """
+    from nnabla.utils.py23_compatible import getargspec
+    import inspect
+
     name = func.__name__
     doc = func.__doc__
     if doc is None:
         doc = "No docstring."
 
     # Parsing argspecs
-    spec = inspect.getargspec(func)
+    spec = getargspec(func)
     defaults = spec.defaults
     if spec.defaults is None:
         defaults = None
@@ -56,7 +56,7 @@ def function_api(func):
     # e.g. (x, weights, biases=None, n_outputs=None)
     signature = inspect.formatargspec(
         spec.args[1:], spec.varargs, spec.keywords, defaults)
-    # Creating signature without parans and defaults
+    # Creating signature without params and defaults
     # e.g. x, weights, biases, n_outputs
     shortsignature = inspect.formatargspec(
         spec.args[1:], spec.varargs, spec.keywords, None)[1:-1]

@@ -164,7 +164,7 @@ public:
   */
   virtual vector<string> allowed_array_classes() = 0;
 
-  /** Depenency flag for checking if in-grad depends on out-data.
+  /** Dependency flag for checking if in-grad depends on out-data.
 
       If i=1 and o=0, checking checking if i-th input' gradient
       computation requires o-th output's data or not.
@@ -173,11 +173,11 @@ public:
       @param[in] o Output variable index.
 
       @note If any of inputs requires an output variable data when computing
-      its gradient, this function must be overridden to return appropreate
-      boorean value. Otherwise, backward computation will be incorrect.
+      its gradient, this function must be overridden to return appropriate
+      boolean value. Otherwise, backward computation will be incorrect.
    */
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
-  /** Depenency flag for checking if in-grad depends on in-data.
+  /** Dependency flag for checking if in-grad depends on in-data.
 
       If i=1 and j=0, checking checking if i-th input' gradient
      computation requires j-th input's data or not.
@@ -199,7 +199,7 @@ public:
 
       @param[in] i Input variable index.
       @retval Returns 0 by default.
-      @note If a subclass uses in-place computation, the function must overwride
+      @note If a subclass uses in-place computation, the function must override
      this function.
    */
   virtual int inplace_data(int i) const { return NOT_INPLACE; }
@@ -225,7 +225,7 @@ public:
 
       @param[in] i Input variable index.
       @retval Returns 0 by default.
-      @note If a subclass uses in-place computation, the function must overwride
+      @note If a subclass uses in-place computation, the function must override
      this function.
    */
   virtual int inplace_grad(int i) const { return NOT_INPLACE; }
@@ -247,6 +247,11 @@ public:
       input variables even if clear_buffer is true and condition mets.
    */
   virtual bool prohibit_clear_input_buffers() const { return false; }
+
+  /** A flag for preventing that the graph engine sets input gradient buffer as
+   * 0 even when accum is true.
+   */
+  virtual bool prohibit_zero_input_grad() const { return false; }
 
   /** Copy another instance of Function with the same context.
   */
@@ -292,7 +297,7 @@ protected:
     graph) and compute Jacobian multiplication of this function with grad.
   - Store backprop error into grad in inputs.
 
-  @param propagate_down Boorean array that indicates whether backprop is needed
+  @param propagate_down Boolean array that indicates whether backprop is needed
   for an input corresponding to its index.
 
   @sa setup() arguments.

@@ -46,8 +46,6 @@ endif
 ########################################################################################################################
 # Build options
 DOCKER_RUN_OPTS += -e NNABLA_VERSION=$(NNABLA_VERSION)
-DOCKER_RUN_OPTS += -e NNABLA_SHORT_VERSION=$(NNABLA_SHORT_VERSION)
-DOCKER_RUN_OPTS += -e NNABLA_VERSION_SUFFIX=$(NNABLA_SHORT_VERSION_SUFFIX)
 
 NNABLA_UTILS_STATIC_LINK_DEPS ?= OFF
 DOCKER_RUN_OPTS += -e NNABLA_UTILS_STATIC_LINK_DEPS=$(NNABLA_UTILS_STATIC_LINK_DEPS)
@@ -60,6 +58,9 @@ DOCKER_RUN_OPTS += -e MAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL)
 
 PARALLEL_BUILD_NUM ?= 8
 DOCKER_RUN_OPTS += -e PARALLEL_BUILD_NUM=$(PARALLEL_BUILD_NUM)
+
+WHEEL_SUFFIX ?=
+DOCKER_RUN_OPTS += -e WHEEL_SUFFIX=$(WHEEL_SUFFIX)
 
 ########################################################################################################################
 # Output directories
@@ -85,7 +86,7 @@ export DOCKER_RUN_OPTS
 # Functions for makefile
 define with-virtualenv
 	rm -rf $(2)
-	virtualenv --system-site-packages $(2)
+	python$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR) -m virtualenv --system-site-packages $(2)
 	. $(2)/bin/activate \
 	&& $(MAKE) -C $(1) $(2) $(3) $(4)\
 	&& deactivate

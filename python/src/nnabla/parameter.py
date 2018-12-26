@@ -226,7 +226,7 @@ def get_parameters(params=None, path='', grad_only=True):
     """Get parameter Variables under the current parameter scope.
 
     Args:
-        params (dict): Inernal use. User doesn't set it manually.
+        params (dict): Internal use. User doesn't set it manually.
         path (str): Internal use.  User doesn't set it manually.
         grad_only (bool): Retrieve all parameters under the current scope if
             False, while only parameters with need_grad=True are retrieved

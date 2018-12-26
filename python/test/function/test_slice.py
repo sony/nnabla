@@ -29,10 +29,24 @@ def ref_slice(x, start, stop, step):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape, start, stop, step",
-                         [((2, 2), (0, 0), (2, 2), (1, 1)), ((6, 7, 8), (1, 2, 3), (5, 4, 8), (1, 1, 2)), ((6, 7, 6, 5), (4, 3, 2, 1), (5, 6, 5, 4), (1, 2, 3, 4)), ((7, 6, 5, 4, 3), (5, 4, 3, 2, 1), (6, 6, 5, 4, 2), (1, 2, 3, 2, 1))
+@pytest.mark.parametrize("inshape, start, stop, step, empty_case",
+                         [((2, 2), (0, 0), (2, 2), (1, 1), False),
+                          ((6, 7, 8), (1, 2, 3), (5, 4, 8), (1, 1, 2), False),
+                          ((6, 7, 6, 5), (4, 3, 2, 1),
+                           (5, 6, 5, 4), (1, 2, 3, 4), False),
+                          ((7, 6, 5, 4, 3), (5, 4, 3, 2, 1),
+                           (6, 6, 5, 4, 2), (1, 2, 3, 2, 1), False),
+                          # TODO: Empty-cases
+                          ((6, 7, 6, 5), (0, 0, 1, 2),
+                           (6, -1, -2, -3), (1, 1, 1, 1), True),
+                          # TODO: Empty-cases
+                          ((6, 7, 6, 5), (4, 3, -2, 1),
+                           (5, -6, 5, 4), (-1, 2, 3, 4), True)
                           ])
-def test_slice_forward_backward(seed, inshape, start, stop, step, ctx, func_name):
+def test_slice_forward_backward(seed, inshape, start, stop, step, empty_case, ctx, func_name):
+    if empty_case:
+        pytest.skip("Empty-NdArray raises error as NNabla specification")
+
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)
     x = rng.randn(*inshape).astype(np.float32)
@@ -40,3 +54,35 @@ def test_slice_forward_backward(seed, inshape, start, stop, step, ctx, func_name
                     func_args=[start, stop,
                                step], ctx=ctx, func_name=func_name,
                     atol_f=1e-4, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, start, stop, step, empty_case",
+                         [((4, ), [None, ], [None, ], [-1, ], False),
+                          ((4, ), [None, ], [None, ], [None, ], False),
+                          ((5, ), [3, ], [None, ], [-2, ], False),
+                          ((4, 4, 2), [0, None, 0], [
+                           4, None, 2], [1, -1, 1], False),
+                          ((4, 4, 2), [-1, None, 0],
+                           [None, None, 2], [-1, -1, 1], False),
+                          # TODO: Empty-cases
+                          ((4, ), [0, ], [2, ], [-1, ], True)
+                          ])
+def test_slice_forward_special_case(seed, inshape, start, stop, step, empty_case, ctx, func_name):
+    if empty_case:
+        pytest.skip("Empty-NdArray raises error as NNabla specification")
+
+    x_data = np.random.rand(*inshape)
+    # Numpy
+    s = [slice(start[axis], stop[axis], step[axis])
+         for axis in range(len(start))]
+    x_data_key = ref_slice(x_data, start, stop, step)
+
+    # NNabla
+    with nn.context_scope(ctx):
+        x = nn.Variable.from_numpy_array(x_data)
+        x_key = F.slice(x, start, stop, step)
+        x_key.forward()
+
+    assert np.allclose(x_data_key, x_key.d)

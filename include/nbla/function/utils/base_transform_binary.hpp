@@ -111,7 +111,7 @@ public:
   inline BaseBinaryOp() {}
   template <typename T> inline T operator()(const T x0, const T x1) {
     NBLA_ERROR(error_code::not_implemented,
-               "Forward opeartion is not implemented.");
+               "Forward operation is not implemented.");
   }
   template <typename T>
   inline T g0(const T dy, const T x0, const T x1, const T y) {

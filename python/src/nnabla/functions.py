@@ -57,14 +57,42 @@ def mean(x, axis=None, keepdims=False):
     return mean_base(x, axis, keepdims)
 
 
-def max(x, axis=None, keepdims=False):
-    """Reduction along axes with max operation.
+def max(x, axis=None, keepdims=False, with_index=False, only_index=False):
+    """Reduce the input N-D array `x` along the given `axis` using the max
+    operation. The `axis` argument may be a single integer to reduce
+    over one axis, a tuple of integers to reduce over multiple axes,
+    or ``None`` to reduce over all axes. If `keepdims` is ``True``,
+    the output will keep all reduced dimensions with size 1. If
+    `with_index` is True, result is a tuple ``(sorted, indices)`` or
+    only ``indices`` if `only_index` is True. Setting `only_index` to
+    True implies that `with_index` is also True.
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+
+        maxval = F.max(x, axis=1)
+        assert np.allclose(maxval.d, np.max(x.d, axis=1))
+
+        maxval, indices = F.max(x, axis=1, with_index=True)
+        assert np.allclose(maxval.d, np.max(x.d, axis=1))
+        assert np.all(indices.d == np.argmax(x.d, axis=1))
+
+        indices = F.max(x, axis=1, only_index=True)
+        assert np.all(indices.d == np.argmax(x.d, axis=1))
 
     Args:
         x (Variable): An input variable.
         axis (None, int or tuple of ints): Axis or axes along which max is
-            calculated. Passing the default value `None` will reduce all dimensions.
-        keepdims (bool): Flag whether the reduced axes are kept as a dimension with 1 element.
+            calculated. The default value `None` will reduce all dimensions.
+        keepdims(bool): Keep reduced axes as dimension with 1 element.
+        with_index(bool): Return tuple of max values and index.
+        only_index(bool): Return only the index of max values.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -75,17 +103,46 @@ def max(x, axis=None, keepdims=False):
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    return max_base(x, axis, keepdims)
+    n_outputs = 2 if with_index and not only_index else 1
+    return max_base(x, axis, keepdims, with_index, only_index, n_outputs)
 
 
-def min(x, axis=None, keepdims=False):
-    """Reduction along axes with min operation.
+def min(x, axis=None, keepdims=False, with_index=False, only_index=False):
+    """Reduce the input N-D array `x` along the given `axis` using the min
+    operation. The `axis` argument may be a single integer to reduce
+    over one axis, a tuple of integers to reduce over multiple axes,
+    or ``None`` to reduce over all axes. If `keepdims` is ``True``,
+    the output will keep all reduced dimensions with size 1. If
+    `with_index` is True, result is a tuple ``(sorted, indices)`` or
+    only ``indices`` if `only_index` is True. Setting `only_index` to
+    True implies that `with_index` is also True.
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+
+        minval = F.min(x, axis=1)
+        assert np.allclose(minval.d, np.min(x.d, axis=1))
+
+        minval, indices = F.min(x, axis=1, with_index=True)
+        assert np.allclose(minval.d, np.min(x.d, axis=1))
+        assert np.all(indices.d == np.argmin(x.d, axis=1))
+
+        indices = F.min(x, axis=1, only_index=True)
+        assert np.all(indices.d == np.argmin(x.d, axis=1))
 
     Args:
         x (Variable): An input variable.
         axis (None, int or tuple of ints): Axis or axes along which min is
-            calculated. Passing the default value `None` will reduce all dimensions.
-        keepdims (bool): Flag whether the reduced axes are kept as a dimension with 1 element.
+            calculated. The default value `None` will reduce all dimensions.
+        keepdims(bool): Keep reduced axes as dimension with 1 element.
+        with_index(bool): Return tuple of min values and index.
+        only_index(bool): Return only the index of min values.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -96,7 +153,8 @@ def min(x, axis=None, keepdims=False):
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    return min_base(x, axis, keepdims)
+    n_outputs = 2 if with_index and not only_index else 1
+    return min_base(x, axis, keepdims, with_index, only_index, n_outputs)
 
 
 def prod(x, axis=None, keepdims=False):
@@ -166,6 +224,55 @@ def split(x, axis=0):
     return split_base(x, axis, x.shape[axis])
 
 
+@function_api
+def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
+    r"""
+    Slice arrays along specified axis. This function 
+    complies with python slice wherre `slice(None, None, -1)` and 
+    `slice(-1, None, -1)` are the special case, which flips the 
+    input array and results in the output array from the end to the beginning
+    of the input array along the corresponding dimension.
+
+
+    Args:
+        x(~nnabla.Variable): N-D array
+        start(repeated int64): Start indices for each axis
+            [default=``(0,) * len(x.shape)``]
+        stop(repeated int64): Stop indices for each axis
+            [default=``tuple(x.shape)``]
+        step(repeated int64): Step indices for each axis
+            [default=``(1,) * len(x.shape)``]
+
+    Returns:
+        ~nnabla.Variable: Sliced N-D array
+    """
+    import copy
+    start = copy.copy(start)
+    stop = copy.copy(stop)
+    step = copy.copy(step)
+
+    from .function_bases import slice as slice_base
+    if start is None:
+        start = (0,) * len(x.shape)
+    if stop is None:
+        stop = tuple(x.shape)
+    if step is None:
+        step = (1,) * len(x.shape)
+
+    shape = x.shape
+    for i, sss in enumerate(zip(start, stop, step)):
+        s0, s1, s2 = sss
+        # SPECIAL CASE: slice(-1, None, <0) or slice(None, None, <0)
+        SLICE_NONE = 0x7fffffff
+        if s0 == None:
+            start[i] = SLICE_NONE
+        if s1 == None:
+            stop[i] = SLICE_NONE
+        if s2 == None:
+            step[i] = SLICE_NONE
+    return slice_base(x, start, stop, step, n_outputs, outputs)
+
+
 def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
     r"""
     Batch normalization.
@@ -200,7 +307,7 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
             will be returned as Variables. They are also differentiable.
 
     Returns:
-        Retruns batch normalization output as :obj:`~nnabla.Variable`.
+        Returns batch normalization output as :obj:`~nnabla.Variable`.
         If ``output_stat=True``, it also returns the mean and variance
         of the mini-batch
 
@@ -215,6 +322,9 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     from .function_bases import batch_normalization as batch_normalization_base
     n_outputs = 3 if output_stat else 1
     assert batch_stat or (not output_stat)
+    if batch_stat and (mean.parent or variance.parent) is not None:
+        raise ValueError(
+            "if batch_stat is True, mean and variable must not have a parent function")
     return batch_normalization_base(x, beta, gamma, mean, variance,
                                     axes=axes,
                                     decay_rate=decay_rate,
@@ -453,32 +563,44 @@ def clip_by_value(x, min, max):
 
 
 def clip_by_norm(x, clip_norm, axis=None):
-    r"""ClipByNorm
+    r"""
+    Clip inputs by its L2 norm when the L2 norm is larger than the threshold value (defined by clip_norm).
+    If it is less than the threshold, inputs are not modified. If it is applied, the operation is represented as
 
     .. math::
-
       y = N \times \frac{x}{\|x\|_2}.
 
-    where :math:`x` the input, :math:`y` is the output, 
-    and :math:`N` is `clip_norm` where the norm of :math:`x` becomes. this is the case that `axes` is not set.  
+    where :math:`x` is the input, :math:`y` is the output,
+    and :math:`N` is `clip_norm`. this is the case that `axes` is not set.
     When `axes` is set, the norm is computed over `axes`.
 
     Args:
         x (Variable): An input variable.
-        clip_norm (`Variable` or `float`): An input scalar variable or float value.
-        axis (None, int or tuple of ints): Axis or axes along which the 
-        reduction is performed. Passing the default value `None` will reduce all dimensions.
+        clip_norm (`Variable` or `float`): An input scalar variable or float value. Must be positive.
+        axis (None, int or tuple of ints): Axis or axes along which the reduction is performed. Passing the default value `None` will reduce all dimensions.
+
     Returns:
         ~nnabla.Variable: N-D array.
+
     """
     from .function_bases import pow_scalar as pow_scalar_base
+    from .function_bases import maximum2 as maximum2_base
+    from .function_bases import maximum_scalar as maximum_scalar_base
     from .function_bases import sum as sum_base
+    from ._variable import Variable as Variable_base
+    from ._nd_array import NdArray as NdArray_base
+
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
     x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
-    y = clip_norm * x / x_norm
+    if isinstance(clip_norm, (Variable_base, NdArray_base)):
+        y = x * clip_norm / maximum2_base(x_norm, clip_norm)
+    else:
+        if clip_norm <= 0:
+            raise ValueError("clip_norm must be positive.")
+        y = x * clip_norm / maximum_scalar_base(x_norm, clip_norm)
     return y
 
 
@@ -553,3 +675,47 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
         else:
             align_corners = False
     return interpolate_base(x, output_size, mode, align_corners)
+
+
+def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
+    """Sorts the elements of `x` along a given `axis` in ascending order
+    by value. A negative `axis` counts from the last dimension of `x`,
+    so the default of -1 sorts along the last dimension. If `reverse`
+    is True, then the elements are soreted in descending order.
+
+    If `with_index` is True, result is a tuple ``(sorted, indices)``
+    or only ``indices`` if `only_index` is True. Setting `only_index`
+    to True implies that `with_index` is also True.
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+
+        sorted = F.sort(x)
+        assert np.allclose(sorted.d, np.sort(x.d))
+
+        sorted, indices = F.sort(x, with_index=True)
+        assert np.allclose(sorted.d, np.sort(x.d))
+        assert np.all(indices.d == np.argsort(x.d))
+
+        indices = F.sort(x, only_index=True)
+        assert np.all(indices.d == np.argsort(x.d))
+
+    Args:
+        x(~nnabla.Variable): N-D array
+        axis(int): Axis along which to sort.
+        reverse(bool): Sort in descending order.
+        with_index(bool): Return sorted values and index.
+        only_index(bool): Return only the sort index.
+
+    Returns: :obj:`~nnabla.Variable` `sorted` or :obj:`~nnabla.Variable` `indices` or (:obj:`~nnabla.Variable` `sorted`, :obj:`~nnabla.Variable` `indices`)
+
+    """
+    from .function_bases import sort as sort_base
+    n_outputs = 2 if with_index and not only_index else 1
+    return sort_base(x, axis, reverse, with_index, only_index, n_outputs)

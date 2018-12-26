@@ -50,7 +50,7 @@ bool nbla_train_core(nbla::Context ctx, int argc, char *argv[]) {
     mkdir(result_dir.c_str(), 0756);
   }
 
-  // Create a Nnp objct
+  // Create a Nnp object
   nbla::utils::nnp::Nnp nnp(ctx);
 
   // Set nnp file to Nnp object.

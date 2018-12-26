@@ -67,7 +67,7 @@ shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& fu
       prod_shape *= v;
     }
 
-    // B. Console ommits batch dimensions (the first dimension) during saving.
+    // B. Console omits batch dimensions (the first dimension) during saving.
     int prod_input = 1;
     for( auto inp : func.input() ) {
       auto var_it = variable_protos_.find(inp);

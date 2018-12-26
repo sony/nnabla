@@ -28,14 +28,15 @@ NBLA_REGISTER_FUNCTION_SOURCE(BinaryConnectConvolution, int, // base_axis
                               const vector<int> &,           // pad
                               const vector<int> &,           // stride
                               const vector<int> &,           // dilation
-                              int);                          // group
+                              int,                           // group
+                              float);
 
 template <typename T>
 void BinaryConnectConvolution<T>::setup_impl(const Variables &inputs,
                                              const Variables &outputs) {
   // Initialize function to binarize (we use the `sign` function with alpha =
-  // -1.0)
-  sign_ = create_Sign(this->ctx_, -1.0);
+  // 1.0)
+  sign_ = create_Sign(this->ctx_, quantize_zero_to_);
   sign_->setup(Variables{inputs[1]}, Variables{inputs[2]});
 
   // Initialize internal `convolution` function

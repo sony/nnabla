@@ -26,7 +26,7 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_HEADER(CELU, double, int);
 
 /** Concatenated Exponential Linear Unit (CELU) concatenates ELU outputs of
-positive and negativa inputs together at specified axis.
+positive and negative inputs together at specified axis.
 
 Inputs:
 - N-D array.

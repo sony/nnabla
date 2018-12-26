@@ -37,15 +37,9 @@ project = u'Neural Network Libraries'
 copyright = u'2017, Sony Corporation'
 author = u'Sony Corporation'
 
-################################################################################
 import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(
-    os.path.realpath(__file__)), '..', 'build-tools', 'code_generator'))
-from utils.common import get_version
-
-version, release = get_version(os.path.join(os.path.dirname(__file__), '..'))
-################################################################################
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'VERSION.txt')) as f:
+    version = release = f.readlines()[0].strip()
 
 language = None
 
@@ -59,7 +53,7 @@ html_static_path = ['_static']
 nitpicky = True
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.4', None),
+    'python': ('https://docs.python.org/3.6', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 

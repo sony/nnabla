@@ -210,7 +210,7 @@ cdef class Solver:
 def solver_api(func):
     """
     Decorator function which passes a current context to 1st argument of
-    a decocorated function.
+    a decorated function.
 
     Args:
         func (function): 1st argument must be a Context.
@@ -276,7 +276,7 @@ def ${solver_name}(CContext ctx, ${', '.join(map(arg_field, solver['arguments'].
 %endfor
 
     Returns:
-        ~nnabla.solver.Solver: An intance of Solver class.
+        ~nnabla.solver.Solver: An instance of Solver class.
             See Solver API guide for details.
 
     Note:

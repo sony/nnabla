@@ -20,4 +20,12 @@ List of Monitors
   :members:
 .. autoclass:: MonitorImageTile
   :members:
+
+Utility functions
+-----------------
+
 .. autofunction:: tile_images
+
+.. autofunction:: plot_series
+
+.. autofunction:: plot_time_elaplsed

@@ -205,6 +205,9 @@ LogicalNot:
 Constant:
   float: [float]
   half: [Half]
+Arange:
+  float: [float]
+  half: [Half]
 Abs:
   float: [float]
   half: [Half]
@@ -251,6 +254,9 @@ Flip:
   float: [float]
   half: [Half]
 Shift:
+  float: [float]
+  half: [Half]
+Sort:
   float: [float]
   half: [Half]
 Reshape:
@@ -422,3 +428,6 @@ FFT:
 IFFT:
   float: [float]
 #  half: [Half]
+Prune:
+  float: [float]
+  Half: [Half]

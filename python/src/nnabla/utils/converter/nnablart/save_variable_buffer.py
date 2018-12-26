@@ -37,18 +37,28 @@ def __make_buf_var_lives(info):
     name_to_var = {v.name: v for v in info._network.variable}
 
     # set _LifeSpan.begin_func_idx and .end_func_idx along info._network
+    final_func_idx = len(info._network.function)
     for func_idx, func in enumerate(info._network.function):
         for var_name in list(func.input) + list(func.output):
+            if var_name in info._generator_variables:
+                # no need to assign buffer for generator data
+                pass
             if name_to_var[var_name].type == 'Buffer':
                 var_idx = name_to_vidx[var_name]
                 buf_idx = info._buffer_ids[var_idx]
                 buf_var_life = buf_var_lives[buf_idx]
                 if buf_var_life.begin_func_idx < 0:
-                    buf_var_life.begin_func_idx = func_idx
+                    if var_name in info._input_variables:
+                        buf_var_life.begin_func_idx = 0
+                    else:
+                        buf_var_life.begin_func_idx = func_idx
                 else:
                     # only identify a Function which first refers to the Variable
                     pass
-                buf_var_life.end_func_idx = func_idx
+                if var_name in info._output_variables:
+                    buf_var_life.end_func_idx = final_func_idx
+                else:
+                    buf_var_life.end_func_idx = func_idx
             else:
                 pass  # ignore 'Parameter'
 
@@ -112,7 +122,7 @@ def __compute_actual_buf_sizes(info, buf_var_lives):
 
 
 def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
-    # create a dictionary to store assiginment of actual buffers to Variables
+    # create a dictionary to store assignment of actual buffers to Variables
 
     # vidx_to_abidx is short for variable index to actual buffer index
     vidx_to_abidx = {}
@@ -135,9 +145,9 @@ def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
                 abidx = vidx_to_abidx[vidx]
                 actual_assigned_flags[abidx] = True
             else:
-                pass  # determine assigment for this vidx in the follwoing for loop
+                pass  # determine assignment for this vidx in the following for loop
 
-        # determine new assigments of actual buffers to Variables
+        # determine new assignments of actual buffers to Variables
         for ref_crsr in range(actual_buf_num):
             # minus buf_idx means the corresponding buffer is not needed
             buf_idx = buf_var_refs[func_idx][ref_crsr]
@@ -176,7 +186,7 @@ def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
 
 def save_variable_buffer(info):
     # make the followings to save memory usage for Variable Buffer:
-    #  - actual_buf_sizes(list): sizes of actual buffers, which lie unfer Variable Buffer.
+    #  - actual_buf_sizes(list): sizes of actual buffers, which lie under Variable Buffer.
     #                            indices in this list are hereinafter called 'actual buffer index'
     #  - vidx_to_abidx(dict): assignment of actual buffers to Variable Buffer.
     #                         the key and the value are Variable index and actual buffer index, respectively

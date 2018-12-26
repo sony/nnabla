@@ -84,6 +84,9 @@ Following is example function definition of `sum` function in nnabla.
 	doc: N-D array
 ```
 
+**Note:**
+Please ignore `function_ids` . This entry is the function id and its history used by internal code generation, and it is updated when compile NNabla.
+
 ### Template type specification (function_types.yaml)
 
 After adding the function definition, next step is to add a type specification of the new function to [function_types.yaml](https://github.com/sony/nnabla/tree/master/build-tools/code_generator/function_types.yaml).  
@@ -142,26 +145,22 @@ cmake ..
   * `include/nbla/function/${snake_name}.hpp`
   * `src/nbla/function/generic/${snake_name}.cpp`
 
-* Template type instantiation of functions (overwriten)
+* Template type instantiation of functions (overwritten)
   * `src/nbla/function/${snake_name}.cpp`
 
-* Initialization, function registration to factories (overwriten)
+* Initialization, function registration to factories (overwritten)
   * `src/nbla/init.cpp`
 
-* Python interfaces at `python/src/nnabla` (overwriten)
+* Python interfaces at `python/src/nnabla` (overwritten)
   * `_version.py`
   * `function.pxd`
   * `function.pyx`
   * `function_bases.py`
 
-* Serializer/Deserializer (overwriten)
+* Serializer/Deserializer (overwritten)
   * `python/src/nnabla/utils/load_function.py`
   * `python/src/nnabla/utils/save_function.py`
   * `src/nbla_utils/nnp_impl_create_function.cpp`
-
-* Format definition for C-runtime (overwritten, and should be added to the Git version control)
-  * `python/src/nnabla/utils/converter/function_order.yaml`
-
 
 Although the function template are useful, element-wise operation functions such as an activation function can be written by using macro functions.  
 Various macros are provided for easily defining functions with common structures. Please look inside existing functions for examples of these macros.  

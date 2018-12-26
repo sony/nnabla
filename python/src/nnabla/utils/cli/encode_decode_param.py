@@ -56,7 +56,7 @@ def decode_param_command(args, **kwargs):
     except OSError:
         pass  # python2 does not support exists_ok arg
 
-    # Load prameter
+    # Load parameter
     logger.log(99, 'Loading parameters...')
     load_parameters(args.param)
 
@@ -74,6 +74,7 @@ def decode_param_command(args, **kwargs):
         save_param_in_txt(variable.d, file_path)
 
     logger.log(99, 'Decode Parameter Completed.')
+    return True
 
 
 def encode_param_command(args, **kwargs):
@@ -86,11 +87,12 @@ def encode_param_command(args, **kwargs):
         load_param_in_txt(os.path.splitext(file_path)[0].replace(
             '~', '/'), os.path.join(args.indir, file_path))
 
-    # Save prameter
+    # Save parameter
     logger.log(99, 'Saving parameters...')
     save_parameters(args.param)
 
     logger.log(99, 'Encode Parameter Completed.')
+    return True
 
 
 def add_decode_param_command(subparsers):

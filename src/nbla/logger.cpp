@@ -30,9 +30,13 @@
 #include <unistd.h>
 #endif
 
+// #define SPDLOG_ENABLE_LOGFILE
+// #define SPDLOG_ENABLE_SYSLOG
+
 std::shared_ptr<spdlog::logger> get_logger(void) {
   static std::shared_ptr<spdlog::logger> l = 0;
   if (l == 0) {
+#ifdef SPDLOG_ENABLE_LOGFILE
     std::string logpath;
     std::string logfile;
 #ifdef _WIN32
@@ -47,40 +51,43 @@ std::shared_ptr<spdlog::logger> get_logger(void) {
       _mkdir(logpath.c_str());
       logfile = logpath + "\\nbla_lib.log";
     }
-#else
-    const char *homedir = getenv("HOME");
+#else  //_WIN32
+    const char *homedir = nullptr;
     if (homedir == nullptr) {
       struct passwd *pw = getpwuid(getuid());
       if (pw != nullptr) {
         homedir = pw->pw_dir;
+        logpath = homedir;
+        logpath += "/nnabla_data";
+        mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
       }
     }
     if (homedir == nullptr) {
-      logpath = "/tmp_";
+      logpath = "/tmp/nnabla_";
       logpath += getuid();
-    } else {
-      logpath = homedir;
+      mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-    logpath += "/nnabla_data";
-    mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     logpath += "/log";
     mkdir(logpath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     logfile = logpath + "/nbla_lib.log";
-#endif
+#endif //_WIN32
+#endif // SPDLOG_ENABLE_LOGFILE
 
     std::vector<spdlog::sink_ptr> sinks;
     auto s1 = std::make_shared<spdlog::sinks::stdout_sink_st>();
     s1->set_level(spdlog::level::critical);
     sinks.push_back(s1);
 
+#ifdef SPDLOG_ENABLE_LOGFILE
     auto s2 = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
         logfile.c_str(), 1024 * 1024, 5);
     sinks.push_back(s2);
+#endif // SPDLOG_ENABLE_LOGFILE
 
 #ifdef SPDLOG_ENABLE_SYSLOG
     auto s3 = std::make_shared<spdlog::sinks::syslog_sink>();
     sinks.push_back(s3);
-#endif
+#endif // SPDLOG_ENABLE_SYSLOG
     l = std::make_shared<spdlog::logger>("nbla", begin(sinks), end(sinks));
   }
   return l;

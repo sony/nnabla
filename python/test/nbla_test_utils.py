@@ -23,6 +23,7 @@ import nnabla.utils.converter
 import numpy
 import numpy as np
 import pytest
+from numpy.core import function_base
 
 
 def ext_to_camel(ext):
@@ -90,10 +91,10 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
     using given function
 
     f: function to test
-    inputs: funcion input variable 
+    inputs: function input variable 
     outputs: function output variable
     inputs0: function inputs to calculate numerical grad
-    vgrads: initianl grads of output variable
+    vgrads: initial grads of output variable
     epsilon: small value to calculate numerical grad
     rng: random number generator
     """
@@ -380,13 +381,15 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
             param = eval('func.{}_param'.format(function['snake_name']))
             if not func_args and not func_kwargs:
                 continue
+            if func.name == 'Interpolate':
+                del func_args[0]
             if n < len(func_args):
                 a = func_args[n]
             else:
                 if func.name == 'Concatenate' or func.name == 'Stack':
                     a = func_kwargs['axis']
                 else:
-                    a = func_kwargs['keepdims']
+                    a = func_kwargs.get('keepdims')
             # This is used to fix the problem of flip (axes == None)
             if a is None:
                 f = ['Sum', 'Mean', 'Max', 'Min', 'Prod']
@@ -465,7 +468,7 @@ def function_tester(rng, func, ref_func, inputs,
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
-    Syntax of `ref_func`: inputs, parametes
+    Syntax of `ref_func`: inputs, parameters
     Syntax of `ref_grad`: inputs, output grads, parameters
     """
 

@@ -1,4 +1,3 @@
 ipython
 pytest
 scipy
-scikit-image

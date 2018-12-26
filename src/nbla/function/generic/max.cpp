@@ -18,12 +18,26 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Max, const vector<int> &, bool);
+NBLA_REGISTER_FUNCTION_SOURCE(Max, const vector<int> &, bool, bool, bool);
+
 template <typename T>
 void Max<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Sum<T>::setup_impl(inputs, outputs);
   int outer_size = inputs[0]->size() / this->reduction_size_;
-  index_buff_ = make_shared<Variable>(Shape_t{outer_size});
+  this->index_buff_ = make_shared<Variable>(Shape_t{outer_size});
+  if (this->with_index_ && !this->only_index_)
+    outputs[1]->reshape(outputs[0]->shape(), true);
+}
+
+template <typename T>
+void Max<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
+  Sum<T>::forward_impl(inputs, outputs);
+  if (this->with_index_ || this->only_index_) {
+    Variable *idx_var = this->only_index_ ? outputs[0] : outputs[1];
+    auto idx_arr = idx_var->data()->cast(get_dtype<size_t>(), this->ctx_, true);
+    auto idx_buf = this->index_buff_->data()->get(get_dtype<int>(), this->ctx_);
+    idx_arr->copy_from(idx_buf);
+  }
 }
 
 template <typename T>

@@ -257,7 +257,7 @@ def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_count
 
 
 def generate_unary(func_name, node_name, x,
-                   out_name,  base_name, func_counter):
+                   out_name, base_name, func_counter):
     func = nnabla_pb2.Function()
     func.type = func_name
     set_function_name(func, node_name, base_name, func_counter)
@@ -770,7 +770,7 @@ def convert_to_functions(pb, network, node, base_name, initializers,
             if attr.name == "value":
                 if attr.type != AttributeProto.TENSOR:
                     raise ValueError(
-                        "Only TESNOR is supported for value in {} op_type".format(node.op_type))
+                        "Only TENSOR is supported for value in {} op_type".format(node.op_type))
                 t = attr.t
                 if t is None:
                     raise ValueError(
