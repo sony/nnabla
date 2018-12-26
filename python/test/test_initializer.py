@@ -18,9 +18,6 @@ import numpy as np
 
 import nnabla.initializer as I
 
-from functools import reduce
-from operator import mul
-
 
 def orthogonal_test(x):
     rows, cols = x.shape[0], int(np.prod(x.shape[1:]))
