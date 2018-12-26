@@ -7,13 +7,13 @@ convert param and dataset, measure performance, file format converter and so on.
 .. code-block:: none
 
     usage: nnabla_cli [-h] [-m]
-                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,version}
+                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
                       ...
     
-    Command line interface for NNabla(Version 1.0.9.dev1, Build 181025154033)
+    Command line interface for NNabla(Version 1.0.11.dev1, Build 181226024531)
     
     positional arguments:
-      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,version}
+      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
         train               Training with NNP.
         infer               Do inference with NNP and binary data file input.
         forward             Do evaluation with NNP and test dataset.
@@ -32,6 +32,7 @@ convert param and dataset, measure performance, file format converter and so on.
         convert             File format converter.
         plot_series         Plot *.series.txt files.
         plot_timer          Plot *.timer.txt files.
+        draw_graph          Draw a graph in a NNP or nntxt file with graphviz.
         version             Print version and build number.
     
     optional arguments:
@@ -434,6 +435,37 @@ MonitorTimeElapsed
       -e, --elapsed         Plot total elapsed time. By default, it plots elapsed time per iteration.
       -u TIME_UNIT, --time-unit TIME_UNIT
                             Time unit chosen from {s|m|h|d}.
+
+Draw a graph from NNP or .nntxt files
+-------------------------------------
+
+**Note**:
+
+- This feature requires ``graphviz`` installed as a `Python package <https://graphviz.readthedocs.io/en/stable/manual.html#installation>`_. The ``graphviz`` Python is a interface to `graphviz library <https://www.graphviz.org/>`_ which is not installed by ``pip`` command. You have to install it using ``apt`` on Ubuntu for example.
+
+
+.. code-block:: none
+
+    usage: nnabla_cli draw_graph [-h] [-o OUTPUT_DIR] [-n NETWORK] [-f FORMAT]
+                                 input
+
+    Draw a graph in a NNP or nntxt file with graphviz.
+
+    Example:
+
+        nnabla_cli draw_graph -o output-folder path-to-nnp.nnp
+
+    positional arguments:
+      input                 Path to input nnp or nntxt.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                            Output directory.
+      -n NETWORK, --network NETWORK
+                            Network names to be drawn.
+      -f FORMAT, --format FORMAT
+                            Graph saving format compatible with graphviz (`pdf`, `png`, ...).
 
 
 Development
