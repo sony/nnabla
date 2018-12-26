@@ -57,7 +57,6 @@ def test_graph_logreg(seed):
     w1.g = 0
     b1.g = 0
     L1.backward(clear_buffer=True)
-    #x.g = rng.randn(*x.shape)
 
     inputs = [x, w1, b1]
 
@@ -72,7 +71,6 @@ def test_graph_logreg(seed):
     w2.g = 0
     b2.g = 0
     L2.backward(clear_buffer=True)
-    #x.g = rng.randn(*x.shape)
 
     inputs = [x, w2, b2]
 
