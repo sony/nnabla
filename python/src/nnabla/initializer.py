@@ -253,9 +253,9 @@ class OrthogonalInitializer(BaseInitializer):
                                self.gain)
 
     def __call__(self, shape):
-        flat_shape = (shape[0], np.prod(shape[1:]))
+        flat_shape = (shape[0], int(np.prod(shape[1:])))
         x = self.rng.normal(0.0, 1.0, flat_shape)
-        u, _, v = np.linalg.svd(a, full_matrices=False)
+        u, _, v = np.linalg.svd(x, full_matrices=False)
         q = u if u.shape == flat_shape else v
         return q.reshape(shape).astype('float32') * self.gain
 
