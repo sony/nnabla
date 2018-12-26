@@ -52,7 +52,8 @@ def list_ctx_and_func_name(fnames):
 
 
 def compute_analytical_and_numerical_grad_graph(terminal, inputs,
-                                                epsilon=1e-3):
+                                                epsilon=1e-3,
+                                                recompute_graph=True):
     def set_inputs(x0):
         begin = 0
         for i in inputs:
@@ -68,11 +69,15 @@ def compute_analytical_and_numerical_grad_graph(terminal, inputs,
     def grad(x0):
         set_inputs(x0)
         backups = [i.g.copy() for i in inputs]
-        terminal.forward()
-        terminal.backward()
+        if recompute_graph:
+            terminal.forward()
+            terminal.backward()
         gx0 = []
         for i, b in zip(inputs, backups):
-            gx0.append((i.g.copy() - b).flatten())
+            if recompute_graph:
+                gx0.append((i.g.copy() - b).flatten())
+            else:
+                gx0.append(i.g.copy().flatten())
             i.g = b
         return np.concatenate(gx0)
 
