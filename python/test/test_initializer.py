@@ -18,6 +18,19 @@ import numpy as np
 
 import nnabla.initializer as I
 
+from functools import reduce
+from operator import mul
+
+
+def orthogonal_test(x):
+    rows, cols = x.shape[0], int(np.prod(x.shape[1:]))
+    flattened = x.view().reshape((rows, cols))
+    if rows > cols:
+        target = np.matmul(flattened.T, flattened)
+        return np.allclose(target, np.eye(cols), atol=1e-6)
+    else:
+        target = np.matmul(flattened, flattened.T)
+        return np.allclose(target, np.eye(rows), atol=1e-6)
 
 @pytest.mark.parametrize('rng', [None, np.random.RandomState(313)])
 @pytest.mark.parametrize('shape', [
@@ -30,6 +43,7 @@ import nnabla.initializer as I
     (I.UniformInitializer, dict(lim=(-1, 10)),
      lambda x: np.all(x >= -1) and np.all(x < 10)),
     (I.ConstantInitializer, dict(value=-2), lambda x: np.all(x == -2)),
+    (I.OrthogonalInitializer, dict(gain=1.0), orthogonal_test)
 ])
 def test_initializer_execution(shape, initializer, opts, condition, rng):
     try:
