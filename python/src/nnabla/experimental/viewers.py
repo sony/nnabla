@@ -60,13 +60,7 @@ class SimpleGraph(object):
           fname_color_map (`dict`): Mapping of a function name to a color name. Color name should be one supported in the graphviz. For example, `fname_color_map = {"Convolution": "red", "Affine": "blue"}`. Default is None and a color is automatically set according to a type of function.
           vname_color_map (`dict`): Mapping of a variable name (:obj:`Variable`.name) to a color name. Color name should be one supported in the graphviz. For example, `fname_color_map = {"input": "blue", "pred": "red"}`. Default is None and pink is used for all variables.
         """
-        try:
-            from graphviz import Digraph
-        except:
-            raise ImportError("Install graphviz. `pip install graphviz.`")
-
-        self._graph = Digraph(format=format)
-        self._graph.attr("node", style="filled")
+        self._format = format
         self._verbose = verbose
         self._fname_color_map = fname_color_map
         self._vname_color_map = vname_color_map
@@ -74,7 +68,8 @@ class SimpleGraph(object):
         class Functor(object):
             def __init__(self, graph, verbose=False,
                          fname_color_map=fname_color_map,
-                         vname_color_map=vname_color_map):
+                         vname_color_map=vname_color_map,
+                         fun2scope=None, var2name=None):
                 self._var_idx = 0
                 self._fname_to_idx = defaultdict(int)
                 self._vhash_to_idx = defaultdict(int)
@@ -82,6 +77,8 @@ class SimpleGraph(object):
                 self._verbose = verbose
                 self._fname_color_map = fname_color_map
                 self._vname_color_map = vname_color_map
+                self._fun2scope = fun2scope
+                self._var2name = var2name
 
             def _map_fname_to_color(self, fname):
                 if self._fname_color_map is not None:
@@ -102,13 +99,15 @@ class SimpleGraph(object):
                 if np.sum([x in fname for x in ["Add", "Sub", "Mul", "Div"]]):
                     return "purple"
 
-                return "lightgray"
+                return "gray"
 
-            def _map_vname_to_color(self, vname):
+            def _map_vname_to_color(self, v, vname):
+                if v.data in self._var2name:
+                    return 'pink'
                 if self._vname_color_map is not None:
                     if vname in self._vname_color_map:
                         return self._vname_color_map[vname]
-                return "pink"
+                return "lightgray"
 
             def _map_fname_to_idx(self, fname):
                 self._fname_to_idx[fname] += 1
@@ -119,13 +118,17 @@ class SimpleGraph(object):
                 return self._vhash_to_idx[vhash]
 
             def _var_label(self, var):
-                vname = var.name if var.name != "" else "v"
+                vname = var.name if var.name != "" else "h"
+                if self._var2name is not None and var.data in self._var2name:
+                    return self._var2name[var.data]
                 if not self._verbose:
                     return vname
                 return "{}\n({})".format(vname,
                                          "({}, need_grad={})".format(var.shape, var.need_grad))
 
             def _fun_label(self, fun):
+                if self._fun2scope is not None and fun in self._fun2scope:
+                    return fun.name + '\n' + self._fun2scope[fun]
                 if not self._verbose:
                     return fun.name
                 return "{}\n({})".format(fun.name, json.dumps(fun.info.args))
@@ -149,18 +152,22 @@ class SimpleGraph(object):
                     tail_name = "{}-{}".format(hash_i,
                                                self._vhash_to_idx[hash_i])
                     self._graph.edge(tail_name, fname)
+                    fillcolor = self._map_vname_to_color(i, i.name)
                     self._graph.node(tail_name, label=self._var_label(i),
                                      shape=self._var_shape(),
-                                     color=self._map_vname_to_color(i.name))
+                                     color='black' if i.need_grad else fillcolor,
+                                     fillcolor=fillcolor)
                 # f => v
                 for o in f.outputs:
                     hash_o = str(hash(o))
                     head_name = "{}-{}".format(hash_o,
                                                self._map_vhash_to_idx(hash_o))
                     self._graph.edge(fname, head_name)
+                    fillcolor = self._map_vname_to_color(o, o.name)
                     self._graph.node(head_name, label=self._var_label(o),
                                      shape=self._var_shape(),
-                                     color=self._map_vname_to_color(o.name))
+                                     color='black' if o.need_grad else fillcolor,
+                                     fillcolor=fillcolor)
 
                 # f
                 self._graph.node(fname, label=self._fun_label(f),
@@ -170,29 +177,78 @@ class SimpleGraph(object):
 
         self.functor = Functor
 
-    def save(self, vleaf, fpath, cleanup=False):
+    def save(self, vleaf, fpath, cleanup=False, format=None):
         """Save the graph to a given file path.
 
         Args:
           vleaf (`nnabla.Variable`): End variable. All variables and functions which can be traversed from this variable are shown in the reuslt.
           fpath (`str`): The file path used to save. 
           cleanup (`bool`): Clean up the source file after rendering. Default is False.
+          format (str):
+              Force overwrite ``format`` (``'pdf', 'png', ...)``) configuration.
 
         """
-        func = self.functor(self._graph, self._verbose)
-        vleaf.visit(func)
-        self._graph.render(fpath, cleanup=cleanup)
+        graph = self.create_graphviz_digraph(vleaf, format=format)
+        graph.render(fpath, cleanup=cleanup)
 
-    def view(self, vleaf, fpath=None, cleanup=True):
+    def view(self, vleaf, fpath=None, cleanup=True, format=None):
         """View the graph.
 
         Args:
           vleaf (`nnabla.Variable`): End variable. All variables and functions which can be traversed from this variable are shown in the reuslt.
           fpath (`str`): The file path used to save. 
           cleanup (`bool`): Clean up the source file after rendering. Default is True.
+          format (str):
+              Force overwrite ``format`` (``'pdf', 'png', ...)``) configuration.
 
         """
+        graph = self.create_graphviz_digraph(vleaf, format=format)
+        graph.view(fpath, cleanup=cleanup)
 
-        func = self.functor(self._graph, self._verbose)
+    def create_graphviz_digraph(self, vleaf, format=None):
+        '''
+        Create a :obj:`graphviz.Digraph` object given the leaf variable of a
+        computation graph.
+
+        One of nice things of getting ``Digraph`` directly is that the drawn
+        graph can be displayed inline in a Jupyter notebook as described in
+        `Graphviz documentation <https://graphviz.readthedocs.io/en/stable/manual.html#jupyter-notebooks>`_.
+
+        Args:
+            vleaf (`nnabla.Variable`):
+                End variable. All variables and functions which can be
+                traversed from this variable are shown in the reuslt.
+            format (str):
+                Force overwrite ``format`` (``'pdf', 'png', ...)``) configuration.
+
+        Returns: graphviz.Digraph
+
+        '''
+        from nnabla import get_parameters
+        import copy
+        try:
+            from graphviz import Digraph
+        except:
+            raise ImportError("Install graphviz. `pip install graphviz.`")
+        if format is None:
+            format = self._format
+        graph = Digraph(format=format)
+        graph.attr("node", style="filled")
+
+        params = get_parameters(grad_only=False)
+        var2name = {v.data: k for k, v in params.items()}
+        fun2scope = {}
+        var2postname = copy.copy(var2name)
+
+        def fscope(f):
+            names = [var2name[v.data] for v in f.inputs if v.data in var2name]
+            if names:
+                c = os.path.commonprefix(names)
+                fun2scope[f] = c
+                for n in names:
+                    var2postname[params[n].data] = n[len(c):]
+        vleaf.visit(fscope)
+        func = self.functor(graph, self._verbose,
+                            fun2scope=fun2scope, var2name=var2postname)
         vleaf.visit(func)
-        self._graph.view(fpath, cleanup=cleanup)
+        return graph
