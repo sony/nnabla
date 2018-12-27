@@ -250,14 +250,20 @@ class NnpNetwork(object):
             f.inputs = inputs
             f.outputs = outputs
 
-        # get outputs
-        inputs = [v for v in variables.values() if v.parent is None]
+        # Filter isolated variables
+        variables = {k: v for k, v in variables.items(
+        ) if v.parent is not None or v.num_referrers > 0}
+
+        # Get outputs
         outputs = [v for v in variables.values() if v.num_referrers == 0]
 
+        # Build computation graph
         visit_forward(outputs, self._create_function)
 
         # Get input variables
         self.variables = {v.proto.name: v.variable for v in variables.values()}
+        inputs = [v for v in variables.values(
+        ) if v.parent is None and v.proto.type != "Parameter"]
         self.inputs = {i.proto.name: i.variable for i in inputs}
         self.outputs = {o.proto.name: o.variable for o in outputs}
 
