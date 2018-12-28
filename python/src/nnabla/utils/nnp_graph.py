@@ -243,7 +243,8 @@ class NnpNetwork(object):
 
         function_instance = _create_function(inputs, f.proto, self.batch_size)
 
-        outputs = function_instance(*inputs)
+        outputs = function_instance(
+            *inputs, n_outputs=len(f.outputs), auto_forward=False)
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
 
