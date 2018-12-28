@@ -225,11 +225,13 @@ class NnpNetwork(object):
                             list(nn.get_parameters(grad_only=False).keys()))))
             assert shape == param.shape
             v.variable = param
+            param.name = name
             return param
 
         # Create a new one and returns.
         var = nn.Variable(shape)
         v.variable = var
+        var.name = name
         return var
 
     def _create_inputs(self, inputs):
@@ -250,6 +252,8 @@ class NnpNetwork(object):
 
         for o, ovar in zip(f.outputs, outputs):
             o.variable = ovar
+            ovar.name = o.proto.name
+
     def __init__(self, network_proto, batch_size=None, rng=None, callbacks=None):
 
         if batch_size is None:
