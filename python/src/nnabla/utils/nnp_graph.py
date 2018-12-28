@@ -22,8 +22,10 @@ from nnabla.utils import nnabla_pb2
 from nnabla.parameter import get_parameter
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.load import (
+    _create_variable,
     resolve_reshape_params,
     resolve_broadcast_params)
+from nnabla import logger
 
 
 def _load_nnp_to_proto(nnp_path):
@@ -49,6 +51,16 @@ def _load_nnp_to_proto(nnp_path):
                     nn.load_parameters(os.path.join(tmpdir, name))
     finally:
         shutil.rmtree(tmpdir)
+
+    return proto
+
+
+def _load_nntxt_to_proto(nntxt_path):
+    import google.protobuf.text_format as text_format
+    proto = nnabla_pb2.NNablaProtoBuf()
+
+    with open(nntxt_path, "rt") as f:
+        text_format.Merge(f.read(), proto)
 
     return proto
 
@@ -196,8 +208,11 @@ class NnpNetwork(object):
         if pvar.type == 'Parameter':
             try:
                 param = get_parameter(name)
-                assert param is not None, \
-                    "A parameter `{}` is not found.".format(name)
+                if param is None:
+                    logger.info('Paramter `{}` is not found. Initializing.'.format(
+                        name))
+                    tmp = _create_variable(pvar, name, shape, self.rng)
+                    param = tmp.variable_instance
             except:
                 import sys
                 import traceback
@@ -234,11 +249,14 @@ class NnpNetwork(object):
 
         for o, ovar in zip(f.outputs, outputs):
             o.variable = ovar
+    def __init__(self, network_proto, batch_size=None, rng=None, callbacks=None):
 
-    def __init__(self, network_proto, batch_size=None, callbacks=None):
         if batch_size is None:
             batch_size = network_proto.batch_size
         self.batch_size = batch_size
+        if rng is None:
+            rng = np.random.RandomState(1223)
+        self.rng = rng
 
         # Variable proto messages as a dictionary with name as a key
         variables = {v.name: VariableProto(v) for v in network_proto.variable}
@@ -297,9 +315,11 @@ class NnpLoader(object):
 
         if ext == ".nnp":
             proto = _load_nnp_to_proto(filepath)
+        elif ext in ('.nntxt', '.prototxt'):
+            proto = _load_nntxt_to_proto(filepath)
         else:
             raise NotImplementedError(
-                "Currently extension of file for loading must be ['.nnp', ]")
+                "Currently extension of file for loading must be ['.nnp', '.nntxt']")
         self.proto = proto
         self.network_dict = {
             network.name: network for network in proto.network}
