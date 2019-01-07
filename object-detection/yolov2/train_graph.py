@@ -88,6 +88,7 @@ class RegionLossTargets(PythonFunction):
         tmpbuff[tmpbuff > 5] = 5
         pred_boxes[2, :] = (
             np.exp(tmpbuff) * anchors[None, :, 0, None, None]).flat
+        tmpbuff[...] = bb[:, :, 3]
         tmpbuff[tmpbuff > 5] = 5
         pred_boxes[3, :] = (
             np.exp(tmpbuff) * anchors[None, :, 1, None, None]).flat
