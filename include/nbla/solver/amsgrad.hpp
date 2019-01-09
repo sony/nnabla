@@ -65,15 +65,6 @@ protected:
   float eps_;            ///< \f$\epsilon\f$
   bool bias_correction_; ///< \bias_correction
 
-  // State variables.
-  struct State {
-    VariablePtr mean;
-    VariablePtr var;
-    VariablePtr var_hat;
-    int t;
-  };
-  unordered_map<string, State> state_;
-
   // Functions.
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);

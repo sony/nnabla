@@ -34,19 +34,24 @@ template <typename T>
 void Adagrad<T>::set_state_impl(const string &key, VariablePtr param) {
   auto v = make_shared<Variable>(param->shape());
   v->data()->zero();
-  state_.insert({key, v});
+  unordered_map<string, VariablePtr> pstate{{"v", v}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void Adagrad<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void Adagrad<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr g_ = state_.at(key);
+  auto &state = states_.at(key);
+  VariablePtr g_ = state.pstate["v"];
+  auto &t = state.t;
   T *g = g_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
+  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
   for (int s = 0; s < size; ++s) {
     g[s] += grad[s] * grad[s];
     data[s] -= lr_ * grad[s] / (std::sqrt(g[s]) + eps_);

@@ -57,12 +57,6 @@ protected:
   float decay_; ///< decay factor
   float eps_;   ///< small value
 
-  struct State {
-    VariablePtr e_sqr_grad;
-    VariablePtr e_sqr_delta;
-  };
-  unordered_map<string, State> state_;
-
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);

@@ -39,24 +39,26 @@ void Adam<T>::set_state_impl(const string &key, VariablePtr param) {
   auto v = make_shared<Variable>(shape);
   m->data()->zero();
   v->data()->zero();
-  state_.insert({key, State{m, v, 0}});
+  unordered_map<string, VariablePtr> pstate{{"mean", m}, {"var", v}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void Adam<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void Adam<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  auto &state = state_.at(key);
+  auto &state = states_.at(key);
   auto &t = state.t;
   const T *g = param->get_grad_pointer<T>(this->ctx_);
-  VariablePtr s1 = state.mean;
-  VariablePtr s2 = state.var;
+  VariablePtr s1 = state.pstate["mean"];
+  VariablePtr s2 = state.pstate["var"];
   T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
   T *v = s2->cast_data_and_get_pointer<T>(this->ctx_);
   T *theta = param->cast_data_and_get_pointer<T>(this->ctx_);
-  t = std::min(t + 1, std::numeric_limits<int>::max());
+  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
   const T bias_correction =
       std::sqrt(1 - std::pow(beta2_, t)) / (1 - std::pow(beta1_, t));
   const T alpha_t = alpha_ * bias_correction;

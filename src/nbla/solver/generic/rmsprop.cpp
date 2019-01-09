@@ -35,23 +35,28 @@ void RMSprop<T>::set_state_impl(const string &key, VariablePtr param) {
   auto shape = param->shape();
   auto v = make_shared<Variable>(shape);
   v->data()->zero();
-  state_.insert({key, v});
+  unordered_map<string, VariablePtr> pstate{{"v", v}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void RMSprop<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void RMSprop<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr state = state_.at(key);
-  T *e_sqr_grad = state->cast_data_and_get_pointer<T>(this->ctx_);
+  auto &state = states_.at(key);
+  VariablePtr v = state.pstate["v"];
+  T *e_sqr_grad = v->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
   for (int s = 0; s < size; ++s) {
     e_sqr_grad[s] = e_sqr_grad[s] * decay_ + grad[s] * grad[s] * (1 - decay_);
     data[s] -= lr_ / (std::sqrt(e_sqr_grad[s]) + eps_) * grad[s];
   }
+  auto &t = state.t;
+  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(RMSprop, weight_decay_cpu);

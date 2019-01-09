@@ -29,7 +29,11 @@ Sgd<T>::Sgd(const Context &ctx, float lr) : Solver(ctx), lr_(lr) {}
 template <typename T> Sgd<T>::~Sgd() {}
 
 template <typename T>
-void Sgd<T>::set_state_impl(const string &key, VariablePtr param) {}
+void Sgd<T>::set_state_impl(const string &key, VariablePtr param) {
+  unordered_map<string, VariablePtr> pstate;
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
+}
 template <typename T> void Sgd<T>::remove_state_impl(const string &key) {}
 
 template <typename T>
@@ -40,6 +44,9 @@ void Sgd<T>::update_impl(const string &key, VariablePtr param) {
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
   std::transform(grad, grad + size, data, data,
                  [this](T g, T x) { return x - lr_ * g; });
+  auto &state = states_.at(key);
+  auto &t = state.t;
+  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Sgd, weight_decay_cpu);

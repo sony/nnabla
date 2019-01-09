@@ -47,6 +47,28 @@ it is called (e.g. Adam).
 
 */
 class NBLA_API Solver {
+public:
+  /** Struct for storing both parameter state Variable and iteration
+   */
+  struct SolverState {
+    unordered_map<string, VariablePtr> pstate;  ///< Paramter state maps
+    uint t;                                     ///< Iteration as state
+    SolverState(){};
+    SolverState(unordered_map<string, VariablePtr> pstate, uint t) {
+      this->pstate = pstate;
+      this->t = t;
+    };
+    SolverState(const SolverState &state) {
+      this->pstate = state.pstate;
+      this->t = state.t;
+    };
+    SolverState& operator=(const SolverState &state) {
+      this->pstate = state.pstate;
+      this->t = state.t;
+      return *this;
+    };
+  };
+
 protected:
   /** Struct for storing both parameter Variable and update status of gradient.
    */
@@ -61,6 +83,9 @@ protected:
      */
     size_t at;
   };
+
+  unordered_map<string, SolverState> states_;  ///< Hash map of states
+
   Context ctx_;                          ///< Stores Context.
   unordered_map<string, Params> params_; ///< Hash map of parameters
   bool setup_called_;
@@ -106,6 +131,18 @@ public:
   /** Clear all parameters.
    */
   void clear_parameters();
+
+  /** Get all parameters.
+   */
+  vector<pair<string, VariablePtr>> get_parameters();
+
+  /** Get all states.
+   */
+  vector<pair<string, SolverState>> get_states();
+
+  /** Set states.
+   */
+  void set_states(const vector<pair<string, SolverState>> &params);
 
   /** Update all params using stored grads in #params_ by backpropagation.
 
@@ -168,6 +205,10 @@ protected:
   @param key Key of parameter.
   */
   virtual void remove_state_impl(const string &key) = 0;
+  
+  /**
+  */
+  //virtual void get_state_impl() = 0;
 
   /** Update implementation.
 

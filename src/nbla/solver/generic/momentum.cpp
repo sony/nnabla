@@ -34,22 +34,27 @@ void Momentum<T>::set_state_impl(const string &key, VariablePtr param) {
   auto shape = param->shape();
   auto m = make_shared<Variable>(shape);
   m->data()->zero();
-  state_.insert({key, m});
+  unordered_map<string, VariablePtr> pstate{{"m", m}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void Momentum<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void Momentum<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr v_ = state_.at(key);
+  auto &state = states_.at(key);
+  VariablePtr v_ = state.pstate["m"];
   T *v = v_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
   std::transform(grad, grad + size, v, v,
                  [this](T g, T v) { return momentum_ * v + lr_ * g; });
   std::transform(v, v + size, data, data, [this](T v, T x) { return x - v; });
+  auto &t = state.t;
+  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Momentum, weight_decay_cpu);

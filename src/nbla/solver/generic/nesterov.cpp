@@ -34,16 +34,19 @@ void Nesterov<T>::set_state_impl(const string &key, VariablePtr param) {
   auto shape = param->shape();
   auto m = make_shared<Variable>(shape);
   m->data()->zero();
-  state_.insert({key, m});
+  unordered_map<string, VariablePtr> pstate{{"m", m}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void Nesterov<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void Nesterov<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  VariablePtr v_ = state_.at(key);
+  auto &state = states_.at(key);
+  VariablePtr v_ = state.pstate["m"];
   T *v = v_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
@@ -52,6 +55,8 @@ void Nesterov<T>::update_impl(const string &key, VariablePtr param) {
     v[s] = momentum_ * v[s] - lr_ * grad[s];
     data[s] += -momentum_ * v_prev + (1 + momentum_) * v[s];
   }
+  auto &t = state.t;
+  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Nesterov, weight_decay_cpu);
