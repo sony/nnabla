@@ -153,6 +153,6 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
             assert s1.t == s0.t
     test_save_load(s, "states.h5")
     test_save_load(s, "states.protobuf")
-    
+
     # Check if remove_state_impl work correctly.
     s.clear_parameters()

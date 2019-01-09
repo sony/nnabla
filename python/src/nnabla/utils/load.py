@@ -429,6 +429,7 @@ def _create_optimizer(ctx, o, networks, datasets):
     optimizer.weight_decay = o.solver.weight_decay
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+    optimizer.solver.set_states_from_protobuf(o)
 
     optimizer.comm = current_communicator()
     if optimizer.comm is not None:

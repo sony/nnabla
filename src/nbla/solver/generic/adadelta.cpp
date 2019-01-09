@@ -37,7 +37,8 @@ void Adadelta<T>::set_state_impl(const string &key, VariablePtr param) {
   auto e_sqr_delta = make_shared<Variable>(shape);
   e_sqr_grad->data()->zero();
   e_sqr_delta->data()->zero();
-  unordered_map<string, VariablePtr> pstate{{"e_sqr_grad", e_sqr_grad}, {"e_sqr_delta", e_sqr_delta}};
+  unordered_map<string, VariablePtr> pstate{{"e_sqr_grad", e_sqr_grad},
+                                            {"e_sqr_delta", e_sqr_delta}};
   SolverState state{pstate, 0};
   states_.insert({key, state});
 }

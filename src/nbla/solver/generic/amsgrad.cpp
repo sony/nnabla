@@ -42,7 +42,8 @@ void AMSGRAD<T>::set_state_impl(const string &key, VariablePtr param) {
   m->data()->zero();
   v->data()->zero();
   v_hat->data()->zero();
-  unordered_map<string, VariablePtr> pstate{{"m", m}, {"v", v}, {"v_hat", v_hat}};
+  unordered_map<string, VariablePtr> pstate{
+      {"m", m}, {"v", v}, {"v_hat", v_hat}};
   SolverState state{pstate, 0};
   states_.insert({key, state});
 }

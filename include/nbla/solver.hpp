@@ -51,8 +51,8 @@ public:
   /** Struct for storing both parameter state Variable and iteration
    */
   struct SolverState {
-    unordered_map<string, VariablePtr> pstate;  ///< Paramter state maps
-    uint t;                                     ///< Iteration as state
+    unordered_map<string, VariablePtr> pstate; ///< Paramter state maps
+    uint t;                                    ///< Iteration as state
     SolverState(){};
     SolverState(unordered_map<string, VariablePtr> pstate, uint t) {
       this->pstate = pstate;
@@ -62,7 +62,7 @@ public:
       this->pstate = state.pstate;
       this->t = state.t;
     };
-    SolverState& operator=(const SolverState &state) {
+    SolverState &operator=(const SolverState &state) {
       this->pstate = state.pstate;
       this->t = state.t;
       return *this;
@@ -84,7 +84,7 @@ protected:
     size_t at;
   };
 
-  unordered_map<string, SolverState> states_;  ///< Hash map of states
+  unordered_map<string, SolverState> states_; ///< Hash map of states
 
   Context ctx_;                          ///< Stores Context.
   unordered_map<string, Params> params_; ///< Hash map of parameters
@@ -205,10 +205,10 @@ protected:
   @param key Key of parameter.
   */
   virtual void remove_state_impl(const string &key) = 0;
-  
+
   /**
   */
-  //virtual void get_state_impl() = 0;
+  // virtual void get_state_impl() = 0;
 
   /** Update implementation.
 
