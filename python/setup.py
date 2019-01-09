@@ -233,6 +233,7 @@ if __name__ == '__main__':
                 'nnabla.contrib',
                 'nnabla.experimental',
                 'nnabla.experimental.graph_converters',
+                'nnabla.experimental.trainers',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',

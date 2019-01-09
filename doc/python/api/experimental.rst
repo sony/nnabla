@@ -14,13 +14,22 @@ SimpleGraph
     :members:
 
 
-GraphConveter
--------------
+Trainer
+-------
 
-.. automodule:: nnabla.experimental.graph_converters
-    :classes:
+.. autoclass:: nnabla.experimental.trainers.Trainer
+    :members:
 
-.. autoclass:: nnabla.experimental.graph_converters.identity_graph.IdentityGraph
+.. autoclass:: nnabla.experimental.trainers.NaiveClassificationTrainer
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.NaiveRegressionTrainer
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.Updater
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.Evaluator
     :members:
 
 
