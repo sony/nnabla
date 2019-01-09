@@ -52,9 +52,9 @@ public:
    */
   struct SolverState {
     unordered_map<string, VariablePtr> pstate; ///< Paramter state maps
-    uint t;                                    ///< Iteration as state
+    uint32_t t;                                ///< Iteration as state
     SolverState(){};
-    SolverState(unordered_map<string, VariablePtr> pstate, uint t) {
+    SolverState(unordered_map<string, VariablePtr> pstate, uint32_t t) {
       this->pstate = pstate;
       this->t = t;
     };

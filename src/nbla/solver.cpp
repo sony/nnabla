@@ -109,7 +109,7 @@ void Solver::set_states(const vector<pair<string, SolverState>> &states) {
   for (auto &kv0 : states) {
     auto it = states_.find(kv0.first);
     NBLA_CHECK(it != states_.end(), error_code::value,
-               "Set weight parameter for %s first.", kv0.first);
+               "Set weight parameter for %s first.", kv0.first.c_str());
     it->second = kv0.second;
   }
 }

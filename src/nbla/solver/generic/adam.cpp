@@ -58,7 +58,7 @@ void Adam<T>::update_impl(const string &key, VariablePtr param) {
   T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
   T *v = s2->cast_data_and_get_pointer<T>(this->ctx_);
   T *theta = param->cast_data_and_get_pointer<T>(this->ctx_);
-  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
   const T bias_correction =
       std::sqrt(1 - std::pow(beta2_, t)) / (1 - std::pow(beta1_, t));
   const T alpha_t = alpha_ * bias_correction;

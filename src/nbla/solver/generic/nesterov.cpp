@@ -56,7 +56,7 @@ void Nesterov<T>::update_impl(const string &key, VariablePtr param) {
     data[s] += -momentum_ * v_prev + (1 + momentum_) * v[s];
   }
   auto &t = state.t;
-  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Nesterov, weight_decay_cpu);

@@ -46,7 +46,7 @@ void Sgd<T>::update_impl(const string &key, VariablePtr param) {
                  [this](T g, T x) { return x - lr_ * g; });
   auto &state = states_.at(key);
   auto &t = state.t;
-  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Sgd, weight_decay_cpu);

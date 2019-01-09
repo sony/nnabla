@@ -65,7 +65,7 @@ void Adadelta<T>::update_impl(const string &key, VariablePtr param) {
     data[s] -= lr_ * delta;
   }
   auto &t = state.t;
-  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Adadelta, weight_decay_cpu);

@@ -51,7 +51,7 @@ void Adagrad<T>::update_impl(const string &key, VariablePtr param) {
   T *g = g_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
-  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
   for (int s = 0; s < size; ++s) {
     g[s] += grad[s] * grad[s];
     data[s] -= lr_ * grad[s] / (std::sqrt(g[s]) + eps_);

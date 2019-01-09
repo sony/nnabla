@@ -54,7 +54,7 @@ void Momentum<T>::update_impl(const string &key, VariablePtr param) {
                  [this](T g, T v) { return momentum_ * v + lr_ * g; });
   std::transform(v, v + size, data, data, [this](T v, T x) { return x - v; });
   auto &t = state.t;
-  t = std::min(t + 1, std::numeric_limits<uint>::max() - 1);
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Momentum, weight_decay_cpu);

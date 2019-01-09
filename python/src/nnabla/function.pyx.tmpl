@@ -515,6 +515,7 @@ class PythonFunction:
         info.type_name = 'PythonFunction'
         from pickle import dumps
         info.args = {'pickle': dumps(self)}
+        info.tags = {}
         # Increment reference count to prevent deleting this object as long as
         # the CgFunction instance created below exists.
         # The reference count is decremented at the cleanup_callback function
