@@ -15,12 +15,13 @@
 from six import iteritems
 
 import nnabla as nn
+import nnabla.solvers as S
 import numpy as np
 from collections import OrderedDict
+import os
 
 
 class RefSolver(object):
-
     def set_parameters(self, params):
         if not hasattr(self, 'params'):
             self.params = OrderedDict()
@@ -70,6 +71,15 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     ref_s = ref_solver(*solver_args, **solver_kwargs)
     ref_s.set_parameters(params)
 
+    # Get params (unordered_map is used in C++, thus check in both directions)
+    params_ = s.get_parameters()
+    for k0, v0 in iteritems(ref_s.params):
+        v1 = params_[k0]
+        assert np.allclose(v0, v1.d, atol=atol)
+    for k1, v1 in iteritems(params_):
+        v0 = ref_s.params[k1]
+        assert np.allclose(v0, v1.d, atol=atol)
+
     # Check weight decay.
     grad_copy = OrderedDict([(k, p.g.copy())
                              for k, p in iteritems(params)])
@@ -86,8 +96,12 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
             params[k].g = g
         s.update()
         ref_s.update(grads)
+        # update check
         for p, ref_p in zip(params.values(), ref_s.params.values()):
             assert np.allclose(ref_p, p.d, atol=atol)
+        # iteration state incrementaion check
+        for state in s.get_states().values():
+            assert state.t == (i + 1)
 
     # Check inf, nan, and inf/nan
     for v, method in zip([[np.inf], [np.nan], [np.inf, np.nan]],
@@ -116,5 +130,29 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     for ref, p in zip(ref_grad, params.values()):
         assert np.allclose(ref, p.g, atol=1e-4)
 
+    # Save/Load Test
+    def test_save_load(s, name):
+        # Save states
+        import tempfile
+        tmpdir = tempfile.mkdtemp("solver-test")
+        tmpfile = os.path.join(tmpdir, name)
+        states0 = s.get_states()
+        s.save_states(tmpfile)
+        # Load states
+        with nn.context_scope(ctx):
+            s1 = solver(*solver_args, **solver_kwargs)
+            s1.set_parameters(params)
+            s1.load_states(tmpfile)
+        # Check save/load states
+        states1 = s1.get_states()
+        for k0, s0 in iteritems(states0):
+            s1 = states1[k0]
+            for sname, vx0 in iteritems(s0.pstate):
+                vx1 = s1.pstate[sname]
+                assert np.allclose(vx0.d, vx1.d)
+            assert s1.t == s0.t
+    test_save_load(s, "states.h5")
+    test_save_load(s, "states.protobuf")
+    
     # Check if remove_state_impl work correctly.
     s.clear_parameters()
