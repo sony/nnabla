@@ -37,7 +37,10 @@ def test_assign_forward_backward(seed, ctx, func_name):
     src.d = np.random.random((2, 3, 4))
     assign.forward()
 
+    # destination variable should be equal to source variable
     assert np.allclose(dst.d, src.d)
+    # output variable of assign function should be equal to soure variable
+    assert np.allclose(assign.d, src.d)
 
     dummy = assign + np.random.random()
 
