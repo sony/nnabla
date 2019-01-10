@@ -36,14 +36,11 @@ void Assign<T>::setup_impl(const Variables &inputs,
 template <typename T>
 void Assign<T>::forward_impl(const Variables &inputs,
                                const Variables &outputs) {
-  // remove const from below to update destination variable
-  T* dst = inputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  const T* src = inputs[1]->get_data_pointer<T>(this->ctx_);
-  T* y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  for (int s = 0; s < inputs[0]->size(); s++) {
-    dst[s] = src[s];
-    y[s] = src[s];
-  }
+  Array *dst = inputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
+  const Array *src = inputs[1]->data()->get(get_dtype<T>(), this->ctx_);
+  Array *y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
+  dst->copy_from(src);
+  y->copy_from(src);
 }
 
 
