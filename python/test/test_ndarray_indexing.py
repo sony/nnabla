@@ -20,11 +20,25 @@ import nnabla as nn
 
 def test_1d_array_indexing():
     # 1d-tensor
-    d = 16
+    d = 20
     x_data = np.random.rand(d)
     x = nn.NdArray.from_numpy_array(x_data)
 
     with nn.auto_forward(True):
+        with pytest.raises(RuntimeError):
+            x_data_key = x_data[10:19:-1]
+            x_key = x[10:19:-1]
+            assert np.allclose(x_key.data, x_data_key)
+
+        x_data_key = x_data[10::-1]
+        x_key = x[10::-1]
+        assert np.allclose(x_key.data, x_data_key)
+
+        with pytest.raises(RuntimeError):
+            x_data_key = x_data[10:20:-1]
+            x_key = x[10:20:-1]
+            assert np.allclose(x_key.data, x_data_key)
+
         x_data_key = x_data[1]
         x_key = x[1]
         assert np.allclose(x_key.data, x_data_key)
@@ -61,6 +75,26 @@ def test_4d_array_indexing():
         x_key = x[:, :, 4:36, 4:36]
         assert np.allclose(x_key.data, x_data_key)
 
+        x_data_key = x_data[:, :2]
+        x_key = x[:, :2]
+        assert np.allclose(x_key.data, x_data_key)
+
+        x_data_key = x_data[2, :]
+        x_key = x[2, :]
+        assert np.allclose(x_key.data, x_data_key)
+
+        x_data_key = x_data[:, :, 1:-1, 1:-1]
+        x_key = x[:, :, 1:-1, 1:-1]
+        assert np.allclose(x_key.data, x_data_key)
+
+        x_data_key = x_data[:, :, 1:-2, 1:-2]
+        x_key = x[:, :, 1:-2, 1:-2]
+        assert np.allclose(x_key.data, x_data_key)
+
+        x_data_key = x_data[:, :, 1:-3, 1:-3]
+        x_key = x[:, :, 1:-3, 1:-3]
+        assert np.allclose(x_key.data, x_data_key)
+
         x_data_key = x_data[:, 0, :, :]
         x_key = x[:, 0, :, :]
         assert np.allclose(x_key.data, x_data_key)
@@ -95,6 +129,21 @@ def test_complex_nd_array_indexing():
 
         x_data_key = x_data[..., 1]
         x_key = x[..., 1]
+        assert np.allclose(x_key.data, x_data_key)
+
+
+def test_flipping():
+    b, c, h, w = 8, 8, 16, 16
+    x_data = np.random.rand(b, c, h, w)
+    x = nn.NdArray.from_numpy_array(x_data)
+
+    with nn.auto_forward(True):
+        x_data_key = x_data[:, :, :, ::-1]
+        x_key = x[:, :, :, ::-1]
+        assert np.allclose(x_key.data, x_data_key)
+
+        x_data_key = x_data[:, :, ::-1, ::-1]
+        x_key = x[:, :, ::-1, ::-1]
         assert np.allclose(x_key.data, x_data_key)
 
 

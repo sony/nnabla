@@ -140,7 +140,7 @@ def device_synchronize(str device):
 def get_device_count():
     """Always returns 1.
 
-    Retuns:
+    Returns:
         int: Number of devices available.
 
     """

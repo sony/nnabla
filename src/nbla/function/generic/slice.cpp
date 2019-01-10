@@ -19,6 +19,7 @@
 #include <nbla/variable.hpp>
 
 #include <cstring>
+#include <iostream>
 
 namespace nbla {
 
@@ -26,16 +27,27 @@ NBLA_REGISTER_FUNCTION_SOURCE(Slice, const vector<int> &, // start
                               const vector<int> &,        // stop
                               const vector<int> &);       // step
 
+template <typename T> bool Slice<T>::skip_check(const Variables &outputs) {
+  Shape_t shape_x = outputs[0]->shape();
+  for (auto s : shape_x) {
+    if (s == 0)
+      return true;
+  }
+  return false;
+}
+
 template <typename T>
 void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t shape_x = inputs[0]->shape();
   const int size = shape_x.size();
+
+  // Size check for start, stop, and step
   NBLA_CHECK(stop_[0].size() == start_[0].size(), error_code::value,
-             "size of stop and start must be same. "
+             "Size of stop and start must be same. "
              "Stop size: %d != start size: %d.",
              stop_[0].size(), start_[0].size());
   NBLA_CHECK(step_[0].size() == start_[0].size(), error_code::value,
-             "size of step and start must be same. "
+             "Size of step and start must be same. "
              "Step size: %d != start size: %d.",
              step_[0].size(), start_[0].size());
 
@@ -45,40 +57,79 @@ void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
     step_[0].insert(step_[0].begin(), 1);
   }
 
+  // Size check for start, stop, step, and input
   NBLA_CHECK(start_[0].size() == size, error_code::value,
              "Size of start must be same as input size. "
              "Start size: %d != input size: %d.",
              start_[0].size(), size);
   NBLA_CHECK(stop_[0].size() == size, error_code::value,
-             "size of stop must be same as input size. "
+             "Size of stop must be same as input size. "
              "Stop size: %d != input size: %d.",
              stop_[0].size(), size);
   NBLA_CHECK(step_[0].size() == size, error_code::value,
-             "size of step must be smaller than input size. "
+             "Size of step must be smaller than input size. "
              "Step size: %d != input size: %d.",
              step_[0].size(), size);
 
+  // Index range check, then convert negative start and stop
   Shape_t shape_y(size);
   for (int i = 0; i < size; i++) {
-    NBLA_CHECK(0 <= start_[0][i] && start_[0][i] <= shape_x[i],
-               error_code::value, "start[%d] must be between 0 and %d. "
-                                  "start[%d]: %d.",
-               i, shape_x[i], i, start_[0][i]);
-    NBLA_CHECK(0 <= stop_[0][i] && stop_[0][i] <= shape_x[i], error_code::value,
-               "stop[%d] must be between 0 and %d. "
-               "stop[%d]: %d.",
-               i, shape_x[i], i, stop_[0][i]);
-    NBLA_CHECK(start_[0][i] <= stop_[0][i], error_code::value,
-               "start must be smaller than stop. "
-               "start[%d]: %d > stop[%d]: %d.",
-               i, start_[0][i], i, stop_[0][i]);
-    NBLA_CHECK(0 < step_[0][i], error_code::value,
-               "step must be positive integer. step[%d]: %d.", step_[0][i]);
-    const int size_i = int((stop_[0][i] - 1 - start_[0][i]) / step_[0][i]) + 1;
+    // Step 1: step 0 check
+    NBLA_CHECK(step_[0][i] != 0, error_code::value,
+               "slice step cannot be zero. "
+               "step[%d] must NOT be 0 "
+               "step[%d]: %d",
+               i, i, step_[0][i]);
+
+    // Step 2: step none check
+    if (step_[0][i] == SLICE_NONE)
+      step_[0][i] = 1;
+
+    // Step 3: start negative check
+    if (start_[0][i] < 0)
+      start_[0][i] += shape_x[i];
+
+    // Step 4: stop negative check
+    if (stop_[0][i] < 0)
+      stop_[0][i] += shape_x[i];
+
+    // Step 5: start none check
+    if (start_[0][i] == SLICE_NONE) {
+      if (step_[0][i] > 0)
+        start_[0][i] = 0;
+      else
+        start_[0][i] = shape_x[i] - 1;
+    }
+    // Step 6: stop none check
+    if (stop_[0][i] == SLICE_NONE) {
+      if (step_[0][i] > 0)
+        stop_[0][i] = shape_x[i];
+      else
+        stop_[0][i] = -1;
+    }
+
+    // determine size_i
+    int size_i;
+    if (step_[0][i] < 0 && start_[0][i] > stop_[0][i]) {
+      size_i =
+          int((start_[0][i] - 1 - stop_[0][i]) / std::abs(step_[0][i])) + 1;
+    } else if (step_[0][i] > 0 && start_[0][i] < stop_[0][i]) {
+      size_i =
+          int((stop_[0][i] - 1 - start_[0][i]) / std::abs(step_[0][i])) + 1;
+    } else {
+      size_i = 0;
+    }
     shape_y[i] = size_i;
   }
-
   outputs[0]->reshape(shape_y, true);
+
+  if (skip_check(outputs)) {
+    // TODO: now raise error, but in the future, this will change in align with
+    // numpy behaviour, so that this skip_check will be replaced in the head of
+    // `forward_impl` and `backward_impl` functions for each extension.
+    NBLA_ERROR(error_code::value,
+               "Empty dimension. the size of at-least one dimension is zero.");
+  }
 }
 
 template <typename T>
@@ -153,6 +204,10 @@ void Slice<T>::slice_backward_recursive(Variable *outp, const Variable *inp,
 
 template <class T>
 void Slice<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
+  // TODO: see nnabla's setup_impl
+  //  if (this->skip_check(outputs))
+  //    return;
+
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
@@ -167,6 +222,11 @@ void Slice<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   if (!propagate_down[0]) {
     return;
   }
+
+  // TODO: see nnabla's setup_impl
+  //  if (this->skip_check(outputs))
+  //    return;
+
   if (!accum[0])
     inputs[0]->grad()->zero();
 

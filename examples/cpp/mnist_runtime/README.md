@@ -61,13 +61,13 @@ make
 
 The above command generates an executable `mnist_runtime` at the current directly.
 
-The build file `GNUMakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++11 option `-std=c++11`.
+The build file `GNUmakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++11 option `-std=c++11`.
 
 ```shell
 make cuda
 ```
 
-You can also compile an executable `mnist_runtime_cuda` that runs computation on your CUDA device by the above command if you install `nnabla-ext-cuda` in a right path. See `GNUMakefile` for details.
+You can also compile an executable `mnist_runtime_cuda` that runs computation on your CUDA device by the above command if you install `nnabla-ext-cuda` in a right path. See `GNUmakefile` for details.
 
 
 ## Execute handwritten digit classification
@@ -106,7 +106,7 @@ The output shows it makes a prediction. In my case, it's correct.
 Prediction scores: -24.1875 -14.0103 -13.2646 7.52215 -13.7401 31.1683 -0.501035 -4.69472 6.2626 1.87513
 Prediction: 5
 ```
-NOTE: The recognition performance is not perfect for the real hand-written digit images (i.e. the digit images contained in this example). For example, it often mis-classifies the digit 6 as 5.
+NOTE: The recognition performance is not perfect for the real hand-written digit images (i.e. the digit images contained in this example). For example, it often misclassifies the digit 6 as 5.
 
 ## Walk through the example code
 

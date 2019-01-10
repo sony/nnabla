@@ -120,7 +120,7 @@ public:
   /** reduce over parameters added.
 
         @param ndarray_list Vector of NdArrayPtr.
-        @param dst Distination rank.
+        @param dst Destination rank.
   @param division Divide the reduced value.
   @param inplace Pack the arrays into one large array if false.
   @param group Name of a group.
@@ -132,7 +132,7 @@ public:
   /** reduce over parameters added.
 
   @param data NdArrayPtr.
-  @param dst Distination rank.
+  @param dst Destination rank.
 @param division Divide the reduced value.
 @param inplace Pack the arrays into one large array if false.
 @param group Name of a group.
@@ -227,7 +227,7 @@ public:
   /** all_gather.
 
          @param ndarray data to be sent.
-         @param ndarray_list Vector of NdArrayPtr to recieve data.
+         @param ndarray_list Vector of NdArrayPtr to receive data.
          @param group Name of a group.
    */
   virtual void all_gather(NdArrayPtr ndarray,

@@ -27,7 +27,7 @@ using std::vector;
 /** Singleton for garbage collector registry.
 
    This singleton class is intended to be used to freeing cpu/device memory
-   held by an interpreter language which manages mamery by GC (e.g. Python). GC
+   held by an interpreter language which manages memory by GC (e.g. Python). GC
    function as c++ callback function can be registered via `register_collector`
    function. All registered GC function is called usually in case memory
    allocation fails.

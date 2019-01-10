@@ -29,7 +29,11 @@ def version_command(args):
     print(_nnabla_version())
 
 
+return_value = None
+
+
 def main():
+    global return_value
     import six.moves._thread as thread
     import threading
     thread.stack_size(128 * 1024 * 1024)
@@ -37,12 +41,20 @@ def main():
     main_thread = threading.Thread(target=cli_main)
     main_thread.start()
     main_thread.join()
+    if not return_value:
+        sys.exit(-1)
 
 
 def cli_main():
+    global return_value
+    return_value = False
+
     import nnabla
     parser = argparse.ArgumentParser(description='Command line interface ' +
                                      'for NNabla({})'.format(_nnabla_version()))
+    parser.add_argument(
+        '-m', '--mpi', help='exec with mpi.', action='store_true')
+
     subparsers = parser.add_subparsers()
 
     from nnabla.utils.cli.train import add_train_command
@@ -77,18 +89,41 @@ def cli_main():
     from nnabla.utils.cli.convert import add_convert_command
     add_convert_command(subparsers)
 
+    from nnabla.utils.cli.plot import (
+        add_plot_series_command, add_plot_timer_command)
+    add_plot_series_command(subparsers)
+    add_plot_timer_command(subparsers)
+
     # Version
     subparser = subparsers.add_parser(
         'version', help='Print version and build number.')
     subparser.set_defaults(func=version_command)
 
+    print('NNabla command line interface (Version {}, Build {})'.format(
+        nnabla.__version__, nnabla.__build_number__))
+
     args = parser.parse_args()
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
-        sys.exit(-1)
+        return
 
-    args.func(args)
+    if args.mpi:
+        from nnabla.utils.communicator_util import create_communicator
+        comm = create_communicator()
+        try:
+            return_value = args.func(args)
+        except:
+            import traceback
+            print(traceback.format_exc())
+            comm.abort()
+    else:
+        try:
+            return_value = args.func(args)
+        except:
+            import traceback
+            print(traceback.format_exc())
+            return_value = False
 
 
 if __name__ == '__main__':

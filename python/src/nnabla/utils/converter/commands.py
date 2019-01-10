@@ -26,7 +26,7 @@ def _import_file(args, ifiles):
     if len(ifiles) == 1 and os.path.splitext(ifiles[0])[1] == '.onnx':
         args.import_format = 'ONNX'
     if args.import_format == 'NNP':
-        # Input file that has unsuported extension store into output nnp
+        # Input file that has unsupported extension store into output nnp
         # archive or directory.
         return NnpImporter(*ifiles,
                            expand_network=not args.nnp_no_expand_network,

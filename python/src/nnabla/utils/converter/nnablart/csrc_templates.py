@@ -64,7 +64,7 @@ extern "C" {{
 #endif /* __cplusplus */
 
 // All information for inference stores into context buffer.
-// Detailed structure of context is unvisible from user.
+// Detailed structure of context is invisible from user.
 
 /// Allocate memories and initialize buffers.
 void* {prefix}_allocate_context(void** params);
@@ -101,6 +101,7 @@ csrc_implements = _header + """
 #include "{name}_inference.h"
 
 #include <nnablart/functions.h>
+#include <string.h>
 
 {internal_defines}
 

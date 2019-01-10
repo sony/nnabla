@@ -17,11 +17,12 @@ import pytest
 
 from contextlib import contextmanager
 from shutil import rmtree
-from skimage.io import imsave
 import numpy
 import os
 import tempfile
 import warnings
+
+from nnabla.utils.image_utils import imsave
 
 
 @contextmanager
@@ -41,7 +42,7 @@ def generate_csv_csv(filename, num_of_data, data_size):
         with open(csvfilename, 'w') as f:
             f.write('x:data, y\n')
             for n in range(0, num_of_data):
-                x = numpy.ones(data_size).astype(numpy.uint16) * n
+                x = numpy.ones(data_size).astype(numpy.uint8) * n
                 data_name = 'data_{}.csv'.format(n)
                 with open(os.path.join(datadir, data_name), 'w') as df:
                     for d in x:
@@ -57,7 +58,7 @@ def generate_csv_png(filename, num_of_data, img_size):
         with open(csvfilename, 'w') as f:
             f.write('x:image, y\n')
             for n in range(0, num_of_data):
-                x = numpy.identity(img_size).astype(numpy.uint16) * n
+                x = numpy.identity(img_size).astype(numpy.uint8) * n
                 img_name = 'image_{}.png'.format(n)
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")

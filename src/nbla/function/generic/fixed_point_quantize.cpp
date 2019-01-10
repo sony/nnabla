@@ -29,7 +29,7 @@ template <typename T>
 void FixedPointQuantize<T>::setup_impl(const Variables &inputs,
                                        const Variables &outputs) {
   NBLA_CHECK(n_ > 0 && delta_ > 0., error_code::value,
-             "Both bit withd and delta should be positive.");
+             "Both bit width and delta should be positive.");
 
   // Reshape output size equal to input size
   outputs[0]->reshape(inputs[0]->shape(), true);

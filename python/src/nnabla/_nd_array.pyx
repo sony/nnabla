@@ -13,8 +13,9 @@
 # limitations under the License.
 
 from __future__ import division
+from libcpp cimport bool as cpp_bool
 from libcpp.algorithm cimport copy
-from libcpp.memory cimport make_shared
+from libcpp.memory cimport make_shared, shared_ptr
 from libc.stdint cimport intptr_t
 from cpython cimport PyObject, Py_INCREF
 
@@ -29,11 +30,70 @@ import numpy as np
 cimport numpy as np
 np.import_array()
 
+# Older cython doesn't expose const_pointer_cast in <memory>
+cdef extern from "<memory>" namespace "std" nogil:
+    cdef shared_ptr[T] const_pointer_cast[T, U](const shared_ptr[U] & )
+
+
+cdef c_get_numpy_array(CNdArray * arrp, vector[np.npy_intp] & shape,
+                       int type_num, CContext cctx):
+    cdef shared_ptr[const CArray] arr
+    with nogil:
+        arr = <shared_ptr[const CArray] > (arrp.get_sp( < dtypes > type_num, cctx))
+    cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
+        shape.size(), shape.data(), type_num, < void*>(arr.get().const_pointer()))
+    ndarray.flags.writeable = False
+    pyarr = Array.create(arr)
+    ndarray.base = <PyObject * > pyarr
+    Py_INCREF(pyarr)
+    return ndarray
+
+
+cdef c_cast_numpy_array(CNdArray * arrp, vector[np.npy_intp] & shape,
+                        int type_num, CContext cctx, cpp_bool write_only):
+    cdef ArrayPtr arr
+    with nogil:
+        arr = <ArrayPtr > (arrp.cast_sp(< dtypes > type_num, cctx, write_only))
+    cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
+        shape.size(), shape.data(), type_num, arr.get().pointer())
+    cdef shared_ptr[const CArray] carr = < shared_ptr[const CArray] > const_pointer_cast[ConstArray, CArray](arr)
+    pyarr = Array.create(carr)
+    ndarray.base = <PyObject * > pyarr
+    Py_INCREF(pyarr)
+    return ndarray
+
+
+cdef c_as_numpy_array(CNdArray * arrp, str mode):
+    cdef int type_num
+    cdef vector[np.npy_intp] shape
+    cdef Shape_t shape_base
+    from nnabla_ext.cpu import context
+    ctx = context()
+    cdef CContext cctx = <CContext > ctx
+
+    # Getting current data type
+    try:
+        type_num = <int > arrp.array().get().dtype()
+    except:
+        type_num = np.dtype(np.float32).num
+
+    # Create numpy shape array
+    shape.resize(arrp.ndim())
+    shape_base = arrp.shape()
+    copy(shape_base.begin(), shape_base.end(), shape.begin())
+
+    # Convert to numpy array with flags depending on the mode option.
+    if mode == 'r':
+        return c_get_numpy_array(arrp, shape, type_num, cctx)
+    else:
+        assert mode in ('w', 'rw'), 'Invalid mode is given: "%s"' % mode
+        return c_cast_numpy_array(arrp, shape, type_num, cctx, mode == 'w')
+
 
 cdef class NdArray:
     """
     :class:`nnabla._nd_array.NdArray` is a device-agnostic data container for multi-dimensional arrays (tensors).
-    :class:`nnabla._nd_array.NdArray` can also implictly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
+    :class:`nnabla._nd_array.NdArray` can also implicitly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
     See `Python API Tutorial <http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_ for more details.
 
     :class:`~nnabla.NdArray` overrides some arithmetic operators
@@ -124,7 +184,7 @@ cdef class NdArray:
     def size(self):
         """Total size of the N-d array.
 
-        Retuns: int
+        Returns: int
 
         """
         return self.arrp.size(-1)
@@ -194,7 +254,7 @@ cdef class NdArray:
         cdef int type_num = np.dtype(dtype).num
         cdef CContext cctx = <CContext ?> ctx_
         with nogil:
-            self.arrp.cast(< dtypes > type_num, cctx)
+            self.arrp.cast(< dtypes > type_num, cctx, False)
         if ctx is None:
             return self.data
 
@@ -214,33 +274,27 @@ cdef class NdArray:
         Returns: :obj:`numpy.ndarray`
 
         """
-        cdef int type_num
-        cdef vector[np.npy_intp] shape
-        cdef Shape_t shape_base
-        cdef ArrayPtr arr
-        cdef CArray * arrp
-        from nnabla_ext.cpu import context
-        ctx = context()
-        cdef CContext cctx = <CContext > ctx
-        try:
-            type_num = <int > self.arrp.array().get().dtype()
-        except:
-            type_num = np.dtype(np.float32).num
-        shape.resize(self.arrp.ndim())
-        shape_base = self.arrp.shape()
-        copy(shape_base.begin(), shape_base.end(), shape.begin())
-        with nogil:
-            arr = <ArrayPtr > (self.arrp.cast_sp(< dtypes > type_num, cctx))
-        cdef np.ndarray ndarray = np.PyArray_SimpleNewFromData(
-            shape.size(), shape.data(), type_num, arr.get().pointer())
-        pyarr = Array.create(arr)
-        ndarray.base = <PyObject * > pyarr
-        Py_INCREF(pyarr)
-        return ndarray
+        return c_as_numpy_array(self.arrp, 'rw')
 
     @data.setter
     def data(self, value):
         self.data[...] = value
+
+    def get_data(self, str mode='rw'):
+        '''
+        Returns the values held by this array as a :class:`numpy.ndarray`
+        with a specified mode.
+
+        Args:
+            mode (str): Computation becomes more efficient if right one is chosen.
+                * 'r': Read-only access.
+                * 'w': Write-only access.
+                * 'rw': You can both read and write.
+
+        See :function:`nnabla._nd_array.NdArray.data for more details.
+
+        '''
+        return c_as_numpy_array(self.arrp, mode)
 
     def zero(self):
         """

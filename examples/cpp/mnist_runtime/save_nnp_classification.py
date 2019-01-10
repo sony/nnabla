@@ -75,7 +75,7 @@ def main():
     try:
         nn.load_parameters(parameter_file)
     except IOError:
-        logger.error("Run classification.py before runnning this script.")
+        logger.error("Run classification.py before running this script.")
         exit(1)
 
     # Create a computation graph to be saved.

@@ -29,7 +29,7 @@ NBLA_REGISTER_FUNCTION_HEADER(PReLU, int);
 @f[
 y_i = \max(0, x_i) + \alpha \min(0, x_i)
 @f]
-where nagative slope @f$ \alpha @f$ is learned and can vary accros channels (an
+where negative slope @f$ \alpha @f$ is learned and can vary across channels (an
 axis specified with base_axis).
 
 Inputs:
@@ -40,7 +40,7 @@ Outputs:
 - N-D array.
 
 @tparam T Data type for computation.
-@param base_axis Valid if negative slope is a vector. The nagative slope vector
+@param base_axis Valid if negative slope is a vector. The negative slope vector
 size and input shape of base_axis must match.
 
 @sa He et.al, Delving Deep into Rectifiers: Surpassing Human-Level Performance

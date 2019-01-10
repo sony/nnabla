@@ -64,13 +64,13 @@ def resolve_reshape_params(inputs, function_proto, batch_size):
         if d < 0:
             negative_count += 1
     if negative_count > 1:
-        raise ValueError('Reshape: shape has muliple negative number.')
+        raise ValueError('Reshape: shape has multiple negative number.')
 
-    # A-2. Fill nagative dimensions with batch size.
+    # A-2. Fill negative dimensions with batch size.
     shape = tuple(
         [d if d >= 0 else batch_size for d in f.reshape_param.shape.dim])
 
-    # B. Console ommits batch dimensions (the first dimension) during saving.
+    # B. Console omits batch dimensions (the first dimension) during saving.
     # B-1. Fill with batch size if shapes don't match.
     if numpy.prod(shape) != numpy.prod(inputs[0].shape):
         shape = (batch_size,) + shape
@@ -91,9 +91,9 @@ def resolve_broadcast_params(inputs, function_proto, batch_size):
         if d < 0:
             negative_count += 1
     if negative_count > 1:
-        raise ValueError('Reshape: shape has muliple negative number.')
+        raise ValueError('Reshape: shape has multiple negative number.')
 
-    # B. Fill nagative dimensions with batch size.
+    # B. Fill negative dimensions with batch size.
     shape = tuple(
         [d if d >= 0 else batch_size for d in f.broadcast_param.shape.dim])
     return shape
@@ -343,7 +343,7 @@ def _get_matching_variable_names(variable, variable_names):
     if variable in variable_names:
         return [variable]
     r = re.compile('{[^}]*}')
-    key = r.sub('\[[\d+]\]', variable, re.U)
+    key = r.sub(r'\\[[\\d+]\\]', variable, re.U)
     r2 = re.compile(key)
     variable_names = [
         v_name for v_name in variable_names if re.match(r2, v_name)]
@@ -532,7 +532,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
         if cache_dir == '':
             cache_dir = None
 
-        # Disble implicit cache creation when MPI is available.
+        # Disable implicit cache creation when MPI is available.
         if cache_dir and (create_cache_explicitly or comm):
             cache_index = os.path.join(cache_dir, "cache_index.csv")
             if not os.path.exists(cache_index) or overwrite_cache:
@@ -791,21 +791,16 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
-    if len(proto.dataset) > 0:
-        info.datasets = _datasets(proto, prepare_data_iterator)
+    info.datasets = _datasets(proto, prepare_data_iterator)
 
-    if len(proto.network) > 0:
-        info.networks = _networks(proto, default_context, batch_size)
+    info.networks = _networks(proto, default_context, batch_size)
 
-    if len(proto.optimizer) > 0:
-        info.optimizers = _optimizers(
-            proto, default_context, info.networks, info.datasets)
+    info.optimizers = _optimizers(
+        proto, default_context, info.networks, info.datasets)
 
-    if len(proto.monitor) > 0:
-        info.monitors = _monitors(
-            proto, default_context, info.networks, info.datasets)
+    info.monitors = _monitors(
+        proto, default_context, info.networks, info.datasets)
 
-    if len(proto.executor) > 0:
-        info.executors = _executors(proto, info.networks)
+    info.executors = _executors(proto, info.networks)
 
     return info

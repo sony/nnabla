@@ -58,7 +58,7 @@ void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   // C: Reshape output
   outputs[0]->reshape(shape_, true);
 
-  // D: Inpalce
+  // D: Inplace
   if (inplace_) {
     outputs[0]->data()->set_array(inputs[0]->data()->array());
     outputs[0]->grad()->set_array(inputs[0]->grad()->array());

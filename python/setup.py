@@ -25,7 +25,7 @@ import copy
 setup_requires = [
     'setuptools',
     'numpy>=1.12',
-    'Cython>=0.24,<0.26',  # Requires python-dev.
+    'Cython',  # Requires python-dev.
 ]
 
 install_requires = setup_requires + [
@@ -33,12 +33,13 @@ install_requires = setup_requires + [
     'configparser',
     'contextlib2',
     'h5py',
-    'protobuf',
+    'protobuf>=3.6',
     'pyyaml',
     'requests',
-    'scikit-image',
     'scipy',
     'tqdm',
+    'imageio',
+    'pillow'
 ]
 
 
@@ -78,7 +79,7 @@ def extopts(library_name, library_dir):
         ))
     else:
         # Assume Windows.
-        ext_opts.update(dict(extra_compile_args=['/W0']))
+        ext_opts.update(dict(extra_compile_args=['/W0', '/EHsc']))
     return ext_opts
 
 ################################################################################
@@ -96,20 +97,28 @@ if __name__ == '__main__':
                            '_version.py')).read(), globals(), a)
     if '__version__' in a:
         __version__ = a['__version__']
+    if '__author__' in a:
+        __author__ = a['__author__']
     if '__email__' in a:
         __email__ = a['__email__']
 
     ############################################################################
     # Package information
+
+    pkg_name = "nnabla"
+    if 'WHEEL_SUFFIX' in os.environ:
+        pkg_name += os.environ['WHEEL_SUFFIX']
+
     pkg_info = dict(
-        name="nnabla",
+        name=pkg_name,
         description='Neural Network Libraries',
         version=__version__,
+        author=__author__,
         author_email=__email__,
         url="https://github.com/sony/nnabla",
-        license='Apache Licence 2.0',
+        license='Apache License 2.0',
         classifiers=[
-            'Development Status :: 4 - Beta',
+            'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'Intended Audience :: Education',
             'Intended Audience :: Science/Research',
@@ -120,15 +129,15 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: Implementation :: CPython',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX :: Linux',
+            'Operating System :: MacOS :: MacOS X'
         ],
         keywords="deep learning artificial intelligence machine learning neural network",
-        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
     )
 
     ############################################################################
@@ -186,8 +195,7 @@ if __name__ == '__main__':
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [
         library_file_name, 'nnabla.conf',
-                           'utils/converter/functions.yaml',
-                           'utils/converter/function_order.yaml']}
+                           'utils/converter/functions.pkl']}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -224,6 +232,7 @@ if __name__ == '__main__':
     packages = ['nnabla',
                 'nnabla.contrib',
                 'nnabla.experimental',
+                'nnabla.experimental.graph_converters',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
@@ -231,6 +240,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
                 'nnabla.utils.factorization',
+                'nnabla.utils.image_utils',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 
@@ -240,8 +250,10 @@ if __name__ == '__main__':
                       ["nnabla_cli=nnabla.utils.cli.cli:main"]},
         setup_requires=setup_requires,
         install_requires=install_requires,
-        extras_require={':python_version == "2.7"': [
-            'futures'], ':python_version != "2.7"': ['onnx']},
+        extras_require={
+            ':python_version == "2.7"': ['futures'],
+            ':(python_version != "2.7" and python_version != "3.7")': ['onnx']
+            },
         ext_modules=ext_modules,
         package_dir=package_dir,
         packages=packages,

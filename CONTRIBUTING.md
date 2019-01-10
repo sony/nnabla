@@ -15,7 +15,7 @@ Note:
 
 
 We appreciate contributors in the community, that are willing to improve NNabla.
-We basically follow the developement style used in many GitHub repositories.
+We basically follow the development style used in many GitHub repositories.
 
 1. Search existing issues and/or pull request in
    [the GitHub repository](https://github.com/sony/nnabla).
@@ -32,8 +32,8 @@ We basically follow the developement style used in many GitHub repositories.
 
 ## Development Guide
 
-* Architecture overview (availble soon).
+* Architecture overview (available soon).
 * [Adding a new function (layer implementation)](doc/contributing/add_function.md).
-* [Adding a new solver (gradient descent algorighm implemenation)](doc/contributing/add_solver.md).
+* [Adding a new solver (gradient descent algorithm implementation)](doc/contributing/add_solver.md).
 * [Contributing to NNabla CUDA extension](https://github.com/sony/nnabla-ext-cuda/blob/master/CONTRIBUTING.md).
-* Adding a new extension (availble soon).
+* Adding a new extension (available soon).

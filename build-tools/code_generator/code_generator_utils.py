@@ -15,7 +15,7 @@
 from __future__ import print_function
 from collections import OrderedDict
 from os.path import abspath, join, dirname, exists
-from utils.common import check_update, get_version
+from utils.common import check_update
 from utils.type_conv import type_from_proto
 import time
 import yaml
@@ -122,9 +122,9 @@ class MyDumper(yaml.Dumper):
         super(MyDumper, self).process_scalar()
 
 
-def dump_yaml(data, stream, default_flow_style=None):
+def dump_yaml(data, stream, default_flow_style=None, width=None):
     dumper = MyDumper(stream, default_flow_style=default_flow_style, indent=2,
-                      default_style=None)
+                      default_style=None, width=width)
     dumper.open()
     dumper.represent(data)
     dumper.close()
@@ -201,16 +201,13 @@ def generate_init(function_info, function_types, solver_info, solver_types, ext_
     generate_from_template(template, **kwargs)
 
 
-def generate_version(template=None, rootdir=None, suffix=None):
-    if template is None:
-        template = join(base, 'python/src/nnabla/_version.py.tmpl')
-    if rootdir is None:
-        rootdir = base
-    version, short_version = get_version(rootdir)
+def generate_version(template, rootdir, version = None, suffix=None, **kwargs):
     if suffix is not None:
         version = version + suffix
-    generated = render_with_template(filename=template, template_kwargs=dict(
-        version=version, short_version=short_version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime())))
+    tmpl_kwargs = dict(
+        version=version, build_number=time.strftime('%y%m%d%H%M%S', time.gmtime()))
+    tmpl_kwargs.update(kwargs)
+    generated = render_with_template(filename=template, template_kwargs=tmpl_kwargs)
     path_o = template.replace('.tmpl', '')
     check_update(path_o, generated, force=True)
 
@@ -224,7 +221,7 @@ def unique_ordered(*lists):
     return ret
 
 
-def generate_skelton_function_impl_one(ext_info, name, func, template, output_dir, output_format):
+def generate_skeleton_function_impl_one(ext_info, name, func, template, output_dir, output_format):
     path_o = join(output_dir, output_format % func['snake_name'])
     if exists(path_o):
         return
@@ -240,7 +237,7 @@ def generate_skelton_function_impl_one(ext_info, name, func, template, output_di
     check_update(path_o, generated, force=False)
 
 
-def generate_skelton_function_impl(function_info, function_types, ext_info={}, template=None, output_dir=None, output_format='%s.cpp'):
+def generate_skeleton_function_impl(function_info, function_types, ext_info={}, template=None, output_dir=None, output_format='%s.cpp'):
     if template is None:
         template = join(
             base, 'src/nbla/function/generic/function_impl.cpp.tmpl')
@@ -250,5 +247,5 @@ def generate_skelton_function_impl(function_info, function_types, ext_info={}, t
     for name, func in function_info.items():
         if name not in function_types:
             continue
-        generate_skelton_function_impl_one(
+        generate_skeleton_function_impl_one(
             ext_info, name, func, template, output_dir, output_format)

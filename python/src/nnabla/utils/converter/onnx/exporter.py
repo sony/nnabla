@@ -90,7 +90,7 @@ def merge_broadcast(node, func, target_name, broadcast_target):
     node.input.extend([func.input[0], before_broadcast])
     # Remove the used target.
     # We may have a problem if the same parameter is used from
-    # multipler operators.
+    # multiplier operators.
     del broadcast_target[target_name]
     # Return the merged input's name so we can use it if we need to
     return before_broadcast
@@ -176,9 +176,8 @@ class OnnxExporter:
             "PReLU": "PRelu",
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
-            "Convolution": "Conv",
             "GlobalAveragePooling": "GlobalAveragePool",
-            "MaxPooling":     partial(self.BasePooling, 'MaxPool'),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool'),
             "AveragePooling": partial(self.BasePooling, 'AveragePool'),
             "Add2": "Add",
             "BatchMatmul": "MatMul",
@@ -220,7 +219,10 @@ class OnnxExporter:
             "Flip": self.Flip,
             "OneHot": self.OneHot,
             "Unpooling": self.Unpooling,
-            "DepthwiseConvolution": self.DepthwiseConvolution
+            "DepthwiseConvolution": self.DepthwiseConvolution,
+            "BinaryConnectConvolution": partial(self.BaseConvolution, 'BinaryConnectConvolution'),
+            "Convolution": partial(self.BaseConvolution, 'Convolution'),
+            "BinarySigmoid": self.BinarySigmoid
         }
 
     def _add_param(self, param_name, dtype, shape, raw_data):
@@ -236,6 +238,136 @@ class OnnxExporter:
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
 
+    def BinarySigmoid(self, func):
+        '''
+        Currently, caffe2 does not support this function.
+        '''
+        n = onnx.helper.make_node(
+            'HardSigmoid',
+            func.input,
+            func.output,
+            alpha=1.0,
+            beta=0.0
+        )
+        return [n]
+
+    def _conv1d(self, weight_base, weight_shape, func, func_input, cp):
+        nl = []
+        kernel_shape = weight_shape[weight_base:] + [1]
+        dilations = cp.dilation.dim[:] + [1]
+        strides = cp.stride.dim[:] + [1]
+        pads = cp.pad.dim[:] + [0]
+        input_x_shape_name = fork_name("input_x_shape_name")
+        input_x_shape = np.array(
+            [d for d in self._var_dict[func_input[0]].dim])
+        input_x_shape = np.array([np.prod(
+            input_x_shape) / np.prod(input_x_shape[-2:]), input_x_shape[-2], input_x_shape[-1], 1])
+        input_x_shape_shape = [len(input_x_shape)]
+        self._add_param(input_x_shape_name, TensorProto.INT32,
+                        input_x_shape_shape,
+                        input_x_shape.astype(np.int32).tostring())
+        output_x_reshape = fork_name("output_x_reshape")
+        n = onnx.helper.make_node(
+            'Reshape',
+            [func_input[0], input_x_shape_name],
+            [output_x_reshape]
+        )
+        nl.append(n)
+        inputs = [output_x_reshape]
+
+        input_w_shape_name = fork_name("input_w_shape_name")
+        input_w_shape = np.array(
+            [d for d in self._var_dict[func_input[1]].dim] + [1])
+        input_w_shape_shape = [len(input_w_shape)]
+        self._add_param(input_w_shape_name, TensorProto.INT32,
+                        input_w_shape_shape,
+                        input_w_shape.astype(np.int32).tostring())
+        output_w_reshape = fork_name("output_w_reshape")
+        n = onnx.helper.make_node(
+            'Reshape',
+            [func_input[1], input_w_shape_name],
+            [output_w_reshape]
+        )
+        nl.append(n)
+        inputs.append(output_w_reshape)
+
+        if len(func_input) == 3:
+            inputs.append(func_input[2])
+        output_1d_conv = fork_name('ouput_1d_conv')
+        outputs = [output_1d_conv]
+
+        n = onnx.helper.make_node(
+            'Conv',
+            inputs,
+            outputs,
+            kernel_shape=kernel_shape,
+            dilations=dilations,
+            strides=strides,
+            pads=pads * 2,
+            group=cp.group
+        )
+        nl.append(n)
+
+        output_y_shape_name = fork_name("output_y_shape_name")
+        output_y_shape = np.array(
+            [d for d in self._var_dict[func.output[0]].dim])
+        output_y_shape_shape = [len(output_y_shape)]
+        self._add_param(output_y_shape_name, TensorProto.INT32,
+                        output_y_shape_shape,
+                        output_y_shape.astype(np.int32).tostring())
+        n = onnx.helper.make_node(
+            'Reshape',
+            [output_1d_conv, output_y_shape_name],
+            func.output
+        )
+        nl.append(n)
+        return nl
+
+    def BaseConvolution(self, func_name, func):
+        nl = []
+        if func_name == 'Convolution':
+            cp = func.convolution_param
+            inputs = func.input
+        elif func_name == 'BinaryConnectConvolution':
+            cp = func.binary_connect_convolution_param
+            inputs = [func.input[0], func.input[2]]
+            if len(func.input) > 3:
+                inputs += [func.input[3]]
+        else:
+            raise ValueError('Internal error!')
+        weight_shape = [d for d in self._var_dict[func.input[1]].dim]
+        weight_base = cp.base_axis + 1
+
+        if len(cp.pad.dim[:]) == 1:  # 1-D convolution
+            return self._conv1d(weight_base, weight_shape, func, inputs, cp)
+        elif len(cp.pad.dim[:]) == 2:  # 2-D convolution:
+            kernel_shape = weight_shape[weight_base:]
+            dilations = cp.dilation.dim[:]
+            strides = cp.stride.dim[:]
+            pads = cp.pad.dim[:]
+            input_shape = [d for d in self._var_dict[func.input[0]].dim]
+            input_shape = [
+                int(np.prod(input_shape) / np.prod(input_shape[-3:]))] + input_shape[-3:]
+            x_shape = nnabla_pb2.Shape()
+            x_shape.dim.extend(input_shape)
+            self._var_dict[func.input[0]] = x_shape
+        else:
+            raise ValueError('N(>2)-D convolution is not supported.')
+
+        n = onnx.helper.make_node(
+            'Conv',
+            inputs,
+            func.output,
+            kernel_shape=kernel_shape,
+            dilations=dilations,
+            strides=strides,
+            pads=pads * 2,
+            group=cp.group
+        )
+        nl.append(n)
+
+        return nl
+
     def DepthwiseConvolution(self, func):
         cp = func.depthwise_convolution_param
         in_shape = [d for d in self._var_dict[func.input[0]].dim]
@@ -250,7 +382,7 @@ class OnnxExporter:
         w_shape.dim.extend(w)
         self._var_dict[func.input[1]] = w_shape
         multiple = out_shape[cp.base_axis] / in_shape[cp.base_axis]
-        assert multiple == cp.multiplier, "Invalid input/ouput shape!"
+        assert multiple == cp.multiplier, "Invalid input/output shape!"
         n = onnx.helper.make_node(
             'Conv',
             func.input,
@@ -274,19 +406,21 @@ class OnnxExporter:
             k = func.max_pooling_param.kernel.dim
             s = func.max_pooling_param.stride.dim
             pads = func.max_pooling_param.pad.dim
+            ignore_border = func.max_pooling_param.ignore_border
         elif onnx_func == 'AveragePool':
             k = func.average_pooling_param.kernel.dim
             s = func.average_pooling_param.stride.dim
             pads = func.average_pooling_param.pad.dim
+            ignore_border = func.average_pooling_param.ignore_border
         else:
             raise ValueError('Internal error!')
 
-        if func.max_pooling_param.ignore_border:
+        if ignore_border:
             pads = [d for d in pads]
             pads = [pads[0], pads[1], pads[0], pads[1]]
         else:
-            subs = [k - i % s if i % s != 0 else k - s
-                    for k, s, i in zip(k, s, input_shape[-2:])]
+            subs = [kk - i % ss if i % ss != 0 else kk - ss
+                    for kk, ss, i in zip(k, s, input_shape[-2:])]
             pads = [0, 0] + subs
         n = onnx.helper.make_node(
             onnx_func,
@@ -299,32 +433,43 @@ class OnnxExporter:
         return [n]
 
     def BatchNormalization(self, func):
+        nl = []
+        bnp = func.batch_normalization_param
         onnx_order = [0, 2, 1, 3, 4]
         if len(func.input) != len(onnx_order):
             raise ValueError(
                 "The number of BatchNormalization input must be {}".format(len(onnx_order)))
-        onnx_input = [func.input[i] for i in onnx_order]
-        if func.batch_normalization_param.batch_stat:
-            # Batch normalization for training is currently not supported
-            raise ValueError(
-                "BatchNormalization with batch_stat=True is "
-                "currently not supported for ONNX conversion")
-        n = onnx.helper.make_node(
-            'BatchNormalization',
-            onnx_input,
-            func.output,
-            is_test=True,
-            epsilon=func.batch_normalization_param.eps,
-            momentum=func.batch_normalization_param.decay_rate
-            # spatial=1 different from SPEC.
-        )
-
         for p in func.input[1:]:
             d = sum([d if d > 1 else 0 for d in self._var_dict[p].dim])
             b_shape = nnabla_pb2.Shape()
             b_shape.dim.extend([d])
             self._var_dict[p] = b_shape
-        return [n]
+        if func.batch_normalization_param.batch_stat:
+            bn_input = [func.input[i] for i in onnx_order[:3]]
+            bn_output = [func.output[0]]
+            n = onnx.helper.make_node(
+                'InstanceNormalization',
+                bn_input,
+                bn_output,
+                epsilon=1e-5
+            )
+        else:
+            bn_input = [func.input[i] for i in onnx_order]
+            eps = 1e-5 if bnp.eps == 0.0 else bnp.eps
+            decay_rate = 0.9 if bnp.decay_rate == 0.0 \
+                else bnp.decay_rate
+            n = onnx.helper.make_node(
+                'BatchNormalization',
+                bn_input,
+                [func.output[0]],
+                is_test=True,
+                epsilon=eps,
+                momentum=decay_rate
+                # spatial=1 # say: "Don't know map unexpected argument spatial."
+                # different from SPEC.
+            )
+        nl.append(n)
+        return nl
 
     def Concatenate(self, func):
         n = onnx.helper.make_node(
@@ -633,30 +778,43 @@ class OnnxExporter:
     def Affine(self, func):
         """
         Affine is decomposed as 3 steps:
-            Flatten inputs
+            Reshape inputs
             Gemm
             Reshape
         """
         nl = []
         out_a = fork_name(func.input[0])
         out_b = fork_name(func.input[1])
+        out_c = fork_name("affine_bias")
+        base_axis = func.affine_param.base_axis
+
+        x_shape = list(self._var_dict[func.input[0]].dim[:])
+        x_shape_dims = [np.prod(x_shape[:base_axis]),
+                        np.prod(x_shape[base_axis:])]
+        x_shape_dims_name = fork_name('x_shape_dims')
+        x_shape_dims_raw = np.array(x_shape_dims).astype(np.int64)
+        self._add_param(x_shape_dims_name, TensorProto.INT64, list(
+            x_shape_dims_raw.shape), x_shape_dims_raw.tostring())
 
         n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[0]],
-            [out_a],
-            name="Flatten" + func.input[0])
-        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
-        n.attribute.extend([a])
+            "Reshape",
+            [func.input[0], x_shape_dims_name],
+            [out_a]
+        )
         nl.append(n)
 
+        w_shape = list(self._var_dict[func.input[1]].dim[:])
+        w_shape_dims = [w_shape[0], np.prod(w_shape) / w_shape[0]]
+        w_shape_dims_name = fork_name('w_shape_dims')
+        w_shape_dims_raw = np.array(w_shape_dims).astype(np.int64)
+        self._add_param(w_shape_dims_name, TensorProto.INT64, list(
+            w_shape_dims_raw.shape), w_shape_dims_raw.tostring())
+
         n = onnx.helper.make_node(
-            "Flatten",
-            [func.input[1]],
-            [out_b],
-            name="Flatten" + func.input[1])
-        a = onnx.helper.make_attribute("axis", func.affine_param.base_axis)
-        n.attribute.extend([a])
+            "Reshape",
+            [func.input[1], w_shape_dims_name],
+            [out_b]
+        )
         nl.append(n)
 
         out_c = fork_name('Affine')
@@ -740,7 +898,15 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
-                assert len(init.raw_data) / 4 == np.prod(np.array(init.dims))
+
+                p = graph.input.add()
+                p.name = param.variable_name
+                p.type.tensor_type.elem_type = get_tensor_type(
+                    param.variable_name, self._input_types)
+                dims = [create_dim(d)
+                        for d in self._var_dict[param.variable_name].dim]
+                p.type.tensor_type.shape.dim.extend(dims)
+
             else:
                 print("Not in: {}".format(param.variable_name))
 
@@ -752,18 +918,6 @@ class OnnxExporter:
             dims = [create_dim(d)
                     for d in self._var_dict[iv.variable_name].dim]
             i.type.tensor_type.shape.dim.extend(dims)
-
-        for pv in exe.parameter_variable:
-            if pv.variable_name in self._var_dict:
-                p = graph.input.add()
-                p.name = pv.variable_name
-                p.type.tensor_type.elem_type = get_tensor_type(
-                    pv.variable_name, self._input_types)
-                dims = [create_dim(d)
-                        for d in self._var_dict[pv.variable_name].dim]
-                p.type.tensor_type.shape.dim.extend(dims)
-            else:
-                print("param: {} not in dict.".format(pv.variable_name))
 
         # Add only the final output of the graph as output
         for ov in exe.output_variable:
@@ -850,7 +1004,7 @@ class OnnxExporter:
             # "Conv" or "Pool" contained.
             # Caffe2 issue is here:
             # https://github.com/caffe2/caffe2/issues/1971
-            # Becuase a GlobalAveragePooling operator does not contain a kernel, we get an error at the
+            # Because a GlobalAveragePooling operator does not contain a kernel, we get an error at the
             # following code if we have a specific name.
             # https://github.com/caffe2/caffe2/blob/master/caffe2/operators/conv_pool_op_base.h#L167
             # The above caffe2 code should be checking the node's operator name and not the node's name.
@@ -858,7 +1012,7 @@ class OnnxExporter:
             nl.append(n)
         elif func.type == "Softmax":
             # Softmax on NNabla does softmax ONLY along the specified axis.
-            # ONNX first squashes the input dimensions to 2D based on the specifed axis,
+            # ONNX first squashes the input dimensions to 2D based on the specified axis,
             # and then calculates the Softmax.
             # Since these two slightly differ, we show a warning here.
             logger.warning(SOFTMAX_WARNING)
@@ -1161,6 +1315,7 @@ class OnnxExporter:
         nnp_fn = keyname + '.nnp.dump'
         with open(nnp_fn, "w") as f:
             f.write(str(self._nnp))
+        print('{} is written.'.format(nnp_fn))
 
     def dump_onnx(self, fn):
         import os
@@ -1168,6 +1323,7 @@ class OnnxExporter:
         onnx_dump = keyname + '.onnx.dump'
         with open(onnx_dump, "w") as f:
             f.write(str(self._model_proto))
+        print('{} is written.'.format(onnx_dump))
 
     def dump_graph(self):
         in_d = {}

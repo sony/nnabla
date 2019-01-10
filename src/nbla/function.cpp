@@ -31,7 +31,7 @@ void Function::setup(const Variables &inputs, const Variables &outputs) {
     fall_back_func_->setup(inputs, outputs);
     return;
   }
-  // Check if specifiedd array_class by context matches to allowed array
+  // Check if specified array_class by context matches to allowed array
   // classes.
   int array_class_index =
       0; // Default array is 0-th array_class in allowed_array_classes().
@@ -52,7 +52,7 @@ void Function::setup(const Variables &inputs, const Variables &outputs) {
              "%s needs at least %d outputs (given %d). ", this->name().c_str(),
              this->min_outputs(), outputs.size());
 
-  // Call setup implemention
+  // Call setup implementation
   this->setup_impl(inputs, outputs);
 
   if (fall_back_func_) {
@@ -146,13 +146,14 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
   // zero() function is lazily evaluated and write_only option in
   // Variable::cast* function resets all lazy-evaluation flags before getting an
   // array instance.
-  for (int i = 0; i < inputs.size(); i++) {
-    if (propagate_down[i] && !accum[i] &&
-        (this->inplace_grad(i) == Function::NOT_INPLACE)) {
-      inputs[i]->grad()->zero();
+  if (!this->prohibit_zero_input_grad()) {
+    for (int i = 0; i < inputs.size(); i++) {
+      if (propagate_down[i] && !accum[i] &&
+          (this->inplace_grad(i) == Function::NOT_INPLACE)) {
+        inputs[i]->grad()->zero();
+      }
     }
   }
-
   // Calling the sub-class implementation of backward.
   this->backward_impl(inputs, outputs, propagate_down, accum);
 }

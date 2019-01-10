@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// binary_connnect_affine.hpp
+// binary_connect_affine.hpp
 
 #ifndef __NBLA_FUNCTION_BINARY_CONNECT_AFFINE_HPP__
 #define __NBLA_FUNCTION_BINARY_CONNECT_AFFINE_HPP__
@@ -29,7 +29,7 @@ namespace nbla {
 
 using std::string;
 
-NBLA_REGISTER_FUNCTION_HEADER(BinaryConnectAffine, int);
+NBLA_REGISTER_FUNCTION_HEADER(BinaryConnectAffine, int, float);
 
 /** BinaryConnectAffine
     BinaryConnect network version of an affine layer, using
@@ -71,21 +71,25 @@ Outputs:
 @param base_axis Base axis of BinaryConnectAffine operation. Dimensions up to
 base_axis
 is treated as sample dimension.
+@param quantize_zero_to Input value at zero is quantized to this value.
 
 \ingroup FunctionImplGrp
  */
-template <typename T> class BinaryConnectAffine : public BaseFunction<int> {
+template <typename T>
+class BinaryConnectAffine : public BaseFunction<int, float> {
 protected:
   int base_axis_;
+  float quantize_zero_to_;
   shared_ptr<Function> sign_;
   shared_ptr<Function> affine_;
 
 public:
-  BinaryConnectAffine(const Context &ctx, int base_axis)
-      : BaseFunction(ctx, base_axis), base_axis_(base_axis) {}
+  BinaryConnectAffine(const Context &ctx, int base_axis, float quantize_zero_to)
+      : BaseFunction(ctx, base_axis, quantize_zero_to), base_axis_(base_axis),
+        quantize_zero_to_(quantize_zero_to) {}
 
   virtual shared_ptr<Function> copy() const {
-    return create_BinaryConnectAffine(ctx_, base_axis_);
+    return create_BinaryConnectAffine(ctx_, base_axis_, quantize_zero_to_);
   }
 
   virtual vector<dtypes> in_types() {

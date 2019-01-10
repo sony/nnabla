@@ -31,7 +31,7 @@ using std::string;
 NBLA_REGISTER_FUNCTION_HEADER(CReLU, int);
 
 /** Concatenated Rectified Linear Unit (CReLU) concatenates ReLU outputs of
-positive inputs and negativa inputs together at specified axis.
+positive inputs and negative inputs together at specified axis.
 
 Inputs:
 - N-D array.

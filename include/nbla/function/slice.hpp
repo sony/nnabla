@@ -52,6 +52,9 @@ protected:
 
   int base_axis_;
 
+  // SPECIAL condition
+  enum { SLICE_NONE = 0x7fffffff };
+
 public:
   Slice(const Context &ctx, const vector<int> &start, const vector<int> &stop,
         const vector<int> &step)
@@ -86,6 +89,7 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API bool skip_check(const Variables &outputs);
 
 private:
   NBLA_API void slice_forward_recursive(const Variable *inp, Variable *outp,

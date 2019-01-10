@@ -32,7 +32,7 @@ def create_communicator(ignore_error=False):
     context = get_extension_context(extension_module)
     try:
         logger.log(99, 'Create communicator with contexts {}'.format(context))
-        _current_communicator = C.MultiProcessDataParalellCommunicator(context)
+        _current_communicator = C.MultiProcessCommunicator(context)
         _current_communicator.init()
         context.device_id = str(_current_communicator.rank %
                                 _current_communicator.size)

@@ -119,7 +119,7 @@ public:
   /** Replace an arbitrary variable in the network with a given
       variable.
 
-      The predecessors of the variable in the networks are dicarded, and
+      The predecessors of the variable in the networks are discarded, and
       replaced with the predecessors of the given variable.
 
       @param[in] name Name of variable in the network you are replacing.
@@ -378,7 +378,7 @@ public:
     @endcode
 
     Suppose we have network.nnp which is previously created. You can add a
-    previsouly dumped NNabla format file to Nnp object.
+    previously dumped NNabla format file to Nnp object.
     Nnp will parse the file format and internally store the information such as
     network architectures, learned parameters and execution settings.
     @code{.cpp}

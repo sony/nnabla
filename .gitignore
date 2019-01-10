@@ -3,6 +3,7 @@
 .pytest_cache
 .cache
 .pytest_cache
+*.egg-info
 *.pyc
 
 /build-tools/msvc/cmake_cpp_utils.bat
@@ -21,7 +22,6 @@
 /python/setup.cfg-RelWithDebInfo
 /python/setup.cfg-Release
 /python/setup.cfg.in.configured
-/python/src/nnabla.egg-info/
 /python/src/nnabla/*.lib
 /python/src/nnabla/_arithmetic_ops.cpp
 /python/src/nnabla/_array.cpp
@@ -43,7 +43,7 @@
 /python/src/nnabla/solver.cpp
 /python/src/nnabla/solver.pxd
 /python/src/nnabla/solver.pyx
-/python/src/nnabla/utils/converter/functions.yaml
+/python/src/nnabla/utils/converter/functions.pkl
 /python/src/nnabla/utils/load_function.py
 /python/src/nnabla/utils/nnabla_pb2.py
 /python/src/nnabla/utils/save_function.py
@@ -57,6 +57,7 @@
 /src/nbla/init.cpp
 /src/nbla/proto/nnabla.proto
 /src/nbla/solver/*.cpp
+/src/nbla/version.cpp
 /src/nbla_utils/nnabla.pb.cc
 /src/nbla_utils/nnabla.pb.h
 /src/nbla_utils/nnp_impl_create_function.cpp

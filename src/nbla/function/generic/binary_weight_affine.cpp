@@ -26,7 +26,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(BinaryWeightAffine, int);
+NBLA_REGISTER_FUNCTION_SOURCE(BinaryWeightAffine, int, float);
 
 template <typename T>
 void BinaryWeightAffine<T>::setup_impl(const Variables &inputs,
@@ -66,7 +66,7 @@ void BinaryWeightAffine<T>::setup_impl(const Variables &inputs,
   abs_ = create_Abs(this->ctx_);
   sum_ = create_Sum(this->ctx_, vector<int>{1}, false);
   div_ = create_MulScalar(this->ctx_, (T)1 / w_row_);
-  bin_ = create_Sign(this->ctx_, -1.0);
+  bin_ = create_Sign(this->ctx_, quantize_zero_to_);
   mul_ = create_Mul2(this->ctx_);
   scaled_weights_.reshape(shape_weights, true);
 }

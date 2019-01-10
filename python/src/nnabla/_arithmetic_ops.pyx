@@ -180,7 +180,7 @@ cdef object pow(object x, object y, object z):
     Element-wise power function.
 
     Implements the power operator expression ``x ** y``,
-    optionaly ``x ** y % z`` (but not implemented).
+    optionally ``x ** y % z`` (but not implemented).
     When both of ``x`` and ``y`` are either :obj:`~nnabla.Variable` or
     :obj:`~nnabla.NdArray`, :func:`~nnabla.functions.pow2`` is
     internally called.

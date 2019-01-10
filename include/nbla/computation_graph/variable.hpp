@@ -191,7 +191,7 @@ public:
    */
   inline void set_rank_(int rank) { rank_ = rank; }
 
-  /** Forward propagation from root iputs to this variable.
+  /** Forward propagation from root inputs to this variable.
 
       The predecessor functions are executed in order of lower rank to higher
       rank until reaching this variable.
@@ -234,6 +234,10 @@ public:
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
   /**
+  */
+  NBLA_API vector<CgFunctionPtr> function_references();
+
+  /**
    */
   inline int function_reference_count() const {
     return function_references_.size();
@@ -268,7 +272,7 @@ public:
   /** Set persistent flag.
 
       If it's true, the variable data and grad are never cleared during forward
-      or backward propgation with clear options. It is useful for visualization
+      or backward propagation with clear options. It is useful for visualization
       and debugging purposes.
 
       @param[in] p Persistent flag.

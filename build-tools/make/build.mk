@@ -35,6 +35,7 @@ nnabla-clean-all:
 # Auto Format
 .PHONY: nnabla-auto-format
 nnabla-auto-format:
+	cd $(NNABLA_DIRECTORY) && \
 	python $(NNABLA_DIRECTORY)/build-tools/auto_format . --exclude \
 		'\./src/nbla/(function|solver)/\w+\.cpp' \
 		'\./src/nbla/init.cpp' \
@@ -85,6 +86,7 @@ nnabla-wheel:
 	&& cmake \
 		-DPYTHON_VERSION_MAJOR=$(PYTHON_VERSION_MAJOR) \
 		-DPYTHON_VERSION_MINOR=$(PYTHON_VERSION_MINOR) \
+		-DWHEEL_SUFFIX=$(WHEEL_SUFFIX) \
 		-DBUILD_CPP_LIB=OFF \
 		-DBUILD_PYTHON_PACKAGE=ON \
 		-DMAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL) \

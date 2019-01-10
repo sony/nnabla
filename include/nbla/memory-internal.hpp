@@ -33,7 +33,7 @@ shared_ptr<M> MemoryCache<M>::pop_or_create(Size_t bytes,
     pools_.insert({device, cache_type()});
   }
   // Get pool of the device.
-  cache_type &pool = pools_[device]; // unorderd_map<int, CudaMemoryPtr>
+  cache_type &pool = pools_[device]; // unordered_map<int, CudaMemoryPtr>
 
   // Allocation size will be a multiple of blocksize_ except scalar (infer
   // from

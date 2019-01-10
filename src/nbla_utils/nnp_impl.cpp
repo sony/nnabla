@@ -82,12 +82,12 @@ void NetworkImpl::build() {
       // std::cout << " " << func.output(j);
       auto it = variables_.find(func.output(j));
       if (it != variables_.end()) {
-        // Rewire the output to an exisiting variable.
+        // Rewire the output to an existing variable.
         // std::cout << "(r)";
         CgVariablePtr cg_v = get_cgvariable_or_create(func.output(j));
         steal_variable_from_to(foutputs[j], cg_v);
       } else {
-        // Regiser a newly created variable
+        // Register a newly created variable
         // std::cout << "(c)";
         variables_.insert({func.output(j), foutputs[j]});
       }
@@ -428,7 +428,7 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
       }
     } // i
 
-    // Prepare fuctions
+    // Prepare functions
     std::map<std::string, int> funcs;
     std::map<std::string, int> ofuncs;
 
@@ -760,7 +760,7 @@ bool NnpImpl::save_parameters(const string &filename) {
       shape->add_dim(variable->shape()[i]);
   }
   params.SerializeToOstream(&ofs);
-  NBLA_LOG_INFO("Saved paremeters to {}", filename);
+  NBLA_LOG_INFO("Saved parameters to {}", filename);
 
   return true;
 }

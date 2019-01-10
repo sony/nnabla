@@ -24,7 +24,8 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(BinaryWeightConvolution, int, const vector<int> &,
-                              const vector<int> &, const vector<int> &, int);
+                              const vector<int> &, const vector<int> &, int,
+                              float);
 
 /** N-D Binary Weight Convolution with bias.
 
@@ -68,6 +69,7 @@ is treated as sample dimension.
 @param dilation Dilation sizes for dimensions.
 @param group Number of groups of channels. This makes connections across
 channels sparser by grouping connections along map direction.
+@param quantize_zero_to Input value at zero is quantized to this value.
 
 @sa For Dilated Convolution (a.k.a a trous), refer to:
 - Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional
@@ -81,7 +83,7 @@ https://arxiv.org/abs/1511.07122
 template <typename T>
 class BinaryWeightConvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
-                          const vector<int> &, int> {
+                          const vector<int> &, int, float> {
 protected:
   shared_ptr<Function> convolution_;
   shared_ptr<Function> abs_;
@@ -97,19 +99,23 @@ protected:
   const vector<int> dilation_;
   int group_;
 
+  float quantize_zero_to_;
+
   int channels_o_, col_w_;
 
 public:
   BinaryWeightConvolution(const Context &ctx, int base_axis,
                           const vector<int> &pad, const vector<int> &stride,
-                          const vector<int> &dilation, int group)
-      : BaseFunction(ctx, base_axis, pad, stride, dilation, group),
+                          const vector<int> &dilation, int group,
+                          float quantize_zero_to)
+      : BaseFunction(ctx, base_axis, pad, stride, dilation, group,
+                     quantize_zero_to),
         base_axis_(base_axis), pad_(pad), stride_(stride), dilation_(dilation),
-        group_(group) {}
+        group_(group), quantize_zero_to_(quantize_zero_to) {}
   virtual ~BinaryWeightConvolution() {}
   virtual shared_ptr<Function> copy() const {
     return create_BinaryWeightConvolution(ctx_, base_axis_, pad_, stride_,
-                                          dilation_, group_);
+                                          dilation_, group_, quantize_zero_to_);
   }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<T>(),

@@ -20,7 +20,7 @@ The supported Python versions for provided binary packages are 2.7, 3.5  3.6. It
     bash Miniconda3-latest-Linux-x86_64.sh -b -p {installation path e.g. ~/miniconda}
     # You have to set an environment variable PATH accordingly
     # to enable the installed ``Python`` and the ``conda`` system.
-    echo 'export PATH=<installation path>:$PATH' > ~/.bashrc
+    echo 'export PATH=<installation path>/bin:$PATH' >> ~/.bashrc
     # Restart your bash or source ~/.bashrc
 
     # Switch the default Python version

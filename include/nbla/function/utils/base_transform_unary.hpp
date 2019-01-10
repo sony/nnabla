@@ -68,7 +68,7 @@ public:
   inline BaseUnaryOp() {}
   template <typename T> inline T operator()(const T x) {
     NBLA_ERROR(error_code::not_implemented,
-               "Forward opeartion is not implemented.");
+               "Forward operation is not implemented.");
   }
   template <typename T> inline T g(const T dy, const T x, const T y) {
     NBLA_ERROR(error_code::not_implemented,

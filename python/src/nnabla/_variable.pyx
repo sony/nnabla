@@ -76,7 +76,7 @@ cdef class Context:
         return getattr(self, key)
 
     def __repr__(self):
-        return "Context(backend='{}', array_class='{}'"\
+        return "Context(backend={}, array_class='{}'"\
             ", device_id='{}')".format(
                 self.backend, self.array_class,
                 self.device_id)
@@ -401,7 +401,7 @@ cdef class Variable:
         """
         Returns the values held by this variable, as a :class:`numpy.ndarray`.
         Note that the values are referenced (not copied). Therefore, the
-        modification of the returned ndarray will affet the data of the
+        modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the value held by this variable.
 
@@ -422,7 +422,7 @@ cdef class Variable:
         """
         Returns the gradient values held by this variable, as a :class:`numpy.ndarray`.
         Note that the values are referenced (not copied). Therefore, the
-        modification of the returned ndarray will affet the data of the
+        modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the gradient held by this variable.        
 
@@ -461,6 +461,21 @@ cdef class Variable:
         cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
         assert cg_func, "TODO"
         self.varp.set_parent(cg_func)
+
+    @property
+    def function_references(self):
+        """
+        Returns a list of functions which take this variable as an input.
+        This method can be called only as a getter.
+
+        Returns:
+            list of `nnabla.function.Function`
+
+        """
+        cdef vector[CgFunctionPtr] fs = self.varp.function_references()
+
+        return [function.Function.create_from_c(f) for f in fs]
+
 
     def forward(self, cpp_bool clear_buffer=False, cpp_bool clear_no_need_grad=False):
         """
@@ -558,7 +573,7 @@ cdef class Variable:
                 flag with this variable instance. By specifying a boolean value,
                 the new need_grad flags will be set to the unlinked variable.
                 It is recommended to explicitly specify this option to avoid an
-                unintented behavior.
+                unintended behavior.
 
         Returns: nnabla._variable.Variable
 
@@ -575,7 +590,7 @@ cdef class Variable:
                 y = PF.affine(x, 4, name="y")
 
                 # Create a new variable of which graph connection is unlinked.
-                # Recommened to specify need_grad option explicitly .
+                # Recommend to specify need_grad option explicitly .
                 z = y.get_unlinked_variable(need_grad=False)
 
                 print(y.parent)
@@ -620,6 +635,10 @@ cdef class Variable:
     @name.setter
     def name(self, string name):
         self.varp.set_name(name)
+
+    @property
+    def rank(self, ):
+        return self.varp.rank()
 
     def visit(self, f):
         '''Visit functions recursively in forward order.
@@ -675,7 +694,7 @@ cdef class Variable:
         """Clear all intermediate functions and variables.
 
         This method clear all intermediate functions and variables up to this variable 
-        in forward pass and is useful for the truncated backpropergation through time 
+        in forward pass and is useful for the truncated backpropagation through time 
         (truncated BPTT) in dynamic graph.
         """
         def _clear_all_graph_links(func):

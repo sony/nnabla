@@ -18,7 +18,7 @@ It can be downloaded from the following URLs.
 * Training images : http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
 * Training labels : http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
 
-## Create NNP file of an initialized model for MNIST classifcation.
+## Create NNP file of an initialized model for MNIST classification.
 This sample requires initialized model parameters and a network definition saved as an NNP file.
 We provide an example script which creates the NNP file from a classification example in mnist-example collections.
 
@@ -56,9 +56,9 @@ If you want to build it yourself using makefile you can refer to the following c
 make
 ```
 
-The above command generates an executable `mnist_training` at the current directry.
+The above command generates an executable `mnist_training` at the current directory.
 
-The build file `GNUMakefile` is simple.
+The build file `GNUmakefile` is simple.
 It links `libnnabla.so`, `libnnabla_utils.so` and `libz.so` with the executable generated from `main.cpp`, and compiles with C++11 option `-std=c++11`.
 
 You can also compile an executable `mnist_training_cuda` that runs computation on your CUDA device.
@@ -149,7 +149,7 @@ After getting learned.nnp, you can use it as a model file for "mnist_runtime".
 ```c++
   MnistDataIterator data_iterator();
 ```
-  This sample works only for the mnist traing dataset downloaded to this directory
+  This sample works only for the mnist training dataset downloaded to this directory
 
 6. Create solver and set parameters.
 ```c++

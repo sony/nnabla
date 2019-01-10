@@ -134,6 +134,7 @@ Math
 ----
 
 .. autofunction:: constant
+.. autofunction:: arange
 .. autofunction:: abs
 .. autofunction:: exp
 .. autofunction:: log
@@ -171,6 +172,7 @@ Array Manipulation
 .. autofunction:: broadcast_to
 .. autofunction:: flip
 .. autofunction:: shift
+.. autofunction:: sort
 .. autofunction:: reshape
 .. autofunction:: one_hot
 .. autofunction:: assign
@@ -222,6 +224,7 @@ Quantized Neural Network Layers
 .. autofunction:: binary_weight_convolution
 .. autofunction:: fixed_point_quantize
 .. autofunction:: pow2_quantize
+.. autofunction:: prune
 		  
    
 Unsupported, Special Use

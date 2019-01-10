@@ -21,20 +21,20 @@ from nbla_test_utils import list_context
 ctxs = list_context('BinaryConnectAffine')
 
 
-def binarize(x):
+def binarize(x, quantize_zero_to):
     y = np.sign(x)
-    y[y == 0] = -1.0
+    y[y == 0] = quantize_zero_to
     return y
 
 
-def ref_binary_connect_affine(x, w, dummy, b, base_axis):
+def ref_binary_connect_affine(x, w, dummy, b, base_axis, quantize_zero_to):
     # dummy is the placeholder for the binary weights
     shape = list(x.shape[:base_axis])
     shape += [-1]
     out_shape = w.shape[1:]
 
     # Binarize weights to -1 and 1, and set zeroes to -1
-    binw = binarize(w.reshape(w.shape[0], -1))
+    binw = binarize(w.reshape(w.shape[0], -1), quantize_zero_to)
 
     y = np.dot(x.reshape(*shape), binw)
     if b is not None:
@@ -42,11 +42,11 @@ def ref_binary_connect_affine(x, w, dummy, b, base_axis):
     return y.reshape(tuple(shape[:-1]) + tuple(out_shape))
 
 
-def ref_grad_binary_connect_affine(x, w, wb, b, dy, base_axis):
+def ref_grad_binary_connect_affine(x, w, wb, b, dy, base_axis, quantize_zero_to):
     shape = list(x.shape[:base_axis])
 
     x_ = x.reshape(np.prod(shape), -1)
-    wb_ = binarize(w).reshape(w.shape[0], -1)
+    wb_ = binarize(w, quantize_zero_to).reshape(w.shape[0], -1)
     dy_ = dy.reshape(np.prod(shape), -1)
 
     dx = np.dot(dy_, np.transpose(wb_))
@@ -67,7 +67,8 @@ def ref_grad_binary_connect_affine(x, w, wb, b, dy, base_axis):
 @pytest.mark.parametrize("base_axis, weight_shape",
                          [(1, (12, 2, 3)), (2, (4, 4))])
 @pytest.mark.parametrize("bias", [True, False])
-def test_binary_connect_affine_forward_backward(seed, base_axis, weight_shape, bias,
+@pytest.mark.parametrize("quantize_zero_to", [0.0, -1.0, 1.0])
+def test_binary_connect_affine_forward_backward(seed, base_axis, weight_shape, bias, quantize_zero_to,
                                                 ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
@@ -83,6 +84,6 @@ def test_binary_connect_affine_forward_backward(seed, base_axis, weight_shape, b
     else:
         inputs += [None]
 
-    function_tester(rng, F.binary_connect_affine, ref_binary_connect_affine, inputs, func_args=[base_axis],
+    function_tester(rng, F.binary_connect_affine, ref_binary_connect_affine, inputs, func_args=[base_axis, quantize_zero_to],
                     atol_b=1e-2, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_binary_connect_affine)

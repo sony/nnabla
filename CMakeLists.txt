@@ -79,22 +79,23 @@ string(STRIP ${NBLA_SETUP_LIB_DIR_RAW} NBLA_SETUP_LIB_DIR)
 ###############################################################################
 # Code generator
 ###############################################################################
-file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
 
+file(STRINGS ${CMAKE_SOURCE_DIR}/VERSION.txt versions NEWLINE_CONSUME)
+string(REGEX REPLACE [[^([A-z0-9.\-_]+).*$]] [[\1]] version ${versions})
+string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\1]] version_major ${version})
+string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\2]] version_minor ${version})
+string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\3]] version_patch ${version})
+
+file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
 execute_process(
   COMMAND
   ${PYTHON_COMMAND}
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py
+  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/generate.py ${version}
   RESULT_VARIABLE GENERATE_RESULT)
 
 if (NOT ${GENERATE_RESULT} EQUAL 0)
   message(FATAL_ERROR "generate.py failed.")
 endif ()
-
-configure_file(
-  ${CMAKE_SOURCE_DIR}/build-tools/code_generator/functions.yaml
-  ${CMAKE_SOURCE_DIR}/python/src/nnabla/utils/converter/functions.yaml
-  COPYONLY)
 
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN
@@ -137,7 +138,7 @@ if(BUILD_CPP_LIB)
   
   if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Build type release is default on single-configuration build system like GnuMake."
+      "Build type release is default on single-configuration build system like GNU make."
       FORCE)
   endif()
   
@@ -149,6 +150,7 @@ if(BUILD_CPP_LIB)
     else()
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
     endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
   endif()
   
   if(UNIX OR APPLE)
@@ -229,7 +231,7 @@ if(BUILD_CPP_LIB)
       message(FATAL_ERROR
         "Python build_ext compiler inference is only supported on Win, Unix or Apple.")
     endif()
-    message("Python build_ext compiler is infered as '${NBLA_PYTHON_BUILD_EXT_COMPILER}'.")
+    message("Python build_ext compiler is inferred as '${NBLA_PYTHON_BUILD_EXT_COMPILER}'.")
     message("You can specify a compiler manually setting a variable"
       " NBLA_PYTHON_BUILD_EXT_COMPILER. You can see a list of supported"
       " compiler by `python setup.py build_ext --help-compiler`.")
@@ -317,7 +319,9 @@ if(BUILD_PYTHON_PACKAGE)
       add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
-        COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${CMAKE_COMMAND} -E env
+                WHEEL_SUFFIX=${WHEEL_SUFFIX}
+                ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
         COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
@@ -326,7 +330,9 @@ if(BUILD_PYTHON_PACKAGE)
       add_custom_command(OUTPUT ${NBLA_PYTHON_OUTPUT_WHEEL}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
-        COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${CMAKE_COMMAND} -E env
+                WHEEL_SUFFIX=${WHEEL_SUFFIX}
+                ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
         DEPENDS ${NBLA_WHEEL_DEPENDS})
     endif()
@@ -379,4 +385,3 @@ if(BUILD_PYTHON_PACKAGE)
   endif()
 
 endif() # BUILD_PYTHON_PACKAGE
-

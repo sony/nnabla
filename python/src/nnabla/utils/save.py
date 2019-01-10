@@ -261,7 +261,7 @@ def _create_network(net, variable_batch_size):
                 if s < 0:
                     if shape_infer_index >= 0:
                         raise ValueError(
-                            'Rehaps: shape has multiple negative value.')
+                            'Reshape: shape has multiple negative value.')
                     shape_infer_index = i
                 else:
                     rest_size *= s

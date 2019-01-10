@@ -116,7 +116,7 @@ private:
   // Network
   shared_ptr<Network> network_;
 
-  // Sink variable to execute forward/backard
+  // Sink variable to execute forward/backward
   CgVariablePtr sink_{nullptr};
 
   // Get sink output

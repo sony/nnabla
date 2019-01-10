@@ -36,7 +36,7 @@ moving average and 0-mean variance of a sequence of gradients \f$t=0,...,t\f$.
 @param beta1 \f$\beta_1\f$ Decay rate of moving mean.
 @param beta2 \f$\beta_2\f$ Decay rate of moving 0-mean variance.
 @param eps \f$\epsilon\f$ Small value for avoiding zero
-devision(:math:`\epsilon`). Note this does not appear in the paper.
+division(:math:`\epsilon`). Note this does not appear in the paper.
 @param bias_correction Apply bias correction to moving averages defined in ADAM.
 Note this does not appear in the paper.
 
