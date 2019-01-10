@@ -28,9 +28,24 @@ ctxs = list_context('Assign')
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
 def test_assign_forward_backward(seed, ctx, func_name):
-    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
-    grads = np.zeros((48,))
-    function_tester(rng, F.assign, lambda dst, src: src, inputs, ref_grad=lambda *args: grads,
-                    ctx=ctx, func_name=func_name, atol_f=1e-3, atol_b=1e-2)
+    dst = nn.Variable((2, 3, 4), need_grad=True)
+    src = nn.Variable((2, 3, 4), need_grad=True)
+
+    assign = F.assign(dst, src)
+
+    src.d = np.random.random((2, 3, 4))
+    assign.forward()
+
+    assert np.allclose(dst.d, src.d)
+
+    dummy = assign + np.random.random()
+
+    dst.grad.zero()
+    src.grad.zero()
+    dummy.forward()
+    dummy.backward()
+
+    # assign should not propagate gradients
+    assert np.all(dst.g == np.zeros((2, 3, 4)))
+    assert np.all(src.g == np.zeros((2, 3, 4)))
