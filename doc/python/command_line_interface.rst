@@ -307,7 +307,7 @@ File format converter
                               [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
-                              [-s SETTINGS]
+                              [-s SETTINGS] [-c CONFIG]
                               FILE [FILE ...]
     
     positional arguments:
@@ -333,6 +333,8 @@ File format converter
                             Default type of variable
       -s SETTINGS, --settings SETTINGS
                             Settings in YAML format file.
+      -c CONFIG, --config CONFIG
+                            [export] config target function list.
 
 
 Plot Monitor class output files
@@ -440,13 +442,28 @@ Generate function information
 
 .. code-block:: none
 
-    usage: nnabla_cli function_info [-h] [dest]
-    
+    usage: nnabla_cli function_info [-h] [-o OUTFILE] [-f FUNC_SET] [-c CONFIG]
+                                    [-t TARGET] [-q --query] [--nnp-no-expand-network]
+                                    [FILE] [FILE ...]
+
     positional arguments:
-      dest        destination filename
-    
+      FILE                  Path to nnp file.
+
     optional arguments:
       -h, --help  show this help message and exit
+      -o OUTFILE, --output OUTFILE
+                          output filename, *.txt or *.yaml, the default is stdout.
+      -f FUNC_SET, --all_support FUNC_SET
+                          select function set: NNB, ONNX, the default is nnabla.
+      -c CONFIG, --config CONFIG
+                          user config file for target constraint, *.txt file of the
+                          function list or the "opset_" args.
+      -t, --target
+                          output target function list.
+      -q, --query
+                          query the detail of a function.
+      --nnp-no-expand-network
+                          [import][NNP] expand network with repeat or recurrent.
 
 Display version
 ---------------

@@ -35,7 +35,7 @@ def command_exists(command):
     return not retval
 
 
-def check_nbla_infer(tmpdir, x, y, batch_size):
+def check_nbla_infer(tmpdir, x, y, batch_size, on_memory):
     if not command_exists('nbla'):
         pytest.skip('An executable `nbla` is not in path.')
 
@@ -74,8 +74,12 @@ def check_nbla_infer(tmpdir, x, y, batch_size):
     x2.d.tofile(input_bin_file)
 
     output_bin = tmpdir.join('tmp_out')
-    check_call(['nbla', 'infer', '-e', 'runtime', '-b', str(batch_size),
-                '-o', output_bin.strpath, nnp_file, input_bin_file])
+    if on_memory:
+        check_call(['nbla', 'infer', '-O', '-e', 'runtime', '-b', str(batch_size),
+                    '-o', output_bin.strpath, nnp_file, input_bin_file])
+    else:
+        check_call(['nbla', 'infer', '-e', 'runtime', '-b', str(batch_size),
+                    '-o', output_bin.strpath, nnp_file, input_bin_file])
 
     # D. Compare
     y3 = np.fromfile(output_bin.strpath + '_0.bin',
@@ -85,16 +89,18 @@ def check_nbla_infer(tmpdir, x, y, batch_size):
 
 @pytest.mark.parametrize('batch_size', [1, 4])
 @pytest.mark.parametrize("shape", [(10, 56, -1), (-1, 56, 7, 20, 10)])
-def test_nbla_reshape(tmpdir, batch_size, shape):
+@pytest.mark.parametrize('on_memory', [True, False])
+def test_nbla_reshape(tmpdir, batch_size, shape, on_memory):
 
     x = nn.Variable([10, 1, 28, 28, 10, 10])
     y = F.reshape(x, shape=shape)
-    check_nbla_infer(tmpdir, x, y, batch_size)
+    check_nbla_infer(tmpdir, x, y, batch_size, on_memory)
 
 
 @pytest.mark.parametrize('batch_size', [1, 4])
-def test_nbla_broadcast(tmpdir, batch_size):
+@pytest.mark.parametrize('on_memory', [True, False])
+def test_nbla_broadcast(tmpdir, batch_size, on_memory):
 
     x = nn.Variable([10, 1, 4, 1, 5])
     y = F.broadcast(x, shape=[10, 8, 4, 1, 5])
-    check_nbla_infer(tmpdir, x, y, batch_size)
+    check_nbla_infer(tmpdir, x, y, batch_size, on_memory)

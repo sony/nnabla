@@ -698,12 +698,8 @@ cdef class Variable:
         (truncated BPTT) in dynamic graph.
         """
         def _clear_all_graph_links(func):
-            for v in func.inputs:
-                v._clear_parent()
             for v in func.outputs:
                 v._clear_parent()
-            func._clear_inputs()
-            func._clear_outputs()
         self.visit(_clear_all_graph_links)
 
     def _clear_parent(self, ):

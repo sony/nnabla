@@ -321,23 +321,23 @@ def load_parameters(path):
     logger.info("Parameter load ({}): {}".format(format, path))
 
 
-def save_parameters(path):
+def save_parameters(path, params=None):
     """Save all parameters into a file with the specified format.
 
     Currently hdf5 and protobuf formats are supported.
 
     Args:
       path : path or file object
+      params (dict, optional): Parameters to be saved. Dictionary is of a parameter name (:obj:`str`) to :obj:`~nnabla.Variable`.
     """
     _, ext = os.path.splitext(path)
-    params = get_parameters(grad_only=False)
+    params = get_parameters(grad_only=False) if params is None else params
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
         import warnings
         warnings.simplefilter('ignore', category=FutureWarning)
         import h5py
         with h5py.File(path, 'w') as hd:
-            params = get_parameters(grad_only=False)
             for i, (k, v) in enumerate(iteritems(params)):
                 hd[k] = v.d
                 hd[k].attrs['need_grad'] = v.need_grad

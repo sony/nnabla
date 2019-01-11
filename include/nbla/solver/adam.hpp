@@ -57,14 +57,6 @@ protected:
   float beta2_; ///< \f$\beta_2\f$
   float eps_;   ///< \f$\epsilon\f$
 
-  // State variables.
-  struct State {
-    VariablePtr mean;
-    VariablePtr var;
-    int t;
-  };
-  unordered_map<string, State> state_;
-
   // Functions.
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);

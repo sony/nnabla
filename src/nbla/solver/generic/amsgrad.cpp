@@ -42,26 +42,29 @@ void AMSGRAD<T>::set_state_impl(const string &key, VariablePtr param) {
   m->data()->zero();
   v->data()->zero();
   v_hat->data()->zero();
-  state_.insert({key, State{m, v, v_hat, 0}});
+  unordered_map<string, VariablePtr> pstate{
+      {"m", m}, {"v", v}, {"v_hat", v_hat}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void AMSGRAD<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void AMSGRAD<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  auto &state = state_.at(key);
+  auto &state = states_.at(key);
   auto &t = state.t;
   const T *g = param->get_grad_pointer<T>(this->ctx_);
-  VariablePtr s1 = state.mean;
-  VariablePtr s2 = state.var;
-  VariablePtr s3 = state.var_hat;
+  VariablePtr s1 = state.pstate["m"];
+  VariablePtr s2 = state.pstate["v"];
+  VariablePtr s3 = state.pstate["v_hat"];
   T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
   T *v = s2->cast_data_and_get_pointer<T>(this->ctx_);
   T *v_hat = s3->cast_data_and_get_pointer<T>(this->ctx_);
   T *theta = param->cast_data_and_get_pointer<T>(this->ctx_);
-  t = std::min(t + 1, std::numeric_limits<int>::max());
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
   const T bias_correction =
       std::sqrt(1 - std::pow(beta2_, t)) / (1 - std::pow(beta1_, t));
   const T alpha_t = alpha_ * (bias_correction_ ? bias_correction : 1);

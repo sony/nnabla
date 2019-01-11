@@ -140,12 +140,25 @@ message Optimizer {
   repeated ParameterVariable parameter_variable = 80;
 }
 
+
+message SolverStateParameter {
+  Shape shape = 20;
+  repeated float data = 100;
+}
+
+message SolverState {
+  uint32 t = 1;
+  map<string, SolverStateParameter> state_parameter = 2;
+}
+
 message Solver {
   string type = 2;
 
   Context context = 10;
 
   float weight_decay = 20;
+
+  map<string, SolverState> states = 40;
 
   oneof parameter {
 % for i, (name, solver) in enumerate(solver_info.items()):
