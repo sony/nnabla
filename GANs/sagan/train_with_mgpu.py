@@ -61,13 +61,13 @@ def train(args):
                        sn=not_sn).apply(persistent=True)
     p_fake = discriminator(x_fake, y_fake, maps=maps //
                            16, n_classes=n_classes, sn=not_sn)
-    loss_gen = gan_loss(p_fake) / args.accum_grad
+    loss_gen = gan_loss(p_fake)
     # discriminator loss
     y_real = nn.Variable([batch_size])
     x_real = nn.Variable([batch_size, 3, image_size, image_size])
     p_real = discriminator(x_real, y_real, maps=maps //
                            16, n_classes=n_classes, sn=not_sn)
-    loss_dis = gan_loss(p_fake, p_real) / args.accum_grad
+    loss_dis = gan_loss(p_fake, p_real)
     # generator with fixed value for test
     z_test = nn.Variable.from_numpy_array(np.random.randn(batch_size, latent))
     y_test = nn.Variable.from_numpy_array(
