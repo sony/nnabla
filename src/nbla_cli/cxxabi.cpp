@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H_CXXABI_H_
-#define H_CXXABI_H_
+#include <cstring>
+#include <string>
 
-/**
-   This roughly simulates a behavior of GNU cxxabi.h used in src/nbla_cli by an
-   external library `cmdline`.
- */
+#include <cxxabi.h>
 
-namespace abi {
-char *__cxa_demangle(const char *s, int o, int o2, int *status);
+char *abi::__cxa_demangle(const char *s, int o, int o2, int *status) {
+  std::string ss(s);
+  size_t size = ss.size();
+  char *ret = (char *)malloc(sizeof(char) * (size + 1));
+  strcpy(ret, s);
+  status = 0;
+  return ret;
 }
-
-#endif // H_CXXABI_H_
