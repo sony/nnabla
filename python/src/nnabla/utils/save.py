@@ -349,6 +349,7 @@ def _create_optimizer(name, solver, network, dataset, weight_decay, lr_decay, lr
         d = o.parameter_variable.add()
         d.variable_name = param
         d.learning_rate_multiplier = 1.0
+    solver.set_states_to_protobuf(o)
     return o
 
 

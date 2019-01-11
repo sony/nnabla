@@ -56,8 +56,6 @@ protected:
   float decay_; ///< decay factor
   float eps_;   ///< small value
 
-  unordered_map<string, VariablePtr> state_;
-
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);

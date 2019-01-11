@@ -39,24 +39,26 @@ void Adamax<T>::set_state_impl(const string &key, VariablePtr param) {
   auto u = make_shared<Variable>(shape);
   m->data()->zero();
   u->data()->zero();
-  state_.insert({key, State{m, u, 0}});
+  unordered_map<string, VariablePtr> pstate{{"m", m}, {"u", u}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void Adamax<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void Adamax<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  auto &state = state_.at(key);
-  int &t = state.t;
-  VariablePtr s1 = state.mean;
-  VariablePtr s2 = state.u;
+  auto &state = states_.at(key);
+  uint32_t &t = state.t;
+  VariablePtr s1 = state.pstate["m"];
+  VariablePtr s2 = state.pstate["u"];
   const T *g = param->get_grad_pointer<T>(this->ctx_);
   T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
   T *u = s2->cast_data_and_get_pointer<T>(this->ctx_);
   T *theta = param->cast_data_and_get_pointer<T>(this->ctx_);
-  t = std::min(t + 1, std::numeric_limits<int>::max());
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
   const T bias_correction = 1 / (1 - std::pow(beta1_, t));
   const T alpha_t = alpha_ * bias_correction;
   for (int s = 0; s < size; ++s) {
