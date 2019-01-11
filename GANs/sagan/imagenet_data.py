@@ -120,8 +120,8 @@ def data_iterator_imagenet(img_path, dirname_to_label_path,
 
 
 def main():
-    img_path = "/home/Kazuki.Yoshiyama/data/imagenet/sngan_projection/train_cache_sngan"
-    dirname_to_label_path = "/home/Kazuki.Yoshiyama/data/imagenet/sngan_projection/dirname_to_label.txt"
+    img_path = ""
+    dirname_to_label_path = ""
     di = data_iterator_imagenet(img_path, dirname_to_label_path)
     itr = 1620
     for i in range(itr):
