@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H_CXXABI_H_
-#define H_CXXABI_H_
+#ifndef H_INTERNAL_HPP_
+#define H_INTERNAL_HPP_
 
-/**
-   This roughly simulates a behavior of GNU cxxabi.h used in src/nbla_cli by an
-   external library `cmdline`.
- */
+std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
+                                          std::vector<std::string> files,
+                                          bool on_memory = false);
 
-namespace abi {
-char *__cxa_demangle(const char *s, int o, int o2, int *status);
-}
-
-#endif // H_CXXABI_H_
+#endif // H_INTERNAL_HPP_

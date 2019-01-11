@@ -51,8 +51,6 @@ protected:
   float lr_; ///< learning rate
   float momentum_;
 
-  unordered_map<string, VariablePtr> state_;
-
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);
   virtual void update_impl(const string &key, VariablePtr param);

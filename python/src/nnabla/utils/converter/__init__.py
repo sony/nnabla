@@ -26,3 +26,14 @@ from .utils import load_yaml_ordered
 from .utils import select_executor
 from .utils import search_network
 from .utils import calc_shape_size
+from .utils import func_set_import_nnp, \
+                   func_set_import_config, \
+                   func_set_nnabla_support, \
+                   func_set_onnx_support, \
+                   func_set_nncr_support, \
+                   func_dict_import_config, \
+                   func_set_import_onnx_config, \
+                   func_set_onnx_output_target_list, \
+                   func_set_import_onnx_opset, \
+                   func_set_export_yaml, \
+                   func_set_exporter_funcs_opset_yaml

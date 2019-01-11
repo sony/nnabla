@@ -141,7 +141,7 @@ cdef class Function:
         f = Function()
         f.fun = make_shared[CgFunction](fun)
         f.funp = f.fun.get()
-        info2 = {'name': info.type_name, 'args': info.args}
+        info2 = {'name': info.type_name, 'args': info.args, 'tags': info.tags}
         f.funp.set_info(repr(info2).encode('ascii'))
         return f
 
@@ -154,6 +154,7 @@ cdef class Function:
         info = Info()
         info.args = info2['args']
         info.type_name = info2['name']
+        info.tags = info2['tags']
         f.info = info
         return f
 
@@ -281,6 +282,24 @@ cdef class Function:
                     return self._imperative_call(inputs, n_outputs, outputs)
         return self._cg_call(inputs, n_outputs, outputs, auto_forward)
 
+    @property
+    def tags(self):
+        """Experimental
+
+        Get tags of the function.
+        """
+        info = eval(self.funp.info())
+        return info['tags']
+
+    @tags.setter
+    def tags(self, tags):
+        """Experimental
+
+        Set tags to the function.
+        """
+        info = eval(self.funp.info())
+        info['tags'] = tags
+        self.funp.set_info(repr(info).encode('ascii'))
 			
     """
     @property
@@ -474,6 +493,7 @@ class PythonFunction:
         info.type_name = 'PythonFunction'
         from pickle import dumps
         info.args = {'pickle': dumps(self)}
+        info.tags = {}
         # Increment reference count to prevent deleting this object as long as
         # the CgFunction instance created below exists.
         # The reference count is decremented at the cleanup_callback function
@@ -543,6 +563,7 @@ def ${name}(CContext ctx${''.join([', {} {}'.format(type_from_proto[v['type']]['
     info.args['${arg}'] = ${arg}
 %endfor
     info.type_name = '${name}'
+    info.tags = {}
     f = Function.create(create_${name}(ctx${''.join([', %s' % k for k in func.get('arguments', {}).keys()])}), info)
     return f
 %endfor

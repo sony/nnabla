@@ -25,20 +25,34 @@ from six import iteritems
 
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
+from libcpp.unordered_map cimport unordered_map
 from libcpp.string cimport string
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t
 
 cimport solver
-from solver cimport CSolver
+from solver cimport CSolver, CSolverState
 cimport _variable
 from _variable cimport Variable as _Variable, CVariable
+
+from collections import OrderedDict
 
 # Numpy
 import numpy as np
 cimport numpy as np
 np.import_array()
+
+import nnabla.utils.nnabla_pb2 as nnabla_pb2
+import google.protobuf.text_format as text_format
+
+
+class SolverState(object):
+    """Solver State
+    """
+    def __init__(self):
+        self.pstate = {}
+        self.t = 0
 
 
 cdef class Solver:
@@ -115,6 +129,191 @@ cdef class Solver:
         Clear all registered parameters and states.
         """
         self.solverp.clear_parameters()
+
+    def get_parameters(self):
+        """
+        Get all registered parameters
+        """
+        cdef vector[pair[string, shared_ptr[CVariable]]] cparams;
+        cparams = self.solverp.get_parameters()
+        params = OrderedDict()
+        for elm in cparams:
+            name = elm.first
+            var = _Variable.create_from_cvariable(elm.second)
+            params[name] = var
+        return params
+
+    def get_states(self):
+        """
+        Get all states
+        """
+        cstates = self.solverp.get_states()
+        states = OrderedDict()
+        for elm0 in cstates:
+            vname = elm0.first
+            src_state = elm0.second
+            dst_state = SolverState()
+            pstate = src_state.pstate
+            for elm1 in pstate:
+                sname = elm1.first
+                var = _Variable.create_from_cvariable(< shared_ptr[CVariable] ?> elm1.second)
+                dst_state.pstate[sname] = var
+            dst_state.t = src_state.t
+            states[vname] = dst_state
+        return states
+
+    def set_states(self, states):
+        """
+        Set states. Call `set_parameters` to initialize states of a solver first, otherwise this method raise an value error.
+        """
+        cdef vector[pair[string, CSolverState]] cstates
+        cdef string pname
+        cdef CSolverState dst_cstate
+        cdef _Variable pstate
+        for pname, src_state in iteritems(states):
+            for sname, var in iteritems(src_state.pstate):
+                dst_cstate.pstate[sname] = (< _Variable > var).varp.variable()
+            dst_cstate.t = src_state.t
+            cstates.push_back(pair[string, CSolverState](pname, dst_cstate))
+        self.solverp.set_states(cstates)
+
+    def save_states(self, path):
+        """
+        Save solver states.
+
+        Args:
+            path : path or file object
+        
+        """
+        import os
+        import nnabla as nn
+        states = self.get_states()
+        _, ext = os.path.splitext(path)
+        if ext == '.h5':
+            # TODO temporary work around to suppress FutureWarning message.
+            import warnings
+            warnings.simplefilter('ignore', category=FutureWarning)
+            import h5py
+            with h5py.File(path, 'w') as hd:
+                # File's key is `/{parameter-name}/{state-name}` and `/{parameter-name}/t`
+                for i, (pname, state) in enumerate(iteritems(states)):
+                    hd.create_group(pname)
+                    hd[pname].create_dataset("t", data=state.t)
+                    hd[pname].attrs['index'] = i
+                    for j, (sname, vx) in enumerate(iteritems(state.pstate)):
+                        hd[pname].create_dataset(sname, data=vx.d)
+                        hd[pname][sname].attrs['index'] = j
+
+        elif ext == '.protobuf':
+            optimizer = nnabla_pb2.Optimizer()
+            self.set_states_to_protobuf(optimizer)
+            with open(path, "wb") as f:
+                f.write(optimizer.SerializeToString())
+        else:
+            nn.logger.critical('Only supported hdf5 or protobuf.')
+            assert False
+        nn.logger.info("Solver state save ({}): {}".format(ext, path))
+
+    def set_states_to_protobuf(self, optimizer):
+        """Set states to the protobuf file from the solver.
+        
+        Internally used helper method.
+        """
+        states = self.get_states()
+        states_proto = optimizer.solver.states
+        for pname, state in iteritems(states):
+            state_proto = nnabla_pb2.SolverState()
+            state_proto.t = state.t
+            for sname, vx in iteritems(state.pstate):
+                solver_state_parameter_proto = nnabla_pb2.SolverStateParameter()
+                solver_state_parameter_proto.shape.dim.extend(vx.shape)
+                solver_state_parameter_proto.data.extend(np.array(vx.d).flatten().tolist())
+                state_proto.state_parameter[sname].CopyFrom(solver_state_parameter_proto)
+            states_proto[pname].CopyFrom(state_proto)
+        
+    def load_states(self, path):
+        """
+        Load solver states.
+
+        Args:
+            path : path to the state file to be loaded.
+        
+        """
+        import os
+        import nnabla as nn
+
+        states = OrderedDict()
+
+        _, ext = os.path.splitext(path)
+        if ext == '.h5':
+            # TODO temporary work around to suppress FutureWarning message.
+            import warnings
+            warnings.simplefilter('ignore', category=FutureWarning)
+            import h5py
+            with h5py.File(path, 'r') as hd:
+                # File's key is `/{parameter-name}/{state-name}` and `/{parameter-name}/t`
+                skeys = []
+                pkeys = set()
+                def _get_skeys(name):
+                    ds = hd[name]
+                    if not isinstance(ds, h5py.Dataset):
+                        # Group
+                        return
+                    # state key
+                    skeys.append(name)                          
+                    # To preserve order of parameters
+                    index = ds.parent.attrs.get('index', None)
+                    pname = "/".join(name.split("/")[:-1])
+                    # parameter key
+                    pkeys.add((index, pname))
+                hd.visit(_get_skeys)
+                for _, pkey in sorted(pkeys):
+                    state = SolverState()
+                    for skey in skeys:
+                        if pkey not in skey:
+                            continue
+                        ds = hd[skey]
+                        if skey.endswith("/t"):
+                            state.t = ds[...]
+                        else:
+                            sname = skey.split("/")[-1]
+                            var = nn.Variable.from_numpy_array(ds[...])
+                            state.pstate[sname] = var
+                    states[pkey] = state
+            self.set_states(states)
+        elif ext == '.protobuf':
+            optimizer = nnabla_pb2.Optimizer()
+            with open(path, 'rb') as f:
+                optimizer.MergeFromString(f.read())
+                self.set_states_from_protobuf(optimizer)
+        elif ext == '.nntxt' or ext == '.prototxt':
+            optimizer = nnabla_pb2.Optimizer()
+            with open(path, 'r') as f:
+                text_format.Merge(f.read(), optimizer)
+                self.set_states_from_protobuf(optimizer)
+        elif ext == '.nnp':
+            raise NotImplementedError("Solver.load_states for nnp format not implemented.")
+
+        nn.logger.info("State load ({}): {}".format(ext, path))
+
+    def set_states_from_protobuf(self, optimizer_proto):
+        """Set states to the solver from the protobuf file.
+        
+        Internally used helper method.
+        """
+        import nnabla as nn
+
+        states = OrderedDict()
+        states_proto = optimizer_proto.solver.states
+        for pname, state_proto in iteritems(states_proto):
+            state = SolverState()
+            state.t = state_proto.t
+            for sname, ssp in iteritems(state_proto.state_parameter):
+                xd = np.reshape(ssp.data, ssp.shape.dim)
+                vx = nn.Variable.from_numpy_array(xd)
+                state.pstate[sname] = vx
+            states[pname] = state
+        self.set_states(states)
 
     def set_learning_rate(self, learning_rate):
         """

@@ -37,22 +37,26 @@ void Adadelta<T>::set_state_impl(const string &key, VariablePtr param) {
   auto e_sqr_delta = make_shared<Variable>(shape);
   e_sqr_grad->data()->zero();
   e_sqr_delta->data()->zero();
-  state_.insert({key, {e_sqr_grad, e_sqr_delta}});
+  unordered_map<string, VariablePtr> pstate{{"e_sqr_grad", e_sqr_grad},
+                                            {"e_sqr_delta", e_sqr_delta}};
+  SolverState state{pstate, 0};
+  states_.insert({key, state});
 }
 template <typename T> void Adadelta<T>::remove_state_impl(const string &key) {
-  state_.erase(key);
+  states_.erase(key);
 }
 
 template <typename T>
 void Adadelta<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
-  auto &state = state_.at(key);
-  VariablePtr e1 = state.e_sqr_grad;
-  VariablePtr e2 = state.e_sqr_delta;
+  auto &state = states_.at(key);
+  VariablePtr e1 = state.pstate["e_sqr_grad"];
+  VariablePtr e2 = state.pstate["e_sqr_delta"];
   T *e_sqr_grad = e1->cast_data_and_get_pointer<T>(this->ctx_);
   T *e_sqr_delta = e2->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
+
   for (int s = 0; s < size; ++s) {
     e_sqr_grad[s] = e_sqr_grad[s] * decay_ + grad[s] * grad[s] * (1 - decay_);
     const T delta =
@@ -60,6 +64,8 @@ void Adadelta<T>::update_impl(const string &key, VariablePtr param) {
     e_sqr_delta[s] = e_sqr_delta[s] * decay_ + delta * delta * (1 - decay_);
     data[s] -= lr_ * delta;
   }
+  auto &t = state.t;
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
 
 NBLA_DEF_WEIGHT_DECAY(Adadelta, weight_decay_cpu);

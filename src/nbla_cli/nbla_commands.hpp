@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H_CXXABI_H_
-#define H_CXXABI_H_
+#ifndef H_NBLA_COMMANDS_HPP_
+#define H_NBLA_COMMANDS_HPP_
 
-/**
-   This roughly simulates a behavior of GNU cxxabi.h used in src/nbla_cli by an
-   external library `cmdline`.
- */
+bool nbla_dump(int argc, char *argv[]);
+bool nbla_infer(int argc, char *argv[]);
+bool nbla_train(int argc, char *argv[]);
 
-namespace abi {
-char *__cxa_demangle(const char *s, int o, int o2, int *status);
-}
-
-#endif // H_CXXABI_H_
+#endif // H_NBLA_COMMANDS_HPP_
