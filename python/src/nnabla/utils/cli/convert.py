@@ -19,15 +19,6 @@ import nnabla.utils.converter
 from nnabla.utils.converter import get_category_info_string
 
 
-def function_info_command(args):
-    if args.dest is None:
-        sys.stdout.write(get_category_info_string())
-    else:
-        with open(args.dest, 'w') as f:
-            f.write(get_category_info_string())
-    return True
-
-
 def dump_command(args):
     if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
@@ -85,14 +76,6 @@ def add_convert_command(subparsers):
         nnabla.utils.converter.formats.import_name)
 
     ################################################################################
-    # Function Info
-    subparser = subparsers.add_parser(
-        'function_info', help='Output function info.')
-    subparser.add_argument('dest', nargs='?', default=None,
-                           help='destination filename')
-    subparser.set_defaults(func=function_info_command)
-
-    ################################################################################
     # Dump Network.
     subparser = subparsers.add_parser(
         'dump', help='Dump network with supported format.')
@@ -147,6 +130,11 @@ def add_convert_command(subparsers):
                            help='[export] This option need to set  "-E" option.' +
                            'Split executor with specified index. ' +
                            '(eg. "1-9", "1-2,5-")')
+
+    # For config function list
+    subparser.add_argument('-c', '--config', type=str, default=None,
+                           help='[export] config target function list.')
+
     # NNP
     subparser.add_argument('--nnp-parameter-h5', action='store_true',
                            help='[export][NNP] store parameter with h5 format')

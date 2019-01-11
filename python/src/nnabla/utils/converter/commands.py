@@ -18,6 +18,11 @@ import sys
 
 from .nnabla import NnpImporter, NnpExporter
 from .nnablart import NnbExporter, CsrcExporter
+from .utils import func_set_import_nnp, \
+                   func_set_import_onnx_config, \
+                   func_set_import_config, \
+                   func_set_nnabla_support, \
+                   func_set_onnx_support
 
 
 def _import_file(args, ifiles):
@@ -38,12 +43,16 @@ def _import_file(args, ifiles):
 
 
 def _shrink_nnp(nnp, pos_start, pos_end):
-
     if len(nnp.protobuf.executor) != 1 or \
             len(nnp.protobuf.network) != 1:
         print('[ERROR] Please make only one network in nnp.')
         sys.exit(-1)
     from nnabla.utils import nnabla_pb2
+
+    class _nnp:
+        pass
+    _nnp.protobuf = nnabla_pb2.NNablaProtoBuf()
+    _nnp.other_files = nnp.other_files
     net = nnabla_pb2.NNablaProtoBuf().network.add()
     net.CopyFrom(nnp.protobuf.network[0])
 
@@ -73,9 +82,8 @@ def _shrink_nnp(nnp, pos_start, pos_end):
             p = nnabla_pb2.NNablaProtoBuf().parameter.add()
             p.CopyFrom(param)
             params.append(p)
-    nnp.protobuf.ClearField('parameter')
     for p in params:
-        param = nnp.protobuf.parameter.add()
+        param = _nnp.protobuf.parameter.add()
         param.CopyFrom(p)
 
     # Shrink executor
@@ -83,36 +91,22 @@ def _shrink_nnp(nnp, pos_start, pos_end):
     exe.CopyFrom(nnp.protobuf.executor[0])
 
     exe.ClearField('data_variable')
-    for var in nnp.protobuf.executor[0].data_variable:
-        if var.variable_name in variables:
+    for vname in nnp.protobuf.network[0].function[pos_start].input:
+        if variables[vname] == 'Buffer':
             v = exe.data_variable.add()
-            v.CopyFrom(var)
-
-    # If data_variable is empty use input of first function instead.
-    if len(exe.data_variable) == 0:
-        for vname in nnp.protobuf.network[0].function[pos_start].input:
-            if variables[vname] == 'Buffer':
-                v = exe.data_variable.add()
-                v.variable_name = vname
+            v.variable_name = vname
 
     exe.ClearField('generator_variable')
-    for var in nnp.protobuf.executor[0].data_variable:
+    for var in nnp.protobuf.executor[0].generator_variable:
         if var.variable_name in variables:
-            v = exe.data_variable.add()
+            v = exe.generator_variable.add()
             v.CopyFrom(var)
 
     exe.ClearField('output_variable')
-    for var in nnp.protobuf.executor[0].output_variable:
-        if var.variable_name in variables:
+    for vname in nnp.protobuf.network[0].function[pos_end].output:
+        if variables[vname] == 'Buffer':
             v = exe.output_variable.add()
-            v.CopyFrom(var)
-
-    # If output_variable is empty use output of last function instead.
-    if len(exe.output_variable) == 0:
-        for vname in nnp.protobuf.network[0].function[pos_end].input:
-            if variables[vname] == 'Buffer':
-                v = exe.output_variable.add()
-                v.variable_name = vname
+            v.variable_name = vname
 
     exe.ClearField('parameter_variable')
     for var in nnp.protobuf.executor[0].parameter_variable:
@@ -120,17 +114,14 @@ def _shrink_nnp(nnp, pos_start, pos_end):
             v = exe.parameter_variable.add()
             v.CopyFrom(var)
 
-    nnp.protobuf.ClearField('network')
-    n = nnp.protobuf.network.add()
+    n = _nnp.protobuf.network.add()
     n.CopyFrom(net)
-    nnp.protobuf.ClearField('executor')
-    e = nnp.protobuf.executor.add()
+    e = _nnp.protobuf.executor.add()
     e.CopyFrom(exe)
-    return nnp
+    return _nnp
 
 
-def _export_from_nnp(args, nnp, output):
-    output_ext = os.path.splitext(output)[1].lower()
+def _export_from_nnp(args, nnp, output, output_ext):
     if (os.path.isdir(output) and args.export_format == 'NNP') \
             or output_ext == '.nnp':
         parameter_type = 'protobuf'
@@ -159,51 +150,130 @@ def _export_from_nnp(args, nnp, output):
     return True
 
 
-def convert_files(args, ifiles, output):
-    nnp = _import_file(args, ifiles)
-    if nnp is not None:
-        if args.split is not None:
-            if args.nnp_import_executor_index is None:
-                print('[ERROR] "-S" needs "-E".')
-                sys.exit(-1)
-            network = None
-            for n in nnp.protobuf.network:
-                if n.name == nnp.protobuf.executor[0].network_name:
-                    network = n
-            ranges = []
-            for srange in args.split.split(','):
-                srange_s = srange.split('-')
-                print(srange, srange_s, len(srange_s))
-                pos_start = None
-                pos_end = None
-                if len(srange_s) == 2:
-                    if srange_s[0] == '':
-                        pos_start = 0
-                    else:
-                        pos_start = int(srange_s[0])
-                    if srange_s[1] == '':
-                        pos_end = len(network.function)-1
-                    else:
-                        pos_end = int(srange_s[1])
-                    if pos_end < pos_start or pos_end > len(network.function)-1:
-                        print('[ERROR] range must be in 0 to {}'.format(
-                            len(network.function)-1))
-                        sys.exit(-1)
-                else:
-                    print('[ERROR] range must be "x0-y0,x1-y1,..."')
-                    sys.exit(-1)
-                ranges.append((pos_start, pos_end))
+def _need_split(nnp, args, supported_set):
+    if args.split is not None:
+        if args.nnp_import_executor_index is None:
+            print('[ERROR] "-S" needs "-E".')
+            sys.exit(-1)
+        return True
 
+    if not args.config:
+        return False
+
+    if func_set_import_nnp(nnp) <= supported_set:
+        return False
+
+    return True
+
+
+def _get_split_ranges(nnp, args, supported_set):
+    def get_ranges_from_param(split_spec):
+        ranges = []
+        for srange in split_spec.split(','):
+            srange_s = srange.split('-')
+            if len(srange_s) == 2:
+                if srange_s[0] == '':
+                    pos_start = 0
+                else:
+                    pos_start = int(srange_s[0])
+                if srange_s[1] == '':
+                    pos_end = len(network.function) - 1
+                else:
+                    pos_end = int(srange_s[1])
+                if pos_end < pos_start or pos_end > len(network.function) - 1:
+                    print('[ERROR] range must be in 0 to {}'.format(
+                        len(network.function) - 1))
+                    sys.exit(-1)
+            else:
+                print('[ERROR] range must be "x0-y0,x1-y1,..."')
+                sys.exit(-1)
+            ranges.append((pos_start, pos_end))
+        return ranges
+
+    def get_ranges_from_func_set(support_set):
+        pos_start = 0
+        pos_end = 0
+        ranges = []
+        for pos, func in enumerate(network.function):
+            if func.type in support_set:
+                pos_end = pos
+            else:
+                if pos_end >= pos_start:
+                    ranges.append((pos_start, pos_end))
+                pos_start = pos + 1
+        if pos_end >= pos_start:
+            ranges.append((pos_start, pos_end))
+        return ranges
+
+    network = None
+    for n in nnp.protobuf.network:
+        if n.name == nnp.protobuf.executor[0].network_name:
+            network = n
+    if args.split:
+        return get_ranges_from_param(args.split)
+    return get_ranges_from_func_set(supported_set)
+
+
+def convert_files(args, ifiles, output):
+    output_ext = os.path.splitext(output)[1].lower()
+    nnp = _import_file(args, ifiles)
+    network_name = nnp.protobuf.executor[0].network_name
+    if nnp is not None:
+        if output_ext == '.onnx':
+            if args.config:
+                support_set = func_set_onnx_support() & \
+                              func_set_import_onnx_config(args.config)
+            else:
+                support_set = func_set_onnx_support()
+        elif output_ext == '.nnb':
+            if args.config:
+                support_set = func_set_import_config(args.config)
+            else:
+                support_set = func_set_nnabla_support()
+        else:
+            if args.config:
+                support_set = func_set_import_config(args.config)
+            else:
+                support_set = func_set_nnabla_support()
+        if _need_split(nnp, args, support_set):
+            for _net in nnp.protobuf.network[:]:
+                if _net.name != network_name:
+                    nnp.protobuf.network.remove(_net)
+            ranges = _get_split_ranges(nnp, args, support_set)
+            nnb_info = collections.OrderedDict()
             for pos_start, pos_end in ranges:
                 print('   Shrink {} to {}.'.format(pos_start, pos_end))
                 n, e = os.path.splitext(output)
                 new_output = n + '_{}_{}'.format(pos_start, pos_end) + e
                 print('    Output to [{}]'.format(new_output))
-                _export_from_nnp(args, _shrink_nnp(
-                    nnp, pos_start, pos_end), new_output)
-
+                _nnp = _shrink_nnp(nnp, pos_start, pos_end)
+                nnb_info[new_output] = collections.OrderedDict()
+                nnb_info[new_output]['input'] = []
+                nnb_info[new_output]['output'] = []
+                i_var = []
+                o_var = []
+                for var in _nnp.protobuf.executor[0].data_variable:
+                    i_var.append(var.variable_name)
+                for var in _nnp.protobuf.executor[0].output_variable:
+                    o_var.append(var.variable_name)
+                for var in _nnp.protobuf.network[0].variable:
+                    if var.name in i_var:
+                        _info = collections.OrderedDict()
+                        _info['name'] = var.name
+                        _info['shape'] = '({})'.format(
+                            ', '.join(str(i) for i in var.shape.dim))
+                        nnb_info[new_output]['input'].append(_info)
+                    if var.name in o_var:
+                        _info = collections.OrderedDict()
+                        _info['name'] = var.name
+                        _info['shape'] = '({})'.format(
+                            ', '.join(str(i) for i in var.shape.dim))
+                        nnb_info[new_output]['output'].append(_info)
+                _export_from_nnp(args, _nnp, new_output, output_ext)
+            import yaml
+            print(yaml.dump(nnb_info, default_flow_style=False))
         else:
-            return _export_from_nnp(args, nnp, output)
+            return _export_from_nnp(args, nnp, output, output_ext)
     else:
         print('Import from [{}] failed.'.format(ifiles))
         return False
