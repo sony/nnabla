@@ -14,8 +14,8 @@ SimpleGraph
     :members:
 
 
-GraphConveter
--------------
+GraphConverter
+--------------
 
 .. autoclass:: nnabla.experimental.graph_converters.identity.IdentityConverter
     :members:
@@ -31,6 +31,24 @@ GraphConveter
 
 .. autoclass:: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter
     :members:
+
+
+Trainer
+-------
+
+.. autoclass:: nnabla.experimental.trainers.Trainer
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.NaiveClassificationTrainer
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.NaiveRegressionTrainer
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.Updater
+    :members:
+
+.. autoclass:: nnabla.experimental.trainers.Evaluator
 
 
 Parametric Function Classes
