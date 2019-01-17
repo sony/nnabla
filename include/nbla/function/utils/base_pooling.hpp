@@ -99,23 +99,22 @@ protected:
                  "kernel: %d != inshape: %d.",
                  kernel_.size(), inshape.size());
     }
-    NBLA_CHECK(kernel_.size() == 2, error_code::not_implemented,
-               "2D Pooling is only supported so far.");
+    NBLA_CHECK(kernel_.size() >= 2 && kernel_.size() <= 3,
+               error_code::not_implemented,
+               "2D and 3D Pooling are only supported so far.");
 
-    vector<int> shape(kernel_.size());
-    for (int i = 0; i < kernel_.size(); i++)
-      shape[i] = inshape[i + s];
     NBLA_CHECK(kernel_.size() == pad_.size(), error_code::value,
                "Size of kernel and pad must be same. "
                "kernel: %d != pad: %d).",
                kernel_.size(), pad_.size());
-    for (int i = 0; i < shape.size(); i++) {
-      shape[i] += 2 * pad_[i];
-      if (ignore_border_) {
-        shape[i] = int((shape[i] - kernel_[i]) / stride_[i]) + 1;
-      } else {
-        shape[i] = ceil(shape[i] * 1.0 / stride_[i]);
-      }
+
+    vector<int> shape(kernel_.size());
+    for (int i = 0; i < kernel_.size(); i++) {
+      int _w = inshape[i + s];
+      int _k = kernel_[i];
+      int _s = stride_[i];
+      int _p = pad_[i];
+      shape[i] = (_w + _p - (ignore_border_ ? _k - _p : 1)) / _s + 1;
     }
 
     Shape_t outshape(inshape.size());
