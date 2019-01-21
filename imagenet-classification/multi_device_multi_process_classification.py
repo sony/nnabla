@@ -243,16 +243,6 @@ def train():
         # Gradient accumulation loop
         for j in range(args.accum_grad):
             images, labels = data.next()
-            if j != 0:
-                # Update e and l according to previous results of forward
-                # propagation.
-                # The update of last iteration is performed
-                # after solver update to avoid unnecessary CUDA synchronization.
-                # This is performed after data.next() in order to overlap
-                # the data loading and graph execution.
-                # TODO: Move this to the bottom of the loop when prefetch
-                # data loader is available.
-                l, e = accumulate_error(l, e, t_model, t_e)
             t_model.image.d = images
             t_model.label.d = labels
             t_model.image.data.cast(np.uint8, ctx)
@@ -260,6 +250,7 @@ def train():
             t_model.loss.forward(clear_no_need_grad=True)
             t_model.loss.backward(clear_buffer=True)  # Accumulating gradients
             t_e.forward(clear_buffer=True)
+            l, e = accumulate_error(l, e, t_model, t_e)
 
         # AllReduce
         params = [x.grad for x in nn.get_parameters().values()]
