@@ -392,30 +392,43 @@ def _create_optimizer(ctx, o, networks, datasets):
         if o.solver.type == 'Adagrad':
             optimizer.solver = S.Adagrad(
                 o.solver.adagrad_param.lr, o.solver.adagrad_param.eps)
+            init_lr = o.solver.adagrad_param.lr
         elif o.solver.type == 'Adadelta':
             optimizer.solver = S.Adadelta(
                 o.solver.adadelta_param.lr, o.solver.adadelta_param.decay, o.solver.adadelta_param.eps)
+            init_lr = o.solver.adadelta_param.lr
         elif o.solver.type == 'Adam':
             optimizer.solver = S.Adam(o.solver.adam_param.alpha, o.solver.adam_param.beta1,
                                       o.solver.adam_param.beta2, o.solver.adam_param.eps)
+            init_lr = o.solver.adam_param.alpha
         elif o.solver.type == 'Adamax':
             optimizer.solver = S.Adamax(o.solver.adamax_param.alpha, o.solver.adamax_param.beta1,
                                         o.solver.adamax_param.beta2, o.solver.adamax_param.eps)
+            init_lr = o.solver.adamax_param.alpha
+        elif o.solver.type == 'AMSGRAD':
+            optimizer.solver = S.AMSGRAD(o.solver.amsgrad_param.alpha, o.solver.amsgrad_param.beta1,
+                                         o.solver.amsgrad_param.beta2, o.solver.amsgrad_param.eps)
+            init_lr = o.solver.amsgrad_param.alpha
         elif o.solver.type == 'Eve':
             p = o.solver.eve_param
             optimizer.solver = S.Eve(
                 p.alpha, p.beta1, p.beta2, p.beta3, p.k, p.k2, p.eps)
+            init_lr = p.alpha
         elif o.solver.type == 'Momentum':
             optimizer.solver = S.Momentum(
                 o.solver.momentum_param.lr, o.solver.momentum_param.momentum)
+            init_lr = o.solver.momentum_param.lr
         elif o.solver.type == 'Nesterov':
             optimizer.solver = S.Nesterov(
                 o.solver.nesterov_param.lr, o.solver.nesterov_param.momentum)
+            init_lr = o.solver.nesterov_param.lr
         elif o.solver.type == 'RMSprop':
             optimizer.solver = S.RMSprop(
                 o.solver.rmsprop_param.lr, o.solver.rmsprop_param.decay, o.solver.rmsprop_param.eps)
+            init_lr = o.solver.rmsprop_param.lr
         elif o.solver.type == 'Sgd' or o.solver.type == 'SGD':
             optimizer.solver = S.Sgd(o.solver.sgd_param.lr)
+            init_lr = o.solver.sgd_param.lr
         else:
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
