@@ -92,28 +92,33 @@ ENV PATH /opt/miniconda3/bin:$PATH
 ENV LD_LIBRARY_PATH /opt/miniconda3/lib:$LD_LIBRARY_PATH
 
 RUN set -xe \
-	&& umask 0 \
-        && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-	&& bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
-	&& rm -rf Miniconda3-latest-Linux-x86_64.sh \
-	&& conda install -y python=${PYVERNAME} \
-        && conda install -y \
-            future \
-            numpy \
-            pip \
-            boto3 \
-            h5py \
-            ipython \
-            mako \
-            numpy \
-            opencv \
-            protobuf \
-            pytest \
-            scikit-image \
-            scipy \
-            tqdm \
-            wheel \
-        && pip install --no-cache-dir pyyaml onnx future Cython autopep8 requests \
-        && pip install --no-cache-dir cntk || true \
-        && conda install -y -c pytorch pytorch-nightly-cpu \
-        && rm -rf /opt/miniconda3/pkgs
+    && umask 0 \
+    && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
+    && rm -rf Miniconda3-latest-Linux-x86_64.sh \
+    && if test ${PYTHON_VERSION_MAJOR} -eq 3 -a ${PYTHON_VERSION_MINOR} -eq 5; \
+       then \
+            conda install -y conda=4.5.11 python=${PYVERNAME}; \
+       else \
+            conda install -y python=${PYVERNAME}; \
+            conda update -y --all; \
+       fi \
+    && conda install -y \
+        boto3 \
+        future \
+        h5py \
+        ipython \
+        mako \
+        'numpy<1.16' \
+        opencv \
+        pip \
+        protobuf \
+        pytest \
+        scikit-image \
+        scipy \
+        tqdm \
+        wheel \
+    && pip install --no-cache-dir pyyaml onnx future Cython autopep8 requests \
+    && pip install --no-cache-dir cntk || true \
+    && conda install -y -c pytorch pytorch-nightly-cpu \
+    && rm -rf /opt/miniconda3/pkgs

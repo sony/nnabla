@@ -2,7 +2,7 @@ Cython
 boto3
 requests
 h5py
-numpy>=1.12
+numpy<1.16
 onnx
 protobuf
 pyyaml
