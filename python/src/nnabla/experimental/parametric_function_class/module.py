@@ -23,10 +23,11 @@ from nnabla.initializer import (
 
 from collections import OrderedDict
 
+
 class Module(object):
     """Module mix-in for the parametric function classes.
     """
-    
+
     def __init__(self):
         pass
 
@@ -53,7 +54,6 @@ class Module(object):
                     continue
                 params[name] = v
         return params
-    
 
     def get_modules(self, memo=None, prefix=""):
         """Get modules.
@@ -63,13 +63,13 @@ class Module(object):
         Args: 
             memo (set, optional): Module set in order to memorize to visit.
             prefix (str, optional): Prefix to a specific parameter name.
-        
+
         Yields:
             `Module`: The module class.
         """
         if memo is None:
             memo = set()
-            
+
         if self not in memo:
             memo.add(self)
             yield prefix, self
@@ -77,16 +77,16 @@ class Module(object):
                 if not isinstance(v, Module):
                     continue
                 name, module = k, v
-                submodule_prefix = "{}/{}".format(prefix, name) if prefix != "" else name
+                submodule_prefix = "{}/{}".format(prefix,
+                                                  name) if prefix != "" else name
                 for m in module.get_modules(memo, submodule_prefix):
                     yield m
 
-
     def save_parameters(self, path, grad_only=False):
         """Save all parameters into a file with the specified format.
-    
+
         Currently hdf5 and protobuf formats are supported.
-    
+
         Args:
             path : path or file object
             grad_only (bool, optional): Return parameters with `need_grad` option as `True`. 
@@ -94,10 +94,9 @@ class Module(object):
         params = self.get_parameters(grad_only=grad_only)
         nn.save_parameters(path, params)
 
-
     def load_parameters(self, path):
         """Load parameters from a file with the specified format.
-        
+
         Args:
             path : path or file object
         """
@@ -115,8 +114,7 @@ class Module(object):
                 param0 = v
                 param1 = nn.parameter.pop_parameter(name)
                 if param0 is None:
-                    raise ValueError("Model does not have {} parameter.".format(name))
+                    raise ValueError(
+                        "Model does not have {} parameter.".format(name))
                 param0.d = param1.d.copy()
                 nn.logger.info("`{}` loaded.)".format(name))
-                
-                
