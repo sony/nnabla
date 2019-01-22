@@ -33,11 +33,19 @@ def compute_full_path(root_path, file_path):
     return full_path
 
 
-def let_data_to_variable(variable, data, ctx=None):
-    if data.dtype <= np.float64:
-        variable.data.cast(data.dtype)[...] = data
-    else:
-        variable.d = data
+def let_data_to_variable(variable, data, ctx=None, data_name=None, variable_name=None):
+    try:
+        if data.dtype <= np.float64:
+            variable.data.cast(data.dtype)[...] = data
+        else:
+            variable.d = data
+    except:
+        if variable.shape != data.shape:
+            logger.critical('Shape does not match between data{} and variable{} ({} != {}).'.format(
+                ' "' + data_name + '"' if data_name else '',
+                ' "' + variable_name + '"' if variable_name else '',
+                data.shape, variable.shape))
+        raise
     variable.need_grad = False
 
     # Copy to device

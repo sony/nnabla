@@ -23,6 +23,7 @@ import time
 
 import nnabla as nn
 import nnabla.function as F
+from nnabla.ext_utils import import_extension_module
 from nnabla.logger import logger
 from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
@@ -30,28 +31,25 @@ from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
 
 
-def profile(config, name, func, result_dict):
-    # for sync CPU/GPU
-    identity = F.Identity(config.global_config.default_context)
-    tmp_in = nn.Variable((1,))
-    tmp_out = nn.Variable((1,))
-    identity.setup([tmp_in], [tmp_out])
-
-    tmp_in.d = [0.]
-    identity.forward([tmp_in], [tmp_out])
+def profile(config, name, func, result_dict, synchromize):
+    # Warm-up
+    func()
+    synchromize()
 
     # Profile
-    start = time.time()
+    start_0 = time.time()
+    result = 0
     count = 0
-    while time.time() < start + 1.0 or count < 100:
+    while time.time() < start_0 + 1.0 or count < 100:
+        start = time.time()
         func()
+        synchromize()
+        stop = time.time()
+        result += stop - start
         count += 1
 
-    # sync CPU/GPU
-    identity.forward([tmp_in], [tmp_out])
-    data = tmp_out.d
+    t = result * 1000 / count
 
-    t = (time.time() - start) * 1000 / count
     logger.log(99, '%s %f(ms)' % (name, t))
     result_dict[name] = t
     return result_dict
@@ -74,7 +72,7 @@ def add_result(title, result_dict, result_array):
     return result_array
 
 
-def profile_optimizer(config, result_array):
+def profile_optimizer(config, result_array, synchronize):
     # Profile Training
     for opt in config.optimizers.values():
         o = opt.optimizer
@@ -83,6 +81,10 @@ def profile_optimizer(config, result_array):
         result_dict = OrderedDict()
 
         logger.log(99, 'Profiling ' + result_name + ' ...')
+        # Clear weight
+        for name, p in o.parameters.items():
+            if name[-2:] in ('/W', '/b'):
+                p.data.zero()
 
         # Load dataset
         def load_dataset():
@@ -90,7 +92,7 @@ def profile_optimizer(config, result_array):
             di = opt.data_iterator
             loaded_data[di] = di.next()
             return loaded_data
-        profile(config, 'load_dataset', load_dataset, result_dict)
+        profile(config, 'load_dataset', load_dataset, result_dict, synchronize)
 
         # Let data
         loaded_data = load_dataset()
@@ -103,24 +105,32 @@ def profile_optimizer(config, result_array):
                     print(opt.data_iterator.variables)
                     raise ValueError(
                         'Data "' + d + '" is not found in dataset.')
-                let_data_to_variable(v.variable_instance, data=data)
+                let_data_to_variable(v.variable_instance, data=data,
+                                     data_name=d, variable_name=v.name)
             profile(config, 'let_data (%s to %s)' %
-                    (d, v.name), let_data, result_dict)
+                    (d, v.name), let_data, result_dict, synchronize)
 
         # Generate data
         for v, generator in o.generator_assign.items():
             def generate_data():
                 let_data_to_variable(v.variable_instance,
-                                     data=generator(v.shape))
+                                     data=generator(v.shape),
+                                     variable_name=v.name)
             profile(config, 'generate_data (%s)' %
-                    v.name, generate_data, result_dict)
+                    v.name, generate_data, result_dict, synchronize)
 
+        '''
         # Setup (detail)
         for func in o.forward_sequence:
             def setup():
                 o.network.setup_function(func)
             profile(config, 'setup_function (%s : %s)' % (
-                func.name, func.function_instance.name), setup, result_dict)
+                func.name, func.function_instance.name), setup, result_dict, synchronize)
+        '''
+        # Warm-up
+        o.network.forward(o.forward_sequence)
+        o.network.prepare_backward(o.backward_sequence)
+        o.network.backward(o.backward_sequence)
 
         # Forward (detail)
         for func in o.forward_sequence:
@@ -129,12 +139,13 @@ def profile_optimizer(config, result_array):
             in_place_str = ' : in_place' if func.function_instance.inplace_data(
                 0) > 0 else ''
             profile(config, 'forward_function (%s : %s%s)' % (
-                func.name, func.function_instance.name, in_place_str), forward, result_dict)
+                func.name, func.function_instance.name, in_place_str), forward, result_dict, synchronize)
 
         # Backward (detail)
         def prepare_backward():
             o.network.prepare_backward(o.backward_sequence)
-        profile(config, 'prepare_backward', prepare_backward, result_dict)
+        profile(config, 'prepare_backward',
+                prepare_backward, result_dict, synchronize)
         for seq in o.backward_sequence.sequence:
             o.network.prepare_backward(o.backward_sequence)
 
@@ -143,41 +154,42 @@ def profile_optimizer(config, result_array):
             in_place_str = ' : in_place' if seq.func.function_instance.inplace_grad(
                 0) > 0 else ''
             profile(config, 'backward_function (%s : %s%s)' % (
-                seq.func.name, seq.func.function_instance.name, in_place_str), backward, result_dict)
+                seq.func.name, seq.func.function_instance.name, in_place_str), backward, result_dict, synchronize)
 
         # Forward (all)
         def forward_all():
             o.network.forward(o.forward_sequence)
-        profile(config, 'forward_all', forward_all, result_dict)
+        profile(config, 'forward_all', forward_all, result_dict, synchronize)
 
         # Backward (all)
         def backward_all():
             o.network.backward(o.backward_sequence)
-        profile(config, 'backward_all', backward_all, result_dict)
+        profile(config, 'backward_all', backward_all, result_dict, synchronize)
 
         # Backward (all)
         def backward_all_wo_zero_grad():
             o.network.backward(o.backward_sequence, parameter_zero_grad=False)
         profile(config, 'backward_all(wo param zero_grad)',
-                backward_all_wo_zero_grad, result_dict)
+                backward_all_wo_zero_grad, result_dict, synchronize)
 
         # Update (weight decay)
         if o.weight_decay > 0:
             def weight_decay():
                 o.solver.weight_decay(o.weight_decay)
             profile(config, 'weight_decay (%s)' %
-                    o.solver.name, weight_decay, result_dict)
+                    o.solver.name, weight_decay, result_dict, synchronize)
 
         # Update
         def update():
             o.solver.update()
-        profile(config, 'update (%s)' % o.solver.name, update, result_dict)
+        profile(config, 'update (%s)' %
+                o.solver.name, update, result_dict, synchronize)
 
         # Monitor loss
         def monitor_loss():
             for l in o.loss_variables:
                 np.mean(l.variable_instance.d)
-        profile(config, 'monitor_loss', monitor_loss, result_dict)
+        profile(config, 'monitor_loss', monitor_loss, result_dict, synchronize)
 
         result_array = add_result(result_name, result_dict, result_array)
 
@@ -215,6 +227,12 @@ def profile_command(args):
         m.data_iterator = None
         config.monitors[name] = m
 
+    ext_module = import_extension_module(
+        config.global_config.default_context.backend[0].split(':')[0])
+
+    def synchronize(): return ext_module.synchronize(
+        device_id=config.global_config.default_context.device_id)
+
     result_array = [['time in ms']]
 
     # Profile Optimizer
@@ -222,7 +240,7 @@ def profile_command(args):
         for name, o in config.optimizers.items():
             o.data_iterator = stack.enter_context(
                 o.optimizer.data_iterator())
-        result_array = profile_optimizer(config, result_array)
+        result_array = profile_optimizer(config, result_array, synchronize)
 
     # Write profiling result
     import csv
