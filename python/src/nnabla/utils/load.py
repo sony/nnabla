@@ -38,6 +38,8 @@ from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
+from nnabla.utils.learning_rate_scheduler import (
+    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler)
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -443,11 +445,40 @@ def _create_optimizer(ctx, o, networks, datasets):
         sorted(parameters.items(), key=lambda x: x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
+
+    # keep following 2 lines for backward compatibility
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
     optimizer.solver.set_states_from_protobuf(o)
 
     optimizer.comm = current_communicator()
+    optimizer.scheduler = None
+    if o.solver.lr_scheduler_type == 'Polynomial':
+        if o.solver.polynomial_scheduler_param.power != 0.0:
+            optimizer.scheduler = PolynomialScheduler(
+                init_lr, o.solver.polynomial_scheduler_param.max_iter // (optimizer.comm.size if optimizer.comm else 1), o.solver.polynomial_scheduler_param.power)
+    elif o.solver.lr_scheduler_type == 'Cosine':
+        optimizer.scheduler = CosineScheduler(
+            init_lr, o.solver.cosine_scheduler_param.max_iter // (optimizer.comm.size if optimizer.comm else 1))
+    elif o.solver.lr_scheduler_type == 'Exponential':
+        if o.solver.exponential_scheduler_param.gamma != 1.0:
+            optimizer.scheduler = ExponentialScheduler(
+                init_lr, o.solver.exponential_scheduler_param.gamma, o.solver.exponential_scheduler_param.iter_interval if o.solver.exponential_scheduler_param.iter_interval > 0 else 1)
+    elif o.solver.lr_scheduler_type == 'Step':
+        if o.solver.step_scheduler_param.gamma != 1.0 and len(o.solver.step_scheduler_param.iter_steps) > 0:
+            optimizer.scheduler = StepScheduler(
+                init_lr, o.solver.step_scheduler_param.gamma, o.solver.step_scheduler_param.iter_steps)
+    elif o.solver.lr_scheduler_type == 'Custom':
+        # ToDo
+        raise NotImplementedError()
+    elif o.solver.lr_scheduler_type == '':
+        if o.solver.lr_decay_interval != 0 or o.solver.lr_decay != 0.0:
+            optimizer.scheduler = ExponentialScheduler(
+                init_lr, o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0, o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1)
+    else:
+        raise ValueError('Learning Rate Scheduler "' + o.solver.lr_scheduler_type +
+                         '" is not supported.')
+
     if optimizer.comm is not None:
         new_interval = optimizer.lr_decay_interval // optimizer.comm.size
         if new_interval == 0:

@@ -171,11 +171,10 @@ def _update(iter, config, cost):
             if o.comm:  # Updated param with communicator
                 params = [x.grad for x in o.parameters.values()]
                 _all_reduce(o.comm, params, division=True, inplace=True)
+
+            if o.scheduler is not None:
+                o.solver.set_learning_rate(o.scheduler.get_learning_rate(iter))
             o.solver.update()
-
-        if o.lr_decay != 1.0 and iter % o.lr_decay_interval == o.lr_decay_interval - 1:
-            o.solver.set_learning_rate(o.solver.learning_rate() * o.lr_decay)
-
         # Sync w sometimes
         if iter % 10 == 9:  # TODO: change the interval
             if o.comm:
