@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
+from collections import OrderedDict
 import os
 import weakref
 import numpy as np
@@ -19,7 +22,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.function as F
 from nnabla.utils import nnabla_pb2
-from nnabla.parameter import get_parameter
+from nnabla.parameter import get_parameter, set_parameter
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.load import (
     _create_variable,
@@ -107,22 +110,49 @@ class VariableProto:
     def __init__(self, v):
         self.proto = v
         self.parent = None
-        self._referrers = []
+        self._referrers = {}
         self.variable = None
+        self.need_grad = None
+        self.stop = False
+
+    @property
+    def name(self):
+        return self.proto.name
 
     def add_referrer(self, f):
         assert isinstance(f, FunctionProto)
-        self._referrers.append(weakref.ref(f))
+        self._referrers[f.name] = weakref.ref(f)
 
     @property
     def referrers(self):
-        referrers = [r() for r in self.referrers]
-        assert all([r is not None for r in referrers])
+        referrers = {k: r()
+                     for k, r in self._referrers.items() if r() is not None}
         return referrers
 
     @property
     def num_referrers(self):
         return len(self._referrers)
+
+    def delete_referrer(self, f):
+        del self._referrers[f.name]
+
+    def rewire_on(self, var):
+        parent = var.parent
+        if self.parent is not None:
+            self.parent.disable()
+        self.parent = parent
+        var.parent = None
+
+        # Replace var with self for var.parent.outputs
+        if parent is None:
+            return
+        new_outputs = []
+        for o in parent.outputs:
+            new = o
+            if o is var:
+                new = self
+            new_outputs.append(new)
+        self.parent.outputs = new_outputs
 
 
 class FunctionProto:
@@ -131,6 +161,11 @@ class FunctionProto:
         self._inputs = []
         self._outputs = []
         self.function = None
+        self._disabled = False
+
+    @property
+    def name(self):
+        return self.proto.name
 
     @property
     def inputs(self):
@@ -157,19 +192,42 @@ class FunctionProto:
         for o in outputs:
             o.parent = self
 
+    def disable(self):
+        self._disabled = True
+        for i in self.inputs:
+            i.delete_referrer(self)  # Forget me.
+        for o in self.outputs:
+            o.parent = None  # Forget me.
+        self._inputs = []
+        self._outputs = []
+
+    @property
+    def disabled(self):
+        return self._disabled
+
 
 def visit_forward(variables, callback, fclosed=None):
     if fclosed is None:
         fclosed = set()
+    stop = False
     for v in variables:
+        stop |= v.stop
         f = v.parent
         if f is None:
             continue
         if f in fclosed:
             continue
         fclosed.add(f)
-        visit_forward(f.inputs, callback, fclosed)
+        stop_f = visit_forward(f.inputs, callback, fclosed)
+        # Send stop signal to child function if any of predecessors of
+        # `variables` has the stop attribute.
+        stop |= stop_f
+        if stop_f:
+            # callback.verbose('Skip {} by stop signal.'.format(f.name))
+            f.disable()
+            continue
         callback(f)
+    return stop
 
 
 class NnpNetwork(object):
@@ -190,7 +248,12 @@ class NnpNetwork(object):
 
     '''
 
-    def _get_variable_or_create(self, v):
+    def _get_variable_or_create(self, v, callback, current_scope):
+
+        if v.variable is not None:
+            return v.variable
+
+        v = callback._apply_generate_variable(v)
 
         if v.variable is not None:
             return v.variable
@@ -213,6 +276,10 @@ class NnpNetwork(object):
                         name))
                     tmp = _create_variable(pvar, name, shape, self.rng)
                     param = tmp.variable_instance
+                    set_parameter(name, param)
+                # Always copy param to current scope even if it already exists.
+                with nn.parameter_scope('', current_scope):
+                    set_parameter(name, param)
             except:
                 import sys
                 import traceback
@@ -224,6 +291,7 @@ class NnpNetwork(object):
                         '\n'.join(
                             list(nn.get_parameters(grad_only=False).keys()))))
             assert shape == param.shape
+            param = param.get_unlinked_variable(need_grad=v.need_grad)
             v.variable = param
             param.name = name
             return param
@@ -234,15 +302,20 @@ class NnpNetwork(object):
         var.name = name
         return var
 
-    def _create_inputs(self, inputs):
+    def _create_inputs(self, inputs, callback, current_scope):
         input_vars = []
         for i in inputs:
-            input_vars.append(self._get_variable_or_create(i))
+            input_vars.append(self._get_variable_or_create(
+                i, callback, current_scope))
         return input_vars
 
-    def _create_function(self, f):
-        inputs = self._create_inputs(f.inputs)
+    def _create_function(self, f, callback, current_scope):
+        callback.verbose2('Creating function {}: {} --> {}.'.format(f.name,
+                                                                    [i.name for i in f.inputs], [i.name for i in f.outputs]))
 
+        f = callback._apply_generate_function_by_type(f)
+        f = callback._apply_generate_function_by_name(f)
+        inputs = self._create_inputs(f.inputs, callback, current_scope)
         function_instance = _create_function(inputs, f.proto, self.batch_size)
 
         outputs = function_instance(
@@ -252,9 +325,36 @@ class NnpNetwork(object):
 
         for o, ovar in zip(f.outputs, outputs):
             o.variable = ovar
-            ovar.name = o.proto.name
+            ovar.name = o.name
 
-    def __init__(self, network_proto, batch_size=None, rng=None, callbacks=None):
+    def _filter_variables(self, variables):
+        # Filter isolated variables
+        variables = {k: v for k, v in variables.items(
+        ) if v.parent is not None or v.num_referrers > 0}
+        return variables
+
+    def _get_inputs(self, variables):
+        inputs = [v for v in variables.values(
+        ) if v.parent is None and v.proto.type != "Parameter"]
+        return inputs
+
+    def _get_outputs(self, variables):
+        # Get outputs
+        outputs = [v for v in variables.values() if v.num_referrers == 0]
+        return outputs
+
+    def _functions_in_forward_order(self, variables):
+        variables = self._filter_variables(variables)
+        outputs = self._get_outputs(variables)
+        function_order = []
+
+        def _function_order(f):
+            function_order.append(f)
+        visit_forward(outputs, _function_order)
+        for f in function_order:
+            yield f
+
+    def __init__(self, network_proto, scope, batch_size=None, rng=None, callback=None):
 
         if batch_size is None:
             batch_size = network_proto.batch_size
@@ -262,6 +362,9 @@ class NnpNetwork(object):
         if rng is None:
             rng = np.random.RandomState(1223)
         self.rng = rng
+
+        if callback is None:
+            callback = NnpNetworkPass()  # No pass
 
         # Variable proto messages as a dictionary with name as a key
         variables = {v.name: VariableProto(v) for v in network_proto.variable}
@@ -273,22 +376,35 @@ class NnpNetwork(object):
             f.inputs = inputs
             f.outputs = outputs
 
-        # Filter isolated variables
-        variables = {k: v for k, v in variables.items(
-        ) if v.parent is not None or v.num_referrers > 0}
+        # Apply function passes
+        for f in self._functions_in_forward_order(variables):
+            if f.disabled:
+                continue
+            callback._apply_function_pass_by_type(f, variables)
+            callback._apply_function_pass_by_name(f, variables)
 
-        # Get outputs
-        outputs = [v for v in variables.values() if v.num_referrers == 0]
+        # Apply stop-at.
+        for f in self._functions_in_forward_order(variables):
+            # callback.verbose2('Applying stop-at for inputs of {}.'.format(f.name))
+            callback._apply_use_up_to(f.inputs)
 
         # Build computation graph
-        visit_forward(outputs, self._create_function)
+        num_ops = 0
+        current_scope = nn.get_current_parameter_scope()
+        with nn.parameter_scope('', scope):
+            for f in self._functions_in_forward_order(variables):
+                self._create_function(f, callback, current_scope)
+                num_ops += 1
+        callback.verbose2('Created {} functions.'.format(num_ops))
+
+        variables = self._filter_variables(variables)
+        inputs = self._get_inputs(variables)
+        outputs = self._get_outputs(variables)
 
         # Get input variables
-        self.variables = {v.proto.name: v.variable for v in variables.values()}
-        inputs = [v for v in variables.values(
-        ) if v.parent is None and v.proto.type != "Parameter"]
-        self.inputs = {i.proto.name: i.variable for i in inputs}
-        self.outputs = {o.proto.name: o.variable for o in outputs}
+        self.variables = {v.name: v.variable for v in variables.values()}
+        self.inputs = {i.name: i.variable for i in inputs}
+        self.outputs = {o.name: o.variable for o in outputs}
 
 
 class NnpLoader(object):
@@ -315,11 +431,21 @@ class NnpLoader(object):
 
     '''
 
-    def __init__(self, filepath):
+    def __init__(self, filepath, scope=None):
+        # OrderedDict maintains loaded parameters from nnp files.
+        # The loaded parameters will be copied to the current
+        # scope when get_network is called.
+        if scope is None:
+            scope = OrderedDict()
+        self._params = scope
+
         _, ext = os.path.splitext(filepath)
 
         if ext == ".nnp":
-            proto = _load_nnp_to_proto(filepath)
+            # Load parameters to self._params rather than
+            # loading to global current scope.
+            with nn.parameter_scope('', self._params):
+                proto = _load_nnp_to_proto(filepath)
         elif ext in ('.nntxt', '.prototxt'):
             proto = _load_nntxt_to_proto(filepath)
         else:
@@ -334,10 +460,176 @@ class NnpLoader(object):
         '''
         return list(self.network_dict.keys())
 
-    def get_network(self, name, batch_size=None, callbacks=None):
+    def get_network(self, name, batch_size=None, callback=None):
         '''Create a variable graph given  network by name
 
         Returns: NnpNetwork
 
         '''
-        return NnpNetwork(self.network_dict[name], batch_size, callbacks)
+        network_proto = nnabla_pb2.Network()
+        network_proto.CopyFrom(self.network_dict[name])
+        return NnpNetwork(network_proto, self._params, batch_size, callback=callback)
+
+
+class NnpNetworkPass(object):
+
+    def _no_verbose(self, *a, **kw):
+        pass
+
+    def _verbose(self, *a, **kw):
+        print(*a, **kw)
+
+    def __init__(self, verbose=0):
+        self._variable_callbacks = {}
+        self._function_callbacks_by_name = {}
+        self._function_callbacks_by_type = {}
+        self._passes_by_name = {}
+        self._passes_by_type = {}
+        self._fix_parameters = False
+        self._use_up_to_variables = set()
+
+        self.verbose = self._no_verbose
+        self.verbose2 = self._no_verbose
+        if verbose:
+            self.verbose = self._verbose
+        if verbose > 1:
+            self.verbose2 = self._verbose
+
+    def on_function_pass_by_name(self, name):
+        def _on_function_pass_by_name(callback):
+            def _callback(f, variables):
+                return callback(f, variables)
+            self._passes_by_name[name] = _callback
+            return _callback
+        return _on_function_pass_by_name
+
+    def on_function_pass_by_type(self, name):
+        def _on_function_pass_by_type(callback):
+            def _callback(f, variables):
+                return callback(f, variables)
+            self._passes_by_name[name] = _callback
+            return _callback
+        return _on_function_pass_by_type
+
+    def on_generate_variable(self, name):
+        def _on_generate_variable(callback):
+            def _callback(v):
+                return callback(v)
+            self._variable_callbacks[name] = _callback
+            return _callback
+        return _on_generate_variable
+
+    def on_generate_function_by_name(self, name):
+        def _on_generate_function_by_name(callback):
+            def _callback(v):
+                return callback(v)
+            self._function_callbacks_by_name[name] = _callback
+            return _callback
+        return _on_generate_function_by_name
+
+    def on_generate_function_by_type(self, name):
+        def _on_generate_function_by_type(callback):
+            def _callback(v):
+                return callback(v)
+            self._function_callbacks_by_type[name] = _callback
+            return _callback
+        return _on_generate_function_by_type
+
+    def drop_function(self, *names):
+        def callback(f, variables):
+            self.verbose('Pass: Deleting {}.'.format(f.name))
+            f.disable()
+
+        for name in names:
+            self.on_function_pass_by_name(name)(callback)
+
+    def fix_parameters(self):
+        self._fix_parameters = True
+
+    def use_up_to(self, *names):
+        self._use_up_to_variables.update(set(names))
+
+    def remove_and_rewire(self, name, i=0, o=0):
+        @self.on_function_pass_by_name(name)
+        def on_dr(f, variables):
+            fi = f.inputs[i]
+            fo = f.outputs[o]
+            self.verbose('Removing {} and rewire input={} and output={}.'.format(
+                f.name, fi.name, fo.name))
+            fo.rewire_on(fi)
+
+    def set_variable(self, name, input_var):
+        @self.on_generate_variable(name)
+        def on_input_x(v):
+            self.verbose('Replace {} by {}.'.format(name, input_var))
+            v.proto.shape.dim[:] = input_var.shape
+            v.variable = input_var
+            return v
+
+    def force_average_pooling_global(self, name):
+        @self.on_generate_function_by_name(name)
+        def on_avgpool(f):
+            pool_shape = f.inputs[0].variable.shape[2:]
+            self.verbose('Change strides of {} to {}.'.format(
+                f.name, pool_shape))
+            p = f.proto.average_pooling_param
+            p.kernel.dim[:] = pool_shape
+            p.stride.dim[:] = pool_shape
+            return f
+
+    def check_average_pooling_global(self, name):
+        @self.on_generate_function_by_name(name)
+        def on_avgpool_check(f):
+            pool_shape = f.inputs[0].variable.shape[2:]
+            self.verbose('Change strides of {} to {}.'.format(
+                f.name, pool_shape))
+            p = f.proto.average_pooling_param
+            if tuple(p.kernel.dim[:]) != pool_shape:
+                raise ValueError('Stride configuration of average pooling is not for global pooling. Given Image shape: {} Kernel: {} Stride: {}.'.format(
+                    pool_shape, p.kernel.dim[:], p.stride.dim[:]))
+            if tuple(p.stride.dim[:]) != pool_shape:
+                raise ValueError('Stride configuration of average pooling is not for global pooling. Given Image shape: {} Kernel: {} Stride: {}.'.format(
+                    pool_shape, p.kernel.dim[:], p.stride.dim[:]))
+            return f
+
+    def set_batch_normalization_batch_stat_all(self, batch_stat):
+        @self.on_generate_function_by_type('BatchNormalization')
+        def on_bn(f):
+            self.verbose('Setting batch_stat={} at {}.'.format(
+                batch_stat, f.name))
+            p = f.proto.batch_normalization_param
+            p.batch_stat = batch_stat
+            return f
+
+    def _apply_function_pass_by_name(self, f, variables):
+        if f.name not in self._passes_by_name:
+            return f
+        return self._passes_by_name[f.name](f, variables)
+
+    def _apply_function_pass_by_type(self, f, variables):
+        if f.proto.type not in self._passes_by_type:
+            return f
+        return self._passes_by_type[f.proto.type](f, variables)
+
+    def _apply_generate_variable(self, v):
+        if v.name in self._variable_callbacks:
+            v = self._variable_callbacks[v.name](v)
+        if self._fix_parameters:
+            v.need_grad = False
+        return v
+
+    def _apply_generate_function_by_name(self, f):
+        if f.name not in self._function_callbacks_by_name:
+            return f
+        return self._function_callbacks_by_name[f.name](f)
+
+    def _apply_generate_function_by_type(self, f):
+        if f.proto.type not in self._function_callbacks_by_type:
+            return f
+        return self._function_callbacks_by_type[f.proto.type](f)
+
+    def _apply_use_up_to(self, variables):
+        for v in variables:
+            if v.name in self._use_up_to_variables:
+                self.verbose('Stopping at {}.'.format(v.name))
+                v.stop = True
