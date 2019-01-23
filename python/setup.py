@@ -195,8 +195,11 @@ if __name__ == '__main__':
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [
-        library_file_name, 'nnabla.conf',
-                           'utils/converter/functions.pkl']}
+        library_file_name,
+        'nnabla.conf',
+        'utils/converter/functions.pkl',
+        'models/imagenet/category_names.txt',
+        ]}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -236,6 +239,8 @@ if __name__ == '__main__':
                 'nnabla.experimental.graph_converters',
                 'nnabla.experimental.parametric_function_class',
                 'nnabla.experimental.trainers',
+                'nnabla.models',
+                'nnabla.models.imagenet',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
