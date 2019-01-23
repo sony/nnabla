@@ -31,6 +31,7 @@ from ._version import (
 from .variable import Variable, Context
 from ._nd_array import NdArray
 from .parameter import (
+    get_current_parameter_scope,
     parameter_scope, get_parameters, clear_parameters,
     load_parameters, save_parameters)
 from .context import (
