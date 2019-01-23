@@ -146,13 +146,9 @@ RUN umask 0 \
             conda install -y python=${PYVERNAME}; \
             conda update -y --all; \
        fi \
-    && pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
-    && echo Try to install setuptools few times to avoid conda problem. \
-    && (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
-    && pip install --no-cache-dir -U -r /tmp/deps/requirements.txt \
-    && pip install --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
-    && pip install --no-cache-dir -U pytest-pep8 \
-    && pip install --no-cache-dir -U pytest-cov \
+    && pip install --only-binary -U -r /tmp/deps/setup_requirements.txt \
+    && pip install --only-binary -U -r /tmp/deps/requirements.txt \
+    && pip install --only-binary -U -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
