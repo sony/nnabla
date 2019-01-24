@@ -3,7 +3,7 @@ ARG CUDNN_VER=7
 
 FROM nvidia/cuda:${CUDA_VER}-cudnn${CUDNN_VER}-runtime-ubuntu16.04
 
-ARG PYTHON_VER=3.5
+ARG PYTHON_VER=3.6
 ARG CUDA_VER=9.0
 ENV PATH /opt/miniconda3/bin:$PATH
 ENV OMP_NUM_THREADS 1
@@ -19,7 +19,7 @@ RUN umask 0 \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
     && conda install -y python=${PYTHON_VER} \
-    && (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
+    && pip install -U setuptools \
     && conda install -y opencv jupyter
 
 RUN umask 0 \
