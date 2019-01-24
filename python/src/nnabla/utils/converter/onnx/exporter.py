@@ -81,20 +81,20 @@ def merge_broadcast(node, func, target_name, broadcast_target):
     # Set the broadcast attribute to the operator
     # so we can combine BroadcastTo with this operator.
     param = broadcast_target[target_name]
-    before_broadcast = param[0]
+    second_input = param[0]
     axis = param[1]
     a = onnx.helper.make_attribute("axis", axis)
     b = onnx.helper.make_attribute("broadcast", 1)
     node.attribute.extend([a, b])
     # Replace the broadcasted input with the original input
     del node.input[:]
-    node.input.extend([func.input[0], before_broadcast])
+    node.input.extend([func.input[0], second_input])
     # Remove the used target.
     # We may have a problem if the same parameter is used from
     # multiplier operators.
     del broadcast_target[target_name]
     # Return the merged input's name so we can use it if we need to
-    return before_broadcast
+    return second_input
 
 
 def set_reduction_attrs(node, param):
@@ -166,18 +166,18 @@ class OnnxExporter:
         # opset_6 default op table
         table_op_set_6 = {
             # optype with same names
-            "Dropout": "Dropout",
+            "Dropout": partial(self.Dropout, "6"),
             "Softmax": "Softmax",
-            "BatchNormalization": self.BatchNormalization,
+            "BatchNormalization": partial(self.BatchNormalization, "6"),
             "Reshape": "Reshape",
             "Transpose": "Transpose",
             "Abs": "Abs",
             "Sigmoid": "Sigmoid",
             "Tanh": "Tanh",
             "Log": "Log",
-            "Less": "Less",
-            "Greater": "Greater",
-            "Equal": "Equal",
+            "Less": partial(self.BinaryOperator, "Less", "6"),
+            "Greater": partial(self.BinaryOperator, "Greater", "6"),
+            "Equal": partial(self.BinaryOperator, "Equal", "6"),
             "Exp": "Exp",
             "Identity": "Identity",
             "Pad": "Pad",
@@ -189,7 +189,7 @@ class OnnxExporter:
             "GlobalAveragePooling": "GlobalAveragePool",
             "MaxPooling": partial(self.BasePooling, 'MaxPool'),
             "AveragePooling": partial(self.BasePooling, 'AveragePool'),
-            "Add2": "Add",
+            "Add2": partial(self.BinaryOperator, "Add", "6"),
             "BatchMatmul": "MatMul",
             "LogicalNot": "Not",
             "ELU": "Elu",
@@ -199,33 +199,33 @@ class OnnxExporter:
             "Min": "ReduceMin",
             "Max": "ReduceMax",
             "Prod": "ReduceProd",
-            "Mul2": "Mul",
-            "Div2": "Div",
-            "Pow2": "Pow",
-            "Sub2": "Sub",
+            "Mul2": partial(self.BinaryOperator, "Mul", "6"),
+            "Div2": partial(self.BinaryOperator, "Div", "6"),
+            "Pow2": partial(self.BinaryOperator, "Pow", "6"),
+            "Sub2": partial(self.BinaryOperator, "Sub", "6"),
             "RSubScalar": partial(self.ScalarOperator, 'RSubScalar'),
             "RDivScalar": partial(self.ScalarOperator, 'RDivScalar'),
             "RPowScalar": partial(self.ScalarOperator, 'RPowScalar'),
-            "LogicalAnd": "And",
-            "LogicalOr": "Or",
-            "LogicalXor": "Xor",
+            "LogicalAnd": partial(self.BinaryOperator, "And", "6"),
+            "LogicalOr": partial(self.BinaryOperator, "Or", "6"),
+            "LogicalXor": partial(self.BinaryOperator, "Xor", "6"),
             "Maximum2": "Max",
             "Minimum2": "Min",
             # optype that gets converted
             "Affine": partial(self.Affine, '6'),
-            "MulScalar": "Mul",
+            "MulScalar": partial(self.ElementWiseScalar, "Mul", "6"),
             "MinimumScalar": "Clip",
             "MaximumScalar": "Clip",
-            "AddScalar": "Add",
-            "PowScalar": "Pow",
-            "SumPooling": "Mul",
+            "AddScalar": partial(self.ElementWiseScalar, "Add", "6"),
+            "PowScalar": partial(self.ElementWiseScalar, "Pow", "6"),
+            "SumPooling": partial(self.SumPooling, "6"),
             # optype that should get merged
             # with other operators
             "BroadcastTo": "",
             "Split": self.Split,
             "Stack": self.Stack,
             "Slice": self.Slice_6,
-            "Deconvolution": self.Deconvolution,
+            "Deconvolution": partial(self.Deconvolution, "6"),
             "Flip": self.Flip,
             "OneHot": self.OneHot,
             "Unpooling": self.Unpooling_6,
@@ -238,9 +238,27 @@ class OnnxExporter:
         # opset_9 table
         table_op_set_9 = {
             **table_op_set_6,
+            "Dropout": partial(self.Dropout, "9"),
+            "Add2": partial(self.BinaryOperator, "Add", "9"),
+            "Mul2": partial(self.BinaryOperator, "Mul", "9"),
+            "Div2": partial(self.BinaryOperator, "Div", "9"),
+            "Pow2": partial(self.BinaryOperator, "Pow", "9"),
+            "Sub2": partial(self.BinaryOperator, "Sub", "9"),
             "Affine": partial(self.Affine, '9'),
             "Slice": self.Slice_9,
-            "Unpooling": self.Unpooling_9
+            "Unpooling": self.Unpooling_9,
+            "SumPooling": partial(self.SumPooling, "9"),
+            "BatchNormalization": partial(self.BatchNormalization, "9"),
+            "Deconvolution": partial(self.Deconvolution, "9"),
+            "MulScalar": partial(self.ElementWiseScalar, "Mul", "9"),
+            "AddScalar": partial(self.ElementWiseScalar, "Add", "9"),
+            "PowScalar": partial(self.ElementWiseScalar, "Pow", "9"),
+            "LogicalAnd": partial(self.BinaryOperator, "And", "9"),
+            "LogicalOr": partial(self.BinaryOperator, "Or", "9"),
+            "LogicalXor": partial(self.BinaryOperator, "Xor", "9"),
+            "Less": partial(self.BinaryOperator, "Less", "9"),
+            "Greater": partial(self.BinaryOperator, "Greater", "9"),
+            "Equal": partial(self.BinaryOperator, "Equal", "9"),
         }
 
         # opset_ support for SNPE
@@ -278,6 +296,98 @@ class OnnxExporter:
         i.type.tensor_type.elem_type = dtype
         dims = [create_dim(d) for d in shape]
         i.type.tensor_type.shape.dim.extend(dims)
+
+    def Dropout(self, opset, func):
+        # Since only export executor network from nnp,
+        # Dropout works only for test.
+        # we set Dropout to is test mode
+        if opset == "6":
+            n = onnx.helper.make_node(
+                'Dropout',
+                func.input,
+                func.output,
+                is_test=1,
+                name=func.name
+            )
+            return [n]
+        elif opset == "9":
+            n = onnx.helper.make_node(
+                'Dropout',
+                func.input,
+                func.output,
+                name=func.name
+            )
+            return [n]
+        raise ValueError("Dropout: not support opset:{}.".format(opset))
+
+    def BinaryOperator(self, func_name, opset, func):
+        if func_name == "And" or func_name == "Or" or func_name == "Xor":
+            self._input_types[func.input[0]] = TensorProto.BOOL
+            self._output_types[func.output[0]] = TensorProto.BOOL
+
+        if func_name == "Less" or func_name == "Greater":
+            self._output_types[func.output[0]] = TensorProto.BOOL
+
+        if func_name == "Equal":
+            self._input_types[func.input[0]] = TensorProto.INT64
+            self._output_types[func.output[0]] = TensorProto.BOOL
+
+        # Check if the second input is a brodcast target.
+        bt = func.input[1]
+        nl = []
+        if bt in self._broadcast_target:
+            # Set the broadcast attribute to the operator
+            # so we can combine BroadcastTo with this operator.
+            param = self._broadcast_target[bt]
+            second_input = param[0]
+            axis = param[1]
+            if opset == "6":
+                n = onnx.helper.make_node(
+                    func_name,
+                    [func.input[0], second_input],
+                    func.output,
+                    axis=axis,
+                    broadcast=1,
+                    name=func.name
+                )
+                nl.append(n)
+            else:  # opset >= 9
+                input0_shape_len = len(self._var_dict[func.input[0]].dim)
+                input1_shape_len = len(self._var_dict[second_input].dim)
+                unsqueeze_output = fork_name("broadcast_unsqueeze")
+                trailing = list(
+                    range(input1_shape_len+1, input0_shape_len))
+                unsqueeze = onnx.helper.make_node(
+                    'Unsqueeze',
+                    [second_input],
+                    [unsqueeze_output],
+                    axes=list(range(axis)) + trailing,
+                    name="broadcast_unsqueeze"
+                )
+                nl.append(unsqueeze)
+                n = onnx.helper.make_node(
+                    func_name,
+                    [func.input[0], unsqueeze_output],
+                    func.output,
+                    name=func.name)
+                nl.append(n)
+            if func_name == "And" or func_name == "Or" or func_name == "Xor":
+                self._input_types[second_input] = TensorProto.BOOL
+            if func_name == "Equal":
+                self._input_types[second_input] = TensorProto.INT64
+            del self._broadcast_target[bt]
+        else:
+            n = onnx.helper.make_node(
+                func_name,
+                func.input,
+                func.output,
+                name=func.name)
+            nl.append(n)
+            if func_name == "And" or func_name == "Or" or func_name == "Xor":
+                self._input_types[func.input[1]] = TensorProto.BOOL
+            if func_name == "Equal":
+                self._input_types[func.input[1]] = TensorProto.INT64
+        return nl
 
     def BinarySigmoid(self, func):
         '''
@@ -473,7 +583,7 @@ class OnnxExporter:
         )
         return [n]
 
-    def BatchNormalization(self, func):
+    def BatchNormalization(self, opset, func):
         nl = []
         bnp = func.batch_normalization_param
         onnx_order = [0, 2, 1, 3, 4]
@@ -503,12 +613,14 @@ class OnnxExporter:
                 'BatchNormalization',
                 bn_input,
                 [func.output[0]],
-                is_test=True,
                 epsilon=eps,
                 momentum=decay_rate
                 # spatial=1 # say: "Don't know map unexpected argument spatial."
                 # different from SPEC.
             )
+            if opset == "6":
+                b = onnx.helper.make_attribute("is_test", 1)
+                n.attribute.extend([b])
         nl.append(n)
         return nl
 
@@ -521,7 +633,7 @@ class OnnxExporter:
         )
         return [n]
 
-    def Unpooling_9(self, func):
+    def Unpooling_7(self, func):
         scales = list(
             map(lambda f: float(f), [1.0, 1.0] + func.unpooling_param.kernel.dim[:]))
         n = onnx.helper.make_node(
@@ -533,7 +645,7 @@ class OnnxExporter:
         )
         return [n]
 
-    def Unpooling_7(self, func):
+    def Unpooling_9(self, func):
         scales = np.array([1.0, 1.0] + func.unpooling_param.kernel.dim[:])
         scale_shape = (len(scales), )
         scale_param_name = fork_name("UpsampleScales")
@@ -665,7 +777,7 @@ class OnnxExporter:
         nl.append(n)
         return nl
 
-    def Deconvolution(self, func):
+    def Deconvolution(self, opset, func):
         output_name = fork_name(func.output[0])
         input_shape = self._var_dict[func.input[0]].dim
         if len(input_shape) != 4:
@@ -706,9 +818,11 @@ class OnnxExporter:
                 "Add",
                 [output_name, func.input[2]],
                 func.output,
-                broadcast=1,
                 name=func.name + "_add_bias"
             )
+            if opset == "6":
+                b = onnx.helper.make_attribute("broadcast", 1)
+                node_add.attribute.extend([b])
             return [node_conv_transpose, node_add]
         else:
             node_conv_transpose = onnx.helper.make_node(
@@ -899,7 +1013,7 @@ class OnnxExporter:
             nl.append(n)
         return nl
 
-    def Affine(self, opver, func):
+    def Affine(self, opset, func):
         """
         Affine is decomposed as 3 steps:
             Reshape inputs
@@ -931,7 +1045,7 @@ class OnnxExporter:
                 "{} is not in network's parameters.".format(func.input[1]))
 
         transB = 0
-        if opver == '9x':
+        if opset == '9x':
             state = self._parameters_state.get(func.input[1], 0)
             if not state & ParameterState.TRANSPOSED:
                 # make it to `transB=1`
@@ -971,7 +1085,7 @@ class OnnxExporter:
 
         out = fork_name(func.output[0])
 
-        if opver == '6':
+        if opset == '6':
             # broadcast is needed.
             n = onnx.helper.make_node(
                 "Gemm",
@@ -1009,6 +1123,75 @@ class OnnxExporter:
         self._add_param(param_name, TensorProto.INT64, list(
             output_shape.shape), output_shape.tostring())
 
+        return nl
+
+    def SumPooling(self, opset, func):
+        # SumPooling gets converted to AveragePooling+Mul.
+        # Mul is used to counter the division in AveragePooling
+        # since SumPooling is just summing the values in each kernel.
+        # Copy kernel, stride, and pads values
+        nl = []
+        spp = func.sum_pooling_param
+        if not spp.ignore_border:
+            raise ValueError("SumPooling with ignore_border=False"
+                             " is not supported")
+        attrs = {
+            "kernel_shape": spp.kernel.dim,
+            "strides": spp.stride.dim,
+            "pads": spp.pad.dim[:] * 2
+        }
+        apin = func.input[0]
+        apout = apin + "_ap"
+        ap = onnx.helper.make_node("AveragePool",
+                                   [apin],
+                                   [apout],
+                                   **attrs)
+        nl.append(ap)
+        # Counter the averaging process by multiplying kernel size
+        kernel_size = np.prod(spp.kernel.dim)
+        mulout = apin + "_kernel"
+        c = generate_scalar_constant(
+            mulout, func.name + "_kernel", kernel_size)
+        nl.append(c)
+        n = onnx.helper.make_node("Mul",
+                                  [apout, mulout],
+                                  func.output)
+        if opset == "6":
+            # set broadcast to true
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+        return nl
+
+    def ElementWiseScalar(self, func_name, opset, func):
+        nl = []
+        if func_name == "Mul":
+            sp = func.mul_scalar_param
+            if sp.val == -1.0:
+                n = onnx.helper.make_node("Neg",
+                                          func.input,
+                                          func.output)
+                nl.append(n)
+                return nl
+        elif func_name == "Add":
+            sp = func.add_scalar_param
+        elif func_name == "Pow":
+            sp = func.pow_scalar_param
+        else:
+            raise ValueError(
+                "{} is not support".format(func_name))
+        # Convert the scalar param to a Const node and add it with input
+        x = func.input[0]
+        sval = x + "_scalar"
+        c = generate_scalar_constant(sval, func.name + "_scalar", sp.val)
+        nl.append(c)
+        n = onnx.helper.make_node(func_name,
+                                  [x, sval],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
         return nl
 
     def set_network(self):
@@ -1121,14 +1304,7 @@ class OnnxExporter:
             func.output,
             name=func.name)
         nl = []
-        if func.type == "Dropout":
-            # NNP Dropout is always is_test=false
-            # since we always apply dropout when it is
-            # included in a network.
-            attr = onnx.helper.make_attribute("is_test", 1)
-            n.attribute.extend([attr])
-            nl.append(n)
-        elif func.type == "Convolution":
+        if func.type == "Convolution":
             cp = func.convolution_param
             # Calculate the kernel_shape from input weight data.
             # Weight data should be the second input for convolution
@@ -1248,79 +1424,6 @@ class OnnxExporter:
             bp = func.broadcast_to_param
             broadcast_target[func.output[0]] = (func.input[1], bp.axis)
             # we do not append node here because BroadcastTo should disappear
-        elif (func.type == "Add2" or
-              func.type == "Mul2" or
-              func.type == "Div2" or
-              func.type == "Pow2" or
-              func.type == "Sub2"):
-            # Check if the second input is a brodcast target.
-            bt = func.input[1]
-            if bt in broadcast_target:
-                merge_broadcast(n, func, bt, broadcast_target)
-            nl.append(n)
-        elif (func.type == "LogicalAnd" or
-              func.type == "LogicalOr" or
-              func.type == "LogicalXor"):
-            # Store the input/output tensor's name and convert it to boolean
-            input_types[n.input[0]] = TensorProto.BOOL
-            output_types[n.output[0]] = TensorProto.BOOL
-            # Check if the second input is a brodcast target.
-            bt = func.input[1]
-            if bt in broadcast_target:
-                merged = merge_broadcast(n, func, bt, broadcast_target)
-                # Set the merged parameter name as BOOL
-                input_types[merged] = TensorProto.BOOL
-            else:
-                # Set the given parameter name as BOOL
-                input_types[n.input[1]] = TensorProto.BOOL
-            nl.append(n)
-        elif (func.type == "Less" or
-              func.type == "Greater"):
-            # Store the output tensor's name and convert it to boolean
-            output_types[n.output[0]] = TensorProto.BOOL
-            # Check if the second input is a brodcast target.
-            bt = func.input[1]
-            if bt in broadcast_target:
-                merged = merge_broadcast(n, func, bt, broadcast_target)
-            nl.append(n)
-        elif func.type == "Equal":
-            # Get the input data's type.
-            # Since ONNX only accepts bool,int32,int64
-            # while NNabla does not expose its data type,
-            # we default to int64 for now.
-            # TODO: Get the correct type information from NNP
-            intype = TensorProto.INT64
-            # Store the input/output tensor's name and convert it to boolean
-            input_types[n.input[0]] = intype
-            output_types[n.output[0]] = TensorProto.BOOL
-            # Check if the second input is a brodcast target.
-            bt = func.input[1]
-            if bt in broadcast_target:
-                merged = merge_broadcast(n, func, bt, broadcast_target)
-                # Set the merged parameter name as BOOL
-                input_types[merged] = intype
-            else:
-                # Set the given parameter name as BOOL
-                input_types[n.input[1]] = intype
-            nl.append(n)
-        elif func.type == "MulScalar":
-            mp = func.mul_scalar_param
-            if mp.val == -1.0:
-                # Convert to Neg
-                n.op_type = "Neg"
-            else:
-                # Convert the scalar param to a Const node and add it with input
-                x = func.input[0]
-                sval = x + "_scalar"
-                c = generate_scalar_constant(
-                    sval, func.name + "_scalar", mp.val)
-                del n.input[:]
-                n.input.extend([x, sval])
-                nl.append(c)
-                # set broadcast to true
-                b = onnx.helper.make_attribute("broadcast", 1)
-                n.attribute.extend([b])
-            nl.append(n)
         elif func.type == "MinimumScalar":
             msp = func.minimum_scalar_param
             m = onnx.helper.make_attribute("max", msp.val)
@@ -1330,66 +1433,6 @@ class OnnxExporter:
             msp = func.maximum_scalar_param
             m = onnx.helper.make_attribute("min", msp.val)
             n.attribute.extend([m])
-            nl.append(n)
-        elif func.type == "AddScalar":
-            asp = func.add_scalar_param
-            # Convert the scalar param to a Const node and add it with input
-            x = func.input[0]
-            sval = x + "_scalar"
-            c = generate_scalar_constant(sval, func.name + "_scalar", asp.val)
-            nl.append(c)
-            del n.input[:]
-            n.input.extend([x, sval])
-            # set broadcast to true
-            b = onnx.helper.make_attribute("broadcast", 1)
-            n.attribute.extend([b])
-            nl.append(n)
-        elif func.type == "PowScalar":
-            psp = func.pow_scalar_param
-            # Convert the scalar param to a Const node and add it with input
-            x = func.input[0]
-            sval = x + "_scalar"
-            c = generate_scalar_constant(sval, func.name + "_scalar", psp.val)
-            nl.append(c)
-            del n.input[:]
-            n.input.extend([x, sval])
-            # set broadcast to true
-            b = onnx.helper.make_attribute("broadcast", 1)
-            n.attribute.extend([b])
-            nl.append(n)
-        elif func.type == "SumPooling":
-            # SumPooling gets converted to AveragePooling+Mul.
-            # Mul is used to counter the division in AveragePooling
-            # since SumPooling is just summing the values in each kernel.
-            # Copy kernel, stride, and pads values
-            spp = func.sum_pooling_param
-            if not spp.ignore_border:
-                raise ValueError("SumPooling with ignore_border=False"
-                                 " is not supported")
-            attrs = {
-                "kernel_shape": spp.kernel.dim,
-                "strides": spp.stride.dim,
-                "pads": spp.pad.dim[:] * 2
-            }
-            apin = func.input[0]
-            apout = apin + "_ap"
-            ap = onnx.helper.make_node("AveragePool",
-                                       [apin],
-                                       [apout],
-                                       **attrs)
-            nl.append(ap)
-            # Counter the averaging process by multiplying kernel size
-            kernel_size = np.prod(spp.kernel.dim)
-            mulout = apin + "_kernel"
-            c = generate_scalar_constant(
-                mulout, func.name + "_kernel", kernel_size)
-            nl.append(c)
-            # Rewire Mul with average pooling output
-            del n.input[:]
-            n.input.extend([apout, mulout])
-            # set broadcast to true
-            b = onnx.helper.make_attribute("broadcast", 1)
-            n.attribute.extend([b])
             nl.append(n)
         elif func.type == "Pad":
             pp = func.pad_param
