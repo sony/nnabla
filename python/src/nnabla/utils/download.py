@@ -65,7 +65,7 @@ def download(url, output_file=None, open_file=True, allow_overwrite=False):
             content_length = 0
         unit = 1000000
         content = b''
-        with tqdm(total=content_length, desc=filename) as t:
+        with tqdm(total=content_length, desc=filename, unit='B', unit_scale=True, unit_divisor=1024) as t:
             while True:
                 data = r.read(unit)
                 l = len(data)
