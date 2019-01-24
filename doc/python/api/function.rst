@@ -154,6 +154,7 @@ Math
 .. autofunction:: asin
 .. autofunction:: acos
 .. autofunction:: atan
+.. autofunction:: atan2
 .. autofunction:: asinh
 .. autofunction:: acosh
 .. autofunction:: atanh
