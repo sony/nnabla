@@ -64,3 +64,6 @@ List of models
 
 .. autoclass:: MobileNetV2
     :members:
+
+.. autoclass:: SENet
+    :members:
