@@ -130,25 +130,25 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
+ENV PATH /opt/miniconda3/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/miniconda3/lib:$LD_LIBRARY_PATH
+
 RUN umask 0 \
     && mkdir -p /tmp/deps \
     && cd /tmp/deps \
     && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
-    && PATH=/opt/miniconda3/bin:$PATH \
-    && conda install python=${PYVERNAME} \
-    && conda update -y --all \
-    && if test ${PYTHON_VERSION_MAJOR} -eq 3 -a ${PYTHON_VERSION_MINOR} -eq 7; then echo conda install scandir; else conda install scandir; fi \
-    && pip install --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
-    && echo Try to install setuptools few times to avoid conda problem. \
-    && (pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || pip install --no-cache-dir -U setuptools || true) \
-    && pip install --no-cache-dir -U -r /tmp/deps/requirements.txt \
-    && pip install --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
-    && pip install --no-cache-dir -U "pytest-pep8" \
-    && pip install --no-cache-dir -U "pytest-cov" \
+    && if test ${PYTHON_VERSION_MAJOR} -eq 3 -a ${PYTHON_VERSION_MINOR} -eq 5; \
+       then \
+            conda install -y conda=4.5.11 python=${PYVERNAME}; \
+       else \
+            conda install -y python=${PYVERNAME}; \
+            conda update -y --all; \
+       fi \
+    && pip install --only-binary -U -r /tmp/deps/setup_requirements.txt \
+    && pip install --only-binary -U -r /tmp/deps/requirements.txt \
+    && pip install --only-binary -U -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
-
-ENV PATH /opt/miniconda3/bin:$PATH

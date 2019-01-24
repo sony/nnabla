@@ -23,6 +23,7 @@ from nnabla.initializer import (
 
 from .module import Module
 
+
 class Embed(Module):
     """ Embed.
 
@@ -38,12 +39,13 @@ class Embed(Module):
     Returns:
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
-    
+
     def __init__(self, n_inputs, n_features, w_init=None, fix_parameters=False):
         if w_init is None:
             w_init = UniformInitializer((-np.sqrt(3.), np.sqrt(3)))
         w_shape = (n_input, n_features)
-        w = nn.Variables.from_numpy_array(w_init()).apply(need_grad=not fix_parameters)
+        w = nn.Variables.from_numpy_array(
+            w_init()).apply(need_grad=not fix_parameters)
         self.W = w
 
     def __call__(self, inp):

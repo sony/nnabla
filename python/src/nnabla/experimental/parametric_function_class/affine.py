@@ -23,6 +23,7 @@ from nnabla.initializer import (
 
 from .module import Module
 
+
 class Affine(Module):
     """
     The affine layer, also known as the fully connected layer. Computes
@@ -48,7 +49,7 @@ class Affine(Module):
 
     """
 
-    def __init__(self, n_inmaps, n_outmaps, base_axis=1, w_init=None, b_init=None, 
+    def __init__(self, n_inmaps, n_outmaps, base_axis=1, w_init=None, b_init=None,
                  fix_parameters=False, rng=None, with_bias=True):
         if not hasattr(n_outmaps, '__iter__'):
             n_outmaps = [n_outmaps]
@@ -60,17 +61,20 @@ class Affine(Module):
         if with_bias and b_init is None:
             b_init = ConstantInitializer()
         w_shape = (n_inmaps, n_outmap)
-        w = nn.Variable.from_numpy_array(w_init(w_shape)).apply(need_grad=not fix_parameters)
+        w = nn.Variable.from_numpy_array(
+            w_init(w_shape)).apply(need_grad=not fix_parameters)
         b = None
         if with_bias:
             b_shape = (n_outmap, )
-            b = nn.Variable.from_numpy_array(b_init(b_shape)).apply(need_grad=not fix_parameters)
-        
+            b = nn.Variable.from_numpy_array(
+                b_init(b_shape)).apply(need_grad=not fix_parameters)
+
         self.W = w
         self.b = b
         self.base_axis = base_axis
-        
+
     def __call__(self, inp):
         return F.affine(inp, self.W, self.b, self.base_axis)
+
 
 Linear = Affine
