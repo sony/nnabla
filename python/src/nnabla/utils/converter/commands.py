@@ -142,7 +142,11 @@ def _export_from_nnp(args, nnp, output, output_ext):
 
     elif output_ext == '.onnx':
         from .onnx import OnnxExporter
-        OnnxExporter(nnp, args.batch_size).execute(output)
+        if args.define_opset and args.define_opset.startswith('opset_'):
+            opset = args.define_opset.split("_")[1]
+            OnnxExporter(nnp, args.batch_size, opset=opset).execute(output)
+        else:
+            OnnxExporter(nnp, args.batch_size).execute(output)
     else:
         print('Output file ({})'.format(output_ext) +
               ' is not supported or output directory does not exist.')

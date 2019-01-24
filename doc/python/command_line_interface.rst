@@ -307,7 +307,7 @@ File format converter
                               [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
-                              [-s SETTINGS] [-c CONFIG]
+                              [-s SETTINGS] [-c CONFIG] [-d OPSET_VERSION]
                               FILE [FILE ...]
     
     positional arguments:
@@ -335,6 +335,8 @@ File format converter
                             Settings in YAML format file.
       -c CONFIG, --config CONFIG
                             [export] config target function list.
+      -d OPSET_VERSION, --define_opset
+                            [export] define onnx opset version. e.g. opset_6
 
 
 Plot Monitor class output files
