@@ -67,3 +67,6 @@ List of models
 
 .. autoclass:: SENet
     :members:
+
+.. autoclass:: SqueezeNet
+    :members:
