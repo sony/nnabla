@@ -13,9 +13,17 @@
 # limitations under the License.
 from __future__ import absolute_import
 import os
+from nnabla.utils.nnp_graph import NnpLoader, NnpNetworkPass
+
+from ..utils import *
 
 
 class ImageNetBase(object):
+
+    '''
+    Most of ImageNet pretrained models are inherited from this class
+    so that it provides some common interfaces.
+    '''
 
     @property
     def category_names(self):
@@ -37,3 +45,48 @@ class ImageNetBase(object):
 
     def _input_shape(self):
         raise NotImplementedError('input size is not implemented')
+
+    def _load_nnp(self, rel_name, rel_url):
+        '''
+            Args:
+                rel_name: relative path to where donwloaded nnp is saved.
+                rel_url: relative url path to where nnp is downloaded from.
+
+            '''
+        from nnabla.utils.download import download
+        path_nnp = os.path.join(
+                get_model_home(), 'imagenet/{}'.format(rel_name))
+        url = os.path.join(get_model_url_base(),
+                           'imagenet/{}'.format(rel_url))
+        logger.info('Downloading {} from {}'.format(rel_name, url))
+        download(url, path_nnp, open_file=False, allow_overwrite=False)
+        print('Loading {}.'.format(path_nnp))
+        self.nnp = NnpLoader(path_nnp)
+
+    def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
+        '''
+        Create a network (computation graph) from a loaded model.
+
+        Args:
+
+            input_var (Variable, optional):
+                If given, input variable is replaced with the given variable and a network is constructed on top of the variable. Otherwise, a variable with batch size as 1 and a default shape from ``self.input_shape``.
+
+            use_up_to (str):
+                Network is constructed up to a variable specified by a string. A list of string-variable correspondences in a model is described in documentation for each model class.
+
+            training (bool):
+                This option enables additional training (fine-tuning, transfer learning etc.) for the constructed network. If True, the ``batch_stat`` option in batch normalization is turned ``True``, and ``need_grad`` attribute in trainable variables (conv weights and gamma and beta of bn etc.) is turned ``True``. The default is ``False``.
+
+            force_global_pooling (bool):
+                Regardless the input image size, the final average pooling before classification layer will be automatically transformed to a global average pooling. The default is ``False``.
+
+            check_global_pooling (bool):
+                If ``True``, and if the stride configuration of the final average pooling is not for global pooling, it raises an exception. The default is ``True``. Use ``False`` when user want to do the pooling with the trained stride ``(7, 7)`` regardless the input spatial size.
+
+            returns_net (bool):
+                When ``True``, it returns a :obj:`~nnabla.utils.nnp_graph.NnpNetwork` object. Otherwise, It only returns the last variable of the constructed network. The default is ``False``.
+            verbose (bool, or int):
+                Verbose level. With ``0``, it says nothing during network construction.
+        '''
+        raise NotImplementedError()

@@ -17,6 +17,8 @@ import os
 from nnabla import logger
 from nnabla.utils.download import download, get_data_home
 
+from ..utils import *
+
 
 def get_model_home():
     '''

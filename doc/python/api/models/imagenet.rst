@@ -1,7 +1,5 @@
-Pretrained models on ImageNet dataset
-=====================================
-
-.. automodule:: nnabla.models.imagenet
+ImageNet Models
+===============
 
 This subpackage provides a variety of pre-trained state-of-the-art models which is trained on ImageNet_ dataset.
 
@@ -48,6 +46,21 @@ The pre-trained models can be used for both inference and training as following:
     # Training...
 
 
+Common interfaces
+-----------------
+
+.. automodule:: nnabla.models.imagenet.base
+.. autoclass:: ImageNetBase
+    :members: input_shape, category_names
+    :special-members: __call__
+
+List of models
+--------------
+
+.. automodule:: nnabla.models.imagenet
+
 .. autoclass:: ResNet
     :members:
-    :special-members:
+
+.. autoclass:: MobileNetV2
+    :members:
