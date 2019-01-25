@@ -44,7 +44,7 @@ def test_graph_logreg(seed):
 
     # Forwardprop by definintion
     z1 = F.affine(x, w1, b1, 1)
-    z2 = F.affine(x, w1, b1, 1)
+    z2 = F.affine(x, w2, b2, 1)
     l1 = F.softmax_cross_entropy(z1, t, 1)
     L1 = F.mean(l1)
     l2 = F.softmax_cross_entropy(z2, t, 1)
