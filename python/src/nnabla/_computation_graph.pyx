@@ -18,7 +18,7 @@ from _variable cimport Variable as _Variable
 from _computation_graph cimport forward_all as cforward_all
 
 
-def forward_all(variables, cpp_bool clear_buffer=False, cpp_bool clear_no_need_grad=False):
+def forward_all(variables, cpp_bool clear_no_need_grad=False):
     cdef vector[CgVariablePtr] cg_variables
     cdef int i
     cdef int size
@@ -27,4 +27,4 @@ def forward_all(variables, cpp_bool clear_buffer=False, cpp_bool clear_no_need_g
     for i in range(size):
         cg_variables[i] = (<_Variable?> variables[i]).var
     with nogil:
-        cforward_all(cg_variables, clear_buffer, clear_no_need_grad)
+        cforward_all(cg_variables, clear_no_need_grad)

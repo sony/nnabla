@@ -135,11 +135,11 @@ void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to) {
   to->mark_need_setup();
 }
 
-void forward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
+void forward_all(const vector<CgVariablePtr> variables,
                  bool clear_no_need_grad) {
   unordered_set<CgFunctionPtr> fclosed;
   for (int i = 0; i < variables.size(); ++i) {
-    variables[i]->forward(clear_buffer, clear_no_need_grad, &fclosed);
+    variables[i]->forward(false, clear_no_need_grad, &fclosed);
   }
 }
 
