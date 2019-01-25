@@ -231,6 +231,8 @@ MATHF(abs);
 MATHF(floor);
 MATHF(ceil);
 MATHF(round);
+MATHF(isnan);
+MATHF(isinf);
 NBLA_API Half pow(const Half &a, const Half &b);
 NBLA_API Half ldexp(const Half &a, const int &b);
 #undef MATHF

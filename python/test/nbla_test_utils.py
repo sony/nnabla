@@ -52,6 +52,13 @@ def list_ctx_and_func_name(fnames):
     return l
 
 
+def list_ctx_and_func_name2(fnames):
+    l = []
+    for fname, func_name in fnames:
+        l += [(fname, x[0], x[1]) for x in list_context(func_name)]
+    return l
+
+
 def compute_analytical_and_numerical_grad_graph(terminal, inputs,
                                                 epsilon=1e-3):
     def set_inputs(x0):
