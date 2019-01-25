@@ -224,7 +224,9 @@ def test_graph_clear_buffer(seed):
                 v.grad.zero()
             nn.forward_all([L1, L2], clear_no_need_grad=cnng)
 
-            L1.backward(clear_buffer=cb)
+            # for now, the first backward cannot be
+            # called with clear_buffer=True
+            L1.backward(clear_buffer=False)
             L2.backward(clear_buffer=cb)
             if not first:
                 first = True
@@ -284,11 +286,12 @@ def test_graph_rewire(seed, clear_buffer):
     assert np.allclose(yb2.d, yc2.d)
 
     # Checking backward for yb1 and yc1
+    # for now, the first backward cannot be called with clear_buffer=True
     zero_grad()
-    yb1.backward(clear_buffer=clear_buffer)
+    yb1.backward(clear_buffer=False)
     gb = backup_params()
     zero_grad()
-    yc1.backward(clear_buffer=clear_buffer)
+    yc1.backward(clear_buffer=False)
     gc = backup_params()
     assert np.allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
