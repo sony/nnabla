@@ -14,9 +14,10 @@
 
 
 class WavenetConfig(object):
-    hidden_dims = 256
-    skip_dims = 512
+    hidden_dims = 32
+    skip_dims = 128
     kernel_size = 2
+    speaker_dims = 32
     dilations = [
         1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
         1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
@@ -27,8 +28,8 @@ class WavenetConfig(object):
 
 class DataConfig(object):
     sample_rate = 16000
-    duration = 8000
-    shift = 4000
+    duration = 16000
+    shift = 8000
     q_bit_len = 256
 
 

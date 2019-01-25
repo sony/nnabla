@@ -38,9 +38,11 @@ def mu_law_encode(x, quantize=data_config.q_bit_len):
 
     mu = quantize - 1
 
-    compressed = np.sign(x) * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)  # [-1, 1]
+    compressed = np.sign(x) * np.log(1 + mu * np.abs(x)) / \
+        np.log(1 + mu)  # [-1, 1]
 
-    return np.asarray((compressed + 1) / 2 * mu + 0.5, dtype=np.int32)  # [0, mu]
+    # [0, mu]
+    return np.asarray((compressed + 1) / 2 * mu + 0.5, dtype=np.int32)
 
 
 def mu_law_decode(x, quantize=data_config.q_bit_len):
@@ -50,7 +52,8 @@ def mu_law_decode(x, quantize=data_config.q_bit_len):
         raise ValueError("Input 'x' must be numpy.ndarray")
 
     if x.max() > mu or x.min() < 0:
-        raise ValueError("All values of 'x' must be between [0, (quantization bit length) - 1]")
+        raise ValueError(
+            "All values of 'x' must be between [0, (quantization bit length) - 1]")
 
     # The range of return values is between [-1, 1] of float64
 
@@ -65,8 +68,13 @@ class LibriSpeechDataSource(DataSource):
 
         self._data_list = self.get_all_path_and_label(data_dir)
 
+        speaker_list = sorted(set([x[1] for x in self._data_list]))
+
+        self.n_speaker = len(speaker_list)
+        self.speaker2id = dict(zip(speaker_list, np.arange(self.n_speaker)))
+
         self._size = len(self._data_list)
-        self._variables = ('x', 'y')
+        self._variables = ('audio_input', 'speaker_id', 'y')
 
         self.duration = data_config.duration + 1
 
@@ -90,7 +98,7 @@ class LibriSpeechDataSource(DataSource):
     def _get_data(self, position):
         index = self._indexes[position]
 
-        flac_path, speaker_id, _ = self._data_list[index]
+        flac_path, speaker, _ = self._data_list[index]
 
         # all values of data are between [-1, 1]
         data, sr = sf.read(flac_path)
@@ -113,12 +121,15 @@ class LibriSpeechDataSource(DataSource):
         quantized = mu_law_encode(clipped)
 
         _input = quantized[:-1].reshape(-1, 1)
+        _speaker_id = self.speaker2id.get(speaker)
+
         _output = quantized[1:].reshape(-1, 1)
 
-        return _input, _output
+        return _input, _speaker_id, _output
 
     def reset(self):
-        self._indexes = self._rng.permutation(self._size) if self._shuffle else np.arange(self._size)
+        self._indexes = self._rng.permutation(
+            self._size) if self._shuffle else np.arange(self._size)
 
         super(LibriSpeechDataSource, self).reset()
 

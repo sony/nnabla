@@ -13,6 +13,13 @@
 # limitations under the License.
 
 
+def to_bool(x):
+    if isinstance(x, bool):
+        return x
+
+    return True if str(x).lower() == "true" else False
+
+
 def get_args(monitor_path='tmp.monitor',
              max_iter=500000,
              model_save_path=None,
@@ -39,6 +46,8 @@ def get_args(monitor_path='tmp.monitor',
     parser.add_argument("--learning-rate", "-l",
                         type=float, default=learning_rate)
 
+    parser.add_argument("--use-speaker-id", type=to_bool, default=True)
+
     parser.add_argument("--monitor-path", "-m",
                         type=str, default=monitor_path,
                         help='Path monitoring logs saved.')
@@ -56,7 +65,7 @@ def get_args(monitor_path='tmp.monitor',
     parser.add_argument("--type-config", "-t", type=str, default='float',
                         help='Type configuration.')
 
-    parser.add_argument("--model-save-interval", "-s", type=int, default=1000,
+    parser.add_argument("--model-save-interval", "-s", type=int, default=2000,
                         help='The interval of saving model parameters.')
     parser.add_argument("--model-save-path", "-o",
                         type=str, default=model_save_path,

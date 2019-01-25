@@ -36,7 +36,7 @@ class waveNet(object):
 
         self.output_channels = data_config.q_bit_len
 
-    def residual_block(self, x, dilation):
+    def residual_block(self, x, dilation, speaker_emb=None):
         # x.shape = (Batch, channels, Time)
 
         # padding
@@ -44,10 +44,22 @@ class waveNet(object):
 
         # gated convolution
         with nn.parameter_scope("filter"):
-            f = F.tanh(PF.convolution(pad, self.hidden_dims, kernel=(self.kernel_size, ), dilation=(dilation,)))
+            f_audio = PF.convolution(pad, self.hidden_dims, kernel=(
+                self.kernel_size, ), dilation=(dilation,), name="audio")
+
+            f_speaker = PF.convolution(speaker_emb, self.hidden_dims, kernel=(
+                1, ), name="speaker") if speaker_emb is not None else 0
+
+            f = F.tanh(f_audio + f_speaker)
 
         with nn.parameter_scope("gate"):
-            g = F.sigmoid(PF.convolution(pad, self.hidden_dims, kernel=(self.kernel_size, ), dilation=(dilation,)))
+            g_audio = PF.convolution(pad, self.hidden_dims, kernel=(self.kernel_size, ), dilation=(dilation,),
+                                     name="audio")
+
+            g_speaker = PF.convolution(speaker_emb, self.hidden_dims, kernel=(
+                1, ), name="speaker") if speaker_emb is not None else 0
+
+            g = F.sigmoid(g_audio + g_speaker)
 
         h = f * g
 
@@ -59,17 +71,26 @@ class waveNet(object):
 
         return out, skip
 
-    def call(self, x):
+    def call(self, x, speaker_onehot=None):
+        # speaker embedding
+        if speaker_onehot is not None:
+            with nn.parameter_scope("speaker_embedding"):
+                s_emb = PF.convolution(
+                    speaker_onehot, wavenet_config.speaker_dims, kernel=(1, ))
+        else:
+            s_emb = None
+
         # causal convolution
         with nn.parameter_scope("causal"):
             pad = causal_padding(x, kernel_size=2, dilation=1)
-            current = PF.convolution(pad, self.skip_dims, kernel=(2, ), dilation=(1,))
+            current = PF.convolution(
+                pad, self.skip_dims, kernel=(2, ), dilation=(1,))
 
         # residual
         skips = []
         for index, dilation in enumerate(self.dilations):
             with nn.parameter_scope("residual_{}".format(index)):
-                current, skip = self.residual_block(current, dilation)
+                current, skip = self.residual_block(current, dilation, s_emb)
             skips.append(skip)
 
         # output
@@ -77,13 +98,12 @@ class waveNet(object):
         with nn.parameter_scope("out1"):
             y1 = F.relu(PF.convolution(out, self.skip_dims, kernel=(1,)))
         with nn.parameter_scope("out2"):
-            y2 = F.softmax(PF.convolution(y1, self.output_channels, kernel=(1, )))
+            y2 = PF.convolution(y1, self.output_channels, kernel=(1, ))
 
         return y2
 
-    def __call__(self, x):
+    def __call__(self, x, speaker_emb=None):
         with nn.parameter_scope("WaveNet"):
-            y = self.call(x)
+            y = self.call(x, speaker_emb)
 
         return y
-
