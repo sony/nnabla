@@ -204,7 +204,7 @@ def forward_command(args):
 
     normalize = True
     for d in info.datasets.values():
-        if d.uri == args.dataset:
+        if d.uri == args.dataset or d.cache_dir = args.dataset:
             normalize = d.normalize
 
     orders = {}

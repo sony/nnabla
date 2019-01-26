@@ -579,11 +579,20 @@ def _training_config(proto):
     return config
 
 
-def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator, dataset_index):
+def _create_dataset(
+        uri,
+        batch_size,
+        shuffle, no_image_normalization,
+        cache_dir,
+        overwrite_cache,
+        create_cache_explicitly,
+        prepare_data_iterator,
+        dataset_index):
     class Dataset:
         pass
     dataset = Dataset()
     dataset.uri = uri
+    dataset.cache_dir = cache_dir
     dataset.normalize = not no_image_normalization
 
     comm = current_communicator()
@@ -641,7 +650,15 @@ def _datasets(proto, prepare_data_iterator=True):
     datasets = OrderedDict()
     for i, d in enumerate(proto.dataset):
         datasets[d.name] = _create_dataset(
-            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator, i)
+            d.uri,
+            d.batch_size,
+            d.shuffle,
+            d.no_image_normalization,
+            d.cache_dir,
+            d.overwrite_cache,
+            d.create_cache_explicitly,
+            prepare_data_iterator,
+            i)
     return datasets
 
 
