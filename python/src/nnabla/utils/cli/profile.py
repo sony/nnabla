@@ -92,23 +92,22 @@ def profile_optimizer(config, result_array, synchronize):
         # Load dataset
         def load_dataset():
             loaded_data = {}
-            di = opt.data_iterator
-            loaded_data[di] = di.next()
-            return loaded_data
+            data = OrderedDict()
+            for di in opt.data_iterators:
+                if di not in loaded_data:
+                    loaded_data[di] = di.next()
+                data.update(zip(di.variables, loaded_data[di]))
+            return data
         profile(config, 'load_dataset', load_dataset, result_dict, synchronize)
 
         # Let data
-        loaded_data = load_dataset()
+        data = load_dataset()
         for v, d in o.dataset_assign.items():
             def let_data():
-                try:
-                    data = loaded_data[opt.data_iterator][
-                        opt.data_iterator.variables.index(d)]
-                except:
-                    print(opt.data_iterator.variables)
+                if d not in data:
                     raise ValueError(
                         'Data "' + d + '" is not found in dataset.')
-                let_data_to_variable(v.variable_instance, data=data,
+                let_data_to_variable(v.variable_instance, data=data[d],
                                      data_name=d, variable_name=v.name)
             profile(config, 'let_data (%s to %s)' %
                     (d, v.name), let_data, result_dict, synchronize)
@@ -222,7 +221,7 @@ def profile_command(args):
     for name, opt in info.optimizers.items():
         o = OptConfig()
         o.optimizer = opt
-        o.data_iterator = None
+        o.data_iterators = []
         config.optimizers[name] = o
 
     class MonConfig:
@@ -231,7 +230,7 @@ def profile_command(args):
     for name, mon in info.monitors.items():
         m = MonConfig()
         m.monitor = mon
-        m.data_iterator = None
+        m.data_iterators = []
         config.monitors[name] = m
 
     ext_module = import_extension_module(
@@ -249,9 +248,16 @@ def profile_command(args):
 
     # Profile Optimizer
     with ExitStack() as stack:
+        # Create data_iterator instance only once for each dataset in optimizers
+        optimizer_data_iterators = {}
         for name, o in config.optimizers.items():
-            o.data_iterator = stack.enter_context(
-                o.optimizer.data_iterator())
+            for di in o.optimizer.data_iterators.values():
+                if di not in optimizer_data_iterators:
+                    di_instance = stack.enter_context(di())
+                    optimizer_data_iterators[di] = di_instance
+                else:
+                    di_instance = optimizer_data_iterators[di]
+                o.data_iterators.append(di_instance)
         result_array = profile_optimizer(config, result_array, synchronize)
 
     # Write profiling result

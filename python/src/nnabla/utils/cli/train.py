@@ -204,76 +204,84 @@ def _update(iter, config, cost):
 
     for opt in config.optimizers.values():
         o = opt.optimizer
-        # Load dataset
-        di = opt.data_iterator
-        if o.data_iterator not in loaded_data:
-            loaded_data[o.data_iterator] = di.next()
-        data = loaded_data[o.data_iterator]
-        for v, d in o.dataset_assign.items():
-            dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
-                0].inputs else None
-            let_data_to_variable(v.variable_instance, data[
-                                 di.variables.index(d)], ctx=dest_context,
-                                 data_name=d, variable_name=v.name)
+        if (o.start_iter == 0 or iter + 1 >= o.start_iter) and (o.end_iter == 0 or iter + 1 <= o.end_iter):
+            # Load dataset
+            data = OrderedDict()
+            for di in opt.data_iterators:
+                if di not in loaded_data:
+                    loaded_data[di] = di.next()
+                data.update(zip(di.variables, loaded_data[di]))
+            for v, d in o.dataset_assign.items():
+                dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
+                    0].inputs else None
+                if d not in data and d[0] == "%":
+                    value = _get_reserved_variable(
+                        v.variable_instance.shape, d, iter, config.training_config.iter_per_epoch, config.training_config.max_epoch)
+                    v.variable_instance.data.fill(value)
+                elif d in data:
+                    let_data_to_variable(v.variable_instance, data[
+                                         d], ctx=dest_context,
+                                         data_name=d, variable_name=v.name)
+                else:
+                    raise ValueError('Variable "{}" is not found in dataset "{}", optimizer "{}"'.format(
+                        d, ', '.join(o.data_iterators.keys()), o.name))
 
-        # Generate data
-        for v, generator in o.generator_assign.items():
-            dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
-                0].inputs else None
-            let_data_to_variable(v.variable_instance,
-                                 data=generator(v.shape), ctx=dest_context,
-                                 variable_name=v.name)
+            # Generate data
+            for v, generator in o.generator_assign.items():
+                dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
+                    0].inputs else None
+                let_data_to_variable(v.variable_instance,
+                                     data=generator(v.shape), ctx=dest_context,
+                                     variable_name=v.name)
 
-        # Monitor loss before forward to prepare input data while processing on
-        # GPU
-        if cost.variables:
-            for l in cost.variables:
-                cost.sum_iteration += np.mean(l.variable_instance.d)
-                l.variable_instance.data.zero()
-            if is_first_optimizer:
-                is_first_optimizer = False
-                _sum_cost()
-                if single_or_rankzero():
-                    progress("Training : cost={0:0.6f}".format(cost.sum_iteration),
-                             (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
-                cost.sum_iteration = 0.0
+            # Monitor loss before forward to prepare input data while processing on
+            # GPU
+            if cost.variables:
+                for l in cost.variables:
+                    cost.sum_iteration += np.mean(l.variable_instance.d)
+                    # l.variable_instance.data.zero()
+                if is_first_optimizer:
+                    is_first_optimizer = False
+                    _sum_cost()
+                    if single_or_rankzero():
+                        progress("Training : cost={0:0.6f}".format(cost.sum_iteration),
+                                 (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
+                    cost.sum_iteration = 0.0
 
-        # Forward
-        o.network.forward(o.forward_sequence)
+            # Forward
+            o.network.forward(o.forward_sequence)
 
-        # Backward
-        o.network.backward(o.backward_sequence, iter % o.update_interval == 0)
+            # Backward
+            o.network.backward(o.backward_sequence, iter %
+                               o.update_interval == 0)
 
-        # Update
-        if iter % o.update_interval == o.update_interval - 1:
-            if o.weight_decay > 0:
-                o.solver.weight_decay(o.weight_decay)
+            # Update
+            if iter % o.update_interval == o.update_interval - 1:
+                if o.weight_decay > 0:
+                    o.solver.weight_decay(o.weight_decay)
 
-            if o.comm:  # Updated param with communicator
-                params = [x.grad for x in o.parameters.values()]
-                _all_reduce(o.comm, params, division=True, inplace=True)
+                if o.comm:  # Updated param with communicator
+                    params = [x.grad for x in o.parameters.values()]
+                    _all_reduce(o.comm, params, division=True, inplace=True)
 
-            if o.scheduler is not None:
-                o.solver.set_learning_rate(o.scheduler.get_learning_rate(iter))
-            o.solver.update()
+                if o.scheduler is not None:
+                    o.solver.set_learning_rate(
+                        o.scheduler.get_learning_rate(iter))
+                o.solver.update()
+            # Sync w sometimes
+            if iter % 10 == 9:  # TODO: change the interval
+                if o.comm:
+                    params = [x.data for x in o.parameters.values()]
+                    _all_reduce(o.comm, params, division=True, inplace=True)
 
-            if o.scheduler is not None:
-                o.solver.set_learning_rate(o.scheduler.get_learning_rate(iter))
-            o.solver.update()
-        # Sync w sometimes
-        if iter % 10 == 9:  # TODO: change the interval
-            if o.comm:
-                params = [x.data for x in o.parameters.values()]
-                _all_reduce(o.comm, params, division=True, inplace=True)
+            # Reserve monitor loss
+            cost.variables = o.loss_variables
 
-        # Reserve monitor loss
-        cost.variables = o.loss_variables
-
-    # Monitor loss at the end of iteration
+    # Monitor loss at the end of epoch
     if iter % config.training_config.iter_per_epoch == config.training_config.iter_per_epoch - 1 and cost.variables:
         for l in cost.variables:
             cost.sum_iteration += np.mean(l.variable_instance.d)
-            l.variable_instance.data.zero()
+            # l.variable_instance.data.zero()
         _sum_cost()
         cost.variables = None
         cost.sum_iteration = 0.0
@@ -302,16 +310,21 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         m = mon.monitor
         error_sum_monitor = 0.0
         error_count = 0
-        di = mon.data_iterator
+        data_size = max([di.size for di in mon.data_iterators])
+        batch_size = max([di.batch_size for di in mon.data_iterators])
 
-        for i in range(di.size // di.batch_size):
+        for i in range(data_size // batch_size):
+            # Load dataset
+            data = OrderedDict()
+            for di in mon.data_iterators:
+                data.update(zip(di.variables, di.next()))
+
             # Set data to variable
-            data = di.next()
             for v, d in m.dataset_assign.items():
                 dest_context = config.global_config.default_context if not m.forward_sequence or v not in m.forward_sequence[
                     0].inputs else None
                 let_data_to_variable(v.variable_instance, data[
-                                     di.variables.index(d)], ctx=dest_context,
+                                     d], ctx=dest_context,
                                      data_name=d, variable_name=v.name)
 
             # Generate data
@@ -328,7 +341,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                 error_sum = 0.0
                 for v in m.monitor_variables:
                     error_sum += np.mean(v.variable_instance.d)
-                    v.variable_instance.data.zero()
+                    # v.variable_instance.data.zero()
                 error_sum_monitor = _sum_error(error_sum_monitor, error_sum)
                 if single_or_rankzero():
                     progress('Evaluating "{0}"'.format(
@@ -344,7 +357,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_sum = 0.0
         for v in m.monitor_variables:
             error_sum += np.mean(v.variable_instance.d)
-            v.variable_instance.data.zero()
+            # v.variable_instance.data.zero()
         error_sum_monitor = _sum_error(error_sum_monitor, error_sum)
 
         if error_count == 0:
@@ -470,16 +483,16 @@ def _train(args, config):
             for iteration in range(last_iteration, max_iteration):
 
                 cost = _update(iteration, config, cost)
-                if (iteration - last_iteration) > 0:
-                    timeinfo = _calc_estimate_time(
-                        timeinfo, max_iteration, last_iteration, iteration)
-                    # Console only start
-                    status.update_time_train(prediction=timeinfo.estimate_time)
-                    # Console only end
-                    if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
-                        logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
-                            timeinfo.estimate_time, config.timelimit))
-                        return False, False
+                timeinfo = _calc_estimate_time(
+                    timeinfo, max_iteration, last_iteration, iteration + 1)
+                # Console only start
+                status.update_time_train(prediction=timeinfo.estimate_time)
+                # Console only end
+
+                if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
+                    logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
+                        timeinfo.estimate_time, config.timelimit))
+                    return False, False
 
                 if (iteration + 1) % config.training_config.iter_per_epoch == 0:
                     last_past_time = -1
@@ -553,7 +566,8 @@ def train_command(args):
     if single_or_rankzero():
         configure_progress(os.path.join(args.outdir, 'progress.txt'))
 
-    info = load.load([args.config], exclude_parameter=True)
+    info = load.load([args.config], prepare_data_iterator=None,
+                     exclude_parameter=True)
 
     # Check dataset uri is empty.
     dataset_error = False
@@ -587,7 +601,7 @@ def train_command(args):
     for name, opt in info.optimizers.items():
         o = OptConfig()
         o.optimizer = opt
-        o.data_iterator = None
+        o.data_iterators = []
         config.optimizers[name] = o
 
     class MonConfig:
@@ -596,7 +610,7 @@ def train_command(args):
     for name, mon in info.monitors.items():
         m = MonConfig()
         m.monitor = mon
-        m.data_iterator = None
+        m.data_iterators = []
         config.monitors[name] = m
 
     # Training
@@ -625,24 +639,41 @@ def train_command(args):
         data_iterators = {'optimizer': {}, 'monitor': {}}
         rng = np.random.RandomState(comm.rank if comm else 0)
         with ExitStack() as stack:
+            # Create data_iterator instance only once for each dataset in optimizers
+            optimizer_data_iterators = {}
             for name, o in config.optimizers.items():
-                o.data_iterator = stack.enter_context(
-                    o.optimizer.data_iterator())
-                if comm and comm.size > 1:
-                    o.data_iterator = o.data_iterator.slice(
-                        rng, comm.size, comm.rank)
+                for di in o.optimizer.data_iterators.values():
+                    if di not in optimizer_data_iterators:
+                        di_instance = stack.enter_context(di())
+                        if comm and comm.size > 1:
+                            di_instance = di_instance.slice(
+                                rng, comm.size, comm.rank)
+                        optimizer_data_iterators[di] = di_instance
+                    else:
+                        di_instance = optimizer_data_iterators[di]
+                    o.data_iterators.append(di_instance)
+
+            # Create data_iterator instance only once for each dataset in monitors
+            monitor_data_iterators = {}
             for name, m in config.monitors.items():
-                m.data_iterator = stack.enter_context(
-                    m.monitor.data_iterator())
-                if comm and comm.size > 1:
-                    m.data_iterator = m.data_iterator.slice(
-                        rng, comm.size, comm.rank)
-            result, restart = _train(args, config)
+                for di in m.monitor.data_iterators.values():
+                    if di not in monitor_data_iterators:
+                        di_instance = stack.enter_context(di())
+                        if comm and comm.size > 1:
+                            di_instance = di_instance.slice(
+                                rng, comm.size, comm.rank)
+                        monitor_data_iterators[di] = di_instance
+                    else:
+                        di_instance = monitor_data_iterators[di]
+                    m.data_iterators.append(stack.enter_context(di()))
+            monitor_data_iterators.update(optimizer_data_iterators)
+
+            result = _train(args, config)
     else:
         # save parameters without training (0 epoch learning)
         logger.log(99, '0 epoch learning. (Just save parameter.)')
         if single_or_rankzero():
-            _save_parameters(args, 'current', 0, True)
+            _save_parameters(args, 'best', 0, True)
         result = True
 
     if single_or_rankzero() and not restart:
