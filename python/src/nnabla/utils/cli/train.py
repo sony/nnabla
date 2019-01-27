@@ -467,6 +467,8 @@ def _train(args, config):
     class TimeInfo:
         pass
     timeinfo = TimeInfo()
+    timeinfo.past_time = 0
+    timeinfo.estimate_time = 0
     timeinfo.last_past_time = None
 
     if max_iteration > 0:
