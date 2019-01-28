@@ -83,6 +83,8 @@ def test_nnabla_models_resnet(num_layers, image_size, batch_size, training, seed
     reason='models are tested only when NNBLA_MODELS_URL_BASE is specified as an envvar')
 @pytest.mark.parametrize('model_class, up_to_list', [
     ('MobileNetV2', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('SENet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('SqueezeNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ])
 @pytest.mark.parametrize('image_size_factor', [1, 2])
 @pytest.mark.parametrize('batch_size', [1, 5])
@@ -116,10 +118,12 @@ def test_nnabla_models_imagenet_etc(model_class, up_to_list, image_size_factor, 
                       check_global_pooling=check_global_pooling)
             y.forward()
 
-        if image_size_factor != 1 and use_up_to in ('classifier', 'pool'):
+        # Need special care for SENet because it contains global average
+        # pooling in various points in a network.
+        if image_size_factor != 1 and (model_class == 'SENet' or use_up_to in ('classifier', 'pool')):
             with pytest.raises(ValueError):
                 _execute()
-            if use_up_to == 'pool':
+            if use_up_to == 'pool' and model_class != 'SENet':
                 check_global_pooling = False
                 _execute()
             force_global_pooling = True

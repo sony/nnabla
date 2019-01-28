@@ -59,9 +59,35 @@ class ImageNetBase(object):
         url = os.path.join(get_model_url_base(),
                            'imagenet/{}'.format(rel_url))
         logger.info('Downloading {} from {}'.format(rel_name, url))
+        dir_nnp = os.path.dirname(path_nnp)
+        if not os.path.isdir(dir_nnp):
+            os.makedirs(dir_nnp)
         download(url, path_nnp, open_file=False, allow_overwrite=False)
         print('Loading {}.'.format(path_nnp))
         self.nnp = NnpLoader(path_nnp)
+
+    def use_up_to(self, key, callback, **variable_format_dict):
+        if key not in self._KEY_VARIABLE:
+            raise ValueError('The key "{}" is not present in {}. Availble keys are {}.'.format(
+                key, self.__class__.__name__, list(self._KEY_VARIABLE.keys())))
+        callback.use_up_to(
+            self._KEY_VARIABLE[key].format(**variable_format_dict))
+
+    def get_input_var(self, input_var):
+        default_shape = (1,) + self.input_shape
+        if input_var is None:
+            input_var = nn.Variable(default_shape)
+        assert input_var.ndim == 4, "input_var must be 4 dimensions. Given {}.".format(
+            input_var.ndim)
+        assert input_var.shape[1] == 3, "input_var.shape[1] must be 3 (RGB). Given {}.".format(
+            input_var.shape[1])
+        return input_var
+
+    def configure_global_average_pooling(self, callback, force_global_pooling, check_global_pooling, name, by_type=False):
+        if force_global_pooling:
+            callback.force_average_pooling_global(name, by_type=by_type)
+        elif check_global_pooling:
+            callback.check_average_pooling_global(name, by_type=by_type)
 
     def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
         '''

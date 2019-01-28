@@ -38,6 +38,12 @@ class SENet(ImageNetBase):
           <https://arxiv.org/abs/1709.01507>`_
 
     '''
+    _KEY_VARIABLE = {
+        'classifier': 'Affine',
+        'pool': 'AveragePooling',
+        'lastconv': 'Add2_7_RepeatStart_4[1]',
+        'lastconv+relu': 'ReLU_25_RepeatStart_4[1]',
+        }
 
     def __init__(self):
         self._load_nnp('SENet-154.nnp', 'SENet-154/SENet-154.nnp')
@@ -46,45 +52,17 @@ class SENet(ImageNetBase):
         return (3, 224, 224)
 
     def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
-        # Use up to
-        set_use_up_to = set(
-            ['classifier', 'pool', 'lastconv', 'lastconv+relu'])
-        assert use_up_to in set_use_up_to, "use_up_to must be chosen from {}. Given {}.".format(
-            set_use_up_to, use_up_to)
-
-        fix_parameters = not training
-        bn_batch_stat = training
-        default_shape = (1, 3, 224, 224)
-        if input_var is None:
-            input_var = nn.Variable(default_shape)
-        assert input_var.ndim == 4, "input_var must be 4 dimensions. Given {}.".format(
-            input_var.ndim)
-        assert input_var.shape[1] == 3, "input_var.shape[1] must be 3 (RGB). Given {}.".format(
-            input_var.shape[1])
+        input_var = self.get_input_var(input_var)
 
         callback = NnpNetworkPass(verbose)
-
         callback.remove_and_rewire('ImageAugmentationX')
+        callback.set_variable('InputX', input_var)
+        self.configure_global_average_pooling(
+            callback, force_global_pooling, check_global_pooling, 'AveragePooling', by_type=True)
+        callback.set_batch_normalization_batch_stat_all(training)
+        self.use_up_to(use_up_to, callback)
         if not training:
             callback.remove_and_rewire('Dropout')
-        callback.set_variable('ImageAugmentationX', input_var)
-        if force_global_pooling:
-            callback.force_average_pooling_global('AveragePooling')
-        elif check_global_pooling:
-            callback.check_average_pooling_global('AveragePooling')
-        callback.set_batch_normalization_batch_stat_all(bn_batch_stat)
-
-        if use_up_to == 'classifier':
-            callback.use_up_to('Affine')
-        elif use_up_to == 'pool':
-            callback.use_up_to('AveragePooling')
-        elif use_up_to == 'lastconv':
-            callback.use_up_to('Add2_7_RepeatStart_4[1]')
-        elif use_up_to == 'lastconv+relu':
-            callback.use_up_to('ReLU_25_RepeatStart_4[1]')
-        else:
-            raise NotImplementedError()
-        if fix_parameters:
             callback.fix_parameters()
         batch_size = input_var.shape[0]
         net = self.nnp.get_network(

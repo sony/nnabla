@@ -557,6 +557,8 @@ class NnpNetworkPass(object):
             self.verbose('Removing {} and rewire input={} and output={}.'.format(
                 f.name, fi.name, fo.name))
             fo.rewire_on(fi)
+            # Use input name
+            fo.proto.name = fi.name
 
     def set_variable(self, name, input_var):
         @self.on_generate_variable(name)
@@ -564,10 +566,15 @@ class NnpNetworkPass(object):
             self.verbose('Replace {} by {}.'.format(name, input_var))
             v.proto.shape.dim[:] = input_var.shape
             v.variable = input_var
+            input_var.name = v.name
             return v
 
-    def force_average_pooling_global(self, name):
-        @self.on_generate_function_by_name(name)
+    def force_average_pooling_global(self, name, by_type=False):
+        dec = self.on_generate_function_by_name
+        if by_type:
+            dec = self.on_generate_function_by_type
+
+        @dec(name)
         def on_avgpool(f):
             pool_shape = f.inputs[0].variable.shape[2:]
             self.verbose('Change strides of {} to {}.'.format(
@@ -577,8 +584,12 @@ class NnpNetworkPass(object):
             p.stride.dim[:] = pool_shape
             return f
 
-    def check_average_pooling_global(self, name):
-        @self.on_generate_function_by_name(name)
+    def check_average_pooling_global(self, name, by_type=False):
+        dec = self.on_generate_function_by_name
+        if by_type:
+            dec = self.on_generate_function_by_type
+
+        @dec(name)
         def on_avgpool_check(f):
             pool_shape = f.inputs[0].variable.shape[2:]
             self.verbose('Change strides of {} to {}.'.format(

@@ -37,6 +37,13 @@ class MobileNetV2(ImageNetBase):
 
     '''
 
+    _KEY_VARIABLE = {
+        'classifier': 'Reshape',
+        'pool': 'AveragePooling',
+        'lastconv': 'BatchNormalization_2',
+        'lastconv+relu': 'ReLU_2',
+        }
+
     def __init__(self):
         self._load_nnp('MobileNet-v2.nnp', 'MobileNet-v2/MobileNet-v2.nnp')
 
@@ -45,42 +52,16 @@ class MobileNetV2(ImageNetBase):
 
     def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
 
-        # Use up to
-        set_use_up_to = set(
-            ['classifier', 'pool', 'lastconv', 'lastconv+relu'])
-        assert use_up_to in set_use_up_to, "use_up_to must be chosen from {}. Given {}.".format(
-            set_use_up_to, use_up_to)
-
-        fix_parameters = not training
-        bn_batch_stat = training
-        default_shape = (1,) + self.input_shape
-        if input_var is None:
-            input_var = nn.Variable(default_shape)
-        assert input_var.ndim == 4, "input_var must be 4 dimensions. Given {}.".format(
-            input_var.ndim)
-        assert input_var.shape[1] == 3, "input_var.shape[1] must be 3 (RGB). Given {}.".format(
-            input_var.shape[1])
+        input_var = self.get_input_var(input_var)
 
         callback = NnpNetworkPass(verbose)
         callback.drop_function('ImageAugmentationX')
         callback.set_variable('ImageAugmentationX', input_var)
-        if force_global_pooling:
-            callback.force_average_pooling_global('AveragePooling')
-        elif check_global_pooling:
-            callback.check_average_pooling_global('AveragePooling')
-        callback.set_batch_normalization_batch_stat_all(bn_batch_stat)
-
-        if use_up_to == 'classifier':
-            callback.use_up_to('Reshape')
-        elif use_up_to == 'pool':
-            callback.use_up_to('AveragePooling')
-        elif use_up_to == 'lastconv':
-            callback.use_up_to('BatchNormalization_2')
-        elif use_up_to == 'lastconv+relu':
-            callback.use_up_to('ReLU_2')
-        else:
-            raise NotImplementedError()
-        if fix_parameters:
+        self.configure_global_average_pooling(
+            callback, force_global_pooling, check_global_pooling, 'AveragePooling')
+        callback.set_batch_normalization_batch_stat_all(training)
+        self.use_up_to(use_up_to, callback)
+        if not training:
             callback.fix_parameters()
         batch_size = input_var.shape[0]
         net = self.nnp.get_network(
