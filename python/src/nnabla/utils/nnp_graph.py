@@ -105,7 +105,7 @@ def _create_function(inputs, f, batch_size):
     return function_instance
 
 
-class VariableProto:
+class VariableProto(object):
 
     def __init__(self, v):
         self.proto = v
@@ -155,7 +155,7 @@ class VariableProto:
         self.parent.outputs = new_outputs
 
 
-class FunctionProto:
+class FunctionProto(object):
     def __init__(self, proto):
         self.proto = proto
         self._inputs = []
