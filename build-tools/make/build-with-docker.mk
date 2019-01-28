@@ -130,7 +130,7 @@ docker_image_nnabla:
 	cp -rf output/build_sdeepconsole $(NNABLA_DIRECTORY)
 	docker pull ubuntu:16.04
 	cd $(NNABLA_DIRECTORY) \
-	&& cat docker/py35/Dockerfile |grep -v ^RUN\ pip3\ install\ nnabla >Dockerfile \
+	&& cat docker/py36/Dockerfile |grep -v ^RUN\ pip3\ install\ nnabla >Dockerfile \
 	&& echo ADD $(shell echo build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist/*.whl) /tmp/ >>Dockerfile \
 	&& echo RUN pip install /tmp/$(shell basename build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist/*.whl) >>Dockerfile \
 	&& echo ADD build_sdeepconsole/settings /usr/local/bin/settings/ >>Dockerfile \
