@@ -257,11 +257,14 @@ class OnnxExporter:
         try:
             opset = int(opset)
             if opset <= 6:
-                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get("6")
+                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
+                    "6")
             else:
-                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(str(opset), table_op_set_9_x)
+                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
+                    str(opset), table_op_set_9_x)
         except:
-            self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(opset, table_op_set_9_x)
+            self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
+                opset, table_op_set_9_x)
 
     def _add_param(self, param_name, dtype, shape, raw_data):
         init = self._model_proto.graph.initializer.add()
@@ -519,7 +522,8 @@ class OnnxExporter:
         return [n]
 
     def Unpooling_9(self, func):
-        scales = list(map(lambda f: float(f), [1.0, 1.0] + func.unpooling_param.kernel.dim[:]))
+        scales = list(
+            map(lambda f: float(f), [1.0, 1.0] + func.unpooling_param.kernel.dim[:]))
         n = onnx.helper.make_node(
             'Upsample',
             func.input,
@@ -547,7 +551,6 @@ class OnnxExporter:
             name=func.name
         )
         return [n]
-
 
     def Unpooling_6(self, func):
         if len(func.unpooling_param.kernel.dim) != 2:
@@ -848,7 +851,6 @@ class OnnxExporter:
 
         return nl
 
-
     def Stack(self, func):
         nl = []
         outputs = []
@@ -944,7 +946,8 @@ class OnnxExporter:
                 d = list(np.transpose(w_data).astype(np.float32).flatten())
                 del param.data[:]
                 param.data.extend(d)
-                self._parameters_state[func.input[1]] = state | ParameterState.TRANSPOSED
+                self._parameters_state[func.input[1]
+                                       ] = state | ParameterState.TRANSPOSED
             transB = 1
         else:
             w_shape = list(self._var_dict[func.input[1]].dim[:])
