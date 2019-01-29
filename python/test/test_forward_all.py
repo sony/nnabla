@@ -24,6 +24,7 @@ def initialize_grad(parameters):
     for param in parameters.values():
         param.grad.zero()
 
+
 @pytest.mark.parametrize("seed", [313])
 def test_graph_logreg(seed):
     rng = np.random.RandomState(seed)
