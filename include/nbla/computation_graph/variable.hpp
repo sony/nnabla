@@ -205,12 +205,15 @@ public:
                  need_grad=False during forward propagation.
                  True is usually used when calling this during training.
                  This is ignored when clear_buffer=True.
+      @param[in] fclosed Set arbitrary fclosed flags to control forward
+                 computation. This is used for forward_all function.
 
       @seealso set_persistent() to prevent a specific variable to be cleared
                during forward propagation.
    */
   NBLA_API void forward(bool clear_buffer = false,
-                        bool clear_no_need_grad = false);
+                        bool clear_no_need_grad = false,
+                        unordered_set<CgFunctionPtr> *fclosed = nullptr);
   /** Performs a backward propagation
 
       starting from this variable until the root variable(s) is/are reached

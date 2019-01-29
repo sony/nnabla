@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libcpp.vector cimport vector
 from libcpp cimport bool as cpp_bool
-from _nd_array cimport *
-from function cimport *
-from _variable cimport *
+from libcpp.vector cimport vector
+from _variable cimport Variable as _Variable
+from _computation_graph cimport forward_all as cforward_all
 
 
-cdef extern from "nbla/computation_graph/computation_graph.hpp" namespace "nbla":
-    vector[CgVariablePtr] connect(
-        CgFunctionPtr,
-        vector[CgVariablePtr] & ,
-        int,
-        vector[NdArrayPtr],
-        cpp_bool) except+
-    void steal_variable_from_to(CgVariablePtr f, CgVariablePtr t) except+
-    void forward_all(const vector[CgVariablePtr] &, cpp_bool) nogil except+
+def forward_all(variables, cpp_bool clear_no_need_grad=False):
+    cdef vector[CgVariablePtr] cg_variables
+    cdef int i
+    cdef int size
+    size = len(variables)
+    cg_variables.resize(size)
+    for i in range(size):
+        cg_variables[i] = (<_Variable?> variables[i]).var
+    with nogil:
+        cforward_all(cg_variables, clear_no_need_grad)
