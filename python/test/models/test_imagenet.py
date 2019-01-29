@@ -82,6 +82,7 @@ def test_nnabla_models_resnet(num_layers, image_size, batch_size, training, seed
     get_model_url_base_from_env() is None,
     reason='models are tested only when NNBLA_MODELS_URL_BASE is specified as an envvar')
 @pytest.mark.parametrize('model_class, up_to_list', [
+    ('MobileNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('MobileNetV2', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('SENet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('SqueezeNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),

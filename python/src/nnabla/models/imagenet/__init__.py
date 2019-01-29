@@ -13,6 +13,6 @@
 # limitations under the License.
 from __future__ import absolute_import
 from .resnet import ResNet
-from .mobilenet import MobileNetV2
+from .mobilenet import MobileNet, MobileNetV2
 from .senet import SENet
 from .squeezenet import SqueezeNet
