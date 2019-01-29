@@ -142,5 +142,4 @@ void forward_all(const vector<CgVariablePtr> variables,
     variables[i]->forward(false, clear_no_need_grad, &fclosed);
   }
 }
-
 }
