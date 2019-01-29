@@ -15,8 +15,10 @@
 from six.moves import range
 from collections import OrderedDict
 from contextlib2 import ExitStack  # Backport from python3
-import numpy as np
+
 import glob
+import json
+import numpy as np
 import os
 import time
 import zipfile
@@ -328,6 +330,17 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
 
 def _get_current_parameter(args):
 
+    status_json_path = os.path.join(args.outdir, 'status.json')
+    best_epoch = None
+    best_error = None
+    if os.path.exists(status_json_path):
+        with open(status_json_path, 'r') as f:
+            _job_status = json.load(f)
+        logger.log(99, '{}'.format(_job_status))
+        if 'best' in _job_status:
+            best_error = _job_status['best']['valid_error']
+            best_epoch = _job_status['best']['epoch']
+
     globname = os.path.join(args.outdir, 'results_current_*.nnp')
     exists = glob.glob(globname)
 
@@ -343,9 +356,9 @@ def _get_current_parameter(args):
         logger.log(99, "Load parameter from [{}]".format(
             os.path.basename(last_parameter)))
         load.load([last_parameter], parameter_only=True)
-        return last_epoch
+        return last_epoch, best_epoch, best_error
 
-    return 0
+    return 0, best_epoch, best_error
 
 
 def _calc_estimate_time(timeinfo, max_iter, last_iter, iter):
@@ -361,9 +374,18 @@ def _train(args, config):
     global _save_parameter_info
     comm = current_communicator()
 
+    best_epoch = None
+    best_error = None
     last_epoch = 0
     if args.resume:
-        last_epoch = _get_current_parameter(args)
+        last_epoch, best_epoch, best_error = _get_current_parameter(args)
+        if best_epoch is not None:
+            logger.log(
+                99, "Best error {} recorded at epoch {} in previous training.".format(best_error,
+                                                                                      best_epoch))
+            if best_epoch > last_epoch:
+                logger.log(
+                    99, "Resumed epoch is {} but this training keep this result.".format(last_epoch))
         logger.log(99, "Resume from epoch {}".format(last_epoch + 1))
 
     # Console only start
@@ -386,8 +408,6 @@ def _train(args, config):
     cost.num_iteration = 0
     cost.sum_iteration = 0.0
     cost.variables = None
-
-    best_error = None
 
     class TimeInfo:
         pass
