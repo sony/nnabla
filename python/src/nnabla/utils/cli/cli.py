@@ -97,6 +97,9 @@ def cli_main():
     add_plot_series_command(subparsers)
     add_plot_timer_command(subparsers)
 
+    from nnabla.utils.cli.draw_graph import add_draw_graph_command
+    add_draw_graph_command(subparsers)
+
     # Version
     subparser = subparsers.add_parser(
         'version', help='Print version and build number.')

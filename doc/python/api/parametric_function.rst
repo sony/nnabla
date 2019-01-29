@@ -23,7 +23,8 @@ The parameters registered by :ref:`parametric-functions`
 can be managed using APIs listed in this section.
 
 
-.. autofunction:: parameter_scope(name)
+.. autofunction:: parameter_scope
+.. autofunction:: get_current_parameter_scope
 .. autofunction:: get_parameters
 .. autofunction:: clear_parameters
 .. autofunction:: save_parameters
