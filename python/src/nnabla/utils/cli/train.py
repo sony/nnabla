@@ -80,81 +80,6 @@ def _save_parameters(args, suffix, epoch, force=False):
     exists = glob.glob(globname)
 
     base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
-    filename = base + '.nnp'
-
-    if not os.path.exists(filename) and \
-       (force or timediff > 180.0 or epochdiff > 10):
-
-        version_filename = base + '_version.txt'
-
-        with open(version_filename, 'w') as file:
-            file.write('{}\n'.format(nnp_version()))
-
-        param_filename = base + '_param.protobuf'
-        save_parameters(param_filename)
-
-        with zipfile.ZipFile(filename, 'w') as nnp:
-            nnp.write(version_filename, 'nnp_version.txt')
-            nnp.write(_save_parameter_info['config'], os.path.basename(
-                _save_parameter_info['config']))
-            nnp.write(param_filename, 'parameter.protobuf')
-
-        os.unlink(version_filename)
-        os.unlink(param_filename)
-
-        for exist in exists:
-            os.unlink(exist)
-
-        _save_parameter_info[suffix]['epoch'] = epoch
-        _save_parameter_info[suffix]['time'] = current_time
-
-        # Console only start
-        status.save_train_snapshot()
-        # Console only end
-
-
-_save_parameter_info = {}
-
-
-def _all_reduce(comm, var, division, inplace):
-    import threading
-    _finish = False
-
-    def _wait():
-        import time
-        import sys
-        count = 0
-        while not _finish:
-            if count > 10000:
-                logger.log(99, "STALLED MPI RANK {}".format(comm.rank))
-                sys.exit(-1)
-            time.sleep(0.01)
-            count += 1
-
-    th = threading.Thread(target=_wait)
-    th.start()
-
-    comm.all_reduce(var, division=division, inplace=inplace)
-    _finish = True
-    th.join()
-
-
-def _save_parameters(args, suffix, epoch, force=False):
-    global _save_parameter_info
-
-    if suffix not in _save_parameter_info:
-        _save_parameter_info[suffix] = {}
-        _save_parameter_info[suffix]['epoch'] = 0
-        _save_parameter_info[suffix]['time'] = 0
-
-    current_time = time.time()
-    timediff = current_time - _save_parameter_info[suffix]['time']
-    epochdiff = epoch - _save_parameter_info[suffix]['epoch']
-
-    globname = os.path.join(args.outdir, 'results_{}_*.nnp'.format(suffix))
-    exists = glob.glob(globname)
-
-    base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
     if suffix == 'best':
         base = os.path.join(args.outdir, 'results')
     filename = base + '.nnp'
@@ -413,7 +338,7 @@ def _get_current_parameter(args):
             n = int(ex.rsplit('_', 1)[1].rsplit('.', 1)[0])
             ex_list[n] = ex
 
-        last_epoch = sorted(ex_list.keys())[0]
+        last_epoch = sorted(ex_list.keys(), reverse=True)[0]
         last_parameter = ex_list[last_epoch]
         logger.log(99, "Load parameter from [{}]".format(
             os.path.basename(last_parameter)))
