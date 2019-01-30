@@ -52,11 +52,20 @@ def test_graph_logreg(seed):
     L2 = F.mean(l2)
     nn.forward_all([L1, L2])
 
+    def zero_grad():
+        x.g = 0
+        w1.g = 0
+        w2.g = 0
+        b1.g = 0
+        b2.g = 0
+
+    def backup_grads():
+        grads = [x.g, w1.g, w2.g, b1.g, b2.g]
+        return map(lambda v: v.copy(), grads)
+
     # Backprop for z1
     # Diff should be initialized since they are always accumulated
-    x.g = 0
-    w1.g = 0
-    b1.g = 0
+    zero_grad()
     L1.backward(clear_buffer=True)
 
     inputs = [x, w1, b1]
@@ -68,9 +77,7 @@ def test_graph_logreg(seed):
 
     # Backprop for z2
     # Diff should be initialized since they are always accumulated
-    x.g = 0
-    w2.g = 0
-    b2.g = 0
+    zero_grad()
     L2.backward(clear_buffer=True)
 
     inputs = [x, w2, b2]
@@ -79,6 +86,16 @@ def test_graph_logreg(seed):
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L2, inputs, 1e-3, False)
     assert np.allclose(ngrad, agrad, atol=1e-2)
+
+    zero_grad()
+    L1.backward(clear_buffer=True)
+    L2.backward(clear_buffer=True)
+    grad1 = backup_grads()
+    zero_grad()
+    nn.backward_all([L1, L2], clear_buffer=True)
+    grad2 = backup_grads()
+    for g1, g2 in zip(grad1, grad2):
+        np.allclose(g1, g2)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -157,6 +174,15 @@ def test_graph_model(model, seed):
     agrad, ngrad = grads(L2, inputs, 1e-3, False)
     assert np.allclose(ngrad, agrad, atol=1.05e-2)
 
+    # test backward_all
+    initialize_grad(parameters)
+    L1.backward(clear_buffer=False)
+    L2.backward(clear_buffer=True)
+    backup_grads = {k: v.g.copy() for k, v in parameters.items()}
+    nn.backward_all([L1, L2], clear_buffer=True)
+    for k, g in backup_grads.items():
+        np.allclose(parameters[k].g, g)
+
 
 @pytest.mark.parametrize("seed", [311])
 def test_graph_unlink_backward(seed):
@@ -183,6 +209,11 @@ def test_graph_unlink_backward(seed):
     assert not np.all(x1.g == 0)
 
     y2.backward(clear_buffer=True)
+    assert np.all(x0.g == 0)
+    assert not np.all(x1.g == 0)
+
+    # test backward_all
+    nn.backward_all([y1, y2], clear_buffer=True)
     assert np.all(x0.g == 0)
     assert not np.all(x1.g == 0)
 
@@ -224,11 +255,7 @@ def test_graph_clear_buffer(seed):
             for v in nn.get_parameters().values():
                 v.grad.zero()
             nn.forward_all([L1, L2], clear_no_need_grad=cnng)
-
-            # for now, the first backward cannot be
-            # called with clear_buffer=True
-            L1.backward(clear_buffer=False)
-            L2.backward(clear_buffer=cb)
+            nn.backward_all([L1, L2], clear_buffer=cb)
             if not first:
                 first = True
                 g = list(nn.get_parameters().values())[0].g.copy()
@@ -304,6 +331,17 @@ def test_graph_rewire(seed, clear_buffer):
     gb = backup_params()
     zero_grad()
     yc2.backward(clear_buffer=clear_buffer)
+    gc = backup_params()
+    assert np.allclose(xa.d, xc.d)
+    for b, c in zip(gb, gc):
+        assert np.allclose(b, c)
+
+    # test backward_all
+    zero_grad()
+    nn.backward_all([yb1, yb2], clear_buffer=True)
+    gb = backup_params()
+    zero_grad()
+    nn.backward_all([yc1, yc2], clear_buffer=True)
     gc = backup_params()
     assert np.allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
