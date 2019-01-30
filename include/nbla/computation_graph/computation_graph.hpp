@@ -54,6 +54,7 @@ NBLA_API void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to);
  * Forward all given variables with shared fclosed flags.
  */
 NBLA_API void forward_all(const vector<CgVariablePtr> variables,
+                          bool clear_buffer = false,
                           bool clear_no_need_grad = false);
 }
 #endif
