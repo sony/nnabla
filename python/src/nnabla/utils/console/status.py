@@ -63,12 +63,20 @@ def init(args):
         for k in sorted(data.keys()):
             mon_rep[str(k + 1)] = data[k]
             if 'train_error' in data[k]:
-                last_train_error = data[k]['train_error']
+                try:
+                    last_train_error = float(data[k]['train_error'])
+                except:
+                    # Ignore if train error in monitoring_repot is invalid.
+                    pass
             if 'valid_error' in data[k]:
-                last_valid_error = data[k]['valid_error']
-                if data[k]['valid_error'] < best_valid_error:
-                    best_epoch = k + 1
-                    best_valid_error = data[k]['valid_error']
+                try:
+                    last_valid_error = float(data[k]['valid_error'])
+                    if last_valid_error < best_valid_error:
+                        best_epoch = k + 1
+                        best_valid_error = last_valid_error
+                except:
+                    # Ignore if valid error in monitoring_repot is invalid.
+                    pass
         _job_status['monitoring_report'] = mon_rep
 
         if best_epoch:
