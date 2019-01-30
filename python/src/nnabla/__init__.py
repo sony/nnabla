@@ -37,7 +37,7 @@ from .parameter import (
 from .context import (
     context_scope, set_default_context, get_current_context)
 from .auto_forward import auto_forward, set_auto_forward, get_auto_forward
-from._computation_graph import forward_all
+from._computation_graph import forward_all, backward_all
 
 # Prefer cached array by default for performance.
 prefer_cached_array(True)

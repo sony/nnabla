@@ -28,3 +28,7 @@ cdef extern from "nbla/computation_graph/computation_graph.hpp" namespace "nbla"
         cpp_bool) except+
     void steal_variable_from_to(CgVariablePtr f, CgVariablePtr t) except+
     void forward_all(const vector[CgVariablePtr] &, cpp_bool) nogil except+
+    void backward_all(
+        const vector[CgVariablePtr] &,
+        cpp_bool,
+        vector[CommunicatorBackwardCallbackPtr]) nogil except+
