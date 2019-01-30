@@ -239,6 +239,33 @@ def test_graph_clear_buffer(seed):
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("clear_buffer", [True, False])
+def test_graph_forward_clear_buffer(seed, clear_buffer):
+    nn.clear_parameters()
+
+    x = nn.Variable((2, 10))
+    h = PF.affine(x, 10, name='hidden')
+    y1 = PF.affine(h, 10, name='out1')
+    y2 = PF.affine(h, 10, name='out2')
+
+    # input
+    rng = np.random.RandomState(seed)
+    data = rng.randn(*x.shape)
+
+    # reference values
+    x.d = data
+    y1.forward()
+    y2.forward()
+    ref_y1 = y1.d.copy()
+    ref_y2 = y2.d.copy()
+
+    # check
+    nn.forward_all([y1, y2], clear_buffer=clear_buffer)
+    assert np.allclose(y1.d, ref_y1)
+    assert np.allclose(y2.d, ref_y2)
+
+
+@pytest.mark.parametrize("seed", [311])
+@pytest.mark.parametrize("clear_buffer", [True, False])
 def test_graph_rewire(seed, clear_buffer):
     nn.clear_parameters()
 

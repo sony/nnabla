@@ -27,4 +27,6 @@ cdef extern from "nbla/computation_graph/computation_graph.hpp" namespace "nbla"
         vector[NdArrayPtr],
         cpp_bool) except+
     void steal_variable_from_to(CgVariablePtr f, CgVariablePtr t) except+
-    void forward_all(const vector[CgVariablePtr] &, cpp_bool) nogil except+
+    void forward_all(const vector[CgVariablePtr] &,
+                     cpp_bool,
+                     cpp_bool) nogil except+
