@@ -55,5 +55,12 @@ NBLA_API void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to);
  */
 NBLA_API void forward_all(const vector<CgVariablePtr> variables,
                           bool clear_no_need_grad = false);
+
+/** Backward given variables in a single call.
+ * Backward all given variables in a single call.
+ */
+NBLA_API void backward_all(
+    const vector<CgVariablePtr> variables, bool clear_buffer = false,
+    const vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 }
 #endif
