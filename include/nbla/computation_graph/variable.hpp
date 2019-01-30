@@ -75,8 +75,9 @@ class CgVariable {
                            unordered_set<CgFunctionPtr> &fclosed,
                            std::function<void(CgFunctionPtr)> forward_callback);
 
-  void visit_function_backward(
-      CgFunctionPtr func, std::function<void(CgFunctionPtr)> backward_callback,
+  static void visit_function_backward(
+      vector<CgFunctionPtr> roots,
+      std::function<void(CgFunctionPtr)> backward_callback,
       vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
 
 public:
@@ -234,6 +235,12 @@ public:
   */
   NBLA_API void
   backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
+           vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
+
+  /**
+   */
+  static void
+  backward_all(vector<CgVariable::Ptr> variables, bool clear_buffer = false,
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
   /**

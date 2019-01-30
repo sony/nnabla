@@ -292,11 +292,13 @@ class BackwardCallback {
   }
 
 public:
-  BackwardCallback(CgFunctionPtr f, bool clear_buffer)
+  BackwardCallback(vector<CgFunctionPtr> roots, bool clear_buffer)
       : clear_buffer_(clear_buffer) {
     // Note prohibiting clearing variable buffers where terminal.
-    for (auto o : f->outputs()) {
-      vseen_.insert({o, true});
+    for (auto v : roots) {
+      for (auto o : v->outputs()) {
+        vseen_.insert({o, true});
+      }
     }
   }
 
@@ -403,7 +405,8 @@ void CgVariable::visit_function_recursive(
 }
 
 void CgVariable::visit_function_backward(
-    CgFunctionPtr p, std::function<void(CgFunctionPtr)> backward_callback,
+    vector<CgFunctionPtr> roots,
+    std::function<void(CgFunctionPtr)> backward_callback,
     vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
   // Open list of next search candidate.
   unordered_map<CgFunctionPtr, uint64_t> ids;
@@ -420,7 +423,9 @@ void CgVariable::visit_function_backward(
     return it->second;
   };
   set<tuple<int, uint64_t, CgFunctionPtr>> open;
-  open.insert(make_tuple(-p->rank(), get_id(p), p));
+  for (auto p : roots) {
+    open.insert(make_tuple(-p->rank(), get_id(p), p));
+  }
   while (!open.empty()) {
     auto rank_func = open.begin();
     auto f = get<2>(*rank_func);
@@ -488,11 +493,39 @@ void CgVariable::backward(
   }
 
   // Create callback
-  BackwardCallback backward_callback(parent_, clear_buffer);
+  vector<CgFunctionPtr> roots{this->parent()};
+  BackwardCallback backward_callback(roots, clear_buffer);
 
   // Visit backward
   visit_function_backward(
-      parent_, [&backward_callback](CgFunctionPtr f) { backward_callback(f); },
+      roots, [&backward_callback](CgFunctionPtr f) { backward_callback(f); },
+      communicator_callbacks);
+}
+
+void CgVariable::backward_all(
+    vector<CgVariable::Ptr> variables, bool clear_buffer,
+    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
+  // setup backward at each variable
+  vector<NdArrayPtr> bak_grads;
+  DestructorCallback at_scope_exit([&]() {
+    for (int i = 0; i < variables.size(); ++i) {
+      variables[i]->variable()->set_grad(bak_grads[i]);
+    }
+  });
+  vector<CgFunctionPtr> roots;
+  for (auto v : variables) {
+    // backup gradients
+    bak_grads.push_back(v->variable()->grad());
+    // set function to avoid clearing
+    roots.push_back(v->parent());
+  }
+
+  // Create callback
+  BackwardCallback backward_callback(roots, clear_buffer);
+
+  // Visit backward
+  visit_function_backward(
+      roots, [&backward_callback](CgFunctionPtr f) { backward_callback(f); },
       communicator_callbacks);
 }
 
