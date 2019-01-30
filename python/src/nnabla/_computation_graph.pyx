@@ -15,7 +15,11 @@
 from libcpp cimport bool as cpp_bool
 from libcpp.vector cimport vector
 from _variable cimport Variable as _Variable
+from _variable cimport CommunicatorBackwardCallback
+from _variable cimport CommunicatorBackwardCallbackPtr
+from _variable cimport CgVariable as _CgVariable
 from _computation_graph cimport forward_all as cforward_all
+from _computation_graph cimport backward_all as cbackward_all
 
 
 def forward_all(variables, cpp_bool clear_no_need_grad=False):
@@ -28,3 +32,23 @@ def forward_all(variables, cpp_bool clear_no_need_grad=False):
         cg_variables[i] = (<_Variable?> variables[i]).var
     with nogil:
         cforward_all(cg_variables, clear_no_need_grad)
+
+
+def backward_all(variables, cpp_bool clear_buffer=False, communicator_callbacks=None):
+    cdef vector[CommunicatorBackwardCallbackPtr] callback_list
+    if type(communicator_callbacks) == list:
+        for x in communicator_callbacks:
+            callback_list.push_back((< CommunicatorBackwardCallback?> x).var)
+    elif type(communicator_callbacks) != type(None):
+        callback_list.push_back((< CommunicatorBackwardCallback?> communicator_callbacks).var)
+
+    cdef vector[CgVariablePtr] cg_variables
+    cdef int i
+    cdef int size
+    size = len(variables)
+    cg_variables.resize(size)
+    for i in range(size):
+        cg_variables[i] = (<_Variable?> variables[i]).var
+
+    with nogil:
+        cbackward_all(cg_variables, clear_buffer, callback_list)

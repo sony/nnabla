@@ -142,4 +142,9 @@ void forward_all(const vector<CgVariablePtr> variables,
     variables[i]->forward(false, clear_no_need_grad, &fclosed);
   }
 }
+
+void backward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
+    const vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
+  CgVariable::backward_all(variables, clear_buffer, communicator_callbacks);
+}
 }
