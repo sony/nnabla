@@ -34,20 +34,20 @@ def get_model(args, test=False):
     Create computation graph and variables.
 
     """
-    nn_in_size = 513
 
-    image = nn.Variable([args.batch_size, 3, nn_in_size, nn_in_size])
-    label = nn.Variable([args.batch_size, 1, nn_in_size, nn_in_size])
-    mask = nn.Variable([args.batch_size, 1, nn_in_size, nn_in_size])
+    image = nn.Variable(
+        [args.batch_size, 3, args.image_height, args.image_width])
+    label = nn.Variable(
+        [args.batch_size, 1, args.image_height, args.image_width])
+    mask = nn.Variable(
+        [args.batch_size, 1, args.image_height, args.image_width])
 
     pred = model.deeplabv3plus_model(
         image, args.output_stride, args.num_class, test=test, fix_params=False)
 
-    # Initializing moving variance by 1
-    params = nn.get_parameters()
-    for key, val in params.items():
-        if 'bn/var' in key:
-            val.d.fill(1)
+    if pred.shape != label.shape:
+        pred = F.interpolate(pred, output_size=(
+            label.shape[2], label.shape[3]), mode='linear')
 
     loss = F.sum(F.softmax_cross_entropy(
         pred, label, axis=1) * mask) / F.sum(mask)
@@ -104,8 +104,8 @@ def train():
 
     _ = nn.load_parameters(args.pretrained_model_path)
     if args.fine_tune:
-        nn.parameter.pop_parameter('decoder/logits/affine/conv/W')
-        nn.parameter.pop_parameter('decoder/logits/affine/conv/b')
+        nnabla.parameter.pop_parameter('decoder/logits/affine/conv/W')
+        nnabla.parameter.pop_parameter('decoder/logits/affine/conv/b')
 
     n_train_samples = args.train_samples
     n_val_samples = args.val_samples
@@ -140,10 +140,10 @@ def train():
 
     # training data
     data = data_iterator_segmentation(
-            args.train_samples, args.batch_size, args.train_dir, args.train_label_dir)
+            args.train_samples, args.batch_size, args.train_dir, args.train_label_dir, target_width=args.image_width, target_height=args.image_height)
     # validation data
-    vdata = data_iterator_segmentation(
-        args.val_samples, args.batch_size, args.val_dir, args.val_label_dir)
+    vdata = data_iterator_segmentation(args.val_samples, args.batch_size, args.val_dir,
+                                       args.val_label_dir, target_width=args.image_width, target_height=args.image_height)
 
     if distributed:
         data = data.slice(

@@ -5,7 +5,7 @@ import numpy as np
 import time
 
 
-def data_iterator_segmentation(num_examples, batch_size, image_path_file, label_path_file, rng=None, train=True):
+def data_iterator_segmentation(num_examples, batch_size, image_path_file, label_path_file, rng=None, target_width=513, target_height=513, train=True):
 
     image_paths = load_paths(image_path_file)
     label_paths = load_paths(label_path_file)
@@ -27,11 +27,11 @@ def data_iterator_segmentation(num_examples, batch_size, image_path_file, label_
         else:
             lab = np.load(label_paths[i]).astype('int32')
         if lab.ndim == 2:
-            lab = np.expand_dims(lab, axis=2)
+            lab = lab[..., None]
         # Compute image preprocessing time
         #t = time.time()
         img, lab, mask = image_preprocess.preprocess_image_and_label(
-            img, lab, train=train)
+            img, lab, target_width, target_height, train=train)
         #elapsed = time.time() - t
 
         return np.rollaxis(img, 2), np.rollaxis(lab, 2), np.rollaxis(mask, 2)

@@ -28,10 +28,14 @@ def convert_to_rgb(image, label=None):
 def resize(image, desired_size):
 
     old_size = image.shape[:2]  # old_size is in (height, width) format
-    ratio = float(desired_size)/max(old_size)
-    new_size = tuple([int(x*ratio) for x in old_size])
+    ratio = min(np.divide(desired_size, old_size))
+    new_size = (int(old_size[0]*ratio), int(old_size[1]*ratio))
 
     # new_size should be in (width, height) format
+    if image.shape[2] == 1:
+        image = cv2.resize(
+            image, (new_size[1], new_size[0]), interpolation=cv2.INTER_NEAREST)
+        return image
     image = cv2.resize(image, (new_size[1], new_size[0]))
 
     return image
@@ -79,12 +83,6 @@ def random_scale(image, label):
     random.shuffle(scale_factors)
 
     scale = scale_factors[0].astype(np.float32)
-
-    scaled_image = np.zeros(
-        (int(image.shape[0]*scale), int(image.shape[1]*scale), image.shape[2]), dtype=np.float32)
-    scaled_label = np.zeros(
-        (int(label.shape[0]*scale), int(label.shape[1]*scale), label.shape[2]), dtype=np.int32)
-
     scaled_image = cv2.resize(image, (int(
         image.shape[1]*scale), int(image.shape[0]*scale)), interpolation=cv2.INTER_LINEAR)
 
@@ -107,15 +105,15 @@ def cast(image, label=None):
     return image, label
 
 
-def pad(image, label=None, desired_size=513):
+def pad(image, label=None, desired_size=(513, 513)):
 
     # mean pixel value
     color = [127.5, 127.5, 127.5]
 
     old_size = image.shape[:2]  # old_size is in (height, width) format
-    ratio = float(desired_size)/max(old_size)
 
-    new_size = tuple([x + max(desired_size-x, 0) for x in old_size])
+    new_size = tuple([x + max(ds - x, 0)
+                      for x, ds in zip(old_size, desired_size)])
 
     # Pad image with mean pixel value
     new_im = cv2.copyMakeBorder(
@@ -138,7 +136,7 @@ def create_mask(label):
     return label, mask
 
 
-def preprocess_image_and_label(image, label=None, target_width=513, train=True):
+def preprocess_image_and_label(image, label=None, target_width=513, target_height=513, train=True):
     '''
     image - 4d array (batch, ch, h, w)
     label - 4d array (batch, ch, h, w)
@@ -146,16 +144,17 @@ def preprocess_image_and_label(image, label=None, target_width=513, train=True):
     '''
 
     crop_w = target_width
-    crop_h = target_width
+    crop_h = target_height
 
     if train == True:
         image, label = cast(image, label)
 
         image, label = random_scale(image, label)
 
-        image, label = pad(image, label, desired_size=target_width)
+        image, label = pad(image, label, desired_size=(
+            target_height, target_width))
 
-        image, label = random_crop(image, label, target_width, target_width)
+        image, label = random_crop(image, label, target_height, target_width)
 
         image, label = random_flip(image, label)
 
@@ -167,7 +166,7 @@ def preprocess_image_and_label(image, label=None, target_width=513, train=True):
 
     else:
         image, label = cast(image)
-        image = resize(image, target_width)
-        image, label = pad(image, desired_size=crop_w)
+        image = resize(image, (target_height, target_width))
+        image, label = pad(image, desired_size=(crop_h, crop_w))
         image = zero_mean_unit_range(image)
         return image
