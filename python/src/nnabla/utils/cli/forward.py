@@ -269,32 +269,6 @@ def forward_command(args):
     status.dump(status='processing')
     # Console only end
 
-    with data_iterator() as di:
-        index = 0
-        while index < di.size:
-            data = di.next()
-            result, outputs = _forward(args, index, config, data, di.variables)
-            if index == 0:
-                for name, dim in zip(result.names, result.dims):
-                    if dim == 1:
-                        row0.append(name)
-                    else:
-                        for d in range(dim):
-                            row0.append(name + '__' + str(d))
-            for i, output in enumerate(outputs):
-                if index + i < len(rows):
-                    rows[orders[index + i]].extend(output)
-            index += len(outputs)
-
-            # Console only start
-            status.set_val('data.current', min([index, len(rows)]))
-            status.update_time_forward()
-            status.dump()
-            # Console only end
-
-            logger.log(
-                99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
-
     with open(os.path.join(args.outdir, 'output_result.csv'), 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         with data_iterator() as di:
@@ -318,6 +292,13 @@ def forward_command(args):
                         row.extend(output)
                         writer.writerow(row)
                 index += len(outputs)
+
+                # Console only start
+                status.set_val('data.current', min([index, len(rows)]))
+                status.update_time_forward()
+                status.dump()
+                # Console only end
+
                 logger.log(
                     99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
 

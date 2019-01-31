@@ -54,7 +54,7 @@ def _all_reduce(comm, var, division, inplace):
         while not _finish:
             if count > 10000:
                 logger.log(99, "STALLED MPI RANK {}".format(comm.rank))
-                sys.exit(-1)
+                os.kill(os.getpid(), 9)
             time.sleep(0.01)
             count += 1
 
@@ -291,6 +291,11 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             error = 0
         else:
             error = error_sum_monitor / error_count
+
+        if np.isnan(error) or np.isinf(error):
+            logger.log(99, 'Validation error is Nan')
+            error = 0.0
+
         monitoring_report.append('  {}: {}\n'.format(name, error))
 
         # Console only start
@@ -321,10 +326,6 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             # Console only end
             _save_parameters(args, 'best', epoch, True)
 
-    # Console only start
-    status.set_val('best.valid_error', best_error)
-    status.set_val('best.epoch', epoch)
-    # Console only end
     return best_error, error_str
 
 
