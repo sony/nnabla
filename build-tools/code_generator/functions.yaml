@@ -2416,6 +2416,25 @@ Math:
     function_ids:
       Empty: 180
     c_runtime: not support
+  ATan2:
+    snake_name: atan2
+    doc: |2
+
+      Element-wise arctangent (atan) function with 2 input variables.
+
+      .. math::
+          y_i = \arctan2 (x_{i1}, x_{i2})
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as input variables
+    c_runtime: not support
+    function_ids:
+      Empty: 241
   ASinh:
     snake_name: asinh
     doc: |2

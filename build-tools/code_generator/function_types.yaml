@@ -425,6 +425,9 @@ ACos:
 ATan:
   float: [float]
   half: [Half]
+ATan2:
+  float: [float]
+  half: [Half]
 ASinh:
   float: [float]
   half: [Half]
