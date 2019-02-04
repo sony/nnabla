@@ -56,6 +56,7 @@ Available models are summarized in the following table. Error rates are calculat
     "ResNet-50", "ResNet", 24.59, 7.48, Neural Network Console
     "ResNet-101", "ResNet", 23.81, 7.01, Neural Network Console
     "ResNet-152", "ResNet", 23.48, 7.09, Neural Network Console
+    "MobileNet", "MobileNet", 29.51, 10.34, Neural Network Console
     "MobileNetV2", "MobileNetV2", 29.94, 10.82, Neural Network Console
     "SENet-154", "SENet", 22.04, 6.29, Neural Network Console
     "SqueezeNet v1.1", "SqueezeNet", 41.23, 19.18, Neural Network Console
@@ -75,6 +76,9 @@ List of models
 .. automodule:: nnabla.models.imagenet
 
 .. autoclass:: ResNet
+    :members:
+
+.. autoclass:: MobileNet
     :members:
 
 .. autoclass:: MobileNetV2
