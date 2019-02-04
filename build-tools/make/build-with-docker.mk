@@ -28,17 +28,10 @@ DOCKER_IMAGE_NAME_BASE ?= nnabla-build
 
 DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format
 DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc
-DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build
+DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX)
 DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android
 DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla
-DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test
-
-DOCKER_RUN_OPTS +=--rm
-DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
-DOCKER_RUN_OPTS += -w $$(pwd)
-DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
-DOCKER_RUN_OPTS += -e HOME=/tmp
-DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
+DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test$(ARCH_SUFFIX)
 
 ########################################################################################################################
 # Docker images
@@ -56,17 +49,17 @@ docker_image_doc:
 
 .PHONY: docker_image_build
 docker_image_build:
-	docker pull centos:6
+	docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}')
 	cd $(NNABLA_DIRECTORY) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) \
-		-f docker/development/Dockerfile.build .
+		-f docker/development/Dockerfile.build$(ARCH_SUFFIX) .
 
 .PHONY: docker_image_onnx_test
 docker_image_onnx_test:
-	docker pull ubuntu:16.04
+	docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}')
 	cd $(NNABLA_DIRECTORY) \
 	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) \
-		-f docker/development/Dockerfile.onnx-test .
+		-f docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) .
 
 .PHONY: docker_image_build_android
 docker_image_build_android:
@@ -110,12 +103,12 @@ bwd-nnabla-test-cpplib: docker_image_build
 .PHONY: bwd-nnabla-wheel
 bwd-nnabla-wheel: docker_image_build
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=ON nnabla-wheel
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL) nnabla-wheel
 
 .PHONY: bwd-nnabla-test
 bwd-nnabla-test: docker_image_onnx_test
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_ONNX_TEST) make -f build-tools/make/build.mk nnabla-test-local
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_ONNX_TEST) make -f build-tools/make/build.mk nnabla-test
 
 .PHONY: bwd-nnabla-shell
 bwd-nnabla-shell: docker_image_build
