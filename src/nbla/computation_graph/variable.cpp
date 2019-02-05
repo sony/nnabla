@@ -162,11 +162,12 @@ public:
   }
 
   void error_trace(const string &name_on_error) {
+    // TODO: Optional verbosity
     std::cerr << "Error during forward propagation:" << std::endl;
     for (auto &name : history_) {
       std::cerr << "  " << name << std::endl;
     }
-    std::cerr << "  " << name_on_error << " <-- Here" << std::endl;
+    std::cerr << "  " << name_on_error << " <-- ERROR" << std::endl;
   }
 
   void operator()(CgFunctionPtr func) {
@@ -320,11 +321,12 @@ public:
   }
 
   void error_trace(const string &name_on_error) {
+    // TODO: Optional verbosity
     std::cerr << "Error during backward propagation:" << std::endl;
     for (auto &name : history_) {
       std::cerr << "  " << name << std::endl;
     }
-    std::cerr << "  " << name_on_error << " <-- Here" << std::endl;
+    std::cerr << "  " << name_on_error << " <-- ERROR" << std::endl;
   }
 
   void operator()(CgFunctionPtr f) {

@@ -12,22 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/memory.hpp>
+#pragma once
+
+#include <nbla/memory/memory.hpp>
 
 namespace nbla {
-Memory::Memory(Size_t bytes, const string &device)
-    : size_(bytes), ptr_(nullptr), device_(device) {}
 
-Size_t Memory::size() const { return size_; }
+/** Cpu memory implementation.
 
-string Memory::device() const { return device_; }
+    A memory block allocated by ::malloc function is managed by an instance.
 
-void *Memory::ptr() {
-  if (!ptr_) {
-    NBLA_CHECK(allocate(), error_code::memory,
-               "Failed to allocate %d bytes of memory on %s.", size_,
-               device_.c_str());
-  }
-  return ptr_;
-}
+    \ingroup MemoryImplGrp
+ */
+class NBLA_API CpuMemory : public Memory {
+  CpuMemory(size_t bytes, const string &device_id, void *ptr);
+
+public:
+  CpuMemory(size_t bytes, const string &device_id);
+  ~CpuMemory();
+
+protected:
+  bool alloc_impl() override;
+  shared_ptr<Memory> divide_impl(size_t second_start) override;
+  void merge_next_impl(Memory *from) override;
+  void merge_prev_impl(Memory *from) override;
+};
 }

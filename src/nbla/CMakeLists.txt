@@ -1,5 +1,6 @@
 file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} 
   ./*.cpp
+  memory/*.cpp
   array/*.cpp
   solver/*.cpp
   communicator/*.cpp

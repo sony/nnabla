@@ -24,6 +24,7 @@ Array classes are not directly used by users
 #include <nbla/dtypes.hpp>
 #include <nbla/exception.hpp>
 #include <nbla/half.hpp>
+#include <nbla/memory/allocator.hpp>
 
 #include <memory>
 #include <type_traits>
@@ -36,40 +37,46 @@ namespace nbla {
 /** An abstract class of Array interface.
 
 This is extended to implement a new array class (see CpuArray, CudaArray etc.).
-
-NOTE for developers: Do not directly access object_ from anywhere except
-`allocate` and `deallocate` functions. Use `pointer<T>()` or
-`const_pointer<T>()`. Objects are lazily allocated when they are called.
 */
 class Array {
 protected:
-  void *object_; ///< In many case, this is a pointer to device memory.
-  Size_t size_;  ///< Size of array.
-  dtypes dtype_; ///< Data type such as float32, int32, uint8 etc.
-  Context ctx_;  ///< Hold device info to identify
-                 ///< what device array is used.
+  /// Size of array.
+  Size_t size_;
+
+  /// Data type such as float32, int32, uint8 etc.
+  dtypes dtype_;
+
+  /// Hold device info to identify what device array is used.
+  Context ctx_;
+
+  /// Holding nbla::Memory object.
+  AllocatorMemory mem_;
+
+  /** The constructor must be called only from derived class.
+
+      AllocatorMemory should be created by an instance of a realization of
+      nbla::Allocator and passed as a rvalue reference.
+   */
+  NBLA_API Array(const Size_t size, dtypes dtype, const Context &ctx,
+                 AllocatorMemory &&mem);
+
+  static NBLA_API size_t size_as_bytes(Size_t size, dtypes dtype);
+
 public:
   typedef shared_ptr<Array> Ptr;
 
-  explicit NBLA_API Array(const Size_t size, dtypes dtype, const Context &ctx);
   virtual NBLA_API ~Array() = 0;
 
   /** Get object pointer.
    */
   template <typename T = void> T *pointer() {
-    if (!object_) {
-      allocate();
-    }
-    return reinterpret_cast<T *>(object_);
+    return reinterpret_cast<T *>(mem_.pointer());
   }
 
   /** Get constant object pointer
    */
   template <typename T = void> const T *const_pointer() const {
-    if (!object_) {
-      const_cast<Array *>(this)->allocate();
-    }
-    return reinterpret_cast<const T *>(object_);
+    return reinterpret_cast<const T *>(mem_.const_pointer());
   }
 
   /** Return dtype. */
@@ -88,24 +95,17 @@ public:
   /**
     Fill all element with zero.
   */
-  virtual void zero() = 0;
+  virtual NBLA_API void zero() = 0;
 
   /** Fill all element with given value.
   */
-  virtual void fill(float value) = 0;
+  virtual NBLA_API void fill(float value) = 0;
 
   /** Filter a Context into a minimal information to describe an Array.
   */
   static Context filter_context(const Context &ctx);
 
 protected:
-  /** Memory allocator.
-  */
-  virtual void allocate() = 0;
-  /** Memory deallocator.
-  */
-  virtual void deallocate() = 0;
-
   DISABLE_COPY_AND_ASSIGN(Array);
 };
 
