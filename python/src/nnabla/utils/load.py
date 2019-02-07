@@ -39,7 +39,7 @@ from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 from nnabla.utils.learning_rate_scheduler import (
-    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler)
+    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler, LinearWarmupScheduler)
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -458,7 +458,8 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer.comm = current_communicator()
     comm_size = optimizer.comm.size if optimizer.comm else 1
-    optimizer.scheduler = None
+    optimizer.scheduler = ExponentialScheduler(init_lr, 1.0, 1)
+
     if o.solver.lr_scheduler_type == 'Polynomial':
         if o.solver.polynomial_scheduler_param.power != 0.0:
             optimizer.scheduler = PolynomialScheduler(
@@ -484,6 +485,11 @@ def _create_optimizer(ctx, o, networks, datasets):
     else:
         raise ValueError('Learning Rate Scheduler "' + o.solver.lr_scheduler_type +
                          '" is not supported.')
+
+    if o.solver.lr_warmup_scheduler_type == 'Linear':
+        if o.solver.linear_warmup_scheduler_param.warmup_iter >= comm_size:
+            optimizer.scheduler = LinearWarmupScheduler(
+                optimizer.scheduler, o.solver.linear_warmup_scheduler_param.warmup_iter // comm_size)
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
         optimizer.loss_variables)

@@ -176,6 +176,9 @@ message Solver {
   StepSchedulerParameter step_scheduler_param = 213;
   CustomSchedulerParameter custom_scheduler_param = 299;
 
+  string lr_warmup_scheduler_type = 300;
+  LinearWarmupSchedulerParameter linear_warmup_scheduler_param = 310;
+
   float lr_decay = 30;  // Obsolete
   int64 lr_decay_interval = 31;  // Obsolete
 }
@@ -213,6 +216,10 @@ message CustomSchedulerParameter {
 
   repeated DataVariable data_variable = 50;
   repeated OutputVariable output_variable = 80;
+}
+
+message LinearWarmupSchedulerParameter {
+  int64 warmup_iter = 1;
 }
 
 message DataVariable {
