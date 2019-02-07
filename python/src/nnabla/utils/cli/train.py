@@ -394,19 +394,18 @@ def _train(args, config):
             for iteration in range(last_iteration, max_iteration):
 
                 cost = _update(iteration, config, cost)
-                if (iteration - last_iteration) > 0:
-                    timeinfo = _calc_estimate_time(
-                        timeinfo, max_iteration, last_iteration, iteration)
-                    if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
-                        logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
-                            timeinfo.estimate_time, config.timelimit))
-                        return False
+                timeinfo = _calc_estimate_time(
+                    timeinfo, max_iteration, last_iteration, iteration + 1)
+                if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
+                    logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
+                        timeinfo.estimate_time, config.timelimit))
+                    return False
 
                 if (iteration + 1) % config.training_config.iter_per_epoch == 0:
                     last_past_time = -1
                     # End of epoch
                     epoch = iteration // config.training_config.iter_per_epoch + 1
-                    cost_avg_epoch = cost.sum_epoch / cost.num_iteration
+                    cost_avg_epoch = cost.sum_epoch / cost.num_iteration if cost.num_iteration else 0
                     cost.sum_epoch = 0.0
                     cost.num_iteration = 0
                     monitoring_report = []
