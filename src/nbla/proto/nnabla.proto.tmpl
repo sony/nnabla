@@ -133,11 +133,14 @@ message Optimizer {
 
   Solver solver = 30;
   int64 update_interval = 40;
-
+  
   repeated DataVariable data_variable = 50;
   repeated GeneratorVariable generator_variable = 60;
   repeated LossVariable loss_variable = 70;
   repeated ParameterVariable parameter_variable = 80;
+
+  int64 start_iter = 100;
+  int64 end_iter = 101;
 }
 
 

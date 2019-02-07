@@ -361,14 +361,19 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer = Optimizer()
 
+    optimizer.comm = current_communicator()
+    comm_size = optimizer.comm.size if optimizer.comm else 1
+    optimizer.start_iter = (o.start_iter - 1) // comm_size + \
+        1 if o.start_iter > 0 else 0
+    optimizer.end_iter = (o.end_iter - 1) // comm_size + \
+        1 if o.end_iter > 0 else 0
     optimizer.name = o.name
     optimizer.order = o.order
     optimizer.update_interval = o.update_interval if o.update_interval > 0 else 1
     optimizer.network = networks[o.network_name]
-    optimizer.data_iterator = OrderedDict()
+    optimizer.data_iterators = OrderedDict()
     for d in o.dataset_name:
-        optimizer.data_iterator[d] = datasets[d].data_iterator
-    optimizer.data_iterator = list(optimizer.data_iterator.values())[0]  # Todo
+        optimizer.data_iterators[d] = datasets[d].data_iterator
 
     optimizer.dataset_assign = OrderedDict()
     for d in o.data_variable:
@@ -556,7 +561,7 @@ def _training_config(proto):
     return config
 
 
-def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator):
+def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator, dataset_index):
     class Dataset:
         pass
     dataset = Dataset()
@@ -566,7 +571,8 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     comm = current_communicator()
 
     # use same random state for each process until slice is called
-    rng = numpy.random.RandomState(0)
+    # different random state is used for each dataset
+    rng = numpy.random.RandomState(dataset_index)
     use_memory_cache = comm.size == 1 if comm else True
 
     if prepare_data_iterator:
@@ -588,7 +594,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
                         pass
 
-            rng = numpy.random.RandomState(0)
+            rng = numpy.random.RandomState(dataset_index)
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
@@ -615,9 +621,9 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
 
 def _datasets(proto, prepare_data_iterator=True):
     datasets = OrderedDict()
-    for d in proto.dataset:
+    for i, d in enumerate(proto.dataset):
         datasets[d.name] = _create_dataset(
-            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator)
+            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator, i)
     return datasets
 
 
@@ -658,10 +664,9 @@ def _monitors(proto, default_context, networks, datasets):
         monitor = Monitor()
 
         monitor.network = networks[m.network_name]
-        monitor.data_iterator = OrderedDict()
+        monitor.data_iterators = OrderedDict()
         for d in m.dataset_name:
-            monitor.data_iterator[d] = datasets[d].data_iterator
-        monitor.data_iterator = list(monitor.data_iterator.values())[0]  # Todo
+            monitor.data_iterators[d] = datasets[d].data_iterator
 
         monitor.dataset_assign = OrderedDict()
         for d in m.data_variable:
@@ -841,7 +846,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
-    info.datasets = _datasets(proto, prepare_data_iterator)
+    info.datasets = _datasets(
+        proto, prepare_data_iterator if prepare_data_iterator is not None else info.training_config.max_epoch > 0)
 
     info.networks = _networks(proto, default_context, batch_size)
 
