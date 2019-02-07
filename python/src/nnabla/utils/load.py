@@ -719,6 +719,7 @@ def _executors(executors_proto, networks):
         executor.num_evaluations = e.num_evaluations if e.num_evaluations > 0 else 1
         executor.repeat_evaluation_type = e.repeat_evaluation_type
         executor.need_back_propagation = e.need_back_propagation
+        executor.no_image_normalization = e.no_image_normalization
 
         executor.dataset_assign = OrderedDict()
         for d in e.data_variable:

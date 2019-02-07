@@ -276,6 +276,8 @@ message Executor {
   repeated LossVariable loss_variable = 70;
   repeated OutputVariable output_variable = 80;
   repeated ParameterVariable parameter_variable = 90;
+
+  bool no_image_normalization = 101;
 }
 
 message OutputVariable {

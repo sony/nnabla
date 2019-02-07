@@ -195,6 +195,9 @@ def forward_command(args):
     for d in info.datasets.values():
         if d.uri == args.dataset:
             normalize = d.normalize
+    for e in config.executors:
+        normalize = normalize and not e.no_image_normalization
+
     data_iterator = (lambda: data_iterator_csv_dataset(
         uri=args.dataset,
         batch_size=config.networks[0].batch_size,
