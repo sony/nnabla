@@ -278,7 +278,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                 error_sum = 0.0
                 for v in m.monitor_variables:
                     error_sum += np.mean(v.variable_instance.d)
-                    v.variable_instance.data.zero()
+                    # v.variable_instance.data.zero()
                 error_sum_monitor = _sum_error(error_sum_monitor, error_sum)
                 if single_or_rankzero():
                     progress('Evaluating "{0}"'.format(
@@ -294,7 +294,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
         error_sum = 0.0
         for v in m.monitor_variables:
             error_sum += np.mean(v.variable_instance.d)
-            v.variable_instance.data.zero()
+            # v.variable_instance.data.zero()
         error_sum_monitor = _sum_error(error_sum_monitor, error_sum)
 
         if error_count == 0:
