@@ -42,6 +42,13 @@ struct CommunicatorBackwardCallback {
 typedef shared_ptr<CommunicatorBackwardCallback>
     CommunicatorBackwardCallbackPtr;
 
+/** visit functions backward to calculate gradients
+ */
+void visit_function_backward(
+    vector<CgFunctionPtr> roots,
+    std::function<void(CgFunctionPtr)> backward_callback,
+    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
+
 /** Computation graph variable.
 
 A Variable object is held in this object as a data container. In addition,
@@ -74,11 +81,6 @@ class CgVariable {
   visit_function_recursive(CgFunctionPtr func,
                            unordered_set<CgFunctionPtr> &fclosed,
                            std::function<void(CgFunctionPtr)> forward_callback);
-
-  static void visit_function_backward(
-      vector<CgFunctionPtr> roots,
-      std::function<void(CgFunctionPtr)> backward_callback,
-      vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
 
 public:
   typedef shared_ptr<CgVariable> Ptr;
@@ -238,12 +240,6 @@ public:
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
 
   /**
-   */
-  static void
-  backward_all(vector<CgVariable::Ptr> variables, bool clear_buffer = false,
-           vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
-
-  /**
   */
   NBLA_API vector<CgFunctionPtr> function_references();
 
@@ -305,5 +301,25 @@ public:
 /** shared_ptr typedef of CGVariable
  */
 typedef CgVariable::Ptr CgVariablePtr;
+
+/** Callback invoked at backward
+ */
+class BackwardCallback {
+  bool clear_buffer_;
+  unordered_map<CgVariablePtr, bool> vseen_;
+  vector<bool> get_accum(const vector<CgVariablePtr> &inputs,
+                         const vector<bool> &first_visit_flags);
+  void force_zero_grad_if_unseen(vector<CgVariablePtr> outputs,
+                                 const vector<bool> &first_visit);
+  void clear_output_buffers(CgFunctionPtr func,
+                            const vector<bool> &prohibit_clear);
+  pair<vector<bool>, vector<bool>> query_outputs_flags(
+      const vector<CgVariablePtr> &outputs);
+  vector<bool> query_input_flags(const vector<CgVariablePtr> &inputs,
+                                 CgFunctionPtr func);
+public:
+  BackwardCallback(vector<CgFunctionPtr> roots, bool clear_buffer);
+  void operator()(CgFunctionPtr f);
+};
 }
 #endif

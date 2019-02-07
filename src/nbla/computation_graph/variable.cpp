@@ -55,6 +55,67 @@ CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
   set_need_grad(need_grad);
 }
 
+void visit_function_backward(
+    vector<CgFunctionPtr> roots,
+    std::function<void(CgFunctionPtr)> backward_callback,
+    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
+  // Open list of next search candidate.
+  unordered_map<CgFunctionPtr, uint64_t> ids;
+  /* Returns the ID for each function (layer) */
+  auto get_id = [&ids](const CgFunctionPtr &ptr) -> uint64_t {
+    auto it = ids.find(ptr);
+    if (it == ids.end()) {
+      /* Assign an ID to the function */
+      auto id = ids.size();
+      ids.insert({ptr, id});
+      return id;
+    }
+    /* Return the previous ID if the ID is already assigned */
+    return it->second;
+  };
+  set<tuple<int, uint64_t, CgFunctionPtr>> open;
+  for (auto p : roots) {
+    open.insert(make_tuple(-p->rank(), get_id(p), p));
+  }
+  while (!open.empty()) {
+    auto rank_func = open.begin();
+    auto f = get<2>(*rank_func);
+    DestructorCallback at_scope_exit([&]() { open.erase(rank_func); });
+    // std::cout << "size: " << open.size();
+    // std::cout << " --> " << open.size() << std::endl;
+    if (!f->need_grad())
+      continue;
+
+    // Callback
+    backward_callback(f);
+    // std::cout << (int)(get<1>(*rank_func)) << ": " << f->rank() << " "
+    //           << f->function()->name() << " " << f.get() << " " <<
+    //           open.size()
+    //           << std::endl;
+
+    //
+    for (auto &com_callback : communicator_callbacks) {
+      com_callback->on_finish_function_backward(f);
+    }
+
+    // Propagate down.
+    auto inputs = f->inputs();
+    for (int i = 0; i < f->num_inputs(); i++) {
+      auto inp = inputs[i];
+      if (!inp->need_grad_state())
+        continue;
+      auto p_i = inp->parent();
+      if (!p_i)
+        continue;
+      open.insert(make_tuple(-p_i->rank(), get_id(p_i), p_i));
+    }
+  }
+
+  for (auto &com_callback : communicator_callbacks) {
+    com_callback->on_finish_backward();
+  }
+}
+
 class ForwardCallback {
   bool clear_buffer_{false};
   bool clear_no_need_grad_{false};
@@ -176,165 +237,160 @@ public:
   }
 };
 
-class BackwardCallback {
-  bool clear_buffer_;
-  // Visit CgVaiable list. The value is whether this is cleared during backward.
-  unordered_map<CgVariablePtr, bool> vseen_;
+vector<bool> BackwardCallback::get_accum(
+    const vector<CgVariablePtr> &inputs,
+    const vector<bool> &first_visit_flags) {
+  vector<bool> accum(inputs.size(), false);
+  for (int i = 0; i < inputs.size(); i++) {
+    // No need grad.
+    if (!inputs[i]->need_grad_state())
+      continue;
 
-  vector<bool> get_accum(const vector<CgVariablePtr> &inputs,
-                         const vector<bool> &first_visit_flags) {
-    vector<bool> accum(inputs.size(), false);
-    for (int i = 0; i < inputs.size(); i++) {
-      // No need grad.
-      if (!inputs[i]->need_grad_state())
-        continue;
-
-      // Root variable is always accumulated.
-      if (!inputs[i]->parent()) {
-        accum[i] = true;
-        continue;
-      }
-      // First visit gradients are copied.
-      if (first_visit_flags[i]) {
-        continue;
-      }
+    // Root variable is always accumulated.
+    if (!inputs[i]->parent()) {
       accum[i] = true;
+      continue;
     }
-    return accum;
-  }
-
-  void force_zero_grad_if_unseen(vector<CgVariablePtr> outputs,
-                                 const vector<bool> &first_visit) {
-    for (int i = 0; i < outputs.size(); i++) {
-      auto o = outputs[i];
-      if (first_visit[i]) {
-        // The output variable has not been seen during this backprop, which
-        // means no one sets the gradient previously. To prevent to propagate
-        // uninitialized gradient, the output gradients are filled as 0.
-        // std::cout << "Zero-ing output grad of "
-        //           << o->parent()->function()->name() << std::endl;
-        o->variable()->grad()->zero();
-      }
+    // First visit gradients are copied.
+    if (first_visit_flags[i]) {
+      continue;
     }
+    accum[i] = true;
   }
+  return accum;
+}
 
-  void clear_output_buffers(CgFunctionPtr func,
-                            const vector<bool> &prohibit_clear) {
-    if (clear_buffer_) {
-      auto f = func->function();
-      auto inputs = func->inputs();
-      auto outputs = func->outputs();
-      vector<pair<bool, bool>> clear(outputs.size(), {true, true});
-      for (int i = 0; i < inputs.size(); i++) {
-        if (f->inplace_data(i)) {
-          clear[f->inplace_data_with(i)].first = false;
-        }
-        if (f->inplace_grad(i)) {
-          clear[f->inplace_grad_with(i)].second = false;
-        }
-      }
-      for (int o = 0; o < outputs.size(); ++o) {
-        if (prohibit_clear[o] || outputs[o]->persistent()) {
-          continue;
-        }
-        if (clear[o].first) {
-          outputs[o]->variable()->data()->array()->clear();
-        }
-        if (clear[o].second) {
-          outputs[o]->variable()->grad()->array()->clear();
-        }
-      }
+void BackwardCallback::force_zero_grad_if_unseen(vector<CgVariablePtr> outputs,
+                               const vector<bool> &first_visit) {
+  for (int i = 0; i < outputs.size(); i++) {
+    auto o = outputs[i];
+    if (first_visit[i]) {
+      // The output variable has not been seen during this backprop, which
+      // means no one sets the gradient previously. To prevent to propagate
+      // uninitialized gradient, the output gradients are filled as 0.
+      // std::cout << "Zero-ing output grad of "
+      //           << o->parent()->function()->name() << std::endl;
+      o->variable()->grad()->zero();
     }
   }
+}
 
-  // Get first visit flags and prohibit clear flags;
-  // The prohibit clear flags are set by query_input_flags function with inputs
-  // of a previously called function.
-  pair<vector<bool>, vector<bool>>
-  query_outputs_flags(const vector<CgVariablePtr> &outputs) {
-    vector<bool> first_visit(outputs.size());
-    vector<bool> prohibit_clear(outputs.size());
-    for (int i = 0; i < outputs.size(); i++) {
-      auto v = outputs[i];
-      auto it = vseen_.find(v);
-      bool first = it == vseen_.end();
-      if (first) { // first visit
-        // Terminal variable always doesn't allow to clear buffers.
-        prohibit_clear[i] = true;
-      } else {
-        // Propagate prohibit_clear_inputs_buffers flag from the previous seen
-        // inputs.
-        prohibit_clear[i] = it->second;
+void BackwardCallback::clear_output_buffers(CgFunctionPtr func,
+                                const vector<bool> &prohibit_clear) {
+  if (clear_buffer_) {
+    auto f = func->function();
+    auto inputs = func->inputs();
+    auto outputs = func->outputs();
+    vector<pair<bool, bool>> clear(outputs.size(), {true, true});
+    for (int i = 0; i < inputs.size(); i++) {
+      if (f->inplace_data(i)) {
+        clear[f->inplace_data_with(i)].first = false;
       }
-      first_visit[i] = first;
+      if (f->inplace_grad(i)) {
+        clear[f->inplace_grad_with(i)].second = false;
+      }
     }
-    return {first_visit, prohibit_clear};
-  }
-
-  vector<bool> query_input_flags(const vector<CgVariablePtr> &inputs,
-                                 CgFunctionPtr func) {
-    vector<bool> ret(inputs.size());
-    bool prohibit_clear = func->function()->prohibit_clear_input_buffers();
-    for (int i = 0; i < ret.size(); i++) {
-      auto v = inputs[i];
-      auto it = vseen_.find(v);
-      bool first_visit = it == vseen_.end();
-      ret[i] = first_visit;
-      if (first_visit) {
-        vseen_.insert({v, prohibit_clear});
+    for (int o = 0; o < outputs.size(); ++o) {
+      if (prohibit_clear[o] || outputs[o]->persistent()) {
         continue;
       }
-      // Prohibits clearing if any of previous function prohibits clearing
-      // inputs.
-      it->second |= prohibit_clear;
-    }
-    return ret;
-  }
-
-public:
-  BackwardCallback(vector<CgFunctionPtr> roots, bool clear_buffer)
-      : clear_buffer_(clear_buffer) {
-    // Note prohibiting clearing variable buffers where terminal.
-    for (auto v : roots) {
-      for (auto o : v->outputs()) {
-        vseen_.insert({o, true});
+      if (clear[o].first) {
+        outputs[o]->variable()->data()->array()->clear();
+      }
+      if (clear[o].second) {
+        outputs[o]->variable()->grad()->array()->clear();
       }
     }
   }
+}
 
-  void operator()(CgFunctionPtr f) {
-    // Check accumulation.
-    const auto inputs = f->inputs();
-    auto first_visit_flags = query_input_flags(inputs, f);
-    auto accum = get_accum(inputs, first_visit_flags);
-
-    // Get output variables
-    vector<CgVariablePtr> outputs;
-    vector<Variable *> voutputs;
-    std::tie(outputs, voutputs) = f->function_outputs();
-
-    // Query output flags according to previous trace history.
-    vector<bool> output_first_visit_flags;
-    vector<bool> output_prohibit_clear;
-    std::tie(output_first_visit_flags, output_prohibit_clear) =
-        query_outputs_flags(outputs);
-
-    // Check if any of outputs is unseen.
-    force_zero_grad_if_unseen(outputs, output_first_visit_flags);
-
-    // Call backward function
-    vector<bool> prop_down(accum.size());
-    std::transform(inputs.begin(), inputs.end(), prop_down.begin(),
-                   [](CgVariablePtr v) { return v->need_grad_state(); });
-    // std::cout << f->function()->name() << std::endl;
-    // std::cout << "  " << string_join(prop_down, ",") << std::endl;
-    // std::cout << "  " << string_join(accum, ",") << std::endl;
-    f->function()->backward(f->function_inputs(), voutputs, prop_down, accum);
-
-    // Clear outputs buffer
-    clear_output_buffers(f, output_prohibit_clear);
+// Get first visit flags and prohibit clear flags;
+// The prohibit clear flags are set by query_input_flags function with inputs
+// of a previously called function.
+pair<vector<bool>, vector<bool>>
+BackwardCallback::query_outputs_flags(const vector<CgVariablePtr> &outputs) {
+  vector<bool> first_visit(outputs.size());
+  vector<bool> prohibit_clear(outputs.size());
+  for (int i = 0; i < outputs.size(); i++) {
+    auto v = outputs[i];
+    auto it = vseen_.find(v);
+    bool first = it == vseen_.end();
+    if (first) { // first visit
+      // Terminal variable always doesn't allow to clear buffers.
+      prohibit_clear[i] = true;
+    } else {
+      // Propagate prohibit_clear_inputs_buffers flag from the previous seen
+      // inputs.
+      prohibit_clear[i] = it->second;
+    }
+    first_visit[i] = first;
   }
-};
+  return {first_visit, prohibit_clear};
+}
+
+vector<bool> BackwardCallback::query_input_flags(
+    const vector<CgVariablePtr> &inputs, CgFunctionPtr func) {
+  vector<bool> ret(inputs.size());
+  bool prohibit_clear = func->function()->prohibit_clear_input_buffers();
+  for (int i = 0; i < ret.size(); i++) {
+    auto v = inputs[i];
+    auto it = vseen_.find(v);
+    bool first_visit = it == vseen_.end();
+    ret[i] = first_visit;
+    if (first_visit) {
+      vseen_.insert({v, prohibit_clear});
+      continue;
+    }
+    // Prohibits clearing if any of previous function prohibits clearing
+    // inputs.
+    it->second |= prohibit_clear;
+  }
+  return ret;
+}
+
+BackwardCallback::BackwardCallback(vector<CgFunctionPtr> roots,
+                                   bool clear_buffer)
+    : clear_buffer_(clear_buffer) {
+  // Note prohibiting clearing variable buffers where terminal.
+  for (auto v : roots) {
+    for (auto o : v->outputs()) {
+      vseen_.insert({o, true});
+    }
+  }
+}
+
+void BackwardCallback::operator()(CgFunctionPtr f) {
+  // Check accumulation.
+  const auto inputs = f->inputs();
+  auto first_visit_flags = query_input_flags(inputs, f);
+  auto accum = get_accum(inputs, first_visit_flags);
+
+  // Get output variables
+  vector<CgVariablePtr> outputs;
+  vector<Variable *> voutputs;
+  std::tie(outputs, voutputs) = f->function_outputs();
+
+  // Query output flags according to previous trace history.
+  vector<bool> output_first_visit_flags;
+  vector<bool> output_prohibit_clear;
+  std::tie(output_first_visit_flags, output_prohibit_clear) =
+      query_outputs_flags(outputs);
+
+  // Check if any of outputs is unseen.
+  force_zero_grad_if_unseen(outputs, output_first_visit_flags);
+
+  // Call backward function
+  vector<bool> prop_down(accum.size());
+  std::transform(inputs.begin(), inputs.end(), prop_down.begin(),
+                 [](CgVariablePtr v) { return v->need_grad_state(); });
+  // std::cout << f->function()->name() << std::endl;
+  // std::cout << "  " << string_join(prop_down, ",") << std::endl;
+  // std::cout << "  " << string_join(accum, ",") << std::endl;
+  f->function()->backward(f->function_inputs(), voutputs, prop_down, accum);
+
+  // Clear outputs buffer
+  clear_output_buffers(f, output_prohibit_clear);
+}
 
 void CgVariable::visit_function_recursive(
     CgFunctionPtr func, unordered_set<CgFunctionPtr> &fclosed,
@@ -404,67 +460,6 @@ void CgVariable::visit_function_recursive(
   // func.get() << std::endl;
 }
 
-void CgVariable::visit_function_backward(
-    vector<CgFunctionPtr> roots,
-    std::function<void(CgFunctionPtr)> backward_callback,
-    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
-  // Open list of next search candidate.
-  unordered_map<CgFunctionPtr, uint64_t> ids;
-  /* Returns the ID for each function (layer) */
-  auto get_id = [&ids](const CgFunctionPtr &ptr) -> uint64_t {
-    auto it = ids.find(ptr);
-    if (it == ids.end()) {
-      /* Assign an ID to the function */
-      auto id = ids.size();
-      ids.insert({ptr, id});
-      return id;
-    }
-    /* Return the previous ID if the ID is already assigned */
-    return it->second;
-  };
-  set<tuple<int, uint64_t, CgFunctionPtr>> open;
-  for (auto p : roots) {
-    open.insert(make_tuple(-p->rank(), get_id(p), p));
-  }
-  while (!open.empty()) {
-    auto rank_func = open.begin();
-    auto f = get<2>(*rank_func);
-    DestructorCallback at_scope_exit([&]() { open.erase(rank_func); });
-    // std::cout << "size: " << open.size();
-    // std::cout << " --> " << open.size() << std::endl;
-    if (!f->need_grad())
-      continue;
-
-    // Callback
-    backward_callback(f);
-    // std::cout << (int)(get<1>(*rank_func)) << ": " << f->rank() << " "
-    //           << f->function()->name() << " " << f.get() << " " <<
-    //           open.size()
-    //           << std::endl;
-
-    //
-    for (auto &com_callback : communicator_callbacks) {
-      com_callback->on_finish_function_backward(f);
-    }
-
-    // Propagate down.
-    auto inputs = f->inputs();
-    for (int i = 0; i < f->num_inputs(); i++) {
-      auto inp = inputs[i];
-      if (!inp->need_grad_state())
-        continue;
-      auto p_i = inp->parent();
-      if (!p_i)
-        continue;
-      open.insert(make_tuple(-p_i->rank(), get_id(p_i), p_i));
-    }
-  }
-
-  for (auto &com_callback : communicator_callbacks) {
-    com_callback->on_finish_backward();
-  }
-}
-
 void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
                          unordered_set<CgFunctionPtr> *fclosed) {
   if (fclosed == nullptr) {
@@ -494,33 +489,6 @@ void CgVariable::backward(
 
   // Create callback
   vector<CgFunctionPtr> roots{this->parent()};
-  BackwardCallback backward_callback(roots, clear_buffer);
-
-  // Visit backward
-  visit_function_backward(
-      roots, [&backward_callback](CgFunctionPtr f) { backward_callback(f); },
-      communicator_callbacks);
-}
-
-void CgVariable::backward_all(
-    vector<CgVariable::Ptr> variables, bool clear_buffer,
-    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
-  // setup backward at each variable
-  vector<NdArrayPtr> bak_grads;
-  DestructorCallback at_scope_exit([&]() {
-    for (int i = 0; i < variables.size(); ++i) {
-      variables[i]->variable()->set_grad(bak_grads[i]);
-    }
-  });
-  vector<CgFunctionPtr> roots;
-  for (auto v : variables) {
-    // backup gradients
-    bak_grads.push_back(v->variable()->grad());
-    // set function to avoid clearing
-    roots.push_back(v->parent());
-  }
-
-  // Create callback
   BackwardCallback backward_callback(roots, clear_buffer);
 
   // Visit backward

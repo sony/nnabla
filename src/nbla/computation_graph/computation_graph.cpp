@@ -145,6 +145,27 @@ void forward_all(const vector<CgVariablePtr> variables,
 
 void backward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
     const vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
-  CgVariable::backward_all(variables, clear_buffer, communicator_callbacks);
+  // setup backward at each variable
+  vector<NdArrayPtr> bak_grads;
+  DestructorCallback at_scope_exit([&]() {
+    for (int i = 0; i < variables.size(); ++i) {
+      variables[i]->variable()->set_grad(bak_grads[i]);
+    }
+  });
+  vector<CgFunctionPtr> roots;
+  for (auto v : variables) {
+    // backup gradients
+    bak_grads.push_back(v->variable()->grad());
+    // set function to avoid clearing
+    roots.push_back(v->parent());
+  }
+
+  // Create callback
+  BackwardCallback backward_callback(roots, clear_buffer);
+
+  // Visit backward
+  visit_function_backward(
+      roots, [&backward_callback](CgFunctionPtr f) { backward_callback(f); },
+      communicator_callbacks);
 }
 }
