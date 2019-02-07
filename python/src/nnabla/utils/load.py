@@ -178,20 +178,24 @@ def _create_function(ctx, network, f, variable_index):
 
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
+    persistent = True
     if f.type == "Reshape":
         shape = resolve_reshape_params(inputs, f, network.batch_size)
         function_instance = F.Reshape(
             ctx, shape=shape, inplace=True)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
+        persistent = False
     elif f.type == "RepeatEnd":
         function_instance = F.Identity(ctx)
+        persistent = False
     elif f.type == "RecurrentOutput":
         function_instance = F.Stack(ctx, axis=f.recurrent_param.axis)
     elif f.type == "RecurrentInput":
         function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
+        persistent = False
     elif f.type == "Broadcast":
         shape = resolve_broadcast_params(inputs, f, network.batch_size)
         function_instance = F.Broadcast(ctx, shape)
@@ -206,6 +210,7 @@ def _create_function(ctx, network, f, variable_index):
     function.function_instance = function_instance
     function.inputs = list(inputs)
     function.outputs = list(outputs)
+    function.persistent = persistent
 
     return function, input_variable_names, output_variable_names
 
