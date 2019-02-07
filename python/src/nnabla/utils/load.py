@@ -28,7 +28,7 @@ import tempfile
 import zipfile
 
 from nnabla.initializer import (
-    NormalInitializer, UniformInitializer, ConstantInitializer,
+    NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,
     calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
 from nnabla.logger import logger
 from nnabla.parameter import get_parameter_or_create
@@ -252,6 +252,9 @@ def _create_variable(v, name, shape, rng):
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
                 shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
+        elif v.initializer.type == 'Range':
+            initializer = (lambda shape: RangeInitializer(0, 1)
+                           (shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Constant':
             initializer = ConstantInitializer(value=v.initializer.multiplier)
         else:
@@ -339,6 +342,8 @@ def _get_generator(proto):
         return NormalInitializer(sigma=proto.multiplier)
     elif proto.type == 'Uniform':
         return UniformInitializer(lim=(-proto.multiplier, proto.multiplier))
+    elif proto.type == 'Range':
+        return RangeInitializer(start=0, step=proto.multiplier)
     elif proto.type == 'Constant':
         return ConstantInitializer(value=proto.multiplier)
     else:
