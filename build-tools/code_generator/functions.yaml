@@ -3525,6 +3525,67 @@ Stochasticity:
     function_ids:
       ffiIi: 91
     c_runtime: not support
+  RandomChoice:
+    snake_name: random_choice
+    doc: |2
+
+      Generate random samples from population `x` with selection
+      probabilities determined by the relative weights `w`. The number
+      of samples to draw is given by the product of `shape` dimensions
+      and the samples are returned with the given `shape`. By default
+      samples are drawn with replacement, i.e. selection of a specific
+      population member is solely determined by its associated
+      weight. Sampling without replacement, where any population
+      member may be drawn only once, is used if `replace` is set to
+      False.
+
+      >>> import nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> x = nn.Variable.from_numpy_array(np.array([11, 22, 33]))
+      >>> w = nn.Variable.from_numpy_array(np.array([10, 20, 70]))
+      >>> y = F.random_choice(x, w, shape=(1_000_000,))
+      >>> assert np.isclose((y.d == 11).sum() / 1_000_000, .1, atol=1e-3)
+      >>> assert np.isclose((y.d == 22).sum() / 1_000_000, .2, atol=1e-3)
+      >>> assert np.isclose((y.d == 33).sum() / 1_000_000, .7, atol=1e-3)
+      >>> print(F.random_choice(x, w, shape=(2,), replace=False).d)
+      [33. 11.]
+
+      Note that negative weights as well as all-zero weights allow no
+      useful interpretation in a weighted random choice algorithm and
+      the result is thus undefined. Also undefined is the result of
+      sampling without replacement when the number of positive weights
+      is less than the number of samples to generate.
+
+      Random sampling from an implicit array of index values (like
+      categorical or multinomial in other frameworks) can be realized
+      with input `x` constructed as indices.
+
+      >>> w = nn.Variable.from_numpy_array(np.array([1, 2, 3, 2, 1]))
+      >>> y = F.random_choice(F.arange(0, 5), w)
+    inputs:
+      x:
+        doc: N-D array from which a random sample is generated.
+      w:
+        doc: N-D array of associated weights of elements in `x`.
+    arguments:
+      shape:
+        doc: Number and shape of generated samples.
+        type: Shape
+        default: '[]'
+      replace:
+        doc: Whether sampling is with or without replacement.
+        type: bool
+        default: 'True'
+      seed:
+        doc: Random seed.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIBi: 246
   RandomCrop:
     snake_name: random_crop
     doc: |2

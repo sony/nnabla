@@ -191,6 +191,7 @@ Stochasticity
 .. autofunction:: dropout
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
+.. autofunction:: random_choice
 .. autofunction:: random_crop
 .. autofunction:: random_flip
 .. autofunction:: random_shift
