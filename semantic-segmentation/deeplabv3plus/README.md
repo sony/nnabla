@@ -50,7 +50,7 @@ Convert tensorflow weight/checkpoints to nnabla parameters file.
 python convert_tf_nnabla.py --input-ckpt-file=/path to ckpt file --output-nnabla-file=/output.h5 file
 ```
 
-##### NOTE: input-ckpt-file is the path to the ckpt file downloaded and uncompressed in the previous step. Please give the path to the model-*.ckpt.
+**NOTE: input-ckpt-file is the path to the ckpt file downloaded and uncompressed in the previous step. Please give the path to the model-*.ckpt.**
 
 
 ## Inference
@@ -60,8 +60,8 @@ Perform inference on a test image using the converted Tensorflow model.
 python model_inference.py --model-load-path=/path to parameter file --image-width=target width for input image --test-image-file=image file for inference --num-class=no. of categories --label-file-path=txt file having categories --output-stride=16
 ```
 
-##### NOTE: model-load-path is the path to the converted parameter filr(.h5) obtained in the previous step.
-##### and num-class=21 in the case of using the default tensorflow pretrained model downloaded in the "Download pretrained model" step (as it is trained on 21 categories).
+**NOTE: model-load-path is the path to the converted parameter filr(.h5) obtained in the previous step; 
+and num-class=21 in the case of using the default tensorflow pretrained model downloaded in the "Download pretrained model" step (as it is trained on 21 categories).**
 
 
 
@@ -89,8 +89,9 @@ To prepare VOC data for training:
 ```bash
 python dataset_utils.py --train-file="" --val-file="" --data-dir=""
 ```
-##### NOTE: train-file and val-file are the filenames of the train and val images provided by VOC under VOC2012/ImageSets/Segmentation/ respectively; data-dir is the path that contains the JPEGImages (e.g: --data-dir = =../../VOCdevkit/VOC2012/ )
-##### This will result in files train_images.txt, train_labels.txt, val_images.txt, val_labels.txt
+**NOTE:**
+* train-file and val-file are the filenames of the train and val images provided by VOC under VOC2012/ImageSets/Segmentation/ respectively; data-dir is the path that contains the JPEGImages (e.g: --data-dir = =../../VOCdevkit/VOC2012/ )
+* This will result in files train_images.txt, train_labels.txt, val_images.txt, val_labels.txt
 
 After data preparation, the data directory structure should look like :
 ```
@@ -173,21 +174,85 @@ mpirun -n <no. of devices> python train.py \
     --distributed
 ```
 
-##### Fine Tuning
-For fine-tuning with any dataset, prepare the dataset in the same way VOC dataset is prepared(writing a data preparation script may be required--refer dataset_utils.py) and add --fine-tune argument.
+**NOTE:**
+**1. The text files passed as arguments to the training scripts are the ones generated in the "Run the data preparation script" Step.**
+**2. For reproducing paper results, it is suggested to use batch-size > 16 (for distributed, set argument --batch-size = 16 / no.of devices) and max-iter=250,000 when training from scratch.**
+**3. To compute the accuracy (mean IOU) while training/validation add argument --compute-acc to the training command.**
 
-##### NOTE: 
-1. The text files passed as arguments to the training scripts are the ones generated in the "Run the data preparation script" Step.
-2. For reproducing paper results, it is suggested to use batch-size > 16 (for distributed, set argument --batch-size = 16 / no.of devices) and max-iter=250,000 when training from scratch.
-3. To compute the accuracy (mean IOU) while training/validation add argument --compute-acc to the training command.
-
-##### Typical Training Loss curve:
+**Typical Training Loss curve:**
 <p align="center">
     <img src="results/Train-loss.png" width=600 height=350></br>
 </p>    
 
 
-## Evaluate
+
+# Fine-tuning with smaller dataset
+
+This section demonstrates how to fine-tune Deeplab v3+ pre-trained model using LFW Part Labels dataset, which contains 2000 train+val labelled images having 3 classes: hair, face and background.
+
+## Some fine-tuning results on LFW Part Labels validation images:
+<p align="center">
+    <img src="results/lfw_finetuning/Janet_Napolitano_0002.jpg" width=150 height=150>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/lfw_finetuning/Janet_Napolitano_0002.png" width=150 height=150>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
+    <img src="results/lfw_finetuning/Jen_Schefft_0001.jpg" width=150 height=150>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/lfw_finetuning/Jen_Schefft_001.png" width=150 height=150>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
+    <img src="results/lfw_finetuning/Richard_Krajicek_0002.jpg" width=150 height=150>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/lfw_finetuning/Richard_Krajicek_002.png" width=150 height=150>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
+</p>
+
+## Download Dataset
+
+Download the LFW Part Labels dataset (images + ground truth labels) and uncompress it.
+```bash
+wget http://vis-www.cs.umass.edu/lfw/lfw-funneled.tgz
+wget http://vis-www.cs.umass.edu/lfw/part_labels/parts_lfw_funneled_gt_images.tgz
+```
+
+Also download the train and val files to get the train and val data distributions:
+```bash
+wget http://vis-www.cs.umass.edu/lfw/part_labels/parts_train.txt
+wget http://vis-www.cs.umass.edu/lfw/part_labels/parts_validation.txt
+```
+
+After download, the data directory structure should look like:
+```
++ <data-dir>
+  + lfw-funneled/
+  + parts_lfw_funneled_gt_images/
+  + parts_train.txt
+  + parts_validation.txt
+```
+
+## Run the data preparation script
+
+To prepare LFW Part Labels data for training:
+```bash
+python prepare_lfw_data.py --train-file="" --val-file="" --data-dir=""
+```
+**NOTE:** 
+* train-file and val-file are the filenames of the train (parts_train.txt) and val(parts_validation) txt files; data-dir is the path that contains the data i.e., lfw_funneled/ , parts_lfw_funneled_images/ , etc.
+* This will result in files lfw_train_images.txt, lfw_train_labels.txt, lfw_val_images.txt, lfw_val_labels.txt
+
+After data preparation, the data directory structure should look like :
+```
++ <data-dir>
+  + lfw-funneled/
+  + parts_lfw_funneled_gt_images/
+      + encoded
+```
+and the current working directory should contain the following 4 files generated from running the above script:
+```
++ lfw_train_image.txt
++ lfw_train_label.txt
++ lfw_val_image.txt
++ lfw_val_label.txt
+```
+
+## Execute Fine Tuning
+* For fine-tuning with any dataset, prepare the dataset in the same way as above(writing a data preparation script is required; refer [prepare_lfw_data.py](https://github.com/LambdaScrum/sdeep-nnabla-examples/blob/feature/20190329-deeplabv3plus-finetuning/semantic-segmentation/deeplabv3plus/prepare_lfw_data.py)) and add ```--fine-tune``` argument to the training command.
+* Hyper parameters such as learning rate, number of epochs, batch_size, and input image size should be adjusted depending on your purpose.
+* Specify the VOC trained Deeplabv3+ model as pretrained model in ```--pretrained-model-path``` argument.
+
+
+
+# Evaluate
 
 To evaluate the trained model obtained from the previous step :
 
@@ -202,7 +267,7 @@ python eval.py \
     --num-class=no. of categories 
 ```
 
-## Inference
+# Inference
 
 Perform inference on a test image using the trained model.
 
@@ -210,4 +275,4 @@ Perform inference on a test image using the trained model.
 python model_inference.py --model-load-path=/path to parameter file(.h5) --image-width=target width for input image --test-image-file=image file for inference --num-class=no. of categories --label-file-path=txt file having categories --output-stride=16
 ```
 
-##### NOTE: model-load-path is the path to the converted parameter filr(.h5) obtained in training.
+**NOTE: model-load-path is the path to the converted parameter file(.h5) obtained in training.**

@@ -104,8 +104,8 @@ def train():
 
     _ = nn.load_parameters(args.pretrained_model_path)
     if args.fine_tune:
-        nnabla.parameter.pop_parameter('decoder/logits/affine/conv/W')
-        nnabla.parameter.pop_parameter('decoder/logits/affine/conv/b')
+        nn.parameter.pop_parameter('decoder/logits/affine/conv/W')
+        nn.parameter.pop_parameter('decoder/logits/affine/conv/b')
 
     n_train_samples = args.train_samples
     n_val_samples = args.val_samples
