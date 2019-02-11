@@ -64,9 +64,9 @@ inline T nd2flat(const std::vector<T> &index, const std::vector<T> &stride,
                  const std::pair<int, int> &axis) {
   int axis_from = axis.first < 0 ? stride.size() + axis.first : axis.first;
   int axis_last = axis.second < 0 ? stride.size() + axis.second : axis.second;
-  assert(0 <= axis_from && axis_from <= axis_last && axis_last < index.size());
+  assert(0 <= axis_from && axis_from <= axis_last && axis_last <= index.size());
   assert(index.size() <= stride.size());
-  assert(index.begin() + axis_last + 1 == index.end());
+  assert(index.begin() + axis_last == index.end());
   T result = 0;
   for (; axis_from < axis_last; ++axis_from) {
     result += index[axis_from] * stride[axis_from];
