@@ -49,9 +49,11 @@ def context_scope(ctx):
     context_level += 1
     prev_context = current_ctx
     current_ctx = ctx
-    yield
-    context_level -= 1
-    current_ctx = prev_context
+    try:
+        yield
+    finally:
+        context_level -= 1
+        current_ctx = prev_context
 
 
 def set_default_context(ctx):
