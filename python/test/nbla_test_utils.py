@@ -593,10 +593,12 @@ def function_tester(rng, func, ref_func, inputs,
             continue
         v = vinputs[i]
         v.need_grad = backward[i]
+
     for i in range(len(vinputs)):
         if vinputs[i] is None:
             continue
         v = vinputs[i]
+
         if not backward[i]:
             continue
         f = o[0].parent
@@ -616,7 +618,7 @@ def function_tester(rng, func, ref_func, inputs,
         true_g = v.g - g
 
         # Check accum=False
-        accum = [j != i for j in range(len(finputs))]
+        accum = [j != i for j, vv in enumerate(vinputs) if vv is not None]
         v.g = rng.randn(*v.shape)
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
