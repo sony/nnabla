@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef NBLA_FUNCTION_ATAN2_HPP
 #define NBLA_FUNCTION_ATAN2_HPP
 
@@ -44,6 +43,8 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 
-NBLA_DEFINE_TRANSFORM_BINARY(ATan2, std::atan2(x0,x1), dy * x1  / (x0*x0 + x1*x1), - dy * x0 / (x0*x0 + x1*x1), true, true);
+NBLA_DEFINE_TRANSFORM_BINARY(ATan2, std::atan2(x0, x1),
+                             dy *x1 / (x0 * x0 + x1 * x1),
+                             -dy *x0 / (x0 * x0 + x1 * x1), true, true);
 }
 #endif
