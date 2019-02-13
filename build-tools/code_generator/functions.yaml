@@ -95,7 +95,7 @@ Neural Network Layer:
       h_n:
         doc: Output N-D array of size (num_layers, num_directions, batch_size, hidden_size)
     function_ids:
-      iifBB: 241
+      iifBB: 244
   LSTM:
     snake_name: lstm
     doc: |2
