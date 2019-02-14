@@ -187,7 +187,7 @@ bool load_cache(const string &filename, vector<string> &data_names,
   hid_t id = H5LTopen_file_image((char *)&h5data.front(), h5data.size(),
                                  H5LT_FILE_IMAGE_DONT_RELEASE);
   if (0 <= id) {
-    int root = H5Gopen(id, "/", H5P_DEFAULT);
+    hid_t root = H5Gopen(id, "/", H5P_DEFAULT);
     if (0 <= root)
       parse_hdf5_group(root, data_names, ndarrays);
   }
@@ -219,7 +219,7 @@ bool create_cachefile_list(const string &path, vector<string> &filenames) {
   while ((entry = readdir(dir)) != NULL) {
     if (has_suffix(entry->d_name, ".h5")) {
       string d_name(entry->d_name);
-      filenames.push_back(path + d_name);
+      filenames.push_back(path + '/' + d_name);
     }
   }
   closedir(dir);
