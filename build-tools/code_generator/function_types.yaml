@@ -283,6 +283,9 @@ MatrixDiag:
 MatrixDiagPart:
   float: [float]
   half: [Half]
+Inverse:
+  float: [float]
+  half: [Half]
 Interpolate:
   float: [float]
   half: [Half]

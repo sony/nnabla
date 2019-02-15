@@ -2874,6 +2874,20 @@ Array Manipulation:
     function_ids:
       Empty: 85
     c_runtime: support
+  Inverse:
+    snake_name: inverse
+    doc: |2
+
+      Returns an array of inverse matrix
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array of inverse matrix
+    c_runtime: not support
+    function_ids:
+      Empty: 241
 Signal Processing:
   Interpolate:
     snake_name: interpolate
