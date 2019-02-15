@@ -153,10 +153,9 @@ experimental Upsample                    1               OK
 Support status exporting to ONNX
 ----------------------------------
 
-The column of opset means current operator is mapped with which the opset specifications. For example,
-Affine() is converted to 3 onnx functions, Reshape@5, Flatten@1, Gemm@6 and so on. Hence, the exporter
-will generate the onnx model which require the executor at least support opset 6, when the model contains
-Affine() function.
+The column of opset means which opset version can be converted to. For example, if Affine() has opset 6,9,
+that means Affine() can be converted to both opset version 6 and opset version 9. Users may define which 
+opset version to export by nnabla_cli command line parameters.
 
 Total 60/136
 
@@ -200,7 +199,7 @@ SELU                                     1               OK              Rename 
 CReLU                                    1               NG
 CELU                                     1               NG
 PReLU                                    1               OK              Rename to PRelu
-======================================== =============== =================================================
+======================================== =============== =============== =================================================
 
 Normalization
 +++++++++++++
