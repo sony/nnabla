@@ -1313,6 +1313,266 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
                                      dilation, divisor)
 
 
+@parametric_function_api("rnn")
+def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity='tanh', dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
+    """N-Step RNN (recurrent neural networks).
+
+    N-Step RNN function implements Elman RNN with nonlineraity to input sequence.
+    N-Step RNN function is defined as following:
+
+    .. math::
+        h_t&&=\\tanh(w_{ih}x_t+b_{ih}+w_{hh}h_{(t-1)}).
+
+    References:
+
+        Jeffrey L. Elman. "Finding Structure in Time."
+        Cognitive Science. 1990.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array with shape (sequence_length, batch_size, input_size).
+        h (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is (num_directions, hidden_size, input_size + hidden_size).
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is (num_layers - 1, num_directions, hidden_size, num_directions * hidden_size + hidden_size).
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is (num_layers, num_directions, hidden_size).
+        num_layers (int, optional): Number of layers in the network. If set to 1, only the weights for the first layer will be invoked. Default is 1.
+        nonlinearity (str, optional): Type of nonlinearity applied to input sequcne. Must be either tanh or relu. Default is tanh.
+        dropout (float, optional): Dropout ratio applied to parameters. Default is 0.0.
+        bidirectional (bool, optional): If True, bidirectional computation will be performed in each layer. Default is False.
+        training (bool, optional): Backpropagation will be performed only when it is true. Default is True.
+        with_bias (bool, optional): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`y` of size (seq_len, batch_size, num_directions * hidden_size)
+        :class:`~nnabla.Variable`: :math:`h_n` of size (num_layers, num_directions, batch_size, hidden_size)
+
+    Example:
+    .. code-block:: python
+
+        x = nn.Variable((seq_len, batch_size, input_size))
+        h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+        y, hn = PF.rnn(x, h)
+
+    """
+    input_size = x.shape[2]
+    hidden_size = h.shape[3]
+    num_layers = h.shape[0]
+    num_directions = 2 if bidirectional else 1
+
+    if w0_init is None:
+        w0_init_ih = UniformInitializer(
+            calc_uniform_lim_glorot(input_size, hidden_size), rng)
+        w0_init_ih = w0_init_ih((num_directions, hidden_size, input_size))
+        w0_init_hh = UniformInitializer(
+            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+        w0_init_hh = w0_init_hh((num_directions, hidden_size, hidden_size))
+        w0_init = np.concatenate((w0_init_ih, w0_init_hh), axis=2)
+    if w_init is None:
+        w_init_ih = UniformInitializer(calc_uniform_lim_glorot(
+            num_directions*hidden_size, hidden_size), rng)
+        w_init_ih = w_init_ih(
+            (num_layers - 1, num_directions, hidden_size, num_directions*hidden_size))
+        w_init_hh = UniformInitializer(
+            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+        w_init_hh = w_init_hh(
+            (num_layers - 1, num_directions, hidden_size, hidden_size))
+        w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w0 = get_parameter_or_create(
+        "weight_l0", w0_init.shape,
+        w0_init, True, not fix_parameters)
+    w = None
+    if num_layers > 1:
+        w = get_parameter_or_create(
+            "weight", w_init.shape,
+            w_init, True, not fix_parameters)
+    b = None
+    n_outmaps = (num_layers, num_directions, hidden_size)
+    if with_bias:
+        b = get_parameter_or_create(
+            "bias", n_outmaps, b_init, True, not fix_parameters)
+
+    return F.rnn(x, h, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout, bidirectional=bidirectional, training=training)
+
+
+@parametric_function_api("lstm")
+def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
+    """LSTM (long short-term memory).
+
+    Long Short-Term Memory, or LSTM, is a building block for recurrent neural networks (RNN) layers.
+    LSTM unit consists of a cell and input, output, forget gates whose functions are defined as following:
+
+    .. math::
+        f_t&&=\\sigma(W_fx_t+U_fh_{t-1}+b_f) \\\\
+        i_t&&=\\sigma(W_ix_t+U_ih_{t-1}+b_i) \\\\
+        o_t&&=\\sigma(W_ox_t+U_oh_{t-1}+b_o) \\\\
+        c_t&&=f_t\\odot c_{t-1}+i_t\\odot\\tanh(W_cx_t+U_ch_{t-1}+b_c) \\\\
+        h_t&&=o_t\\odot\\tanh(c_t).
+
+    References:
+
+        S. Hochreiter, and J. Schmidhuber. "Long Short-Term Memory."
+        Neural Computation. 1997.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array with shape (seq_len, batch_size, input_size).
+        h (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        c (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is (num_directions, 4, hidden_size, input_size + hidden_size).
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is (num_layers - 1, num_directions, 4, hidden_size, num_directions * hidden_size + hidden_size).
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is (num_layers, num_directions, 4, hidden_size).
+        num_layers (int, optional): Number of layers in the network. If set to 1, only the weights for the first layer will be invoked. Default is 1.
+        dropout (float, optional): Dropout ratio applied to parameters. Default is 0.0.
+        bidirectional (bool, optional): If True, bidirectional computation will be performed in each layer. Default is False.
+        training (bool, optional): Backpropagation will be performed only when it is true. Default is True.
+        with_bias (bool, optional): Specify whether to include the bias term.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`y` of size (seq_len, batch_size, num_directions * hidden_size)
+        :class:`~nnabla.Variable`: :math:`h_n` of size (num_layers, num_directions, batch_size, hidden_size)
+        :class:`~nnabla.Variable`: :math:`c_n` of size (num_layers, num_directions, batch_size, hidden_size)
+
+
+    Example:
+    .. code-block:: python
+
+        x = nn.Variable((seq_len, batch_size, input_size))
+        h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+        c = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+        y, hn, cn = PF.lstm(x, h, c)
+
+    """
+    if type(w0_init) == int:
+        nn.logger.warn(
+            "Arguments passed seem to be for previous LSTM function, which has been renamed to lstm_cell.")
+        raise ValueError
+
+    input_size = x.shape[2]
+    hidden_size = h.shape[3]
+    num_layers = h.shape[0]
+    num_directions = 2 if bidirectional else 1
+
+    if w0_init is None:
+        w0_init_ih = UniformInitializer(
+            calc_uniform_lim_glorot(input_size, hidden_size), rng)
+        w0_init_ih = w0_init_ih((num_directions, hidden_size, 4*input_size))
+        w0_init_hh = UniformInitializer(
+            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+        w0_init_hh = w0_init_hh((num_directions, hidden_size, 4*hidden_size))
+        w0_init = np.concatenate((w0_init_ih, w0_init_hh), axis=2)
+    if w_init is None:
+        w_init_ih = UniformInitializer(calc_uniform_lim_glorot(
+            num_directions*hidden_size, hidden_size), rng)
+        w_init_ih = w_init_ih(
+            (num_layers - 1, num_directions, hidden_size, 4*num_directions*hidden_size))
+        w_init_hh = UniformInitializer(
+            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+        w_init_hh = w_init_hh(
+            (num_layers - 1, num_directions, hidden_size, 4*hidden_size))
+        w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w0 = get_parameter_or_create(
+        "weight_l0", w0_init.shape,
+        w0_init, True, not fix_parameters)
+    w = None
+    if num_layers > 1:
+        w = get_parameter_or_create(
+            "weight", w_init.shape,
+            w_init, True, not fix_parameters)
+    b = None
+    n_outmaps = (num_layers, num_directions, 4, hidden_size)
+    if with_bias:
+        b = get_parameter_or_create(
+            "bias", n_outmaps, b_init, True, not fix_parameters)
+
+    return F.lstm(x, h, c, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training)
+
+
+@parametric_function_api("gru")
+def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
+    """GRU (gated recurrent units).
+
+    GRU is defined as following:
+
+    .. math::
+        r_t&&=\\sigma(W_rx_t+U_rh_{t-1}+b_r) \\\\
+        z_t&&=\\sigma(W_zx_t+U_zh_{t-1}+b_z) \\\\
+        n_t&&=\\tanh(W_nx_t+b_{in}+r_n(U_nh_{t-1}+b_{hn})) \\\\
+        h_t&&=(1-z_t)n_t+z_th_{t-1}.
+
+    References:
+
+        K. Cho et al. "Learning Phrase Representations using RNN Encoder--Decoder for Statistical Machine Translation."
+        Empirical Methods in Natural Language Processing. 2014.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array with shape (sequence_length, batch_size, input_size).
+        h (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is (num_directions, 3, hidden_size, input_size + hidden_size).
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is (num_layers - 1, num_directions, 3, hidden_size, num_directions * hidden_size + hidden_size).
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is (num_layers, num_directions, 4, hidden_size).
+        num_layers (int, optional): Number of layers in the network. If set to 1, only the weights for the first layer will be invoked. Default is 1.
+        dropout (float, optional): Dropout ratio applied to parameters. Default is 0.0.
+        bidirectional (bool, optional): If True, bidirectional computation will be performed in each layer. Default is False.
+        training (bool, optional): Backpropagation will be performed only when it is true. Default is True.
+        with_bias (bool, optional): Specify whether to include the bias term.
+
+    Returns:
+        :class:`~nnabla.Variable`: :math:`y` of size (seq_len, batch_size, num_directions * hidden_size)
+        :class:`~nnabla.Variable`: :math:`h_n` of size (num_layers, num_directions, batch_size, hidden_size)
+
+    Example:
+    .. code-block:: python
+
+        x = nn.Variable((seq_len, batch_size, input_size))
+        h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+        y, hn = PF.gru(x, h)
+
+    """
+    input_size = x.shape[2]
+    hidden_size = h.shape[3]
+    num_layers = h.shape[0]
+    num_directions = 2 if bidirectional else 1
+
+    if w0_init is None:
+        w0_init_ih = UniformInitializer(
+            calc_uniform_lim_glorot(input_size, hidden_size), rng)
+        w0_init_ih = w0_init_ih((num_directions, hidden_size, 3*input_size))
+        w0_init_hh = UniformInitializer(
+            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+        w0_init_hh = w0_init_hh((num_directions, hidden_size, 3*hidden_size))
+        w0_init = np.concatenate((w0_init_ih, w0_init_hh), axis=2)
+    if w_init is None:
+        w_init_ih = UniformInitializer(calc_uniform_lim_glorot(
+            num_directions*hidden_size, hidden_size), rng)
+        w_init_ih = w_init_ih(
+            (num_layers - 1, num_directions, hidden_size, 3*num_directions*hidden_size))
+        w_init_hh = UniformInitializer(
+            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+        w_init_hh = w_init_hh(
+            (num_layers - 1, num_directions, hidden_size, 3*hidden_size))
+        w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    w0 = get_parameter_or_create(
+        "weight_l0", w0_init.shape,
+        w0_init, True, not fix_parameters)
+    w = None
+    if num_layers > 1:
+        w = get_parameter_or_create(
+            "weight", w_init.shape,
+            w_init, True, not fix_parameters)
+    b = None
+    n_outmaps = (num_layers, num_directions, 4, hidden_size)
+    if with_bias:
+        b = get_parameter_or_create(
+            "bias", n_outmaps, b_init, True, not fix_parameters)
+
+    return F.gru(x, h, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training)
+
+
 @parametric_function_api("bn", [
     ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
     ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
@@ -2161,7 +2421,7 @@ def pruned_convolution(inp, outmaps, kernel,
      '(inmaps, 4, state_size)', True),
     ('affine/b', 'Stacked bias vectors of LSTM block', '(4, state_size,)', True),
 ])
-def lstm(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
+def lstm_cell(x, h, c, state_size, w_init=None, b_init=None, fix_parameters=False):
     """Long Short-Term Memory.
 
     Long Short-Term Memory, or LSTM, is a building block for recurrent neural networks (RNN) layers.
@@ -2247,7 +2507,7 @@ class LSTMCell:
             fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
         """
-        self.h, self.c = lstm(
+        self.h, self.c = lstm_cell(
             x, self.h, self.c, self.state_size,
             w_init, b_init,
             fix_parameters=fix_parameters, name=self.name)

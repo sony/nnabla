@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** Stack
- */
-#ifndef __NBLA_FUNCTION_STACK_HPP__
-#define __NBLA_FUNCTION_STACK_HPP__
+#ifndef NBLA_FUNCTION_GRU_HPP
+#define NBLA_FUNCTION_GRU_HPP
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
@@ -23,50 +21,57 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Stack, int);
+NBLA_REGISTER_FUNCTION_HEADER(GRU, int, float, bool, bool);
 
-/** Stack joins two or more arrays on a new axis. The sizes of all the arrays to
-be stacked must be the same. Unlike Concatenate, which joins arrays on an
-existing axis, Stack joins arrays on a new axis.
+/**
+    @todo Write doc.
 
 Inputs:
-- list of N-D arrays.
 
 Outputs:
-- N-D array.
 
-@tparam T Data type for computation.
-@param axis The axis on which to concatenate arrays. Axis indexes take on values
-0, 1, 2, and so on from the left. For example, to stack four (3,28,28) inputs on
-the second axis, specify 1. In this case, the output size will be (3,4,28,28).
 \ingroup FunctionImplGrp
  */
-template <typename T> class Stack : public BaseFunction<int> {
+template <typename T> class GRU : public BaseFunction<int, float, bool, bool> {
 protected:
-  int axis_;
-  int num_inputs_;
-  int inner_size_, outer_size_;
+  int num_layers_;
+  float dropout_;
+  bool bidirectional_;
+  bool training_;
 
 public:
-  Stack(const Context &ctx, int axis) : BaseFunction(ctx, axis), axis_(axis) {}
-  virtual ~Stack() {}
+  GRU(const Context &ctx, int num_layers, float dropout, bool bidirectional,
+      bool training)
+      : BaseFunction(ctx, num_layers, dropout, bidirectional, training),
+        num_layers_(num_layers), dropout_(dropout),
+        bidirectional_(bidirectional), training_(training) {}
+  virtual ~GRU() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Stack(ctx_, axis_);
+    return create_GRU(ctx_, num_layers_, dropout_, bidirectional_, training_);
   }
-  virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual int min_inputs() { return 1; }
-  virtual int min_outputs() { return 1; }
-  virtual string name() { return "Stack"; }
+  virtual int min_inputs() { return 3; }
+  virtual int min_outputs() { return 2; }
+  virtual vector<dtypes> in_types() {
+    return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<T>(),
+                          get_dtype<T>(), get_dtype<T>()};
+  }
+  virtual vector<dtypes> out_types() {
+    return vector<dtypes>{get_dtype<T>(), get_dtype<T>()};
+  }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual string name() { return "GRU"; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs);
   NBLA_API virtual void forward_impl(const Variables &inputs,
                                      const Variables &outputs);
+  NBLA_API virtual void forward_impl_training(const Variables &inputs,
+                                              const Variables &outputs);
+  NBLA_API virtual void forward_impl_inference(const Variables &inputs,
+                                               const Variables &outputs);
   NBLA_API virtual void backward_impl(const Variables &inputs,
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,

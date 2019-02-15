@@ -34,6 +34,192 @@ Neural Network Layer:
     function_ids:
       i: 0
     c_runtime: support
+  RNN:
+    snake_name: rnn
+    doc: |2
+
+      RNN function implements Elman RNN with nonlineraity to input sequence.
+      RNN function is defined as following:
+
+      .. math::
+          {\mathbf h_t} = {\mathbf \tanh}( {\mathbf w_{ih}} *{\mathbf x_t} + {\mathbf b_{ih}} + {\mathbf w_{hh}}* {\mathbf h_{(t-1)}} + {\mathbf b_{hh}}).
+
+      References:
+
+          * `Jeffrey Elman, Finding Structure in Time.`_
+    inputs:
+      x:
+        doc: Input N-D array with shape (sequence_length, batch_size, input_size).
+      h:
+        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+      weight_l0:
+        doc: Input N-D array with shape (num_directions, hidden_size, input_size +
+          hidden_size).
+        parameter: true
+      weight:
+        doc: Input N-D array with shape (num_layers -1, num_directions, hidden_size,
+          num_directions * hidden_size + hidden_size).
+        optional: true
+        parameter: true
+      bias:
+        doc: Input N-D array with shape (num_layers, num_directions, hidden_size).
+        optional: true
+        parameter: true
+    arguments:
+      num_layers:
+        doc: Number of layers in the network. If set to 1, only the weights for the
+          first layer will be invoked. Default is 1.
+        type: int64
+        default: '1'
+      nonlinearity:
+        doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
+          relu. Default is tanh.
+        type: string
+        default: tanh
+      dropout:
+        doc: Dropout ratio applied to parameters. Default is 0.0.
+        type: float
+        default: 0.0
+      bidirectional:
+        doc: If True, bidirectional computation will be performed in each layer. Default
+          is False.
+        type: bool
+        default: 'False'
+      training:
+        doc: Backpropagation will be performed only when it is true. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Output N-D array of size (seq_len, batch_size, num_directions * hidden_size)
+      h_n:
+        doc: Output N-D array of size (num_layers, num_directions, batch_size, hidden_size)
+    function_ids:
+      iifBB: 244
+  LSTM:
+    snake_name: lstm
+    doc: |2
+
+      N-Step LSTM layer.
+
+      .. math::
+          {\mathbf f_t} = {\mathbf \sigma}( {\mathbf W_f} *{\mathbf x_t} + {\mathbf U_f}* {\mathbf h_{(t-1)}} + {\mathbf b_f})\\
+          {\mathbf i_t} = {\mathbf \sigma}( {\mathbf W_i} *{\mathbf x_t} + {\mathbf U_i}* {\mathbf h_{(t-1)}} + {\mathbf b_i})\\
+          {\mathbf o_t} = {\mathbf \sigma}( {\mathbf W_o} *{\mathbf x_t} + {\mathbf U_o}* {\mathbf h_{(t-1)}} + {\mathbf b_o})\\
+          {\mathbf c_t} = {\mathbf f_t}\odot {mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
+          {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
+
+
+      References:
+
+          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory.`_
+    inputs:
+      x:
+        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+      h:
+        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+      c:
+        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+      weight_l0:
+        doc: weight parameters for the first layer. Shape is (num_directions, 4, hidden_size,
+          input_size + hidden_size).
+        parameter: true
+      weight:
+        doc: weight parameters for the second layer and above. Shape is (num_layers
+          -1, num_directions, 4, hidden_size, num_directions * hidden_size + hidden_size)
+        optional: true
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        optional: true
+        parameter: true
+    arguments:
+      num_layers:
+        doc: Number of layers in the network. If set to 1, only the weights for the
+          first layer will be invoked. Default is 1.
+        type: int64
+        default: '1'
+      dropout:
+        doc: Dropout ratio applied to parameters. Default is 0.0.
+        type: float
+        default: 0.0
+      bidirectional:
+        doc: If True, bidirecitonal computation will be performed in each layer. Default
+          is False.
+        type: bool
+        default: 'False'
+      training:
+        doc: Backpropagation will be performed only when it is True. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+      h_n:
+        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+      c_n:
+        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+    function_ids:
+      ifBB: 242
+  GRU:
+    snake_name: gru
+    doc: |2
+
+      N-Step GRU layer.
+
+      .. math::
+          {\mathbf r_t} = {\mathbf \sigma}( {\mathbf W_r} *{\mathbf x_t} + {\mathbf U_r}* {\mathbf h_{(t-1)}} + {\mathbf b_r})\\
+          {\mathbf z_t} = {\mathbf \sigma}( {\mathbf W_z} *{\mathbf x_t} + {\mathbf U_z}* {\mathbf h_{(t-1)}} + {\mathbf b_z})\\
+        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
+        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}{\mathbf h_{t-1}}.
+
+      References:
+
+          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation.`_
+    inputs:
+      x:
+        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+      h:
+        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+      weight_l0:
+        doc: weight parameters for the first layer. Shape is (num_directions, 3, hidden_size,
+          input_size + hidden_size).
+        parameter: true
+      weight:
+        doc: weight parameters for the second layer and above. Shape is (num_layers
+          -1, num_directions, 3, hidden_size, num_directions * hidden_size + hidden_size)
+        optional: true
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        optional: true
+        parameter: true
+    arguments:
+      num_layers:
+        doc: Number of layers in the network. If set to 1, only the weights for the
+          first layer will be invoked. Default is 1.
+        type: int64
+        default: '1'
+      dropout:
+        doc: Dropout ratio applied to parameters. Default is 0.0.
+        type: float
+        default: 0.0
+      bidirectional:
+        doc: If True, bidirecitonal computation will be performed in each layer. Default
+          is False.
+        type: bool
+        default: 'False'
+      training:
+        doc: Backpropagation will be performed only when it is True. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+      h_n:
+        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+    function_ids:
+      ifBB: 243
   Convolution:
     snake_name: convolution
     doc: |2
@@ -2416,6 +2602,25 @@ Math:
     function_ids:
       Empty: 180
     c_runtime: not support
+  ATan2:
+    snake_name: atan2
+    doc: |2
+
+      Element-wise arctangent (atan) function with 2 input variables.
+
+      .. math::
+          y_i = \arctan2 (x_{i1}, x_{i2})
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as input variables
+    c_runtime: not support
+    function_ids:
+      Empty: 241
   ASinh:
     snake_name: asinh
     doc: |2

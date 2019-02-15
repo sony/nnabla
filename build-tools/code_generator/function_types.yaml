@@ -1,6 +1,15 @@
 Affine:
   float: [float]
   half: [Half]
+RNN:
+  float: [float]
+  half: [Half]
+LSTM:
+  float: [float]
+  half: [Half]
+GRU:
+  float: [float]
+  half: [Half]
 Convolution:
   float: [float]
   half: [Half]
@@ -426,6 +435,9 @@ ACos:
   float: [float]
   half: [Half]
 ATan:
+  float: [float]
+  half: [Half]
+ATan2:
   float: [float]
   half: [Half]
 ASinh:
