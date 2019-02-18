@@ -134,8 +134,13 @@ def _export_from_nnp(args, nnp, output, output_ext):
         NnpExporter(nnp, args.batch_size, parameter_type).execute(output)
 
     elif output_ext == '.nnb':
-        NnbExporter(nnp, args.batch_size).execute(
-            output, None, args.settings, args.default_variable_type)
+        if args.define_version and args.define_version.startswith('nnb_'):
+            nnb_version = int(args.define_version.split("_")[1])
+            NnbExporter(nnp, args.batch_size, nnb_version=nnb_version).execute(
+                output, None, args.settings, args.default_variable_type)
+        else:
+            NnbExporter(nnp, args.batch_size).execute(
+                output, None, args.settings, args.default_variable_type)
 
     elif os.path.isdir(output) and args.export_format == 'CSRC':
         CsrcExporter(nnp, args.batch_size).execute(output)

@@ -108,6 +108,41 @@ def create_nnabart_info(nnp, batch_size):
     return info
 
 
+def revise_buffer_size(info, settings):
+    '''
+    This function is used to revise buffer size, use byte
+    as its unit, instead of data item.
+    This is only used for nnb, not for csrc.
+    When settings contains user customized data type, not pure
+    FLOAT32, it affects the memory consumption.
+    '''
+    size_mapping = {
+        'FLOAT32': 4,
+        'FIXED16': 2,
+        'FIXED8': 1
+    }
+
+    var_dict = settings['variables']
+    buffer_index = 0
+    info._variable_sizes = []
+    info._variable_buffer_index = collections.OrderedDict()
+    info._variable_buffer_size = collections.OrderedDict()
+    info._buffer_ids = {}
+    for n, v in enumerate(info._network.variable):
+        byte_per_item = size_mapping.get(var_dict.get(
+            v.name, 'FLOAT32').split('_')[0], 4)
+        size = nnabla.utils.converter.calc_shape_size(
+            v.shape, info._batch_size) * byte_per_item
+        info._variable_sizes.append(size)
+        if v.type == 'Buffer':
+            info._variable_buffer_index[buffer_index] = [n]
+            for vid in info._variable_buffer_index[buffer_index]:
+                info._buffer_ids[vid] = buffer_index
+
+            info._variable_buffer_size[buffer_index] = size
+            buffer_index += 1
+
+
 def affine_transpose_weight(params, info, func):
     if 'Affine' in info._convert_context:
         transposed = info._convert_context['Affine']
