@@ -961,6 +961,32 @@ Neural Network Activation Functions:
     function_ids:
       i: 21
     c_runtime: support
+  GELU:
+    snake_name: gelu
+    doc: |2
+
+      Gaussian Error Unit (GELU) function.
+
+      .. math::
+          GELU(x) = xP(X \leq  x) = x \Phi (x)
+
+      which is approximated by
+
+      .. math::
+          GELU(x) = 0.5x (1 + \tanh ( \sqrt(2/\pi)(x + 0.044715x^3) ))
+
+      References:
+          * `Dan Hendrycks and Kevin Gimpel.
+            Gaussian Error Linera Units (GELUs).
+            <https://arxiv.org/abs/1606.08415>`_
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 245
 Normalization:
   BatchNormalization:
     snake_name: batch_normalization
