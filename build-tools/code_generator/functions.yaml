@@ -2912,18 +2912,70 @@ Array Manipulation:
     snake_name: one_hot
     doc: |2
 
-      OneHot creates one-hot vector based on input indices.
+      This function creates one-hot vector based on input indices.
+
+              Example:
+
+              .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import numpy as np
+
+                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [1], [0]]))
+                print(labels.shape)  # (5, 1)
+
+                num_class = 10
+
+                y_train = F.one_hot(labels, shape=(num_class, ))
+                y_train.forward()
+
+                print(y_train.shape)  # (5, 10)
+                print(y_train.d)
+
+                # [[0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+                #  [0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
+                #  [0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
+                #  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
+                #  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+
+                # Can also be used for ndarray.
+
+                labels = nn.Variable.from_numpy_array(np.array([[1, 7], [4, 7], [8, 6], [5, 0], [2, 6]]))
+                print(labels.shape)  # (5, 2)
+
+                num_class_1, num_class_2  = 10, 8
+
+                y_train = F.one_hot(labels, shape=(num_class_1, num_class_2))
+                y_train.forward()
+        
+                print(y_train.shape)  # (5, 10, 8)
+                print(y_train.d)
+
+                # [[[0. 0. 0. 0. 0. 0. 0. 0.]          [[0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 1.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 1. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]    ...    [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]],         [0. 0. 0. 0. 0. 0. 0. 0.]]]
+
     inputs:
       x:
-        doc: N-D array
+        doc: N-D array representing label's indice.
         template: TI
     arguments:
       shape:
-        doc: No Description
+        doc: Number of classes. Note that it must be exactly the same as the number of classes included in label data.
+             Passing incorrect numbers might cause an unexpected error and currently this function doesn't check if the input is valid or not.
+             Also, when nd-labels are given, dimensions must match. See the example above.
         type: Shape
     outputs:
       output:
-        doc: N-D array
+        doc: N-D array one-hot vector/tensor.
     function_ids:
       iI: 80
     c_runtime: not support
