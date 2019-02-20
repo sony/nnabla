@@ -1321,7 +1321,10 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
     N-Step RNN function is defined as following:
 
     .. math::
-        h_t&&=\\tanh(w_{ih}x_t+b_{ih}+w_{hh}h_{(t-1)}).
+        h_t = \\tanh(w_{ih}x_t+b_{ih}+w_{hh}h_{(t-1)}).
+
+    We use the following notations to describe the inputs and outputs below.
+    :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
     References:
 
@@ -1329,11 +1332,11 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
         Cognitive Science. 1990.
 
     Args:
-        x (~nnabla.Variable): Input N-D array with shape (sequence_length, batch_size, input_size).
-        h (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
-        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is (num_directions, hidden_size, input_size + hidden_size).
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is (num_layers - 1, num_directions, hidden_size, num_directions * hidden_size + hidden_size).
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is (num_layers, num_directions, hidden_size).
+        x (~nnabla.Variable): Input N-D array with shape :math:`(T, B, I)`.
+        h (~nnabla.Variable): Input N-D array with shape :math:`(L, D, B, H)`.
+        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is :math:`(D, H, I + H)`.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is :math:`(L-1, D, H, D*H + H)`.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is :math:`(L, D, H)`.
         num_layers (int, optional): Number of layers in the network. If set to 1, only the weights for the first layer will be invoked. Default is 1.
         nonlinearity (str, optional): Type of nonlinearity applied to input sequcne. Must be either tanh or relu. Default is tanh.
         dropout (float, optional): Dropout ratio applied to parameters. Default is 0.0.
@@ -1342,15 +1345,15 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
         with_bias (bool, optional): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: :math:`y` of size (seq_len, batch_size, num_directions * hidden_size)
-        :class:`~nnabla.Variable`: :math:`h_n` of size (num_layers, num_directions, batch_size, hidden_size)
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(T, B, D * H)`
+        ~nnabla.Variable: Output :math:`h_n` with shape :math:`(L, D, B, H)`
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        x = nn.Variable((seq_len, batch_size, input_size))
-        h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
-        y, hn = PF.rnn(x, h)
+            x = nn.Variable((seq_len, batch_size, input_size))
+            h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+            y, hn = PF.rnn(x, h)
 
     """
     input_size = x.shape[2]
@@ -1409,18 +1412,21 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
         c_t&&=f_t\\odot c_{t-1}+i_t\\odot\\tanh(W_cx_t+U_ch_{t-1}+b_c) \\\\
         h_t&&=o_t\\odot\\tanh(c_t).
 
+    We use the following notations to describe the inputs and outputs below.
+    :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
     References:
 
         S. Hochreiter, and J. Schmidhuber. "Long Short-Term Memory."
         Neural Computation. 1997.
 
     Args:
-        x (~nnabla.Variable): Input N-D array with shape (seq_len, batch_size, input_size).
-        h (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
-        c (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
-        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is (num_directions, 4, hidden_size, input_size + hidden_size).
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is (num_layers - 1, num_directions, 4, hidden_size, num_directions * hidden_size + hidden_size).
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is (num_layers, num_directions, 4, hidden_size).
+        x (~nnabla.Variable): Input N-D array with shape :math:`(T, B, I)`.
+        h (~nnabla.Variable): Input N-D array with shape :math:`(L, D, B, H)`.
+        c (~nnabla.Variable): Input N-D array with shape :math:`(L, D, B, H)` .
+        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is :math:`(D, 4, H, I + H)`.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is :math:`(L-1, D, 4, H, D * H + H)`.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is :math:`(L, D, 4, H)`.
         num_layers (int, optional): Number of layers in the network. If set to 1, only the weights for the first layer will be invoked. Default is 1.
         dropout (float, optional): Dropout ratio applied to parameters. Default is 0.0.
         bidirectional (bool, optional): If True, bidirectional computation will be performed in each layer. Default is False.
@@ -1429,18 +1435,17 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
     Returns:
-        :class:`~nnabla.Variable`: :math:`y` of size (seq_len, batch_size, num_directions * hidden_size)
-        :class:`~nnabla.Variable`: :math:`h_n` of size (num_layers, num_directions, batch_size, hidden_size)
-        :class:`~nnabla.Variable`: :math:`c_n` of size (num_layers, num_directions, batch_size, hidden_size)
-
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(T, B, D * H)`
+        ~nnabla.Variable: Output :math:`h_n` with shape :math:`(L, D, B, H)`
+        ~nnabla.Variable: Output :math:`c_n` with shape :math:`(L, D, B, H)`
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        x = nn.Variable((seq_len, batch_size, input_size))
-        h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
-        c = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
-        y, hn, cn = PF.lstm(x, h, c)
+            x = nn.Variable((seq_len, batch_size, input_size))
+            h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+            c = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+            y, hn, cn = PF.lstm(x, h, c)
 
     """
     if type(w0_init) == int:
@@ -1502,17 +1507,20 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
         n_t&&=\\tanh(W_nx_t+b_{in}+r_n(U_nh_{t-1}+b_{hn})) \\\\
         h_t&&=(1-z_t)n_t+z_th_{t-1}.
 
+    We use the following notations to describe the inputs and outputs below.
+    :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
     References:
 
         K. Cho et al. "Learning Phrase Representations using RNN Encoder--Decoder for Statistical Machine Translation."
         Empirical Methods in Natural Language Processing. 2014.
 
     Args:
-        x (~nnabla.Variable): Input N-D array with shape (sequence_length, batch_size, input_size).
-        h (~nnabla.Variable): Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
-        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is (num_directions, 3, hidden_size, input_size + hidden_size).
-        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is (num_layers - 1, num_directions, 3, hidden_size, num_directions * hidden_size + hidden_size).
-        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is (num_layers, num_directions, 4, hidden_size).
+        x (~nnabla.Variable): Input N-D array with shape :math:`(T, B, I)`.
+        h (~nnabla.Variable): Input N-D array with shape :math:`(L, D, B, H)`.
+        w0_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weight at the first layer. Shape is :math:`(D, 3, H, I + H)`.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for weights at the second layer and up. Shape is :math:`(L-1, D, 3, H, D * H + H)`.
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`, optional): Initializer for bias. Shape is :math:`(L, D, 4, H)`.
         num_layers (int, optional): Number of layers in the network. If set to 1, only the weights for the first layer will be invoked. Default is 1.
         dropout (float, optional): Dropout ratio applied to parameters. Default is 0.0.
         bidirectional (bool, optional): If True, bidirectional computation will be performed in each layer. Default is False.
@@ -1520,15 +1528,15 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
         with_bias (bool, optional): Specify whether to include the bias term.
 
     Returns:
-        :class:`~nnabla.Variable`: :math:`y` of size (seq_len, batch_size, num_directions * hidden_size)
-        :class:`~nnabla.Variable`: :math:`h_n` of size (num_layers, num_directions, batch_size, hidden_size)
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(T, B, D * H)`
+        ~nnabla.Variable: Output :math:`h_n` with shape :math:`(L, D, B, H)`
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        x = nn.Variable((seq_len, batch_size, input_size))
-        h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
-        y, hn = PF.gru(x, h)
+            x = nn.Variable((seq_len, batch_size, input_size))
+            h = nn.Variable((num_layers, num_directions, batch_size, hidden_size))
+            y, hn = PF.gru(x, h)
 
     """
     input_size = x.shape[2]
