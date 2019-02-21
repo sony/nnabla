@@ -62,6 +62,7 @@ Neural Network Activation
 .. autofunction:: selu
 .. autofunction:: crelu
 .. autofunction:: celu
+.. autofunction:: gelu
 .. autofunction:: prelu
 .. autofunction:: leaky_relu
 
