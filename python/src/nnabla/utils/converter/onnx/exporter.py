@@ -1206,7 +1206,7 @@ class OnnxExporter:
                 net = n
         if net is None:
             raise ValueError(
-                "Executor network [{}] does not found in this NNP.".format(exe.network_name))
+                "Executor network [{}] is not found in this NNP.".format(exe.network_name))
         self._net = net
         self._executor = exe
         return net

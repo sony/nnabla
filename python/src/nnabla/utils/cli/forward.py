@@ -187,7 +187,7 @@ def forward_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 
@@ -268,7 +268,7 @@ def infer_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 

@@ -27,7 +27,7 @@ def create_nnabart_info(nnp, batch_size):
         nnp, executor.network_name)
 
     if network is None:
-        print('Network for executor [{}] does not found.'.format(
+        print('Network for executor [{}] is not found.'.format(
             executor.network_name))
         return
     print('Using network [{}].'.format(executor.network_name))
