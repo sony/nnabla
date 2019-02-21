@@ -28,18 +28,18 @@ def ref_one_hot(x, shape):
         result[idx] = 1
     return result
 
+
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape", [(100, 1), (100, 2)])
 @pytest.mark.parametrize("shape", [(10, ), (10, 8)])
-
 def test_one_hot_forward(seed, inshape, shape, ctx, func_name):
     # Input
     input = np.zeros(inshape, dtype=int)
     rng = np.random.RandomState(seed)
 
     if len(shape) != inshape[-1]:
-        # input inshape and shape don't match. 
+        # input inshape and shape don't match.
         with pytest.raises(RuntimeError):
             y = F.one_hot(nn.Variable(input.shape), shape)
     else:
