@@ -19,17 +19,19 @@ def data_iterator_segmentation(num_examples, batch_size, image_path_file, label_
         '''
 
         img = cv2.imread(image_paths[i]).astype('float32')
-        b,g,r = cv2.split(img)
-        img = cv2.merge([r,g,b])
+        b, g, r = cv2.split(img)
+        img = cv2.merge([r, g, b])
         if 'png' in label_paths[i]:
-            lab = imageio.imread(label_paths[i], as_gray=False, pilmode="RGB").astype('int32')
+            lab = imageio.imread(
+                label_paths[i], as_gray=False, pilmode="RGB").astype('int32')
         else:
             lab = np.load(label_paths[i]).astype('int32')
-        if lab.ndim==2:
+        if lab.ndim == 2:
             lab = np.expand_dims(lab, axis=2)
-        #Compute image preprocessing time
+        # Compute image preprocessing time
         #t = time.time()
-        img,lab,mask = image_preprocess.preprocess_image_and_label(img,lab,train=train)
+        img, lab, mask = image_preprocess.preprocess_image_and_label(
+            img, lab, train=train)
         #elapsed = time.time() - t
 
         return np.rollaxis(img, 2), np.rollaxis(lab, 2), np.rollaxis(mask, 2)
@@ -37,13 +39,8 @@ def data_iterator_segmentation(num_examples, batch_size, image_path_file, label_
     return data_iterator_simple(image_label_load_func, num_examples, batch_size, shuffle=True, rng=rng, with_file_cache=False, with_memory_cache=False)
 
 
-
 def load_paths(path_file):
     text_file = open(path_file, "r")
     lines = [line[:-1] for line in text_file]
 
     return lines
-   
-
-
-

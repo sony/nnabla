@@ -15,6 +15,7 @@
 import tarfile
 import nnabla
 
+
 def download(url):
     from nnabla.utils.data_source_loader import download as dl
     dl(url, url.split('/')[-1], False)
@@ -22,12 +23,12 @@ def download(url):
 
 def main():
     model_url = 'http://download.tensorflow.org/models/deeplabv3_pascal_train_aug_2018_01_04.tar.gz'
-    
+
     print('Downloading Xception COCO VOC trainaug pretrained model ...')
     download(model_url)
 
-    #untar the downloaded compressed file
-    compressed_file=tarfile.open(model_url.split('/')[-1], "r:gz")
+    # untar the downloaded compressed file
+    compressed_file = tarfile.open(model_url.split('/')[-1], "r:gz")
     compressed_file.extractall()
     compressed_file.close()
 

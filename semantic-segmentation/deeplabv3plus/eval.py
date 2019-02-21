@@ -26,13 +26,14 @@ from segmentation_data import data_iterator_segmentation
 
 def validate(args):
 
-   #load trained param file
+   # load trained param file
     _ = nn.load_parameters(args.model_load_path)
 
-    #get data iterator
-    vdata = data_iterator_segmentation(args.val_samples, args.batch_size, args.val_dir, args.val_label_dir)
+    # get data iterator
+    vdata = data_iterator_segmentation(
+        args.val_samples, args.batch_size, args.val_dir, args.val_label_dir)
 
-    #get deeplabv3plus model
+    # get deeplabv3plus model
     v_model = train.get_model(args, test=True)
     v_model.pred.persistent = True  # Not clearing buffer of pred in forward
     v_pred2 = v_model.pred.unlinked()
@@ -41,24 +42,23 @@ def validate(args):
     monitor = M.Monitor(args.monitor_path)
     monitor_miou = M.MonitorSeries("mean IOU", monitor, interval=1)
 
-
     l = 0.0
     e = 0.0
     vmiou = 0.
-    #Evaluation loop
+    # Evaluation loop
     for j in range(args.val_samples // args.batch_size):
         images, labels, masks = vdata.next()
         v_model.image.d = images
         v_model.label.d = labels
         v_model.mask.d = masks
         v_model.pred.forward(clear_buffer=True)
-        miou = train.compute_miou(args.num_class, labels, np.argmax(v_model.pred.d, axis=1), masks)
+        miou = train.compute_miou(
+            args.num_class, labels, np.argmax(v_model.pred.d, axis=1), masks)
         vmiou += miou
         print(j, miou)
 
     monitor_miou.add(0, vmiou / (args.val_samples / args.batch_size))
-    return vmiou / args.val_samples     
-
+    return vmiou / args.val_samples
 
 
 def main():
@@ -75,14 +75,9 @@ def main():
     miou = validate(args)
 
 
-    
-    
-
 if __name__ == '__main__':
     '''
     Usage : python eval.py --model-load-path=/path to trained .h5 file --val-samples=no. of validation examples --batch-size=1 --val-dir=file containing paths to val images --val-label-dir=file containing paths to val labels --num-class=no. of categories
     '''
 
     main()
-
-

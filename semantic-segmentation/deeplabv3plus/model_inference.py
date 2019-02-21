@@ -28,20 +28,19 @@ import time
 
 
 def visualize(label):
-    h,w = label.shape
-    vis = np.zeros((h,w,3), dtype=np.int32)
+    h, w = label.shape
+    vis = np.zeros((h, w, 3), dtype=np.int32)
     clr_map = dataset_utils.get_color()
     for y in range(h):
         for x in range(w):
-           if label[y][x] == 22:
-               vis[y][x]=0
-           else:
-               vis[y][x] = clr_map[label[y][x]]
-    
-    #plt.imshow(vis, interpolation='none')
-    #plt.show()
-    imageio.imwrite('output.png', vis)
+            if label[y][x] == 22:
+                vis[y][x] = 0
+            else:
+                vis[y][x] = clr_map[label[y][x]]
 
+    #plt.imshow(vis, interpolation='none')
+    # plt.show()
+    imageio.imwrite('output.png', vis)
 
 
 def post_process(output, old_size, taget_size):
@@ -51,10 +50,10 @@ def post_process(output, old_size, taget_size):
 
     post_processed = output[0:new_size[0], 0:new_size[1]]
 
-    post_processed = cv2.resize(post_processed, (old_size[1], old_size[0]),interpolation=cv2.INTER_NEAREST)
+    post_processed = cv2.resize(
+        post_processed, (old_size[1], old_size[0]), interpolation=cv2.INTER_NEAREST)
 
     return post_processed
-    
 
 
 def main():
@@ -67,72 +66,59 @@ def main():
     ctx = get_extension_context(
         args.context, device_id=args.device_id, type_config=args.type_config)
     nn.set_default_context(ctx)
-    ext=import_extension_module(args.context)
+    ext = import_extension_module(args.context)
 
-
-
-    #read label file
+    # read label file
     f = open(args.label_file_path, "r")
     labels_dict = f.readlines()
-
-
 
     # Load parameters
     _ = nn.load_parameters(args.model_load_path)
 
-
-
     # Build a Deeplab v3+ network
-    x = nn.Variable((1, 3, args.image_width, args.image_width),need_grad=False)
-    y = net.deeplabv3plus_model(x, args.output_stride, args.num_class, test=True)
+    x = nn.Variable((1, 3, args.image_width, args.image_width),
+                    need_grad=False)
+    y = net.deeplabv3plus_model(
+        x, args.output_stride, args.num_class, test=True)
 
-
-
-    #preprocess image
+    # preprocess image
     image = imageio.imread(args.test_image_file, as_gray=False, pilmode="RGB")
     #image = imread(args.test_image_file).astype('float32')
-    orig_h,orig_w,orig_c = image.shape
-    old_size=(orig_h,orig_w)
+    orig_h, orig_w, orig_c = image.shape
+    old_size = (orig_h, orig_w)
 
-    input_array = image_preprocess.preprocess_image_and_label(image, label=None, target_width=args.image_width, train=False)
+    input_array = image_preprocess.preprocess_image_and_label(
+        image, label=None, target_width=args.image_width, train=False)
     print('Input', input_array.shape)
-    input_array = np.transpose(input_array, (2,0,1))
-    input_array=np.reshape(input_array,(1,input_array.shape[0],input_array.shape[1],input_array.shape[2]))
+    input_array = np.transpose(input_array, (2, 0, 1))
+    input_array = np.reshape(
+        input_array, (1, input_array.shape[0], input_array.shape[1], input_array.shape[2]))
 
-
-
-    #Compute inference and inference time
+    # Compute inference and inference time
     t = time.time()
 
     x.d = input_array
     y.forward(clear_buffer=True)
     print ("done")
-    available_devices=ext.get_devices()
+    available_devices = ext.get_devices()
     ext.device_synchronize(available_devices[0])
     ext.clear_memory_cache()
 
     elapsed = time.time() - t
-    print('Inference time : %s seconds' %(elapsed))
+    print('Inference time : %s seconds' % (elapsed))
 
+    output = np.argmax(y.d, axis=1)  # (batch,h,w)
 
-
-    output = np.argmax(y.d, axis=1) # (batch,h,w)
-
-    #Apply post processing
+    # Apply post processing
     post_processed = post_process(output[0], old_size, args.image_width)
 
-
-    #Get the classes predicted
+    # Get the classes predicted
     predicted_classes = np.unique(post_processed)
     for i in range(predicted_classes.shape[0]):
         print('Classes Segmented: ', labels_dict[predicted_classes[i]])
 
-
-
-    #Visualize inference result
+    # Visualize inference result
     visualize(post_processed)
-
-
 
 
 if __name__ == '__main__':
@@ -141,5 +127,3 @@ if __name__ == '__main__':
     '''
 
     main()
-
-
