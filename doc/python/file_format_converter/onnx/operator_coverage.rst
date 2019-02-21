@@ -24,13 +24,13 @@ might fail to convert NNP model due to this function.
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
 Abs                                      1,6             OK
-Add                                      1,6             OK              broadcast will be converted to a BroadcastTo
-And                                      1               OK              broadcast will be converted to a BroadcastTo
+Add                                      1,6,7           OK              broadcast will be converted to a BroadcastTo
+And                                      1,7             OK              broadcast will be converted to a BroadcastTo
 ArgMax                                                   Unimplemented   Operator does not exist in NNabla
 ArgMin                                                   Unimplemented   Operator does not exist in NNabla
-AveragePool                              1               OK              autopad not supported. pads must have same
+AveragePool                              1,7             OK              autopad not supported. pads must have same
                                                                          value for begin and end.
-BatchNormalization                       1,6             OK              is_test=false not supported (only inference)
+BatchNormalization                       1,6,9           OK              is_test=false not supported (only inference)
 Cast                                                     Unimplemented   Operator does not exist in NNabla(No type
                                                                          information is exposed in NNP)
 Ceil                                                     Unimplemented   Should map to Ceil
@@ -42,11 +42,11 @@ Conv                                     1               OK              auto_pa
                                                                          for begin and end.
 ConvTranspose                                            Unimplemented   Should map to Deconvolution?
 DepthToSpace                                             Unimplemented   Operator does not exist in NNabla
-Div                                      1,6             OK              broadcast will be converted to a BroadcastTo
+Div                                      1,6,7           OK              broadcast will be converted to a BroadcastTo
 Dropout                                  1,6,7           OK              mask output will be removed since NNabla does
                                                                          not produce mask output.
 Elu                                      1,6             OK
-Equal                                    1               OK              broadcast will be converted to a BroadcastTo.
+Equal                                    1,7             OK              broadcast will be converted to a BroadcastTo.
                                                                          Input data type will all be converted to int64
                                                                          since NNP does not have type information
 Exp                                      1,6             OK
@@ -62,7 +62,7 @@ Gemm                                     1,6,7,9         OK              alpha a
 GlobalAveragePool                        1               OK
 GlobalLpPool                                             Unimplemented   Operator does not exist in NNabla
 GlobalMaxPool                                            Unimplemented   Operator does not exist in NNabla
-Greater                                  1               OK              broadcast will be converted to a BroadcastTo
+Greater                                  1,7,9           OK              broadcast will be converted to a BroadcastTo
 HardSigmoid                                              Unimplemented   Should be able to map to
                                                                          MulScalar+AddScalar+MinimumScalar+ReLU
 Hardmax                                                  Unimplemented   Operator does not exist in NNabla
@@ -73,7 +73,7 @@ LRN                                      1               OK              Convert
                                                                          Currently only odd size is allowed.
 LSTM                                                     Unimplemented
 LeakyRelu                                1,6             OK
-Less                                     1               OK              broadcast will be converted to a BroadcastTo
+Less                                     1,7,9           OK              broadcast will be converted to a BroadcastTo
 Log                                      1,6             OK
 LogSoftmax                               1               Not test        Converted to Exp+Sum+Log+Sub2.
                                                                          Only works on input shape like N*C*1*1
@@ -86,14 +86,14 @@ MaxPool                                  1,8             OK              auto_pa
 MaxRoiPool                                               Unimplemented   Operator does not exist in NNabla
 Mean                                     1,6,8           Not test        Operator does not exist in NNabla
 Min                                      1,6,8           OK              Only input of two tensors is currently supported
-Mul                                                      OK              broadcast will be converted to a BroadcastTo
+Mul                                      1,6,7           OK              broadcast will be converted to a BroadcastTo
 Neg                                      1,6             Not test        Converted to MulScalar
-Not                                                      OK
+Not                                      1               OK
 Or                                       1,7             OK              broadcast will be converted to a BroadcastTo
 PRelu                                    1,6             OK
 Pad                                      1,2             Not test        For NNP to ONNX conversion, input buffer's
                                                                          dimension is assumed to be 4D if the shape cannot be determined.
-Pow                                      1               OK              broadcast will be converted to a BroadcastTo
+Pow                                      1,7             OK              broadcast will be converted to a BroadcastTo
 RNN                                                      Unimplemented   Operator does not exist in NNabla
 RandomNormal                                             Unimplemented   Should be able to map to Randn
 RandomNormalLike                                         Unimplemented   Operator does not exist in NNabla
@@ -123,14 +123,14 @@ SpaceToDepth                                             Unimplemented   Operato
 Split                                                    Unimplemented   Operator does not exist in NNabla
 Sqrt                                                     Unimplemented   Operator does not exist in NNabla
 Squeeze                                                  Unimplemented   Operator does not exist in NNabla
-Sub                                      1,6             OK              broadcast will be converted to a BroadcastTo
+Sub                                      1,6,7           OK              broadcast will be converted to a BroadcastTo
 Sum                                      1,6,8           OK              Supporting two inputs only
 Tanh                                     1,6             OK
 Tile                                                     Unimplemented   Operator does not exist in NNabla
 TopK                                                     Unimplemented   Operator does not exist in NNabla
 Transpose                                1               OK
 Unsqueeze                                                Unimplemented   Operator does not exist in NNabla
-Xor                                      1               OK              broadcast will be converted to a BroadcastTo
+Xor                                      1,7             OK              broadcast will be converted to a BroadcastTo
 experimental ATen                                        Unimplemented
 experimental Affine                                      Unimplemented
 experimental ConstantFill                                Unimplemented
@@ -153,10 +153,9 @@ experimental Upsample                                    Unimplemented
 Support status exporting to ONNX
 ----------------------------------
 
-The column of opset means current operator is mapped with which the opset specifications. For example,
-Affine() is converted to 3 onnx functions, Reshape@5, Flatten@1, Gemm@6 and so on. Hence, the exporter
-will generate the onnx model which require the executor at least support opset 6, when the model contains
-Affine() function.
+The column of opset means which opset version can be converted to. For example, if Affine() has opset 6,9,
+that means Affine() can be converted to both opset version 6 and opset version 9. Users may define which 
+opset version to export by nnabla_cli command line parameters.
 
 Total 45/136
 
@@ -168,16 +167,16 @@ Count 4/11
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-Affine                                   1,5,6           Not test        Implemented by Reshape,Flatten,Gemm
-Convolution                              1               OK              Implemented by Conv
-DepthwiseConvolution                     1               Not test        Implemented by Conv
-Deconvolution                            1,6             Not test        Implemented by ConvTranspose,Add
+Affine                                   6,9             Not test        Implemented by Reshape,Flatten,Gemm
+Convolution                              6,9             OK              Implemented by Conv
+DepthwiseConvolution                     6,9             Not test        Implemented by Conv
+Deconvolution                            6,9             Not test        Implemented by ConvTranspose,Add
 DepthwiseDeconvolution                                   Not test        Not implemented
-MaxPooling                               1               OK              Implemented by MaxPool
-AveragePooling                           1               OK              Implemented by AveragePool
-GlobalAveragePooling                     1               OK              Implemented by GlobalAveragePool
-SumPooling                               1               Not test        Implemented by Mul
-Unpooling                                                Not test        Not implemented
+MaxPooling                               6,9             OK              Implemented by MaxPool
+AveragePooling                           6,9             OK              Implemented by AveragePool
+GlobalAveragePooling                     6,9             OK              Implemented by GlobalAveragePool
+SumPooling                               6,9             Not test        Implemented by Mul
+Unpooling                                6,9             Not test        Implemented by Upsample
 Embed                                                    Not test        Not implemented
 ======================================== =============== =============== =================================================
 
@@ -189,18 +188,18 @@ Count 8/11
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-Sigmoid                                  6               OK              Implemented by Sigmoid
+Sigmoid                                  6,9             OK              Implemented by Sigmoid
 Swish                                                    Not test        Not implemented
-Tanh                                     6               OK              Implemented by Tanh
-ReLU                                     6               OK              Implemented by Relu
-LeakyReLU                                6               OK              Implemented by LeakyRelu
-Softmax                                  1               OK              Implemented by Softmax
-ELU                                      6               OK              Implemented by ELU
-SELU                                     6               OK              Implemented by SELU
+Tanh                                     6,9             OK              Implemented by Tanh
+ReLU                                     6,9             OK              Implemented by Relu
+LeakyReLU                                6,9             OK              Implemented by LeakyRelu
+Softmax                                  6,9             OK              Implemented by Softmax
+ELU                                      6,9             OK              Implemented by ELU
+SELU                                     6,9             OK              Implemented by SELU
 CReLU                                                    Not test        Not implemented
 CELU                                                     Not test        Not implemented
-PReLU                                    6               OK              Implemented by PRelu
-======================================== =============== =================================================
+PReLU                                    6,9             OK              Implemented by PRelu
+======================================== =============== =============== =================================================
 
 Normalization
 +++++++++++++
@@ -210,7 +209,7 @@ Count 1/4
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-BatchNormalization                       6               OK              Implemented by InstanceNormalization,BatchNormalization
+BatchNormalization                       6,9             OK              Implemented by InstanceNormalization,BatchNormalization
 MeanSubtraction                                          Not test        Not implemented
 ClipGradByValue                                          Not test        Not implemented
 ClipGradByNorm                                           Not test        Not implemented
@@ -224,11 +223,11 @@ Count 5/7
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-Sum                                      1               OK              Implemented by ReduceSum
-Mean                                     1               OK              Implemented by ReduceMean
-Max                                      1               OK              Implemented by ReduceMax
-Min                                      1               OK              Implemented by ReduceMin
-Prod                                     1               OK              Implemented by ReduceProd
+Sum                                      6,9             OK              Implemented by ReduceSum
+Mean                                     6,9             OK              Implemented by ReduceMean
+Max                                      6,9             OK              Implemented by ReduceMax
+Min                                      6,9             OK              Implemented by ReduceMin
+Prod                                     6,9             OK              Implemented by ReduceProd
 ReduceSum                                                Not test        Not implemented
 ReduceMean                                               Not test        Not implemented
 ======================================== =============== =============== =================================================
@@ -241,18 +240,18 @@ Count 8/12
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-Add2                                     6               OK              Implemented by Add
+Add2                                     6,9             OK              Implemented by Add
 BcAdd2                                                   Not test        Not implemented
-Sub2                                     1               OK              Implemented by Sub
-Mul2                                     1               OK              Implemented by Mul
-Div2                                     6               OK              Implemented by Div
-Pow2                                     1               OK              Implemented by Pow
-AddScalar                                6               Not test        Implemented by Add
-MulScalar                                1               OK              Implemented by Mul
-PowScalar                                1               OK              Implemented by Pow
-RSubScalar                               6               Not test        Implemented by Sub
-RDivScalar                               6               OK              Implemented by Div
-RPowScalar                               1               Not test        Implemented by Pow
+Sub2                                     6,9             OK              Implemented by Sub
+Mul2                                     6,9             OK              Implemented by Mul
+Div2                                     6,9             OK              Implemented by Div
+Pow2                                     6,9             OK              Implemented by Pow
+AddScalar                                6,9             Not test        Implemented by Add
+MulScalar                                6,9             OK              Implemented by Mul
+PowScalar                                6,9             Partial OK      Implemented by Pow, opset_6 status is OK, opset_9 status is NG
+RSubScalar                               6,9             Not test        Implemented by Sub
+RDivScalar                               6,9             OK              Implemented by Div
+RPowScalar                               6,9             Not test        Implemented by Pow
 ======================================== =============== =============== =================================================
 
 Logical
@@ -264,19 +263,19 @@ Count 11/24
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
 Sign                                                     Not test        Not implemented
-Minimum2                                 6               OK              Implemented by Min
-Maximum2                                 6               OK              Implemented by Max
-MinimumScalar                            6               OK              Implemented by Clip
-MaximumScalar                            6               OK              Implemented by Clip
-LogicalAnd                               1               OK              Implemented by And
-LogicalOr                                1               OK              Implemented by Or
-LogicalXor                               1               OK              Implemented by Xor
-Equal                                    1               OK              Implemented by Equal
+Minimum2                                 6,9             OK              Implemented by Min
+Maximum2                                 6,9             OK              Implemented by Max
+MinimumScalar                            6,9             OK              Implemented by Clip
+MaximumScalar                            6,9             OK              Implemented by Clip
+LogicalAnd                               6,9             OK              Implemented by And
+LogicalOr                                6,9             OK              Implemented by Or
+LogicalXor                               6,9             OK              Implemented by Xor
+Equal                                    6,9             OK              Implemented by Equal
 NotEqual                                                 Not test        Not implemented
 GreaterEqual                                             Not test        Not implemented
-Greater                                  1               OK              Implemented by Greater
+Greater                                  6,9             OK              Implemented by Greater
 LessEqual                                                Not test        Not implemented
-Less                                     1               OK              Implemented by Less
+Less                                     6,9             OK              Implemented by Less
 LogicalAndScalar                                         Not test        Not implemented
 LogicalOrScalar                                          Not test        Not implemented
 LogicalXorScalar                                         Not test        Not implemented
@@ -286,7 +285,7 @@ GreaterEqualScalar                                       Not test        Not imp
 GreaterScalar                                            Not test        Not implemented
 LessEqualScalar                                          Not test        Not implemented
 LessScalar                                               Not test        Not implemented
-LogicalNot                               1               OK              Implemented by Not
+LogicalNot                               6,9             OK              Implemented by Not
 ======================================== =============== =============== =================================================
 
 Math
@@ -298,11 +297,11 @@ Count 5/18
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
 Constant                                                 Not test        Not implemented
-Abs                                      6               OK              Implemented by Abs
-Exp                                      6               OK              Implemented by Exp
-Log                                      6               OK              Implemented by Log
-Identity                                 1               OK              Implemented by Identity
-BatchMatmul                              1               OK              Implemented by Matmul
+Abs                                      6,9             OK              Implemented by Abs
+Exp                                      6,9             OK              Implemented by Exp
+Log                                      6,9             OK              Implemented by Log
+Identity                                 6,9             OK              Implemented by Identity
+BatchMatmul                              6,9             OK              Implemented by Matmul
 Round                                                    Not test        Not implemented
 Sin                                                      Not test        Not implemented
 Cos                                                      Not test        Not implemented
@@ -325,17 +324,17 @@ Count 3/13
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-Concatenate                              4               OK              Implemented by Concat
-Split                                    1,2             Not test        Implemented by Split,Squeeze
-Stack                                    1,4             Not test        Implemented by Unsqueeze,Concat
-Slice                                    1               Not test        Implemented by Slice
-Pad                                      2               OK              Implemented by Pad
-Transpose                                1               OK              Implemented by Transpose
+Concatenate                              6,9             OK              Implemented by Concat
+Split                                    6,9             Not test        Implemented by Split,Squeeze
+Stack                                    6,9             Not test        Implemented by Unsqueeze,Concat
+Slice                                    6,9             Not test        Implemented by Slice
+Pad                                      6,9             OK              Implemented by Pad
+Transpose                                6,9             OK              Implemented by Transpose
 Broadcast                                                Not test        Not implemented
-OneHot                                   1,5             Not test        Implemented by Flatten,Gather,Reshape
-Flip                                     1               Not test        Implemented by Gather,Transpose,Identity
+OneHot                                   6,9             Not test        Implemented by Flatten,Gather,Reshape
+Flip                                     6,9             Not test        Implemented by Gather,Transpose,Identity
 Shift                                                    Not test        Not implemented
-Reshape                                  5               Not test        Implemented by Reshape
+Reshape                                  6,9             Not test        Implemented by Reshape
 MatrixDiag                                               Not test        Not implemented
 MatrixDiagPart                                           Not test        Not implemented
 ======================================== =============== =============== =================================================
@@ -348,7 +347,7 @@ Count 0/10
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-Dropout                                  6               NG              Implemented by Dropout
+Dropout                                  6,9             NG              Implemented by Dropout
 TopKData                                                 Not test        Not implemented
 TopKGrad                                                 Not test        Not implemented
 Rand                                                     Not test        Not implemented
@@ -387,10 +386,10 @@ Count 0/10
 ======================================== =============== =============== =================================================
 Operator                                 Opset           Status          Description
 ======================================== =============== =============== =================================================
-BinarySigmoid                            6               Not test        Implemented by HardSigmoid
+BinarySigmoid                            6,9             Not test        Implemented by HardSigmoid
 BinaryTanh                                               Not test        Not implemented
 BinaryConnectAffine                                      Not test        Not implemented
-BinaryConnectConvolution                 1,5             Not test        Implemented by Conv,Reshape
+BinaryConnectConvolution                 6,9             Not test        Implemented by Conv,Reshape
 BinaryWeightAffine                                       Not test        Not implemented
 BinaryWeightConvolution                                  Not test        Not implemented
 INQAffine                                                Not test        Not implemented
