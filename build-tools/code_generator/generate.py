@@ -120,6 +120,9 @@ def update_function_order_in_functsions_yaml():
                     missing[cat_name][func_name] = []
                 missing[cat_name][func_name].append(default_arg)
 
+            if 'c_runtime' not in func_info:
+                func_info['c_runtime'] = 'not support'
+
     current_id = sorted(order_info_by_id.keys()).pop() + 1
     for cat_name in missing:
         for func_name in missing[cat_name]:

@@ -96,6 +96,7 @@ Neural Network Layer:
         doc: Output N-D array of size (num_layers, num_directions, batch_size, hidden_size)
     function_ids:
       iifBB: 244
+    c_runtime: not support
   LSTM:
     snake_name: lstm
     doc: |2
@@ -161,6 +162,7 @@ Neural Network Layer:
         doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
     function_ids:
       ifBB: 242
+    c_runtime: not support
   GRU:
     snake_name: gru
     doc: |2
@@ -220,6 +222,7 @@ Neural Network Layer:
         doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
     function_ids:
       ifBB: 243
+    c_runtime: not support
   Convolution:
     snake_name: convolution
     doc: |2
@@ -2154,6 +2157,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 236
+    c_runtime: not support
   IsInf:
     snake_name: isinf
     doc: |2
@@ -2167,6 +2171,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 237
+    c_runtime: not support
   ResetNaN:
     snake_name: reset_nan
     doc: |2
@@ -2185,6 +2190,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 238
+    c_runtime: not support
   ResetInf:
     snake_name: reset_inf
     doc: |2
@@ -2203,6 +2209,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 239
+    c_runtime: not support
   Where:
     snake_name: where
     doc: |2
@@ -2241,6 +2248,7 @@ Logical:
         doc: N-D array with the same shape as condition
     function_ids:
       Empty: 240
+    c_runtime: not support
 Math:
   Constant:
     snake_name: constant
