@@ -44,25 +44,25 @@ Neural Network Layer:
       .. math::
           {\mathbf h_t} = {\mathbf \tanh}( {\mathbf w_{ih}} *{\mathbf x_t} + {\mathbf b_{ih}} + {\mathbf w_{hh}}* {\mathbf h_{(t-1)}} + {\mathbf b_{hh}}).
 
-      References:
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
-          * `Jeffrey Elman, Finding Structure in Time.`_
+      References:
+          * `Jeffrey Elman, Finding Structure in Time. <https://crl.ucsd.edu/~elman/Papers/fsit.pdf>`_
     inputs:
       x:
-        doc: Input N-D array with shape (sequence_length, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: Input N-D array with shape (num_directions, hidden_size, input_size +
-          hidden_size).
+        doc: Input N-D array with shape :math:`(D, H, I + H)`.
         parameter: true
       weight:
-        doc: Input N-D array with shape (num_layers -1, num_directions, hidden_size,
-          num_directions * hidden_size + hidden_size).
+        doc: Input N-D array with shape :math:`(L-1, D, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Input N-D array with shape (num_layers, num_directions, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, H)`.
         optional: true
         parameter: true
     arguments:
@@ -91,9 +91,9 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output N-D array of size (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output N-D array of size (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
       iifBB: 244
     c_runtime: not support
@@ -110,28 +110,29 @@ Neural Network Layer:
           {\mathbf c_t} = {\mathbf f_t}\odot {mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
           {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
 
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
       References:
-
-          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory.`_
+          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory. <https://www.bioinf.jku.at/publications/older/2604.pdf>`_
     inputs:
       x:
-        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       c:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is (num_directions, 4, hidden_size,
-          input_size + hidden_size).
+        doc: weight parameters for the first layer. Shape is :math:`(D, 4, H, I +
+          H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is (num_layers
-          -1, num_directions, 4, hidden_size, num_directions * hidden_size + hidden_size)
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 4, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
         optional: true
         parameter: true
     arguments:
@@ -155,11 +156,11 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
       c_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`c_n` with shape :math:`(L, D, B, H)`
     function_ids:
       ifBB: 242
     c_runtime: not support
@@ -175,25 +176,28 @@ Neural Network Layer:
         {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
         {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}{\mathbf h_{t-1}}.
 
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
       References:
 
-          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation.`_
+          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation. <https://www.aclweb.org/anthology/D14-1179>`_
     inputs:
       x:
-        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is (num_directions, 3, hidden_size,
-          input_size + hidden_size).
+        doc: weight parameters for the first layer. Shape is :math:`(D, 3, H, I +
+          H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is (num_layers
-          -1, num_directions, 3, hidden_size, num_directions * hidden_size + hidden_size)
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 3, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
         optional: true
         parameter: true
     arguments:
@@ -217,9 +221,9 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
       ifBB: 243
     c_runtime: not support
@@ -2970,16 +2974,17 @@ Array Manipulation:
                 #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
                 #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
                 #   [0. 0. 0. 0. 0. 0. 0. 0.]],         [0. 0. 0. 0. 0. 0. 0. 0.]]]
-
     inputs:
       x:
         doc: N-D array representing label's indice.
         template: TI
     arguments:
       shape:
-        doc: Number of classes. Note that it must be exactly the same as the number of classes included in label data.
-             Passing incorrect numbers might cause an unexpected error and currently this function doesn't check if the input is valid or not.
-             Also, when nd-labels are given, dimensions must match. See the example above.
+        doc: Number of classes. Note that it must be exactly the same as the number
+          of classes included in label data. Passing incorrect numbers might cause
+          an unexpected error and currently this function doesn't check if the input
+          is valid or not. Also, when nd-labels are given, dimensions must match.
+          See the example above.
         type: Shape
     outputs:
       output:

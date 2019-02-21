@@ -45,6 +45,9 @@ Neural Network Layers
 .. autofunction:: sum_pooling
 .. autofunction:: unpooling
 .. autofunction:: embed
+.. autofunction:: rnn
+.. autofunction:: lstm
+.. autofunction:: gru
 
 
 Neural Network Activation
