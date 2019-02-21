@@ -75,6 +75,9 @@ Neural Network Layer:
         doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
           relu. Default is tanh.
         type: string
+        available_values:
+        - tanh
+        - relu
         default: tanh
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
@@ -994,6 +997,7 @@ Neural Network Activation Functions:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 245
+    c_runtime: not support
 Normalization:
   BatchNormalization:
     snake_name: batch_normalization
