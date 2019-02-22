@@ -147,8 +147,8 @@ def _export_from_nnp(args, nnp, output, output_ext):
 
     elif output_ext == '.onnx':
         from .onnx import OnnxExporter
-        if args.define_opset and args.define_opset.startswith('opset_'):
-            opset = args.define_opset.split("_")[1]
+        if args.define_version and args.define_version.startswith('opset_'):
+            opset = args.define_version.split("_")[1]
             OnnxExporter(nnp, args.batch_size, opset=opset).execute(output)
         else:
             OnnxExporter(nnp, args.batch_size).execute(output)
