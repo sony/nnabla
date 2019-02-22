@@ -293,6 +293,11 @@ public:
   /** Get variable name
    */
   inline string name() const { return name_; }
+
+  /** Deepcopy method
+   */
+  NBLA_API
+  Ptr create_deep_copy(Context ctx, bool copy_grad = false);
 };
 
 /** shared_ptr typedef of CGVariable
