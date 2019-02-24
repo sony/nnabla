@@ -16,6 +16,9 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/inverse.hpp>
+#include <nbla/function/batch_matmul.hpp>
+#include <nbla/function/add2.hpp>
+#include <nbla/function/mul_scalar.hpp>
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
 
@@ -35,8 +38,33 @@ void Inverse<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(input_shape[1] == input_shape[2], error_code::value,
              "Input must be square matrix");
   outputs[0]->reshape(input_shape, true);
+  batch_size_ = input_shape[0];
   dim_ = input_shape[1];
   offset_ = dim_ * dim_;
+
+  // for backward
+  inv_x_ = make_shared<Variable>(outputs[0]->data());
+  neg_inv_x_ = make_shared<Variable>();
+  matmul1_out_ = make_shared<Variable>();
+  matmul2_out_ = make_shared<Variable>();
+  gy_ = make_shared<Variable>(outputs[0]->grad());
+  gx_ = make_shared<Variable>(inputs[0]->grad());
+  gx_accum_ = make_shared<Variable>();
+
+  f_mul_scalar = create_MulScalar(this->ctx_, -1.0);
+  f_mul_scalar->setup(Variables{inv_x_.get()}, Variables{neg_inv_x_.get()});
+
+  f_batch_matmul1_ = create_BatchMatmul(this->ctx_, true, false);
+  f_batch_matmul1_->setup(Variables{neg_inv_x_.get(), gy_.get()},
+                          Variables{matmul1_out_.get()});
+
+  f_batch_matmul2_ = create_BatchMatmul(this->ctx_, false, true);
+  f_batch_matmul2_->setup(Variables{matmul1_out_.get(), inv_x_.get()},
+                          Variables{matmul2_out_.get()});
+
+  f_add_ = create_Add2(this->ctx_, false);
+  f_add_->setup(Variables{gx_.get(), matmul2_out_.get()},
+                Variables{gx_accum_.get()});
 }
 
 template <typename T>
@@ -45,7 +73,7 @@ void Inverse<T>::forward_impl(const Variables &inputs,
   using namespace ::nbla::eigen;
   const T* x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T* y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  for (int i = 0; i < inputs[0]->shape()[0]; ++i) {
+  for (int i = 0; i < batch_size_; ++i) {
     ConstMatrixMap<T> mx(x + i * offset_, dim_, dim_);
     MatrixMap<T> my(y + i * offset_, dim_, dim_);
     auto inv_x = mx.inverse();
@@ -61,22 +89,18 @@ void Inverse<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0]) {
     return;
   }
-  using namespace ::nbla::eigen;
-  const T* dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  const T* x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T* dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
-  for (int i = 0; i < inputs[0]->shape()[0]; ++i) {
-    ConstMatrixMap<T> mx(x + i * offset_, dim_, dim_);
-    ConstMatrixMap<T> mdy(dy + i * offset_, dim_, dim_);
-    auto inv_mx = mx.inverse();
-    auto inv_mxT = inv_mx.transpose();
-    MatrixMap<T> mdx(dx + i * offset_, dim_, dim_);
-    auto g = -inv_mxT * mdy * inv_mxT;
-    if (accum[0]) {
-      mdx += g;
-    } else {
-      mdx = g;
-    }
+  if (!accum[0]) {
+    gx_->data()->zero();
   }
+  // gx_ += -inv_x^T * gy * inv_x^T
+  f_mul_scalar->forward(Variables{inv_x_.get()}, Variables{neg_inv_x_.get()});
+  f_batch_matmul1_->forward(Variables{neg_inv_x_.get(), gy_.get()},
+                            Variables{matmul1_out_.get()});
+  f_batch_matmul2_->forward(Variables{matmul1_out_.get(), inv_x_.get()},
+                            Variables{matmul2_out_.get()});
+  f_add_->forward(Variables{gx_.get(), matmul2_out_.get()},
+                  Variables{gx_accum_.get()});
+  // TODO: Remove this line
+  inputs[0]->grad()->cast(get_dtype<T>(), this->ctx_, true)->copy_from(gx_accum_->data()->get(get_dtype<T>(), this->ctx_));
 }
 }
