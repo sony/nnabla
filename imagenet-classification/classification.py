@@ -207,9 +207,6 @@ def train():
         solver.weight_decay(args.weight_decay)
         solver.update()
 
-        # Accumulate errors after solver update
-        l, e = accumulate_error(l, e, t_model, t_e)
-
         monitor_loss.add(i, l / args.accum_grad)
         monitor_err.add(i, e / args.accum_grad)
         monitor_time.add(i)
