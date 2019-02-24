@@ -292,7 +292,7 @@ MatrixDiag:
 MatrixDiagPart:
   float: [float]
   half: [Half]
-Inverse:
+BatchInv:
   float: [float]
   half: [Half]
 Interpolate:

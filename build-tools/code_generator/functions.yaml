@@ -3079,17 +3079,17 @@ Array Manipulation:
     function_ids:
       Empty: 85
     c_runtime: support
-  Inverse:
-    snake_name: inverse
+  BatchInv:
+    snake_name: batch_inv
     doc: |2
 
-      Returns an array of inverse matrix
+      Returns an array of inverted matrix
     inputs:
       x:
-        doc: N-D array
+        doc: batched N-D array
     outputs:
       y:
-        doc: N-D array of inverse matrix
+        doc: batched N-D array of inverted matrix
     c_runtime: not support
     function_ids:
       Empty: 245

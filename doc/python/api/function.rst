@@ -176,7 +176,7 @@ Array Manipulation
 .. autofunction:: sort
 .. autofunction:: reshape
 .. autofunction:: one_hot
-.. autofunction:: inverse
+.. autofunction:: batch_inv
 
 
 Stochasticity

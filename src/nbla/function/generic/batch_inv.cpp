@@ -15,7 +15,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
-#include <nbla/function/inverse.hpp>
+#include <nbla/function/batch_inv.hpp>
 #include <nbla/function/batch_matmul.hpp>
 #include <nbla/function/add2.hpp>
 #include <nbla/function/mul_scalar.hpp>
@@ -26,11 +26,11 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Inverse);
+NBLA_REGISTER_FUNCTION_SOURCE(BatchInv);
 
 
 template <typename T>
-void Inverse<T>::setup_impl(const Variables &inputs,
+void BatchInv<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
   NBLA_CHECK(inputs[0]->ndim() == 3, error_code::value,
              "Input must be 2D array");
@@ -68,7 +68,7 @@ void Inverse<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-void Inverse<T>::forward_impl(const Variables &inputs,
+void BatchInv<T>::forward_impl(const Variables &inputs,
                                const Variables &outputs) {
   using namespace ::nbla::eigen;
   const T* x = inputs[0]->get_data_pointer<T>(this->ctx_);
@@ -82,7 +82,7 @@ void Inverse<T>::forward_impl(const Variables &inputs,
 }
 
 template <typename T>
-void Inverse<T>::backward_impl(const Variables &inputs,
+void BatchInv<T>::backward_impl(const Variables &inputs,
                                 const Variables &outputs,
                                 const vector<bool> &propagate_down,
                                 const vector<bool> &accum) {

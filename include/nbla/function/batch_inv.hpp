@@ -22,7 +22,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Inverse);
+NBLA_REGISTER_FUNCTION_HEADER(BatchInv);
 
 /** Invert source matrix
 The function is defined as
@@ -38,18 +38,18 @@ Outputs:
 
 \ingroup FunctionImplGrp
 */
-template <typename T> class Inverse : public BaseFunction<> {
+template <typename T> class BatchInv : public BaseFunction<> {
 protected:
   int dim_, offset_, batch_size_;
   shared_ptr<Function> f_mul_scalar, f_batch_matmul1_, f_batch_matmul2_, f_add_;
   VariablePtr neg_inv_x_, inv_x_, matmul1_out_, matmul2_out_, gx_, gy_, gx_accum_;
 
 public:
-  Inverse(const Context &ctx) : BaseFunction(ctx)
+  BatchInv(const Context &ctx) : BaseFunction(ctx)
     {}
-  virtual ~Inverse() {}
+  virtual ~BatchInv() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Inverse(ctx_);
+    return create_BatchInv(ctx_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -62,7 +62,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
-  virtual string name() { return "Inverse"; }
+  virtual string name() { return "BatchInv"; }
   virtual bool grad_depends_output_data(int i, int o) const { return true; }
 
 protected:

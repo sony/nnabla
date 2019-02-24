@@ -19,9 +19,9 @@ import nnabla.functions as F
 from nbla_test_utils import list_context
 
 
-ctxs = list_context('Inverse')
+ctxs = list_context('BatchInv')
 
-def ref_inverse(x):
+def ref_inv(x):
     y = np.zeros_like(x, dtype=np.float32)
     for i in range(x.shape[0]):
         y[i] = np.linalg.inv(x[i])
@@ -29,11 +29,11 @@ def ref_inverse(x):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
-def test_inverse_forward_backward(seed, ctx, func_name):
+def test_batch_inv_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     # input must be batched square matrix
     inputs = [np.clip(rng.randn(2, 3, 3).astype(np.float32), -0.9, 0.9)]
-    function_tester(rng, F.inverse, ref_inverse, inputs, ctx=ctx,
+    function_tester(rng, F.batch_inv, ref_inv, inputs, ctx=ctx,
                     func_name=func_name, atol_b=2e-2, dstep=1e-4,
                     disable_half_test=True)
