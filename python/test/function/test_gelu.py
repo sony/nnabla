@@ -22,13 +22,15 @@ ctxs = list_context('GELU')
 
 
 def ref_gelu(x):
-    return x/2*(1+np.tanh(np.sqrt(2/np.pi)*(x +0.044715 * np.power(x, 3))))
+    return x/2*(1+np.tanh(np.sqrt(2/np.pi)*(x + 0.044715 * np.power(x, 3))))
+
 
 def ref_gelu_backward(x, dx):
-    return np.array(np.array(0.5 + (0.398942*x + 0.0535161 * np.power(x,3)) * np.power( 1/ np.cosh(0.797885*x + 0.0356774* np.power(x,3)),2) + 0.5*np.tanh(0.797885*x + 0.0356774*np.power(x,3))).flat)
+    return np.array(np.array(0.5 + (0.398942*x + 0.0535161 * np.power(x, 3)) * np.power(1 / np.cosh(0.797885*x + 0.0356774 * np.power(x, 3)), 2) + 0.5*np.tanh(0.797885*x + 0.0356774*np.power(x, 3))).flat)
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("seed", [313,999])
+@pytest.mark.parametrize("seed", [313, 999])
 def test_swish_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
