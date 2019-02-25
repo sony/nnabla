@@ -295,6 +295,9 @@ MatrixDiagPart:
 BatchInv:
   float: [float]
   half: [Half]
+BatchDet:
+  float: [float]
+  half: [Half]
 Interpolate:
   float: [float]
   half: [Half]

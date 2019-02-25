@@ -3093,6 +3093,20 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 245
+  BatchDet:
+    snake_name: batch_det
+    doc: |2
+
+      Returns determinant of an input array
+    inputs:
+      x:
+        doc: batched N-D array
+    outputs:
+      y:
+        doc: batched N-D array of inverted matrix
+    c_runtime: not support
+    function_ids:
+      Empty: 246
 Signal Processing:
   Interpolate:
     snake_name: interpolate
