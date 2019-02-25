@@ -297,7 +297,7 @@ public:
   /** Deepcopy method
    */
   NBLA_API
-  Ptr create_deep_copy(Context ctx, bool copy_grad = false);
+  Ptr create_deep_copy(Context ctx, bool copy_grad = true);
 };
 
 /** shared_ptr typedef of CGVariable
