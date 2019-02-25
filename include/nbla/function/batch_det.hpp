@@ -37,7 +37,7 @@ template <typename T> class BatchDet : public BaseFunction<> {
 protected:
   int dim_, offset_, batch_size_;
   shared_ptr<Function> f_transpose_, f_batch_inv_, f_mul1_, f_mul2_, f_add_;
-  VariablePtr inv_x_, transposed_inv_x_, reshaped_det_x_, reshaped_gy_, gx_, accum_gx_, mul1_out_, mul2_out_;
+  VariablePtr inv_x_, transposed_inv_x_, reshaped_det_x_, reshaped_gy_, gx_, mul1_out_, mul2_out_;
 
 public:
   BatchDet(const Context &ctx) : BaseFunction(ctx)
