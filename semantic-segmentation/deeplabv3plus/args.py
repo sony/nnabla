@@ -33,11 +33,12 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
     parser.add_argument('--compute-acc', action='store_true',
                         default=False, help="Whether to compute the accuracy mean IOU value during training/validation; False by default")
     parser.add_argument("--input-ckpt-file", type=str)
-    parser.add_argument("--output-nnabla-file", type=str, default='deeplab_nnabla.h5')
+    parser.add_argument("--output-nnabla-file", type=str,
+                        default='deeplab_nnabla.h5')
     parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
     parser.add_argument("--label-path", type=str)
-    parser.add_argument("--data-dir",type=str,help='Path to VOC datset.')
-    parser.add_argument("--train-file",type=str,
+    parser.add_argument("--data-dir", type=str, help='Path to VOC datset.')
+    parser.add_argument("--train-file", type=str,
                         help='VOC train split text file')
     parser.add_argument("--val-file",
                         type=str, help='VOC val split text file')
@@ -111,7 +112,6 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
                         help="Sync weights every specified iteration. NCCL uses\
  the ring all reduce, so gradients in each device are not exactly same. When it\
  is accumulated in the weights, the weight values in each device diverge.")
-
 
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):

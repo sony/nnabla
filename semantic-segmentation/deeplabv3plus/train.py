@@ -35,32 +35,33 @@ def get_model(args, test=False):
 
     """
     nn_in_size = 513
-    
+
     image = nn.Variable([args.batch_size, 3, nn_in_size, nn_in_size])
     label = nn.Variable([args.batch_size, 1, nn_in_size, nn_in_size])
     mask = nn.Variable([args.batch_size, 1, nn_in_size, nn_in_size])
-    
-    pred = model.deeplabv3plus_model(image, args.output_stride, args.num_class, test=test, fix_params=False)
 
-    #Initializing moving variance by 1
+    pred = model.deeplabv3plus_model(
+        image, args.output_stride, args.num_class, test=test, fix_params=False)
+
+    # Initializing moving variance by 1
     params = nn.get_parameters()
-    for key,val in params.items():
+    for key, val in params.items():
         if 'bn/var' in key:
             val.d.fill(1)
 
-
-    loss = F.sum(F.softmax_cross_entropy(pred, label,axis=1) * mask) / F.sum(mask)
+    loss = F.sum(F.softmax_cross_entropy(
+        pred, label, axis=1) * mask) / F.sum(mask)
     Model = namedtuple('Model', ['image', 'label', 'mask', 'pred', 'loss'])
     return Model(image, label, mask, pred, loss)
 
 
-
 def one_hot_encode(label, num_class):
     # label is 2-d of shape (batch, pixels(513x513))
-    one_hot_vector = np.zeros((label.shape[0],label.shape[1], num_class), dtype=np.int32)
+    one_hot_vector = np.zeros(
+        (label.shape[0], label.shape[1], num_class), dtype=np.int32)
 
-    batch_id = np.arange(label.shape[0]).reshape(label.shape[0],1)
-    pixel_id = np.tile(np.arange(label.shape[1]), (label.shape[0],1))
+    batch_id = np.arange(label.shape[0]).reshape(label.shape[0], 1)
+    pixel_id = np.tile(np.arange(label.shape[1]), (label.shape[0], 1))
 
     one_hot_vector[batch_id, pixel_id, label.astype(np.int32)] = 1
 
@@ -68,28 +69,31 @@ def one_hot_encode(label, num_class):
 
 
 def compute_miou(num_classes, gt, pred, mask):
-    
-    gt = np.squeeze(np.transpose(gt, (1,0,2,3)), axis=0)
-    gt = gt.reshape(gt.shape[0],gt.shape[1]*gt.shape[2])
+
+    gt = np.squeeze(np.transpose(gt, (1, 0, 2, 3)), axis=0)
+    gt = gt.reshape(gt.shape[0], gt.shape[1]*gt.shape[2])
     gt = one_hot_encode(gt, num_classes)
 
-    pred = pred.reshape(pred.shape[0],pred.shape[1]*pred.shape[2])
+    pred = pred.reshape(pred.shape[0], pred.shape[1]*pred.shape[2])
     pred = one_hot_encode(pred, num_classes)
 
-    # Now, gt: [B, P, C] ; pred: [B, P, C]   
-    mask = np.squeeze(np.transpose(mask, (1,0,2,3)), axis=0)  
-    mask = mask.reshape(mask.shape[0],mask.shape[1]*mask.shape[2]) #mask: [B, P]
+    # Now, gt: [B, P, C] ; pred: [B, P, C]
+    mask = np.squeeze(np.transpose(mask, (1, 0, 2, 3)), axis=0)
+    mask = mask.reshape(mask.shape[0], mask.shape[1]
+                        * mask.shape[2])  # mask: [B, P]
     mask = mask[..., None]
 
-    numer = np.sum(np.logical_and(gt, pred) * mask, axis=1)  # gt: [B, P, C], mask: [B, P, 1]
+    # gt: [B, P, C], mask: [B, P, 1]
+    numer = np.sum(np.logical_and(gt, pred) * mask, axis=1)
     denom = np.sum(np.logical_or(gt, pred) * mask, axis=1)
     iou = numer / np.maximum(denom, 1)
 
-    cat_mask = np.max(gt, axis=1) 
+    cat_mask = np.max(gt, axis=1)
     iou_per_image = np.sum(iou * cat_mask, axis=1) / np.sum(cat_mask, axis=1)
-    miou = np.mean(iou_per_image) 
+    miou = np.mean(iou_per_image)
 
     return miou.mean()
+
 
 def train():
     """
@@ -103,7 +107,6 @@ def train():
         nnabla.parameter.pop_parameter('decoder/logits/affine/conv/W')
         nnabla.parameter.pop_parameter('decoder/logits/affine/conv/b')
 
-
     n_train_samples = args.train_samples
     n_val_samples = args.val_samples
     distributed = args.distributed
@@ -113,7 +116,8 @@ def train():
         # Communicator and Context
         from nnabla.ext_utils import get_extension_context
         extension_module = "cudnn"
-        ctx = get_extension_context(extension_module, type_config=args.type_config)
+        ctx = get_extension_context(
+            extension_module, type_config=args.type_config)
         comm = C.MultiProcessDataParalellCommunicator(ctx)
         comm.init()
         n_devices = comm.size
@@ -132,13 +136,14 @@ def train():
             extension_module, device_id=args.device_id, type_config=args.type_config)
         nn.set_default_context(ctx)
         n_devices = 1
-        device_id=0
+        device_id = 0
 
-    #training data
+    # training data
     data = data_iterator_segmentation(
             args.train_samples, args.batch_size, args.train_dir, args.train_label_dir)
-    #validation data
-    vdata = data_iterator_segmentation(args.val_samples, args.batch_size, args.val_dir, args.val_label_dir)
+    # validation data
+    vdata = data_iterator_segmentation(
+        args.val_samples, args.batch_size, args.val_dir, args.val_label_dir)
 
     if distributed:
         data = data.slice(
@@ -147,22 +152,21 @@ def train():
             rng=None, num_of_slices=n_devices, slice_pos=device_id)
     num_classes = args.num_class
 
-     
-
     # Workaround to start with the same initialized weights for all workers.
     np.random.seed(313)
     t_model = get_model(
         args, test=False)
     t_model.pred.persistent = True  # Not clearing buffer of pred in backward
     t_pred2 = t_model.pred.unlinked()
-    t_e = F.sum(F.top_n_error(t_pred2, t_model.label, axis=1)* t_model.mask) / F.sum(t_model.mask)
+    t_e = F.sum(F.top_n_error(t_pred2, t_model.label, axis=1)
+                * t_model.mask) / F.sum(t_model.mask)
 
     v_model = get_model(
         args, test=True)
     v_model.pred.persistent = True  # Not clearing buffer of pred in forward
     v_pred2 = v_model.pred.unlinked()
-    v_e = F.sum(F.top_n_error(v_pred2, v_model.label, axis=1)* v_model.mask) / F.sum(t_model.mask)
-
+    v_e = F.sum(F.top_n_error(v_pred2, v_model.label, axis=1)
+                * v_model.mask) / F.sum(t_model.mask)
 
     # Create Solver
     solver = S.Momentum(args.learning_rate, 0.9)
@@ -175,7 +179,6 @@ def train():
     warmup_slope = base_lr * (n_devices - 1) / warmup_iter
     solver.set_learning_rate(base_lr)
 
-
     # Create monitor
     import nnabla.monitor as M
     monitor = M.Monitor(args.monitor_path)
@@ -187,7 +190,6 @@ def train():
     monitor_miou = M.MonitorSeries("mean IOU", monitor, interval=10)
     monitor_vtime = M.MonitorTimeElapsed(
         "Validation time", monitor, interval=1)
-
 
     # Training loop
     for i in range(int(args.max_iter / n_devices)):
@@ -217,25 +219,26 @@ def train():
                 ve_local += v_e.data
                 # Mean IOU computation
                 if compute_acc:
-                    vmiou_local += compute_miou(num_classes, labels, np.argmax(v_model.pred.d, axis=1), masks)
+                    vmiou_local += compute_miou(num_classes, labels,
+                                                np.argmax(v_model.pred.d, axis=1), masks)
 
             vl_local /= val_iter_local
             ve_local /= val_iter_local
             if compute_acc:
                 vmiou_local /= val_iter_local
-                vmiou_ndarray = nn.NdArray.from_numpy_array(np.array(vmiou_local))
+                vmiou_ndarray = nn.NdArray.from_numpy_array(
+                    np.array(vmiou_local))
             if distributed:
                 comm.all_reduce(vl_local, division=True, inplace=True)
                 comm.all_reduce(ve_local, division=True, inplace=True)
                 if compute_acc:
                     comm.all_reduce(vmiou_ndarray, division=True, inplace=True)
 
-
             if device_id == 0:
                 monitor_vloss.add(i * n_devices, vl_local.data.copy())
                 monitor_verr.add(i * n_devices, ve_local.data.copy())
                 if compute_acc:
-                    monitor_miou.add(i* n_devices, vmiou_local)
+                    monitor_miou.add(i * n_devices, vmiou_local)
                 monitor_vtime.add(i * n_devices)
 
         # Training
@@ -271,7 +274,6 @@ def train():
         solver.weight_decay(args.weight_decay)
         solver.update()
 
-
         # Linear Warmup
         if i <= warmup_iter:
             lr = base_lr + warmup_slope * i
@@ -284,17 +286,19 @@ def train():
                 comm.all_reduce(weights, division=True, inplace=True)
 
         if device_id == 0:
-            monitor_loss.add(i * n_devices, (l_acc / args.accum_grad).data.copy())
-            monitor_err.add(i * n_devices, (e_acc / args.accum_grad).data.copy())
+            monitor_loss.add(
+                i * n_devices, (l_acc / args.accum_grad).data.copy())
+            monitor_err.add(
+                i * n_devices, (e_acc / args.accum_grad).data.copy())
             monitor_time.add(i * n_devices)
 
         # Learning rate decay at scheduled iter --> changed to poly learning rate decay policy
-        #if i in args.learning_rate_decay_at:
-        solver.set_learning_rate(base_lr * ((1 - i / args.max_iter)**0.1) )
+        # if i in args.learning_rate_decay_at:
+        solver.set_learning_rate(base_lr * ((1 - i / args.max_iter)**0.1))
 
     if device_id == 0:
         nn.save_parameters(os.path.join(args.model_save_path,
-                                    'param_%06d.h5' % args.max_iter))
+                                        'param_%06d.h5' % args.max_iter))
 
 
 if __name__ == '__main__':

@@ -21,6 +21,7 @@ from args import get_args
 import os
 import matplotlib.pyplot as plt
 
+
 def main():
     args = get_args()
     rng = np.random.RandomState(1223)
@@ -35,34 +36,32 @@ def main():
     mean_iou = []
     model_dir = args.model_load_path
     for filename in os.listdir(model_dir):
-        args.model_load_path=model_dir+filename
+        args.model_load_path = model_dir+filename
         miou = eval.validate(args)
         iterations.append(filename.split('.')[0])
         mean_iou.append(miou)
 
-
     for i in range(len(iterations)):
-        iterations[i] = iterations[i].replace('param_','')
+        iterations[i] = iterations[i].replace('param_', '')
 
     itr = list(map(int, iterations))
 
-    #Plot Iterations Vs mIOU
+    # Plot Iterations Vs mIOU
     plt.axes([0, max(itr), 0.0, 1.0])
     plt.xlabel('Iterations')
     plt.ylabel('Accuracy - mIOU')
-    plt.scatter(itr,mean_iou)
+    plt.scatter(itr, mean_iou)
     plt.show()
 
     print(iterations)
     print(mean_iou)
-    with open('iterations.txt','w') as f:
+    with open('iterations.txt', 'w') as f:
         for item in iterations:
-            f.write('%s\n' %item)
-    with open('miou.txt','w') as f2:
+            f.write('%s\n' % item)
+    with open('miou.txt', 'w') as f2:
         for item in mean_iou:
-            f2.write('%s\n' %item)
+            f2.write('%s\n' % item)
 
-        
     #plt.plot(iterations, mean_iou)
 if __name__ == '__main__':
     main()
