@@ -74,6 +74,19 @@ vector<pair<string, VariablePtr>> ParameterDirectory::get_parameters() {
   return parameters;
 }
 
+CgVariablePtr ParameterDirectory::get_parameter(string name) {
+  // Parameter name.
+  auto param_path = scope_path_ + "/" + name;
+
+  // Search exist one.
+  auto it = param_dict_->find(param_path);
+  if (it != param_dict_->end()) {
+    return it->second;
+  }
+
+  return nullptr;
+}
+
 CgVariablePtr
 ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
                                             Initializer *initializer,
@@ -92,6 +105,20 @@ ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
   ordered_keys_->push_back(param_path);
 
   return parameter;
+}
+
+ParameterDirectory ParameterDirectory::create_deep_copy() {
+  auto param_dict = make_shared<dict_type>();
+  auto ordered_keys = make_shared<ordered_keys_type>(*ordered_keys_.get());
+
+  // get ctx
+  auto ctx = SingletonManager::get<GlobalContext>()->get_current_context();
+
+  for (auto p = param_dict_->begin(); p != param_dict_->end(); p++) {
+    param_dict->insert({p->first, p->second->create_deep_copy(ctx, false)});
+  }
+
+  return ParameterDirectory("", param_dict, ordered_keys);
 }
 
 namespace parametric_functions {

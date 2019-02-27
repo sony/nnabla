@@ -541,4 +541,23 @@ bool CgVariable::check_and_unmark_need_setup(CgFunctionPtr func) {
   it->second.second.need_setup = false;
   return ret;
 }
+
+CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
+  auto ret = std::make_shared<CgVariable>(this->variable()->shape(),
+                                          this->need_grad());
+
+  dtypes dtype = this->variable()->data()->array()->dtype();
+
+  const Array *x = this->variable()->data()->get(dtype, ctx);
+  Array *y = ret->variable()->data()->cast(dtype, ctx, true);
+  y->copy_from(x);
+
+  if (copy_grad) {
+    const Array *g = this->variable()->grad()->get(dtype, ctx);
+    Array *h = ret->variable()->grad()->cast(dtype, ctx, true);
+    h->copy_from(g);
+  }
+
+  return ret;
+}
 }

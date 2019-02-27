@@ -60,11 +60,15 @@ public:
 public:
   ParameterDirectory operator[](string name);
 
+  CgVariablePtr get_parameter(string name);
+
   vector<pair<string, VariablePtr>> get_parameters();
 
   CgVariablePtr get_parameter_or_create(string name, Shape_t shape,
                                         Initializer *initializer,
                                         bool need_grad);
+
+  ParameterDirectory create_deep_copy();
 };
 
 namespace parametric_functions {
