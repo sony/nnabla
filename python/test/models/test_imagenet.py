@@ -139,3 +139,43 @@ def test_nnabla_models_imagenet_etc(model_class, up_to_list, image_size_factor, 
             assert _check_trainable_parameters(y)
         else:
             assert not _check_trainable_parameters(y)
+
+
+@pytest.mark.skipif(
+    get_model_url_base_from_env() is None,
+    reason='models are tested only when NNBLA_MODELS_URL_BASE is specified as an envvar')
+@pytest.mark.parametrize('num_layers', [11, 13, 16])
+@pytest.mark.parametrize('batch_size', [1, 5])
+@pytest.mark.parametrize('training', [False, True])
+@pytest.mark.parametrize('seed', [1223])
+def test_nnabla_models_vgg(num_layers, batch_size, training, seed):
+    from nnabla.models.imagenet import VGG
+    nn.clear_parameters()
+    rng = np.random.RandomState(seed)
+    model = VGG(num_layers)
+
+    # Determine input shape and create input variable
+    input_shape = list(model.input_shape)
+    input_shape = tuple(input_shape)
+    x = nn.Variable.from_numpy_array(rng.randint(
+        0, 256, size=(batch_size,) + input_shape))
+
+    # Test cases for all intermediate outputs
+    for use_up_to in ('classifier', 'pool', 'lastconv', 'lastconv+relu'):
+        returns_net = False
+
+        def _execute():
+            y = model(x, training=training, use_up_to=use_up_to)
+            y.forward()
+
+        _execute()
+        net = model(x, training=training,
+                    use_up_to=use_up_to, returns_net=True)
+        assert isinstance(net, NnpNetwork)
+        assert len(net.inputs.values()) == 1
+        assert len(net.outputs.values()) == 1
+        y = list(net.outputs.values())[0]
+        if training:
+            assert _check_trainable_parameters(y)
+        else:
+            assert not _check_trainable_parameters(y)
