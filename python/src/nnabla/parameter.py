@@ -35,11 +35,27 @@ current_scope = OrderedDict()
 root_scope = current_scope
 
 
+def get_current_parameter_scope():
+    '''Returns current parameter scope.
+    '''
+    global current_scope
+    return current_scope
+
+
 @contextmanager
-def parameter_scope(name):
+def parameter_scope(name, scope=None):
     """
     Grouping parameters registered by parametric functions
     listed in :mod:`nnabla.parametric_functions`.
+
+    Args:
+
+        name (str): Parameter scope name.
+
+        scope (OrderedDict, optional):
+            Specifiy current parameter scope as a local dictionary.
+            The default value is ``None``. In this case,
+            the current parameter scope maintained in global is used.
 
     Example:
 
@@ -95,18 +111,25 @@ def parameter_scope(name):
         raise ValueError(
             'Invalid argument of parameter_scope("{}").'.format(name))
     prev_scope = current_scope
-    scope = current_scope
+    if scope is None:
+        scope = current_scope
+    else:
+        if not isinstance(scope, dict):
+            raise ValueError(
+                'Scope must be a dictionary. {} is given.'.format(type(scope)))
     for name in names:
         parent_scope = scope
-        # Creates a new scope dict if it doesn't exist.
-        # `dict.get` returns default value (OrderedDict())
-        # if scope contains `name`
-        scope = scope.get(name, OrderedDict())
-        assert isinstance(scope, dict)
-        parent_scope[name] = scope
+        # When name is empty, the given scope is used as a current scope.
+        if name:
+            # Creates a new scope dict if it doesn't exist.
+            # `dict.get` returns default value (OrderedDict())
+            # if scope contains `name`
+            scope = scope.get(name, OrderedDict())
+            assert isinstance(scope, dict)
+            parent_scope[name] = scope
     current_scope = scope
     try:
-        yield
+        yield current_scope
     finally:
         current_scope = prev_scope
 
@@ -321,23 +344,23 @@ def load_parameters(path):
     logger.info("Parameter load ({}): {}".format(format, path))
 
 
-def save_parameters(path):
+def save_parameters(path, params=None):
     """Save all parameters into a file with the specified format.
 
     Currently hdf5 and protobuf formats are supported.
 
     Args:
       path : path or file object
+      params (dict, optional): Parameters to be saved. Dictionary is of a parameter name (:obj:`str`) to :obj:`~nnabla.Variable`.
     """
     _, ext = os.path.splitext(path)
-    params = get_parameters(grad_only=False)
+    params = get_parameters(grad_only=False) if params is None else params
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
         import warnings
         warnings.simplefilter('ignore', category=FutureWarning)
         import h5py
         with h5py.File(path, 'w') as hd:
-            params = get_parameters(grad_only=False)
             for i, (k, v) in enumerate(iteritems(params)):
                 hd[k] = v.d
                 hd[k].attrs['need_grad'] = v.need_grad

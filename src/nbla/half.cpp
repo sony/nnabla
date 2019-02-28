@@ -221,7 +221,13 @@ MATHF(atanh);
 MATHF(fabs);
 MATHF(abs);
 MATHF(round);
+MATHF(isnan);
+MATHF(isinf);
 Half pow(const Half &a, const Half &b) { return std::pow((float)a, (float)b); }
+Half pow(const Half &a, const int &b) { return std::pow((float)a, (float)b); }
+Half atan2(const Half &a, const Half &b) {
+  return std::atan2((float)a, (float)b);
+}
 Half ldexp(const Half &a, const int &b) { return std::ldexp((float)a, b); }
 MATHF(floor);
 MATHF(ceil);

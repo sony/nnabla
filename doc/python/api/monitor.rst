@@ -28,4 +28,4 @@ Utility functions
 
 .. autofunction:: plot_series
 
-.. autofunction:: plot_time_elaplsed
+.. autofunction:: plot_time_elapsed

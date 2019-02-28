@@ -22,6 +22,7 @@
 namespace nbla {
 
 using std::make_shared;
+using std::make_pair;
 
 Solver::Solver(const Context &ctx) : ctx_(ctx), setup_called_(false) {}
 
@@ -85,6 +86,32 @@ void Solver::clear_parameters() {
     remove_state_impl(key);
   }
   params_.clear();
+}
+
+vector<pair<string, VariablePtr>> Solver::get_parameters() {
+  vector<pair<string, VariablePtr>> params;
+  for (auto &kv : params_) {
+    auto elm = make_pair(kv.first, kv.second.p);
+    params.push_back(elm);
+  }
+  return params;
+}
+
+vector<pair<string, Solver::SolverState>> Solver::get_states() {
+  vector<pair<string, Solver::SolverState>> states;
+  for (auto &kv0 : states_) {
+    states.push_back({kv0.first, kv0.second});
+  }
+  return states;
+}
+
+void Solver::set_states(const vector<pair<string, SolverState>> &states) {
+  for (auto &kv0 : states) {
+    auto it = states_.find(kv0.first);
+    NBLA_CHECK(it != states_.end(), error_code::value,
+               "Set weight parameter for %s first.", kv0.first.c_str());
+    it->second = kv0.second;
+  }
 }
 
 void Solver::zero_grad() {

@@ -24,7 +24,7 @@ import copy
 
 setup_requires = [
     'setuptools',
-    'numpy>=1.12',
+    'numpy<1.16',
     'Cython',  # Requires python-dev.
 ]
 
@@ -170,6 +170,7 @@ if __name__ == '__main__':
         'communicator',
         '_init',
         '_nd_array',
+        '_computation_graph',
         '_array',
         '_arithmetic_ops',
         '_indexing']
@@ -194,8 +195,11 @@ if __name__ == '__main__':
 
     shutil.copyfile(library_path, os.path.join(path_pkg, library_file_name))
     package_data = {"nnabla": [
-        library_file_name, 'nnabla.conf',
-                           'utils/converter/functions.pkl']}
+        library_file_name,
+        'nnabla.conf',
+        'utils/converter/functions.pkl',
+        'models/imagenet/category_names.txt',
+        ]}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -233,6 +237,10 @@ if __name__ == '__main__':
                 'nnabla.contrib',
                 'nnabla.experimental',
                 'nnabla.experimental.graph_converters',
+                'nnabla.experimental.parametric_function_class',
+                'nnabla.experimental.trainers',
+                'nnabla.models',
+                'nnabla.models.imagenet',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',

@@ -390,6 +390,7 @@ class NnpImpl {
 public:
   ~NnpImpl() {}
 
+  bool add_archive(void *archive);
   bool add_prototxt(std::string filename);
   bool add_prototxt(char *buffer, int size);
   bool add_protobuf(std::string filename);

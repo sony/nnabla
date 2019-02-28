@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <nbla/logger.hpp>
+#include <nbla_utils/nnp.hpp>
+
+#include <fstream>
+#include <iostream>
+
+#include "nbla_commands.hpp"
+
 #include <nbla_utils/nnp.hpp>
 #ifndef _WIN32
 #include <dirent.h>

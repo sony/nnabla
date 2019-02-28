@@ -23,7 +23,8 @@ The parameters registered by :ref:`parametric-functions`
 can be managed using APIs listed in this section.
 
 
-.. autofunction:: parameter_scope(name)
+.. autofunction:: parameter_scope
+.. autofunction:: get_current_parameter_scope
 .. autofunction:: get_parameters
 .. autofunction:: clear_parameters
 .. autofunction:: save_parameters
@@ -72,6 +73,10 @@ Here is the list of parametric functions.
 .. autofunction:: batch_normalization
 .. autofunction:: mean_subtraction
 
+.. autofunction:: rnn
+.. autofunction:: lstm
+.. autofunction:: gru
+
 .. autofunction:: embed
 .. autofunction:: prelu
 
@@ -92,7 +97,7 @@ Here is the list of parametric functions.
 .. autofunction:: pruned_affine
 .. autofunction:: pruned_convolution
 
-.. autofunction:: lstm
+.. autofunction:: lstm_cell
 
 .. autoclass:: LSTMCell
 

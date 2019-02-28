@@ -46,14 +46,27 @@ else()
       error() # Undefined command to abort cmake process here.
     endif()
   endif()
-  find_package(Protobuf REQUIRED)
+  if (ANDROID)
+    include_directories(/usr/local/android/arm64/include)
+    add_library(Protobuf STATIC IMPORTED)
+    set_target_properties(Protobuf 
+                          PROPERTIES IMPORTED_LOCATION 
+                          /usr/local/android/arm64/lib/libprotobuf.a)
+    
+    add_library(LibArchive STATIC IMPORTED)
+    set_target_properties(LibArchive 
+                         PROPERTIES IMPORTED_LOCATION 
+                         /usr/local/android/arm64/lib/libarchive.so) 
+  else()
+    find_package(Protobuf REQUIRED)
+    find_package(LibArchive REQUIRED)
+  endif()
   if (NNABLA_UTILS_WITH_HDF5)
     if (NNABLA_UTILS_STATIC_LINK_DEPS)
       set(HDF5_USE_STATIC_LIBRARIES 1)
     endif()
     find_package(HDF5 REQUIRED COMPONENTS C HL)
   endif()
-  find_package(LibArchive REQUIRED)
   find_package(ZLIB REQUIRED)
   if (NNABLA_UTILS_STATIC_LINK_DEPS)
     if (NNABLA_UTILS_WITH_HDF5)
@@ -75,12 +88,21 @@ else()
     include_directories(${HDF5_INCLUDE_DIRS})
   endif()
 
-  target_link_libraries(nnabla_utils
-    nnabla
-    ${PROTOBUF_LIBRARY}
-    ${LibArchive_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    )
+  if (ANDROID)
+    target_link_libraries(nnabla_utils
+      nnabla
+      Protobuf
+      LibArchive
+      ${ZLIB_LIBRARIES}
+      )
+  else()
+    target_link_libraries(nnabla_utils
+      nnabla
+      ${PROTOBUF_LIBRARY}
+      ${LibArchive_LIBRARIES}
+      ${ZLIB_LIBRARIES}
+      )
+  endif()
   if (NNABLA_UTILS_WITH_HDF5)
     target_link_libraries(nnabla_utils
       ${HDF5_LIBRARIES}

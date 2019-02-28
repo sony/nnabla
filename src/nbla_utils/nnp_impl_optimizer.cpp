@@ -71,7 +71,10 @@ string OptimizerImpl::network_name() const {
   return optimizer_proto_.network_name();
 }
 string OptimizerImpl::dataset_name() const {
-  return optimizer_proto_.dataset_name();
+  if (optimizer_proto_.dataset_name_size() != 1) {
+    NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
+  }
+  return optimizer_proto_.dataset_name()[0];
 }
 const int OptimizerImpl::update_interval() const {
   return optimizer_proto_.update_interval();

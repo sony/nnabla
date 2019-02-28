@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef _WIN32
+typedef int ssize_t;
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #include "nnp_impl.hpp"
 #include <nbla/computation_graph/computation_graph.hpp>
 
@@ -20,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+
 #include <nbla/function/sink.hpp>
 #include <nbla/logger.hpp>
 
@@ -29,6 +37,9 @@
 #define open _open
 #define O_RDONLY _O_RDONLY
 #endif
+// Lib archive
+#include <archive.h>
+#include <archive_entry.h>
 
 namespace nbla {
 namespace utils {
@@ -612,6 +623,35 @@ void NnpImpl::update_parameters() {
   proto_->clear_parameter(); // Reset all parameters consumed.
 }
 
+bool NnpImpl::add_archive(void *archive) {
+  struct archive *a = (struct archive *)archive;
+  struct archive_entry *entry;
+  int r = ARCHIVE_OK;
+  while ((r = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
+    ssize_t size = (ssize_t)archive_entry_size(entry);
+    char *buffer = new char[size];
+    assert(buffer);
+    ssize_t read_size = archive_read_data(a, buffer, size);
+    if (read_size != size) {
+      return false;
+    }
+    std::string entryname(archive_entry_pathname(entry));
+
+    int ep = entryname.find_last_of(".");
+    std::string ext = entryname.substr(ep, entryname.size() - ep);
+
+    if (ext == ".prototxt" || ext == ".nntxt") {
+      add_prototxt(buffer, size);
+    } else if (ext == ".protobuf") {
+      add_protobuf(buffer, size);
+    } else if (ext == ".h5") {
+      add_hdf5(buffer, size);
+    }
+    delete buffer;
+  }
+  return true;
+}
+
 bool NnpImpl::add_prototxt(std::string filename) {
   int fd = open(filename.c_str(), O_RDONLY);
   google::protobuf::io::ZeroCopyInputStream *input =
@@ -780,9 +820,12 @@ shared_ptr<Optimizer> NnpImpl::get_optimizer(const string &name) {
     if (it->name() != name) {
       continue;
     }
+    if (it->dataset_name_size() != 1) {
+      NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
+    }
     return shared_ptr<Optimizer>(new Optimizer(
         new OptimizerImpl(ctx_, *it, get_network(it->network_name()),
-                          get_dataset(it->dataset_name()))));
+                          get_dataset(it->dataset_name()[0]))));
   }
   NBLA_ERROR(error_code::value, "Optimizer `%s` not found", name.c_str());
 }
@@ -822,9 +865,12 @@ shared_ptr<Monitor> NnpImpl::get_monitor(const string &name) {
     if (it->name() != name) {
       continue;
     }
+    if (it->dataset_name_size() != 1) {
+      NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
+    }
     return shared_ptr<Monitor>(
         new Monitor(new MonitorImpl(ctx_, *it, get_network(it->network_name()),
-                                    get_dataset(it->dataset_name()))));
+                                    get_dataset(it->dataset_name()[0]))));
   }
   NBLA_ERROR(error_code::value, "Monitor `%s` not found", name.c_str());
 }
