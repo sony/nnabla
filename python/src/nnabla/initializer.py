@@ -64,7 +64,7 @@ class NormalInitializer(BaseInitializer):
 
     def __init__(self, sigma=1.0, rng=None):
         if rng is None:
-            rng = np.random
+            rng = np.random.RandomState(313)
         self.rng = rng
         self.sigma = sigma
 
@@ -103,7 +103,7 @@ class UniformInitializer(BaseInitializer):
 
     def __init__(self, lim=(-1, 1), rng=None):
         if rng is None:
-            rng = np.random
+            rng = np.random.RandomState(313)
         self.rng = rng
         self.lim = lim
 
@@ -142,7 +142,7 @@ class UniformIntInitializer(BaseInitializer):
 
     def __init__(self, lim=(0, 10), rng=None):
         if rng is None:
-            rng = np.random
+            rng = np.random.RandomState(313)
         self.rng = rng
         self.lim = lim
 
