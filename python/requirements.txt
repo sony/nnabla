@@ -2,8 +2,8 @@ Cython
 boto3
 requests
 h5py
-numpy>=1.12
-onnx
+numpy<1.16
+onnx==1.3.0
 protobuf
 pyyaml
 requests

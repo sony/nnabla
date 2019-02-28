@@ -79,3 +79,70 @@ RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/pro
     && cd / \
     && rm -rf /tmp/*
 
+RUN mkdir -p /usr/local/android
+RUN chmod -R a+rw /usr/local/android
+
+ARG ANDROID_PLATFORM
+ARG ANDROID_ARCHITECTURE
+ARG ANDROID_CMAKE_SYSTEM_NAME
+ARG ANDROID_EABI
+
+ENV SYSTEM_PYTHON /usr/bin/python
+ENV SYSTEM_PROTOC /usr/local/bin/protoc
+ENV NDK_PATH /usr/local/src/android-ndk
+
+ENV PLATFORM ${ANDROID_PLATFORM}
+ENV ARCHITECTURE ${ANDROID_ARCHITECTURE}
+ENV CMAKE_SYSTEM_NAME ${ANDROID_CMAKE_SYSTEM_NAME}
+ENV EABI ${ANDROID_EABI}
+ENV TOOLCHAIN_INSTALL_DIR /usr/local/android/${ARCHITECTURE}
+ENV GCC ${CMAKE_SYSTEM_NAME}-gcc
+ENV GCXX ${CMAKE_SYSTEM_NAME}-c++
+ENV SYSROOT ${NDK_PATH}/platforms/${PLATFORM}/arch-${ARCHITECTURE}
+
+
+RUN sh $NDK_PATH/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --arch=$ARCHITECTURE --install-dir=$TOOLCHAIN_INSTALL_DIR
+ENV CC ${GCC}
+ENV CXX ${GCXX}
+ENV PATH ${TOOLCHAIN_INSTALL_DIR}/bin:${PATH}
+
+RUN cd /tmp \
+    && curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o protobuf-v3.1.0.tar.gz \
+    && tar xvf protobuf-v3.1.0.tar.gz \
+    && cd protobuf-3.1.0 \
+    && mkdir build \
+    && cd build \
+    && cmake  -DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake \
+              -DANDROID_TOOLCHAIN=clang \
+              -DCMAKE_SYSTEM_NAME=$CMAKE_SYSTEM_NAME \
+              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+              -Dprotobuf_BUILD_TESTS=OFF \
+              -DCMAKE_INSTALL_PREFIX=$TOOLCHAIN_INSTALL_DIR \
+              -DANDROID_STL=c++_static \
+              -DANDROID_ABI=$EABI \
+              ../cmake \
+    && $TOOLCHAIN_INSTALL_DIR/bin/make \
+    && $TOOLCHAIN_INSTALL_DIR/bin/make install
+
+
+RUN cd /tmp \
+    && set -xe \
+    && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
+    && tar xf libarchive-3.3.2.tar.gz \
+    && cd libarchive-3.3.2 \
+    && sed -i "/INCLUDE(CheckTypeSize)/aINCLUDE_DIRECTORIES(/tmp/libarchive-3.3.2/contrib/android/include/)" \
+       CMakeLists.txt \
+    && cmake  \
+       -DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake \
+       -DANDROID_TOOLCHAIN=clang \
+       -DCMAKE_SYSTEM_NAME=$CMAKE_SYSTEM_NAME \
+       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+       -DCMAKE_INSTALL_PREFIX=$TOOLCHAIN_INSTALL_DIR \
+       -DENABLE_TEST=OFF \
+       -DANDROID_STL=c++_static \
+       -DANDROID_ABI=$EABI . \
+    && sed -i "/#define HAVE_STATFS 1/a#define HAVE_STATVFS 1" config.h \
+    && sed -i "/#include \"passphrase.h\"/a#ifdef ANDROID\nint wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }\nint mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }\n#endif" tar/util.c \
+    && $TOOLCHAIN_INSTALL_DIR/bin/make \
+    && $TOOLCHAIN_INSTALL_DIR/bin/make install \
+    && cp /tmp/libarchive-3.3.2/contrib/android/include/* $TOOLCHAIN_INSTALL_DIR/include/

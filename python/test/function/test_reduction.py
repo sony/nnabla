@@ -18,9 +18,8 @@ import nnabla as nn
 import nnabla.functions as F
 
 
-from nbla_test_utils import (
-    function_tester,
-    list_ctx_and_func_name)
+from nbla_test_utils import (function_tester, list_context,
+                             list_ctx_and_func_name)
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -29,7 +28,6 @@ from nbla_test_utils import (
 @pytest.mark.parametrize("inshape", [(2, 3, 4, 5), (2, 1, 4, 5)])
 @pytest.mark.parametrize("op, ctx, func_name", list_ctx_and_func_name(['sum', 'mean', 'max', 'min', 'prod']))
 def test_reduction_forward_backward(op, seed, inshape, axis, keepdims, ctx, func_name):
-    from nbla_test_utils import function_tester
     func = getattr(F, op)
     ref_func = getattr(np, op)
     rng = np.random.RandomState(seed)
@@ -43,3 +41,35 @@ def test_reduction_forward_backward(op, seed, inshape, axis, keepdims, ctx, func
                     # the different results on different platforms?
                     # atol_b=3e-3,
                     atol_b=6e-3)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, axis", [((2, 1, 64, 64), (2, 3))])
+@pytest.mark.parametrize("ctx, func_name", list_context('Sum'))
+def test_large_sum_reduction(seed, inshape, axis, ctx, func_name):
+    if not func_name.endswith('Cuda'):
+        # This configuration is only to test the CUDA implementation branch
+        # where reduction_size / outer_size >= 2048, so we skip this test for
+        # CPU and CuDNN and also do not need to run for both keepdims.
+        pytest.skip('skip CUDA specific implementation test for other target')
+
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    function_tester(rng, F.sum, np.sum, inputs, ctx=ctx, func_name=func_name,
+                    func_args=[axis], atol_b=1e-2, disable_half_test=True)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, axis", [((2, 1, 64, 64), (2, 3))])
+@pytest.mark.parametrize("ctx, func_name", list_context('Mean'))
+def test_large_mean_reduction(seed, inshape, axis, ctx, func_name):
+    if not func_name.endswith('Cuda'):
+        # This configuration is only to test the CUDA implementation branch
+        # where reduction_size / outer_size >= 2048, so we skip this test for
+        # CPU and CuDNN and also do not need to run for both keepdims.
+        pytest.skip('skip CUDA specific implementation test for other target')
+
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    function_tester(rng, F.mean, np.mean, inputs, ctx=ctx, func_name=func_name,
+                    func_args=[axis])

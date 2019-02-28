@@ -129,15 +129,29 @@ message Optimizer {
   int64 order = 3;
 
   string network_name = 10;
-  string dataset_name = 20;
+  repeated string dataset_name = 20;
 
   Solver solver = 30;
   int64 update_interval = 40;
-
+  
   repeated DataVariable data_variable = 50;
   repeated GeneratorVariable generator_variable = 60;
   repeated LossVariable loss_variable = 70;
   repeated ParameterVariable parameter_variable = 80;
+
+  int64 start_iter = 100;
+  int64 end_iter = 101;
+}
+
+
+message SolverStateParameter {
+  Shape shape = 20;
+  repeated float data = 100;
+}
+
+message SolverState {
+  uint32 t = 1;
+  map<string, SolverStateParameter> state_parameter = 2;
 }
 
 message Solver {
@@ -146,6 +160,8 @@ message Solver {
   Context context = 10;
 
   float weight_decay = 20;
+
+  map<string, SolverState> states = 40;
 
   oneof parameter {
 % for i, (name, solver) in enumerate(solver_info.items()):
@@ -159,6 +175,9 @@ message Solver {
   ExponentialSchedulerParameter exponential_scheduler_param = 212;
   StepSchedulerParameter step_scheduler_param = 213;
   CustomSchedulerParameter custom_scheduler_param = 299;
+
+  string lr_warmup_scheduler_type = 300;
+  LinearWarmupSchedulerParameter linear_warmup_scheduler_param = 310;
 
   float lr_decay = 30;  // Obsolete
   int64 lr_decay_interval = 31;  // Obsolete
@@ -199,6 +218,10 @@ message CustomSchedulerParameter {
   repeated OutputVariable output_variable = 80;
 }
 
+message LinearWarmupSchedulerParameter {
+  int64 warmup_iter = 1;
+}
+
 message DataVariable {
   string variable_name = 1;
   string data_name = 3;
@@ -223,7 +246,7 @@ message Monitor {
   string name = 1;
 
   string network_name = 10;
-  string dataset_name = 20;
+  repeated string dataset_name = 20;
 
   repeated DataVariable data_variable = 50;
   repeated GeneratorVariable generator_variable = 60;
@@ -253,6 +276,8 @@ message Executor {
   repeated LossVariable loss_variable = 70;
   repeated OutputVariable output_variable = 80;
   repeated ParameterVariable parameter_variable = 90;
+
+  bool no_image_normalization = 101;
 }
 
 message OutputVariable {

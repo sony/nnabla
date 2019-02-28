@@ -18,6 +18,7 @@ import copy
 def plot_series_command(args):
     import nnabla.monitor as M
     plot_any_command(args, M.plot_series)
+    return True
 
 
 def plot_timer_command(args):
@@ -38,6 +39,7 @@ def plot_timer_command(args):
                 format_unit[args.time_unit])
     plot_any_command(args, M.plot_time_elapsed, dict(
         elapsed=args.elapsed, unit=args.time_unit))
+    return True
 
 
 def plot_any_command(args, plot_func, plot_func_kwargs=None):

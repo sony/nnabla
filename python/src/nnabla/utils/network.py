@@ -70,7 +70,7 @@ class Network:
             except:
                 index = forward_sequence.index(func)
                 print_network_traceback(
-                    forward_sequence[min(0, index - 4):index + 1])
+                    forward_sequence[max(0, index - 4):index + 1])
                 raise
 
     def forward_function(self, func):
@@ -126,7 +126,7 @@ class Network:
         # logger.debug('bwcall: {}'.format(function.name if function else ''))
         if not function and variable not in self.variable_outputs:
             # terminal variable
-            return variable in self.loss_variables
+            return variable in loss_variables
         diff_exists = False
         for func in [function] if function else self.variable_outputs[variable]:
             if func.backward_complete:
@@ -178,7 +178,7 @@ class Network:
             except:
                 index = backward_sequence.sequence.index(seq)
                 print_network_traceback(
-                    [seq.func for seq in backward_sequence.sequence[min(0, index - 4):index + 1]])
+                    [seq.func for seq in backward_sequence.sequence[max(0, index - 4):index + 1]])
                 raise
 
     def backward_function(self, seq):
@@ -195,7 +195,7 @@ class Network:
         if optimize:
             for func in list(self.functions.values()):
                 # remove identity layer
-                if func.function_instance.name[0:8] == "Identity":
+                if func.function_instance.name[0:8] == "Identity" and not func.persistent:
                     assert(len(func.inputs) == 1)
                     assert(len(func.outputs) == 1)
                     # if the identity function is not terminal (keep terminal
@@ -229,7 +229,7 @@ class Network:
                 self.setup_function(func)
             except:
                 print_network_traceback(list(self.functions.values())[
-                                        min(0, i - 4):i + 1])
+                                        max(0, i - 4):i + 1])
                 raise
 
         # set link structure to each layer

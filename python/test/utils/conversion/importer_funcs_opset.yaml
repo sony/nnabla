@@ -8,12 +8,12 @@ Acos:
 Add:
   '1': true
   '6': true
-  '7': false
+  '7': true
 Affine:
   '1': false
 And:
   '1': true
-  '7': false
+  '7': true
 ArgMax:
   '1': false
 ArgMin:
@@ -24,11 +24,12 @@ Atan:
   '7': false
 AveragePool:
   '1': true
-  '7': false
+  '7': true
 BatchNormalization:
   '1': true
   '6': true
   '7': false
+  '9': true
 Cast:
   '1': false
   '6': false
@@ -61,7 +62,7 @@ DepthToSpace:
 Div:
   '1': true
   '6': true
-  '7': false
+  '7': true
 Dropout:
   '1': true
   '6': true
@@ -73,7 +74,7 @@ Elu:
   '6': true
 Equal:
   '1': true
-  '7': false
+  '7': true
 Exp:
   '1': true
   '6': true
@@ -111,8 +112,8 @@ GlobalMaxPool:
   '1': false
 Greater:
   '1': true
-  '7': false
-  '9': false
+  '7': true
+  '9': true
 HardSigmoid:
   '1': false
   '6': false
@@ -137,8 +138,8 @@ LeakyRelu:
   '6': true
 Less:
   '1': true
-  '7': false
-  '9': false
+  '7': true
+  '9': true
 Log:
   '1': true
   '6': true
@@ -172,16 +173,16 @@ Min:
   '6': true
   '8': true
 Mul:
-  '1': false
-  '6': false
-  '7': false
+  '1': true
+  '6': true
+  '7': true
 Multinomial:
   '7': false
 Neg:
   '1': true
   '6': true
 Not:
-  '1': false
+  '1': true
 Or:
   '1': true
   '7': true
@@ -197,7 +198,7 @@ ParametricSoftplus:
   '1': false
 Pow:
   '1': true
-  '7': false
+  '7': true
 RNN:
   '1': false
   '7': false
@@ -277,7 +278,7 @@ Squeeze:
 Sub:
   '1': true
   '6': true
-  '7': false
+  '7': true
 Sum:
   '1': true
   '6': true
@@ -303,4 +304,4 @@ Upsample:
   '7': false
 Xor:
   '1': true
-  '7': false
+  '7': true

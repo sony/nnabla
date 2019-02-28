@@ -1,6 +1,15 @@
 Affine:
   float: [float]
   half: [Half]
+RNN:
+  float: [float]
+  half: [Half]
+LSTM:
+  float: [float]
+  half: [Half]
+GRU:
+  float: [float]
+  half: [Half]
 Convolution:
   float: [float]
   half: [Half]
@@ -59,6 +68,9 @@ CELU:
   float: [float]
   half: [Half]
 PReLU:
+  float: [float]
+  half: [Half]
+GELU:
   float: [float]
   half: [Half]
 BatchNormalization:
@@ -200,6 +212,21 @@ LessScalar:
   float: [float]
   half: [Half]
 LogicalNot:
+  float: [float]
+  half: [Half]
+IsNaN:
+  float: [float]
+  half: [Half]
+IsInf:
+  float: [float]
+  half: [Half]
+ResetNaN:
+  float: [float]
+  half: [Half]
+ResetInf:
+  float: [float]
+  half: [Half]
+Where:
   float: [float]
   half: [Half]
 Constant:
@@ -408,6 +435,9 @@ ACos:
   float: [float]
   half: [Half]
 ATan:
+  float: [float]
+  half: [Half]
+ATan2:
   float: [float]
   half: [Half]
 ASinh:

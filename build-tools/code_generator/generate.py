@@ -79,7 +79,7 @@ def update_function_order_in_functsions_yaml():
 
     duplicated = {}
     missing = {}
-    
+
     for cat_name, cat_info in d.items():
         for func_name, func_info in d[cat_name].items():
             order_info[func_name] = OrderedDict()
@@ -92,7 +92,7 @@ def update_function_order_in_functsions_yaml():
             if default_arg == '':
                 default_arg = 'Empty'
             else:
-                default_full_name = func_name + '_' + default_arg 
+                default_full_name = func_name + '_' + default_arg
 
             if 'function_ids' in func_info and func_info['function_ids'] is not None:
                 for func_arg, func_id in func_info['function_ids'].items():
@@ -104,7 +104,7 @@ def update_function_order_in_functsions_yaml():
                         if func_id not in duplicated:
                             duplicated[func_id] = [order_info_by_id[func_id]]
                         duplicated[func_id].append(full_name)
-                        
+
                     order_info_by_id[func_id] = full_name
                     order_info[func_name][full_name] = func_id
                 if default_full_name not in order_info[func_name]:
@@ -119,6 +119,9 @@ def update_function_order_in_functsions_yaml():
                 if func_name not in missing[cat_name]:
                     missing[cat_name][func_name] = []
                 missing[cat_name][func_name].append(default_arg)
+
+            if 'c_runtime' not in func_info:
+                func_info['c_runtime'] = 'not support'
 
     current_id = sorted(order_info_by_id.keys()).pop() + 1
     for cat_name in missing:
@@ -140,13 +143,14 @@ def update_function_order_in_functsions_yaml():
         print('')
         import sys
         sys.exit(-1)
-        
+
     utils.dump_yaml(d, open(join(here, 'functions.yaml'), 'w'), default_flow_style=False, width=80)
 
 def generate_functions_pkl():
     import pickle
+    yaml_data = {}
     d = utils.load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
-    
+
     for cat_name, cat_info in d.items():
         for func_name, func_info in d[cat_name].items():
             if 'doc' in func_info:
@@ -156,15 +160,38 @@ def generate_functions_pkl():
                     for b in func_info[a]:
                         if 'doc' in func_info[a][b]:
                             del func_info[a][b]['doc']
+            fmt = ''
+            if 'arguments' in func_info:
+                fmt = '_'
+                for a, a_info in func_info['arguments'].items():
+                    fmt += type_to_pack_format(a_info['type'])
+            func_info['uniq_name'] = func_name + fmt
+            func_info['id'] = list(func_info['function_ids'].items()).pop()[1]
+    yaml_data['nnabla_func_info'] = d
+
+    o = utils.load_yaml_ordered(open(join(base, 'python/test/utils/conversion/exporter_funcs_opset.yaml'), 'r'))
+    yaml_data['onnx_func_info'] = {}
+    for func, func_info in o.items():
+        if 'Not implemented' in func_info:
+            continue
+        else:
+            yaml_data['onnx_func_info'][func] = func_info
 
     with open(join(base, 'python/src/nnabla/utils/converter/functions.pkl'), 'wb') as f:
-        pickle.dump(d, f, 2)
+        pickle.dump(yaml_data, f, 2)
+
+def generate_function_cpp_interface(function_info):
+    function_list = utils.info_to_list(function_info)
+    utils.generate_from_template(
+        join(base, 'include/nbla/functions.hpp.tmpl'), function_info=function_info, function_list=function_list)
+    utils.generate_from_template(
+        join(base, 'src/nbla/functions.cpp.tmpl'), function_info=function_info, function_list=function_list)
 
 def generate():
     version = sys.argv[1]
     update_function_order_in_functsions_yaml()
     generate_functions_pkl()
-    
+
     function_info = utils.load_function_info(flatten=True)
     solver_info = utils.load_solver_info()
     function_types = utils.load_yaml_ordered(open(join(here, 'function_types.yaml'), 'r'))
@@ -180,6 +207,7 @@ def generate():
     generate_python_utils(function_info)
     generate_proto(function_info, solver_info)
     generate_cpp_utils(function_info)
+    generate_function_cpp_interface(function_info)
 
     # Generate function skeletons if new ones are added to functions.yaml and function_types.yaml.
     utils.generate_skeleton_function_impl(

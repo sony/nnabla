@@ -28,7 +28,7 @@ import tempfile
 import zipfile
 
 from nnabla.initializer import (
-    NormalInitializer, UniformInitializer, ConstantInitializer,
+    NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,
     calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
 from nnabla.logger import logger
 from nnabla.parameter import get_parameter_or_create
@@ -38,6 +38,8 @@ from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
+from nnabla.utils.learning_rate_scheduler import (
+    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler, LinearWarmupScheduler)
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
@@ -176,20 +178,24 @@ def _create_function(ctx, network, f, variable_index):
 
     outputs = [network.variables[v_name] for v_name in output_variable_names]
 
+    persistent = True
     if f.type == "Reshape":
         shape = resolve_reshape_params(inputs, f, network.batch_size)
         function_instance = F.Reshape(
-            ctx, shape=shape, inplace=f.reshape_param.inplace)
+            ctx, shape=shape, inplace=True)
     elif f.type == "RepeatStart":
         function_instance = F.Identity(ctx)
+        persistent = False
     elif f.type == "RepeatEnd":
         function_instance = F.Identity(ctx)
+        persistent = False
     elif f.type == "RecurrentOutput":
         function_instance = F.Stack(ctx, axis=f.recurrent_param.axis)
     elif f.type == "RecurrentInput":
         function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
     elif f.type == "Delay":
         function_instance = F.Identity(ctx)
+        persistent = False
     elif f.type == "Broadcast":
         shape = resolve_broadcast_params(inputs, f, network.batch_size)
         function_instance = F.Broadcast(ctx, shape)
@@ -204,6 +210,7 @@ def _create_function(ctx, network, f, variable_index):
     function.function_instance = function_instance
     function.inputs = list(inputs)
     function.outputs = list(outputs)
+    function.persistent = persistent
 
     return function, input_variable_names, output_variable_names
 
@@ -245,6 +252,9 @@ def _create_variable(v, name, shape, rng):
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
                 shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
+        elif v.initializer.type == 'Range':
+            initializer = (lambda shape: RangeInitializer(0, 1)
+                           (shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Constant':
             initializer = ConstantInitializer(value=v.initializer.multiplier)
         else:
@@ -332,6 +342,8 @@ def _get_generator(proto):
         return NormalInitializer(sigma=proto.multiplier)
     elif proto.type == 'Uniform':
         return UniformInitializer(lim=(-proto.multiplier, proto.multiplier))
+    elif proto.type == 'Range':
+        return RangeInitializer(start=0, step=proto.multiplier)
     elif proto.type == 'Constant':
         return ConstantInitializer(value=proto.multiplier)
     else:
@@ -359,11 +371,19 @@ def _create_optimizer(ctx, o, networks, datasets):
 
     optimizer = Optimizer()
 
+    optimizer.comm = current_communicator()
+    comm_size = optimizer.comm.size if optimizer.comm else 1
+    optimizer.start_iter = (o.start_iter - 1) // comm_size + \
+        1 if o.start_iter > 0 else 0
+    optimizer.end_iter = (o.end_iter - 1) // comm_size + \
+        1 if o.end_iter > 0 else 0
     optimizer.name = o.name
     optimizer.order = o.order
     optimizer.update_interval = o.update_interval if o.update_interval > 0 else 1
     optimizer.network = networks[o.network_name]
-    optimizer.data_iterator = datasets[o.dataset_name].data_iterator
+    optimizer.data_iterators = OrderedDict()
+    for d in o.dataset_name:
+        optimizer.data_iterators[d] = datasets[d].data_iterator
 
     optimizer.dataset_assign = OrderedDict()
     for d in o.data_variable:
@@ -392,30 +412,43 @@ def _create_optimizer(ctx, o, networks, datasets):
         if o.solver.type == 'Adagrad':
             optimizer.solver = S.Adagrad(
                 o.solver.adagrad_param.lr, o.solver.adagrad_param.eps)
+            init_lr = o.solver.adagrad_param.lr
         elif o.solver.type == 'Adadelta':
             optimizer.solver = S.Adadelta(
                 o.solver.adadelta_param.lr, o.solver.adadelta_param.decay, o.solver.adadelta_param.eps)
+            init_lr = o.solver.adadelta_param.lr
         elif o.solver.type == 'Adam':
             optimizer.solver = S.Adam(o.solver.adam_param.alpha, o.solver.adam_param.beta1,
                                       o.solver.adam_param.beta2, o.solver.adam_param.eps)
+            init_lr = o.solver.adam_param.alpha
         elif o.solver.type == 'Adamax':
             optimizer.solver = S.Adamax(o.solver.adamax_param.alpha, o.solver.adamax_param.beta1,
                                         o.solver.adamax_param.beta2, o.solver.adamax_param.eps)
+            init_lr = o.solver.adamax_param.alpha
+        elif o.solver.type == 'AMSGRAD':
+            optimizer.solver = S.AMSGRAD(o.solver.amsgrad_param.alpha, o.solver.amsgrad_param.beta1,
+                                         o.solver.amsgrad_param.beta2, o.solver.amsgrad_param.eps)
+            init_lr = o.solver.amsgrad_param.alpha
         elif o.solver.type == 'Eve':
             p = o.solver.eve_param
             optimizer.solver = S.Eve(
                 p.alpha, p.beta1, p.beta2, p.beta3, p.k, p.k2, p.eps)
+            init_lr = p.alpha
         elif o.solver.type == 'Momentum':
             optimizer.solver = S.Momentum(
                 o.solver.momentum_param.lr, o.solver.momentum_param.momentum)
+            init_lr = o.solver.momentum_param.lr
         elif o.solver.type == 'Nesterov':
             optimizer.solver = S.Nesterov(
                 o.solver.nesterov_param.lr, o.solver.nesterov_param.momentum)
+            init_lr = o.solver.nesterov_param.lr
         elif o.solver.type == 'RMSprop':
             optimizer.solver = S.RMSprop(
                 o.solver.rmsprop_param.lr, o.solver.rmsprop_param.decay, o.solver.rmsprop_param.eps)
+            init_lr = o.solver.rmsprop_param.lr
         elif o.solver.type == 'Sgd' or o.solver.type == 'SGD':
             optimizer.solver = S.Sgd(o.solver.sgd_param.lr)
+            init_lr = o.solver.sgd_param.lr
         else:
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
@@ -427,17 +460,46 @@ def _create_optimizer(ctx, o, networks, datasets):
         sorted(parameters.items(), key=lambda x: x[0]))
 
     optimizer.weight_decay = o.solver.weight_decay
+
+    # keep following 2 lines for backward compatibility
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
+    optimizer.solver.set_states_from_protobuf(o)
 
     optimizer.comm = current_communicator()
-    if optimizer.comm is not None:
-        new_interval = optimizer.lr_decay_interval // optimizer.comm.size
-        if new_interval == 0:
-            new_interval = 1
-        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(
-            optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
-        optimizer.lr_decay_interval = new_interval
+    comm_size = optimizer.comm.size if optimizer.comm else 1
+    optimizer.scheduler = ExponentialScheduler(init_lr, 1.0, 1)
+
+    if o.solver.lr_scheduler_type == 'Polynomial':
+        if o.solver.polynomial_scheduler_param.power != 0.0:
+            optimizer.scheduler = PolynomialScheduler(
+                init_lr, o.solver.polynomial_scheduler_param.max_iter // comm_size, o.solver.polynomial_scheduler_param.power)
+    elif o.solver.lr_scheduler_type == 'Cosine':
+        optimizer.scheduler = CosineScheduler(
+            init_lr, o.solver.cosine_scheduler_param.max_iter // comm_size)
+    elif o.solver.lr_scheduler_type == 'Exponential':
+        if o.solver.exponential_scheduler_param.gamma != 1.0:
+            optimizer.scheduler = ExponentialScheduler(
+                init_lr, o.solver.exponential_scheduler_param.gamma, o.solver.exponential_scheduler_param.iter_interval // comm_size if o.solver.exponential_scheduler_param.iter_interval > comm_size else 1)
+    elif o.solver.lr_scheduler_type == 'Step':
+        if o.solver.step_scheduler_param.gamma != 1.0 and len(o.solver.step_scheduler_param.iter_steps) > 0:
+            optimizer.scheduler = StepScheduler(
+                init_lr, o.solver.step_scheduler_param.gamma, [step // comm_size for step in o.solver.step_scheduler_param.iter_steps])
+    elif o.solver.lr_scheduler_type == 'Custom':
+        # ToDo
+        raise NotImplementedError()
+    elif o.solver.lr_scheduler_type == '':
+        if o.solver.lr_decay_interval != 0 or o.solver.lr_decay != 0.0:
+            optimizer.scheduler = ExponentialScheduler(
+                init_lr, o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0, o.solver.lr_decay_interval // comm_size if o.solver.lr_decay_interval > comm_size else 1)
+    else:
+        raise ValueError('Learning Rate Scheduler "' + o.solver.lr_scheduler_type +
+                         '" is not supported.')
+
+    if o.solver.lr_warmup_scheduler_type == 'Linear':
+        if o.solver.linear_warmup_scheduler_param.warmup_iter >= comm_size:
+            optimizer.scheduler = LinearWarmupScheduler(
+                optimizer.scheduler, o.solver.linear_warmup_scheduler_param.warmup_iter // comm_size)
 
     optimizer.forward_sequence = optimizer.network.get_forward_sequence(
         optimizer.loss_variables)
@@ -515,7 +577,7 @@ def _training_config(proto):
     return config
 
 
-def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator):
+def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator, dataset_index):
     class Dataset:
         pass
     dataset = Dataset()
@@ -525,7 +587,8 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
     comm = current_communicator()
 
     # use same random state for each process until slice is called
-    rng = numpy.random.RandomState(0)
+    # different random state is used for each dataset
+    rng = numpy.random.RandomState(dataset_index)
     use_memory_cache = comm.size == 1 if comm else True
 
     if prepare_data_iterator:
@@ -547,7 +610,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                     with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
                         pass
 
-            rng = numpy.random.RandomState(0)
+            rng = numpy.random.RandomState(dataset_index)
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
         elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
@@ -574,9 +637,9 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
 
 def _datasets(proto, prepare_data_iterator=True):
     datasets = OrderedDict()
-    for d in proto.dataset:
+    for i, d in enumerate(proto.dataset):
         datasets[d.name] = _create_dataset(
-            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator)
+            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator, i)
     return datasets
 
 
@@ -617,7 +680,9 @@ def _monitors(proto, default_context, networks, datasets):
         monitor = Monitor()
 
         monitor.network = networks[m.network_name]
-        monitor.data_iterator = datasets[m.dataset_name].data_iterator
+        monitor.data_iterators = OrderedDict()
+        for d in m.dataset_name:
+            monitor.data_iterators[d] = datasets[d].data_iterator
 
         monitor.dataset_assign = OrderedDict()
         for d in m.data_variable:
@@ -654,6 +719,7 @@ def _executors(executors_proto, networks):
         executor.num_evaluations = e.num_evaluations if e.num_evaluations > 0 else 1
         executor.repeat_evaluation_type = e.repeat_evaluation_type
         executor.need_back_propagation = e.need_back_propagation
+        executor.no_image_normalization = e.no_image_normalization
 
         executor.dataset_assign = OrderedDict()
         for d in e.data_variable:
@@ -732,7 +798,13 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         if ext in ['.nntxt', '.prototxt']:
             if not parameter_only:
                 with open(filename, 'rt') as f:
-                    text_format.Merge(f.read(), proto)
+                    try:
+                        text_format.Merge(f.read(), proto)
+                    except:
+                        logger.critical('Failed to read {}.'.format(filename))
+                        logger.critical(
+                            '2 byte characters may be used for file name or folder name.')
+                        raise
             if len(proto.parameter) > 0:
                 if not exclude_parameter:
                     nn.load_parameters(filename)
@@ -791,7 +863,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
-    info.datasets = _datasets(proto, prepare_data_iterator)
+    info.datasets = _datasets(
+        proto, prepare_data_iterator if prepare_data_iterator is not None else info.training_config.max_epoch > 0)
 
     info.networks = _networks(proto, default_context, batch_size)
 

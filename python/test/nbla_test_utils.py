@@ -52,8 +52,16 @@ def list_ctx_and_func_name(fnames):
     return l
 
 
+def list_ctx_and_func_name2(fnames):
+    l = []
+    for fname, func_name in fnames:
+        l += [(fname, x[0], x[1]) for x in list_context(func_name)]
+    return l
+
+
 def compute_analytical_and_numerical_grad_graph(terminal, inputs,
-                                                epsilon=1e-3):
+                                                epsilon=1e-3,
+                                                recompute_graph=True):
     def set_inputs(x0):
         begin = 0
         for i in inputs:
@@ -69,11 +77,15 @@ def compute_analytical_and_numerical_grad_graph(terminal, inputs,
     def grad(x0):
         set_inputs(x0)
         backups = [i.g.copy() for i in inputs]
-        terminal.forward()
-        terminal.backward()
+        if recompute_graph:
+            terminal.forward()
+            terminal.backward()
         gx0 = []
         for i, b in zip(inputs, backups):
-            gx0.append((i.g.copy() - b).flatten())
+            if recompute_graph:
+                gx0.append((i.g.copy() - b).flatten())
+            else:
+                gx0.append(i.g.copy().flatten())
             i.g = b
         return np.concatenate(gx0)
 
@@ -581,10 +593,12 @@ def function_tester(rng, func, ref_func, inputs,
             continue
         v = vinputs[i]
         v.need_grad = backward[i]
+
     for i in range(len(vinputs)):
         if vinputs[i] is None:
             continue
         v = vinputs[i]
+
         if not backward[i]:
             continue
         f = o[0].parent
@@ -604,7 +618,7 @@ def function_tester(rng, func, ref_func, inputs,
         true_g = v.g - g
 
         # Check accum=False
-        accum = [j != i for j in range(len(finputs))]
+        accum = [j != i for j, vv in enumerate(vinputs) if vv is not None]
         v.g = rng.randn(*v.shape)
         f.forward(finputs, o)
         f.backward(finputs, o, accum)

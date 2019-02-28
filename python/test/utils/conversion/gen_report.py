@@ -290,7 +290,7 @@ class StatusHandler:
                 opset_s = ','.join(sorted(opset['version']))
                 desc = opset['functions']
             if fields[0] in self.test_result:
-                if self.test_result[fields[0]] == 'OK':
+                if self.test_result[fields[0]] == 'OK' or self.test_result[fields[0]] == 'Partial OK':
                     self.ok += 1
                 line = output_line.format(
                     fields[0], opset_s, self.test_result[fields[0]], desc)
@@ -370,7 +370,7 @@ def obtain_export_opset_d():
     refine_d = {}
     for func, impl in funcs_opset_d.items():
         if impl and '@' in impl[0]:
-            op_ver = {func_decl.split('@')[1] for func_decl in impl}
+            op_ver = {'6', '9'}
             func_list = [func_decl.split('@')[0] for func_decl in impl]
             refine_d[func] = {
                 'version': op_ver, 'functions': "Implemented by {}".format(','.join(func_list))}
@@ -379,9 +379,25 @@ def obtain_export_opset_d():
     return refine_d
 
 
+def integration_export_result(export_result, export_opset_d):
+    for func, result in export_result.items():
+        if len(set(result.values())) == 1:
+            if 'NG' in set(result.values()):
+                export_result[func] = 'NG'
+            elif 'OK' in set(result.values()):
+                export_result[func] = 'OK'
+        else:
+            desc = ""
+            for op_ver, test_result in result.items():
+                desc += ", opset_{} status is {}".format(op_ver, test_result)
+            export_opset_d[func]['functions'] += desc
+            export_result[func] = 'Partial OK'
+
+
 def gen_report(import_result, export_result):
     import_opset_d = obtain_import_opset_d()
     export_opset_d = obtain_export_opset_d()
+    integration_export_result(export_result, export_opset_d)
     with open(TEMPALTE_FILE, 'r') as f:
         line_buffer = []
         importer_status_handler = StateMachine('ImporterSM',

@@ -31,11 +31,13 @@ from ._version import (
 from .variable import Variable, Context
 from ._nd_array import NdArray
 from .parameter import (
+    get_current_parameter_scope,
     parameter_scope, get_parameters, clear_parameters,
     load_parameters, save_parameters)
 from .context import (
     context_scope, set_default_context, get_current_context)
 from .auto_forward import auto_forward, set_auto_forward, get_auto_forward
+from._computation_graph import forward_all
 
 # Prefer cached array by default for performance.
 prefer_cached_array(True)

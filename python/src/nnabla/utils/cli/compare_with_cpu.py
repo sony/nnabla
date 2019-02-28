@@ -80,10 +80,12 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
 
         for v, d in o.dataset_assign.items():
             let_data_to_variable(v.variable_instance, data[
-                                 di.variables.index(d)])
+                                 di.variables.index(d)],
+                                 data_name=d, variable_name=v.name)
         for v, d in o_cpu.dataset_assign.items():
             let_data_to_variable(v.variable_instance, data[
-                                 di.variables.index(d)])
+                                 di.variables.index(d)],
+                                 data_name=d, variable_name=v.name)
 
         # Generate data
         generated = {}
@@ -92,12 +94,14 @@ def compare_optimizer(config, parameters, config_cpu, parameters_cpu, result_arr
             dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
                 0].inputs else None
             let_data_to_variable(v.variable_instance,
-                                 data=generated[v.name], ctx=dest_context)
+                                 data=generated[v.name], ctx=dest_context,
+                                 variable_name=v.name)
         for v, generator in o_cpu.generator_assign.items():
             dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
                 0].inputs else None
             let_data_to_variable(v.variable_instance,
-                                 data=generated[v.name], ctx=dest_context)
+                                 data=generated[v.name], ctx=dest_context,
+                                 variable_name=v.name)
 
         last_max_diff = 1e-5
 

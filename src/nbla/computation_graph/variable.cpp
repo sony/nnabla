@@ -460,12 +460,16 @@ void CgVariable::visit_function_backward(
   }
 }
 
-void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad) {
+void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
+                         unordered_set<CgFunctionPtr> *fclosed) {
+  unordered_set<CgFunctionPtr> scoped_fclosed;
+  if (fclosed == nullptr) {
+    fclosed = &scoped_fclosed;
+  }
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
-  unordered_set<CgFunctionPtr> fclosed;
   ForwardCallback forward_callback(clear_buffer, clear_no_need_grad);
   visit_function_recursive(
-      parent_, fclosed,
+      parent_, *fclosed,
       [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
 }
 
@@ -535,6 +539,25 @@ bool CgVariable::check_and_unmark_need_setup(CgFunctionPtr func) {
              "Fatal issue: function reference has gone.");
   auto ret = it->second.second.need_setup;
   it->second.second.need_setup = false;
+  return ret;
+}
+
+CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
+  auto ret = std::make_shared<CgVariable>(this->variable()->shape(),
+                                          this->need_grad());
+
+  dtypes dtype = this->variable()->data()->array()->dtype();
+
+  const Array *x = this->variable()->data()->get(dtype, ctx);
+  Array *y = ret->variable()->data()->cast(dtype, ctx, true);
+  y->copy_from(x);
+
+  if (copy_grad) {
+    const Array *g = this->variable()->grad()->get(dtype, ctx);
+    Array *h = ret->variable()->grad()->cast(dtype, ctx, true);
+    h->copy_from(g);
+  }
+
   return ret;
 }
 }

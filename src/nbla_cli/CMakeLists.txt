@@ -1,6 +1,7 @@
 if (WIN32)
   # Use simulated cxxabi.h since it is not appeared in MSVC. 
   include_directories(${PROJECT_SOURCE_DIR}/include/msvc)
+  set(CXXABI_HPP cxxabi.cpp)
 endif()
 
 if (NNABLA_UTILS_WITH_HDF5)
@@ -24,7 +25,14 @@ include_directories(${HDF5_INCLUDE_DIRS})
 endif()
 
 
-add_executable(nbla nbla.cpp)
+add_executable(nbla
+  internal.cpp
+  nbla.cpp
+  nbla_dump.cpp
+  nbla_infer.cpp
+  nbla_train.cpp
+  ${CXXABI_HPP})
+
 target_link_libraries(nbla nnabla nnabla_utils)
 set_property(TARGET nbla PROPERTY CXX_STANDARD 11)
 

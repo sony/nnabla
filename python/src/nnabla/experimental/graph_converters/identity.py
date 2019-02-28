@@ -53,7 +53,7 @@ class IdentityConverter(object):
         import nnabla.function_bases as FB
         function_expr = "FB.F.{type_name}(nn.{ctx}, **{args})".format(
             type_name=type_name,
-            ctx=nn.Context(),
+            ctx=nn.get_current_context(),
             args=args)
         function = eval(function_expr)
         o = function(*inputs)
@@ -82,7 +82,7 @@ class IdentityConverter(object):
                 inputs.append(i)
 
         # Function Call
-        o = self._call_function(func.name, inputs, func.info.args)
+        o = self._call_function(func.info.type_name, inputs, func.info.args)
 
         # Map output of ref graph to output of new graph
         x = func.outputs[0]

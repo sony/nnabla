@@ -17,12 +17,13 @@ Contents loader functions for DataSource.
 
 '''
 
+from __future__ import absolute_import
+
 from six.moves import map
 from shutil import rmtree
 from six import BytesIO
 from six import StringIO
 from six.moves.urllib.parse import urljoin
-from tqdm import tqdm
 import contextlib
 import csv
 
@@ -39,6 +40,9 @@ import tempfile
 
 from nnabla.utils.image_utils import imresize, imread
 from nnabla.logger import logger
+
+# Expose for backward compatibility
+from .download import download, get_data_home
 
 pypng_available = False
 try:
@@ -373,7 +377,8 @@ def register_load_function(ext, function):
 def load(ext):
     if ext in _load_functions:
         return _load_functions[ext]
-    return None
+    raise ValueError(
+        'File format with extension "{}" is not supported.'.format(ext))
 
 
 def _download_hook(t):
@@ -385,63 +390,3 @@ def _download_hook(t):
         t.update((b - last_b[0]) * bsize)
         last_b[0] = b
     return inner
-
-
-def get_data_home():
-    import os
-    d = os.path.expanduser('~/nnabla_data')
-    if d == '/nnabla_data':
-        d = './nnabla_data'
-    try:
-        os.makedirs(d)
-    except OSError:
-        pass  # python2 does not support exists_ok arg
-    return d
-
-
-def download(url, output_file=None, open_file=True, allow_overwrite=False):
-    '''Download a file from URL.
-
-    Args:
-        url (str): URL.
-        output_file (str, optional): If given, the downloaded file is written to the given path.
-        open_file (bool): If True, it returns an opened file stream of the downloaded file.
-        allow_overwrite (bool): If True, it overwrites an existing file.
-
-    Returns:
-        Returns file object if open_file is True, otherwise None.
-
-    '''
-    filename = url.split('/')[-1]
-    if output_file is None:
-        cache = os.path.join(get_data_home(), filename)
-    else:
-        cache = output_file
-    if os.path.exists(cache) and not allow_overwrite:
-        logger.info("> {} already exists.".format(cache))
-        logger.info("> If you have any issue when using this file, ")
-        logger.info("> manually remove the file and try download again.")
-    else:
-        r = request.urlopen(url)
-        try:
-            if six.PY2:
-                content_length = int(r.info().dict['content-length'])
-            elif six.PY3:
-                content_length = int(r.info()['Content-Length'])
-        except:
-            content_length = 0
-        unit = 1000000
-        content = b''
-        with tqdm(total=content_length, desc=filename) as t:
-            while True:
-                data = r.read(unit)
-                l = len(data)
-                t.update(l)
-                if l == 0:
-                    break
-                content += data
-        with open(cache, 'wb') as f:
-            f.write(content)
-    if not open_file:
-        return
-    return open(cache, 'rb')

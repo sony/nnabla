@@ -73,7 +73,7 @@ class Uploader:
 
         self._log('Create index.csv')
         self._progress.init(len(csv_data), 'Create index.csv')
-        with open(indexcsvfilename, 'w') as f:
+        with open(indexcsvfilename, 'w', newline='') as f:
             csvwriter = csv.writer(f)
             for row in csv_data:
                 csvwriter.writerow(row)

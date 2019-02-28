@@ -7,13 +7,13 @@ convert param and dataset, measure performance, file format converter and so on.
 .. code-block:: none
 
     usage: nnabla_cli [-h] [-m]
-                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,version}
+                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
                       ...
     
-    Command line interface for NNabla(Version 1.0.9.dev1, Build 181025154033)
+    Command line interface for NNabla(Version 1.0.11.dev1, Build 181226024531)
     
     positional arguments:
-      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,version}
+      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
         train               Training with NNP.
         infer               Do inference with NNP and binary data file input.
         forward             Do evaluation with NNP and test dataset.
@@ -32,6 +32,7 @@ convert param and dataset, measure performance, file format converter and so on.
         convert             File format converter.
         plot_series         Plot *.series.txt files.
         plot_timer          Plot *.timer.txt files.
+        draw_graph          Draw a graph in a NNP or nntxt file with graphviz.
         version             Print version and build number.
     
     optional arguments:
@@ -307,7 +308,7 @@ File format converter
                               [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
-                              [-s SETTINGS]
+                              [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION]
                               FILE [FILE ...]
     
     positional arguments:
@@ -333,6 +334,11 @@ File format converter
                             Default type of variable
       -s SETTINGS, --settings SETTINGS
                             Settings in YAML format file.
+      -c CONFIG, --config CONFIG
+                            [export] config target function list.
+      -d DEFINE_VERSION, --define_version
+                            [export][ONNX] define onnx opset version. e.g. opset_6
+                            [export][NNB] define binary format version. e.g. nnb_3
 
 
 Plot Monitor class output files
@@ -431,6 +437,37 @@ MonitorTimeElapsed
       -u TIME_UNIT, --time-unit TIME_UNIT
                             Time unit chosen from {s|m|h|d}.
 
+Draw a graph from NNP or .nntxt files
+-------------------------------------
+
+**Note**:
+
+- This feature requires ``graphviz`` installed as a `Python package <https://graphviz.readthedocs.io/en/stable/manual.html#installation>`_. The ``graphviz`` Python is a interface to `graphviz library <https://www.graphviz.org/>`_ which is not installed by ``pip`` command. You have to install it using ``apt`` on Ubuntu for example.
+
+
+.. code-block:: none
+
+    usage: nnabla_cli draw_graph [-h] [-o OUTPUT_DIR] [-n NETWORK] [-f FORMAT]
+                                 input
+
+    Draw a graph in a NNP or nntxt file with graphviz.
+
+    Example:
+
+        nnabla_cli draw_graph -o output-folder path-to-nnp.nnp
+
+    positional arguments:
+      input                 Path to input nnp or nntxt.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                            Output directory.
+      -n NETWORK, --network NETWORK
+                            Network names to be drawn.
+      -f FORMAT, --format FORMAT
+                            Graph saving format compatible with graphviz (`pdf`, `png`, ...).
+
 
 Development
 ~~~~~~~~~~~
@@ -440,13 +477,28 @@ Generate function information
 
 .. code-block:: none
 
-    usage: nnabla_cli function_info [-h] [dest]
-    
+    usage: nnabla_cli function_info [-h] [-o OUTFILE] [-f FUNC_SET] [-c CONFIG]
+                                    [-t TARGET] [-q --query] [--nnp-no-expand-network]
+                                    [FILE] [FILE ...]
+
     positional arguments:
-      dest        destination filename
-    
+      FILE                  Path to nnp file.
+
     optional arguments:
       -h, --help  show this help message and exit
+      -o OUTFILE, --output OUTFILE
+                          output filename, *.txt or *.yaml, the default is stdout.
+      -f FUNC_SET, --all_support FUNC_SET
+                          select function set: NNB, ONNX, the default is nnabla.
+      -c CONFIG, --config CONFIG
+                          user config file for target constraint, *.txt file of the
+                          function list or the "opset_" args.
+      -t, --target
+                          output target function list.
+      -q, --query
+                          query the detail of a function.
+      --nnp-no-expand-network
+                          [import][NNP] expand network with repeat or recurrent.
 
 Display version
 ---------------

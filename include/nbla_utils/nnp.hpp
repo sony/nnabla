@@ -422,6 +422,10 @@ public:
    */
   NBLA_API bool add(const string &filename);
 
+  /** Add nnp on memory
+   */
+  NBLA_API bool add(char *buffer, unsigned int size);
+
   /** Get Network name list from added files (nnp, nntxt etc.).
       @retval A vector of Network instance names.
    */

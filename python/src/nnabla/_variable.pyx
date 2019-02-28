@@ -641,14 +641,48 @@ cdef class Variable:
         return self.varp.rank()
 
     def visit(self, f):
-        '''Visit functions recursively in forward order.
+        """
+        Visit functions recursively in forward order.
 
         Args:
             f (function): Function object which takes
                 :obj:`nnabla._function.Function` object as an argument.
 
         Returns: None
-        '''
+
+        Example:
+
+            .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import nnabla.parametric_functions as PF
+
+                # Define a simple network-graph
+                def network_graph(x, maps=16, test=False):
+                    h = x
+                    h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), name="first-conv", with_bias=False)
+                    h = F.average_pooling(h, h.shape[2:])
+                    pred = PF.affine(h, 10, name="pred")
+                    return pred
+
+                # You can modify this PrintFunc to get the other informations like inputs(nnabla_func.inputs), outputs and arguments(nnabla_func.info.args) of nnabla functions.
+                class PrintFunc(object):
+                    def __call__(self, nnabla_func):
+                        print(nnabla_func.info.type_name)
+
+                x = nn.Variable([1, 3, 16, 16])
+                output = network_graph(x)
+                output.visit(PrintFunc())
+
+            Output :
+
+            .. code-block:: plaintext
+
+                Convolution
+                AveragePooling
+                Affine
+        """
         def _recursive_visit_functions(func, seen):
             if func is None:
                 return
@@ -662,7 +696,8 @@ cdef class Variable:
         _recursive_visit_functions(self.parent, seen)
 
     def visit_check(self, f):
-        '''Visit functions recursively in forward order.
+        """
+        Visit functions recursively in forward order.
 
         Note:
             If any of evaluation of the function object returns True,
@@ -675,7 +710,63 @@ cdef class Variable:
 
         Returns: bool
             Returns True if any of the function object call returns True.
-        '''
+
+        Example:
+
+            Define a simple network-graph where AveragePooling function can be added explicitly as below:
+
+            .. code-block:: python
+
+                def network_graph(x, add_avg_pool=False, maps=16, test=False):
+                    h = x
+                    h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), name="first-conv", with_bias=False)
+                    if add_avg_pool :
+                        h = F.average_pooling(h, h.shape[2:])
+                    else :
+                        h = F.relu(h)
+                    pred = PF.affine(h, 10, name="pred")
+                    return pred
+
+                # Define 'PrintFunc()' to check whether "AveragePooling" function exists in the network-graph
+                class PrintFunc(object):
+                    def __call__(self, nnabla_func):
+                        if nnabla_func.info.type_name =="AveragePooling" :
+                            print("{} exists in the graph".format(nnabla_func.info.type_name))
+                            return True
+                        else :
+                            return False
+
+            Create a network-graph which has AveragePooling function and call visit_check() method :
+
+            .. code-block:: python
+
+                x = nn.Variable([1, 3, 16, 16])
+                output = network_graph(x, add_avg_pool=True)  #Adding AveragePooling function to the graph
+                print("The return value of visit_check() method is : {}".format(output.visit_check(PrintFunc())))
+
+            Output :
+
+            .. code-block:: plaintext
+
+                AveragePooling exists in the graph
+                The return value of visit_check() method is : True
+
+            Create a network-graph which doesn't have AveragePooling function and call visit_check() method :
+
+            .. code-block:: python
+
+                nn.clear_parameters()                         # call this in case you want to run the following code agian
+                output = network_graph(x, add_avg_pool=False) # Exclusion of AveragePooling function in the graph
+                print("The return value of visit_check() method is : {}".format(output.visit_check(PrintFunc())))
+
+            Output :
+
+            .. code-block:: plaintext
+
+                The return value of visit_check() method is : False
+
+        """
+
         def _recursive_visit_functions(func, seen):
             if func is None:
                 return False
@@ -698,12 +789,8 @@ cdef class Variable:
         (truncated BPTT) in dynamic graph.
         """
         def _clear_all_graph_links(func):
-            for v in func.inputs:
-                v._clear_parent()
             for v in func.outputs:
                 v._clear_parent()
-            func._clear_inputs()
-            func._clear_outputs()
         self.visit(_clear_all_graph_links)
 
     def _clear_parent(self, ):

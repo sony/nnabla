@@ -33,6 +33,200 @@ Neural Network Layer:
           L`)
     function_ids:
       i: 0
+    c_runtime: support
+  RNN:
+    snake_name: rnn
+    doc: |2
+
+      RNN function implements Elman RNN with nonlineraity to input sequence.
+      RNN function is defined as following:
+
+      .. math::
+          {\mathbf h_t} = {\mathbf \tanh}( {\mathbf w_{ih}} *{\mathbf x_t} + {\mathbf b_{ih}} + {\mathbf w_{hh}}* {\mathbf h_{(t-1)}} + {\mathbf b_{hh}}).
+
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
+      References:
+          * `Jeffrey Elman, Finding Structure in Time. <https://crl.ucsd.edu/~elman/Papers/fsit.pdf>`_
+    inputs:
+      x:
+        doc: Input N-D array with shape :math:`(T, B, I)`.
+      h:
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
+      weight_l0:
+        doc: Input N-D array with shape :math:`(D, H, I + H)`.
+        parameter: true
+      weight:
+        doc: Input N-D array with shape :math:`(L-1, D, H, D * H + H)`.
+        optional: true
+        parameter: true
+      bias:
+        doc: Input N-D array with shape :math:`(L, D, H)`.
+        optional: true
+        parameter: true
+    arguments:
+      num_layers:
+        doc: Number of layers in the network. If set to 1, only the weights for the
+          first layer will be invoked. Default is 1.
+        type: int64
+        default: '1'
+      nonlinearity:
+        doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
+          relu. Default is tanh.
+        type: string
+        default: tanh
+      dropout:
+        doc: Dropout ratio applied to parameters. Default is 0.0.
+        type: float
+        default: 0.0
+      bidirectional:
+        doc: If True, bidirectional computation will be performed in each layer. Default
+          is False.
+        type: bool
+        default: 'False'
+      training:
+        doc: Backpropagation will be performed only when it is true. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
+      h_n:
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
+    function_ids:
+      iifBB: 244
+    c_runtime: not support
+  LSTM:
+    snake_name: lstm
+    doc: |2
+
+      N-Step LSTM layer.
+
+      .. math::
+          {\mathbf f_t} = {\mathbf \sigma}( {\mathbf W_f} *{\mathbf x_t} + {\mathbf U_f}* {\mathbf h_{(t-1)}} + {\mathbf b_f})\\
+          {\mathbf i_t} = {\mathbf \sigma}( {\mathbf W_i} *{\mathbf x_t} + {\mathbf U_i}* {\mathbf h_{(t-1)}} + {\mathbf b_i})\\
+          {\mathbf o_t} = {\mathbf \sigma}( {\mathbf W_o} *{\mathbf x_t} + {\mathbf U_o}* {\mathbf h_{(t-1)}} + {\mathbf b_o})\\
+          {\mathbf c_t} = {\mathbf f_t}\odot {mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
+          {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
+
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
+      References:
+          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory. <https://www.bioinf.jku.at/publications/older/2604.pdf>`_
+    inputs:
+      x:
+        doc: Input N-D array with shape :math:`(T, B, I)`.
+      h:
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
+      c:
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
+      weight_l0:
+        doc: weight parameters for the first layer. Shape is :math:`(D, 4, H, I +
+          H)`.
+        parameter: true
+      weight:
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 4, H, D * H + H)`.
+        optional: true
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
+        optional: true
+        parameter: true
+    arguments:
+      num_layers:
+        doc: Number of layers in the network. If set to 1, only the weights for the
+          first layer will be invoked. Default is 1.
+        type: int64
+        default: '1'
+      dropout:
+        doc: Dropout ratio applied to parameters. Default is 0.0.
+        type: float
+        default: 0.0
+      bidirectional:
+        doc: If True, bidirecitonal computation will be performed in each layer. Default
+          is False.
+        type: bool
+        default: 'False'
+      training:
+        doc: Backpropagation will be performed only when it is True. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
+      h_n:
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
+      c_n:
+        doc: Output :math:`c_n` with shape :math:`(L, D, B, H)`
+    function_ids:
+      ifBB: 242
+    c_runtime: not support
+  GRU:
+    snake_name: gru
+    doc: |2
+
+      N-Step GRU layer.
+
+      .. math::
+          {\mathbf r_t} = {\mathbf \sigma}( {\mathbf W_r} *{\mathbf x_t} + {\mathbf U_r}* {\mathbf h_{(t-1)}} + {\mathbf b_r})\\
+          {\mathbf z_t} = {\mathbf \sigma}( {\mathbf W_z} *{\mathbf x_t} + {\mathbf U_z}* {\mathbf h_{(t-1)}} + {\mathbf b_z})\\
+        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
+        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}{\mathbf h_{t-1}}.
+
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
+      References:
+
+          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation. <https://www.aclweb.org/anthology/D14-1179>`_
+    inputs:
+      x:
+        doc: Input N-D array with shape :math:`(T, B, I)`.
+      h:
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
+      weight_l0:
+        doc: weight parameters for the first layer. Shape is :math:`(D, 3, H, I +
+          H)`.
+        parameter: true
+      weight:
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 3, H, D * H + H)`.
+        optional: true
+        parameter: true
+      bias:
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
+        optional: true
+        parameter: true
+    arguments:
+      num_layers:
+        doc: Number of layers in the network. If set to 1, only the weights for the
+          first layer will be invoked. Default is 1.
+        type: int64
+        default: '1'
+      dropout:
+        doc: Dropout ratio applied to parameters. Default is 0.0.
+        type: float
+        default: 0.0
+      bidirectional:
+        doc: If True, bidirecitonal computation will be performed in each layer. Default
+          is False.
+        type: bool
+        default: 'False'
+      training:
+        doc: Backpropagation will be performed only when it is True. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
+      h_n:
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
+    function_ids:
+      ifBB: 243
+    c_runtime: not support
   Convolution:
     snake_name: convolution
     doc: |2
@@ -116,6 +310,7 @@ Neural Network Layer:
             
     function_ids:
       iiIiIiIi: 1
+    c_runtime: support
   DepthwiseConvolution:
     snake_name: depthwise_convolution
     doc: |2
@@ -181,6 +376,7 @@ Neural Network Layer:
           where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
     function_ids:
       iiIiIiIi: 2
+    c_runtime: support
   Deconvolution:
     snake_name: deconvolution
     doc: |2
@@ -239,6 +435,7 @@ Neural Network Layer:
           where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.  
     function_ids:
       iiIiIiIi: 3
+    c_runtime: support
   DepthwiseDeconvolution:
     snake_name: depthwise_deconvolution
     doc: |2
@@ -298,6 +495,7 @@ Neural Network Layer:
           where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 4
+    c_runtime: not support
   MaxPooling:
     snake_name: max_pooling
     doc: |2
@@ -333,6 +531,7 @@ Neural Network Layer:
         doc: Maximum values variable
     function_ids:
       iIiIBiI: 5
+    c_runtime: support
   AveragePooling:
     snake_name: average_pooling
     doc: |2
@@ -372,6 +571,7 @@ Neural Network Layer:
         doc: Average values variable
     function_ids:
       iIiIBiIB: 6
+    c_runtime: support
   GlobalAveragePooling:
     snake_name: global_average_pooling
     doc: |
@@ -387,6 +587,7 @@ Neural Network Layer:
         doc: Average values variable
     function_ids:
       Empty: 7
+    c_runtime: not support
   SumPooling:
     snake_name: sum_pooling
     doc: |2
@@ -422,6 +623,7 @@ Neural Network Layer:
         doc: Summed values variable
     function_ids:
       iIiIBiI: 8
+    c_runtime: support
   Unpooling:
     snake_name: unpooling
     doc: |2
@@ -444,6 +646,7 @@ Neural Network Layer:
         doc: Spread values variable
     function_ids:
       iI: 9
+    c_runtime: support
   Embed:
     snake_name: embed
     doc: |2
@@ -461,6 +664,7 @@ Neural Network Layer:
         doc: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     function_ids:
       Empty: 10
+    c_runtime: not support
 Neural Network Activation Functions:
   Sigmoid:
     snake_name: sigmoid
@@ -479,6 +683,7 @@ Neural Network Activation Functions:
         doc: Output
     function_ids:
       Empty: 11
+    c_runtime: support
   Swish:
     snake_name: swish
     doc: |2-
@@ -500,6 +705,7 @@ Neural Network Activation Functions:
         doc: Output
     function_ids:
       Empty: 12
+    c_runtime: support
   Tanh:
     snake_name: tanh
     doc: |2
@@ -516,6 +722,7 @@ Neural Network Activation Functions:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 13
+    c_runtime: support
   ReLU:
     snake_name: relu
     doc: |2
@@ -537,6 +744,7 @@ Neural Network Activation Functions:
         doc: N-D array with the same shape as x
     function_ids:
       B: 14
+    c_runtime: support
   LeakyReLU:
     snake_name: leaky_relu
     doc: |2+
@@ -567,6 +775,7 @@ Neural Network Activation Functions:
     function_ids:
       f: 15
       fB: 128
+    c_runtime: support
   Softmax:
     snake_name: softmax
     doc: |2
@@ -590,6 +799,7 @@ Neural Network Activation Functions:
         doc: N-D array with the same shape as x
     function_ids:
       i: 16
+    c_runtime: support
   ELU:
     snake_name: elu
     doc: |2
@@ -619,6 +829,7 @@ Neural Network Activation Functions:
         doc: N-D array with the same shape as x
     function_ids:
       f: 17
+    c_runtime: support
   SELU:
     snake_name: selu
     doc: |2
@@ -675,6 +886,7 @@ Neural Network Activation Functions:
         doc: N-D array with the same shape as x
     function_ids:
       ff: 18
+    c_runtime: support
   CReLU:
     snake_name: crelu
     doc: |2
@@ -703,6 +915,7 @@ Neural Network Activation Functions:
         doc: N-D array where axis dimension is doubled by concatenating.
     function_ids:
       i: 19
+    c_runtime: support
   CELU:
     snake_name: celu
     doc: |2
@@ -727,6 +940,7 @@ Neural Network Activation Functions:
         doc: N-D array where axis dimension is doubled by concatenating.
     function_ids:
       fi: 20
+    c_runtime: support
   PReLU:
     snake_name: prelu
     doc: |2
@@ -753,6 +967,33 @@ Neural Network Activation Functions:
         doc: N-D array.
     function_ids:
       i: 21
+    c_runtime: support
+  GELU:
+    snake_name: gelu
+    doc: |2
+
+      Gaussian Error Unit (GELU) function.
+
+      .. math::
+          GELU(x) = xP(X \leq  x) = x \Phi (x)
+
+      which is approximated by
+
+      .. math::
+          GELU(x) = 0.5x (1 + \tanh ( \sqrt(2/\pi)(x + 0.044715x^3) ))
+
+      References:
+          * `Dan Hendrycks and Kevin Gimpel.
+            Gaussian Error Linera Units (GELUs).
+            <https://arxiv.org/abs/1606.08415>`_
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 245
 Normalization:
   BatchNormalization:
     snake_name: batch_normalization
@@ -808,6 +1049,7 @@ Normalization:
         doc: N-D array
     function_ids:
       iIffB: 22
+    c_runtime: support
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
@@ -850,6 +1092,7 @@ Normalization:
         doc: N-D array.
     function_ids:
       iB: 23
+    c_runtime: support
   ClipGradByValue:
     snake_name: clip_grad_by_value
     doc: |
@@ -891,6 +1134,7 @@ Normalization:
         doc: N-D array.
     function_ids:
       Empty: 121
+    c_runtime: not support
   ClipGradByNorm:
     snake_name: clip_grad_by_norm
     doc: |2
@@ -933,6 +1177,7 @@ Normalization:
         doc: N-D array.
     function_ids:
       fiI: 122
+    c_runtime: not support
 Reduction:
   Sum:
     snake_name: sum
@@ -957,6 +1202,7 @@ Reduction:
         doc: N-D array
     function_ids:
       iIB: 24
+    c_runtime: support
   Mean:
     snake_name: mean
     doc: |2
@@ -979,6 +1225,7 @@ Reduction:
         doc: N-D array
     function_ids:
       iIB: 25
+    c_runtime: not support
   Max:
     snake_name: max
     doc: |2
@@ -1010,6 +1257,7 @@ Reduction:
     function_ids:
       iIB: 26
       iIBBB: 132
+    c_runtime: not support
   Min:
     snake_name: min
     doc: |2
@@ -1041,6 +1289,7 @@ Reduction:
     function_ids:
       iIB: 27
       iIBBB: 130
+    c_runtime: not support
   Prod:
     snake_name: prod
     doc: |2
@@ -1066,6 +1315,7 @@ Reduction:
         doc: N-D array
     function_ids:
       iIB: 28
+    c_runtime: not support
   ReduceSum:
     snake_name: reduce_sum
     doc: |2
@@ -1082,6 +1332,7 @@ Reduction:
         doc: N-D array
     function_ids:
       Empty: 29
+    c_runtime: not support
   ReduceMean:
     snake_name: reduce_mean
     doc: |2
@@ -1098,6 +1349,7 @@ Reduction:
         doc: N-D array
     function_ids:
       Empty: 30
+    c_runtime: not support
 Arithmetic:
   Add2:
     snake_name: add2
@@ -1122,6 +1374,7 @@ Arithmetic:
         doc: N-D array
     function_ids:
       B: 31
+    c_runtime: support
   BcAdd2:
     snake_name: bc_add2
     doc: |2+
@@ -1138,6 +1391,7 @@ Arithmetic:
         doc: N-D array
     function_ids:
       Empty: 32
+    c_runtime: not support
   Sub2:
     snake_name: sub2
     doc: |2
@@ -1156,6 +1410,7 @@ Arithmetic:
         doc: N-D array
     function_ids:
       Empty: 33
+    c_runtime: support
   Mul2:
     snake_name: mul2
     doc: |2
@@ -1174,6 +1429,7 @@ Arithmetic:
         doc: N-D array
     function_ids:
       Empty: 34
+    c_runtime: support
   Div2:
     snake_name: div2
     doc: |2
@@ -1192,6 +1448,7 @@ Arithmetic:
         doc: N-D array
     function_ids:
       Empty: 35
+    c_runtime: support
   Pow2:
     snake_name: pow2
     doc: |2
@@ -1210,6 +1467,7 @@ Arithmetic:
         doc: N-D array
     function_ids:
       Empty: 36
+    c_runtime: support
   AddScalar:
     snake_name: add_scalar
     doc: |2+
@@ -1232,6 +1490,7 @@ Arithmetic:
         doc: N-D array with the same shape as x
     function_ids:
       f: 37
+    c_runtime: support
   MulScalar:
     snake_name: mul_scalar
     doc: |2
@@ -1253,6 +1512,7 @@ Arithmetic:
         doc: N-D array with the same shape as x
     function_ids:
       f: 38
+    c_runtime: support
   PowScalar:
     snake_name: pow_scalar
     doc: |2
@@ -1274,6 +1534,7 @@ Arithmetic:
         doc: N-D array with the same shape as x
     function_ids:
       f: 39
+    c_runtime: support
   RSubScalar:
     snake_name: r_sub_scalar
     doc: |2
@@ -1295,6 +1556,7 @@ Arithmetic:
         doc: N-D array with the same shape as x
     function_ids:
       f: 40
+    c_runtime: support
   RDivScalar:
     snake_name: r_div_scalar
     doc: |2
@@ -1316,6 +1578,7 @@ Arithmetic:
         doc: N-D array with the same shape as x
     function_ids:
       f: 41
+    c_runtime: support
   RPowScalar:
     snake_name: r_pow_scalar
     doc: |2
@@ -1337,6 +1600,7 @@ Arithmetic:
         doc: N-D array with the same shape as x
     function_ids:
       f: 42
+    c_runtime: support
 Logical:
   Sign:
     snake_name: sign
@@ -1373,6 +1637,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 43
+    c_runtime: support
   Minimum2:
     snake_name: minimum2
     doc: |2
@@ -1391,6 +1656,7 @@ Logical:
         doc: N-D array of min value
     function_ids:
       Empty: 44
+    c_runtime: support
   Maximum2:
     snake_name: maximum2
     doc: |2
@@ -1409,6 +1675,7 @@ Logical:
         doc: N-D array of max value
     function_ids:
       Empty: 45
+    c_runtime: support
   MinimumScalar:
     snake_name: minimum_scalar
     doc: |2
@@ -1430,6 +1697,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 46
+    c_runtime: support
   MaximumScalar:
     snake_name: maximum_scalar
     doc: |2
@@ -1451,6 +1719,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 47
+    c_runtime: support
   LogicalAnd:
     snake_name: logical_and
     doc: |2
@@ -1472,6 +1741,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 48
+    c_runtime: not support
   LogicalOr:
     snake_name: logical_or
     doc: |2-
@@ -1493,6 +1763,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 49
+    c_runtime: not support
   LogicalXor:
     snake_name: logical_xor
     doc: |2
@@ -1515,6 +1786,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 50
+    c_runtime: not support
   Equal:
     snake_name: equal
     doc: |2
@@ -1536,6 +1808,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 51
+    c_runtime: not support
   NotEqual:
     snake_name: not_equal
     doc: |2
@@ -1558,6 +1831,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 52
+    c_runtime: not support
   GreaterEqual:
     snake_name: greater_equal
     doc: |2
@@ -1580,6 +1854,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 53
+    c_runtime: not support
   Greater:
     snake_name: greater
     doc: |2
@@ -1602,6 +1877,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 54
+    c_runtime: not support
   LessEqual:
     snake_name: less_equal
     doc: |2+
@@ -1625,6 +1901,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 55
+    c_runtime: not support
   Less:
     snake_name: less
     doc: |2+
@@ -1648,6 +1925,7 @@ Logical:
         doc: No Description
     function_ids:
       Empty: 56
+    c_runtime: not support
   LogicalAndScalar:
     snake_name: logical_and_scalar
     doc: |2
@@ -1671,6 +1949,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       B: 57
+    c_runtime: not support
   LogicalOrScalar:
     snake_name: logical_or_scalar
     doc: |2-
@@ -1694,6 +1973,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       B: 58
+    c_runtime: not support
   LogicalXorScalar:
     snake_name: logical_xor_scalar
     doc: |2
@@ -1718,6 +1998,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       B: 59
+    c_runtime: not support
   EqualScalar:
     snake_name: equal_scalar
     doc: |2
@@ -1742,6 +2023,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 60
+    c_runtime: not support
   NotEqualScalar:
     snake_name: not_equal_scalar
     doc: |2
@@ -1766,6 +2048,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 61
+    c_runtime: not support
   GreaterEqualScalar:
     snake_name: greater_equal_scalar
     doc: |2
@@ -1791,6 +2074,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 62
+    c_runtime: not support
   GreaterScalar:
     snake_name: greater_scalar
     doc: |2
@@ -1816,6 +2100,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 63
+    c_runtime: not support
   LessEqualScalar:
     snake_name: less_equal_scalar
     doc: |2+
@@ -1842,6 +2127,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 64
+    c_runtime: not support
   LessScalar:
     snake_name: less_scalar
     doc: |2
@@ -1867,6 +2153,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 65
+    c_runtime: not support
   LogicalNot:
     snake_name: logical_not
     doc: |2
@@ -1886,6 +2173,112 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 66
+    c_runtime: not support
+  IsNaN:
+    snake_name: isnan
+    doc: |2
+
+      Test element-wise for NaN and return a ``0/1`` array.
+    inputs:
+      x0:
+        doc: Input variable
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 236
+    c_runtime: not support
+  IsInf:
+    snake_name: isinf
+    doc: |2
+
+      Test element-wise for ``inf/-inf`` and return a ``0/1`` array.
+    inputs:
+      x0:
+        doc: Input variable
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 237
+    c_runtime: not support
+  ResetNaN:
+    snake_name: reset_nan
+    doc: |2
+
+      Replace NaNs with a scalar value specified by ``val``.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      f: 238
+    c_runtime: not support
+  ResetInf:
+    snake_name: reset_inf
+    doc: |2
+
+      Replace ``-inf/inf`` with a scalar value specified by ``val``.
+    inputs:
+      x0:
+        doc: Input variable
+    arguments:
+      val:
+        doc: Value of the scalar
+        type: double
+        default: '0'
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      f: 239
+    c_runtime: not support
+  Where:
+    snake_name: where
+    doc: |2
+
+      Return elements, either from ``x_true`` or ``x_false``, depending on ``condition``.
+
+      If rank of ``condition`` is higher than those of ``x_true`` and ``x_false``, the first dimensions of ``x_true`` and ``x_false`` must match the dimensions of ``condition``.
+
+      Example:
+
+      .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        a = nn.Variable.from_numpy_array(np.random.rand(2, 3))
+        x = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+        y = nn.Variable.from_numpy_array(np.random.rand(2, 3, 4))
+        z = F.where(F.greater_scalar(a, 0.5), x, y)
+        z.forward()
+
+        # Numpy equivalent
+        z_numpy = np.where(a.d > 0.5, x.d, y.d)
+        assert np.allclose(z_numpy, z.d)
+    inputs:
+      condition:
+        doc: N-d array. For all i, when ``condition[i] == true``, yield ``x_true[i]``,
+          otherwise ``x_false[i]``.
+      x_true:
+        doc: N-d array with higher or equal rank to ``condition``.
+      x_false:
+        doc: N-d array with higher or equal rank to ``condition``.
+    outputs:
+      y:
+        doc: N-D array with the same shape as condition
+    function_ids:
+      Empty: 240
+    c_runtime: not support
 Math:
   Constant:
     snake_name: constant
@@ -1907,6 +2300,7 @@ Math:
         doc: N-D array where all values are the specified constant.
     function_ids:
       fiI: 67
+    c_runtime: not support
   Arange:
     snake_name: arange
     doc: |2
@@ -1931,6 +2325,7 @@ Math:
         doc: 1-D array with the generated values.
     function_ids:
       fff: 131
+    c_runtime: not support
   Abs:
     snake_name: abs
     doc: |2
@@ -1947,6 +2342,7 @@ Math:
         doc: Element-wise absolute variable
     function_ids:
       Empty: 68
+    c_runtime: support
   Exp:
     snake_name: exp
     doc: |2
@@ -1963,6 +2359,7 @@ Math:
         doc: Element-wise exp variable
     function_ids:
       Empty: 69
+    c_runtime: support
   Log:
     snake_name: log
     doc: |2
@@ -1979,6 +2376,7 @@ Math:
         doc: Element-wise log variable
     function_ids:
       Empty: 70
+    c_runtime: support
   Identity:
     snake_name: identity
     doc: |2
@@ -1995,6 +2393,7 @@ Math:
         doc: N-D array
     function_ids:
       Empty: 71
+    c_runtime: support
   BatchMatmul:
     snake_name: batch_matmul
     doc: |2
@@ -2026,6 +2425,7 @@ Math:
           options are all False, the output will be a shape of [N, P, R].
     function_ids:
       BB: 72
+    c_runtime: support
   Round:
     snake_name: round
     doc: |2+
@@ -2051,6 +2451,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 73
+    c_runtime: support
   Ceil:
     snake_name: ceil
     doc: |2+
@@ -2076,6 +2477,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 124
+    c_runtime: not support
   Floor:
     snake_name: floor
     doc: |2+
@@ -2101,6 +2503,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 125
+    c_runtime: not support
   Sin:
     snake_name: sin
     doc: |2
@@ -2117,6 +2520,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 173
+    c_runtime: not support
   Cos:
     snake_name: cos
     doc: |2
@@ -2133,6 +2537,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 174
+    c_runtime: not support
   Tan:
     snake_name: tan
     doc: |2
@@ -2149,6 +2554,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 175
+    c_runtime: not support
   Sinh:
     snake_name: sinh
     doc: |2
@@ -2165,6 +2571,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 176
+    c_runtime: not support
   Cosh:
     snake_name: cosh
     doc: |2
@@ -2181,6 +2588,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 177
+    c_runtime: not support
   ASin:
     snake_name: asin
     doc: |2
@@ -2197,6 +2605,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 178
+    c_runtime: not support
   ACos:
     snake_name: acos
     doc: |2
@@ -2213,6 +2622,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 179
+    c_runtime: not support
   ATan:
     snake_name: atan
     doc: |2
@@ -2229,6 +2639,26 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 180
+    c_runtime: not support
+  ATan2:
+    snake_name: atan2
+    doc: |2
+
+      Element-wise arctangent (atan) function with 2 input variables.
+
+      .. math::
+          y_i = \arctan2 (x_{i1}, x_{i2})
+    inputs:
+      x0:
+        doc: N-D array
+      x1:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as input variables
+    c_runtime: not support
+    function_ids:
+      Empty: 241
   ASinh:
     snake_name: asinh
     doc: |2
@@ -2245,6 +2675,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 181
+    c_runtime: not support
   ACosh:
     snake_name: acosh
     doc: |2
@@ -2261,6 +2692,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 182
+    c_runtime: not support
   ATanh:
     snake_name: atanh
     doc: |2
@@ -2277,6 +2709,7 @@ Math:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 183
+    c_runtime: not support
 Array Manipulation:
   Concatenate:
     snake_name: concatenate
@@ -2297,6 +2730,7 @@ Array Manipulation:
         doc: Concatenate variable
     function_ids:
       i: 74
+    c_runtime: support
   Split:
     snake_name: split
     doc: |2
@@ -2322,6 +2756,7 @@ Array Manipulation:
         parameter: true
     function_ids:
       i: 75
+    c_runtime: support
   Stack:
     snake_name: stack
     doc: |2
@@ -2347,6 +2782,7 @@ Array Manipulation:
         doc: Output
     function_ids:
       i: 76
+    c_runtime: support
   Slice:
     snake_name: slice
     doc: |2
@@ -2373,6 +2809,7 @@ Array Manipulation:
         doc: Sliced N-D array
     function_ids:
       iIiIiI: 77
+    c_runtime: support
   Pad:
     snake_name: pad
     doc: |2
@@ -2447,6 +2884,7 @@ Array Manipulation:
             assert F.pad(x, (0, 1, 2, 1, 3, 3)).shape == (3, 4, 7, 8)
     function_ids:
       iIif: 123
+    c_runtime: not support
   Transpose:
     snake_name: transpose
     doc: |2
@@ -2464,6 +2902,7 @@ Array Manipulation:
         doc: Transposed N-D array.
     function_ids:
       iI: 78
+    c_runtime: support
   Broadcast:
     snake_name: broadcast
     doc: |2
@@ -2482,6 +2921,7 @@ Array Manipulation:
         doc: Broadcasted N-D array
     function_ids:
       iI: 79
+    c_runtime: not support
   BroadcastTo:
     snake_name: broadcast_to
     doc: |
@@ -2505,24 +2945,79 @@ Array Manipulation:
         doc: Broadcasted N-D array
     function_ids:
       i: 184
+    c_runtime: not support
   OneHot:
     snake_name: one_hot
     doc: |2
 
-      OneHot creates one-hot vector based on input indices.
+      This function creates one-hot vector based on input indices.
+
+              Example:
+
+              .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import numpy as np
+
+                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [1], [0]]))
+                print(labels.shape)  # (5, 1)
+
+                num_class = 10
+
+                y_train = F.one_hot(labels, shape=(num_class, ))
+                y_train.forward()
+
+                print(y_train.shape)  # (5, 10)
+                print(y_train.d)
+
+                # [[0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+                #  [0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
+                #  [0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
+                #  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
+                #  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+
+                # Can also be used for ndarray.
+
+                labels = nn.Variable.from_numpy_array(np.array([[1, 7], [4, 7], [8, 6], [5, 0], [2, 6]]))
+                print(labels.shape)  # (5, 2)
+
+                num_class_1, num_class_2  = 10, 8
+
+                y_train = F.one_hot(labels, shape=(num_class_1, num_class_2))
+                y_train.forward()
+        
+                print(y_train.shape)  # (5, 10, 8)
+                print(y_train.d)
+
+                # [[[0. 0. 0. 0. 0. 0. 0. 0.]          [[0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 1.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 1. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]    ...    [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]],         [0. 0. 0. 0. 0. 0. 0. 0.]]]
     inputs:
       x:
-        doc: N-D array
+        doc: N-D array representing label's indice.
         template: TI
     arguments:
       shape:
-        doc: No Description
+        doc: Number of classes. Note that it must be exactly the same as the number
+          of classes included in label data. Passing incorrect numbers might cause
+          an unexpected error and currently this function doesn't check if the input
+          is valid or not. Also, when nd-labels are given, dimensions must match.
+          See the example above.
         type: Shape
     outputs:
       output:
-        doc: N-D array
+        doc: N-D array one-hot vector/tensor.
     function_ids:
       iI: 80
+    c_runtime: not support
   Flip:
     snake_name: flip
     doc: |2
@@ -2544,6 +3039,7 @@ Array Manipulation:
         doc: N-D array
     function_ids:
       iI: 81
+    c_runtime: support
   Shift:
     snake_name: shift
     doc: |2
@@ -2573,6 +3069,7 @@ Array Manipulation:
         doc: N-D array.
     function_ids:
       iIi: 82
+    c_runtime: support
   Sort:
     snake_name: sort
     doc: |2
@@ -2613,6 +3110,7 @@ Array Manipulation:
         parameter: true
     function_ids:
       iBBB: 129
+    c_runtime: not support
   Reshape:
     snake_name: reshape
     doc: |2
@@ -2642,6 +3140,7 @@ Array Manipulation:
     function_ids:
       iI: 83
       iIB: 126
+    c_runtime: support
   MatrixDiag:
     snake_name: matrix_diag
     doc: |2
@@ -2655,6 +3154,7 @@ Array Manipulation:
         doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N \times M_N`).
     function_ids:
       Empty: 84
+    c_runtime: support
   MatrixDiagPart:
     snake_name: matrix_diag_part
     doc: |2
@@ -2669,6 +3169,7 @@ Array Manipulation:
         doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
     function_ids:
       Empty: 85
+    c_runtime: support
 Signal Processing:
   Interpolate:
     snake_name: interpolate
@@ -2701,6 +3202,7 @@ Signal Processing:
         doc: N-D array.
     function_ids:
       iIiB: 127
+    c_runtime: not support
   FFT:
     snake_name: fft
     doc: |2+
@@ -2760,6 +3262,7 @@ Signal Processing:
         doc: FFT transformed signal.
     function_ids:
       iB: 158
+    c_runtime: not support
   IFFT:
     snake_name: ifft
     doc: |2+
@@ -2798,6 +3301,7 @@ Signal Processing:
         doc: IFFT transformed signal.
     function_ids:
       iB: 159
+    c_runtime: not support
 Stochasticity:
   Dropout:
     snake_name: dropout
@@ -2842,6 +3346,7 @@ Stochasticity:
         doc: N-D array with the same shape as x
     function_ids:
       fi: 86
+    c_runtime: support
   TopKData:
     snake_name: top_k_data
     doc: |2
@@ -2889,6 +3394,7 @@ Stochasticity:
         doc: N-D array.
     function_ids:
       iBBi: 87
+    c_runtime: not support
   TopKGrad:
     snake_name: top_k_grad
     doc: |2
@@ -2920,6 +3426,7 @@ Stochasticity:
         doc: N-D array with same shape and data as `x`.
     function_ids:
       iBi: 88
+    c_runtime: not support
   Rand:
     snake_name: rand
     doc: |2
@@ -2950,6 +3457,7 @@ Stochasticity:
         doc: Variable with the shape specified in the argument.
     function_ids:
       ffiIi: 89
+    c_runtime: not support
   Randint:
     snake_name: randint
     doc: |2
@@ -2981,6 +3489,7 @@ Stochasticity:
         template: TI
     function_ids:
       iiiIi: 90
+    c_runtime: not support
   Randn:
     snake_name: randn
     doc: |2
@@ -3011,6 +3520,7 @@ Stochasticity:
         doc: Variable with the shape specified in the argument.
     function_ids:
       ffiIi: 91
+    c_runtime: not support
   RandomCrop:
     snake_name: random_crop
     doc: |2
@@ -3038,6 +3548,7 @@ Stochasticity:
         doc: N-D array
     function_ids:
       iIii: 92
+    c_runtime: not support
   RandomFlip:
     snake_name: random_flip
     doc: |2
@@ -3067,6 +3578,7 @@ Stochasticity:
         doc: N-D array
     function_ids:
       iIii: 93
+    c_runtime: not support
   RandomShift:
     snake_name: random_shift
     doc: |2
@@ -3105,6 +3617,7 @@ Stochasticity:
         doc: N-D array.
     function_ids:
       iIiii: 94
+    c_runtime: not support
   ImageAugmentation:
     snake_name: image_augmentation
     doc: |2
@@ -3206,6 +3719,7 @@ Stochasticity:
         doc: N-D array.
     function_ids:
       iIiIfffffBBfBffBfi: 95
+    c_runtime: not support
 Loss Functions:
   SigmoidCrossEntropy:
     snake_name: sigmoid_cross_entropy
@@ -3236,6 +3750,7 @@ Loss Functions:
         doc: N-D array of element-wise losses.
     function_ids:
       Empty: 96
+    c_runtime: not support
   BinaryCrossEntropy:
     snake_name: binary_cross_entropy
     doc: |2
@@ -3256,6 +3771,7 @@ Loss Functions:
         doc: N-D array of element-wise losses.
     function_ids:
       Empty: 97
+    c_runtime: not support
   SoftmaxCrossEntropy:
     snake_name: softmax_cross_entropy
     doc: |2
@@ -3290,6 +3806,7 @@ Loss Functions:
           ... \times D_N)`
     function_ids:
       i: 98
+    c_runtime: not support
   CategoricalCrossEntropy:
     snake_name: categorical_cross_entropy
     doc: |2
@@ -3321,6 +3838,7 @@ Loss Functions:
           ... \times D_N)`
     function_ids:
       i: 99
+    c_runtime: not support
   SquaredError:
     snake_name: squared_error
     doc: |2
@@ -3339,6 +3857,7 @@ Loss Functions:
         doc: N-D array.
     function_ids:
       Empty: 100
+    c_runtime: not support
   AbsoluteError:
     snake_name: absolute_error
     doc: |2
@@ -3357,6 +3876,7 @@ Loss Functions:
         doc: N-D array.
     function_ids:
       Empty: 101
+    c_runtime: not support
   HuberLoss:
     snake_name: huber_loss
     doc: |2
@@ -3386,6 +3906,7 @@ Loss Functions:
         doc: N-D array of element-wise losses.
     function_ids:
       f: 102
+    c_runtime: not support
   EpsilonInsensitiveLoss:
     snake_name: epsilon_insensitive_loss
     doc: |2
@@ -3412,6 +3933,7 @@ Loss Functions:
         doc: N-D array of element-wise losses.
     function_ids:
       f: 103
+    c_runtime: not support
   KLMultinomial:
     snake_name: kl_multinomial
     doc: |2
@@ -3435,6 +3957,7 @@ Loss Functions:
         doc: Kullback Leibler divergence :math:`KL(p \parallel q)`.
     function_ids:
       i: 104
+    c_runtime: not support
 Quantization Neural Network Layers:
   BinarySigmoid:
     snake_name: binary_sigmoid
@@ -3471,6 +3994,7 @@ Quantization Neural Network Layers:
         doc: Output.
     function_ids:
       Empty: 105
+    c_runtime: support
   BinaryTanh:
     snake_name: binary_tanh
     doc: |2
@@ -3505,6 +4029,7 @@ Quantization Neural Network Layers:
         doc: Output.
     function_ids:
       Empty: 106
+    c_runtime: support
   BinaryConnectAffine:
     snake_name: binary_connect_affine
     doc: |2
@@ -3571,6 +4096,8 @@ Quantization Neural Network Layers:
         doc: Output.
     function_ids:
       i: 107
+      if: 235
+    c_runtime: support
   BinaryConnectConvolution:
     snake_name: binary_connect_convolution
     doc: |2
@@ -3655,6 +4182,8 @@ Quantization Neural Network Layers:
         doc: Output
     function_ids:
       iiIiIiIi: 108
+      iiIiIiIif: 233
+    c_runtime: support
   BinaryWeightAffine:
     snake_name: binary_weight_affine
     doc: |2
@@ -3722,6 +4251,8 @@ Quantization Neural Network Layers:
         doc: Output.
     function_ids:
       i: 109
+      if: 234
+    c_runtime: support
   BinaryWeightConvolution:
     snake_name: binary_weight_convolution
     doc: |2
@@ -3807,6 +4338,8 @@ Quantization Neural Network Layers:
         doc: Output
     function_ids:
       iiIiIiIi: 110
+      iiIiIiIif: 232
+    c_runtime: support
   INQAffine:
     snake_name: inq_affine
     doc: |2
@@ -3875,6 +4408,7 @@ Quantization Neural Network Layers:
         doc: Output.
     function_ids:
       iiiIii: 111
+    c_runtime: not support
   INQConvolution:
     snake_name: inq_convolution
     doc: |2
@@ -3960,6 +4494,7 @@ Quantization Neural Network Layers:
         doc: Output
     function_ids:
       iiIiIiIiiiIii: 112
+    c_runtime: not support
   FixedPointQuantize:
     snake_name: fixed_point_quantize
     doc: |+
@@ -4029,6 +4564,7 @@ Quantization Neural Network Layers:
         doc: N-D array.
     function_ids:
       BifB: 113
+    c_runtime: not support
   Pow2Quantize:
     snake_name: pow2_quantize
     doc: |2+
@@ -4156,6 +4692,7 @@ Quantization Neural Network Layers:
         doc: N-D array.
     function_ids:
       BBiiB: 114
+    c_runtime: not support
   Prune:
     snake_name: prune
     doc: |2
@@ -4185,6 +4722,7 @@ Quantization Neural Network Layers:
         doc: N-D array with the same shape as x
     function_ids:
       f: 135
+    c_runtime: not support
 Validation:
   TopNError:
     snake_name: top_n_error
@@ -4223,6 +4761,7 @@ Validation:
           ... \times D_N`)
     function_ids:
       ii: 115
+    c_runtime: not support
   BinaryError:
     snake_name: binary_error
     doc: |2+
@@ -4248,6 +4787,7 @@ Validation:
         doc: Element-wise errors N-D array.
     function_ids:
       Empty: 116
+    c_runtime: not support
   ConfusionMatrix:
     snake_name: confusion_matrix
     doc: |2
@@ -4272,6 +4812,7 @@ Validation:
           label class.
     function_ids:
       i: 117
+    c_runtime: not support
 Unsupported, Special Use:
   VATNoise:
     snake_name: vat_noise
@@ -4323,6 +4864,7 @@ Unsupported, Special Use:
         doc: N-D array
     function_ids:
       if: 118
+    c_runtime: not support
   Unlink:
     snake_name: unlink
     doc: |2
@@ -4353,6 +4895,7 @@ Unsupported, Special Use:
         doc: N-D array.
     function_ids:
       Empty: 119
+    c_runtime: not support
   Sink:
     snake_name: sink
     doc: |2
@@ -4384,6 +4927,7 @@ Unsupported, Special Use:
         doc: Dummy variable.
     function_ids:
       B: 120
+    c_runtime: not support
   NmsDetection2d:
     snake_name: nms_detection2d
     doc: |2
@@ -4441,3 +4985,4 @@ Unsupported, Special Use:
         doc: A 3-dim array with the same dimensions with the input.
     function_ids:
       ffB: 231
+    c_runtime: not support

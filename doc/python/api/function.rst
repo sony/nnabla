@@ -45,6 +45,9 @@ Neural Network Layers
 .. autofunction:: sum_pooling
 .. autofunction:: unpooling
 .. autofunction:: embed
+.. autofunction:: rnn
+.. autofunction:: lstm
+.. autofunction:: gru
 
 
 Neural Network Activation
@@ -59,6 +62,7 @@ Neural Network Activation
 .. autofunction:: selu
 .. autofunction:: crelu
 .. autofunction:: celu
+.. autofunction:: gelu
 .. autofunction:: prelu
 .. autofunction:: leaky_relu
 
@@ -154,6 +158,7 @@ Math
 .. autofunction:: asin
 .. autofunction:: acos
 .. autofunction:: atan
+.. autofunction:: atan2
 .. autofunction:: asinh
 .. autofunction:: acosh
 .. autofunction:: atanh

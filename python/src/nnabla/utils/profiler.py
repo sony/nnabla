@@ -131,7 +131,7 @@ class GraphProfilerCsvWriter:
         writer.writerow(
             ["backward_all_n_run", self.gb.result["n_run_backward_all"]])
 
-        if self.gb.result.keys() >= {"training", "n_run_training"}:
+        if set(self.gb.result.keys()) >= {"training", "n_run_training"}:
             writer.writerow([])
             writer.writerow(
                 ["training(forward + backward + update)", self.gb.result["training"]])

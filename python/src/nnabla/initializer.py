@@ -154,6 +154,37 @@ class UniformIntInitializer(BaseInitializer):
         return self.rng.randint(self.lim[0], self.lim[1], size=shape)
 
 
+class RangeInitializer(BaseInitializer):
+
+    """Generates an array with sequence of numbers.
+
+    .. math::
+        \mathbf x[i] = start + step * i
+
+    Args:
+        start (int): A start value.
+        step (int): A step value.
+
+    Example:
+
+    .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.initializer as I
+
+        x = nn.Variable([100])
+        x.d = I.RangeInitializer(0, 1)(x.shape)
+    """
+
+    def __init__(self, start=0, step=1):
+        self.start = start
+        self.step = step
+
+    def __call__(self, shape):
+        a = np.arange(0, shape[-1], 1)
+        return np.broadcast_to(self.start + a * self.step, shape)
+
+
 class ConstantInitializer(BaseInitializer):
 
     """Generates a constant valued array.
