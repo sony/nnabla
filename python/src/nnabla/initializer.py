@@ -243,7 +243,7 @@ class OrthogonalInitializer(BaseInitializer):
 
     def __init__(self, gain=1.0, rng=None):
         if rng is None:
-            rng = np.random
+            rng = np.random.RandomState(313)
         self.rng = rng
         self.gain = gain
 
