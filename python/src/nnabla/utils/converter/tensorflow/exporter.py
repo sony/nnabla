@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2019 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
+from ..onnx import OnnxExporter
+from onnx_tf.backend import prepare
 
-_SupportedInfo = collections.namedtuple(
-    '_SupportedInfo', 'import_name export_name')
-extensions = _SupportedInfo(import_name=['.nnp', '.onnx', '.ckpt', '.pb'], export_name=[
-                            '.nnp', '.nnb', '.onnx', '.ckpt', '.pb'])
-formats = _SupportedInfo(import_name=['NNP', 'ONNX', 'TF_CKPT', 'TF_PB'], export_name=[
-                         'NNP', 'NNB', 'CSRC', 'ONNX', 'TF_CKPT', 'TF_PB'])
+
+class TensorflowExporter:
+    def __init__(self, nnp, batch_size):
+        self._nnp = nnp
+        self._batch_size = batch_size
+
+    def execute(self, output):
+        onnx_model = OnnxExporter(
+            self._nnp, self._batch_size).export_model_proto()
+        tf_rep = prepare(onnx_model)
+        tf_rep.export_graph(output)

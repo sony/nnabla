@@ -1541,6 +1541,11 @@ class OnnxExporter:
                         print("{} : {}".format(i, in_d[i]))
             print(node)
 
+    def export_model_proto(self):
+        self.create_model()
+        self.create_graph()
+        return self._model_proto
+
     def execute(self, file_path):
         # if debug, please uncomment it.
         # self.dump_nnp(file_path)

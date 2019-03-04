@@ -247,6 +247,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnabla',
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
+                'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
                 'nnabla_ext',
