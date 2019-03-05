@@ -25,6 +25,7 @@
 #include <nbla/defs.hpp>
 
 #include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -99,12 +100,14 @@ public:
 };
 
 /** String formatter.
-
-TODO: Remove warning. Maybe a bit tricky.
 */
 template <typename T, typename... Args>
 string format_string(const string &format, T first, Args... rest) {
   int size = snprintf(nullptr, 0, format.c_str(), first, rest...);
+  if (size < 0) {
+    std::printf("fatal error in format_string function: snprintf failed\n");
+    std::abort();
+  }
   vector<char> buffer(size + 1);
   snprintf(buffer.data(), size + 1, format.c_str(), first, rest...);
   return string(buffer.data(), buffer.data() + size);
