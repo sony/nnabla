@@ -16,11 +16,13 @@
 #include <nbla/computation_graph/variable.hpp>
 
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include <set>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 // #define NNABLA_DUMP_ON_OUTPUTS_FORWARD
 // #define NNABLA_DUMP_ON_INPUTS_FORWARD
@@ -39,6 +41,7 @@ using std::tuple;
 using std::make_tuple;
 using std::get;
 using std::unique_ptr;
+using std::vector;
 
 CgVariable::CgVariable() { var_ = make_shared<Variable>(Shape_t{}); }
 CgVariable::CgVariable(bool need_grad) : CgVariable() {
@@ -59,6 +62,7 @@ class ForwardCallback {
   bool clear_buffer_{false};
   bool clear_no_need_grad_{false};
   unordered_map<CgVariablePtr, int> vseen_;
+  vector<string> history_;
 
 public:
   ForwardCallback(bool clear_buffer, bool clear_no_need_grad)
@@ -157,6 +161,14 @@ public:
 #endif
   }
 
+  void error_trace(const string &name_on_error) {
+    std::cerr << "Error during forward propagation:" << std::endl;
+    for (auto &name : history_) {
+      std::cerr << "  " << name << std::endl;
+    }
+    std::cerr << "  " << name_on_error << " <-- Here" << std::endl;
+  }
+
   void operator()(CgFunctionPtr func) {
     // Execute forward.
     // std::cout << "Call forward of " << func->function()->name() << "."
@@ -166,7 +178,13 @@ public:
     vector<CgVariablePtr> outputs; // Get shared reference of outputs.
     vector<Variable *> voutputs;
     std::tie(outputs, voutputs) = func->function_outputs();
-    func->function()->forward(func->function_inputs(), voutputs);
+    try {
+      func->function()->forward(func->function_inputs(), voutputs);
+    } catch (...) {
+      error_trace(func->function()->name());
+      throw;
+    }
+    history_.push_back(func->function()->name());
 
     this->on_outputs(func);
 
@@ -180,6 +198,7 @@ class BackwardCallback {
   bool clear_buffer_;
   // Visit CgVaiable list. The value is whether this is cleared during backward.
   unordered_map<CgVariablePtr, bool> vseen_;
+  vector<string> history_;
 
   vector<bool> get_accum(const vector<CgVariablePtr> &inputs,
                          const vector<bool> &first_visit_flags) {
@@ -300,6 +319,14 @@ public:
     }
   }
 
+  void error_trace(const string &name_on_error) {
+    std::cerr << "Error during backward propagation:" << std::endl;
+    for (auto &name : history_) {
+      std::cerr << "  " << name << std::endl;
+    }
+    std::cerr << "  " << name_on_error << " <-- Here" << std::endl;
+  }
+
   void operator()(CgFunctionPtr f) {
     // Check accumulation.
     const auto inputs = f->inputs();
@@ -327,7 +354,13 @@ public:
     // std::cout << f->function()->name() << std::endl;
     // std::cout << "  " << string_join(prop_down, ",") << std::endl;
     // std::cout << "  " << string_join(accum, ",") << std::endl;
-    f->function()->backward(f->function_inputs(), voutputs, prop_down, accum);
+    try {
+      f->function()->backward(f->function_inputs(), voutputs, prop_down, accum);
+    } catch (...) {
+      error_trace(f->function()->name());
+      throw;
+    }
+    history_.push_back(f->function()->name());
 
     // Clear outputs buffer
     clear_output_buffers(f, output_prohibit_clear);
