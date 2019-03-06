@@ -16,7 +16,7 @@
 #define __NBLA_CPU_ARRAY_HPP__
 
 #include <nbla/array.hpp>
-#include <nbla/cpu_memory.hpp>
+#include <nbla/memory/allocator.hpp>
 
 namespace nbla {
 
@@ -25,19 +25,15 @@ namespace nbla {
 */
 class NBLA_API CpuArray : public Array {
 protected:
-  shared_ptr<CpuMemory> inuse_memory_;
-
 public:
-  explicit CpuArray(const Size_t size, dtypes dtype, const Context &ctx);
+  CpuArray(const Size_t size, dtypes dtype, const Context &ctx);
+  CpuArray(const Size_t size, dtypes dtype, const Context &ctx,
+           AllocatorMemory &&mem);
   virtual ~CpuArray();
   virtual void copy_from(const Array *src_array);
   virtual void zero();
   virtual void fill(float value);
   static Context filter_context(const Context &ctx);
-
-protected:
-  virtual void allocate();
-  virtual void deallocate();
 };
 
 /** Cached CPU array.
@@ -47,10 +43,6 @@ public:
   explicit CpuCachedArray(const Size_t size, dtypes dtype, const Context &ctx);
   virtual ~CpuCachedArray();
   static Context filter_context(const Context &ctx);
-
-protected:
-  virtual void allocate();
-  virtual void deallocate();
 };
 }
 #endif

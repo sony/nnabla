@@ -26,6 +26,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -54,6 +55,14 @@ using std::vector;
   if (!(condition)) {                                                          \
     NBLA_ERROR(code, string("Failed `" #condition "`: ") + msg,                \
                ##__VA_ARGS__);                                                 \
+  }
+
+#define NBLA_FORCE_ASSERT(condition, msg, ...)                                 \
+  if (!(condition)) {                                                          \
+    std::cerr << "Aborting: " << format_string(msg, ##__VA_ARGS__) << " at "   \
+              << __func__ << " in " << __FILE__ << ":" << __LINE__             \
+              << std::endl;                                                    \
+    ::abort();                                                                 \
   }
 
 /** Enum of error codes throwing in NNabla

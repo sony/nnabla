@@ -760,7 +760,9 @@ shared_ptr<Executor> NnpImpl::get_executor(const string &name) {
     return shared_ptr<Executor>(
         new Executor(new ExecutorImpl(*it, get_network(it->network_name()))));
   }
-  NBLA_ERROR(error_code::value, "Executor `%s` not found", name.c_str());
+  NBLA_ERROR(error_code::value, "Executor `%s` not found from [%s].",
+             name.c_str(),
+             string_join(this->get_executor_names(), ", ").c_str());
 }
 
 vector<pair<string, VariablePtr>> NnpImpl::get_parameters() {
