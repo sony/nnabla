@@ -274,6 +274,9 @@ Broadcast:
 BroadcastTo:
   float: [float]
   half: [Half]
+Tile:
+  float: [float]
+  half: [Half]
 OneHot:
   float: [int, float]
   half: [int, Half]

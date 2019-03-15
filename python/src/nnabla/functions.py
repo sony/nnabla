@@ -766,3 +766,44 @@ def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
     from .function_bases import sort as sort_base
     n_outputs = 2 if with_index and not only_index else 1
     return sort_base(x, axis, reverse, with_index, only_index, n_outputs)
+
+
+def tile(x, reps):
+    """Forward `x` repeated the number of times given by `reps`. If `reps` is
+    a sequence, the output has dimension of ``d = max(len(reps), x.ndim)`` and
+    either `x` is promoted to be d-dimensional by prepending new axes or `reps`
+    is promoted to x.ndim by prepending 1's.
+
+    Args:
+        x(~nnabla.Variable): Input N-D array.
+        reps(int or sequence of int): Repetitions of `x` along each axis.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> F.tile(nn.Variable([2, 3], 3).shape    # reps is promoted to [1, 3]
+    (2, 9)
+    >>> F.tile(nn.Variable([3], [2, 3]).shape  # x is promoted to shape (1, 3)
+    (2, 9)
+    >>> nn.set_auto_forward(True)
+    >>> x = nn.Variable.from_numpy_array(np.array([1, 2, 3]))
+    >>> print(F.tile(x, 3).d)
+    [1. 2. 3. 1. 2. 3. 1. 2. 3.]
+    >>> print(F.tile(x, [2, 3]).d)
+    [[1. 2. 3. 1. 2. 3. 1. 2. 3.]
+     [1. 2. 3. 1. 2. 3. 1. 2. 3.]]
+    >>> x = nn.Variable.from_numpy_array(np.array([[1, 3], [2, 4]]))
+    >>> print(F.tile(x, 3).d)
+    [[1. 3. 1. 3. 1. 3.]
+     [2. 4. 2. 4. 2. 4.]]
+    >>> print(F.tile(x, [2, 3]).d)
+    [[1. 3. 1. 3. 1. 3.]
+     [2. 4. 2. 4. 2. 4.]
+     [1. 3. 1. 3. 1. 3.]
+     [2. 4. 2. 4. 2. 4.]]
+
+    """
+    from .function_bases import tile as tile_base
+    reps = [reps] if isinstance(reps, int) else reps
+    return tile_base(x, reps)

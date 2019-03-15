@@ -175,6 +175,7 @@ Array Manipulation
 .. autofunction:: transpose
 .. autofunction:: broadcast
 .. autofunction:: broadcast_to
+.. autofunction:: tile
 .. autofunction:: flip
 .. autofunction:: shift
 .. autofunction:: sort
