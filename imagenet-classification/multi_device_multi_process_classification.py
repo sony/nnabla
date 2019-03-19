@@ -108,7 +108,7 @@ def train():
     if args.tiny_mode:
         n_train_samples = 100000
     else:
-        n_train_samples = 1282167
+        n_train_samples = 1281167
 
     # Communicator and Context
     from nnabla.ext_utils import get_extension_context
@@ -259,9 +259,6 @@ def train():
         # Update
         solver.weight_decay(args.weight_decay)
         solver.update()
-
-        # Accumulate errors after solver update
-        l, e = accumulate_error(l, e, t_model, t_e)
 
         # Linear Warmup
         if i <= warmup_iter:
