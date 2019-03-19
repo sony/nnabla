@@ -60,6 +60,7 @@ Available models are summarized in the following table. Error rates are calculat
     "MobileNetV2", "MobileNetV2", 29.94, 10.82, Neural Network Console
     "SENet-154", "SENet", 22.04, 6.29, Neural Network Console
     "SqueezeNet v1.1", "SqueezeNet", 41.23, 19.18, Neural Network Console
+    "NIN", "NIN", 42.91, 20.66, Neural Network Console
 
 
 Common interfaces
@@ -88,4 +89,7 @@ List of models
     :members:
 
 .. autoclass:: SqueezeNet
+    :members:
+
+.. autoclass:: NIN
     :members:
