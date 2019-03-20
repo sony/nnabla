@@ -44,6 +44,7 @@ DataIteratorFromCacheFiles::DataIteratorFromCacheFiles(
 
   dataset_.resize(n_stream);
   for (int i = 0; i < n_stream; i++) {
+
     Shape_t shape = shapes[i];
     shape[0] = n_data_;
     dataset_[i] = make_shared<NdArray>(shape);
@@ -55,11 +56,11 @@ DataIteratorFromCacheFiles::DataIteratorFromCacheFiles(
       normalize = 1.0 / 255.0;
     }
     float *target =
-        dataset_[i]->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
+        dataset_[i]->cast(get_dtype<float>(), kCpuCtx, true)->pointer<float>();
     for (int j = 0; j < cache_blocks.size(); j++) {
       NdArrayPtr ndarray = cache_blocks[j][i];
       float *source =
-          ndarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
+          ndarray->cast(get_dtype<float>(), kCpuCtx, false)->pointer<float>();
       for (int k = 0; k < ndarray->size(); k++)
         target[ndarray->size() * j + k] = source[k] * normalize;
     }
@@ -84,17 +85,21 @@ void DataIteratorFromCacheFiles::shuffle_dataset() {
 
   shuffle_index();
   vector<NdArrayPtr> source = dataset_;
-  vector<NdArrayPtr> target;
 
   for (int i = 0; i < source.size(); i++) {
-    NdArrayPtr ndarray = source[i];
-    const int dsize = ndarray->strides()[0];
-    float *x = ndarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
-    float *y = ndarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
+    NdArrayPtr sarray = source[i];
+    NdArrayPtr tarray = make_shared<NdArray>(sarray->shape());
+    float *x =
+        sarray->cast(get_dtype<float>(), kCpuCtx, false)->pointer<float>();
+    float *y =
+        tarray->cast(get_dtype<float>(), kCpuCtx, true)->pointer<float>();
+    const int dsize = sarray->strides()[0];
     for (int t = 0; t < n_data_; t++) {
       const int s = shuffle_ids_[t];
-      memcpy(y + i * dsize, x + s * dsize, sizeof(float) * dsize);
+      memcpy(y + t * dsize, x + s * dsize, sizeof(float) * dsize);
     }
+    x = sarray->cast(get_dtype<float>(), kCpuCtx, true)->pointer<float>();
+    y = tarray->cast(get_dtype<float>(), kCpuCtx, false)->pointer<float>();
     memcpy(x, y, sizeof(float) * n_data_ * dsize);
   }
 }
@@ -132,8 +137,10 @@ unordered_map<string, NdArrayPtr> DataIteratorFromCacheFiles::next() {
   for (int n = 0; n < n_stream; n++) {
     NdArrayPtr sarray = dataset_[n];
     NdArrayPtr tarray = data_batch.at(data_names_[n]);
-    float *source = sarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
-    float *target = tarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
+    float *source =
+        sarray->cast(get_dtype<float>(), kCpuCtx, false)->pointer<float>();
+    float *target =
+        tarray->cast(get_dtype<float>(), kCpuCtx, true)->pointer<float>();
     const int size_x = sarray->strides()[0];
     source += size_x * current_id_;
     memcpy(target, source, sizeof(float) * size_x * n_count);
@@ -150,10 +157,12 @@ unordered_map<string, NdArrayPtr> DataIteratorFromCacheFiles::next() {
   for (int n = 0; n < n_stream; n++) {
     NdArrayPtr sarray = dataset_[n];
     NdArrayPtr tarray = data_batch.at(data_names_[n]);
-    float *source = sarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
-    float *target = tarray->cast(get_dtype<float>(), kCpuCtx)->pointer<float>();
+    float *source =
+        sarray->cast(get_dtype<float>(), kCpuCtx, false)->pointer<float>();
+    float *target =
+        tarray->cast(get_dtype<float>(), kCpuCtx, true)->pointer<float>();
     const int size_x = sarray->strides()[0];
-    source += size_x * (current_id_ + n_count);
+    source += size_x * current_id_;
     target += size_x * n_count;
     memcpy(target, source, sizeof(float) * size_x * (batch_size_ - n_count));
   }
