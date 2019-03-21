@@ -14,8 +14,7 @@
 
 // test_cpp_parametric_functions.cpp
 
-#define FOR(i, a, b) for (int i = a; i < (b); ++i)
-#define REP(i, n) FOR(i, 0, n)
+#include "macros.hpp"
 
 #include <string>
 #include <gtest/gtest.h>
