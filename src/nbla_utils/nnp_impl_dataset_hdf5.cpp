@@ -233,10 +233,10 @@ bool create_cachefile_list(const string &path, vector<string> &filenames) {
 }
 
 // ----------------------------------------------------------------------
-// DatasetImpl
+// DatasetHDF5Impl
 // ----------------------------------------------------------------------
-DatasetImpl::DatasetImpl(const ::Dataset &dataset)
-    : dataset_proto_(dataset), n_data_(0), n_stream_(0) {
+DatasetHDF5Impl::DatasetHDF5Impl(const ::Dataset &dataset)
+    : DatasetImpl(dataset), n_data_(0), n_stream_(0) {
 
   vector<string> filenames;
   create_cachefile_list(this->cache_dir(), filenames);
@@ -255,27 +255,11 @@ DatasetImpl::DatasetImpl(const ::Dataset &dataset)
   }
 }
 
-string DatasetImpl::name() const { return dataset_proto_.name(); }
-string DatasetImpl::uri() const { return dataset_proto_.uri(); }
-string DatasetImpl::cache_dir() const { return dataset_proto_.cache_dir(); }
-bool DatasetImpl::create_cache_explicitly() const {
-  return dataset_proto_.create_cache_explicitly();
-}
-bool DatasetImpl::overwrite_cache() const {
-  return dataset_proto_.overwrite_cache();
-}
-bool DatasetImpl::shuffle() const { return dataset_proto_.shuffle(); }
-bool DatasetImpl::no_image_normalization() const {
-  return dataset_proto_.no_image_normalization();
-}
-const int DatasetImpl::batch_size() const {
-  return dataset_proto_.batch_size();
-}
-const int DatasetImpl::get_num_stream() const { return n_stream_; }
-const int DatasetImpl::get_num_data() const { return n_data_; }
-vector<string> DatasetImpl::get_data_names() { return data_names_; }
-vector<Shape_t> DatasetImpl::get_shapes() { return shapes_; }
-vector<vector<NdArrayPtr>> DatasetImpl::get_cache_blocks() {
+const int DatasetHDF5Impl::get_num_stream() const { return n_stream_; }
+const int DatasetHDF5Impl::get_num_data() const { return n_data_; }
+vector<string> DatasetHDF5Impl::get_data_names() { return data_names_; }
+vector<Shape_t> DatasetHDF5Impl::get_shapes() { return shapes_; }
+vector<vector<NdArrayPtr>> DatasetHDF5Impl::get_cache_blocks() {
   return cache_blocks_;
 }
 }

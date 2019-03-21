@@ -20,6 +20,9 @@ typedef int ssize_t;
 #endif
 
 #include "nnp_impl.hpp"
+#if defined(NBLA_UTILS_WITH_NPY)
+#include "nnp_impl_dataset_npy.hpp"
+#endif
 #include <nbla/computation_graph/computation_graph.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
@@ -847,7 +850,16 @@ shared_ptr<DatasetImpl> NnpImpl::get_dataset(const string &name) {
     if (it->name() != name) {
       continue;
     }
-    return shared_ptr<DatasetImpl>(new DatasetImpl(*it));
+
+#if defined(NBLA_UTILS_WITH_HDF5)
+    // HDF5 Support
+    return shared_ptr<DatasetHDF5Impl>(new DatasetHDF5Impl(*it));
+#elif defined(NBLA_UTILS_WITH_NPY)
+    // Npy Support
+    return shared_ptr<DatasetNpyImpl>(new DatasetNpyImpl(*it));
+#else
+    static_assert(false, "No cache file format is defined.");
+#endif
   }
   NBLA_ERROR(error_code::value, "Dataset `%s` not found", name.c_str());
 }

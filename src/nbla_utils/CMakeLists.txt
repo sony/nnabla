@@ -1,13 +1,11 @@
 option(NNABLA_UTILS_WITH_HDF5 "Enable HDF5 in C++ utils." OFF)
+option(NNABLA_UTILS_WITH_NPY "Enable NPY in C++ utils." ON)
 option(NNABLA_UTILS_STATIC_LINK_DEPS "Static link C++ NNabla utils deps." OFF)
 
-if (NNABLA_UTILS_WITH_HDF5)
-  add_definitions(-DNBLA_UTILS_WITH_HDF5)
-endif()
 
 include_directories(${CMAKE_BINARY_DIR}/libraries/include)
 
-add_library(nnabla_utils SHARED
+list(APPEND nnabla_utils_SOURCES
   nnp.cpp
   nnabla.pb.cc
   nnp_impl.cpp
@@ -15,10 +13,25 @@ add_library(nnabla_utils SHARED
   nnp_impl_create_solver.cpp
   nnp_impl_optimizer.cpp
   nnp_impl_monitor.cpp
-  nnp_impl_dataset.cpp
   nnp_impl_configs.cpp
   data_iterator.cpp
+)
+
+if (NNABLA_UTILS_WITH_HDF5)
+  add_definitions(-DNBLA_UTILS_WITH_HDF5)
+  list(APPEND nnabla_utils_SOURCES
+    nnp_impl_dataset_hdf5.cpp
   )
+elseif (NNABLA_UTILS_WITH_NPY)
+  add_definitions(-DNBLA_UTILS_WITH_NPY)
+  list(APPEND nnabla_utils_SOURCES
+    nnp_impl_dataset_npy.cpp
+  )
+endif()
+
+add_library(nnabla_utils SHARED
+  ${nnabla_utils_SOURCES}
+)
 
 if (WIN32)
   if (NNABLA_UTILS_WITH_HDF5)
@@ -119,6 +132,25 @@ if (NOT WIN32)
     LIBRARY DESTINATION lib)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_utils
     DESTINATION include)
+endif()
+
+if (BUILD_TEST)
+  if (WIN32)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL
+         "Force to build gtest with dll on windows.")
+  endif()
+  enable_testing()
+  include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+  include_directories(${PROJECT_SOURCE_DIR}/src/nbla_utils/)
+  file(GLOB NBLA_UTILS_TEST_SOURCES test/test_*.cpp)
+  add_executable(test_nbla_utils ${NBLA_UTILS_TEST_SOURCES})
+  add_dependencies(test_nbla_utils ${NBLA_LIBRARY_NAME})
+  target_link_libraries(test_nbla_utils gtest gtest_main)
+  target_link_libraries(test_nbla_utils ${NBLA_LIBRARY_NAME})
+  target_link_libraries(test_nbla_utils nnabla_utils)
+  set_property(TARGET test_nbla_utils PROPERTY CXX_STANDARD 11)
+  nbla_exclude_from_all(test_nbla_utils)
+  add_test(NAME test_nbla_utils COMMAND test_nbla_utils)
 endif()
 
 set(NNABLA_UTILS_LIBRARY_NAME nnabla_utils PARENT_SCOPE)
