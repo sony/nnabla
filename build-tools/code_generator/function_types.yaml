@@ -497,3 +497,6 @@ Prune:
 Assign:
   float: [float]
   half: [Half]
+GatherNd:
+  float: [float]
+  half: [Half]

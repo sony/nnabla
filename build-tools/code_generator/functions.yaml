@@ -3435,6 +3435,74 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 248
+  GatherNd:
+    snake_name: gather_nd
+    doc: |2
+
+      Gather elements or slices from `data` according to `indices`, which must
+      be at least two-dimensional with the first dimension :math:`M` being less
+      or equal to the :math:`N` dimensions of `data`. Given `data` with shape
+      :math:`(X_0, X_1, ..., X_{N-1})` and indices with shape
+      :math:`(M, Y_0, ..., Y_{K-1})` output has shape
+      :math:`(Y_0, ..., Y_{K-1}, X_M, ..., X_{N-1})`. If :math:`M == N`, output
+      shape is simply :math:`(Y_0, ..., Y_{K-1})`.
+
+      The forward of :func:`~nnabla.functions.gather_nd` is equivalent to:
+
+      .. code-block:: python
+
+        def gather_nd(data, index):
+            import numpy as np
+            tmp_index = index.reshape(index.shape[0], -1)
+            tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
+            out_shape = index.shape[1:] + data.shape[index.shape[0]:]
+            return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> data = F.arange(1, 11).reshape([2, 5])
+      >>> print(data.d)
+      [[ 1.  2.  3.  4.  5.]
+       [ 6.  7.  8.  9. 10.]]
+      >>> F.gather_nd(data, [[1, 1, 0]]).shape
+      (3, 5)
+      >>> F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).shape
+      (3,)
+      >>> print(F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).d)
+      [6. 7. 1.]
+      >>> print(F.gather_nd(data, [[1, 1, 0]]).d)
+      [[ 6.  7.  8.  9. 10.]
+       [ 6.  7.  8.  9. 10.]
+       [ 1.  2.  3.  4.  5.]]
+
+      When `indices` is provided as a :obj:`~nnabla.Variable` it will be
+      possible to change the actual index values after function creation.
+      It is important to note that out-of-bound indices raise error when
+      running on CPU but are ignored when using an accelerated computation
+      context.
+
+      >>> indices = nn.Variable((2, 1))
+      >>> indices.d = [[0], [0]]
+      >>> y = F.gather_nd(data, indices)
+      >>> print(y.d)
+      [1.]
+      >>> indices.d = [[1], [4]]
+      >>> y.forward()
+      >>> print(y.d)
+      [10.]
+    inputs:
+      x:
+        doc: N-D array input data
+      indices:
+        doc: N-D array indices
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      Empty: 264
 Signal Processing:
   Interpolate:
     snake_name: interpolate

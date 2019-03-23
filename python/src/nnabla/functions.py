@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 from .function_bases import *
 from six.moves import reduce as rd
+import nnabla as nn
 import numpy as np
 
 
@@ -248,22 +249,11 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     Returns:
         ~nnabla.Variable: Sliced N-D array
     """
-    import copy
-    start = copy.copy(start)
-    stop = copy.copy(stop)
-    step = copy.copy(step)
+    start = list(start[:]) if start is not None else len(x.shape) * (0,)
+    stop = list(stop[:]) if stop is not None else tuple(x.shape)
+    step = list(step[:]) if step is not None else len(x.shape) * (1,)
 
-    from .function_bases import slice as slice_base
-    if start is None:
-        start = (0,) * len(x.shape)
-    if stop is None:
-        stop = tuple(x.shape)
-    if step is None:
-        step = (1,) * len(x.shape)
-
-    shape = x.shape
-    for i, sss in enumerate(zip(start, stop, step)):
-        s0, s1, s2 = sss
+    for i, (s0, s1, s2) in enumerate(zip(start, stop, step)):
         # SPECIAL CASE: slice(-1, None, <0) or slice(None, None, <0)
         SLICE_NONE = 0x7fffffff
         if s0 == None:
@@ -272,6 +262,8 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
             stop[i] = SLICE_NONE
         if s2 == None:
             step[i] = SLICE_NONE
+
+    from .function_bases import slice as slice_base
     return slice_base(x, start, stop, step, n_outputs, outputs)
 
 
@@ -818,7 +810,7 @@ def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
         with_index(bool): Return sorted values and index.
         only_index(bool): Return only the sort index.
 
-    Returns: :obj:`~nnabla.Variable` `sorted` or :obj:`~nnabla.Variable` `indices` or (:obj:`~nnabla.Variable` `sorted`, :obj:`~nnabla.Variable` `indices`)
+    Returns: ~nnabla.Variable `sorted` or ~nnabla.Variable `indices` or (~nnabla.Variable `sorted`, ~nnabla.Variable `indices`)
 
     """
     from .function_bases import sort as sort_base
@@ -1013,3 +1005,70 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
         x = x[:, fft_size//2:-fft_size//2]
 
     return x
+
+
+def gather_nd(data, indices):
+    """Gather elements or slices from `data` according to `indices`, which must
+    be at least two-dimensional with the first dimension :math:`M` being less or
+    equal to the :math:`N` dimensions of `data`. Given `data` with shape
+    :math:`(X_0, X_1, ..., X_{N-1})` and indices with shape :math:`(M, Y_0, ...,
+    Y_{K-1})` output has shape :math:`(Y_0, ..., Y_{K-1}, X_M, ..., X_{N-1})`.
+    If :math:`M == N`, output shape is simply :math:`(Y_0, ..., Y_{K-1})`.
+
+    The forward of :func:`~nnabla.functions.gather_nd` is equivalent to:
+
+    .. code-block:: python
+
+      def gather_nd(data, index):
+          import numpy as np
+          tmp_index = index.reshape(index.shape[0], -1)
+          tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
+          out_shape = index.shape[1:] + data.shape[index.shape[0]:]
+          return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+
+    Examples:
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> nn.set_auto_forward(True)
+    >>> data = F.arange(1, 11).reshape([2, 5])
+    >>> print(data.d)
+    [[ 1.  2.  3.  4.  5.]
+     [ 6.  7.  8.  9. 10.]]
+    >>> F.gather_nd(data, [[1, 1, 0]]).shape
+    (3, 5)
+    >>> F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).shape
+    (3,)
+    >>> print(F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).d)
+    [6. 7. 1.]
+    >>> print(F.gather_nd(data, [[1, 1, 0]]).d)
+    [[ 6.  7.  8.  9. 10.]
+     [ 6.  7.  8.  9. 10.]
+     [ 1.  2.  3.  4.  5.]]
+
+    When `indices` is provided as a :obj:`~nnabla.Variable` it will be possible
+    to change the actual index values after function creation. It is important
+    to note that out-of-bound indices raise errors when running on CPU but are
+    ignored when using an accelerated computation context.
+
+    >>> indices = nn.Variable((2, 1))
+    >>> indices.d = [[0], [0]]
+    >>> y = F.gather_nd(data, indices)
+    >>> print(y.d)
+    [1.]
+    >>> indices.d = [[1], [4]]
+    >>> y.forward()
+    >>> print(y.d)
+    [10.]
+
+    Args:
+        data(~nnabla.Variable, ~nnabla.NdArray): input data
+        indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): gather indices
+
+    Returns: ~nnabla.Variable or ~nnabla.NdArray of gathered elements.
+    """
+    from .function_bases import gather_nd as gather_nd_base
+    if not isinstance(indices, (nn.Variable, nn.NdArray)):
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.int)
+        indices = nn.Variable.from_numpy_array(indices)
+    return gather_nd_base(data, indices)

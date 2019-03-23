@@ -180,6 +180,7 @@ Array Manipulation
 .. autofunction:: split
 .. autofunction:: stack
 .. autofunction:: slice
+.. autofunction:: gather_nd
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast
