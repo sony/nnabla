@@ -189,19 +189,10 @@ cdef class Variable:
         return "<Variable({}, need_grad={}) at {}>".format(
             self.shape, self.need_grad, hex(id(self)))
 
-    def __richcmp__(self, other, int op):
-        '''Overrides comparison operators ``==`` and ``!=``.
-
-        Compare the addresses of their C++ objects.
+    def __eq__(self, other):
+        '''Determine equality by comparing the address of the C++ objects.
         '''
-        if op == 2:
-            try:
-                return (< Variable > self).varp == ( < Variable ?> other).varp
-            except:
-                return False
-        elif op == 3:
-            return not self.__richcmp__(other, 2)
-        return False
+        return (< Variable > self).varp == ( < Variable ?> other).varp
 
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
