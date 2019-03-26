@@ -1729,7 +1729,8 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
 @parametric_function_api("embed", [
     ('W', 'Embedding matrix', '(n_inputs, n_features)', True),
 ])
-def embed(inp, n_inputs, n_features, fix_parameters=False):
+def embed(inp, n_inputs, n_features, initializer=None,
+          fix_parameters=False, apply_w=None):
     """ Embed.
 
     Embed slices a matrix/tensor with indexing array/tensor. Weights are initialized with :obj:`nnabla.initializer.UniformInitializer` within the range of :math:`-\\sqrt{3}` and :math:`\\sqrt{3}`.
@@ -1740,12 +1741,17 @@ def embed(inp, n_inputs, n_features, fix_parameters=False):
         n_features : number of embedding features
         fix_parameters (bool): When set to `True`, the embedding weight matrix
             will not be updated.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
 
     Returns:
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
+    if not initializer:
+        initializer = UniformInitializer((-np.sqrt(3.), np.sqrt(3)))
     w = get_parameter_or_create("W", [n_inputs, n_features],
-                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True, not fix_parameters)
+                                initializer, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     return F.embed(inp, w)
 
 
