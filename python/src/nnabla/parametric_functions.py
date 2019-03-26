@@ -132,7 +132,8 @@ def {name}{signature}:
 def affine(inp, n_outmaps,
            base_axis=1,
            w_init=None, b_init=None,
-           fix_parameters=False, rng=None, with_bias=True):
+           fix_parameters=False, rng=None, with_bias=True,
+           apply_w=None, apply_b=None):
     """
     The affine layer, also known as the fully connected layer. Computes
 
@@ -151,6 +152,8 @@ def affine(inp, n_outmaps,
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
+        apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
         :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)f
@@ -169,10 +172,14 @@ def affine(inp, n_outmaps,
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
         w_init, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", n_outmaps, b_init, True, not fix_parameters)
+        if apply_b is not None:
+            b = apply_b(b)
     return F.affine(inp, w, b, base_axis)
 
 
@@ -559,7 +566,8 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
 def convolution(inp, outmaps, kernel,
                 pad=None, stride=None, dilation=None, group=1,
                 w_init=None, b_init=None,
-                base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+                base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                apply_w=None, apply_b=None):
     """N-D Convolution with a bias term.
 
     For Dilated Convolution (a.k.a. Atrous Convolution), refer to:
@@ -598,6 +606,8 @@ def convolution(inp, outmaps, kernel,
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
+        apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.convolution` for the output shape.
@@ -611,10 +621,14 @@ def convolution(inp, outmaps, kernel,
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
         w_init, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
+        if apply_b is not None:
+            b = apply_b(b)
     return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
@@ -1226,7 +1240,8 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
 def deconvolution(inp, outmaps, kernel,
                   pad=None, stride=None, dilation=None, group=1,
                   w_init=None, b_init=None,
-                  base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+                  base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                  apply_w=None, apply_b=None):
     """
     Deconvolution layer.
 
@@ -1244,6 +1259,8 @@ def deconvolution(inp, outmaps, kernel,
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
+        apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.deconvolution` for the output shape.
@@ -1257,10 +1274,14 @@ def deconvolution(inp, outmaps, kernel,
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis], outmaps // group) + tuple(kernel),
         w_init, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
+        if apply_b is not None:
+            b = apply_b(b)
     return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
