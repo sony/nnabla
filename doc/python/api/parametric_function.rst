@@ -103,6 +103,7 @@ Here is the list of parametric functions.
 
     .. automethod:: __call__(x, w_init, b_init, fix_parameters)
 
+.. autofunction:: spectral_norm
 
 Parameter Initializer
 ---------------------
