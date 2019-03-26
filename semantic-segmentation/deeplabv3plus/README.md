@@ -23,7 +23,7 @@ In Linux environment:
 <p align="center">
     <img src="results/test3.jpg" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/nn_test3.png" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
     <img src="results/test4.jpg" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/nn_test4.png" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
-    <pre class="tab"></pre><img src="results/test5.jpg" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/nn_test5.png" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
+    <img src="results/test5.jpg" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/nn_test5.png" width=200 height=250>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
     <img src="results/test7.jpg" width=300 height=200>&nbsp;&nbsp;&nbsp;&nbsp;<img src="results/nn_test7.png" width=300 height=200>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</br>
 </p>
 
