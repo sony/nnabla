@@ -12,177 +12,207 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// test_cpp_parametric_functions.cpp
+// test_initializer.cpp
 
-#include "macros.hpp"
+#include <macros.hpp>
 
-#include <string>
-#include <memory>
-#include <vector>
-#include <utility>
 #include <climits>
 #include <gtest/gtest.h>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
-#include <nbla/exception.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
+#include <nbla/exception.hpp>
 #include <nbla/initializer.hpp>
 
 using std::shared_ptr;
 using std::make_shared;
 using std::vector;
 using std::pair;
+using std::tuple;
 using namespace nbla;
 
 class InitializerTest : public ::testing::Test {
 protected:
-    Context ctx_;
-    CgVariablePtr var_;
+  Context ctx_;
+  CgVariablePtr var_;
 
-    virtual void SetUp() override {
-        ctx_.array_class = "CpuArray";
+  virtual void SetUp() override {
+    ctx_.array_class = "CpuArray";
 
-        var_ = make_shared<CgVariable>(Shape_t({5, 5}), false);
+    var_ = make_shared<CgVariable>(Shape_t({5, 5}), false);
 
-        resetVariable();
-    }
+    resetVariable();
+  }
 
-    void resetVariable() {
-        // init all values by 0
-        auto *d = var_->variable()->cast_data_and_get_pointer<float>(ctx_, true);
+  void resetVariable() {
+    // init all values by 0
+    auto *d = var_->variable()->cast_data_and_get_pointer<float>(ctx_, true);
 
-        REP(i, var_->variable()->size()) {
-            d[i] = 0;
-        }
-    }
+    REP(i, var_->variable()->size()) { d[i] = 0; }
+  }
 
-    template <typename T>
-    T* initVar(Initializer *initializer) {
-        initializer->initialize(var_->variable()->data());
+  template <typename T> T *initVar(Initializer *initializer) {
+    initializer->initialize(var_->variable()->data());
 
-        return var_->variable()->cast_data_and_get_pointer<T>(ctx_, false);
-    }
-
-    void checkUniformInitializer(const shared_ptr<UniformInitializer> &init, float min, float max) {
-        auto *d = initVar<float>(init.get());
-
-        REP(i, var_->variable()->size()) {
-            EXPECT_TRUE(d[i] <= max || d[i] >= min);
-        }
-    }
-
-    void checkConstantInitializer(const shared_ptr<ConstantInitializer> &init, float value) {
-        auto *d = initVar<float>(init.get());
-
-        REP(i, var_->variable()->size()) {
-            EXPECT_EQ(d[i], value);
-        }
-    }
-
-    void checkNormalInitializer(const shared_ptr<NormalInitializer> &init, float mu, float sigma) {
-        //just check call
-        EXPECT_NO_THROW(initVar<float>(init.get()));
-    }
-
-    void checkUniformIntInitializer(const shared_ptr<UniformIntInitializer> &init, int min, int max) {
-        auto *d = initVar<int>(init.get());
-
-        REP(i, var_->variable()->size()) {
-            EXPECT_TRUE(d[i] <= max || d[i] >= min);
-        }
-    }
+    return var_->variable()->cast_data_and_get_pointer<T>(ctx_, false);
+  }
 };
 
-TEST_F(InitializerTest, UniformInitializer) {
-    //default constructor -> init by [-1, 1]
-    auto initializer = make_shared<UniformInitializer>();
+// UniformInitializerTest
 
-    checkUniformInitializer(initializer, -1, 1);
+#define UniformInitializerParams tuple<float, float>
 
-    // check all cases
-    vector<pair<float, float>> check_cases{
-            {2, 3}, {2, 2}, {2, 1}, {2, 0}, {2, -1}, // min > 0
-            {0, 2}, {0, 0}, {0, -2}, // min = 0
-            {-2, 1}, {-2, 0}, {-2, -1}, {-2, -2}, {-2, -3} // min < 0
-    };
+class UniformInitializerTest
+    : public InitializerTest,
+      public ::testing::WithParamInterface<UniformInitializerParams> {
+protected:
+  void checkUniformInitializer(const shared_ptr<UniformInitializer> &init,
+                               float min, float max) {
+    auto *d = initVar<float>(init.get());
 
-    for(auto p: check_cases) {
-        float min = p.first;
-        float max = p.second;
-
-        if (min > max) {
-            EXPECT_THROW(UniformInitializer(min, max), Exception);
-        } else {
-            initializer = make_shared<UniformInitializer>(min, max);
-            checkUniformInitializer(initializer, min, max);
-        }
+    REP(i, var_->variable()->size()) {
+      EXPECT_GE(max, d[i]);
+      EXPECT_LE(min, d[i]);
     }
+  }
+};
+
+TEST_F(UniformInitializerTest, CtorWithoutArgs) {
+  // default constructor -> init by [-1, 1]
+  auto initializer = make_shared<UniformInitializer>();
+
+  checkUniformInitializer(initializer, -1, 1);
 }
 
-TEST_F(InitializerTest, ConstantInitializer) {
-    //default constructor -> init by 0
-    auto initializer = make_shared<ConstantInitializer>();
+TEST_P(UniformInitializerTest, CtorWithArgs) {
+  UniformInitializerParams p = GetParam();
+  float min = std::get<0>(p);
+  float max = std::get<1>(p);
 
-    checkConstantInitializer(initializer, 0.0);
-
-    // check all cases
-    vector<float> check_cases{-1, 0, 1};
-
-    for(float v: check_cases) {
-        initializer = make_shared<ConstantInitializer>(v);
-        checkConstantInitializer(initializer, v);
-    }
+  if (min > max) {
+    EXPECT_THROW(UniformInitializer(min, max), Exception);
+  } else {
+    auto initializer = make_shared<UniformInitializer>(min, max);
+    checkUniformInitializer(initializer, min, max);
+  }
 }
 
-TEST_F(InitializerTest, NormalInitializer) {
-    //default constructor -> init by 0
-    auto initializer = make_shared<NormalInitializer>();
+INSTANTIATE_TEST_CASE_P(Parameterize, UniformInitializerTest,
+                        ::testing::Combine(::testing::Values(-1, 0, 1),
+                                           ::testing::Values(-1, 0, 1)));
 
-    checkNormalInitializer(initializer, 0.0, 1.0);
+// ConstantInitializerTest
+#define ConstantInitializerParams float
 
-    // check all cases
-    vector<pair<float, float>> check_cases{
-        {1, 1}, {1, 0}, {1, -1}, // mu > 0
-        {0, 1}, {0, 0}, {0, -1}, // mu = 0
-        {-1, 1}, {-1, 0}, {-1, -1} // mu < 0
-        };
+class ConstantInitializerTest
+    : public InitializerTest,
+      public ::testing::WithParamInterface<ConstantInitializerParams> {
+protected:
+  void checkConstantInitializer(const shared_ptr<ConstantInitializer> &init,
+                                float value) {
+    auto *d = initVar<float>(init.get());
 
-    for(auto p: check_cases) {
-        float mu = p.first;
-        float sigma = p.second;
+    REP(i, var_->variable()->size()) { EXPECT_FLOAT_EQ(value, d[i]); }
+  }
+};
 
-        if (sigma < 0) {
-            EXPECT_THROW(NormalInitializer(mu, sigma), Exception);
-        } else {
-            initializer = make_shared<NormalInitializer>(mu, sigma);
-            checkNormalInitializer(initializer, mu, sigma);
-        }
-    }
+TEST_F(ConstantInitializerTest, CtorWithoutArgs) {
+  // default constructor -> init by 0
+  auto initializer = make_shared<ConstantInitializer>();
+
+  checkConstantInitializer(initializer, 0.0);
 }
 
-TEST_F(InitializerTest, UniformIntInitializer) {
-    //default constructor -> init by [0, INT_MAX]
-    auto initializer = make_shared<UniformIntInitializer>();
+TEST_P(ConstantInitializerTest, CtorWithArgs) {
+  ConstantInitializerParams value = GetParam();
 
-    checkUniformIntInitializer(initializer, 0, INT_MAX);
-
-    // check all cases
-    vector<pair<int, int>> check_cases{
-            {2, 3}, {2, 2}, {2, 1}, {2, 0}, {2, -1}, // min > 0
-            {0, 2}, {0, 0}, {0, -2}, // min = 0
-            {-2, 1}, {-2, 0}, {-2, -1}, {-2, -2}, {-2, -3} // min < 0
-    };
-
-    for(auto p: check_cases) {
-        int min = p.first;
-        int max = p.second;
-
-        if (min > max) {
-            EXPECT_THROW(UniformIntInitializer(min, max), Exception);
-        } else {
-            auto initializer = make_shared<UniformIntInitializer>(min, max);
-            checkUniformIntInitializer(initializer, min, max);
-        }
-    }
+  auto initializer = make_shared<ConstantInitializer>(value);
+  checkConstantInitializer(initializer, value);
 }
 
+INSTANTIATE_TEST_CASE_P(Parameterize, ConstantInitializerTest,
+                        ::testing::Values(-1, 0, 1));
 
+// NormalInitializerTest
+#define NormalInitializerParams tuple<float, float>
+
+class NormalInitializerTest
+    : public InitializerTest,
+      public ::testing::WithParamInterface<NormalInitializerParams> {
+protected:
+  void checkNormalInitializer(const shared_ptr<NormalInitializer> &init,
+                              float mu, float sigma) {
+    // just check call
+    EXPECT_NO_THROW(initVar<float>(init.get()));
+  }
+};
+
+TEST_F(NormalInitializerTest, CtorWithoutArgs) {
+  // default constructor -> init by 0
+  auto initializer = make_shared<NormalInitializer>();
+
+  checkNormalInitializer(initializer, 0.0, 1.0);
+}
+
+TEST_P(NormalInitializerTest, CtorWithArgs) {
+  NormalInitializerParams p = GetParam();
+  float mu = std::get<0>(p);
+  float sigma = std::get<1>(p);
+
+  if (sigma < 0) {
+    EXPECT_THROW(NormalInitializer(mu, sigma), Exception);
+  } else {
+    auto initializer = make_shared<NormalInitializer>(mu, sigma);
+    checkNormalInitializer(initializer, mu, sigma);
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(Parameterize, NormalInitializerTest,
+                        ::testing::Combine(::testing::Values(-1, 0, 1),
+                                           ::testing::Values(-1, 0, 1)));
+
+// UniformIntInitializerTest
+#define UniformIntInitializerParams tuple<int, int>
+
+class UniformIntInitializerTest
+    : public InitializerTest,
+      public ::testing::WithParamInterface<UniformIntInitializerParams> {
+protected:
+  void checkUniformIntInitializer(const shared_ptr<UniformIntInitializer> &init,
+                                  int min, int max) {
+    auto *d = initVar<int>(init.get());
+
+    REP(i, var_->variable()->size()) {
+      EXPECT_LE(min, d[i]);
+      EXPECT_GE(max, d[i]);
+    }
+  }
+};
+
+TEST_F(UniformIntInitializerTest, CtorWithoutArgs) {
+  // default constructor -> init by [0, INT_MAX]
+  auto initializer = make_shared<UniformIntInitializer>();
+
+  checkUniformIntInitializer(initializer, 0, INT_MAX);
+}
+
+TEST_P(UniformIntInitializerTest, CtorWithArgs) {
+  UniformIntInitializerParams p = GetParam();
+  int min = std::get<0>(p);
+  int max = std::get<1>(p);
+
+  if (min > max) {
+    EXPECT_THROW(UniformIntInitializer(min, max), Exception);
+  } else {
+    auto initializer = make_shared<UniformIntInitializer>(min, max);
+    checkUniformIntInitializer(initializer, min, max);
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(Parameterize, UniformIntInitializerTest,
+                        ::testing::Combine(::testing::Range(-2, 3, 2),
+                                           ::testing::Range(-3, 4, 1)));

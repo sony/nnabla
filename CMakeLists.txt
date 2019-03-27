@@ -228,8 +228,10 @@ if(BUILD_CPP_LIB)
         "Force to build gtest with dll on Windows.")
     endif()
     enable_testing()
-    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-    file(GLOB NBLA_TEST_SOURCES src/nbla/test/test_*.cpp)
+    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} src/nbla/test/include)
+    file(GLOB NBLA_TEST_SOURCES
+            src/nbla/test/test_*.cpp
+            src/nbla/test/parametric_functions/*.cpp)
     add_executable(cpplibtest ${NBLA_TEST_SOURCES})
     add_dependencies(cpplibtest ${NBLA_LIBRARY_NAME})
     target_link_libraries(cpplibtest gtest gtest_main)

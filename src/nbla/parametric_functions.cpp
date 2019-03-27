@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
-#include <nbla/exception.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
+#include <nbla/exception.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function/affine.hpp>
 #include <nbla/function/batch_normalization.hpp>
@@ -98,13 +98,13 @@ ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
   // Search exist one.
   auto it = param_dict_->find(param_path);
   if (it != param_dict_->end()) {
-    NBLA_CHECK(shape == it->second->variable()->shape(),
-               error_code::value,
-               "Parameter \"%s\" already exists but the shape you passed is mismatch."
-               "the shape of existed paremeter: (%s) != the shape you passed: (%s).",
-               param_path.c_str(),
-               string_join(it->second->variable()->shape(), ", ").c_str(),
-               string_join(shape, ", ").c_str());
+    NBLA_CHECK(
+        shape == it->second->variable()->shape(), error_code::value,
+        "Parameter \"%s\" already exists but the shape you passed is mismatch."
+        "the shape of existed paremeter: (%s) != the shape you passed: (%s).",
+        param_path.c_str(),
+        string_join(it->second->variable()->shape(), ", ").c_str(),
+        string_join(shape, ", ").c_str());
 
     return it->second;
   }
