@@ -380,7 +380,7 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     return out, mean, variance
 
 
-def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-05, output_stat=False, n_outputs=None):
+def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
     r"""
     Synchronized batch normalization.
 
@@ -410,6 +410,7 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
         axes(repeated int64): Axes mean and variance are taken.
         decay_rate(float): Decay rate of running mean and variance.
         eps(float): Tiny value to avoid zero division by std.
+        batch_stat(bool): Use mini-batch statistics rather than running ones.
         output_stat(bool): It true, the batch statistics of mean and variance,
             will be returned as Variables. They are also differentiable.
 
@@ -433,6 +434,7 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
                                     axes=axes,
                                     decay_rate=decay_rate,
                                     eps=eps,
+                                    batch_stat=batch_stat,
                                     n_outputs=n_outputs)
 
 

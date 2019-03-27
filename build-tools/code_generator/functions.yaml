@@ -1196,6 +1196,10 @@ Normalization:
         doc: Tiny value to avoid zero division by std.
         type: float
         default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
     outputs:
       y:
         doc: N-D array

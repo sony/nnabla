@@ -32,7 +32,7 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_HEADER(SyncBatchNormalization,
                               const std::shared_ptr<Communicator> &,
                               const std::string &, const vector<int> &, float,
-                              float);
+                              float, bool);
 
 /** Batch normalization with sync between other processes at training time
 defined as
@@ -81,14 +81,14 @@ public:
   SyncBatchNormalization(const Context &ctx,
                          const std::shared_ptr<Communicator> &comm,
                          const std::string &group, const vector<int> axes,
-                         float decay_rate, float eps)
-      : BatchNormalization<T>(ctx, axes, decay_rate, eps, true), comm_(comm),
+                         float decay_rate, float eps, bool batch_stat)
+      : BatchNormalization<T>(ctx, axes, decay_rate, eps, batch_stat), comm_(comm),
         group_(group) {}
   virtual ~SyncBatchNormalization() {}
   virtual shared_ptr<Function> copy() const override {
     return create_SyncBatchNormalization(this->ctx_, this->comm_, this->group_,
                                          this->axes_, this->decay_rate_,
-                                         this->eps_);
+                                         this->eps_, this->batch_stat_);
   }
   virtual string name() override { return "SyncBatchNormalization"; }
 

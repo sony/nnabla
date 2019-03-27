@@ -1688,7 +1688,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     ('mean', 'Moving average of batch mean', '<see above>', False),
     ('var', 'Moving average of batch variance', '<see above>', False),
 ])
-def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-5,
+def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-5, batch_stat=True,
                              output_stat=False, fix_parameters=False):
     """
     Synchronized batch normalization layer.
@@ -1719,6 +1719,7 @@ def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9,
             (using numpy expression as an example).
         decay_rate (float): Decay rate of running mean and variance.
         eps (float): Tiny value to avoid zero division by std.
+        batch_stat (bool): Use mini-batch statistics rather than running ones.
         output_stat (bool): Output batch mean and variance.
         fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
 
@@ -1750,7 +1751,7 @@ def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9,
         "var", shape_stat, ConstantInitializer(0), False)
 
     return F.sync_batch_normalization(inp, beta, gamma, mean, var, comm, group,
-                                      axes, decay_rate, eps, output_stat)
+                                      axes, decay_rate, eps, batch_stat, output_stat)
 
 
 @parametric_function_api("mean_subtraction", [
