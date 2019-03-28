@@ -43,6 +43,17 @@ using std::get;
 using std::unique_ptr;
 using std::vector;
 
+FunctionHookWithObject::FunctionHookWithObject() {}
+FunctionHookWithObject::FunctionHookWithObject(
+    void *obj, FunctionHookWithObject::callback_type cb,
+    FunctionHookWithObject::cleanup_callback_type cleanup_cb)
+    : obj_(obj), callback_(cb), cleanup_callback_(cleanup_cb) {}
+
+FunctionHookWithObject::~FunctionHookWithObject() { cleanup_callback_(obj_); }
+void FunctionHookWithObject::operator()(const CgFunctionPtr &f) {
+  callback_(obj_, f);
+}
+
 CgVariable::CgVariable() { var_ = make_shared<Variable>(Shape_t{}); }
 CgVariable::CgVariable(bool need_grad) : CgVariable() {
   set_need_grad(need_grad);
@@ -61,12 +72,18 @@ CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
 class ForwardCallback {
   bool clear_buffer_{false};
   bool clear_no_need_grad_{false};
+  function_hook_type function_pre_hook_;
+  function_hook_type function_post_hook_;
   unordered_map<CgVariablePtr, int> vseen_;
   vector<string> history_;
 
 public:
-  ForwardCallback(bool clear_buffer, bool clear_no_need_grad)
-      : clear_buffer_(clear_buffer), clear_no_need_grad_(clear_no_need_grad) {}
+  ForwardCallback(bool clear_buffer, bool clear_no_need_grad,
+                  function_hook_type function_pre_hook,
+                  function_hook_type function_post_hook)
+      : clear_buffer_(clear_buffer), clear_no_need_grad_(clear_no_need_grad),
+        function_pre_hook_(function_pre_hook),
+        function_post_hook_(function_post_hook) {}
 
   bool check_last_visit(CgVariablePtr v) {
     if (v->function_reference_count() < 2) {
@@ -180,7 +197,14 @@ public:
     vector<Variable *> voutputs;
     std::tie(outputs, voutputs) = func->function_outputs();
     try {
+      auto call_callback = [func](function_hook_type &h) {
+        if (h) {
+          h(func);
+        }
+      };
+      call_callback(function_pre_hook_);
       func->function()->forward(func->function_inputs(), voutputs);
+      call_callback(function_post_hook_);
     } catch (...) {
       error_trace(func->function()->name());
       throw;
@@ -197,6 +221,8 @@ public:
 
 class BackwardCallback {
   bool clear_buffer_;
+  function_hook_type function_pre_hook_;
+  function_hook_type function_post_hook_;
   // Visit CgVaiable list. The value is whether this is cleared during backward.
   unordered_map<CgVariablePtr, bool> vseen_;
   vector<string> history_;
@@ -312,8 +338,11 @@ class BackwardCallback {
   }
 
 public:
-  BackwardCallback(CgFunctionPtr f, bool clear_buffer)
-      : clear_buffer_(clear_buffer) {
+  BackwardCallback(CgFunctionPtr f, bool clear_buffer,
+                   function_hook_type function_pre_hook,
+                   function_hook_type function_post_hook)
+      : clear_buffer_(clear_buffer), function_pre_hook_(function_pre_hook),
+        function_post_hook_(function_post_hook) {
     // Note prohibiting clearing variable buffers where terminal.
     for (auto o : f->outputs()) {
       vseen_.insert({o, true});
@@ -357,7 +386,14 @@ public:
     // std::cout << "  " << string_join(prop_down, ",") << std::endl;
     // std::cout << "  " << string_join(accum, ",") << std::endl;
     try {
+      auto call_callback = [f](function_hook_type &h) {
+        if (h) {
+          h(f);
+        }
+      };
+      call_callback(function_pre_hook_);
       f->function()->backward(f->function_inputs(), voutputs, prop_down, accum);
+      call_callback(function_post_hook_);
     } catch (...) {
       error_trace(f->function()->name());
       throw;
@@ -496,13 +532,16 @@ void CgVariable::visit_function_backward(
 }
 
 void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
-                         unordered_set<CgFunctionPtr> *fclosed) {
+                         unordered_set<CgFunctionPtr> *fclosed,
+                         function_hook_type function_pre_hook,
+                         function_hook_type function_post_hook) {
   unordered_set<CgFunctionPtr> scoped_fclosed;
   if (fclosed == nullptr) {
     fclosed = &scoped_fclosed;
   }
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
-  ForwardCallback forward_callback(clear_buffer, clear_no_need_grad);
+  ForwardCallback forward_callback(clear_buffer, clear_no_need_grad,
+                                   function_pre_hook, function_post_hook);
   visit_function_recursive(
       parent_, *fclosed,
       [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
@@ -510,7 +549,9 @@ void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
 
 void CgVariable::backward(
     NdArrayPtr grad, bool clear_buffer,
-    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
+    vector<CommunicatorBackwardCallbackPtr> communicator_callbacks,
+    function_hook_type function_pre_hook,
+    function_hook_type function_post_hook) {
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
 
   // Scoped context.
@@ -524,7 +565,8 @@ void CgVariable::backward(
   }
 
   // Create callback
-  BackwardCallback backward_callback(parent_, clear_buffer);
+  BackwardCallback backward_callback(parent_, clear_buffer, function_pre_hook,
+                                     function_post_hook);
 
   // Visit backward
   visit_function_backward(
