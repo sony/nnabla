@@ -496,6 +496,15 @@ def _create_optimizer(ctx, o, networks, datasets):
         raise ValueError('Learning Rate Scheduler "' + o.solver.lr_scheduler_type +
                          '" is not supported.')
 
+    optimizer.lr_decay_interval = 1
+    if optimizer.comm is not None:
+        new_interval = optimizer.lr_decay_interval // optimizer.comm.size
+        if new_interval == 0:
+            new_interval = 1
+        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(
+            optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
+        optimizer.lr_decay_interval = new_interval
+
     if o.solver.lr_warmup_scheduler_type == 'Linear':
         if o.solver.linear_warmup_scheduler_param.warmup_iter >= comm_size:
             optimizer.scheduler = LinearWarmupScheduler(
@@ -577,11 +586,20 @@ def _training_config(proto):
     return config
 
 
-def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator, dataset_index):
+def _create_dataset(
+        uri,
+        batch_size,
+        shuffle, no_image_normalization,
+        cache_dir,
+        overwrite_cache,
+        create_cache_explicitly,
+        prepare_data_iterator,
+        dataset_index):
     class Dataset:
         pass
     dataset = Dataset()
     dataset.uri = uri
+    dataset.cache_dir = cache_dir
     dataset.normalize = not no_image_normalization
 
     comm = current_communicator()
@@ -639,7 +657,15 @@ def _datasets(proto, prepare_data_iterator=True):
     datasets = OrderedDict()
     for i, d in enumerate(proto.dataset):
         datasets[d.name] = _create_dataset(
-            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator, i)
+            d.uri,
+            d.batch_size,
+            d.shuffle,
+            d.no_image_normalization,
+            d.cache_dir,
+            d.overwrite_cache,
+            d.create_cache_explicitly,
+            prepare_data_iterator,
+            i)
     return datasets
 
 
