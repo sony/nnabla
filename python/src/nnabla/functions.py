@@ -267,7 +267,8 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     return slice_base(x, start, stop, step, n_outputs, outputs)
 
 
-def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
+def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True,
+                        output_stat=False, n_outputs=None):
     r"""
     Batch normalization.
 
@@ -471,7 +472,7 @@ def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
                                  update_running_mean=update_running_mean)
 
 
-def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine_grained=True, outputs=None):
+def fixed_point_quantize(x, sign=True, n=8, delta=2 ** -4, quantize=True, ste_fine_grained=True, outputs=None):
     r"""Fixed Point Quantize
 
     Args:
@@ -691,7 +692,7 @@ def clip_by_norm(x, clip_norm, axis=None):
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
+    x_norm = pow_scalar_base(sum_base(x ** 2.0, axis, True), 0.5)
     if isinstance(clip_norm, (Variable_base, NdArray_base)):
         y = x * clip_norm / maximum2_base(x_norm, clip_norm)
     else:
@@ -699,6 +700,152 @@ def clip_by_norm(x, clip_norm, axis=None):
             raise ValueError("clip_norm must be positive.")
         y = x * clip_norm / maximum_scalar_base(x_norm, clip_norm)
     return y
+
+
+def matrix_normalization(x, axes, eps, output_stat=False):
+    r"""
+    General function for matrix normalization.
+    Input variable `x` is normalized by mean and std calculated by `x` itself.
+    Mean and std are taken by all `axes`.
+
+    Args:
+        x (Variable): N-D array of input variable.
+        axes (repeated int64): Axes mean and variance are taken.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, the batch statistics of mean and variance.
+        will be returned as Variables. They are also differentiable.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+
+    """
+    from .function_bases import mean as mean_base
+
+    x_mean = mean_base(x, axes, keep_dims=True)
+    subtracted = x - x_mean
+    x_std = mean_base(subtracted ** 2, axes, keep_dims=True) ** 0.5
+
+    if output_stat:
+        return subtracted / (x_std + eps), x_mean, x_std
+
+    return subtracted / (x_std + eps)
+
+
+def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Weight standardization defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu_{W_{i,.}} &=& \frac{1}{I} \sum_{j=1}^{I} W_{i,j} \\
+        \sigma_{W_{i,.}} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{i, j} - \mu_{W_{i,.}}\right)^2} \\
+        \hat{W_{i, j}} &=& \frac{W_{i, j} - \mu_{W_{i,.}}}{\sigma_{W_{i,.}} + \epsilon}} \\
+        y &=& \hat{W} \ast x
+      \end{eqnarray}
+
+    References:
+
+      * `Siyuan Qiao, Huiyu Wang, Chenxi Liu, Wei Shen, Alan Yuille, Weight Standardization
+        <https://arxiv.org/pdf/1903.10520v1.pdf>`_
+
+    Args:
+        w (Variable): A weight variable.
+        channel_axis (int): An axis for output channel. Default value is for convolution (channel_axis = 0).
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, the batch statistics of mean and variance.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Standardized output weight.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+
+    """
+    if channel_axis < 0 or channel_axis > len(w.shape) - 1:
+        raise ValueError(
+            "channel_axis must be in the range of [0, len(w.shape)). channel_axis : {}, len(w.shape): {}.".format(
+                channel_axis, len(w.shape)))
+
+    axes = [i for i in range(len(w.shape)) if i != channel_axis]
+
+    return matrix_normalization(w, axes, eps, output_stat)
+
+
+def layer_normalization(x, batch_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Layer standardization defined as:
+
+    .. math::
+      \begin{eqnarray}
+        todo
+      \end{eqnarray}
+
+    References:
+        todo
+
+    Args:
+        x (Variable): An input variable.
+        batch_axis (int):  (channel_axis = 0).
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, the batch statistics of mean and variance.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+
+    if batch_axis < 0 or batch_axis > len(x.shape) - 1:
+        raise ValueError(
+            "batch_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
+                batch_axis, len(x.shape)))
+
+    axes = [i for i in range(len(x.shape)) if i != batch_axis]
+
+    return matrix_normalization(x, axes, eps, output_stat)
+
+
+def instance_normalization(x, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    if channel_axis < 0 or channel_axis > len(x.shape) - 1:
+        raise ValueError(
+            "channel_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
+                channel_axis, len(x.shape)))
+
+    if batch_axis < 0 or batch_axis > len(x.shape) - 1:
+        raise ValueError(
+            "batch_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
+                batch_axis, len(x.shape)))
+
+    axes = [i for i in range(len(x.shape)) if i not in (
+        channel_axis, batch_axis)]
+
+    return matrix_normalization(x, axes, eps, output_stat)
+
+
+def group_normalization(x, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    if channel_axis < 0 or channel_axis > len(x.shape) - 1:
+        raise ValueError(
+            "channel_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
+                channel_axis, len(x.shape)))
+
+    cdim = x.shape[channel_axis]
+
+    if cdim % num_groups > 0:
+        raise ValueError(
+            "Channel dim (: {]) must be integer multiple of num_groups(: {}).".format(cdim, num_groups))
+
+    shape = x.shape[:channel_axis] + (num_groups, cdim / num_groups)
+    if channel_axis < len(x.shape) - 1:
+        shape += x.shape[channel_axis + 1:]
+
+    if output_stat:
+        out, mu, sigma = instance_normalization(
+            x.reshape(shape), channel_axis, batch_axis, eps, output_stat)
+
+        return out.reshape(x.shape), mu, sigma
+
+    return instance_normalization(x.reshape(shape), channel_axis, batch_axis, eps, output_stat).reshape(x.shape)
 
 
 def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None):

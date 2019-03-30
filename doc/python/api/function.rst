@@ -85,6 +85,10 @@ Normalization
 .. autofunction:: clip_grad_by_value
 .. autofunction:: clip_by_norm
 .. autofunction:: clip_grad_by_norm
+.. autofunction:: layer_normalization
+.. autofunction:: Instance_normalization
+.. autofunction:: group_normalization
+.. autofunction:: weight_standardization
 
 
 Reduction
