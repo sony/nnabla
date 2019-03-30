@@ -1639,9 +1639,9 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     (using numpy expression as an example).
 
     """
-    assert len(axes) == 1
     shape_stat = [1 for _ in inp.shape]
-    shape_stat[axes[0]] = inp.shape[axes[0]]
+    for i in range(len(axes)):
+        shape_stat[axes[i]] = inp.shape[axes[i]]
 
     if param_init is None:
         param_init = {}

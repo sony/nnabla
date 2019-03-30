@@ -14,6 +14,8 @@
 
 from __future__ import absolute_import
 from .function_bases import *
+from six.moves import reduce as rd
+import numpy as np
 
 
 def sum(x, axis=None, keepdims=False):
@@ -325,12 +327,57 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     if batch_stat and (mean.parent or variance.parent) is not None:
         raise ValueError(
             "if batch_stat is True, mean and variable must not have a parent function")
-    return batch_normalization_base(x, beta, gamma, mean, variance,
-                                    axes=axes,
-                                    decay_rate=decay_rate,
-                                    eps=eps,
-                                    batch_stat=batch_stat,
-                                    n_outputs=n_outputs)
+
+    if len(axes) == 1:
+        return batch_normalization_base(x, beta, gamma, mean, variance,
+                                        axes=axes,
+                                        decay_rate=decay_rate,
+                                        eps=eps,
+                                        batch_stat=batch_stat,
+                                        n_outputs=n_outputs)
+
+    def transpose_and_reshape(x, axes):
+        transposed = transpose(x, transpose_axes)
+        return reshape(transposed, [rd(lambda x, y: x * y, transposed.shape[:len(axes)])] + list(
+            transposed.shape[len(axes):])), transposed.shape
+
+    def inverse_transpose_and_reshape(x, axes, variable_shape):
+        un_reshaped = reshape(
+            x, list(variable_shape[:len(axes)] + variable_shape[len(axes):]))
+        return transpose(un_reshaped, inv_transpose_axes)
+
+    def get_tranpose_args(ndim, axes):
+        transpose_axes = [i for i in list(
+            axes)] + [i for i in range(ndim) if i not in list(axes)]
+        inv_transpose_axes = np.argsort(transpose_axes).tolist()
+        return transpose_axes, inv_transpose_axes
+
+    transpose_axes, inv_transpose_axes = get_tranpose_args(len(x.shape), axes)
+    inp, transposed_inp_shape = transpose_and_reshape(x, axes)
+    beta, transposed_beta_shape = transpose_and_reshape(beta, axes)
+    gamma, transposed_gamma_shape = transpose_and_reshape(gamma, axes)
+    mean, transposed_mean_shape = transpose_and_reshape(mean, axes)
+    variance, transposed_variance_shape = transpose_and_reshape(variance, axes)
+
+    if n_outputs == 1:
+        out = batch_normalization_base(inp, beta, gamma, mean, variance,
+                                       axes=[0],
+                                       decay_rate=decay_rate,
+                                       eps=eps,
+                                       batch_stat=batch_stat,
+                                       n_outputs=n_outputs)
+        return inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
+    out, mean, variance = batch_normalization_base(inp, beta, gamma, mean, variance,
+                                                   axes=[0],
+                                                   decay_rate=decay_rate,
+                                                   eps=eps,
+                                                   batch_stat=batch_stat,
+                                                   n_outputs=n_outputs)
+    out = inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
+    mean = inverse_transpose_and_reshape(mean, axes, transposed_mean_shape)
+    variance = inverse_transpose_and_reshape(
+        variance, axes, transposed_variance_shape)
+    return out, mean, variance
 
 
 def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
