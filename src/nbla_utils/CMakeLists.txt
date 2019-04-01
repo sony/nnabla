@@ -1,7 +1,11 @@
 option(NNABLA_UTILS_WITH_HDF5 "Enable HDF5 in C++ utils." OFF)
 option(NNABLA_UTILS_WITH_NPY "Enable NPY in C++ utils." ON)
 option(NNABLA_UTILS_STATIC_LINK_DEPS "Static link C++ NNabla utils deps." OFF)
+option(DEBUG_NETWORK_EXPANDER "Debug network expander." OFF)
 
+if (DEBUG_NETWORK_EXPANDER)
+  add_definitions(-DDEBUG_NETWORK_EXPANDER)
+endif()
 
 include_directories(${CMAKE_BINARY_DIR}/libraries/include)
 
@@ -15,6 +19,7 @@ list(APPEND nnabla_utils_SOURCES
   nnp_impl_monitor.cpp
   nnp_impl_configs.cpp
   data_iterator.cpp
+  nnp_network_expander.cpp
 )
 
 if (NNABLA_UTILS_WITH_HDF5)
@@ -78,7 +83,9 @@ else()
     if (NNABLA_UTILS_STATIC_LINK_DEPS)
       set(HDF5_USE_STATIC_LIBRARIES 1)
     endif()
-    find_package(HDF5 REQUIRED COMPONENTS C HL)
+    #find_package(HDF5 REQUIRED COMPONENTS C HL)
+    set(HDF5_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hdf5/include)
+    file(GLOB HDF5_LIBRARIES ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hdf5/lib/*.so)
   endif()
   find_package(ZLIB REQUIRED)
   if (NNABLA_UTILS_STATIC_LINK_DEPS)
@@ -91,6 +98,8 @@ else()
       string(REPLACE .so .a LibArchive_LIBRARIES ${LibArchive_LIBRARIES})
     endif()
   endif()
+
+
 
   include_directories(
     ${LibArchive_INCLUDE_DIR}
@@ -142,7 +151,9 @@ if (BUILD_TEST)
   enable_testing()
   include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
   include_directories(${PROJECT_SOURCE_DIR}/src/nbla_utils/)
+  include_directories(${PROJECT_SOURCE_DIR}/src/nbla_cli/)
   file(GLOB NBLA_UTILS_TEST_SOURCES test/test_*.cpp)
+  list(APPEND NBLA_UTILS_TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/nbla_cli/internal.cpp)
   add_executable(test_nbla_utils ${NBLA_UTILS_TEST_SOURCES})
   add_dependencies(test_nbla_utils ${NBLA_LIBRARY_NAME})
   target_link_libraries(test_nbla_utils gtest gtest_main)

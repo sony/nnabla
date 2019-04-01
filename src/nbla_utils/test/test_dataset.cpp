@@ -31,6 +31,7 @@ namespace nbla {
 namespace utils {
 namespace nnp {
 
+#ifndef NBLA_UTILS_WITH_HDF5
 using namespace std;
 
 const nbla::Context kCpuCtx{{"cpu:float"}, "CpuCachedArray", "0"};
@@ -103,6 +104,7 @@ TEST_P(DataSetNpyTest, TestDataIterator) {
 
   EXPECT_TRUE(true);
 }
+#endif
 
 } // namespace nnp
 } // namespace utils
