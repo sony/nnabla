@@ -2604,10 +2604,10 @@ def spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_param
 
     """
 
-    assert (0 <= dim and dim < len(w.shape)), "`dim` must be `0 <= dim and dim < len(w.shape)`."
+    assert (0 <= dim and dim < len(w.shape)
+            ), "`dim` must be `0 <= dim and dim < len(w.shape)`."
     assert 0 < itr, "`itr` must be greater than 0."
     assert 0 < eps, "`eps` must be greater than 0."
-
 
     if dim == len(w.shape) - 1:
         w_sn = _spectral_norm_outer_most_dim(w, dim=dim, itr=itr, eps=eps, test=test,
