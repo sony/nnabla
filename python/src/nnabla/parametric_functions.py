@@ -132,7 +132,8 @@ def {name}{signature}:
 def affine(inp, n_outmaps,
            base_axis=1,
            w_init=None, b_init=None,
-           fix_parameters=False, rng=None, with_bias=True):
+           fix_parameters=False, rng=None, with_bias=True,
+           apply_w=None, apply_b=None):
     """
     The affine layer, also known as the fully connected layer. Computes
 
@@ -151,6 +152,8 @@ def affine(inp, n_outmaps,
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
+        apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
         :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)f
@@ -169,10 +172,14 @@ def affine(inp, n_outmaps,
     w = get_parameter_or_create(
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
         w_init, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", n_outmaps, b_init, True, not fix_parameters)
+        if apply_b is not None:
+            b = apply_b(b)
     return F.affine(inp, w, b, base_axis)
 
 
@@ -559,7 +566,8 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
 def convolution(inp, outmaps, kernel,
                 pad=None, stride=None, dilation=None, group=1,
                 w_init=None, b_init=None,
-                base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+                base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                apply_w=None, apply_b=None):
     """N-D Convolution with a bias term.
 
     For Dilated Convolution (a.k.a. Atrous Convolution), refer to:
@@ -598,6 +606,8 @@ def convolution(inp, outmaps, kernel,
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
+        apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.convolution` for the output shape.
@@ -611,10 +621,14 @@ def convolution(inp, outmaps, kernel,
     w = get_parameter_or_create(
         "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
         w_init, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
+        if apply_b is not None:
+            b = apply_b(b)
     return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
@@ -1226,7 +1240,8 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
 def deconvolution(inp, outmaps, kernel,
                   pad=None, stride=None, dilation=None, group=1,
                   w_init=None, b_init=None,
-                  base_axis=1, fix_parameters=False, rng=None, with_bias=True):
+                  base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                  apply_w=None, apply_b=None):
     """
     Deconvolution layer.
 
@@ -1244,6 +1259,8 @@ def deconvolution(inp, outmaps, kernel,
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
         rng (numpy.random.RandomState): Random generator for Initializer.
         with_bias (bool): Specify whether to include the bias term.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
+        apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.deconvolution` for the output shape.
@@ -1257,10 +1274,14 @@ def deconvolution(inp, outmaps, kernel,
     w = get_parameter_or_create(
         "W", (inp.shape[base_axis], outmaps // group) + tuple(kernel),
         w_init, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     b = None
     if with_bias:
         b = get_parameter_or_create(
             "b", (outmaps,), b_init, True, not fix_parameters)
+        if apply_b is not None:
+            b = apply_b(b)
     return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
 
 
@@ -1708,7 +1729,8 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
 @parametric_function_api("embed", [
     ('W', 'Embedding matrix', '(n_inputs, n_features)', True),
 ])
-def embed(inp, n_inputs, n_features, fix_parameters=False):
+def embed(inp, n_inputs, n_features, initializer=None,
+          fix_parameters=False, apply_w=None):
     """ Embed.
 
     Embed slices a matrix/tensor with indexing array/tensor. Weights are initialized with :obj:`nnabla.initializer.UniformInitializer` within the range of :math:`-\\sqrt{3}` and :math:`\\sqrt{3}`.
@@ -1719,12 +1741,17 @@ def embed(inp, n_inputs, n_features, fix_parameters=False):
         n_features : number of embedding features
         fix_parameters (bool): When set to `True`, the embedding weight matrix
             will not be updated.
+        apply_w (function): Lambda, function, or callable object applied to the weights.
 
     Returns:
         ~nnabla.Variable: Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`
     """
+    if not initializer:
+        initializer = UniformInitializer((-np.sqrt(3.), np.sqrt(3)))
     w = get_parameter_or_create("W", [n_inputs, n_features],
-                                UniformInitializer((-np.sqrt(3.), np.sqrt(3))), True, not fix_parameters)
+                                initializer, True, not fix_parameters)
+    if apply_w is not None:
+        w = apply_w(w)
     return F.embed(inp, w)
 
 
@@ -2520,3 +2547,167 @@ class LSTMCell:
             w_init, b_init,
             fix_parameters=fix_parameters, name=self.name)
         return self.h
+
+
+@parametric_function_api("spectral-norm", [
+    ('W_sn', 'Spectral Normalized Weight matrix.', 'w.shape', False),
+    ('u', 'singular vector', '(w.shape[dim], )', False),
+])
+def spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_parameters=True):
+    """Spectral Normalization.
+
+    .. math::
+
+        W_{sn} = \\frac{W}{\\sigma(W)}.
+
+    where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+
+    References:
+
+        Takeru Miyato, Toshiki Kataoka, Masanori Koyama, Yuichi Yoshida, 
+        "Spectral Normalization for Generative Adversarial Networks", 
+        International Conference on Learning Representations. 2018.
+
+    Args:
+        W (~nnabla.Variable): Input N-D array with shape. This is normally network parameter.
+        dim (`int`): Output dimension. Default is 0. If the dimension is not 0, then the specified dimension becomes the most-left dimension by transposing.
+        itr (`int`): Number of iterations. Default is 1.
+        eps (`float`): Epsilon for the normalization. Default is 1e-12.
+        test (`bool`): Use test mode. Default is False.
+
+    Returns:
+        ~nnabla.Variable: Spectrally normalized :math:`W_{sn}` with the same shape as :math:`W`.
+
+    Example:
+
+        .. code-block:: python
+
+            import nnabla as nn
+            import nnabla.parametric_functions as PF
+
+            b, c, h, w = 4, 64, 32, 32
+
+            # Spectrally normalized convolution
+            apply_w = lambda w: PF.spectral_norm(w, dim=0)
+            h = nn.Variable.from_numpy_array(np.random.randn(b, c, h, w))
+            h = PF.convolution(h, with_bias=False, apply_w=apply_w)
+
+            # Spectrally normalized affine
+            apply_w = lambda w: PF.spectral_norm(w, dim=1)
+            h = nn.Variable.from_numpy_array(np.random.randn(b, c))
+            h = PF.affine(h, with_bias=False, apply_w=apply_w)
+
+            # Spectrally normalized embed
+            apply_w = lambda w: PF.spectral_norm(w, dim=1)
+            h = nn.Variable.from_numpy_array(np.random.randn(b, c))
+            h = PF.embed(h, c, apply_w=apply_w)
+
+    """
+
+    assert (0 <= dim and dim < len(w.shape)), "`dim` must be `0 <= dim and dim < len(w.shape)`."
+    assert 0 < itr, "`itr` must be greater than 0."
+    assert 0 < eps, "`eps` must be greater than 0."
+
+
+    if dim == len(w.shape) - 1:
+        w_sn = _spectral_norm_outer_most_dim(w, dim=dim, itr=itr, eps=eps, test=test,
+                                             u_init=u_init, fix_parameters=fix_parameters)
+    else:
+        w_sn = _spectral_norm(w, dim=dim, itr=itr, eps=eps, test=test,
+                              u_init=u_init, fix_parameters=fix_parameters)
+    return w_sn
+
+
+def _spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_parameters=True):
+    # Use the orignal shape for W_sn
+    w_shape = w.shape
+    W_sn = get_parameter_or_create(
+        "W_sn", w_shape, ConstantInitializer(0), False)
+    # Transpose if the output dimension is not the most-left dimension.
+    if dim != 0:
+        dims_transpose = [dim] + [i for i in range(len(w_shape)) if i != dim]
+        w = F.transpose(w, dims_transpose)
+        w_shape = w.shape
+    d0 = w.shape[0]            # Out
+    d1 = np.prod(w.shape[1:])  # In
+    w = F.reshape(w, [d0, d1], inplace=False)
+    if u_init is None:
+        u_init = NormalInitializer()
+    u0 = get_parameter_or_create("u", [d0], u_init, False, False)
+    u = F.reshape(u0, [1, d0])
+
+    # Ensure both parameters (W_sn and u) exist when the test is called fast.
+    if test:
+        return W_sn
+    # Power method
+    for _ in range(itr):
+        # v
+        v = F.affine(u, w)
+        v = v / ((F.sum(v ** 2.0, keepdims=True) + eps) ** 0.5)
+        v = F.reshape(v, [d1, 1])
+        # u
+        u = F.affine(w, v)
+        u = u / ((F.sum(u ** 2.0, keepdims=True) + eps) ** 0.5)
+        u = F.reshape(u, [1, d0])
+    # Iterate
+    u = F.identity(u, outputs=[u0.data])
+    u.persistent = True
+    # No grad
+    u.need_grad = False
+    v.need_grad = False
+    # Spectral normalization
+    wv = F.affine(w, v)
+    sigma = F.affine(u, wv)
+    w_sn = w / sigma
+    w_sn = F.reshape(w_sn, w_shape)
+    # Transpose again if the output dimension is not the most-left dimension.
+    if dim != 0:
+        dims_transpose = [i for i in range(1, dim + 1)] \
+                         + [0] + [i for i in range(dim + 1, len(w_shape))]
+        w_sn = F.transpose(w_sn, dims_transpose)
+    w_sn = F.identity(w_sn, outputs=[W_sn.data])
+    w_sn.persistent = True
+    return w_sn
+
+
+def _spectral_norm_outer_most_dim(w, dim, itr=1, eps=1e-12, test=False,
+                                  u_init=None, fix_parameters=True):
+    w_shape = w.shape
+    W_sn = get_parameter_or_create(
+        "W_sn", w.shape, ConstantInitializer(0), False, False)
+    d0 = np.prod(w.shape[0:-1])  # In
+    d1 = w.shape[-1]             # Out
+    w = F.reshape(w, [d0, d1], inplace=False)
+    if u_init is None:
+        u_init = NormalInitializer()
+    u0 = get_parameter_or_create("u", [d1], u_init, False, False)
+    u = F.reshape(u0, [d1, 1])
+
+    # Ensure both parameters (W_sn and u) exist when the test is called fast.
+    if test:
+        return W_sn
+
+    # Power method
+    for _ in range(itr):
+        # v
+        v = F.affine(w, u)
+        v = v / ((F.sum(v ** 2.0, keepdims=True) + eps) ** 0.5)
+        v = F.reshape(v, [1, d0])
+        # u
+        u = F.affine(v, w)
+        u = u / ((F.sum(u ** 2.0, keepdims=True) + eps) ** 0.5)
+        u = F.reshape(u, [d1, 1])
+    # Iterate
+    u = F.identity(u, outputs=[u0.data])
+    u.persistent = True
+    # No grad
+    u.need_grad = False
+    v.need_grad = False
+    # Spectral normalization
+    wv = F.affine(v, w)
+    sigma = F.affine(wv, u)
+    w_sn = w / sigma
+    w_sn = F.reshape(w_sn, w_shape)
+    w_sn = F.identity(w_sn, outputs=[W_sn.data])
+    w_sn.persistent = True
+    return w_sn

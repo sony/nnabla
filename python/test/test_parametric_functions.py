@@ -284,4 +284,69 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
     assert not v.need_grad
 
 
+@pytest.mark.parametrize("w_shape, dim", [((32, 16, 3, 3), 0),  # convolution
+                                          ((16, 1), 1),         # affine
+                                          ((16, 32), 1),        # affine
+                                          ((8, 8, 16), 2),      # affine
+                                          ((8, 4, 16), 1),      # affine
+                                          ])
+@pytest.mark.parametrize("itr", [1, 2, 3])
+@pytest.mark.parametrize("test", [True, False])
+@pytest.mark.parametrize("u_init", [None, True])
+def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
+    nn.clear_parameters()
+
+    # python implementation
+    def spectral_norm_numpy(w, dim=0, itr=1, eps=1e-12, test=False, u_init_d=None):
+        if test:
+            return w
+        w_shape = w.shape
+        if dim != 0:
+            dims_transpose = [dim] + \
+                [i for i in range(len(w_shape)) if i != dim]
+            w = w.transpose(*dims_transpose)
+            w_shape = w.shape
+        d0, d1 = w_shape[0], np.prod(w_shape[1:])  # [Out, In]
+        w = w.reshape((d0, d1))
+        u = u_init_d
+        for i in range(itr):
+            v = np.dot(w.T, u)
+            v = v / np.sqrt(np.sum(v ** 2) + eps)
+            u = np.dot(w, v)
+            u = u / np.sqrt(np.sum(u ** 2) + eps)
+        sigma = np.dot(u.T, np.dot(w, v))
+        w_sn = w / sigma
+        w_sn = w_sn.reshape(w_shape)
+        if dim != 0:
+            dims_transpose = [i for i in range(1, dim + 1)] \
+                             + [0] + [i for i in range(dim + 1, len(w_shape))]
+            w_sn = w_sn.transpose(*dims_transpose)
+        return w_sn
+
+    # Setting
+    w = nn.Variable.from_numpy_array(g_rng.randn(*w_shape))
+    u_init = process_param_init(u_init, [w_shape[dim]], g_rng)
+
+    # Check execution
+    w_sn = PF.spectral_norm(w, dim, itr, test=test, u_init=u_init)
+    u_init_d = nn.get_parameters(grad_only=False)['spectral-norm/u'].d.copy() \
+        if u_init is None else u_init
+    if not test:
+        w_sn.forward()
+        w_sn.backward()
+    else:
+        w_sn = w
+
+    # Check values
+    w_sn_numpy = spectral_norm_numpy(
+        w.d, dim, itr, test=test, u_init_d=u_init_d)
+    assert np.allclose(w_sn_numpy, w_sn.d, atol=1e-2, rtol=1e-5)
+
+    # Check args (cannot since this is the functions composite)
+
+    # Check created parameters
+    assert len(nn.get_parameters(grad_only=False)) == 2
+    w_sn, u = [nn.get_parameters(grad_only=False)['spectral-norm/' + name]
+               for name in ['W_sn', 'u']]
+
 # TODO: Test all parametric functions.
