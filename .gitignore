@@ -36,6 +36,7 @@
 /python/src/nnabla/*.lib
 /python/src/nnabla/_arithmetic_ops.cpp
 /python/src/nnabla/_array.cpp
+/python/src/nnabla/_computation_graph.cpp
 /python/src/nnabla/_indexing.cpp
 /python/src/nnabla/_init.cpp
 /python/src/nnabla/_init.h
