@@ -21,9 +21,12 @@ import shutil
 import tarfile
 import tempfile
 import tqdm
+import csv
 
 from nnabla.utils.image_utils import imresize, imread
 
+VALIDATION_DATA_LABEL = "validation_data_label.txt"
+LABEL_WORDNETID = "label_wordnetid.csv"
 
 def _resize_image(im, width, height, padding):
     # resize
@@ -59,7 +62,15 @@ def _resize_image(im, width, height, padding):
     return x
 
 
-def _create_train_cache(archive, output, names, synsets_id, args):
+def _create_train_cache(archive, output, names, args):
+    # Read label and wordnet_id
+    wid2ind = np.loadtxt(fname=LABEL_WORDNETID, dtype=object, delimiter=",")
+
+    def _get_label(wordnet_id):
+        for item in wid2ind:
+            if item[1] == wordnet_id:
+                return item[0]
+
     images0 = []
     print("Count image in TAR")
     pbar = tqdm.tqdm(total=len(names), unit='%')
@@ -68,7 +79,7 @@ def _create_train_cache(archive, output, names, synsets_id, args):
         marchive = tarfile.open(fileobj=archive.extractfile(name))
         for mname in marchive.getnames():
             if re.match(r'{}_[0-9]+\.JPEG'.format(category), mname):
-                images0.append((synsets_id[category], name, marchive, mname))
+                images0.append((_get_label(name[:9]), name, marchive, mname))
             else:
                 print('Invalid file {} includes in tar file'.format(mname))
                 exit(-1)
@@ -85,7 +96,7 @@ def _create_train_cache(archive, output, names, synsets_id, args):
         y, name, marchive, mname = images[index]
         im = imread(marchive.extractfile(mname), num_channels=3)
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
-        return x, np.array([y - 1]).astype(np.int32)
+        return x, np.array([y]).astype(np.int32)
 
     from nnabla.utils.data_source import DataSourceWithFileCache
     from nnabla.utils.data_source_implements import SimpleDataSource
@@ -101,11 +112,6 @@ def _create_train_cache(archive, output, names, synsets_id, args):
 
 
 def _create_validation_cache(archive, output, names, ground_truth, args):
-    # ILSVRC2012_devkit_t12/readme.txt
-    #     The ground truth of the validation images is in
-    #     data/ILSVRC2012_validation_ground_truth.txt, where each line contains
-    #     one ILSVRC2012_ID for one image, in the ascending alphabetical order
-    #     of the image file names.
     images0 = sorted(names)
 
     # Thinning
@@ -118,7 +124,7 @@ def _create_validation_cache(archive, output, names, ground_truth, args):
         y, name = ground_truth[index], images[index]
         im = imread(archive.extractfile(name), num_channels=3)
         x = _resize_image(im, args.width, args.height, args.mode == 'padding')
-        return x, np.array([y - 1]).astype(np.int32)
+        return x, np.array([y]).astype(np.int32)
 
     from nnabla.utils.data_source import DataSourceWithFileCache
     from nnabla.utils.data_source_implements import SimpleDataSource
@@ -164,8 +170,6 @@ def main():
                         help='Source file or directory.')
     parser.add_argument('output', type=str,
                         help='Destination directory.')
-    parser.add_argument('-D', '--devkit', type=str, required=True,
-                        help='Devkit filename')
     parser.add_argument('-W', '--width', type=int, default=320,
                         help='width of output image (default:320)')
     parser.add_argument('-H', '--height', type=int, default=320,
@@ -227,28 +231,12 @@ def main():
                 print('Please specify only 1 validation tar archive.')
                 exit(-1)
 
-    devkit = tarfile.open(args.devkit)
+    # Read label of validation data, (Use ascending label of wordnet_id)
     validation_ground_truth = []
-    synsets_id = {}
-    synsets_id_name = {}
-    synsets_id_word = {}
-    m = devkit.extractfile('ILSVRC2012_devkit_t12/data/meta.mat')
-    meta = scipy.io.loadmat(m)
-    for item in meta['synsets']:
-        sid = item[0][0][0][0]
-        sname = item[0][1][0]
-        sword = item[0][2][0]
-        synsets_id[sname] = sid
-        synsets_id_name[sid] = sname
-        synsets_id_word[sid] = sword
-    m.close()
-    g = devkit.extractfile(
-        'ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt')
-    for l in g.readlines():
-        validation_ground_truth.append(int(l.rstrip()))
-    g.close()
-
-    devkit.close()
+    g_file = VALIDATION_DATA_LABEL
+    with open(g_file, 'r') as f:
+        for l in f.readlines():
+            validation_ground_truth.append(int(l.rstrip()))
 
     ############################################################################
     # Prepare logging
@@ -287,15 +275,6 @@ def main():
     ############################################################################
     # Converter
 
-    names_csv = open(os.path.join(args.output, 'synsets_id_name.csv'), 'w')
-    words_csv = open(os.path.join(args.output, 'synsets_id_word.csv'), 'w')
-    for sid in sorted(synsets_id_word.keys()):
-        names_csv.write('{},{}\n'.format(sid, synsets_id_name[sid]))
-        words_csv.write('{},{}\n'.format(sid, ','.join(
-            ['"'+x.strip()+'"' for x in synsets_id_word[sid].split(',')])))
-    names_csv.close()
-    words_csv.close()
-
     try:
         if archives['train'] is not None:
             from nnabla.logger import logger
@@ -304,7 +283,7 @@ def main():
             output = os.path.join(args.output, 'train')
             if not os.path.isdir(output):
                 os.makedirs(output)
-            _create_train_cache(archive, output, names, synsets_id, args)
+            _create_train_cache(archive, output, names, args)
         if archives['val'] is not None:
             from nnabla.logger import logger
             logger.info('StartCreatingCache')

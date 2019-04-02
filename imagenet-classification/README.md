@@ -5,7 +5,9 @@
 ## Overview
 
 The examples are written in python. These examples demonstrate learning on ImageNet and Tiny ImageNet dataset.
-In case of ImageNet, We need to get the dataset and to create the cache file by yourself.
+In case of ImageNet, We need to get the dataset and to create the cache file by yourself. We changed a method of labeling for the cache file after ver.1.0.14.This label is based of a ascending order number of WordNet ID.
+(Previous version used the label with the development kits of ImageNet.)
+Please be careful about this update.
 Tiny ImageNet dataset will be cached by running the example script.
 
 ---
@@ -24,7 +26,6 @@ The ImageNet dataset(training and validation) requires 150[GBytes] of disk capac
 To create cache files requires approximately 400[GBytes] of disk capacity.
 
 1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/). The following setup procedure requires the following three files.
-  - Development kit: `ILSVRC2012_devkit_t12.tar.gz`
   - Training dataset: `ILSVRC2012_img_train.tar`
   - Validation dataset: `ILSVRC2012_img_val.tar`
 
@@ -32,7 +33,7 @@ To create cache files requires approximately 400[GBytes] of disk capacity.
 
 We provides the tool for creating dataset cache.
 
-    usage: create_cache.py [-h] -D DEVKIT
+    usage: create_cache.py [-h]
                            [-W WIDTH] [-H HEIGHT]
                            [-m {trimming,padding}]
                            [-S {True,False}]
@@ -47,8 +48,6 @@ We provides the tool for creating dataset cache.
 
     optional arguments:
       -h, --help            show this help message and exit
-      -D DEVKIT, --devkit DEVKIT
-                            Devkit filename
       -W WIDTH, --width WIDTH
                             width of output image (default:320)
       -H HEIGHT, --height HEIGHT
@@ -75,7 +74,6 @@ For example
 
 ```
 $ python create_cache.py \
-    -D ImageNet/ILSVRC2012_devkit_t12.tar.gz \
     ImageNet/ILSVRC2012_img_train.tar \
     ImageNet/ILSVRC2012_img_val.tar \
     ImageNet/imagenet-320-320-trimming-npy
@@ -83,12 +81,14 @@ $ python create_cache.py \
 
 It will create cache data from
 
-- ImageNet/ILSVRC2012_devkit_t12.tar.gz
-    - Meta data
 - ImageNet/ILSVRC2012_img_train.tar
     - Training images
 - ImageNet/ILSVRC2012_img_val.tar
     - Validation images
+- label_wordnetid.csv
+    - List of label and wordnet_id(ascending order of wordnet_id)
+- validation_data_label.txt
+    - Labeling list of validation data(label of file name order)
 
 Outputs are followings
 
