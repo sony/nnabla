@@ -702,15 +702,17 @@ def clip_by_norm(x, clip_norm, axis=None):
     return y
 
 
-def matrix_normalization(x, axes, eps, output_stat=False):
+def tensor_normalization(x, axes, eps, output_stat=False):
     r"""
-    General function for matrix normalization.
+    General function for tensor normalization.
     Input variable `x` is normalized by mean and std calculated by `x` itself.
     Mean and std are taken by all `axes`.
+    For example, if the input shape is (B, C, H, W) and axes is [1, 2, 3],
+     then the shape of calculated mean and std are (B, 1, 1 ,1).
 
     Args:
         x (Variable): N-D array of input variable.
-        axes (repeated int64): Axes mean and variance are taken.
+        axes (repeated int): Axes mean and variance are taken.
         eps (float): Tiny value to avoid zero division by std.
         output_stat(bool): It true, the batch statistics of mean and variance.
         will be returned as Variables. They are also differentiable.
@@ -735,7 +737,7 @@ def matrix_normalization(x, axes, eps, output_stat=False):
 
 def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
     r"""
-    Weight standardization defined as:
+    Applies Weight Standardization over an input weight, which is defined as:
 
     .. math::
       \begin{eqnarray}
@@ -769,24 +771,95 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
 
     axes = [i for i in range(len(w.shape)) if i != channel_axis]
 
-    return matrix_normalization(w, axes, eps, output_stat)
+    return tensor_normalization(w, axes, eps, output_stat)
 
 
-def layer_normalization(x, batch_axis=0, eps=1e-05, output_stat=False):
+def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=False):
     r"""
-    Layer standardization defined as:
+    Applies Layer Normalization over an input tensor, which is defined as:
 
     .. math::
       \begin{eqnarray}
-        todo
+        \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
+        \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2} \\
+        y &=& \frac{x - \mu^l}{\sigma^l} \gamma + \beta
       \end{eqnarray}
 
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^l` and :math:`\sigma^l` are the mean and std of each layer which is separately calculated for each batch,
+    and :math:`\beta` and :math:`\gamma` are adaptive biases and gains.
+
+    If the input shape is [B, C, H, W] (= batch_axis=0), the shape of calculated mean and std are [B, 1, 1, 1]
+
     References:
-        todo
+
+        * `Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton, Layer Normalization.
+          <https://arxiv.org/abs/1607.06450>`_
 
     Args:
         x (Variable): An input variable.
-        batch_axis (int):  (channel_axis = 0).
+        beta (Variable): An Adaptive biases.
+        gamma (Variable): An Adaptive gains.
+        batch_axis (int or repeated int): Axes mean and variance are taken.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, calculated mean and variance are also returned.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: output variable which is normalized its statics and rescaled by alpha and beta.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+
+    if not hasattr(batch_axis, "__iter__"):
+        if not isinstance(batch_axis, int):
+            raise ValueError(
+                "batch_axis must be repeated int (like list, tuple...) or int. (batch_axis: {})".format(batch_axis))
+
+        batch_axis = [batch_axis]
+
+    for _axis in batch_axis:
+        if _axis < 0 or _axis > len(x.shape) - 1:
+            raise ValueError(
+                "batch_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
+                    batch_axis, len(x.shape)))
+
+    axes = [i for i in range(len(x.shape)) if i not in batch_axis]
+
+    if output_stat:
+        out, mean, std = tensor_normalization(x, axes, eps, output_stat)
+        return gamma * out + beta, mean, std
+
+    return tensor_normalization(x, axes, eps, output_stat) * gamma + beta
+
+
+def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Applies Instance Normalization over an input tensor, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
+        \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2} \\
+        y &=& \frac{x - \mu^i}{\sigma^i} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^i` and :math:`\sigma^i` are the mean and std of each instance which is separately calculated for each batch and channel,
+    and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+    If the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0), the shape of calculated mean and std are [B, C, 1, 1]
+
+    References:
+
+        * `Dmitry Ulyanov, Andrea Vedaldi, Victor Lempitsky, Instance Normalization: The Missing Ingredient for Fast Stylization.
+          <https://arxiv.org/abs/1607.08022>`_
+
+    Args:
+        x (Variable): An input variable.
+        beta (Variable): An Adaptive biases.
+        gamma (Variable): An Adaptive gains.
+        channel_axis (int): Channel axis.
+        batch_axis (int or repeated int): Batch axes.
         eps (float): Tiny value to avoid zero division by std.
         output_stat(bool): It true, the batch statistics of mean and variance.
 
@@ -796,34 +869,80 @@ def layer_normalization(x, batch_axis=0, eps=1e-05, output_stat=False):
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
 
-    if batch_axis < 0 or batch_axis > len(x.shape) - 1:
-        raise ValueError(
-            "batch_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
-                batch_axis, len(x.shape)))
-
-    axes = [i for i in range(len(x.shape)) if i != batch_axis]
-
-    return matrix_normalization(x, axes, eps, output_stat)
-
-
-def instance_normalization(x, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    # check channel axis
     if channel_axis < 0 or channel_axis > len(x.shape) - 1:
         raise ValueError(
             "channel_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
                 channel_axis, len(x.shape)))
 
-    if batch_axis < 0 or batch_axis > len(x.shape) - 1:
-        raise ValueError(
-            "batch_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
-                batch_axis, len(x.shape)))
+    # check batch axis
+    if not hasattr(batch_axis, "__iter__"):
+        if not isinstance(batch_axis, int):
+            raise ValueError(
+                "batch_axis must be repeated int (like list, tuple...) or int. (batch_axis: {})".format(batch_axis))
 
-    axes = [i for i in range(len(x.shape)) if i not in (
-        channel_axis, batch_axis)]
+        batch_axis = [batch_axis]
 
-    return matrix_normalization(x, axes, eps, output_stat)
+    for _axis in batch_axis:
+        if _axis < 0 or _axis > len(x.shape) - 1:
+            raise ValueError(
+                "batch_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
+                    batch_axis, len(x.shape)))
+
+    axes = [i for i in range(len(x.shape)) if i not in [
+        channel_axis, ] + batch_axis]
+
+    if output_stat:
+        out, mean, std = tensor_normalization(x, axes, eps, output_stat)
+
+        return out * gamma + beta, mean, std
+
+    return tensor_normalization(x, axes, eps, output_stat) * gamma + beta
 
 
-def group_normalization(x, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Applies Group Normalization over an input tensor, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
+        \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2} \\
+        y &=& \frac{x - \mu^g}{\sigma^g} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^g` and :math:`\sigma^g` are the mean and std of each group which contains `num_channels / num_groups` channels,
+    and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+    The input channels, specified by :attr:`channel_axis`, are separeted into :attr:`num_groups` groups,
+    and the mean and std are calculated over the each group.
+    For example, if the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0),
+    an input variable is once reshaped to [B, num_groups, C / num_groups, H, W]
+    and standardize by its mean and std whose shapes are [B, num_groups, C / num_groups, 1, 1].
+    Before returning, an output variable is reshaped again to the original input shape (= [B, C, H, W] in the case above).
+
+    References:
+
+        * `Yuxin Wu, Kaiming He, Group Normalization.
+          <https://arxiv.org/abs/1803.08494>`_
+
+    Args:
+        x (Variable): An input variable.
+        beta (Variable): An Adaptive biases.
+        gamma (Variable): An Adaptive gains.
+        num_groups (int): A number of groups. The channel dim of 'x' must be integer multiple of `num_groups`.
+        channel_axis (int): Channel axis.
+        batch_axis (int or repeated int): Batch axes.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, the batch statistics of mean and variance.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+
     if channel_axis < 0 or channel_axis > len(x.shape) - 1:
         raise ValueError(
             "channel_axis must be in the range of [0, len(x.shape)). channel_axis : {}, len(x.shape): {}.".format(
@@ -833,19 +952,20 @@ def group_normalization(x, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, 
 
     if cdim % num_groups > 0:
         raise ValueError(
-            "Channel dim (: {]) must be integer multiple of num_groups(: {}).".format(cdim, num_groups))
+            "Channel dim ({}) must be integer multiple of num_groups ({}).".format(cdim, num_groups))
 
-    shape = x.shape[:channel_axis] + (num_groups, cdim / num_groups)
+    shape = x.shape[:channel_axis] + (num_groups, int(cdim / num_groups))
     if channel_axis < len(x.shape) - 1:
         shape += x.shape[channel_axis + 1:]
 
     if output_stat:
         out, mu, sigma = instance_normalization(
-            x.reshape(shape), channel_axis, batch_axis, eps, output_stat)
+            x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps, output_stat)
 
-        return out.reshape(x.shape), mu, sigma
+        return (out * gamma + beta).reshape(x.shape), mu, sigma
 
-    return instance_normalization(x.reshape(shape), channel_axis, batch_axis, eps, output_stat).reshape(x.shape)
+    return (instance_normalization(x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps,
+                                   output_stat) * gamma + beta).reshape(x.shape)
 
 
 def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None):

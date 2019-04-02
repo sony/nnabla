@@ -5,7 +5,10 @@ import nnabla.functions as F
 
 
 def ref_layer_normalization(x, batch_axis, eps, output_stat):
-    axes = tuple([i for i in range(len(x.shape)) if i != batch_axis])
+    if not hasattr(batch_axis, "__iter__"):
+        batch_axis = [batch_axis]
+
+    axes = tuple([i for i in range(len(x.shape)) if i not in batch_axis])
 
     x_mean = x.mean(axis=axes, keepdims=True)
     x_std = x.std(axis=axes, keepdims=True)
@@ -21,6 +24,8 @@ def ref_layer_normalization(x, batch_axis, eps, output_stat):
                                                   ((4, 16, 16, 8), 0),
                                                   ((16, 1), 0),
                                                   ((3, 32, 4), 0),
+                                                  # time-series (T, B, C) or (B, T, C)
+                                                  ((10, 4, 16), [0, 1])
                                                   ])
 @pytest.mark.parametrize("output_stat", [False, True])
 def test_layer_normalization_forward_backward(seed, x_shape, batch_axis, output_stat):

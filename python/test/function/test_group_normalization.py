@@ -16,8 +16,12 @@ def ref_group_normalization(x, num_groups, channel_axis, batch_axis, eps, output
 
     tmp = x.reshape(shape).copy()
 
-    axes = tuple([i for i in range(len(shape))
-                  if i not in (batch_axis, channel_axis)])
+    if hasattr(batch_axis, "__iter__"):
+        ignore_axes = batch_axis + [channel_axis, ]
+    else:
+        ignore_axes = [batch_axis, channel_axis]
+
+    axes = tuple([i for i in range(len(shape)) if i not in ignore_axes])
 
     x_mean = tmp.mean(axis=axes, keepdims=True)
     x_std = tmp.std(axis=axes, keepdims=True)
@@ -34,6 +38,8 @@ def ref_group_normalization(x, num_groups, channel_axis, batch_axis, eps, output
                          [((4, 32, 8, 8), 0, 1),  # convolution (NCHW)
                           ((4, 16, 16, 8), 0, 3),  # convolution (NHWC)
                           ((16, 4), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((10, 4, 16), [0, 1], 2)
                           ])
 @pytest.mark.parametrize("output_stat", [False, True])
 def test_group_normalization_forward_backward(seed, num_groups, x_shape, batch_axis, channel_axis, output_stat):
