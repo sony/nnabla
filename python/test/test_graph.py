@@ -237,3 +237,14 @@ def test_graph_rewire(seed, clear_buffer):
     assert np.allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
         assert np.allclose(b, c)
+
+
+def test_deleted_outputs():
+    rng = np.random.RandomState(313)
+
+    x = nn.Variable((2, 3, 4, 5))
+    h, m, v = PF.batch_normalization(x, output_stat=True)
+    del m
+    x.d = rng.randn(*x.shape).astype(np.float32)
+    h.forward()
+    h.backward()
