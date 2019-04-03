@@ -16,5 +16,6 @@ from .resnet import ResNet
 from .mobilenet import MobileNet, MobileNetV2
 from .senet import SENet
 from .squeezenet import SqueezeNet
+from .vgg import VGG
 from .nin import NIN
 from .densenet import DenseNet
