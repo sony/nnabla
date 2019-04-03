@@ -1,16 +1,14 @@
-ATen:
-  '1': false
 Abs:
-  '1': true
+  '1': false
   '6': true
 Acos:
   '7': false
+Acosh:
+  '9': false
 Add:
-  '1': true
+  '1': false
   '6': true
   '7': true
-Affine:
-  '1': false
 And:
   '1': true
   '7': true
@@ -20,34 +18,40 @@ ArgMin:
   '1': false
 Asin:
   '7': false
+Asinh:
+  '9': false
 Atan:
   '7': false
+Atanh:
+  '9': false
 AveragePool:
   '1': true
   '7': true
+  '10': false
 BatchNormalization:
-  '1': true
+  '1': false
   '6': true
   '7': false
   '9': true
 Cast:
   '1': false
   '6': false
+  '9': false
 Ceil:
   '1': false
   '6': false
 Clip:
   '1': false
   '6': true
+Compress:
+  '9': false
 Concat:
   '1': true
   '4': true
 Constant:
   '1': true
   '9': true
-ConstantFill:
-  '1': false
-ConstantLike:
+ConstantOfShape:
   '9': false
 Conv:
   '1': true
@@ -55,28 +59,29 @@ ConvTranspose:
   '1': false
 Cos:
   '7': false
-Crop:
-  '1': false
+Cosh:
+  '9': false
 DepthToSpace:
   '1': false
 Div:
-  '1': true
+  '1': false
   '6': true
   '7': true
 Dropout:
   '1': true
   '6': true
   '7': true
-DynamicSlice:
-  '9': false
+  '10': false
 Elu:
-  '1': true
+  '1': false
   '6': true
 Equal:
   '1': true
   '7': true
+Erf:
+  '9': false
 Exp:
-  '1': true
+  '1': false
   '6': true
 Expand:
   '8': false
@@ -92,17 +97,13 @@ GRU:
   '1': false
   '3': false
   '7': false
-GRUUnit:
-  '1': false
 Gather:
   '1': false
-Gemm:
+Gemm: # TODO
   '1': true
   '6': true
-  '7': true
-  '9': true
-GivenTensorFill:
-  '1': false
+  '7': false
+  '9': false
 GlobalAveragePool:
   '1': true
 GlobalLpPool:
@@ -123,25 +124,25 @@ Identity:
   '1': true
 If:
   '1': false
-ImageScaler:
-  '1': false
 InstanceNormalization:
   '1': false
   '6': false
+IsNaN:
+  '9': false
 LRN:
   '1': true
 LSTM:
   '1': false
   '7': false
 LeakyRelu:
-  '1': true
+  '1': false
   '6': true
 Less:
   '1': true
   '7': true
   '9': true
 Log:
-  '1': true
+  '1': false
   '6': true
 LogSoftmax:
   '1': true
@@ -156,46 +157,51 @@ MatMul:
   '1': true
   '9': true
 Max:
-  '1': true
+  '1': false
   '6': true
   '8': true
 MaxPool:
   '1': true
-  '8': true
+  '8': false
+  '10': false
 MaxRoiPool:
   '1': false
+MaxUnpool:
+  '9': false
 Mean:
-  '1': true
+  '1': false
   '6': true
   '8': true
 Min:
-  '1': true
+  '1': false
   '6': true
   '8': true
 Mul:
-  '1': true
+  '1': false
   '6': true
   '7': true
 Multinomial:
   '7': false
 Neg:
-  '1': true
+  '1': false
   '6': true
+NonZero:
+  '9': false
 Not:
   '1': true
+OneHot:
+  '9': false
 Or:
   '1': true
   '7': true
 PRelu:
-  '1': true
+  '1': false
   '6': true
   '7': false
   '9': false
 Pad:
-  '1': true
-  '2': true
-ParametricSoftplus:
   '1': false
+  '2': true
 Pow:
   '1': true
   '7': true
@@ -211,7 +217,7 @@ RandomUniform:
 RandomUniformLike:
   '1': false
 Reciprocal:
-  '1': true
+  '1': false
   '6': true
 ReduceL1:
   '1': false
@@ -234,31 +240,39 @@ ReduceSum:
 ReduceSumSquare:
   '1': false
 Relu:
-  '1': true
+  '1': false
   '6': true
 Reshape:
-  '1': true
+  '1': false
   '5': true
-Scale:
-  '1': false
-ScaledTanh:
-  '1': false
+Resize:
+  '10': false
 Scan:
   '8': false
+  '9': false
+Scatter:
+  '9': false
 Selu:
-  '1': true
+  '1': false
   '6': true
 Shape:
   '1': false
+Shrink:
+  '9': false
 Sigmoid:
-  '1': true
+  '1': false
   '6': true
+Sign:
+  '9': false
 Sin:
   '7': false
+Sinh:
+  '9': false
 Size:
   '1': false
 Slice:
   '1': false
+  '10': false
 Softmax:
   '1': true
 Softplus:
@@ -275,26 +289,31 @@ Sqrt:
   '6': false
 Squeeze:
   '1': false
+StringNormalizer:
+  '10': false
 Sub:
-  '1': true
+  '1': false
   '6': true
   '7': true
 Sum:
-  '1': true
+  '1': false
   '6': true
   '8': true
 Tan:
   '7': false
 Tanh:
-  '1': true
-  '6': true
-ThresholdedRelu:
   '1': false
+  '6': true
+TfIdfVectorizer:
+  '9': false
+ThresholdedRelu:
+  '10': false
 Tile:
   '1': false
   '6': false
 TopK:
   '1': false
+  '10': false
 Transpose:
   '1': true
 Unsqueeze:
@@ -302,6 +321,18 @@ Unsqueeze:
 Upsample:
   '1': false
   '7': false
+  '9': false
+  '10': false
+Where:
+  '9': false
 Xor:
   '1': true
   '7': true
+experimental ATen:
+  '1': false
+experimental GRUUnit:
+  '1': false
+experimental GivenTensorFill:
+  '1': false
+experimental Scale:
+  '1': false
