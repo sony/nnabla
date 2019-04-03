@@ -55,6 +55,8 @@ NBLA_API void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to);
  */
 NBLA_API void forward_all(const vector<CgVariablePtr> variables,
                           bool clear_buffer = false,
-                          bool clear_no_need_grad = false);
+                          bool clear_no_need_grad = false,
+                          function_hook_type function_pre_hook = nullptr,
+                          function_hook_type function_post_hook = nullptr);
 }
 #endif
