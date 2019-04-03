@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
+
 option(NNABLA_UTILS_WITH_HDF5 "Enable HDF5 in C++ utils." OFF)
 option(NNABLA_UTILS_WITH_NPY "Enable NPY in C++ utils." ON)
 option(NNABLA_UTILS_STATIC_LINK_DEPS "Static link C++ NNabla utils deps." OFF)
@@ -22,16 +24,22 @@ list(APPEND nnabla_utils_SOURCES
   nnp_network_expander.cpp
 )
 
-if (NNABLA_UTILS_WITH_HDF5)
-  add_definitions(-DNBLA_UTILS_WITH_HDF5)
-  list(APPEND nnabla_utils_SOURCES
-    nnp_impl_dataset_hdf5.cpp
-  )
-elseif (NNABLA_UTILS_WITH_NPY)
+# NPY is prior option, if it is ON,
+# data iterator is set to NPY, and hdf5
+# is disabled.
+if (NNABLA_UTILS_WITH_NPY)
   add_definitions(-DNBLA_UTILS_WITH_NPY)
   list(APPEND nnabla_utils_SOURCES
     nnp_impl_dataset_npy.cpp
   )
+elseif (NNABLA_UTILS_WITH_HDF5)
+  list(APPEND nnabla_utils_SOURCES
+    nnp_impl_dataset_hdf5.cpp
+  )
+endif()
+
+if (NNABLA_UTILS_WITH_HDF5)
+  add_definitions(-DNBLA_UTILS_WITH_HDF5)
 endif()
 
 add_library(nnabla_utils SHARED
@@ -83,9 +91,7 @@ else()
     if (NNABLA_UTILS_STATIC_LINK_DEPS)
       set(HDF5_USE_STATIC_LIBRARIES 1)
     endif()
-    #find_package(HDF5 REQUIRED COMPONENTS C HL)
-    set(HDF5_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hdf5/include)
-    file(GLOB HDF5_LIBRARIES ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hdf5/lib/*.so)
+    findhdf5()
   endif()
   find_package(ZLIB REQUIRED)
   if (NNABLA_UTILS_STATIC_LINK_DEPS)

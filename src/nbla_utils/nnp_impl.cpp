@@ -274,7 +274,9 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
   err = H5Dread(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   if (err >= 0) {
     Shape_t shape(dims, dims + rank);
-    bool need_grad = false; // default need_grad
+    // fix crash bug by replacing bool with int,
+    // since actual 4 bytes is read.
+    int need_grad = false; // default need_grad
     if (H5Aexists(did, "need_grad")) {
       hid_t att = H5Aopen(did, "need_grad", H5P_DEFAULT);
       H5Aread(att, H5T_NATIVE_HBOOL, &need_grad);
@@ -288,10 +290,10 @@ bool NnpImpl::parse_hdf5_dataset(std::string name, hid_t did) {
       data[i] = buffer[i];
     }
     parameters_.insert({variable_name, cg_v});
-    delete buffer;
+    delete[] buffer;
     return true;
   }
-  delete buffer;
+  delete[] buffer;
   NBLA_ERROR(error_code::not_implemented, "HDF5 is not enabled when build.");
   return false;
 }
@@ -676,12 +678,12 @@ shared_ptr<DatasetImpl> NnpImpl::get_dataset(const string &name) {
       continue;
     }
 
-#if defined(NBLA_UTILS_WITH_HDF5)
-    // HDF5 Support
-    return shared_ptr<DatasetHDF5Impl>(new DatasetHDF5Impl(*it));
-#elif defined(NBLA_UTILS_WITH_NPY)
+#if defined(NBLA_UTILS_WITH_NPY)
     // Npy Support
     return shared_ptr<DatasetNpyImpl>(new DatasetNpyImpl(*it));
+#elif defined(NBLA_UTILS_WITH_HDF5)
+    // HDF5 Support
+    return shared_ptr<DatasetHDF5Impl>(new DatasetHDF5Impl(*it));
 #else
     static_assert(false, "No cache file format is defined.");
 #endif
