@@ -226,8 +226,8 @@ def _get_split_ranges(nnp, args, supported_set):
 def convert_files(args, ifiles, output):
     output_ext = os.path.splitext(output)[1].lower()
     nnp = _import_file(args, ifiles)
-    network_name = nnp.protobuf.executor[0].network_name
     if nnp is not None:
+        network_name = nnp.protobuf.executor[0].network_name
         if output_ext == '.onnx':
             if args.config:
                 support_set = func_set_onnx_support() & \

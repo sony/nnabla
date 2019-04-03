@@ -42,6 +42,31 @@ struct CommunicatorBackwardCallback {
 typedef shared_ptr<CommunicatorBackwardCallback>
     CommunicatorBackwardCallbackPtr;
 
+typedef std::function<void(const CgFunctionPtr &ptr)> function_hook_type;
+
+/** Callback helper class for function callbacks during forward and backward
+class.
+
+This is used from Python frontend.
+ */
+class FunctionHookWithObject {
+public:
+  typedef std::function<void(void *)> cleanup_callback_type;
+  typedef std::function<void(void *, const CgFunctionPtr &f)> callback_type;
+
+private:
+  void *obj_{nullptr};
+  callback_type callback_;
+  cleanup_callback_type cleanup_callback_;
+
+public:
+  NBLA_API FunctionHookWithObject();
+  NBLA_API FunctionHookWithObject(void *obj, callback_type cb,
+                                  cleanup_callback_type clean_cb);
+  NBLA_API ~FunctionHookWithObject();
+  NBLA_API void operator()(const CgFunctionPtr &f);
+};
+
 /** Computation graph variable.
 
 A Variable object is held in this object as a data container. In addition,
@@ -213,7 +238,9 @@ public:
    */
   NBLA_API void forward(bool clear_buffer = false,
                         bool clear_no_need_grad = false,
-                        unordered_set<CgFunctionPtr> *fclosed = nullptr);
+                        unordered_set<CgFunctionPtr> *fclosed = nullptr,
+                        function_hook_type pre_callback = nullptr,
+                        function_hook_type post_callback = nullptr);
   /** Performs a backward propagation
 
       starting from this variable until the root variable(s) is/are reached
@@ -234,7 +261,9 @@ public:
   */
   NBLA_API void
   backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
-           vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {});
+           vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {},
+           function_hook_type pre_callback = nullptr,
+           function_hook_type post_callback = nullptr);
 
   /**
   */

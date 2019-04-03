@@ -248,3 +248,45 @@ def test_deleted_outputs():
     x.d = rng.randn(*x.shape).astype(np.float32)
     h.forward()
     h.backward()
+
+
+def test_function_hook():
+    '''
+    Testing function hooks in forward and backward
+    '''
+
+    x = nn.Variable.from_numpy_array(
+        np.zeros((2, 3), dtype=np.float32)).apply(need_grad=True)
+    x.grad.zero()
+    h = x + 2
+    h.data.zero()
+    h.grad.zero()
+    y = h * 0.5
+    y.data.zero()
+
+    def forward_pre_hook(f):
+        assert np.allclose(f.outputs[0].d, 0)
+
+    def forward_post_hook(f):
+        if f.info.type_name == 'AddScalar':
+            assert np.allclose(f.outputs[0].d, 2)
+        if f.info.type_name == 'MulScalar':
+            assert np.allclose(f.outputs[0].d, 1)
+
+    def backward_pre_hook(f):
+        assert np.allclose(f.inputs[0].g, 0)
+
+    def backward_post_hook(f):
+        # Both h and x grad will be 0.5
+        assert np.allclose(f.inputs[0].g, 0.5)
+
+    y.forward(function_pre_hook=forward_pre_hook,
+              function_post_hook=forward_post_hook)
+    y.backward(function_pre_hook=backward_pre_hook,
+               function_post_hook=backward_post_hook)
+
+    x.grad.zero()
+    z = x * 0.1
+    # Just calling test
+    nn.forward_all((y, z), function_pre_hook=lambda f: None,
+                   function_post_hook=lambda f: None)

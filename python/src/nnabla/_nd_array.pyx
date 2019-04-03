@@ -152,19 +152,10 @@ cdef class NdArray:
         return "<NdArray({}) at {}>".format(
             self.shape, hex(id(self)))
 
-    def __richcmp__(self, other, int op):
-        '''Overrides comparison operators ``==`` and ``!=``.
-
-        Compare the addresses of their C++ objects.
+    def __eq__(self, other):
+        '''Compare the addresses of their C++ objects.
         '''
-        if op == 2:
-            try:
-                return (< NdArray > self).arrp == ( < NdArray ?> other).arrp
-            except:
-                return False
-        elif op == 3:
-            return not self.__richcmp__(other, 2)
-        return False
+        return (< NdArray > self).arrp == ( < NdArray ?> other).arrp
 
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
