@@ -84,6 +84,7 @@ def test_nnabla_models_resnet(num_layers, image_size, batch_size, training, seed
 @pytest.mark.parametrize('model_class, up_to_list', [
     ('MobileNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('MobileNetV2', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('NIN', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('SENet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('SqueezeNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('DenseNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
