@@ -15,8 +15,8 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libc.stdint cimport int64_t, intptr_t
-from libcpp.memory cimport make_shared, shared_ptr
-from cpython cimport PyObject, Py_INCREF
+from libcpp.memory cimport make_shared, shared_ptr, const_pointer_cast
+from cpython cimport PyObject, Py_INCREF, Py_DECREF
 cimport _variable
 from _variable cimport CVariable, CContext, Shape_t, dtypes
 cimport function
@@ -92,6 +92,22 @@ cdef class CommunicatorBackwardCallback:
         var.var = varsp
 
         return var
+
+cdef void callback_decref(void *obj) with gil:
+    # Note we do not decrement reference count because we do not increment.
+    # Py_DECREF(<object>obj)
+    pass
+
+cdef void callback_call_callable(void *obj, const CgFunctionPtr &f) except+ with gil:
+    cdef object cbl = <object>obj
+    cbl(function.Function.create_from_c(const_pointer_cast[CgFunction, CgFunction](<const shared_ptr[CgFunction]&>f)))
+
+cdef FunctionHookWithObject create_function_hook_with_object(object callback):
+    # Note we do not have to increment reference count
+    # because we know callback will alive until FunctionHookWithObject dies.
+    # Py_INCREF(callback)
+    return FunctionHookWithObject(<void*>callback, <std_function[void(void*, const CgFunctionPtr&)]>callback_call_callable, <std_function[void(void*)]>callback_decref)
+
 
 cdef class Variable:
     """
@@ -189,19 +205,10 @@ cdef class Variable:
         return "<Variable({}, need_grad={}) at {}>".format(
             self.shape, self.need_grad, hex(id(self)))
 
-    def __richcmp__(self, other, int op):
-        '''Overrides comparison operators ``==`` and ``!=``.
-
-        Compare the addresses of their C++ objects.
+    def __eq__(self, other):
+        '''Determine equality by comparing the address of the C++ objects.
         '''
-        if op == 2:
-            try:
-                return (< Variable > self).varp == ( < Variable ?> other).varp
-            except:
-                return False
-        elif op == 3:
-            return not self.__richcmp__(other, 2)
-        return False
+        return (< Variable > self).varp == ( < Variable ?> other).varp
 
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
@@ -477,7 +484,8 @@ cdef class Variable:
         return [function.Function.create_from_c(f) for f in fs]
 
 
-    def forward(self, cpp_bool clear_buffer=False, cpp_bool clear_no_need_grad=False):
+    def forward(self, cpp_bool clear_buffer=False, cpp_bool clear_no_need_grad=False,
+                object function_pre_hook=None, object function_post_hook=None):
         """
         Performs a forward propagation from the root node to this variable.
         The forward propagation is performed on a subset of variables
@@ -495,12 +503,29 @@ cdef class Variable:
                 need_grad=False during forward propagation.
                 True is usually used when calling this during training.
                 This is ignored when clear_buffer=True.
+            function_pre_hook(callable):
+                This callable object is called immediately before each function is executed.
+                It must take :obj:`~nnabla.function.Function` as an input.
+                The default is None.
+            function_post_hook(callable):
+                This callable object is called immediately after each function is executed.
+                It must take :obj:`~nnabla.function.Function` as an input.
+                The default is None.
 
         """
-        with nogil:
-            self.varp.forward(clear_buffer, clear_no_need_grad)
+        cdef function_hook_type function_pre_hook_c
+        cdef function_hook_type function_post_hook_c
 
-    def backward(self, grad=1, cpp_bool clear_buffer=False, communicator_callbacks=None):
+        if function_pre_hook is not None:
+            function_pre_hook_c = create_function_hook_with_object(function_pre_hook)
+        if function_post_hook is not None:
+            function_post_hook_c = create_function_hook_with_object(function_post_hook)
+
+        with nogil:
+            self.varp.forward(clear_buffer, clear_no_need_grad, NULL, function_pre_hook_c, function_post_hook_c)
+
+    def backward(self, grad=1, cpp_bool clear_buffer=False, communicator_callbacks=None,
+                 function_pre_hook=None, function_post_hook=None):
         """
         Performs a backward propagation starting from this variable until
         the root variable(s) is/are reached in the function graph.
@@ -521,6 +546,14 @@ cdef class Variable:
                 The callback functions invoked when 1) backward computation
                 of each function is finished and 2) all backward
                 computation is finished.
+            function_pre_hook(callable):
+                This callable object is called immediately before each function is executed.
+                It must take :obj:`~nnabla.function.Function` as an input.
+                The default is None.
+            function_post_hook(callable):
+                This callable object is called immediately after each function is executed.
+                It must take :obj:`~nnabla.function.Function` as an input.
+                The default is None.
 
         """
         cdef NdArrayPtr p
@@ -549,8 +582,16 @@ cdef class Variable:
         elif type(communicator_callbacks) != type(None):
             callback_list.push_back((< CommunicatorBackwardCallback?> communicator_callbacks).var)
 
+        cdef function_hook_type function_pre_hook_c
+        cdef function_hook_type function_post_hook_c
+
+        if function_pre_hook is not None:
+            function_pre_hook_c = create_function_hook_with_object(function_pre_hook)
+        if function_post_hook is not None:
+            function_post_hook_c = create_function_hook_with_object(function_post_hook)
+
         with nogil:
-            self.varp.backward(p, clear_buffer, callback_list)
+            self.varp.backward(p, clear_buffer, callback_list, function_pre_hook_c, function_post_hook_c)
 
     def unlinked(self, need_grad=None):
         """
