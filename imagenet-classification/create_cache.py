@@ -28,6 +28,7 @@ from nnabla.utils.image_utils import imresize, imread
 VALIDATION_DATA_LABEL = "validation_data_label.txt"
 LABEL_WORDNETID = "label_wordnetid.csv"
 
+
 def _resize_image(im, width, height, padding):
     # resize
     h = im.shape[0]
