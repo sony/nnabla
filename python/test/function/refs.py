@@ -31,6 +31,22 @@ def get_pool_out_size(w, k, p, s, ignore_border):
     return (w + p - (k - p if ignore_border else 1)) // s + 1
 
 
+class ChannelLastToFirstTranspose(object):
+
+    def __init__(self, dim, kdim):
+        base_axis = dim - kdim - 1
+        up_to_base = tuple(range(0, base_axis))
+        self.axes = up_to_base + (dim - 1,) + tuple(range(base_axis, dim - 1))
+        self.inv_axes = up_to_base + \
+            tuple(range(base_axis + 1, dim)) + (base_axis,)
+
+    def __call__(self, x):
+        return x.transpose(self.axes).copy()
+
+    def inv(self, x):
+        return x.transpose(self.inv_axes).copy()
+
+
 def convolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     """
     """
