@@ -38,10 +38,10 @@ namespace pf = nbla::parametric_functions;
 /******************************************/
 CgVariablePtr model(CgVariablePtr x, ParameterDirectory parameters) {
   auto h = pf::convolution(x, 1, 16, {5, 5}, parameters["conv1"]);
-  h = f::max_pooling(h, {2, 2}, {2, 2}, true, {0, 0});
+  h = f::max_pooling(h, {2, 2}, {2, 2}, true, {0, 0}, false);
   h = f::relu(h, false);
   h = pf::convolution(h, 1, 16, {5, 5}, parameters["conv2"]);
-  h = f::max_pooling(h, {2, 2}, {2, 2}, true, {0, 0});
+  h = f::max_pooling(h, {2, 2}, {2, 2}, true, {0, 0}, false);
   h = f::relu(h, false);
   h = pf::affine(h, 1, 50, parameters["affine3"]);
   h = f::relu(h, false);
