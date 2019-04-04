@@ -296,6 +296,11 @@ Neural Network Layer:
           sparser, by grouping connections along the mapping direction.
         type: int64
         default: '1'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: |2
@@ -313,6 +318,7 @@ Neural Network Layer:
             
     function_ids:
       iiIiIiIi: 1
+      iiIiIiIiB: 265
     c_runtime: support
   DepthwiseConvolution:
     snake_name: depthwise_convolution

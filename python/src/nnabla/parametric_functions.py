@@ -564,7 +564,7 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def convolution(inp, outmaps, kernel,
-                pad=None, stride=None, dilation=None, group=1,
+                pad=None, stride=None, dilation=None, group=1, channel_last=False,
                 w_init=None, b_init=None,
                 base_axis=1, fix_parameters=False, rng=None, with_bias=True,
                 apply_w=None, apply_b=None):
@@ -600,6 +600,7 @@ def convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        channel_last (bool): If True, the last dimension is considered as channel dimension, a.k.a NHWC order.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.  
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
@@ -613,13 +614,19 @@ def convolution(inp, outmaps, kernel,
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.convolution` for the output shape.
 
     """
+    if channel_last:
+        channels = inp.shape[-1]
+        filter_shape = tuple(kernel) + (channels // group,)
+    else:
+        channels = inp.shape[base_axis]
+        filter_shape = (channels // group,) + tuple(kernel)
     if w_init is None:
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+            calc_uniform_lim_glorot(channels, outmaps, tuple(kernel)), rng=rng)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
+        "W", (outmaps,) + filter_shape,
         w_init, True, not fix_parameters)
     if apply_w is not None:
         w = apply_w(w)
@@ -629,7 +636,7 @@ def convolution(inp, outmaps, kernel,
             "b", (outmaps,), b_init, True, not fix_parameters)
         if apply_b is not None:
             b = apply_b(b)
-    return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
+    return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group, channel_last)
 
 
 @parametric_function_api("svd_conv", [
