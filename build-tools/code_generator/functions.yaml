@@ -535,11 +535,17 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Maximum values variable
     function_ids:
       iIiIBiI: 5
+      iIiIBiIB: 266
     c_runtime: support
   AveragePooling:
     snake_name: average_pooling
@@ -571,6 +577,11 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
       including_pad:
         doc: If true, border padding values are considered for the output.
         type: bool
@@ -580,6 +591,7 @@ Neural Network Layer:
         doc: Average values variable
     function_ids:
       iIiIBiIB: 6
+      iIiIBiIBB: 267
     c_runtime: support
   GlobalAveragePooling:
     snake_name: global_average_pooling
@@ -627,11 +639,17 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Summed values variable
     function_ids:
       iIiIBiI: 8
+      iIiIBiIB: 268
     c_runtime: support
   Unpooling:
     snake_name: unpooling

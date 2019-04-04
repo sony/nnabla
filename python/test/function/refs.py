@@ -28,7 +28,7 @@ def get_deconv_out_size(w, k, p, s, d):
 
 
 def get_pool_out_size(w, k, p, s, ignore_border):
-    return (w + p - (k - p if ignore_border else 1)) // s + 1
+    return (w + p - ((k - p) if ignore_border else 1)) // s + 1
 
 
 class ChannelLastToFirstTranspose(object):
