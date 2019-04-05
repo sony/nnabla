@@ -171,6 +171,34 @@ cdef class NdArray:
         """
         return tuple(self.arrp.shape())
 
+
+    def data_ptr(self, dtype, ctx=None):
+        """Get array's pointer.
+
+        The behavior is similar to `cast` method but returns the data pointer based on the `ctx`.
+        If the `ctx` is not specified, the default context obtained by `nn.get_current_context` is used.
+
+        Args: 
+            dtype (:obj:`numpy.dtype`):  Numpy Data type.
+            ctx (:obj:`nnabla.Context`, optional): Context descriptor.
+
+        Returns:
+            int: The data pointer.
+        
+        """
+        if ctx is not None:
+            ctx_ = ctx
+        else:
+            import nnabla as nn
+            ctx_ = nn.get_current_context()
+        cdef int type_num = np.dtype(dtype).num
+        cdef CContext cctx = <CContext ?> ctx_
+        cdef unsigned long ptr
+        with nogil:
+            ptr = <unsigned long> self.arrp.data_ptr(< dtypes > type_num, cctx, False)
+        return ptr
+
+
     @property
     def size(self):
         """Total size of the N-d array.

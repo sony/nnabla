@@ -85,6 +85,15 @@ public:
    */
   shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
 
+  /** Get array's ptr.
+
+      @param[in] dtype Enum of data type.
+      @param[in] ctx Descriptor of array backend.
+      @param[in] write_only No synchronization happens.
+   */
+  const void *data_ptr(dtypes dtype, const Context &ctx,
+                       bool write_only = false);
+
   /** Get dtype
   */
   inline dtypes dtype() const {
