@@ -239,6 +239,7 @@ if __name__ == '__main__':
                 'nnabla.experimental.graph_converters',
                 'nnabla.experimental.parametric_function_class',
                 'nnabla.experimental.trainers',
+                'nnabla.experimental.distributions',
                 'nnabla.models',
                 'nnabla.models.imagenet',
                 'nnabla.utils',
