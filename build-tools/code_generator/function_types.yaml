@@ -97,6 +97,9 @@ TanhShrink:
 Sinc:
   float: [float]
   half: [Half]
+FusedBatchNormalization:
+  float: [float]
+  half: [Half]
 BatchNormalization:
   float: [float]
   half: [Half]      

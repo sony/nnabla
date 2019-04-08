@@ -47,6 +47,32 @@ def _get_axes_excluding(ndim, axes):
     return [i for i in range(ndim) if i not in axes]
 
 
+class BatchNormalizationInOutAdapter(object):
+    def __init__(self, ndim, axes):
+        assert len(axes) != 1
+        outer_axes = sorted(set(range(ndim)).difference(axes))
+        inner_axes = sorted(axes)
+        self.ndim = ndim
+        self.axes = axes
+        self.outer_axes = outer_axes
+        self.transpose_axes = outer_axes + inner_axes
+        self.transposed_shape = None
+        self.inv_transpose_axes = np.argsort(self.transpose_axes).tolist()
+
+    def __call__(self, x):
+        transposed = transpose(x, self.transpose_axes)
+        if self.transposed_shape is not None:
+            assert self.transposed_shape == transposed.shape, "Wrong shape input given."
+        self.transposed_shape = transposed.shape
+        reduced_inner_size = np.prod(transposed.shape[len(self.outer_axes):])
+        outer_shape = list(transposed.shape[:len(self.outer_axes)])
+        return reshape(transposed, outer_shape + [reduced_inner_size])
+
+    def inv(self, y):
+        transposed = reshape(y, self.transposed_shape)
+        return transpose(transposed, self.inv_transpose_axes)
+
+
 def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True,
                         output_stat=False, n_outputs=None):
     r"""
@@ -150,6 +176,90 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     mean = inverse_transpose_and_reshape(mean, axes, transposed_mean_shape)
     variance = inverse_transpose_and_reshape(
         variance, axes, transposed_variance_shape)
+    return out, mean, variance
+
+
+def fused_batch_normalization(x, beta, gamma, mean, variance, z=None, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, nonlinearity='relu', output_stat=False, n_outputs=None):
+    r"""
+    Batch normalization fused with an add operation and an activation.
+
+    References:
+
+        * `Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.
+          <https://arxiv.org/abs/1502.03167>`_
+
+    Args:
+        x(~nnabla.Variable): N-D array of input.
+        beta(~nnabla.Variable): N-D array of beta which is learned.
+        gamma(~nnabla.Variable): N-D array of gamma which is learned.
+        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
+        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
+        z(~nnabla.Variable, optional): N-D array
+        axes(repeated int64): Axes mean and variance are taken.
+        decay_rate(float): Decay rate of running mean and variance.
+        eps(float): Tiny value to avoid zero division by std.
+        batch_stat(bool): Use mini-batch statistics rather than running ones.
+        nonlinearity(str): Nonlinearity chosen from relu. Default is relu.
+        output_stat(bool): It true, the batch statistics of mean and variance,
+            will be returned as Variables. They are also differentiable.
+
+    Returns:
+        Returns batch normalization output as :obj:`~nnabla.Variable`.
+        If ``output_stat=True``, it also returns the mean and variance
+        of the mini-batch
+
+        * :obj:`~nnabla.Variable`: Output of the batch normalization
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
+
+    See Also:
+        ``nnabla.function_bases.batch_normalization``.
+
+    """
+    from .function_bases import fused_batch_normalization as fused_batch_normalization_base
+    n_outputs = 3 if output_stat else 1
+    if batch_stat and (mean.parent or variance.parent) is not None:
+        raise ValueError(
+            "if batch_stat is True, mean and variable must not have a parent function")
+
+    if len(axes) == 1:
+        return fused_batch_normalization_base(x, beta, gamma, mean, variance, z,
+                                              axes=axes,
+                                              decay_rate=decay_rate,
+                                              eps=eps,
+                                              batch_stat=batch_stat,
+                                              nonlinearity=nonlinearity,
+                                              n_outputs=n_outputs)
+
+    in_adapter = BatchNormalizationInOutAdapter(x.ndim, axes)
+    param_adapter = BatchNormalizationInOutAdapter(x.ndim, axes)
+    inp = in_adapter(x)
+    z = in_adapter(z)
+    beta = param_adapter(beta)
+    gamma = param_adapter(gamma)
+    mean = param_adapter(mean)
+    variance = param_adapter(variance)
+    axis = x.ndim - len(axes)
+    if not output_stat:
+        out = fused_batch_normalization_base(x, beta, gamma, mean, variance, z,
+                                             axes=[axis],
+                                             decay_rate=decay_rate,
+                                             eps=eps,
+                                             batch_stat=batch_stat,
+                                             nonlinearity=nonlinearity,
+                                             n_outputs=n_outputs)
+        return in_adapter.inv(out)
+
+    out, mean, variance = fused_batch_normalization_base(inp, beta, gamma, mean, variance, z,
+                                                         axes=[axis],
+                                                         decay_rate=decay_rate,
+                                                         eps=eps,
+                                                         batch_stat=batch_stat,
+                                                         nonlinearity=nonlinearity,
+                                                         n_outputs=n_outputs)
+    out = in_adapter.inv(out)
+    mean = param_adapter.inv(mean)
+    variance = param_adapter.inv(variance)
     return out, mean, variance
 
 
