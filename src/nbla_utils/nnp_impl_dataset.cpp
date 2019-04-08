@@ -64,54 +64,55 @@ bool read_dataset(hid_t gid, const int id, string &data_name,
 
   if (H5Tequal(tid, H5T_NATIVE_CHAR)) {
     char *buffer =
-        ndarray->cast(nbla::get_dtype<char>(), kCpuCtx)->pointer<char>();
+        ndarray->cast(nbla::get_dtype<char>(), kCpuCtx, true)->pointer<char>();
     H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_UCHAR)) {
-    uint8_t *buffer =
-        ndarray->cast(nbla::get_dtype<uint8_t>(), kCpuCtx)->pointer<uint8_t>();
+    uint8_t *buffer = ndarray->cast(nbla::get_dtype<uint8_t>(), kCpuCtx, true)
+                          ->pointer<uint8_t>();
     H5Dread(did, H5T_NATIVE_UCHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_SHORT)) {
-    short *buffer =
-        ndarray->cast(nbla::get_dtype<short>(), kCpuCtx)->pointer<short>();
+    short *buffer = ndarray->cast(nbla::get_dtype<short>(), kCpuCtx, true)
+                        ->pointer<short>();
     H5Dread(did, H5T_NATIVE_SHORT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_INT)) {
     int *buffer =
-        ndarray->cast(nbla::get_dtype<int>(), kCpuCtx)->pointer<int>();
+        ndarray->cast(nbla::get_dtype<int>(), kCpuCtx, true)->pointer<int>();
     H5Dread(did, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_UINT)) {
     unsigned int *buffer =
-        ndarray->cast(nbla::get_dtype<unsigned int>(), kCpuCtx)
+        ndarray->cast(nbla::get_dtype<unsigned int>(), kCpuCtx, true)
             ->pointer<unsigned int>();
     H5Dread(did, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_LONG)) {
     long *buffer =
-        ndarray->cast(nbla::get_dtype<long>(), kCpuCtx)->pointer<long>();
+        ndarray->cast(nbla::get_dtype<long>(), kCpuCtx, true)->pointer<long>();
     H5Dread(did, H5T_NATIVE_LONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_ULONG)) {
     unsigned long *buffer =
-        ndarray->cast(nbla::get_dtype<unsigned long>(), kCpuCtx)
+        ndarray->cast(nbla::get_dtype<unsigned long>(), kCpuCtx, true)
             ->pointer<unsigned long>();
     H5Dread(did, H5T_NATIVE_ULONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_LLONG)) {
-    long long *buffer = ndarray->cast(nbla::get_dtype<long long>(), kCpuCtx)
-                            ->pointer<long long>();
+    long long *buffer =
+        ndarray->cast(nbla::get_dtype<long long>(), kCpuCtx, true)
+            ->pointer<long long>();
     H5Dread(did, H5T_NATIVE_LLONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_FLOAT)) {
-    float *buffer =
-        ndarray->cast(nbla::get_dtype<float>(), kCpuCtx)->pointer<float>();
+    float *buffer = ndarray->cast(nbla::get_dtype<float>(), kCpuCtx, true)
+                        ->pointer<float>();
     H5Dread(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   if (H5Tequal(tid, H5T_NATIVE_DOUBLE)) {
-    double *buffer =
-        ndarray->cast(nbla::get_dtype<double>(), kCpuCtx)->pointer<double>();
+    double *buffer = ndarray->cast(nbla::get_dtype<double>(), kCpuCtx, true)
+                         ->pointer<double>();
     H5Dread(did, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
   }
   H5Dclose(did);
@@ -187,7 +188,7 @@ bool load_cache(const string &filename, vector<string> &data_names,
   hid_t id = H5LTopen_file_image((char *)&h5data.front(), h5data.size(),
                                  H5LT_FILE_IMAGE_DONT_RELEASE);
   if (0 <= id) {
-    int root = H5Gopen(id, "/", H5P_DEFAULT);
+    hid_t root = H5Gopen(id, "/", H5P_DEFAULT);
     if (0 <= root)
       parse_hdf5_group(root, data_names, ndarrays);
   }
@@ -219,7 +220,7 @@ bool create_cachefile_list(const string &path, vector<string> &filenames) {
   while ((entry = readdir(dir)) != NULL) {
     if (has_suffix(entry->d_name, ".h5")) {
       string d_name(entry->d_name);
-      filenames.push_back(path + d_name);
+      filenames.push_back(path + '/' + d_name);
     }
   }
   closedir(dir);

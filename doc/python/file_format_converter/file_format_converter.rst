@@ -111,8 +111,8 @@ ONNX
 Limitation
 ++++++++++
 
-- Training is not supported
-- Only supports operator set 3
+- Training is not supported.
+- Only supports operator set 6 and 9.
 - Not all functions are supported. See :any:`onnx/operator_coverage`.
 - Only limited Neural Network Console projects supported.  See :any:`onnx/neural_network_console_example_coverage`.
 - In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
@@ -223,6 +223,13 @@ Convert NNP to ONNX
 
    $ nnabla_cli convert input.nnp output.onnx
 
+If specify output onnx opset 9, please use the following (default is opset 6):
+
+.. code-block:: none
+
+   $ nnabla_cli convert input.nnp output.onnx -d opset_9
+
+
 Convert ONNX to NNP
 ^^^^^^^^^^^^^^^^^^^
 
@@ -230,6 +237,7 @@ Convert ONNX to NNP
 
    $ nnabla_cli convert input.onnx output.nnp
 
+Currently, only opset 6 or opset 9 are supported to import.
 
 C Runtime Operation
 +++++++++++++++++++
