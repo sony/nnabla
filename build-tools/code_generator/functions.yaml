@@ -2950,6 +2950,27 @@ Array Manipulation:
     function_ids:
       i: 184
     c_runtime: not support
+  Tile:
+    snake_name: tile
+    doc: |2
+
+      Forward input `x` repeated the number of times given by `reps`. If `reps`
+      is a sequence, the output has dimension of ``d = max(len(reps), x.ndim)``
+      and either `x` is promoted to be d-dimensional by prepending new axes or
+      `reps` is promoted to x.ndim by prepending 1's.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      reps:
+        doc: The number of repetitions of `x` along each axis.
+        type: repeated int64
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iI: 247
   OneHot:
     snake_name: one_hot
     doc: |2
