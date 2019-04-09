@@ -318,15 +318,19 @@ def load_parameters(path, proto=None, proto_only=False):
             hd.visit(_get_keys)
             for _, key in sorted(keys):
                 ds = hd[key]
+                need_grad = False
+                if ds.attrs['need_grad']:
+                    need_grad = True
+
                 if not proto_only:
-                    var = get_parameter_or_create(key, ds.shape,
-                                                  need_grad=ds.attrs['need_grad'].astype('bool'))
+                    var = get_parameter_or_create(
+                        key, ds.shape, need_grad=need_grad)
                     var.data.cast(ds.dtype)[...] = ds[...]
                 parameter = proto.parameter.add()
                 parameter.variable_name = key
                 parameter.shape.dim.extend(ds.shape)
                 parameter.data.extend(numpy.array(ds[...]).flatten().tolist())
-                parameter.need_grad = ds.attrs['need_grad'].astype('bool')
+                parameter.need_grad = need_grad
     elif ext == '.protobuf':
         with open(path, 'rb') as f:
             proto.MergeFromString(f.read())
