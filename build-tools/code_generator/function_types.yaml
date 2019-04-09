@@ -315,6 +315,9 @@ Randint:
 Randn:
   float: [float]
   half: [Half]
+RandomChoice:
+  float: [float]
+  half: [Half]
 RandomCrop:
   float: [float]
   half: [Half]
