@@ -349,4 +349,262 @@ def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
     w_sn, u = [nn.get_parameters(grad_only=False)['spectral-norm/' + name]
                for name in ['W_sn', 'u']]
 
+
+from nbla_test_utils import list_context
+ctxs = list_context('RNN')
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape", [(5, 8, 16), (10, 16, 32)])
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("bidirectional", [False, True])
+@pytest.mark.parametrize("hidden_size", [5])
+@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_rnn_execution(g_rng, inshape, num_layers, bidirectional, hidden_size, with_bias, fix_parameters, rng, ctx, func_name):
+
+    with nn.context_scope(ctx):
+        if func_name == "RNN":
+            pytest.skip("Not implemented in CPU.")
+
+        num_directions = 2 if bidirectional else 1
+        w0_shape = (num_directions, hidden_size, inshape[2] + hidden_size)
+        w_shape = (max(1, num_layers-1), num_directions, hidden_size,
+                   num_directions * hidden_size + hidden_size)
+        b_shape = (num_layers, num_directions, hidden_size)
+
+        w0_init = process_param_init(True, w0_shape, g_rng)
+        w_init = process_param_init(True, w_shape, g_rng)
+        b_init = process_param_init(True, b_shape, g_rng)
+        rng = process_rng(rng)
+
+        kw = {}
+        insert_if_not_none(kw, 'w0_init', w0_init)
+        insert_if_not_none(kw, 'w_init', w_init)
+        insert_if_not_none(kw, 'b_init', b_init)
+        insert_if_not_none(kw, 'num_layers', 2)
+        insert_if_not_none(kw, 'nonlinearity', 'tanh')
+        insert_if_not_none(kw, 'dropout', 0.0)
+        insert_if_not_none(kw, 'bidirectional', False)
+        insert_if_not_none(kw, 'training', True)
+        insert_if_not_none(kw, 'rng', rng)
+        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+        insert_if_not_default(kw, 'with_bias', with_bias, True)
+
+        x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+        h = nn.Variable.from_numpy_array(g_rng.randn(
+            *(num_layers, num_directions, inshape[2], hidden_size)))
+
+        # Check execution
+        y, hn = PF.rnn(x, h, **kw)
+        y.forward()
+        y.backward()
+
+        # Check values
+        # TODO
+
+        # Check args
+        assert y.parent.info.type_name == 'RNN'
+        args = y.parent.info.args
+
+        # Check created parameters
+        assert y.parent.inputs[0] == x
+        assert y.parent.inputs[1] == h
+        w0 = nn.get_parameters()['rnn/weight_l0']
+        assert w0.shape == w0_shape
+        assert w0.need_grad
+        assert y.parent.inputs[2].need_grad == (not fix_parameters)
+        if isinstance(w0_init, np.ndarray):
+            assert np.allclose(w0_init, w0.d)
+        if num_layers > 1:
+            w = nn.get_parameters()['rnn/weight']
+            assert w.shape == w_shape
+            assert w.need_grad
+            assert y.parent.inputs[3].need_grad == (not fix_parameters)
+            if isinstance(w_init, np.ndarray):
+                assert np.allclose(w_init, w.d)
+        if with_bias:
+            b = nn.get_parameters()['rnn/bias']
+            assert b.shape == b_shape
+            assert b.need_grad
+            if num_layers > 1:
+                assert y.parent.inputs[4].need_grad == (not fix_parameters)
+            else:
+                assert y.parent.inputs[3].need_grad == (not fix_parameters)
+            if isinstance(b_init, np.ndarray):
+                assert np.allclose(b_init, b.d)
+
+
+ctxs = list_context('GRU')
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape", [(5, 8, 16), (10, 16, 32)])
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("bidirectional", [False, True])
+@pytest.mark.parametrize("hidden_size", [5])
+@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_gru_execution(g_rng, inshape, num_layers, bidirectional, hidden_size, with_bias, fix_parameters, rng, ctx, func_name):
+
+    with nn.context_scope(ctx):
+        if func_name == "GRU":
+            pytest.skip("Not implemented in CPU.")
+
+        num_directions = 2 if bidirectional else 1
+        w0_shape = (num_directions, 3, hidden_size, inshape[2] + hidden_size)
+        w_shape = (max(1, num_layers-1), num_directions, 3,
+                   hidden_size, num_directions * hidden_size + hidden_size)
+        b_shape = (num_layers, num_directions, 4, hidden_size)
+
+        w0_init = process_param_init(True, w0_shape, g_rng)
+        w_init = process_param_init(True, w_shape, g_rng)
+        b_init = process_param_init(True, b_shape, g_rng)
+        rng = process_rng(rng)
+
+        kw = {}
+        insert_if_not_none(kw, 'w0_init', w0_init)
+        insert_if_not_none(kw, 'w_init', w_init)
+        insert_if_not_none(kw, 'b_init', b_init)
+        insert_if_not_none(kw, 'num_layers', 2)
+        insert_if_not_none(kw, 'dropout', 0.0)
+        insert_if_not_none(kw, 'bidirectional', False)
+        insert_if_not_none(kw, 'training', True)
+        insert_if_not_none(kw, 'rng', rng)
+        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+        insert_if_not_default(kw, 'with_bias', with_bias, True)
+
+        x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+        h = nn.Variable.from_numpy_array(g_rng.randn(
+            *(num_layers, num_directions, inshape[2], hidden_size)))
+
+        # Check execution
+        y, hn = PF.gru(x, h, **kw)
+        y.forward()
+        y.backward()
+
+        # Check values
+        # TODO
+
+        # Check args
+        assert y.parent.info.type_name == 'GRU'
+        args = y.parent.info.args
+
+        # Check created parameters
+        assert y.parent.inputs[0] == x
+        assert y.parent.inputs[1] == h
+        w0 = nn.get_parameters()['gru/weight_l0']
+        assert w0.shape == w0_shape
+        assert w0.need_grad
+        assert y.parent.inputs[2].need_grad == (not fix_parameters)
+        if isinstance(w0_init, np.ndarray):
+            assert np.allclose(w0_init, w0.d)
+        if num_layers > 1:
+            w = nn.get_parameters()['gru/weight']
+            assert w.shape == w_shape
+            assert w.need_grad
+            assert y.parent.inputs[3].need_grad == (not fix_parameters)
+            if isinstance(w_init, np.ndarray):
+                assert np.allclose(w_init, w.d)
+        if with_bias:
+            b = nn.get_parameters()['gru/bias']
+            assert b.shape == b_shape
+            assert b.need_grad
+            if num_layers > 1:
+                assert y.parent.inputs[4].need_grad == (not fix_parameters)
+            else:
+                assert y.parent.inputs[3].need_grad == (not fix_parameters)
+            if isinstance(b_init, np.ndarray):
+                assert np.allclose(b_init, b.d)
+
+
+ctxs = list_context('LSTM')
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape", [(5, 8, 16), (10, 16, 32)])
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("bidirectional", [False, True])
+@pytest.mark.parametrize("hidden_size", [5])
+@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_lstm_execution(g_rng, inshape, num_layers, bidirectional, hidden_size, with_bias, fix_parameters, rng, ctx, func_name):
+
+    with nn.context_scope(ctx):
+        if func_name == "LSTM":
+            pytest.skip("Not implemented in CPU.")
+
+        num_directions = 2 if bidirectional else 1
+        w0_shape = (num_directions, 4, hidden_size, inshape[2] + hidden_size)
+        w_shape = (max(1, num_layers-1), num_directions, 4,
+                   hidden_size, num_directions * hidden_size + hidden_size)
+        b_shape = (num_layers, num_directions, 4, hidden_size)
+
+        w0_init = process_param_init(True, w0_shape, g_rng)
+        w_init = process_param_init(True, w_shape, g_rng)
+        b_init = process_param_init(True, b_shape, g_rng)
+        rng = process_rng(rng)
+
+        kw = {}
+        insert_if_not_none(kw, 'w0_init', w0_init)
+        insert_if_not_none(kw, 'w_init', w_init)
+        insert_if_not_none(kw, 'b_init', b_init)
+        insert_if_not_none(kw, 'num_layers', 2)
+        insert_if_not_none(kw, 'dropout', 0.0)
+        insert_if_not_none(kw, 'bidirectional', False)
+        insert_if_not_none(kw, 'training', True)
+        insert_if_not_none(kw, 'rng', rng)
+        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+        insert_if_not_default(kw, 'with_bias', with_bias, True)
+
+        x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+        h = nn.Variable.from_numpy_array(g_rng.randn(
+            *(num_layers, num_directions, inshape[2], hidden_size)))
+        c = nn.Variable.from_numpy_array(g_rng.randn(
+            *(num_layers, num_directions, inshape[2], hidden_size)))
+
+        # Check execution
+        y, hn, cn = PF.lstm(x, h, c, **kw)
+        y.forward()
+        y.backward()
+
+        # Check values
+        # TODO
+
+        # Check args
+        assert y.parent.info.type_name == 'LSTM'
+        args = y.parent.info.args
+
+        # Check created parameters
+        assert y.parent.inputs[0] == x
+        assert y.parent.inputs[1] == h
+        assert y.parent.inputs[2] == c
+        w0 = nn.get_parameters()['lstm/weight_l0']
+        assert w0.shape == w0_shape
+        assert w0.need_grad
+        assert y.parent.inputs[3].need_grad == (not fix_parameters)
+        if isinstance(w0_init, np.ndarray):
+            assert np.allclose(w0_init, w0.d)
+        if num_layers > 1:
+            w = nn.get_parameters()['lstm/weight']
+            assert w.shape == w_shape
+            assert w.need_grad
+            assert y.parent.inputs[4].need_grad == (not fix_parameters)
+            if isinstance(w_init, np.ndarray):
+                assert np.allclose(w_init, w.d)
+        if with_bias:
+            b = nn.get_parameters()['lstm/bias']
+            assert b.shape == b_shape
+            assert b.need_grad
+            if num_layers > 1:
+                assert y.parent.inputs[5].need_grad == (not fix_parameters)
+            else:
+                assert y.parent.inputs[4].need_grad == (not fix_parameters)
+            if isinstance(b_init, np.ndarray):
+                assert np.allclose(b_init, b.d)
+
+
 # TODO: Test all parametric functions.
