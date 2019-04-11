@@ -127,7 +127,7 @@ def train():
     monitor_loss = MonitorSeries("Training loss", monitor, interval=10)
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=10)
-    monitor_verr = MonitorSeries("Test error", monitor, interval=1)
+    monitor_verr = MonitorSeries("Validation error", monitor, interval=1)
     monitor_vtime = MonitorTimeElapsed("Validation time", monitor, interval=1)
 
     # Data Iterator
