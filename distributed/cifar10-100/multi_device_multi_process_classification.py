@@ -183,11 +183,6 @@ def train():
         # Solvers update
         solver.update()
 
-        # Synchronize by averaging the weights over devices using allreduce
-        if (i + 1) % args.sync_weight_every_itr == 0:
-            weights = [x.data for x in nn.get_parameters().values()]
-            comm.all_reduce(weights, division=True, inplace=True)
-
         # Linear Warmup
         if i <= warmup_iter:
             lr = base_lr + warmup_slope * i
