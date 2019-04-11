@@ -50,4 +50,6 @@ def get_args(monitor_path='tmp.monitor', max_iter=234300, model_save_path='tmp.m
                         "'cifar100_resnet23'")
     parser.add_argument("--with-all-reduce-callback", action='store_true',
                         help="Use all_reduce_callback API instead of all_reduce")
+    parser.add_argument('--sync-bn', action='store_true',
+                        help="Use Synchronized batch normalization.")
     return parser.parse_args()

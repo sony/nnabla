@@ -37,7 +37,15 @@ def categorical_error(pred, label):
     return (pred_label != label.flat).mean()
 
 
-def resnet23_prediction(image, test=False, rng=None, ncls=10, nmaps=64, act=F.relu):
+def batch_normalization(h, test=False, comm=None, group="world"):
+    if comm is None:
+        h = PF.batch_normalization(h, batch_stat=not test)
+    else:
+        h = PF.sync_batch_normalization(h, comm=comm, group=group, batch_stat=not test)
+    return h
+
+
+def resnet23_prediction(image, test=False, rng=None, ncls=10, nmaps=64, act=F.relu, comm=None, group="world"):
     """
     Construct ResNet 23
     """
@@ -49,19 +57,19 @@ def resnet23_prediction(image, test=False, rng=None, ncls=10, nmaps=64, act=F.re
             with nn.parameter_scope("conv1"):
                 h = PF.convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
                                    with_bias=False)
-                h = PF.batch_normalization(h, batch_stat=not test)
+                h = batch_normalization(h, test=test, comm=comm, group=group)
                 h = act(h)
             # Conv -> BN -> Nonlinear
             with nn.parameter_scope("conv2"):
                 h = PF.convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
                                    with_bias=False)
-                h = PF.batch_normalization(h, batch_stat=not test)
+                h = batch_normalization(h, test=test, comm=comm, group=group)
                 h = act(h)
             # Conv -> BN
             with nn.parameter_scope("conv3"):
                 h = PF.convolution(h, C, kernel=(1, 1), pad=(0, 0),
                                    with_bias=False)
-                h = PF.batch_normalization(h, batch_stat=not test)
+                h = batch_normalization(h, test=test, comm=comm, group=group)
             # Residual -> Nonlinear
             h = act(F.add2(h, x, inplace=True))
             # Maxpooling
@@ -78,7 +86,7 @@ def resnet23_prediction(image, test=False, rng=None, ncls=10, nmaps=64, act=F.re
             image.need_grad = False
         h = PF.convolution(image, nmaps, kernel=(3, 3),
                            pad=(1, 1), with_bias=False)
-        h = PF.batch_normalization(h, batch_stat=not test)
+        h = batch_normalization(h, test=test, comm=comm, group=group)
         h = act(h)
 
     h = res_unit(h, "conv2", rng, False)    # -> 32x32
