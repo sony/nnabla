@@ -99,7 +99,7 @@ def train():
     label_train = nn.Variable((args.batch_size, 1))
     pred_train = prediction(image_train, test)
     pred_train.persistent = True
-    loss_train = loss_function(pred_train, label_train)
+    loss_train = loss_function(pred_train, label_train) / n_devices
     error_train = F.mean(F.top_n_error(pred_train, label_train, axis=1))
     loss_error_train = F.sink(loss_train, error_train)
     input_image_train = {"image": image_train, "label": label_train}
