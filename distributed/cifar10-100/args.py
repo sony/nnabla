@@ -21,7 +21,8 @@ def get_args(monitor_path='tmp.monitor', max_iter=234300, model_save_path='tmp.m
     """
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
+    parser.add_argument("--batch-size", "-b", type=int, default=batch_size,
+                        help="Local batch size, e.g., batch size per worker.")
     parser.add_argument("--learning-rate", "-l",
                         type=float, default=learning_rate)
     parser.add_argument("--monitor-path", "-m",
