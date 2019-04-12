@@ -176,13 +176,6 @@ def train():
     solver = S.Momentum(args.learning_rate, 0.9)
     solver.set_parameters(nn.get_parameters())
 
-    # Setting warmup.
-    base_lr = args.learning_rate / n_devices
-    warmup_iter = int(1. * n_train_samples /
-                      args.batch_size / args.accum_grad / n_devices) * args.warmup_epoch
-    warmup_slope = base_lr * (n_devices - 1) / warmup_iter
-    solver.set_learning_rate(base_lr)
-
     # Create monitor.
     import nnabla.monitor as M
     monitor = M.Monitor(args.monitor_path)
@@ -259,11 +252,6 @@ def train():
         # Update
         solver.weight_decay(args.weight_decay)
         solver.update()
-
-        # Linear Warmup
-        if i <= warmup_iter:
-            lr = base_lr + warmup_slope * i
-            solver.set_learning_rate(lr)
 
         if device_id == 0:
             monitor_loss.add(i * n_devices, l / args.accum_grad)

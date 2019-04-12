@@ -53,7 +53,6 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
                         help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
     parser.add_argument("--type-config", "-t", type=str, default='float',
                         help='Type configuration.')
-    parser.add_argument("--warmup-epoch", "-e", type=int, default=warmup_epoch)
     parser.add_argument("--model-save-interval", "-s", type=int, default=1000,
                         help='The interval of saving model parameters.')
     parser.add_argument("--model-save-path", "-o",
