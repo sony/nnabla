@@ -79,7 +79,8 @@ enum class error_code {
   io,
   os,
   target_specific,
-  target_specific_async
+  target_specific_async,
+  runtime
 };
 
 string get_error_string(error_code code);
