@@ -73,11 +73,6 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
                         help='Training cache file dir. Create to use create_cache_file.py')
     parser.add_argument("--val-cachefile-dir", "-V", type=str, default=val_cachefile_dir,
                         help='Validation cache file dir. Create to use create_cache_file.py')
-    parser.add_argument("--sync-weight-every-itr",
-                        type=int, default=100,
-                        help="Sync weights every specified iteration. NCCL uses\
- the ring all reduce, so gradients in each device are not exactly same. When it\
- is accumulated in the weights, the weight values in each device diverge.")
 
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):

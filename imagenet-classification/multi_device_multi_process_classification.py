@@ -265,11 +265,6 @@ def train():
             lr = base_lr + warmup_slope * i
             solver.set_learning_rate(lr)
 
-        # Synchronize by averaging the weights over devices using allreduce
-        if (i+1) % args.sync_weight_every_itr == 0:
-            weights = [x.data for x in nn.get_parameters().values()]
-            comm.all_reduce(weights, division=True, inplace=True)
-
         if device_id == 0:
             monitor_loss.add(i * n_devices, l / args.accum_grad)
             monitor_err.add(i * n_devices, e / args.accum_grad)
