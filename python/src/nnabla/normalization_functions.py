@@ -73,8 +73,7 @@ class BatchNormalizationInOutAdapter(object):
         return transpose(transposed, self.inv_transpose_axes)
 
 
-def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True,
-                        output_stat=False, n_outputs=None):
+def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
     r"""
     Batch normalization.
 
@@ -135,47 +134,32 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
                                         batch_stat=batch_stat,
                                         n_outputs=n_outputs)
 
-    def transpose_and_reshape(x, axes):
-        transposed = transpose(x, transpose_axes)
-        return reshape(transposed, [rd(lambda x, y: x * y, transposed.shape[:len(axes)])] + list(
-            transposed.shape[len(axes):])), transposed.shape
-
-    def inverse_transpose_and_reshape(x, axes, variable_shape):
-        un_reshaped = reshape(
-            x, list(variable_shape[:len(axes)] + variable_shape[len(axes):]))
-        return transpose(un_reshaped, inv_transpose_axes)
-
-    def get_tranpose_args(ndim, axes):
-        transpose_axes = [i for i in list(
-            axes)] + [i for i in range(ndim) if i not in list(axes)]
-        inv_transpose_axes = np.argsort(transpose_axes).tolist()
-        return transpose_axes, inv_transpose_axes
-
-    transpose_axes, inv_transpose_axes = get_tranpose_args(len(x.shape), axes)
-    inp, transposed_inp_shape = transpose_and_reshape(x, axes)
-    beta, transposed_beta_shape = transpose_and_reshape(beta, axes)
-    gamma, transposed_gamma_shape = transpose_and_reshape(gamma, axes)
-    mean, transposed_mean_shape = transpose_and_reshape(mean, axes)
-    variance, transposed_variance_shape = transpose_and_reshape(variance, axes)
+    in_adapter = BatchNormalizationInOutAdapter(x.ndim, axes)
+    param_adapter = BatchNormalizationInOutAdapter(x.ndim, axes)
+    inp = in_adapter(x)
+    beta = param_adapter(beta)
+    gamma = param_adapter(gamma)
+    mean = param_adapter(mean)
+    variance = param_adapter(variance)
+    axis = x.ndim - len(axes)
 
     if n_outputs == 1:
         out = batch_normalization_base(inp, beta, gamma, mean, variance,
-                                       axes=[0],
+                                       axes=[axis],
                                        decay_rate=decay_rate,
                                        eps=eps,
                                        batch_stat=batch_stat,
                                        n_outputs=n_outputs)
-        return inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
+        return in_adapter.inv(out)
     out, mean, variance = batch_normalization_base(inp, beta, gamma, mean, variance,
-                                                   axes=[0],
+                                                   axes=[axis],
                                                    decay_rate=decay_rate,
                                                    eps=eps,
                                                    batch_stat=batch_stat,
                                                    n_outputs=n_outputs)
-    out = inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
-    mean = inverse_transpose_and_reshape(mean, axes, transposed_mean_shape)
-    variance = inverse_transpose_and_reshape(
-        variance, axes, transposed_variance_shape)
+    out = in_adapter.inv(out)
+    mean = param_adapter.inv(mean)
+    variance = param_adapter.inv(variance)
     return out, mean, variance
 
 

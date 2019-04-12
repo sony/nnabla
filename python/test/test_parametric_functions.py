@@ -187,23 +187,28 @@ def test_pf_convolution_execution(g_rng, inshape, outmaps, kernel, pad, stride, 
             assert np.allclose(b_init, b.d)
 
 
-@pytest.mark.parametrize("inshape, decay_rate, eps", [
-    ((1, 2, 1, 4), 0.9, 1e-5),
-    ((8, 8), 0.99, 1e-3),
+def _get_bn_parameter_shape(inshape, axes):
+    '''
+    Helper function which gets parameter shape of Batch Normalization.
+    '''
+    return tuple(size if i in axes else 1 for (i, size) in enumerate(inshape))
+
+
+@pytest.mark.parametrize("inshape, decay_rate, eps, axes", [
+    ((1, 2, 1, 4), 0.9, 1e-5, [3]),
+    ((8, 8), 0.99, 1e-3, [1]),
 ])
 @pytest.mark.parametrize('batch_stat, output_stat', [(False, False), (True, False), (True, True)])
 @pytest.mark.parametrize('param_init', [None, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize("rng", [None, True])
-def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch_stat, output_stat, param_init, fix_parameters, rng):
+def test_pf_batch_normalization_execution(
+        g_rng, inshape, axes, decay_rate, eps, batch_stat, output_stat,
+        param_init, fix_parameters, rng):
 
-    axis = 1  # Assume axes=[1]
-    p_shape = [1] * len(inshape)
-    p_shape[axis] = inshape[axis]
-    p_shape = tuple(p_shape)
-
+    p_shape = _get_bn_parameter_shape(inshape, axes)
     if param_init:
-        beta_init = np.ones(p_shape) * 1
+        beta_init = np.ones(p_shape)
         gamma_init = np.ones(p_shape) * 2
         mean_init = np.ones(p_shape) * 0.5
         var_init = np.ones(p_shape) * 1.5
@@ -217,6 +222,7 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
     x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
 
     kw = {}
+    insert_if_not_default(kw, 'axes', axes, [1])
     insert_if_not_default(kw, 'decay_rate', decay_rate, 0.9)
     insert_if_not_default(kw, 'eps', eps, 1e-5)
     insert_if_not_default(kw, 'batch_stat', batch_stat, True)
@@ -258,6 +264,7 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
     args = h.parent.info.args
     assert np.isclose(args['decay_rate'], decay_rate)
     assert np.isclose(args['eps'], eps)
+    assert args['axes'] == axes
     assert args['batch_stat'] == batch_stat
 
     # Check created parameters
@@ -298,13 +305,10 @@ def test_pf_fused_batch_normalization_execution(
         g_rng, inshape, axes, decay_rate, eps, batch_stat, nonlinearity,
         output_stat, param_init, fix_parameters, with_z, rng):
 
-    p_shape = [1 for _ in inshape]
-    for i in range(len(axes)):
-        p_shape[axes[i]] = inshape[axes[i]]
-    p_shape = tuple(p_shape)
+    p_shape = _get_bn_parameter_shape(inshape, axes)
 
     if param_init:
-        beta_init = np.ones(p_shape) * 1
+        beta_init = np.ones(p_shape)
         gamma_init = np.ones(p_shape) * 2
         mean_init = np.ones(p_shape) * 0.5
         var_init = np.ones(p_shape) * 1.5
