@@ -120,7 +120,7 @@ RUN set -xe \
         tqdm \
         wheel \
         virtualenv \
-    && pip install pyyaml onnx==1.3.0 future Cython autopep8 requests \
+    && pip install pyyaml onnx==1.4.1 future Cython autopep8 requests \
         graphviz tensorflow onnx_tf \
     && pip install cntk || true \
     && conda install -y -c pytorch pytorch-nightly-cpu \
