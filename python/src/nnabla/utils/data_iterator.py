@@ -38,9 +38,9 @@ from nnabla.logger import logger
 
 class DataIterator(object):
     '''DataIterator
-    Collect data from :ref:`data_source_design` and yields bunch of data.
+    Collect data from :ref:`data_source` and yields bunch of data.
 
-    Detailed documentation is available in :ref:`data_iterator_design`.
+    Detailed documentation is available in :ref:`data_iterator`.
 
     Args:
         data_source (:py:class:`DataSource <nnabla.utils.data_source.DataSource>`):
