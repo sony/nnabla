@@ -12,11 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-
-_SupportedInfo = collections.namedtuple(
-    '_SupportedInfo', 'import_name export_name')
-extensions = _SupportedInfo(import_name=['.nnp', '.onnx', '.ckpt', '.pb'], export_name=[
-                            '.nnp', '.nnb', '.onnx', '.ckpt', '.pb'])
-formats = _SupportedInfo(import_name=['NNP', 'ONNX', 'TF_CKPT', 'TF_PB'], export_name=[
-                         'NNP', 'NNB', 'CSRC', 'ONNX', 'TF_CKPT', 'TF_PB'])
+from .importer import TensorflowImporter
+from .exporter import TensorflowExporter
