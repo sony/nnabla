@@ -1,3 +1,4 @@
+include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 if (WIN32)
   # Use simulated cxxabi.h since it is not appeared in MSVC. 
   include_directories(${PROJECT_SOURCE_DIR}/include/msvc)
@@ -12,7 +13,7 @@ if (NNABLA_UTILS_WITH_HDF5)
 if (NNABLA_UTILS_STATIC_LINK_DEPS)
     set(HDF5_USE_STATIC_LIBRARIES 1)
 endif()
-find_package(HDF5 REQUIRED COMPONENTS C HL)
+findhdf5()
 endif()
 if (NNABLA_UTILS_STATIC_LINK_DEPS)
 if (NNABLA_UTILS_WITH_HDF5)
