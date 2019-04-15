@@ -121,7 +121,7 @@ RUN set -xe \
         wheel \
         virtualenv \
     && pip install pyyaml onnx==1.3.0 future Cython autopep8 requests \
-        graphviz \
+        graphviz pytablewriter \
     && pip install cntk || true \
     && conda install -y -c pytorch pytorch-nightly-cpu \
     && rm -rf /opt/miniconda3/pkgs
