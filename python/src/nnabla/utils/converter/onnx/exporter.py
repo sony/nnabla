@@ -237,7 +237,6 @@ class OnnxExporter:
 
         # opset_9 table
         table_op_set_9 = {
-            **table_op_set_6,
             "Dropout": partial(self.Dropout, "9"),
             "Add2": partial(self.BinaryOperator, "Add", "9"),
             "Mul2": partial(self.BinaryOperator, "Mul", "9"),
@@ -260,12 +259,13 @@ class OnnxExporter:
             "Greater": partial(self.BinaryOperator, "Greater", "9"),
             "Equal": partial(self.BinaryOperator, "Equal", "9"),
         }
+        table_op_set_9 = dict(table_op_set_6, **table_op_set_9)
 
         # opset_ support for SNPE
         table_op_set_9_x = {
-            **table_op_set_9,
             "Affine": partial(self.Affine, '9x')
         }
+        table_op_set_9_x = dict(table_op_set_9, **table_op_set_9_x)
 
         opver_impl_map = {
             "6": table_op_set_6,
