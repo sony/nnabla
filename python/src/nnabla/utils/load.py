@@ -496,15 +496,6 @@ def _create_optimizer(ctx, o, networks, datasets):
         raise ValueError('Learning Rate Scheduler "' + o.solver.lr_scheduler_type +
                          '" is not supported.')
 
-    optimizer.lr_decay_interval = 1
-    if optimizer.comm is not None:
-        new_interval = optimizer.lr_decay_interval // optimizer.comm.size
-        if new_interval == 0:
-            new_interval = 1
-        logger.log(99, 'LR Decay interval divide by {} ({} -> {})'.format(
-            optimizer.comm.size, optimizer.lr_decay_interval, new_interval))
-        optimizer.lr_decay_interval = new_interval
-
     if o.solver.lr_warmup_scheduler_type == 'Linear':
         if o.solver.linear_warmup_scheduler_param.warmup_iter >= comm_size:
             optimizer.scheduler = LinearWarmupScheduler(

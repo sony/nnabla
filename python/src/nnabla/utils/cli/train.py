@@ -83,8 +83,7 @@ def _save_parameters(args, suffix, epoch, force=False):
         base = os.path.join(args.outdir, 'results')
     filename = base + '.nnp'
 
-    if not os.path.exists(filename) and \
-       (force or timediff > 180.0 or epochdiff > 10):
+    if force or (not os.path.exists(filename) and (force or timediff > 180.0 or epochdiff > 10)):
 
         # Remove existing nnp before saving new file.
         for exist in exists:

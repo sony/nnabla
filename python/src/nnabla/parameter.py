@@ -291,15 +291,13 @@ def set_parameter_from_proto(proto):
         var.need_grad = parameter.need_grad
 
 
-def load_parameters(path, proto=None, proto_only=False):
+def load_parameters(path, proto=None, needs_proto=False):
     """Load parameters from a file with the specified format.
 
     Args:
       path : path or file object
     """
     _, ext = os.path.splitext(path)
-    if proto is None:
-        proto = nnabla_pb2.NNablaProtoBuf()
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
         import warnings
@@ -322,16 +320,22 @@ def load_parameters(path, proto=None, proto_only=False):
                 if ds.attrs['need_grad']:
                     need_grad = True
 
-                if not proto_only:
-                    var = get_parameter_or_create(
-                        key, ds.shape, need_grad=need_grad)
-                    var.data.cast(ds.dtype)[...] = ds[...]
-                parameter = proto.parameter.add()
-                parameter.variable_name = key
-                parameter.shape.dim.extend(ds.shape)
-                parameter.data.extend(numpy.array(ds[...]).flatten().tolist())
-                parameter.need_grad = need_grad
+                var = get_parameter_or_create(
+                    key, ds.shape, need_grad=need_grad)
+                var.data.cast(ds.dtype)[...] = ds[...]
+
+                if needs_proto:
+                    if proto is None:
+                        proto = nnabla_pb2.NNablaProtoBuf()
+                    parameter = proto.parameter.add()
+                    parameter.variable_name = key
+                    parameter.shape.dim.extend(ds.shape)
+                    parameter.data.extend(
+                        numpy.array(ds[...]).flatten().tolist())
+                    parameter.need_grad = need_grad
     elif ext == '.protobuf':
+        if proto is None:
+            proto = nnabla_pb2.NNablaProtoBuf()
         with open(path, 'rb') as f:
             proto.MergeFromString(f.read())
             set_parameter_from_proto(proto)
@@ -342,6 +346,8 @@ def load_parameters(path, proto=None, proto_only=False):
             set_parameter_from_proto(proto)
 
     elif ext == '.nnp':
+        if proto is None:
+            proto = nnabla_pb2.NNablaProtoBuf()
         try:
             tmpdir = tempfile.mkdtemp()
             with zipfile.ZipFile(path, 'r') as nnp:
@@ -350,7 +356,7 @@ def load_parameters(path, proto=None, proto_only=False):
                     _, ext = os.path.splitext(name)
                     if ext in ['.protobuf', '.h5']:
                         proto = load_parameters(os.path.join(
-                            tmpdir, name), proto, proto_only)
+                            tmpdir, name), proto, needs_proto)
         finally:
             shutil.rmtree(tmpdir)
     logger.info("Parameter load ({}): {}".format(format, path))

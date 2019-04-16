@@ -78,7 +78,8 @@ def _update_result(args, index, result, values, output_index, type_end_names, ou
                     if dim > 1:
                         file_name += str(dim_index) + '_'
                     file_name += '{}{}'.format(file_index, vtype)
-                    full_path = os.path.join(args.outdir, 'outputs', file_name)
+                    full_path = os.path.join(
+                        args.outdir, args.result_outdir, file_name)
                     directory = os.path.dirname(full_path)
                     try:
                         os.makedirs(directory)
@@ -103,7 +104,7 @@ def _update_result(args, index, result, values, output_index, type_end_names, ou
                             x = np.array(d)
                             writer.writerows(x)
                     outputs[data_index].append(
-                        os.path.join('.', 'outputs', file_name))
+                        os.path.join('.', args.result_outdir, file_name))
         output_index += 1
 
     return result, outputs
@@ -193,7 +194,7 @@ def forward_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 
@@ -201,6 +202,8 @@ def forward_command(args):
     for d in info.datasets.values():
         if d.uri == args.dataset or d.cache_dir == args.dataset:
             normalize = d.normalize
+    for e in config.executors:
+        normalize = normalize and not e.no_image_normalization
 
     orders = {}
     # With CSV
@@ -210,6 +213,7 @@ def forward_command(args):
             batch_size=config.networks[0].batch_size,
             shuffle=False,
             normalize=normalize,
+            with_memory_cache=False,
             with_file_cache=False))
 
         # load dataset as csv
@@ -322,7 +326,7 @@ def infer_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 
@@ -365,6 +369,8 @@ def add_infer_command(subparsers):
     subparser.add_argument(
         '-o', '--output', help='output file prefix', required=False)
     subparser.add_argument(
+        '--result_outdir', help='output result directory', type=str, default='')
+    subparser.add_argument(
         '-p', '--param', help='path to parameter file', required=False)
     subparser.add_argument(
         '-b', '--batch_size',
@@ -386,6 +392,8 @@ def add_forward_command(subparsers):
         '-d', '--dataset', help='path to CSV dataset', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '--result_outdir', help='output result directory', type=str, default='')
     subparser.add_argument(
         '-b', '--batch_size',
         help='Batch size to use batch size in nnp file set -1.',
