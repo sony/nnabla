@@ -37,7 +37,12 @@
 
 #include "nnabla.pb.h"
 
+#include <chrono>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <unordered_map>
 
 namespace nbla {
@@ -136,6 +141,7 @@ public:
   void execute();
 };
 
+#ifndef USE_NPY_CACHE_DATA_ITERATOR
 // ----------------------------------------------------------------------
 // DatasetImpl
 // ----------------------------------------------------------------------
@@ -227,6 +233,87 @@ public:
   const int get_iter_per_epoch() const;
   unordered_map<string, NdArrayPtr> next();
 };
+#else
+// ----------------------------------------------------------------------
+// VariableBuffer
+// ----------------------------------------------------------------------
+/** Hold memory of a batch data
+*/
+class VariableBuffer {
+
+public:
+  VariableBuffer();
+  ~VariableBuffer();
+
+  NdArrayPtr to_ndarray();
+  void from_buffer(const void *buffer, dtypes data_type, int block_size,
+                   Shape_t shape);
+
+private:
+  VariableBuffer(const VariableBuffer &) = delete;
+  VariableBuffer &operator=(const VariableBuffer &) = delete;
+
+  char *buffer_;
+  dtypes data_type_;
+  int block_size_;
+  Shape_t shape_;
+};
+
+class DatasetImpl {
+public:
+  DatasetImpl(const ::Dataset &dataset) : dataset_proto_(dataset){};
+  virtual ~DatasetImpl() = default;
+  string name() { return dataset_proto_.name(); }
+  string uri() const { return dataset_proto_.uri(); };
+  string cache_dir() const { return dataset_proto_.cache_dir(); };
+  bool create_cache_explicitly() const {
+    return dataset_proto_.create_cache_explicitly();
+  };
+  bool overwrite_cache() const { return dataset_proto_.overwrite_cache(); };
+  bool shuffle() const { return dataset_proto_.shuffle(); };
+  bool no_image_normalization() const {
+    return dataset_proto_.no_image_normalization();
+  };
+  const int batch_size() const { return dataset_proto_.batch_size(); };
+
+  virtual unordered_map<string, shared_ptr<VariableBuffer>>
+  get_batch_data(uint32_t iter_num) = 0;
+  virtual vector<string> get_data_names() = 0;
+  virtual int get_num_data() const = 0;
+
+protected:
+  const ::Dataset dataset_proto_;
+};
+
+class DataIteratorFromCacheFiles {
+public:
+  // ctor
+  DataIteratorFromCacheFiles(shared_ptr<DatasetImpl> dataset);
+  ~DataIteratorFromCacheFiles();
+
+public:
+  const vector<string> get_data_names() const;
+  const int get_batch_size() const;
+  const int get_iter_per_epoch() const;
+
+  typedef unordered_map<string, NdArrayPtr> batch_data_type;
+  typedef unordered_map<string, shared_ptr<VariableBuffer>> queue_data_type;
+  batch_data_type next();
+
+private:
+  const int MAX_ITEM = 256;
+  const int TIMEOUT = 250;
+  void loop();
+  shared_ptr<DatasetImpl> dataset_;
+  vector<shared_ptr<std::thread>> workers_;
+  uint32_t iter_;
+  bool req_exit_;
+  std::queue<queue_data_type> queue_;
+  mutable std::mutex mutex_;
+  std::condition_variable full_cond_;
+  std::condition_variable empty_cond_;
+};
+#endif
 
 // ----------------------------------------------------------------------
 // OptimizerImpl
