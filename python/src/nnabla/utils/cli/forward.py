@@ -265,41 +265,47 @@ def forward_command(args):
     callback.update_status(('data.current', 0))
     callback.update_status('processing', True)
 
-    with data_iterator() as di:
-        index = 0
-        while index < di.size:
-            data = di.next()
-            result, outputs = _forward(args, index, config, data, di.variables)
-            if index == 0:
-                for name, dim in zip(result.names, result.dims):
-                    if dim == 1:
-                        row0.append(name)
-                    else:
-                        for d in range(dim):
-                            row0.append(name + '__' + str(d))
-            for i, output in enumerate(outputs):
-                if index + i < len(rows):
-                    rows[orders[index + i]].extend(output)
-            index += len(outputs)
-
-            callback.update_status(('data.current', min([index, len(rows)])))
-            callback.update_forward_time()
-            callback.update_status()
-
-            logger.log(
-                99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
-
-    with open(os.path.join(args.outdir, 'output_result.csv'), 'w') as f:
+    result_csv_filename = os.path.join(args.outdir, 'output_result.csv')
+    with open(result_csv_filename, 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
-        writer.writerow(row0)
-        writer.writerows(rows)
+        with data_iterator() as di:
+            index = 0
+            while index < di.size:
+                data = di.next()
+                result, outputs = _forward(
+                    args, index, config, data, di.variables)
+                if index == 0:
+                    for name, dim in zip(result.names, result.dims):
+                        if dim == 1:
+                            row0.append(name)
+                        else:
+                            for d in range(dim):
+                                row0.append(name + '__' + str(d))
+                    writer.writerow(row0)
+                for i, output in enumerate(outputs):
+                    if index + i < len(rows):
+                        import copy
+                        row = copy.deepcopy(rows[orders[index + i]])
+                        row.extend(output)
+                        writer.writerow(row)
+                index += len(outputs)
 
-    callback.process_evaluation_result(args, row0, rows)
+                callback.update_status(
+                    ('data.current', min([index, len(rows)])))
+                callback.update_forward_time()
+                callback.update_status()
+
+                logger.log(
+                    99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
+
+    callback.process_evaluation_result(args.outdir, result_csv_filename)
 
     logger.log(99, 'Forward Completed.')
     progress(None)
 
-    callback.update_forward_result(row0, rows)
+    callback.update_status(('output_result.csv.header', ','.join(row0)))
+    callback.update_status(('output_result.column_num', len(row0)))
+    callback.update_status(('output_result.data_num', len(rows)))
     callback.update_status('finished')
 
     return True

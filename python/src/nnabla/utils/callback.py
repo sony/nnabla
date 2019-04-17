@@ -68,14 +68,9 @@ def get_timelimit(args):
         return -1
 
 
-def process_evaluation_result(args, row0, rows):
+def process_evaluation_result(outdir, filename):
     if callback is not None:
-        callback.process_evaluation_result(args, row0, rows)
-
-
-def update_forward_result(header, rows):
-    if callback is not None:
-        callback.update_forward_result(header, rows)
+        callback.process_evaluation_result(outdir, filename)
 
 
 def update_forward_time():
