@@ -80,6 +80,10 @@ def _save_parameters(args, suffix, epoch, force=False):
     filename = base + '.nnp'
     if force or timediff > 180.0 or epochdiff > 10:
 
+        # Remove existing nnp before saving new file.
+        for exist in exists:
+            os.unlink(exist)
+
         version_filename = base + '_version.txt'
 
         with open(version_filename, 'w') as file:
@@ -96,9 +100,6 @@ def _save_parameters(args, suffix, epoch, force=False):
 
         os.unlink(version_filename)
         os.unlink(param_filename)
-
-        for exist in exists:
-            os.unlink(exist)
 
         _save_parameter_info[suffix]['epoch'] = epoch
         _save_parameter_info[suffix]['time'] = current_time
