@@ -518,7 +518,6 @@ class OnnxImporter:
 
         # opset_9 table
         self.table_op_set_9 = {
-            **self.table_op_set_6,
             "Dropout": partial(self.Dropout, 9),
             "Less": partial(self.BroadcastOperator_9, 'Less'),
             "Greater": partial(self.BroadcastOperator_9, 'Greater'),
@@ -532,6 +531,7 @@ class OnnxImporter:
             "Or": partial(self.BroadcastOperator_9, 'LogicalOr'),
             "Xor": partial(self.BroadcastOperator_9, 'LogicalXor'),
         }
+        self.table_op_set_9 = dict(self.table_op_set_6, **self.table_op_set_9)
 
         # Currently, we only planed to support opset 6 and opset 9.
         # More planes will be added later to support more opset versions.
