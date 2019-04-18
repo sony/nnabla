@@ -61,13 +61,13 @@ Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+.
 CUDA vs CUDNN Compatibility
 ---------------------------
 
-================== ============ =============
-Package name       CUDA version CUDNN version
-================== ============ =============
+================================= ============ =============
+Package name                      CUDA version CUDNN version
+================================= ============ =============
 nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.4(Python3.5),7.5(python3.6,3.7)
 nnabla-ext-cuda92_nccl2_ubuntu16  9.2          7.4(python3.6),7.5(python3.5,3.7)
-nnabla-ext-cuda100_nccl2_ubuntu16  10.0         7.5
-================== ============ =============
+nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.5
+================================= ============ =============
 
 You can install as the following.
 
