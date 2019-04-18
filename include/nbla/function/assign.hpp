@@ -41,6 +41,9 @@ Outputs:
  */
 template <typename T> class Assign : public BaseFunction<> {
 protected:
+  shared_ptr<Function> f_add_;
+  VariablePtr gx_, gy_;
+
 public:
   Assign(const Context &ctx) : BaseFunction(ctx)
     {}

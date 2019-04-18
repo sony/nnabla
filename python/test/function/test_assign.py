@@ -49,6 +49,5 @@ def test_assign_forward_backward(seed, ctx, func_name):
     dummy.forward()
     dummy.backward()
 
-    # assign should not propagate gradients
-    assert np.all(dst.g == np.zeros((2, 3, 4)))
-    assert np.all(src.g == np.zeros((2, 3, 4)))
+    # gradients at destination are identical to gradients at assign operation
+    assert np.all(dst.g == dummy.g)
