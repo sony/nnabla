@@ -14,6 +14,8 @@
 
 from __future__ import absolute_import
 from .function_bases import *
+from six.moves import reduce as rd
+import numpy as np
 
 
 def sum(x, axis=None, keepdims=False):
@@ -280,7 +282,7 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     .. math::
         \begin{eqnarray}
           \mu &=& \frac{1}{M} \sum x_i \\
-          \sigma^2 &=& \frac{1}{M} \left(\sum x_i - \mu\right)^2 \\
+          \sigma^2 &=& \frac{1}{M} \sum \left(x_i - \mu\right)^2 \\
           \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
           y_i &=& \hat{x}_i \gamma + \beta.
         \end{eqnarray}
@@ -325,12 +327,57 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     if batch_stat and (mean.parent or variance.parent) is not None:
         raise ValueError(
             "if batch_stat is True, mean and variable must not have a parent function")
-    return batch_normalization_base(x, beta, gamma, mean, variance,
-                                    axes=axes,
-                                    decay_rate=decay_rate,
-                                    eps=eps,
-                                    batch_stat=batch_stat,
-                                    n_outputs=n_outputs)
+
+    if len(axes) == 1:
+        return batch_normalization_base(x, beta, gamma, mean, variance,
+                                        axes=axes,
+                                        decay_rate=decay_rate,
+                                        eps=eps,
+                                        batch_stat=batch_stat,
+                                        n_outputs=n_outputs)
+
+    def transpose_and_reshape(x, axes):
+        transposed = transpose(x, transpose_axes)
+        return reshape(transposed, [rd(lambda x, y: x * y, transposed.shape[:len(axes)])] + list(
+            transposed.shape[len(axes):])), transposed.shape
+
+    def inverse_transpose_and_reshape(x, axes, variable_shape):
+        un_reshaped = reshape(
+            x, list(variable_shape[:len(axes)] + variable_shape[len(axes):]))
+        return transpose(un_reshaped, inv_transpose_axes)
+
+    def get_tranpose_args(ndim, axes):
+        transpose_axes = [i for i in list(
+            axes)] + [i for i in range(ndim) if i not in list(axes)]
+        inv_transpose_axes = np.argsort(transpose_axes).tolist()
+        return transpose_axes, inv_transpose_axes
+
+    transpose_axes, inv_transpose_axes = get_tranpose_args(len(x.shape), axes)
+    inp, transposed_inp_shape = transpose_and_reshape(x, axes)
+    beta, transposed_beta_shape = transpose_and_reshape(beta, axes)
+    gamma, transposed_gamma_shape = transpose_and_reshape(gamma, axes)
+    mean, transposed_mean_shape = transpose_and_reshape(mean, axes)
+    variance, transposed_variance_shape = transpose_and_reshape(variance, axes)
+
+    if n_outputs == 1:
+        out = batch_normalization_base(inp, beta, gamma, mean, variance,
+                                       axes=[0],
+                                       decay_rate=decay_rate,
+                                       eps=eps,
+                                       batch_stat=batch_stat,
+                                       n_outputs=n_outputs)
+        return inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
+    out, mean, variance = batch_normalization_base(inp, beta, gamma, mean, variance,
+                                                   axes=[0],
+                                                   decay_rate=decay_rate,
+                                                   eps=eps,
+                                                   batch_stat=batch_stat,
+                                                   n_outputs=n_outputs)
+    out = inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
+    mean = inverse_transpose_and_reshape(mean, axes, transposed_mean_shape)
+    variance = inverse_transpose_and_reshape(
+        variance, axes, transposed_variance_shape)
+    return out, mean, variance
 
 
 def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
@@ -719,3 +766,44 @@ def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
     from .function_bases import sort as sort_base
     n_outputs = 2 if with_index and not only_index else 1
     return sort_base(x, axis, reverse, with_index, only_index, n_outputs)
+
+
+def tile(x, reps):
+    """Forward `x` repeated the number of times given by `reps`. If `reps` is
+    a sequence, the output has dimension of ``d = max(len(reps), x.ndim)`` and
+    either `x` is promoted to be d-dimensional by prepending new axes or `reps`
+    is promoted to x.ndim by prepending 1's.
+
+    Args:
+        x(~nnabla.Variable): Input N-D array.
+        reps(int or sequence of int): Repetitions of `x` along each axis.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> F.tile(nn.Variable([2, 3], 3).shape    # reps is promoted to [1, 3]
+    (2, 9)
+    >>> F.tile(nn.Variable([3], [2, 3]).shape  # x is promoted to shape (1, 3)
+    (2, 9)
+    >>> nn.set_auto_forward(True)
+    >>> x = nn.Variable.from_numpy_array(np.array([1, 2, 3]))
+    >>> print(F.tile(x, 3).d)
+    [1. 2. 3. 1. 2. 3. 1. 2. 3.]
+    >>> print(F.tile(x, [2, 3]).d)
+    [[1. 2. 3. 1. 2. 3. 1. 2. 3.]
+     [1. 2. 3. 1. 2. 3. 1. 2. 3.]]
+    >>> x = nn.Variable.from_numpy_array(np.array([[1, 3], [2, 4]]))
+    >>> print(F.tile(x, 3).d)
+    [[1. 3. 1. 3. 1. 3.]
+     [2. 4. 2. 4. 2. 4.]]
+    >>> print(F.tile(x, [2, 3]).d)
+    [[1. 3. 1. 3. 1. 3.]
+     [2. 4. 2. 4. 2. 4.]
+     [1. 3. 1. 3. 1. 3.]
+     [2. 4. 2. 4. 2. 4.]]
+
+    """
+    from .function_bases import tile as tile_base
+    reps = [reps] if isinstance(reps, int) else reps
+    return tile_base(x, reps)

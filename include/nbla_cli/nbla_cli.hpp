@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2019 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/memory.hpp>
+#ifndef NBLA_CLI_HPP_
+#define NBLA_CLI_HPP_
 
-namespace nbla {
-Memory::Memory(Size_t bytes, const string &device)
-    : size_(bytes), ptr_(nullptr), device_(device) {}
+#include <nbla_cli/nbla_dump.h>
+#include <nbla_cli/nbla_infer.h>
+#include <nbla_cli/nbla_train.h>
 
-Size_t Memory::size() const { return size_; }
-
-string Memory::device() const { return device_; }
-
-void *Memory::ptr() {
-  if (!ptr_) {
-    NBLA_CHECK(allocate(), error_code::memory,
-               "Failed to allocate %d bytes of memory on %s.", size_,
-               device_.c_str());
-  }
-  return ptr_;
-}
-}
+#endif // NBLA_CLI_HPP_

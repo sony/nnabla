@@ -184,7 +184,49 @@ Adam:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
-  
+
+AdaBound:
+  snake_name: adabound
+  doc: |
+    AdaBound optimizer applies dynamic bounds on learning rates to Adam.
+
+    .. math::
+        w_{t+1} &\leftarrow w_t - \eta_t*m_t\\
+        \eta_t = clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{v_t} + \epsilon)}, \eta_l(t), \eta_u(t))\\
+        \eta_l(t) = (1 - (1/((1-\beta)t+1)))\alpha\\
+        \eta_u(t) = (1 + (1/((1-\beta)t)))\alpha
+
+
+  references:
+    - |
+      `L. Luo, Y. Xiong, Y. Liu and X. Sun. Adaptive Gradient Methods with Dynamic Bound of Learning Rate.
+      <https://arxiv.org/abs/1902.09843>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 1e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
+    final_lr:
+      type: float
+      default: 0.1
+      doc: Final (SGD) learning rate.
+    gamma:
+      type: float
+      default: 0.001
+      doc: Convergence speed of the bound functions.
 Adamax:
   snake_name: adamax
   doc: |
@@ -262,6 +304,54 @@ AMSGRAD:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`). Note this does not appear in the paper.
+    bias_correction:
+      type: bool
+      default: False
+      doc: Apply bias correction to moving averages defined in ADAM. Note this does not appear in the paper.
+
+AMSBound:
+  snake_name: amsbound
+  doc: |
+    AMSBound optimizer applies dynamic bounds on learning rates to AMSGrad.
+
+    .. math::
+        w_{t+1} &\leftarrow w_t - \eta_t*m_t\\
+        \eta_t = clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{\hat{v_t}} + \epsilon)}, \eta_l(t), \eta_u(t))\\
+        \hat{v_t} = \max(\hat{v_{t-1}}, v_t)\\
+        \eta_l(t) = (1 - (1/((1-\beta)t+1)))\alpha\\
+        \eta_u(t) = (1 + (1/((1-\beta)t)))\alpha
+
+
+  references:
+    - |
+      `L. Luo, Y. Xiong, Y. Liu and X. Sun. Adaptive Gradient Methods with Dynamic Bound of Learning Rate.
+      <https://arxiv.org/abs/1902.09843>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 1e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero division(:math:`\epsilon`). Note this does not appear in the paper.
+    final_lr:
+      type: float
+      default: 0.1
+      doc: Final (SGD) learning rtae
+    gamma:
+      type: float
+      default: 0.001
+      doc: Convergence speed of the bound functions
     bias_correction:
       type: bool
       default: False

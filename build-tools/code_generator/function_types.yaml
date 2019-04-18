@@ -274,6 +274,9 @@ Broadcast:
 BroadcastTo:
   float: [float]
   half: [Half]
+Tile:
+  float: [float]
+  half: [Half]
 OneHot:
   float: [int, float]
   half: [int, Half]
@@ -313,6 +316,9 @@ Rand:
 Randint:
   float: [int]
 Randn:
+  float: [float]
+  half: [Half]
+RandomChoice:
   float: [float]
   half: [Half]
 RandomCrop:

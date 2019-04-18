@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2018 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nbla_test_utils import list_context
+from nbla_test_utils import list_context, function_tester
 
 ctxs = list_context('TopKData')
 
@@ -41,24 +41,31 @@ def ref_top_k_data(x, k, abs, reduce, base_axis, grad=None):
     return (yd.reshape(x.shape[:base_axis] + (k,) if reduce else x.shape), xg)
 
 
-@pytest.mark.parametrize("ctx, func_name", ctxs)
+def ref_top_k_data_fw(x, k, abs, reduce, base_axis):
+    return ref_top_k_data(x, k, abs, reduce, base_axis)[0]
+
+
+def ref_top_k_data_bw(x, g, k, abs, reduce, base_axis):
+    return ref_top_k_data(x, k, abs, reduce, base_axis, g)[1].flatten()
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("k", [1, 5])
 @pytest.mark.parametrize("abs", [False, True])
-@pytest.mark.parametrize("reduce", [False, True])
-@pytest.mark.parametrize("base_axis", [1, 0, 2])
-def test_forward_backward(seed, k, abs, reduce, base_axis, ctx, func_name):
+@pytest.mark.parametrize("reduce", [True, False])
+@pytest.mark.parametrize("ishape, k, base_axis", [
+    ((4, 5, 6), 1, 0), ((4, 5, 6), 1, 1), ((4, 5, 6), 1, 2),
+    ((4, 5, 6), 5, 0), ((4, 5, 6), 5, 1), ((4, 5, 6), 5, 2),
+    ((1, 1000), 10, 1), ((1, 100000), 1024, 1), ((1, 100000), 1025, 1)
+])
+def test_forward_backward(seed, ishape, k, abs, reduce, base_axis, ctx, fname):
     rng = np.random.RandomState(seed)
-    ishape = (4, 5, 6)
+    inputs = [rng.randn(*ishape).astype(np.float32)]
+    function_tester(rng, F.top_k_data, ref_top_k_data_fw, inputs, ctx=ctx,
+                    func_name=fname, ref_grad=ref_top_k_data_bw,
+                    func_args=[k, abs, reduce, base_axis],
+                    disable_half_test=k > 10)
 
-    x = nn.Variable.from_numpy_array(rng.randn(*ishape), need_grad=True)
-    y = F.top_k_data(x, k, abs, reduce, base_axis)
-    y.forward()
-
-    x.grad.zero()
-    grad = rng.randn(*y.shape)
-    y.backward(grad)
-
-    ref_d, ref_g = ref_top_k_data(x.d, k, abs, reduce, base_axis, grad)
-    assert np.allclose(ref_d, y.d, atol=1e-6)
-    assert np.allclose(ref_g, x.g, atol=1e-6)
+    # Note: FP16 has too many duplicate value for larger K to get the
+    # same sort order as FP32 and this makes the function tester fail
+    # when comparing FP16 to FP32 results of gradient computation.

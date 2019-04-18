@@ -75,6 +75,9 @@ Neural Network Layer:
         doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
           relu. Default is tanh.
         type: string
+        available_values:
+        - tanh
+        - relu
         default: tanh
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
@@ -2947,6 +2950,27 @@ Array Manipulation:
     function_ids:
       i: 184
     c_runtime: not support
+  Tile:
+    snake_name: tile
+    doc: |2
+
+      Forward input `x` repeated the number of times given by `reps`. If `reps`
+      is a sequence, the output has dimension of ``d = max(len(reps), x.ndim)``
+      and either `x` is promoted to be d-dimensional by prepending new axes or
+      `reps` is promoted to x.ndim by prepending 1's.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      reps:
+        doc: The number of repetitions of `x` along each axis.
+        type: repeated int64
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iI: 247
   OneHot:
     snake_name: one_hot
     doc: |2
@@ -3540,6 +3564,79 @@ Stochasticity:
     function_ids:
       ffiIi: 91
     c_runtime: not support
+  RandomChoice:
+    snake_name: random_choice
+    doc: |2
+
+      Generate random samples from population `x` with selection probabilities
+      determined by the relative weights `w`. The number of samples to draw is
+      given by the product of `shape`s dimensions, and the samples are returned
+      with the given `shape`. By default, samples are drawn with replacement,
+      i.e. selection of a specific population member is solely determined by
+      its associated weight. Sampling without replacement, where any population
+      member may be drawn only once, is used if `replace` is set to False.
+
+      For both `x` and `w` the innermost dimension corresponds to the individual
+      populations and their weights from which samples are returned with the
+      requested `shape` following all outermost dimensions of the input.
+
+      .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.functions as F
+        import numpy as np
+        nn.set_auto_forward(True)
+
+        # x holds two populations
+        x = nn.Variable.from_numpy_array(np.array([[11, 22, 33], [110, 220, 330]]))
+        # w holds the weights for each population
+        w = nn.Variable.from_numpy_array(np.array([[10, 20, 70], [70, 20, 10]]))
+
+        # draw one sample from each population
+        y = F.random_choice(x, w)  # y.shape => (2, 1)
+
+        # draw 12 samples with shape (3, 4) from each population
+        y = F.random_choice(x, w, shape=(3, 4))  # y.shape => (2, 3, 4)
+
+      Note that weights must not be less than zero and for each population the
+      sum of weights must be greater than zero. Additionally, sampling without
+      replacement requires that the number of non-zero weights is not less than
+      the number of samples to be drawn. These conditions are verified in "cpu"
+      computation context but not when using "cuda" or "cudnn" acceleration
+      (this would require additional device synchronization steps penalizing
+      performance).
+
+      Random sampling from an implicit array of index values (like categorical
+      or multinomial) can be realized with input `x` constructed as indices.
+
+      .. code-block:: python
+
+        w = nn.Variable.from_numpy_array(np.array([1, 2, 3, 2, 1]))
+        y = F.random_choice(F.arange(0, 5), w)
+    inputs:
+      x:
+        doc: N-D array from which a random sample is generated.
+      w:
+        doc: N-D array of associated weights of elements in `x`.
+    arguments:
+      shape:
+        doc: Number and shape of generated samples.
+        type: Shape
+        default: '[]'
+      replace:
+        doc: Whether sampling is with or without replacement.
+        type: bool
+        default: 'True'
+      seed:
+        doc: Random seed.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIBi: 246
   RandomCrop:
     snake_name: random_crop
     doc: |2
