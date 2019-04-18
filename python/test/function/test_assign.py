@@ -51,3 +51,4 @@ def test_assign_forward_backward(seed, ctx, func_name):
 
     # gradients at destination are identical to gradients at assign operation
     assert np.all(dst.g == dummy.g)
+    assert np.all(src.g == np.zeros((2, 3, 4)))
