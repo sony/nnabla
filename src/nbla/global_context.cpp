@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2019 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/memory.hpp>
+#include <nbla/global_context.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 namespace nbla {
-Memory::Memory(Size_t bytes, const string &device)
-    : size_(bytes), ptr_(nullptr), device_(device) {}
+GlobalContext::GlobalContext()
+    : current_(Context({"cpu:float"}, "CpuCachedArray", "0")) {}
 
-Size_t Memory::size() const { return size_; }
+GlobalContext::~GlobalContext() {}
 
-string Memory::device() const { return device_; }
+Context GlobalContext::get_current_context() const { return current_; }
 
-void *Memory::ptr() {
-  if (!ptr_) {
-    NBLA_CHECK(allocate(), error_code::memory,
-               "Failed to allocate %d bytes of memory on %s.", size_,
-               device_.c_str());
-  }
-  return ptr_;
-}
+void GlobalContext::set_current_context(const Context ctx) { current_ = ctx; }
+
+NBLA_INSTANTIATE_SINGLETON(NBLA_API, GlobalContext);
 }

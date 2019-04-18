@@ -85,6 +85,13 @@ const Array *NdArray::get(dtypes dtype, const Context &ctx) {
 shared_ptr<const Array> NdArray::get_sp(dtypes dtype, const Context &ctx) {
   return array_->get_sp(dtype, ctx);
 }
+
+unsigned long NdArray::data_ptr(dtypes dtype, const Context &ctx,
+                                bool write_only) {
+  return (unsigned long)reinterpret_cast<uintptr_t>(
+      array_->data_ptr(dtype, ctx, write_only));
+}
+
 Array *NdArray::cast(dtypes dtype, const Context &ctx, bool write_only) {
   return array_->cast(dtype, ctx, write_only);
 }

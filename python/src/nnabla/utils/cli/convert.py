@@ -130,8 +130,9 @@ def add_convert_command(subparsers):
                            help='[export] This option need to set  "-E" option.' +
                            'Split executor with specified index. ' +
                            '(eg. "1-9", "1-2,5-")')
-    subparser.add_argument('-d', '--define_opset', type=str, default=None,
-                           help='[export] define onnx opset version. e.g. opset_6')
+    subparser.add_argument('-d', '--define_version', type=str, default=None,
+                           help='[export][ONNX] define onnx opset version. e.g. opset_6' + '\n' +
+                           '[export][NNB] define binary format version. e.g. nnb_3')
 
     # For config function list
     subparser.add_argument('-c', '--config', type=str, default=None,

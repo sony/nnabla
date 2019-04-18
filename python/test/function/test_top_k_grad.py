@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2018 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nbla_test_utils import list_context
+from nbla_test_utils import list_context, function_tester
 
 ctxs = list_context('TopKGrad')
 
@@ -33,26 +33,30 @@ def ref_top_k_grad(k, abs, base_axis, grad):
     return dx.reshape(grad.shape)
 
 
-@pytest.mark.parametrize("ctx, func_name", ctxs)
+def ref_top_k_grad_fw(x, k, abs, base_axis):
+    return x
+
+
+def ref_top_k_grad_bw(x, g, k, abs, base_axis):
+    return ref_top_k_grad(k, abs, base_axis, g).flatten()
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("k", [1, 5])
 @pytest.mark.parametrize("abs", [False, True])
-@pytest.mark.parametrize("base_axis", [1, 0, 2])
-def test_forward_backward(seed, k, abs, base_axis, ctx, func_name):
+@pytest.mark.parametrize("ishape, k, base_axis", [
+    ((4, 5, 6), 1, 0), ((4, 5, 6), 1, 1), ((4, 5, 6), 1, 2),
+    ((4, 5, 6), 5, 0), ((4, 5, 6), 5, 1), ((4, 5, 6), 5, 2),
+    ((1, 1000), 10, 1), ((1, 100000), 1024, 1), ((1, 100000), 1025, 1)
+])
+def test_forward_backward(seed, ishape, k, abs, base_axis, ctx, fname):
     rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*ishape).astype(np.float32)]
+    function_tester(rng, F.top_k_grad, ref_top_k_grad_fw, inputs, ctx=ctx,
+                    func_name=fname, ref_grad=ref_top_k_grad_bw,
+                    func_args=[k, abs, base_axis],
+                    disable_half_test=k > 10)
 
-    x = nn.Variable.from_numpy_array(rng.randn(4, 5, 6), need_grad=True)
-    y = F.top_k_grad(x, k, abs, base_axis)
-    g = rng.randn(*x.shape)
-    ref = ref_top_k_grad(k, abs, base_axis, g)
-
-    y.forward()
-    assert np.allclose(x.d, y.d)
-
-    x.grad.zero()
-    y.backward(g)
-    assert np.allclose(ref, x.g)
-
-    x.grad.fill(0.5)
-    y.backward(g)
-    assert np.allclose(ref + 0.5, x.g)
+    # Note: FP16 has too many duplicate value for larger K to get the
+    # same sort order as FP32 and this makes the function tester fail
+    # when comparing FP16 to FP32 results of gradient computation.

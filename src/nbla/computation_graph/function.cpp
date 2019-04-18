@@ -24,6 +24,23 @@ using std::make_shared;
 // Just a helper function.
 static inline const char *b2str(bool b) { return b ? "true" : "false"; }
 
+void CgFunction::OutputWrapper::set(CgVariablePtr v) {
+  this->weak_reference = v;
+  this->internal_variable = v->variable();
+}
+CgVariablePtr CgFunction::OutputWrapper::get() {
+  auto o = this->weak_reference.lock();
+  if (o) {
+    return o;
+  }
+  /*
+    If the CgVariable instace is deleted before using, a new CgVariable
+    instance is created using the Variable instance which has been held in the
+    deleted CgVariable instance.
+   */
+  return make_shared<CgVariable>(this->internal_variable);
+}
+
 CgFunction::CgFunction(FunctionPtr func) : rank_(0), func_(func) {}
 
 CgFunction::~CgFunction() {
@@ -114,18 +131,14 @@ void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
   outputs_.resize(outputs.size());
   for (int i = 0; i < outputs.size(); ++i) {
     outputs[i]->set_rank_(rank_ + 1);
-    outputs_[i] = outputs[i];
+    outputs_[i].set(outputs[i]);
   }
 }
 
 vector<CgVariablePtr> CgFunction::outputs() {
   vector<CgVariablePtr> outputs(outputs_.size());
   for (int i = 0; i < outputs_.size(); ++i) {
-    auto o = outputs_[i].lock();
-    NBLA_CHECK(o, error_code::value,
-               "Weak reference to outputs[%d] has gone at %s.", i,
-               func_->name().c_str());
-    outputs[i] = o;
+    outputs[i] = outputs_[i].get();
   }
   return outputs;
 }

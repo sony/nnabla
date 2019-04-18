@@ -54,8 +54,10 @@ def test_examples_cpp_mnist_runtime(tmpdir, nnabla_examples_root, batch_size):
 
     # C. Get mnist_runtime results.
     nnp_file = tmpdir.join('tmp.monitor', 'lenet_result.nnp').strpath
+    assert os.path.isfile(nnp_file)
     pgm_file = os.path.join(os.path.dirname(__file__),
                             '../../../examples/cpp/mnist_runtime/1.pgm')
+    assert os.path.isfile(pgm_file)
     output = check_output(['mnist_runtime', nnp_file, pgm_file, 'Runtime'])
     output.decode('ascii').splitlines()[1].split(':')[1].strip()
     cpp_result = np.asarray(output.decode('ascii').splitlines()[1].split(':')[

@@ -41,8 +41,6 @@ Outputs:
 template <typename T> class BatchInv : public BaseFunction<> {
 protected:
   int dim_, offset_, batch_size_;
-  shared_ptr<Function> f_mul_scalar, f_batch_matmul1_, f_batch_matmul2_, f_add_;
-  VariablePtr neg_inv_x_, inv_x_, matmul1_out_, matmul2_out_, gx_, gy_, gx_accum_;
 
 public:
   BatchInv(const Context &ctx) : BaseFunction(ctx)

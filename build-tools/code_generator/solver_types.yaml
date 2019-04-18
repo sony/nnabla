@@ -8,6 +8,8 @@ Adagrad:
   float: [float]
 Adam:
   float: [float]
+AdaBound:
+  float: [float]
 Adamax:
   float: [float]
 Nesterov:
@@ -15,4 +17,6 @@ Nesterov:
 RMSprop:
   float: [float]
 AMSGRAD:
+  float: [float]
+AMSBound:
   float: [float]

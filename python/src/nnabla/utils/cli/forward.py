@@ -187,7 +187,7 @@ def forward_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 
@@ -195,6 +195,9 @@ def forward_command(args):
     for d in info.datasets.values():
         if d.uri == args.dataset:
             normalize = d.normalize
+    for e in config.executors:
+        normalize = normalize and not e.no_image_normalization
+
     data_iterator = (lambda: data_iterator_csv_dataset(
         uri=args.dataset,
         batch_size=config.networks[0].batch_size,
@@ -265,7 +268,7 @@ def infer_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 

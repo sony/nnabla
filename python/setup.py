@@ -24,7 +24,7 @@ import copy
 
 setup_requires = [
     'setuptools',
-    'numpy<1.16',
+    'numpy>1.13',
     'Cython',  # Requires python-dev.
 ]
 
@@ -248,6 +248,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnabla',
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
+                'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
                 'nnabla_ext',

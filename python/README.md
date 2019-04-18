@@ -1,1 +1,1 @@
-See [Install Python binding](../doc/install-python-binding.md)
+See [Install Python binding](https://nnabla.readthedocs.io/en/latest/python/installation.html)

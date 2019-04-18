@@ -54,6 +54,7 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
         void fill(double v) except+
         const CArray * get(dtypes dtype, const CContext & ctx) nogil except+
         shared_ptr[const CArray] get_sp(dtypes dtype, const CContext & ctx) nogil except+
+        unsigned long data_ptr(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except+
         CArray * cast(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
         ArrayPtr cast_sp(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
 

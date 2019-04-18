@@ -153,7 +153,7 @@ def func_set_nncr_support():
     func_list = []
     for cat, cat_info in _nnabla_func_info.items():
         for func, func_info in cat_info.items():
-            if func_info['c_runtime'] == 'support':
+            if 'c_runtime' in func_info and func_info['c_runtime'] == 'support':
                 func_list.append(func)
     return set(func_list)
 

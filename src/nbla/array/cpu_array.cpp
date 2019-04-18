@@ -17,7 +17,6 @@
 #include <nbla/array_registry.hpp>
 #include <nbla/common.hpp>
 #include <nbla/cpu.hpp>
-#include <nbla/cpu_memory.hpp>
 
 #include <cstring> // memset
 #include <vector>
@@ -29,32 +28,19 @@ using std::shared_ptr;
 using std::make_shared;
 
 CpuArray::CpuArray(const Size_t size, dtypes dtype, const Context &ctx)
-    : Array::Array(size, dtype, ctx), inuse_memory_(nullptr) {}
+    : Array::Array(size, dtype, ctx,
+                   SingletonManager::get<Cpu>()->naive_allocator()->alloc(
+                       Array::size_as_bytes(size, dtype), "")) {}
 
-CpuArray::~CpuArray() {
-  if (this->object_) {
-    this->deallocate();
-  }
-}
+CpuArray::CpuArray(const Size_t size, dtypes dtype, const Context &ctx,
+                   AllocatorMemory &&mem)
+    : Array::Array(size, dtype, ctx, std::move(mem)) {}
+
+CpuArray::~CpuArray() {}
 
 void CpuArray::zero() {
   std::memset(this->pointer<void>(), 0,
               this->size() * sizeof_dtype(this->dtype_));
-}
-
-void CpuArray::allocate() {
-#ifdef NBLA_VERBOSE_MEMORY_USAGE
-  printf("CpuArray is created with size of %d\n",
-         (int)(this->size_ * sizeof(this->dtype_)));
-#endif
-  int msize = this->size_ * sizeof_dtype(this->dtype_);
-  inuse_memory_ = make_shared<CpuMemory>(msize, "");
-  inuse_memory_->allocate();
-  this->object_ = inuse_memory_->ptr();
-}
-void CpuArray::deallocate() {
-  inuse_memory_ = nullptr;
-  this->object_ = nullptr;
 }
 
 /** Helper template to copy data from CpuArray with other data type.
@@ -90,24 +76,12 @@ NBLA_DEFINE_FUNC_FILL(CpuArray, cpu_fill, cpu);
 /////////////////////////////////
 CpuCachedArray::CpuCachedArray(const Size_t size, dtypes dtype,
                                const Context &ctx)
-    : CpuArray(size, dtype, ctx) {}
+    : CpuArray(size, dtype, ctx,
+               SingletonManager::get<Cpu>()->caching_allocator()->alloc(
+                   Array::size_as_bytes(size, dtype), "")) {}
 
-CpuCachedArray::~CpuCachedArray() { this->deallocate(); }
+CpuCachedArray::~CpuCachedArray() {}
 
-void CpuCachedArray::allocate() {
-  deallocate();
-  int bytes = this->size_ * sizeof_dtype(this->dtype_);
-  auto mem = SingletonManager::get<Cpu>()->memcache().pop_or_create(bytes, "");
-  this->object_ = mem->ptr();
-  this->inuse_memory_ = mem;
-}
-
-void CpuCachedArray::deallocate() {
-  if (this->inuse_memory_) {
-    SingletonManager::get<Cpu>()->memcache().cache(this->inuse_memory_);
-    this->inuse_memory_ = nullptr;
-  }
-}
 Context CpuCachedArray::filter_context(const Context &ctx) {
   return Context({}, "CpuCachedArray", "");
 }
