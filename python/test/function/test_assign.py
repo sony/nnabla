@@ -34,7 +34,7 @@ def test_assign_forward_backward(seed, ctx, func_name):
 
     assign = F.assign(dst, src)
 
-    src.d = np.random.random((2, 3, 4))
+    src.d = rng.rand(2, 3, 4)
     assign.forward()
 
     # destination variable should be equal to source variable
@@ -42,7 +42,7 @@ def test_assign_forward_backward(seed, ctx, func_name):
     # output variable of assign function should be equal to soure variable
     assert np.allclose(assign.d, src.d)
 
-    dummy = assign + np.random.random()
+    dummy = assign + rng.rand()
 
     dst.grad.zero()
     src.grad.zero()
@@ -50,5 +50,15 @@ def test_assign_forward_backward(seed, ctx, func_name):
     dummy.backward()
 
     # gradients at destination are identical to gradients at assign operation
-    assert np.all(dst.g == dummy.g)
+    assert not np.all(dst.g == np.zeros((2, 3, 4)))
+    assert np.all(dst.g == assign.g)
+    assert np.all(src.g == np.zeros((2, 3, 4)))
+
+    # check accum=False
+    assign.grad.zero()
+    dst.g = rng.rand(2, 3, 4)
+    f = assign.parent
+    f.forward([dst, src], [assign])
+    f.backward([dst, src], [assign], accum=[False])
+    assert np.all(dst.g == assign.g)
     assert np.all(src.g == np.zeros((2, 3, 4)))

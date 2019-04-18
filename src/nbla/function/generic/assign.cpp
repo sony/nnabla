@@ -53,14 +53,17 @@ void Assign<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
 
-  auto gy = make_shared<Variable>(outputs[0]->grad());
-  auto gx = make_shared<Variable>(inputs[0]->grad());
-  auto f_add = create_Add2(this->ctx_, true);
-  f_add->setup(Variables{gx.get(), gy.get()}, Variables{gx.get()});
+  Variable gy(outputs[0]->grad());
+  Variable gx(inputs[0]->grad());
 
-  if (!accum[0])
-    gx->data()->zero();
-
-  f_add->forward(Variables{gx.get(), gy.get()}, Variables{gx.get()});
+  if (!accum[0]) {
+    const Array *gy_ptr = gy.data()->get(get_dtype<T>(), this->ctx_);
+    Array *gx_ptr = gx.data()->cast(get_dtype<T>(), this->ctx_, true);
+    gx_ptr->copy_from(gy_ptr);
+  } else {
+    auto f_add = create_Add2(this->ctx_, true);
+    f_add->setup(Variables{&gx, &gy}, Variables{&gx});
+    f_add->forward(Variables{&gx, &gy}, Variables{&gx});
+  }
 }
 }
