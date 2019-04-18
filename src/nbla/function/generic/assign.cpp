@@ -32,12 +32,6 @@ void Assign<T>::setup_impl(const Variables &inputs,
              string_join(inputs[0]->shape(), string(", ")).c_str(),
              string_join(inputs[1]->shape(), string(", ")).c_str());
   outputs[0]->reshape(inputs[0]->shape(), true);
-
-  gy_ = make_shared<Variable>(outputs[0]->grad());
-  gx_ = make_shared<Variable>(inputs[0]->grad());
-
-  f_add_ = create_Add2(this->ctx_, true);
-  f_add_->setup(Variables{gx_.get(), gy_.get()}, Variables{gx_.get()});
 }
 
 template <typename T>
@@ -59,10 +53,16 @@ void Assign<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
 
-  if (!accum[0])
     inputs[0]->grad()->zero();
 
-  gx_->data()->set_array(inputs[0]->grad()->array());
+  auto gy_ = make_shared<Variable>(outputs[0]->grad());
+  auto gx_ = make_shared<Variable>(inputs[0]->grad());
+  auto f_add_ = create_Add2(this->ctx_, true);
+  f_add_->setup(Variables{gx_.get(), gy_.get()}, Variables{gx_.get()});
+
+  if (!accum[0])
+    gx_->data()->zero();
+
   f_add_->forward(Variables{gx_.get(), gy_.get()}, Variables{gx_.get()});
 }
 }
