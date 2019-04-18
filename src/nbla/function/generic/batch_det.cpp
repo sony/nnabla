@@ -43,37 +43,6 @@ void BatchDet<T>::setup_impl(const Variables &inputs,
   offset_ = dim_ * dim_;
 
   outputs[0]->reshape(Shape_t{batch_size_}, true);
-
-  // for backward
-  reshaped_det_x_ = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
-  reshaped_gy_ = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
-  gx_ = make_shared<Variable>(inputs[0]->grad());
-  inv_x_ = make_shared<Variable>(inputs[0]->shape());
-  transposed_inv_x_ = make_shared<Variable>();
-  mul1_out_ = make_shared<Variable>();
-  mul2_out_ = make_shared<Variable>();
-
-  reshaped_det_x_->data()->set_array(outputs[0]->data()->array());
-  reshaped_gy_->data()->set_array(outputs[0]->grad()->array());
-
-  f_batch_inv_ = create_BatchInv(this->ctx_);
-  f_batch_inv_->setup(inputs, Variables{inv_x_.get()});
-
-  f_transpose_ = create_Transpose(this->ctx_, vector<int>{0, 2, 1});
-  f_transpose_->setup(Variables{inv_x_.get()},
-                      Variables{transposed_inv_x_.get()});
-
-  f_mul1_ = create_Mul2(this->ctx_);
-  f_mul1_->setup(Variables{reshaped_gy_.get(), reshaped_det_x_.get()},
-                 Variables{mul1_out_.get()});
-
-  f_mul2_ = create_Mul2(this->ctx_);
-  f_mul2_->setup(Variables{mul1_out_.get(), transposed_inv_x_.get()},
-                 Variables{mul2_out_.get()});
-
-  f_add_ = create_Add2(this->ctx_, true);
-  f_add_->setup(Variables{gx_.get(), mul2_out_.get()},
-                Variables{gx_.get()});
 }
 
 template <typename T>
@@ -97,20 +66,47 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0]) {
     return;
   }
-  if (!accum[0]) {
-    inputs[0]->grad()->zero();
-  }
+
+  auto inv_x = make_shared<Variable>(inputs[0]->shape());
+  auto f_batch_inv = create_BatchInv(this->ctx_);
+  f_batch_inv->setup(inputs, Variables{inv_x.get()});
+
+  auto transposed_inv_x = make_shared<Variable>();
+  auto f_transpose = create_Transpose(this->ctx_, vector<int>{0, 2, 1});
+  f_transpose->setup(Variables{inv_x.get()},
+                     Variables{transposed_inv_x.get()});
+
+  auto reshaped_gy = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
+  reshaped_gy->data()->set_array(outputs[0]->grad()->array());
+  auto reshaped_det_x = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
+  reshaped_det_x->data()->set_array(outputs[0]->data()->array());
+  auto mul1_out = make_shared<Variable>();
+  auto f_mul1 = create_Mul2(this->ctx_);
+  f_mul1->setup(Variables{reshaped_gy.get(), reshaped_det_x.get()},
+                Variables{mul1_out.get()});
+
+  auto mul2_out = make_shared<Variable>();
+  auto f_mul2 = create_Mul2(this->ctx_);
+  f_mul2->setup(Variables{mul1_out.get(), transposed_inv_x.get()},
+                Variables{mul2_out.get()});
+
+  auto gx = make_shared<Variable>(inputs[0]->grad());
+  auto f_add = create_Add2(this->ctx_, true);
+  f_add->setup(Variables{gx.get(), mul2_out.get()},
+               Variables{gx.get()});
+
+  if (!accum[0])
+    gx->data()->zero();
+
   // gx += gy * det_x * inv_x^T (element-wise multiplication)
-  f_batch_inv_->forward(inputs, Variables{inv_x_.get()});
-  f_transpose_->forward(Variables{inv_x_.get()},
-                        Variables{transposed_inv_x_.get()});
-  f_mul1_->forward(Variables{reshaped_gy_.get(), reshaped_det_x_.get()},
-                   Variables{mul1_out_.get()});
-  f_mul2_->forward(Variables{mul1_out_.get(), transposed_inv_x_.get()},
-                   Variables{mul2_out_.get()});
-  // set gradient to output
-  gx_->data()->set_array(inputs[0]->grad()->array());
-  f_add_->forward(Variables{gx_.get(), mul2_out_.get()},
-                  Variables{gx_.get()});
+  f_batch_inv->forward(inputs, Variables{inv_x.get()});
+  f_transpose->forward(Variables{inv_x.get()},
+                       Variables{transposed_inv_x.get()});
+  f_mul1->forward(Variables{reshaped_gy.get(), reshaped_det_x.get()},
+                  Variables{mul1_out.get()});
+  f_mul2->forward(Variables{mul1_out.get(), transposed_inv_x.get()},
+                  Variables{mul2_out.get()});
+  f_add->forward(Variables{gx.get(), mul2_out.get()},
+                 Variables{gx.get()});
 }
 }
