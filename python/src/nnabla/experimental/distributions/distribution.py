@@ -1,3 +1,6 @@
+import nnabla.functions as F
+
+
 class Distribution(object):
     def entropy(self):
         raise NotImplementedError
@@ -16,3 +19,7 @@ class Distribution(object):
 
     def sample(self, shape):
         raise NotImplementedError
+
+    def sample_n(self, n):
+        samples = [self.sample() for _ in range(n)]
+        return F.stack(*samples, axis=1)

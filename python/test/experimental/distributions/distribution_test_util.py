@@ -49,6 +49,11 @@ def _check_sample(dist_fn, scipy_fn, param_fn, ref_sample_fn):
     assert np.allclose(sample.d.std(), ref_sample.std(), atol=3e-2,
                        rtol=3e-2)
 
+    # nnabla sample_n
+    sample_n = dist.sample_n(2)
+    sample_n.forward(clear_buffer=True)
+    assert sample_n.d.shape == (10000, 2, 10)
+
 
 def _check_prob(dist_fn,
                 scipy_fn,
