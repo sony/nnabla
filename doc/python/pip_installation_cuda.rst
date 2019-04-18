@@ -18,9 +18,9 @@ CUDA vs CUDNN Compatibility
 Package name       CUDA version CUDNN version
 ================== ============ =============
 nnabla-ext-cuda80  8.0          7.1
-nnabla-ext-cuda90  9.0          7.3(win), 7.4(linux)
-nnabla-ext-cuda92  9.2          7.3(win), 7.4(linux)
-nnabla-ext-cuda100 10.0         7.3(win), 7.4(linux)
+nnabla-ext-cuda90  9.0          7.5(win), 7.4(linux)
+nnabla-ext-cuda92  9.2          7.5(win), 7.4(linux)
+nnabla-ext-cuda100 10.0         7.5
 ================== ============ =============
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -54,7 +54,22 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+, you can install as the following.
+Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+.
+
+.. _cuda-cudnn-compatibility:
+
+CUDA vs CUDNN Compatibility
+---------------------------
+
+================== ============ =============
+Package name       CUDA version CUDNN version
+================== ============ =============
+nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.4(Python3.5),7.5(python3.6,3.7)
+nnabla-ext-cuda92_nccl2_ubuntu16  9.2          7.4(python3.6),7.5(python3.5,3.7)
+nnabla-ext-cuda100_nccl2_ubuntu16  10.0         7.5
+================== ============ =============
+
+You can install as the following.
 
 .. code-block:: bash
 
