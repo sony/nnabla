@@ -33,10 +33,13 @@ class MultivariateNormal(Distribution):
 
     Args:
         loc (~nnabla.Variable): N-D array of :math:`\mu` in definition.
-        scale (~nnabla.Variable): N-D array of diagonal entries of :math:`L` such that covariance matrix :math:`\Sigma = L L^T`.
+        scale (~nnabla.Variable): N-D array of diagonal entries of :math:`L`
+            such that covariance matrix :math:`\Sigma = L L^T`.
 
     """
     def __init__(self, loc, scale):
+        assert loc.shape == scale.shape,\
+            'For now, loc and scale must have same shape.'
         self.loc = loc
         self.scale = scale
 
@@ -110,7 +113,8 @@ class MultivariateNormal(Distribution):
             x \sim N(\mu, \Sigma)
 
         Args:
-            shape (:obj:`tuple`): Shape of sampled points. If this is omitted, the returned shape is identical to :math:`\mu`.
+            shape (:obj:`tuple`): Shape of sampled points. If this is omitted,
+                the returned shape is identical to :math:`\mu`.
 
         Returns:
             ~nnabla.Variable: N-D array.

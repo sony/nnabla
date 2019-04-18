@@ -16,7 +16,7 @@
 import numpy as np
 import nnabla.functions as F
 
-from distribution import Distribution
+from .distribution import Distribution
 
 
 class Normal(Distribution):
@@ -36,7 +36,8 @@ class Normal(Distribution):
     """
 
     def __init__(self, loc, scale):
-        assert los.shape == scale.shape, 'For now, loc and scale must have same shape.'
+        assert loc.shape == scale.shape,\
+            'For now, loc and scale must have same shape.'
         self.loc = loc
         self.scale = scale
 
@@ -108,7 +109,9 @@ class Normal(Distribution):
             x \sim N(\mu, \sigma^2)
 
         Args:
-            shape (:obj:`tuple`): Shape of sampled points. If this is omitted, the returned shape is identical to :math:`\mu` and :math:`\sigma`.
+            shape (:obj:`tuple`): Shape of sampled points. If this is omitted,
+                the returned shape is identical to
+                :math:`\mu` and :math:`\sigma`.
 
         Returns:
             ~nnabla.Variable: N-D array.

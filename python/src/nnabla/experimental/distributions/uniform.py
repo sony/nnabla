@@ -32,7 +32,8 @@ class Uniform(Distribution):
     """
 
     def __init__(self, low, high):
-        assert low.shape == high.shape, 'For now, low and high must have same shape.'
+        assert low.shape == high.shape,\
+            'For now, low and high must have same shape.'
         self.low = low
         self.high = high
 
@@ -88,9 +89,8 @@ class Uniform(Distribution):
             ~nnabla.Variable: N-D array.
 
         """
-        greater_than_low = F.less(x, self.low)
-        less_than_high = F.greater(x, self.high)
-        return 1.0 / (self.high - self.low) * greater_than_low * less_than_high
+        return 1.0 / (self.high - self.low) * F.less(self.low, x) \
+            * F.greater(self.high, x)
 
     def entropy(self):
         """Get entropy of uniform distribution.
@@ -113,7 +113,9 @@ class Uniform(Distribution):
             x \sim U(low, high)
 
         Args:
-            shape (:obj:`tuple`): Shape of sampled points. If this is omitted, the returned shape is identical to :math:`high` and :math:`low`.
+            shape (:obj:`tuple`): Shape of sampled points. If this is omitted,
+                the returned shape is identical to
+                :math:`high` and :math:`low`.
 
         Returns:
             ~nnabla.Variable: N-D array.
