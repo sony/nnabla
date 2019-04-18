@@ -450,7 +450,7 @@ def _train(args, config):
                     last_past_time = -1
                     # End of epoch
                     epoch = iteration // config.training_config.iter_per_epoch + 1
-                    cost_avg_epoch = cost.sum_epoch / cost.num_iteration
+                    cost_avg_epoch = cost.sum_epoch / cost.num_iteration if cost.num_iteration else 0
                     cost.sum_epoch = 0.0
                     cost.num_iteration = 0
                     monitoring_report = []
