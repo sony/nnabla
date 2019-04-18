@@ -24,7 +24,7 @@ class MultivariateNormal(Distribution):
 
     Multivariate normal distribution defined as follows:
 
-    ..math::
+    .. math::
 
         p(x | \mu, \Sigma) = \frac{1}{\sqrt{(2 \pi)^k \det(\Sigma)}}
             \exp(-\frac{1}{2}(x - \mu)^T \Sigma^-1 (x - \mu))
