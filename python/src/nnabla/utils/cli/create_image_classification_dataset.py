@@ -87,7 +87,7 @@ def convert_image(args):
                     pad = pad + ((0, 0),)
                 im = np.pad(im, pad, 'constant')
                 # print('before', im.shape)
-            im = imresize(im, size=(height, width))
+            im = imresize(im, size=(width, height))
             # print('after', im.shape)
 
         # change color ch
@@ -96,7 +96,7 @@ def convert_image(args):
             im = np.array([im, im, im]).transpose((1, 2, 0))
         elif len(im.shape) == 3 and ch == 1:
             # RGB to monochrome
-            im = np.dot(im[..., :3], [0.299, 0.587, 0.114])
+            im = np.dot(im[..., :3], [0.299, 0.587, 0.114]).astype(np.uint8)
 
         # output
         try:
@@ -134,6 +134,9 @@ def create_image_classification_dataset_command(args):
     dirs = os.listdir(args.sourcedir)
     dirs = [d for d in dirs if os.path.isdir(os.path.join(args.sourcedir, d))]
     dirs.sort()
+    if len(dirs) == 0:
+        logger.critical("Subdirectory not found in the input directory.")
+        return False
     # print(dirs)
 
     labels = []
@@ -163,6 +166,10 @@ def create_image_classification_dataset_command(args):
                 pbar.update(current - last)
                 last = current
     pbar.close()
+    if len(csv_data) == 0:
+        logger.critical(
+            "No image file found in the subdirectory of the input directory.")
+        return False
 
     # create output data
     logger.log(99, "Creating output images...")

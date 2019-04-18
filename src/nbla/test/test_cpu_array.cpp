@@ -75,6 +75,7 @@ TEST_F(CpuArrayManipTest, TypeConversion) {
   delete arr2;
 }
 
+#if 0
 TEST(CpuCachedArrayTest, CacheTest) {
   Context ctx;
   ctx.array_class = "CpuArray";
@@ -138,4 +139,5 @@ TEST(CpuCachedArrayTest, CacheTest) {
   }
   ASSERT_EQ(7, SingletonManager::get<Cpu>()->memcache().count(""));
 }
+#endif
 }

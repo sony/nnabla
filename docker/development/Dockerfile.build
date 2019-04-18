@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# for nnabla>=1.0.16
+
 FROM centos:6
 
 ENV LC_ALL C

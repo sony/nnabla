@@ -120,6 +120,9 @@ def update_function_order_in_functsions_yaml():
                     missing[cat_name][func_name] = []
                 missing[cat_name][func_name].append(default_arg)
 
+            if 'c_runtime' not in func_info:
+                func_info['c_runtime'] = 'not support'
+
     current_id = sorted(order_info_by_id.keys()).pop() + 1
     for cat_name in missing:
         for func_name in missing[cat_name]:
@@ -177,6 +180,13 @@ def generate_functions_pkl():
     with open(join(base, 'python/src/nnabla/utils/converter/functions.pkl'), 'wb') as f:
         pickle.dump(yaml_data, f, 2)
 
+def generate_function_cpp_interface(function_info):
+    function_list = utils.info_to_list(function_info)
+    utils.generate_from_template(
+        join(base, 'include/nbla/functions.hpp.tmpl'), function_info=function_info, function_list=function_list)
+    utils.generate_from_template(
+        join(base, 'src/nbla/functions.cpp.tmpl'), function_info=function_info, function_list=function_list)
+
 def generate():
     version = sys.argv[1]
     update_function_order_in_functsions_yaml()
@@ -197,6 +207,7 @@ def generate():
     generate_python_utils(function_info)
     generate_proto(function_info, solver_info)
     generate_cpp_utils(function_info)
+    generate_function_cpp_interface(function_info)
 
     # Generate function skeletons if new ones are added to functions.yaml and function_types.yaml.
     utils.generate_skeleton_function_impl(

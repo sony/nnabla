@@ -82,7 +82,7 @@ void init_cpu() {
 }
 
 void clear_cpu_memory_cache() {
-  SingletonManager::get<Cpu>()->memcache().clear();
+  SingletonManager::get<Cpu>()->caching_allocator()->free_unused_caches();
 }
 
 /** Get CPU array classes.

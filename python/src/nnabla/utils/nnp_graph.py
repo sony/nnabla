@@ -592,15 +592,13 @@ class NnpNetworkPass(object):
         @dec(name)
         def on_avgpool_check(f):
             pool_shape = f.inputs[0].variable.shape[2:]
-            self.verbose('Change strides of {} to {}.'.format(
-                f.name, pool_shape))
             p = f.proto.average_pooling_param
-            if tuple(p.kernel.dim[:]) != pool_shape:
-                raise ValueError('Stride configuration of average pooling is not for global pooling. Given Image shape: {} Kernel: {} Stride: {}.'.format(
-                    pool_shape, p.kernel.dim[:], p.stride.dim[:]))
-            if tuple(p.stride.dim[:]) != pool_shape:
-                raise ValueError('Stride configuration of average pooling is not for global pooling. Given Image shape: {} Kernel: {} Stride: {}.'.format(
-                    pool_shape, p.kernel.dim[:], p.stride.dim[:]))
+            if tuple(p.kernel.dim[:]) != pool_shape or tuple(p.stride.dim[:]) != pool_shape:
+                raise ValueError(
+                    'Stride configuration of average pooling is not for global pooling.'
+                    ' Given Image shape is {}, whereas pooling window size is {} and its stride is {}.'
+                    ' Consider using force_global_pooling=True'.format(
+                        pool_shape, p.kernel.dim[:], p.stride.dim[:]))
             return f
 
     def set_batch_normalization_batch_stat_all(self, batch_stat):

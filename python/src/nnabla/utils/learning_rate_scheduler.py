@@ -164,3 +164,37 @@ class StepScheduler(BaseLearningRateScheduler):
             if iter >= iter_step:
                 lr *= self.gamma
         return lr
+
+
+class LinearWarmupScheduler(BaseLearningRateScheduler):
+    '''Linear Warm-up Scheduler
+    Linear warm-up
+
+    '''
+
+    def __init__(self, scheduler, warmup_iter):
+        '''
+        Args:
+            scheduler (BaseLearningRateScheduler): learning_rate_scheduler
+            warmup_iter (int): Iteration for warm-up.
+
+        Example:
+            LinearWarmupScheduler(scheduler, 25000)
+        '''
+        self.scheduler = scheduler
+        self.warmup_iter = warmup_iter
+
+    def get_learning_rate(self, iter):
+        '''
+        Get learning rate with exponential decay based on current iteration.
+
+        Args:
+            iter (int): Current iteration (starting with 0).
+
+        Returns:
+            float: Learning rate
+        '''
+        lr = self.scheduler.get_learning_rate(iter)
+        if iter < self.warmup_iter:
+            lr *= (iter + 1) * 1.0 / self.warmup_iter
+        return lr

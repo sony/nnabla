@@ -17,6 +17,13 @@ NNABLA_OPTIONS_INCLUDED = True
 ########################################################################################################################
 # Environments
 
+DOCKER_RUN_OPTS =--rm
+DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
+DOCKER_RUN_OPTS += -w $$(pwd)
+DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
+DOCKER_RUN_OPTS += -e HOME=/tmp
+DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
+
 DOCKER_RUN_OPTS += -v $(HOME)/.ccache:/tmp/.ccache
 
 ## If your environment is under proxy uncomment following lines.
@@ -62,11 +69,17 @@ DOCKER_RUN_OPTS += -e PARALLEL_BUILD_NUM=$(PARALLEL_BUILD_NUM)
 WHEEL_SUFFIX ?=
 DOCKER_RUN_OPTS += -e WHEEL_SUFFIX=$(WHEEL_SUFFIX)
 
+ARCH_SUFFIX ?=
+DOCKER_RUN_OPTS += -e ARCH_SUFFIX=$(ARCH_SUFFIX)
+
 ########################################################################################################################
 # Output directories
 
 export BUILD_DIRECTORY_CPPLIB ?= $(NNABLA_DIRECTORY)/build$(BUILD_DIRECTORY_CPPLIB_SUFFIX)
 DOCKER_RUN_OPTS += -e BUILD_DIRECTORY_CPPLIB=$(BUILD_DIRECTORY_CPPLIB)
+
+export BUILD_DIRECTORY_CPPLIB_ANDROID ?= $(NNABLA_DIRECTORY)/build-android$(BUILD_DIRECTORY_CPPLIB_ANDROID_SUFFIX)
+DOCKER_RUN_OPTS += -e BUILD_DIRECTORY_CPPLIB_ANDROID=$(BUILD_DIRECTORY_CPPLIB_ANDROID)
 
 export BUILD_DIRECTORY_WHEEL ?= $(NNABLA_DIRECTORY)/build_wheel$(BUILD_DIRECTORY_WHEEL_SUFFIX)
 DOCKER_RUN_OPTS += -e BUILD_DIRECTORY_WHEEL=$(BUILD_DIRECTORY_WHEEL)
@@ -81,6 +94,7 @@ DOCKER_RUN_OPTS += -e PYTEST_LD_LIBRARY_PATH_EXTRA=$(PYTEST_LD_LIBRARY_PATH_EXTR
 
 
 export DOCKER_RUN_OPTS
+export ARCH_SUFFIX
 
 ########################################################################################################################
 # Functions for makefile

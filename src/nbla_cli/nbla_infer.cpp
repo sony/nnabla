@@ -22,7 +22,7 @@
 #include "internal.hpp"
 #include "nbla_commands.hpp"
 
-bool nbla_infer(int argc, char *argv[]) {
+bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
 
@@ -47,7 +47,6 @@ bool nbla_infer(int argc, char *argv[]) {
     on_memory = true;
   }
 
-  nbla::Context ctx{{"cpu:float"}, "CpuCachedArray", "0"};
   nbla::utils::nnp::Nnp nnp(ctx);
   std::vector<std::string> input_files =
       add_files_to_nnp(nnp, p.rest(), on_memory);
@@ -119,5 +118,17 @@ bool nbla_infer(int argc, char *argv[]) {
     }
     index += 1;
   }
+  return true;
+}
+
+bool nbla_infer(int argc, char *argv[]) {
+  // Create a context
+  nbla::Context ctx{{"cpu:float"}, "CpuCachedArray", "0"};
+
+  // Train
+  if (!nbla_infer_core(ctx, argc, argv)) {
+    return false;
+  }
+
   return true;
 }
