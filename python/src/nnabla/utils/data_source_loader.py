@@ -377,7 +377,8 @@ def register_load_function(ext, function):
 def load(ext):
     if ext in _load_functions:
         return _load_functions[ext]
-    return None
+    raise ValueError(
+        'File format with extension "{}" is not supported.'.format(ext))
 
 
 def _download_hook(t):

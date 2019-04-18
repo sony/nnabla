@@ -133,11 +133,14 @@ message Optimizer {
 
   Solver solver = 30;
   int64 update_interval = 40;
-
+  
   repeated DataVariable data_variable = 50;
   repeated GeneratorVariable generator_variable = 60;
   repeated LossVariable loss_variable = 70;
   repeated ParameterVariable parameter_variable = 80;
+
+  int64 start_iter = 100;
+  int64 end_iter = 101;
 }
 
 
@@ -172,6 +175,9 @@ message Solver {
   ExponentialSchedulerParameter exponential_scheduler_param = 212;
   StepSchedulerParameter step_scheduler_param = 213;
   CustomSchedulerParameter custom_scheduler_param = 299;
+
+  string lr_warmup_scheduler_type = 300;
+  LinearWarmupSchedulerParameter linear_warmup_scheduler_param = 310;
 
   float lr_decay = 30;  // Obsolete
   int64 lr_decay_interval = 31;  // Obsolete
@@ -210,6 +216,10 @@ message CustomSchedulerParameter {
 
   repeated DataVariable data_variable = 50;
   repeated OutputVariable output_variable = 80;
+}
+
+message LinearWarmupSchedulerParameter {
+  int64 warmup_iter = 1;
 }
 
 message DataVariable {
@@ -266,6 +276,8 @@ message Executor {
   repeated LossVariable loss_variable = 70;
   repeated OutputVariable output_variable = 80;
   repeated ParameterVariable parameter_variable = 90;
+
+  bool no_image_normalization = 101;
 }
 
 message OutputVariable {

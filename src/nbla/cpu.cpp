@@ -15,8 +15,15 @@
 #include <nbla/cpu.hpp>
 #include <nbla/singleton_manager-internal.hpp>
 
+#include <nbla/memory/caching_allocator_with_buckets.hpp>
+#include <nbla/memory/cpu_memory.hpp>
+#include <nbla/memory/naive_allocator.hpp>
+
 namespace nbla {
-Cpu::Cpu() {}
+Cpu::Cpu()
+    : naive_allocator_(make_shared<NaiveAllocator<CpuMemory>>()),
+      caching_allocator_(
+          make_shared<CachingAllocatorWithBuckets<CpuMemory>>()) {}
 
 Cpu::~Cpu() {}
 
@@ -28,7 +35,8 @@ void Cpu::register_array_class(const string &name) {
   array_classes_.push_back(name);
 }
 
-MemoryCache<CpuMemory> &Cpu::memcache() { return memcache_; }
+shared_ptr<Allocator> Cpu::caching_allocator() { return caching_allocator_; }
+shared_ptr<Allocator> Cpu::naive_allocator() { return naive_allocator_; }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, Cpu);
 }

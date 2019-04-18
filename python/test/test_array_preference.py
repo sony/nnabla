@@ -43,3 +43,5 @@ def test_prefer_cached_array():
     if cuda is not None:
         ac2 = cuda.array_classes()
         check_cached_array_preferred(ac2, False)
+
+    nn.prefer_cached_array(True)

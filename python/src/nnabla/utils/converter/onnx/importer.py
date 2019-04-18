@@ -440,7 +440,7 @@ def add_tensor_as_parameter(pb, tensor):
 
 
 class OnnxImporter:
-    def __init__(self, file_path):
+    def __init__(self, file_path=''):
         self._file_path = file_path
 
         # We use an OrderedDict and not a set
@@ -518,7 +518,6 @@ class OnnxImporter:
 
         # opset_9 table
         self.table_op_set_9 = {
-            **self.table_op_set_6,
             "Dropout": partial(self.Dropout, 9),
             "Less": partial(self.BroadcastOperator_9, 'Less'),
             "Greater": partial(self.BroadcastOperator_9, 'Greater'),
@@ -532,6 +531,7 @@ class OnnxImporter:
             "Or": partial(self.BroadcastOperator_9, 'LogicalOr'),
             "Xor": partial(self.BroadcastOperator_9, 'LogicalXor'),
         }
+        self.table_op_set_9 = dict(self.table_op_set_6, **self.table_op_set_9)
 
         # Currently, we only planed to support opset 6 and opset 9.
         # More planes will be added later to support more opset versions.
@@ -1722,6 +1722,12 @@ class OnnxImporter:
         nnp.other_files = []
         return nnp
 
+    def import_from_onnx_model(self, onnx_model):
+        self._ir_version = onnx_model.ir_version
+        self._graph = onnx_model.graph
+        self._opset_import = onnx_model.opset_import
+
     def execute(self):
-        self.get_onnx_graph_info()
+        if self._file_path != '':
+            self.get_onnx_graph_info()
         return self.onnx_model_to_nnp_protobuf()

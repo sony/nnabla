@@ -14,16 +14,18 @@
 
 #ifndef __NBLA_CPU_HPP__
 #define __NBLA_CPU_HPP__
-#include <nbla/cpu_memory.hpp>
 #include <nbla/defs.hpp>
+#include <nbla/memory/allocator.hpp>
 #include <nbla/singleton_manager.hpp>
 
+#include <memory>
 #include <string>
 
 namespace nbla {
 
 using std::vector;
 using std::string;
+using std::unique_ptr;
 
 /**
 Singleton class for storing some handles or configs for CPU Computation.
@@ -47,13 +49,24 @@ public:
    */
   void register_array_class(const string &name);
 
-  /** Get a CpuMemoryCache instance.
+  /** Get a caching allocator.
    */
-  MemoryCache<CpuMemory> &memcache();
+  shared_ptr<Allocator> caching_allocator();
+
+  /** Get a no-cache allocator.
+   */
+  shared_ptr<Allocator> naive_allocator();
 
 protected:
-  vector<string> array_classes_;    ///< Available array classes
-  MemoryCache<CpuMemory> memcache_; ///< CPU memory cache.
+  vector<string> array_classes_; ///< Available array classes
+
+  /*
+    NOTE: Allocators must be shared_ptr in order to be passed to a
+    AllocatorMemory instance to prevent destructing allocators before
+    destructing AllocatorMemory.
+   */
+  shared_ptr<Allocator> naive_allocator_;
+  shared_ptr<Allocator> caching_allocator_;
 
 private:
   friend SingletonManager;

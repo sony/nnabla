@@ -18,9 +18,9 @@ CUDA vs CUDNN Compatibility
 Package name       CUDA version CUDNN version
 ================== ============ =============
 nnabla-ext-cuda80  8.0          7.1
-nnabla-ext-cuda90  9.0          7.3
-nnabla-ext-cuda92  9.2          7.3
-nnabla-ext-cuda100 10.0         7.3
+nnabla-ext-cuda90  9.0          7.3(win), 7.4(linux)
+nnabla-ext-cuda92  9.2          7.3(win), 7.4(linux)
+nnabla-ext-cuda100 10.0         7.3(win), 7.4(linux)
 ================== ============ =============
 
 The latest CUDA version is always preferred if your GPU accepts.

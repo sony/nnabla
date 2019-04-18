@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2019 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NBLA_CPU_MEMORY_HPP__
-#define __NBLA_CPU_MEMORY_HPP__
+#ifndef NBLA_CLI_HPP_
+#define NBLA_CLI_HPP_
 
-#include <memory>
-#include <vector>
+#include <nbla_cli/nbla_dump.h>
+#include <nbla_cli/nbla_infer.h>
+#include <nbla_cli/nbla_train.h>
 
-#include <nbla/array.hpp>
-#include <nbla/common.hpp>
-#include <nbla/memory.hpp>
-
-namespace nbla {
-
-using std::vector;
-using std::shared_ptr;
-
-/** CPU Memory
- */
-class NBLA_API CpuMemory : public Memory {
-public:
-  CpuMemory(Size_t bytes, const string &device);
-  virtual bool allocate();
-  virtual ~CpuMemory();
-};
-}
-#endif
+#endif // NBLA_CLI_HPP_

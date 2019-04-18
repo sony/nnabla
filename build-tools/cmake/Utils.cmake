@@ -11,6 +11,32 @@ endfunction()
 
 
 ################################################################################################
+# Find HDF5 source package
+#
+function(prepend lib_paths prefix)
+  set(listvar "")
+  foreach(f ${ARGN})
+    if (CMAKE_BUILD_TYPE MATCHES Debug)
+      list(APPEND listvar "${prefix}/lib${f}_debug.so")
+    else()
+      list(APPEND listvar "${prefix}/lib${f}.so")
+    endif()
+  endforeach(f)
+  set (${lib_paths} "${listvar}" PARENT_SCOPE)
+endfunction(prepend)
+
+function(findhdf5)
+  set(HDF5_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/src
+     ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hl/src
+     ${CMAKE_BINARY_DIR}/third_party/hdf5-master)
+  prepend(HDF5_LIBRARIES ${CMAKE_BINARY_DIR}/third_party/hdf5-master/bin/ ${HDF5_LIBRARIES_TO_EXPORT})
+  set(HDF5_INCLUDE_DIRS "${HDF5_INCLUDE_DIRS}" PARENT_SCOPE)
+  set(HDF5_LIBRARIES "${HDF5_LIBRARIES}" PARENT_SCOPE)
+endfunction(findhdf5)
+
+
+
+################################################################################################
 # Clears variables from list
 # Usage:
 #   nbla_clear_vars(<variables_list>)

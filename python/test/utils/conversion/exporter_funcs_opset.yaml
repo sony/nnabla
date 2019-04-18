@@ -8,6 +8,8 @@ ASinh:
     - 'Not implemented'
 ATan:
     - 'Not implemented'
+ATan2:
+    - 'Not implemented'
 ATanh:
     - 'Not implemented'
 Abs:
@@ -22,6 +24,8 @@ Affine:
     - Reshape@5
     - Flatten@1
     - Gemm@6
+Arange:
+    - 'Not implemented'
 AveragePooling:
     - AveragePool@1
 BatchMatmul:
@@ -109,6 +113,10 @@ Flip:
     - Identity@1
 Floor:
     - 'Not implemented'
+GELU:
+    - 'Not implemented'
+GRU:
+    - 'Not implemented'
 GlobalAveragePooling:
     - GlobalAveragePool@1
 Greater:
@@ -133,7 +141,13 @@ ImageAugmentation:
     - 'Not implemented'
 Interpolate:
     - 'Not implemented'
+IsInf:
+    - 'Not implemented'
+IsNaN:
+    - 'Not implemented'
 KLMultinomial:
+    - 'Not implemented'
+LSTM:
     - 'Not implemented'
 LeakyReLU:
     - LeakyRelu@6
@@ -209,8 +223,12 @@ PowScalar:
     - Pow@1
 Prod:
     - ReduceProd@1
+Prune:
+    - 'Not implemented'
 RDivScalar:
     - Div@6
+RNN:
+    - 'Not implemented'
 RPowScalar:
     - Pow@1
 RSubScalar:
@@ -232,6 +250,10 @@ ReLU:
 ReduceMean:
     - 'Not implemented'
 ReduceSum:
+    - 'Not implemented'
+ResetInf:
+    - 'Not implemented'
+ResetNaN:
     - 'Not implemented'
 Reshape:
     - Reshape@5
@@ -258,6 +280,8 @@ Slice:
 Softmax:
     - Softmax@1
 SoftmaxCrossEntropy:
+    - 'Not implemented'
+Sort:
     - 'Not implemented'
 Split:
     - Split@2
@@ -292,4 +316,6 @@ Unlink:
 Unpooling:
     - Upsample@1
 VATNoise:
+    - 'Not implemented'
+Where:
     - 'Not implemented'

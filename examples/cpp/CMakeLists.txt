@@ -1,3 +1,4 @@
 add_subdirectory(cpp_graph)
 add_subdirectory(mnist_runtime)
 add_subdirectory(mnist_training)
+add_subdirectory(mnist_collection)

@@ -44,25 +44,25 @@ Neural Network Layer:
       .. math::
           {\mathbf h_t} = {\mathbf \tanh}( {\mathbf w_{ih}} *{\mathbf x_t} + {\mathbf b_{ih}} + {\mathbf w_{hh}}* {\mathbf h_{(t-1)}} + {\mathbf b_{hh}}).
 
-      References:
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
-          * `Jeffrey Elman, Finding Structure in Time.`_
+      References:
+          * `Jeffrey Elman, Finding Structure in Time. <https://crl.ucsd.edu/~elman/Papers/fsit.pdf>`_
     inputs:
       x:
-        doc: Input N-D array with shape (sequence_length, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: Input N-D array with shape (num_directions, hidden_size, input_size +
-          hidden_size).
+        doc: Input N-D array with shape :math:`(D, H, I + H)`.
         parameter: true
       weight:
-        doc: Input N-D array with shape (num_layers -1, num_directions, hidden_size,
-          num_directions * hidden_size + hidden_size).
+        doc: Input N-D array with shape :math:`(L-1, D, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Input N-D array with shape (num_layers, num_directions, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, H)`.
         optional: true
         parameter: true
     arguments:
@@ -75,6 +75,9 @@ Neural Network Layer:
         doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
           relu. Default is tanh.
         type: string
+        available_values:
+        - tanh
+        - relu
         default: tanh
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
@@ -91,11 +94,12 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output N-D array of size (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output N-D array of size (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
       iifBB: 244
+    c_runtime: not support
   LSTM:
     snake_name: lstm
     doc: |2
@@ -109,28 +113,29 @@ Neural Network Layer:
           {\mathbf c_t} = {\mathbf f_t}\odot {mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
           {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
 
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
       References:
-
-          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory.`_
+          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory. <https://www.bioinf.jku.at/publications/older/2604.pdf>`_
     inputs:
       x:
-        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       c:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is (num_directions, 4, hidden_size,
-          input_size + hidden_size).
+        doc: weight parameters for the first layer. Shape is :math:`(D, 4, H, I +
+          H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is (num_layers
-          -1, num_directions, 4, hidden_size, num_directions * hidden_size + hidden_size)
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 4, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
         optional: true
         parameter: true
     arguments:
@@ -154,13 +159,14 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
       c_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`c_n` with shape :math:`(L, D, B, H)`
     function_ids:
       ifBB: 242
+    c_runtime: not support
   GRU:
     snake_name: gru
     doc: |2
@@ -173,25 +179,28 @@ Neural Network Layer:
         {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
         {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}{\mathbf h_{t-1}}.
 
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
+
       References:
 
-          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation.`_
+          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation. <https://www.aclweb.org/anthology/D14-1179>`_
     inputs:
       x:
-        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is (num_directions, 3, hidden_size,
-          input_size + hidden_size).
+        doc: weight parameters for the first layer. Shape is :math:`(D, 3, H, I +
+          H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is (num_layers
-          -1, num_directions, 3, hidden_size, num_directions * hidden_size + hidden_size)
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 3, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
         optional: true
         parameter: true
     arguments:
@@ -215,11 +224,12 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
       ifBB: 243
+    c_runtime: not support
   Convolution:
     snake_name: convolution
     doc: |2
@@ -961,6 +971,33 @@ Neural Network Activation Functions:
     function_ids:
       i: 21
     c_runtime: support
+  GELU:
+    snake_name: gelu
+    doc: |2
+
+      Gaussian Error Unit (GELU) function.
+
+      .. math::
+          GELU(x) = xP(X \leq  x) = x \Phi (x)
+
+      which is approximated by
+
+      .. math::
+          GELU(x) = 0.5x (1 + \tanh ( \sqrt(2/\pi)(x + 0.044715x^3) ))
+
+      References:
+          * `Dan Hendrycks and Kevin Gimpel.
+            Gaussian Error Linera Units (GELUs).
+            <https://arxiv.org/abs/1606.08415>`_
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 245
+    c_runtime: not support
 Normalization:
   BatchNormalization:
     snake_name: batch_normalization
@@ -2154,6 +2191,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 236
+    c_runtime: not support
   IsInf:
     snake_name: isinf
     doc: |2
@@ -2167,6 +2205,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 237
+    c_runtime: not support
   ResetNaN:
     snake_name: reset_nan
     doc: |2
@@ -2185,6 +2224,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 238
+    c_runtime: not support
   ResetInf:
     snake_name: reset_inf
     doc: |2
@@ -2203,6 +2243,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 239
+    c_runtime: not support
   Where:
     snake_name: where
     doc: |2
@@ -2241,6 +2282,7 @@ Logical:
         doc: N-D array with the same shape as condition
     function_ids:
       Empty: 240
+    c_runtime: not support
 Math:
   Constant:
     snake_name: constant
@@ -2908,22 +2950,96 @@ Array Manipulation:
     function_ids:
       i: 184
     c_runtime: not support
+  Tile:
+    snake_name: tile
+    doc: |2
+
+      Forward input `x` repeated the number of times given by `reps`. If `reps`
+      is a sequence, the output has dimension of ``d = max(len(reps), x.ndim)``
+      and either `x` is promoted to be d-dimensional by prepending new axes or
+      `reps` is promoted to x.ndim by prepending 1's.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      reps:
+        doc: The number of repetitions of `x` along each axis.
+        type: repeated int64
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iI: 247
   OneHot:
     snake_name: one_hot
     doc: |2
 
-      OneHot creates one-hot vector based on input indices.
+      This function creates one-hot vector based on input indices.
+
+              Example:
+
+              .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import numpy as np
+
+                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [1], [0]]))
+                print(labels.shape)  # (5, 1)
+
+                num_class = 10
+
+                y_train = F.one_hot(labels, shape=(num_class, ))
+                y_train.forward()
+
+                print(y_train.shape)  # (5, 10)
+                print(y_train.d)
+
+                # [[0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+                #  [0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
+                #  [0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
+                #  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
+                #  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+
+                # Can also be used for ndarray.
+
+                labels = nn.Variable.from_numpy_array(np.array([[1, 7], [4, 7], [8, 6], [5, 0], [2, 6]]))
+                print(labels.shape)  # (5, 2)
+
+                num_class_1, num_class_2  = 10, 8
+
+                y_train = F.one_hot(labels, shape=(num_class_1, num_class_2))
+                y_train.forward()
+        
+                print(y_train.shape)  # (5, 10, 8)
+                print(y_train.d)
+
+                # [[[0. 0. 0. 0. 0. 0. 0. 0.]          [[0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 1.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 1. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]    ...    [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]],         [0. 0. 0. 0. 0. 0. 0. 0.]]]
     inputs:
       x:
-        doc: N-D array
+        doc: N-D array representing label's indice.
         template: TI
     arguments:
       shape:
-        doc: No Description
+        doc: Number of classes. Note that it must be exactly the same as the number
+          of classes included in label data. Passing incorrect numbers might cause
+          an unexpected error and currently this function doesn't check if the input
+          is valid or not. Also, when nd-labels are given, dimensions must match.
+          See the example above.
         type: Shape
     outputs:
       output:
-        doc: N-D array
+        doc: N-D array one-hot vector/tensor.
     function_ids:
       iI: 80
     c_runtime: not support
@@ -3444,6 +3560,79 @@ Stochasticity:
     function_ids:
       ffiIi: 91
     c_runtime: not support
+  RandomChoice:
+    snake_name: random_choice
+    doc: |2
+
+      Generate random samples from population `x` with selection probabilities
+      determined by the relative weights `w`. The number of samples to draw is
+      given by the product of `shape`s dimensions, and the samples are returned
+      with the given `shape`. By default, samples are drawn with replacement,
+      i.e. selection of a specific population member is solely determined by
+      its associated weight. Sampling without replacement, where any population
+      member may be drawn only once, is used if `replace` is set to False.
+
+      For both `x` and `w` the innermost dimension corresponds to the individual
+      populations and their weights from which samples are returned with the
+      requested `shape` following all outermost dimensions of the input.
+
+      .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.functions as F
+        import numpy as np
+        nn.set_auto_forward(True)
+
+        # x holds two populations
+        x = nn.Variable.from_numpy_array(np.array([[11, 22, 33], [110, 220, 330]]))
+        # w holds the weights for each population
+        w = nn.Variable.from_numpy_array(np.array([[10, 20, 70], [70, 20, 10]]))
+
+        # draw one sample from each population
+        y = F.random_choice(x, w)  # y.shape => (2, 1)
+
+        # draw 12 samples with shape (3, 4) from each population
+        y = F.random_choice(x, w, shape=(3, 4))  # y.shape => (2, 3, 4)
+
+      Note that weights must not be less than zero and for each population the
+      sum of weights must be greater than zero. Additionally, sampling without
+      replacement requires that the number of non-zero weights is not less than
+      the number of samples to be drawn. These conditions are verified in "cpu"
+      computation context but not when using "cuda" or "cudnn" acceleration
+      (this would require additional device synchronization steps penalizing
+      performance).
+
+      Random sampling from an implicit array of index values (like categorical
+      or multinomial) can be realized with input `x` constructed as indices.
+
+      .. code-block:: python
+
+        w = nn.Variable.from_numpy_array(np.array([1, 2, 3, 2, 1]))
+        y = F.random_choice(F.arange(0, 5), w)
+    inputs:
+      x:
+        doc: N-D array from which a random sample is generated.
+      w:
+        doc: N-D array of associated weights of elements in `x`.
+    arguments:
+      shape:
+        doc: Number and shape of generated samples.
+        type: Shape
+        default: '[]'
+      replace:
+        doc: Whether sampling is with or without replacement.
+        type: bool
+        default: 'True'
+      seed:
+        doc: Random seed.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIBi: 246
   RandomCrop:
     snake_name: random_crop
     doc: |2

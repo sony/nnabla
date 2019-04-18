@@ -23,22 +23,33 @@ ctxs = list_context('OneHot')
 
 def ref_one_hot(x, shape):
     result = np.zeros((x.shape[0],) + shape)
-    result[np.arange(x.shape[0]), x.flatten()] = 1
+    for i in range(x.shape[0]):
+        idx = (i, ) + tuple(x[i])
+        result[idx] = 1
     return result
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape", [(100, 1)])
-@pytest.mark.parametrize("shape", [(10,)])
+@pytest.mark.parametrize("inshape", [(100, 1), (100, 2)])
+@pytest.mark.parametrize("shape", [(10, ), (10, 8)])
 def test_one_hot_forward(seed, inshape, shape, ctx, func_name):
-    rng = np.random.RandomState(seed)
     # Input
-    input = rng.randint(0, shape[0], size=inshape)
-    vinput = nn.Variable(input.shape, need_grad=False)
-    vinput.d = input
-    with nn.context_scope(ctx), nn.auto_forward():
-        o = F.one_hot(vinput, shape)
-    r = ref_one_hot(input, shape)
-    assert np.allclose(o.d, r)
-    assert func_name == o.parent.name
+    input = np.zeros(inshape, dtype=int)
+    rng = np.random.RandomState(seed)
+
+    if len(shape) != inshape[-1]:
+        # input inshape and shape don't match.
+        with pytest.raises(RuntimeError):
+            y = F.one_hot(nn.Variable(input.shape), shape)
+    else:
+        for i in range(inshape[-1]):
+            input[:, i] = rng.randint(0, shape[i], size=inshape[0])
+        vinput = nn.Variable(input.shape, need_grad=False)
+        vinput.d = input
+
+        with nn.context_scope(ctx), nn.auto_forward():
+            o = F.one_hot(vinput, shape)
+        r = ref_one_hot(input, shape)
+        assert np.allclose(o.d, r)
+        assert func_name == o.parent.name

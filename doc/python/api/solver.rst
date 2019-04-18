@@ -23,5 +23,7 @@ List of solvers
 .. autofunction:: Adagrad
 .. autofunction:: RMSprop
 .. autofunction:: Adam
+.. autofunction:: AdaBound
 .. autofunction:: Adamax
 .. autofunction:: AMSGRAD
+.. autofunction:: AMSBound

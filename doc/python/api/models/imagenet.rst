@@ -52,7 +52,7 @@ Available models are summarized in the following table. Error rates are calculat
     :header: "Name", "Class", "Top-1 error", "Top-5 error", "Trained by/with"
 
     "ResNet-18", "ResNet", 30.28, 10.90, Neural Network Console
-    "ResNet-32", "ResNet", 26.72, 8.89, Neural Network Console
+    "ResNet-34", "ResNet", 26.72, 8.89, Neural Network Console
     "ResNet-50", "ResNet", 24.59, 7.48, Neural Network Console
     "ResNet-101", "ResNet", 23.81, 7.01, Neural Network Console
     "ResNet-152", "ResNet", 23.48, 7.09, Neural Network Console
@@ -60,6 +60,12 @@ Available models are summarized in the following table. Error rates are calculat
     "MobileNetV2", "MobileNetV2", 29.94, 10.82, Neural Network Console
     "SENet-154", "SENet", 22.04, 6.29, Neural Network Console
     "SqueezeNet v1.1", "SqueezeNet", 41.23, 19.18, Neural Network Console
+    "VGG-11", "VGG", 30.85, 11.38, Neural Network Console
+    "VGG-13", "VGG", 29.51, 10.46, Neural Network Console
+    "VGG-16", "VGG", 29.03, 10.07, Neural Network Console
+    "NIN", "NIN", 42.91, 20.66, Neural Network Console
+    "DenseNet-161", "DenseNet", 23.82, 7.02, Neural Network Console
+    "InceptionV3", "InceptionV3", 21.82, 5.88, Neural Network Console
 
 
 Common interfaces
@@ -88,4 +94,16 @@ List of models
     :members:
 
 .. autoclass:: SqueezeNet
+    :members:
+
+.. autoclass:: VGG
+    :members:
+    
+.. autoclass:: NIN
+    :members:
+    
+.. autoclass:: DenseNet
+    :members:
+
+.. autoclass:: InceptionV3
     :members:

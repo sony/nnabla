@@ -480,8 +480,7 @@ class DataSourceWithMemoryCache(DataSource):
     '''
 
     def _get_data_func(self, position):
-        # return self._data_source._get_data(position)
-        return [numpy.array(x, dtype=numpy.float32) for x in self._data_source._get_data(position)]
+        return self._data_source._get_data(position)
 
     def _get_data(self, position):
         if self._on_memory:
@@ -512,6 +511,8 @@ class DataSourceWithMemoryCache(DataSource):
         data = self._get_data_func(0)
         self._data_size = 0
         for d in data:
+            if isinstance(d, list):
+                d = numpy.array(d, dtype=numpy.float32)
             self._data_size += d.size * d.itemsize
         total_size = self._data_size * self._size
         if total_size < self._buffer_max_size:

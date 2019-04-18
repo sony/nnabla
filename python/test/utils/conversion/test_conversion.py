@@ -62,6 +62,10 @@ print(TEST_DATA_DIR)
 # if you want to update all the NNP files
 DEFAULT_NNP_EXPORT_PATH = None
 
+# Currently, the onnx exporter converter only supports opset_6 and opset_9 versions.
+ONNX_EXPORT_OPSET_VERSION = ["6", "9"]
+DEFAULT_SUPPORT_OPSET_VERSION = "6"
+
 try:
     from .gen_report import gen_report
 except:
@@ -192,49 +196,59 @@ def convert_nnp_to_onnx_and_compare(
         print(nnp.protobuf)
     func_name = nnp.protobuf.network[0].function[0].type
     print(func_name)
-    export_result[func_name] = 'NG'
-    onnxex = OnnxExporter(nnp, -1)
-    onnxdir = tmpdir.mkdir("onnx")
-    p = os.path.join(str(onnxdir), onnx_name)
-    onnxex.execute(p)
-    if export_onnx_path:
-        shutil.copy2(p, export_onnx_path)
+    export_result[func_name] = {}
+    for opset in ONNX_EXPORT_OPSET_VERSION:
+        export_result[func_name][opset] = 'NG'
+        onnxex = OnnxExporter(nnp, -1, opset)
+        onnxdir = tmpdir.mkdir("onnx")
+        p = os.path.join(str(onnxdir), onnx_name)
+        onnxex.execute(p)
+        if export_onnx_path:
+            shutil.copy2(p, export_onnx_path)
 
-    # read exported onnx and run network
-    model = onnx.load(p)
-    if show_onnx:
-        print(model)
-    # pdb.set_trace()
-    backend_out = None
-    if backend == "caffe2" and CAFFE2_AVAILABLE:
-        # Process onnx with caffe2 backend
-        c2out = None
-        rep = oc2.prepare(model)
-        if type(in_img) is np.ndarray:
-            c2out = rep.run([in_img])
-        else:
-            c2out = rep.run([])
-        # for k in rep.workspace.Blobs():
-        #     v = rep.workspace.FetchBlob(k)
-        #     print(k, v.shape)
-        backend_out = c2out[out_name]
-    elif backend == "cntk" and CNTK_AVAILABLE:
-        n = cntkf.Function.load(p, format=cntk.ModelFormat.ONNX)
-        cntk_out = None
-        if type(in_img) is np.ndarray:
-            cntk_out = n.eval({in_name: in_img})
-        else:
-            cntk_out = n.eval()
-        backend_out = cntk_out
-    else:
-        raise ValueError("Unknown backend specified")
-    # Compare both naabla and backend out results
-    if show_output:
-        print(backend_out, nnout)
-    assert backend_out.shape == nnout.shape
-    if compare_values:
-        assert np.allclose(backend_out, nnout, atol=atol)
-        export_result[func_name] = 'OK'
+        # read exported onnx and run network
+        model = onnx.load(p)
+        if show_onnx:
+            print(model)
+        # pdb.set_trace()
+        backend_out = None
+        try:
+            if backend == "caffe2" and CAFFE2_AVAILABLE:
+                # Process onnx with caffe2 backend
+                c2out = None
+                rep = oc2.prepare(model)
+                if type(in_img) is np.ndarray:
+                    c2out = rep.run([in_img])
+                else:
+                    c2out = rep.run([])
+                # for k in rep.workspace.Blobs():
+                #     v = rep.workspace.FetchBlob(k)
+                #     print(k, v.shape)
+                backend_out = c2out[out_name]
+            elif backend == "cntk" and CNTK_AVAILABLE:
+                n = cntkf.Function.load(p, format=cntk.ModelFormat.ONNX)
+                cntk_out = None
+                if type(in_img) is np.ndarray:
+                    cntk_out = n.eval({in_name: in_img})
+                else:
+                    cntk_out = n.eval()
+                backend_out = cntk_out
+            else:
+                raise ValueError("Unknown backend specified")
+        except:
+            if opset == DEFAULT_SUPPORT_OPSET_VERSION:
+                raise ValueError("Process onnx with caffe2 backend failed!!!")
+            else:
+                print("Process onnx with caffe2 backend failed!!!")
+                return
+        # Compare both naabla and backend out results
+        if show_output:
+            print(backend_out, nnout)
+        assert backend_out.shape == nnout.shape
+        if compare_values:
+            assert np.allclose(backend_out, nnout, atol=atol)
+            export_result[func_name][opset] = 'OK'
+        onnxdir.remove()
 
 
 @pytest.fixture

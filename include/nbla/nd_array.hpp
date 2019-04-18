@@ -121,6 +121,15 @@ public:
    */
   NBLA_API shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
 
+  /** Get array's ptr.
+
+      @param[in] dtype Enum of data type.
+      @param[in] ctx Descriptor of array backend.
+      @param[in] write_only No synchronization happens.
+   */
+  NBLA_API unsigned long data_ptr(dtypes dtype, const Context &ctx,
+                                  bool write_only = false);
+
   /** Get mutable array with specified dtype and backend description.
 
       @param[in] dtype Enum of data type.

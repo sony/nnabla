@@ -45,6 +45,9 @@ Neural Network Layers
 .. autofunction:: sum_pooling
 .. autofunction:: unpooling
 .. autofunction:: embed
+.. autofunction:: rnn
+.. autofunction:: lstm
+.. autofunction:: gru
 
 
 Neural Network Activation
@@ -59,6 +62,7 @@ Neural Network Activation
 .. autofunction:: selu
 .. autofunction:: crelu
 .. autofunction:: celu
+.. autofunction:: gelu
 .. autofunction:: prelu
 .. autofunction:: leaky_relu
 
@@ -171,6 +175,7 @@ Array Manipulation
 .. autofunction:: transpose
 .. autofunction:: broadcast
 .. autofunction:: broadcast_to
+.. autofunction:: tile
 .. autofunction:: flip
 .. autofunction:: shift
 .. autofunction:: sort
@@ -188,6 +193,7 @@ Stochasticity
 .. autofunction:: dropout
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
+.. autofunction:: random_choice
 .. autofunction:: random_crop
 .. autofunction:: random_flip
 .. autofunction:: random_shift
