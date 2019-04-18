@@ -65,6 +65,14 @@ Neural Network Activation
 .. autofunction:: gelu
 .. autofunction:: prelu
 .. autofunction:: leaky_relu
+.. autofunction:: relu6
+.. autofunction:: hard_sigmoid
+.. autofunction:: hard_tanh
+.. autofunction:: log_sigmoid
+.. autofunction:: softplus
+.. autofunction:: softsign
+.. autofunction:: tanh_shrink
+.. autofunction:: sinc
 
 
 Normalization

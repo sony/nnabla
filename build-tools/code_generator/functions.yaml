@@ -998,6 +998,152 @@ Neural Network Activation Functions:
     function_ids:
       Empty: 245
     c_runtime: not support
+  ReLU6:
+    snake_name: relu6
+    doc: |2
+
+      Element-wise ReLU6 function.
+      Capping ReLU activation to 6 is often observed to learn sparse features earlier.
+
+      .. math::
+          ReLU6(x) = \min(\max(0,x,),6)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 256
+  HardSigmoid:
+    snake_name: hard_sigmoid
+    doc: |2
+
+      Segment-wise linear approximation of sigmoid.
+      Preferable when speed of computation is more important than precision.
+      Returns :math:`0` if :math:`x < -2.5`. 
+      Returns :math:`1` if :math:`x> 2.5`. 
+      Returns :math:`0.2x + 0.5` if :math:`-2.5 <= x <= 2.5`.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 249
+      ff: 259
+  HardTanh:
+    snake_name: hard_tanh
+    doc: |2
+
+      Element-wise HardTanh function.
+      Computationally cheaper than Tanh function.
+      Returns :math:`1` if :math:`x > 1`. 
+      Returns :math:`-1` if :math:`x < -1`. 
+      Returns :math:`x` otherwise.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      ii: 250
+      ff: 260
+      Empty: 261
+  LogSigmoid:
+    snake_name: log_sigmoid
+    doc: |2
+
+      Element-wise LogSigmoid function.
+
+      .. math::
+          LogSigmoid(x) = \log(1/(1+\exp(-x_i)))
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 251
+  SoftPlus:
+    snake_name: softplus
+    doc: |2
+
+      Element-wise SoftPlus function.
+      Unlike Sigmoid and Tanh that have upper and lower bound, SoftPlus is only lower-bounded by 0.
+
+      .. math::
+          SoftPlus(x) = \log(1+\exp(x_i))
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      ii: 252
+      Empty: 262
+  SoftSign:
+    snake_name: softsign
+    doc: |2
+
+      Element-wise SoftSign.
+      Can be used in place of Tanh function.
+      While Tanh converges exponentially, SoftSign converges polynomially.
+
+      .. math::
+          SoftSign(x) = x/(1+|x|)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 253
+  TanhShrink:
+    snake_name: tanh_shrink
+    doc: |2
+
+      Element-wies TanhShrink function.
+
+      .. math::
+          TanhShrink(x) = x - \tanh(x)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 254
+  Sinc:
+    snake_name: sinc
+    doc: |2
+
+      Element-wise Sinc function.
+      Unlike other popular activation functions, it has rises and falls.
+      returns :math:`1` if :math:`x = 0`.
+      returns :math:`\sin(x)/x` otherwise.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 255
 Normalization:
   BatchNormalization:
     snake_name: batch_normalization
