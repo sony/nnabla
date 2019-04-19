@@ -67,46 +67,52 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  auto inv_x = make_shared<Variable>(inputs[0]->shape());
-  auto f_batch_inv = create_BatchInv(this->ctx_);
-  f_batch_inv->setup(inputs, Variables{inv_x.get()});
+  Variable gx(inputs[0]->grad());
+  Variable reshaped_gy(Shape_t{batch_size_, 1, 1});
+  Variable inv_x(inputs[0]->shape());
+  Variable transposed_inv_x(inv_x.data()->shape());
+  Variable reshaped_det_x(Shape_t{batch_size_, 1, 1});
+  Variable mul1_out(reshaped_det_x.data()->shape());
+  Variable mul2_out(mul1_out.data()->shape());
 
-  auto transposed_inv_x = make_shared<Variable>();
-  auto f_transpose = create_Transpose(this->ctx_, vector<int>{0, 2, 1});
-  f_transpose->setup(Variables{inv_x.get()},
-                     Variables{transposed_inv_x.get()});
-
-  auto reshaped_gy = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
-  reshaped_gy->data()->set_array(outputs[0]->grad()->array());
-  auto reshaped_det_x = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
-  reshaped_det_x->data()->set_array(outputs[0]->data()->array());
-  auto mul1_out = make_shared<Variable>();
-  auto f_mul1 = create_Mul2(this->ctx_);
-  f_mul1->setup(Variables{reshaped_gy.get(), reshaped_det_x.get()},
-                Variables{mul1_out.get()});
-
-  auto mul2_out = make_shared<Variable>();
-  auto f_mul2 = create_Mul2(this->ctx_);
-  f_mul2->setup(Variables{mul1_out.get(), transposed_inv_x.get()},
-                Variables{mul2_out.get()});
-
-  auto gx = make_shared<Variable>(inputs[0]->grad());
-  auto f_add = create_Add2(this->ctx_, true);
-  f_add->setup(Variables{gx.get(), mul2_out.get()},
-               Variables{gx.get()});
-
-  if (!accum[0])
-    gx->data()->zero();
+  reshaped_gy.data()->set_array(outputs[0]->grad()->array());
+  reshaped_det_x.data()->set_array(outputs[0]->data()->array());
 
   // gx += gy * det_x * inv_x^T (element-wise multiplication)
-  f_batch_inv->forward(inputs, Variables{inv_x.get()});
-  f_transpose->forward(Variables{inv_x.get()},
-                       Variables{transposed_inv_x.get()});
-  f_mul1->forward(Variables{reshaped_gy.get(), reshaped_det_x.get()},
-                  Variables{mul1_out.get()});
-  f_mul2->forward(Variables{mul1_out.get(), transposed_inv_x.get()},
-                  Variables{mul2_out.get()});
-  f_add->forward(Variables{gx.get(), mul2_out.get()},
-                 Variables{gx.get()});
+
+  // batch_inv = input^-1
+  auto f_batch_inv = create_BatchInv(this->ctx_);
+  f_batch_inv->setup(inputs, Variables{&inv_x});
+  f_batch_inv->forward(inputs, Variables{&inv_x});
+
+  // mul1_out = gy * det_x = gy * output
+  auto f_mul1 = create_Mul2(this->ctx_);
+  f_mul1->setup(Variables{&reshaped_gy, &reshaped_det_x},
+                Variables{&mul1_out});
+  f_mul1->forward(Variables{&reshaped_gy, &reshaped_det_x},
+                  Variables{&mul1_out});
+
+  // inv_x^T
+  auto f_transpose = create_Transpose(this->ctx_, vector<int>{0, 2, 1});
+  f_transpose->setup(Variables{&inv_x}, Variables{&transposed_inv_x});
+  f_transpose->forward(Variables{&inv_x}, Variables{&transposed_inv_x});
+
+  // mul2_out = mul1_out * inv_x^T
+  auto f_mul2 = create_Mul2(this->ctx_);
+  f_mul2->setup(Variables{&mul1_out, &transposed_inv_x}, Variables{&mul2_out});
+  f_mul2->forward(Variables{&mul1_out, &transposed_inv_x},
+                  Variables{&mul2_out});
+
+  if (!accum[0]) {
+    // gx = mul2_out
+    const Array *mul2_ptr = mul2_out.data()->get(get_dtype<T>(), this->ctx_);
+    Array *gx_ptr = gx.data()->cast(get_dtype<T>(), this->ctx_, true);
+    gx_ptr->copy_from(mul2_ptr);
+  } else {
+    // gx = gx + mul2_out
+    auto f_add = create_Add2(this->ctx_, true);
+    f_add->setup(Variables{&gx, &mul2_out}, Variables{&gx});
+    f_add->forward(Variables{&gx, &mul2_out}, Variables{&gx});
+  }
 }
 }
