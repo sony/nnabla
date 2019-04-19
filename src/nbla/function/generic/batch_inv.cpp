@@ -41,8 +41,6 @@ void BatchInv<T>::setup_impl(const Variables &inputs,
   batch_size_ = input_shape[0];
   dim_ = input_shape[1];
   offset_ = dim_ * dim_;
-
-  
 }
 
 template <typename T>
@@ -68,37 +66,44 @@ void BatchInv<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  auto inv_x = make_shared<Variable>(outputs[0]->data());
-  auto neg_inv_x = make_shared<Variable>();
+  Variable gx(inputs[0]->grad());
+  Variable gy(outputs[0]->grad());
+  Variable inv_x(outputs[0]->data());
+  Variable neg_inv_x(inv_x.data()->shape());
+  Variable matmul1_out(inv_x.data()->shape());
+  Variable matmul2_out(inv_x.data()->shape());
+
+  // gx = -inv_x^T * gy * inv_x^T
+
+  // neg_inv_x = -inv_x = inv_x * -1
   auto f_mul_scalar = create_MulScalar(this->ctx_, -1.0);
-  f_mul_scalar->setup(Variables{inv_x.get()}, Variables{neg_inv_x.get()});
+  f_mul_scalar->setup(Variables{&inv_x}, Variables{&neg_inv_x});
+  f_mul_scalar->forward(Variables{&inv_x}, Variables{&neg_inv_x});
 
-  auto matmul1_out = make_shared<Variable>();
-  auto gy = make_shared<Variable>(outputs[0]->grad());
+  // matmul1_out = neg_inv_x^T * gy
   auto f_batch_matmul1 = create_BatchMatmul(this->ctx_, true, false);
-  f_batch_matmul1->setup(Variables{neg_inv_x.get(), gy.get()},
-                          Variables{matmul1_out.get()});
+  f_batch_matmul1->setup(Variables{&neg_inv_x, &gy}, Variables{&matmul1_out});
+  f_batch_matmul1->forward(Variables{&neg_inv_x, &gy},
+                           Variables{&matmul1_out});
 
-  auto matmul2_out = make_shared<Variable>();
+  // matmul2_out = matmul1_out * inv_x^T
   auto f_batch_matmul2 = create_BatchMatmul(this->ctx_, false, true);
-  f_batch_matmul2->setup(Variables{matmul1_out.get(), inv_x.get()},
-                          Variables{matmul2_out.get()});
+  f_batch_matmul2->setup(Variables{&matmul1_out, &inv_x},
+                         Variables{&matmul2_out});
+  f_batch_matmul2->forward(Variables{&matmul1_out, &inv_x},
+                           Variables{&matmul2_out});
 
-  auto gx = make_shared<Variable>(inputs[0]->grad());
-  auto f_add = create_Add2(this->ctx_, true);
-  f_add->setup(Variables{gx.get(), matmul2_out.get()},
-                Variables{gx.get()});
-
-  if (!accum[0])
-    gx->data()->zero();
-
-  // gx += -inv_x^T * gy * inv_x^T
-  f_mul_scalar->forward(Variables{inv_x.get()}, Variables{neg_inv_x.get()});
-  f_batch_matmul1->forward(Variables{neg_inv_x.get(), gy.get()},
-                            Variables{matmul1_out.get()});
-  f_batch_matmul2->forward(Variables{matmul1_out.get(), inv_x.get()},
-                            Variables{matmul2_out.get()});
-  f_add->forward(Variables{gx.get(), matmul2_out.get()},
-                  Variables{gx.get()});
+  if (!accum[0]) {
+    // gx = matmul2_out
+    const Array *matmul2_ptr = matmul2_out.data()->get(get_dtype<T>(),
+                                                       this->ctx_);
+    Array *gx_ptr = gx.data()->cast(get_dtype<T>(), this->ctx_, true);
+    gx_ptr->copy_from(matmul2_ptr);
+  } else {
+    // gx = gx + matmul_2_out
+    auto f_add = create_Add2(this->ctx_, true);
+    f_add->setup(Variables{&gx, &matmul2_out}, Variables{&gx});
+    f_add->forward(Variables{&gx, &matmul2_out}, Variables{&gx});
+  }
 }
 }

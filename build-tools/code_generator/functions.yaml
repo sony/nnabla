@@ -3219,7 +3219,7 @@ Array Manipulation:
         doc: batched N-D array
     outputs:
       y:
-        doc: batched N-D array of inverted matrix
+        doc: batched N-D array of determinant
     c_runtime: not support
     function_ids:
       Empty: 249
