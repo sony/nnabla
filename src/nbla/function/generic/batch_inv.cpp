@@ -82,8 +82,7 @@ void BatchInv<T>::backward_impl(const Variables &inputs,
 
   // matmul1_out = neg_inv_x^T * gy
   auto f_batch_matmul1 = create_BatchMatmul(this->ctx_, true, false);
-  f_batch_matmul1->setup(Variables{&neg_inv_x, &gy},
-                         Variables{&matmul1_out});
+  f_batch_matmul1->setup(Variables{&neg_inv_x, &gy}, Variables{&matmul1_out});
   f_batch_matmul1->forward(Variables{&neg_inv_x, &gy},
                            Variables{&matmul1_out});
 
@@ -103,10 +102,8 @@ void BatchInv<T>::backward_impl(const Variables &inputs,
   } else {
     // gx = gx + matmul_2_out
     auto f_add = create_Add2(this->ctx_, true);
-    f_add->setup(Variables{&gx, &matmul2_out},
-                 Variables{&gx});
-    f_add->forward(Variables{&gx, &matmul2_out},
-                   Variables{&gx});
+    f_add->setup(Variables{&gx, &matmul2_out}, Variables{&gx});
+    f_add->forward(Variables{&gx, &matmul2_out}, Variables{&gx});
   }
 }
 }
