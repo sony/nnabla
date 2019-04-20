@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
-#include <nbla/function/assign.hpp>
 #include <nbla/function/add2.hpp>
+#include <nbla/function/assign.hpp>
 #include <nbla/variable.hpp>
 
 namespace nbla {
@@ -24,8 +23,7 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_SOURCE(Assign);
 
 template <typename T>
-void Assign<T>::setup_impl(const Variables &inputs,
-                               const Variables &outputs) {
+void Assign<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   NBLA_CHECK(inputs[0]->shape() == inputs[1]->shape(), error_code::value,
              "Dimensions of inputs must match. "
              "inputs[0]: %s != inputs[1]: %s.",
@@ -36,7 +34,7 @@ void Assign<T>::setup_impl(const Variables &inputs,
 
 template <typename T>
 void Assign<T>::forward_impl(const Variables &inputs,
-                               const Variables &outputs) {
+                             const Variables &outputs) {
   Array *dst = inputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
   const Array *src = inputs[1]->data()->get(get_dtype<T>(), this->ctx_);
   Array *y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
@@ -44,12 +42,10 @@ void Assign<T>::forward_impl(const Variables &inputs,
   y->copy_from(src);
 }
 
-
 template <typename T>
-void Assign<T>::backward_impl(const Variables &inputs,
-                                const Variables &outputs,
-                                const vector<bool> &propagate_down,
-                                const vector<bool> &accum) {
+void Assign<T>::backward_impl(const Variables &inputs, const Variables &outputs,
+                              const vector<bool> &propagate_down,
+                              const vector<bool> &accum) {
   if (!propagate_down[0])
     return;
 
