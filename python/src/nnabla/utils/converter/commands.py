@@ -386,6 +386,15 @@ def _dump_protobuf(args, proto, prefix, depth):
                       ' Shape:{}'.format(shape))
 
         def _dump_network(prefix, net):
+            if args.dump_variable_name:
+                if args.dump_variable_name in net['variables']:
+                    v = args.dump_variable_name
+                    print('Variable Name: {:20} Shape: {}'.format(
+                        v, net['variables'][v]['shape']))
+                else:
+                    print('DUMP ERROR: variable {} not found.'.format(
+                        args.dump_variable_name))
+                return
             if args.dump_functions:
                 for i, f in enumerate(net['functions']):
                     func_prefix = '{}  Function[{:^5}]: '.format(prefix, i)

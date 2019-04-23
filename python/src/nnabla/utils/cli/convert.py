@@ -87,6 +87,8 @@ def add_convert_command(subparsers):
                            help='[dump] dump variable list.')
     subparser.add_argument('--dump-limit', type=int, default=-1,
                            help='[dump] limit num of items.')
+    subparser.add_argument('-n', '--dump-variable-name', type=str, default=None,
+                           help='[dump] Specific variable name to display.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
     # import option
