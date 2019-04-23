@@ -3195,6 +3195,39 @@ Array Manipulation:
     function_ids:
       Empty: 85
     c_runtime: support
+  Assign:
+    snake_name: assign
+    doc: |2
+
+      Assign source array to destination array just like `tf.assign`.
+      This is useful to synchronize or manually update parameters.
+
+      .. code-block:: python
+
+        dst = nn.Variable((2, 3, 4))
+        src = nn.Variable((2, 3, 4))
+        assign = F.assign(dst, src)
+
+        assign.forward()
+        assert np.allclose(dst.d, src.d) # dst and src have identical values.
+        assert np.allclose(assign.d dst.d) # returned Variable is also identical to dst.
+
+      Unlike TensorFlow, the returned Variable has a backward path to `dst`:
+
+      .. math::
+
+        g_{dst} = g_{y}
+    inputs:
+      dst:
+        doc: A destination N-D array
+      src:
+        doc: A source N-D array
+    outputs:
+      y:
+        doc: An assigned array
+    c_runtime: not support
+    function_ids:
+      Empty: 248
 Signal Processing:
   Interpolate:
     snake_name: interpolate

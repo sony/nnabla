@@ -467,3 +467,6 @@ IFFT:
 Prune:
   float: [float]
   Half: [Half]
+Assign:
+  float: [float]
+  half: [Half]
