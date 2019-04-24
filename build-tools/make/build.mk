@@ -78,6 +78,16 @@ nnabla-cpplib:
 		$(NNABLA_DIRECTORY)
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) -j$(PARALLEL_BUILD_NUM)
 
+.PHONY: nnabla-cpplib-rpm
+nnabla-cpplib-rpm: nnabla-cpplib
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G RPM CPackConfig.cmake
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G TBZ2 CPackConfig.cmake
+
+.PHONY: nnabla-cpplib-deb
+nnabla-cpplib-deb: nnabla-cpplib
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G DEB CPackConfig.cmake
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G TBZ2 CPackConfig.cmake
+
 .PHONY: nnabla-cpplib-android
 nnabla-cpplib-android:
 	@mkdir -p $(BUILD_DIRECTORY_CPPLIB_ANDROID)

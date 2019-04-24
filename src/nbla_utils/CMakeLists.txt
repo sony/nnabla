@@ -147,6 +147,7 @@ if (NOT WIN32)
     LIBRARY DESTINATION lib)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_utils
     DESTINATION include)
+  include(CPack)
 endif()
 
 if (BUILD_TEST)
