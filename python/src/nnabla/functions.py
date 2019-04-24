@@ -915,12 +915,12 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
     :math:`\mu^g` and :math:`\sigma^g` are the mean and std of each group which contains `num_channels / num_groups` channels,
     and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
 
-    The input channels, specified by :attr:`channel_axis`, are separeted into :attr:`num_groups` groups,
+    The input channels, specified by :attr:`channel_axis`, are separated into :attr:`num_groups` groups,
     and the mean and std are calculated over the each group.
     For example, if the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0),
     an input variable is once reshaped to [B, num_groups, C / num_groups, H, W]
-    and standardize by its mean and std whose shapes are [B, num_groups, C / num_groups, 1, 1].
-    Before returning, an output variable is reshaped again to the original input shape (= [B, C, H, W] in the case above).
+    and standardize by its mean and std whose shapes are [B, num_groups, 1, 1, 1].
+    Finally, an output variable is reshaped again to the original input shape (= [B, C, H, W] in the case above).
 
     References:
 
@@ -962,10 +962,10 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
         out, mu, sigma = instance_normalization(
             x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps, output_stat)
 
-        return (out * gamma + beta).reshape(x.shape), mu, sigma
+        return out.reshape(x.shape), mu, sigma
 
-    return (instance_normalization(x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps,
-                                   output_stat) * gamma + beta).reshape(x.shape)
+    return instance_normalization(x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps,
+                                  output_stat).reshape(x.shape)
 
 
 def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None):

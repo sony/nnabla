@@ -4,7 +4,7 @@ import nnabla as nn
 import nnabla.functions as F
 
 
-def ref_instance_normalization(x, channel_axis, batch_axis, eps, output_stat):
+def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, output_stat):
 
     if hasattr(batch_axis, "__iter__"):
         ignore_axes = batch_axis + [channel_axis, ]
@@ -17,9 +17,9 @@ def ref_instance_normalization(x, channel_axis, batch_axis, eps, output_stat):
     x_std = x.std(axis=axes, keepdims=True)
 
     if output_stat:
-        return ((x - x_mean) / (x_std + eps)).reshape(x.shape), x_mean, x_std
+        return (x - x_mean) / (x_std + eps) * gamma + beta, x_mean, x_std
 
-    return ((x - x_mean) / (x_std + eps)).reshape(x.shape)
+    return (x - x_mean) / (x_std + eps) * gamma + beta
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -36,11 +36,24 @@ def test_group_normalization_forward_backward(seed, x_shape, batch_axis, channel
     input = np.array(rng.randn(*x_shape).astype(np.float32))
     eps = 1e-05
 
+    stat_shape = [1 for _ in range(len(x_shape))]
+    if isinstance(batch_axis, int):
+        stat_shape[batch_axis] = x_shape[batch_axis]
+    else:
+        for axis in list(batch_axis):
+            stat_shape[axis] = x_shape[axis]
+    stat_shape[channel_axis] = x_shape[channel_axis]
+    beta = rng.randn(*stat_shape).astype(np.float32)
+    gamma = rng.randn(*stat_shape).astype(np.float32)
+
     x = nn.Variable.from_numpy_array(input)
+    v_beta = nn.Variable.from_numpy_array(beta)
+    v_gamma = nn.Variable.from_numpy_array(gamma)
+
     output = F.instance_normalization(
-        x, channel_axis, batch_axis, eps, output_stat)
+        x, v_beta, v_gamma, channel_axis, batch_axis, eps, output_stat)
     ref = ref_instance_normalization(
-        input, channel_axis, batch_axis, eps, output_stat)
+        input, beta, gamma, channel_axis, batch_axis, eps, output_stat)
 
     if output_stat:
         tmp = F.sink(*output)
