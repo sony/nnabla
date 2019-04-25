@@ -261,7 +261,10 @@ Dump content of supported format
 
 .. code-block:: none
 
-    usage: nnabla_cli dump [-h] [-I IMPORT_FORMAT] [--nnp-no-expand-network]
+    usage: nnabla_cli dump [-h] [-v] [-F] [-V] [--dump-limit DUMP_LIMIT]
+                           [-n DUMP_VARIABLE_NAME] [-I IMPORT_FORMAT]
+                           [-E NNP_IMPORT_EXECUTOR_INDEX]
+                           [--nnp-exclude-preprocess] [--nnp-no-expand-network]
                            FILE [FILE ...]
     
     positional arguments:
@@ -269,8 +272,20 @@ Dump content of supported format
     
     optional arguments:
       -h, --help            show this help message and exit
+      -v, --dump-verbose    [dump] verbose output.
+      -F, --dump-functions  [dump] dump function list.
+      -V, --dump-variables  [dump] dump variable list.
+      --dump-limit DUMP_LIMIT
+                            [dump] limit num of items.
+      -n DUMP_VARIABLE_NAME, --dump-variable-name DUMP_VARIABLE_NAME
+                            [dump] Specific variable name to display.
       -I IMPORT_FORMAT, --import-format IMPORT_FORMAT
                             [import] import format. (one of [NNP,ONNX])
+      -E NNP_IMPORT_EXECUTOR_INDEX, --nnp-import-executor-index NNP_IMPORT_EXECUTOR_INDEX
+                            [import][NNP] import only specified executor.
+      --nnp-exclude-preprocess
+                            [import][NNP] EXPERIMENTAL exclude preprocess
+                            functions when import.
       --nnp-no-expand-network
                             [import][NNP] expand network with repeat or recurrent.
 
@@ -308,7 +323,7 @@ File format converter
                               [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
-                              [-s SETTINGS] [-c CONFIG] [-d OPSET_VERSION]
+                              [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION]
                               FILE [FILE ...]
     
     positional arguments:
@@ -336,8 +351,9 @@ File format converter
                             Settings in YAML format file.
       -c CONFIG, --config CONFIG
                             [export] config target function list.
-      -d OPSET_VERSION, --define_opset
-                            [export] define onnx opset version. e.g. opset_6
+      -d DEFINE_VERSION, --define_version
+                            [export][ONNX] define onnx opset version. e.g. opset_6
+                            [export][NNB] define binary format version. e.g. nnb_3
 
 
 Plot Monitor class output files

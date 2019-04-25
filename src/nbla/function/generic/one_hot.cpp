@@ -57,7 +57,7 @@ void OneHot<T, T1>::forward_impl(const Variables &inputs,
     Size_t size = 1;
     for (int i2 = dim_ - 1; i2 >= 0; --i2) {
       addr += x[i * dim_ + i2] * size;
-      size *= shape_[dim_];
+      size *= shape_[i2];
     }
     y[i * size_ + addr] = (T1)1;
   }

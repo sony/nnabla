@@ -14,6 +14,8 @@
 
 from libcpp.vector cimport vector
 from libcpp.string cimport string
+from libcpp.unordered_set cimport unordered_set
+from libcpp.functional cimport function as std_function
 from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t
 from libcpp.memory cimport shared_ptr
@@ -45,6 +47,15 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
     cdef cppclass CCommunicatorBackwardCallback "nbla::CommunicatorBackwardCallback":
         CCommunicatorBackwardCallback() except+
     ctypedef shared_ptr[CCommunicatorBackwardCallback] CommunicatorBackwardCallbackPtr
+    ctypedef std_function[void(const CgFunctionPtr &)] function_hook_type
+
+    cdef cppclass FunctionHookWithObject:
+        ctypedef std_function[void(void *)] cleanup_callback_type
+        ctypedef std_function[void(void *, const CgFunctionPtr &)] callback_type
+        FunctionHookWithObject()
+        FunctionHookWithObject(void *obj, callback_type cb,
+                                   cleanup_callback_type clean_cb)
+
     cdef cppclass CgVariable:
         CgVariable() except+
         CgVariable(cpp_bool need_grad) except+
@@ -65,8 +76,8 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         VariablePtr variable()
         int rank() const
         void set_rank(int rank) except+
-        void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad) nogil except+
-        void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks) nogil except+
+        void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad, unordered_set[CgFunctionPtr] *fclosed, function_hook_type function_pre_hook, function_hook_type function_post_hook) nogil except+
+        void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks, function_hook_type function_pre_hook, function_hook_type function_post_hook) nogil except+
         void set_persistent(cpp_bool b)
         cpp_bool persistent()
         string name() except +
@@ -116,3 +127,5 @@ cdef class Variable:
 
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv)
+
+cdef FunctionHookWithObject create_function_hook_with_object(object callback)

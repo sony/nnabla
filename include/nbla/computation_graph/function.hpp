@@ -39,7 +39,25 @@ class CgFunction {
   int rank_{0};
   vector<CgVariablePtr> inputs_;
   FunctionPtr func_;
-  vector<std::weak_ptr<CgVariable>> outputs_;
+
+  /* Wrapper object of output CgVariable.
+   */
+  struct OutputWrapper {
+    std::weak_ptr<CgVariable> weak_reference;
+    /*
+      Output variables are weakly referenced to avoid circular dependencies,
+      which means output variables may be deleted before it is used.
+      To recover a deleted CgVariable instance, a Variable instance originally
+      held by the CgVariable is kept aside the weak reference.
+      This dosesn't cause circular dependency.
+    */
+    VariablePtr internal_variable;
+
+    void set(CgVariablePtr v);
+    CgVariablePtr get();
+  };
+
+  vector<OutputWrapper> outputs_;
   bool need_grad_{false};
   string info_;
 

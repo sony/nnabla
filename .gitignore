@@ -11,10 +11,21 @@
 /docker/development/Dockerfile.build.py*
 /docker/development/Dockerfile.onnx-test.py*
 /examples/cpp/forward_check/*/tmp.*
+/examples/cpp/mnist_collection/train_dcgan
+/examples/cpp/mnist_collection/train_lenet_classifier
+/examples/cpp/mnist_collection/train_resnet_classifier
+/examples/cpp/mnist_collection/train_siamese
+/examples/cpp/mnist_collection/train_vae
+/examples/cpp/mnist_collection/train_vat
 /examples/cpp/mnist_runtime/*.nnp
 /examples/cpp/mnist_runtime/mnist_runtime
 /examples/cpp/mnist_runtime/mnist_runtime_cuda
 /examples/cpp/mnist_runtime/tmp.*
+/examples/cpp/mnist_training/*.nnp
+/examples/cpp/mnist_training/mnist_training
+/examples/cpp/mnist_training/tmp.*
+/examples/cpp/nbla_train/*.nnp
+/include/nbla/functions.hpp
 /output/
 /python/setup.cfg
 /python/setup.cfg-Debug
@@ -25,6 +36,7 @@
 /python/src/nnabla/*.lib
 /python/src/nnabla/_arithmetic_ops.cpp
 /python/src/nnabla/_array.cpp
+/python/src/nnabla/_computation_graph.cpp
 /python/src/nnabla/_indexing.cpp
 /python/src/nnabla/_init.cpp
 /python/src/nnabla/_init.h
@@ -54,6 +66,7 @@
 /python/test/tmp.h5
 /python/test/tmp.protobuf
 /src/nbla/function/*.cpp
+/src/nbla/functions.cpp
 /src/nbla/init.cpp
 /src/nbla/proto/nnabla.proto
 /src/nbla/solver/*.cpp
@@ -69,6 +82,7 @@
 /third_party/zlib-1.2.11tar.gz
 
 /build/
+/build-android/
 /build-doc/
 /build_wheel_py*/
 

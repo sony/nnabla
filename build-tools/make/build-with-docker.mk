@@ -24,56 +24,86 @@ NNABLA_BUILD_WITH_DOCKER_INCLUDED = True
 NNABLA_DIRECTORY ?= $(shell pwd)
 include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
-DOCKER_IMAGE_NAME_BASE ?= nnabla-build
+DOCKER_IMAGE_NAME_BASE ?= nnabla-py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)
 
-DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format
-DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc
-DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build
-DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android
-DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla
-DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test
-
-DOCKER_RUN_OPTS +=--rm
-DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
-DOCKER_RUN_OPTS += -w $$(pwd)
-DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
-DOCKER_RUN_OPTS += -e HOME=/tmp
-DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
+DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format:$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format |cut -d \  -f 1)
+DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc:$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |cut -d \  -f 1)
+DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |cut -d \  -f 1)
+DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla:$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build |cut -d \  -f 1)
+DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |cut -d \  -f 1)
+DOCKER_IMAGE_TF_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-tf-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.tf-test |cut -d \  -f 1)
 
 ########################################################################################################################
 # Docker images
-.PHONY: docker_image_auto_format
-docker_image_auto_format:
-	docker pull ubuntu:16.04
-	cd $(NNABLA_DIRECTORY) \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .
 
-.PHONY: docker_image_doc
-docker_image_doc:
-	docker pull ubuntu:16.04
-	cd $(NNABLA_DIRECTORY) \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .
+.PHONY: docker_image_auto_format$(DOCKER_IMAGE_TARGET_SUFFIX)
+docker_image_auto_format$(DOCKER_IMAGE_TARGET_SUFFIX):
+	if ! docker image inspect $(DOCKER_IMAGE_AUTO_FORMAT) >/dev/null 2>/dev/null; then \
+		docker pull ubuntu:16.04 && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .) \
+	fi
 
-.PHONY: docker_image_build
-docker_image_build:
-	docker pull centos:6
-	cd $(NNABLA_DIRECTORY) \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) \
-		-f docker/development/Dockerfile.build .
+.PHONY: docker_image_doc$(DOCKER_IMAGE_TARGET_SUFFIX)
+docker_image_doc$(DOCKER_IMAGE_TARGET_SUFFIX):
+	if ! docker image inspect $(DOCKER_IMAGE_DOC) >/dev/null 2>/dev/null; then \
+		docker pull ubuntu:16.04 && \
+		( cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document . ) \
+	fi
 
-.PHONY: docker_image_onnx_test
-docker_image_onnx_test:
-	docker pull ubuntu:16.04
-	cd $(NNABLA_DIRECTORY) \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) \
-		-f docker/development/Dockerfile.onnx-test .
+.PHONY: docker_image_build$(DOCKER_IMAGE_TARGET_SUFFIX)
+docker_image_build$(DOCKER_IMAGE_TARGET_SUFFIX):
+	if ! docker image inspect $(DOCKER_IMAGE_BUILD) >/dev/null 2>/dev/null; then \
+		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .) \
+	fi
 
-.PHONY: docker_image_build_android
-docker_image_build_android:
-	docker pull ubuntu:16.04
+.PHONY: docker_image_onnx_test$(DOCKER_IMAGE_TARGET_SUFFIX)
+docker_image_onnx_test$(DOCKER_IMAGE_TARGET_SUFFIX):
+	if ! docker image inspect $(DOCKER_IMAGE_ONNX_TEST) >/dev/null 2>/dev/null; then \
+		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) -f docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) .) \
+	fi
+
+.PHONY: docker_image_tf_test$(DOCKER_IMAGE_TARGET_SUFFIX)
+docker_image_tf_test$(DOCKER_IMAGE_TARGET_SUFFIX):
+	if ! docker image inspect $(DOCKER_IMAGE_TF_TEST) >/dev/null 2>/dev/null; then \
+		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.tf-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_TF_TEST) -f docker/development/Dockerfile.tf-test$(ARCH_SUFFIX) .) \
+	fi
+
+
+# for Android
+# Compiler for diffrent ARCHITECTURE and ABI:
+# CMAKE_SYSTEM_NAME = arm-linux-androideabi  ==> ARCHITECTURE = arm 	 , ABI=armeabi or ABI=armeabi-v7a
+# CMAKE_SYSTEM_NAME = aarch64-linux-android  ==> ARCHITECTURE = arm64 	 , ABI=arm64-v8a
+# CMAKE_SYSTEM_NAME = i686-linux-android     ==> ARCHITECTURE = x86 	 , ABI=x86
+# CMAKE_SYSTEM_NAME = x86_64-linux-android   ==> ARCHITECTURE = x86_64 	 , ABI=x86_64
+
+ANDROID_PLATFORM ?= android-26
+ANDROID_ARCHITECTURE ?= arm64
+ANDROID_CMAKE_SYSTEM_NAME ?= aarch64-linux-android
+ANDROID_EABI ?= arm64-v8a
+
+DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android-$(ANDROID_PLATFORM)-$(ANDROID_ARCHITECTURE)-$(ANDROID_CMAKE_SYSTEM_NAME)-$(ANDROID_EABI):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.android |cut -d \  -f 1)
+
+.PHONY: docker_image_build_android$(DOCKER_IMAGE_TARGET_SUFFIX)
+docker_image_build_android$(DOCKER_IMAGE_TARGET_SUFFIX):
+	if ! docker image inspect $(DOCKER_IMAGE_BUILD_ANDROID) >/dev/null 2>/dev/null; then \
+		docker pull ubuntu:16.04 && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \
+			--build-arg ANDROID_PLATFORM=$(ANDROID_PLATFORM) \
+			--build-arg ANDROID_ARCHITECTURE=$(ANDROID_ARCHITECTURE) \
+			--build-arg ANDROID_CMAKE_SYSTEM_NAME=$(ANDROID_CMAKE_SYSTEM_NAME) \
+			--build-arg ANDROID_EABI=$(ANDROID_EABI) \
+			-f docker/development/Dockerfile.android .) \
+	fi
+
+.PHONY: docker_image_build_android_emulator
+docker_image_build_android_emulator:
+	docker pull gradle:4.10.0-jdk8
 	cd $(NNABLA_DIRECTORY) \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \
-		-f docker/development/Dockerfile.android .
+	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID)_test \
+		-f docker/development/Dockerfile.android-test .
 
 ########################################################################################################################
 # Auto Format
@@ -100,7 +130,12 @@ bwd-nnabla-cpplib: docker_image_build
 .PHONY: bwd-nnabla-cpplib-android
 bwd-nnabla-cpplib-android: docker_image_build_android
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID) ./build-tools/android/build_nnabla.sh -p=$(PLATFORM) -a=$(ARCHITECTURE) -n=/usr/local/src/android-ndk -e=$(ABI)
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID) make -f build-tools/make/build.mk nnabla-cpplib-android
+
+.PHONY: bwd-nnabla-cpplib-android-test
+bwd-nnabla-cpplib-android-test: docker_image_build_android_emulator
+	cd $(NNABLA_DIRECTORY) \
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD_ANDROID)_test make -f build-tools/make/build.mk nnabla-cpplib-android-test
 
 .PHONY: bwd-nnabla-test-cpplib
 bwd-nnabla-test-cpplib: docker_image_build
@@ -110,12 +145,12 @@ bwd-nnabla-test-cpplib: docker_image_build
 .PHONY: bwd-nnabla-wheel
 bwd-nnabla-wheel: docker_image_build
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=ON nnabla-wheel
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL) nnabla-wheel
 
 .PHONY: bwd-nnabla-test
 bwd-nnabla-test: docker_image_onnx_test
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_ONNX_TEST) make -f build-tools/make/build.mk nnabla-test-local
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_ONNX_TEST) make -f build-tools/make/build.mk nnabla-test
 
 .PHONY: bwd-nnabla-shell
 bwd-nnabla-shell: docker_image_build

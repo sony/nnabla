@@ -1,0 +1,41 @@
+﻿#include <winver.h>
+
+#define VER_FILEVERSION ${version_major},${version_minor},${version_patch}
+#define VER_FILEVERSION_STR "${version}"
+
+#define VER_PRODUCTVERSION ${version_major},${version_minor},${version_patch}
+#define VER_PRODUCTVERSION_STR "${version}"
+
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION VER_FILEVERSION
+PRODUCTVERSION VER_PRODUCTVERSION
+FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+FILEFLAGS 0x1L
+#else
+FILEFLAGS 0x0L
+#endif
+FILEOS VOS__WINDOWS32
+FILETYPE 0x2L
+FILESUBTYPE 0x0L
+BEGIN
+BLOCK "StringFileInfo"
+BEGIN
+BLOCK "040904E4"
+BEGIN
+VALUE "CompanyName", "Sony Corporation"
+VALUE "FileDescription", "nnabla"
+VALUE "FileVersion", VER_FILEVERSION_STR
+VALUE "InternalName", "nnabla"
+VALUE "LegalCopyright", "©2018, 2019 Sony Corporation"
+VALUE "OriginalFilename", "nnabla"
+VALUE "ProductName", "nnabla"
+VALUE "ProductVersion", VER_PRODUCTVERSION_STR
+END
+END
+BLOCK "VarFileInfo"
+BEGIN
+VALUE "Translation", 0x409, 1252
+END
+END

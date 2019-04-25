@@ -87,6 +87,8 @@ def add_convert_command(subparsers):
                            help='[dump] dump variable list.')
     subparser.add_argument('--dump-limit', type=int, default=-1,
                            help='[dump] limit num of items.')
+    subparser.add_argument('-n', '--dump-variable-name', type=str, default=None,
+                           help='[dump] Specific variable name to display.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
     # import option
@@ -130,8 +132,9 @@ def add_convert_command(subparsers):
                            help='[export] This option need to set  "-E" option.' +
                            'Split executor with specified index. ' +
                            '(eg. "1-9", "1-2,5-")')
-    subparser.add_argument('-d', '--define_opset', type=str, default=None,
-                           help='[export] define onnx opset version. e.g. opset_6')
+    subparser.add_argument('-d', '--define_version', type=str, default=None,
+                           help='[export][ONNX] define onnx opset version. e.g. opset_6' + '\n' +
+                           '[export][NNB] define binary format version. e.g. nnb_3')
 
     # For config function list
     subparser.add_argument('-c', '--config', type=str, default=None,

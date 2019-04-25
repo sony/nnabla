@@ -142,14 +142,42 @@ public:
 /** Implementation of Dataset
 */
 class DatasetImpl {
+public:
+  DatasetImpl(const ::Dataset &dataset) : dataset_proto_(dataset){};
+  virtual ~DatasetImpl() = default;
+  string name() { return dataset_proto_.name(); }
+  string uri() const { return dataset_proto_.uri(); };
+  string cache_dir() const { return dataset_proto_.cache_dir(); };
+  bool create_cache_explicitly() const {
+    return dataset_proto_.create_cache_explicitly();
+  };
+  bool overwrite_cache() const { return dataset_proto_.overwrite_cache(); };
+  bool shuffle() const { return dataset_proto_.shuffle(); };
+  bool no_image_normalization() const {
+    return dataset_proto_.no_image_normalization();
+  };
+  const int batch_size() const { return dataset_proto_.batch_size(); };
+  virtual const int get_num_stream() const = 0;
+  virtual const int get_num_data() const = 0;
+  virtual vector<string> get_data_names() = 0;
+  virtual vector<Shape_t> get_shapes() = 0;
+  virtual vector<vector<NdArrayPtr>> get_cache_blocks() = 0;
+
+protected:
+  const ::Dataset dataset_proto_;
+};
+
+// ----------------------------------------------------------------------
+// DatasetHDF5Impl
+// ----------------------------------------------------------------------
+/** Implementation of DatasetHDF5Impl
+*/
+class DatasetHDF5Impl : public DatasetImpl {
   friend class NnpImpl;
 
 private:
-  // Dataset proto
-  const ::Dataset dataset_proto_;
-
   // ctor
-  DatasetImpl(const ::Dataset &dataset);
+  DatasetHDF5Impl(const ::Dataset &dataset);
 
   // Number of data
   int n_data_;
@@ -167,19 +195,11 @@ private:
   vector<vector<NdArrayPtr>> cache_blocks_; // cache_block/data_column/data
 
 public:
-  string name() const;
-  string uri() const;
-  string cache_dir() const;
-  bool create_cache_explicitly() const;
-  bool overwrite_cache() const;
-  bool shuffle() const;
-  bool no_image_normalization() const;
-  const int batch_size() const;
-  const int get_num_stream() const;
-  const int get_num_data() const;
-  vector<string> get_data_names();
-  vector<Shape_t> get_shapes();
-  vector<vector<NdArrayPtr>> get_cache_blocks();
+  virtual const int get_num_stream() const override;
+  virtual const int get_num_data() const override;
+  virtual vector<string> get_data_names() override;
+  virtual vector<Shape_t> get_shapes() override;
+  virtual vector<vector<NdArrayPtr>> get_cache_blocks() override;
 };
 
 class DataIteratorFromCacheFiles {
