@@ -324,10 +324,13 @@ File format converter
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
                               [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION]
-                              FILE [FILE ...]
+                              [--outputs OUTPUTS] [--inputs INPUTS] FILE [FILE ...]
     
     positional arguments:
       FILE                  File or directory name(s) to convert.
+                            (When convert ckpt format of the tensorflow model,
+                            If the version of the checkpoint is V1, need to enter the `.ckpt` file,
+                            otherwise need to enter the `.meta` file.)
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -335,6 +338,12 @@ File format converter
                             [import] import format. (one of [NNP,ONNX])
       --nnp-no-expand-network
                             [import][NNP] expand network with repeat or recurrent.
+      --outputs OUTPUTS
+                            [import][tensorflow] The name(s) of the output nodes, comma separated.
+                                                 Only needed when convert CKPT format.
+      --inputs INPUTS
+                            [import][tensorflow] The name(s) of the input nodes, comma separated.
+                                                 Only needed when convert CKPT format.
       -O EXPORT_FORMAT, --export-format EXPORT_FORMAT
                             [export] export format. (one of [NNP,NNB,CSRC,ONNX])
       -f, --force           [export] overwrite output file.
