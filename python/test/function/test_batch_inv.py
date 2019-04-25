@@ -21,11 +21,13 @@ from nbla_test_utils import list_context
 
 ctxs = list_context('BatchInv')
 
+
 def ref_inv(x):
     y = np.zeros_like(x, dtype=np.float32)
     for i in range(x.shape[0]):
         y[i] = np.linalg.inv(x[i])
     return y
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
