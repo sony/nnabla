@@ -27,9 +27,6 @@ NBLA_REGISTER_FUNCTION_SOURCE(GlobalAveragePooling);
 template <typename T>
 void GlobalAveragePooling<T>::setup_impl(const Variables &inputs,
                                          const Variables &outputs) {
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_);
-
   const Shape_t inshape = inputs[0]->shape();
   const int in_dim = inshape.size();
   const int MIN_DIM = 2;
@@ -55,7 +52,6 @@ void GlobalAveragePooling<T>::forward_impl(const Variables &inputs,
   const Shape_t inshape = inputs[0]->shape();
   const Shape_t outshape = outputs[0]->shape();
   const int in_dim = inshape.size();
-  const int out_dim = outshape.size();
   const int ndim = outshape[0];
   const int chandim = outshape[1];
   const int in_h = in_dim >= 3 ? inshape[2] : 1;
