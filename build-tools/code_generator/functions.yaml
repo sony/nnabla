@@ -3207,6 +3207,8 @@ Array Manipulation:
       y:
         doc: batched N-D array of inverted matrix
     c_runtime: not support
+    function_ids:
+      Empty: 249
   Assign:
     snake_name: assign
     doc: |2
