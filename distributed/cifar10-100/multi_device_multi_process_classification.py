@@ -88,7 +88,7 @@ def train():
     comm_syncbn = comm if args.sync_bn else None
     if args.net == "cifar10_resnet23":
         prediction = functools.partial(
-            resnet23_prediction, rng=rng, ncls=10, nmaps=64, act=F.relu, comm=comm_syncbn)
+            resnet23_prediction, rng=rng, ncls=10, nmaps=32, act=F.relu, comm=comm_syncbn)
         data_iterator = data_iterator_cifar10
     if args.net == "cifar100_resnet23":
         prediction = functools.partial(
@@ -100,8 +100,10 @@ def train():
     label_train = nn.Variable((args.batch_size, 1))
     pred_train = prediction(image_train, test=False)
     pred_train.persistent = True
-    loss_train = loss_function(pred_train, label_train) / n_devices
-    error_train = F.mean(F.top_n_error(pred_train, label_train, axis=1))
+    loss_train = (loss_function(pred_train, label_train) /
+                  n_devices).apply(persistent=True)
+    error_train = F.mean(F.top_n_error(
+        pred_train, label_train, axis=1)).apply(persistent=True)
     loss_error_train = F.sink(loss_train, error_train)
     input_image_train = {"image": image_train, "label": label_train}
 
@@ -134,6 +136,8 @@ def train():
     rng = np.random.RandomState(device_id)
     _, tdata = data_iterator(args.batch_size, True, rng)
     vsource, vdata = data_iterator(args.batch_size, False)
+
+    # loss_error_train.forward()
 
     # Training-loop
     ve = nn.Variable()
@@ -178,7 +182,7 @@ def train():
 
         # Backward/AllReduce
         backward_and_all_reduce(
-            loss_train, comm, with_all_reduce_callback=args.with_all_reduce_callback)
+            loss_error_train, comm, with_all_reduce_callback=args.with_all_reduce_callback)
 
         # Solvers update
         solver.update()
@@ -192,6 +196,8 @@ def train():
             monitor_loss.add(i * n_devices, loss_train.d.copy())
             monitor_err.add(i * n_devices, error_train.d.copy())
             monitor_time.add(i * n_devices)
+
+        # exit(0)
 
     if device_id == 0:
         nn.save_parameters(os.path.join(

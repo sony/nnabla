@@ -41,7 +41,8 @@ def batch_normalization(h, test=False, comm=None, group="world"):
     if comm is None:
         h = PF.batch_normalization(h, batch_stat=not test)
     else:
-        h = PF.sync_batch_normalization(h, comm=comm, group=group, batch_stat=not test)
+        h = PF.sync_batch_normalization(
+            h, comm=comm, group=group, batch_stat=not test)
     return h
 
 
@@ -71,7 +72,7 @@ def resnet23_prediction(image, test=False, rng=None, ncls=10, nmaps=64, act=F.re
                                    with_bias=False)
                 h = batch_normalization(h, test=test, comm=comm, group=group)
             # Residual -> Nonlinear
-            h = act(F.add2(h, x, inplace=True))
+            h = act(F.add2(h, x, inplace=False))
             # Maxpooling
             if dn:
                 h = F.max_pooling(h, kernel=(2, 2), stride=(2, 2))
