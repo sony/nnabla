@@ -1183,7 +1183,7 @@ Normalization:
       group:
         doc: The name of the communicator group
         type: string
-        default: "world"
+        default: world
       axes:
         doc: Axes mean and variance are taken.
         type: repeated int64
@@ -1203,6 +1203,9 @@ Normalization:
     outputs:
       y:
         doc: N-D array
+    c_runtime: not support
+    function_ids:
+      CiiIffB: 248
   BatchNormalization:
     snake_name: batch_normalization
     doc: |2

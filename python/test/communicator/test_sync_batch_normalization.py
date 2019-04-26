@@ -23,6 +23,7 @@ ctxs = list_context('SyncBatchNormalization')
 
 from six.moves import range
 
+
 def create_inputs(rng, axis, device_id):
     x = rng.randn(2, 3, 4).astype(np.float32) * 2
     x += device_id
@@ -34,14 +35,15 @@ def create_inputs(rng, axis, device_id):
     rvar = np.zeros(shape_stat, dtype=np.float32)
     return x, beta, gamma, rmean, rvar
 
+
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [1, 2])
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
-@pytest.mark.parametrize("output_stat", [True, False])
+@pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True], [True, True]])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
-                                              output_stat, ctx, func_name, comm_nccl_opts):
+def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, batch_stat,
+                                                   output_stat, ctx, func_name, comm_nccl_opts):
     if comm_nccl_opts is None:
         pytest.skip(
             "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
@@ -52,7 +54,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     ctx.device_id = comm_nccl_opts.device_id
 
     def ref_batch_normalization(x, beta, gamma, rmean, rvar, comm, axes, decay_rate,
-                                eps, output_stat):
+                                eps, batch_stat, output_stat):
 
         orig = x - device_id
         inputs = []
@@ -72,7 +74,8 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         vrvar.d = rvar
         with nn.context_scope(ctx):
             out = F.batch_normalization(vx, vbeta, vgamma, vrmean, vrvar,
-                                  batch_stat=True, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
+                                        batch_stat=batch_stat, output_stat=output_stat,
+                                        axes=axes, decay_rate=decay_rate, eps=eps)
         if output_stat:
             out[0].forward()
             rmean[...] = vrmean.d.copy()
@@ -82,10 +85,11 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         rmean[...] = vrmean.d.copy()
         rvar[...] = vrvar.d.copy()
         return out.d[device_id*2:(device_id+1)*2]
+
     def ref_batch_normalize_grad(x, beta, gamma, rmean, rvar,
                                  dy,
                                  comm, axes, decay_rate,
-                                 eps, output_stat):
+                                 eps, batch_stat, output_stat):
         orig = x - device_id
         inputs = []
         for i in range(n_devices):
@@ -107,7 +111,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         vrvar.d = rvar
         with nn.context_scope(ctx):
             out = F.batch_normalization(vx, vbeta, vgamma, vrmean, vrvar,
-                                batch_stat=True, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
+                                        batch_stat=batch_stat, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
         f = out.parent
         f.forward([vx, vbeta, vgamma, vrmean, vrvar], [out])
         for i in range(n_devices):
@@ -115,10 +119,11 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         f.backward([vx, vbeta, vgamma, vrmean, vrvar], [out])
 
         return np.concatenate([vx.g[device_id*2:(device_id+1)*2].flatten(), vbeta.g.flatten(), vgamma.g.flatten()])
+
     def ref_batch_normalize_grad_with_output_stat(x, beta, gamma, rmean, rvar,
-                                 dy, dmean, dvar,
-                                 comm, axes, decay_rate,
-                                 eps, output_stat):
+                                                  dy, dmean, dvar,
+                                                  comm, axes, decay_rate,
+                                                  eps, batch_stat, output_stat):
         orig = x - device_id
         inputs = []
         for i in range(n_devices):
@@ -140,7 +145,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         vrvar.d = rvar
         with nn.context_scope(ctx):
             out = F.batch_normalization(vx, vbeta, vgamma, vrmean, vrvar,
-                                  batch_stat=True, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
+                                        batch_stat=batch_stat, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
         f = out[0].parent
         f.forward([vx, vbeta, vgamma, vrmean, vrvar], out)
         for i in range(n_devices):
@@ -158,17 +163,36 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     else:
         ref_grad = ref_batch_normalize_grad
     axes = [axis]
-    function_tester(rng, F.sync_batch_normalization, ref_batch_normalization,
-                    inputs,
-                    ref_grad=ref_grad,
-                    func_args=[comm],
-                    func_kwargs=dict(
-                        axes=axes,
-                        decay_rate=decay_rate,
-                        eps=eps,
-                        output_stat=output_stat),
-                    backward=[True, True, True, False, False],
-                    ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
+
+    # TODO: enable test using function_tester when the backward is supported with batch_stat=True
+    if batch_stat is True:
+        function_tester(rng, F.sync_batch_normalization, ref_batch_normalization,
+                        inputs,
+                        ref_grad=ref_grad,
+                        func_args=[comm],
+                        func_kwargs=dict(
+                            axes=axes,
+                            decay_rate=decay_rate,
+                            eps=eps,
+                            batch_stat=batch_stat,
+                            output_stat=output_stat),
+                        backward=[True, True, True, False, False],
+                        ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
+    else:
+        # Forward test when batch_stat is False
+        vinputs = []
+        for i in inputs:
+            vinputs.append(nn.Variable(i.shape, True))
+            vinputs[-1].d = i
+        for i in range(5):
+            inputs[0] = rng.randn(*inputs[0].shape) + device_id
+            vinputs[0].d[...] = inputs[0]
+            ref_y = ref_batch_normalization(
+                *(inputs + [comm, axes, decay_rate, eps, batch_stat, output_stat]))
+            with nn.context_scope(ctx), nn.auto_forward():
+                y = F.sync_batch_normalization(
+                    *(vinputs + [comm, "world", axes, decay_rate, eps, batch_stat, output_stat]))
+            assert np.allclose(vinputs[0].d, inputs[0])
 
     # Check if running mean and var works.
     vinputs = []
@@ -179,9 +203,9 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         inputs[0] = rng.randn(*inputs[0].shape) + device_id
         vinputs[0].d[...] = inputs[0]
         ref_y = ref_batch_normalization(
-            *(inputs + [comm, axes, decay_rate, eps, output_stat]))
+            *(inputs + [comm, axes, decay_rate, eps, batch_stat, output_stat]))
         with nn.context_scope(ctx), nn.auto_forward():
             y = F.sync_batch_normalization(
-                *(vinputs + [comm, "world", axes, decay_rate, eps, output_stat]))
+                *(vinputs + [comm, "world", axes, decay_rate, eps, batch_stat, output_stat]))
         assert np.allclose(vinputs[3].d, inputs[3])
         assert np.allclose(vinputs[4].d, inputs[4], atol=1e-3)

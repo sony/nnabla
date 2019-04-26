@@ -405,7 +405,7 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
         gamma(~nnabla.Variable): N-D array of gamma which is learned.
         mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
         variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
-        co      mm(~nnabla.Communicator): The communicator
+        comm(~nnabla.Communicator): The communicator
         group(string): The name of the communicator group
         axes(repeated int64): Axes mean and variance are taken.
         decay_rate(float): Decay rate of running mean and variance.

@@ -82,8 +82,8 @@ public:
                          const std::shared_ptr<Communicator> &comm,
                          const std::string &group, const vector<int> axes,
                          float decay_rate, float eps, bool batch_stat)
-      : BatchNormalization<T>(ctx, axes, decay_rate, eps, batch_stat), comm_(comm),
-        group_(group) {}
+      : BatchNormalization<T>(ctx, axes, decay_rate, eps, batch_stat),
+        comm_(comm), group_(group) {}
   virtual ~SyncBatchNormalization() {}
   virtual shared_ptr<Function> copy() const override {
     return create_SyncBatchNormalization(this->ctx_, this->comm_, this->group_,
