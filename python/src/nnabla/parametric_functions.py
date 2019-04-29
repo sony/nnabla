@@ -1710,7 +1710,7 @@ def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9,
 
     Args:
         inp (~nnabla.Variable): N-D array of input.
-        comm (~nnabla.Communicator): The communicator
+        comm (~nnabla.communicators.Communicator): The communicator
         group (string): The name of the communicator group
         axes (:obj:`tuple` of :obj:`int`):
             Mean and variance for each element in ``axes`` are calculated using
