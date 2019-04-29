@@ -20,5 +20,5 @@ type_from_proto = {
     'double': {'cpp': 'double', 'cpp_var': 'double', 'pyx': 'double', 'pxd': 'double'},
     'repeated int64': {'cpp': 'const vector<int> &', 'cpp_var': 'const vector<int>', 'pyx': 'const vector[int]&', 'pxd': 'const vector[int]&'},
     'string': {'cpp': 'const string &', 'cpp_var': 'const string', 'pyx': 'const string&', 'pxd': 'const string&'},
-    'Communicator': {'cpp': 'const shared_ptr<Communicator> &', 'cpp_var': 'shared_ptr<Communicator>', 'pyx': 'Communicator', 'pxd': 'shared_ptr[CCommunicator]&'}
+    'Communicator': {'cpp': 'const shared_ptr<Communicator> &', 'cpp_var': 'shared_ptr<const Communicator>', 'pyx': 'Communicator', 'pxd': 'shared_ptr[CCommunicator]&'}
 }
