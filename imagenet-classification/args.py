@@ -83,7 +83,7 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
     parser.add_argument("--val-list", "-VL", type=str, default=val_list,
                         help='Validation file list.')
     parser.add_argument("--random-area", type=parse_tuple, default=(0.08, 1.0),
-                        help="DALI's the number of threads.")
+                        help="Random area of the RandomResizedCrop augmentation.")
     parser.add_argument("--num-threads", "-N", type=int, default=num_threads,
                         help="DALI's the number of threads.")
 
