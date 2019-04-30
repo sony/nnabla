@@ -36,6 +36,6 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Cosh, std::cosh(x), dy *std::sinh(x), true);
+NBLA_DEFINE_TRANSFORM_UNARY(Cosh, std::cosh(x), dy *std::sinh(x), false);
 }
 #endif

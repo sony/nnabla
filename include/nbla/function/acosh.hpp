@@ -37,6 +37,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(ACosh, std::acosh(x), dy / std::sqrt(x * x - 1),
-                            true);
+                            false);
 }
 #endif
