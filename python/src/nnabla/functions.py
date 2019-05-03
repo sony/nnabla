@@ -807,3 +807,151 @@ def tile(x, reps):
     from .function_bases import tile as tile_base
     reps = [reps] if isinstance(reps, int) else reps
     return tile_base(x, reps)
+
+
+def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
+    """Computes the short-time Fourier transform
+
+    Args:
+        x (~nnabla.Variable): Time domain sequence of size `batch_size x sample_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
+        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
+        pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+
+    Returns:
+        Returns real and imaginary parts of STFT result.
+
+        * :obj:`~nnabla.Variable`: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        * :obj:`~nnabla.Variable`: Imaginary part of STFT of size `batch x fft_size//2 + 1 x frame_size`.
+    """
+    from nnabla.parameter import get_parameter, get_parameter_or_create
+    conv_r = get_parameter('conv_r')
+    conv_i = get_parameter('conv_i')
+
+    if conv_r is None or conv_i is None:
+        if window_type == 'hanning':
+            window_func = np.hanning(window_size + 1)[:-1]
+        elif window_type == 'hamming':
+            window_func = np.hamming(window_size + 1)[:-1]
+        else:
+            raise ValueError("Unknown window type {}.".format(window_type))
+
+        # pad window if `fft_size > window_size`
+        if fft_size > window_size:
+            diff = fft_size - window_size
+            window_func = np.pad(
+                window_func, (diff//2, diff - diff//2), mode='constant')
+        elif fft_size < window_size:
+            raise ValueError(
+                "FFT size has to be as least as large as window size.")
+
+        # compute STFT filter coefficients
+        mat_r = np.zeros((fft_size//2 + 1, 1, fft_size))
+        mat_i = np.zeros((fft_size//2 + 1, 1, fft_size))
+
+        for w in range(fft_size//2+1):
+            for t in range(fft_size):
+                mat_r[w, 0, t] = np.cos(2. * np.pi * w * t / fft_size)
+                mat_i[w, 0, t] = -np.sin(2. * np.pi * w * t / fft_size)
+        mat_r = mat_r * window_func
+        mat_i = mat_i * window_func
+
+        conv_r = get_parameter_or_create(
+            'conv_r', initializer=mat_r, need_grad=False)
+        conv_i = get_parameter_or_create(
+            'conv_i', initializer=mat_i, need_grad=False)
+
+    if center:
+        # pad at begin/end (per default this is a reflection padding)
+        x = pad(x, (fft_size // 2, fft_size // 2), mode=pad_mode)
+
+    # add channel dimension
+    x = reshape(x, (x.shape[0], 1, x.shape[1]), inplace=False)
+
+    # compute STFT
+    y_r = convolution(x, conv_r, stride=(stride,))
+    y_i = convolution(x, conv_i, stride=(stride,))
+
+    return y_r, y_i
+
+
+def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
+    """Computes the inverse shoft-time Fourier transform
+
+    Note: We use a constant square inverse window for the reconstruction
+    of the time-domain signal, therefore, the first and last
+    `window_size - stride` are not perfectly reconstructed.
+
+    Args:
+        y_r (~nnabla.Variable): Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        y_i (~nnabla.Variable): Imaginary part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, (STFT has `fft_size // 2 + 1` frequency bins).
+        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
+
+    Returns:
+        ~nnabla.Variable: Time domain sequence of size `batch_size x sample_size`.
+    """
+    from nnabla.parameter import get_parameter, get_parameter_or_create
+    conv_cos = get_parameter('conv_cos')
+    conv_sin = get_parameter('conv_sin')
+
+    if conv_cos is None or conv_sin is None:
+        if window_type == 'hanning':
+            window_func = np.hanning(window_size + 1)[:-1]
+        elif window_type == 'hamming':
+            window_func = np.hamming(window_size + 1)[:-1]
+        else:
+            raise ValueError("Unknown window type {}.".format(window_type))
+
+        # pad window if `fft_size > window_size`
+        if fft_size > window_size:
+            diff = fft_size - window_size
+            window_func = np.pad(
+                window_func, (diff//2, diff - diff//2), mode='constant')
+        elif fft_size < window_size:
+            raise ValueError(
+                "FFT size has to be as least as large as window size.")
+
+        # compute inverse STFT filter coefficients
+        if fft_size % stride != 0:
+            raise ValueError("FFT size needs to be a multiple of stride.")
+
+        inv_window_func = np.zeros_like(window_func)
+        for s in range(0, fft_size, stride):
+            inv_window_func += np.roll(np.square(window_func), s)
+
+        mat_cos = np.zeros((fft_size//2 + 1, 1, fft_size))
+        mat_sin = np.zeros((fft_size//2 + 1, 1, fft_size))
+
+        for w in range(fft_size//2+1):
+            alpha = 1.0 if w == 0 or w == fft_size//2 else 2.0
+            alpha /= fft_size
+            for t in range(fft_size):
+                mat_cos[w, 0, t] = alpha * \
+                    np.cos(2. * np.pi * w * t / fft_size)
+                mat_sin[w, 0, t] = alpha * \
+                    np.sin(2. * np.pi * w * t / fft_size)
+        mat_cos = mat_cos * window_func / inv_window_func
+        mat_sin = mat_sin * window_func / inv_window_func
+
+        conv_cos = get_parameter_or_create(
+            'conv_sin', initializer=mat_cos, need_grad=False)
+        conv_sin = get_parameter_or_create(
+            'conv_cos', initializer=mat_sin, need_grad=False)
+
+    # compute inverse STFT
+    x_cos = deconvolution(y_r, conv_cos, stride=(stride,))
+    x_sin = deconvolution(y_i, conv_sin, stride=(stride,))
+
+    x = reshape(x_cos - x_sin, (x_cos.shape[0], x_cos.shape[2]))
+
+    if center:
+        x = x[:, fft_size//2:-fft_size//2]
+
+    return x
