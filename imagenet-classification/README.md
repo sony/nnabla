@@ -25,7 +25,7 @@ The ImageNet dataset(training and validation) requires 150[GBytes] of disk capac
 
 To create cache files requires approximately 400[GBytes] of disk capacity.
 
-1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/). The following setup procedure requires the following three files.
+1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/)). The following setup procedure requires the following two files.
   - Training dataset: `ILSVRC2012_img_train.tar`
   - Validation dataset: `ILSVRC2012_img_val.tar`
 
@@ -143,3 +143,10 @@ python -w param_500000.h5 -i file.jpg -L 50
 ```
 
 ##### NOTE: weight-file is the path to the parameter file(.h5) obtained in training. As a result, we display values of Top-5（label,  words,  predicted value).
+
+
+## Use DALI data iterator
+
+Go to [this REAMDE](README.dali.md).
+
+
