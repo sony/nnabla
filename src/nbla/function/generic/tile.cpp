@@ -18,6 +18,8 @@
 #include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 
+#include <cstring>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(Tile, const vector<int> &);
