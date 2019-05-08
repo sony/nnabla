@@ -380,6 +380,64 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     return out, mean, variance
 
 
+def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
+    r"""
+    Synchronized batch normalization.
+
+    For some tasks (e.g., semantic segmentation), batch size will be too small and BatchNormalization layer might not work well.
+    SyncBatchNorlization layer solves these problems by synchronizing batch stats (mean and var) between multiple processes.
+
+    .. math::
+        \begin{eqnarray}
+          \mu &=& \frac{1}{M} \sum x_i \\
+          \sigma^2 &=& \frac{1}{M} \left(\sum x_i - \mu\right)^2 \\
+          \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
+          y_i &=& \hat{x}_i \gamma + \beta.
+        \end{eqnarray}
+
+    References:
+
+        * Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+
+    Args:
+        x(~nnabla.Variable): N-D array of input.
+        beta(~nnabla.Variable): N-D array of beta which is learned.
+        gamma(~nnabla.Variable): N-D array of gamma which is learned.
+        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
+        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
+        comm(~nnabla.communicators.Communicator): The communicator
+        group(string): The name of the communicator group
+        axes(repeated int64): Axes mean and variance are taken.
+        decay_rate(float): Decay rate of running mean and variance.
+        eps(float): Tiny value to avoid zero division by std.
+        batch_stat(bool): Use mini-batch statistics rather than running ones.
+        output_stat(bool): It true, the batch statistics of mean and variance,
+            will be returned as Variables. They are also differentiable.
+
+    Returns:
+        Returns batch normalization output as :obj:`~nnabla.Variable`.
+        If ``output_stat=True``, it also returns the mean and variance
+        of the mini-batch
+
+        * :obj:`~nnabla.Variable`: Output of the batch normalization
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
+
+    See Also:
+        ``nnabla.function_bases.batch_normalization``.
+
+    """
+    from .function_bases import sync_batch_normalization as batch_normalization_base
+    n_outputs = 3 if output_stat else 1
+    return batch_normalization_base(x, beta, gamma, mean, variance,
+                                    comm, group=group,
+                                    axes=axes,
+                                    decay_rate=decay_rate,
+                                    eps=eps,
+                                    batch_stat=batch_stat,
+                                    n_outputs=n_outputs)
+
+
 def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
     r"""
     It subtracts the mean of the elements of the input array,

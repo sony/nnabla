@@ -277,6 +277,7 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
     ext, dtype = ctx.backend[0].split(':')
     assert dtype == 'float'
     ctx_h = ext_utils.get_extension_context(ext, type_config='half')
+    ctx_h.device_id = ctx.device_id
     with nn.context_scope(ctx_h):
         o_h = force_tuple(func(*(hinputs + func_args), **func_kwargs))
     if True in backward:

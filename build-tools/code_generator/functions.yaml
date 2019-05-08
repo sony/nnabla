@@ -1200,6 +1200,67 @@ Normalization:
     function_ids:
       iIffB: 22
     c_runtime: support
+  SyncBatchNormalization:
+    snake_name: sync_batch_normalization
+    doc: |2
+
+      Synchronized Batch Normalization:
+
+      For some tasks (e.g., semantic segmentation), batch size will be too small and BatchNormalization layer might not work well.
+      SyncBatchNorlization layer solves these problems by synchronizing batch stats (mean and var) between multiple processes.
+
+      .. math::
+          \begin{eqnarray}
+            \mu &=& \frac{1}{M} \sum x_i \\
+            \sigma^2 &=& \frac{1}{M} \left(\sum x_i - \mu\right)^2 \\
+            \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
+            y_i &=& \hat{x}_i \gamma + \beta.
+          \end{eqnarray}
+
+      References:
+
+          * Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+      gamma:
+        doc: N-D array of gamma which is learned.
+      mean:
+        doc: N-D array of running mean (modified during forward execution).
+      variance:
+        doc: N-D array of running variance (modified during forward execution).
+    arguments:
+      comm:
+        doc: The communicator
+        type: Communicator
+      group:
+        doc: The name of the communicator group
+        type: string
+        default: world
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      decay_rate:
+        doc: Decay rate of running mean and variance.
+        type: float
+        default: '0.9'
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      CiiIffB: 263
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
