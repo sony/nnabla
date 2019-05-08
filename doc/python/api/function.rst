@@ -227,6 +227,8 @@ Signal Processing
 .. autofunction:: interpolate
 .. autofunction:: fft
 .. autofunction:: ifft
+.. autofunction:: stft
+.. autofunction:: istft
 
 Quantized Neural Network Layers
 ----------------------------------
