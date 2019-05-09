@@ -29,10 +29,6 @@ def _force_list(axis):
     if hasattr(axis, "__iter__"):
         return axis
 
-    if not isinstance(axis, int):
-        raise ValueError(
-            "axis must be repeated int (like list, tuple and so on) or int. (axis: {})".format(axis))
-
     return [axis]
 
 
@@ -327,7 +323,7 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
 
     if output_stat:
         out, mean, std = tensor_normalization(x, axes, eps, output_stat)
-        return gamma * out + beta, mean, std
+        return out * gamma + beta, mean, std
 
     return tensor_normalization(x, axes, eps, output_stat) * gamma + beta
 
@@ -448,12 +444,3 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
 
     return instance_normalization(x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps,
                                   output_stat).reshape(x.shape)
-
-
-__all__ = ["batch_normalization",
-           "sync_batch_normalization",
-           "tensor_normalization",
-           "weight_standardization",
-           "layer_normalization",
-           "instance_normalization",
-           "group_normalization"]

@@ -17,7 +17,7 @@ from .function_bases import *
 
 import nnabla as nn
 import numpy as np
-from .normalize import *
+from .normalization import *
 
 
 def sum(x, axis=None, keepdims=False):
@@ -267,6 +267,7 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     from .function_bases import slice as slice_base
     return slice_base(x, start, stop, step, n_outputs, outputs)
 
+
 def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
     r"""
     It subtracts the mean of the elements of the input array,
@@ -308,7 +309,7 @@ def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
                                  update_running_mean=update_running_mean)
 
 
-def fixed_point_quantize(x, sign=True, n=8, delta=2 ** -4, quantize=True, ste_fine_grained=True, outputs=None):
+def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine_grained=True, outputs=None):
     r"""Fixed Point Quantize
 
     Args:
@@ -528,7 +529,7 @@ def clip_by_norm(x, clip_norm, axis=None):
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = pow_scalar_base(sum_base(x ** 2.0, axis, True), 0.5)
+    x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
     if isinstance(clip_norm, (Variable_base, NdArray_base)):
         y = x * clip_norm / maximum2_base(x_norm, clip_norm)
     else:

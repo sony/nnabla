@@ -1853,7 +1853,11 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    shape_stat = [inp.shape[i] if i == batch_axis else 1
+    from nnabla.normalization import _force_list
+
+    batch_axis = _force_list(batch_axis)
+
+    shape_stat = [inp.shape[i] if i in batch_axis else 1
                   for i in range(len(inp.shape))]
 
     if param_init is None:
@@ -1916,7 +1920,11 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    shape_stat = [inp.shape[i] if i in (channel_axis, batch_axis) else 1
+    from nnabla.normalization import _force_list
+
+    batch_axis = _force_list(batch_axis)
+
+    shape_stat = [inp.shape[i] if i in [channel_axis, ] + batch_axis else 1
                   for i in range(len(inp.shape))]
 
     if param_init is None:
@@ -1926,7 +1934,7 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
     beta_init = param_init.get('beta', ConstantInitializer(0))
 
     gamma = get_parameter_or_create(
-        "alpha", shape_stat, gamma_init, True, not fix_parameters)
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
     beta = get_parameter_or_create(
         "beta", shape_stat, beta_init, True, not fix_parameters)
 
@@ -1985,8 +1993,12 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    shape_stat = [1 for _ in range(len(inp) + 1)]
-    shape_stat[batch_axis] = inp.shape[batch_axis]
+    from nnabla.normalization import _force_list
+
+    batch_axis = _force_list(batch_axis)
+
+    shape_stat = [inp.shape[i]
+                  if i in batch_axis else 1 for i in range(len(inp.shape) + 1)]
     shape_stat[channel_axis] = num_groups
     shape_stat[channel_axis + 1] = int(inp.shape[channel_axis] / num_groups)
 
@@ -1997,7 +2009,7 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
     beta_init = param_init.get('beta', ConstantInitializer(0))
 
     gamma = get_parameter_or_create(
-        "alpha", shape_stat, gamma_init, True, not fix_parameters)
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
     beta = get_parameter_or_create(
         "beta", shape_stat, beta_init, True, not fix_parameters)
 

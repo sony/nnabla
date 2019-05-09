@@ -3,12 +3,13 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 
+from nnabla.normalization import _force_list, _get_axes_excluding
+
 
 def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
-    if not hasattr(batch_axis, "__iter__"):
-        batch_axis = [batch_axis]
+    batch_axis = _force_list(batch_axis)
 
-    axes = tuple([i for i in range(len(x.shape)) if i not in batch_axis])
+    axes = tuple(_get_axes_excluding(len(x.shape), batch_axis))
 
     x_mean = x.mean(axis=axes, keepdims=True)
     x_std = x.std(axis=axes, keepdims=True)
@@ -32,12 +33,9 @@ def test_layer_normalization_forward_backward(seed, x_shape, batch_axis, output_
     rng = np.random.RandomState(seed)
     input = rng.randn(*x_shape).astype(np.float32)
 
-    stat_shape = [1 for _ in range(len(x_shape))]
-    if isinstance(batch_axis, int):
-        stat_shape[batch_axis] = x_shape[batch_axis]
-    else:
-        for axis in list(batch_axis):
-            stat_shape[axis] = x_shape[axis]
+    stat_shape = tuple([x_shape[i] if i in _force_list(batch_axis) else 1
+                        for i in range(len(x_shape))])
+
     beta = rng.randn(*stat_shape).astype(np.float32)
     gamma = rng.randn(*stat_shape).astype(np.float32)
     eps = 1e-05

@@ -3,15 +3,14 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 
+from nnabla.normalization import _force_list, _get_axes_excluding
+
 
 def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, output_stat):
 
-    if hasattr(batch_axis, "__iter__"):
-        ignore_axes = batch_axis + [channel_axis, ]
-    else:
-        ignore_axes = [batch_axis, channel_axis]
+    ignore_axes = _force_list(batch_axis) + [channel_axis, ]
 
-    axes = tuple([i for i in range(len(x.shape)) if i not in ignore_axes])
+    axes = tuple(_get_axes_excluding(len(x.shape), ignore_axes))
 
     x_mean = x.mean(axis=axes, keepdims=True)
     x_std = x.std(axis=axes, keepdims=True)
@@ -31,18 +30,15 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
                           ((10, 4, 16), [0, 1], 2)
                           ])
 @pytest.mark.parametrize("output_stat", [False, True])
-def test_group_normalization_forward_backward(seed, x_shape, batch_axis, channel_axis, output_stat):
+def test_instance_normalization_forward_backward(seed, x_shape, batch_axis, channel_axis, output_stat):
+
     rng = np.random.RandomState(seed)
     input = np.array(rng.randn(*x_shape).astype(np.float32))
     eps = 1e-05
 
-    stat_shape = [1 for _ in range(len(x_shape))]
-    if isinstance(batch_axis, int):
-        stat_shape[batch_axis] = x_shape[batch_axis]
-    else:
-        for axis in list(batch_axis):
-            stat_shape[axis] = x_shape[axis]
-    stat_shape[channel_axis] = x_shape[channel_axis]
+    stat_shape = tuple([x_shape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+                        for i in range(len(x_shape))])
+
     beta = rng.randn(*stat_shape).astype(np.float32)
     gamma = rng.randn(*stat_shape).astype(np.float32)
 
