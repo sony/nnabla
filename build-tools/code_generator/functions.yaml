@@ -812,7 +812,7 @@ Neural Network Activation Functions:
       .. math::
           y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 
-      along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
+      along the dimension specified by `axis`, where :math:`x_i` is the input and :math:`y_i` is the output.
     inputs:
       x:
         doc: N-D array. Typically indicates a score.
@@ -827,6 +827,46 @@ Neural Network Activation Functions:
     function_ids:
       i: 16
     c_runtime: support
+  LogSoftmax:
+    snake_name: log_softmax
+    doc: |2
+
+      Fused operation of Softmax normalization followed by log, which is defined as
+
+      .. math::
+          y_i = \log \frac{\exp(x_i)}{\sum_j \exp(x_j)},
+
+      where :math:`y_i` is the input and :math:`x_i` is the output at i-th channel.
+      An advantage of this fusion is reducing the numerical instability due to the log application.
+
+      The original definition can be rewritten as
+
+      .. math::
+          y_i = x_i - \max_j(x_j) - \log\left\(\sum_j \exp(x_j - \max_k(x_k))\right\).
+
+      It is more stable as a log is always applied to a value :math:`\ge e`, while a log can be evaluated for 0 in the non-fused operation.
+
+      Also, backward gradient computation is more stable than the original one as it doesn't perform division by x due to a gradient of log. The definition is as following.
+
+      .. math::
+          dx_i = dy_i - y_i * \sum_j dy_j
+
+      where :math:`dx_i` and :math:`dy_i` denote gradients of loss
+      wrt :math:`x_i` and :math:`y_i` respectively.
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score.
+    arguments:
+      axis:
+        doc: Axis normalization is taken.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      i: 269
   ELU:
     snake_name: elu
     doc: |2
