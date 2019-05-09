@@ -70,16 +70,6 @@ def train():
     n_train_samples = 50000
     n_valid_samples = 10000
     bs_valid = args.batch_size
-    rng = np.random.RandomState(313)
-    if args.net == "cifar10_resnet23":
-        prediction = functools.partial(
-            resnet23_prediction, rng=rng, ncls=10, nmaps=64, act=F.relu)
-        data_iterator = data_iterator_cifar10
-
-    if args.net == "cifar100_resnet23":
-        prediction = functools.partial(
-            resnet23_prediction, rng=rng, ncls=100, nmaps=384, act=F.elu)
-        data_iterator = data_iterator_cifar100
 
     # Create Communicator and Context
     extension_module = "cudnn"
@@ -93,22 +83,34 @@ def train():
     ctx.device_id = str(device_id)
     nn.set_default_context(ctx)
 
+    # Model
+    rng = np.random.RandomState(313)
+    comm_syncbn = comm if args.sync_bn else None
+    if args.net == "cifar10_resnet23":
+        prediction = functools.partial(
+            resnet23_prediction, rng=rng, ncls=10, nmaps=32, act=F.relu, comm=comm_syncbn)
+        data_iterator = data_iterator_cifar10
+    if args.net == "cifar100_resnet23":
+        prediction = functools.partial(
+            resnet23_prediction, rng=rng, ncls=100, nmaps=384, act=F.elu, comm=comm_syncbn)
+        data_iterator = data_iterator_cifar100
+
     # Create training graphs
-    test = False
     image_train = nn.Variable((args.batch_size, 3, 32, 32))
     label_train = nn.Variable((args.batch_size, 1))
-    pred_train = prediction(image_train, test)
+    pred_train = prediction(image_train, test=False)
     pred_train.persistent = True
-    loss_train = loss_function(pred_train, label_train)
-    error_train = F.mean(F.top_n_error(pred_train, label_train, axis=1))
+    loss_train = (loss_function(pred_train, label_train) /
+                  n_devices).apply(persistent=True)
+    error_train = F.mean(F.top_n_error(
+        pred_train, label_train, axis=1)).apply(persistent=True)
     loss_error_train = F.sink(loss_train, error_train)
     input_image_train = {"image": image_train, "label": label_train}
 
     # Create validation graph
-    test = True
     image_valid = nn.Variable((bs_valid, 3, 32, 32))
     label_valid = nn.Variable((args.batch_size, 1))
-    pred_valid = prediction(image_valid, test)
+    pred_valid = prediction(image_valid, test=True)
     error_valid = F.mean(F.top_n_error(pred_valid, label_valid, axis=1))
     input_image_valid = {"image": image_valid, "label": label_valid}
 
@@ -127,13 +129,15 @@ def train():
     monitor_loss = MonitorSeries("Training loss", monitor, interval=10)
     monitor_err = MonitorSeries("Training error", monitor, interval=10)
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=10)
-    monitor_verr = MonitorSeries("Test error", monitor, interval=1)
+    monitor_verr = MonitorSeries("Validation error", monitor, interval=1)
     monitor_vtime = MonitorTimeElapsed("Validation time", monitor, interval=1)
 
     # Data Iterator
     rng = np.random.RandomState(device_id)
     _, tdata = data_iterator(args.batch_size, True, rng)
     vsource, vdata = data_iterator(args.batch_size, False)
+
+    # loss_error_train.forward()
 
     # Training-loop
     ve = nn.Variable()
@@ -178,15 +182,10 @@ def train():
 
         # Backward/AllReduce
         backward_and_all_reduce(
-            loss_train, comm, with_all_reduce_callback=args.with_all_reduce_callback)
+            loss_error_train, comm, with_all_reduce_callback=args.with_all_reduce_callback)
 
         # Solvers update
         solver.update()
-
-        # Synchronize by averaging the weights over devices using allreduce
-        if (i + 1) % args.sync_weight_every_itr == 0:
-            weights = [x.data for x in nn.get_parameters().values()]
-            comm.all_reduce(weights, division=True, inplace=True)
 
         # Linear Warmup
         if i <= warmup_iter:
@@ -197,6 +196,8 @@ def train():
             monitor_loss.add(i * n_devices, loss_train.d.copy())
             monitor_err.add(i * n_devices, error_train.d.copy())
             monitor_time.add(i * n_devices)
+
+        # exit(0)
 
     if device_id == 0:
         nn.save_parameters(os.path.join(
