@@ -1816,14 +1816,14 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
     ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True)
 ])
 def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_parameters=False, param_init=None):
-    """
+    r"""
     Applies Layer Normalization over an input variable, which is defined as:
 
     .. math::
       \begin{eqnarray}
         \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
         \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2} \\
-        y &=& \frac{x - \mu^l}{\sigma^l} \alpha + \beta
+        y &=& \frac{x - \mu^l}{\sigma^l + \epsilon} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -1883,7 +1883,7 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
       \begin{eqnarray}
         \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
         \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2} \\
-        y &=& \frac{x - \mu^i}{\sigma^i} \gamma + \beta
+        y &=& \frac{x - \mu^i}{\sigma^ + \epsilon} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -1946,7 +1946,7 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
       \begin{eqnarray}
         \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
         \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2} \\
-        y &=& \frac{x - \mu^g}{\sigma^g} \gamma + \beta
+        y &=& \frac{x - \mu^g}{\sigma^g + \epsilon} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,

@@ -215,13 +215,13 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
                                     n_outputs=n_outputs)
 
 
-def tensor_normalization(x, axes, eps, output_stat=False):
+def tensor_normalization(x, axes, eps=1e-05, output_stat=False):
     r"""
     General function for tensor normalization.
     Input variable `x` is normalized by mean and std calculated by `x` itself.
     Mean and std are taken by all `axes`.
     For example, if the input shape is (B, C, H, W) and axes is [1, 2, 3],
-     then the shape of calculated mean and std are (B, 1, 1 ,1).
+     the shape of calculated mean and std are (B, 1, 1 ,1).
 
     Args:
         x (Variable): N-D array of input variable.
@@ -254,9 +254,9 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
 
     .. math::
       \begin{eqnarray}
-        \mu_{W_{i,.}} &=& \frac{1}{I} \sum_{j=1}^{I} W_{i,j} \\
-        \sigma_{W_{i,.}} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{i, j} - \mu_{W_{i,.}}\right)^2} \\
-        \hat{W_{i, j}} &=& \frac{W_{i, j} - \mu_{W_{i,.}}}{\sigma_{W_{i,.}} + \epsilon}} \\
+        \mu_{W_i} &=& \frac{1}{I} \sum_{j=1}^{I} W_{ij} \\
+        \sigma_{W_i} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{ij} - \mu_{W_{i}}\right)^2} \\
+        \hat{W_{ij}} &=& \frac{W_{ij} - \mu_{W_i}}{\sigma_{W_i} + \epsilon} \\
         y &=& \hat{W} \ast x
       \end{eqnarray}
 
@@ -267,9 +267,9 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
 
     Args:
         w (Variable): A weight variable.
-        channel_axis (int): An axis for output channel. Default value is for convolution (channel_axis = 0).
+        channel_axis (int): An axis for output channel. Default value is 0 which assumes the weights of convolution.
         eps (float): Tiny value to avoid zero division by std.
-        output_stat(bool): It true, the batch statistics of mean and variance.
+        output_stat(bool): If true, the batch statistics of mean and variance.
 
     Returns:
         * :obj:`~nnabla.Variable`: Standardized output weight.
@@ -293,7 +293,7 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
       \begin{eqnarray}
         \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
         \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2} \\
-        y &=& \frac{x - \mu^l}{\sigma^l} \gamma + \beta
+        y &=& \frac{x - \mu^l}{\sigma^l + \epsilon} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -313,7 +313,7 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
         gamma (Variable): An Adaptive gains.
         batch_axis (int or repeated int): Axes mean and variance are taken.
         eps (float): Tiny value to avoid zero division by std.
-        output_stat(bool): It true, calculated mean and variance are also returned.
+        output_stat(bool): If true, calculated mean and variance are also returned.
 
     Returns:
         * :obj:`~nnabla.Variable`: output variable which is normalized its statics and rescaled by alpha and beta.
@@ -340,7 +340,7 @@ def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-
       \begin{eqnarray}
         \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
         \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2} \\
-        y &=& \frac{x - \mu^i}{\sigma^i} \gamma + \beta
+        y &=& \frac{x - \mu^i}{\sigma^i + \epsilon} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -361,7 +361,7 @@ def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-
         channel_axis (int): Channel axis.
         batch_axis (int or repeated int): Batch axes.
         eps (float): Tiny value to avoid zero division by std.
-        output_stat(bool): It true, the batch statistics of mean and variance.
+        output_stat(bool): If true, the batch statistics of mean and variance.
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
@@ -393,7 +393,7 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
       \begin{eqnarray}
         \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
         \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2} \\
-        y &=& \frac{x - \mu^g}{\sigma^g} \gamma + \beta
+        y &=& \frac{x - \mu^g}{\sigma^g + \epsilon} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -420,7 +420,7 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
         channel_axis (int): Channel axis.
         batch_axis (int or repeated int): Batch axes.
         eps (float): Tiny value to avoid zero division by std.
-        output_stat(bool): It true, the batch statistics of mean and variance.
+        output_stat(bool): If true, the batch statistics of mean and variance.
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
@@ -450,9 +450,10 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
                                   output_stat).reshape(x.shape)
 
 
-__all__ = [batch_normalization,
-           tensor_normalization,
-           weight_standardization,
-           layer_normalization,
-           instance_normalization,
-           group_normalization]
+__all__ = ["batch_normalization",
+           "sync_batch_normalization",
+           "tensor_normalization",
+           "weight_standardization",
+           "layer_normalization",
+           "instance_normalization",
+           "group_normalization"]
