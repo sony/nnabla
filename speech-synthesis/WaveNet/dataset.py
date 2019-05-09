@@ -28,6 +28,16 @@ from config import data_config
 
 
 def mu_law_encode(x, quantize=data_config.q_bit_len):
+    """
+    Applies mu-law encoding algorithm and quantization for an input signal.
+
+    Args:
+        x (numpy.ndarray): An array of a signal.
+        quantize (int): A bit length of quantization.
+
+    Returns:
+         numpy.ndarray: An array of mu-law encoded signal.
+    """
     if not isinstance(x, np.ndarray):
         raise ValueError("Input 'x' must be numpy.ndarray")
 
@@ -46,6 +56,16 @@ def mu_law_encode(x, quantize=data_config.q_bit_len):
 
 
 def mu_law_decode(x, quantize=data_config.q_bit_len):
+    """
+    Applies dequantization and mu-law decoding algorithm for an input signal.
+
+    Args:
+        x (numpy.ndarray): A data array of mu-law encoded signal.
+        quantize (int): A bit length of quantization.
+
+    Returns:
+         numpy.ndarray: An array of a signal (which is mu-law decoded).
+    """
     mu = quantize - 1
 
     if not isinstance(x, np.ndarray):
@@ -90,8 +110,10 @@ class LibriSpeechDataSource(DataSource):
                 continue
 
             # each element of ret is (path, speaker_id, script_id)
-            ret += [(os.path.join(dirpath, filename), *filename.split("-")[:2])
-                    for filename in flac_files]
+            for filename in flac_files:
+                speaker_id, script_id = filename.split("-")[:2]
+                ret.append(
+                    (os.path.join(dirpath, filename), speaker_id, script_id))
 
         return ret
 

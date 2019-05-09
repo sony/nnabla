@@ -20,13 +20,14 @@ import librosa
 
 import nnabla as nn
 import nnabla.functions as F
+import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 from nnabla.logger import logger
 from nnabla.monitor import Monitor, MonitorSeries
 
-from model import waveNet
+from model import WaveNet
 from args import get_args
-from config import data_config
+from config import data_config, WavenetConfig
 from dataset import data_iterator_librispeech, mu_law_decode
 
 
@@ -56,15 +57,18 @@ def train():
     onehot = F.one_hot(x, shape=(data_config.q_bit_len, ))  # (B, T, C)
     wavenet_input = F.transpose(onehot, (0, 2, 1))  # (B, C, T)
 
-    s_id = nn.Variable(shape=(args.batch_size, 1))
+    # speaker embedding
     if args.use_speaker_id:
-        s_onehot = F.reshape(F.one_hot(s_id, shape=(
-            _data_source.n_speaker, )), (args.batch_size, -1, 1))  # (B, C, 1)
+        s_id = nn.Variable(shape=(args.batch_size, 1))
+        with nn.parameter_scope("speaker_embedding"):
+            s_emb = PF.embed(s_id, n_inputs=_data_source.n_speaker,
+                             n_features=WavenetConfig.speaker_dims)
+            s_emb = F.transpose(s_emb, (0, 2, 1))
     else:
-        s_onehot = None  # dummy
+        s_emb = None
 
-    net = waveNet()
-    wavenet_output = net(wavenet_input, s_onehot)
+    net = WaveNet()
+    wavenet_output = net(wavenet_input, s_emb)
 
     pred = F.transpose(wavenet_output, (0, 2, 1))
 
@@ -95,7 +99,8 @@ def train():
         # todo: validation
 
         x.d, _speaker, t.d = data_iterator.next()
-        s_id.d = _speaker.reshape(-1, 1)
+        if args.use_speaker_id:
+            s_id.d = _speaker.reshape(-1, 1)
 
         solver.zero_grad()
         loss.forward(clear_no_need_grad=True)

@@ -26,7 +26,7 @@ def causal_padding(x, kernel_size, dilation):
     return F.pad(x, (padding_size, 0), mode="constant", constant_value=0)
 
 
-class waveNet(object):
+class WaveNet(object):
 
     def __init__(self):
         self.hidden_dims = wavenet_config.hidden_dims
@@ -71,15 +71,7 @@ class waveNet(object):
 
         return out, skip
 
-    def call(self, x, speaker_onehot=None):
-        # speaker embedding
-        if speaker_onehot is not None:
-            with nn.parameter_scope("speaker_embedding"):
-                s_emb = PF.convolution(
-                    speaker_onehot, wavenet_config.speaker_dims, kernel=(1, ))
-        else:
-            s_emb = None
-
+    def call(self, x, speaker_emb=None):
         # causal convolution
         with nn.parameter_scope("causal"):
             pad = causal_padding(x, kernel_size=2, dilation=1)
@@ -90,7 +82,8 @@ class waveNet(object):
         skips = []
         for index, dilation in enumerate(self.dilations):
             with nn.parameter_scope("residual_{}".format(index)):
-                current, skip = self.residual_block(current, dilation, s_emb)
+                current, skip = self.residual_block(
+                    current, dilation, speaker_emb)
             skips.append(skip)
 
         # output
@@ -102,8 +95,8 @@ class waveNet(object):
 
         return y2
 
-    def __call__(self, x, speaker_emb=None):
+    def __call__(self, x, speaker_emd=None):
         with nn.parameter_scope("WaveNet"):
-            y = self.call(x, speaker_emb)
+            y = self.call(x, speaker_emd)
 
         return y
