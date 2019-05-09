@@ -15,7 +15,7 @@
 // softmax_cross_entropy.cpp
 
 #include <nbla/array.hpp>
-#include <nbla/function/softmax.hpp>
+#include <nbla/function/log_softmax.hpp>
 #include <nbla/function/softmax_cross_entropy.hpp>
 #include <nbla/variable.hpp>
 
@@ -57,8 +57,8 @@ void SoftmaxCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
   }
   outputs[0]->reshape(label_shape, true);
 
-  softmax_ = create_Softmax(ctx_, axis_);
-  softmax_->setup(Variables{inputs[0]}, Variables{&softmax_output_});
+  log_softmax_ = create_LogSoftmax(ctx_, axis_);
+  log_softmax_->setup(Variables{inputs[0]}, Variables{&log_softmax_output_});
 
   Size_t size = inputs[0]->size();
   Size_t size_axis = inputs[0]->size(axis_);
@@ -72,9 +72,9 @@ void SoftmaxCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
 template <typename T, typename Tl>
 void SoftmaxCrossEntropy<T, Tl>::forward_impl(const Variables &inputs,
                                               const Variables &outputs) {
-  softmax_->forward(Variables{inputs[0]}, Variables{&softmax_output_});
+  log_softmax_->forward(Variables{inputs[0]}, Variables{&log_softmax_output_});
   // Setting up variables
-  const T *p = softmax_output_.get_data_pointer<T>(this->ctx_);
+  const T *log_p = log_softmax_output_.get_data_pointer<T>(this->ctx_);
   const Tl *l = inputs[1]->get_data_pointer<Tl>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
@@ -83,7 +83,7 @@ void SoftmaxCrossEntropy<T, Tl>::forward_impl(const Variables &inputs,
       const int j = i0 * size2_ + i2;
       Tl label = l[j];
       const int k = i0 * size1_ * size2_ + label * size2_ + i2;
-      y[j] = -std::log(std::max(p[k], std::numeric_limits<T>::min()));
+      y[j] = -log_p[k];
     }
   }
 }
@@ -97,7 +97,7 @@ void SoftmaxCrossEntropy<T, Tl>::backward_impl(
   if (!propagate_down[0])
     return;
 
-  const T *p = softmax_output_.get_data_pointer<T>(this->ctx_);
+  const T *log_p = log_softmax_output_.get_data_pointer<T>(this->ctx_);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const Tl *l = inputs[1]->get_data_pointer<Tl>(this->ctx_);
   T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
@@ -110,8 +110,9 @@ void SoftmaxCrossEntropy<T, Tl>::backward_impl(
       T grad = dy[j];
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i0 * size1_ * size2_ + i1 * size2_ + i2;
-        // dx[k] = beta * dx[k] + grad * (p[k] - static_cast<int>(label == i1));
-        dx[k] += grad * (p[k] - static_cast<int>(label == i1));
+        // dx[k] = beta * dx[k] + grad * (std::exp(log_p[k]) -
+        // static_cast<int>(label == i1));
+        dx[k] += grad * (std::exp(log_p[k]) - static_cast<int>(label == i1));
       }
     }
   }
