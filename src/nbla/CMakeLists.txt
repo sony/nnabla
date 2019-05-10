@@ -37,6 +37,7 @@ if (NOT WIN32)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla
     DESTINATION include
     )
+  include(CPack)
 endif()
 
 set(NBLA_LIBRARY_NAME nnabla PARENT_SCOPE)

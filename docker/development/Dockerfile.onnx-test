@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# for nnabla>=1.0.17
+
 FROM ubuntu:16.04
 
 ENV LC_ALL C
@@ -52,6 +54,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+################################################## libarchive
 RUN cd /tmp \
     && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
     && tar xfa libarchive-3.3.2.tar.gz \
@@ -85,43 +88,48 @@ RUN cd /tmp \
     && cd / \
     && rm -rf /tmp/*
 
+################################################## protobuf
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && PROTOVER=3.4.1 \
+    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && tar xvf protobuf-v${PROTOVER}.tar.gz \
+    && cd protobuf-${PROTOVER} \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -Dprotobuf_BUILD_TESTS=OFF \
+        ../cmake \
+    && make \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
+
+################################################## miniconda3
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-ENV PATH /opt/miniconda3/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/miniconda3/lib:$LD_LIBRARY_PATH
+ADD python/setup_requirements.txt /tmp/deps/
+ADD python/requirements.txt /tmp/deps/
+ADD python/test_requirements.txt /tmp/deps/
 
-RUN set -xe \
-    && umask 0 \
+RUN umask 0 \
+    && mkdir -p /tmp/deps \
+    && cd /tmp/deps \
     && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
-    && if test ${PYTHON_VERSION_MAJOR} -eq 3 -a ${PYTHON_VERSION_MINOR} -eq 5; \
-       then \
-            conda install -y conda=4.5.11 python=${PYVERNAME}; \
-       else \
-            conda install -y python=${PYVERNAME}; \
-            conda update -y --all; \
-       fi \
-    && conda install -y \
-        boto3 \
-        future \
-        h5py \
-        ipython \
-        mako \
-        'numpy<1.16' \
-        opencv \
-        pip \
-        protobuf \
-        pytest \
-        scikit-image \
-        scipy \
-        tqdm \
-        wheel \
-        virtualenv \
-    && pip install pyyaml onnx==1.4.1 future Cython autopep8 requests \
-        graphviz \
-    && pip install cntk || true \
-    && conda install -y -c pytorch pytorch-nightly-cpu \
-    && rm -rf /opt/miniconda3/pkgs
+    && . /opt/miniconda3/bin/activate \
+    && conda create -n nnabla-build python=${PYVERNAME} \
+    && conda activate nnabla-build \
+    && pip install --only-binary -U -r /tmp/deps/setup_requirements.txt \
+    && pip install --only-binary -U -r /tmp/deps/requirements.txt \
+    && pip install --only-binary -U -r /tmp/deps/test_requirements.txt \
+    && conda clean -y --all \
+    && cd / \
+    && rm -rf /tmp/*
+
+ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/miniconda3/envs/nnabla-build/lib:$LD_LIBRARY_PATH

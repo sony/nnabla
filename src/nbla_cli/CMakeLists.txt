@@ -60,6 +60,7 @@ if (NOT WIN32)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_cli
     DESTINATION include
     )
+  include(CPack)
 endif()
 
 set(NBLA_CLI_LIBRARY_NAME nbla_cli PARENT_SCOPE)

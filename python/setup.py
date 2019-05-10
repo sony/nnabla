@@ -24,7 +24,7 @@ import copy
 
 setup_requires = [
     'setuptools',
-    'numpy>1.13',
+    'numpy>=1.16',
     'Cython',  # Requires python-dev.
 ]
 
