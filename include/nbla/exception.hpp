@@ -33,8 +33,15 @@
 
 namespace nbla {
 using std::string;
-using std::snprintf;
 using std::vector;
+
+#if _MSC_VER
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+#else
+using std::snprintf;
+#endif
 
 /** In NNabla, exceptions are thrown through this macro. Error codes are
     defined in enum class nbla::error_code. See also NBLA_CHECK.
