@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# for nnabla>=1.0.16
+# for nnabla>=1.0.17
 
 FROM multiarch/ubuntu-core:armhf-xenial
 
@@ -66,24 +66,13 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+ADD python/setup_requirements.txt /tmp/deps/
+ADD python/requirements.txt /tmp/deps/
+ADD python/test_requirements.txt /tmp/deps/
+
 RUN python3 -m pip install --upgrade pip
 RUN python2 -m pip install --upgrade pip
 
-RUN pip install --no-cache-dir \
-    autopep8 \
-    boto3 \
-    cython \
-    mako \
-    numpy\<1.16 \
-    onnx==1.4.1 \
-    pillow \
-    protobuf \
-    pytest \
-    pyyaml \
-    requests \
-    scipy \
-    tqdm \
-    virtualenv
 
 RUN pip install \
     --no-cache-dir \
@@ -91,22 +80,11 @@ RUN pip install \
     --global-option="-I/usr/include/hdf5/serial" \
     --global-option="-L/usr/lib/arm-linux-gnueabihf/hdf5/serial" \
     h5py
+RUN pip install ipython==5.0
 
-RUN pip3 install --no-cache-dir \
-    autopep8 \
-    boto3 \
-    cython \
-    mako \
-    numpy\<1.16 \
-    onnx==1.4.1 \
-    pillow \
-    protobuf \
-    pytest \
-    pyyaml \
-    requests \
-    scipy \
-    tqdm \
-    virtualenv
+RUN pip install -r /tmp/deps/setup_requirements.txt
+RUN pip install -r /tmp/deps/requirements.txt
+RUN pip install -r /tmp/deps/test_requirements.txt
 
 RUN pip3 install \
     --no-cache-dir \
@@ -114,6 +92,8 @@ RUN pip3 install \
     --global-option="-I/usr/include/hdf5/serial" \
     --global-option="-L/usr/lib/arm-linux-gnueabihf/hdf5/serial" \
     h5py
-
-RUN pip install ipython==5.0
 RUN pip3 install ipython
+
+RUN pip3 install -r /tmp/deps/setup_requirements.txt
+RUN pip3 install -r /tmp/deps/requirements.txt
+RUN pip3 install -r /tmp/deps/test_requirements.txt

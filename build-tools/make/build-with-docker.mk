@@ -127,6 +127,16 @@ bwd-nnabla-cpplib: docker_image_build
 	cd $(NNABLA_DIRECTORY) \
 	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-cpplib
 
+.PHONY: bwd-nnabla-cpplib-rpm
+bwd-nnabla-cpplib-rpm: docker_image_build
+	cd $(NNABLA_DIRECTORY) \
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-cpplib-rpm
+
+.PHONY: bwd-nnabla-cpplib-deb
+bwd-nnabla-cpplib-deb: docker_image_build
+	cd $(NNABLA_DIRECTORY) \
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk nnabla-cpplib-deb
+
 .PHONY: bwd-nnabla-cpplib-android
 bwd-nnabla-cpplib-android: docker_image_build_android
 	cd $(NNABLA_DIRECTORY) \
