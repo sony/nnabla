@@ -1853,7 +1853,7 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    from nnabla.normalization import _force_list
+    from nnabla.normalization_functions import _force_list
 
     batch_axis = _force_list(batch_axis)
 
@@ -1920,7 +1920,7 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    from nnabla.normalization import _force_list
+    from nnabla.normalization_functions import _force_list
 
     batch_axis = _force_list(batch_axis)
 
@@ -1993,7 +1993,7 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    from nnabla.normalization import _force_list
+    from nnabla.normalization_functions import _force_list
 
     batch_axis = _force_list(batch_axis)
 

@@ -17,7 +17,7 @@ from .function_bases import *
 
 import nnabla as nn
 import numpy as np
-from .normalization import *
+from .normalization_functions import *
 
 
 def sum(x, axis=None, keepdims=False):

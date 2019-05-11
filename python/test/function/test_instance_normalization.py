@@ -3,7 +3,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 
-from nnabla.normalization import _force_list, _get_axes_excluding
+from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
 
 def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, output_stat):

@@ -4,7 +4,7 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
-from nnabla.normalization import _get_axes_excluding
+from nnabla.normalization_functions import _get_axes_excluding
 
 
 @pytest.fixture("function")

@@ -3,7 +3,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 
-from nnabla.normalization import _force_list, _get_axes_excluding
+from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
 
 def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat):
@@ -42,7 +42,7 @@ def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis
                           ])
 @pytest.mark.parametrize("output_stat", [False, True])
 def test_group_normalization_forward_backward(seed, num_groups, x_shape, batch_axis, channel_axis, output_stat):
-    from nnabla.normalization import _force_list
+    from nnabla.normalization_functions import _force_list
 
     rng = np.random.RandomState(seed)
     input = np.array(rng.randn(*x_shape).astype(np.float32))

@@ -358,7 +358,7 @@ def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize('param_init', [None, True])
 def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_parameters, param_init):
-    from nnabla.normalization import _force_list, _get_axes_excluding
+    from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
     def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
         batch_axis = _force_list(batch_axis)
@@ -448,7 +448,7 @@ def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_par
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize('param_init', [None, True])
 def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, output_stat, fix_parameters, param_init):
-    from nnabla.normalization import _force_list, _get_axes_excluding
+    from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
     def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, output_stat):
 
@@ -541,7 +541,7 @@ def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, out
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize('param_init', [None, True])
 def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_axis, output_stat, fix_parameters, param_init):
-    from nnabla.normalization import _force_list, _get_axes_excluding
+    from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
     def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat):
         cdim = x.shape[channel_axis]
