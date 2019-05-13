@@ -18,8 +18,8 @@ CUDA vs CUDNN Compatibility
 Package name       CUDA version CUDNN version
 ================== ============ =============
 nnabla-ext-cuda80  8.0          7.1
-nnabla-ext-cuda90  9.0          7.5(win), 7.4(linux)
-nnabla-ext-cuda92  9.2          7.5(win), 7.4(linux)
+nnabla-ext-cuda90  9.0          7.5
+nnabla-ext-cuda92  9.2          7.5
 nnabla-ext-cuda100 10.0         7.5
 ================== ============ =============
 
@@ -64,8 +64,11 @@ CUDA vs CUDNN Compatibility
 ================================= ============ =============
 Package name                      CUDA version CUDNN version
 ================================= ============ =============
-nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.4(Python3.5),7.5(python3.6,3.7)
-nnabla-ext-cuda92_nccl2_ubuntu16  9.2          7.4(python3.6),7.5(python3.5,3.7)
+nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.5
+nnabla-ext-cuda92_nccl2_ubuntu16  9.2          7.5
+nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.5
+nnabla-ext-cuda92_nccl2_ubuntu18  9.2          7.4
+nnabla-ext-cuda100_nccl2_ubuntu18 10.0         7.5
 nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.5
 ================================= ============ =============
 
