@@ -147,7 +147,7 @@ class ParameterState:
 
 # OnnxExporter class
 class OnnxExporter:
-    def __init__(self, nnp, batch_size, opset="6"):
+    def __init__(self, nnp, batch_size, opset="7"):
         self._nnp = nnp.protobuf
         self._batch_size = batch_size
         self._model_proto = None
@@ -165,7 +165,6 @@ class OnnxExporter:
 
         # opset_6 default op table
         table_op_set_6 = {
-            # optype with same names
             "Dropout": partial(self.Dropout, "6"),
             "Softmax": "Softmax",
             "BatchNormalization": partial(self.BatchNormalization, "6"),
@@ -181,7 +180,6 @@ class OnnxExporter:
             "Exp": "Exp",
             "Identity": "Identity",
             "Pad": "Pad",
-            # optype with different names
             "ReLU": "Relu",
             "PReLU": "PRelu",
             "LeakyReLU": "LeakyRelu",
@@ -211,7 +209,6 @@ class OnnxExporter:
             "LogicalXor": partial(self.BinaryOperator, "Xor", "6"),
             "Maximum2": "Max",
             "Minimum2": "Min",
-            # optype that gets converted
             "Affine": partial(self.Affine, '6'),
             "MulScalar": partial(self.ElementWiseScalar, "Mul", "6"),
             "MinimumScalar": "Clip",
@@ -219,8 +216,6 @@ class OnnxExporter:
             "AddScalar": partial(self.ElementWiseScalar, "Add", "6"),
             "PowScalar": partial(self.ElementWiseScalar, "Pow", "6"),
             "SumPooling": partial(self.SumPooling, "6"),
-            # optype that should get merged
-            # with other operators
             "BroadcastTo": "",
             "Split": self.Split,
             "Stack": self.Stack,
@@ -235,31 +230,36 @@ class OnnxExporter:
             "BinarySigmoid": self.BinarySigmoid
         }
 
+        table_op_set_7 = {
+            "Dropout": partial(self.Dropout, "7"),
+            "BatchNormalization": partial(self.BatchNormalization, "7"),
+            "Less": partial(self.BinaryOperator, "Less", "7"),
+            "Greater": partial(self.BinaryOperator, "Greater", "7"),
+            "Equal": partial(self.BinaryOperator, "Equal", "7"),
+            "Add2": partial(self.BinaryOperator, "Add", "7"),
+            "Mul2": partial(self.BinaryOperator, "Mul", "7"),
+            "Div2": partial(self.BinaryOperator, "Div", "7"),
+            "Pow2": partial(self.BinaryOperator, "Pow", "7"),
+            "Sub2": partial(self.BinaryOperator, "Sub", "7"),
+            "LogicalAnd": partial(self.BinaryOperator, "And", "7"),
+            "LogicalOr": partial(self.BinaryOperator, "Or", "7"),
+            "LogicalXor": partial(self.BinaryOperator, "Xor", "7"),
+            "Affine": partial(self.Affine, '7'),
+            "MulScalar": partial(self.ElementWiseScalar, "Mul", "7"),
+            "AddScalar": partial(self.ElementWiseScalar, "Add", "7"),
+            "PowScalar": partial(self.ElementWiseScalar, "Pow", "7"),
+            "Deconvolution": partial(self.Deconvolution, "7"),
+            "SumPooling": partial(self.SumPooling, "7"),
+            "Unpooling": self.Unpooling_7,
+        }
+        table_op_set_7 = dict(table_op_set_6, **table_op_set_7)
+
         # opset_9 table
         table_op_set_9 = {
-            "Dropout": partial(self.Dropout, "9"),
-            "Add2": partial(self.BinaryOperator, "Add", "9"),
-            "Mul2": partial(self.BinaryOperator, "Mul", "9"),
-            "Div2": partial(self.BinaryOperator, "Div", "9"),
-            "Pow2": partial(self.BinaryOperator, "Pow", "9"),
-            "Sub2": partial(self.BinaryOperator, "Sub", "9"),
-            "Affine": partial(self.Affine, '9'),
             "Slice": self.Slice_9,
             "Unpooling": self.Unpooling_9,
-            "SumPooling": partial(self.SumPooling, "9"),
-            "BatchNormalization": partial(self.BatchNormalization, "9"),
-            "Deconvolution": partial(self.Deconvolution, "9"),
-            "MulScalar": partial(self.ElementWiseScalar, "Mul", "9"),
-            "AddScalar": partial(self.ElementWiseScalar, "Add", "9"),
-            "PowScalar": partial(self.ElementWiseScalar, "Pow", "9"),
-            "LogicalAnd": partial(self.BinaryOperator, "And", "9"),
-            "LogicalOr": partial(self.BinaryOperator, "Or", "9"),
-            "LogicalXor": partial(self.BinaryOperator, "Xor", "9"),
-            "Less": partial(self.BinaryOperator, "Less", "9"),
-            "Greater": partial(self.BinaryOperator, "Greater", "9"),
-            "Equal": partial(self.BinaryOperator, "Equal", "9"),
         }
-        table_op_set_9 = dict(table_op_set_6, **table_op_set_9)
+        table_op_set_9 = dict(table_op_set_7, **table_op_set_9)
 
         # opset_ support for SNPE
         table_op_set_9_x = {
@@ -269,6 +269,7 @@ class OnnxExporter:
 
         opver_impl_map = {
             "6": table_op_set_6,
+            "7": table_op_set_7,
             "9": table_op_set_9,
             "9x": table_op_set_9_x
         }
@@ -310,7 +311,7 @@ class OnnxExporter:
                 name=func.name
             )
             return [n]
-        elif opset == "9":
+        elif opset == "7":
             n = onnx.helper.make_node(
                 'Dropout',
                 func.input,
@@ -351,7 +352,7 @@ class OnnxExporter:
                     name=func.name
                 )
                 nl.append(n)
-            else:  # opset >= 9
+            else:  # opset >= 7
                 input0_shape_len = len(self._var_dict[func.input[0]].dim)
                 input1_shape_len = len(self._var_dict[second_input].dim)
                 unsqueeze_output = fork_name("broadcast_unsqueeze")
