@@ -35,7 +35,9 @@ def _import_file(args, ifiles):
         elif ext == '.pb':
             args.import_format = "TF_PB"
         elif ext == '.ckpt':
-            args.import_format = "TF_CKPT"
+            args.import_format = "TF_CKPT_V1"
+        elif ext == '.meta':
+            args.import_format = "TF_CKPT_V2"
 
     if args.import_format == 'NNP':
         # Input file that has unsupported extension store into output nnp
@@ -49,9 +51,10 @@ def _import_file(args, ifiles):
         return OnnxImporter(*ifiles).execute()
 
     elif args.import_format == 'TF_PB' or \
-            args.import_format == 'TF_CKPT':
+            args.import_format == 'TF_CKPT_V1' or \
+            args.import_format == "TF_CKPT_V2":
         from .tensorflow import TensorflowImporter
-        return TensorflowImporter(*ifiles, tf_format=args.import_format).execute()
+        return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     return None
 
 

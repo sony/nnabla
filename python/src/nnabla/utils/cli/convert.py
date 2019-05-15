@@ -115,8 +115,17 @@ def add_convert_command(subparsers):
     # Converter
     subparser = subparsers.add_parser('convert', help='File format converter.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
-                           help='File or directory name(s) to convert.')
+                           help='File or directory name(s) to convert. \
+                           (When convert ckpt format of the tensorflow model, \
+                           If the version of the checkpoint is V1, need to enter the `.ckpt` file, \
+                           otherwise need to enter the `.meta` file.)')
     # import option
+    subparser.add_argument('--outputs', type=str, default=None,
+                           help='[import][tensorflow] The name(s) of the output nodes, comma separated. \
+                           Only needed when convert CKPT format.')
+    subparser.add_argument('--inputs', type=str, default=None,
+                           help='[import][tensorflow] The name(s) of the input nodes, comma separated. \
+                           Only needed when convert CKPT format.')
     add_import_arg(subparser)
 
     # export option
