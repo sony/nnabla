@@ -78,7 +78,7 @@ Neural Network Layer:
         available_values:
         - tanh
         - relu
-        default: tanh
+        default: '''tanh'''
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
         type: float
