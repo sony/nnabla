@@ -50,6 +50,14 @@ def core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip(
             'channel_last=True is only supported in CUDNN backend so far.')
+    if channel_last and func_name.endswith('Cudnn') and (np.any(np.asarray(dilation) > 1) or group > 1):
+        import nnabla_ext.cuda as nc
+        major, minor, revision = map(int, nc.__cudnn_version__.split('.'))
+        version = major * 1000 + minor * 100
+        if version < 7200:
+            pytest.skip(
+                'channel_last dilated convolution not work in CUDNN {}.'.format(version))
+
     base_axis = len(inshape) - len(kernel) - 1
     inmaps = inshape[base_axis]
     if channel_last:
