@@ -51,6 +51,11 @@ namespace nbla {
 namespace utils {
 namespace nnp {
 
+#include <atomic>
+#include <chrono>
+#include <functional>
+#include <utility>
+
 // ----------------------------------------------------------------------
 // NetworkImpl
 // ----------------------------------------------------------------------
@@ -680,12 +685,12 @@ shared_ptr<DatasetImpl> NnpImpl::get_dataset(const string &name) {
 
 #if defined(NBLA_UTILS_WITH_NPY)
     // Npy Support
-    return shared_ptr<DatasetNpyImpl>(new DatasetNpyImpl(*it));
+    return shared_ptr<DatasetNpyCache>(new DatasetNpyCache(*it));
 #elif defined(NBLA_UTILS_WITH_HDF5)
     // HDF5 Support
     return shared_ptr<DatasetHDF5Impl>(new DatasetHDF5Impl(*it));
 #else
-    static_assert(false, "No cache file format is defined.");
+#warning("No cache file format is defined.");
 #endif
   }
   NBLA_ERROR(error_code::value, "Dataset `%s` not found", name.c_str());
