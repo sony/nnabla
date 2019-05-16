@@ -88,7 +88,8 @@ def test_nnabla_models_resnet(num_layers, image_size, batch_size, training, seed
     ('SENet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('DenseNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('InceptionV3', ['classifier', 'pool', 'prepool']),
-    ('Xception', ['classifier', 'pool', 'lastconv', 'lastconv+relu'])
+    ('Xception', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('GoogLeNet', ['classifier', 'pool', 'prepool'])
     ])
 @pytest.mark.parametrize('image_size_factor', [1, 2])
 @pytest.mark.parametrize('batch_size', [1, 5])
