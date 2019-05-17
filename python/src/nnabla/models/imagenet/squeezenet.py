@@ -14,17 +14,17 @@
 
 
 from __future__ import absolute_import
-import nnabla as nn
 from nnabla.utils.nnp_graph import NnpNetworkPass
-
-from nnabla import logger
 
 from .base import ImageNetBase
 
 
 class SqueezeNet(ImageNetBase):
     '''
-    SqueezeNet v1.1 model.
+    SqueezeNet model for architecture-v1.0 and v1.1 .
+
+    Args:
+        version (str): Version chosen from 'v1.0' and 'v1.1'.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
 
@@ -35,26 +35,39 @@ class SqueezeNet(ImageNetBase):
 
     References:
 
-        * `Iandra et al., SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <0.5MB model size.
+        * `Iandola, Forrest N. et al., SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <0.5MB model size.
           <https://arxiv.org/abs/1602.07360>`_
+        * `Iandola, Forrest N. et al., SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <1MB model size.
+          <https://arxiv.org/abs/1602.07360v1>`_
         * `DeepScale/SqueezeNet on GitHub <https://github.com/DeepScale/SqueezeNet>`_
 
     '''
     _KEY_VARIABLE = {
-        'classifier': 'SqueezeNet/Reshape',
-        'pool': 'SqueezeNet/AveragePooling',
-        'lastconv': 'SqueezeNet/Convolution_2',
-        'lastconv+relu': 'SqueezeNet/ReLU_2',
-        }
+        'classifier': '{prefix}Reshape',
+        'pool': '{prefix}AveragePooling',
+        'lastconv': '{prefix}Convolution_2',
+        'lastconv+relu': '{prefix}ReLU_2',
+    }
 
-    def __init__(self):
-        self._load_nnp('SqueezeNet-1.1.nnp',
-                       'SqueezeNet-1.1/SqueezeNet-1.1.nnp')
+    def __init__(self, version='v1.1'):
+
+        # Check versions
+        assert version in (
+            'v1.0', 'v1.1'), "version must be chosen from {'v1.0', 'v1.1'}"
+        self.version = version
+        self._prefix = ''
+        if version == 'v1.1':
+            self._prefix = 'SqueezeNet/'
+
+        # Load nnp
+        self._load_nnp('SqueezeNet-{}.nnp'.format(version[1:]),
+                       'SqueezeNet-{0}/SqueezeNet-{0}.nnp'.format(version[1:]))
 
     def _input_shape(self):
         return (3, 227, 227)
 
-    def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
+    def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False,
+                 force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
 
         input_var = self.get_input_var(input_var)
 
@@ -62,11 +75,11 @@ class SqueezeNet(ImageNetBase):
         callback.remove_and_rewire('ImageAugmentationX')
         callback.set_variable('TrainingInput', input_var)
         self.configure_global_average_pooling(
-            callback, force_global_pooling, check_global_pooling, 'SqueezeNet/AveragePooling')
+            callback, force_global_pooling, check_global_pooling, '{}AveragePooling'.format(self._prefix))
         callback.set_batch_normalization_batch_stat_all(training)
-        self.use_up_to(use_up_to, callback)
+        self.use_up_to(use_up_to, callback, prefix=self._prefix)
         if not training:
-            callback.remove_and_rewire('SqueezeNet/Dropout')
+            callback.remove_and_rewire('{}Dropout'.format(self._prefix))
             callback.fix_parameters()
         batch_size = input_var.shape[0]
         net = self.nnp.get_network(

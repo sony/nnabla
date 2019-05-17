@@ -59,6 +59,7 @@ Available models are summarized in the following table. Error rates are calculat
     "MobileNet", "MobileNet", 29.51, 10.34, Neural Network Console
     "MobileNetV2", "MobileNetV2", 29.94, 10.82, Neural Network Console
     "SENet-154", "SENet", 22.04, 6.29, Neural Network Console
+    "SqueezeNet v1.0", "SqueezeNet", 42.71, 20.12, Neural Network Console
     "SqueezeNet v1.1", "SqueezeNet", 41.23, 19.18, Neural Network Console
     "VGG-11", "VGG", 30.85, 11.38, Neural Network Console
     "VGG-13", "VGG", 29.51, 10.46, Neural Network Console
