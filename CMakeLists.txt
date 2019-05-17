@@ -88,7 +88,6 @@ string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\3]] version_patch ${versi
 
 set(CPACK_PACKAGE_NAME "nnabla-cpplib")
 find_program(LSB_RELEASE lsb_release)
-message("LSB_RELEASE" ${LSB_RELEASE})
 if(EXISTS ${LSB_RELEASE})
 
   execute_process(COMMAND ${LSB_RELEASE} -si

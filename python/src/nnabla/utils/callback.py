@@ -83,3 +83,10 @@ def check_training_time(args, config, timeinfo, epoch, last_epoch):
         return callback.check_training_time(args, config, timeinfo, epoch, last_epoch)
     else:
         return True
+
+
+def result_base(base, suffix, outdir):
+    if callback is not None:
+        return callback.result_base(base, suffix, outdir)
+    else:
+        return None
