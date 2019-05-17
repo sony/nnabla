@@ -1070,7 +1070,7 @@ PReLU
 Element-wise Parametrized Rectified Linear Unit function. Calculates:
 
 .. math::
-    y_i = \max(0, x_i) + w_i \min(0, -x_i)
+    y_i = \max(0, x_i) + w_i \min(0, x_i)
 
 where negative slope :math:`w` is learned and can vary across channels (an
 axis specified with `base_axis`).

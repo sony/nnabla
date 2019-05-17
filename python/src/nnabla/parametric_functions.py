@@ -2188,7 +2188,7 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
     Parametrized Rectified Linear Unit function defined as
 
     .. math::
-        y_i = \max(0, x_i) + w_i \min(0, -x_i)
+        y_i = \max(0, x_i) + w_i \min(0, x_i)
 
     where negative slope :math:`w` is learned and can vary across channels (an
     axis specified with base_axis). Weights are initialized with :math:`-1`.
