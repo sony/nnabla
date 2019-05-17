@@ -139,7 +139,7 @@ Perform inference on a test image using the trained model.
 ```bash
 python model_inference.py --weight-file=/path to parameter file(.h5) --input-file=/path to input image file --num-layers=number of resnet layers
 ex):
-python -w param_500000.h5 -i file.jpg -L 50
+python model_inference.py -w param_500000.h5 -i file.jpg -L 50
 ```
 
 ##### NOTE: weight-file is the path to the parameter file(.h5) obtained in training. As a result, we display values of Top-5（label,  words,  predicted value).
