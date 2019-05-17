@@ -56,7 +56,7 @@ class Cifar100DataSource(DataSource):
                     if "train" not in member.name:
                         continue
                     fp = fpin.extractfile(member)
-                    data = np.load(fp, encoding="bytes")
+                    data = np.load(fp, encoding="bytes", allow_pickle=True)
                     images = data[b"data"]
                     labels = data[b"fine_labels"]
                 self._size = 50000
@@ -68,7 +68,7 @@ class Cifar100DataSource(DataSource):
                     if "test" not in member.name:
                         continue
                     fp = fpin.extractfile(member)
-                    data = np.load(fp, encoding="bytes")
+                    data = np.load(fp, encoding="bytes", allow_pickle=True)
                     images = data[b"data"]
                     labels = data[b"fine_labels"]
                 self._size = 10000
@@ -107,16 +107,15 @@ def data_iterator_cifar100(batch_size,
                            rng=None,
                            shuffle=True,
                            with_memory_cache=False,
-                           with_parallel=False,
                            with_file_cache=False):
     '''
     Provide DataIterator with :py:class:`Cifar100DataSource`
-    with_memory_cache, with_parallel and with_file_cache option's default value is all False,
+    with_memory_cache and with_file_cache option's default value is all False,
     because :py:class:`Cifar100DataSource` is able to store all data into memory.
     '''
     data_source = Cifar100DataSource(train=train, shuffle=shuffle, rng=rng)
     return data_source, data_iterator(data_source,
                                       batch_size,
+                                      rng,
                                       with_memory_cache,
-                                      with_parallel,
                                       with_file_cache)

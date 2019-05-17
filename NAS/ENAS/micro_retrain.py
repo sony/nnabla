@@ -46,7 +46,7 @@ def main():
                  "valid_data": (vdata, mean_val_valid, std_val_valid),
                  "basic_info": (channel, img_height, img_width, num_class)}
 
-    check_arch = np.load(filename)
+    check_arch = np.load(filename, allow_pickle=True)
     print("Train the model whose architecture is:")
     show_arch(check_arch)
 

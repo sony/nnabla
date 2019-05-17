@@ -157,9 +157,9 @@ class LibriSpeechDataSource(DataSource):
 
 
 def data_iterator_librispeech(batch_size, data_dir, shuffle=True, rng=None,
-                              with_memory_cache=False, with_parallel=False, with_file_cache=False):
+                              with_memory_cache=False, with_file_cache=False):
     return data_iterator(LibriSpeechDataSource(data_dir, shuffle=shuffle, rng=rng),
                          batch_size,
+                         rng,
                          with_memory_cache,
-                         with_parallel,
                          with_file_cache)

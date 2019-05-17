@@ -149,9 +149,9 @@ def facade_data_iterator(
         shuffle=True,
         rng=None,
         with_memory_cache=True,
-        with_parallel=False,
         with_file_cache=False):
     return data_iterator(FacadeDataSource(images_root_path, random_crop=random_crop, shuffle=shuffle, rng=rng),
                          batch_size,
+                         rng,
                          with_memory_cache,
                          with_file_cache)

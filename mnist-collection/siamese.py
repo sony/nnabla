@@ -84,8 +84,8 @@ class MnistSiameseDataIterator(object):
 
 
 def siamese_data_iterator(batch_size, train, rng=None):
-    itr0 = data_iterator_mnist(batch_size, train=train, shuffle=True, rng=rng)
-    itr1 = data_iterator_mnist(batch_size, train=train, shuffle=True, rng=rng)
+    itr0 = data_iterator_mnist(batch_size, train=train, rng=rng, shuffle=True)
+    itr1 = data_iterator_mnist(batch_size, train=train, rng=rng, shuffle=True)
     return MnistSiameseDataIterator(itr0, itr1)
 
 
@@ -190,7 +190,7 @@ def visualize(args):
     # Prepare MNIST data iterator
 
     rng = np.random.RandomState(313)
-    data = data_iterator_mnist(batch_size, train=False, shuffle=True, rng=rng)
+    data = data_iterator_mnist(batch_size, train=False, rng=rng, shuffle=True)
     for i in range(10000 // batch_size):
         image_data, label_data = data.next()
         image.d = image_data / 255.

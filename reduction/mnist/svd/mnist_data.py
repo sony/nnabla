@@ -98,11 +98,10 @@ def data_iterator_mnist(batch_size,
                         rng=None,
                         shuffle=True,
                         with_memory_cache=False,
-                        with_parallel=False,
                         with_file_cache=False):
     '''
     Provide DataIterator with :py:class:`MnistDataSource`
-    with_memory_cache, with_parallel and with_file_cache option's default value is all False,
+    with_memory_cache and with_file_cache option's default value is all False,
     because :py:class:`MnistDataSource` is able to store all data into memory.
 
     For example,
@@ -116,6 +115,6 @@ def data_iterator_mnist(batch_size,
     '''
     return data_iterator(MnistDataSource(train=train, shuffle=shuffle, rng=rng),
                          batch_size,
+                         rng,
                          with_memory_cache,
-                         with_parallel,
                          with_file_cache)

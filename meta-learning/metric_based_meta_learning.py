@@ -226,8 +226,8 @@ def get_args():
 
 
 def load_omniglot(dataset_root):
-    x_train, _ = np.load(dataset_root + "/train.npy")
-    x_valid, _ = np.load(dataset_root + "/val.npy")
+    x_train, _ = np.load(dataset_root + "/train.npy", allow_pickle=True)
+    x_valid, _ = np.load(dataset_root + "/val.npy", allow_pickle=True)
     x = np.r_[x_train, x_valid]
     from nnabla.utils.image_utils import imresize
     shape_x = (1, 28, 28)
