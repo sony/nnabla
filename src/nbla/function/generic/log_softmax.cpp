@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// softmax.cpp
-
 #include <nbla/array.hpp>
-#include <nbla/function/softmax.hpp>
+#include <nbla/common.hpp>
+#include <nbla/function/log_softmax.hpp>
 #include <nbla/variable.hpp>
 
-#include <algorithm>
-#include <cmath>
+// TODO: remove the following headers if not used.
+#include <iostream>
+#include <typeinfo>
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Softmax, int);
+NBLA_REGISTER_FUNCTION_SOURCE(LogSoftmax, int);
 
 template <typename T>
-void Softmax<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
+void LogSoftmax<T>::setup_impl(const Variables &inputs,
+                               const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
   NBLA_CHECK(axis_ < in_shape.size(), error_code::value,
              "axis must be less than ndim of inputs[0]. "
@@ -38,13 +39,11 @@ void Softmax<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   size0_ = size / size_axis;          // Batch size.
   size1_ = inputs[0]->shape()[axis_]; // Size of specified axis.
   size2_ = size / size0_ / size1_;    // Size of rest.
-  NBLA_CHECK(size0_ * size1_ * size2_ == size, error_code::unclassified,
-             "An error occurred during setup Softmax function.");
 }
 
-template <class T>
-void Softmax<T>::forward_impl(const Variables &inputs,
-                              const Variables &outputs) {
+template <typename T>
+void LogSoftmax<T>::forward_impl(const Variables &inputs,
+                                 const Variables &outputs) {
   typedef typename force_float<T>::type AccumType;
   // Setting up variables
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
@@ -62,28 +61,28 @@ void Softmax<T>::forward_impl(const Variables &inputs,
       AccumType exp_sum = 0;
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
-        const T tmp = std::exp(x[k] - max_x);
+        const T tmp = x[k] - max_x;
         y[k] = tmp;
-        exp_sum += tmp;
+        exp_sum += std::exp(tmp);
       }
       // Compute softmax
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
-        y[k] = y[k] / exp_sum;
+        y[k] -= std::log(exp_sum);
       }
     }
   }
 }
 
-template <class T>
-void Softmax<T>::backward_impl(const Variables &inputs,
-                               const Variables &outputs,
-                               const vector<bool> &propagate_down,
-                               const vector<bool> &accum) {
+template <typename T>
+void LogSoftmax<T>::backward_impl(const Variables &inputs,
+                                  const Variables &outputs,
+                                  const vector<bool> &propagate_down,
+                                  const vector<bool> &accum) {
+  typedef typename force_float<T>::type AccumType;
   if (!propagate_down[0]) {
     return;
   }
-  typedef typename force_float<T>::type AccumType;
   // Setting up variables
   const T *y = outputs[0]->get_data_pointer<T>(this->ctx_);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
@@ -93,15 +92,15 @@ void Softmax<T>::backward_impl(const Variables &inputs,
     for (int i2 = 0; i2 < size2_; ++i2) {
       const int j = i0 * size1_ * size2_ + i2;
       // compute sum of dy * y
-      AccumType dyy_sum = 0;
+      AccumType dy_sum = 0;
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
-        dyy_sum += dy[k] * y[k];
+        dy_sum += dy[k];
       }
       // Compute backward
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
-        dx[k] = (accum[0] ? dx[k] : (T)0) + y[k] * (dy[k] - dyy_sum);
+        dx[k] = (accum[0] ? dx[k] : (T)0) + dy[k] - std::exp(y[k]) * dy_sum;
       }
     }
   }

@@ -12,74 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** SoftmaxCrossEntropy
- */
-#ifndef __NBLA_FUNCTION_SOFTMAX_XENT_HPP__
-#define __NBLA_FUNCTION_SOFTMAX_XENT_HPP__
+#ifndef NBLA_FUNCTION_LOG_SOFTMAX_HPP
+#define NBLA_FUNCTION_LOG_SOFTMAX_HPP
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
-#include <memory>
-#include <string>
-
 namespace nbla {
 
-using std::string;
-using std::make_shared;
+NBLA_REGISTER_FUNCTION_HEADER(LogSoftmax, int);
 
-NBLA_REGISTER_FUNCTION_HEADER(SoftmaxCrossEntropy, int);
-
-/** SoftmaxCrossEntropy calculate the element-wise cross entropy between the
-variables and the variables of a label given by a category index with Softmax
-normalization.
+/** Softmax normalization defined as
 @f[
-y_{j} = -\ln \left(\frac{\exp(x_{t_j,j})}{\sum_{i'} exp(x_{i'j})}\right)
+y_i = x_i - \log\left\(\sum_j exp(x_j)\right\)
 @f]
 along dimension specified by axis.
 
-SoftmaxCrossEntropy is equivalent to Softmax+CategoricalCrossEntropy, but
-computing them at once has the effect of reducing computational error.
-
-Inputs (i is axis normalization taken):
-- Scores N-D array. (\f$D_1 \times ... \times D_i \times ... \times D_N\f$)
-- Labels N-D array. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+Inputs:
+- N-D array.
 
 Outputs:
-- Element-wise losses N-D array. (\f$D_1 \times ... \times 1 \times ... \times
-D_N\f$)
+- N-D array with the same shape as input.
 
-@tparam T Data type for computation and score variable.
-@tparam Tl Data type of label variable.
+@tparam T Data type for computation.
 @param axis Axis normalization is taken.
 \ingroup FunctionImplGrp
  */
-template <typename T, typename Tl = int>
-class SoftmaxCrossEntropy : public BaseFunction<int> {
+template <typename T> class LogSoftmax : public BaseFunction<int> {
 protected:
   int axis_;
   int size0_, size1_, size2_;
-  shared_ptr<Function> log_softmax_;
-  Variable log_softmax_output_;
 
 public:
-  SoftmaxCrossEntropy(const Context &ctx, int axis)
+  LogSoftmax(const Context &ctx, int axis)
       : BaseFunction(ctx, axis), axis_(axis) {}
-  virtual ~SoftmaxCrossEntropy() {}
+  virtual ~LogSoftmax() {}
   virtual shared_ptr<Function> copy() const {
-    return create_SoftmaxCrossEntropy(ctx_, axis_);
+    return create_LogSoftmax(ctx_, axis_);
   }
-  virtual vector<dtypes> in_types() {
-    return vector<dtypes>{get_dtype<T>(), get_dtype<Tl>()};
-  }
-  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual int min_inputs() { return 2; }
+  virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
-  virtual string name() { return "SoftmaxCrossEntropy"; }
+  virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual string name() { return "LogSoftmax"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
