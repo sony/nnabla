@@ -1615,6 +1615,63 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
     ('mean', 'Moving average of batch mean', '<see above>', False),
     ('var', 'Moving average of batch variance', '<see above>', False),
 ])
+def fused_batch_normalization(inp, z=None, axes=[1], decay_rate=0.9, eps=1e-5,
+                              batch_stat=True, nonlinearity='relu', output_stat=False, fix_parameters=False, param_init=None):
+    """
+    Batch normalization layer fused with the following add2 operation of a
+    residual input and an nonlinear activation.
+
+    Args:
+        inp (~nnabla.Variable): N-D array of input.
+        z (~nnabla.Variable, optional):
+            A residual input. By specifying None, the activation function will
+            follow immediately after BN operation.
+        axes (:obj:`tuple` of :obj:`int`):
+            Mean and variance for each element in ``axes`` are calculated using
+            elements on the rest axes. For example, if an input is 4 dimensions,
+            and ``axes`` is ``[1]``,  batch mean is calculated as
+            ``np.mean(inp.d, axis=(0, 2, 3), keepdims=True)``
+            (using numpy expression as an example).
+        decay_rate (float): Decay rate of running mean and variance.
+        eps (float): Tiny value to avoid zero division by std.
+        batch_stat (bool): Use mini-batch statistics rather than running ones.
+        nonlinearity (string): Activation function. The default is 'relu'.
+        output_stat (bool): Output batch mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    shape_stat = [1 for _ in inp.shape]
+    for i in range(len(axes)):
+        shape_stat[axes[i]] = inp.shape[axes[i]]
+
+    if param_init is None:
+        param_init = {}
+    beta_init = param_init.get('beta', ConstantInitializer(0))
+    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+    mean_init = param_init.get('mean', ConstantInitializer(0))
+    var_init = param_init.get('var', ConstantInitializer(1))
+    beta = get_parameter_or_create(
+        "beta", shape_stat, beta_init, True, not fix_parameters)
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
+    mean = get_parameter_or_create(
+        "mean", shape_stat, mean_init, False)
+    var = get_parameter_or_create(
+        "var", shape_stat, var_init, False)
+    return F.fused_batch_normalization(inp, beta, gamma, mean, var, z, axes,
+                                       decay_rate, eps, batch_stat,
+                                       nonlinearity, output_stat)
+
+
+@parametric_function_api("bn", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+    ('mean', 'Moving average of batch mean', '<see above>', False),
+    ('var', 'Moving average of batch variance', '<see above>', False),
+])
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                         batch_stat=True, output_stat=False, fix_parameters=False,
                         param_init=None):
