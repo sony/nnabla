@@ -79,8 +79,13 @@ def _save_parameters(args, suffix, epoch, force=False):
     exists = glob.glob(globname)
 
     base = os.path.join(args.outdir, 'results_{}_{}'.format(suffix, epoch))
-    if suffix is None or suffix == 'best':
-        base = os.path.join(args.outdir, 'results')
+    base_candidate = callback.result_base(base, suffix, args.outdir)
+    if base_candidate is None:
+        if suffix is None or suffix == 'best':
+            base = os.path.join(args.outdir, 'results')
+    else:
+        base = base_candidate
+
     filename = base + '.nnp'
 
     if force or (not os.path.exists(filename) and (timediff > 180.0 or epochdiff > 10)):
