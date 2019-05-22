@@ -90,3 +90,8 @@ def result_base(base, suffix, outdir):
         return callback.result_base(base, suffix, outdir)
     else:
         return None
+
+
+def update_progress(text):
+    if callback is not None:
+        callback.update_progress(text)
