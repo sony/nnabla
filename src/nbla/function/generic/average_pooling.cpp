@@ -26,7 +26,7 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(AveragePooling, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
-                              bool);
+                              bool, bool);
 
 using std::min;
 using std::max;
@@ -213,6 +213,10 @@ using avg_pooling_impl::backward_map;
 template <typename T>
 void AveragePooling<T>::forward_impl(const Variables &inputs,
                                      const Variables &outputs) {
+  NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
+             "The passed argument channel_last=true is not supported in CPU "
+             "pooling.");
+
   auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
@@ -265,6 +269,10 @@ void AveragePooling<T>::backward_impl(const Variables &inputs,
                                       const vector<bool> &accum) {
   if (!propagate_down[0])
     return;
+
+  NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
+             "The passed argument channel_last=true is not supported in CPU "
+             "pooling.");
 
   if (!accum[0])
     inputs[0]->grad()->zero();

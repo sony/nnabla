@@ -122,6 +122,11 @@ class FixedPointWeightConverter(IdentityConverter):
             omaps = w_init.shape[0]
             kernel = w_init.shape[2:]
             args = inner_prod_func.info.args
+            if args.get('channel_last', False):
+                raise ValueError(
+                    'channel_last=True is not supported in fixed_point_quantized_convolution.')
+            del args['channel_last']
+
             o = PF.fixed_point_quantized_convolution(x, omaps, kernel, with_bias=with_bias,
                                                      w_init=w_init, b_init=b_init,
                                                      sign_w=sign_w, n_w=n_w, delta_w=delta_w,
