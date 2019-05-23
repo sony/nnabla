@@ -20,3 +20,4 @@ from .vgg import VGG
 from .nin import NIN
 from .densenet import DenseNet
 from .inception import InceptionV3
+from .xception import Xception

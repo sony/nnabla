@@ -187,23 +187,28 @@ def test_pf_convolution_execution(g_rng, inshape, outmaps, kernel, pad, stride, 
             assert np.allclose(b_init, b.d)
 
 
-@pytest.mark.parametrize("inshape, decay_rate, eps", [
-    ((1, 2, 1, 4), 0.9, 1e-5),
-    ((8, 8), 0.99, 1e-3),
+def _get_bn_parameter_shape(inshape, axes):
+    '''
+    Helper function which gets parameter shape of Batch Normalization.
+    '''
+    return tuple(size if i in axes else 1 for (i, size) in enumerate(inshape))
+
+
+@pytest.mark.parametrize("inshape, decay_rate, eps, axes", [
+    ((1, 2, 1, 4), 0.9, 1e-5, [3]),
+    ((8, 8), 0.99, 1e-3, [1]),
 ])
 @pytest.mark.parametrize('batch_stat, output_stat', [(False, False), (True, False), (True, True)])
 @pytest.mark.parametrize('param_init', [None, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize("rng", [None, True])
-def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch_stat, output_stat, param_init, fix_parameters, rng):
+def test_pf_batch_normalization_execution(
+        g_rng, inshape, axes, decay_rate, eps, batch_stat, output_stat,
+        param_init, fix_parameters, rng):
 
-    axis = 1  # Assume axes=[1]
-    p_shape = [1] * len(inshape)
-    p_shape[axis] = inshape[axis]
-    p_shape = tuple(p_shape)
-
+    p_shape = _get_bn_parameter_shape(inshape, axes)
     if param_init:
-        beta_init = np.ones(p_shape) * 1
+        beta_init = np.ones(p_shape)
         gamma_init = np.ones(p_shape) * 2
         mean_init = np.ones(p_shape) * 0.5
         var_init = np.ones(p_shape) * 1.5
@@ -217,6 +222,7 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
     x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
 
     kw = {}
+    insert_if_not_default(kw, 'axes', axes, [1])
     insert_if_not_default(kw, 'decay_rate', decay_rate, 0.9)
     insert_if_not_default(kw, 'eps', eps, 1e-5)
     insert_if_not_default(kw, 'batch_stat', batch_stat, True)
@@ -258,6 +264,7 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
     args = h.parent.info.args
     assert np.isclose(args['decay_rate'], decay_rate)
     assert np.isclose(args['eps'], eps)
+    assert args['axes'] == axes
     assert args['batch_stat'] == batch_stat
 
     # Check created parameters
@@ -284,6 +291,119 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
     assert not v.need_grad
 
 
+@pytest.mark.parametrize("inshape, decay_rate, eps, axes", [
+    ((1, 2, 1, 4), 0.9, 1e-5, [3]),
+    ((8, 8), 0.99, 1e-3, [1]),
+])
+@pytest.mark.parametrize('batch_stat, output_stat', [(False, False), (True, False), (True, True)])
+@pytest.mark.parametrize("nonlinearity", ['relu'])
+@pytest.mark.parametrize('param_init', [None, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("with_z", [False, True])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_fused_batch_normalization_execution(
+        g_rng, inshape, axes, decay_rate, eps, batch_stat, nonlinearity,
+        output_stat, param_init, fix_parameters, with_z, rng):
+
+    p_shape = _get_bn_parameter_shape(inshape, axes)
+
+    if param_init:
+        beta_init = np.ones(p_shape)
+        gamma_init = np.ones(p_shape) * 2
+        mean_init = np.ones(p_shape) * 0.5
+        var_init = np.ones(p_shape) * 1.5
+        param_init = dict(
+            beta=beta_init,
+            gamma=gamma_init,
+            mean=mean_init,
+            var=var_init)
+    rng = process_rng(rng)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+    z = None
+    if with_z:
+        z = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+
+    kw = {}
+    insert_if_not_none(kw, 'z', z)
+    insert_if_not_default(kw, 'axes', axes, [1])
+    insert_if_not_default(kw, 'decay_rate', decay_rate, 0.9)
+    insert_if_not_default(kw, 'eps', eps, 1e-5)
+    insert_if_not_default(kw, 'batch_stat', batch_stat, True)
+    insert_if_not_default(kw, 'nonlinearity', nonlinearity, 'relu')
+    insert_if_not_default(kw, 'output_stat', output_stat, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_none(kw, 'param_init', param_init)
+
+    # Check creation
+    y = PF.fused_batch_normalization(x, **kw)
+
+    # Check parameter values before execution
+    h = y[0] if output_stat else y
+    if with_z:
+        _, b, g, m, v, _ = h.parent.inputs
+    else:
+        _, b, g, m, v = h.parent.inputs
+    if param_init:
+        assert np.allclose(b.d, beta_init)
+        assert np.allclose(g.d, gamma_init)
+        assert np.allclose(m.d, mean_init)
+        assert np.allclose(v.d, var_init)
+    else:
+        assert np.allclose(b.d, 0)
+        assert np.allclose(g.d, 1)
+        assert np.allclose(m.d, 0)
+        assert np.allclose(v.d, 1)
+
+    # Check execution
+    if output_stat:
+        forward_backward_all(*y)
+    else:
+        y.forward()
+        # TODO: Enable when implemented
+        if batch_stat:
+            y.backward()
+
+    # Check values
+    # TODO
+
+    # Check args
+    assert h.parent.info.type_name == 'FusedBatchNormalization'
+    args = h.parent.info.args
+    assert args['axes'] == axes
+    assert np.isclose(args['decay_rate'], decay_rate)
+    assert np.isclose(args['eps'], eps)
+    assert args['batch_stat'] == batch_stat
+    assert args['nonlinearity'] == nonlinearity
+
+    # Check created parameters
+    assert h.parent.inputs[0] == x
+    num_inputs = 5
+    if with_z:
+        num_inputs = 6
+        h.parent.inputs[5] == z
+    assert len(h.parent.inputs) == num_inputs
+    assert len(nn.get_parameters()) == 2
+    assert len(nn.get_parameters(grad_only=False)) == 4
+    beta, gamma, mean, var = [nn.get_parameters(grad_only=False)['bn/' + name]
+                              for name in ['beta', 'gamma', 'mean', 'var']]
+    assert beta.shape == p_shape
+    assert gamma.shape == p_shape
+    assert mean.shape == p_shape
+    assert var.shape == p_shape
+
+    assert beta.need_grad
+    assert gamma.need_grad
+    assert not mean.need_grad
+    assert not var.need_grad
+
+    _, b, g, m, v = h.parent.inputs[:5]
+    assert b.need_grad == (not fix_parameters)
+    assert g.need_grad == (not fix_parameters)
+    assert not m.need_grad
+    assert not v.need_grad
+
+
 @pytest.mark.parametrize("w_shape, dim", [((32, 16, 3, 3), 0),  # convolution
                                           ((16, 1), 1),         # affine
                                           ((16, 32), 1),        # affine
@@ -294,8 +414,6 @@ def test_pf_batch_normalization_execution(g_rng, inshape, decay_rate, eps, batch
 @pytest.mark.parametrize("test", [True, False])
 @pytest.mark.parametrize("u_init", [None, True])
 def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
-    nn.clear_parameters()
-
     # python implementation
     def spectral_norm_numpy(w, dim=0, itr=1, eps=1e-12, test=False, u_init_d=None):
         if test:
@@ -348,6 +466,293 @@ def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
     assert len(nn.get_parameters(grad_only=False)) == 2
     w_sn, u = [nn.get_parameters(grad_only=False)['spectral-norm/' + name]
                for name in ['W_sn', 'u']]
+
+
+@pytest.mark.parametrize("inshape , batch_axis", [((4, 3, 8, 8), 0),
+                                                  ((16, 1), 0),
+                                                  # time-series (T, B, C) or (B, T, C)
+                                                  ((3, 32, 4), 0),
+                                                  ((10, 4, 16), [0, 1])
+                                                  ])
+@pytest.mark.parametrize('output_stat', [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize('param_init', [None, True])
+def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_parameters, param_init):
+    from nnabla.normalization_functions import _force_list, _get_axes_excluding
+
+    def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
+        batch_axis = _force_list(batch_axis)
+
+        axes = tuple(_get_axes_excluding(len(x.shape), batch_axis))
+
+        x_mean = x.mean(axis=axes, keepdims=True)
+        x_std = x.std(axis=axes, keepdims=True)
+
+        if output_stat:
+            return (x - x_mean) / (x_std + eps) * gamma + beta, x_mean, x_std
+
+        return (x - x_mean) / (x_std + eps) * gamma + beta
+
+    eps = 1e-5
+
+    p_shape = tuple([inshape[i] if i in _force_list(batch_axis) else 1
+                     for i in range(len(inshape))])
+
+    x_npy = g_rng.randn(*inshape)
+
+    if param_init:
+        beta_init = np.ones(p_shape)
+        gamma_init = np.ones(p_shape) * 2
+        param_init = dict(beta=beta_init, gamma=gamma_init)
+    else:
+        beta_init = np.zeros(p_shape)
+        gamma_init = np.ones(p_shape)
+
+    x = nn.Variable.from_numpy_array(x_npy)
+
+    kw = {}
+    insert_if_not_default(kw, 'batch_axis', batch_axis, 0)
+    insert_if_not_default(kw, 'eps', eps, 1e-5)
+    insert_if_not_default(kw, 'output_stat', output_stat, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_none(kw, 'param_init', param_init)
+
+    # Check creation
+    y = PF.layer_normalization(x, **kw)
+    y = _force_list(y)  # just to simplify after execution
+
+    # Check parameter values before execution
+    h = y[0]
+    b = h.parent.inputs[1]
+    g = h.parent.inputs[0].parent.inputs[1]
+    assert np.allclose(b.d, beta_init)
+    assert np.allclose(g.d, gamma_init)
+
+    # Check execution
+    forward_backward_all(*y)
+
+    # Check values
+    ref = ref_layer_normalization(
+        x_npy, beta_init, gamma_init, batch_axis, eps, output_stat)
+    if not output_stat:
+        ref = [ref]
+
+    for i in range(len(ref)):
+        assert np.allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
+
+    # Check created parameters
+    assert len(nn.get_parameters()) == 2
+    assert len(nn.get_parameters(grad_only=False)) == 2
+    beta, gamma = [nn.get_parameters()['layer_normalization/' + name]
+                   for name in ['beta', 'gamma']]
+    assert beta.shape == p_shape
+    assert gamma.shape == p_shape
+
+    assert beta.need_grad
+    assert gamma.need_grad
+
+    b = h.parent.inputs[1]
+    g = h.parent.inputs[0].parent.inputs[1]
+    assert b.need_grad == (not fix_parameters)
+    assert g.need_grad == (not fix_parameters)
+
+
+@pytest.mark.parametrize("inshape , batch_axis, channel_axis",
+                         [((4, 32, 8, 8), 0, 1),  # convolution (NCHW)
+                          ((4, 16, 16, 8), 0, 3),  # convolution (NHWC)
+                          ((16, 4), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((10, 4, 16), [0, 1], 2)
+                          ])
+@pytest.mark.parametrize('output_stat', [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize('param_init', [None, True])
+def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, output_stat, fix_parameters, param_init):
+    from nnabla.normalization_functions import _force_list, _get_axes_excluding
+
+    def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, output_stat):
+
+        ignore_axes = _force_list(batch_axis) + [channel_axis, ]
+
+        axes = tuple(_get_axes_excluding(len(x.shape), ignore_axes))
+
+        x_mean = x.mean(axis=axes, keepdims=True)
+        x_std = x.std(axis=axes, keepdims=True)
+
+        if output_stat:
+            return (x - x_mean) / (x_std + eps) * gamma + beta, x_mean, x_std
+
+        return (x - x_mean) / (x_std + eps) * gamma + beta
+
+    eps = 1e-5
+
+    p_shape = tuple([inshape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+                     for i in range(len(inshape))])
+
+    x_npy = g_rng.randn(*inshape)
+
+    if param_init:
+        beta_init = np.ones(p_shape)
+        gamma_init = np.ones(p_shape) * 2
+        param_init = dict(beta=beta_init, gamma=gamma_init)
+    else:
+        beta_init = np.zeros(p_shape)
+        gamma_init = np.ones(p_shape)
+
+    x = nn.Variable.from_numpy_array(x_npy)
+
+    kw = {}
+    insert_if_not_default(kw, 'channel_axis', channel_axis, 1)
+    insert_if_not_default(kw, 'batch_axis', batch_axis, 0)
+    insert_if_not_default(kw, 'eps', eps, 1e-5)
+    insert_if_not_default(kw, 'output_stat', output_stat, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_none(kw, 'param_init', param_init)
+
+    # Check creation
+    y = PF.instance_normalization(x, **kw)
+    y = _force_list(y)  # just to simplify after execution
+
+    # Check parameter values before execution
+    h = y[0]
+    b = h.parent.inputs[1]
+    g = h.parent.inputs[0].parent.inputs[1]
+    assert np.allclose(b.d, beta_init)
+    assert np.allclose(g.d, gamma_init)
+
+    # Check execution
+    forward_backward_all(*y)
+
+    # Check values
+    ref = ref_instance_normalization(
+        x_npy, beta_init, gamma_init, channel_axis, batch_axis, eps, output_stat)
+    if not output_stat:
+        ref = [ref]
+
+    for i in range(len(ref)):
+        assert np.allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
+
+    # Check created parameters
+    assert len(nn.get_parameters()) == 2
+    assert len(nn.get_parameters(grad_only=False)) == 2
+    beta, gamma = [nn.get_parameters()['instance_normalization/' + name]
+                   for name in ['beta', 'gamma']]
+    assert beta.shape == p_shape
+    assert gamma.shape == p_shape
+
+    assert beta.need_grad
+    assert gamma.need_grad
+
+    b = h.parent.inputs[1]
+    g = h.parent.inputs[0].parent.inputs[1]
+    assert b.need_grad == (not fix_parameters)
+    assert g.need_grad == (not fix_parameters)
+
+
+@pytest.mark.parametrize("num_groups", [2, 4])
+@pytest.mark.parametrize("inshape , batch_axis, channel_axis",
+                         [((4, 32, 8, 8), 0, 1),  # convolution (NCHW)
+                          ((4, 16, 16, 8), 0, 3),  # convolution (NHWC)
+                          ((16, 4), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((10, 4, 16), [0, 1], 2)
+                          ])
+@pytest.mark.parametrize('output_stat', [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize('param_init', [None, True])
+def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_axis, output_stat, fix_parameters, param_init):
+    from nnabla.normalization_functions import _force_list, _get_axes_excluding
+
+    def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat):
+        cdim = x.shape[channel_axis]
+
+        if cdim % num_groups > 0:
+            raise ValueError()
+
+        shape = x.shape[:channel_axis] + (num_groups, int(cdim / num_groups))
+        if channel_axis < len(x.shape) - 1:
+            shape += x.shape[channel_axis + 1:]
+
+        tmp = x.reshape(shape).copy()
+
+        ignore_axes = _force_list(batch_axis) + [channel_axis, ]
+
+        axes = tuple(_get_axes_excluding(len(shape), ignore_axes))
+
+        x_mean = tmp.mean(axis=axes, keepdims=True)
+        x_std = tmp.std(axis=axes, keepdims=True)
+
+        if output_stat:
+            return ((tmp - x_mean) / (x_std + eps) * gamma + beta).reshape(x.shape), x_mean, x_std
+
+        return ((tmp - x_mean) / (x_std + eps) * gamma + beta).reshape(x.shape)
+
+    eps = 1e-5
+
+    p_shape = [inshape[i] if i in _force_list(
+        batch_axis) else 1 for i in range(len(inshape) + 1)]
+    p_shape[channel_axis] = num_groups
+    p_shape[channel_axis + 1] = int(inshape[channel_axis] / num_groups)
+    p_shape = tuple(p_shape)
+
+    x_npy = g_rng.randn(*inshape)
+
+    if param_init:
+        beta_init = np.ones(p_shape)
+        gamma_init = np.ones(p_shape) * 2
+        param_init = dict(beta=beta_init, gamma=gamma_init)
+    else:
+        beta_init = np.zeros(p_shape)
+        gamma_init = np.ones(p_shape)
+
+    x = nn.Variable.from_numpy_array(x_npy)
+
+    kw = {}
+    insert_if_not_default(kw, 'channel_axis', channel_axis, 1)
+    insert_if_not_default(kw, 'batch_axis', batch_axis, 0)
+    insert_if_not_default(kw, 'eps', eps, 1e-5)
+    insert_if_not_default(kw, 'output_stat', output_stat, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_none(kw, 'param_init', param_init)
+
+    # Check creation
+    y = PF.group_normalization(x, num_groups, **kw)
+    y = _force_list(y)  # just to simplify after execution
+
+    # Check parameter values before execution ( reshape(Add2(Mul2(h, g), b)) )
+    h = y[0]
+    b = h.parent.inputs[0].parent.inputs[1]
+    g = h.parent.inputs[0].parent.inputs[0].parent.inputs[1]
+    assert np.allclose(b.d, beta_init)
+    assert np.allclose(g.d, gamma_init)
+
+    # Check execution
+    forward_backward_all(*y)
+
+    # Check values
+    ref = ref_group_normalization(
+        x_npy, beta_init, gamma_init, num_groups, channel_axis, batch_axis, eps, output_stat)
+    if not output_stat:
+        ref = [ref]
+
+    for i in range(len(ref)):
+        assert np.allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
+
+    # Check created parameters
+    assert len(nn.get_parameters()) == 2
+    assert len(nn.get_parameters(grad_only=False)) == 2
+    beta, gamma = [nn.get_parameters()['group_normalization/' + name]
+                   for name in ['beta', 'gamma']]
+    assert beta.shape == p_shape
+    assert gamma.shape == p_shape
+
+    assert beta.need_grad
+    assert gamma.need_grad
+
+    b = h.parent.inputs[0].parent.inputs[1]
+    g = h.parent.inputs[0].parent.inputs[0].parent.inputs[1]
+    assert b.need_grad == (not fix_parameters)
+    assert g.need_grad == (not fix_parameters)
 
 
 from nbla_test_utils import list_context

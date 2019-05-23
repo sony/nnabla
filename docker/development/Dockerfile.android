@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# for nnabla>=1.0.17
+
 FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -64,10 +66,13 @@ RUN cd ${BUILD_DIR} \
   && mv ${NDK_NAME} android-ndk
 ENV NDK_PATH ${BUILD_DIR}/android-ndk
 
-RUN curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o /tmp/protobuf-v3.1.0.tar.gz \
-    && cd /tmp \
-    && tar xvf protobuf-v3.1.0.tar.gz \
-    && cd protobuf-3.1.0 \
+ENV PROTOVER 3.1.0
+################################################## protobuf
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && tar xvf protobuf-v${PROTOVER}.tar.gz \
+    && cd protobuf-${PROTOVER} \
     && mkdir build \
     && cd build \
     && cmake \
@@ -107,9 +112,9 @@ ENV CXX ${GCXX}
 ENV PATH ${TOOLCHAIN_INSTALL_DIR}/bin:${PATH}
 
 RUN cd /tmp \
-    && curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o protobuf-v3.1.0.tar.gz \
-    && tar xvf protobuf-v3.1.0.tar.gz \
-    && cd protobuf-3.1.0 \
+    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && tar xvf protobuf-v${PROTOVER}.tar.gz \
+    && cd protobuf-${PROTOVER} \
     && mkdir build \
     && cd build \
     && cmake  -DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake \

@@ -37,6 +37,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Tan, std::tan(x), dy / std::pow(std::cos(x), (T)2.),
-                            true);
+                            false);
 }
 #endif

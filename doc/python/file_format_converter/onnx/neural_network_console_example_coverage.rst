@@ -1,5 +1,5 @@
-Neural network console examples support status.
-===============================================
+Neural network console examples support status
+==============================================
 
 ============================ ======== ========================================
 Network                      Status    memo

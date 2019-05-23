@@ -117,7 +117,7 @@ def imread(path, grayscale=False, size=None, interpolate="bilinear",
             This argument specifies the shape of img is whether (height, width, channel) or (channel, height, width).
             Default value is False, which means the img shape is (height, width, channel).
         interpolate (str):
-            must be one of ["nearest", "box", "bilinear", "hamming", "bicubic", "lanczos"].
+            must be one of ["nearest", "bilinear", "bicubic", "lanczos"].
         as_uint16 (bool):
             If True, this function reads image as uint16.
         num_channels (int):

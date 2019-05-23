@@ -27,6 +27,9 @@ from libcpp cimport bool as cpp_bool
 cimport _variable
 from _variable cimport CVariable, CContext, dtypes, VariablePtr
 
+cimport communicator
+from communicator cimport CCommunicator
+
 ctypedef vector[CVariable*] Variables
 
 cdef extern from "nbla/function.hpp" namespace "nbla":
@@ -83,7 +86,7 @@ from utils.type_conv import type_from_proto
 %for name, func in function_info.items():
 cdef extern from "nbla/function/${func['snake_name']}.hpp" namespace "nbla":
     shared_ptr[CFunction] create_${name}(
-        const CContext &${''.join([', {} {}'.format(type_from_proto[v['type']]['pyx'], k) for k, v in func.get('arguments', {}).items()])}) except +
+        const CContext &${''.join([', {} {}'.format(type_from_proto[v['type']]['pxd'], k) for k, v in func.get('arguments', {}).items()])}) except +
 %endfor
 
 cdef class Function:

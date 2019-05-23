@@ -237,7 +237,7 @@ def force_tuple(x):
     return (x,)
 
 
-def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx, func_name):
+def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx, func_name, atol=1e-1):
 
     # 0. Define utility functions
     def _filter_inputs(vinputs):
@@ -277,6 +277,7 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
     ext, dtype = ctx.backend[0].split(':')
     assert dtype == 'float'
     ctx_h = ext_utils.get_extension_context(ext, type_config='half')
+    ctx_h.device_id = ctx.device_id
     with nn.context_scope(ctx_h):
         o_h = force_tuple(func(*(hinputs + func_args), **func_kwargs))
     if True in backward:
@@ -293,13 +294,13 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
     # 5. Check if output values are close between function data types.
     for ff, hh in zip(y_f, y_h):
         # TODO: set tol param
-        assert np.allclose(ff, hh, atol=1e-1), "Checking forward half: " + str(
+        assert np.allclose(ff, hh, atol=atol), "Checking forward half: " + str(
             ArrayDiffStats(ff, hh))
     if True not in backward:
         return
     for ff, hh in zip(g_f, g_h):
         # TODO: set tol param
-        assert np.allclose(ff, hh, atol=1e-1), "Checking backward half: " + str(
+        assert np.allclose(ff, hh, atol=atol), "Checking backward half: " + str(
             ArrayDiffStats(ff, hh))
 
 
@@ -476,7 +477,7 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
-                    ctx=None, func_name=None, ref_grad=None, disable_half_test=False):
+                    ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
@@ -507,7 +508,7 @@ def function_tester(rng, func, ref_func, inputs,
         finputs = create_variables(inputs, backward)
         hinputs = create_variables(inputs, backward)
         half_test(rng, func, finputs, hinputs, func_args,
-                  func_kwargs, backward, ctx, func_name)
+                  func_kwargs, backward, ctx, func_name, atol=atol_half)
 
     vinputs = create_variables(inputs, backward)
     # Checking forward

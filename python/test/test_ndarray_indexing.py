@@ -14,190 +14,110 @@
 
 import pytest
 import numpy as np
-
 import nnabla as nn
 
 
-def test_1d_array_indexing():
-    # 1d-tensor
-    d = 20
-    x_data = np.random.rand(d)
-    x = nn.NdArray.from_numpy_array(x_data)
-
+@pytest.mark.parametrize("key", [
+    "10:19:-1",
+    "10::-1",
+    "10:20:-1",
+    "1",
+    ":",
+    "3:8",
+    "3:16:3",
+    "...",
+    "np.newaxis",
+    "[1,4,7,18]",
+    "(1,4,7,18),",
+    "np.array([4,7])",
+    "[1,4,7,18], np.newaxis",
+    "np.newaxis, [1,4,7,18], np.newaxis",
+    "x_np > 0.5",
+    "x_np > 0.5, np.newaxis",
+    "np.newaxis, x_np > 0.5, np.newaxis",
+])
+def test_1d_array_indexing(key):
+    x_np = np.random.rand(20)
+    x_nn = nn.NdArray.from_numpy_array(x_np)
     with nn.auto_forward(True):
-        with pytest.raises(RuntimeError):
-            x_data_key = x_data[10:19:-1]
-            x_key = x[10:19:-1]
-            assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[10::-1]
-        x_key = x[10::-1]
-        assert np.allclose(x_key.data, x_data_key)
-
-        with pytest.raises(RuntimeError):
-            x_data_key = x_data[10:20:-1]
-            x_key = x[10:20:-1]
-            assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[1]
-        x_key = x[1]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:]
-        x_key = x[:]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[3:8]
-        x_key = x[3:8]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[3:16:3]
-        x_key = x[3:16:3]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[...]
-        x_key = x[...]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[np.newaxis]
-        x_key = x[np.newaxis]
-        assert np.allclose(x_key.data, x_data_key)
+        assert np.allclose(eval("x_nn[{key}].data".format(key=key)),
+                           eval("x_np[{key}]".format(key=key)))
 
 
-def test_4d_array_indexing():
-    # 4d-tensor
+@pytest.mark.parametrize("key", [
+    ":, :, 4:36, 4:36",
+    ":, :2",
+    "2, :",
+    ":, :, 1:-1, 1:-1",
+    ":, :, 1:-2, 1:-2",
+    ":, :, 1:-3, 1:-3",
+    ":, 0, :, :",
+    "3, ...",
+    "..., 3",
+    "3, 0, :, :",
+    "...",
+    "[1,2,3,4]",
+    "[1,2,3,4], [2,1,4,3]",
+    "[1,2], [3,4], [2,1], [4,3]",
+    "x_np > 0.5",
+    "x_np > 0.5, np.newaxis",
+    "np.newaxis, x_np > 0.5, np.newaxis",
+])
+def test_4d_array_indexing(key):
     b, c, h, w = 8, 16, 40, 40
-    x_data = np.random.rand(b, c, h, w)
-    x = nn.NdArray.from_numpy_array(x_data)
-
+    x_np = np.random.rand(b, c, h, w)
+    x_nn = nn.NdArray.from_numpy_array(x_np)
     with nn.auto_forward(True):
-        x_data_key = x_data[:, :, 4:36, 4:36]
-        x_key = x[:, :, 4:36, 4:36]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, :2]
-        x_key = x[:, :2]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[2, :]
-        x_key = x[2, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, :, 1:-1, 1:-1]
-        x_key = x[:, :, 1:-1, 1:-1]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, :, 1:-2, 1:-2]
-        x_key = x[:, :, 1:-2, 1:-2]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, :, 1:-3, 1:-3]
-        x_key = x[:, :, 1:-3, 1:-3]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 0, :, :]
-        x_key = x[:, 0, :, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[3, ...]
-        x_key = x[3, ...]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[3, 0, :, :]
-        x_key = x[3, 0, :, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[3, ...]
-        x_key = x[3, ...]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[...]
-        x_key = x[...]
-        assert np.allclose(x_key.data, x_data_key)
+        assert np.allclose(eval("x_nn[{key}].data".format(key=key)),
+                           eval("x_np[{key}]".format(key=key)))
 
 
-def test_complex_nd_array_indexing():
-    # Pseudo-Complex
-    b, h, w, cr = 8, 16, 16, 2
-    x_data = np.random.rand(b, h, w, cr)
-    x = nn.NdArray.from_numpy_array(x_data)
-
-    with nn.auto_forward(True):
-        x_data_key = x_data[..., 0]
-        x_key = x[..., 0]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[..., 1]
-        x_key = x[..., 1]
-        assert np.allclose(x_key.data, x_data_key)
-
-
-def test_flipping():
+@pytest.mark.parametrize("key", [
+    ":, :, :, ::-1",
+    ":, :, ::-1, ::-1",
+])
+def test_flipping(key):
     b, c, h, w = 8, 8, 16, 16
-    x_data = np.random.rand(b, c, h, w)
-    x = nn.NdArray.from_numpy_array(x_data)
-
+    x_np = np.random.rand(b, c, h, w)
+    x_nn = nn.NdArray.from_numpy_array(x_np)
     with nn.auto_forward(True):
-        x_data_key = x_data[:, :, :, ::-1]
-        x_key = x[:, :, :, ::-1]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, :, ::-1, ::-1]
-        x_key = x[:, :, ::-1, ::-1]
-        assert np.allclose(x_key.data, x_data_key)
+        assert np.allclose(eval("x_nn[{key}].data".format(key=key)),
+                           eval("x_np[{key}]".format(key=key)))
 
 
-def test_6d_array_indexing():
+@pytest.mark.parametrize("key", [
+    "1",
+    ":, ..., :",
+    ":, 3, 0, ..., :",
+    ":, 3, 0, ..., 2:5:2, 3",
+    ":, 3, 0, ..., 3, :",
+    ":, 3, ..., :",
+    "np.newaxis",
+    "0:5:3, 3, np.newaxis, 0, ..., 3, :",
+    ":, 3, ..., np.newaxis, 3, :",
+    ":, 3, ..., 3, np.newaxis, :",
+    ":, 3, ..., 3, :, np.newaxis",
+    "np.newaxis, :, 3, ..., 3, :",
+])
+def test_6d_array_indexing(key):
     # Hard
     b, c, s0, s1, s2, s3 = 8, 16, 1, 7, 6, 4
-    x_data = np.random.rand(b, c, s0, s1, s2, s3)
-    x = nn.NdArray.from_numpy_array(x_data)
-
+    x_np = np.random.rand(b, c, s0, s1, s2, s3)
+    x_nn = nn.NdArray.from_numpy_array(x_np)
     with nn.auto_forward(True):
-        x_data_key = x_data[1]
-        x_key = x[1]
-        assert np.allclose(x_key.data, x_data_key)
+        assert np.allclose(eval("x_nn[{key}].data".format(key=key)),
+                           eval("x_np[{key}]".format(key=key)))
 
-        x_data_key = x_data[:, ..., :]
-        x_key = x[:, ..., :]
-        assert np.allclose(x_key.data, x_data_key)
 
-        x_data_key = x_data[:, 3, 0, ..., :]
-        x_key = x[:, 3, 0, ..., :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 3, 0, ..., 2:5:2, 3]
-        x_key = x[:, 3, 0, ..., 2:5:2, 3]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 3, 0, ..., 3, :]
-        x_key = x[:, 3, 0, ..., 3, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 3, ..., :]
-        x_key = x[:, 3, ..., :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[np.newaxis]
-        x_key = x[np.newaxis]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[0:5:3, 3, np.newaxis, 0, ..., 3, :]
-        x_key = x[0:5:3, 3, np.newaxis, 0, ..., 3, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 3, ..., np.newaxis, 3, :]
-        x_key = x[:, 3, ..., np.newaxis, 3, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 3, ..., 3, np.newaxis, :]
-        x_key = x[:, 3, ..., 3, np.newaxis, :]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[:, 3, ..., 3, :, np.newaxis]
-        x_key = x[:, 3, ..., 3, :, np.newaxis]
-        assert np.allclose(x_key.data, x_data_key)
-
-        x_data_key = x_data[np.newaxis, :, 3, ..., 3, :]
-        x_key = x[np.newaxis, :, 3, ..., 3, :]
-        assert np.allclose(x_key.data, x_data_key)
+def test_update_index_variable():
+    x_np = np.random.rand(20)
+    i_np = np.random.choice(np.arange(20), 10)
+    x_nn = nn.Variable.from_numpy_array(x_np)
+    i_nn = nn.Variable.from_numpy_array(i_np)
+    y_nn = x_nn[i_nn]
+    y_nn.forward()
+    assert np.allclose(y_nn.d, x_np[i_np])
+    i_np = np.random.choice(np.arange(20), 10)
+    i_nn.d = i_np
+    y_nn.forward()
+    assert np.allclose(y_nn.d, x_np[i_np])

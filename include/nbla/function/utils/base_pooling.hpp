@@ -30,6 +30,27 @@ namespace nbla {
 
 using std::ceil;
 
+using std::vector;
+
+/**
+   Get output shape of pooling from input configuration.
+ */
+struct PoolingConfiguration {
+  vector<int> inshape;
+  vector<int> kernel;
+  vector<int> stride;
+  vector<int> pad;
+  bool ignore_border;
+  bool channel_last;
+  vector<int> outshape;
+  int base_axis;
+  NBLA_API PoolingConfiguration(const vector<int> &inshape,
+                                const vector<int> &kernel,
+                                const vector<int> &stride,
+                                const vector<int> &pad, bool ignore_border,
+                                bool channel_last);
+};
+
 /** Base class for pooling functions AveragePooling, SumPooling and MaxPooling.
 
 Inputs:
@@ -55,8 +76,11 @@ protected:
   vector<int> stride_;
   bool ignore_border_;
   vector<int> pad_;
+  bool channel_last_;
 
 public:
+  typedef T data_type;
+  typedef BasePooling<T, Args...> base_pooling_type;
   // First arguments are
   // const vector<int> &kernel,
   // const vector<int> &stride, bool ignore_border, const vector<int> &pad
@@ -67,6 +91,7 @@ public:
     stride_ = std::get<1>(t);
     ignore_border_ = std::get<2>(t);
     pad_ = std::get<3>(t);
+    channel_last_ = std::get<4>(t);
   }
 
   virtual ~BasePooling() {}
@@ -85,46 +110,11 @@ protected:
 
     // compute out shape
     const Shape_t inshape = inputs[0]->shape();
-    const int s = inshape.size() - kernel_.size();
-
-    if (stride_.size() == 0) {
-      std::copy(stride_.begin(), stride_.end(), kernel_.begin());
-    } else {
-      NBLA_CHECK(kernel_.size() == stride_.size(), error_code::value,
-                 "Length of kernel and stride must be same. "
-                 "kernel: %d != stride: %d.",
-                 kernel_.size(), stride_.size());
-      NBLA_CHECK(kernel_.size() <= inshape.size(), error_code::value,
-                 "Length of kernel must be less than length of inshape. "
-                 "kernel: %d != inshape: %d.",
-                 kernel_.size(), inshape.size());
-    }
-    NBLA_CHECK(kernel_.size() >= 2 && kernel_.size() <= 3,
-               error_code::not_implemented,
-               "2D and 3D Pooling are only supported so far.");
-
-    NBLA_CHECK(kernel_.size() == pad_.size(), error_code::value,
-               "Size of kernel and pad must be same. "
-               "kernel: %d != pad: %d).",
-               kernel_.size(), pad_.size());
-
-    vector<int> shape(kernel_.size());
-    for (int i = 0; i < kernel_.size(); i++) {
-      int _w = inshape[i + s];
-      int _k = kernel_[i];
-      int _s = stride_[i];
-      int _p = pad_[i];
-      shape[i] = (_w + _p - (ignore_border_ ? _k - _p : 1)) / _s + 1;
-    }
-
-    Shape_t outshape(inshape.size());
-    for (int i = 0; i < inshape.size(); i++) {
-      if (i < s)
-        outshape[i] = inshape[i];
-      else
-        outshape[i] = shape[i - s];
-    }
-
+    PoolingConfiguration cfg(vector<int>(inshape.begin(), inshape.end()),
+                             kernel_, stride_, pad_, ignore_border_,
+                             channel_last_);
+    stride_ = cfg.stride;
+    Shape_t outshape(cfg.outshape.cbegin(), cfg.outshape.cend()); // cast
     outputs[0]->reshape(outshape, true);
   }
 };

@@ -22,6 +22,7 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
+#include <nbla/exception.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function/affine.hpp>
 #include <nbla/function/batch_normalization.hpp>
@@ -96,8 +97,17 @@ ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
 
   // Search exist one.
   auto it = param_dict_->find(param_path);
-  if (it != param_dict_->end())
+  if (it != param_dict_->end()) {
+    NBLA_CHECK(
+        shape == it->second->variable()->shape(), error_code::value,
+        "Parameter \"%s\" already exists but the shape you passed is mismatch."
+        "the shape of existed paremeter: (%s) != the shape you passed: (%s).",
+        param_path.c_str(),
+        string_join(it->second->variable()->shape(), ", ").c_str(),
+        string_join(shape, ", ").c_str());
+
     return it->second;
+  }
 
   // Create a new one and initialize with the initializer.
   auto parameter = make_parameter(shape, initializer, need_grad);
@@ -179,6 +189,11 @@ ConvolutionOpts &ConvolutionOpts::dilation(const vector<int> &val) {
   return *this;
 }
 
+ConvolutionOpts &ConvolutionOpts::channel_last(bool val) {
+  base_.channel_last(val);
+  return *this;
+}
+
 int ConvolutionOpts::group() { return base_.group(); }
 
 const vector<int> &ConvolutionOpts::pad() const { return base_.pad(); }
@@ -188,6 +203,7 @@ const vector<int> &ConvolutionOpts::stride() const { return base_.stride(); }
 const vector<int> &ConvolutionOpts::dilation() const {
   return base_.dilation();
 }
+bool ConvolutionOpts::channel_last() const { return base_.channel_last(); }
 
 ConvolutionOpts &ConvolutionOpts::with_bias(bool with_bias) {
   with_bias_ = with_bias;
@@ -305,8 +321,8 @@ vector<CgVariablePtr>
 convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
             const vector<int> &kernel, const vector<int> &pad,
             const vector<int> &stride, const vector<int> &dilation, int group,
-            ParameterDirectory parameters, bool with_bias, bool fix_parameters,
-            Initializer *w_init, Initializer *b_init) {
+            bool channel_last, ParameterDirectory parameters, bool with_bias,
+            bool fix_parameters, Initializer *w_init, Initializer *b_init) {
 
   shared_ptr<Initializer> shared_w_init;
   shared_ptr<Initializer> shared_b_init;
@@ -343,16 +359,18 @@ convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
         parameters.get_parameter_or_create("conv/b", {n_map_out}, b_init);
 
     bool execute_forward = true;
-    return connect(make_shared<CgFunction>(create_Convolution(
-                       ctx, base_axis, pad, stride, dilation, group)),
-                   {x, conv_w, conv_b}, execute_forward);
+    return connect(
+        make_shared<CgFunction>(create_Convolution(
+            ctx, base_axis, pad, stride, dilation, group, channel_last)),
+        {x, conv_w, conv_b}, execute_forward);
 
   } else {
 
     bool execute_forward = true;
-    return connect(make_shared<CgFunction>(create_Convolution(
-                       ctx, base_axis, pad, stride, dilation, group)),
-                   {x, conv_w}, execute_forward);
+    return connect(
+        make_shared<CgFunction>(create_Convolution(
+            ctx, base_axis, pad, stride, dilation, group, channel_last)),
+        {x, conv_w}, execute_forward);
   }
 }
 
@@ -364,9 +382,9 @@ CgVariablePtr convolution(CgVariablePtr x, int base_axis, int n_map_out,
       SingletonManager::get<GlobalContext>()->get_current_context();
   return convolution(global_ctx, x, base_axis, n_map_out, kernel,
                      conv_opts.pad(), conv_opts.stride(), conv_opts.dilation(),
-                     conv_opts.group(), parameters, conv_opts.with_bias(),
-                     conv_opts.fix_parameters(), conv_opts.w_init(),
-                     conv_opts.b_init())[0];
+                     conv_opts.group(), conv_opts.channel_last(), parameters,
+                     conv_opts.with_bias(), conv_opts.fix_parameters(),
+                     conv_opts.w_init(), conv_opts.b_init())[0];
 }
 
 vector<CgVariablePtr>

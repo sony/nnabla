@@ -27,7 +27,7 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(AveragePooling, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
-                              bool);
+                              bool, bool);
 
 /** Average pooling operator.
 
@@ -41,24 +41,23 @@ NBLA_REGISTER_FUNCTION_HEADER(AveragePooling, const vector<int> &,
 template <typename T>
 class AveragePooling
     : public BasePooling<T, const vector<int> &, const vector<int> &, bool,
-                         const vector<int> &, bool> {
+                         const vector<int> &, bool, bool> {
 protected:
   bool including_pad_;
 
 public:
   AveragePooling(const Context &ctx, const vector<int> &kernel,
                  const vector<int> &stride, bool ignore_border,
-                 const vector<int> &pad, bool including_pad)
-      : BasePooling<T, const vector<int> &, const vector<int> &, bool,
-                    const vector<int> &, bool>(
-            ctx, kernel, stride, ignore_border, pad, including_pad),
+                 const vector<int> &pad, bool channel_last, bool including_pad)
+      : NBLA_THIS_TYPE::base_pooling_type(ctx, kernel, stride, ignore_border,
+                                          pad, channel_last, including_pad),
         including_pad_(including_pad) {}
 
   virtual ~AveragePooling() {}
   virtual shared_ptr<Function> copy() const {
     return create_AveragePooling(this->ctx_, this->kernel_, this->stride_,
                                  this->ignore_border_, this->pad_,
-                                 including_pad_);
+                                 this->channel_last_, including_pad_);
   }
   virtual string name() { return "AveragePooling"; }
 

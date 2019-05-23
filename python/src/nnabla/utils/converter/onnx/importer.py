@@ -184,6 +184,31 @@ def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_count
     return bt
 
 
+def generate_broadcast(node_name, in_name, out_name, shape, base_name, func_counter):
+    """Generate a Broadcast operator to brodcast specified buffer"""
+    bt = nnabla_pb2.Function()
+    bt.type = "Broadcast"
+    set_function_name(bt, node_name, base_name, func_counter)
+    bt.input.extend([in_name])
+    bt.output.extend([out_name])
+    btp = bt.broadcast_param
+    btp.shape.dim.extend(shape)
+    return bt
+
+
+def generate_batchmatmul(node_name, in_name, out_name, transpose_a, transpose_b, base_name, func_counter):
+    """Generate a BatchMatmul operator to brodcast specified buffer"""
+    bm = nnabla_pb2.Function()
+    bm.type = "BatchMatmul"
+    set_function_name(bm, node_name, base_name, func_counter)
+    bm.input.extend(in_name)
+    bm.output.extend([out_name])
+    bmp = bm.batch_matmul_param
+    bmp.transpose_a = transpose_a
+    bmp.transpose_b = transpose_b
+    return bm
+
+
 def generate_unary(func_name, node_name, x,
                    out_name, base_name, func_counter):
     func = nnabla_pb2.Function()
@@ -471,15 +496,15 @@ class OnnxImporter:
             "Exp": partial(self.GeneralOperator, 'Exp'),
             "Identity": partial(self.GeneralOperator, 'Identity'),
             "Pad": self.Pad,
-            "Relu": partial(self.ReLU, 'ReLU'),
-            "PRelu": partial(self.ReLU, 'PReLU'),
+            "Relu": partial(self.GeneralOperator, 'ReLU'),
+            "PRelu": self.PRelu,
             "Concat": self.Concatenate,
             "Conv": self.Convolution,
             "GlobalAveragePool": partial(self.BasePooling, 'GlobalAveragePooling'),
             "MaxPool": partial(self.BasePooling, 'MaxPooling'),
             "AveragePool": partial(self.BasePooling, 'AveragePooling'),
-            "Sum": partial(self.BroadcastOperator_9, 'Add2'),
-            "Gemm": self.Affine,
+            "Sum": partial(self.GeneralOperator, 'Add2'),
+            "Gemm": self.Gemm,
             "Add": partial(self.BroadcastOperator, 'Add2'),
             "Mul": partial(self.BroadcastOperator, 'Mul2'),
             "Div": partial(self.BroadcastOperator, 'Div2'),
@@ -498,17 +523,14 @@ class OnnxImporter:
             "And": partial(self.BroadcastOperator, 'LogicalAnd'),
             "Or": partial(self.BroadcastOperator, 'LogicalOr'),
             "Xor": partial(self.BroadcastOperator, 'LogicalXor'),
-            "Min": partial(self.BroadcastOperator_9, 'Minimum2'),
-            "Max": partial(self.BroadcastOperator_9, 'Maximum2'),
+            "Min": partial(self.GeneralOperator, 'Minimum2'),
+            "Max": partial(self.GeneralOperator, 'Maximum2'),
             "Reciprocal": partial(self.ElementWiseScalar, 'RDivScalar'),
             "Neg": partial(self.ElementWiseScalar, 'MulScalar'),
             "LogSoftmax": self.LogSoftmax,
             "Softplus": self.Softplus,
             "Softsign": self.Softsign,
             "LRN": self.LRN,
-            # Clip gets converted to Identity, MaxScalar or MinScalar
-            # or both, depending on the attributes.
-            # We set a temporary name here
             "Clip": self.Clip,
             # Constant does not get converted to a function
             # but we list it here so we can accept it
@@ -516,9 +538,9 @@ class OnnxImporter:
             "Unsqueeze": self.Unsqueeze
         }
 
-        # opset_9 table
-        self.table_op_set_9 = {
-            "Dropout": partial(self.Dropout, 9),
+        # opset_7 table
+        self.table_op_set_7 = {
+            "Dropout": partial(self.Dropout, 7),
             "Less": partial(self.BroadcastOperator_9, 'Less'),
             "Greater": partial(self.BroadcastOperator_9, 'Greater'),
             "Equal": partial(self.BroadcastOperator_9, 'Equal'),
@@ -531,12 +553,21 @@ class OnnxImporter:
             "Or": partial(self.BroadcastOperator_9, 'LogicalOr'),
             "Xor": partial(self.BroadcastOperator_9, 'LogicalXor'),
         }
-        self.table_op_set_9 = dict(self.table_op_set_6, **self.table_op_set_9)
+        self.table_op_set_7 = dict(self.table_op_set_6, **self.table_op_set_7)
+
+        # opset_9 table
+        self.table_op_set_9 = {
+            "Sum": partial(self.BroadcastOperator_9, 'Add2'),
+            "Min": partial(self.BroadcastOperator_9, 'Minimum2'),
+            "Max": partial(self.BroadcastOperator_9, 'Maximum2'),
+        }
+        self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
         # Currently, we only planed to support opset 6 and opset 9.
         # More planes will be added later to support more opset versions.
         self.opver_impl_map = {
             "6": self.table_op_set_6,
+            "7": self.table_op_set_7,
             "9": self.table_op_set_9
         }
 
@@ -725,16 +756,19 @@ class OnnxImporter:
                            ] = self.get_func_input_shape(func.input[0])
         func_list.append(func)
 
-    def ReLU(self, func_name, func_list, n):
-        func = self.generate_default_function(func_name, n)
-        if func_name == "PReLU":
-            pp = func.prelu_param
-            # ONNX PRelu defaults to the Channel axis,
-            # so we set the channel axis (1) here.
-            # This should be the same for NNabla
-            # buf currently it defaults to 0
-            # so we explicitly set 1 here.
-            pp.base_axis = 1
+    def PRelu(self, func_list, n):
+        slope_shape = self.get_func_input_shape(n.input[1])
+        if len(slope_shape) != 1:
+            raise ValueError(
+                "Only one dimensional is currently supported for PRelu input tensor slope")
+        func = self.generate_default_function("PReLU", n)
+        pp = func.prelu_param
+        # ONNX PRelu defaults to the Channel axis,
+        # so we set the channel axis (1) here.
+        # This should be the same for NNabla
+        # buf currently it defaults to 0
+        # so we explicitly set 1 here.
+        pp.base_axis = 1
         self._shape_output[func.output[0]
                            ] = self.get_func_input_shape(func.input[0])
         func_list.append(func)
@@ -987,18 +1021,23 @@ class OnnxImporter:
             self._shape_output[func.output[0]] = output_shape
             func_list.append(func)
 
-    def Affine(self, func_list, n):
-        func = self.generate_default_function("Affine", n)
-        ap = func.affine_param
-        ap.base_axis = 1
-        transposed_postfix = "_transposed"
+    def Gemm(self, func_list, n):
+        func = self.generate_default_function("Add2", n)
+        alpha = 1.0
+        beta = 1.0
+        transpose_a = 0
+        transpose_b = 0
         input = n.input[:]
         # Check the dimension of all inputs
-        x = input[0]
-        weight = input[1]
+        transA = input[0]
+        transB = input[1]
         bias = input[2]
+        transA_shape = self.get_func_input_shape(transA)
+        transB_shape = self.get_func_input_shape(transB)
+        bias_shape = self.get_func_input_shape(bias)
+        shape = [transA_shape[0], transB_shape[1]]
         for init in self._graph.initializer:
-            if init.name == x or init.name == weight:
+            if init.name == transA or init.name == transB:
                 # must be two dimensional
                 if len(init.dims) != 2:
                     raise ValueError(
@@ -1011,64 +1050,76 @@ class OnnxImporter:
 
         # Switch H and W for transpose
         # We assume the buffer is two dimensional.
-        axes = [1, 0]
         for attr in n.attribute:
             if attr.name == "transA":
                 if attr.type != AttributeProto.INT:
                     raise ValueError(
                         "Only INT is supported for transA in {} op_type".format(n.op_type))
-                # We need to transpose the input weight beforehand
-                # since NNabla does not support transpose with Affine.
-                # Add a new intermediate buffer for transposition,
-                # and rewire the buffer as input.
-                ain = n.input[0]
-                aout = ain+transposed_postfix
-                transA = generate_transpose(
-                    n.name, ain, aout, axes, self._graph.name, self._func_counter)
-                input_shape = self.get_func_input_shape(ain)
-                output_shape = []
-                for i in range(len(input_shape)):
-                    index = axes[i]
-                    output_shape.append(input_shape[index])
-                self._shape_output[aout] = output_shape
-                func_list.append(transA)
-                input[0] = aout  # rewire input to transposed input
+                if attr.i:
+                    shape[0] = transA_shape[1]
+                    transpose_a = attr.i
             elif attr.name == "transB":
                 if attr.type != AttributeProto.INT:
                     raise ValueError(
                         "Only INT is supported for transB in {} op_type".format(n.op_type))
-                # same as transA
-                bin = n.input[1]
-                bout = bin+transposed_postfix
-                transB = generate_transpose(
-                    n.name, bin, bout, axes, self._graph.name, self._func_counter)
-                input_shape = self.get_func_input_shape(bin)
-                output_shape = []
-                for i in range(len(input_shape)):
-                    index = axes[i]
-                    output_shape.append(input_shape[index])
-                self._shape_output[bout] = output_shape
-                func_list.append(transB)
-                input[1] = bout  # rewire input to transposed input
+                if attr.i:
+                    shape[1] = transB_shape[0]
+                    transpose_b = attr.i
             elif attr.name == "broadcast":
-                if attr.type != AttributeProto.INT:
-                    raise ValueError(
-                        "Only INT is supported for broadcast in {} op_type".format(n.op_type))
-                # Affine broadcasts Bias vector automatically if the bias is one dimension
-                # so we don't have to do anything here
                 pass
+            elif attr.name == "alpha":
+                alpha = attr.f
+            elif attr.name == "beta":
+                beta = attr.f
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
-        # update Gemm input with the converted inputs
+
+        bmout = transA + transB + "batchmatmul"
+        bm = generate_batchmatmul(n.name, input[:2], bmout, transpose_a, transpose_b,
+                                  self._graph.name, self._func_counter)
+        self._shape_output[bmout] = shape
+        func_list.append(bm)
+        input[0] = bmout
+
+        if alpha != 1.0:
+            # MulScalar
+            muls_out = input[0]+"_muls"
+            muls = generate_mul_scalar(n.name, input[0], muls_out,
+                                       alpha, self._graph.name, self._func_counter)
+            self._shape_output[muls_out] = shape
+            func_list.append(muls)
+            input[0] = muls_out
+
+        if beta != 1.0:
+            # MulScalar
+            muls_out = input[2]+"_muls"
+            muls = generate_mul_scalar(n.name, input[2], muls_out,
+                                       alpha, self._graph.name, self._func_counter)
+            self._shape_output[muls_out] = bias_shape
+            func_list.append(muls)
+            input[2] = muls_out
+
+        if bias_shape != shape:
+            s = len(shape) - len(bias_shape)
+            if s > 0:
+                rout = input[2] + "_shape"
+                _shape = [1] * s + bias_shape
+                rp = generate_reshape(n.name, input[2], rout, _shape,
+                                      self._graph.name, self._func_counter)
+                self._shape_output[rout] = _shape
+                func_list.append(rp)
+                input[2] = rout
+            bout = input[2] + "_broadcast"
+            bt = generate_broadcast(n.name, input[2], bout, shape,
+                                    self._graph.name, self._func_counter)
+            self._shape_output[bout] = shape
+            input[2] = bout
+            func_list.append(bt)
+
         del func.input[:]
-        func.input.extend(input)
-        input_shape = self.get_func_input_shape(func.input[0])
-        weight_shape = self.get_func_input_shape(func.input[1])
-        output_shape = []
-        output_shape.append(input_shape[0])
-        output_shape.extend(weight_shape[1:])
-        self._shape_output[func.output[0]] = output_shape
+        func.input.extend([input[0], input[2]])
+        self._shape_output[n.output[0]] = shape
         func_list.append(func)
 
     def Softmax(self, func_list, n):

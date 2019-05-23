@@ -102,7 +102,7 @@ def test_minmax_auto_scale(img, as_uint16):
     assert np.allclose(img, reverted, atol=1 / 2 ** 4)
 
 
-@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
+@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2", "dicom"])
 @pytest.mark.parametrize("grayscale", [False, True])
 @pytest.mark.parametrize("size", [None, (16, 16)])
 @pytest.mark.parametrize("channel_first", [False, True])
@@ -111,11 +111,16 @@ def test_minmax_auto_scale(img, as_uint16):
 @pytest.mark.parametrize("auto_scale", [False, True])
 @pytest.mark.parametrize("img", imgs)
 def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_uint16, num_channels, auto_scale, img):
+    # import pdb
+    # pdb.set_trace()
     # preprocess
     _change_backend(backend)
 
     tmpdir.ensure(dir=True)
-    tmppath = tmpdir.join("tmp.png")
+    if backend != "dicom":
+        tmppath = tmpdir.join("tmp.png")
+    else:
+        tmppath = tmpdir.join("tmp.dcm")
     img_file = tmppath.strpath
 
     ref_size_axis = 0
@@ -179,7 +184,7 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
             (img.astype(dtype) * scaler).astype(read_image.dtype), read_image)
 
 
-@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
+@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2", "dicom"])
 @pytest.mark.parametrize("size", [(16, 16), (64, 64)])
 @pytest.mark.parametrize("channel_first", [False, True])
 @pytest.mark.parametrize("img", imgs)

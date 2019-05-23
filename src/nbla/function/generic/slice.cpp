@@ -27,15 +27,6 @@ NBLA_REGISTER_FUNCTION_SOURCE(Slice, const vector<int> &, // start
                               const vector<int> &,        // stop
                               const vector<int> &);       // step
 
-template <typename T> bool Slice<T>::skip_check(const Variables &outputs) {
-  Shape_t shape_x = outputs[0]->shape();
-  for (auto s : shape_x) {
-    if (s == 0)
-      return true;
-  }
-  return false;
-}
-
 template <typename T>
 void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t shape_x = inputs[0]->shape();
@@ -121,15 +112,8 @@ void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
     }
     shape_y[i] = size_i;
   }
-  outputs[0]->reshape(shape_y, true);
 
-  if (skip_check(outputs)) {
-    // TODO: now raise error, but in the future, this will change in align with
-    // numpy behaviour, so that this skip_check will be replaced in the head of
-    // `forward_impl` and `backward_impl` functions for each extension.
-    NBLA_ERROR(error_code::value,
-               "Empty dimension. the size of at-least one dimension is zero.");
-  }
+  outputs[0]->reshape(shape_y, true);
 }
 
 template <typename T>
@@ -204,9 +188,8 @@ void Slice<T>::slice_backward_recursive(Variable *outp, const Variable *inp,
 
 template <class T>
 void Slice<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
-  // TODO: see nnabla's setup_impl
-  //  if (this->skip_check(outputs))
-  //    return;
+  if (outputs[0]->size() == 0)
+    return;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -219,13 +202,11 @@ template <class T>
 void Slice<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                              const vector<bool> &propagate_down,
                              const vector<bool> &accum) {
-  if (!propagate_down[0]) {
+  if (!propagate_down[0])
     return;
-  }
 
-  // TODO: see nnabla's setup_impl
-  //  if (this->skip_check(outputs))
-  //    return;
+  if (outputs[0]->size() == 0)
+    return;
 
   if (!accum[0])
     inputs[0]->grad()->zero();

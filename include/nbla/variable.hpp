@@ -48,6 +48,12 @@ class Variable {
 public:
   typedef shared_ptr<Variable> Ptr;
 
+  /** Create a shared_ptr instance of Variable.
+   */
+  template <typename... Args> static Ptr create(Args... args) {
+    return make_shared<Variable>(args...);
+  }
+
   /**
   Constructor.
 

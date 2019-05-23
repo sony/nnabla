@@ -27,7 +27,8 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(SumPooling, const vector<int> &,
-                              const vector<int> &, bool, const vector<int> &);
+                              const vector<int> &, bool, const vector<int> &,
+                              bool);
 
 /** Sum pooling operator.
 
@@ -38,19 +39,19 @@ NBLA_REGISTER_FUNCTION_HEADER(SumPooling, const vector<int> &,
 template <typename T>
 class SumPooling
     : public BasePooling<T, const vector<int> &, const vector<int> &, bool,
-                         const vector<int> &> {
+                         const vector<int> &, bool> {
 public:
   SumPooling(const Context &ctx, const vector<int> &kernel,
              const vector<int> &stride, bool ignore_border,
-             const vector<int> &pad)
-      : BasePooling<T, const vector<int> &, const vector<int> &, bool,
-                    const vector<int> &>(ctx, kernel, stride, ignore_border,
-                                         pad) {}
+             const vector<int> &pad, bool channel_last)
+      : NBLA_THIS_TYPE::base_pooling_type(ctx, kernel, stride, ignore_border,
+                                          pad, channel_last) {}
 
   virtual ~SumPooling() {}
   virtual shared_ptr<Function> copy() const {
     return create_SumPooling(this->ctx_, this->kernel_, this->stride_,
-                             this->ignore_border_, this->pad_);
+                             this->ignore_border_, this->pad_,
+                             this->channel_last_);
   }
   virtual string name() { return "SumPooling"; }
 

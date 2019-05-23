@@ -35,12 +35,12 @@ vector<vector<uint8_t>> read_images(const string &train,
 
   gzFile fp = gzopen((data_root + filename).c_str(), "rb");
   if (fp == NULL) {
-    cerr << "This sample requires mnist data downloaded before.";
+    cerr << "This sample requires mnist data downloaded before." << endl;
     exit(0);
   }
 
-  int header;
-  gzread(fp, (char *)&header, 4 * sizeof(int));
+  char header[16];
+  gzread(fp, header, 16);
   int num_images = 60000;
   if (train == "test")
     num_images = 10000;
@@ -69,12 +69,12 @@ vector<uint8_t> read_labels(const string &train, const string &data_root,
 
   gzFile fp = gzopen((data_root + filename).c_str(), "rb");
   if (fp == NULL) {
-    cerr << "This sample requires mnist data downloaded before. ";
+    cerr << "This sample requires mnist data downloaded before." << endl;
     exit(0);
   }
 
-  int header;
-  gzread(fp, (char *)&header, 2 * sizeof(int));
+  char header[8];
+  gzread(fp, header, 8);
   int num_images = 60000;
   if (train == "test")
     num_images = 10000;

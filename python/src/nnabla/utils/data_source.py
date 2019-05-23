@@ -43,7 +43,6 @@ import threading
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
-import nnabla.utils.callback as callback
 from nnabla.utils.communicator_util import single_or_rankzero
 from .data_source_loader import FileReader
 

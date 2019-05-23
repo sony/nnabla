@@ -564,7 +564,7 @@ def inq_affine(inp, n_outmaps, base_axis=1, num_bits=4,
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def convolution(inp, outmaps, kernel,
-                pad=None, stride=None, dilation=None, group=1,
+                pad=None, stride=None, dilation=None, group=1, channel_last=False,
                 w_init=None, b_init=None,
                 base_axis=1, fix_parameters=False, rng=None, with_bias=True,
                 apply_w=None, apply_b=None):
@@ -600,6 +600,7 @@ def convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        channel_last (bool): If True, the last dimension is considered as channel dimension, a.k.a NHWC order.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.  
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
@@ -613,13 +614,19 @@ def convolution(inp, outmaps, kernel,
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.convolution` for the output shape.
 
     """
+    if channel_last:
+        channels = inp.shape[-1]
+        filter_shape = tuple(kernel) + (channels // group,)
+    else:
+        channels = inp.shape[base_axis]
+        filter_shape = (channels // group,) + tuple(kernel)
     if w_init is None:
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+            calc_uniform_lim_glorot(channels, outmaps, tuple(kernel)), rng=rng)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
+        "W", (outmaps,) + filter_shape,
         w_init, True, not fix_parameters)
     if apply_w is not None:
         w = apply_w(w)
@@ -629,7 +636,7 @@ def convolution(inp, outmaps, kernel,
             "b", (outmaps,), b_init, True, not fix_parameters)
         if apply_b is not None:
             b = apply_b(b)
-    return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group)
+    return F.convolution(inp, w, b, base_axis, pad, stride, dilation, group, channel_last)
 
 
 @parametric_function_api("svd_conv", [
@@ -1608,6 +1615,63 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
     ('mean', 'Moving average of batch mean', '<see above>', False),
     ('var', 'Moving average of batch variance', '<see above>', False),
 ])
+def fused_batch_normalization(inp, z=None, axes=[1], decay_rate=0.9, eps=1e-5,
+                              batch_stat=True, nonlinearity='relu', output_stat=False, fix_parameters=False, param_init=None):
+    """
+    Batch normalization layer fused with the following add2 operation of a
+    residual input and an nonlinear activation.
+
+    Args:
+        inp (~nnabla.Variable): N-D array of input.
+        z (~nnabla.Variable, optional):
+            A residual input. By specifying None, the activation function will
+            follow immediately after BN operation.
+        axes (:obj:`tuple` of :obj:`int`):
+            Mean and variance for each element in ``axes`` are calculated using
+            elements on the rest axes. For example, if an input is 4 dimensions,
+            and ``axes`` is ``[1]``,  batch mean is calculated as
+            ``np.mean(inp.d, axis=(0, 2, 3), keepdims=True)``
+            (using numpy expression as an example).
+        decay_rate (float): Decay rate of running mean and variance.
+        eps (float): Tiny value to avoid zero division by std.
+        batch_stat (bool): Use mini-batch statistics rather than running ones.
+        nonlinearity (string): Activation function. The default is 'relu'.
+        output_stat (bool): Output batch mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    shape_stat = [1 for _ in inp.shape]
+    for i in range(len(axes)):
+        shape_stat[axes[i]] = inp.shape[axes[i]]
+
+    if param_init is None:
+        param_init = {}
+    beta_init = param_init.get('beta', ConstantInitializer(0))
+    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+    mean_init = param_init.get('mean', ConstantInitializer(0))
+    var_init = param_init.get('var', ConstantInitializer(1))
+    beta = get_parameter_or_create(
+        "beta", shape_stat, beta_init, True, not fix_parameters)
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
+    mean = get_parameter_or_create(
+        "mean", shape_stat, mean_init, False)
+    var = get_parameter_or_create(
+        "var", shape_stat, var_init, False)
+    return F.fused_batch_normalization(inp, beta, gamma, mean, var, z, axes,
+                                       decay_rate, eps, batch_stat,
+                                       nonlinearity, output_stat)
+
+
+@parametric_function_api("bn", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+    ('mean', 'Moving average of batch mean', '<see above>', False),
+    ('var', 'Moving average of batch variance', '<see above>', False),
+])
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                         batch_stat=True, output_stat=False, fix_parameters=False,
                         param_init=None):
@@ -1682,6 +1746,91 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                                  decay_rate, eps, batch_stat, output_stat)
 
 
+@parametric_function_api("bn", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+    ('mean', 'Moving average of batch mean', '<see above>', False),
+    ('var', 'Moving average of batch variance', '<see above>', False),
+])
+def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-5, batch_stat=True,
+                             output_stat=False, fix_parameters=False,
+                             param_init=None):
+    """
+    Synchronized batch normalization layer.
+
+    For some tasks (e.g., semantic segmentation), batch size will be too small and BatchNormalization layer might not work well.
+    SyncBatchNorlization layer solves these problems by synchronizing batch stats (mean and var) between multiple processes.
+
+    .. math::
+
+        \\begin{array}{lcl}
+        \\mu &=& \\frac{1}{M} \\sum x_i\\\\
+        \\sigma^2 &=& \\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\
+        \\hat{x}_i &=& \\frac{x_i - \\mu}{\\sqrt{\\sigma^2 + \\epsilon }}\\\\
+        y_i &= & \\hat{x}_i \\gamma + \\beta.
+        \\end{array}
+
+    where :math:`x_i, y_i` are the inputs.
+
+    Args:
+        inp (~nnabla.Variable): N-D array of input.
+        comm (~nnabla.communicators.Communicator): The communicator
+        group (string): The name of the communicator group
+        axes (:obj:`tuple` of :obj:`int`):
+            Mean and variance for each element in ``axes`` are calculated using
+            elements on the rest axes. For example, if an input is 4 dimensions,
+            and ``axes`` is ``[1]``,  batch mean is calculated as
+            ``np.mean(inp.d, axis=(0, 2, 3), keepdims=True)``
+            (using numpy expression as an example).
+        decay_rate (float): Decay rate of running mean and variance.
+        eps (float): Tiny value to avoid zero division by std.
+        batch_stat (bool): Use mini-batch statistics rather than running ones.
+        output_stat (bool): Output batch mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+        param_init (dict):
+            Parameter initializers can be set with a dict. A key of the dict must
+            be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
+            A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
+            or a :obj:`numpy.ndarray`.
+            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    References:
+        - Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift, https://arxiv.org/abs/1502.03167
+        - Hang Zhang, Kristin Dana, Jianping Shi, Zhongyue Zhang, Xiaogang Wang, Ambrish Tyagi, Amit Agrawal, Context Encoding for Semantic Segmentation, https://arxiv.org/abs/1803.08904 
+        - Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+
+    The shape of parameters has the same number of dimensions with the input
+    data, and the shapes in ``axes`` has the same dimensions with the input, while the rest has ``1``.
+    If an input is 4-dim and ``axes=[1]``, the parameter shape will be
+    ``param_shape  = np.mean(inp.d, axis=(0, 2, 3), keepdims=True).shape``
+    (using numpy expression as an example).
+
+    """
+    shape_stat = [1 for _ in inp.shape]
+    for i in range(len(axes)):
+        shape_stat[axes[i]] = inp.shape[axes[i]]
+
+    if param_init is None:
+        param_init = {}
+    beta_init = param_init.get('beta', ConstantInitializer(0))
+    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+    mean_init = param_init.get('mean', ConstantInitializer(0))
+    var_init = param_init.get('var', ConstantInitializer(1))
+    beta = get_parameter_or_create(
+        "beta", shape_stat, beta_init, True, not fix_parameters)
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
+    mean = get_parameter_or_create(
+        "mean", shape_stat, mean_init, False)
+    var = get_parameter_or_create(
+        "var", shape_stat, var_init, False)
+    return F.sync_batch_normalization(inp, beta, gamma, mean, var, comm, group,
+                                      axes, decay_rate, eps, batch_stat, output_stat)
+
+
 @parametric_function_api("mean_subtraction", [
     ('mean', 'Moving average', 'inp.shape[base_axis:]', False),
     ('t', 'Minibatch counter used in forward pass', '(1,)', False),
@@ -1724,6 +1873,211 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
     t = get_parameter_or_create(
         "t", (1, ), ConstantInitializer(0), False)
     return F.mean_subtraction(inp, mean, t, base_axis=base_axis, update_running_mean=update_running_mean)
+
+
+@parametric_function_api("layer_normalization", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True)
+])
+def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_parameters=False, param_init=None):
+    r"""
+    Applies Layer Normalization over an input variable, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
+        \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2} \\
+        y &=& \frac{x - \mu^l}{\sigma^l + \epsilon} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^l` and :math:`\sigma^l` are the mean and std of each layer along batch axis,
+    and :math:`\alpha` and :math:`\beta` are trainable parameter.
+
+    References:
+
+        * `Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton, Layer Normalization.
+          <https://arxiv.org/abs/1607.06450>`_
+
+    Args:
+        inp (Variable): An input variable.
+        batch_axis (int or repeated int): Axes mean and variance are taken.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It `true`, calculated mean and variance are also returned.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+        param_init (dict):
+            Parameter initializers can be set with a dict. A key of the dict must
+            be ``'gamma'``, ``'beta'``.
+            A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
+            or a :obj:`numpy.ndarray`.
+            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+    from nnabla.normalization_functions import _force_list
+
+    batch_axis = _force_list(batch_axis)
+
+    shape_stat = [inp.shape[i] if i in batch_axis else 1
+                  for i in range(len(inp.shape))]
+
+    if param_init is None:
+        param_init = {}
+
+    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+    beta_init = param_init.get('beta', ConstantInitializer(0))
+
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
+    beta = get_parameter_or_create(
+        "beta", shape_stat, beta_init, True, not fix_parameters)
+
+    return F.layer_normalization(inp, beta, gamma, batch_axis, eps, output_stat)
+
+
+@parametric_function_api("instance_normalization", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+])
+def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False, fix_parameters=False,
+                           param_init=None):
+    r"""
+    Applies Instance Normalization over an input variable, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
+        \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2} \\
+        y &=& \frac{x - \mu^i}{\sigma^ + \epsilon} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^i` and :math:`\sigma^i` are the mean and std of each instance which is separately calculated for each batch and channel,
+    and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+    If the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0), the shape of calculated mean and std are [B, C, 1, 1]
+
+    References:
+
+        * `Dmitry Ulyanov, Andrea Vedaldi, Victor Lempitsky, Instance Normalization: The Missing Ingredient for Fast Stylization.
+          <https://arxiv.org/abs/1607.08022>`_
+
+    Args:
+        inp (Variable): An input variable.
+        channel_axis (int or repeated int): Channel axes.
+        batch_axis (int or repeated int): Batch axes.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, the batch statistics of mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+        param_init (dict):
+            Parameter initializers can be set with a dict. A key of the dict must
+            be ``'gamma'``, ``'beta'``.
+            A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
+            or a :obj:`numpy.ndarray`.
+            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+    from nnabla.normalization_functions import _force_list
+
+    batch_axis = _force_list(batch_axis)
+
+    shape_stat = [inp.shape[i] if i in [channel_axis, ] + batch_axis else 1
+                  for i in range(len(inp.shape))]
+
+    if param_init is None:
+        param_init = {}
+
+    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+    beta_init = param_init.get('beta', ConstantInitializer(0))
+
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
+    beta = get_parameter_or_create(
+        "beta", shape_stat, beta_init, True, not fix_parameters)
+
+    return F.instance_normalization(inp, beta, gamma, channel_axis, batch_axis, eps, output_stat)
+
+
+@parametric_function_api("group_normalization", [
+    ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
+    ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
+])
+def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False,
+                        fix_parameters=False, param_init=None):
+    r"""
+    Applies Group Normalization over an input tensor, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
+        \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2} \\
+        y &=& \frac{x - \mu^g}{\sigma^g + \epsilon} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^g` and :math:`\sigma^g` are the mean and std of each group which contains `num_channels / num_groups` channels,
+    and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+    The input channels, specified by :attr:`channel_axis`, are separeted into :attr:`num_groups` groups,
+    and the mean and std are calculated over the each group.
+    For example, if the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0),
+    an input variable is once reshaped to [B, num_groups, C / num_groups, H, W]
+    and standardize by its mean and std whose shapes are [B, num_groups, C / num_groups, 1, 1].
+    Before returning, an output variable is reshaped again to the original input shape (= [B, C, H, W] in the case above).
+
+    References:
+
+        * `Yuxin Wu, Kaiming He, Group Normalization.
+          <https://arxiv.org/abs/1803.08494>`_
+
+    Args:
+        inp (Variable): An input variable.
+        num_groups (int): A number of groups. The channel dim of 'x' must be integer multiple of `num_groups`.
+        channel_axis (int): Channel axis.
+        batch_axis (int or repeated int): Axes mean and variance are taken.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): It true, the batch statistics of mean and variance.
+        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+        param_init (dict):
+            Parameter initializers can be set with a dict. A key of the dict must
+            be ``'gamma'``, ``'beta'``.
+            A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
+            or a :obj:`numpy.ndarray`.
+            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+    from nnabla.normalization_functions import _force_list
+
+    batch_axis = _force_list(batch_axis)
+
+    shape_stat = [inp.shape[i]
+                  if i in batch_axis else 1 for i in range(len(inp.shape) + 1)]
+    shape_stat[channel_axis] = num_groups
+    shape_stat[channel_axis + 1] = int(inp.shape[channel_axis] / num_groups)
+
+    if param_init is None:
+        param_init = {}
+
+    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+    beta_init = param_init.get('beta', ConstantInitializer(0))
+
+    gamma = get_parameter_or_create(
+        "gamma", shape_stat, gamma_init, True, not fix_parameters)
+    beta = get_parameter_or_create(
+        "beta", shape_stat, beta_init, True, not fix_parameters)
+
+    return F.group_normalization(inp, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat)
 
 
 @parametric_function_api("embed", [

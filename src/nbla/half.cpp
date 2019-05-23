@@ -225,6 +225,7 @@ MATHF(isnan);
 MATHF(isinf);
 Half pow(const Half &a, const Half &b) { return std::pow((float)a, (float)b); }
 Half pow(const Half &a, const int &b) { return std::pow((float)a, (float)b); }
+Half max(const Half &a, const int &b) { return std::max((float)a, (float)b); }
 Half atan2(const Half &a, const Half &b) {
   return std::atan2((float)a, (float)b);
 }
