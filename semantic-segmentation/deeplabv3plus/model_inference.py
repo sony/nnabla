@@ -43,10 +43,9 @@ def visualize(label):
     imageio.imwrite('output.png', vis)
 
 
-def post_process(output, old_size, taget_size):
-
-    ratio = float(taget_size)/max(old_size)
-    new_size = tuple([int(x*ratio) for x in old_size])
+def post_process(output, old_size, target_size):
+    ratio = min(np.divide(desired_size, old_size))
+    new_size = (int(old_size[0]*ratio), int(old_size[1]*ratio))
 
     post_processed = output[0:new_size[0], 0:new_size[1]]
 
@@ -76,8 +75,8 @@ def main():
     _ = nn.load_parameters(args.model_load_path)
 
     # Build a Deeplab v3+ network
-    x = nn.Variable((1, 3, args.image_width, args.image_width),
-                    need_grad=False)
+    x = nn.Variable(
+        (1, 3, args.image_height, args.image_width), need_grad=False)
     y = net.deeplabv3plus_model(
         x, args.output_stride, args.num_class, test=True)
 
@@ -88,7 +87,7 @@ def main():
     old_size = (orig_h, orig_w)
 
     input_array = image_preprocess.preprocess_image_and_label(
-        image, label=None, target_width=args.image_width, train=False)
+        image, label=None, target_width=args.image_width, target_height=args.image_height, train=False)
     print('Input', input_array.shape)
     input_array = np.transpose(input_array, (2, 0, 1))
     input_array = np.reshape(
@@ -110,7 +109,8 @@ def main():
     output = np.argmax(y.d, axis=1)  # (batch,h,w)
 
     # Apply post processing
-    post_processed = post_process(output[0], old_size, args.image_width)
+    post_processed = post_process(
+        output[0], old_size, (args.image_height, args.image_width))
 
     # Get the classes predicted
     predicted_classes = np.unique(post_processed)

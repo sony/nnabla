@@ -47,14 +47,15 @@ def atrous_spatial_pyramid_pooling(x, output_stride, test=False, fix_params=Fals
     with nn.parameter_scope("image_pooling"):
         x_shape = x.shape[2]
         h = F.average_pooling(
-            x, (x.shape[2], x.shape[2]), stride=(x.shape[2], x.shape[2]))
+            x, (x.shape[2], x.shape[3]), stride=(x.shape[2], x.shape[2]))
 
         h = PF.convolution(h, depth, (1, 1), with_bias=False,
                            fix_parameters=fix_params)
         h = F.relu(PF.batch_normalization(
             h, batch_stat=not test, fix_parameters=fix_params))
 
-        h = F.interpolate(h, output_size=(x_shape, x_shape), mode='linear')
+        h = F.interpolate(h, output_size=(
+            x.shape[2], x.shape[3]), mode='linear')
 
     with nn.parameter_scope("concat_projection"):
         h5 = F.concatenate(
@@ -85,7 +86,7 @@ def decoder(x, upsampled, num_classes, test=False, fix_params=False):
 
     with nn.parameter_scope("upsample2"):
         h = F.interpolate(h, output_size=(
-            h.shape[2]*4 - 3, h.shape[2]*4 - 3), mode='linear')
+            h.shape[2]*4 - 3, h.shape[3]*4 - 3), mode='linear')
 
     return h
 
@@ -111,7 +112,7 @@ def deeplabv3plus_model(x, output_stride, num_classes, test=False, fix_params=Fa
     with nn.parameter_scope("decoder"):
         with nn.parameter_scope("upsample1"):
             upsampled = F.interpolate(encoder_output, output_size=(
-                low_level_features.shape[2], low_level_features.shape[2]), mode='linear')
+                low_level_features.shape[2], low_level_features.shape[3]), mode='linear')
 
         h = decoder(low_level_features, upsampled, num_classes,
                     test=test, fix_params=fix_params)

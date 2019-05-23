@@ -30,8 +30,8 @@ def validate(args):
     _ = nn.load_parameters(args.model_load_path)
 
     # get data iterator
-    vdata = data_iterator_segmentation(
-        args.val_samples, args.batch_size, args.val_dir, args.val_label_dir)
+    vdata = data_iterator_segmentation(args.val_samples, args.batch_size, args.val_dir,
+                                       args.val_label_dir, target_width=args.image_width, target_height=args.image_height)
 
     # get deeplabv3plus model
     v_model = train.get_model(args, test=True)
