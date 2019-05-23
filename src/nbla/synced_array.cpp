@@ -158,14 +158,16 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
 
 void SyncedArray::clear() {
   array_.clear();
+  this->clear_flags();
+}
+
+// Reset head state
+void SyncedArray::clear_all_array() { this->clear(); }
+
+void SyncedArray::clear_flags() {
   zeroing_ = false;
   filling_ = false;
 }
 
-// Reset head state
-void SyncedArray::clear_all_array() {
-  array_.clear();
-  zeroing_ = false;
-  filling_ = false;
-}
+bool SyncedArray::zeroing() const { return zeroing_; }
 }
