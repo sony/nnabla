@@ -40,7 +40,7 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(LogSigmoid, std::log((T)1 / (std::exp(-x) + (T)1)),
+NBLA_DEFINE_TRANSFORM_UNARY(LogSigmoid, -std::log(std::exp(-x) + (T)1),
                             (T)1 / (std::exp(x) + (T)1), false);
 }
 #endif
