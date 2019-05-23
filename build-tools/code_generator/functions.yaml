@@ -296,6 +296,11 @@ Neural Network Layer:
           sparser, by grouping connections along the mapping direction.
         type: int64
         default: '1'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: |2
@@ -313,6 +318,7 @@ Neural Network Layer:
             
     function_ids:
       iiIiIiIi: 1
+      iiIiIiIiB: 265
     c_runtime: support
   DepthwiseConvolution:
     snake_name: depthwise_convolution
@@ -529,11 +535,17 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Maximum values variable
     function_ids:
       iIiIBiI: 5
+      iIiIBiIB: 266
     c_runtime: support
   AveragePooling:
     snake_name: average_pooling
@@ -565,6 +577,11 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
       including_pad:
         doc: If true, border padding values are considered for the output.
         type: bool
@@ -574,6 +591,7 @@ Neural Network Layer:
         doc: Average values variable
     function_ids:
       iIiIBiIB: 6
+      iIiIBiIBB: 267
     c_runtime: support
   GlobalAveragePooling:
     snake_name: global_average_pooling
@@ -621,11 +639,17 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Summed values variable
     function_ids:
       iIiIBiI: 8
+      iIiIBiIB: 268
     c_runtime: support
   Unpooling:
     snake_name: unpooling
@@ -788,7 +812,7 @@ Neural Network Activation Functions:
       .. math::
           y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 
-      along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
+      along the dimension specified by `axis`, where :math:`x_i` is the input and :math:`y_i` is the output.
     inputs:
       x:
         doc: N-D array. Typically indicates a score.
@@ -803,6 +827,46 @@ Neural Network Activation Functions:
     function_ids:
       i: 16
     c_runtime: support
+  LogSoftmax:
+    snake_name: log_softmax
+    doc: |2
+
+      Fused operation of Softmax normalization followed by log, which is defined as
+
+      .. math::
+          y_i = \log \frac{\exp(x_i)}{\sum_j \exp(x_j)},
+
+      where :math:`y_i` is the input and :math:`x_i` is the output at i-th channel.
+      An advantage of this fusion is reducing the numerical instability due to the log application.
+
+      The original definition can be rewritten as
+
+      .. math::
+          y_i = x_i - \max_j(x_j) - \log\left\(\sum_j \exp(x_j - \max_k(x_k))\right\).
+
+      It is more stable as a log is always applied to a value :math:`\ge e`, while a log can be evaluated for 0 in the non-fused operation.
+
+      Also, backward gradient computation is more stable than the original one as it doesn't perform division by x due to a gradient of log. The definition is as following.
+
+      .. math::
+          dx_i = dy_i - y_i * \sum_j dy_j
+
+      where :math:`dx_i` and :math:`dy_i` denote gradients of loss
+      wrt :math:`x_i` and :math:`y_i` respectively.
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score.
+    arguments:
+      axis:
+        doc: Axis normalization is taken.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      i: 269
   ELU:
     snake_name: elu
     doc: |2
@@ -998,7 +1062,210 @@ Neural Network Activation Functions:
     function_ids:
       Empty: 245
     c_runtime: not support
+  ReLU6:
+    snake_name: relu6
+    doc: |2
+
+      Element-wise ReLU6 function.
+      Capping ReLU activation to 6 is often observed to learn sparse features earlier.
+
+      .. math::
+          ReLU6(x) = \min(\max(0,x,),6)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 256
+  HardSigmoid:
+    snake_name: hard_sigmoid
+    doc: |2
+
+      Segment-wise linear approximation of sigmoid.
+      Preferable when speed of computation is more important than precision.
+      Returns :math:`0` if :math:`x < -2.5`. 
+      Returns :math:`1` if :math:`x> 2.5`. 
+      Returns :math:`0.2x + 0.5` if :math:`-2.5 <= x <= 2.5`.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 249
+      ff: 259
+  HardTanh:
+    snake_name: hard_tanh
+    doc: |2
+
+      Element-wise HardTanh function.
+      Computationally cheaper than Tanh function.
+      Returns :math:`1` if :math:`x > 1`. 
+      Returns :math:`-1` if :math:`x < -1`. 
+      Returns :math:`x` otherwise.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      ii: 250
+      ff: 260
+      Empty: 261
+  LogSigmoid:
+    snake_name: log_sigmoid
+    doc: |2
+
+      Element-wise LogSigmoid function.
+
+      .. math::
+          LogSigmoid(x) = \log(1/(1+\exp(-x_i)))
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 251
+  SoftPlus:
+    snake_name: softplus
+    doc: |2
+
+      Element-wise SoftPlus function.
+      Unlike Sigmoid and Tanh that have upper and lower bound, SoftPlus is only lower-bounded by 0.
+
+      .. math::
+          SoftPlus(x) = \log(1+\exp(x_i))
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      ii: 252
+      Empty: 262
+  SoftSign:
+    snake_name: softsign
+    doc: |2
+
+      Element-wise SoftSign.
+      Can be used in place of Tanh function.
+      While Tanh converges exponentially, SoftSign converges polynomially.
+
+      .. math::
+          SoftSign(x) = x/(1+|x|)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 253
+  TanhShrink:
+    snake_name: tanh_shrink
+    doc: |2
+
+      Element-wies TanhShrink function.
+
+      .. math::
+          TanhShrink(x) = x - \tanh(x)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 254
+  Sinc:
+    snake_name: sinc
+    doc: |2
+
+      Element-wise Sinc function.
+      Unlike other popular activation functions, it has rises and falls.
+      returns :math:`1` if :math:`x = 0`.
+      returns :math:`\sin(x)/x` otherwise.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 255
 Normalization:
+  FusedBatchNormalization:
+    snake_name: fused_batch_normalization
+    doc: |2
+
+      Batch normalization fused with add2 (adding a residual input) and activation.
+
+      This is an equivalent operation to the following,
+      but is more computationally efficient:
+
+      .. code-block:: python
+
+        h = nn.BatchNormalization(x, beta, gamma, mean, variance, *opts)
+        y = F.ReLU(h + z)
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+      gamma:
+        doc: N-D array of gamma which is learned.
+      mean:
+        doc: N-D array of running mean (modified during forward execution).
+      variance:
+        doc: N-D array of running variance (modified during forward execution).
+      z:
+        doc: N-D array of a residual input. By specifying None, the activation function
+          will follow immediately after BN operation.
+        optional: true
+    arguments:
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      decay_rate:
+        doc: Decay rate of running mean and variance.
+        type: float
+        default: '0.9'
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
+      nonlinearity:
+        doc: Activation chosen from ('relu').
+        type: string
+        available_values:
+        - relu
+        default: '''relu'''
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIffBi: 270
   BatchNormalization:
     snake_name: batch_normalization
     doc: |2
@@ -1054,6 +1321,67 @@ Normalization:
     function_ids:
       iIffB: 22
     c_runtime: support
+  SyncBatchNormalization:
+    snake_name: sync_batch_normalization
+    doc: |2
+
+      Synchronized Batch Normalization:
+
+      For some tasks (e.g., semantic segmentation), batch size will be too small and BatchNormalization layer might not work well.
+      SyncBatchNorlization layer solves these problems by synchronizing batch stats (mean and var) between multiple processes.
+
+      .. math::
+          \begin{eqnarray}
+            \mu &=& \frac{1}{M} \sum x_i \\
+            \sigma^2 &=& \frac{1}{M} \left(\sum x_i - \mu\right)^2 \\
+            \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
+            y_i &=& \hat{x}_i \gamma + \beta.
+          \end{eqnarray}
+
+      References:
+
+          * Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+      gamma:
+        doc: N-D array of gamma which is learned.
+      mean:
+        doc: N-D array of running mean (modified during forward execution).
+      variance:
+        doc: N-D array of running variance (modified during forward execution).
+    arguments:
+      comm:
+        doc: The communicator
+        type: Communicator
+      group:
+        doc: The name of the communicator group
+        type: string
+        default: world
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      decay_rate:
+        doc: Decay rate of running mean and variance.
+        type: float
+        default: '0.9'
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      CiiIffB: 263
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
@@ -3242,6 +3570,74 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 248
+  GatherNd:
+    snake_name: gather_nd
+    doc: |2
+
+      Gather elements or slices from `data` according to `indices`, which must
+      be at least two-dimensional with the first dimension :math:`M` being less
+      or equal to the :math:`N` dimensions of `data`. Given `data` with shape
+      :math:`(X_0, X_1, ..., X_{N-1})` and indices with shape
+      :math:`(M, Y_0, ..., Y_{K-1})` output has shape
+      :math:`(Y_0, ..., Y_{K-1}, X_M, ..., X_{N-1})`. If :math:`M == N`, output
+      shape is simply :math:`(Y_0, ..., Y_{K-1})`.
+
+      The forward of :func:`~nnabla.functions.gather_nd` is equivalent to:
+
+      .. code-block:: python
+
+        def gather_nd(data, index):
+            import numpy as np
+            tmp_index = index.reshape(index.shape[0], -1)
+            tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
+            out_shape = index.shape[1:] + data.shape[index.shape[0]:]
+            return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> data = F.arange(1, 11).reshape([2, 5])
+      >>> print(data.d)
+      [[ 1.  2.  3.  4.  5.]
+       [ 6.  7.  8.  9. 10.]]
+      >>> F.gather_nd(data, [[1, 1, 0]]).shape
+      (3, 5)
+      >>> F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).shape
+      (3,)
+      >>> print(F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).d)
+      [6. 7. 1.]
+      >>> print(F.gather_nd(data, [[1, 1, 0]]).d)
+      [[ 6.  7.  8.  9. 10.]
+       [ 6.  7.  8.  9. 10.]
+       [ 1.  2.  3.  4.  5.]]
+
+      When `indices` is provided as a :obj:`~nnabla.Variable` it will be
+      possible to change the actual index values after function creation.
+      It is important to note that out-of-bound indices raise error when
+      running on CPU but are ignored when using an accelerated computation
+      context.
+
+      >>> indices = nn.Variable((2, 1))
+      >>> indices.d = [[0], [0]]
+      >>> y = F.gather_nd(data, indices)
+      >>> print(y.d)
+      [1.]
+      >>> indices.d = [[1], [4]]
+      >>> y.forward()
+      >>> print(y.d)
+      [10.]
+    inputs:
+      x:
+        doc: N-D array input data
+      indices:
+        doc: N-D array indices
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      Empty: 264
 Signal Processing:
   Interpolate:
     snake_name: interpolate

@@ -65,17 +65,30 @@ Neural Network Activation
 .. autofunction:: gelu
 .. autofunction:: prelu
 .. autofunction:: leaky_relu
+.. autofunction:: relu6
+.. autofunction:: hard_sigmoid
+.. autofunction:: hard_tanh
+.. autofunction:: log_sigmoid
+.. autofunction:: softplus
+.. autofunction:: softsign
+.. autofunction:: tanh_shrink
+.. autofunction:: sinc
 
 
 Normalization
 -------------
 
 .. autofunction:: batch_normalization
+.. autofunction:: sync_batch_normalization
 .. autofunction:: mean_subtraction
 .. autofunction:: clip_by_value
 .. autofunction:: clip_grad_by_value
 .. autofunction:: clip_by_norm
 .. autofunction:: clip_grad_by_norm
+.. autofunction:: layer_normalization
+.. autofunction:: instance_normalization
+.. autofunction:: group_normalization
+.. autofunction:: weight_standardization
 
 
 Reduction
@@ -171,6 +184,7 @@ Array Manipulation
 .. autofunction:: split
 .. autofunction:: stack
 .. autofunction:: slice
+.. autofunction:: gather_nd
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast
@@ -220,6 +234,8 @@ Signal Processing
 .. autofunction:: interpolate
 .. autofunction:: fft
 .. autofunction:: ifft
+.. autofunction:: stft
+.. autofunction:: istft
 
 Quantized Neural Network Layers
 ----------------------------------

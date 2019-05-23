@@ -86,6 +86,25 @@ string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\1]] version_major ${versi
 string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\2]] version_minor ${version})
 string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\3]] version_patch ${version})
 
+set(CPACK_PACKAGE_NAME "nnabla-cpplib")
+find_program(LSB_RELEASE lsb_release)
+if(EXISTS ${LSB_RELEASE})
+
+  execute_process(COMMAND ${LSB_RELEASE} -si
+    OUTPUT_VARIABLE LSB_RELEASE_ID
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  execute_process(COMMAND ${LSB_RELEASE} -sr
+    OUTPUT_VARIABLE LSB_RELEASE_RELEASE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  set(CPACK_SYSTEM_NAME ${LSB_RELEASE_ID}${LSB_RELEASE_RELEASE})
+endif()
+set(CPACK_PACKAGE_VERSION_MAJOR ${version_major})
+set(CPACK_PACKAGE_VERSION_MINOR ${version_minor})
+set(CPACK_PACKAGE_VERSION_PATCH ${version_patch})
+set(CPACK_PACKAGE_CONTACT "nnabla@googlegroups.com")
+
 file(MAKE_DIRECTORY  ${CMAKE_SOURCE_DIR}/src/nbla/proto)
 execute_process(
   COMMAND
@@ -208,8 +227,10 @@ if(BUILD_CPP_LIB)
         "Force to build gtest with dll on Windows.")
     endif()
     enable_testing()
-    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-    file(GLOB NBLA_TEST_SOURCES src/nbla/test/test_*.cpp)
+    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} src/nbla/test/include)
+    file(GLOB NBLA_TEST_SOURCES
+            src/nbla/test/test_*.cpp
+            src/nbla/test/parametric_functions/*.cpp)
     add_executable(cpplibtest ${NBLA_TEST_SOURCES})
     add_dependencies(cpplibtest ${NBLA_LIBRARY_NAME})
     target_link_libraries(cpplibtest gtest gtest_main)
@@ -260,7 +281,6 @@ if(BUILD_CPP_LIB)
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg-$<CONFIG>)
-  
   
 endif() # BUILD_CPP_LIB
 

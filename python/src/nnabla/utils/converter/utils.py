@@ -50,6 +50,8 @@ def type_to_pack_format(typestring):
         fmt = 'iI'
     elif typestring == 'string':
         fmt = 'i'
+    elif typestring == 'Communicator':
+        fmt = 'C'
     return fmt
 
 

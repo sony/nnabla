@@ -209,6 +209,16 @@ inline std::vector<T> make_index(size_t ndim, const T &init = T()) {
   return std::vector<T>(ndim, init);
 }
 
+template <typename T>
+inline std::vector<T> batch_reduced_shape(std::vector<T> &shape,
+                                          int reduce_axis_up_to) {
+  assert(reduce_axis_up_to < shape.size());
+  std::vector<T> ret(shape.size() - reduce_axis_up_to + 1);
+  ret[0] = outer_size(shape, reduce_axis_up_to);
+  std::copy(shape.cbegin() + reduce_axis_up_to, shape.cend(), ret.begin() + 1);
+  return ret;
+}
+
 } // namespace ndi
 } // namespace nbla
 #endif

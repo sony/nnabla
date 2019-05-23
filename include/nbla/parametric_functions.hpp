@@ -107,11 +107,13 @@ public:
   ConvolutionOpts &pad(const vector<int> &val);
   ConvolutionOpts &stride(const vector<int> &val);
   ConvolutionOpts &dilation(const vector<int> &val);
+  ConvolutionOpts &channel_last(bool val);
 
   int group();
   const vector<int> &pad() const;
   const vector<int> &stride() const;
   const vector<int> &dilation() const;
+  bool channel_last() const;
 
   ConvolutionOpts &with_bias(bool with_bias);
   ConvolutionOpts &fix_parameters(bool val);
@@ -164,8 +166,8 @@ NBLA_API vector<CgVariablePtr>
 convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
             const vector<int> &kernel, const vector<int> &pad,
             const vector<int> &stride, const vector<int> &dilation, int group,
-            ParameterDirectory parameters, bool with_bias, bool fix_parameters,
-            Initializer *w_init, Initializer *b_init);
+            bool channel_last, ParameterDirectory parameters, bool with_bias,
+            bool fix_parameters, Initializer *w_init, Initializer *b_init);
 
 NBLA_API CgVariablePtr
 convolution(CgVariablePtr x, int base_axis, int n_map_out,

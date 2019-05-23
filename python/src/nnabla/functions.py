@@ -14,8 +14,10 @@
 
 from __future__ import absolute_import
 from .function_bases import *
-from six.moves import reduce as rd
+
+import nnabla as nn
 import numpy as np
+from .normalization_functions import *
 
 
 def sum(x, axis=None, keepdims=False):
@@ -248,22 +250,11 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     Returns:
         ~nnabla.Variable: Sliced N-D array
     """
-    import copy
-    start = copy.copy(start)
-    stop = copy.copy(stop)
-    step = copy.copy(step)
+    start = list(start[:]) if start is not None else len(x.shape) * (0,)
+    stop = list(stop[:]) if stop is not None else tuple(x.shape)
+    step = list(step[:]) if step is not None else len(x.shape) * (1,)
 
-    from .function_bases import slice as slice_base
-    if start is None:
-        start = (0,) * len(x.shape)
-    if stop is None:
-        stop = tuple(x.shape)
-    if step is None:
-        step = (1,) * len(x.shape)
-
-    shape = x.shape
-    for i, sss in enumerate(zip(start, stop, step)):
-        s0, s1, s2 = sss
+    for i, (s0, s1, s2) in enumerate(zip(start, stop, step)):
         # SPECIAL CASE: slice(-1, None, <0) or slice(None, None, <0)
         SLICE_NONE = 0x7fffffff
         if s0 == None:
@@ -272,112 +263,9 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
             stop[i] = SLICE_NONE
         if s2 == None:
             step[i] = SLICE_NONE
+
+    from .function_bases import slice as slice_base
     return slice_base(x, start, stop, step, n_outputs, outputs)
-
-
-def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
-    r"""
-    Batch normalization.
-
-    .. math::
-        \begin{eqnarray}
-          \mu &=& \frac{1}{M} \sum x_i \\
-          \sigma^2 &=& \frac{1}{M} \sum \left(x_i - \mu\right)^2 \\
-          \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
-          y_i &=& \hat{x}_i \gamma + \beta.
-        \end{eqnarray}
-
-
-    At testing time, the mean and variance values used are those that were computed during training by moving average.
-
-    References:
-
-        * `Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.
-          <https://arxiv.org/abs/1502.03167>`_
-
-    Args:
-        x(~nnabla.Variable): N-D array of input.
-        beta(~nnabla.Variable): N-D array of beta which is learned.
-        gamma(~nnabla.Variable): N-D array of gamma which is learned.
-        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
-        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
-        axes(repeated int64): Axes mean and variance are taken.
-        decay_rate(float): Decay rate of running mean and variance.
-        eps(float): Tiny value to avoid zero division by std.
-        batch_stat(bool): Use mini-batch statistics rather than running ones.
-        output_stat(bool): It true, the batch statistics of mean and variance,
-            will be returned as Variables. They are also differentiable.
-
-    Returns:
-        Returns batch normalization output as :obj:`~nnabla.Variable`.
-        If ``output_stat=True``, it also returns the mean and variance
-        of the mini-batch
-
-        * :obj:`~nnabla.Variable`: Output of the batch normalization
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
-
-    See Also:
-        ``nnabla.function_bases.batch_normalization``.
-
-    """
-    from .function_bases import batch_normalization as batch_normalization_base
-    n_outputs = 3 if output_stat else 1
-    assert batch_stat or (not output_stat)
-    if batch_stat and (mean.parent or variance.parent) is not None:
-        raise ValueError(
-            "if batch_stat is True, mean and variable must not have a parent function")
-
-    if len(axes) == 1:
-        return batch_normalization_base(x, beta, gamma, mean, variance,
-                                        axes=axes,
-                                        decay_rate=decay_rate,
-                                        eps=eps,
-                                        batch_stat=batch_stat,
-                                        n_outputs=n_outputs)
-
-    def transpose_and_reshape(x, axes):
-        transposed = transpose(x, transpose_axes)
-        return reshape(transposed, [rd(lambda x, y: x * y, transposed.shape[:len(axes)])] + list(
-            transposed.shape[len(axes):])), transposed.shape
-
-    def inverse_transpose_and_reshape(x, axes, variable_shape):
-        un_reshaped = reshape(
-            x, list(variable_shape[:len(axes)] + variable_shape[len(axes):]))
-        return transpose(un_reshaped, inv_transpose_axes)
-
-    def get_tranpose_args(ndim, axes):
-        transpose_axes = [i for i in list(
-            axes)] + [i for i in range(ndim) if i not in list(axes)]
-        inv_transpose_axes = np.argsort(transpose_axes).tolist()
-        return transpose_axes, inv_transpose_axes
-
-    transpose_axes, inv_transpose_axes = get_tranpose_args(len(x.shape), axes)
-    inp, transposed_inp_shape = transpose_and_reshape(x, axes)
-    beta, transposed_beta_shape = transpose_and_reshape(beta, axes)
-    gamma, transposed_gamma_shape = transpose_and_reshape(gamma, axes)
-    mean, transposed_mean_shape = transpose_and_reshape(mean, axes)
-    variance, transposed_variance_shape = transpose_and_reshape(variance, axes)
-
-    if n_outputs == 1:
-        out = batch_normalization_base(inp, beta, gamma, mean, variance,
-                                       axes=[0],
-                                       decay_rate=decay_rate,
-                                       eps=eps,
-                                       batch_stat=batch_stat,
-                                       n_outputs=n_outputs)
-        return inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
-    out, mean, variance = batch_normalization_base(inp, beta, gamma, mean, variance,
-                                                   axes=[0],
-                                                   decay_rate=decay_rate,
-                                                   eps=eps,
-                                                   batch_stat=batch_stat,
-                                                   n_outputs=n_outputs)
-    out = inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
-    mean = inverse_transpose_and_reshape(mean, axes, transposed_mean_shape)
-    variance = inverse_transpose_and_reshape(
-        variance, axes, transposed_variance_shape)
-    return out, mean, variance
 
 
 def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
@@ -760,7 +648,7 @@ def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
         with_index(bool): Return sorted values and index.
         only_index(bool): Return only the sort index.
 
-    Returns: :obj:`~nnabla.Variable` `sorted` or :obj:`~nnabla.Variable` `indices` or (:obj:`~nnabla.Variable` `sorted`, :obj:`~nnabla.Variable` `indices`)
+    Returns: ~nnabla.Variable `sorted` or ~nnabla.Variable `indices` or (~nnabla.Variable `sorted`, ~nnabla.Variable `indices`)
 
     """
     from .function_bases import sort as sort_base
@@ -807,3 +695,218 @@ def tile(x, reps):
     from .function_bases import tile as tile_base
     reps = [reps] if isinstance(reps, int) else reps
     return tile_base(x, reps)
+
+
+def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
+    """Computes the short-time Fourier transform
+
+    Args:
+        x (~nnabla.Variable): Time domain sequence of size `batch_size x sample_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
+        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
+        pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+
+    Returns:
+        Returns real and imaginary parts of STFT result.
+
+        * :obj:`~nnabla.Variable`: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        * :obj:`~nnabla.Variable`: Imaginary part of STFT of size `batch x fft_size//2 + 1 x frame_size`.
+    """
+    from nnabla.parameter import get_parameter, get_parameter_or_create
+    conv_r = get_parameter('conv_r')
+    conv_i = get_parameter('conv_i')
+
+    if conv_r is None or conv_i is None:
+        if window_type == 'hanning':
+            window_func = np.hanning(window_size + 1)[:-1]
+        elif window_type == 'hamming':
+            window_func = np.hamming(window_size + 1)[:-1]
+        else:
+            raise ValueError("Unknown window type {}.".format(window_type))
+
+        # pad window if `fft_size > window_size`
+        if fft_size > window_size:
+            diff = fft_size - window_size
+            window_func = np.pad(
+                window_func, (diff//2, diff - diff//2), mode='constant')
+        elif fft_size < window_size:
+            raise ValueError(
+                "FFT size has to be as least as large as window size.")
+
+        # compute STFT filter coefficients
+        mat_r = np.zeros((fft_size//2 + 1, 1, fft_size))
+        mat_i = np.zeros((fft_size//2 + 1, 1, fft_size))
+
+        for w in range(fft_size//2+1):
+            for t in range(fft_size):
+                mat_r[w, 0, t] = np.cos(2. * np.pi * w * t / fft_size)
+                mat_i[w, 0, t] = -np.sin(2. * np.pi * w * t / fft_size)
+        mat_r = mat_r * window_func
+        mat_i = mat_i * window_func
+
+        conv_r = get_parameter_or_create(
+            'conv_r', initializer=mat_r, need_grad=False)
+        conv_i = get_parameter_or_create(
+            'conv_i', initializer=mat_i, need_grad=False)
+
+    if center:
+        # pad at begin/end (per default this is a reflection padding)
+        x = pad(x, (fft_size // 2, fft_size // 2), mode=pad_mode)
+
+    # add channel dimension
+    x = reshape(x, (x.shape[0], 1, x.shape[1]), inplace=False)
+
+    # compute STFT
+    y_r = convolution(x, conv_r, stride=(stride,))
+    y_i = convolution(x, conv_i, stride=(stride,))
+
+    return y_r, y_i
+
+
+def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
+    """Computes the inverse shoft-time Fourier transform
+
+    Note: We use a constant square inverse window for the reconstruction
+    of the time-domain signal, therefore, the first and last
+    `window_size - stride` are not perfectly reconstructed.
+
+    Args:
+        y_r (~nnabla.Variable): Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        y_i (~nnabla.Variable): Imaginary part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, (STFT has `fft_size // 2 + 1` frequency bins).
+        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
+
+    Returns:
+        ~nnabla.Variable: Time domain sequence of size `batch_size x sample_size`.
+    """
+    from nnabla.parameter import get_parameter, get_parameter_or_create
+    conv_cos = get_parameter('conv_cos')
+    conv_sin = get_parameter('conv_sin')
+
+    if conv_cos is None or conv_sin is None:
+        if window_type == 'hanning':
+            window_func = np.hanning(window_size + 1)[:-1]
+        elif window_type == 'hamming':
+            window_func = np.hamming(window_size + 1)[:-1]
+        else:
+            raise ValueError("Unknown window type {}.".format(window_type))
+
+        # pad window if `fft_size > window_size`
+        if fft_size > window_size:
+            diff = fft_size - window_size
+            window_func = np.pad(
+                window_func, (diff//2, diff - diff//2), mode='constant')
+        elif fft_size < window_size:
+            raise ValueError(
+                "FFT size has to be as least as large as window size.")
+
+        # compute inverse STFT filter coefficients
+        if fft_size % stride != 0:
+            raise ValueError("FFT size needs to be a multiple of stride.")
+
+        inv_window_func = np.zeros_like(window_func)
+        for s in range(0, fft_size, stride):
+            inv_window_func += np.roll(np.square(window_func), s)
+
+        mat_cos = np.zeros((fft_size//2 + 1, 1, fft_size))
+        mat_sin = np.zeros((fft_size//2 + 1, 1, fft_size))
+
+        for w in range(fft_size//2+1):
+            alpha = 1.0 if w == 0 or w == fft_size//2 else 2.0
+            alpha /= fft_size
+            for t in range(fft_size):
+                mat_cos[w, 0, t] = alpha * \
+                    np.cos(2. * np.pi * w * t / fft_size)
+                mat_sin[w, 0, t] = alpha * \
+                    np.sin(2. * np.pi * w * t / fft_size)
+        mat_cos = mat_cos * window_func / inv_window_func
+        mat_sin = mat_sin * window_func / inv_window_func
+
+        conv_cos = get_parameter_or_create(
+            'conv_sin', initializer=mat_cos, need_grad=False)
+        conv_sin = get_parameter_or_create(
+            'conv_cos', initializer=mat_sin, need_grad=False)
+
+    # compute inverse STFT
+    x_cos = deconvolution(y_r, conv_cos, stride=(stride,))
+    x_sin = deconvolution(y_i, conv_sin, stride=(stride,))
+
+    x = reshape(x_cos - x_sin, (x_cos.shape[0], x_cos.shape[2]))
+
+    if center:
+        x = x[:, fft_size//2:-fft_size//2]
+
+    return x
+
+
+def gather_nd(data, indices):
+    """Gather elements or slices from `data` according to `indices`, which must
+    be at least two-dimensional with the first dimension :math:`M` being less or
+    equal to the :math:`N` dimensions of `data`. Given `data` with shape
+    :math:`(X_0, X_1, ..., X_{N-1})` and indices with shape :math:`(M, Y_0, ...,
+    Y_{K-1})` output has shape :math:`(Y_0, ..., Y_{K-1}, X_M, ..., X_{N-1})`.
+    If :math:`M == N`, output shape is simply :math:`(Y_0, ..., Y_{K-1})`.
+
+    The forward of :func:`~nnabla.functions.gather_nd` is equivalent to:
+
+    .. code-block:: python
+
+      def gather_nd(data, index):
+          import numpy as np
+          tmp_index = index.reshape(index.shape[0], -1)
+          tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
+          out_shape = index.shape[1:] + data.shape[index.shape[0]:]
+          return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+
+    Examples:
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> nn.set_auto_forward(True)
+    >>> data = F.arange(1, 11).reshape([2, 5])
+    >>> print(data.d)
+    [[ 1.  2.  3.  4.  5.]
+     [ 6.  7.  8.  9. 10.]]
+    >>> F.gather_nd(data, [[1, 1, 0]]).shape
+    (3, 5)
+    >>> F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).shape
+    (3,)
+    >>> print(F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).d)
+    [6. 7. 1.]
+    >>> print(F.gather_nd(data, [[1, 1, 0]]).d)
+    [[ 6.  7.  8.  9. 10.]
+     [ 6.  7.  8.  9. 10.]
+     [ 1.  2.  3.  4.  5.]]
+
+    When `indices` is provided as a :obj:`~nnabla.Variable` it will be possible
+    to change the actual index values after function creation. It is important
+    to note that out-of-bound indices raise errors when running on CPU but are
+    ignored when using an accelerated computation context.
+
+    >>> indices = nn.Variable((2, 1))
+    >>> indices.d = [[0], [0]]
+    >>> y = F.gather_nd(data, indices)
+    >>> print(y.d)
+    [1.]
+    >>> indices.d = [[1], [4]]
+    >>> y.forward()
+    >>> print(y.d)
+    [10.]
+
+    Args:
+        data(~nnabla.Variable, ~nnabla.NdArray): input data
+        indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): gather indices
+
+    Returns: ~nnabla.Variable or ~nnabla.NdArray of gathered elements.
+    """
+    from .function_bases import gather_nd as gather_nd_base
+    if not isinstance(indices, (nn.Variable, nn.NdArray)):
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.int)
+        indices = nn.Variable.from_numpy_array(indices)
+    return gather_nd_base(data, indices)

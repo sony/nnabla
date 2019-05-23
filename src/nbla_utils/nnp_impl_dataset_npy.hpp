@@ -17,6 +17,7 @@
 
 #include "nnp_impl.hpp"
 #include <iostream>
+#include <queue>
 #include <string>
 
 #include <nbla/computation_graph/function.hpp>
@@ -40,64 +41,111 @@ struct FileResource {
   bool read(char *buffer, size_t size);
   bool gets(char *buffer, size_t size);
   void seek_to(size_t absolute_offset);
+  void seek_by(size_t relative_offset);
+  size_t current_position() const;
+};
+
+struct VariableDesc {
+  VariableDesc();
+  dtypes data_type;
+  int word_size;
+  Shape_t shape;
+  size_t offset;
+  bool valid;
 };
 
 // ----------------------------------------------------------------------
-// NpyReader
+// CacheFile
 // ----------------------------------------------------------------------
-/** Helper class which represent a npy file.
+/** Corresponding to each *.npy cache file.
 */
-class NpyReader {
+class CacheFile {
+public:
+  CacheFile(const string &filename, vector<string> v_names);
+  virtual ~CacheFile();
+
+  void preload();
+  bool read_data(string v_name, void *buffer);
+  const VariableDesc *get_variable_desc(string v_name);
+  int get_num_data() const;
+  const string get_name() const;
+
 private:
-  std::string filename_;
+  bool load_variable(string v_name, int &offset);
+
+private:
+  string filename_;
   shared_ptr<FileResource> file_;
   int num_of_data_;
   int major_version_;
   int minor_version_;
   bool fortran_order_;
-  Shape_t shape_;
-  int word_size_;
-
-public:
-  NpyReader(const std::string &filename);
-  ~NpyReader();
-
-  bool preload(vector<Shape_t> &shapes);
-  bool load_all(vector<NdArrayPtr> &cached);
-  int num_of_data() const { return num_of_data_; };
-  const string &get_name() const { return filename_; }
+  vector<string> v_names_;
+  typedef unordered_map<string, shared_ptr<VariableDesc>> var_desc_map_t;
+  var_desc_map_t var_desc_;
 };
 
 // ----------------------------------------------------------------------
-// DatasetNpyImpl
+// RingBuffer
 // ----------------------------------------------------------------------
-/** Implementation of DatasetNpyImpl
+/** Make the balance between memory usage and performance
 */
-class DatasetNpyImpl : public DatasetImpl {
+class RingBuffer {
+public:
+  RingBuffer(const vector<shared_ptr<CacheFile>> &cache_files, int batch_size,
+             string variable_name, const vector<int> &idx_list, bool shuffle);
+
+  virtual ~RingBuffer();
+
+  void fill_up();
+  void read_batch_data(int idx, shared_ptr<VariableBuffer> v);
+  Shape_t get_shape() const;
+  dtypes get_data_type() const;
+
+  RingBuffer(const RingBuffer &) = delete;
+  RingBuffer &operator=(const RingBuffer &) = delete;
+
 private:
-  // Number of data
-  int n_data_;
+  void fill_buffer(int load_size);
+  vector<shared_ptr<CacheFile>> cache_files_;
+  vector<int> idx_list_;
+  bool shuffle_;
+  int prev_index_;
+  int current_;
+  int start_;
+  int total_;
+  int total_buffer_size_;
+  int cache_file_data_size_;
+  int data_size_;
+  int batch_data_size_;
+  char *buffer_;
+  char *shuffle_buffer_;
+  std::queue<CacheFile *> file_queue_;
+  dtypes data_type_;
+  Shape_t shape_;
+  string variable_name_;
+};
 
-  // Number of stream
-  int n_stream_;
-
-  // Data shapes
-  std::vector<Shape_t> shapes_;
-
-  // Data names
-  std::vector<string> data_names_;
-
-  // Cache blocks
-  std::vector<vector<NdArrayPtr>> cache_blocks_; // cache_block/data_column/data
-  std::vector<std::shared_ptr<NpyReader>> cached_variables_;
+// ----------------------------------------------------------------------
+// DatasetNpyCache
+// ----------------------------------------------------------------------
+/** Implementation of DatasetNpyCache
+*/
+class DatasetNpyCache : public DatasetImpl {
+  friend class NnpImpl;
 
 public:
-  DatasetNpyImpl(const ::Dataset &dataset);
-  virtual const int get_num_stream() const override;
-  virtual const int get_num_data() const override;
-  virtual std::vector<string> get_data_names() override;
-  virtual std::vector<Shape_t> get_shapes() override;
-  virtual std::vector<vector<NdArrayPtr>> get_cache_blocks() override;
+  DatasetNpyCache(const ::Dataset &dataset);
+  virtual ~DatasetNpyCache() = default;
+  virtual unordered_map<string, shared_ptr<VariableBuffer>>
+  get_batch_data(uint32_t iter_num) override;
+  virtual int get_num_data() const override;
+  virtual vector<string> get_data_names() override;
+
+private:
+  vector<string> data_names_;
+  int num_of_data_;
+  unordered_map<string, shared_ptr<RingBuffer>> ring_buffers_;
 };
 
 } // namespace nnp

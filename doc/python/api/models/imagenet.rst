@@ -66,6 +66,7 @@ Available models are summarized in the following table. Error rates are calculat
     "NIN", "NIN", 42.91, 20.66, Neural Network Console
     "DenseNet-161", "DenseNet", 23.82, 7.02, Neural Network Console
     "InceptionV3", "InceptionV3", 21.82, 5.88, Neural Network Console
+    "Xception", "Xception", 23.59, 6.91, Neural Network Console
 
 
 Common interfaces
@@ -106,4 +107,7 @@ List of models
     :members:
 
 .. autoclass:: InceptionV3
+    :members:
+
+.. autoclass:: Xception
     :members:

@@ -319,6 +319,7 @@ protected:
   tuple<typename std::remove_reference<Args>::type...> args_;
 
 public:
+  typedef BaseFunction<Args...> base_function_type;
   BaseFunction(const Context &ctx, Args... args)
       : Function(ctx), args_(args...) {}
 

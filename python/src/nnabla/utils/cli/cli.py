@@ -133,6 +133,7 @@ def cli_main():
             import traceback
             print(traceback.format_exc())
             return_value = False
+            sys.exit(-1)
 
 
 if __name__ == '__main__':

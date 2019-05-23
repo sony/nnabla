@@ -71,7 +71,11 @@ Here is the list of parametric functions.
 .. autofunction:: deconvolution
 .. autofunction:: depthwise_deconvolution
 .. autofunction:: batch_normalization
+.. autofunction:: sync_batch_normalization
 .. autofunction:: mean_subtraction
+.. autofunction:: layer_normalization
+.. autofunction:: instance_normalization
+.. autofunction:: group_normalization
 
 .. autofunction:: rnn
 .. autofunction:: lstm

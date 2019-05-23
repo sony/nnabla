@@ -17,7 +17,11 @@
 
 #include <nbla/synced_array.hpp>
 
+#include <memory>
+
 namespace nbla {
+
+using std::make_shared;
 
 /** Dtype and backend agnostic multi-dimensional array.
  */
@@ -34,6 +38,12 @@ class NdArray {
 
 public:
   typedef shared_ptr<NdArray> Ptr;
+
+  /** Create a shared_ptr instance of NdArray.
+   */
+  template <typename... Args> static Ptr create(Args... args) {
+    return make_shared<NdArray>(args...);
+  }
 
   /** Ctor given shape.
 

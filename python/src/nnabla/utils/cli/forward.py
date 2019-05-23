@@ -303,7 +303,7 @@ def forward_command(args):
     logger.log(99, 'Forward Completed.')
     progress(None)
 
-    callback.update_status(('output_result.csv.header', ','.join(row0)))
+    callback.update_status(('output_result.csv_header', ','.join(row0)))
     callback.update_status(('output_result.column_num', len(row0)))
     callback.update_status(('output_result.data_num', len(rows)))
     callback.update_status('finished')

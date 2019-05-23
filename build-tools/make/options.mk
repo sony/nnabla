@@ -17,7 +17,7 @@ NNABLA_OPTIONS_INCLUDED = True
 ########################################################################################################################
 # Environments
 
-DOCKER_RUN_OPTS =--rm
+DOCKER_RUN_OPTS +=--rm
 DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
 DOCKER_RUN_OPTS += -w $$(pwd)
 DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)

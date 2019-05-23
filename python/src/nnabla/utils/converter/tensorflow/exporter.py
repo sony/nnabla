@@ -20,6 +20,43 @@ class TensorflowExporter:
     def __init__(self, nnp, batch_size):
         self._nnp = nnp
         self._batch_size = batch_size
+        self.check_nnp_variable_name()
+
+    def check_nnp_variable_name(self):
+        def fix_variable_name(variable_name):
+            if "[" in variable_name and "]" in variable_name:
+                variable_name = variable_name.replace("[", "_")
+                variable_name = variable_name.replace("]", "")
+            if "\'" in variable_name:
+                variable_name = variable_name.replace("\'", "")
+            return variable_name
+
+        network = self._nnp.protobuf.network
+        executor = self._nnp.protobuf.executor
+        network_name = executor[0].network_name
+        parameter_variable = []
+        for net in network:
+            if net.name == network_name:
+                for var in net.variable:
+                    if var.type == 'Parameter':
+                        parameter_variable.append(var.name)
+                        continue
+                    var.name = fix_variable_name(var.name)
+                for func in net.function:
+                    if func.name not in parameter_variable:
+                        func.name = fix_variable_name(func.name)
+                    for i, name in enumerate(func.input):
+                        if name not in parameter_variable:
+                            del func.input[i]
+                            func.input.insert(i, fix_variable_name(name))
+                    for i, name in enumerate(func.output):
+                        if name not in parameter_variable:
+                            del func.output[i]
+                            func.output.insert(i, fix_variable_name(name))
+        for var in executor[0].data_variable:
+            var.variable_name = fix_variable_name(var.variable_name)
+        for var in executor[0].output_variable:
+            var.variable_name = fix_variable_name(var.variable_name)
 
     def execute(self, output):
         onnx_model = OnnxExporter(

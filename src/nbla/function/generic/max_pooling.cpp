@@ -29,7 +29,8 @@ using std::max;
 using std::ceil;
 
 NBLA_REGISTER_FUNCTION_SOURCE(MaxPooling, const vector<int> &,
-                              const vector<int> &, bool, const vector<int> &);
+                              const vector<int> &, bool, const vector<int> &,
+                              bool);
 
 namespace max_pooling_impl {
 
@@ -131,8 +132,7 @@ using max_pooling_impl::backward_map;
 template <typename T>
 void MaxPooling<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
-  BasePooling<T, const vector<int> &, const vector<int> &, bool,
-              const vector<int> &>::setup_impl(inputs, outputs);
+  NBLA_THIS_TYPE::base_pooling_type::setup_impl(inputs, outputs);
   max_idx_.reshape(outputs[0]->shape(), true);
   forward_done_ = false;
 }
@@ -140,6 +140,10 @@ void MaxPooling<T>::setup_impl(const Variables &inputs,
 template <typename T>
 void MaxPooling<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
+  NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
+             "The passed argument channel_last=true is not supported in CPU "
+             "pooling.");
+
   auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   auto m = max_idx_.cast_data_and_get_pointer<int>(this->ctx_, true);
@@ -194,6 +198,10 @@ void MaxPooling<T>::backward_impl(const Variables &inputs,
                                   const vector<bool> &accum) {
   if (!propagate_down[0])
     return;
+
+  NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
+             "The passed argument channel_last=true is not supported in CPU "
+             "pooling.");
 
   NBLA_CHECK(forward_done_, error_code::value,
              "Forward must be called before calling backward.");
