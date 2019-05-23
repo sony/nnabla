@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import os
+import shutil
 import sys
 from tqdm import tqdm
 
+from nnabla.utils.create_cache import CreateCache
 from nnabla.utils.data_source import DataSourceWithFileCache
 from nnabla.utils.data_source_implements import CacheDataSource, CsvDataSource
 
@@ -59,8 +61,17 @@ def conv_dataset_command(args):
     datasource = None
     _, ext = os.path.splitext(args.source)
     if ext.lower() == '.csv':
-        with CsvDataSource(args.source, shuffle=args.shuffle, normalize=args.normalize) as source:
-            _convert(args, source)
+
+        if os.path.exists(args.source):
+            cc = CreateCache(args.source, shuffle=args.shuffle)
+            print('Number of Data: {}'.format(cc._size))
+            print('Shuffle:        {}'.format(cc._shuffle))
+            print('Normalize:      {}'.format(args.normalize))
+            cc.create(args.destination, normalize=args.normalize)
+        else:
+            with CsvDataSource(args.source, shuffle=args.shuffle, normalize=args.normalize) as source:
+                _convert(args, source)
+
     elif ext.lower() == '.cache':
         with CacheDataSource(args.source, shuffle=args.shuffle, normalize=args.normalize) as source:
             _convert(args, source)
