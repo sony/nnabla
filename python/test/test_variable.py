@@ -255,3 +255,49 @@ def test_function_references():
     del h2
 
     assert len(v.function_references) == 0
+
+
+@pytest.mark.parametrize("f", [lambda x: x, hash])
+def test_variable_equality_and_hash(f):
+    shape = (2, 3, 4)
+    x = nn.Variable(shape)
+    assert f(x) == f(x)
+
+    y = nn.Variable(shape)
+    assert f(x) != f(y)
+
+    y.data = x.data
+    assert f(x) != f(y)
+
+    y.grad = x.grad
+    assert f(x) == f(y)
+
+    y.need_grad = True
+    assert f(x) == f(y)
+
+    y.data = nn.NdArray(shape)
+    assert f(x) != f(y)
+
+
+def test_variable_set():
+    # Testing hash and equality operator via set
+    shape = (2, 3, 4)
+    x = nn.Variable(shape)
+    s = set()
+    s.add(x)
+    assert x in s
+
+    y = nn.Variable(shape)
+    assert y not in s
+
+    y.data = x.data
+    assert y not in s
+
+    y.grad = x.grad
+    assert y in s
+
+    y.need_grad = True
+    assert y in s
+
+    y.data = nn.NdArray(shape)
+    assert y not in s
