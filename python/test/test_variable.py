@@ -266,17 +266,11 @@ def test_variable_equality_and_hash(f):
     y = nn.Variable(shape)
     assert f(x) != f(y)
 
-    y.data = x.data
-    assert f(x) != f(y)
-
-    y.grad = x.grad
+    y = x.get_unlinked_variable()
     assert f(x) == f(y)
 
     y.need_grad = True
     assert f(x) == f(y)
-
-    y.data = nn.NdArray(shape)
-    assert f(x) != f(y)
 
 
 def test_variable_set():
@@ -290,14 +284,8 @@ def test_variable_set():
     y = nn.Variable(shape)
     assert y not in s
 
-    y.data = x.data
-    assert y not in s
-
-    y.grad = x.grad
+    y = x.get_unlinked_variable()
     assert y in s
 
     y.need_grad = True
     assert y in s
-
-    y.data = nn.NdArray(shape)
-    assert y not in s
