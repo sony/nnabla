@@ -159,7 +159,8 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout can be reshaped as :math:`(T, B, D, H)`.  
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
+          can be reshaped as :math:`(T, B, D, H)`.
       h_n:
         doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
       c_n:
@@ -224,7 +225,8 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout can be reshaped as :math:`(T, B, D, H)`.   
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
+          can be reshaped as :math:`(T, B, D, H)`.
       h_n:
         doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
