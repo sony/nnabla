@@ -196,7 +196,7 @@ AdaBound:
         \eta_l(t) = (1 - (1/((1-\beta)t+1)))\alpha^*\\
         \eta_u(t) = (1 + (1/((1-\beta)t)))\alpha^*
 
-    where :math:`\alpha^*` is a decayed learning rate, where the decay factor is defined as the current value of :math:`\alpha` over initial value of :math:`\alpha`. 
+    where :math:`\alpha^*` (``final_lr``) is scaled by a factor defined as the current value of :math:`\alpha` (set by ``set_learning_rate(lr)``) over initial value of :math:`\alpha`, so that learnign rate scheduling is properly applied to both :math:`\alpha` and :math:`\alpha^*`.
 
   references:
     - |
@@ -322,7 +322,7 @@ AMSBound:
         \eta_l(t) = (1 - (1/((1-\beta)t+1)))\alpha^*\\
         \eta_u(t) = (1 + (1/((1-\beta)t)))\alpha^*
 
-    where :math:`\alpha^*` is a decayed learning rate, where the decay factor is defined as the current value of :math:`\alpha` over initial value of :math:`\alpha`. 
+    where :math:`\alpha^*` (``final_lr``) is scaled by a factor defined as the current value of :math:`\alpha` (set by ``set_learning_rate(lr)``) over initial value of :math:`\alpha`, so that learnign rate scheduling is properly applied to both :math:`\alpha` and :math:`\alpha^*`.
 
   references:
     - |
