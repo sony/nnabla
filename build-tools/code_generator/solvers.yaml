@@ -12,6 +12,36 @@ Sgd:
       default: 1e-3
       doc: Learning rate (:math:`\eta`).
 
+SgdW:
+  snake_name: sgdw
+  doc: |
+    Stochastic gradient descent (SGD) optimizer with decoupled weight decay.
+
+    .. math::
+        w_{t+1} \leftarrow w_t - \eta \Delta w_t - (\eta / \eta_0)\lambda\w_t
+
+    where :math:`\lambda` is the decoupled weight decay rate.
+
+  references:
+    - |
+      `Loshchilov and Hutter, Decoupled Weight Decay Regularization.
+      <https://arxiv.org/abs/1711.05101>`_
+
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+    momentum:
+      type: float
+      default: 0.9
+      doc: Decay rate of momentum.
+    wd:
+      type: float
+      default: 1e-4
+      doc: Weight decay rate.
+
 Momentum:
   snake_name: momentum
   doc: |
@@ -220,6 +250,49 @@ Adam:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
+
+AdamW:
+  snake_name: adamw
+  doc: |
+    ADAM optimizer with decoupled weight decay.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
+        w_{t+1} &\leftarrow w_t - \alpha
+            \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
+            \frac{m_t}{\sqrt{v_t} + \epsilon} - \eta_t\lambda\w_{t-1}
+
+    where :math:`g_t` denotes a gradient, :math:`\lambda` is the decoupled weight decay rate,
+    and :math:`m_0 \leftarrow 0` and :math:`v_0 \leftarrow 0`.
+
+  references:
+    - |
+      `Loshchilov and Hutter, Decoupled Weight Decay Regularization.
+      <https://arxiv.org/abs/1711.05101>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 1e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
+    wd:
+      type: float
+      default: 1e-4
+      doc: Weight decay rate.
+
 
 AdaBound:
   snake_name: adabound
