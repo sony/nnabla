@@ -25,7 +25,7 @@ def data_iterator_segmentation(num_examples, batch_size, image_path_file, label_
             lab = imageio.imread(
                 label_paths[i], as_gray=False, pilmode="RGB").astype('int32')
         else:
-            lab = np.load(label_paths[i]).astype('int32')
+            lab = np.load(label_paths[i], allow_pickle=True).astype('int32')
         if lab.ndim == 2:
             lab = lab[..., None]
         # Compute image preprocessing time
