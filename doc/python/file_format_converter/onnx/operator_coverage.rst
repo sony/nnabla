@@ -14,7 +14,7 @@ Import
   - Version: 1.4.1
   - Commit id: 3b0ecd5
 
-Total: 53/129
+Total: 77/129
 
 .. table:: 
 
@@ -22,20 +22,20 @@ Total: 53/129
             ONNX Operator            1    2    3    4    5    6    7    8    9    10    Description 
     ==============================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  =============
      Abs                            X                        √                                      
-     Acos                                                         X                                 
-     Acosh                                                                  X                       
+     Acos                                                         √                                 
+     Acosh                                                                  √                       
      Add                            X                        √    √                                 
      And                            √                             √                                 
-     ArgMax                         X                                                               
-     ArgMin                         X                                                               
-     Asin                                                         X                                 
-     Asinh                                                                  X                       
-     Atan                                                         X                                 
-     Atanh                                                                  X                       
+     ArgMax                         √                                                               
+     ArgMin                         √                                                               
+     Asin                                                         √                                 
+     Asinh                                                                  √                       
+     Atan                                                         √                                 
+     Atanh                                                                  √                       
      AveragePool                    √                             √              X                  
      BatchNormalization             X                        √    X         √                       
      Cast                           X                        X              X                       
-     Ceil                           X                        X                                      
+     Ceil                           X                        √                                      
      Clip                           X                        √                                      
      Compress                                                               X                       
      Concat                         √              √                                                
@@ -43,9 +43,9 @@ Total: 53/129
      ConstantOfShape                                                        X                       
      Conv                           √                                                               
      ConvTranspose                  X                                                               
-     Cos                                                          X                                 
-     Cosh                                                                   X                       
-     DepthToSpace                   X                                                               
+     Cos                                                          √                                 
+     Cosh                                                                   √                       
+     DepthToSpace                   √                                                               
      Div                            X                        √    √                                 
      Dropout                        √                        √    √              X                  
      Elu                            X                        √                                      
@@ -54,11 +54,11 @@ Total: 53/129
      Exp                            X                        √                                      
      Expand                                                            X                            
      EyeLike                                                                X                       
-     Flatten                        X                                       X                       
-     Floor                          X                        X                                      
+     Flatten                        √                                       √                       
+     Floor                          X                        √                                      
      GRU                            X         X                   X                                 
      Gather                         X                                                               
-     Gemm                           √                        √    X         X                       
+     Gemm                           √                        √    √         √                       
      GlobalAveragePool              √                                                               
      GlobalLpPool                   X    X                                                          
      GlobalMaxPool                  X                                                               
@@ -68,7 +68,7 @@ Total: 53/129
      Identity                       √                                                               
      If                             X                                                               
      InstanceNormalization          X                        X                                      
-     IsNaN                                                                  X                       
+     IsNaN                                                                  √                       
      LRN                            √                                                               
      LSTM                           X                             X                                 
      LeakyRelu                      X                        √                                      
@@ -83,7 +83,7 @@ Total: 53/129
      MaxPool                        √                                  X         X                  
      MaxRoiPool                     X                                                               
      MaxUnpool                                                              X                       
-     Mean                           X                        √         √                            
+     Mean                           X                        X         X                            
      Min                            X                        √         √                            
      Mul                            X                        √    √                                 
      Multinomial                                                  X                                 
@@ -120,29 +120,29 @@ Total: 53/129
      Shape                          X                                                               
      Shrink                                                                 X                       
      Sigmoid                        X                        √                                      
-     Sign                                                                   X                       
-     Sin                                                          X                                 
-     Sinh                                                                   X                       
+     Sign                                                                   √                       
+     Sin                                                          √                                 
+     Sinh                                                                   √                       
      Size                           X                                                               
-     Slice                          X                                            X                  
+     Slice                          √                                            X                  
      Softmax                        √                                                               
      Softplus                       √                                                               
      Softsign                       √                                                               
      SpaceToDepth                   X                                                               
-     Split                          X    X                                                          
-     Sqrt                           X                        X                                      
-     Squeeze                        X                                                               
+     Split                          √    √                                                          
+     Sqrt                           X                        √                                      
+     Squeeze                        √                                                               
      StringNormalizer                                                            X                  
      Sub                            X                        √    √                                 
      Sum                            X                        √         √                            
-     Tan                                                          X                                 
+     Tan                                                          √                                 
      Tanh                           X                        √                                      
      TfIdfVectorizer                                                        X                       
      ThresholdedRelu                                                             X                  
-     Tile                           X                        X                                      
+     Tile                           X                        √                                      
      TopK                           X                                            X                  
      Transpose                      √                                                               
-     Unsqueeze                      X                                                               
+     Unsqueeze                      √                                                               
      Upsample                       X                             X         X    X                  
      Where                                                                  X                       
      Xor                            √                             √                                 
@@ -274,11 +274,11 @@ Total: 63/155
      NotEqualScalar                                                                                                           
      OneHot                                              △              △          By Flatten,Gather,Reshape                  
      PReLU                                               √              √          By PRelu                                   
-     Pad                                                 √              √          By Pad                                     
+     Pad                                                 △              △          By Pad                                     
      Pow2                                                √              √          By Pow                                     
      Pow2Quantize                                                                                                             
      PowScalar                                           √              △          By Pow                                     
-     Prod                                                √              √          By ReduceProd                              
+     Prod                                                △              △          By ReduceProd                              
      Prune                                                                                                                    
      RDivScalar                                          √              √          By Div                                     
      RNN                                                                                                                      
