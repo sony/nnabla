@@ -56,7 +56,7 @@ ConstantOfShape:
 Conv:
   '1': true
 ConvTranspose:
-  '1': false
+  '1': true
 Cos:
   '7': true
 Cosh:
@@ -170,8 +170,8 @@ MaxUnpool:
   '9': false
 Mean:
   '1': false
-  '6': false
-  '8': false
+  '6': true
+  '8': true
 Min:
   '1': false
   '6': true
@@ -280,7 +280,7 @@ Softplus:
 Softsign:
   '1': true
 SpaceToDepth:
-  '1': false
+  '1': true
 Split:
   '1': true
   '2': true
@@ -319,9 +319,9 @@ Transpose:
 Unsqueeze:
   '1': true
 Upsample:
-  '1': false
-  '7': false
-  '9': false
+  '6': true
+  '7': true
+  '9': true
   '10': false
 Where:
   '9': false
