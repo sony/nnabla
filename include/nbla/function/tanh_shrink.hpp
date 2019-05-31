@@ -41,6 +41,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(TanhShrink, x - std::tanh(x),
-                            std::pow(std::tanh(x), (T)2), false);
+                            dy *std::pow(std::tanh(x), (T)2), false);
 }
 #endif

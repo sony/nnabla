@@ -25,8 +25,8 @@ def ref_hard_sigmoid(x):
     return np.maximum(0, np.minimum(1, x*0.2 + 0.5))
 
 
-def ref_hard_sigmoid_backward(x, dx):
-    return np.array([0.2 if i <= 2.5 and i >= -2.5 else 0 for i in np.nditer(x)])
+def ref_hard_sigmoid_backward(x, dy):
+    return np.array([dy*0.2 if i <= 2.5 and i >= -2.5 else 0 for i in np.nditer(x)])
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -34,6 +34,7 @@ def ref_hard_sigmoid_backward(x, dx):
 def test_hard_sigmoid_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)
-    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    inputs = [
+        np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e4, 1e-2, 1e4)]
     function_tester(rng, F.hard_sigmoid, ref_hard_sigmoid, inputs,
                     ctx=ctx, func_name=func_name, ref_grad=ref_hard_sigmoid_backward)

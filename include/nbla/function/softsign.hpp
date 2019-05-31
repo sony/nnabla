@@ -41,6 +41,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(SoftSign, x / (1 + std::abs(x)),
-                            1 / std::pow((1 + std::abs(x)), 2), false);
+                            dy / std::pow((1 + std::abs(x)), 2), false);
 }
 #endif
