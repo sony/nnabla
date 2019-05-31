@@ -193,9 +193,10 @@ AdaBound:
     .. math::
         w_{t+1} &\leftarrow w_t - \eta_t*m_t\\
         \eta_t = clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{v_t} + \epsilon)}, \eta_l(t), \eta_u(t))\\
-        \eta_l(t) = (1 - (1/((1-\beta)t+1)))\alpha\\
-        \eta_u(t) = (1 + (1/((1-\beta)t)))\alpha
+        \eta_l(t) = (1 - (1/((1-\gamma)t+1)))\alpha^*\\
+        \eta_u(t) = (1 + (1/((1-\gamma)t)))\alpha^*
 
+    where :math:`\alpha^*` (``final_lr``) is scaled by a factor defined as the current value of :math:`\alpha` (set by ``set_learning_rate(lr)``) over initial value of :math:`\alpha`, so that learnign rate scheduling is properly applied to both :math:`\alpha` and :math:`\alpha^*`.
 
   references:
     - |
@@ -318,9 +319,10 @@ AMSBound:
         w_{t+1} &\leftarrow w_t - \eta_t*m_t\\
         \eta_t = clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{\hat{v_t}} + \epsilon)}, \eta_l(t), \eta_u(t))\\
         \hat{v_t} = \max(\hat{v_{t-1}}, v_t)\\
-        \eta_l(t) = (1 - (1/((1-\beta)t+1)))\alpha\\
-        \eta_u(t) = (1 + (1/((1-\beta)t)))\alpha
+        \eta_l(t) = (1 - (1/((1-\gamma)t+1)))\alpha^*\\
+        \eta_u(t) = (1 + (1/((1-\gamma)t)))\alpha^*
 
+    where :math:`\alpha^*` (``final_lr``) is scaled by a factor defined as the current value of :math:`\alpha` (set by ``set_learning_rate(lr)``) over initial value of :math:`\alpha`, so that learnign rate scheduling is properly applied to both :math:`\alpha` and :math:`\alpha^*`.
 
   references:
     - |
