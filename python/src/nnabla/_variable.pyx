@@ -134,6 +134,12 @@ cdef class Variable:
     is invoked immediately when :function:`nnabla.auto_forward`
     or :function:`nnabla.set_auto_forward(True)` is used.
 
+    Note:
+        Relational operators  :code:`==` and :code:`!=` of two  :obj:`Variable` s are
+        defined as an address comparison of underlying C++ instances
+        (:code:`nbla::Variable`). Also, :func:`hash` function, which is often used
+        in a key for :obj:`set` and :obj:`dict`, is based on the address.
+
     See also:
         `Python API Tutorial
         <http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_.
@@ -206,14 +212,18 @@ cdef class Variable:
             self.shape, self.need_grad, hex(id(self)))
 
     def __eq__(self, other):
-        '''Determine equality by comparing the address of the C++ objects.
+        '''Equal operator compares the addresses of underlying C++ objects
+        (``nbla::Variable``).
         '''
-        return (< Variable > self).varp == ( < Variable ?> other).varp
+        cdef CVariable* v = (< Variable > self).varp.variable().get()
+        cdef CVariable* w = (< Variable ?> other).varp.variable().get()
+        return v == w
 
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash(< intptr_t > (( < Variable > self).varp))
+        cdef CVariable* v = ( < Variable > self).varp.variable().get()
+        return hash(< intptr_t > (v))
 
     def apply(self, **kwargs):
         '''Helper for setting property, then return self.
@@ -619,6 +629,12 @@ cdef class Variable:
         Returns: nnabla._variable.Variable
 
 
+        Note:
+            The unlinked Variable behaves equivalent to the original variable
+            in a comparison operator and hash function regardless whether or
+            not the `need_grad` attribute is changed.
+            See a note in the `Variable` class documentation.
+
         Example:
 
             .. code-block:: python
@@ -640,7 +656,7 @@ cdef class Variable:
                 # None
 
         """
-        var = Variable.create_from_cvariable(self.varp.variable().get().view())
+        var = Variable.create_from_cvariable(self.varp.variable())
         if need_grad is not None:
             var.need_grad = need_grad
         else:
