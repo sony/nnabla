@@ -50,6 +50,22 @@ class ObjectDetection(object):
         print('Loading {}.'.format(path_nnp))
         self.nnp = NnpLoader(path_nnp)
 
+    def get_category_names(self):
+        '''
+        Returns category names of object detection dataset.
+        '''
+        if hasattr(self, '_category_names'):
+            return self._category_names
+        assert hasattr(self, '_dataset_name'),\
+            'A class attribute _dataset_name must be set.'
+        with open(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    '{}.names'.format(self._dataset_name)),
+                'r') as fd:
+            self._category_names = fd.read().splitlines()
+        return self._category_names
+
     def use_up_to(self, key, callback, **variable_format_dict):
         if key not in self._KEY_VARIABLE:
             raise ValueError('The key "{}" is not present in {}. Availble keys are {}.'.format(

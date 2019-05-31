@@ -44,14 +44,16 @@ class YoloV2(ObjectDetection):
         'Arange2': 'Arange_2_Output',
         }
 
-    def __init__(self, _dataset_name='VOC'):
+    def __init__(self, dataset='voc'):
 
         # Check validity of num_layers
+        assert dataset in ['voc', 'coco'],\
+            'dataset must be chosen from ["voc", "coco"].'
         # Load nnp
-        self._dataset_name = _dataset_name
-        if self._dataset_name == 'VOC':
+        self._dataset_name = dataset
+        if self._dataset_name == 'voc':
             self._load_nnp('yolov2-voc.nnp', 'yolov2-voc.nnp')
-        elif self._dataset_name == "COCO":
+        elif self._dataset_name == "coco":
             self._load_nnp('yolov2-coco.nnp', 'yolov2-coco.nnp')
 
     def _input_shape(self):
@@ -61,7 +63,6 @@ class YoloV2(ObjectDetection):
 
         assert use_from is None, 'This should not be set because it is for forward compatibility.'
         input_var = self.get_input_var(input_var)
-        print("input_var", input_var.shape)
         nnp_input_size = self.get_nnp_input_size()
         callback = NnpNetworkPass(verbose)
         callback.set_variable('x', input_var)
@@ -177,10 +178,8 @@ class YoloV2(ObjectDetection):
         @callback.on_generate_function_by_name('Reshape_5')
         def reshape__yolov2_image_coordinate_t_x(f):
             s = f.inputs[0].variable.shape
-            print("input_shape", s)
             r = f.proto.reshape_param
             r.shape.dim[:] = [s[0], s[1], s[0]//s[0], s[2], s[3]]
-            print("reshape_5", r.shape.dim)
             return f
 
         # Reshape the output of Arange_2 to get ys
@@ -243,7 +242,6 @@ class YoloV2(ObjectDetection):
         if not training:
             callback.fix_parameters()
         batch_size = input_var.shape[0]
-        print("batch_size", batch_size)
         net = self.nnp.get_network(
             'runtime', batch_size=batch_size, callback=callback)
         if returns_net:
