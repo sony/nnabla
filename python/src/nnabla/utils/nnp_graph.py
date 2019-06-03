@@ -382,8 +382,8 @@ class NnpNetwork(object):
         for f in self._functions_in_forward_order(variables):
             if f.disabled:
                 continue
-            callback._apply_function_pass_by_type(f, variables)
-            callback._apply_function_pass_by_name(f, variables)
+            callback._apply_function_pass_by_type(f, variables, scope)
+            callback._apply_function_pass_by_name(f, variables, scope)
 
         # Apply stop-at.
         for f in self._functions_in_forward_order(variables):
@@ -396,6 +396,7 @@ class NnpNetwork(object):
         with nn.parameter_scope('', scope):
             for f in self._functions_in_forward_order(variables):
                 self._create_function(f, callback, current_scope)
+                # print(f.name)
                 num_ops += 1
         callback.verbose2('Created {} functions.'.format(num_ops))
 
@@ -499,16 +500,16 @@ class NnpNetworkPass(object):
 
     def on_function_pass_by_name(self, name):
         def _on_function_pass_by_name(callback):
-            def _callback(f, variables):
-                return callback(f, variables)
+            def _callback(f, variables, param_scope):
+                return callback(f, variables, param_scope)
             self._passes_by_name[name] = _callback
             return _callback
         return _on_function_pass_by_name
 
     def on_function_pass_by_type(self, name):
         def _on_function_pass_by_type(callback):
-            def _callback(f, variables):
-                return callback(f, variables)
+            def _callback(f, variables, param_scope):
+                return callback(f, variables, param_scope)
             self._passes_by_name[name] = _callback
             return _callback
         return _on_function_pass_by_type
@@ -538,7 +539,7 @@ class NnpNetworkPass(object):
         return _on_generate_function_by_type
 
     def drop_function(self, *names):
-        def callback(f, variables):
+        def callback(f, variables, param_scope):
             self.verbose('Pass: Deleting {}.'.format(f.name))
             f.disable()
 
@@ -553,7 +554,7 @@ class NnpNetworkPass(object):
 
     def remove_and_rewire(self, name, i=0, o=0):
         @self.on_function_pass_by_name(name)
-        def on_dr(f, variables):
+        def on_dr(f, variables, param_scope):
             fi = f.inputs[i]
             fo = f.outputs[o]
             self.verbose('Removing {} and rewire input={} and output={}.'.format(
@@ -612,15 +613,15 @@ class NnpNetworkPass(object):
             p.batch_stat = batch_stat
             return f
 
-    def _apply_function_pass_by_name(self, f, variables):
+    def _apply_function_pass_by_name(self, f, variables, param_scope):
         if f.name not in self._passes_by_name:
             return f
-        return self._passes_by_name[f.name](f, variables)
+        return self._passes_by_name[f.name](f, variables, param_scope)
 
-    def _apply_function_pass_by_type(self, f, variables):
+    def _apply_function_pass_by_type(self, f, variables, param_scope):
         if f.proto.type not in self._passes_by_type:
             return f
-        return self._passes_by_type[f.proto.type](f, variables)
+        return self._passes_by_type[f.proto.type](f, variables, param_scope)
 
     def _apply_generate_variable(self, v):
         if v.name in self._variable_callbacks:
