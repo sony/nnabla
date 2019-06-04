@@ -29,13 +29,14 @@ def normalize_image(img):
 
 def label_to_image(label):
     # HSV visualization
-    ret = np.zeros(label.shape[-2:]+(3,), dtype=np.uint8)
-    ret[:, :, 1] = 255
-    ret[:, :, 2] = 255
-    for c in range(0, label.shape[1]):
-        ret[:, :, 0] += np.uint8(15 * (12 - c - .5) * label[0, c, :, :])
-    ret = np.asarray(Image.fromarray(ret, mode='HSV').convert('RGB'))
-    ret = np.expand_dims(ret.transpose(2, 0, 1), 0)
+    ret = np.zeros((label.shape[0],)+label.shape[-2:]+(3,), dtype=np.uint8)
+    ret[..., 1] = 255
+    ret[..., 2] = 255
+    for b in range(0, label.shape[0]):
+        for c in range(0, label.shape[1]):
+            ret[b, :, :, 0] += np.uint8(15 * (12 - c - .5) * label[b, c, :, :])
+        ret[b] = np.asarray(Image.fromarray(ret[b], mode='HSV').convert('RGB'))
+    ret = ret.transpose(0, 3, 1, 2)
     return ret
 
 
