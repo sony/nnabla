@@ -114,22 +114,6 @@ class CreateCache(CsvDataSource):
         # rewind
         self._file.seek(0)
 
-        self._cache_file_order = []
-        self._cache_file_data_orders = []
-        self._cache_file_names = []
-
-        # Adjust data size into reseted position. In most case it means
-        # multiple of bunch(mini-batch) size.
-        num_of_cache_files = int(numpy.ceil(
-            float(self._size) / self._cache_size))
-        self._cache_file_order = self._cache_file_order[
-            0:num_of_cache_files]
-        self._cache_file_data_orders = self._cache_file_data_orders[
-            0:num_of_cache_files]
-        if self._size % self._cache_size != 0:
-            self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
-                num_of_cache_files - 1][0:self._size % self._cache_size]
-
         self._original_order = list(range(self._size))
         self._order = list(range(self._size))
         self._variables = tuple(self._variables_dict.keys())
@@ -154,6 +138,10 @@ class CreateCache(CsvDataSource):
 
         progress(None)
 
+        self._cache_file_order = []
+        self._cache_file_data_orders = []
+        self._cache_file_names = []
+
         self._cache_data = []
         for self._position in range(self._size):
             progress('Create cache', self._position * 1.0 / self._size)
@@ -168,6 +156,18 @@ class CreateCache(CsvDataSource):
                 self._cache_data = []
 
         self._save_cache()
+
+        # Adjust data size into reseted position. In most case it means
+        # multiple of bunch(mini-batch) size.
+        num_of_cache_files = int(numpy.ceil(
+            float(self._size) / self._cache_size))
+        self._cache_file_order = self._cache_file_order[
+            0:num_of_cache_files]
+        self._cache_file_data_orders = self._cache_file_data_orders[
+            0:num_of_cache_files]
+        if self._size % self._cache_size != 0:
+            self._cache_file_data_orders[num_of_cache_files - 1] = self._cache_file_data_orders[
+                num_of_cache_files - 1][0:self._size % self._cache_size]
 
         # Create Index
         index_filename = os.path.join(self._cache_dir, "cache_index.csv")
