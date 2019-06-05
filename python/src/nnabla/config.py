@@ -75,6 +75,11 @@ def _get_nnabla_config():
             0, shellcon.CSIDL_APPDATA, None, 0), 'NNabla', 'nnabla.ini')))
     config_files.append(abspath(join(os.getcwd(), 'nnabla.conf')))
 
+    if "NNABLA_CONFIG_FILE_PATH" in os.environ:
+        conf = os.environ["NNABLA_CONFIG_FILE_PATH"]
+        if os.path.exists(conf):
+            config_files.append(conf)
+
     config = configparser.RawConfigParser()
     for filename in config_files:
         # print(' Checking {}'.format(filename))
