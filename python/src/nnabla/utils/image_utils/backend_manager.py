@@ -78,8 +78,9 @@ class ImageUtilsBackendManager(object):
 
         self._backend = backend
 
-        logger.info(
-            "use {} for the backend of image utils".format(self._backend))
+        # Too verbose for common user
+        # logger.info(
+        #     "use {} for the backend of image utils".format(self._backend))
 
     @property
     def module(self):
