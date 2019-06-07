@@ -18,7 +18,7 @@ The pre-trained models can be used for both inference and training as following:
     from nnabla.models.object_detection.utils import (
         LetterBoxTransform,
         draw_bounding_boxes)
-    from nnabla.utils.image_utils import imread
+    from nnabla.utils.image_utils import imread, imsave
     import numpy as np
 
     # Set device
@@ -41,7 +41,6 @@ The pre-trained models can be used for both inference and training as following:
 
     # Draw bounding boxes to the original image
     bboxes = lbt.inverse_coordinate_transform(y.d[0])
-    bboxes = y.d[0]
     img_draw = draw_bounding_boxes(
         img_orig, bboxes, yolov2.get_category_names())
     imsave("detected.jpg", img_draw)
