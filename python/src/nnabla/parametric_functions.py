@@ -1409,13 +1409,16 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
         w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
+    w0_shape = (num_directions, hidden_size, input_size + hidden_size)
     w0 = get_parameter_or_create(
-        "weight_l0", w0_init.shape,
+        "weight_l0", w0_shape,
         w0_init, True, not fix_parameters)
     w = None
     if num_layers > 1:
+        w_shape = (num_layers - 1, num_directions, hidden_size,
+                   num_directions * hidden_size + hidden_size)
         w = get_parameter_or_create(
-            "weight", w_init.shape,
+            "weight", w_shape,
             w_init, True, not fix_parameters)
     b = None
     n_outmaps = (num_layers, num_directions, hidden_size)
@@ -1499,8 +1502,9 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
                 calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
             w0_hh = w0_hh((num_directions, 4, hidden_size, hidden_size))
             w0_init = np.concatenate((w0_ih, w0_hh), axis=3)
+        w0_shape = (num_directions, 4, hidden_size, input_size + hidden_size)
         w0 = get_parameter_or_create(
-            "weight_l0", w0_init.shape,
+            "weight_l0", w0_shape,
             w0_init, True, not fix_parameters)
 
     if num_layers > 1 and w is None:
@@ -1514,8 +1518,10 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
             w_hh = w_hh(
                 (num_layers - 1, num_directions, 4, hidden_size, hidden_size))
             w_init = np.concatenate((w_ih, w_hh), axis=4)
+        w_shape = (num_layers - 1, num_directions, 4, hidden_size,
+                   num_directions * hidden_size + hidden_size)
         w = get_parameter_or_create(
-            "weight", w_init.shape,
+            "weight", w_shape,
             w_init, True, not fix_parameters)
 
     if with_bias and b is None:
@@ -1609,8 +1615,9 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
                 calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
             w0_hh = w0_hh((num_directions, 3, hidden_size, hidden_size))
             w0_init = np.concatenate((w0_ih, w0_hh), axis=3)
+        w0_shape = (num_directions, 3, hidden_size, input_size + hidden_size)
         w0 = get_parameter_or_create(
-            "weight_l0", w0_init.shape,
+            "weight_l0", w0_shape,
             w0_init, True, not fix_parameters)
 
     if num_layers > 1 and w is None:
@@ -1624,8 +1631,10 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
             w_hh = w_hh(
                 (num_layers - 1, num_directions, 3, hidden_size, hidden_size))
             w_init = np.concatenate((w_ih, w_hh), axis=4)
+        w_shape = (num_layers - 1, num_directions, 3, hidden_size,
+                   num_directions * hidden_size + hidden_size)
         w = get_parameter_or_create(
-            "weight", w_init.shape,
+            "weight", w_shape,
             w_init, True, not fix_parameters)
 
     if with_bias and b is None:
