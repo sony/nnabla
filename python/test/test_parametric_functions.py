@@ -804,7 +804,7 @@ def test_pf_rnn_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, n
 
         x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
         h = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
 
         # Check execution
         y, hn = PF.rnn(x, h, **kw)
@@ -894,7 +894,7 @@ def test_pf_gru_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, d
 
         x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
         h = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
 
         # Check execution
         y, hn = PF.gru(x, h, **kw)
@@ -984,9 +984,9 @@ def test_pf_lstm_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, 
 
         x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
         h = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
         c = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
 
         # Check execution
         y, hn, cn = PF.lstm(x, h, c, **kw)
