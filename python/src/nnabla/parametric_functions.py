@@ -1341,7 +1341,11 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
                                      dilation, divisor)
 
 
-@parametric_function_api("rnn")
+@parametric_function_api("rnn", [
+    ('weight_l0', 'Filter weights at 0-th layer', '(D, H, I + H)', True),
+    ('weight', 'Filter weights at 1-st layer and above', '(L-1, D, H, DH + H)', True),
+    ('bias', 'Biases', '(L, D, H)', True),
+])
 def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity='tanh', dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """N-Step RNN (recurrent neural networks).
 
@@ -1429,7 +1433,12 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
     return F.rnn(x, h, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout, bidirectional=bidirectional, training=training)
 
 
-@parametric_function_api("lstm")
+@parametric_function_api("lstm", [
+    ('weight_l0', 'Filter weights at 0-th layer', '(D, 4, H, I + H)', True),
+    ('weight', 'Filter weights at 1-st layer and above',
+     '(L-1, D, 4, H, DH + H)', True),
+    ('bias', 'Biases', '(L, D, 4, H)', True),
+])
 def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """LSTM (long short-term memory).
 
@@ -1553,7 +1562,12 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
     return F.lstm(x, h, c, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training)
 
 
-@parametric_function_api("gru")
+@parametric_function_api("gru", [
+    ('weight_l0', 'Filter weights at 0-th layer', '(D, 3, H, I + H)', True),
+    ('weight', 'Filter weights at 1-st layer and above',
+     '(L-1, D, 3, H, DH + H)', True),
+    ('bias', 'Biases', '(L, D, 4, H)', True),
+])
 def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """GRU (gated recurrent units).
 
