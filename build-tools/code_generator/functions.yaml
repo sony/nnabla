@@ -110,7 +110,7 @@ Neural Network Layer:
           {\mathbf f_t} = {\mathbf \sigma}( {\mathbf W_f} *{\mathbf x_t} + {\mathbf U_f}* {\mathbf h_{(t-1)}} + {\mathbf b_f})\\
           {\mathbf i_t} = {\mathbf \sigma}( {\mathbf W_i} *{\mathbf x_t} + {\mathbf U_i}* {\mathbf h_{(t-1)}} + {\mathbf b_i})\\
           {\mathbf o_t} = {\mathbf \sigma}( {\mathbf W_o} *{\mathbf x_t} + {\mathbf U_o}* {\mathbf h_{(t-1)}} + {\mathbf b_o})\\
-          {\mathbf c_t} = {\mathbf f_t}\odot {mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
+          {\mathbf c_t} = {\mathbf f_t}\odot {\mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
           {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
 
       We use the following notations to describe the inputs and outputs below.
@@ -177,8 +177,8 @@ Neural Network Layer:
       .. math::
           {\mathbf r_t} = {\mathbf \sigma}( {\mathbf W_r} *{\mathbf x_t} + {\mathbf U_r}* {\mathbf h_{(t-1)}} + {\mathbf b_r})\\
           {\mathbf z_t} = {\mathbf \sigma}( {\mathbf W_z} *{\mathbf x_t} + {\mathbf U_z}* {\mathbf h_{(t-1)}} + {\mathbf b_z})\\
-        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
-        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}{\mathbf h_{t-1}}.
+        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}\odot( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
+        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}\odot {\mathbf h_{t-1}}.
 
       We use the following notations to describe the inputs and outputs below.
       :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.

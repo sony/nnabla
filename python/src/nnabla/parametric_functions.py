@@ -1562,8 +1562,8 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
     .. math::
         r_t&&=\\sigma(W_rx_t+U_rh_{t-1}+b_r) \\\\
         z_t&&=\\sigma(W_zx_t+U_zh_{t-1}+b_z) \\\\
-        n_t&&=\\tanh(W_nx_t+b_{in}+r_n(U_nh_{t-1}+b_{hn})) \\\\
-        h_t&&=(1-z_t)n_t+z_th_{t-1}.
+        n_t&&=\\tanh(W_nx_t+b_{in}+r_n \odot (U_nh_{t-1}+b_{hn})) \\\\
+        h_t&&=(1-z_t) \odot n_t+z_t \odot h_{t-1}.
 
     We use the following notations to describe the inputs and outputs below.
     :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
