@@ -179,11 +179,11 @@ def yolov2_image_coordinate(t_xy, t_wh, biases):
     xs = pop_parameter('xs')
     ys = pop_parameter('ys')
     if xs is None or (h != xs.shape[-1]):
-        xs = nn.Variable.from_numpy_array(np.arange(w).reshape(1, 1, 1, -1))
+        xs = F.arange(0, w).reshape((1, 1, 1, w))
         xs.need_grad = False
         set_parameter('xs', xs)
     if ys is None or (h != ys.shape[-2]):
-        ys = nn.Variable.from_numpy_array(np.arange(h).reshape(1, 1, -1, 1))
+        ys = F.arange(0, h).reshape((1, 1, h, 1))
         ys.need_grad = False
         set_parameter('ys', ys)
     t_x, t_y = F.split(t_xy, axis=2)
