@@ -280,7 +280,7 @@ def svd_affine(inp, n_outmaps, r, base_axis=1, uv_init=None,
     v = get_parameter('V')
 
     if (u is None) or (v is None):
-        assert r > 0, "svd_ffine: The rank must larger than zero"
+        assert r > 0, "svd_ffine: The rank must be larger than zero"
         u_, s_, v_ = np.linalg.svd(uv.reshape(inmaps, n_outmap),
                                    full_matrices=False)
         u_ = np.dot(u_, np.diag(s_))  # fold s into u
@@ -723,7 +723,7 @@ def svd_convolution(inp, outmaps, kernel, r, pad=None, stride=None,
         (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
 
     """
-    assert r > 0, "svd_convolution: The rank must larger than zero"
+    assert r > 0, "svd_convolution: The rank must be larger than zero"
 
     if uv_init is None:
         uv_init = UniformInitializer(
@@ -885,7 +885,7 @@ def cpd3_convolution(inp, outmaps, kernel, r,
     k = get_parameter('K')
 
     if (o is None) or (i is None) or (k is None):
-        assert r > 0, "cpd3_convolution: The rank must larger than zero"
+        assert r > 0, "cpd3_convolution: The rank must be larger than zero"
         from nnabla.utils.factorization import cpd
         als = cpd.ALS()
         U, lmbda = als.solve(X=oik, rank=r,
@@ -1341,7 +1341,11 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
                                      dilation, divisor)
 
 
-@parametric_function_api("rnn")
+@parametric_function_api("rnn", [
+    ('weight_l0', 'Filter weights at 0-th layer', '(D, H, I + H)', True),
+    ('weight', 'Filter weights at 1-st layer and above', '(L-1, D, H, DH + H)', True),
+    ('bias', 'Biases', '(L, D, H)', True),
+])
 def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity='tanh', dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """N-Step RNN (recurrent neural networks).
 
@@ -1409,13 +1413,16 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
         w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
+    w0_shape = (num_directions, hidden_size, input_size + hidden_size)
     w0 = get_parameter_or_create(
-        "weight_l0", w0_init.shape,
+        "weight_l0", w0_shape,
         w0_init, True, not fix_parameters)
     w = None
     if num_layers > 1:
+        w_shape = (num_layers - 1, num_directions, hidden_size,
+                   num_directions * hidden_size + hidden_size)
         w = get_parameter_or_create(
-            "weight", w_init.shape,
+            "weight", w_shape,
             w_init, True, not fix_parameters)
     b = None
     n_outmaps = (num_layers, num_directions, hidden_size)
@@ -1426,7 +1433,12 @@ def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity
     return F.rnn(x, h, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout, bidirectional=bidirectional, training=training)
 
 
-@parametric_function_api("lstm")
+@parametric_function_api("lstm", [
+    ('weight_l0', 'Filter weights at 0-th layer', '(D, 4, H, I + H)', True),
+    ('weight', 'Filter weights at 1-st layer and above',
+     '(L-1, D, 4, H, DH + H)', True),
+    ('bias', 'Biases', '(L, D, 4, H)', True),
+])
 def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """LSTM (long short-term memory).
 
@@ -1486,44 +1498,76 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
     num_layers = h.shape[0]
     num_directions = 2 if bidirectional else 1
 
-    if w0_init is None:
-        w0_init_ih = UniformInitializer(
-            calc_uniform_lim_glorot(input_size, hidden_size), rng)
-        w0_init_ih = w0_init_ih((num_directions, hidden_size, 4*input_size))
-        w0_init_hh = UniformInitializer(
-            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
-        w0_init_hh = w0_init_hh((num_directions, hidden_size, 4*hidden_size))
-        w0_init = np.concatenate((w0_init_ih, w0_init_hh), axis=2)
-    if w_init is None:
-        w_init_ih = UniformInitializer(calc_uniform_lim_glorot(
-            num_directions*hidden_size, hidden_size), rng)
-        w_init_ih = w_init_ih(
-            (num_layers - 1, num_directions, hidden_size, 4*num_directions*hidden_size))
-        w_init_hh = UniformInitializer(
-            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
-        w_init_hh = w_init_hh(
-            (num_layers - 1, num_directions, hidden_size, 4*hidden_size))
-        w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
-    if with_bias and b_init is None:
-        b_init = ConstantInitializer()
-    w0 = get_parameter_or_create(
-        "weight_l0", w0_init.shape,
-        w0_init, True, not fix_parameters)
-    w = None
-    if num_layers > 1:
+    w0 = get_parameter('weight_l0')
+    w = get_parameter('weight')
+    b = get_parameter('bias')
+
+    if w0 is None:
+        if w0_init is None:
+            w0_ih = UniformInitializer(
+                calc_uniform_lim_glorot(input_size, hidden_size), rng)
+            w0_ih = w0_ih((num_directions, 4, hidden_size, input_size))
+            w0_hh = UniformInitializer(
+                calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+            w0_hh = w0_hh((num_directions, 4, hidden_size, hidden_size))
+            w0_init = np.concatenate((w0_ih, w0_hh), axis=3)
+        w0_shape = (num_directions, 4, hidden_size, input_size + hidden_size)
+        w0 = get_parameter_or_create(
+            "weight_l0", w0_shape,
+            w0_init, True, not fix_parameters)
+
+    if num_layers > 1 and w is None:
+        if w_init is None:
+            w_ih = UniformInitializer(calc_uniform_lim_glorot(
+                num_directions*hidden_size, hidden_size), rng)
+            w_ih = w_ih(
+                (num_layers - 1, num_directions, 4, hidden_size, num_directions*hidden_size))
+            w_hh = UniformInitializer(
+                calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+            w_hh = w_hh(
+                (num_layers - 1, num_directions, 4, hidden_size, hidden_size))
+            w_init = np.concatenate((w_ih, w_hh), axis=4)
+        w_shape = (num_layers - 1, num_directions, 4, hidden_size,
+                   num_directions * hidden_size + hidden_size)
         w = get_parameter_or_create(
-            "weight", w_init.shape,
+            "weight", w_shape,
             w_init, True, not fix_parameters)
-    b = None
-    n_outmaps = (num_layers, num_directions, 4, hidden_size)
-    if with_bias:
+
+    if with_bias and b is None:
+        if b_init is None:
+            b_init = ConstantInitializer()
+        n_outmaps = (num_layers, num_directions, 4, hidden_size)
         b = get_parameter_or_create(
             "bias", n_outmaps, b_init, True, not fix_parameters)
+
+    if w0.shape != (num_directions, 4, hidden_size, input_size+hidden_size):
+        nn.logger.warn(
+            "Parameters seem to have been saved prior to bug fix. It will be converted into the correct shape, but we highly recommend training again to obtain the correct parameters, as we will cease to support these parametetrs in future. We apologize for the inconveinences.")
+        tmp = w0.d
+        w0 = nn.Variable.from_numpy_array(np.reshape(
+            tmp, (num_directions, 4, hidden_size, input_size + hidden_size)), need_grad=True)
+        nn.set_parameter('weight_l0', w0)
+    if num_layers > 1 and w.shape != (num_layers-1, num_directions, 4, hidden_size, num_directions*hidden_size + hidden_size):
+        tmp = w.d
+        ww = nn.Variable.from_numpy_array(np.reshape(
+            tmp, (num_layers - 1, num_directions, 4, hidden_size, num_directions*hidden_size + hidden_size)), need_grad=True)
+        nn.set_parameter('weight', w)
+
+    w0 = w0.get_unlinked_variable(need_grad=not fix_parameters)
+    if num_layers > 1:
+        w = w.get_unlinked_variable(need_grad=not fix_parameters)
+    if with_bias:
+        b = b.get_unlinked_variable(need_grad=not fix_parameters)
 
     return F.lstm(x, h, c, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training)
 
 
-@parametric_function_api("gru")
+@parametric_function_api("gru", [
+    ('weight_l0', 'Filter weights at 0-th layer', '(D, 3, H, I + H)', True),
+    ('weight', 'Filter weights at 1-st layer and above',
+     '(L-1, D, 3, H, DH + H)', True),
+    ('bias', 'Biases', '(L, D, 4, H)', True),
+])
 def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """GRU (gated recurrent units).
 
@@ -1532,8 +1576,8 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
     .. math::
         r_t&&=\\sigma(W_rx_t+U_rh_{t-1}+b_r) \\\\
         z_t&&=\\sigma(W_zx_t+U_zh_{t-1}+b_z) \\\\
-        n_t&&=\\tanh(W_nx_t+b_{in}+r_n(U_nh_{t-1}+b_{hn})) \\\\
-        h_t&&=(1-z_t)n_t+z_th_{t-1}.
+        n_t&&=\\tanh(W_nx_t+b_{in}+r_n \odot (U_nh_{t-1}+b_{hn})) \\\\
+        h_t&&=(1-z_t) \odot n_t+z_t \odot h_{t-1}.
 
     We use the following notations to describe the inputs and outputs below.
     :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
@@ -1572,39 +1616,65 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
     num_layers = h.shape[0]
     num_directions = 2 if bidirectional else 1
 
-    if w0_init is None:
-        w0_init_ih = UniformInitializer(
-            calc_uniform_lim_glorot(input_size, hidden_size), rng)
-        w0_init_ih = w0_init_ih((num_directions, hidden_size, 3*input_size))
-        w0_init_hh = UniformInitializer(
-            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
-        w0_init_hh = w0_init_hh((num_directions, hidden_size, 3*hidden_size))
-        w0_init = np.concatenate((w0_init_ih, w0_init_hh), axis=2)
-    if w_init is None:
-        w_init_ih = UniformInitializer(calc_uniform_lim_glorot(
-            num_directions*hidden_size, hidden_size), rng)
-        w_init_ih = w_init_ih(
-            (num_layers - 1, num_directions, hidden_size, 3*num_directions*hidden_size))
-        w_init_hh = UniformInitializer(
-            calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
-        w_init_hh = w_init_hh(
-            (num_layers - 1, num_directions, hidden_size, 3*hidden_size))
-        w_init = np.concatenate((w_init_ih, w_init_hh), axis=3)
-    if with_bias and b_init is None:
-        b_init = ConstantInitializer()
-    w0 = get_parameter_or_create(
-        "weight_l0", w0_init.shape,
-        w0_init, True, not fix_parameters)
-    w = None
-    if num_layers > 1:
+    w0 = get_parameter('weight_l0')
+    w = get_parameter('weight')
+    b = get_parameter('bias')
+
+    if w0 is None:
+        if w0_init is None:
+            w0_ih = UniformInitializer(
+                calc_uniform_lim_glorot(input_size, hidden_size), rng)
+            w0_ih = w0_ih((num_directions, 3, hidden_size, input_size))
+            w0_hh = UniformInitializer(
+                calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+            w0_hh = w0_hh((num_directions, 3, hidden_size, hidden_size))
+            w0_init = np.concatenate((w0_ih, w0_hh), axis=3)
+        w0_shape = (num_directions, 3, hidden_size, input_size + hidden_size)
+        w0 = get_parameter_or_create(
+            "weight_l0", w0_shape,
+            w0_init, True, not fix_parameters)
+
+    if num_layers > 1 and w is None:
+        if w_init is None:
+            w_ih = UniformInitializer(calc_uniform_lim_glorot(
+                num_directions*hidden_size, hidden_size), rng)
+            w_ih = w_ih(
+                (num_layers - 1, num_directions, 3, hidden_size, num_directions*hidden_size))
+            w_hh = UniformInitializer(
+                calc_uniform_lim_glorot(hidden_size, hidden_size), rng)
+            w_hh = w_hh(
+                (num_layers - 1, num_directions, 3, hidden_size, hidden_size))
+            w_init = np.concatenate((w_ih, w_hh), axis=4)
+        w_shape = (num_layers - 1, num_directions, 3, hidden_size,
+                   num_directions * hidden_size + hidden_size)
         w = get_parameter_or_create(
-            "weight", w_init.shape,
+            "weight", w_shape,
             w_init, True, not fix_parameters)
-    b = None
-    n_outmaps = (num_layers, num_directions, 4, hidden_size)
-    if with_bias:
+
+    if with_bias and b is None:
+        if b_init is None:
+            b_init = ConstantInitializer()
+        n_outmaps = (num_layers, num_directions, 4, hidden_size)
         b = get_parameter_or_create(
             "bias", n_outmaps, b_init, True, not fix_parameters)
+
+    if w0.shape != (num_directions, 3, hidden_size, input_size+hidden_size):
+        nn.logger.warn(
+            "Parameters seem to have been saved prior to bug fix. It will be converted into the correct shape, but we highly recommend training again to obtain the correct parameters, as we will cease to support these parametetrs in future. We apologize for the inconveinences.")
+        tmp = w0.d
+        w0 = nn.Variable.from_numpy_array(np.reshape(
+            tmp, (num_directions, 3, hidden_size, input_size + hidden_size)), need_grad=True)
+        nn.set_parameter('weight_l0', w0)
+    if num_layers > 1 and w.shape != (num_layers-1, num_directions, 3, hidden_size, num_directions*hidden_size + hidden_size):
+        tmp = w.d
+        ww = nn.Variable.from_numpy_array(np.reshape(
+            tmp, (num_layers - 1, num_directions, 3, hidden_size, num_directions*hidden_size + hidden_size)), need_grad=True)
+        nn.set_parameter('weight', w)
+    w0 = w0.get_unlinked_variable(need_grad=not fix_parameters)
+    if num_layers > 1:
+        w = w.get_unlinked_variable(need_grad=not fix_parameters)
+    if with_bias:
+        b = b.get_unlinked_variable(need_grad=not fix_parameters)
 
     return F.gru(x, h, weight_l0=w0, weight=w, bias=b, num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training)
 
