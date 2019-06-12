@@ -26,13 +26,13 @@ last_state_datetime = datetime.now()
 state_callback = None
 
 
-def configure_progress(file_name, callback=None):
+def configure_progress(file_name, cb=None):
     if file_name is not None:
         global state_file_name
         state_file_name = file_name
-    if callback is not None:
+    if cb is not None:
         global state_callback
-        state_callback = callback
+        state_callback = cb
     progress(None)
 
 
@@ -44,7 +44,6 @@ def progress(state, progress=0.0):
             with open(state_file_name, 'w') as f:
                 if state is not None:
                     f.write(state + ' ({0:3.2f}%)'.format(progress * 100))
-                    callback.update_progress(
-                        state + ' ({0:3.2f}%)'.format(progress * 100))
+    callback.update_progress('{0} ({1:3.2f}%)'.format(state, progress * 100))
     if state_callback is not None:
         state_callback(state, progress)
