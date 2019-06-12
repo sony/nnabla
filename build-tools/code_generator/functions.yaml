@@ -3626,6 +3626,51 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 264
+  ScatterNd:
+    snake_name: scatter_nd
+    doc: |2
+
+      Scatter `data` into a new array of given `shape` according to `indices`.
+      This operation is the inverse of :func:`~nnabla.functions.gather_nd`.
+
+      The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
+
+      .. code-block:: python
+
+        def scatter_nd(data, indices, shape):
+            import numpy as np
+            if isinstance(indices, np.ndarray)
+                indices = indices.tolist()
+            result = np.zeros(shape, dtype=data.dtype)
+            result[indices] = data
+            return result
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> data = nn.Variable.from_numpy_array(np.array([9, 10, 11, 12]))
+      >>> indices = nn.Variable.from_numpy_array(np.array([[4, 3, 1, 7]]))
+      >>> scattered = F.scatter_nd(data, indices, shape=(8,))
+      >>> print(scatterd.d)
+      [ 0. 11.  0. 10.  9.  0.  0. 12.]
+      >>> print(F.gather_nd(scattered, indices).d)
+      [ 9. 10. 11. 12.]
+    inputs:
+      data:
+        doc: N-D array input data.
+      indices:
+        doc: N-D array scatter indices.
+    arguments:
+      shape:
+        doc: Shape of output variable.
+        type: repeated int64
+    outputs:
+      y:
+        doc: N-D array of given `shape`.
+    c_runtime: not support
+    function_ids:
+      iI: 271
 Signal Processing:
   Interpolate:
     snake_name: interpolate
