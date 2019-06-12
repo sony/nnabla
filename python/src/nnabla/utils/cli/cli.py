@@ -84,6 +84,9 @@ def cli_main():
     from nnabla.utils.cli.create_image_classification_dataset import add_create_image_classification_dataset_command
     add_create_image_classification_dataset_command(subparsers)
 
+    from nnabla.utils.cli.create_object_detection_dataset import add_create_object_detection_dataset_command
+    add_create_object_detection_dataset_command(subparsers)
+
     from nnabla.utils.cli.uploader import add_upload_command
     add_upload_command(subparsers)
 
