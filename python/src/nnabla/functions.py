@@ -670,9 +670,9 @@ def tile(x, reps):
         ~nnabla.Variable: N-D array.
 
     >>> import numpy as np, nnabla as nn, nnabla.functions as F
-    >>> F.tile(nn.Variable([2, 3], 3).shape    # reps is promoted to [1, 3]
+    >>> F.tile(nn.Variable([2, 3]), 3).shape    # reps is promoted to [1, 3]
     (2, 9)
-    >>> F.tile(nn.Variable([3], [2, 3]).shape  # x is promoted to shape (1, 3)
+    >>> F.tile(nn.Variable([3]), [2, 3]).shape  # x is promoted to shape (1, 3)
     (2, 9)
     >>> nn.set_auto_forward(True)
     >>> x = nn.Variable.from_numpy_array(np.array([1, 2, 3]))
