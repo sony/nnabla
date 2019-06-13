@@ -18,6 +18,7 @@
 #include <nbla/solver/adam.hpp>
 #include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/weight_decay.hpp>
+#include <nbla/solver/clip_grad.hpp>
 
 namespace nbla {
 using std::shared_ptr;
@@ -72,6 +73,7 @@ void Adam<T>::update_impl(const string &key, VariablePtr param) {
 }
 
 NBLA_DEF_WEIGHT_DECAY(Adam, weight_decay_cpu);
+NBLA_DEF_CLIP_GRAD_BY_NORM(Adam, clip_grad_by_norm_cpu);
 NBLA_DEF_CHECK_INF_GRAD(Adam, check_inf_grad_cpu);
 NBLA_DEF_CHECK_NAN_GRAD(Adam, check_nan_grad_cpu);
 NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Adam, check_inf_or_nan_grad_cpu);
