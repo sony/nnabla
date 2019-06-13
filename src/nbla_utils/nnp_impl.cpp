@@ -482,7 +482,7 @@ bool NnpImpl::add_archive(void *archive) {
     } else if (ext == ".h5") {
       add_hdf5(buffer, size);
     }
-    delete buffer;
+    delete[] buffer;
   }
   return true;
 }

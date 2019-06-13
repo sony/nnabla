@@ -35,6 +35,7 @@ from nnabla.parameter import get_parameter_or_create
 
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
+from nnabla.utils.create_cache import CreateCache
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
@@ -616,8 +617,12 @@ def _create_dataset(
                     except OSError:
                         pass  # python2 does not support exists_ok arg
 
-                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
-                        pass
+                    if os.path.exists(uri):
+                        cc = CreateCache(uri, rng=rng, shuffle=shuffle)
+                        cc.create(cache_dir, normalize=False)
+                    else:
+                        with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
+                            pass
 
             rng = numpy.random.RandomState(dataset_index)
             dataset.data_iterator = (lambda: data_iterator_cache(

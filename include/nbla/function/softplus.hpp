@@ -41,6 +41,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(SoftPlus, std::log(std::exp(x) + (T)1),
-                            (T)1 / ((T)1 + std::exp(-x)), false);
+                            dy / ((T)1 + std::exp(-x)), false);
 }
 #endif

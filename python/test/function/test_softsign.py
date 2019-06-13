@@ -30,7 +30,6 @@ def ref_softsign(x):
 def test_softsign_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)
-    #inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     inputs = [
         np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e4, 1e-2, 1e4)]
     function_tester(rng, F.softsign, ref_softsign, inputs,

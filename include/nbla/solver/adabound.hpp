@@ -47,6 +47,7 @@ protected:
   float eps_;   ///< \f$\epsilon\f$
   float final_lr_;
   float gamma_;
+  float init_alpha_;
 
   // Functions.
   virtual void set_state_impl(const string &key, VariablePtr param);

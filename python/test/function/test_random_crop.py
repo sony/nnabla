@@ -49,7 +49,7 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
     else:
         max_correl = pearsonr(o.d.flatten(), inputs[0].flatten())[0]
 
-    assert(max_correl == 1.0)
+    np.testing.assert_almost_equal(max_correl, 1.0)
 
     assert o.parent.name == func_name
 

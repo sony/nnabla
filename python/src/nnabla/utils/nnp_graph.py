@@ -267,40 +267,42 @@ class NnpNetwork(object):
         assert np.all(np.array(shape) >
                       0), "Shape must be positive. Given {}.".format(shape)
 
-        # The variable is a parameter, then get from parameter registry.
-        if pvar.type == 'Parameter':
-            try:
-                param = get_parameter(name)
-                if param is None:
-                    logger.info('Paramter `{}` is not found. Initializing.'.format(
-                        name))
-                    tmp = _create_variable(pvar, name, shape, self.rng)
-                    param = tmp.variable_instance
-                    set_parameter(name, param)
-                # Always copy param to current scope even if it already exists.
-                with nn.parameter_scope('', current_scope):
-                    set_parameter(name, param)
-            except:
-                import sys
-                import traceback
-                raise ValueError(
-                    'An error occurs during creation of a variable `{}` as a'
-                    ' parameter variable. The error was:\n----\n{}\n----\n'
-                    'The parameters registered was {}'.format(
-                        name, traceback.format_exc(),
-                        '\n'.join(
-                            list(nn.get_parameters(grad_only=False).keys()))))
-            assert shape == param.shape
-            param = param.get_unlinked_variable(need_grad=v.need_grad)
-            v.variable = param
-            param.name = name
-            return param
+        if pvar.type != 'Parameter':
+            # Create a new variable and returns.
+            var = nn.Variable(shape)
+            v.variable = var
+            var.name = name
+            return var
 
-        # Create a new one and returns.
-        var = nn.Variable(shape)
-        v.variable = var
-        var.name = name
-        return var
+        # Trying to load the parameter from .nnp file.
+        callback.verbose(
+            'Loading parameter `{}` from .nnp.'.format(name))
+        try:
+            param = get_parameter(name)
+            if param is None:
+                logger.info(
+                    'Parameter `{}` is not found. Initializing.'.format(name))
+                tmp = _create_variable(pvar, name, shape, self.rng)
+                param = tmp.variable_instance
+                set_parameter(name, param)
+            # Always copy param to current scope even if it already exists.
+            with nn.parameter_scope('', current_scope):
+                set_parameter(name, param)
+        except:
+            import sys
+            import traceback
+            raise ValueError(
+                'An error occurs during creation of a variable `{}` as a'
+                ' parameter variable. The error was:\n----\n{}\n----\n'
+                'The parameters registered was {}'.format(
+                    name, traceback.format_exc(),
+                    '\n'.join(
+                        list(nn.get_parameters(grad_only=False).keys()))))
+        assert shape == param.shape
+        param = param.get_unlinked_variable(need_grad=v.need_grad)
+        v.variable = param
+        param.name = name
+        return param
 
     def _create_inputs(self, inputs, callback, current_scope):
         input_vars = []
@@ -380,8 +382,8 @@ class NnpNetwork(object):
         for f in self._functions_in_forward_order(variables):
             if f.disabled:
                 continue
-            callback._apply_function_pass_by_type(f, variables)
-            callback._apply_function_pass_by_name(f, variables)
+            callback._apply_function_pass_by_type(f, variables, scope)
+            callback._apply_function_pass_by_name(f, variables, scope)
 
         # Apply stop-at.
         for f in self._functions_in_forward_order(variables):
@@ -394,6 +396,7 @@ class NnpNetwork(object):
         with nn.parameter_scope('', scope):
             for f in self._functions_in_forward_order(variables):
                 self._create_function(f, callback, current_scope)
+                # print(f.name)
                 num_ops += 1
         callback.verbose2('Created {} functions.'.format(num_ops))
 
@@ -497,16 +500,16 @@ class NnpNetworkPass(object):
 
     def on_function_pass_by_name(self, name):
         def _on_function_pass_by_name(callback):
-            def _callback(f, variables):
-                return callback(f, variables)
+            def _callback(f, variables, param_scope):
+                return callback(f, variables, param_scope)
             self._passes_by_name[name] = _callback
             return _callback
         return _on_function_pass_by_name
 
     def on_function_pass_by_type(self, name):
         def _on_function_pass_by_type(callback):
-            def _callback(f, variables):
-                return callback(f, variables)
+            def _callback(f, variables, param_scope):
+                return callback(f, variables, param_scope)
             self._passes_by_name[name] = _callback
             return _callback
         return _on_function_pass_by_type
@@ -536,7 +539,7 @@ class NnpNetworkPass(object):
         return _on_generate_function_by_type
 
     def drop_function(self, *names):
-        def callback(f, variables):
+        def callback(f, variables, param_scope):
             self.verbose('Pass: Deleting {}.'.format(f.name))
             f.disable()
 
@@ -551,7 +554,7 @@ class NnpNetworkPass(object):
 
     def remove_and_rewire(self, name, i=0, o=0):
         @self.on_function_pass_by_name(name)
-        def on_dr(f, variables):
+        def on_dr(f, variables, param_scope):
             fi = f.inputs[i]
             fo = f.outputs[o]
             self.verbose('Removing {} and rewire input={} and output={}.'.format(
@@ -610,15 +613,15 @@ class NnpNetworkPass(object):
             p.batch_stat = batch_stat
             return f
 
-    def _apply_function_pass_by_name(self, f, variables):
+    def _apply_function_pass_by_name(self, f, variables, param_scope):
         if f.name not in self._passes_by_name:
             return f
-        return self._passes_by_name[f.name](f, variables)
+        return self._passes_by_name[f.name](f, variables, param_scope)
 
-    def _apply_function_pass_by_type(self, f, variables):
+    def _apply_function_pass_by_type(self, f, variables, param_scope):
         if f.proto.type not in self._passes_by_type:
             return f
-        return self._passes_by_type[f.proto.type](f, variables)
+        return self._passes_by_type[f.proto.type](f, variables, param_scope)
 
     def _apply_generate_variable(self, v):
         if v.name in self._variable_callbacks:

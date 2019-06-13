@@ -48,6 +48,7 @@ protected:
   float eps_;   ///< \f$\epsilon\f$
   float final_lr_;
   float gamma_;
+  float init_alpha_;
   bool bias_correction_; ///< \bias_correction
 
   // Functions.

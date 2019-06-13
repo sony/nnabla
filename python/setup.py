@@ -201,6 +201,8 @@ if __name__ == '__main__':
         'nnabla.conf',
         'utils/converter/functions.pkl',
         'models/imagenet/category_names.txt',
+        'models/object_detection/coco.names',
+        'models/object_detection/voc.names',
     ]}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
@@ -243,6 +245,7 @@ if __name__ == '__main__':
                 'nnabla.experimental.trainers',
                 'nnabla.models',
                 'nnabla.models.imagenet',
+                'nnabla.models.object_detection',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',

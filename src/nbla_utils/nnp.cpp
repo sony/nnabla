@@ -95,6 +95,7 @@ Monitor::Monitor(MonitorImpl *impl)
 
 string Monitor::name() const { return impl_->name(); }
 string Monitor::network_name() const { return impl_->network_name(); }
+shared_ptr<Network> Monitor::get_network() { return impl_->get_network(); }
 const float Monitor::monitor_epoch() { return impl_->monitor_epoch(); }
 
 // ----------------------------------------------------------------------
