@@ -41,6 +41,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(LogSigmoid, -std::log(std::exp(-x) + (T)1),
-                            (T)1 / (std::exp(x) + (T)1), false);
+                            dy / (std::exp(x) + (T)1), false);
 }
 #endif

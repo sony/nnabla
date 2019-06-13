@@ -25,10 +25,6 @@ def ref_tanh_shrink(x):
     return x-np.tanh(x)
 
 
-def ref_tanh_shrink_backward(x, dx):
-    return np.power(np.tanh(x), 2).flat
-
-
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_tanh_shrink_forward_backward(seed, ctx, func_name):
@@ -36,4 +32,4 @@ def test_tanh_shrink_forward_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
     function_tester(rng, F.tanh_shrink, ref_tanh_shrink, inputs,
-                    ctx=ctx, func_name=func_name, ref_grad=ref_tanh_shrink_backward)
+                    ctx=ctx, func_name=func_name)

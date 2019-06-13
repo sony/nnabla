@@ -28,13 +28,6 @@ def ref_sinc(x):
         return np.sin(x)/x
 
 
-def ref_sinc_backward(x, dx):
-    if np.allclose(x, 0):
-        return 0
-    else:
-        return (np.cos(x)/x - np.sin(x)/(x*x)).flat
-
-
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_sinc_forward_backward(seed, ctx, func_name):
@@ -42,4 +35,4 @@ def test_sinc_forward_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
     function_tester(rng, F.sinc, ref_sinc, inputs,
-                    ctx=ctx, func_name=func_name, ref_grad=ref_sinc_backward)
+                    ctx=ctx, func_name=func_name)
