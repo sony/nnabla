@@ -23,43 +23,61 @@ import tqdm
 
 from nnabla.utils.image_utils import imsave, imread, imresize
 
+
 class ObjectRect:
     def __init__(self, LRTB=None, XYWH=None):
         if LRTB is not None:
             self.rect = np.array(LRTB)
         elif XYWH is not None:
-            self.rect = np.array([XYWH[0] - XYWH[2] * 0.5, XYWH[1] - XYWH[3] * 0.5, XYWH[0] + XYWH[2] * 0.5, XYWH[1] + XYWH[3] * 0.5])
+            self.rect = np.array([XYWH[0] - XYWH[2] * 0.5, XYWH[1] - XYWH[3]
+                                  * 0.5, XYWH[0] + XYWH[2] * 0.5, XYWH[1] + XYWH[3] * 0.5])
         else:
             self.rect = np.full((4,), 0.0, dtype=np.float)
+
     def clip(self):
         return ObjectRect(LRTB=self.rect.clip(0.0, 1.0))
+
     def left(self):
         return self.rect[0]
+
     def top(self):
         return self.rect[1]
+
     def right(self):
         return self.rect[2]
+
     def bottom(self):
         return self.rect[3]
+
     def width(self):
         return np.max(self.rect[2] - self.rect[0], 0)
+
     def height(self):
         return np.max(self.rect[3] - self.rect[1], 0)
+
     def centerx(self):
         return (self.rect[0] + self.rect[2]) * 0.5
+
     def centery(self):
         return (self.rect[1] + self.rect[3]) * 0.5
+
     def center(self):
         return self.centerx(), self.centery()
+
     def area(self):
         return self.width() * self.height()
+
     def overlap(self, rect2):
-        w = np.max([np.min([self.right(), rect2.right()]) - np.max([self.left(), rect2.left()])], 0)
-        h = np.max([np.min([self.bottom(), rect2.bottom()]) - np.max([self.top(), rect2.top()])], 0)
+        w = np.max([np.min([self.right(), rect2.right()]) -
+                    np.max([self.left(), rect2.left()])], 0)
+        h = np.max([np.min([self.bottom(), rect2.bottom()]) -
+                    np.max([self.top(), rect2.top()])], 0)
         return w * h
+
     def iou(self, rect2):
         overlap = self.overlap(rect2)
         return overlap / (self.area() + rect2.area() - overlap)
+
 
 def load_label(file_name):
     labels = []
@@ -75,6 +93,7 @@ def load_label(file_name):
             "Label txt file is not found %s." % (file_name))
     return labels
 
+
 def convert_image(args):
     file_name = args[0]
     source_dir = args[1]
@@ -88,10 +107,14 @@ def convert_image(args):
     anchors = args[9]
 
     src_file_name = os.path.join(source_dir, file_name)
-    src_label_file_name = os.path.join(source_dir, os.path.splitext(file_name)[0] + ".txt")
-    image_file_name = os.path.join(dest_dir, 'data', os.path.splitext(file_name)[0] + ".png")
-    label_file_name = os.path.join(dest_dir, 'data', os.path.splitext(file_name)[0] + "_label.csv")
-    region_file_name = os.path.join(dest_dir, 'data', os.path.splitext(file_name)[0] + "_region.csv")
+    src_label_file_name = os.path.join(
+        source_dir, os.path.splitext(file_name)[0] + ".txt")
+    image_file_name = os.path.join(
+        dest_dir, 'data', os.path.splitext(file_name)[0] + ".png")
+    label_file_name = os.path.join(
+        dest_dir, 'data', os.path.splitext(file_name)[0] + "_label.csv")
+    region_file_name = os.path.join(
+        dest_dir, 'data', os.path.splitext(file_name)[0] + "_region.csv")
     try:
         os.makedirs(os.path.dirname(image_file_name))
     except OSError:
@@ -134,11 +157,14 @@ def convert_image(args):
                     # print('crop_target_w', target_w)
                     im = im[::, (w - target_w) // 2:w - (w - target_w) // 2]
                 # print('before', im.shape)
+
                 def trim_warp(label, input_size, output_size):
                     w_scale = input_size[0] * 1.0 / output_size[0]
                     h_scale = input_size[1] * 1.0 / output_size[1]
-                    label[0] = (label[0] - (1.0 - 1.0 / w_scale) * 0.5) * w_scale
-                    label[1] = (label[1] - (1.0 - 1.0 / h_scale) * 0.5) * h_scale
+                    label[0] = (label[0] - (1.0 - 1.0 / w_scale)
+                                * 0.5) * w_scale
+                    label[1] = (label[1] - (1.0 - 1.0 / h_scale)
+                                * 0.5) * h_scale
                     label[3] *= w_scale
                     label[4] *= h_scale
                     return label
@@ -159,6 +185,7 @@ def convert_image(args):
                     pad = pad + ((0, 0),)
                 im = np.pad(im, pad, 'constant')
                 # print('before', im.shape)
+
                 def pad_warp(label, input_size, output_size):
                     w_scale = input_size[0] * 1.0 / output_size[0]
                     h_scale = input_size[1] * 1.0 / output_size[1]
@@ -182,7 +209,7 @@ def convert_image(args):
 
         # output image
         imsave(image_file_name, im)
-        
+
     except:
         logger.warning(
             "Failed to convert %s." % (src_file_name))
@@ -190,51 +217,61 @@ def convert_image(args):
 
     # create label and region file
     if warp_func is not None:
-        labels = [warp_func(label, input_size, output_size) for label in labels]
+        labels = [warp_func(label, input_size, output_size)
+                  for label in labels]
     grid_w = width // grid_size
     grid_h = height // grid_size
     label_array = np.full((len(anchors), grid_h, grid_w), -1, dtype=np.int)
-    region_array = np.full((len(anchors), grid_h, grid_w, 4), 0.0, dtype=np.float)
-    
+    region_array = np.full(
+        (len(anchors), grid_h, grid_w, 4), 0.0, dtype=np.float)
+
     for label in labels:
         label_rect = ObjectRect(XYWH=label[1:]).clip()
-        
+
         if label_rect.width() > 0.0 and label_rect.height() > 0.0:
-            gx, gy = int(label_rect.centerx() * grid_w), int(label_rect.centery() * grid_h)
+            gx, gy = int(label_rect.centerx() *
+                         grid_w), int(label_rect.centery() * grid_h)
             max_iou = 0
             anchor_index = 0
             for i, anchor in enumerate(anchors):
-                anchor_rect = ObjectRect(XYWH=[(gx + 0.5) / grid_w, (gy + 0.5) / grid_h, anchor[0], anchor[1]])
+                anchor_rect = ObjectRect(
+                    XYWH=[(gx + 0.5) / grid_w, (gy + 0.5) / grid_h, anchor[0], anchor[1]])
                 iou = label_rect.iou(anchor_rect)
                 if iou > max_iou:
                     anchor_index = i
                     max_iou = iou
             label_array[anchor_index][gy][gx] = int(label[0])
-            region_array[anchor_index][gy][gx] = [(label_rect.centerx() - anchor_rect.centerx()) * grid_w + 0.5, (label_rect.centery() - anchor_rect.centery()) * grid_h + 0.5, np.log(label_rect.width() * grid_w), np.log(label_rect.height() * grid_h)]
-    np.savetxt(label_file_name, label_array.reshape((label_array.shape[0] * label_array.shape[1], -1)), fmt='%i', delimiter=',')
-    np.savetxt(region_file_name, region_array.reshape((region_array.shape[0] * region_array.shape[1], -1)), fmt='%f', delimiter=',')
+            region_array[anchor_index][gy][gx] = [(label_rect.centerx() - anchor_rect.centerx()) * grid_w + 0.5, (label_rect.centery(
+            ) - anchor_rect.centery()) * grid_h + 0.5, np.log(label_rect.width() * grid_w), np.log(label_rect.height() * grid_h)]
+    np.savetxt(label_file_name, label_array.reshape(
+        (label_array.shape[0] * label_array.shape[1], -1)), fmt='%i', delimiter=',')
+    np.savetxt(region_file_name, region_array.reshape(
+        (region_array.shape[0] * region_array.shape[1], -1)), fmt='%f', delimiter=',')
+
 
 def get_anchors(source_dir, file_list, num_anchor):
     # List label width and height
     labels = []
     for file_name in tqdm.tqdm(file_list):
-        src_label_file_name = os.path.join(source_dir, os.path.splitext(file_name)[0] + ".txt")
-        labels.extend(np.array(load_label(src_label_file_name))[:,3:5])
+        src_label_file_name = os.path.join(
+            source_dir, os.path.splitext(file_name)[0] + ".txt")
+        labels.extend(np.array(load_label(src_label_file_name))[:, 3:5])
     labels = np.array(labels)
-    logger.log(99, '{} labels are found in {} images ({:.2f} labels/image on average).'.format(len(labels), len(file_list), len(labels) * 1.0 / len(file_list)))
-    
+    logger.log(99, '{} labels are found in {} images ({:.2f} labels/image on average).'.format(
+        len(labels), len(file_list), len(labels) * 1.0 / len(file_list)))
+
     # k-means
     np.random.seed(0)
-    classes = np.random.randint(num_anchor, size = len(labels))
+    classes = np.random.randint(num_anchor, size=len(labels))
     loop = 0
     while loop < 1000:
-        means = [] # anchor * wh
-        distance = [] # anchor * data
+        means = []  # anchor * wh
+        distance = []  # anchor * data
         for i in range(num_anchor):
             mean = labels[classes == i].mean(axis=0)
             means.append(mean)
             distance.append(np.sum((labels - mean) ** 2, axis=1))
-        
+
         new_classes = np.array(distance).argmin(axis=0)
         # print(loop, means)
         loop += 1
@@ -244,8 +281,9 @@ def get_anchors(source_dir, file_list, num_anchor):
 
     # sort anchors by area
     means = np.array(means)
-    area = means[:,0] * means[:,1]
+    area = means[:, 0] * means[:, 1]
     return means[area.argsort()]
+
 
 def create_object_detection_dataset_command(args):
     # settings
@@ -259,7 +297,7 @@ def create_object_detection_dataset_command(args):
     grid_size = int(args.grid_size)
     shuffle = args.shuffle == 'true'
     num_anchor = int(args.num_anchor)
-    
+
     if width % grid_size != 0:
         logger.log(99, 'width" must be divisible by grid_size.')
         return
@@ -278,7 +316,8 @@ def create_object_detection_dataset_command(args):
 
     # create file list
     logger.log(99, "Creating file list...")
-    def create_file_list(dir = ""):
+
+    def create_file_list(dir=""):
         result = []
         items = os.listdir(os.path.join(source_dir, dir))
         for item in items:
@@ -291,7 +330,8 @@ def create_object_detection_dataset_command(args):
     file_list = create_file_list()
 
     if len(file_list) == 0:
-        logger.critical("No image file found in the subdirectory of the input directory.")
+        logger.critical(
+            "No image file found in the subdirectory of the input directory.")
         return False
 
     # calc anchor
@@ -309,7 +349,8 @@ def create_object_detection_dataset_command(args):
     pbar.close()
 
     file_list = [os.path.join('.', 'data', file) for file in file_list]
-    file_list = [file for file in file_list if os.path.exists(os.path.join(dest_dir, os.path.splitext(file)[0] + '.png'))]
+    file_list = [file for file in file_list if os.path.exists(
+        os.path.join(dest_dir, os.path.splitext(file)[0] + '.png'))]
     if len(file_list) == 0:
         logger.critical("No image and label file created correctly.")
         return False
@@ -332,7 +373,8 @@ def create_object_detection_dataset_command(args):
                 writer.writerow(['x:image', 'y:label', 'r:region'])
                 for file in file_list_2:
                     base_file_name = os.path.splitext(file)[0]
-                    writer.writerow([file, os.path.splitext(file)[0] + '_label.csv', os.path.splitext(file)[0] + '_region.csv'])
+                    writer.writerow([file, os.path.splitext(
+                        file)[0] + '_label.csv', os.path.splitext(file)[0] + '_region.csv'])
 
     logger.log(99, "Dataset was successfully created.")
     return True

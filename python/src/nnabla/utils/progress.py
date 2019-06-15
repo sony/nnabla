@@ -48,12 +48,14 @@ def progress(state, progress=0.0):
                 try:
                     with open(state_file_name, 'w') as f:
                         if state is not None:
-                            f.write(state + ' ({0:3.2f}%)'.format(progress * 100))
+                            f.write(
+                                state + ' ({0:3.2f}%)'.format(progress * 100))
                     break
                 except:
                     retry += 1
                     if retry > 100:
-                        logger.critical('Failed to write to {}.'.format(state_file_name))
+                        logger.critical(
+                            'Failed to write to {}.'.format(state_file_name))
                         raise
                     time.sleep(0.1)
     callback.update_progress('{0} ({1:3.2f}%)'.format(state, progress * 100))
