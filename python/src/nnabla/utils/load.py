@@ -426,10 +426,20 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.solver = S.Adamax(o.solver.adamax_param.alpha, o.solver.adamax_param.beta1,
                                         o.solver.adamax_param.beta2, o.solver.adamax_param.eps)
             init_lr = o.solver.adamax_param.alpha
+        elif o.solver.type == 'AdaBound':
+            optimizer.solver = S.AdaBound(o.solver.adabound_param.alpha, o.solver.adabound_param.beta1,
+                                          o.solver.adabound_param.beta2, o.solver.adabound_param.eps,
+                                          o.solver.adabound_param.final_lr, o.solver.adabound_param.gamma)
+            init_lr = o.solver.adabound_param.alpha
         elif o.solver.type == 'AMSGRAD':
             optimizer.solver = S.AMSGRAD(o.solver.amsgrad_param.alpha, o.solver.amsgrad_param.beta1,
                                          o.solver.amsgrad_param.beta2, o.solver.amsgrad_param.eps)
             init_lr = o.solver.amsgrad_param.alpha
+        elif o.solver.type == 'AMSBound':
+            optimizer.solver = S.AMSBound(o.solver.amsbound_param.alpha, o.solver.amsbound_param.beta1,
+                                          o.solver.amsbound_param.beta2, o.solver.amsbound_param.eps,
+                                          o.solver.amsbound_param.final_lr, o.solver.amsbound_param.gamma)
+            init_lr = o.solver.amsbound_param.alpha
         elif o.solver.type == 'Eve':
             p = o.solver.eve_param
             optimizer.solver = S.Eve(
