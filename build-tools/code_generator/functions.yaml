@@ -1361,6 +1361,8 @@ Normalization:
       group:
         doc: The name of the communicator group
         type: string
+        available_values:
+        - world
         default: world
       axes:
         doc: Axes mean and variance are taken.
