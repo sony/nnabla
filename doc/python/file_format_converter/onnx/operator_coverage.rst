@@ -14,7 +14,7 @@ Import
   - Version: 1.4.1
   - Commit id: 3b0ecd5
 
-Total: 77/129
+Total: 81/129
 
 .. table:: 
 
@@ -42,7 +42,7 @@ Total: 77/129
      Constant                       √                                       √                       
      ConstantOfShape                                                        X                       
      Conv                           √                                                               
-     ConvTranspose                  X                                                               
+     ConvTranspose                  √                                                               
      Cos                                                          √                                 
      Cosh                                                                   √                       
      DepthToSpace                   √                                                               
@@ -83,7 +83,7 @@ Total: 77/129
      MaxPool                        √                                  X         X                  
      MaxRoiPool                     X                                                               
      MaxUnpool                                                              X                       
-     Mean                           X                        X         X                            
+     Mean                           X                        √         √                            
      Min                            X                        √         √                            
      Mul                            X                        √    √                                 
      Multinomial                                                  X                                 
@@ -128,7 +128,7 @@ Total: 77/129
      Softmax                        √                                                               
      Softplus                       √                                                               
      Softsign                       √                                                               
-     SpaceToDepth                   X                                                               
+     SpaceToDepth                   √                                                               
      Split                          √    √                                                          
      Sqrt                           X                        √                                      
      Squeeze                        √                                                               
@@ -143,7 +143,7 @@ Total: 77/129
      TopK                           X                                            X                  
      Transpose                      √                                                               
      Unsqueeze                      √                                                               
-     Upsample                       X                             X         X    X                  
+     Upsample                                                √    √         √    X                  
      Where                                                                  X                       
      Xor                            √                             √                                 
      experimental ATen              X                                                               
