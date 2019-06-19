@@ -22,6 +22,8 @@ import scipy.signal as sig
 @pytest.mark.parametrize("window_size, stride, fft_size, window_type, center", [
     (256, 128, 512, 'hamming', True),
     (256, 128, 256, 'hanning', False),
+    (256, 128, 512, None, True),
+    (256, 128, 256, 'rectangular', False),
 ])
 def test_istft(window_size, stride, fft_size, window_type, center):
     # clear all previous STFT conv/deconv kernels
@@ -71,8 +73,13 @@ def test_stft(window_size, stride, fft_size, window_type):
     nn.forward_all([nyr, nyi])
 
     stft_nnabla = nyr.d + 1j * nyi.d
+
+    window_type_scipy = window_type
+    if window_type == 'rectangular' or window_type is None:
+        window_type_scipy = 'boxcar'
+
     _f, _t, stft_scipy = sig.stft(x,
-                                  window=window_type,
+                                  window=window_type_scipy,
                                   nperseg=window_size,
                                   noverlap=window_size-stride,
                                   nfft=fft_size,

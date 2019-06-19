@@ -705,7 +705,8 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
         window_size (int): Size of STFT analysis window.
         stride (int): Number of samples that we shift the window, also called `hop size`.
         fft_size (int): Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
-        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
         pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
 
@@ -724,6 +725,8 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
             window_func = np.hanning(window_size + 1)[:-1]
         elif window_type == 'hamming':
             window_func = np.hamming(window_size + 1)[:-1]
+        elif window_type == 'rectangular' or window_type is None:
+            window_func = np.ones(window_size)
         else:
             raise ValueError("Unknown window type {}.".format(window_type))
 
@@ -779,7 +782,8 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
         window_size (int): Size of STFT analysis window.
         stride (int): Number of samples that we shift the window, also called `hop size`.
         fft_size (int): Size of the FFT, (STFT has `fft_size // 2 + 1` frequency bins).
-        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
 
     Returns:
@@ -794,6 +798,8 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
             window_func = np.hanning(window_size + 1)[:-1]
         elif window_type == 'hamming':
             window_func = np.hamming(window_size + 1)[:-1]
+        elif window_type == 'rectangular' or window_type is None:
+            window_func = np.ones(window_size)
         else:
             raise ValueError("Unknown window type {}.".format(window_type))
 
