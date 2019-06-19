@@ -164,55 +164,55 @@ Export
   - Version: 1.0.15.dev1
   - Commit id: 8a603de
 
-Total: 63/155
+Total: 83/155
 
 .. table:: 
 
     ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
          NNabla Functions        1    2    3    4    5    6    7    8    9    10                   Description                
     ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
-     ACos                                                                                                                     
-     ACosh                                                                                                                    
-     ASin                                                                                                                     
-     ASinh                                                                                                                    
-     ATan                                                                                                                     
-     ATan2                                                                                                                    
-     ATanh                                                                                                                    
+     ACos                                                △              △          By ACos                                    
+     ACosh                                               △              △          By Acosh                                   
+     ASin                                                △              △          By ASin                                    
+     ASinh                                               △              △          By Asinh                                   
+     ATan                                                △              △          By ATan                                    
+     ATan2                                               △              △          By Div,ATan                                
+     ATanh                                               △              △          By Atanh                                   
      Abs                                                 √              √          By Abs                                     
      AbsoluteError                                                                                                            
      Add2                                                √              √          By Add                                     
      AddScalar                                           △              △          By Add                                     
-     Affine                                              △              △          By Reshape,Flatten,Gemm                    
+     Affine                                              △              △          By Reshape,Gemm                            
      Arange                                                                                                                   
      AveragePooling                                      √              √          By AveragePool                             
      BatchMatmul                                         √              √          By Matmul                                  
      BatchNormalization                                  √              √          By InstanceNormalization,BatchNormalization
      BcAdd2                                                                                                                   
-     BinaryConnectAffine                                                                                                      
+     BinaryConnectAffine                                 △              △          By Reshape,Gemm                            
      BinaryConnectConvolution                            △              △          By Conv,Reshape                            
      BinaryCrossEntropy                                                                                                       
      BinaryError                                                                                                              
-     BinarySigmoid                                       △              △          By HardSigmoid                             
-     BinaryTanh                                                                                                               
-     BinaryWeightAffine                                                                                                       
-     BinaryWeightConvolution                                                                                                  
+     BinarySigmoid                                       △              △          By Greater,Where                           
+     BinaryTanh                                          △              △          By Greater,Where                           
+     BinaryWeightAffine                                  △              △          By Reshape,MatMul,Mul,Add                  
+     BinaryWeightConvolution                             △              △          By Reshape,Conv,Mul,Add                    
      Broadcast                                                                                                                
      BroadcastTo                                         √              √                                                     
      CELU                                                                                                                     
      CReLU                                                                                                                    
      CategoricalCrossEntropy                                                                                                  
-     Ceil                                                                                                                     
+     Ceil                                                △              △          By Ceil                                    
      ClipGradByNorm                                                                                                           
      ClipGradByValue                                                                                                          
      Concatenate                                         √              √          By Concat                                  
      ConfusionMatrix                                                                                                          
      Constant                                                                                                                 
      Convolution                                         √              √          By Conv                                    
-     Cos                                                                                                                      
-     Cosh                                                                                                                     
-     Deconvolution                                       △              △          By ConvTranspose,Add                       
+     Cos                                                 △              △          By Cos                                     
+     Cosh                                                △              △          By Cosh                                    
+     Deconvolution                                       △              △          By ConvTranspose,Reshape                   
      DepthwiseConvolution                                △              △          By Conv                                    
-     DepthwiseDeconvolution                                                                                                   
+     DepthwiseDeconvolution                              △              △          By ConvTranspose,Reshape                   
      Div2                                                √              √          By Div                                     
      Dropout                                             △              △          By Dropout                                 
      ELU                                                 √              √          By ELU                                     
@@ -224,7 +224,7 @@ Total: 63/155
      FFT                                                                                                                      
      FixedPointQuantize                                                                                                       
      Flip                                                △              △          By Gather,Transpose,Identity               
-     Floor                                                                                                                    
+     Floor                                               △              △          By Floor                                   
      GELU                                                                                                                     
      GRU                                                                                                                      
      GlobalAveragePooling                                √              √          By GlobalAveragePool                       
@@ -301,9 +301,9 @@ Total: 63/155
      Shift                                                                                                                    
      Sigmoid                                             √              √          By Sigmoid                                 
      SigmoidCrossEntropy                                                                                                      
-     Sign                                                                                                                     
-     Sin                                                                                                                      
-     Sinh                                                                                                                     
+     Sign                                                △              △          By Sign                                    
+     Sin                                                 △              △          By Sin                                     
+     Sinh                                                △              △          By Sinh                                    
      Sink                                                                                                                     
      Slice                                               △              △          By Slice                                   
      Softmax                                             √              √          By Softmax                                 
@@ -316,7 +316,7 @@ Total: 63/155
      Sum                                                 √              √          By ReduceSum                               
      SumPooling                                          △              △          By Mul                                     
      Swish                                                                                                                    
-     Tan                                                                                                                      
+     Tan                                                 △              △          By Tan                                     
      Tanh                                                √              √          By Tanh                                    
      TopKData                                                                                                                 
      TopKGrad                                                                                                                 
