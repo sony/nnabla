@@ -29,7 +29,7 @@ void clip_grad_by_norm_cpu(const Context &ctx,
   if (sum > 0.0 && sum > clip_norm * clip_norm) {
     T norm = std::sqrt(sum);
     for (int i = 0; i < size; ++i)
-      grad[i] /= clip_norm * grad[i] / norm;
+      grad[i] = clip_norm * grad[i] / norm;
   }
 }
 }
