@@ -14,10 +14,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <nbla/solver/clip_grad.hpp>
 #include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/rmsprop.hpp>
 #include <nbla/solver/weight_decay.hpp>
-#include <nbla/solver/clip_grad.hpp>
 
 namespace nbla {
 using std::shared_ptr;

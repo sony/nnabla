@@ -18,8 +18,8 @@
 namespace nbla {
 
 template <typename T>
-void clip_grad_by_norm_cpu(const Context &ctx,
-                           const shared_ptr<Variable> param, float clip_norm) {
+void clip_grad_by_norm_cpu(const Context &ctx, const shared_ptr<Variable> param,
+                           float clip_norm) {
   Size_t size = param->size();
   T *grad = param->cast_grad_and_get_pointer<T>(ctx);
   T sum = 0;
