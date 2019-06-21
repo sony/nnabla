@@ -4,6 +4,7 @@ import numpy
 import os
 import shutil
 import sys
+import time
 
 
 from nnabla.utils.data_source_implements import CsvDataSource
@@ -143,12 +144,12 @@ class CreateCache(CsvDataSource):
         self._cache_file_names = []
 
         self._cache_data = []
-        percent = 0
         progress('Create cache', 0)
+        last_time = time.time()
         for self._position in range(self._size):
-            if int(self._position * 10.0 / self._size) > percent:
-                percent = int(self._position * 10.0 / self._size)
-                progress('Create cache', percent / 10.0)
+            if time.time() >= last_time + 1.0:
+                progress('Create cache', self._position / self._size)
+                last_time = time.time()
             self._file.seek(self._line_positions[self._order[self._position]])
             line = self._file.readline().decode('utf-8')
             csvreader = csv.reader([line])

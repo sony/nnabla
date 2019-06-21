@@ -221,7 +221,11 @@ def forward_command(args):
         with filereader.open(textmode=True) as f:
             rows = [row for row in csv.reader(f)]
         row0 = rows.pop(0)
-        root_path = '.'
+        if args.replace_path:
+            root_path = os.path.dirname(args.dataset)
+            root_path = os.path.abspath(root_path.replace('/|\\', os.path.sep))
+        else:
+            root_path = '.'
         rows = list(map(lambda row: list(map(lambda x: x if is_float(
             x) else compute_full_path(root_path, x), row)), rows))
         for i in range(len(rows)):
@@ -398,6 +402,8 @@ def add_forward_command(subparsers):
         '-d', '--dataset', help='path to CSV dataset', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '--replace_path', help='replace data path in the dataset with absolute path', action='store_true')
     subparser.add_argument(
         '--result_outdir', help='output result directory', type=str, default='')
     subparser.add_argument(
