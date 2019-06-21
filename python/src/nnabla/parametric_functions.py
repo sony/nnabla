@@ -2183,7 +2183,7 @@ def embed(inp, n_inputs, n_features, initializer=None,
     ('slope', 'Negative slope',
      'tuple() if shared else (inp.shape[base_axis],)', True),
 ])
-def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
+def prelu(inp, base_axis=1, shared=True, fix_parameters=False, slope_init=None):
     """
     Parametrized Rectified Linear Unit function defined as
 
@@ -2199,14 +2199,17 @@ def prelu(inp, base_axis=1, shared=True, fix_parameters=False):
         shared(bool): Use shared weight value or not
         fix_parameters (bool): When set to `True`, the negative slope values
             will not be updated.
-
+        slope_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
+            Initializer of negative slopes. By default, they are initialized with `0.25`.
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
     shape = tuple() if shared else (inp.shape[base_axis],)
+    if slope_init is None:
+        slope_init = ConstantInitializer(0.25)
     w = get_parameter_or_create("slope", shape,
-                                ConstantInitializer(-1), True, not fix_parameters)
+                                slope_init, True, not fix_parameters)
     return F.prelu(inp, w, base_axis)
 
 
