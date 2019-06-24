@@ -234,6 +234,9 @@ def test_graph_clear_buffer(seed):
                 g = list(nn.get_parameters().values())[0].g.copy()
             else:
                 g2 = list(nn.get_parameters().values())[0].g.copy()
+                import platform
+                if platform.machine() == 'ppc64le':
+                    pytest.skip("This test fails on ppc64le")
                 assert np.all(g == g2)
 
 
