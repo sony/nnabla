@@ -9,11 +9,11 @@ The pre-trained models can be used for both inference and training as following:
 
 .. code-block:: python
 
-    # Create ResNet-18 for inference
-    from nnabla.models.imagenet import ResNet
-    model = ResNet(18)
+    # Create ResNet-50 for inference
+    from nnabla.models.imagenet import ResNet50
+    model = ResNet50()
     batch_size = 1
-    # model.input_shape returns (3, 224, 224) when ResNet-18
+    # model.input_shape returns (3, 224, 224) when ResNet-50
     x = nn.Variable((batch_size,) + model.input_shape)
     y = model(x, training=False)
 
@@ -27,7 +27,7 @@ The pre-trained models can be used for both inference and training as following:
     print('Predicted label:', model.category_names[predicted_label])
 
 
-    # Create ResNet-18 for fine-tuning
+    # Create ResNet-50 for fine-tuning
     batch_size=32
     x = nn.Variable((batch_size,) + model.input_shape)
     # * By training=True, it sets batch normalization mode for training
@@ -51,19 +51,19 @@ Available models are summarized in the following table. Error rates are calculat
 .. csv-table:: Available ImageNet models
     :header: "Name", "Class", "Top-1 error", "Top-5 error", "Training framework", "Notes"
 
-    "ResNet-18", "ResNet", 30.28, 10.90, Neural Network Console,
-    "ResNet-34", "ResNet", 26.72, 8.89, Neural Network Console,
-    "ResNet-50", "ResNet", 24.59, 7.48, Neural Network Console,
-    "ResNet-101", "ResNet", 23.81, 7.01, Neural Network Console,
-    "ResNet-152", "ResNet", 23.48, 7.09, Neural Network Console,
+    "ResNet-18", "ResNet18", 30.28, 10.90, Neural Network Console,
+    "ResNet-34", "ResNet34", 26.72, 8.89, Neural Network Console,
+    "ResNet-50", "ResNet50", 24.59, 7.48, Neural Network Console,
+    "ResNet-101", "ResNet101", 23.81, 7.01, Neural Network Console,
+    "ResNet-152", "ResNet152", 23.48, 7.09, Neural Network Console,
     "MobileNet", "MobileNet", 29.51, 10.34, Neural Network Console,
     "MobileNetV2", "MobileNetV2", 29.94, 10.82, Neural Network Console,
     "SENet-154", "SENet", 22.04, 6.29, Neural Network Console,
-    "SqueezeNet v1.0", "SqueezeNet", 42.71, 20.12, Neural Network Console,
-    "SqueezeNet v1.1", "SqueezeNet", 41.23, 19.18, Neural Network Console,
-    "VGG-11", "VGG", 30.84, 11.51, Neural Network Console,
-    "VGG-13", "VGG", 29.74, 10.47, Neural Network Console,
-    "VGG-16", "VGG", 28.84, 10.13, Neural Network Console,
+    "SqueezeNet v1.0", "SqueezeNetV10", 42.71, 20.12, Neural Network Console,
+    "SqueezeNet v1.1", "SqueezeNetV11", 41.23, 19.18, Neural Network Console,
+    "VGG-11", "VGG11", 30.84, 11.51, Neural Network Console,
+    "VGG-13", "VGG13", 29.74, 10.47, Neural Network Console,
+    "VGG-16", "VGG16", 28.84, 10.13, Neural Network Console,
     "NIN", "NIN", 42.91, 20.66, Neural Network Console,
     "DenseNet-161", "DenseNet", 23.82, 7.02, Neural Network Console,
     "InceptionV3", "InceptionV3", 21.82, 5.88, Neural Network Console,
@@ -84,6 +84,21 @@ List of models
 
 .. automodule:: nnabla.models.imagenet
 
+.. autoclass:: ResNet18
+    :members:
+
+.. autoclass:: ResNet34
+    :members:
+
+.. autoclass:: ResNet50
+    :members:
+
+.. autoclass:: ResNet101
+    :members:
+
+.. autoclass:: ResNet152
+    :members:
+
 .. autoclass:: ResNet
     :members:
 
@@ -96,12 +111,27 @@ List of models
 .. autoclass:: SENet
     :members:
 
+.. autoclass:: SqueezeNetV10
+    :members:
+
+.. autoclass:: SqueezeNetV11
+    :members:
+
 .. autoclass:: SqueezeNet
+    :members:
+
+.. autoclass:: VGG11
+    :members:
+
+.. autoclass:: VGG13
+    :members:
+
+.. autoclass:: VGG16
     :members:
 
 .. autoclass:: VGG
     :members:
-    
+
 .. autoclass:: NIN
     :members:
     

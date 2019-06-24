@@ -63,7 +63,8 @@ class VGG(ImageNetBase):
     def _input_shape(self):
         return (3, 224, 224)
 
-    def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, returns_net=False, verbose=0):
+    def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False,
+                 force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
 
         assert use_from is None, 'This should not be set because it is for forward compatibility.'
         input_var = self.get_input_var(input_var)
@@ -85,3 +86,30 @@ class VGG(ImageNetBase):
         if returns_net:
             return net
         return list(net.outputs.values())[0]
+
+
+class VGG11(VGG):
+    '''VGG11
+        An alias of :obj:`VGG` `(11)`.
+    '''
+
+    def __init__(self):
+        super(VGG11, self).__init__(11)
+
+
+class VGG13(VGG):
+    '''VGG13
+        An alias of :obj:`VGG` `(13)`.
+    '''
+
+    def __init__(self):
+        super(VGG13, self).__init__(13)
+
+
+class VGG16(VGG):
+    '''VGG16
+        An alias of :obj:`VGG` `(16)`.
+    '''
+
+    def __init__(self):
+        super(VGG16, self).__init__(16)
