@@ -71,6 +71,9 @@ Available models are summarized in the following table. Error rates are calculat
     "`GoogLeNet <https://nnabla.org/pretrained-models/nnp_models/imagenet/GoogLeNet/GoogLeNet.nnp>`_", "GoogLeNet", 31.22, 11.34, Neural Network Console
     "`ResNeXt-50 <https://nnabla.org/pretrained-models/nnp_models/imagenet/ResNeXt-50/ResNeXt-50.nnp>`_", "ResNeXt50", 22.95, 6.73, Neural Network Console
     "`ResNeXt-101 <https://nnabla.org/pretrained-models/nnp_models/imagenet/ResNeXt-101/ResNeXt-101.nnp>`_", "ResNeXt101", 22.80, 6.74, Neural Network Console
+    "`ShuffleNet <https://nnabla.org/pretrained-models/nnp_models/imagenet/ShuffleNet/ShuffleNet.nnp>`_", "ShuffleNet10", 34.15, 13.85, Neural Network Console
+    "`ShuffleNet-0.5x <https://nnabla.org/pretrained-models/nnp_models/imagenet/ShuffleNet-0.5x/ShuffleNet-0.5x.nnp>`_", "ShuffleNet05", 41.99, 19.64, Neural Network Console
+    "`ShuffleNet-2.0x <https://nnabla.org/pretrained-models/nnp_models/imagenet/ShuffleNet-2.0x/ShuffleNet-2.0x.nnp>`_", "ShuffleNet20", 30.34, 11.12, Neural Network Console
 
 
 Common interfaces
@@ -156,4 +159,16 @@ List of models
     :members:
 
 .. autoclass:: ResNeXt
+    :members:
+
+.. autoclass:: ShuffleNet10
+    :members:
+
+.. autoclass:: ShuffleNet05
+    :members:
+
+.. autoclass:: ShuffleNet20
+    :members:
+
+.. autoclass:: ShuffleNet
     :members:
