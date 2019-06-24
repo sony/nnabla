@@ -121,12 +121,6 @@ void ScatterNd<T>::backward_impl(const Variables &inputs,
   for (int i = 0; i < idx_cols; i++) {
     for (int m = 0; m < idx_rows; m++) {
       auto index = idx[m * idx_cols + i];
-      NBLA_CHECK(index < src_shape[m], error_code::value,
-                 "index %d for axis %d overflows shape %d", index, m,
-                 src_shape[m]);
-      NBLA_CHECK(index >= -src_shape[m], error_code::value,
-                 "index %d for axis %d underflows shape %d", index, m,
-                 src_shape[m]);
       src_ndi[m] = (index < 0) ? src_shape[m] + index : index;
     }
     auto slice_length = src_strides.at(idx_rows - 1);
