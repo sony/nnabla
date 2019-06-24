@@ -81,7 +81,7 @@ class TensorflowImporter:
                                                          verbose=False,
                                                          target=",".join(
                                                              constants.DEFAULT_TARGET),
-                                                         opset=6,
+                                                         opset=9,
                                                          input_names=inputs,
                                                          output_names=outputs,
                                                          inputs_as_nchw=None)
