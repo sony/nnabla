@@ -920,6 +920,7 @@ def scatter_nd(data, indices, shape=None, out=None):
     :math:`(M,Y_0,\ldots,Y_{K-1})` the input `data` shape is
     :math:`(Y_0,\ldots,Y_{K-1},X_M,\ldots,X_{N-1})`, where :math:`M<=N`. If
     :math:`M==N` the `data` shape is simply :math:`(Y_0,\ldots,Y_{K-1})`.
+    Note that `indices` are treated as integers and potentially converted.
 
     The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
 
