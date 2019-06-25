@@ -48,6 +48,8 @@ def plot_any_command(args, plot_func, plot_func_kwargs=None):
     if args.outfile:
         import matplotlib
         matplotlib.use('Agg')
+    if args.label is None:
+        args.label = []
 
     import matplotlib.pyplot as plt
     plt.figure()
