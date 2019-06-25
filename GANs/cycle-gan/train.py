@@ -69,7 +69,7 @@ def image_augmentation(image):
 
 def train(args):
     # Settings
-    b, c, h, w = 1, 3, 256, 256
+    b, c, h, w = int(args.batch_size), 3, 256, 256
     beta1 = 0.5
     beta2 = 0.999
     pool_size = 50
