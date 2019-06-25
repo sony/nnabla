@@ -125,6 +125,11 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
                                                     nonlinearity,
                                                     output_stat, add,
                                                     ctx, func_name):
+    import platform
+    if platform.system() == 'Windows' and len(ctx.backend) > 1:
+        pytest.skip(
+            "Currently not worked with CUDA/cuDNN on Windows platform.")  # TODO
+
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis, add))

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# for nnabla>=1.0.17
-
 FROM ubuntu:16.04
 
 ENV LC_ALL C
@@ -35,22 +33,15 @@ RUN apt-get update \
        libgoogle-glog-dev \
        libgtest-dev \
        libhdf5-dev \
-       libiomp-dev \
        libleveldb-dev \
        liblmdb-dev \
-       libopencv-dev \
-       libopenmpi-dev \
-       libprotobuf-dev \
        libsnappy-dev \
        libssl-dev \
        make \
-       openmpi-bin \
-       openmpi-doc \
        openssl \
        unzip \
        wget \
        zip \
-       graphviz \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

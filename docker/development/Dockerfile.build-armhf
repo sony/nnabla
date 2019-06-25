@@ -33,9 +33,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatlas-dev \
     libhdf5-dev \
     liblapack-dev \
-    libopenmpi-dev \
     make \
-    openmpi-bin \
+    pkg-config \
     python \
     python-dev \
     python-pip \
@@ -73,25 +72,12 @@ ADD python/test_requirements.txt /tmp/deps/
 RUN python3 -m pip install --upgrade pip
 RUN python2 -m pip install --upgrade pip
 
-
-RUN pip install \
-    --no-cache-dir \
-    --global-option=build_ext \
-    --global-option="-I/usr/include/hdf5/serial" \
-    --global-option="-L/usr/lib/arm-linux-gnueabihf/hdf5/serial" \
-    h5py
 RUN pip install ipython==5.0
 
 RUN pip install -r /tmp/deps/setup_requirements.txt
 RUN pip install -r /tmp/deps/requirements.txt
 RUN pip install -r /tmp/deps/test_requirements.txt
 
-RUN pip3 install \
-    --no-cache-dir \
-    --global-option=build_ext \
-    --global-option="-I/usr/include/hdf5/serial" \
-    --global-option="-L/usr/lib/arm-linux-gnueabihf/hdf5/serial" \
-    h5py
 RUN pip3 install ipython
 
 RUN pip3 install -r /tmp/deps/setup_requirements.txt
