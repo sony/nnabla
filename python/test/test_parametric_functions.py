@@ -29,7 +29,7 @@ def g_rng(request):
 
 def process_param_init(p_init, shape, rng):
     if p_init is True:
-        p_init = rng.randn(*shape)
+        p_init = np.asarray(rng.randn(*shape))
     return p_init
 
 
@@ -1028,6 +1028,49 @@ def test_pf_lstm_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, 
                 assert y.parent.inputs[4].need_grad == (not fix_parameters)
             if isinstance(b_init, np.ndarray):
                 assert np.allclose(b_init, b.d)
+
+
+@pytest.mark.parametrize("inshape", [(8, 2, 2, 2), (16, 1, 8)])
+@pytest.mark.parametrize("base_axis", [1, 2])
+@pytest.mark.parametrize("shared", [False, True])
+@pytest.mark.parametrize("slope_init", [None, I.NormalInitializer(), True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+def test_pf_prelu_execution(g_rng, inshape, base_axis, shared, slope_init, fix_parameters):
+
+    slope_shape = tuple() if shared else (inshape[base_axis],)
+    slope_init = process_param_init(slope_init, slope_shape, g_rng)
+
+    kw = {}
+    insert_if_not_none(kw, 'slope_init', slope_init)
+    insert_if_not_default(kw, 'base_axis', base_axis, 1)
+    insert_if_not_default(kw, 'shared', shared, True)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+
+    # Check execution
+    y = PF.prelu(x, **kw)
+    y.forward()
+    y.backward()
+
+    # Check values
+    # TODO
+
+    # Check args
+    assert y.parent.info.type_name == 'PReLU'
+    args = y.parent.info.args
+    assert args['base_axis'] == base_axis
+
+    # Check created parameters
+    assert y.parent.inputs[0] == x
+    assert len(y.parent.inputs) == 2
+    assert len(nn.get_parameters()) == 1
+    slope = nn.get_parameters()['prelu/slope']
+    assert slope.shape == slope_shape
+    assert slope.need_grad
+    assert y.parent.inputs[1].need_grad == (not fix_parameters)
+    if isinstance(slope_init, np.ndarray):
+        assert np.allclose(slope_init, slope.d)
 
 
 # TODO: Test all parametric functions.
