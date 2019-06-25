@@ -916,3 +916,69 @@ def gather_nd(data, indices):
             indices = np.asarray(indices, dtype=np.int)
         indices = nn.Variable.from_numpy_array(indices)
     return gather_nd_base(data, indices)
+
+
+def scatter_nd(data, indices, shape=None, out=None):
+    """Scatter `data` according to `indices` into a new array of given `shape`
+    or an existing array provided as `out`. Exactly one of the `shape` or `out`
+    argument must be given. Given output `shape`, or shape of `out` array,
+    :math:`(X_0,X_1,\ldots,X_{N-1})` and `indices` shape
+    :math:`(M,Y_0,\ldots,Y_{K-1})` the input `data` shape is
+    :math:`(Y_0,\ldots,Y_{K-1},X_M,\ldots,X_{N-1})`, where :math:`M<=N`. If
+    :math:`M==N` the `data` shape is simply :math:`(Y_0,\ldots,Y_{K-1})`.
+    Note that `indices` are treated as integers and potentially converted.
+
+    The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
+
+    .. code-block:: python
+
+      def scatter_nd(data, indices, shape=None, out=None):
+          assert (shape and not out) or (out and not shape)
+          if isinstance(indices, numpy.ndarray)
+              indices = indices.tolist()
+          result = out if out else numpy.zeros(shape)
+          result[indices] = data
+          return result
+
+    Examples:
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> nn.set_auto_forward(True)
+    >>> data = nn.Variable.from_numpy_array(np.array([9, 10, 11, 12]))
+    >>> indices = nn.Variable.from_numpy_array(np.array([[4, 3, 1, 7]]))
+    >>> scattered = F.scatter_nd(data, indices, shape=(8,))
+    >>> print(scatterd.d)
+    [ 0. 11.  0. 10.  9.  0.  0. 12.]
+    >>> print(F.gather_nd(scattered, indices).d)
+    [ 9. 10. 11. 12.]
+
+    Args:
+        data(~nnabla.Variable, ~nnabla.NdArray): input data
+        indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): scatter indices
+        shape(tuple, list): shape of new output array
+        out(~nnabla.Variable, ~nnabla.NdArray): existing output array
+
+    Returns: ~nnabla.Variable or ~nnabla.NdArray of given `shape`.
+
+    """
+    from .function_bases import scatter_nd as scatter_nd_base
+    if not isinstance(indices, (nn.Variable, nn.NdArray)):
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.int)
+        indices = nn.Variable.from_numpy_array(indices)
+    if shape is None and out is None:
+        raise TypeError("One of `shape` or `out` argument must be supplied.")
+    if shape and out:
+        raise TypeError("Only one of `shape` or `out` argument may be used.")
+    if out:
+        if isinstance(out, nn.Variable):
+            out = out.data
+        if not isinstance(out, nn.NdArray):
+            raise TypeError("`out` argument must be NdArray or Variable type.")
+        shape = out.shape
+        outputs = [out]
+    else:
+        if isinstance(shape, np.ndarray):
+            shape = shape.tolist()
+        outputs = None
+    return scatter_nd_base(data, indices, shape, outputs=outputs)
