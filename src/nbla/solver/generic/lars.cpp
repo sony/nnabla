@@ -62,7 +62,8 @@ void Lars<T>::update_impl(const string &key, VariablePtr param) {
       std::accumulate(data, data + size, T(0),
                       [](const T &acc, const T &d) { return acc + d * d; }));
   auto x = g_norm + this->decay_rate_ * d_norm;
-  assert(x >= 0 && "local learning rate should be positive or zero.");
+  NBLA_CHECK(x >= 0, error_code::value,
+             "local learning rate should be positive or zero.");
   if (x < this->eps_) {
     x += this->eps_;
   }
@@ -85,8 +86,8 @@ void Lars<T>::weight_decay_impl(const string &key, VariablePtr param,
     this->decay_rate_ = decay_rate;
   } else {
     /* decay_rate should be same between all layers */
-    assert(this->decay_rate_ == decay_rate &&
-           "decay_rate should be same between all layers");
+    NBLA_CHECK(this->decay_rate_ == decay_rate, error_code::value,
+               "decay_rate should be same between all layers");
   }
 }
 NBLA_DEF_CHECK_INF_GRAD(Lars, check_inf_grad_cpu);
