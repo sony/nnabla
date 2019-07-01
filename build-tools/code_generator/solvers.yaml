@@ -39,11 +39,20 @@ Momentum:
 Lars:
   snake_name: lars
   doc: |
-    LARS with Momentum
+    LARS with Momentum.
+
+    .. math::
+        \lambda &\leftarrow \eta
+          \frac{\| w_t \|}{\| \Delta w_t + \beta w_t \|} \\
+        v_{t+1} &\leftarrow m v_t + \gamma \lambda
+          (\Delta w_t + \beta w_t) \\
+        w_{t+1} &\leftarrow w_t - v_{t+1}
 
   references:
     - |
-      `https://arxiv.org/pdf/1708.03888.pdf`
+      `Yang You, Igor Gitman, Boris Ginsburg
+      Large Batch Training of Convolutional Networks
+      <https://arxiv.org/abs/1708.03888>`_
 
   arguments:
     lr:

@@ -24,11 +24,11 @@ NBLA_REGISTER_SOLVER_HEADER(Lars, float /*lr*/, float /*momentum*/,
 
 /** LARS solver defined as
 \f[
-\lammda \leftarrow \eta
-\frac{\| w_t \|}{\| \Delta w_t + beta w_t \|} \\
-v_{t+1} \leftarrow m v_t + \gamma \lammda
-(\Delta w_t + beta w_t) \\
-w_{t+1} \leftarrow \w_t - v_{t+1}
+\lambda \leftarrow \eta
+\frac{\| w_t \|}{\| \Delta w_t + \beta w_t \|} \\
+v_{t+1} \leftarrow m v_t + \gamma \lambda
+(\Delta w_t + \beta w_t) \\
+w_{t+1} \leftarrow w_t - v_{t+1}
 \f]
 
 @param lr \f$\gamma\f$ Learning rate.
