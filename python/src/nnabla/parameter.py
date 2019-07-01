@@ -195,7 +195,7 @@ def _create_parameter_by_initializer(initializer, shape, need_grad):
     if callable(initializer):
         assert shape is not None
         return nn.Variable.from_numpy_array(
-            initializer(shape=shape), need_grad=need_grad)
+            initializer(shape=list(map(int, shape))), need_grad=need_grad)
 
     # Invalid initialzier argument.
     raise ValueError(
