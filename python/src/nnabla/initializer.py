@@ -336,7 +336,7 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the standard deviation proposed by Glorot et al.
 
     Note: 
-        We have updated the definition as following from v.1.3. It may affect the
+        We have updated the definition as following from v.1.2. It may affect the
         behavior of existing scripts that rely on the default initialization.
 
     .. math::

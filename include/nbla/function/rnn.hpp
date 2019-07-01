@@ -15,9 +15,27 @@
 #ifndef NBLA_FUNCTION_RNN_HPP
 #define NBLA_FUNCTION_RNN_HPP
 
+#include <nbla/array.hpp>
+#include <nbla/common.hpp>
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
+#include <nbla/variable.hpp>
+
+#include <nbla/computation_graph/computation_graph.hpp>
+#include <nbla/computation_graph/function.hpp>
+#include <nbla/computation_graph/utils.hpp>
+#include <nbla/computation_graph/variable.hpp>
+
+#include <nbla/function/affine.hpp>
+#include <nbla/function/concatenate.hpp>
+#include <nbla/function/relu.hpp>
+#include <nbla/function/reshape.hpp>
+#include <nbla/function/sink.hpp>
+#include <nbla/function/split.hpp>
+#include <nbla/function/stack.hpp>
+#include <nbla/function/tanh.hpp>
+#include <nbla/function/transpose.hpp>
 
 namespace nbla {
 
@@ -40,6 +58,16 @@ protected:
   float dropout_;
   bool bidirectional_;
   bool training_;
+
+  int seq_len_;
+  int input_dim_;
+  int hidden_size_;
+  int num_directions_;
+  int batch_size_;
+  bool weight_exists_;
+  bool bias_exists_;
+  vector<CgVariablePtr> ys_, hn_;
+  shared_ptr<CgVariable> x_, h_, w0_, w_, b_;
 
 public:
   RNN(const Context &ctx, int num_layers, const string &nonlinearity,
@@ -80,6 +108,16 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+
+private:
+  vector<vector<CgVariablePtr>> create_fixed_length_rnn_graph(
+      shared_ptr<CgVariable> in_x, shared_ptr<CgVariable> in_h,
+      shared_ptr<CgVariable> in_w0, shared_ptr<CgVariable> in_w,
+      shared_ptr<CgVariable> in_b);
+  shared_ptr<CgVariable> rnn_cell(shared_ptr<CgVariable> x,
+                                  shared_ptr<CgVariable> h,
+                                  shared_ptr<CgVariable> w,
+                                  shared_ptr<CgVariable> b);
 };
 }
 #endif
