@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import argparse
+import os
 import sys
 import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+from nnabla.logger import logger
 
 
 def _nnabla_version():
@@ -128,7 +130,10 @@ def cli_main():
         except:
             import traceback
             print(traceback.format_exc())
-            comm.abort()
+
+            logger.log(99, "ABORTED")
+            os.kill(os.getpid(), 9)
+            # comm.abort()
     else:
         try:
             return_value = args.func(args)

@@ -26,10 +26,10 @@ include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
 DOCKER_IMAGE_NAME_BASE ?= nnabla-py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)
 
-DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format:$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format |cut -d \  -f 1)
-DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc:$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |cut -d \  -f 1)
+DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format |cut -d \  -f 1)
+DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |cut -d \  -f 1)
 DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |cut -d \  -f 1)
-DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla:$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build |cut -d \  -f 1)
+DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build |cut -d \  -f 1)
 DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |cut -d \  -f 1)
 DOCKER_IMAGE_TF_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-tf-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.tf-test |cut -d \  -f 1)
 

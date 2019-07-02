@@ -192,13 +192,13 @@ cdef class Variable:
         Returns: ~nnabla.Variable
 
         """
-        assert isinstance(data, np.ndarray)
+        data = np.asarray(data)
         var = Variable(data.shape, need_grad)
         var.data.cast(data.dtype)
         var.d = data
         if grad is None:
             return var
-        assert isinstance(grad, np.ndarray)
+        grad = np.asarray(grad)
         assert data.shape == grad.shape
         var.grad.cast(grad.dtype)
         var.g = grad

@@ -18,8 +18,7 @@ ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
        build-essential \
        bzip2 \
        ca-certificates \
@@ -28,17 +27,21 @@ RUN apt-get update \
        cmake \
        curl \
        g++ \
+       gfortran \
        git \
+       graphviz \
        libarchive-dev \
-       libgoogle-glog-dev \
-       libgtest-dev \
+       libfreetype6-dev \
        libhdf5-dev \
+       libjpeg-dev \
+       liblapack-dev \
        libleveldb-dev \
        liblmdb-dev \
        libsnappy-dev \
        libssl-dev \
        make \
        openssl \
+       pkg-config \
        unzip \
        wget \
        zip \
@@ -109,24 +112,18 @@ ADD python/test_requirements.txt /tmp/deps/
 RUN umask 0 \
     && mkdir -p /tmp/deps \
     && cd /tmp/deps \
-    && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
-    && rm -rf Miniconda3-latest-Linux-x86_64.sh \
+    && wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-ppc64le.sh \
+    && bash Miniconda3-latest-Linux-ppc64le.sh -b -p /opt/miniconda3 \
+    && rm -rf Miniconda3-latest-Linux-ppc64le.sh \
     && . /opt/miniconda3/bin/activate \
     && conda create -n nnabla-build python=${PYVERNAME} \
     && conda activate nnabla-build \
-    && pip install --only-binary -U -r /tmp/deps/setup_requirements.txt \
-    && pip install --only-binary -U -r /tmp/deps/requirements.txt \
-    && pip install --only-binary -U -r /tmp/deps/test_requirements.txt \
+    && conda update --all -y \
+    && pip install -U -r /tmp/deps/setup_requirements.txt \
+    && pip install -U -r /tmp/deps/requirements.txt \
+    && pip install -U -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
 
 ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/miniconda3/envs/nnabla-build/lib:$LD_LIBRARY_PATH
-
-RUN cd /tmp \
-    && git clone https://github.com/onnx/tensorflow-onnx.git \
-    && cd tensorflow-onnx \
-    && python setup.py install \
-    && rm -rf /tmp/tensorflow-onnx

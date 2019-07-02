@@ -33,9 +33,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatlas-dev \
     libhdf5-dev \
     liblapack-dev \
-    libopenmpi-dev \
     make \
-    openmpi-bin \
+    pkg-config \
     python \
     python-dev \
     python-pip \
@@ -73,6 +72,7 @@ RUN pip install --no-cache-dir \
     autopep8 \
     boto3 \
     cython \
+    h5py \
     mako \
     numpy\>=1.16 \
     onnx==1.4.1 \
@@ -84,18 +84,12 @@ RUN pip install --no-cache-dir \
     scipy \
     tqdm \
     virtualenv
-
-RUN pip install \
-    --no-cache-dir \
-    --global-option=build_ext \
-    --global-option="-I/usr/include/hdf5/serial" \
-    --global-option="-L/usr/lib/arm-linux-gnueabihf/hdf5/serial" \
-    h5py
 
 RUN pip3 install --no-cache-dir \
     autopep8 \
     boto3 \
     cython \
+    h5py \
     mako \
     numpy\>=1.16 \
     onnx==1.4.1 \
@@ -107,13 +101,6 @@ RUN pip3 install --no-cache-dir \
     scipy \
     tqdm \
     virtualenv
-
-RUN pip3 install \
-    --no-cache-dir \
-    --global-option=build_ext \
-    --global-option="-I/usr/include/hdf5/serial" \
-    --global-option="-L/usr/lib/arm-linux-gnueabihf/hdf5/serial" \
-    h5py
 
 RUN pip install ipython==5.0
 RUN pip3 install ipython

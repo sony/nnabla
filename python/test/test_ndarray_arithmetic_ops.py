@@ -23,12 +23,12 @@ import nnabla.functions as F
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
 @pytest.mark.parametrize("x_var, y_var", [(False, False), (False, True), (True, False)])
-def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var):
+@pytest.mark.parametrize("shape", [(2, 3, 4), (0,)])
+def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var, shape):
     rng = np.random.RandomState(seed)
-    shape = [2, 3, 4]
     vx_data = rng.randn(*shape).astype(np.float32)
     vy_data = rng.randn(*shape).astype(np.float32)
-    if op == "**":
+    if op == "**" and vx_data.size > 0:
         vx_data += - vx_data.min() + 1.0
     if x_var:
         vx = nn.Variable.from_numpy_array(vx_data)
@@ -54,11 +54,12 @@ def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var):
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
-def test_ndarray_arithmetic_scalar_ops(seed, op):
+@pytest.mark.parametrize("shape", [(2, 3, 4), (0,)])
+def test_ndarray_arithmetic_scalar_ops(seed, op, shape):
     rng = np.random.RandomState(seed)
-    vx = nn.NdArray.from_numpy_array(rng.randn(2, 3, 4).astype(np.float32))
+    vx = nn.NdArray.from_numpy_array(rng.randn(*shape).astype(np.float32))
     a = rng.randn()
-    if op == "**":
+    if op == "**" and vx.size > 0:
         vx.data += - vx.data.min() + 1.0
     vz = eval("vx {0} a".format(op))
     ref_z = eval("vx.data {0} a".format(op))
@@ -73,9 +74,10 @@ def test_ndarray_arithmetic_scalar_ops(seed, op):
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
-def test_ndarray_arithmetic_scalar_rops(seed, op):
+@pytest.mark.parametrize("shape", [(2, 3, 4), (0,)])
+def test_ndarray_arithmetic_scalar_rops(seed, op, shape):
     rng = np.random.RandomState(seed)
-    vx = nn.NdArray.from_numpy_array(rng.randn(2, 3, 4).astype(np.float32))
+    vx = nn.NdArray.from_numpy_array(rng.randn(*shape).astype(np.float32))
     a = rng.randn()
     if op == "**":
         a = np.abs(a)
@@ -86,9 +88,10 @@ def test_ndarray_arithmetic_scalar_rops(seed, op):
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-"])
-def test_ndarray_arithmetic_unary_ops(seed, op):
+@pytest.mark.parametrize("shape", [(2, 3, 4), (0,)])
+def test_ndarray_arithmetic_unary_ops(seed, op, shape):
     rng = np.random.RandomState(seed)
-    vx = nn.NdArray.from_numpy_array(rng.randn(2, 3, 4).astype(np.float32))
+    vx = nn.NdArray.from_numpy_array(rng.randn(*shape).astype(np.float32))
     vz = eval("{0} vx".format(op))
     ref_z = eval("{0} vx.data".format(op))
     assert np.allclose(ref_z, vz.data)
