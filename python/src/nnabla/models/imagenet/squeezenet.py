@@ -87,3 +87,21 @@ class SqueezeNet(ImageNetBase):
         if returns_net:
             return net
         return list(net.outputs.values())[0]
+
+
+class SqueezeNetV10(SqueezeNet):
+    '''SquezeNetV10
+        An alias of :obj:`SqueezeNet` `('v1.0')`.
+    '''
+
+    def __init__(self):
+        super(SqueezeNetV10, self).__init__('v1.0')
+
+
+class SqueezeNetV11(SqueezeNet):
+    '''SquezeNetV11
+        An alias of :obj:`SqueezeNet` `('v1.1')`.
+    '''
+
+    def __init__(self):
+        super(SqueezeNetV11, self).__init__('v1.1')
