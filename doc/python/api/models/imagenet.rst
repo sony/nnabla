@@ -69,6 +69,8 @@ Available models are summarized in the following table. Error rates are calculat
     "`InceptionV3 <https://nnabla.org/pretrained-models/nnp_models/imagenet/Inception-v3/Inception-v3.nnp>`_", "InceptionV3", 21.82, 5.88, Neural Network Console
     "`Xception <https://nnabla.org/pretrained-models/nnp_models/imagenet/Xception/Xception.nnp>`_", "Xception", 23.59, 6.91, Neural Network Console
     "`GoogLeNet <https://nnabla.org/pretrained-models/nnp_models/imagenet/GoogLeNet/GoogLeNet.nnp>`_", "GoogLeNet", 31.22, 11.34, Neural Network Console
+    "`ResNeXt-50 <https://nnabla.org/pretrained-models/nnp_models/imagenet/ResNeXt-50/ResNeXt-50.nnp>`_", "ResNeXt50", 22.95, 6.73, Neural Network Console
+    "`ResNeXt-101 <https://nnabla.org/pretrained-models/nnp_models/imagenet/ResNeXt-101/ResNeXt-101.nnp>`_", "ResNeXt101", 22.80, 6.74, Neural Network Console
 
 
 Common interfaces
@@ -145,4 +147,13 @@ List of models
     :members:
 
 .. autoclass:: GoogLeNet
+    :members:
+
+.. autoclass:: ResNeXt50
+    :members:
+
+.. autoclass:: ResNeXt101
+    :members:
+
+.. autoclass:: ResNeXt
     :members:
