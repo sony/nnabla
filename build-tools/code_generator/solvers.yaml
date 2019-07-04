@@ -36,6 +36,42 @@ Momentum:
       default: 0.9
       doc: Decay rate of momentum.
 
+Lars:
+  snake_name: lars
+  doc: |
+    LARS with Momentum.
+
+    .. math::
+        \lambda &\leftarrow \eta
+          \frac{\| w_t \|}{\| \Delta w_t + \beta w_t \|} \\
+        v_{t+1} &\leftarrow m v_t + \gamma \lambda
+          (\Delta w_t + \beta w_t) \\
+        w_{t+1} &\leftarrow w_t - v_{t+1}
+
+  references:
+    - |
+      `Yang You, Igor Gitman, Boris Ginsburg
+      Large Batch Training of Convolutional Networks
+      <https://arxiv.org/abs/1708.03888>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-3
+      doc: Learning rate (:math:`\eta`).
+    momentum:
+      type: float
+      default: 0.9
+      doc: Decay rate of momentum.
+    coefficient:
+      type: float
+      default: 0.001
+      doc: Trust coefficient
+    eps:
+      type: float
+      default: 1e-6
+      doc: Small value for avoiding zero devision(:math:`\epsilon`).
+
 Nesterov:
   snake_name: nesterov
   doc: |

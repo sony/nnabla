@@ -2,6 +2,8 @@ Sgd:
   float: [float]
 Momentum:
   float: [float]
+Lars:
+  float: [float]
 Adadelta:
   float: [float]
 Adagrad:
