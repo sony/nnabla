@@ -879,3 +879,6 @@ cdef class Variable:
 
     def __getitem__(self, key):
         return IDX.getitem(self, key)
+
+    def __setitem__(self, key, value):
+        IDX.setitem(self, key, value)
