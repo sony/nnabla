@@ -3,6 +3,7 @@ from _nd_array cimport NdArray
 
 import numpy as np
 import itertools
+import sys
 
 
 def is_numpy_array(a):
@@ -88,6 +89,8 @@ def basic_getitem(self, key):
                 raise IndexError(msg.format(idx[i], i, s))
 
     start, stop, step = zip(*((s.start, s.stop, s.step) for s in idx))
+    if sys.version_info.major < 3:
+        stop = tuple(None if v == sys.maxsize else v for v in stop)
     array = F.slice(self, start, stop, step)
 
     count = itertools.count()
@@ -210,6 +213,8 @@ def basic_setitem(self, key, value):
                 raise IndexError(msg.format(idx[i], i, s))
 
     start, stop, step = zip(*((s.start, s.stop, s.step) for s in idx))
+    if sys.version_info.major < 3:
+        stop = tuple(None if v == sys.maxsize else v for v in stop)
     index = F.reshape(F.arange(0, self.size), self.shape)
     index = F.slice(index, start, stop, step)
 
