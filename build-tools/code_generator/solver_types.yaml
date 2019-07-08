@@ -1,5 +1,7 @@
 Sgd:
   float: [float]
+SgdW:
+  float: [float]
 Momentum:
   float: [float]
 Lars:
@@ -9,6 +11,8 @@ Adadelta:
 Adagrad:
   float: [float]
 Adam:
+  float: [float]
+AdamW:
   float: [float]
 AdaBound:
   float: [float]
