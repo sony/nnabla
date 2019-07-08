@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# for nnabla>=1.0.17
-
 FROM multiarch/ubuntu-core:armhf-xenial
 
 ENV LC_ALL C
@@ -65,17 +63,18 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+# Limitation: numpy>=1.17 does not support python2.7
 RUN python3 -m pip install --upgrade pip
 RUN python2 -m pip install --upgrade pip
 
+RUN pip install --no-cache-dir numpy\<1.17
 RUN pip install --no-cache-dir \
     autopep8 \
     boto3 \
     cython \
     h5py \
     mako \
-    numpy\>=1.16 \
-    onnx==1.4.1 \
+    onnx \
     pillow \
     protobuf \
     pytest \
@@ -84,15 +83,16 @@ RUN pip install --no-cache-dir \
     scipy \
     tqdm \
     virtualenv
+RUN pip install ipython==5.0
 
+RUN pip3 install --no-cache-dir numpy\<1.17
 RUN pip3 install --no-cache-dir \
     autopep8 \
     boto3 \
     cython \
     h5py \
     mako \
-    numpy\>=1.16 \
-    onnx==1.4.1 \
+    onnx \
     pillow \
     protobuf \
     pytest \
@@ -102,5 +102,4 @@ RUN pip3 install --no-cache-dir \
     tqdm \
     virtualenv
 
-RUN pip install ipython==5.0
 RUN pip3 install ipython

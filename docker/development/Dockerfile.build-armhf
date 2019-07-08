@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# for nnabla>=1.0.17
-
 FROM multiarch/ubuntu-core:armhf-xenial
 
 ENV LC_ALL C
@@ -65,6 +63,7 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+# Limitation: numpy>=1.17 does not support python2.7
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
@@ -74,12 +73,14 @@ RUN python2 -m pip install --upgrade pip
 
 RUN pip install ipython==5.0
 
+RUN pip install numpy\<1.17
 RUN pip install -r /tmp/deps/setup_requirements.txt
 RUN pip install -r /tmp/deps/requirements.txt
 RUN pip install -r /tmp/deps/test_requirements.txt
 
 RUN pip3 install ipython
 
+RUN pip3 install numpy\<1.17
 RUN pip3 install -r /tmp/deps/setup_requirements.txt
 RUN pip3 install -r /tmp/deps/requirements.txt
 RUN pip3 install -r /tmp/deps/test_requirements.txt
