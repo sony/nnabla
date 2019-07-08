@@ -1991,8 +1991,7 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
 
     batch_axis = _force_list(batch_axis)
 
-    shape_stat = [inp.shape[i] if i in batch_axis else 1
-                  for i in range(len(inp.shape))]
+    shape_stat = [1 for _ in range(len(inp.shape))]
 
     if param_init is None:
         param_init = {}
@@ -2058,7 +2057,7 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
 
     batch_axis = _force_list(batch_axis)
 
-    shape_stat = [inp.shape[i] if i in [channel_axis, ] + batch_axis else 1
+    shape_stat = [inp.shape[i] if i == channel_axis else 1
                   for i in range(len(inp.shape))]
 
     if param_init is None:
@@ -2131,8 +2130,7 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
 
     batch_axis = _force_list(batch_axis)
 
-    shape_stat = [inp.shape[i]
-                  if i in batch_axis else 1 for i in range(len(inp.shape) + 1)]
+    shape_stat = [1 for _ in range(len(inp.shape) + 1)]
     shape_stat[channel_axis] = num_groups
     shape_stat[channel_axis + 1] = int(inp.shape[channel_axis] / num_groups)
 

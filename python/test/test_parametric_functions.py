@@ -495,8 +495,7 @@ def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_par
 
     eps = 1e-5
 
-    p_shape = tuple([inshape[i] if i in _force_list(batch_axis) else 1
-                     for i in range(len(inshape))])
+    p_shape = tuple([1 for _ in range(len(inshape))])
 
     x_npy = g_rng.randn(*inshape)
 
@@ -586,7 +585,7 @@ def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, out
 
     eps = 1e-5
 
-    p_shape = tuple([inshape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+    p_shape = tuple([inshape[i] if i == channel_axis else 1
                      for i in range(len(inshape))])
 
     x_npy = g_rng.randn(*inshape)
@@ -689,8 +688,7 @@ def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_
 
     eps = 1e-5
 
-    p_shape = [inshape[i] if i in _force_list(
-        batch_axis) else 1 for i in range(len(inshape) + 1)]
+    p_shape = [1 for _ in range(len(inshape) + 1)]
     p_shape[channel_axis] = num_groups
     p_shape[channel_axis + 1] = int(inshape[channel_axis] / num_groups)
     p_shape = tuple(p_shape)
