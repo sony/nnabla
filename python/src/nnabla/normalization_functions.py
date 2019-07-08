@@ -17,6 +17,8 @@ from .function_bases import *
 from six.moves import reduce as rd
 import numpy as np
 
+import nnabla as nn
+
 
 def _check_axis(ndim, axis):
     if axis < 0 or axis >= ndim:
@@ -45,6 +47,71 @@ def _get_axes_excluding(ndim, axes):
     axes = _force_list(axes)
 
     return [i for i in range(ndim) if i not in axes]
+
+
+def _create_bn_dummy_vars(x, axes, beta, gamma, mean, variance):
+    in_shape = x.shape
+    axes = _force_list(axes)
+    adaptive_shape = tuple(
+        in_shape[i] if i in axes else 1 for i in range(len(in_shape)))
+
+    # create dummy adaptive variables
+    assert_flag = False
+    if beta is not None:
+        assert_flag |= beta.shape != adaptive_shape
+    else:
+        beta = constant(val=0, shape=adaptive_shape)
+
+    if gamma is not None:
+        assert_flag |= gamma.shape != adaptive_shape
+    else:
+        gamma = constant(val=1, shape=adaptive_shape)
+
+    if assert_flag:
+        raise ValueError(
+            "The shapes of beta and gamma must be {}."
+            " If you want to use a tensor with other shape, use arithmetic operators like"
+            " `tensor_normalization(x, axes, beta=None, gamma=None) * gamma + beta`.".format(adaptive_shape))
+
+    if mean is None:
+        # _mean is never used and there is no need to initialize.
+        mean = nn.Variable(adaptive_shape, need_grad=False)
+
+    if variance is None:
+        variance = nn.Variable(adaptive_shape, need_grad=False)  # same above.
+
+    return beta, gamma, mean, variance
+
+
+def _init_beta_gamma(shape, fix_parameters, param_init, no_bias, no_scale):
+    from nnabla.parameter import get_parameter_or_create
+    from nnabla.initializer import ConstantInitializer
+
+    if no_bias:
+        beta = None
+    else:
+        beta_init = param_init.get('beta', ConstantInitializer(0))
+        beta = get_parameter_or_create(
+            "beta", shape, beta_init, True, not fix_parameters)
+
+    if no_scale:
+        gamma = None
+    else:
+        gamma_init = param_init.get('gamma', ConstantInitializer(1))
+        gamma = get_parameter_or_create(
+            "gamma", shape, gamma_init, True, not fix_parameters)
+
+    return beta, gamma
+
+
+def _apply_affine(x, scale=None, bias=None):
+    if scale is not None:
+        x *= scale
+
+    if bias is not None:
+        x += bias
+
+    return x
 
 
 class BatchNormalizationInOutAdapter(object):
@@ -95,14 +162,22 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
 
     Args:
         x(~nnabla.Variable): N-D array of input.
-        beta(~nnabla.Variable): N-D array of beta which is learned.
-        gamma(~nnabla.Variable): N-D array of gamma which is learned.
-        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
-        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
-        axes(repeated int64): Axes mean and variance are taken.
+        beta(~nnabla.Variable or None): N-D array of beta which is learned. If None, the bias term is omitted.
+        gamma(~nnabla.Variable or None): N-D array of gamma which is learned. If None, the scale term is omitted.
+        mean(~nnabla.Variable or None):
+            N-D array of running mean (modified during forward execution).
+            If None, dummy variable is created and running mean is not updated.
+            mean=None with batch_stat=False is prohibited.
+        variance(~nnabla.Variable or None):
+            N-D array of running variance (modified during forward execution).
+            If None, dummy variable is created and running variance is not updated.
+            variance=None with batch_stat=False is prohibited.
+        axes(list of int or int): Mean and variance are calculated along these axes.
         decay_rate(float): Decay rate of running mean and variance.
         eps(float): Tiny value to avoid zero division by std.
-        batch_stat(bool): Use mini-batch statistics rather than running ones.
+        batch_stat(bool):
+            Use mini-batch statistics rather than running ones.
+            If False, mean and variance must be `~nnabla.Variable`. (None is prohibited.)
         output_stat(bool): It true, the batch statistics of mean and variance,
             will be returned as Variables. They are also differentiable.
 
@@ -121,10 +196,20 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     """
     from .function_bases import batch_normalization as batch_normalization_base
     n_outputs = 3 if output_stat else 1
+    axes = _force_list(axes)
+
     assert batch_stat or (not output_stat)
+
+    if not batch_stat and (mean is None or variance is None):
+        raise ValueError(
+            "If batch_stat is False, mean and variable must not be None.")
+
+    beta, gamma, mean, variance = _create_bn_dummy_vars(
+        x, axes, beta, gamma, mean, variance)
+
     if batch_stat and (mean.parent or variance.parent) is not None:
         raise ValueError(
-            "if batch_stat is True, mean and variable must not have a parent function")
+            "if batch_stat is True, mean and variable must not have a parent function.")
 
     if len(axes) == 1:
         return batch_normalization_base(x, beta, gamma, mean, variance,
@@ -174,15 +259,23 @@ def fused_batch_normalization(x, beta, gamma, mean, variance, z=None, axes=[1], 
 
     Args:
         x(~nnabla.Variable): N-D array of input.
-        beta(~nnabla.Variable): N-D array of beta which is learned.
-        gamma(~nnabla.Variable): N-D array of gamma which is learned.
-        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
-        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
+        beta(~nnabla.Variable or None): N-D array of beta which is learned. If None, the bias term is omitted.
+        gamma(~nnabla.Variable or None): N-D array of gamma which is learned. If None, the scale term is omitted.
+        mean(~nnabla.Variable or None):
+            N-D array of running mean (modified during forward execution).
+            If None, dummy variable is created and running mean is never updated.
+            mean=None with batch_stat=False is prohibited.
+        variance(~nnabla.Variable):
+            N-D array of running variance (modified during forward execution).
+            If None, dummy variable is created and running variance is not updated.
+            variance=None with batch_stat=False is prohibited.
         z(~nnabla.Variable, optional): N-D array
-        axes(repeated int64): Axes mean and variance are taken.
+        axes(list of int or int): Mean and variance are calculated along these axes.
         decay_rate(float): Decay rate of running mean and variance.
         eps(float): Tiny value to avoid zero division by std.
-        batch_stat(bool): Use mini-batch statistics rather than running ones.
+        batch_stat(bool):
+            Use mini-batch statistics rather than running ones.
+            If False, mean and variance must be `~nnabla.Variable`. (None is prohibited.)
         nonlinearity(str): Nonlinearity chosen from relu. Default is relu.
         output_stat(bool): It true, the batch statistics of mean and variance,
             will be returned as Variables. They are also differentiable.
@@ -202,9 +295,18 @@ def fused_batch_normalization(x, beta, gamma, mean, variance, z=None, axes=[1], 
     """
     from .function_bases import fused_batch_normalization as fused_batch_normalization_base
     n_outputs = 3 if output_stat else 1
+    axes = _force_list(axes)
+
+    if not batch_stat and (mean is None or variance is None):
+        raise ValueError(
+            "If batch_stat is False, mean and variable must not be None.")
+
+    beta, gamma, mean, variance = _create_bn_dummy_vars(
+        x, axes, beta, gamma, mean, variance)
+
     if batch_stat and (mean.parent or variance.parent) is not None:
         raise ValueError(
-            "if batch_stat is True, mean and variable must not have a parent function")
+            "if batch_stat is True, mean and variable must not have a parent function.")
 
     if len(axes) == 1:
         return fused_batch_normalization_base(x, beta, gamma, mean, variance, z,
@@ -268,16 +370,24 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
 
     Args:
         x(~nnabla.Variable): N-D array of input.
-        beta(~nnabla.Variable): N-D array of beta which is learned.
-        gamma(~nnabla.Variable): N-D array of gamma which is learned.
-        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
-        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
+        beta(~nnabla.Variable or None): N-D array of beta which is learned. If None, the bias term is omitted.
+        gamma(~nnabla.Variable or None): N-D array of gamma which is learned. If None, the scale term is omitted.
+        mean(~nnabla.Variable or None):
+            N-D array of running mean (modified during forward execution).
+            If None, dummy variable is created and running mean is never updated.
+            mean=None with batch_stat=False is prohibited.
+        variance(~nnabla.Variable or None):
+            N-D array of running variance (modified during forward execution).
+            If None, dummy variable is created and running variance is never updated.
+            variance=None with batch_stat=False is prohibited.
         comm(~nnabla.communicators.Communicator): The communicator
         group(string): The name of the communicator group
-        axes(repeated int64): Axes mean and variance are taken.
+        axes(list of int or int): Mean and variance are calculated along these axes.
         decay_rate(float): Decay rate of running mean and variance.
         eps(float): Tiny value to avoid zero division by std.
-        batch_stat(bool): Use mini-batch statistics rather than running ones.
+        batch_stat(bool):
+            Use mini-batch statistics rather than running ones.
+            If False, mean and variance must be `~nnabla.Variable`. (None is prohibited.)
         output_stat(bool): It true, the batch statistics of mean and variance,
             will be returned as Variables. They are also differentiable.
 
@@ -296,6 +406,15 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
     """
     from .function_bases import sync_batch_normalization as batch_normalization_base
     n_outputs = 3 if output_stat else 1
+    axes = _force_list(axes)
+
+    if not batch_stat and (mean is None or variance is None):
+        raise ValueError(
+            "If batch_stat is False, mean and variable must not be None.")
+
+    beta, gamma, mean, variance = _create_bn_dummy_vars(
+        x, axes, beta, gamma, mean, variance)
+
     return batch_normalization_base(x, beta, gamma, mean, variance,
                                     comm, group=group,
                                     axes=axes,
@@ -305,17 +424,26 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
                                     n_outputs=n_outputs)
 
 
-def tensor_normalization(x, axes, eps=1e-05, output_stat=False):
+def tensor_normalization(x, axes, beta=None, gamma=None, eps=1e-05, output_stat=False):
     r"""
-    General function for tensor normalization.
+    General tensor normalization.
     Input variable `x` is normalized by mean and std calculated by `x` itself.
-    Mean and std are taken by all `axes`.
-    For example, if the input shape is (B, C, H, W) and axes is [1, 2, 3],
-     the shape of calculated mean and std are (B, 1, 1 ,1).
+    Mean and variance are calculated along `axes`.
+    For example, if the input shape is (B, C, H, W) and axes is [0, 1],
+     the shape of calculated mean and std are (B, C, 1 ,1).
+
+    Note:
+        Currently tensor_normalization is implemented not as cpp function
+        but as wrapper function which just calls F.batch_normalization internally.
+        That means F.reshape or F.transpose may be additionally called to satisfy the condition required by F.batch_normalization,
+        and if you serialize graphs including tensor_normalization to nnp file,
+        that nnp includes reshape, transpose and batch_normalization rather than tensor_normalization layer itself.
 
     Args:
         x (Variable): N-D array of input variable.
-        axes (repeated int): Axes mean and variance are taken.
+        axes (int or repeated int): Mean and variance are calculated along these axes.
+        beta (Variable or None): An Adaptive biases. If None, the bias term is omitted.
+        gamma (Variable or None): An Adaptive scales. If None, the scale term is omitted.
         eps (float): Tiny value to avoid zero division by std.
         output_stat(bool): It true, the batch statistics of mean and variance.
         will be returned as Variables. They are also differentiable.
@@ -326,16 +454,10 @@ def tensor_normalization(x, axes, eps=1e-05, output_stat=False):
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
 
     """
-    from .function_bases import mean as mean_base
+    # todo: should implement cpp function rather than just calling batch_normalization in python.
 
-    x_mean = mean_base(x, axes, keep_dims=True)
-    subtracted = x - x_mean
-    x_std = mean_base(subtracted ** 2, axes, keep_dims=True) ** 0.5
-
-    if output_stat:
-        return subtracted / (x_std + eps), x_mean, x_std
-
-    return subtracted / (x_std + eps)
+    return batch_normalization(x, beta, gamma, None, None,
+                               axes=axes, decay_rate=0., eps=eps, batch_stat=True, output_stat=output_stat)
 
 
 def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
@@ -370,9 +492,7 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
     # check channel axis
     _check_axis(len(w.shape), channel_axis)
 
-    axes = _get_axes_excluding(len(w.shape), channel_axis)
-
-    return tensor_normalization(w, axes, eps, output_stat)
+    return tensor_normalization(w, channel_axis, beta=None, gamma=None, eps=eps, output_stat=output_stat)
 
 
 def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=False):
@@ -399,8 +519,8 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
 
     Args:
         x (Variable): An input variable.
-        beta (Variable): An Adaptive biases.
-        gamma (Variable): An Adaptive gains.
+        beta (Variable or None): An Adaptive biases. If None, the bias term is omitted.
+        gamma (Variable or None): An Adaptive gains. If None, the scale term is omitted.
         batch_axis (int or repeated int): Axes mean and variance are taken.
         eps (float): Tiny value to avoid zero division by std.
         output_stat(bool): If true, calculated mean and variance are also returned.
@@ -413,13 +533,17 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
 
     batch_axis = _check_batch_axis_and_force_list(len(x.shape), batch_axis)
 
-    axes = _get_axes_excluding(len(x.shape), batch_axis)
+    # cannot broadcast beta & gamma from [1, C, 1, 1] to [N, 1 ,1 ,1],
+    # so these adaptation is applied after calling bn with dummy beta & gamma.
+    # (Currently bn only accepts the case when reduction shape and adaptive parameter shape are the same.)
+    out = tensor_normalization(
+        x, batch_axis, beta=None, gamma=None, eps=eps, output_stat=output_stat)
 
-    if output_stat:
-        out, mean, std = tensor_normalization(x, axes, eps, output_stat)
-        return out * gamma + beta, mean, std
+    if not output_stat:
+        return _apply_affine(out, scale=gamma, bias=beta)
 
-    return tensor_normalization(x, axes, eps, output_stat) * gamma + beta
+    y, mean, var = out
+    return _apply_affine(y, scale=gamma, bias=beta), mean, var
 
 
 def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
@@ -465,14 +589,29 @@ def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-
     # check batch axis
     batch_axis = _check_batch_axis_and_force_list(len(x.shape), batch_axis)
 
-    axes = _get_axes_excluding(len(x.shape), [channel_axis, ] + batch_axis)
+    # check whether broadcast is needed or not.
+    # Unlike layer_norm and group_norm, only instance_norm can use bn scale bias & scale adaptation
+    # by broadcasting channel axis to channel * batch axis. (like [1, C, 1, 1] -> [N, C, 1, 1])
 
-    if output_stat:
-        out, mean, std = tensor_normalization(x, axes, eps, output_stat)
+    adapt_shape = [1 for _ in range(len(x.shape))]
+    for baxis in batch_axis:
+        adapt_shape[baxis] = x.shape[baxis]
+    adapt_shape[channel_axis] = x.shape[channel_axis]
+    adapt_shape = tuple(adapt_shape)
 
-        return out * gamma + beta, mean, std
+    if beta is not None and beta.shape != adapt_shape:
+        assert beta.shape[channel_axis] == adapt_shape[channel_axis],\
+            "channel size of beta: {} != channel size of x ({}).".format(beta.shape[channel_axis],
+                                                                         adapt_shape[channel_axis])
+        beta = broadcast(beta, shape=adapt_shape)
 
-    return tensor_normalization(x, axes, eps, output_stat) * gamma + beta
+    if gamma is not None and gamma.shape != adapt_shape:
+        assert gamma.shape[channel_axis] == adapt_shape[channel_axis], \
+            "channel size of gamma: {} != channel size of x ({}).".format(gamma.shape[channel_axis],
+                                                                          adapt_shape[channel_axis])
+        gamma = broadcast(gamma, shape=adapt_shape)
+
+    return tensor_normalization(x, batch_axis + [channel_axis, ], beta, gamma, eps, output_stat)
 
 
 def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
@@ -504,8 +643,8 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
 
     Args:
         x (Variable): An input variable.
-        beta (Variable): An Adaptive biases.
-        gamma (Variable): An Adaptive gains.
+        beta (Variable or None): An Adaptive biases. If None, the bias term is omitted.
+        gamma (Variable or None): An Adaptive gains. If None, the scale term is omitted.
         num_groups (int): A number of groups. The channel dim of 'x' must be integer multiple of `num_groups`.
         channel_axis (int): Channel axis.
         batch_axis (int or repeated int): Batch axes.
@@ -517,7 +656,6 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-
     _check_axis(len(x.shape), channel_axis)
 
     cdim = x.shape[channel_axis]
@@ -530,11 +668,16 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
     if channel_axis < len(x.shape) - 1:
         shape += x.shape[channel_axis + 1:]
 
-    if output_stat:
-        out, mu, sigma = instance_normalization(
-            x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps, output_stat)
+    # create dummy adaptive constants and pass these to BN.
+    # GN normalizes input along group axis but applies adaptive rescaling along the original channel axis,
+    # so we have to apply adaptive scaling after reshaping the output from batch normalization.
+    # (Currently bn only accepts the case when reduction shape and adaptive parameter shape are the same.)
 
-        return out.reshape(x.shape), mu, sigma
+    out = instance_normalization(x.reshape(shape), beta=None, gamma=None,
+                                 channel_axis=channel_axis, batch_axis=batch_axis, eps=eps, output_stat=output_stat)
 
-    return instance_normalization(x.reshape(shape), beta, gamma, channel_axis, batch_axis, eps,
-                                  output_stat).reshape(x.shape)
+    if not output_stat:
+        return _apply_affine(out.reshape(x.shape), scale=gamma, bias=beta)
+
+    y, mean, var = out
+    return _apply_affine(y.reshape(x.shape), scale=gamma, bias=beta), mean, var

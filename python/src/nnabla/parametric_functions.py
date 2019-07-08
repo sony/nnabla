@@ -1686,7 +1686,8 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
     ('var', 'Moving average of batch variance', '<see above>', False),
 ])
 def fused_batch_normalization(inp, z=None, axes=[1], decay_rate=0.9, eps=1e-5,
-                              batch_stat=True, nonlinearity='relu', output_stat=False, fix_parameters=False, param_init=None):
+                              batch_stat=True, nonlinearity='relu', output_stat=False,
+                              fix_parameters=False, param_init=None, no_scale=False, no_bias=False):
     """
     Batch normalization layer fused with the following add2 operation of a
     residual input and an nonlinear activation.
@@ -1708,25 +1709,27 @@ def fused_batch_normalization(inp, z=None, axes=[1], decay_rate=0.9, eps=1e-5,
         nonlinearity (string): Activation function. The default is 'relu'.
         output_stat (bool): Output batch mean and variance.
         fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+        no_scale (bool): If `True`, the scale term is omitted.
+        no_bias (bool): If `True`, the bias term is omitted.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
 
     """
+    from .normalization_functions import _init_beta_gamma
+
     shape_stat = [1 for _ in inp.shape]
     for i in range(len(axes)):
         shape_stat[axes[i]] = inp.shape[axes[i]]
 
     if param_init is None:
         param_init = {}
-    beta_init = param_init.get('beta', ConstantInitializer(0))
-    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+
+    beta, gamma = _init_beta_gamma(
+        shape_stat, fix_parameters, param_init, no_bias, no_scale)
+
     mean_init = param_init.get('mean', ConstantInitializer(0))
     var_init = param_init.get('var', ConstantInitializer(1))
-    beta = get_parameter_or_create(
-        "beta", shape_stat, beta_init, True, not fix_parameters)
-    gamma = get_parameter_or_create(
-        "gamma", shape_stat, gamma_init, True, not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, mean_init, False)
     var = get_parameter_or_create(
@@ -1744,7 +1747,7 @@ def fused_batch_normalization(inp, z=None, axes=[1], decay_rate=0.9, eps=1e-5,
 ])
 def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
                         batch_stat=True, output_stat=False, fix_parameters=False,
-                        param_init=None):
+                        param_init=None, no_scale=False, no_bias=False):
     """
     Batch normalization layer.
 
@@ -1779,6 +1782,8 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
             E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+        no_scale (bool): If `True`, the scale term is omitted.
+        no_bias (bool): If `True`, the bias term is omitted.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -1794,20 +1799,20 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
     (using numpy expression as an example).
 
     """
+    from .normalization_functions import _init_beta_gamma
+
     shape_stat = [1 for _ in inp.shape]
     for i in range(len(axes)):
         shape_stat[axes[i]] = inp.shape[axes[i]]
 
     if param_init is None:
         param_init = {}
-    beta_init = param_init.get('beta', ConstantInitializer(0))
-    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+
+    beta, gamma = _init_beta_gamma(
+        shape_stat, fix_parameters, param_init, no_bias, no_scale)
+
     mean_init = param_init.get('mean', ConstantInitializer(0))
     var_init = param_init.get('var', ConstantInitializer(1))
-    beta = get_parameter_or_create(
-        "beta", shape_stat, beta_init, True, not fix_parameters)
-    gamma = get_parameter_or_create(
-        "gamma", shape_stat, gamma_init, True, not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, mean_init, False)
     var = get_parameter_or_create(
@@ -1824,7 +1829,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
 ])
 def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9, eps=1e-5, batch_stat=True,
                              output_stat=False, fix_parameters=False,
-                             param_init=None):
+                             param_init=None, no_scale=False, no_bias=False):
     """
     Synchronized batch normalization layer.
 
@@ -1863,6 +1868,8 @@ def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9,
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
             E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+        no_scale (bool): If `True`, the scale term is omitted.
+        no_bias (bool): If `True`, the bias term is omitted.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -1879,20 +1886,20 @@ def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9,
     (using numpy expression as an example).
 
     """
+    from .normalization_functions import _init_beta_gamma
+
     shape_stat = [1 for _ in inp.shape]
     for i in range(len(axes)):
         shape_stat[axes[i]] = inp.shape[axes[i]]
 
     if param_init is None:
         param_init = {}
-    beta_init = param_init.get('beta', ConstantInitializer(0))
-    gamma_init = param_init.get('gamma', ConstantInitializer(1))
+
+    beta, gamma = _init_beta_gamma(
+        shape_stat, fix_parameters, param_init, no_bias, no_scale)
+
     mean_init = param_init.get('mean', ConstantInitializer(0))
     var_init = param_init.get('var', ConstantInitializer(1))
-    beta = get_parameter_or_create(
-        "beta", shape_stat, beta_init, True, not fix_parameters)
-    gamma = get_parameter_or_create(
-        "gamma", shape_stat, gamma_init, True, not fix_parameters)
     mean = get_parameter_or_create(
         "mean", shape_stat, mean_init, False)
     var = get_parameter_or_create(
@@ -1949,7 +1956,8 @@ def mean_subtraction(inp, base_axis=1, update_running_mean=True, fix_parameters=
     ('beta', 'Trainable bias :math:`\\beta`', '<see above>', True),
     ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True)
 ])
-def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_parameters=False, param_init=None):
+def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_parameters=False, param_init=None,
+                        no_scale=False, no_bias=False):
     r"""
     Applies Layer Normalization over an input variable, which is defined as:
 
@@ -1964,6 +1972,11 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
     :math:`\mu^l` and :math:`\sigma^l` are the mean and std of each layer along batch axis,
     and :math:`\alpha` and :math:`\beta` are trainable parameter.
 
+    .. note::
+        Unlike other normalizations,
+        which applies scalar scale and bias for each entire channel/plane,
+        Layer Normalization applies per-element scale and bias.
+
     References:
 
         * `Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton, Layer Normalization.
@@ -1973,7 +1986,7 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
         inp (Variable): An input variable.
         batch_axis (int or repeated int): Axes mean and variance are taken.
         eps (float): Tiny value to avoid zero division by std.
-        output_stat(bool): It `true`, calculated mean and variance are also returned.
+        output_stat(bool): It `True`, calculated mean and variance are also returned.
         fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
         param_init (dict):
             Parameter initializers can be set with a dict. A key of the dict must
@@ -1981,30 +1994,30 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
             E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+        no_scale (bool): If `True`, the scale term is omitted.
+        no_bias (bool): If `True`, the bias term is omitted.
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    from nnabla.normalization_functions import _force_list
+    from nnabla.normalization_functions import _force_list, _init_beta_gamma
 
     batch_axis = _force_list(batch_axis)
 
-    shape_stat = [1 for _ in range(len(inp.shape))]
+    shape_stat = list(inp.shape)
+    for baxis in batch_axis:
+        shape_stat[baxis] = 1
 
     if param_init is None:
         param_init = {}
 
-    gamma_init = param_init.get('gamma', ConstantInitializer(1))
-    beta_init = param_init.get('beta', ConstantInitializer(0))
+    beta, gamma = _init_beta_gamma(
+        shape_stat, fix_parameters, param_init, no_bias, no_scale)
 
-    gamma = get_parameter_or_create(
-        "gamma", shape_stat, gamma_init, True, not fix_parameters)
-    beta = get_parameter_or_create(
-        "beta", shape_stat, beta_init, True, not fix_parameters)
-
-    return F.layer_normalization(inp, beta, gamma, batch_axis, eps, output_stat)
+    return F.layer_normalization(inp, beta, gamma,
+                                 batch_axis=batch_axis, eps=eps, output_stat=output_stat)
 
 
 @parametric_function_api("instance_normalization", [
@@ -2012,7 +2025,7 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
     ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
 ])
 def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False, fix_parameters=False,
-                           param_init=None):
+                           param_init=None, no_scale=False, no_bias=False):
     r"""
     Applies Instance Normalization over an input variable, which is defined as:
 
@@ -2039,39 +2052,35 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
         channel_axis (int or repeated int): Channel axes.
         batch_axis (int or repeated int): Batch axes.
         eps (float): Tiny value to avoid zero division by std.
-        output_stat(bool): It true, the batch statistics of mean and variance.
-        fix_parameters (bool): When set to `True`, the beta and gamma will not be updated.
+        output_stat(bool): It `True`, the batch statistics of mean and variance.
+        fix_parameters (bool): If `True`, the beta and gamma will not be updated.
         param_init (dict):
             Parameter initializers can be set with a dict. A key of the dict must
             be ``'gamma'``, ``'beta'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
             E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+        no_scale (bool): If `True`, the scale term is omitted.
+        no_bias (bool): If `True`, the bias term is omitted.
 
-    Returns:
-        * :obj:`~nnabla.Variable`: Normalized output variable.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
-    """
-    from nnabla.normalization_functions import _force_list
+        Returns:
+            * :obj:`~nnabla.Variable`: Normalized output variable.
+            * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+            * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        """
+    from nnabla.normalization_functions import _init_beta_gamma
 
-    batch_axis = _force_list(batch_axis)
-
-    shape_stat = [inp.shape[i] if i == channel_axis else 1
-                  for i in range(len(inp.shape))]
+    shape_stat = [1 for _ in range(len(inp.shape))]
+    shape_stat[channel_axis] = inp.shape[channel_axis]
 
     if param_init is None:
         param_init = {}
 
-    gamma_init = param_init.get('gamma', ConstantInitializer(1))
-    beta_init = param_init.get('beta', ConstantInitializer(0))
+    beta, gamma = _init_beta_gamma(
+        shape_stat, fix_parameters, param_init, no_bias, no_scale)
 
-    gamma = get_parameter_or_create(
-        "gamma", shape_stat, gamma_init, True, not fix_parameters)
-    beta = get_parameter_or_create(
-        "beta", shape_stat, beta_init, True, not fix_parameters)
-
-    return F.instance_normalization(inp, beta, gamma, channel_axis, batch_axis, eps, output_stat)
+    return F.instance_normalization(inp, beta, gamma,
+                                    channel_axis=channel_axis, batch_axis=batch_axis, eps=eps, output_stat=output_stat)
 
 
 @parametric_function_api("group_normalization", [
@@ -2079,7 +2088,7 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
     ('gamma', 'Trainable scaling factor :math:`\\gamma`', '<see above>', True),
 ])
 def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False,
-                        fix_parameters=False, param_init=None):
+                        fix_parameters=False, param_init=None, no_scale=False, no_bias=False):
     r"""
     Applies Group Normalization over an input tensor, which is defined as:
 
@@ -2120,32 +2129,32 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
             E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+        no_scale (bool): If `True`, the scale term is omitted.
+        no_bias (bool): If `True`, the bias term is omitted.
+
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
-    from nnabla.normalization_functions import _force_list
+    from nnabla.normalization_functions import _force_list, _init_beta_gamma
 
     batch_axis = _force_list(batch_axis)
 
-    shape_stat = [1 for _ in range(len(inp.shape) + 1)]
-    shape_stat[channel_axis] = num_groups
-    shape_stat[channel_axis + 1] = int(inp.shape[channel_axis] / num_groups)
+    shape_stat = [1 for _ in range(len(inp.shape))]
+    shape_stat[channel_axis] = inp.shape[channel_axis]
 
     if param_init is None:
         param_init = {}
 
-    gamma_init = param_init.get('gamma', ConstantInitializer(1))
-    beta_init = param_init.get('beta', ConstantInitializer(0))
+    beta, gamma = _init_beta_gamma(
+        shape_stat, fix_parameters, param_init, no_bias, no_scale)
 
-    gamma = get_parameter_or_create(
-        "gamma", shape_stat, gamma_init, True, not fix_parameters)
-    beta = get_parameter_or_create(
-        "beta", shape_stat, beta_init, True, not fix_parameters)
-
-    return F.group_normalization(inp, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat)
+    # we dont have to broadcast beta and gamma here in this case because adaptive operation in bn is not used.
+    return F.group_normalization(inp, beta, gamma,
+                                 num_groups=num_groups, channel_axis=channel_axis, batch_axis=batch_axis,
+                                 eps=eps, output_stat=output_stat)
 
 
 @parametric_function_api("embed", [

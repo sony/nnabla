@@ -19,12 +19,14 @@ def ref_weight_standardization(w, channel_axis, eps, output_stat):
     axes = tuple(_get_axes_excluding(len(w.shape), channel_axis))
 
     w_mean = w.mean(axis=axes, keepdims=True)
-    w_std = w.std(axis=axes, keepdims=True)
+    w_var = w.var(axis=axes, keepdims=True)
+
+    norm = (w - w_mean) / (w_var + eps) ** 0.5
 
     if output_stat:
-        return (w - w_mean) / (w_std + eps), w_mean, w_std
+        return norm, w_mean, w_var
 
-    return (w - w_mean) / (w_std + eps)
+    return norm
 
 
 @pytest.mark.parametrize("w_shape , channel_axis", [((32, 16, 3, 3), 0),  # convolution
