@@ -170,7 +170,7 @@ class Model(object):
 		# self.epsilon = config['model']['epsilon']
 
 		self.training = training
-		self.vq = VectorQuantizerEMA(self.embedding_dim, self.num_embedding, self.commitment_cost, self.rng)
+		self.vq = VectorQuantizer(self.embedding_dim, self.num_embedding, self.commitment_cost, self.rng)
 
 	def encoder(self, x, iteration):
 		with nn.parameter_scope('encoder'):
