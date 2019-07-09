@@ -1,0 +1,40 @@
+model:
+  in_channels: 3
+  num_hidden: 128
+  num_res_hidden: 32
+  num_res_layers: 2
+  embedding_dim: 64
+  num_embeddings: 512
+  commitment_cost: 0.25
+  saved_models_dir: traied_models/
+  checkpoint: None
+  rng: 313
+  decay: 0.99
+
+train:
+  batch_size: 32
+  num_training_updates: 25000 
+  learning_rate: 3.0e-4
+  weight_decay: 1.0e-5
+  decay: 0.99 # For VQ with EMA (to be implemented later)
+  num_epochs: 30
+  save_param_step_interval: 5
+  logger_step_interval: 1000
+  solver: adam
+
+val:
+  batch_size: 32
+
+monitor:
+  path: tmp.monitor/
+  train_loss: Training loss 
+  train_recon: Training reconstructions
+
+dataset:
+  name: cifar10
+  train_size: 50000
+  val_size: 10000
+
+
+extension_module: cudnn
+device_id: '0'
