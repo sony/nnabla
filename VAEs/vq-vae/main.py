@@ -1,4 +1,5 @@
 import os
+from argparse import ArgumentParser
 import time
 import numpy as np 
 import nnabla as nn 
@@ -11,17 +12,21 @@ from trainers.vq_vae_train import VQVAEtrainer
 from utils.communication_wrapper import CommunicationWrapper 
 from utils.read_yaml import read_yaml
 from data.cifar10_data import data_iterator_cifar10
+from data.mnist_data import data_iterator_mnist
 
-def train(monitor, config, comm):
+def make_parser():
+	parser = ArgumentParser(description='VQVAE: Dataset Name for training.')
+	parser.add_argument('--data', '-d', type=str, default='cifar10',
+		choices=['mnist', 'cifar10'])
+	return parser
+
+
+def train(data_iterator, monitor, config, comm):
 	monitor_loss, monitor_acc, = None, None
 	if comm.rank == 0:
-		def scale_back(img):
-			img = img*1.0 + 0.5
-			img = (img - img.min(axis=(2,3)).reshape((img.shape[0:2]+(1,1))))/img.max(axis=(2,3)).reshape((img.shape[0:2]+(1,1)))
-			return img
 		monitor_loss = MonitorSeries(config['monitor']['train_loss'], monitor, interval=config['train']['logger_step_interval'])
 		monitor_recon = MonitorImageTile(config['monitor']['train_recon'], monitor, interval=config['train']['logger_step_interval'], 
-			num_images=32, normalize_method=scale_back)
+			num_images=config['train']['batch_size'])
 		
 
 	model = Model(config)
@@ -31,8 +36,8 @@ def train(monitor, config, comm):
 		solver = S.momentum()
 	solver.set_learning_rate(config['train']['learning_rate'])
 
-	train_loader_ = data_iterator_cifar10(config['train']['batch_size'], train=True, shuffle=False, rng=np.random.RandomState(config['model']['rng']))
-	val_loader_ = data_iterator_cifar10(config['val']['batch_size'], train=False, rng=np.random.RandomState(config['model']['rng']))
+	train_loader_ = data_iterator(config['train']['batch_size'], train=True, shuffle=False, rng=np.random.RandomState(config['model']['rng']))
+	val_loader_ = data_iterator(config['val']['batch_size'], train=False, rng=np.random.RandomState(config['model']['rng']))
 	if comm.n_procs>1:
 		train_loader = train_loader_.slice(rng=None, num_of_slices=comm.n_procs,
 			slice_pos=comm.rank)
@@ -57,9 +62,16 @@ def train(monitor, config, comm):
 
 if __name__ == '__main__':
 
-	config = read_yaml()
+	parser = make_parser()
+	args = parser.parse_args()
+	config = read_yaml(args.data + '.yaml')
 	ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
 	nn.set_auto_forward(True)
+
+	if args.data == 'mnist':
+		data_iterator = data_iterator_mnist
+	else:
+		data_iterator = data_iterator_cifar10
 
 	comm = CommunicationWrapper(ctx)
 	nn.set_default_context(ctx)
@@ -69,7 +81,7 @@ if __name__ == '__main__':
 		monitor = Monitor(config['monitor']['path'])
 		start_time = time.time()
 
-	acc = train(monitor, config, comm)
+	acc = train(data_iterator, monitor, config, comm)
 
 	if comm.rank == 0:
 		end_time = time.time()

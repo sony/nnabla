@@ -205,43 +205,6 @@ class Model(object):
 
 		return out
 
-	def vector_quantizer(self, x):
-		# convert x from bchw -> bhcw
-		x = F.transpose(x, (0,2,3,1))
-		x_flat = x.reshape((-1, self.embedding_dim))
-		# with nn.parameter_scope('vector_quantizer'):
-		# 	embeddding = PF.embed(x_flat, self.num_embedding, self.embedding_dim, 
-		# 		initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding)))
-		# embedding_weight = nn.get_parameters()['vector_quantizer/embed/W']
-		# import pdb; pdb.set_trace()
-		embedding_weight = nn.parameter.get_parameter_or_create('vq/W', shape=(self.num_embedding, self.embedding_dim),
-			initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding), rng=self.rng), need_grad=True)
-
-		x_flat_squared = F.broadcast(F.sum(x_flat**2, axis=1, keepdims=True), (x_flat.shape[0], self.num_embedding))
-		emb_wt_squared = F.transpose(F.sum(embedding_weight**2, axis=1, keepdims=True), (1,0))
-
-		distances = x_flat_squared + emb_wt_squared - 2*F.batch_matmul(x_flat, F.transpose(embedding_weight, (1,0)))
-		# import pdb; pdb.set_trace()
-		_, encoding_indices = F.min(distances, with_index=True, axis=1, keepdims=True)
-		encoding_indices.need_grad = False
-		encodings = F.one_hot(encoding_indices, (self.num_embedding,))
-		# encodings_indices = F.reshape(encodings_indices, x.shape[:-1])
-		quantized = F.batch_matmul(encodings, embedding_weight).reshape(x.shape)
-
-		e_latent_loss = F.mean(F.squared_error(quantized.get_unlinked_variable(need_grad=False), x))
-		q_latent_loss = F.mean(F.squared_error(quantized, x.get_unlinked_variable(need_grad=False)))
-		loss = q_latent_loss + self.commitment_cost*e_latent_loss
-
-		quantized = x + (quantized - x).get_unlinked_variable()
-		# quantized.need_grad = False
-		# import pdb; pdb.set_trace()
-		avg_probs = F.mean(encodings, axis=0)
-		perplexity = F.exp(-F.sum(avg_probs*F.log(avg_probs+1.0e-10)))
-		if np.isnan(loss.d):
-			import pdb; pdb.set_trace()
-
-		return loss, F.transpose(quantized, (0,3,1,2)), perplexity, encodings
-
 	def __call__(self, img, iteration):
 
 		with nn.parameter_scope('vq_vae'):
