@@ -249,7 +249,7 @@ class Model(object):
 			z = PF.convolution(z, self.embedding_dim, (1,1), stride=(1,1))
 			# import pdb; pdb.set_trace()
 			# loss, quantized, perplexity, encodings = self.vector_quantizer(z)
-			loss, quantized, perplexity, encodings = self.vq(z, iteration)
+			loss, quantized, perplexity, encodings = self.vq(z)
 			img_recon = self.decoder(quantized)
 
 		return loss, img_recon, perplexity 
