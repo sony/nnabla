@@ -491,9 +491,8 @@ class PythonFunction:
     def __call__(self, *inputs, n_outputs=-1, outputs=None):
         from .auto_forward import get_auto_forward
         info = Info()
-        info.type_name = 'PythonFunction'
-        from pickle import dumps
-        info.args = {'pickle': dumps(self)}
+        info.args = {}
+        info.type_name = self.name
         info.tags = {}
         # Increment reference count to prevent deleting this object as long as
         # the CgFunction instance created below exists.
