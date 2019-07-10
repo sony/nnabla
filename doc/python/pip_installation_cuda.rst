@@ -18,10 +18,9 @@ CUDA vs CUDNN Compatibility
 Package name       CUDA version CUDNN version
 ================== ============ =====================
 nnabla-ext-cuda80  8.0          7.1(Linux & Win)
-nnabla-ext-cuda90  9.0          7.5(Liniux), 7.6(Win)
-nnabla-ext-cuda92  9.2          7.5(Liniux), 7.6(Win)
-nnabla-ext-cuda100 10.0         7.5(Liniux), 7.6(Win)
-nnabla-ext-cuda100 10.1         7.5(Liniux), 7.6(Win)
+nnabla-ext-cuda90  9.0          7.6(Linux & Win)
+nnabla-ext-cuda100 10.0         7.6(Linux & Win)
+nnabla-ext-cuda100 10.1         7.6(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -65,13 +64,11 @@ CUDA vs CUDNN Compatibility
 ================================= ============ =============
 Package name                      CUDA version CUDNN version
 ================================= ============ =============
-nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.5
-nnabla-ext-cuda92_nccl2_ubuntu16  9.2          7.5
-nnabla-ext-cuda92_nccl2_ubuntu18  9.2          7.4
-nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.5
-nnabla-ext-cuda100_nccl2_ubuntu18 10.0         7.5
-nnabla-ext-cuda100_nccl2_ubuntu18 10.1         7.5
-nnabla-ext-cuda100_nccl2_ubuntu16 10.1         7.5
+nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.6
+nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.6
+nnabla-ext-cuda100_nccl2_ubuntu18 10.0         7.6
+nnabla-ext-cuda100_nccl2_ubuntu16 10.1         7.6
+nnabla-ext-cuda100_nccl2_ubuntu18 10.1         7.6
 ================================= ============ =============
 
 You can install as the following.
