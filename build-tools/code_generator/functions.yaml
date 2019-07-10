@@ -15,10 +15,11 @@ Neural Network Layer:
           D_B \times ... \times D_N`). Dimensions before and after base_axis are flattened
           as if it is a matrix.
       weight:
-        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L`)
+        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L_{0}
+          \times \ldots \times L_{I}`)
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`)
+        doc: Bias vector (:math:`L_{0} \times \ldots \times L_{I}`)
         optional: true
         parameter: true
     arguments:
@@ -30,7 +31,7 @@ Neural Network Layer:
     outputs:
       y:
         doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
-          L`)
+          L_{0} \times \ldots \times L_{I}`)
     function_ids:
       i: 0
     c_runtime: support
