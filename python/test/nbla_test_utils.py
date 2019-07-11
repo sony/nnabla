@@ -183,8 +183,8 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
 def cap_ignore_region(arr, region):
     assert len(region) == 2
     region = sorted(region)
-    arr = arr.copy()
-    arr[np.logical_and(arr > region[0], arr < region[0])] = region[0]
+    arr0 = arr.copy()
+    arr[np.logical_and(arr > region[0], arr < region[1])] = region[0]
     return arr
 
 
@@ -221,6 +221,7 @@ class ArrayDiffStats:
 
     def __str__(self):
         lines = [
+            '',
             '[diff]',
             str(self.diffstat),
             '[left]',
