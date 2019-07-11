@@ -35,3 +35,20 @@ def test_embed_forward_backward(seed, shape_x, shape_w, ctx, func_name):
     function_tester(rng, F.embed, lambda x, w: w[x], inputs,
                     ctx=ctx, func_name=func_name, atol_b=1e-2,
                     backward=[False, True])
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape_x", [(10,), (2, 8), (2, 3, 4), (2, 2, 3, 4)])
+@pytest.mark.parametrize("shape_w", [(5, 3), (4, 3, 4), (6, 2, 2, 3)])
+def test_embed_double_backward(seed, shape_x, shape_w, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    n_class = shape_w[0]
+    x = rng.randint(0, n_class - 1, shape_x).astype(np.int32)
+    w = rng.randn(*shape_w).astype(np.float32)
+    inputs = [x, w]
+    backward_function_tester(rng, F.embed, None, inputs,
+                             ctx=ctx, func_name=func_name, atol_b=6e-2, atol_accum=6e-2,
+                             dstep=1e-3,
+                             backward=[False, True])

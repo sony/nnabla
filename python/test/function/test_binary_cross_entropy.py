@@ -31,3 +31,17 @@ def test_binary_cross_entropy_forward_backward(seed, ctx, func_name):
     function_tester(rng, F.binary_cross_entropy,
                     lambda x, y: -(y * np.log(x) + (1 - y) * np.log(1 - x)),
                     inputs, atol_b=5e-2, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_binary_cross_entropy_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.rand(2, 3, 4).astype(np.float32) for _ in range(2)]
+    inputs[1] = np.round(inputs[1])
+    backward_function_tester(rng, F.binary_cross_entropy,
+                             None,
+                             inputs,
+                             atol_b=2e-1, atol_accum=2e-1, dstep=1e-3,
+                             ctx=ctx, func_name=func_name)

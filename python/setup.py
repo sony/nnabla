@@ -255,6 +255,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
+                'nnabla.backward_function',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 

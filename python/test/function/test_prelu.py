@@ -42,3 +42,20 @@ def test_prelu_forward_backward(seed, inshape, wshape, base_axis, ctx, func_name
     function_tester(rng, F.prelu, ref_prelu, inputs,
                     func_args=[base_axis],
                     ctx=ctx, func_name=func_name, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, wshape, base_axis",
+                         [((2, 3, 2, 3, 2), tuple(), 4),
+                          ((2, 3, 1, 3), (3,), 1)
+                          ])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_prelu_double_backward(seed, inshape, wshape, base_axis, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
+    w = np.array(rng.randn(*wshape)).astype(np.float32)
+    inputs = [x, w]
+    backward_function_tester(rng, F.prelu, None, inputs,
+                             func_args=[base_axis],
+                             ctx=ctx, func_name=func_name, atol_b=1e-1, atol_accum=1e-1, dstep=1e-3)
