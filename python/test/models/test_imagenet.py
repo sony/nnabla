@@ -36,7 +36,7 @@ def _check_trainable_parameters(y):
 
 @pytest.mark.skipif(
     get_model_url_base_from_env() is None,
-    reason='models are tested only when NNBLA_MODELS_URL_BASE is specified as an envvar')
+    reason='models are tested only when NNABLA_MODELS_URL_BASE is specified as an envvar')
 @pytest.mark.parametrize('model_class, up_to_list', [
     ('ResNet18', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('ResNet34', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
@@ -52,7 +52,9 @@ def _check_trainable_parameters(y):
     ('DenseNet', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('InceptionV3', ['classifier', 'pool', 'prepool']),
     ('Xception', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
-    ('GoogLeNet', ['classifier', 'pool', 'prepool'])
+    ('GoogLeNet', ['classifier', 'pool', 'prepool']),
+    ('ResNeXt50', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('ResNeXt101', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ])
 @pytest.mark.parametrize('image_size_factor', [1, 2])
 @pytest.mark.parametrize('batch_size', [1, 5])
@@ -109,7 +111,7 @@ def test_nnabla_models_imagenet_etc(model_class, up_to_list, image_size_factor, 
 
 @pytest.mark.skipif(
     get_model_url_base_from_env() is None,
-    reason='models are tested only when NNBLA_MODELS_URL_BASE is specified as an envvar')
+    reason='models are tested only when NNABLA_MODELS_URL_BASE is specified as an envvar')
 @pytest.mark.parametrize('model_class, up_to_list', [
     ('VGG11', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('VGG13', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),

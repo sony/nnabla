@@ -22,3 +22,4 @@ from .densenet import DenseNet
 from .inception import InceptionV3
 from .xception import Xception
 from .googlenet import GoogLeNet
+from .resnext import ResNeXt, ResNeXt50, ResNeXt101
