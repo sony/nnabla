@@ -115,12 +115,15 @@ def test_nnabla_models_imagenet_etc(model_class, up_to_list, image_size_factor, 
 @pytest.mark.parametrize('model_class, up_to_list', [
     ('VGG11', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('VGG13', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
-    ('VGG16', ['classifier', 'pool', 'lastconv', 'lastconv+relu'])
+    ('VGG16', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('ShuffleNet10', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('ShuffleNet05', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('ShuffleNet20', ['classifier', 'pool', 'lastconv', 'lastconv+relu'])
     ])
 @pytest.mark.parametrize('batch_size', [1, 5])
 @pytest.mark.parametrize('training', [False, True])
 @pytest.mark.parametrize('seed', [1223])
-def test_nnabla_models_vgg(model_class, up_to_list, batch_size, training, seed):
+def test_nnabla_models_fixed_size(model_class, up_to_list, batch_size, training, seed):
     model_module = importlib.import_module("nnabla.models.imagenet")
     nn.clear_parameters()
     rng = np.random.RandomState(seed)
