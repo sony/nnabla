@@ -78,7 +78,7 @@ def train(generator, discriminator, patch_gan, solver_gen, solver_dis,
         'loss_dis': nm.MonitorSeries("Discriminator loss", monitor, interval=interval),
         'time': nm.MonitorTimeElapsed("Training time", monitor, interval=interval),
         'fake': nm.MonitorImageTile("Fake images", monitor, interval=interval,
-                                    num_images=2, normalize_method=lambda x: x),
+                                    num_images=2, normalize_method=lambda x: np.clip(np.divide(x, 255.0), 0.0, 1.0)),
     }
 
     i = 0

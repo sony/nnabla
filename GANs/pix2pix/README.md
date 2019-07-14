@@ -14,7 +14,7 @@ __Result Examples (cherry picked)__
 ## Running Code
 ### Train Pix2Pix Model
 ```
-python pix2pix.py --train -c "cudnn" -d 0 --path-gan
+python pix2pix.py --train -c "cudnn" -d 0 --patch-gan
 ```
 Trained model will be saved at log directory (default is `tmp.monitor`).
 ### Generate Fakes from Trained Pix2Pix Model
