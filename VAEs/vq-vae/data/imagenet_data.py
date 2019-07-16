@@ -1,15 +1,16 @@
-from nvidia.dali.pipeline import Pipeline 
-import nvidia.dali.ops as ops 
+from nvidia.dali.pipeline import Pipeline
+import nvidia.dali.ops as ops
 import nvidia.dali.types as types
 from nvidia.dali.backend import TensorGPU
 
-import nnabla as nn 
-import nnabla.functions as F 
+import nnabla as nn
+import nnabla.functions as F
 from nnabla.ext_utils import get_extension_context
 from nnabla.utils.data_iterator import data_iterator_cache
 
 import ctypes
 import logging
+
 
 def feed_ndarray(dali_tensor, arr, dtype, ctx):
     """
@@ -29,9 +30,7 @@ def feed_ndarray(dali_tensor, arr, dtype, ctx):
     # turn raw int to a c void pointer
     c_type_pointer = ctypes.c_void_p(arr.data_ptr(dtype, ctx))
     dali_tensor.copy_to_external(c_type_pointer)
-	return arr
-
-class DataPipeline(Pipeline):
+    return arr
 
 	def __init__(self, image_dir, file_list, batch_size, num_threads, device_id, 
 		num_gpus=1, seed=1):
@@ -52,8 +51,6 @@ class DataPipeline(Pipeline):
 		images = self.preprocess(images)
 		images = self.rrc(images)
         images = self.cmn(images)
-
-		return images, labels
 
 class DALIGenericIterator(object):
     """
@@ -290,9 +287,6 @@ class DALIClassificationIterator(DALIGenericIterator):
         data = result[0]
         label = result[1]
         return data, label
-
-
-
 
 def data_iterator_imagenet(config, comm):
 	if type == 'dali':

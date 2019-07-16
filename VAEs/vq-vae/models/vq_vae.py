@@ -1,5 +1,5 @@
-import nnabla as nn 
-import nnabla.functions as F 
+import nnabla as nn
+import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
 import numpy as np
@@ -35,50 +35,59 @@ class ResidualStack(object):
 
 class VectorQuantizer(object):
 
-	def __init__(self, embedding_dim, num_embedding, commitment_cost, rng,
-		scope_name = 'vector_quantizer'):
-		self.embedding_dim = embedding_dim 
-		self.num_embedding = num_embedding
-		self.commitment_cost = commitment_cost
-		self.rng = rng
-		self.scope_name = scope_name
+    def __init__(self, embedding_dim, num_embedding, commitment_cost, rng,
+                 scope_name='vector_quantizer'):
+        self.embedding_dim = embedding_dim
+        self.num_embedding = num_embedding
+        self.commitment_cost = commitment_cost
+        self.rng = rng
+        self.scope_name = scope_name
 
-		# self.embedding_weight = nn.Variable.from_numpy_array(self.rng.uniform(-1/self.num_embedding, 1/self.num_embedding, 
-		# 	(self.num_embedding, self.embedding_dim)), need_grad = True)
+        # self.embedding_weight = nn.Variable.from_numpy_array(self.rng.uniform(-1/self.num_embedding, 1/self.num_embedding,
+        # 	(self.num_embedding, self.embedding_dim)), need_grad = True)
 
-		with nn.parameter_scope(scope_name):
-			self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(self.num_embedding, self.embedding_dim),
-				initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding), rng=self.rng), need_grad=True)
+        with nn.parameter_scope(scope_name):
+            self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(self.num_embedding, self.embedding_dim),
+                                                                         initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding), rng=self.rng), need_grad=True)
 
-	def __call__(self, x):
-		x = F.transpose(x, (0,2,3,1))
-		x_flat = x.reshape((-1, self.embedding_dim))
+    def __call__(self, x):
+        x = F.transpose(x, (0, 2, 3, 1))
+        x_flat = x.reshape((-1, self.embedding_dim))
 
-		x_flat_squared = F.broadcast(F.sum(x_flat**2, axis=1, keepdims=True), (x_flat.shape[0], self.num_embedding))
-		emb_wt_squared = F.transpose(F.sum(self.embedding_weight**2, axis=1, keepdims=True), (1,0))
+        x_flat_squared = F.broadcast(
+            F.sum(x_flat**2, axis=1, keepdims=True), (x_flat.shape[0], self.num_embedding))
+        emb_wt_squared = F.transpose(
+            F.sum(self.embedding_weight**2, axis=1, keepdims=True), (1, 0))
 
-		distances = x_flat_squared + emb_wt_squared - 2*F.batch_matmul(x_flat, F.transpose(self.embedding_weight, (1,0)))
+        distances = x_flat_squared + emb_wt_squared - 2 * \
+            F.batch_matmul(x_flat, F.transpose(self.embedding_weight, (1, 0)))
 
-		_, encoding_indices = F.min(distances, with_index=True, axis=1, keepdims=True)
-		encoding_indices.need_grad = False
-		quantized = F.embed(encoding_indices.reshape(encoding_indices.shape[:-1]), self.embedding_weight).reshape(x.shape)
+        _, encoding_indices = F.min(
+            distances, with_index=True, axis=1, keepdims=True)
+        encoding_indices.need_grad = False
+        quantized = F.embed(encoding_indices.reshape(
+            encoding_indices.shape[:-1]), self.embedding_weight).reshape(x.shape)
 
-		encodings = F.one_hot(encoding_indices, (self.num_embedding,))
-		# quantized = F.batch_matmul(encodings, self.embedding_weight).reshape(x.shape)
-		# import pdb; pdb.set_trace()
-		e_latent_loss = F.mean(F.squared_error(quantized.get_unlinked_variable(need_grad=False), x))
-		q_latent_loss = F.mean(F.squared_error(quantized, x.get_unlinked_variable(need_grad=False)))
-		loss = q_latent_loss + self.commitment_cost*e_latent_loss
+        encodings = F.one_hot(encoding_indices, (self.num_embedding,))
+        # quantized = F.batch_matmul(encodings, self.embedding_weight).reshape(x.shape)
+        # import pdb; pdb.set_trace()
+        e_latent_loss = F.mean(F.squared_error(
+            quantized.get_unlinked_variable(need_grad=False), x))
+        q_latent_loss = F.mean(F.squared_error(
+            quantized, x.get_unlinked_variable(need_grad=False)))
+        loss = q_latent_loss + self.commitment_cost*e_latent_loss
 
-		quantized = x + (quantized - x).get_unlinked_variable(need_grad=False)
-		# quantized.need_grad = False
-		# import pdb; pdb.set_trace()
-		avg_probs = F.mean(encodings, axis=0)
-		perplexity = F.exp(-F.sum(avg_probs*F.log(avg_probs+1.0e-10)))
-		if np.isnan(loss.d):
-			import pdb; pdb.set_trace()
+        quantized = x + (quantized - x).get_unlinked_variable(need_grad=False)
+        # quantized.need_grad = False
+        # import pdb; pdb.set_trace()
+        avg_probs = F.mean(encodings, axis=0)
+        perplexity = F.exp(-F.sum(avg_probs*F.log(avg_probs+1.0e-10)))
+        if np.isnan(loss.d):
+            import pdb
+            pdb.set_trace()
 
-		return loss, F.transpose(quantized, (0,3,1,2)), perplexity, encodings
+        return loss, F.transpose(quantized, (0, 3, 1, 2)), perplexity, encodings
+
 
 class VectorQuantizerEMA(object):
 
@@ -147,8 +156,7 @@ class VectorQuantizerEMA(object):
 			import pdb; pdb.set_trace()
 		# import pdb; pdb.set_trace()
 
-		return loss, F.transpose(quantized, (0,3,1,2)), perplexity, encodings, 
-
+		return loss, F.transpose(quantized, (0,3,1,2)), perplexity, encodings
 
 class Model(object):
 
