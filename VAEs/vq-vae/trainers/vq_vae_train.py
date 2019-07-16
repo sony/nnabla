@@ -47,26 +47,16 @@ class VQVAEtrainer(object):
 		loss = recon_loss + vq_loss
 		if np.isnan(loss.d):
 			import pdb; pdb.set_trace()
-		# if recon_loss.d < 0.1:
-		# 	import pdb; pdb.set_trace()
 		return loss, recon_loss, perplexity, img_recon
 
-	def update(self, iteration):
+	def train(self, iteration):
 
 		for i in range(self.iterations_per_epoch):
-			# import pdb;  pdb.set_trace()
 			data = self.data_loader.next()
 			img_var = self.convert_to_var(data[0])
-			# import pdb; pdb.set_trace()
 			loss, recon_loss, perplexity, img_recon = self.compute_loss(img_var, iteration)
-			# try:
-			# 	self.logger_recon.add(iteration, self.scale_back_var(img_recon))
-			# except:
-			# 	import pdb; pdb.set_trace()
 			self.logger.add(iteration, loss.d)
-			
-			# if iteration > 24000:
-			# 	import pdb; pdb.set_trace()
+			self.logger_recon.add(iteration, self.scale_back_var(img_recon))
 
 			self.solver.set_parameters(nn.get_parameters(), reset=False, retain_state=True)
 			self.solver.zero_grad()
@@ -78,10 +68,6 @@ class VQVAEtrainer(object):
 
 			self.solver.weight_decay(self.weight_decay)
 			self.solver.update()
-
-			# self.logger_recon.add(iteration, img_recon.d)
 			iteration += 1
-			# if iteration%7000 == 0:
-			# 	self.solver.set_learning_rate(self.solver.learning_rate()*0.1)
 
 		return iteration

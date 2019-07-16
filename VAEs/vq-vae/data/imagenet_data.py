@@ -33,21 +33,25 @@ def feed_ndarray(dali_tensor, arr, dtype, ctx):
 
 class DataPipeline(Pipeline):
 
-	def __init__(self, batch_size, num_threads, device_id, image_dir, 
-		file_list, seed=1, num_gpus=1):
+	def __init__(self, image_dir, file_list, batch_size, num_threads, device_id, 
+		num_gpus=1, seed=1):
 		super(TrainPipeline, self).__init__(batch_size, num_threads, 
 			device_id, seed=seed)
-		self.input = ops.FileReader()
-		self.decode = ops.nvJPEGDecoder()
-		self.preprocess = 
-
-
+		self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
+            random_shuffle=True, num_shards=num_gpus, shard_id=device_id)
+		self.decode = ops.nvJPEGDecoder(device='mixed',output_type=types.RGB)
+		self.rrc = ops.RandomResizedCrop(device='gpu', size=(128,128))
+        self.cmn = ops.CropMirrorNormalize(device='gpu',
+                                                 crop=(128,128),
+                                                 mean=[0.5,0.5,0.5],
+                                                 std=[0.5,0.5,0.5])
 
 	def define_graph(self):
 		jpegs, labels = self.input(name='Reader')
 		images = self.decode(jpegs)
 		images = self.preprocess(images)
-		# Preprocessing
+		images = self.rrc(images)
+        images = self.cmn(images)
 
 		return images, labels
 
@@ -290,9 +294,17 @@ class DALIClassificationIterator(DALIGenericIterator):
 
 
 
-def data_iterator_imagenet():
+def data_iterator_imagenet(config, comm):
 	if type == 'dali':
-		return
+        train_pipes = [DataPipeline(config['dataset']['path'], config['dataset']['file_list'], 
+            config['train']['batch_size'], config['dataset']['dali_threads'], comm.device_id, 
+            num_gpus=comm.n_procs, seed=1)]
+        train_pipes[0].build()
+        data = DALIClassificationIterator(train_pipes,
+            train_pipes[0].epoch_size('Reader')//comm.n_procs,
+            auto_reset=True, stop_at_epoch=False)I
+        return data
 	else:
 		return data_iterator_cache(cache_dir, batch_size, 
 			shuffle=shuffle, normalize=normalize, rng=rng)
+
