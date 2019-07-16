@@ -1,15 +1,16 @@
-from nvidia.dali.pipeline import Pipeline 
-import nvidia.dali.ops as ops 
+from nvidia.dali.pipeline import Pipeline
+import nvidia.dali.ops as ops
 import nvidia.dali.types as types
 from nvidia.dali.backend import TensorGPU
 
-import nnabla as nn 
-import nnabla.functions as F 
+import nnabla as nn
+import nnabla.functions as F
 from nnabla.ext_utils import get_extension_context
 from nnabla.utils.data_iterator import data_iterator_cache
 
 import ctypes
 import logging
+
 
 def feed_ndarray(dali_tensor, arr, dtype, ctx):
     """
@@ -29,27 +30,27 @@ def feed_ndarray(dali_tensor, arr, dtype, ctx):
     # turn raw int to a c void pointer
     c_type_pointer = ctypes.c_void_p(arr.data_ptr(dtype, ctx))
     dali_tensor.copy_to_external(c_type_pointer)
-	return arr
+    return arr
+
 
 class DataPipeline(Pipeline):
 
-	def __init__(self, batch_size, num_threads, device_id, image_dir, 
-		file_list, seed=1, num_gpus=1):
-		super(TrainPipeline, self).__init__(batch_size, num_threads, 
-			device_id, seed=seed)
-		self.input = ops.FileReader()
-		self.decode = ops.nvJPEGDecoder()
-		self.preprocess = 
+    def __init__(self, batch_size, num_threads, device_id, image_dir,
+                 file_list, seed=1, num_gpus=1):
+        super(TrainPipeline, self).__init__(batch_size, num_threads,
+                                            device_id, seed=seed)
+        self.input = ops.FileReader()
+        self.decode = ops.nvJPEGDecoder()
+        self.preprocess =
 
+    def define_graph(self):
+        jpegs, labels = self.input(name='Reader')
+        images = self.decode(jpegs)
+        images = self.preprocess(images)
+        # Preprocessing
 
+        return images, labels
 
-	def define_graph(self):
-		jpegs, labels = self.input(name='Reader')
-		images = self.decode(jpegs)
-		images = self.preprocess(images)
-		# Preprocessing
-
-		return images, labels
 
 class DALIGenericIterator(object):
     """
@@ -288,11 +289,9 @@ class DALIClassificationIterator(DALIGenericIterator):
         return data, label
 
 
-
-
 def data_iterator_imagenet():
-	if type == 'dali':
-		return
-	else:
-		return data_iterator_cache(cache_dir, batch_size, 
-			shuffle=shuffle, normalize=normalize, rng=rng)
+    if type == 'dali':
+        return
+    else:
+        return data_iterator_cache(cache_dir, batch_size,
+                                   shuffle=shuffle, normalize=normalize, rng=rng)
