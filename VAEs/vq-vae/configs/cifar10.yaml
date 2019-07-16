@@ -6,27 +6,37 @@ model:
   embedding_dim: 64
   num_embeddings: 512
   commitment_cost: 0.25
-  saved_models_dir: traied_models/
+  saved_models_dir: trained_models_cifar10/
   checkpoint: None
   rng: 313
   decay: 0.99
 
+pixelcnn:
+  in_channels: 128
+  out_channels: 128
+  num_features: 64
+  num_layers: 15
+  conditional: True
+  num_classes: 10
+  saved_models_dir: trained_prior/
+  base_model_checkpoint: trained_models_cifar10/epoch_29
+
 train:
   batch_size: 32
   num_training_updates: 25000 
-  learning_rate: 3.0e-4
-  weight_decay: 1.0e-5
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-6
   decay: 0.99 # For VQ with EMA (to be implemented later)
-  num_epochs: 30
+  num_epochs: 40
   save_param_step_interval: 5
-  logger_step_interval: 1000
+  logger_step_interval: 100
   solver: adam
 
 val:
   batch_size: 32
 
 monitor:
-  path: tmp.monitor/
+  path: tmp.monitor_cifar10/
   train_loss: Training loss 
   train_recon: Training reconstructions
 

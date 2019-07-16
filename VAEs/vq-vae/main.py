@@ -17,7 +17,7 @@ from data.mnist_data import data_iterator_mnist
 def make_parser():
 	parser = ArgumentParser(description='VQVAE: Dataset Name for training.')
 	parser.add_argument('--data', '-d', type=str, default='cifar10',
-		choices=['mnist', 'cifar10'])
+		choices=['mnist', 'cifar10', 'imagenet'])
 	return parser
 
 

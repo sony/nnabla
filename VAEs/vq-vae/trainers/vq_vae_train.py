@@ -59,10 +59,10 @@ class VQVAEtrainer(object):
 			img_var = self.convert_to_var(data[0])
 			# import pdb; pdb.set_trace()
 			loss, recon_loss, perplexity, img_recon = self.compute_loss(img_var, iteration)
-			try:
-				self.logger_recon.add(iteration, self.scale_back_var(img_recon))
-			except:
-				import pdb; pdb.set_trace()
+			# try:
+			# 	self.logger_recon.add(iteration, self.scale_back_var(img_recon))
+			# except:
+			# 	import pdb; pdb.set_trace()
 			self.logger.add(iteration, loss.d)
 			
 			# if iteration > 24000:

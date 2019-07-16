@@ -1,12 +1,12 @@
 model:
-  in_channels: 1
+  in_channels: 3
   num_hidden: 64
   num_res_hidden: 32
   num_res_layers: 2
   embedding_dim: 64
   num_embeddings: 10
   commitment_cost: 0.25
-  saved_models_dir: trained_models_mnist/
+  saved_models_dir: trained_models_imagenet/
   checkpoint: None
   rng: 313
   decay: 0.99
@@ -14,7 +14,7 @@ model:
 train:
   batch_size: 32
   num_training_updates: 25000 
-  learning_rate: 1.5e-4
+  learning_rate: 3.0e-4
   weight_decay: 1.0e-5
   decay: 0.99 # For VQ with EMA (to be implemented later)
   num_epochs: 30
@@ -26,12 +26,12 @@ val:
   batch_size: 32
 
 monitor:
-  path: tmp.monitor_mnist/
-  train_loss: Training loss mnist 
-  train_recon: Training reconstructions mnist
+  path: tmp.monitor_imagenet/
+  train_loss: Training loss  
+  train_recon: Training reconstructions 
 
 dataset:
-  name: mnist
+  name: imagenet
   train_size: 50000
   val_size: 10000
 
