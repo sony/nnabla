@@ -6,7 +6,6 @@ import os
 
 class VQVAEtrainer(object):
 
-<<<<<<< HEAD
 	def __init__(self, model, solver, data_loader, logger, logger_recon, config, comm):
 		self.model = model
 		self.solver = solver
