@@ -129,7 +129,7 @@ def convolution(inp, outmaps, kernel,
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] / group) + tuple(kernel),
+        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
         w_init, not fix_parameters)
     w_sn = spectral_normalization_for_conv(w, itr=itr, test=test) if sn else w
     b = None

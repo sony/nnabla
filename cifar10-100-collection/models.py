@@ -47,13 +47,13 @@ def resnet23_prediction(image, test=False, ncls=10, nmaps=64, act=F.relu):
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Nonlinear
             with nn.parameter_scope("conv1"):
-                h = PF.convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                    with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = act(h)
             # Conv -> BN -> Nonlinear
             with nn.parameter_scope("conv2"):
-                h = PF.convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                    with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = act(h)
