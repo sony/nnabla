@@ -164,7 +164,6 @@ class Model(object):
 		self.in_channels = config['model']['in_channels']
 		self.num_hidden = config['model']['num_hidden']
 		self.num_res_layers = config['model']['num_res_layers']
-		self.num_res_hidden = config['model']['num_res_hidden']
 		self.rng = np.random.RandomState(config['model']['rng'])
 
 		self.encoder_res_stack = ResidualStack(in_channels=self.num_hidden,

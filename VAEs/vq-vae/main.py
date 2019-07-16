@@ -69,12 +69,11 @@ def train(data_iterator, monitor, config, comm):
 
 if __name__ == '__main__':
 
-    parser = make_parser()
-    args = parser.parse_args()
-    config = read_yaml(args.data + '.yaml')
-    ctx = get_extension_context(
-        config['extension_module'], device_id=config['device_id'])
-    nn.set_auto_forward(True)
+	parser = make_parser()
+	args = parser.parse_args()
+	config = read_yaml(args.data + '.yaml')
+	ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
+	nn.set_auto_forward(True)
 
 	if args.data == 'mnist':
 		data_iterator = data_iterator_mnist
@@ -83,19 +82,19 @@ if __name__ == '__main__':
 	else:
 		data_iterator = data_iterator_cifar10
 
-    comm = CommunicationWrapper(ctx)
-    nn.set_default_context(ctx)
+	comm = CommunicationWrapper(ctx)
+	nn.set_default_context(ctx)
 
-    monitor = None
-    if comm.rank == 0:
-        monitor = Monitor(config['monitor']['path'])
-        start_time = time.time()
+	monitor = None
+	if comm.rank == 0:
+		monitor = Monitor(config['monitor']['path'])
+		start_time = time.time()
 
-	acc = train(data_iterator, monitor, config, comm, args)
+	acc = train(data_iterator, monitor, config, comm)
 
-    if comm.rank == 0:
-        end_time = time.time()
-        training_time = (end_time-start_time)/3600
+	if comm.rank == 0:
+		end_time = time.time()
+		training_time = (end_time-start_time)/3600
 
-        print('Finished Training!')
-        print('Total Training time: {} hours'.format(training_time))
+		print('Finished Training!')
+		print('Total Training time: {} hours'.format(training_time))
