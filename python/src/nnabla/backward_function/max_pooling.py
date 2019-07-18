@@ -37,6 +37,8 @@ class MaxPoolingBackward(BackwardFunction):
         for i in range(self._num_outputs_fwd):
             inp = inputs[self._num_inputs_fwd + i]
             v = nn.Variable(inp.shape)
+            # In cudnn, it seems we have to set the same pointer value
+            v.data = self.forward_func.outputs[0].data
             v.grad = inp.data
             outputs_fwd += [v]
         return inputs_fwd, outputs_fwd
@@ -76,3 +78,13 @@ class MaxPoolingBackward(BackwardFunction):
             dx0_ = nn.Variable(dx0.shape).apply(data=dx0, grad=g_dx0)
             backward_func.setup([x0_, dy_], [dx0_])
             backward_func.backward([x0_, dy_], [dx0_], accum=accum)
+
+    def forward_impl(self, inputs, outputs):
+        # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
+        # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
+
+        inputs_fwd, outputs_fwd = self._create_forward_inputs_and_outputs(
+            inputs, outputs)
+        print(inputs_fwd)
+        self.forward_func.backward(inputs_fwd, outputs_fwd, accum=[
+                                   False] * self._num_inputs_fwd)

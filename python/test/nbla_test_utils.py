@@ -803,7 +803,7 @@ def backward_function_tester(rng, func, ref_func, inputs,
     grads = nn.grad(voutputs, vinputs, agrad_outputs)
     grads = list(filter(lambda x: x is not None, grads))
     o = F.sink(*grads)
-    o.forward(clear_buffer=True)
+    o.forward()
     # Check forward
     for vi, go in zip(vinputs, grads):
         if vi.need_grad is False:
