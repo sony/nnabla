@@ -46,7 +46,7 @@ class VectorQuantizer(object):
             self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(self.num_embedding, self.embedding_dim),
                                                                          initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding), rng=self.rng), need_grad=True)
 
-    def __call__(self, x, iteration):
+    def __call__(self, x):
         x = F.transpose(x, (0, 2, 3, 1))
         x_flat = x.reshape((-1, self.embedding_dim))
 
@@ -171,7 +171,7 @@ class Model(object):
 		self.training = training
 		self.vq = VectorQuantizer(self.embedding_dim, self.num_embedding, self.commitment_cost, self.rng)
 
-	def encoder(self, x, iteration):
+	def encoder(self, x):
 		with nn.parameter_scope('encoder'):
 			out = PF.convolution(x, self.num_hidden, (4,4), stride=(2,2),
 				pad=(1,1), name = 'conv_1', rng=self.rng)
@@ -185,7 +185,7 @@ class Model(object):
 			import pdb; pdb.set_trace()		
 		return out
 
-	def decoder(self, x, iteration):
+	def decoder(self, x):
 		with nn.parameter_scope('decoder'):
 			out = self.decoder_res_stack(x)
 			out = F.relu(out)
@@ -199,13 +199,13 @@ class Model(object):
 
 		return out
 
-	def __call__(self, img, iteration):
+	def __call__(self, img):
 
 		with nn.parameter_scope('vq_vae'):
-			z = self.encoder(img, iteration)
+			z = self.encoder(img)
 			z = PF.convolution(z, self.embedding_dim, (1,1), stride=(1,1))
-			loss, quantized, perplexity, encodings = self.vq(z, iteration)
-			img_recon = self.decoder(quantized, iteration)
+			loss, quantized, perplexity, encodings = self.vq(z)
+			img_recon = self.decoder(quantized)
 
 		return loss, img_recon, perplexity 
 

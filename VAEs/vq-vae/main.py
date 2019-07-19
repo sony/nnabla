@@ -45,49 +45,58 @@ def train(data_iterator, monitor, config, comm):
     solver.set_learning_rate(config['train']['learning_rate'])
 
     train_loader = data_iterator(config, comm, train=True)
-    val_loader = data_iterator(config, comm, train=False)
+    if config['dataset']['name'] != 'imagenet':
+        val_loader = data_iterator(config, comm, train=False)
+    else:
+        val_loader = None # DALI not able to read the val file path specified in config as that director is not in the required format
 
-    trainer = VQVAEtrainer(model, solver, train_loader, monitor_train_loss, 
-    	monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
+    trainer = VQVAEtrainer(model, solver, train_loader, val_loader, monitor_train_loss, 
+        monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
 
     if os.path.exists(config['model']['checkpoint']):
         trainer.load_checkpoint(config['model']['checkpoint'])
 
     for epoch in range(config['train']['num_epochs']):
-        iteration = trainer.train(epoch)
+        trainer.train(epoch)
+        if epoch%config['val']['interval'] == 0 and val_loader!=None:
+            trainer.validate(epoch)
+        if comm.rank == 0:
+            if epoch % config['train']['save_param_step_interval'] == 0 or epoch == config['train']['num_epochs']-1:
+                trainer.save_checkpoint(
+                    config['model']['saved_models_dir'], epoch)
 
 
 if __name__ == '__main__':
 
-	parser = make_parser()
-	args = parser.parse_args()
-	config = read_yaml(args.data + '.yaml')
-	ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
-	nn.set_auto_forward(True)
+    parser = make_parser()
+    args = parser.parse_args()
+    config = read_yaml(args.data + '.yaml')
+    ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
+    nn.set_auto_forward(True)
 
-	if args.data == 'mnist':
-		data_iterator = data_iterator_mnist
-	elif args.data == 'imagenet':
-		data_iterator = data_iterator_imagenet
-	elif args.data =='cifar10':
-		data_iterator = data_iterator_cifar10
-	else:
-		print('Dataset not recognized')
-		exit(1)
+    if args.data == 'mnist':
+        data_iterator = data_iterator_mnist
+    elif args.data == 'imagenet':
+        data_iterator = data_iterator_imagenet
+    elif args.data =='cifar10':
+        data_iterator = data_iterator_cifar10
+    else:
+        print('Dataset not recognized')
+        exit(1)
 
-	comm = CommunicationWrapper(ctx)
-	nn.set_default_context(ctx)
+    comm = CommunicationWrapper(ctx)
+    nn.set_default_context(ctx)
 
-	monitor = None
-	if comm.rank == 0:
-		monitor = Monitor(config['monitor']['path'])
-		start_time = time.time()
+    monitor = None
+    if comm.rank == 0:
+        monitor = Monitor(config['monitor']['path'])
+        start_time = time.time()
 
-	acc = train(data_iterator, monitor, config, comm)
+    acc = train(data_iterator, monitor, config, comm)
 
-	if comm.rank == 0:
-		end_time = time.time()
-		training_time = (end_time-start_time)/3600
+    if comm.rank == 0:
+        end_time = time.time()
+        training_time = (end_time-start_time)/3600
 
-		print('Finished Training!')
-		print('Total Training time: {} hours'.format(training_time))
+        print('Finished Training!')
+        print('Total Training time: {} hours'.format(training_time))

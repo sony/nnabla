@@ -3,9 +3,9 @@ model:
   num_hidden: 256
   num_res_layers: 2
   embedding_dim: 256
-  num_embeddings: 512
+  num_embeddings: 128
   commitment_cost: 1
-  saved_models_dir: trained_models_cifar10/
+  saved_models_dir: tmp.monitor_cifar10/trained_models_cifar10/
   checkpoint: None
   rng: 313
   decay: 0.99
@@ -29,10 +29,13 @@ train:
   num_epochs: 40
   save_param_step_interval: 5
   logger_step_interval: 100
+  learning_rate_decay_epochs: []
+  learning_rate_decay_factor: 1
   solver: adam
 
 val:
   batch_size: 32
+  interval: 1
 
 monitor:
   path: tmp.monitor_cifar10/
@@ -45,6 +48,9 @@ dataset:
   name: cifar10
   train_size: 50000
   val_size: 10000
+  with_memory_cache: False
+  with_file_cache: False
+  shuffle: True
 
 
 extension_module: cudnn

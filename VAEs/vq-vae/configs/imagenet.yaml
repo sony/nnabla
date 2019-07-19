@@ -5,7 +5,7 @@ model:
   embedding_dim: 128
   num_embeddings: 512
   commitment_cost: 0.5
-  saved_models_dir: trained_models_imagenet/
+  saved_models_dir: tmp.monitor_imagenet/trained_models_imagenet/
   checkpoint: None
   rng: 313
   decay: 0.99
@@ -28,18 +28,21 @@ train:
   decay: 0.99 # For VQ with EMA (to be implemented later)
   num_epochs: 40
   save_param_step_interval: 5
-  logger_step_interval: 100
+  logger_step_interval: 1
   solver: adam
+  learning_rate_decay_epochs: [10, 30]
+  learning_rate_decay_factor: 0.1
 
 val:
+  interval: 1
   batch_size: 32
 
 monitor:
   path: tmp.monitor_imagenet/
-  train_loss: Training-loss-cifar10 
-  train_recon: Training-reconstructions-cifar10
-  val_loss: Validation-loss-cifar10 
-  val_recon: Validation-reconstructions-cifar10
+  train_loss: Training-loss-imagenet 
+  train_recon: Training-reconstructions-imagenet
+  val_loss: Validation-loss-imagenet 
+  val_recon: Validation-reconstructions-imagenet
 
 dataset:
   name: imagenet
@@ -47,7 +50,9 @@ dataset:
   train_size: 50000
   val_size: 10000
   path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/320x320_png_for_data_iterator_csv_dataset/train
+  val_path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/320x320_png_for_data_iterator_csv_dataset/valid/ILSVRC2012_img_val/
   file_list: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/320x320_png_for_data_iterator_csv_dataset/train/train.csv
+  val_file_list: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/320x320_png_for_data_iterator_csv_dataset/valid/valid.csv
   dali_threads: 4
   cache_dir: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/201612_128x128_mat_for_sdeepy_data_reader/training.cache
 

@@ -103,20 +103,17 @@ class Cifar10DataSource(DataSource):
         return self._labels.copy()
 
 
-def data_iterator_cifar10(batch_size,
-                          train=True,
-                          rng=None,
-                          shuffle=True,
-                          with_memory_cache=False,
-                          with_file_cache=False):
+def data_iterator_cifar10(config, comm, train=True):
     '''
     Provide DataIterator with :py:class:`Cifar10DataSource`
     with_memory_cache and with_file_cache option's default value is all False,
     because :py:class:`Cifar10DataSource` is able to store all data into memory.
 
     '''
-    return data_iterator(Cifar10DataSource(train=train, shuffle=shuffle, rng=rng),
-                         batch_size,
-                         rng,
-                         with_memory_cache,
-                         with_file_cache)
+    data_iterator_ = data_iterator(Cifar10DataSource(train=train, shuffle=config['dataset']['shuffle']), config['train']['batch_size'], 
+        with_memory_cache = config['dataset']['with_memory_cache'],
+        with_file_cache = config['dataset']['with_file_cache'])
+    if comm.n_procs > 1:
+        data_iterator_ = data_iterator_.slice(rng=None, num_of_slices=comm.n_procs, slice_pos=comm.rank)
+
+    return data_iterator_

@@ -6,7 +6,7 @@ model:
   embedding_dim: 64
   num_embeddings: 10
   commitment_cost: 0.25
-  saved_models_dir: trained_models_mnist/
+  saved_models_dir: tmp.monitor_mnist/trained_models_mnist/
   checkpoint: None
   rng: 313
   decay: 0.99
@@ -20,10 +20,13 @@ train:
   num_epochs: 30
   save_param_step_interval: 5
   logger_step_interval: 1000
+  learning_rate_decay_epochs: []
+  learning_rate_decay_factor: 1
   solver: adam
 
 val:
   batch_size: 32
+  interval: 1
 
 monitor:
   path: tmp.monitor_mnist/
@@ -36,6 +39,9 @@ dataset:
   name: mnist
   train_size: 50000
   val_size: 10000
+  with_memory_cache: False
+  with_file_cache: False
+  shuffle: True
 
 
 extension_module: cudnn
