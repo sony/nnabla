@@ -27,8 +27,10 @@ val:
 
 monitor:
   path: tmp.monitor_mnist/
-  train_loss: Training loss mnist 
-  train_recon: Training reconstructions mnist
+  train_loss: Training-loss-mnist 
+  train_recon: Training-reconstructions-mnist
+  val_loss: Validation-loss-mnist 
+  val_recon: Validation-reconstructions-mnist
 
 dataset:
   name: mnist

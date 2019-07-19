@@ -36,8 +36,10 @@ val:
 
 monitor:
   path: tmp.monitor_imagenet/
-  train_loss: Training loss 
-  train_recon: Training reconstructions
+  train_loss: Training-loss-cifar10 
+  train_recon: Training-reconstructions-cifar10
+  val_loss: Validation-loss-cifar10 
+  val_recon: Validation-reconstructions-cifar10
 
 dataset:
   name: imagenet

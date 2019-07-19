@@ -42,9 +42,6 @@ class VectorQuantizer(object):
         self.rng = rng
         self.scope_name = scope_name
 
-        # self.embedding_weight = nn.Variable.from_numpy_array(self.rng.uniform(-1/self.num_embedding, 1/self.num_embedding,
-        # 	(self.num_embedding, self.embedding_dim)), need_grad = True)
-
         with nn.parameter_scope(scope_name):
             self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(self.num_embedding, self.embedding_dim),
                                                                          initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding), rng=self.rng), need_grad=True)
@@ -68,8 +65,7 @@ class VectorQuantizer(object):
             encoding_indices.shape[:-1]), self.embedding_weight).reshape(x.shape)
 
         encodings = F.one_hot(encoding_indices, (self.num_embedding,))
-        # quantized = F.batch_matmul(encodings, self.embedding_weight).reshape(x.shape)
-        # import pdb; pdb.set_trace()
+
         e_latent_loss = F.mean(F.squared_error(
             quantized.get_unlinked_variable(need_grad=False), x))
         q_latent_loss = F.mean(F.squared_error(
@@ -77,19 +73,13 @@ class VectorQuantizer(object):
         loss = q_latent_loss + self.commitment_cost*e_latent_loss
 
         quantized = x + (quantized - x).get_unlinked_variable(need_grad=False)
-        # quantized.need_grad = False
-        # import pdb; pdb.set_trace()
+
         avg_probs = F.mean(encodings, axis=0)
         perplexity = F.exp(-F.sum(avg_probs*F.log(avg_probs+1.0e-10)))
-        if np.isnan(loss.d) or np.any(np.isnan(quantized.d)):
-            import pdb
-            pdb.set_trace()
-        # import pdb
-        # pdb.set_trace()
 
         return loss, F.transpose(quantized, (0, 3, 1, 2)), perplexity, encodings
 
-
+# VQ-EMA not working yet
 class VectorQuantizerEMA(object):
 
 	def __init__(self, embedding_dim, num_embedding, commitment_cost,rng, 
@@ -143,7 +133,6 @@ class VectorQuantizerEMA(object):
 		except:
 			import pdb; pdb.set_trace()
 
-		# import pdb; pdb.set_trace()
 		quantized = F.embed(encoding_indices.reshape(encoding_indices.shape[:-1]), self.embedding_weight).reshape(x.shape)
 		e_latent_loss = F.mean(F.squared_error(quantized.get_unlinked_variable(need_grad=False), x))
 
@@ -155,7 +144,6 @@ class VectorQuantizerEMA(object):
 		perplexity = F.exp(-F.sum(avg_probs*F.log(avg_probs+1.0e-10)))
 		if np.isnan(loss.d):
 			import pdb; pdb.set_trace()
-		# import pdb; pdb.set_trace()
 
 		return loss, F.transpose(quantized, (0,3,1,2)), perplexity, encodings
 
@@ -199,8 +187,6 @@ class Model(object):
 
 	def decoder(self, x, iteration):
 		with nn.parameter_scope('decoder'):
-			# out = PF.convolution(x, self.num_hidden, (3,3), stride=(1,1),
-			# 	pad=(1,1), name='conv_1', rng=self.rng)
 			out = self.decoder_res_stack(x)
 			out = F.relu(out)
 			out = PF.deconvolution(out, self.num_hidden, (4,4), stride=(2,2),
@@ -210,8 +196,6 @@ class Model(object):
 			out = PF.deconvolution(out, self.in_channels, (4,4), stride=(2,2),
 				pad=(1,1), name='deconv_2', rng=self.rng) 
 			out = F.tanh(out)
-			if np.any(np.isnan(out.d)):
-				import pdb; pdb.set_trace()
 
 		return out
 
@@ -219,7 +203,6 @@ class Model(object):
 
 		with nn.parameter_scope('vq_vae'):
 			z = self.encoder(img, iteration)
-			# import pdb; pdb.set_trace()
 			z = PF.convolution(z, self.embedding_dim, (1,1), stride=(1,1))
 			loss, quantized, perplexity, encodings = self.vq(z, iteration)
 			img_recon = self.decoder(quantized, iteration)

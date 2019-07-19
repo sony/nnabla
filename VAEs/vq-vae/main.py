@@ -13,7 +13,7 @@ from utils.communication_wrapper import CommunicationWrapper
 from utils.read_yaml import read_yaml
 from data.cifar10_data import data_iterator_cifar10
 from data.mnist_data import data_iterator_mnist
-# from data.imagenet_data import data_iterator_imagenet
+from data.imagenet_data import data_iterator_imagenet
 
 
 def make_parser():
@@ -24,11 +24,17 @@ def make_parser():
 
 
 def train(data_iterator, monitor, config, comm):
-    monitor_loss, monitor_acc, = None, None
+    monitor_train_loss, monitor_train_recon = None, None
+    monitor_val_loss, monitor_val_recon = None, None
     if comm.rank == 0:
-        monitor_loss = MonitorSeries(
+        monitor_train_loss = MonitorSeries(
             config['monitor']['train_loss'], monitor, interval=config['train']['logger_step_interval'])
-        monitor_recon = MonitorImageTile(config['monitor']['train_recon'], monitor, interval=config['train']['logger_step_interval'],
+        monitor_train_recon = MonitorImageTile(config['monitor']['train_recon'], monitor, interval=config['train']['logger_step_interval'],
+                                         num_images=config['train']['batch_size'])
+
+        monitor_val_loss = MonitorSeries(
+            config['monitor']['val_loss'], monitor, interval=config['train']['logger_step_interval'])
+        monitor_val_recon = MonitorImageTile(config['monitor']['val_recon'], monitor, interval=config['train']['logger_step_interval'],
                                          num_images=config['train']['batch_size'])
 
     model = Model(config)
@@ -38,33 +44,17 @@ def train(data_iterator, monitor, config, comm):
         solver = S.momentum()
     solver.set_learning_rate(config['train']['learning_rate'])
 
-    train_loader_ = data_iterator(config['train']['batch_size'], train=True,
-                                  shuffle=False, rng=np.random.RandomState(config['model']['rng']))
-    val_loader_ = data_iterator(
-        config['val']['batch_size'], train=False, rng=np.random.RandomState(config['model']['rng']))
-    if comm.n_procs > 1:
-        train_loader = train_loader_.slice(rng=None, num_of_slices=comm.n_procs,
-                                           slice_pos=comm.rank)
-        val_loader = val_loader_.slice(rng=None, num_of_slices=comm.n_procs,
-                                       slice_pos=comm.rank)
-    else:
-        train_loader = train_loader_
-        val_loader = val_loader_
+    train_loader = data_iterator(config, comm, train=True)
+    val_loader = data_iterator(config, comm, train=False)
 
-    trainer = VQVAEtrainer(model, solver, train_loader,
-                           monitor_loss, monitor_recon, config, comm)
+    trainer = VQVAEtrainer(model, solver, train_loader, monitor_train_loss, 
+    	monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
 
     if os.path.exists(config['model']['checkpoint']):
         trainer.load_checkpoint(config['model']['checkpoint'])
 
-    iteration = 0
     for epoch in range(config['train']['num_epochs']):
-        iteration = trainer.update(iteration)
-
-        if comm.rank == 0:
-            if epoch % config['train']['save_param_step_interval'] == 0 or epoch == config['train']['num_epochs']-1:
-                trainer.save_checkpoint(
-                    config['model']['saved_models_dir'], epoch)
+        iteration = trainer.train(epoch)
 
 
 if __name__ == '__main__':
@@ -79,8 +69,11 @@ if __name__ == '__main__':
 		data_iterator = data_iterator_mnist
 	elif args.data == 'imagenet':
 		data_iterator = data_iterator_imagenet
-	else:
+	elif args.data =='cifar10':
 		data_iterator = data_iterator_cifar10
+	else:
+		print('Dataset not recognized')
+		exit(1)
 
 	comm = CommunicationWrapper(ctx)
 	nn.set_default_context(ctx)
