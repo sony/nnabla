@@ -1,10 +1,10 @@
 model:
   in_channels: 3
-  num_hidden: 256
+  num_hidden: 128
   num_res_layers: 2
-  embedding_dim: 256
+  embedding_dim: 128
   num_embeddings: 512
-  commitment_cost: 1
+  commitment_cost: 0.5
   saved_models_dir: trained_models_imagenet/
   checkpoint: None
   rng: 313
@@ -41,10 +41,13 @@ monitor:
 
 dataset:
   name: imagenet
+  dali: True
   train_size: 50000
   val_size: 10000
-  path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/original
+  path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/320x320_png_for_data_iterator_csv_dataset/train
+  file_list: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/320x320_png_for_data_iterator_csv_dataset/train/train.csv
   dali_threads: 4
+  cache_dir: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/201612_128x128_mat_for_sdeepy_data_reader/training.cache
 
 
 extension_module: cudnn

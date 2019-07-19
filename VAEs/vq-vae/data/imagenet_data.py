@@ -10,6 +10,7 @@ from nnabla.utils.data_iterator import data_iterator_cache
 
 import ctypes
 import logging
+import numpy as np
 
 
 def feed_ndarray(dali_tensor, arr, dtype, ctx):
@@ -32,25 +33,30 @@ def feed_ndarray(dali_tensor, arr, dtype, ctx):
     dali_tensor.copy_to_external(c_type_pointer)
     return arr
 
-	def __init__(self, image_dir, file_list, batch_size, num_threads, device_id, 
-		num_gpus=1, seed=1):
-		super(TrainPipeline, self).__init__(batch_size, num_threads, 
-			device_id, seed=seed)
-		self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
-            random_shuffle=True, num_shards=num_gpus, shard_id=device_id)
-		self.decode = ops.nvJPEGDecoder(device='mixed',output_type=types.RGB)
-		self.rrc = ops.RandomResizedCrop(device='gpu', size=(128,128))
-        self.cmn = ops.CropMirrorNormalize(device='gpu',
-                                                 crop=(128,128),
-                                                 mean=[0.5,0.5,0.5],
-                                                 std=[0.5,0.5,0.5])
+class DataPipeline(Pipeline):
 
-	def define_graph(self):
-		jpegs, labels = self.input(name='Reader')
-		images = self.decode(jpegs)
-		images = self.preprocess(images)
-		images = self.rrc(images)
-        images = self.cmn(images)
+    def __init__(self, image_dir, file_list, batch_size, num_threads, device_id, num_gpus=1, seed=1):
+        super(DataPipeline, self).__init__(batch_size, num_threads, device_id, seed=seed)
+        self.input = ops.FileReader(file_root=image_dir,
+            random_shuffle=True, num_shards=num_gpus, shard_id=device_id)
+        self.decode = ops.nvJPEGDecoder(device='mixed',output_type=types.RGB)
+        self.rrc = ops.RandomResizedCrop(device='gpu', size=(128,128))
+        # self.np = ops.NormalizePermute(device='gpu', height=128, mean=[0.5*255,0.5*255,0.5*255],
+        #     std=[0.5*255,0.5*255,0.5*255], width=128)
+        self.cmn = ops.CropMirrorNormalize(device='gpu',
+                                            crop=(128,128),
+                                            image_type=types.RGB,
+                                            mean=[0.5*256,0.5*256,0.5*256],
+                                            std=[0.5*256,0.5*256,0.5*256],
+                                            )
+        self.coin = ops.CoinFlip(probability=0.5)
+
+    def define_graph(self):
+        jpegs, labels = self.input(name='Reader')
+        images = self.decode(jpegs)
+        images = self.rrc(images)
+        images = self.cmn(images, mirror=self.coin())
+        return images, labels
 
 class DALIGenericIterator(object):
     """
@@ -269,8 +275,8 @@ class DALIClassificationIterator(DALIGenericIterator):
     def __init__(self,
                  pipelines,
                  size,
-                 auto_reset=False,
-                 stop_at_epoch=True,
+                 auto_reset=True,
+                 stop_at_epoch=False,
                  ):
         super(DALIClassificationIterator, self).__init__(pipelines, ["data", "label"],
                                                          size, auto_reset=auto_reset,
@@ -289,16 +295,15 @@ class DALIClassificationIterator(DALIGenericIterator):
         return data, label
 
 def data_iterator_imagenet(config, comm):
-	if type == 'dali':
-        train_pipes = [DataPipeline(config['dataset']['path'], config['dataset']['file_list'], 
-            config['train']['batch_size'], config['dataset']['dali_threads'], comm.device_id, 
+    if config['dataset']['dali']:
+        train_pipes = [DataPipeline(config['dataset']['path'], config['dataset']['file_list'],
+            config['train']['batch_size'], config['dataset']['dali_threads'], comm.rank, 
             num_gpus=comm.n_procs, seed=1)]
         train_pipes[0].build()
-        data = DALIClassificationIterator(train_pipes,
-            train_pipes[0].epoch_size('Reader')//comm.n_procs,
-            auto_reset=True, stop_at_epoch=False)I
+        data = DALIClassificationIterator(train_pipes, 
+            train_pipes[0].epoch_size('Reader') // comm.n_procs)
         return data
-	else:
-		return data_iterator_cache(cache_dir, batch_size, 
-			shuffle=shuffle, normalize=normalize, rng=rng)
+    else:
+        return data_iterator_cache(config['dataset']['cache_dir'], 32, 
+            shuffle=True, normalize=True)
 

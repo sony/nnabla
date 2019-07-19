@@ -3,7 +3,6 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
 import numpy as np
-import GPUtil
 
 np.random.seed(1)
 
@@ -50,7 +49,7 @@ class VectorQuantizer(object):
             self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(self.num_embedding, self.embedding_dim),
                                                                          initializer=I.UniformInitializer((-1./self.num_embedding, 1./self.num_embedding), rng=self.rng), need_grad=True)
 
-    def __call__(self, x):
+    def __call__(self, x, iteration):
         x = F.transpose(x, (0, 2, 3, 1))
         x_flat = x.reshape((-1, self.embedding_dim))
 
@@ -82,9 +81,11 @@ class VectorQuantizer(object):
         # import pdb; pdb.set_trace()
         avg_probs = F.mean(encodings, axis=0)
         perplexity = F.exp(-F.sum(avg_probs*F.log(avg_probs+1.0e-10)))
-        if np.isnan(loss.d):
+        if np.isnan(loss.d) or np.any(np.isnan(quantized.d)):
             import pdb
             pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
 
         return loss, F.transpose(quantized, (0, 3, 1, 2)), perplexity, encodings
 
@@ -196,7 +197,7 @@ class Model(object):
 			import pdb; pdb.set_trace()		
 		return out
 
-	def decoder(self, x):
+	def decoder(self, x, iteration):
 		with nn.parameter_scope('decoder'):
 			# out = PF.convolution(x, self.num_hidden, (3,3), stride=(1,1),
 			# 	pad=(1,1), name='conv_1', rng=self.rng)
@@ -209,6 +210,8 @@ class Model(object):
 			out = PF.deconvolution(out, self.in_channels, (4,4), stride=(2,2),
 				pad=(1,1), name='deconv_2', rng=self.rng) 
 			out = F.tanh(out)
+			if np.any(np.isnan(out.d)):
+				import pdb; pdb.set_trace()
 
 		return out
 
@@ -218,8 +221,8 @@ class Model(object):
 			z = self.encoder(img, iteration)
 			# import pdb; pdb.set_trace()
 			z = PF.convolution(z, self.embedding_dim, (1,1), stride=(1,1))
-			loss, quantized, perplexity, encodings = self.vq(z)
-			img_recon = self.decoder(quantized)
+			loss, quantized, perplexity, encodings = self.vq(z, iteration)
+			img_recon = self.decoder(quantized, iteration)
 
 		return loss, img_recon, perplexity 
 
