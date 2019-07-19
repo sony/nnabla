@@ -21,7 +21,7 @@ To start training, execute:
 
 `python main.py --data imagenet`     
 
- This will start training on Imagenet dataset on 1 gpu (path to the dataset must be specified in configs/imagenet.yaml). For multi-gpu execution:
+ This will start training on Imagenet dataset on 1 gpu (**path to the dataset must be specified in configs/imagenet.yaml**). For multi-gpu execution:
  `mpirun -n 4 python main.py --data imagenet`    
  will start training on 4 gpus.
 
