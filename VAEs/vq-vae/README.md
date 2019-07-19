@@ -45,5 +45,16 @@ logger interval)
 ## Results
 
 - Mnist
+<p float="center">
+  <img src="results/mnist.png" />
+</p> 
+
 - Cifar10
+<p float="center">
+  <img src="results/cifar10.png"/>
+</p> 
+
 - Imagenet
+<p float="center">
+  <img src="results/imagenet.png"/>
+</p> 
