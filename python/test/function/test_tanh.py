@@ -28,3 +28,22 @@ def test_tanh_forward_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
     function_tester(rng, F.tanh, np.tanh, inputs, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_tanh_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    backward_function_tester(rng, F.tanh, None,
+                             inputs=inputs,
+                             func_args=[], func_kwargs={},
+                             atol_b=1e-2,
+                             atol_accum=1e-2,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

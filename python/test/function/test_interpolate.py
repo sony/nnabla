@@ -264,3 +264,71 @@ def test_interpolate_nearest_forward_backward(seed, inshape, outsize, scale,
     function_tester(rng, F.interpolate, ref_interpolate, inputs,
                     func_name=func_name, func_args=func_args,
                     atol_f=1e-6, atol_b=1e-2, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape, outsize, scale", [
+    # 2-dimensional
+    ((3, 3), (8, 6), None),
+    ((3, 3), (2, 1), None),
+    ((3, 3), None, (2.5, 1.0)),
+    ((3, 3), None, (0.5, 0.5)),
+    ((2, 3, 4, 4), (8, 6), None),
+    ((2, 3, 4, 4), (2, 1), None),
+    ((2, 3, 4, 4), None, (2.5, 1.0)),
+    ((2, 3, 4, 4), None, (0.5, 0.5)),
+    # 3-dimensional
+    ((3, 3, 3), (6, 8, 6), None),
+    ((3, 3, 3), (1, 2, 1), None),
+    ((3, 3, 3), None, (1.5, 2.5, 1.0)),
+    ((3, 3, 3), None, (1.2, 0.5, 0.5)),
+    ((2, 2, 3, 4, 4), (6, 8, 6), None),
+    ((2, 2, 3, 4, 4), (1, 2, 1), None),
+    ((2, 2, 3, 4, 4), None, (1.5, 2.5, 1.0)),
+    ((2, 2, 3, 4, 4), None, (1.2, 0.5, 0.5)),
+])
+@pytest.mark.parametrize('align_corners', [False, True])
+@pytest.mark.parametrize("seed", [313])
+def test_interpolate_linear_double_backward(seed, inshape, outsize, scale,
+                                            align_corners, ctx, func_name):
+    # TODO: some test fail.
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [scale, outsize, 'linear', align_corners]
+    backward_function_tester(rng, F.interpolate, None, inputs,
+                             func_name=func_name, func_args=func_args,
+                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=1e-3, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape, outsize, scale", [
+    # 2-dimensional
+    ((3, 3), (8, 6), None),
+    ((3, 3), (2, 1), None),
+    ((3, 3), None, (2.5, 1.0)),
+    ((3, 3), None, (0.5, 0.5)),
+    ((2, 3, 4, 5), (8, 6), None),
+    ((2, 3, 4, 5), (2, 1), None),
+    ((2, 3, 4, 5), None, (2.5, 1.0)),
+    ((2, 3, 4, 5), None, (0.5, 0.5)),
+    # 3-dimensional
+    ((3, 3, 3), (6, 8, 6), None),
+    ((3, 3, 3), (1, 2, 1), None),
+    ((3, 3, 3), None, (1.5, 2.5, 1.0)),
+    ((3, 3, 3), None, (1.2, 0.5, 0.5)),
+    ((1, 2, 3, 4, 5), (6, 8, 6), None),
+    ((1, 2, 3, 4, 5), (1, 2, 3), None),
+    ((1, 2, 3, 4, 5), None, (1.5, 2.5, 1.0)),
+    ((1, 2, 3, 4, 5), None, (1.2, 0.5, 0.5)),
+])
+@pytest.mark.parametrize("seed", [313])
+def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale,
+                                             ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [scale, outsize, 'nearest']
+    backward_function_tester(rng, F.interpolate, ref_interpolate, inputs,
+                             func_name=func_name, func_args=func_args,
+                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, ctx=ctx)

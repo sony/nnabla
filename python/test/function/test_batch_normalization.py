@@ -167,3 +167,28 @@ def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, deca
         y = F.batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
     assert np.allclose(ref_y, y.d, atol=1e-6)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("decay_rate", [0.9])
+@pytest.mark.parametrize("eps", [1e-5])
+@pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True]])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
+                                             output_stat, batch_stat, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = list(create_inputs(rng, axis))
+    axes = [axis]
+    if ctx.backend[0].split(':')[0] != 'cpu' and batch_stat == False:
+        pytest.skip(
+            "cuda and cudnn implementation for batch_stat==False is not implemented yet")
+    else:
+        backward_function_tester(rng, F.batch_normalization, None,
+                                 inputs,
+                                 func_args=[axes, decay_rate, eps,
+                                            batch_stat, output_stat],
+                                 backward=[True, True, True, False, False],
+                                 ctx=ctx, func_name=func_name,
+                                 atol_b=2e-2, atol_accum=2e-2, dstep=1e-3)

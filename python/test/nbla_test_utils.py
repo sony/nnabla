@@ -183,8 +183,8 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
 def cap_ignore_region(arr, region):
     assert len(region) == 2
     region = sorted(region)
-    arr = arr.copy()
-    arr[np.logical_and(arr > region[0], arr < region[0])] = region[0]
+    arr0 = arr.copy()
+    arr[np.logical_and(arr > region[0], arr < region[1])] = region[0]
     return arr
 
 
@@ -221,6 +221,7 @@ class ArrayDiffStats:
 
     def __str__(self):
         lines = [
+            '',
             '[diff]',
             str(self.diffstat),
             '[left]',
@@ -235,6 +236,14 @@ def force_tuple(x):
     if isinstance(x, tuple):
         return x
     return (x,)
+
+
+def force_list(x):
+    if isinstance(x, list):
+        return x
+    if isinstance(x, tuple):
+        return list(x)
+    return [x]
 
 
 def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx, func_name, atol=1e-1):
@@ -676,3 +685,168 @@ def convert_to_complex_array(x_float2, dtype=np.complex64):
     x_imag = x_float2[..., 1]
     x_complex = x_real + 1j * x_imag
     return x_complex
+
+
+def backward_function_tester(rng, func, ref_func, inputs,
+                             func_args=[], func_kwargs={},
+                             atol_f=1e-6, atol_b=1e-3, atol_accum=1e-3, dstep=1e-3, backward=None,
+                             ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1):
+    """Backward function tester
+
+    In the forward test, it compares the results of nn.grad and `func`.backward.
+    In the backward test, it compares the analytical gradients and numerical gradient with `grad_outputs`.
+    """
+    # TODO: half
+
+    from scipy.optimize import approx_fprime
+
+    if ctx is None:
+        ctx = nn.Context()
+    if backward is None:
+        backward = [True if i is not None else False for i in inputs]
+
+    # TODO: Remove set_default_context after adding ctx to BackwardFunction.
+    nn.set_default_context(ctx)
+
+    # Create Variables
+    def create_variables(inputs, backward):
+        vinputs = []
+        for i, b in zip(inputs, backward):
+            if i is None:
+                vinputs += [None]
+                continue
+            vinputs += [nn.Variable(i.shape, need_grad=b)]
+            vinputs[-1].data.cast(i.dtype)[...] = i
+        return vinputs
+
+    # Create grad_outputs
+    def create_grad_outputs(outputs):
+        grad_outputs = []
+        for o in outputs:
+            if o.shape == ():
+                go = nn.NdArray.from_numpy_array(np.array(rng.randn()))
+                #go = nn.NdArray.from_numpy_array(np.array(1.0))
+            else:
+                go = nn.NdArray.from_numpy_array(rng.randn(*o.shape))
+                #go = nn.NdArray.from_numpy_array(np.ones(o.shape))
+
+            grad_outputs.append(go)
+        return grad_outputs
+
+    # Fill grads
+    def fill_grads(vinputs, grads):
+        for vi, gd in zip(vinputs, grads):
+            if vi is None:
+                continue
+            vi.g = gd
+
+    # Fill grads
+    def zero_grads(vinputs):
+        for vi in vinputs:
+            if vi is None:
+                continue
+            vi.grad.zero()
+        return
+
+    # Gradient penalty on grads
+    def gradient_penalty2(grads):
+        gp2 = 0.0
+        for g in grads:
+            gp2 += F.sum(g ** 2.0)
+        return gp2
+    # Product sum
+
+    def prod_sum(inputs0, inputs1):
+        out = 0.0
+        for inp0, inp1 in zip(inputs0, inputs1):
+            out += inp0 * nn.Variable(inp1.shape).apply(data=inp1)
+        return out
+    # Set inputs for the numerical gradients
+
+    def set_inputs(inputs0, vinputs):
+        begin = 0
+        for i in vinputs:
+            end = begin + i.size
+            if i.need_grad == True:
+                i.d = inputs0[begin:end].reshape(i.shape)
+            begin = end
+
+    # Gradient penalty on grads used for computing numerical gradients
+    def obj_func(inputs0, gp2, vinputs):
+        set_inputs(inputs0, vinputs)
+        gp2.forward()
+        return gp2.d.copy()
+
+    # # Half test
+    # if not disable_half_test:
+    #     finputs = create_variables(inputs, backward)
+    #     hinputs = create_variables(inputs, backward)
+    #     half_test(rng, func, finputs, hinputs, func_args,
+    #               func_kwargs, backward, ctx, func_name, atol=atol_half)
+
+    # Create input variables
+    vinputs = create_variables(inputs, backward)
+    # --- Forward test --- #
+    # Zero grads
+    zero_grads(vinputs)
+    # Forward/Backward on the forward graph
+    voutputs = [F.sigmoid(x) for x in force_list(
+        func(*(vinputs + func_args), **func_kwargs))]
+    agrad_outputs = create_grad_outputs(voutputs)
+    o = prod_sum(voutputs, agrad_outputs)
+    o.forward()
+    o.backward()  # clear_buffer=True)
+    # Grads
+    voutputs = voutputs
+    vinputs = list(filter(lambda vi: vi is not None, vinputs))
+    agrad_outputs = agrad_outputs
+    grads = nn.grad(voutputs, vinputs, agrad_outputs)
+    grads = list(filter(lambda x: x is not None, grads))
+    o = F.sink(*grads)
+    o.forward()
+    # Check forward
+    for vi, go in zip(vinputs, grads):
+        if vi.need_grad is False:
+            continue
+        fgrads = vi.g
+        bgrads = go.d
+        assert np.allclose(fgrads, bgrads, atol=atol_f), str(
+            ArrayDiffStats(fgrads, bgrads))
+
+    # TODO: 1. Pass function argument directly to backward functions.
+    # TODO: 2. should be changed for the simplier form by simply testing BackwardFunction
+
+    # --- Backward (accum = False) test --- #
+    # Zero grads
+    zero_grads(vinputs)
+    # Compute analytical grads
+    gp2 = gradient_penalty2(grads)
+    gp2.forward()
+    gp2.backward(clear_buffer=True)
+    analytical_grads = np.concatenate(
+        [vi.g.copy().flatten() for vi in vinputs])
+    analytical_grads0 = analytical_grads
+    # Compute numerical grads
+    inputs0 = np.concatenate([inp.flatten()
+                              for inp in inputs if inp is not None])
+    numerical_grads = approx_fprime(inputs0, obj_func, dstep, gp2, vinputs)
+    # Check backward
+    assert np.allclose(analytical_grads, numerical_grads, atol=atol_b), \
+        str(ArrayDiffStats(analytical_grads, numerical_grads))
+
+    # --- Backward (accum = True) test --- #
+    # Random grads
+    rand_grads = [rng.randn(*vi.shape) for vi in vinputs]
+    fill_grads(vinputs, rand_grads)
+    # Compute analytical grads
+    gp2.forward()
+    gp2.backward(clear_buffer=True)
+
+    analytical_grads = np.concatenate(
+        [vi.g.copy().flatten() for vi in vinputs])
+    rand_grads = np.concatenate([rg.flatten() if isinstance(rg, np.ndarray) else np.array(rg).reshape((1, ))
+                                 for rg in rand_grads])
+    analytical_grads -= rand_grads
+    # Check backward
+    assert np.allclose(analytical_grads, analytical_grads0, atol=atol_accum), \
+        str(ArrayDiffStats(analytical_grads, analytical_grads0))

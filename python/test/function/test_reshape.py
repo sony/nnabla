@@ -49,3 +49,26 @@ def test_reshpae_inplace(seed, ctx, func_name, inshape, outshape):
     inplace_function_test_helper(
         inputs, F.reshape, func_args=[
             outshape], ctx=ctx, rng=np.random.RandomState(seed))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, outshape", [((1, 1, 6), (1, 2, 3)), ((2, 3), (1, 6)), ((2, 4), (-1, 2, 2))])
+def test_reshape_double_backward(seed, ctx, func_name, inshape, outshape):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    inplace = False
+    # TODO: backward_ref
+    backward_function_tester(rng, F.reshape, None,
+                             inputs=inputs,
+                             func_args=[outshape, inplace], func_kwargs={},
+                             atol_b=5e-3,
+                             atol_accum=5e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)
+
+
+# TODO: inplace double_backward

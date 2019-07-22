@@ -68,3 +68,23 @@ def test_slice_forward_special(seed, inshape, start, stop, step, ctx, fname):
         x_key.forward()
 
     assert np.allclose(x_data_key, x_key.d)
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, start, stop, step", [
+    ((2, 2), (0, 0), (2, 2), (1, 1)),
+    ((6, 7, 8), (1, 2, 3), (5, 4, 8), (1, 1, 2)),
+    ((6, 7, 6, 5), (4, 3, 2, 1), (5, 6, 5, 4), (1, 2, 3, 4)),
+    ((7, 6, 5, 4, 3), (5, 4, 3, 2, 1), (6, 6, 5, 4, 2), (1, 2, 3, 2, 1)),
+    # Negative but not empty array, different from test_slice_forward_backward
+    ((6, 7, 6, 5), (0, 0, 1, 2), (6, -1, -2, -2), (1, 1, 1, 1)),
+    ((6, 7, 6, 5), (5, 0, -2, 1), (4, -6, 5, 4), (-1, 2, 3, 4)),
+])
+def test_slice_double_backward(seed, inshape, start, stop, step, ctx, fname):
+    from nbla_test_utils import backward_function_tester, cap_ignore_region
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
+    backward_function_tester(rng, F.slice, None, [x], ctx=ctx, func_name=fname,
+                             func_args=[start, stop, step], atol_f=1e-4,
+                             atol_b=1e-2, atol_accum=1e-2, dstep=1e-4)
