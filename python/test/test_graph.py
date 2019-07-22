@@ -78,12 +78,12 @@ def test_graph_model(model, seed):
             z3 = PF.affine(z2, 5)
     elif model == "recurrent":
         with nn.parameter_scope('fc1'):
-            z = PF.affine(x, 3)
+            z = PF.affine(x, 4)
             z2 = F.relu(z, inplace=True)
         h = z2
         for _ in range(2):
             with nn.parameter_scope('fc2'):
-                h = PF.affine(h, 3)
+                h = PF.affine(h, 4)
                 h = F.relu(h, inplace=True)
         with nn.parameter_scope('fc3'):
             z3 = PF.affine(h, 5)
