@@ -44,6 +44,8 @@ class SimpleDataSource(DataSource):
         return self._load_func(self._order[position])
 
     def reset(self):
+        self._indexes = self._rng.permutation(
+            self._size) if self._shuffle else numpy.arange(self._size)
         super(SimpleDataSource, self).reset()
 
     def __init__(self, load_func, num_examples, shuffle=False, rng=None):
