@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+from . import random
 
 
 class BaseInitializer(object):
@@ -64,7 +65,7 @@ class NormalInitializer(BaseInitializer):
 
     def __init__(self, sigma=1.0, rng=None):
         if rng is None:
-            rng = np.random.RandomState(313)
+            rng = random.prng
         self.rng = rng
         self.sigma = sigma
 
@@ -103,7 +104,7 @@ class UniformInitializer(BaseInitializer):
 
     def __init__(self, lim=(-1, 1), rng=None):
         if rng is None:
-            rng = np.random.RandomState(313)
+            rng = random.prng
         self.rng = rng
         self.lim = lim
 
@@ -142,7 +143,7 @@ class UniformIntInitializer(BaseInitializer):
 
     def __init__(self, lim=(0, 10), rng=None):
         if rng is None:
-            rng = np.random.RandomState(313)
+            rng = random.prng
         self.rng = rng
         self.lim = lim
 
