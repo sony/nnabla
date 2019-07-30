@@ -5,7 +5,7 @@ import numpy as np
 
 
 class SequentialConverter(object):
-    """Convert a given graph accoring to `converters`
+    """Convert a given graph according to `converters`
 
     Args:
         converters (`list` of Converters): List of converters (e.g., FixedPointWeightConverter and FixedPointActivationConverter).

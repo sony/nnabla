@@ -162,7 +162,7 @@ public:
 
       A derived class must implement
       Allocator::free_unused_device_caches_impl where all
-      unused memory blocks that are origianally created, i.e. not devided, are
+      unused memory blocks that are origianally created, i.e. not divided, are
       discarded from pool.
 
       @param[in] device_id Specifies device by a string.
