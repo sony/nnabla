@@ -89,7 +89,7 @@ def test_graph_model(model, seed):
             z3 = PF.affine(h, 5)
     elif model == "convolution":
         with nn.parameter_scope('conv1'):
-            z = PF.convolution(x, 3, (2, 2))
+            z = PF.convolution(x, 16, (2, 2))
             z2 = F.relu(z, inplace=True)
         with nn.parameter_scope('fc2'):
             z3 = PF.affine(z2, 5)
