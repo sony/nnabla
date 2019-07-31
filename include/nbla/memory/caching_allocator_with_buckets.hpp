@@ -47,7 +47,7 @@ using std::make_shared;
 
     ## Size dependent memory pool
 
-    A memory pool is maintained as two separated pools for small size and large
+    A memory pool is maintained as two separate pools for small size and large
     size memory respectively. By default, memory size less than 1MB is
     considered as a small block, otherwise large.
 
