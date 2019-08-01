@@ -2975,7 +2975,7 @@ class LSTMCell:
 
 
 @parametric_function_api("spectral-norm", [
-    ('W_sn', 'Spectral Normalized Weight matrix.', 'w.shape', False),
+    ('W_sn', 'Spectral Normalized Weight matrix', 'w.shape', False),
     ('u', 'singular vector', '(w.shape[dim], )', False),
 ])
 def spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_parameters=True):
