@@ -116,3 +116,61 @@ def test_average_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border, c
     function_tester(rng, F.average_pooling, ref_average_pooling,
                     inputs=inputs, func_args=func_args, func_name=func_name,
                     ctx=ctx, atol_f=1e-6, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("including_pad", [True, False])
+@pytest.mark.parametrize("ignore_border", [True, False])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((2, 2, 4, 6), (2, 2), (2, 1), (1, 0)),
+    ((2, 2, 2, 4, 6), (2, 2), (1, 2), (0, 1)),
+])
+def test_average_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, ignore_border,
+                                            channel_last,
+                                            including_pad, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    if channel_last:
+        pytest.skip('Channel last is not supported in the double backward.')
+    # if channel_last and not func_name.endswith('Cudnn'):
+    #     pytest.skip('Channel last is only supported in Cudnn so far')
+    # if channel_last:
+    #     t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+    #     inshape = tuple(inshape[i] for i in t.inv_axes)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [kernel, stride, ignore_border,
+                 pad, channel_last, including_pad]
+    backward_function_tester(rng, F.average_pooling, None,
+                             inputs=inputs, func_args=func_args, func_name=func_name,
+                             ctx=ctx, atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("including_pad", [True, False])
+@pytest.mark.parametrize("ignore_border", [True, False])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((2, 2, 3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 2, 2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
+])
+def test_average_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, ignore_border,
+                                            channel_last,
+                                            including_pad, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    if channel_last:
+        pytest.skip('Channel last is not supported in the double backward.')
+    # if channel_last and not func_name.endswith('Cudnn'):
+    #     pytest.skip('Channel last is only supported in Cudnn so far')
+    # if channel_last:
+    #     t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+    #     inshape = tuple(inshape[i] for i in t.inv_axes)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [kernel, stride, ignore_border,
+                 pad, channel_last, including_pad]
+    backward_function_tester(rng, F.average_pooling, None,
+                             inputs=inputs, func_args=func_args, func_name=func_name,
+                             ctx=ctx, atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2)

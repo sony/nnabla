@@ -25,12 +25,6 @@ def ref_softmax(x, axis):
     return x
 
 
-def ref_log_softmax(x, axis):
-    x = x - x.max(axis, keepdims=True)
-    x = x - np.log(np.exp(x).sum(axis, keepdims=True))
-    return x
-
-
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [0, 1, 2])
 @pytest.mark.parametrize("ctx, func_name", list_context('Softmax'))
@@ -44,10 +38,11 @@ def test_softmax_forward_backward(seed, axis, ctx, func_name):
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [0, 1, 2])
-@pytest.mark.parametrize("ctx, func_name", list_context('LogSoftmax'))
-def test_log_softmax_forward_backward(seed, axis, ctx, func_name):
-    from nbla_test_utils import function_tester
+@pytest.mark.parametrize("ctx, func_name", list_context('Softmax'))
+def test_softmax_double_backward(seed, axis, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
-    inputs = [rng.randn(2, 3, 4).astype(np.float32)]
-    function_tester(rng, F.log_softmax, ref_log_softmax, inputs, func_args=[axis],
-                    ctx=ctx, func_name=func_name, atol_b=1e-2)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    backward_function_tester(rng, F.softmax, None, inputs, func_args=[axis],
+                             ctx=ctx, func_name=func_name,
+                             atol_b=1e-4, atol_accum=1e-4, dstep=1e-3)

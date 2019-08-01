@@ -71,3 +71,35 @@ def test_batch_matmul_forward_backward(seed, reduc_dim, row_a, col_b, transpose_
     ]
     function_tester(rng, F.batch_matmul, ref_batch_matmul, inputs, func_args=[transpose_a, transpose_b],
                     atol_b=2e-2, dstep=1e-3, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("reduc_dim", [1, 5])
+@pytest.mark.parametrize("row_a", [1, 5])
+@pytest.mark.parametrize("col_b", [1, 5])
+@pytest.mark.parametrize("transpose_a", [False, True])
+@pytest.mark.parametrize("transpose_b", [False, True])
+@pytest.mark.parametrize("batch_dims_a, batch_dims_b", ([((2, 2, 2), (2, 4)), ((1,), tuple())]))
+def test_batch_matmul_double_backward(seed, reduc_dim, row_a, col_b, transpose_a, transpose_b, batch_dims_a, batch_dims_b, ctx, func_name):
+
+    from nbla_test_utils import backward_function_tester
+    if transpose_a:
+        shape_a = (reduc_dim, row_a)
+    else:
+        shape_a = (row_a, reduc_dim)
+    if transpose_b:
+        shape_b = (col_b, reduc_dim)
+    else:
+        shape_b = (reduc_dim, col_b)
+    shape_a = batch_dims_a + shape_a
+    shape_b = batch_dims_b + shape_b
+
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [
+        rng.randn(*shape_a).astype(np.float32),
+        rng.randn(*shape_b).astype(np.float32),
+    ]
+    backward_function_tester(rng, F.batch_matmul, None, inputs, func_args=[transpose_a, transpose_b],
+                             atol_b=1e-1, atol_accum=1e-1, dstep=1e-3, ctx=ctx, func_name=func_name)

@@ -249,3 +249,18 @@ def generate_skeleton_function_impl(function_info, function_types, ext_info={}, 
             continue
         generate_skeleton_function_impl_one(
             ext_info, name, func, template, output_dir, output_format)
+
+def generate_skeleton_backward_function_impl(function_info, template, output_dir, output_format='%s.py'):
+    """This function now generate the template of a backward function in python-layer using PythonFunction.
+    """
+    from mako.template import Template
+    import os
+
+    for name, func in function_info.items():
+        path_o = join(output_dir, output_format % func['snake_name'])
+        if os.path.exists(path_o):
+            continue
+        # Create the skelton file of Backward Function Class
+        generated = render_with_template(
+            filename=template, template_kwargs=dict(function_name=name))
+        check_update(path_o, generated, force=False)

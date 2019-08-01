@@ -15,10 +15,11 @@ Neural Network Layer:
           D_B \times ... \times D_N`). Dimensions before and after base_axis are flattened
           as if it is a matrix.
       weight:
-        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L`)
+        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L_{0}
+          \times \ldots \times L_{I}`)
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`)
+        doc: Bias vector (:math:`L_{0} \times \ldots \times L_{I}`)
         optional: true
         parameter: true
     arguments:
@@ -30,7 +31,7 @@ Neural Network Layer:
     outputs:
       y:
         doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
-          L`)
+          L_{0} \times \ldots \times L_{I}`)
     function_ids:
       i: 0
     c_runtime: support
@@ -5562,3 +5563,42 @@ Unsupported, Special Use:
     function_ids:
       ffB: 231
     c_runtime: not support
+  MaxPoolingBackward:
+    snake_name: max_pooling_backward
+    doc: |2
+
+      Max pooling backward. This is tentative and temporal solution to support the double backward of 
+      the max pooling. The document of this function must not be shown.
+    inputs:
+      x:
+        doc: Input variable.
+      dy:
+        doc: Input variable.
+    arguments:
+      kernel:
+        doc: Kernel sizes for each spatial axis.
+        type: Shape
+      stride:
+        doc: Subsampling factors for each spatial axis.
+        type: Shape
+        default: kernel
+      ignore_border:
+        doc: If false, kernels covering borders are also considered for the output.
+        type: bool
+        default: 'True'
+      pad:
+        doc: Border padding values for each spatial axis. Padding will be added both
+          sides of the dimension.
+        type: Shape
+        default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
+    outputs:
+      dx:
+        doc: Output
+    c_runtime: not support
+    function_ids:
+      iIiIBiIB: 272
