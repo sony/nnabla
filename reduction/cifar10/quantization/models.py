@@ -45,13 +45,13 @@ def cifar10_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                    with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                    with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -110,13 +110,13 @@ def cifar10_binary_connect_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.binary_connect_convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.binary_connect_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.binary_connect_convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.binary_connect_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -175,13 +175,13 @@ def cifar10_binary_net_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> BinaryTanh
             with nn.parameter_scope("conv1"):
-                h = PF.binary_connect_convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.binary_connect_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.binary_tanh(h)
             # Conv -> BN -> BinaryTanh
             with nn.parameter_scope("conv2"):
-                h = PF.binary_connect_convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.binary_connect_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.binary_tanh(h)
@@ -240,13 +240,13 @@ def cifar10_binary_weight_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.binary_weight_convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.binary_weight_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                                  with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.binary_weight_convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.binary_weight_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                                  with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -305,7 +305,7 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.fixed_point_quantized_convolution(x, C / 2,
+                h = PF.fixed_point_quantized_convolution(x, C // 2,
                                                          kernel=(1, 1), pad=(0, 0),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
@@ -314,7 +314,7 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.fixed_point_quantized_convolution(h, C / 2,
+                h = PF.fixed_point_quantized_convolution(h, C // 2,
                                                          kernel=(3, 3), pad=(1, 1),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
@@ -384,7 +384,7 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
 
             # Conv -> BN -> FixedPointQuantize -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.fixed_point_quantized_convolution(x, C / 2,
+                h = PF.fixed_point_quantized_convolution(x, C // 2,
                                                          kernel=(1, 1), pad=(0, 0),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
@@ -394,7 +394,7 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
                 h = F.relu(h)
             # Conv -> BN -> FixedPointQuantize -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.fixed_point_quantized_convolution(h, C / 2,
+                h = PF.fixed_point_quantized_convolution(h, C // 2,
                                                          kernel=(3, 3), pad=(1, 1),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
@@ -467,7 +467,7 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.pow2_quantized_convolution(x, C / 2,
+                h = PF.pow2_quantized_convolution(x, C // 2,
                                                   kernel=(1, 1), pad=(0, 0),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
@@ -476,7 +476,7 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.pow2_quantized_convolution(h, C / 2,
+                h = PF.pow2_quantized_convolution(h, C // 2,
                                                   kernel=(3, 3), pad=(1, 1),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
@@ -545,7 +545,7 @@ def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Pow2Quantize -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.pow2_quantized_convolution(x, C / 2,
+                h = PF.pow2_quantized_convolution(x, C // 2,
                                                   kernel=(1, 1), pad=(0, 0),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
@@ -555,7 +555,7 @@ def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
                 h = F.relu(h)
             # Conv -> BN -> Pow2Quantize -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.pow2_quantized_convolution(h, C / 2,
+                h = PF.pow2_quantized_convolution(h, C // 2,
                                                   kernel=(3, 3), pad=(1, 1),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
@@ -630,7 +630,7 @@ def cifar10_inq_resnet23_prediction(image, maps=64, num_bits=4,
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.inq_convolution(x, C / 2,
+                h = PF.inq_convolution(x, C // 2,
                                        kernel=(1, 1), pad=(0, 0),
                                        inq_iterations=inq_iterations,
                                        selection_algorithm=selection_algorithm,
@@ -639,7 +639,7 @@ def cifar10_inq_resnet23_prediction(image, maps=64, num_bits=4,
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.inq_convolution(h, C / 2,
+                h = PF.inq_convolution(h, C // 2,
                                        kernel=(3, 3), pad=(1, 1),
                                        inq_iterations=inq_iterations,
                                        selection_algorithm=selection_algorithm,
