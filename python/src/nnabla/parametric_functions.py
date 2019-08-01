@@ -156,7 +156,7 @@ def affine(inp, n_outmaps,
         apply_b (function): Lambda, function, or callable object applied to the bias.
 
     Returns:
-        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)f
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \\times \ldots \\times M_{B-1} \\times L`)
 
     """
     if not hasattr(n_outmaps, '__iter__'):
