@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
+#include <nbla/function/add2.hpp>
 #include <nbla/function/batch_det.hpp>
 #include <nbla/function/batch_inv.hpp>
 #include <nbla/function/mul2.hpp>
-#include <nbla/function/add2.hpp>
 #include <nbla/function/transpose.hpp>
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
-
-
 
 namespace nbla {
 
@@ -31,7 +28,7 @@ NBLA_REGISTER_FUNCTION_SOURCE(BatchDet);
 
 template <typename T>
 void BatchDet<T>::setup_impl(const Variables &inputs,
-                               const Variables &outputs) {
+                             const Variables &outputs) {
   NBLA_CHECK(inputs[0]->ndim() == 3, error_code::value,
              "Input must be 2D array");
   auto input_shape = inputs[0]->shape();
@@ -49,14 +46,13 @@ template <typename T>
 void BatchDet<T>::forward_impl(const Variables &inputs,
                                const Variables &outputs) {
   using namespace ::nbla::eigen;
-  const T* x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T* y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int i = 0; i < batch_size_; ++i) {
     ConstMatrixMap<T> mx(x + i * offset_, dim_, dim_);
     y[i] = mx.determinant();
   }
 }
-
 
 template <typename T>
 void BatchDet<T>::backward_impl(const Variables &inputs,
@@ -87,8 +83,7 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
 
   // mul1_out = gy * det_x = gy * output
   auto f_mul1 = create_Mul2(this->ctx_);
-  f_mul1->setup(Variables{&reshaped_gy, &reshaped_det_x},
-                Variables{&mul1_out});
+  f_mul1->setup(Variables{&reshaped_gy, &reshaped_det_x}, Variables{&mul1_out});
   f_mul1->forward(Variables{&reshaped_gy, &reshaped_det_x},
                   Variables{&mul1_out});
 

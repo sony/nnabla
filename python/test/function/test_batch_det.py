@@ -21,11 +21,13 @@ from nbla_test_utils import list_context
 
 ctxs = list_context('BatchDet')
 
+
 def ref_det(x):
     y = np.zeros(x.shape[0], dtype=np.float32)
     for i in range(x.shape[0]):
         y[i] = np.linalg.det(x[i])
     return y
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
