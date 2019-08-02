@@ -14,7 +14,7 @@ Import
   - Version: 1.4.1
   - Commit id: 3b0ecd5
 
-Total: 53/129
+Total: 81/129
 
 .. table:: 
 
@@ -22,30 +22,30 @@ Total: 53/129
             ONNX Operator            1    2    3    4    5    6    7    8    9    10    Description 
     ==============================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  =============
      Abs                            X                        √                                      
-     Acos                                                         X                                 
-     Acosh                                                                  X                       
+     Acos                                                         √                                 
+     Acosh                                                                  √                       
      Add                            X                        √    √                                 
      And                            √                             √                                 
-     ArgMax                         X                                                               
-     ArgMin                         X                                                               
-     Asin                                                         X                                 
-     Asinh                                                                  X                       
-     Atan                                                         X                                 
-     Atanh                                                                  X                       
+     ArgMax                         √                                                               
+     ArgMin                         √                                                               
+     Asin                                                         √                                 
+     Asinh                                                                  √                       
+     Atan                                                         √                                 
+     Atanh                                                                  √                       
      AveragePool                    √                             √              X                  
      BatchNormalization             X                        √    X         √                       
      Cast                           X                        X              X                       
-     Ceil                           X                        X                                      
+     Ceil                           X                        √                                      
      Clip                           X                        √                                      
      Compress                                                               X                       
      Concat                         √              √                                                
      Constant                       √                                       √                       
      ConstantOfShape                                                        X                       
      Conv                           √                                                               
-     ConvTranspose                  X                                                               
-     Cos                                                          X                                 
-     Cosh                                                                   X                       
-     DepthToSpace                   X                                                               
+     ConvTranspose                  √                                                               
+     Cos                                                          √                                 
+     Cosh                                                                   √                       
+     DepthToSpace                   √                                                               
      Div                            X                        √    √                                 
      Dropout                        √                        √    √              X                  
      Elu                            X                        √                                      
@@ -54,11 +54,11 @@ Total: 53/129
      Exp                            X                        √                                      
      Expand                                                            X                            
      EyeLike                                                                X                       
-     Flatten                        X                                       X                       
-     Floor                          X                        X                                      
+     Flatten                        √                                       √                       
+     Floor                          X                        √                                      
      GRU                            X         X                   X                                 
      Gather                         X                                                               
-     Gemm                           √                        √    X         X                       
+     Gemm                           √                        √    √         √                       
      GlobalAveragePool              √                                                               
      GlobalLpPool                   X    X                                                          
      GlobalMaxPool                  X                                                               
@@ -68,7 +68,7 @@ Total: 53/129
      Identity                       √                                                               
      If                             X                                                               
      InstanceNormalization          X                        X                                      
-     IsNaN                                                                  X                       
+     IsNaN                                                                  √                       
      LRN                            √                                                               
      LSTM                           X                             X                                 
      LeakyRelu                      X                        √                                      
@@ -120,30 +120,30 @@ Total: 53/129
      Shape                          X                                                               
      Shrink                                                                 X                       
      Sigmoid                        X                        √                                      
-     Sign                                                                   X                       
-     Sin                                                          X                                 
-     Sinh                                                                   X                       
+     Sign                                                                   √                       
+     Sin                                                          √                                 
+     Sinh                                                                   √                       
      Size                           X                                                               
-     Slice                          X                                            X                  
+     Slice                          √                                            X                  
      Softmax                        √                                                               
      Softplus                       √                                                               
      Softsign                       √                                                               
-     SpaceToDepth                   X                                                               
-     Split                          X    X                                                          
-     Sqrt                           X                        X                                      
-     Squeeze                        X                                                               
+     SpaceToDepth                   √                                                               
+     Split                          √    √                                                          
+     Sqrt                           X                        √                                      
+     Squeeze                        √                                                               
      StringNormalizer                                                            X                  
      Sub                            X                        √    √                                 
      Sum                            X                        √         √                            
-     Tan                                                          X                                 
+     Tan                                                          √                                 
      Tanh                           X                        √                                      
      TfIdfVectorizer                                                        X                       
      ThresholdedRelu                                                             X                  
-     Tile                           X                        X                                      
+     Tile                           X                        √                                      
      TopK                           X                                            X                  
      Transpose                      √                                                               
-     Unsqueeze                      X                                                               
-     Upsample                       X                             X         X    X                  
+     Unsqueeze                      √                                                               
+     Upsample                                                √    √         √    X                  
      Where                                                                  X                       
      Xor                            √                             √                                 
      experimental ATen              X                                                               
@@ -164,55 +164,55 @@ Export
   - Version: 1.0.15.dev1
   - Commit id: 8a603de
 
-Total: 63/155
+Total: 83/155
 
 .. table:: 
 
     ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
          NNabla Functions        1    2    3    4    5    6    7    8    9    10                   Description                
     ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
-     ACos                                                                                                                     
-     ACosh                                                                                                                    
-     ASin                                                                                                                     
-     ASinh                                                                                                                    
-     ATan                                                                                                                     
-     ATan2                                                                                                                    
-     ATanh                                                                                                                    
+     ACos                                                △              △          By ACos                                    
+     ACosh                                               △              △          By Acosh                                   
+     ASin                                                △              △          By ASin                                    
+     ASinh                                               △              △          By Asinh                                   
+     ATan                                                △              △          By ATan                                    
+     ATan2                                               △              △          By Div,ATan                                
+     ATanh                                               △              △          By Atanh                                   
      Abs                                                 √              √          By Abs                                     
      AbsoluteError                                                                                                            
      Add2                                                √              √          By Add                                     
      AddScalar                                           △              △          By Add                                     
-     Affine                                              △              △          By Reshape,Flatten,Gemm                    
+     Affine                                              △              △          By Reshape,Gemm                            
      Arange                                                                                                                   
      AveragePooling                                      √              √          By AveragePool                             
      BatchMatmul                                         √              √          By Matmul                                  
      BatchNormalization                                  √              √          By InstanceNormalization,BatchNormalization
      BcAdd2                                                                                                                   
-     BinaryConnectAffine                                                                                                      
+     BinaryConnectAffine                                 △              △          By Reshape,Gemm                            
      BinaryConnectConvolution                            △              △          By Conv,Reshape                            
      BinaryCrossEntropy                                                                                                       
      BinaryError                                                                                                              
-     BinarySigmoid                                       △              △          By HardSigmoid                             
-     BinaryTanh                                                                                                               
-     BinaryWeightAffine                                                                                                       
-     BinaryWeightConvolution                                                                                                  
+     BinarySigmoid                                       △              △          By Greater,Where                           
+     BinaryTanh                                          △              △          By Greater,Where                           
+     BinaryWeightAffine                                  △              △          By Reshape,MatMul,Mul,Add                  
+     BinaryWeightConvolution                             △              △          By Reshape,Conv,Mul,Add                    
      Broadcast                                                                                                                
      BroadcastTo                                         √              √                                                     
      CELU                                                                                                                     
      CReLU                                                                                                                    
      CategoricalCrossEntropy                                                                                                  
-     Ceil                                                                                                                     
+     Ceil                                                △              △          By Ceil                                    
      ClipGradByNorm                                                                                                           
      ClipGradByValue                                                                                                          
      Concatenate                                         √              √          By Concat                                  
      ConfusionMatrix                                                                                                          
      Constant                                                                                                                 
      Convolution                                         √              √          By Conv                                    
-     Cos                                                                                                                      
-     Cosh                                                                                                                     
-     Deconvolution                                       △              △          By ConvTranspose,Add                       
+     Cos                                                 △              △          By Cos                                     
+     Cosh                                                △              △          By Cosh                                    
+     Deconvolution                                       △              △          By ConvTranspose,Reshape                   
      DepthwiseConvolution                                △              △          By Conv                                    
-     DepthwiseDeconvolution                                                                                                   
+     DepthwiseDeconvolution                              △              △          By ConvTranspose,Reshape                   
      Div2                                                √              √          By Div                                     
      Dropout                                             △              △          By Dropout                                 
      ELU                                                 √              √          By ELU                                     
@@ -224,7 +224,7 @@ Total: 63/155
      FFT                                                                                                                      
      FixedPointQuantize                                                                                                       
      Flip                                                △              △          By Gather,Transpose,Identity               
-     Floor                                                                                                                    
+     Floor                                               △              △          By Floor                                   
      GELU                                                                                                                     
      GRU                                                                                                                      
      GlobalAveragePooling                                √              √          By GlobalAveragePool                       
@@ -274,11 +274,11 @@ Total: 63/155
      NotEqualScalar                                                                                                           
      OneHot                                              △              △          By Flatten,Gather,Reshape                  
      PReLU                                               √              √          By PRelu                                   
-     Pad                                                 √              √          By Pad                                     
+     Pad                                                 △              △          By Pad                                     
      Pow2                                                √              √          By Pow                                     
      Pow2Quantize                                                                                                             
      PowScalar                                           √              △          By Pow                                     
-     Prod                                                √              √          By ReduceProd                              
+     Prod                                                △              △          By ReduceProd                              
      Prune                                                                                                                    
      RDivScalar                                          √              √          By Div                                     
      RNN                                                                                                                      
@@ -301,9 +301,9 @@ Total: 63/155
      Shift                                                                                                                    
      Sigmoid                                             √              √          By Sigmoid                                 
      SigmoidCrossEntropy                                                                                                      
-     Sign                                                                                                                     
-     Sin                                                                                                                      
-     Sinh                                                                                                                     
+     Sign                                                △              △          By Sign                                    
+     Sin                                                 △              △          By Sin                                     
+     Sinh                                                △              △          By Sinh                                    
      Sink                                                                                                                     
      Slice                                               △              △          By Slice                                   
      Softmax                                             √              √          By Softmax                                 
@@ -316,7 +316,7 @@ Total: 63/155
      Sum                                                 √              √          By ReduceSum                               
      SumPooling                                          △              △          By Mul                                     
      Swish                                                                                                                    
-     Tan                                                                                                                      
+     Tan                                                 △              △          By Tan                                     
      Tanh                                                √              √          By Tanh                                    
      TopKData                                                                                                                 
      TopKGrad                                                                                                                 

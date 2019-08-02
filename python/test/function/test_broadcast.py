@@ -62,3 +62,37 @@ def test_broadcast_forward_backward(ndim, broadcast_dim, seed, fname, ctx, func_
     function_tester(rng, func, ref_func, inputs, [shape],
                     ctx=ctx, backward=[True], func_name=func_name,
                     atol_b=6e-3)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast']))
+@pytest.mark.parametrize("ndim, broadcast_dim", get_combinations(*range(0, 6)))
+def test_broadcast_double_backward(ndim, broadcast_dim, seed, fname, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+
+    rng = np.random.RandomState(seed)
+    shape = rng.randint(2, 5, size=(ndim,))
+    inshape = shape.copy()
+    inshape[broadcast_dim] = 1
+    if ndim == 0:
+        # Performing 0-dim array test too.
+        inputs = [np.array(rng.randn()).astype("float32")]
+        backward_function_tester(rng, F.broadcast, None,
+                                 inputs=inputs,
+                                 func_args=[shape], func_kwargs={},
+                                 atol_b=1e-3,
+                                 atol_accum=1e-3,
+                                 dstep=1e-3,
+                                 ctx=ctx, func_name=None,
+                                 disable_half_test=True)
+
+    inputs = [np.array(rng.randn(*inshape)).astype("float32")]
+    backward_function_tester(rng, F.broadcast, None,
+                             inputs=inputs,
+                             func_args=[shape], func_kwargs={},
+                             atol_f=1e-3,
+                             atol_b=2e-2,
+                             atol_accum=2e-2,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

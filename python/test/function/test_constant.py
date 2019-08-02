@@ -34,3 +34,6 @@ def test_constant_forward(value, shape, ctx, func_name):
     inputs = []
     function_tester(rng, F.constant, ref_constant, inputs, func_args=[value, shape],
                     ctx=ctx, func_name=func_name, backward=[])
+
+
+# No need to test backward_function

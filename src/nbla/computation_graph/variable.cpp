@@ -235,13 +235,13 @@ class BackwardCallback {
       if (!inputs[i]->need_grad_state())
         continue;
 
-      // Root variable is always accumulated.
-      if (!inputs[i]->parent()) {
-        accum[i] = true;
+      // If memset with 0 is reserved, accum is not used.
+      if (inputs[i]->variable()->grad()->array()->zeroing()) {
         continue;
       }
-      // First visit gradients are copied.
-      if (first_visit_flags[i]) {
+
+      // First visit gradients in intermediate layers are copied.
+      if (inputs[i]->parent() && first_visit_flags[i]) {
         continue;
       }
       accum[i] = true;

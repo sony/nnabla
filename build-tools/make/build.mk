@@ -121,7 +121,6 @@ nnabla-cpplib-android-test:
 
 .PHONY: nnabla-wheel
 nnabla-wheel:
-	echo @mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& cmake \

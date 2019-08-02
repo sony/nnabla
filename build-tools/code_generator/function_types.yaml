@@ -509,3 +509,9 @@ Assign:
 GatherNd:
   float: [float]
   half: [Half]
+ScatterNd:
+  float: [float]
+  half: [Half]
+MaxPoolingBackward:
+  float: [float]
+  half: [Half]

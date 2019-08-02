@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import argparse
+import os
 import sys
 import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+from nnabla.logger import logger
 
 
 def _nnabla_version():
@@ -84,6 +86,9 @@ def cli_main():
     from nnabla.utils.cli.create_image_classification_dataset import add_create_image_classification_dataset_command
     add_create_image_classification_dataset_command(subparsers)
 
+    from nnabla.utils.cli.create_object_detection_dataset import add_create_object_detection_dataset_command
+    add_create_object_detection_dataset_command(subparsers)
+
     from nnabla.utils.cli.uploader import add_upload_command
     add_upload_command(subparsers)
 
@@ -125,7 +130,10 @@ def cli_main():
         except:
             import traceback
             print(traceback.format_exc())
-            comm.abort()
+
+            logger.log(99, "ABORTED")
+            os.kill(os.getpid(), 9)
+            # comm.abort()
     else:
         try:
             return_value = args.func(args)

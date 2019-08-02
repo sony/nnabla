@@ -25,10 +25,6 @@ def ref_softplus(x):
     return np.log(np.exp(x, dtype=x.dtype)+1)
 
 
-def ref_softplus_backward(x, dx):
-    return (1/(1+np.exp(-x, dtype=x.dtype))).flat
-
-
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_softplus_forward_backward(seed, ctx, func_name):
@@ -36,4 +32,14 @@ def test_softplus_forward_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     function_tester(rng, F.softplus, ref_softplus, inputs,
-                    ctx=ctx, func_name=func_name, ref_grad=ref_softplus_backward)
+                    ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_softplus_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    backward_function_tester(rng, F.softplus, None, inputs,
+                             ctx=ctx, func_name=func_name)

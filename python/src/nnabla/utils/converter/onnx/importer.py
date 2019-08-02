@@ -173,7 +173,7 @@ def generate_transpose(node_name, in_name, out_name, axes, base_name, func_count
 
 
 def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_counter):
-    """Generate a BroadcastTo operator to brodcast specified buffer"""
+    """Generate a BroadcastTo operator to brodcastto specified buffer"""
     bt = nnabla_pb2.Function()
     bt.type = "BroadcastTo"
     set_function_name(bt, node_name, base_name, func_counter)
@@ -207,6 +207,30 @@ def generate_batchmatmul(node_name, in_name, out_name, transpose_a, transpose_b,
     bmp.transpose_a = transpose_a
     bmp.transpose_b = transpose_b
     return bm
+
+
+def generate_split(node_name, in_name, out_name, axis, base_name, func_counter):
+    """Generate a Split operator to split specified buffer"""
+    sp = nnabla_pb2.Function()
+    sp.type = "Split"
+    set_function_name(sp, node_name, base_name, func_counter)
+    sp.input.extend([in_name])
+    sp.output.extend(out_name)
+    spp = sp.split_param
+    spp.axis = axis
+    return sp
+
+
+def generate_stack(node_name, in_name, out_name, axis, base_name, func_counter):
+    """Generate a Stack operator to stack specified buffer"""
+    sp = nnabla_pb2.Function()
+    sp.type = "Stack"
+    set_function_name(sp, node_name, base_name, func_counter)
+    sp.input.extend(in_name)
+    sp.output.extend([out_name])
+    spp = sp.stack_param
+    spp.axis = axis
+    return sp
 
 
 def generate_unary(func_name, node_name, x,
@@ -535,7 +559,23 @@ class OnnxImporter:
             # Constant does not get converted to a function
             # but we list it here so we can accept it
             "Constant": self.Constant,
-            "Unsqueeze": self.Unsqueeze
+            "Unsqueeze": self.Unsqueeze,
+            "Sqrt": self.Sqrt,
+            "Ceil": partial(self.GeneralOperator, 'Ceil'),
+            "Floor": partial(self.GeneralOperator, 'Floor'),
+            "Tile": self.Tile,
+            "Flatten": self.Flatten,
+            "Squeeze": self.Squeeze,
+            "Slice": self.Slice,
+            # Currently, caffe2 does not support this function.
+            "DepthToSpace": self.DepthToSpace,
+            "SpaceToDepth": self.SpaceToDepth,
+            "ArgMax": partial(self.ElementIndices, "Max"),
+            "ArgMin": partial(self.ElementIndices, "Min"),
+            "Split": self.Split,
+            "Upsample": self.Upsample_6,
+            "Mean": self.Mean,
+            "ConvTranspose": self.ConvTranspose,
         }
 
         # opset_7 table
@@ -552,6 +592,13 @@ class OnnxImporter:
             "And": partial(self.BroadcastOperator_9, 'LogicalAnd'),
             "Or": partial(self.BroadcastOperator_9, 'LogicalOr'),
             "Xor": partial(self.BroadcastOperator_9, 'LogicalXor'),
+            "Acos": partial(self.GeneralOperator, 'ACos'),
+            "Asin": partial(self.GeneralOperator, 'ASin'),
+            "Atan": partial(self.GeneralOperator, 'ATan'),
+            "Cos": partial(self.GeneralOperator, 'Cos'),
+            "Sin": partial(self.GeneralOperator, 'Sin'),
+            "Tan": partial(self.GeneralOperator, 'Tan'),
+            "Upsample": self.Upsample_7,
         }
         self.table_op_set_7 = dict(self.table_op_set_6, **self.table_op_set_7)
 
@@ -560,6 +607,17 @@ class OnnxImporter:
             "Sum": partial(self.BroadcastOperator_9, 'Add2'),
             "Min": partial(self.BroadcastOperator_9, 'Minimum2'),
             "Max": partial(self.BroadcastOperator_9, 'Maximum2'),
+            # Currently, caffe2 does not support this function.
+            "Acosh": partial(self.GeneralOperator, 'ACosh'),
+            # Currently, caffe2 does not support this function.
+            "Asinh": partial(self.GeneralOperator, 'ASinh'),
+            # Currently, caffe2 does not support this function.
+            "Atanh": partial(self.GeneralOperator, 'ATanh'),
+            "Cosh": partial(self.GeneralOperator, 'Cosh'),
+            "Sinh": partial(self.GeneralOperator, 'Sinh'),
+            "IsNaN": partial(self.GeneralOperator, 'IsNaN'),
+            "Sign": partial(self.GeneralOperator, 'Sign'),
+            "Upsample": self.Upsample_9,
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -1620,7 +1678,7 @@ class OnnxImporter:
             if attr.name == "axes":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
-                        "Only INTS is supported for shape in {} op_type".format(n.op_type))
+                        "Only INTS is supported for axes in {} op_type".format(n.op_type))
                 for index in attr.ints:
                     output_shape.insert(index, 1)
             else:
@@ -1629,6 +1687,602 @@ class OnnxImporter:
         rp.shape.dim.extend(output_shape)
         func_list.append(func)
         self._shape_output[func.output[0]] = output_shape
+
+    def Sqrt(self, func_list, n):
+        pow = generate_pow_scalar(n.name, n.input[0], n.output[0],
+                                  0.5, self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = self.get_func_input_shape(n.input[0])
+        func_list.append(pow)
+
+    def Tile(self, func_list, n):
+        func = self.generate_default_function("Tile", n)
+        tp = func.tile_param
+        repeats = func.input[1]
+        input_shape = self.get_func_input_shape(func.input[0])
+        output_shape = []
+        for init in self._graph.initializer:
+            if init.name == repeats:
+                if init.data_type != TensorProto.INT64:
+                    raise ValueError(
+                        "Only INT64 is supported for {} in {} op_type".format(repeats, n.op_type))
+                if init.raw_data:
+                    tp.reps.extend(np.fromstring(
+                        init.raw_data, dtype=np.int64))
+                elif init.int64_data:
+                    tp.reps.extend(init.int64_data)
+        self._merged_inputs.append(repeats)
+        del func.input[1]
+        if len(tp.reps) > len(input_shape):
+            s = len(tp.reps) - len(input_shape)
+            output_shape.extend(tp.reps[:s])
+            for i, v in enumerate(input_shape):
+                output_shape.append(v * tp.reps[s + i])
+        else:
+            s = len(input_shape) - len(tp.reps)
+            output_shape.extend(input_shape[:s])
+            for i, v in enumerate(tp.reps):
+                output_shape.append(v * input_shape[s + i])
+        self._shape_output[func.output[0]] = output_shape
+        func_list.append(func)
+
+    def Slice(self, func_list, n):
+        func = self.generate_default_function("Slice", n)
+        sp = func.slice_param
+        input_shape = self.get_func_input_shape(func.input[0])
+        axes = []
+        starts = []
+        ends = []
+        for attr in n.attribute:
+            if attr.name == "axes":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS is supported for axes in {} op_type".format(n.op_type))
+                for index in attr.ints:
+                    axes.append(index)
+            elif attr.name == "starts":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS is supported for starts in {} op_type".format(n.op_type))
+                for index in attr.ints:
+                    starts.append(index)
+            elif attr.name == "ends":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS is supported for ends in {} op_type".format(n.op_type))
+                for index in attr.ints:
+                    ends.append(index)
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        output_shape = []
+        if len(axes) == 0:
+            axes = range(len(input_shape))
+        for i in range(len(input_shape)):
+            if i not in axes:
+                starts.insert(i, 0)
+                ends.insert(i, input_shape[i])
+            if ends[i] > input_shape[i]:
+                ends[i] = input_shape[i]
+            if starts[i] > input_shape[i]:
+                starts[i] = input_shape[i]
+            if ends[i] < 0:
+                ends[i] = input_shape[i] + ends[i]
+            if starts[i] < 0:
+                starts[i] = input_shape[i] + ends[i]
+            if starts[i] < ends[i]:
+                output_shape.append(starts[i] - ends[i])
+            else:
+                output_shape.append(0)
+        sp.start.extend(starts)
+        sp.stop.extend(ends)
+        sp.step.extend([1] * len(input_shape))
+        self._shape_output[func.output[0]] = output_shape
+        func_list.append(func)
+
+    def Flatten(self, func_list, n):
+        # Convert to Reshape
+        func = self.generate_default_function("Reshape", n)
+        rp = func.reshape_param
+        input_shape = self.get_func_input_shape(func.input[0])
+        axis = 1
+        output_shape = [1, 1]
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for axis in {} op_type".format(n.op_type))
+                axis = attr.i
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        for i in range(axis):
+            output_shape[0] *= input_shape[i]
+        for i in range(axis, len(input_shape)):
+            output_shape[1] *= input_shape[i]
+        rp.shape.dim.extend(output_shape)
+        self._shape_output[func.output[0]] = output_shape
+        func_list.append(func)
+
+    def Squeeze(self, func_list, n):
+        # Convert to Reshape
+        func = self.generate_default_function("Reshape", n)
+        rp = func.reshape_param
+        axes = []
+        for attr in n.attribute:
+            if attr.name == "axes":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS is supported for axes in {} op_type".format(n.op_type))
+                axes.extend(attr.ints)
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        output_shape = self.get_func_input_shape(func.input[0])
+        if len(axes):
+            output_shape = [output_shape[i]
+                            for i in range(len(output_shape)) if i not in axes]
+        else:
+            output_shape = [i for i in output_shape if i != 1]
+        rp.shape.dim.extend(output_shape)
+        self._shape_output[func.output[0]] = output_shape
+        func_list.append(func)
+
+    def DepthToSpace(self, func_list, n):
+        # Convert to Reshape+Transpose+Reshape
+        b, c, h, w = self.get_func_input_shape(n.input[0])
+        blocksize = None
+        for attr in n.attribute:
+            if attr.name == "blocksize":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for blocksize in {} op_type".format(n.op_type))
+                blocksize = attr.i
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        if blocksize is None:
+            raise ValueError("Missing 'blocksize' attribute")
+
+        # Reshape
+        rin = n.input[0]
+        rout = n.input[0]+"_reshape"
+        _shape = [b, blocksize, blocksize, c // (blocksize**2), h, w]
+        rp = generate_reshape(n.name, rin, rout, _shape,
+                              self._graph.name, self._func_counter)
+        self._shape_output[rout] = _shape
+        func_list.append(rp)
+
+        # Transpose
+        trans_out = rout+"_trans"
+        axes = [0, 3, 4, 1, 5, 2]
+        transp = generate_transpose(n.name, rout, trans_out,
+                                    axes, self._graph.name, self._func_counter)
+        output_shape = []
+        for i in range(len(_shape)):
+            index = axes[i]
+            output_shape.append(_shape[index])
+        self._shape_output[trans_out] = output_shape
+        func_list.append(transp)
+
+        # Reshape
+        _shape = [b, c // (blocksize**2), h * blocksize, w * blocksize]
+        rp = generate_reshape(n.name, trans_out, n.output[0], _shape,
+                              self._graph.name, self._func_counter)
+        self._shape_output[rout] = _shape
+        func_list.append(rp)
+
+    def SpaceToDepth(self, func_list, n):
+        # Convert to Reshape+Transpose+Reshape
+        b, c, h, w = self.get_func_input_shape(n.input[0])
+        blocksize = None
+        for attr in n.attribute:
+            if attr.name == "blocksize":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for blocksize in {} op_type".format(n.op_type))
+                blocksize = attr.i
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        if blocksize is None:
+            raise ValueError("Missing 'blocksize' attribute")
+
+        reduced_h = h // blocksize
+        reduced_w = w // blocksize
+        # Reshape
+        rin = n.input[0]
+        rout = n.input[0]+"_reshape"
+        _shape = [b, c, reduced_h, blocksize, reduced_w, blocksize]
+        rp = generate_reshape(n.name, rin, rout, _shape,
+                              self._graph.name, self._func_counter)
+        self._shape_output[rout] = _shape
+        func_list.append(rp)
+
+        # Transpose
+        trans_out = rout+"_trans"
+        axes = [0, 3, 5, 1, 2, 4]
+        transp = generate_transpose(n.name, rout, trans_out,
+                                    axes, self._graph.name, self._func_counter)
+        output_shape = []
+        for i in range(len(_shape)):
+            index = axes[i]
+            output_shape.append(_shape[index])
+        self._shape_output[trans_out] = output_shape
+        func_list.append(transp)
+
+        # Reshape
+        _shape = [b, c * (blocksize**2), reduced_h, reduced_w]
+        rp = generate_reshape(n.name, trans_out, n.output[0], _shape,
+                              self._graph.name, self._func_counter)
+        self._shape_output[rout] = _shape
+        func_list.append(rp)
+
+    def ElementIndices(self, func_name, func_list, n):
+        # Convert to Max or Min
+        func = self.generate_default_function(func_name, n)
+        if func_name == "Max":
+            mp = func.max_param
+        else:
+            mp = func.min_param
+        mp.only_index = True
+        mp.keep_dims = True
+        axes = [0]
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for axis in {} op_type".format(n.op_type))
+                axes = [attr.i]
+            elif attr.name == "keepdims":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for keepdims in {} op_type".format(n.op_type))
+                mp.keep_dims = bool(attr.i)
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+        mp.axes.extend(axes)
+        output_shape = self.get_func_input_shape(func.input[0])
+        for i in mp.axes:
+            if mp.keep_dims:
+                output_shape[i] = 1
+            else:
+                del output_shape[i]
+        self._shape_output[func.output[0]] = output_shape
+        func_list.append(func)
+
+    def Split(self, func_list, n):
+        # Convert to Split+Stack
+        input_shape = self.get_func_input_shape(n.input[0])
+        axis = 0
+        offset = 0
+        output_len = []
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for axis in {} op_type".format(n.op_type))
+                axis = attr.i
+            elif attr.name == "split":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS is supported for split in {} op_type".format(n.op_type))
+                output_len.extend(attr.ints)
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        if len(output_len) == 0:
+            output_len = [input_shape[axis] // len(n.output)] * len(n.output)
+
+        # Split
+        sout = []
+        for i in range(input_shape[axis]):
+            sout.append(n.input[0]+"_split_"+str(i))
+        sp = generate_split(n.name, n.input[0], sout, axis,
+                            self._graph.name, self._func_counter)
+        func_list.append(sp)
+
+        for i in range(len(sout)):
+            self._shape_output[sout[i]] = [input_shape[x]
+                                           for x in range(len(input_shape)) if x != axis]
+
+        # Stack
+        for i in range(len(n.output)):
+            shape = [input_shape[x] if x != axis else output_len[i]
+                     for x in range(len(input_shape))]
+            sp = generate_stack(n.name, sout[offset:output_len[i]+offset], n.output[i], axis,
+                                self._graph.name, self._func_counter)
+            self._shape_output[n.output[i]] = shape
+            func_list.append(sp)
+            offset += output_len[i]
+
+    def Upsample_6(self, func_list, n):
+        func = self.generate_default_function("Unpooling", n)
+        input_shape = self.get_func_input_shape(n.input[0])
+        upp = func.unpooling_param
+        scales = [1, 1]
+        for attr in n.attribute:
+            if attr.name == "height_scale":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError(
+                        "Only FLOAT is supported for height_scale in {} op_type".format(n.op_type))
+                scales[0] = int(np.floor(attr.f))
+            elif attr.name == "width_scale":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError(
+                        "Only FLOAT is supported for width_scale in {} op_type".format(n.op_type))
+                scales[1] = int(np.floor(attr.f))
+            elif attr.name == "mode":
+                pass
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+        scales = [1] * (len(input_shape) - 2) + scales
+        output_shape = []
+        for i in range(len(input_shape)):
+            output_shape.append(input_shape[i] * scales[i])
+        self._shape_output[n.output[0]] = output_shape
+        upp.kernel.dim.extend(scales)
+        func_list.append(func)
+
+    def Upsample_7(self, func_list, n):
+        func = self.generate_default_function("Unpooling", n)
+        input_shape = self.get_func_input_shape(n.input[0])
+        upp = func.unpooling_param
+        scales = []
+        for attr in n.attribute:
+            if attr.name == "scales":
+                if attr.type != AttributeProto.FLOATS:
+                    raise ValueError(
+                        "Only FLOATS is supported for scales in {} op_type".format(n.op_type))
+                scales.extend([int(np.floor(f)) for f in attr.floats])
+            elif attr.name == "mode":
+                pass
+            else:
+                logger.info('Unsupported attribute {} was specified at {}'
+                            .format(attr.name, n.op_type))
+
+        if len(scales) == 0:
+            raise ValueError("Missing 'scales' attribute")
+
+        output_shape = []
+        for i in range(len(input_shape)):
+            output_shape.append(input_shape[i] * scales[i])
+        self._shape_output[n.output[0]] = output_shape
+        upp.kernel.dim.extend(scales)
+        func_list.append(func)
+
+    def Upsample_9(self, func_list, n):
+        func = self.generate_default_function("Unpooling", n)
+        input_shape = self.get_func_input_shape(n.input[0])
+        upp = func.unpooling_param
+        scales = []
+        for init in self._graph.initializer:
+            if init.name == n.input[1]:
+                if init.data_type != TensorProto.FLOAT:
+                    raise ValueError(
+                        "Only FLOAT is supported for {} in {} op_type".format(n.input[1], n.op_type))
+                if init.raw_data:
+                    scales.extend(np.fromstring(
+                        init.raw_data, dtype=np.float32))
+                elif init.float_data:
+                    scales.extend(init.float_data)
+        self._merged_inputs.append(n.input[1])
+        scales = [int(np.floor(i)) for i in scales]
+        output_shape = []
+        for i in range(len(input_shape)):
+            output_shape.append(input_shape[i] * scales[i])
+        self._shape_output[n.output[0]] = output_shape
+        upp.kernel.dim.extend(scales)
+        func_list.append(func)
+
+    def Mean(self, func_list, n):
+        # Reshape+Broadcast+Stack+Mean
+        func = self.generate_default_function("Mean", n)
+        input_num = len(func.input)
+        if input_num == 1:
+            func.type = "Identity"
+            func_list.append(func)
+            return
+        else:
+            input_shape = []
+            ndim = 0
+            inputs = func.input[:]
+            for name in inputs:
+                shape = self.get_func_input_shape(name)
+                if len(shape) > ndim:
+                    ndim = len(shape)
+                input_shape.append(shape)
+                func.input.remove(name)
+
+            # In opset>8 version, `Mean` support multi-directional broadcast,
+            # So all the input is processed into the same shape as the output through Reshape and broadcast operations.
+            # But caffe2 does not support multi-directional broadcast.
+            for i in range(len(input_shape)):
+                if len(input_shape[i]) < ndim:
+                    input_shape[i] = list(
+                        np.ones(ndim - len(input_shape[i]), dtype=np.int)) + input_shape[i]
+                    rout = inputs[i]+"_shape"
+                    rp = generate_reshape(n.name, inputs[i], rout, input_shape[i],
+                                          self._graph.name, self._func_counter)
+                    self._shape_output[rout] = input_shape[i]
+                    func_list.append(rp)
+                    inputs[i] = rout
+
+            broadcast_shape = list(np.max(input_shape, axis=0))
+            for i in range(len(input_shape)):
+                need_broadcast = False
+                for j in range(ndim):
+                    if input_shape[i][j] != broadcast_shape[j]:
+                        need_broadcast = True
+                        break
+                if need_broadcast:
+                    bout = inputs[i] + "_broadcast"
+                    bt = generate_broadcast(n.name, inputs[i], bout, broadcast_shape,
+                                            self._graph.name, self._func_counter)
+                    self._shape_output[bout] = shape
+                    inputs[i] = bout
+                    func_list.append(bt)
+
+            sout = func.output[0] + "_stack"
+            sp = generate_stack(n.name, inputs, sout, 0,
+                                self._graph.name, self._func_counter)
+            self._shape_output[sout] = [len(input_shape)] + broadcast_shape
+            func_list.append(sp)
+
+            func.input.extend([sout])
+            mp = func.mean_param
+            mp.axes.extend([0])
+            func_list.append(func)
+
+    def ConvTranspose(self, func_list, n):
+        func = self.generate_default_function("Deconvolution", n)
+        cp = func.deconvolution_param
+        input_shape = self.get_func_input_shape(func.input[0])
+        weight_shape = self.get_func_input_shape(func.input[1])
+        # We shouldn't need these default settings
+        # since NNabla will set these for us
+        cp.base_axis = 1
+        cp.group = 1
+        dim = len(input_shape) - 2
+        pads = []
+        strides = []
+        dilations = []
+        output_padding = []
+        output_shape = []
+        convt_output_shape = []  # explicitly set the shape of the output.
+        output_need_pad = False
+
+        for attr in n.attribute:
+            if attr.name == "pads":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS are supported for pads in Conv op_type")
+                pads.extend(attr.ints)
+            elif attr.name == "strides":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS are supported for strides in Conv op_type")
+                strides.extend(attr.ints)
+            elif attr.name == "dilations":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS are supported for dilations in Conv op_type")
+                dilations.extend(attr.ints)
+            elif attr.name == "group":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for group in Conv op_type")
+                cp.group = attr.i
+            elif attr.name == "kernel_shape":
+                # We do not set 'kernel_shape' to NNabla
+                # since NNabla doesn't have a parameter for it
+                # (it will be inferred from weight input)
+                pass
+            elif attr.name == "output_padding":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS are supported for dilations in Conv op_type")
+                output_padding.extend(attr.ints)
+                output_need_pad = True
+            elif attr.name == "output_shape":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError(
+                        "Only INTS are supported for dilations in Conv op_type")
+                convt_output_shape.extend(attr.ints)
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+        # NNabla requires for the dimensions of strides, pads, dilations to match.
+        # We align the dimensions for all three attributes to the shortest one
+        if strides:
+            cp.stride.dim.extend(strides[:])
+        else:
+            cp.stride.dim.extend([1]*dim)
+        if pads:
+            padval = []
+            asymmetry = check_padding(pads, dim, padval)
+            if asymmetry:
+                # Add a separate padding function for
+                # asymmetry padding
+                input = n.input[0]
+                padded = input+"_pad"
+                pad_width = rearrange_pads(pads)
+                padf = generate_pad(n.name, input, padded,
+                                    "replicate", pad_width, 0,
+                                    self._graph.name, self._func_counter)
+                shape = []
+                input_shape = self.get_func_input_shape(input)
+                s = len(pad_width) // 2
+                shape = input_shape[-s:]
+                for i in range(s):
+                    shape[i] += pad_width[2 * i]
+                    shape[i] += pad_width[2 * i + 1]
+                shape.extend(input_shape[:-s])
+                shape.extend(shape)
+                self._shape_output[padded] = shape
+                func_list.append(padf)
+                # Rewire input to the padded version
+                del func.input[:]
+                func.input.extend(padded)
+            cp.pad.dim.extend(padval)
+        else:
+            # Set default values.
+            # Do we really need this? (Default value should be set by NNabla)
+            cp.pad.dim.extend([0]*dim)
+        if dilations:
+            cp.dilation.dim.extend(dilations[:])
+        else:
+            # Set default values.
+            # Do we really need this? (Default value should be set by NNabla)
+            cp.dilation.dim.extend([1]*dim)
+
+        output_shape = input_shape[:1]
+        output_shape.append(weight_shape[1])
+        for index in range(dim):
+            d = cp.dilation.dim[index]
+            p = cp.pad.dim[index]
+            s = cp.stride.dim[index]
+            w = weight_shape[2+index]
+            i = input_shape[2+index]
+            k = d * (w - 1) + 1
+            o = s * (i - 1) + k - 2 * p
+            output_shape.append(o)
+
+        if convt_output_shape:
+            import operator
+            if operator.ne(output_shape[2:], convt_output_shape):
+                output_need_pad = True
+                del output_padding[:]
+                for index in range(dim):
+                    output_padding.append(
+                        convt_output_shape[index] - output_shape[2+index])
+
+        if output_need_pad:
+            deconv_out = func.output[0] + "_deconv"
+            del func.output[:]
+            func.output.extend([deconv_out])
+            self._shape_output[deconv_out] = output_shape
+            func_list.append(func)
+
+            for index in range(dim):
+                output_shape[2+index] += output_padding[index]
+
+            pad_width = [output_padding[i % 2] if i %
+                         2 else 0 for i in range(2*dim)]
+            padf = generate_pad(n.name, deconv_out, n.output[0],
+                                "constant", pad_width, 0,
+                                self._graph.name, self._func_counter)
+            func_list.append(padf)
+        else:
+            self._shape_output[func.output[0]] = output_shape
+            func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

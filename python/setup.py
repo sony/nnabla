@@ -24,7 +24,7 @@ import copy
 
 setup_requires = [
     'setuptools',
-    'numpy>=1.16',
+    'numpy>=1.16,<1.17',
     'Cython',  # Requires python-dev.
 ]
 
@@ -201,6 +201,8 @@ if __name__ == '__main__':
         'nnabla.conf',
         'utils/converter/functions.pkl',
         'models/imagenet/category_names.txt',
+        'models/object_detection/coco.names',
+        'models/object_detection/voc.names',
     ]}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
@@ -243,6 +245,7 @@ if __name__ == '__main__':
                 'nnabla.experimental.trainers',
                 'nnabla.models',
                 'nnabla.models.imagenet',
+                'nnabla.models.object_detection',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
@@ -252,6 +255,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
+                'nnabla.backward_function',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 

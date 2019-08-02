@@ -185,6 +185,7 @@ Array Manipulation
 .. autofunction:: stack
 .. autofunction:: slice
 .. autofunction:: gather_nd
+.. autofunction:: scatter_nd
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast

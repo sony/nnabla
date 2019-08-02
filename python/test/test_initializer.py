@@ -38,3 +38,11 @@ def test_initializer_execution(shape, initializer, opts, condition, rng):
         ini = initializer(**opts)
     x = ini(shape)
     assert condition(x)
+
+    # Check difference of initialization with the same shape using different initializer
+    ini0 = initializer(**opts)
+    ini1 = initializer(**opts)
+    x = ini0(shape)
+    y = ini1(shape)
+    if not isinstance(ini0, I.ConstantInitializer):
+        assert np.any(x != y)

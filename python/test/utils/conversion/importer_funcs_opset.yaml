@@ -2,9 +2,9 @@ Abs:
   '1': false
   '6': true
 Acos:
-  '7': false
+  '7': true
 Acosh:
-  '9': false
+  '9': true
 Add:
   '1': false
   '6': true
@@ -13,17 +13,17 @@ And:
   '1': true
   '7': true
 ArgMax:
-  '1': false
+  '1': true
 ArgMin:
-  '1': false
+  '1': true
 Asin:
-  '7': false
+  '7': true
 Asinh:
-  '9': false
+  '9': true
 Atan:
-  '7': false
+  '7': true
 Atanh:
-  '9': false
+  '9': true
 AveragePool:
   '1': true
   '7': true
@@ -39,7 +39,7 @@ Cast:
   '9': false
 Ceil:
   '1': false
-  '6': false
+  '6': true
 Clip:
   '1': false
   '6': true
@@ -56,13 +56,13 @@ ConstantOfShape:
 Conv:
   '1': true
 ConvTranspose:
-  '1': false
+  '1': true
 Cos:
-  '7': false
+  '7': true
 Cosh:
-  '9': false
+  '9': true
 DepthToSpace:
-  '1': false
+  '1': true
 Div:
   '1': false
   '6': true
@@ -88,22 +88,22 @@ Expand:
 EyeLike:
   '9': false
 Flatten:
-  '1': false
-  '9': false
+  '1': true
+  '9': true
 Floor:
   '1': false
-  '6': false
+  '6': true
 GRU:
   '1': false
   '3': false
   '7': false
 Gather:
   '1': false
-Gemm: # TODO
+Gemm:
   '1': true
   '6': true
-  '7': false
-  '9': false
+  '7': true
+  '9': true
 GlobalAveragePool:
   '1': true
 GlobalLpPool:
@@ -128,7 +128,7 @@ InstanceNormalization:
   '1': false
   '6': false
 IsNaN:
-  '9': false
+  '9': true
 LRN:
   '1': true
 LSTM:
@@ -263,15 +263,15 @@ Sigmoid:
   '1': false
   '6': true
 Sign:
-  '9': false
+  '9': true
 Sin:
-  '7': false
+  '7': true
 Sinh:
-  '9': false
+  '9': true
 Size:
   '1': false
 Slice:
-  '1': false
+  '1': true
   '10': false
 Softmax:
   '1': true
@@ -280,15 +280,15 @@ Softplus:
 Softsign:
   '1': true
 SpaceToDepth:
-  '1': false
+  '1': true
 Split:
-  '1': false
-  '2': false
+  '1': true
+  '2': true
 Sqrt:
   '1': false
-  '6': false
+  '6': true
 Squeeze:
-  '1': false
+  '1': true
 StringNormalizer:
   '10': false
 Sub:
@@ -300,7 +300,7 @@ Sum:
   '6': true
   '8': true
 Tan:
-  '7': false
+  '7': true
 Tanh:
   '1': false
   '6': true
@@ -310,18 +310,18 @@ ThresholdedRelu:
   '10': false
 Tile:
   '1': false
-  '6': false
+  '6': true
 TopK:
   '1': false
   '10': false
 Transpose:
   '1': true
 Unsqueeze:
-  '1': false
+  '1': true
 Upsample:
-  '1': false
-  '7': false
-  '9': false
+  '6': true
+  '7': true
+  '9': true
   '10': false
 Where:
   '9': false

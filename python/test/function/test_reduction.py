@@ -115,3 +115,21 @@ def test_min_with_index(seed, ctx, func_name, inshape, axis, keepdims):
         idx = F.min(x, axis, keepdims, only_index=True)
     shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
     assert np.all(idx.d == x.d.reshape(*shape).argmin(-1).reshape(idx.d.shape))
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, 3, (0, 2), (1, 2, 3)])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("inshape", [(2, 3, 4, 5), (2, 1, 4, 5)])
+@pytest.mark.parametrize("op, ctx, func_name", list_ctx_and_func_name(['sum', 'mean', 'max', 'min']))
+def test_reduction_double_backward(op, seed, inshape, axis, keepdims, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    func = getattr(F, op)
+    ref_func = getattr(np, op)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    backward_function_tester(rng, func, None, inputs,
+                             func_args=[axis],
+                             func_kwargs=dict(keepdims=keepdims),
+                             ctx=ctx, func_name=func_name,
+                             atol_b=6e-3, atol_accum=6e-3)

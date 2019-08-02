@@ -29,7 +29,7 @@ def g_rng(request):
 
 def process_param_init(p_init, shape, rng):
     if p_init is True:
-        p_init = rng.randn(*shape)
+        p_init = np.asarray(rng.randn(*shape))
     return p_init
 
 
@@ -495,8 +495,7 @@ def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_par
 
     eps = 1e-5
 
-    p_shape = tuple([inshape[i] if i in _force_list(batch_axis) else 1
-                     for i in range(len(inshape))])
+    p_shape = tuple([1 for _ in range(len(inshape))])
 
     x_npy = g_rng.randn(*inshape)
 
@@ -586,7 +585,7 @@ def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, out
 
     eps = 1e-5
 
-    p_shape = tuple([inshape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+    p_shape = tuple([inshape[i] if i == channel_axis else 1
                      for i in range(len(inshape))])
 
     x_npy = g_rng.randn(*inshape)
@@ -689,8 +688,7 @@ def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_
 
     eps = 1e-5
 
-    p_shape = [inshape[i] if i in _force_list(
-        batch_axis) else 1 for i in range(len(inshape) + 1)]
+    p_shape = [1 for _ in range(len(inshape) + 1)]
     p_shape[channel_axis] = num_groups
     p_shape[channel_axis + 1] = int(inshape[channel_axis] / num_groups)
     p_shape = tuple(p_shape)
@@ -761,13 +759,18 @@ ctxs = list_context('RNN')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("inshape", [(5, 8, 16), (10, 16, 32)])
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("bidirectional", [False, True])
+@pytest.mark.parametrize('w0_init, w_init, b_init', [
+    (None, None, None),
+    (I.ConstantInitializer(), I.ConstantInitializer(), I.ConstantInitializer()),
+    (True, True, True), ])
+@pytest.mark.parametrize("num_layers, nonlinearity, dropout, bidirectional, with_bias", [
+    (1, 'tanh', 0.0, False, False),
+    (2, 'relu', 0.5, True, True)])
 @pytest.mark.parametrize("hidden_size", [5])
-@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("training", [False, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize("rng", [None, True])
-def test_pf_rnn_execution(g_rng, inshape, num_layers, bidirectional, hidden_size, with_bias, fix_parameters, rng, ctx, func_name):
+def test_pf_rnn_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, nonlinearity, dropout, bidirectional, with_bias, hidden_size, training, fix_parameters, rng, ctx, func_name):
 
     with nn.context_scope(ctx):
         if func_name == "RNN":
@@ -779,32 +782,33 @@ def test_pf_rnn_execution(g_rng, inshape, num_layers, bidirectional, hidden_size
                    num_directions * hidden_size + hidden_size)
         b_shape = (num_layers, num_directions, hidden_size)
 
-        w0_init = process_param_init(True, w0_shape, g_rng)
-        w_init = process_param_init(True, w_shape, g_rng)
-        b_init = process_param_init(True, b_shape, g_rng)
+        w0_init = process_param_init(w0_init, w0_shape, g_rng)
+        w_init = process_param_init(w_init, w_shape, g_rng)
+        b_init = process_param_init(b_init, b_shape, g_rng)
         rng = process_rng(rng)
 
         kw = {}
         insert_if_not_none(kw, 'w0_init', w0_init)
         insert_if_not_none(kw, 'w_init', w_init)
         insert_if_not_none(kw, 'b_init', b_init)
-        insert_if_not_none(kw, 'num_layers', 2)
-        insert_if_not_none(kw, 'nonlinearity', 'tanh')
-        insert_if_not_none(kw, 'dropout', 0.0)
-        insert_if_not_none(kw, 'bidirectional', False)
-        insert_if_not_none(kw, 'training', True)
+        insert_if_not_default(kw, 'num_layers', num_layers, 1)
+        insert_if_not_default(kw, 'nonlinearity', nonlinearity, 'tanh')
+        insert_if_not_default(kw, 'dropout', dropout, 0.0)
+        insert_if_not_default(kw, 'bidirectional', bidirectional, False)
+        insert_if_not_default(kw, 'training', training, True)
         insert_if_not_none(kw, 'rng', rng)
-        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
         insert_if_not_default(kw, 'with_bias', with_bias, True)
+        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
 
         x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
         h = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
 
         # Check execution
         y, hn = PF.rnn(x, h, **kw)
         y.forward()
-        y.backward()
+        if training:
+            y.backward()
 
         # Check values
         # TODO
@@ -846,13 +850,18 @@ ctxs = list_context('GRU')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("inshape", [(5, 8, 16), (10, 16, 32)])
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("bidirectional", [False, True])
+@pytest.mark.parametrize('w0_init, w_init, b_init', [
+    (None, None, None),
+    (I.ConstantInitializer(), I.ConstantInitializer(), I.ConstantInitializer()),
+    (True, True, True), ])
+@pytest.mark.parametrize("num_layers, dropout, bidirectional, with_bias", [
+    (1, 0.0, False, False),
+    (2, 0.5, True, True)])
 @pytest.mark.parametrize("hidden_size", [5])
-@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("training", [False, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize("rng", [None, True])
-def test_pf_gru_execution(g_rng, inshape, num_layers, bidirectional, hidden_size, with_bias, fix_parameters, rng, ctx, func_name):
+def test_pf_gru_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, dropout, bidirectional, with_bias, hidden_size, training, fix_parameters, rng, ctx, func_name):
 
     with nn.context_scope(ctx):
         if func_name == "GRU":
@@ -864,31 +873,32 @@ def test_pf_gru_execution(g_rng, inshape, num_layers, bidirectional, hidden_size
                    hidden_size, num_directions * hidden_size + hidden_size)
         b_shape = (num_layers, num_directions, 4, hidden_size)
 
-        w0_init = process_param_init(True, w0_shape, g_rng)
-        w_init = process_param_init(True, w_shape, g_rng)
-        b_init = process_param_init(True, b_shape, g_rng)
+        w0_init = process_param_init(w0_init, w0_shape, g_rng)
+        w_init = process_param_init(w_init, w_shape, g_rng)
+        b_init = process_param_init(b_init, b_shape, g_rng)
         rng = process_rng(rng)
 
         kw = {}
         insert_if_not_none(kw, 'w0_init', w0_init)
         insert_if_not_none(kw, 'w_init', w_init)
         insert_if_not_none(kw, 'b_init', b_init)
-        insert_if_not_none(kw, 'num_layers', 2)
-        insert_if_not_none(kw, 'dropout', 0.0)
-        insert_if_not_none(kw, 'bidirectional', False)
-        insert_if_not_none(kw, 'training', True)
+        insert_if_not_default(kw, 'num_layers', num_layers, 1)
+        insert_if_not_default(kw, 'dropout', dropout, 0.0)
+        insert_if_not_default(kw, 'bidirectional', bidirectional, False)
+        insert_if_not_default(kw, 'training', training, True)
         insert_if_not_none(kw, 'rng', rng)
-        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
         insert_if_not_default(kw, 'with_bias', with_bias, True)
+        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
 
         x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
         h = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
 
         # Check execution
         y, hn = PF.gru(x, h, **kw)
         y.forward()
-        y.backward()
+        if training:
+            y.backward()
 
         # Check values
         # TODO
@@ -930,13 +940,18 @@ ctxs = list_context('LSTM')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("inshape", [(5, 8, 16), (10, 16, 32)])
-@pytest.mark.parametrize("num_layers", [1, 2])
-@pytest.mark.parametrize("bidirectional", [False, True])
+@pytest.mark.parametrize('w0_init, w_init, b_init', [
+    (None, None, None),
+    (I.ConstantInitializer(), I.ConstantInitializer(), I.ConstantInitializer()),
+    (True, True, True), ])
+@pytest.mark.parametrize("num_layers, dropout, bidirectional, with_bias", [
+    (1, 0.0, False, False),
+    (2, 0.5, True, True)])
 @pytest.mark.parametrize("hidden_size", [5])
-@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("training", [False, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize("rng", [None, True])
-def test_pf_lstm_execution(g_rng, inshape, num_layers, bidirectional, hidden_size, with_bias, fix_parameters, rng, ctx, func_name):
+def test_pf_lstm_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, dropout, bidirectional, with_bias, hidden_size, training, fix_parameters, rng, ctx, func_name):
 
     with nn.context_scope(ctx):
         if func_name == "LSTM":
@@ -948,33 +963,34 @@ def test_pf_lstm_execution(g_rng, inshape, num_layers, bidirectional, hidden_siz
                    hidden_size, num_directions * hidden_size + hidden_size)
         b_shape = (num_layers, num_directions, 4, hidden_size)
 
-        w0_init = process_param_init(True, w0_shape, g_rng)
-        w_init = process_param_init(True, w_shape, g_rng)
-        b_init = process_param_init(True, b_shape, g_rng)
+        w0_init = process_param_init(w0_init, w0_shape, g_rng)
+        w_init = process_param_init(w_init, w_shape, g_rng)
+        b_init = process_param_init(b_init, b_shape, g_rng)
         rng = process_rng(rng)
 
         kw = {}
         insert_if_not_none(kw, 'w0_init', w0_init)
         insert_if_not_none(kw, 'w_init', w_init)
         insert_if_not_none(kw, 'b_init', b_init)
-        insert_if_not_none(kw, 'num_layers', 2)
-        insert_if_not_none(kw, 'dropout', 0.0)
-        insert_if_not_none(kw, 'bidirectional', False)
-        insert_if_not_none(kw, 'training', True)
+        insert_if_not_default(kw, 'num_layers', num_layers, 1)
+        insert_if_not_default(kw, 'dropout', dropout, 0.0)
+        insert_if_not_default(kw, 'bidirectional', bidirectional, False)
+        insert_if_not_default(kw, 'training', training, True)
         insert_if_not_none(kw, 'rng', rng)
-        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
         insert_if_not_default(kw, 'with_bias', with_bias, True)
+        insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
 
         x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
         h = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
         c = nn.Variable.from_numpy_array(g_rng.randn(
-            *(num_layers, num_directions, inshape[2], hidden_size)))
+            *(num_layers, num_directions, inshape[1], hidden_size)))
 
         # Check execution
         y, hn, cn = PF.lstm(x, h, c, **kw)
         y.forward()
-        y.backward()
+        if training:
+            y.backward()
 
         # Check values
         # TODO
@@ -1010,6 +1026,49 @@ def test_pf_lstm_execution(g_rng, inshape, num_layers, bidirectional, hidden_siz
                 assert y.parent.inputs[4].need_grad == (not fix_parameters)
             if isinstance(b_init, np.ndarray):
                 assert np.allclose(b_init, b.d)
+
+
+@pytest.mark.parametrize("inshape", [(8, 2, 2, 2), (16, 1, 8)])
+@pytest.mark.parametrize("base_axis", [1, 2])
+@pytest.mark.parametrize("shared", [False, True])
+@pytest.mark.parametrize("slope_init", [None, I.NormalInitializer(), True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+def test_pf_prelu_execution(g_rng, inshape, base_axis, shared, slope_init, fix_parameters):
+
+    slope_shape = tuple() if shared else (inshape[base_axis],)
+    slope_init = process_param_init(slope_init, slope_shape, g_rng)
+
+    kw = {}
+    insert_if_not_none(kw, 'slope_init', slope_init)
+    insert_if_not_default(kw, 'base_axis', base_axis, 1)
+    insert_if_not_default(kw, 'shared', shared, True)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+
+    # Check execution
+    y = PF.prelu(x, **kw)
+    y.forward()
+    y.backward()
+
+    # Check values
+    # TODO
+
+    # Check args
+    assert y.parent.info.type_name == 'PReLU'
+    args = y.parent.info.args
+    assert args['base_axis'] == base_axis
+
+    # Check created parameters
+    assert y.parent.inputs[0] == x
+    assert len(y.parent.inputs) == 2
+    assert len(nn.get_parameters()) == 1
+    slope = nn.get_parameters()['prelu/slope']
+    assert slope.shape == slope_shape
+    assert slope.need_grad
+    assert y.parent.inputs[1].need_grad == (not fix_parameters)
+    if isinstance(slope_init, np.ndarray):
+        assert np.allclose(slope_init, slope.d)
 
 
 # TODO: Test all parametric functions.

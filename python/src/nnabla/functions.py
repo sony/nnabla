@@ -670,9 +670,9 @@ def tile(x, reps):
         ~nnabla.Variable: N-D array.
 
     >>> import numpy as np, nnabla as nn, nnabla.functions as F
-    >>> F.tile(nn.Variable([2, 3], 3).shape    # reps is promoted to [1, 3]
+    >>> F.tile(nn.Variable([2, 3]), 3).shape    # reps is promoted to [1, 3]
     (2, 9)
-    >>> F.tile(nn.Variable([3], [2, 3]).shape  # x is promoted to shape (1, 3)
+    >>> F.tile(nn.Variable([3]), [2, 3]).shape  # x is promoted to shape (1, 3)
     (2, 9)
     >>> nn.set_auto_forward(True)
     >>> x = nn.Variable.from_numpy_array(np.array([1, 2, 3]))
@@ -705,7 +705,8 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
         window_size (int): Size of STFT analysis window.
         stride (int): Number of samples that we shift the window, also called `hop size`.
         fft_size (int): Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
-        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
         pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
 
@@ -724,6 +725,8 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
             window_func = np.hanning(window_size + 1)[:-1]
         elif window_type == 'hamming':
             window_func = np.hamming(window_size + 1)[:-1]
+        elif window_type == 'rectangular' or window_type is None:
+            window_func = np.ones(window_size)
         else:
             raise ValueError("Unknown window type {}.".format(window_type))
 
@@ -779,7 +782,8 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
         window_size (int): Size of STFT analysis window.
         stride (int): Number of samples that we shift the window, also called `hop size`.
         fft_size (int): Size of the FFT, (STFT has `fft_size // 2 + 1` frequency bins).
-        window_type (str): Analysis window, can be either `hanning` or `hamming`.
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
 
     Returns:
@@ -794,6 +798,8 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
             window_func = np.hanning(window_size + 1)[:-1]
         elif window_type == 'hamming':
             window_func = np.hamming(window_size + 1)[:-1]
+        elif window_type == 'rectangular' or window_type is None:
+            window_func = np.ones(window_size)
         else:
             raise ValueError("Unknown window type {}.".format(window_type))
 
@@ -910,3 +916,69 @@ def gather_nd(data, indices):
             indices = np.asarray(indices, dtype=np.int)
         indices = nn.Variable.from_numpy_array(indices)
     return gather_nd_base(data, indices)
+
+
+def scatter_nd(data, indices, shape=None, out=None):
+    """Scatter `data` according to `indices` into a new array of given `shape`
+    or an existing array provided as `out`. Exactly one of the `shape` or `out`
+    argument must be given. Given output `shape`, or shape of `out` array,
+    :math:`(X_0,X_1,\ldots,X_{N-1})` and `indices` shape
+    :math:`(M,Y_0,\ldots,Y_{K-1})` the input `data` shape is
+    :math:`(Y_0,\ldots,Y_{K-1},X_M,\ldots,X_{N-1})`, where :math:`M<=N`. If
+    :math:`M==N` the `data` shape is simply :math:`(Y_0,\ldots,Y_{K-1})`.
+    Note that `indices` are treated as integers and potentially converted.
+
+    The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
+
+    .. code-block:: python
+
+      def scatter_nd(data, indices, shape=None, out=None):
+          assert (shape and not out) or (out and not shape)
+          if isinstance(indices, numpy.ndarray)
+              indices = indices.tolist()
+          result = out if out else numpy.zeros(shape)
+          result[indices] = data
+          return result
+
+    Examples:
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> nn.set_auto_forward(True)
+    >>> data = nn.Variable.from_numpy_array(np.array([9, 10, 11, 12]))
+    >>> indices = nn.Variable.from_numpy_array(np.array([[4, 3, 1, 7]]))
+    >>> scattered = F.scatter_nd(data, indices, shape=(8,))
+    >>> print(scatterd.d)
+    [ 0. 11.  0. 10.  9.  0.  0. 12.]
+    >>> print(F.gather_nd(scattered, indices).d)
+    [ 9. 10. 11. 12.]
+
+    Args:
+        data(~nnabla.Variable, ~nnabla.NdArray): input data
+        indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): scatter indices
+        shape(tuple, list): shape of new output array
+        out(~nnabla.Variable, ~nnabla.NdArray): existing output array
+
+    Returns: ~nnabla.Variable or ~nnabla.NdArray of given `shape`.
+
+    """
+    from .function_bases import scatter_nd as scatter_nd_base
+    if not isinstance(indices, (nn.Variable, nn.NdArray)):
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.int)
+        indices = nn.Variable.from_numpy_array(indices)
+    if shape is None and out is None:
+        raise TypeError("One of `shape` or `out` argument must be supplied.")
+    if shape and out:
+        raise TypeError("Only one of `shape` or `out` argument may be used.")
+    if out:
+        if isinstance(out, nn.Variable):
+            out = out.data
+        if not isinstance(out, nn.NdArray):
+            raise TypeError("`out` argument must be NdArray or Variable type.")
+        shape = out.shape
+        outputs = [out]
+    else:
+        if isinstance(shape, np.ndarray):
+            shape = shape.tolist()
+        outputs = None
+    return scatter_nd_base(data, indices, shape, outputs=outputs)
