@@ -3702,10 +3702,6 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       iI: 271
->>>>>>> implement_inv
-=======
-      Empty: 249
->>>>>>> ad8e6a27f37cfd32e30272f23bcbc5e89d8c4ab4
 Signal Processing:
   Interpolate:
     snake_name: interpolate
