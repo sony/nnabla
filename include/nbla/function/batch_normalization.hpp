@@ -123,6 +123,10 @@ protected:
                                             const Variables &outputs,
                                             const vector<bool> &propagate_down,
                                             const vector<bool> &accum);
+  NBLA_API virtual void backward_impl_global(const Variables &inputs,
+                                             const Variables &outputs,
+                                             const vector<bool> &propagate_down,
+                                             const vector<bool> &accum);
 };
 }
 #endif

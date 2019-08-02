@@ -60,8 +60,8 @@ class SoftmaxCrossEntropy : public BaseFunction<int> {
 protected:
   int axis_;
   int size0_, size1_, size2_;
-  shared_ptr<Function> softmax_;
-  Variable softmax_output_;
+  shared_ptr<Function> log_softmax_;
+  Variable log_softmax_output_;
 
 public:
   SoftmaxCrossEntropy(const Context &ctx, int axis)

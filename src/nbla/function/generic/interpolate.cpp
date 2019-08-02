@@ -22,13 +22,285 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_SOURCE(Interpolate, const vector<int> &, const string &,
                               bool);
 
+inline float compute_scale(int isize, int osize, bool align_corners) {
+  return (osize <= 1) ? 0.0f : (align_corners ? float(isize - 1) / (osize - 1)
+                                              : float(isize) / osize);
+}
+
+inline float get_src_index(float scale, int dst_index, bool align_corners) {
+  return align_corners
+             ? scale * dst_index
+             : std::max(0.0f, scale * (float(dst_index) + 0.5f) - 0.5f);
+}
+
+template <typename T>
+void linear_interpolate_1d(const T *src, T *dst, const int iw, const int ow,
+                           const float sx, const bool align_corners) {
+  for (int ox = 0; ox < ow; ox++) {
+    const auto fx = get_src_index(sx, ox, align_corners);
+    const auto x1 = static_cast<int>(fx);
+    const auto x2 = std::min(x1 + 1, iw - 1);
+    const auto lx1 = static_cast<T>(fx - x1);
+    const auto lx0 = static_cast<T>(1) - lx1;
+
+    const T val0 = lx0 * src[x1];
+    const T val1 = lx1 * src[x2];
+    dst[ox] = val0 + val1;
+  }
+}
+
+template <typename T>
+void linear_interpolate_2d(const T *src, T *dst, const int iw, const int ih,
+                           const int ow, const int oh, const float sx,
+                           const float sy, const bool align_corners) {
+  for (int oy = 0; oy < oh; oy++) {
+    const auto fy = get_src_index(sy, oy, align_corners);
+    const auto y1 = static_cast<int>(fy);
+    const auto y2 = std::min(y1 + 1, ih - 1);
+    const auto ly1 = static_cast<T>(fy - y1);
+    const auto ly0 = static_cast<T>(1) - ly1;
+
+    for (int ox = 0; ox < ow; ox++) {
+      const auto fx = get_src_index(sx, ox, align_corners);
+      const auto x1 = static_cast<int>(fx);
+      const auto x2 = std::min(x1 + 1, iw - 1);
+      const auto lx1 = static_cast<T>(fx - x1);
+      const auto lx0 = static_cast<T>(1) - lx1;
+
+#define _I(y, x) ((y)*iw + (x))
+      const T val0 = lx0 * src[_I(y1, x1)];
+      const T val1 = lx1 * src[_I(y1, x2)];
+      const T val2 = lx0 * src[_I(y2, x1)];
+      const T val3 = lx1 * src[_I(y2, x2)];
+#undef _I
+      dst[oy * ow + ox] = ly0 * (val0 + val1) + ly1 * (val2 + val3);
+    }
+  }
+}
+
+template <typename T>
+void linear_interpolate_3d(const T *src, T *dst, const int iw, const int ih,
+                           const int id, const int ow, const int oh,
+                           const int od, const float sx, const float sy,
+                           const float sz, const bool align_corners) {
+  for (int oz = 0; oz < od; oz++) {
+    const auto fz = get_src_index(sz, oz, align_corners);
+    const auto z1 = static_cast<int>(fz);
+    const auto z2 = std::min(z1 + 1, id - 1);
+    const auto lz1 = static_cast<T>(fz - z1);
+    const auto lz0 = static_cast<T>(1) - lz1;
+
+    for (int oy = 0; oy < oh; oy++) {
+      const auto fy = get_src_index(sy, oy, align_corners);
+      const auto y1 = static_cast<int>(fy);
+      const auto y2 = std::min(y1 + 1, ih - 1);
+      const auto ly1 = static_cast<T>(fy - y1);
+      const auto ly0 = static_cast<T>(1) - ly1;
+
+      for (int ox = 0; ox < ow; ox++) {
+        const auto fx = get_src_index(sx, ox, align_corners);
+        const auto x1 = static_cast<int>(fx);
+        const auto x2 = std::min(x1 + 1, iw - 1);
+        const auto lx1 = static_cast<T>(fx - x1);
+        const auto lx0 = static_cast<T>(1) - lx1;
+
+#define _I(z, y, x) ((z)*ih * iw + (y)*iw + (x))
+        const T val0 = lx0 * src[_I(z1, y1, x1)];
+        const T val1 = lx1 * src[_I(z1, y1, x2)];
+        const T val2 = lx0 * src[_I(z1, y2, x1)];
+        const T val3 = lx1 * src[_I(z1, y2, x2)];
+        const T val4 = lx0 * src[_I(z2, y1, x1)];
+        const T val5 = lx1 * src[_I(z2, y1, x2)];
+        const T val6 = lx0 * src[_I(z2, y2, x1)];
+        const T val7 = lx1 * src[_I(z2, y2, x2)];
+        const T val8 = ly0 * (val0 + val1) + ly1 * (val2 + val3);
+        const T val9 = ly0 * (val4 + val5) + ly1 * (val6 + val7);
+#undef _I
+        dst[oz * oh * ow + oy * ow + ox] = lz0 * val8 + lz1 * val9;
+      }
+    }
+  }
+}
+
+template <typename T>
+void linear_interpolate_1d_backward(T *dst, const T *src, const int iw,
+                                    const int ow, const float sx,
+                                    const bool align_corners) {
+  for (int ox = 0; ox < ow; ox++) {
+    const auto fx = get_src_index(sx, ox, align_corners);
+    const auto x1 = static_cast<int>(fx);
+    const auto x2 = (x1 < iw - 1) ? (x1 + 1) : x1;
+    const auto lx1 = static_cast<T>(fx - x1);
+    const auto lx0 = static_cast<T>(1) - lx1;
+    const T g = src[ox];
+    dst[x1] += lx0 * g;
+    dst[x2] += lx1 * g;
+  }
+}
+
+template <typename T>
+void linear_interpolate_2d_backward(T *dst, const T *src, const int iw,
+                                    const int ih, const int ow, const int oh,
+                                    const float sx, const float sy,
+                                    const bool align_corners) {
+  for (int oy = 0; oy < oh; oy++) {
+    const auto fy = get_src_index(sy, oy, align_corners);
+    const auto y1 = static_cast<int>(fy);
+    const auto y2 = (y1 < ih - 1) ? (y1 + 1) : y1;
+    const auto ly1 = static_cast<T>(fy - y1);
+    const auto ly0 = static_cast<T>(1) - ly1;
+
+    for (int ox = 0; ox < ow; ox++) {
+      const auto fx = get_src_index(sx, ox, align_corners);
+      const auto x1 = static_cast<int>(fx);
+      const auto x2 = (x1 < iw - 1) ? (x1 + 1) : x1;
+      const auto lx1 = static_cast<T>(fx - x1);
+      const auto lx0 = static_cast<T>(1) - lx1;
+      const T g = src[oy * ow + ox];
+#define _I(y, x) ((y)*iw + (x))
+      dst[_I(y1, x1)] += ly0 * lx0 * g;
+      dst[_I(y1, x2)] += ly0 * lx1 * g;
+      dst[_I(y2, x1)] += ly1 * lx0 * g;
+      dst[_I(y2, x2)] += ly1 * lx1 * g;
+#undef _I
+    }
+  }
+}
+
+template <typename T>
+void linear_interpolate_3d_backward(T *dst, const T *src, const int iw,
+                                    const int ih, const int id, const int ow,
+                                    const int oh, const int od, const float sx,
+                                    const float sy, const float sz,
+                                    const bool align_corners) {
+  for (int oz = 0; oz < od; oz++) {
+    const auto fz = get_src_index(sz, oz, align_corners);
+    const auto z1 = static_cast<int>(fz);
+    const auto z2 = (z1 < id - 1) ? (z1 + 1) : z1;
+    const auto lz1 = static_cast<T>(fz - z1);
+    const auto lz0 = static_cast<T>(1) - lz1;
+
+    for (int oy = 0; oy < oh; oy++) {
+      const auto fy = get_src_index(sy, oy, align_corners);
+      const auto y1 = static_cast<int>(fy);
+      const auto y2 = (y1 < ih - 1) ? (y1 + 1) : y1;
+      const auto ly1 = static_cast<T>(fy - y1);
+      const auto ly0 = static_cast<T>(1) - ly1;
+
+      for (int ox = 0; ox < ow; ox++) {
+        const auto fx = get_src_index(sx, ox, align_corners);
+        const auto x1 = static_cast<int>(fx);
+        const auto x2 = (x1 < iw - 1) ? (x1 + 1) : x1;
+        const auto lx1 = static_cast<T>(fx - x1);
+        const auto lx0 = static_cast<T>(1) - lx1;
+
+        const T g = src[oz * oh * ow + oy * ow + ox];
+#define _I(z, y, x) ((z)*ih * iw + (y)*iw + (x))
+        dst[_I(z1, y1, x1)] += lz0 * ly0 * lx0 * g;
+        dst[_I(z1, y1, x2)] += lz0 * ly0 * lx1 * g;
+        dst[_I(z1, y2, x1)] += lz0 * ly1 * lx0 * g;
+        dst[_I(z1, y2, x2)] += lz0 * ly1 * lx1 * g;
+        dst[_I(z2, y1, x1)] += lz1 * ly0 * lx0 * g;
+        dst[_I(z2, y1, x2)] += lz1 * ly0 * lx1 * g;
+        dst[_I(z2, y2, x1)] += lz1 * ly1 * lx0 * g;
+        dst[_I(z2, y2, x2)] += lz1 * ly1 * lx1 * g;
+#undef _I
+      }
+    }
+  }
+}
+
+template <typename T>
+void nearest_interpolate_1d(const T *src, T *dst, const int iw, const int ow,
+                            const float sx) {
+  for (int ox = 0; ox < ow; ox++) {
+    const auto ix = std::min(static_cast<int>(sx * (ox + 0.5f)), iw - 1);
+    dst[ox] = src[ix];
+  }
+}
+
+template <typename T>
+void nearest_interpolate_2d(const T *src, T *dst, const int iw, const int ih,
+                            const int ow, const int oh, const float sx,
+                            const float sy) {
+  for (int oy = 0; oy < oh; oy++) {
+    const auto iy = std::min(static_cast<int>(sy * (oy + 0.5f)), ih - 1);
+    for (int ox = 0; ox < ow; ox++) {
+      const auto ix = std::min(static_cast<int>(sx * (ox + 0.5f)), iw - 1);
+      dst[oy * ow + ox] = src[iy * iw + ix];
+    }
+  }
+}
+
+template <typename T>
+void nearest_interpolate_3d(const T *src, T *dst, const int iw, const int ih,
+                            const int id, const int ow, const int oh,
+                            const int od, const float sx, const float sy,
+                            const float sz) {
+  for (int oz = 0; oz < od; oz++) {
+    const auto iz = std::min(static_cast<int>(sz * (oz + 0.5f)), id - 1);
+    for (int oy = 0; oy < oh; oy++) {
+      const auto iy = std::min(static_cast<int>(sy * (oy + 0.5f)), ih - 1);
+      for (int ox = 0; ox < ow; ox++) {
+        const auto ix = std::min(static_cast<int>(sx * (ox + 0.5f)), iw - 1);
+        dst[oz * oh * ow + oy * ow + ox] = src[iz * ih * iw + iy * iw + ix];
+      }
+    }
+  }
+}
+
+template <typename T>
+void nearest_interpolate_1d_backward(T *dst, const T *src, const int iw,
+                                     const int ow, const float sx) {
+  for (int ox = 0; ox < ow; ox++) {
+    const auto ix = std::min(static_cast<int>(sx * (ox + 0.5f)), iw - 1);
+    dst[ix] += src[ox];
+  }
+}
+
+template <typename T>
+void nearest_interpolate_2d_backward(T *dst, const T *src, const int iw,
+                                     const int ih, const int ow, const int oh,
+                                     const float sx, const float sy) {
+  for (int oy = 0; oy < oh; oy++) {
+    const auto iy = std::min(static_cast<int>(sy * (oy + 0.5f)), ih - 1);
+    for (int ox = 0; ox < ow; ox++) {
+      const auto ix = std::min(static_cast<int>(sx * (ox + 0.5f)), iw - 1);
+      dst[iy * iw + ix] += src[oy * ow + ox];
+    }
+  }
+}
+
+template <typename T>
+void nearest_interpolate_3d_backward(T *dst, const T *src, const int iw,
+                                     const int ih, const int id, const int ow,
+                                     const int oh, const int od, const float sx,
+                                     const float sy, const float sz) {
+  for (int oz = 0; oz < od; oz++) {
+    const auto iz = std::min(static_cast<int>(sz * (oz + 0.5f)), id - 1);
+    for (int oy = 0; oy < oh; oy++) {
+      const auto iy = std::min(static_cast<int>(sy * (oy + 0.5f)), ih - 1);
+      for (int ox = 0; ox < ow; ox++) {
+        const auto ix = std::min(static_cast<int>(sx * (ox + 0.5f)), iw - 1);
+        dst[iz * ih * iw + iy * iw + ix] += src[oz * oh * ow + oy * ow + ox];
+      }
+    }
+  }
+}
+
 template <typename T>
 void Interpolate<T>::setup_impl(const Variables &inputs,
                                 const Variables &outputs) {
-  NBLA_CHECK(output_size_.size() == 2, error_code::not_implemented,
-             "Only 2-dimensional interpolation is implemented.");
-  NBLA_CHECK(mode_ == "linear", error_code::not_implemented,
-             "Only 'linear' interpolation is implemented.");
+  NBLA_CHECK((output_size_.size() >= 1) && (output_size_.size() <= 3),
+             error_code::not_implemented,
+             "Only 1-D, 2-D and 3-D interpolation are implemented.");
+  NBLA_CHECK((mode_ == "linear") || (mode_ == "nearest"),
+             error_code::not_implemented,
+             "Only 'linear' and 'nearest' interpolation are implemented.");
+
+  if (mode_ == "nearest")
+    NBLA_CHECK(align_corners_ == false, error_code::value,
+               "align_corners must be false for interpolation mode 'nearest'");
 
   Shape_t out_shape(inputs[0]->shape());
   for (int d = 0; d < output_size_.size(); d++) {
@@ -38,103 +310,114 @@ void Interpolate<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-T get_interpolate_scale_from_dest(int src, int dst, bool align_corners) {
-  if (dst == 1)
-    return 0;
-  return align_corners ? ((T)(src - 1) / (dst - 1)) : ((T)(src) / dst);
-}
-
-template <typename T>
-T get_interpolate_source_index(T scale, int dst, bool align_corners) {
-  return align_corners ? (scale * dst)
-                       : (std::max((T)0, scale * (dst + (T)0.5) - (T)0.5));
-}
-
-template <typename T>
-void bilinear_interpolate_2d(const T *in, T *out, int outer_dim, int iw, int ih,
-                             int ow, int oh, bool align_corners) {
-  // 2D implementation
-  const T sx = get_interpolate_scale_from_dest<T>(iw, ow, align_corners);
-  const T sy = get_interpolate_scale_from_dest<T>(ih, oh, align_corners);
-  const int inner_dim = iw * ih;
-  const int inner_dim_o = ow * oh;
-  for (int o = 0; o < outer_dim; o++) {
-    for (int oy = 0; oy < oh; oy++) {
-      const T fy = get_interpolate_source_index(sy, oy, align_corners);
-      const int y = fy;
-      const int yp1 = std::min(y + 1, ih - 1);
-      const T ly1 = fy - y;
-      const T ly0 = (T)1 - ly1;
-
-      for (int ox = 0; ox < ow; ox++) {
-        const T fx = get_interpolate_source_index(sx, ox, align_corners);
-        const int x = fx;
-        const int xp1 = std::min(x + 1, iw - 1);
-        const T lx1 = fx - x;
-        const T lx0 = (T)1 - lx1;
-#define _I(o, y, x) ((o)*inner_dim + (y)*iw + (x))
-        const T val0 = ly0 * (lx0 * in[_I(o, y, x)] + lx1 * in[_I(o, y, xp1)]);
-        const T val1 =
-            ly1 * (lx0 * in[_I(o, yp1, x)] + lx1 * in[_I(o, yp1, xp1)]);
-#undef _I
-        out[o * inner_dim_o + oy * ow + ox] = val0 + val1;
-      }
-    }
-  }
-}
-
-template <typename T>
-void bilinear_interpolate_2d_backward(T *gin, const T *gout, int outer_dim,
-                                      int iw, int ih, int ow, int oh,
-                                      bool align_corners) {
-  // 2D implementation
-  const T sx = get_interpolate_scale_from_dest<T>(iw, ow, align_corners);
-  const T sy = get_interpolate_scale_from_dest<T>(ih, oh, align_corners);
-  const int inner_dim = iw * ih;
-  const int inner_dim_o = ow * oh;
-  for (int o = 0; o < outer_dim; o++) {
-    for (int oy = 0; oy < oh; oy++) {
-      const T fy = get_interpolate_source_index(sy, oy, align_corners);
-      const int y = fy;
-      const int yp1 = (y < ih - 1) ? (y + 1) : y;
-      const T ly1 = fy - y;
-      const T ly0 = (T)1 - ly1;
-
-      for (int ox = 0; ox < ow; ox++) {
-        const T fx = get_interpolate_source_index(sx, ox, align_corners);
-        const int x = fx;
-        const int xp1 = (x < iw - 1) ? (x + 1) : x;
-        const T lx1 = fx - x;
-        const T lx0 = (T)1 - lx1;
-        const T g = gout[o * inner_dim_o + oy * ow + ox];
-#define _I(o, y, x) ((o)*inner_dim + (y)*iw + (x))
-        gin[_I(o, y, x)] += ly0 * lx0 * g;
-        gin[_I(o, y, xp1)] += ly0 * lx1 * g;
-        gin[_I(o, yp1, x)] += ly1 * lx0 * g;
-        gin[_I(o, yp1, xp1)] += ly1 * lx1 * g;
-#undef _I
-      }
-    }
-  }
-}
-
-template <typename T>
 void Interpolate<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
-  // Inputs
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  auto src = inputs[0]->get_data_pointer<T>(this->ctx_);
+  auto dst = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
-  // Outputs
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-
-  // 2D bilinear
   const int ndim = inputs[0]->ndim();
-  const int iw = inputs[0]->shape()[ndim - 1];
-  const int ih = inputs[0]->shape()[ndim - 2];
-  const int ow = outputs[0]->shape()[ndim - 1];
-  const int oh = outputs[0]->shape()[ndim - 2];
-  const int outer_dim = inputs[0]->size() / (iw * ih);
-  bilinear_interpolate_2d(x, y, outer_dim, iw, ih, ow, oh, align_corners_);
+
+  if (output_size_.size() == 1) {
+    const int iw = inputs[0]->shape()[ndim - 1];
+    const int ow = outputs[0]->shape()[ndim - 1];
+    const int outer_dim = inputs[0]->size() / iw;
+    const int src_inner_size = iw;
+    const int dst_inner_size = ow;
+    if (mode_ == "linear") {
+      const float sx = compute_scale(iw, ow, align_corners_);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto src_ptr = src + n * src_inner_size;
+        auto dst_ptr = dst + n * dst_inner_size;
+        linear_interpolate_1d(src_ptr, dst_ptr, iw, ow, sx, align_corners_);
+      }
+    } else if (mode_ == "nearest") {
+      const float sx = iw / static_cast<float>(ow);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto src_ptr = src + n * src_inner_size;
+        auto dst_ptr = dst + n * dst_inner_size;
+        nearest_interpolate_1d(src_ptr, dst_ptr, iw, ow, sx);
+      }
+    }
+  }
+
+  else if (output_size_.size() == 2) {
+    const int iw = inputs[0]->shape()[ndim - 1];
+    const int ih = inputs[0]->shape()[ndim - 2];
+    const int ow = outputs[0]->shape()[ndim - 1];
+    const int oh = outputs[0]->shape()[ndim - 2];
+    const int outer_dim = inputs[0]->size() / (iw * ih);
+    const int src_inner_size = iw * ih;
+    const int dst_inner_size = ow * oh;
+    if (mode_ == "linear") {
+      const float sx = compute_scale(iw, ow, align_corners_);
+      const float sy = compute_scale(ih, oh, align_corners_);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto src_ptr = src + n * src_inner_size;
+        auto dst_ptr = dst + n * dst_inner_size;
+        linear_interpolate_2d(src_ptr, dst_ptr, iw, ih, ow, oh, sx, sy,
+                              align_corners_);
+      }
+    } else if (mode_ == "nearest") {
+      const float sx = iw / static_cast<float>(ow);
+      const float sy = ih / static_cast<float>(oh);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto src_ptr = src + n * src_inner_size;
+        auto dst_ptr = dst + n * dst_inner_size;
+        nearest_interpolate_2d(src_ptr, dst_ptr, iw, ih, ow, oh, sx, sy);
+      }
+    }
+  }
+
+  else if (output_size_.size() == 3) {
+    const int iw = inputs[0]->shape()[ndim - 1];
+    const int ih = inputs[0]->shape()[ndim - 2];
+    const int id = inputs[0]->shape()[ndim - 3];
+    const int ow = outputs[0]->shape()[ndim - 1];
+    const int oh = outputs[0]->shape()[ndim - 2];
+    const int od = outputs[0]->shape()[ndim - 3];
+    const int outer_dim = inputs[0]->size() / (id * iw * ih);
+    const int src_inner_size = iw * ih * id;
+    const int dst_inner_size = ow * oh * od;
+    if (mode_ == "linear") {
+      const float sx = compute_scale(iw, ow, align_corners_);
+      const float sy = compute_scale(ih, oh, align_corners_);
+      const float sz = compute_scale(id, od, align_corners_);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto src_ptr = src + n * src_inner_size;
+        auto dst_ptr = dst + n * dst_inner_size;
+        linear_interpolate_3d(src_ptr, dst_ptr, iw, ih, id, ow, oh, od, sx, sy,
+                              sz, align_corners_);
+      }
+    } else if (mode_ == "nearest") {
+      const float sx = iw / static_cast<float>(ow);
+      const float sy = ih / static_cast<float>(oh);
+      const float sz = id / static_cast<float>(od);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto src_ptr = src + n * src_inner_size;
+        auto dst_ptr = dst + n * dst_inner_size;
+        nearest_interpolate_3d(src_ptr, dst_ptr, iw, ih, id, ow, oh, od, sx, sy,
+                               sz);
+      }
+    }
+  }
 }
 
 template <typename T>
@@ -146,22 +429,111 @@ void Interpolate<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  // Gradient of outputs
-  const T *g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  auto g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  auto g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
 
-  // Gradient of inputs
-  // NOTE: Not using write_only flag, because the following accumulates
-  // gradient.
-  T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
-
-  // 2D bilinear
   const int ndim = inputs[0]->ndim();
-  const int iw = inputs[0]->shape()[ndim - 1];
-  const int ih = inputs[0]->shape()[ndim - 2];
-  const int ow = outputs[0]->shape()[ndim - 1];
-  const int oh = outputs[0]->shape()[ndim - 2];
-  const int outer_dim = inputs[0]->size() / (iw * ih);
-  bilinear_interpolate_2d_backward(g_x, g_y, outer_dim, iw, ih, ow, oh,
-                                   align_corners_);
+
+  if (output_size_.size() == 1) {
+    const int iw = inputs[0]->shape()[ndim - 1];
+    const int ow = outputs[0]->shape()[ndim - 1];
+    const int g_x_inner_size = iw;
+    const int g_y_inner_size = ow;
+    const int outer_dim = inputs[0]->size() / g_x_inner_size;
+    if (mode_ == "linear") {
+      const float sx = compute_scale(iw, ow, align_corners_);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto dst = g_x + n * g_x_inner_size;
+        auto src = g_y + n * g_y_inner_size;
+        linear_interpolate_1d_backward(dst, src, iw, ow, sx, align_corners_);
+      }
+    } else if (mode_ == "nearest") {
+      const float sx = iw / static_cast<float>(ow);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto dst = g_x + n * g_x_inner_size;
+        auto src = g_y + n * g_y_inner_size;
+        nearest_interpolate_1d_backward(dst, src, iw, ow, sx);
+      }
+    }
+  }
+
+  else if (output_size_.size() == 2) {
+    const int iw = inputs[0]->shape()[ndim - 1];
+    const int ih = inputs[0]->shape()[ndim - 2];
+    const int ow = outputs[0]->shape()[ndim - 1];
+    const int oh = outputs[0]->shape()[ndim - 2];
+    const int g_x_inner_size = iw * ih;
+    const int g_y_inner_size = ow * oh;
+    const int outer_dim = inputs[0]->size() / g_x_inner_size;
+    if (mode_ == "linear") {
+      const float sx = compute_scale(iw, ow, align_corners_);
+      const float sy = compute_scale(ih, oh, align_corners_);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto dst = g_x + n * g_x_inner_size;
+        auto src = g_y + n * g_y_inner_size;
+        linear_interpolate_2d_backward(dst, src, iw, ih, ow, oh, sx, sy,
+                                       align_corners_);
+      }
+    } else if (mode_ == "nearest") {
+      const float sx = iw / static_cast<float>(ow);
+      const float sy = ih / static_cast<float>(oh);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto dst = g_x + n * g_x_inner_size;
+        auto src = g_y + n * g_y_inner_size;
+        nearest_interpolate_2d_backward(dst, src, iw, ih, ow, oh, sx, sy);
+      }
+    }
+  }
+
+  else if (output_size_.size() == 3) {
+    const int iw = inputs[0]->shape()[ndim - 1];
+    const int ih = inputs[0]->shape()[ndim - 2];
+    const int id = inputs[0]->shape()[ndim - 3];
+    const int ow = outputs[0]->shape()[ndim - 1];
+    const int oh = outputs[0]->shape()[ndim - 2];
+    const int od = outputs[0]->shape()[ndim - 3];
+    const int g_x_inner_size = iw * ih * id;
+    const int g_y_inner_size = ow * oh * od;
+    const int outer_dim = inputs[0]->size() / g_x_inner_size;
+    if (mode_ == "linear") {
+      const float sx = compute_scale(iw, ow, align_corners_);
+      const float sy = compute_scale(ih, oh, align_corners_);
+      const float sz = compute_scale(id, od, align_corners_);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto dst = g_x + n * g_x_inner_size;
+        auto src = g_y + n * g_y_inner_size;
+        linear_interpolate_3d_backward(dst, src, iw, ih, id, ow, oh, od, sx, sy,
+                                       sz, align_corners_);
+      }
+    } else if (mode_ == "nearest") {
+      const float sx = iw / static_cast<float>(ow);
+      const float sy = ih / static_cast<float>(oh);
+      const float sz = id / static_cast<float>(od);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+      for (int n = 0; n < outer_dim; n++) {
+        auto dst = g_x + n * g_x_inner_size;
+        auto src = g_y + n * g_y_inner_size;
+        nearest_interpolate_3d_backward(dst, src, iw, ih, id, ow, oh, od, sx,
+                                        sy, sz);
+      }
+    }
+  }
 }
 }

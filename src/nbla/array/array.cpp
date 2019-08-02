@@ -23,12 +23,17 @@ namespace nbla {
 
 using std::vector;
 
-Array::Array(const Size_t size, dtypes dtype, const Context &ctx)
-    : object_(nullptr), size_(size), dtype_(dtype), ctx_(ctx) {}
+Array::Array(const Size_t size, dtypes dtype, const Context &ctx,
+             AllocatorMemory &&mem)
+    : size_(size), dtype_(dtype), ctx_(ctx), mem_(std::move(mem)) {}
 
 Array::~Array() {}
 
-Context filter_context(const Context &ctx) {
+size_t Array::size_as_bytes(Size_t size, dtypes dtype) {
+  return size * sizeof_dtype(dtype);
+}
+
+Context Array::filter_context(const Context &ctx) {
   NBLA_ERROR(error_code::not_implemented,
              "Array must implement filter_context(const Context&).");
 }

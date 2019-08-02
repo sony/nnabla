@@ -87,6 +87,12 @@ shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx) {
   return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
 
+const void *SyncedArray::data_ptr(dtypes dtype, const Context &ctx,
+                                  bool write_only) {
+  cast_sp(dtype, ctx, write_only);
+  return array_[head_.key].first->const_pointer();
+}
+
 void SyncedArray::zero() {
   clear_all_array();
   zeroing_ = true;
@@ -152,14 +158,16 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
 
 void SyncedArray::clear() {
   array_.clear();
+  this->clear_flags();
+}
+
+// Reset head state
+void SyncedArray::clear_all_array() { this->clear(); }
+
+void SyncedArray::clear_flags() {
   zeroing_ = false;
   filling_ = false;
 }
 
-// Reset head state
-void SyncedArray::clear_all_array() {
-  array_.clear();
-  zeroing_ = false;
-  filling_ = false;
-}
+bool SyncedArray::zeroing() const { return zeroing_; }
 }

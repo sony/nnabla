@@ -197,7 +197,7 @@ void BatchNormalization<T>::backward_impl(const Variables &inputs,
   if (batch_stat_) { // Training mode.
     backward_impl_batch(inputs, outputs, propagate_down, accum);
   } else { // Testing mode.
-    NBLA_ERROR(error_code::not_implemented, "");
+    backward_impl_global(inputs, outputs, propagate_down, accum);
   }
 }
 
@@ -283,6 +283,61 @@ void BatchNormalization<T>::backward_impl_batch(
         const int i = i0 * size12_ + i1 * size2_ + i2;
         dbv += dy[i];
         dgv += dy[i] * (x[i] - m[i1]) / std::sqrt(v[i1] + (T)eps_);
+      }
+      db[i1] = dbv;
+      dg[i1] = dgv;
+    }
+  }
+}
+
+template <class T>
+void BatchNormalization<T>::backward_impl_global(
+    const Variables &inputs, const Variables &outputs,
+    const vector<bool> &propagate_down, const vector<bool> &accum) {
+  if (!(propagate_down[0] || propagate_down[1] || propagate_down[2])) {
+    return;
+  }
+
+  // Common inputs wrt. gradient.
+  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  const T *rm = inputs[3]->get_data_pointer<T>(this->ctx_); // running mean
+  const T *rv = inputs[4]->get_data_pointer<T>(this->ctx_); // running var
+  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+
+  // Gradient wrt. x.
+  if (propagate_down[0]) {
+    T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+    const T *g = inputs[2]->get_data_pointer<T>(this->ctx_);
+
+    for (int i1 = 0; i1 < size1_; ++i1) {
+      // Compute gradient wrt x.
+      for (int i02 = 0; i02 < size02_; ++i02) {
+        const int i0 = i02 / size2_;
+        const int i2 = i02 % size2_;
+        const int i = i0 * size12_ + i1 * size2_ + i2;
+        const T grad = dy[i] * g[i1] / std::sqrt(rv[i1] + (T)eps_);
+        if (accum[0])
+          dx[i] += grad;
+        else
+          dx[i] = grad;
+      }
+    }
+  }
+
+  if (propagate_down[1] || propagate_down[2]) { // beta and gamma
+    NBLA_CHECK(propagate_down[1] && propagate_down[2], error_code::value,
+               "'need_grad' of beta and gamma must be the same.");
+    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
+    T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
+    for (int i1 = 0; i1 < size1_; ++i1) {
+      T dbv = accum[1] ? db[i1] : (T)0;
+      T dgv = accum[2] ? dg[i1] : (T)0;
+      for (int i02 = 0; i02 < size02_; ++i02) {
+        const int i0 = i02 / size2_;
+        const int i2 = i02 % size2_;
+        const int i = i0 * size12_ + i1 * size2_ + i2;
+        dbv += dy[i];
+        dgv += dy[i] * (x[i] - rm[i1]) / std::sqrt(rv[i1] + (T)eps_);
       }
       db[i1] = dbv;
       dg[i1] = dgv;

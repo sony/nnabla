@@ -22,17 +22,16 @@ RUN yum install -y \
         epel-release \
         yum-utils \
     && yum install -y \
-        cmake3 \
         curl \
         hdf5 \
         hdf5-devel \
+        redhat-lsb-core \
+        rpm-build \
         unzip \
         wget \
         zip \
         zlib-static \
-    && yum clean all \
-    && ln -s /usr/bin/cmake3 /usr/local/bin/cmake \
-    && ln -s /usr/bin/ctest3 /usr/local/bin/ctest
+    && yum clean all
 
 # ----------------------------------------------------------------------------
 # TODO: More sustainable way of installing gcc 5.x.
@@ -72,12 +71,32 @@ ENV PATH=/opt/rh/git19/root/usr/bin:/opt/rh/devtoolset-4/root/usr/bin:$PATH
 ENV LD_LIBRARY_PATH=/opt/rh/gti19/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib64:/opt/rh/devtoolset-4/root/usr/lib:$LD_LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/opt/rh/git19/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
 
-################################################## protobuf
+################################################### cmake
+ENV CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o protobuf-v3.1.0.tar.gz \
-    && tar xvf protobuf-v3.1.0.tar.gz \
-    && cd protobuf-3.1.0 \
+    && yum install -y cmake3 \
+    && curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz -o cmake-${CMAKEVER}.tar.gz \
+    && tar xf cmake-${CMAKEVER}.tar.gz \
+    && cd cmake-${CMAKEVER} \
+    && mkdir build \
+    && cd build \
+    && cmake3 -DBUILD_TESTING=FALSE .. \
+    && make \
+    && make install \
+    && yum remove -y cmake3 \
+    && yum clean all \
+    && rm -rf /var/cache/yum/* \
+    && cd / \
+    && rm -rf /tmp/*
+
+################################################## protobuf
+ENV PROTOVER=3.4.1
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && tar xvf protobuf-v${PROTOVER}.tar.gz \
+    && cd protobuf-${PROTOVER} \
     && mkdir build \
     && cd build \
     && cmake \
@@ -126,12 +145,10 @@ ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
+# Limitation: numpy>=1.17 does not support python2.7
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
-
-ENV PATH /opt/miniconda3/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/miniconda3/lib:$LD_LIBRARY_PATH
 
 RUN umask 0 \
     && mkdir -p /tmp/deps \
@@ -139,16 +156,16 @@ RUN umask 0 \
     && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
-    && if test ${PYTHON_VERSION_MAJOR} -eq 3 -a ${PYTHON_VERSION_MINOR} -eq 5; \
-       then \
-            conda install -y conda=4.5.11 python=${PYVERNAME}; \
-       else \
-            conda install -y python=${PYVERNAME}; \
-            conda update -y --all; \
-       fi \
+    && . /opt/miniconda3/bin/activate \
+    && conda create -n nnabla-build python=${PYVERNAME} \
+    && conda activate nnabla-build \
+    && pip install numpy\<1.17 \
     && pip install --only-binary -U -r /tmp/deps/setup_requirements.txt \
     && pip install --only-binary -U -r /tmp/deps/requirements.txt \
     && pip install --only-binary -U -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
+
+ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/miniconda3/envs/nnabla-build/lib:$LD_LIBRARY_PATH

@@ -31,3 +31,20 @@ def test_minimum_scalar_forward_backward(seed, val, ctx, func_name):
     function_tester(rng, F.minimum_scalar, np.minimum, inputs,
                     func_args=[val],
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("val", [0.5, 1, -2])
+def test_minimum_scalar_double_backward(seed, val, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3).astype(np.float32)]
+    backward_function_tester(rng, F.minimum_scalar, None,
+                             inputs=inputs,
+                             func_args=[val], func_kwargs={},
+                             atol_b=1e-3,
+                             atol_accum=1e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

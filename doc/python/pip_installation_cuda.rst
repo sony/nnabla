@@ -14,14 +14,14 @@ Several pip packages of NNabla CUDA extension are provided for each CUDA version
 CUDA vs CUDNN Compatibility
 ---------------------------
 
-================== ============ =============
+================== ============ =====================
 Package name       CUDA version CUDNN version
-================== ============ =============
-nnabla-ext-cuda80  8.0          7.1
-nnabla-ext-cuda90  9.0          7.3
-nnabla-ext-cuda92  9.2          7.3
-nnabla-ext-cuda100 10.0         7.3
-================== ============ =============
+================== ============ =====================
+nnabla-ext-cuda80  8.0          7.1(Linux & Win)
+nnabla-ext-cuda90  9.0          7.6(Linux & Win)
+nnabla-ext-cuda100 10.0         7.6(Linux & Win)
+nnabla-ext-cuda101 10.1         7.6(Linux & Win)
+================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
 
@@ -54,7 +54,24 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+, you can install as the following.
+Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+.
+
+.. _cuda-cudnn-compatibility:
+
+CUDA vs CUDNN Compatibility
+---------------------------
+
+================================= ============ =============
+Package name                      CUDA version CUDNN version
+================================= ============ =============
+nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.6
+nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.6
+nnabla-ext-cuda100_nccl2_ubuntu18 10.0         7.6
+nnabla-ext-cuda101_nccl2_ubuntu16 10.1         7.6
+nnabla-ext-cuda101_nccl2_ubuntu18 10.1         7.6
+================================= ============ =============
+
+You can install as the following.
 
 .. code-block:: bash
 

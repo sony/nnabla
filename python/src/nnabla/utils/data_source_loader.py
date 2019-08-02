@@ -38,6 +38,7 @@ import six.moves.urllib.request as request
 import six
 import tempfile
 
+from nnabla.utils import image_utils
 from nnabla.utils.image_utils import imresize, imread
 from nnabla.logger import logger
 
@@ -109,6 +110,23 @@ class FileReader:
         else:
             self._file_type = 'file'
 
+    def read_s3_object(self, key):
+        retry = 1
+        result = ''
+        while True:
+            if retry > 10:
+                logger.log(99, 'read_s3_object() retry count over give up.')
+                raise
+            try:
+                result = self._s3_bucket.Object(key).get()['Body'].read()
+                break
+            except:
+                logger.log(
+                    99, 'read_s3_object() fails retrying count {}/10.'.format(retry))
+                retry += 1
+
+        return result
+
     @contextlib.contextmanager
     def open(self, filename=None, textmode=False):
         if filename is None:
@@ -130,10 +148,9 @@ class FileReader:
             key = '/'.join(us)
             logger.info('Opening {}'.format(key))
             if textmode:
-                f = StringIO(self._s3_bucket.Object(key).get()
-                             ['Body'].read().decode('utf-8'))
+                f = StringIO(self.read_s3_object(key).decode('utf-8'))
             else:
-                f = BytesIO(self._s3_bucket.Object(key).get()['Body'].read())
+                f = BytesIO(self.read_s3_object(key))
         elif self._file_type == 'http':
             f = request.urlopen(filename)
         else:
@@ -153,7 +170,7 @@ class FileReader:
             key = '/'.join(filename.split('/')[3:])
             fn = '{}/{}'.format(tmpdir, os.path.basename(filename))
             with open(fn, 'wb') as f:
-                f.write(self._s3_bucket.Object(key).get()['Body'].read())
+                f.write(self.read_s3_object(key))
             with h5py.File(fn, 'r') as h5:
                 yield h5
             rmtree(tmpdir, ignore_errors=True)
@@ -302,6 +319,26 @@ def load_image_cv2(file, shape=None, max_range=1.0):
     return img
 
 
+def load_image_dcm(file, shape=None, normalize=False):
+    if normalize:
+        max_range = 1.0
+    else:
+        max_range = -1
+
+    img = None
+    try:
+        if 'dicom' not in image_utils.get_available_backends():
+            raise ValueError("Please ensure cv2 and dicom is installed.")
+
+        current_backend = image_utils.get_backend()
+        image_utils.set_backend('dicom')
+        img = load_image_imread(file, shape, max_range)
+        return img
+    finally:
+        image_utils.set_backend(current_backend)
+        return img
+
+
 def load_image(file, shape=None, normalize=False):
     if normalize:
         max_range = 1.0
@@ -366,6 +403,7 @@ _load_functions = {
     '.gif': load_image,
     '.tif': load_image,
     '.tiff': load_image,
+    '.dcm': load_image_dcm,
     '.csv': load_csv,
     '.npy': load_npy}
 
@@ -377,7 +415,8 @@ def register_load_function(ext, function):
 def load(ext):
     if ext in _load_functions:
         return _load_functions[ext]
-    return None
+    raise ValueError(
+        'File format with extension "{}" is not supported.'.format(ext))
 
 
 def _download_hook(t):

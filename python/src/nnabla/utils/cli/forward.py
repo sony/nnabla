@@ -24,8 +24,11 @@ from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_full_path
 import nnabla.utils.load as load
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
+from nnabla.utils.data_iterator import data_iterator_cache
 from nnabla.utils.data_source_loader import FileReader
 from nnabla.utils.image_utils import imsave
+
+import nnabla.utils.callback as callback
 
 
 def _set_initial_values(result, type_and_name, d):
@@ -75,7 +78,8 @@ def _update_result(args, index, result, values, output_index, type_end_names, ou
                     if dim > 1:
                         file_name += str(dim_index) + '_'
                     file_name += '{}{}'.format(file_index, vtype)
-                    full_path = os.path.join(args.outdir, file_name)
+                    full_path = os.path.join(
+                        args.outdir, args.result_outdir, file_name)
                     directory = os.path.dirname(full_path)
                     try:
                         os.makedirs(directory)
@@ -99,7 +103,8 @@ def _update_result(args, index, result, values, output_index, type_end_names, ou
                             writer = csv.writer(f, lineterminator='\n')
                             x = np.array(d)
                             writer.writerows(x)
-                    outputs[data_index].append(os.path.join('.', file_name))
+                    outputs[data_index].append(
+                        os.path.join('.', args.result_outdir, file_name))
         output_index += 1
 
     return result, outputs
@@ -165,6 +170,8 @@ def _forward(args, index, config, data, variables, output_image=True):
 
 
 def forward_command(args):
+    callback.update_status(args)
+
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     files = []
     files.append(args.config)
@@ -187,33 +194,83 @@ def forward_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 
     normalize = True
     for d in info.datasets.values():
-        if d.uri == args.dataset:
+        if d.uri == args.dataset or d.cache_dir == args.dataset:
             normalize = d.normalize
-    data_iterator = (lambda: data_iterator_csv_dataset(
-        uri=args.dataset,
-        batch_size=config.networks[0].batch_size,
-        shuffle=False,
-        normalize=normalize,
-        with_memory_cache=False,
-        with_file_cache=False))
+    for e in config.executors:
+        normalize = normalize and not e.no_image_normalization
 
-    # load dataset as csv
-    filereader = FileReader(args.dataset)
-    with filereader.open(textmode=True) as f:
-        rows = [row for row in csv.reader(f)]
-    row0 = rows.pop(0)
-    root_path = os.path.dirname(args.dataset)
-    root_path = os.path.abspath(root_path.replace('/|\\', os.path.sep))
-    rows = list(map(lambda row: list(map(lambda x: x if is_float(
-        x) else compute_full_path(root_path, x), row)), rows))
+    orders = {}
+    # With CSV
+    if os.path.splitext(args.dataset)[1] == '.csv':
+        data_iterator = (lambda: data_iterator_csv_dataset(
+            uri=args.dataset,
+            batch_size=config.networks[0].batch_size,
+            shuffle=False,
+            normalize=normalize,
+            with_memory_cache=False,
+            with_file_cache=False))
 
-    with open(os.path.join(args.outdir, 'output_result.csv'), 'w') as f:
+        # load dataset as csv
+        filereader = FileReader(args.dataset)
+        with filereader.open(textmode=True) as f:
+            rows = [row for row in csv.reader(f)]
+        row0 = rows.pop(0)
+        if args.replace_path:
+            root_path = os.path.dirname(args.dataset)
+            root_path = os.path.abspath(root_path.replace('/|\\', os.path.sep))
+        else:
+            root_path = '.'
+        rows = list(map(lambda row: list(map(lambda x: x if is_float(
+            x) else compute_full_path(root_path, x), row)), rows))
+        for i in range(len(rows)):
+            orders[i] = i
+    # With Cache
+    elif os.path.splitext(args.dataset)[1] == '.cache':
+        data_iterator = (lambda: data_iterator_cache(
+            uri=args.dataset,
+            batch_size=config.networks[0].batch_size,
+            shuffle=False,
+            normalize=normalize))
+
+        # Get original CSV
+        original_csv = os.path.join(args.dataset, 'original.csv')
+        try:
+            # load dataset as csv
+            filereader = FileReader(original_csv)
+            with filereader.open(textmode=True) as f:
+                rows = [row for row in csv.reader(f)]
+            row0 = rows.pop(0)
+            root_path = '.'
+            rows = list(map(lambda row: list(map(lambda x: x if is_float(
+                x) else compute_full_path(root_path, x), row)), rows))
+        except:
+            print('Cannot open', original_csv)
+            pass
+
+        # Get original Data order.
+        order_csv = os.path.join(args.dataset, 'order.csv')
+        try:
+            filereader = FileReader(order_csv)
+            with filereader.open(textmode=True) as f:
+                for original, shuffled in [[int(x) for x in row] for row in csv.reader(f)]:
+                    orders[original] = shuffled
+        except:
+            print('Cannot open', order_csv)
+            for i in range(len(rows)):
+                orders[i] = i
+
+    callback.update_status(('data.max', len(rows)))
+    callback.update_status(('data.current', 0))
+    callback.update_status('processing', True)
+
+    result_csv_filename = os.path.join(args.outdir, 'output_result.csv')
+    with open(result_csv_filename, 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         with data_iterator() as di:
             index = 0
@@ -232,15 +289,29 @@ def forward_command(args):
                 for i, output in enumerate(outputs):
                     if index + i < len(rows):
                         import copy
-                        row = copy.deepcopy(rows[index + i])
+                        row = copy.deepcopy(rows[orders[index + i]])
                         row.extend(output)
                         writer.writerow(row)
                 index += len(outputs)
+
+                callback.update_status(
+                    ('data.current', min([index, len(rows)])))
+                callback.update_forward_time()
+                callback.update_status()
+
                 logger.log(
                     99, 'data {} / {}'.format(min([index, len(rows)]), len(rows)))
 
+    callback.process_evaluation_result(args.outdir, result_csv_filename)
+
     logger.log(99, 'Forward Completed.')
     progress(None)
+
+    callback.update_status(('output_result.csv_header', ','.join(row0)))
+    callback.update_status(('output_result.column_num', len(row0)))
+    callback.update_status(('output_result.data_num', len(rows)))
+    callback.update_status('finished')
+
     return True
 
 
@@ -265,7 +336,7 @@ def infer_command(args):
         if e.network.name in info.networks.keys():
             config.networks.append(info.networks[e.network.name])
         else:
-            logger.critical('Network {} does not found.'.format(
+            logger.critical('Network {} is not found.'.format(
                 config.executor.network.name))
             return False
 
@@ -308,6 +379,8 @@ def add_infer_command(subparsers):
     subparser.add_argument(
         '-o', '--output', help='output file prefix', required=False)
     subparser.add_argument(
+        '--result_outdir', help='output result directory', type=str, default='')
+    subparser.add_argument(
         '-p', '--param', help='path to parameter file', required=False)
     subparser.add_argument(
         '-b', '--batch_size',
@@ -329,6 +402,10 @@ def add_forward_command(subparsers):
         '-d', '--dataset', help='path to CSV dataset', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '--replace_path', help='replace data path in the dataset with absolute path', action='store_true')
+    subparser.add_argument(
+        '--result_outdir', help='output result directory', type=str, default='')
     subparser.add_argument(
         '-b', '--batch_size',
         help='Batch size to use batch size in nnp file set -1.',

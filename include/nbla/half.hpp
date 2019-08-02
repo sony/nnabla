@@ -234,6 +234,8 @@ MATHF(round);
 MATHF(isnan);
 MATHF(isinf);
 NBLA_API Half pow(const Half &a, const Half &b);
+NBLA_API Half pow(const Half &a, const int &b);
+NBLA_API Half max(const Half &a, const int &b);
 NBLA_API Half atan2(const Half &a, const Half &b);
 NBLA_API Half ldexp(const Half &a, const int &b);
 #undef MATHF

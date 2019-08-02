@@ -24,7 +24,7 @@ import copy
 
 setup_requires = [
     'setuptools',
-    'numpy<1.16',
+    'numpy>=1.16,<1.17',
     'Cython',  # Requires python-dev.
 ]
 
@@ -67,8 +67,10 @@ def extopts(library_name, library_dir):
         ext_opts.update(dict(
             extra_compile_args=[
                 '-std=c++11', '-stdlib=libc++', '-Wno-sign-compare',
-                '-Wno-unused-function', '-Wno-mismatched-tags'],
-            extra_link_args=['-Wl,-rpath,@loader_path/', '-stdlib=libc++'],
+                '-Wno-unused-function', '-Wno-mismatched-tags',
+                '-mmacosx-version-min=10.7'],
+            extra_link_args=['-Wl,-rpath,@loader_path/', '-stdlib=libc++',
+                             '-mmacosx-version-min=10.7'],
         ))
     elif sys.platform != 'win32':
         # Linux
@@ -199,7 +201,9 @@ if __name__ == '__main__':
         'nnabla.conf',
         'utils/converter/functions.pkl',
         'models/imagenet/category_names.txt',
-        ]}
+        'models/object_detection/coco.names',
+        'models/object_detection/voc.names',
+    ]}
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
@@ -241,14 +245,17 @@ if __name__ == '__main__':
                 'nnabla.experimental.trainers',
                 'nnabla.models',
                 'nnabla.models.imagenet',
+                'nnabla.models.object_detection',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
                 'nnabla.utils.converter.nnabla',
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
+                'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
+                'nnabla.backward_function',
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 
@@ -261,7 +268,7 @@ if __name__ == '__main__':
         extras_require={
             ':python_version == "2.7"': ['futures'],
             ':(python_version != "2.7" and python_version != "3.7")': ['onnx']
-            },
+        },
         ext_modules=ext_modules,
         package_dir=package_dir,
         packages=packages,

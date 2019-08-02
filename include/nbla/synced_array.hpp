@@ -85,6 +85,15 @@ public:
    */
   shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
 
+  /** Get array's ptr.
+
+      @param[in] dtype Enum of data type.
+      @param[in] ctx Descriptor of array backend.
+      @param[in] write_only No synchronization happens.
+   */
+  const void *data_ptr(dtypes dtype, const Context &ctx,
+                       bool write_only = false);
+
   /** Get dtype
   */
   inline dtypes dtype() const {
@@ -119,10 +128,20 @@ public:
 
   void clear();
 
+  /** Get whether or not it fills array values obtained in cast/get call later.
+
+      This is provided to determine gradient accumulation flags in our
+     computation graph engine.
+   */
+  bool zeroing() const;
+
 private:
   ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false);
 
   void clear_all_array();
+
+  // Clearing zero and fill flags for lazy evaluation.
+  void clear_flags();
 
   DISABLE_COPY_AND_ASSIGN(SyncedArray);
 };

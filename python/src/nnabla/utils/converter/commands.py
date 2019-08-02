@@ -26,19 +26,35 @@ from .utils import func_set_import_nnp, \
 
 
 def _import_file(args, ifiles):
-    if len(ifiles) == 1 and os.path.splitext(ifiles[0])[1] == '.nnp':
-        args.import_format = 'NNP'
-    if len(ifiles) == 1 and os.path.splitext(ifiles[0])[1] == '.onnx':
-        args.import_format = 'ONNX'
+    if len(ifiles) == 1:
+        ext = os.path.splitext(ifiles[0])[1]
+        if ext == '.nnp':
+            args.import_format = 'NNP'
+        elif ext == '.onnx':
+            args.import_format = 'ONNX'
+        elif ext == '.pb':
+            args.import_format = "TF_PB"
+        elif ext == '.ckpt':
+            args.import_format = "TF_CKPT_V1"
+        elif ext == '.meta':
+            args.import_format = "TF_CKPT_V2"
+
     if args.import_format == 'NNP':
         # Input file that has unsupported extension store into output nnp
         # archive or directory.
         return NnpImporter(*ifiles,
                            expand_network=not args.nnp_no_expand_network,
                            executor_index=args.nnp_import_executor_index).execute()
+
     elif args.import_format == 'ONNX':
         from .onnx import OnnxImporter
         return OnnxImporter(*ifiles).execute()
+
+    elif args.import_format == 'TF_PB' or \
+            args.import_format == 'TF_CKPT_V1' or \
+            args.import_format == "TF_CKPT_V2":
+        from .tensorflow import TensorflowImporter
+        return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     return None
 
 
@@ -134,19 +150,35 @@ def _export_from_nnp(args, nnp, output, output_ext):
         NnpExporter(nnp, args.batch_size, parameter_type).execute(output)
 
     elif output_ext == '.nnb':
-        NnbExporter(nnp, args.batch_size).execute(
-            output, None, args.settings, args.default_variable_type)
+        if args.batch_size < 0:
+            print('NNB: Batch size adjust to 1.')
+            print('NNB: If you want to use with other size use `-b` option.')
+            args.batch_size = 1
+        if args.define_version and args.define_version.startswith('nnb_'):
+            nnb_version = int(args.define_version.split("_")[1])
+            NnbExporter(nnp, args.batch_size, nnb_version=nnb_version).execute(
+                output, None, args.settings, args.default_variable_type)
+        else:
+            NnbExporter(nnp, args.batch_size).execute(
+                output, None, args.settings, args.default_variable_type)
 
     elif os.path.isdir(output) and args.export_format == 'CSRC':
+        if args.batch_size < 0:
+            print('CSRC: Batch size adjust to 1.')
+            print('CSRC: If you want to use with other size use `-b` option.')
+            args.batch_size = 1
         CsrcExporter(nnp, args.batch_size).execute(output)
 
     elif output_ext == '.onnx':
         from .onnx import OnnxExporter
-        if args.define_opset and args.define_opset.startswith('opset_'):
-            opset = args.define_opset.split("_")[1]
+        if args.define_version and args.define_version.startswith('opset_'):
+            opset = args.define_version.split("_")[1]
             OnnxExporter(nnp, args.batch_size, opset=opset).execute(output)
         else:
             OnnxExporter(nnp, args.batch_size).execute(output)
+    elif output_ext == '.pb':
+        from .tensorflow import TensorflowExporter
+        TensorflowExporter(nnp, args.batch_size).execute(output)
     else:
         print('Output file ({})'.format(output_ext) +
               ' is not supported or output directory does not exist.')
@@ -221,8 +253,8 @@ def _get_split_ranges(nnp, args, supported_set):
 def convert_files(args, ifiles, output):
     output_ext = os.path.splitext(output)[1].lower()
     nnp = _import_file(args, ifiles)
-    network_name = nnp.protobuf.executor[0].network_name
     if nnp is not None:
+        network_name = nnp.protobuf.executor[0].network_name
         if output_ext == '.onnx':
             if args.config:
                 support_set = func_set_onnx_support() & \
@@ -279,7 +311,7 @@ def convert_files(args, ifiles, output):
         else:
             return _export_from_nnp(args, nnp, output, output_ext)
     else:
-        print('Import from [{}] failed.'.format(ifiles))
+        print('Import from {} failed.'.format(ifiles))
         return False
 
 
@@ -357,6 +389,15 @@ def _dump_protobuf(args, proto, prefix, depth):
                       ' Shape:{}'.format(shape))
 
         def _dump_network(prefix, net):
+            if args.dump_variable_name:
+                if args.dump_variable_name in net['variables']:
+                    v = args.dump_variable_name
+                    print('Variable Name: {:20} Shape: {}'.format(
+                        v, net['variables'][v]['shape']))
+                else:
+                    print('DUMP ERROR: variable {} not found.'.format(
+                        args.dump_variable_name))
+                return
             if args.dump_functions:
                 for i, f in enumerate(net['functions']):
                     func_prefix = '{}  Function[{:^5}]: '.format(prefix, i)

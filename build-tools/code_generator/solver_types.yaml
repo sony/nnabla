@@ -1,12 +1,20 @@
 Sgd:
   float: [float]
+SgdW:
+  float: [float]
 Momentum:
+  float: [float]
+Lars:
   float: [float]
 Adadelta:
   float: [float]
 Adagrad:
   float: [float]
 Adam:
+  float: [float]
+AdamW:
+  float: [float]
+AdaBound:
   float: [float]
 Adamax:
   float: [float]
@@ -15,4 +23,6 @@ Nesterov:
 RMSprop:
   float: [float]
 AMSGRAD:
+  float: [float]
+AMSBound:
   float: [float]

@@ -126,7 +126,7 @@ class Network:
         # logger.debug('bwcall: {}'.format(function.name if function else ''))
         if not function and variable not in self.variable_outputs:
             # terminal variable
-            return variable in self.loss_variables
+            return variable in loss_variables
         diff_exists = False
         for func in [function] if function else self.variable_outputs[variable]:
             if func.backward_complete:
@@ -195,7 +195,7 @@ class Network:
         if optimize:
             for func in list(self.functions.values()):
                 # remove identity layer
-                if func.function_instance.name[0:8] == "Identity":
+                if func.function_instance.name[0:8] == "Identity" and not func.persistent:
                     assert(len(func.inputs) == 1)
                     assert(len(func.outputs) == 1)
                     # if the identity function is not terminal (keep terminal

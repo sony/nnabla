@@ -1,427 +1,330 @@
-Operator support status
-=======================
+ONNX Support Status Document
+============================
 
-Support status importing from ONNX
-----------------------------------
+:Note: In this document, the numbers in the header of all tables represent the version of onnx opset.
 
-This is a status list of [ONNX operators](https://github.com/onnx/onnx/blob/master/docs/Operators.md)
-that indicates if each operator can be converted to NNP.
+Import
+------
 
-- OK The ONNX operator can map to a NNabla operator.
-- Not test means the ONNX operator has not been verified. It might be one of the following cases:
-    - The ONNX operator hasn't been checked if it can be converted to NNabla.
-    - The ONNX operator has been checked if it can be converted to NNabla, but the implementation has not started.
-    - The solution is not perfect/finished, for example, the operator can map to a combination of NNabla operators.
-    - Hard to find a solution with existing NNabla operators.
+- √: onnx specification defined, and supported.
+- X: onnx specification defined, but not support yet.
+- Empty: Not defined (Support status follows latest).
 
-Total 44/108
+:ONNX Version Info:
+  - Version: 1.4.1
+  - Commit id: 3b0ecd5
 
-As the following table, Opset column means the maximal opset version are supported to convert to NNP.
-In user's model, if there is any function opset version exceed the maximal opset(as the following table), the importer
-might fail to convert NNP model due to this function.
+Total: 81/129
 
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Abs                                      1,6             OK
-Add                                      1,6             OK              broadcast will be converted to a BroadcastTo
-And                                      1               OK              broadcast will be converted to a BroadcastTo
-ArgMax                                                   Unimplemented   Operator does not exist in NNabla
-ArgMin                                                   Unimplemented   Operator does not exist in NNabla
-AveragePool                              1               OK              autopad not supported. pads must have same
-                                                                         value for begin and end.
-BatchNormalization                       1,6             OK              is_test=false not supported (only inference)
-Cast                                                     Unimplemented   Operator does not exist in NNabla(No type
-                                                                         information is exposed in NNP)
-Ceil                                                     Unimplemented   Should map to Ceil
-Clip                                     6               OK              Converted to Identity, MaximumScalar,
-                                                                         MinimumScalar, or both depending on the attribute
-Concat                                   1,4             OK
-Constant                                 1,9             OK              Converted to an input parameter
-Conv                                     1               OK              auto_pad not supported. pads must have same value
-                                                                         for begin and end.
-ConvTranspose                                            Unimplemented   Should map to Deconvolution?
-DepthToSpace                                             Unimplemented   Operator does not exist in NNabla
-Div                                      1,6             OK              broadcast will be converted to a BroadcastTo
-Dropout                                  1,6,7           OK              mask output will be removed since NNabla does
-                                                                         not produce mask output.
-Elu                                      1,6             OK
-Equal                                    1               OK              broadcast will be converted to a BroadcastTo.
-                                                                         Input data type will all be converted to int64
-                                                                         since NNP does not have type information
-Exp                                      1,6             OK
-Flatten                                                  Unimplemented   Operator does not exist in NNabla
-Floor                                                    Unimplemented   Should map to Floor
-GRU                                                      Unimplemented   Operator does not exist in NNabla
-Gather                                                   Unimplemented   Operator does not exist in NNabla
-Gemm                                     1,6,7,9         OK              alpha and beta is not supported.
-                                                                         Input A and B must be two dimensional,
-                                                                         and input C must be one dimensional.
-                                                                         transA, transB will be converted to
-                                                                         a separate transpose operator
-GlobalAveragePool                        1               OK
-GlobalLpPool                                             Unimplemented   Operator does not exist in NNabla
-GlobalMaxPool                                            Unimplemented   Operator does not exist in NNabla
-Greater                                  1               OK              broadcast will be converted to a BroadcastTo
-HardSigmoid                                              Unimplemented   Should be able to map to
-                                                                         MulScalar+AddScalar+MinimumScalar+ReLU
-Hardmax                                                  Unimplemented   Operator does not exist in NNabla
-Identity                                 1               OK
-InstanceNormalization                                    Unimplemented   Operator does not exist in NNabla
-LRN                                      1               OK              Converted to
-                                                                         PowScalar+Tranpose+SumPooling+Transpose+MulScalar+AddScalar+PowScalar.
-                                                                         Currently only odd size is allowed.
-LSTM                                                     Unimplemented
-LeakyRelu                                1,6             OK
-Less                                     1               OK              broadcast will be converted to a BroadcastTo
-Log                                      1,6             OK
-LogSoftmax                               1               Not test        Converted to Exp+Sum+Log+Sub2.
-                                                                         Only works on input shape like N*C*1*1
-LpNormalization                                          Unimplemented   Operator does not exist in NNabla
-LpPool                                                   Unimplemented   Operator does not exist in NNabla
-MatMul                                   1,9             OK
-Max                                      1,6,8           OK              Only input of two tensors is currently supported
-MaxPool                                  1,8             OK              auto_pad is not supported.
-                                                                         pads must have same value for begin and end.
-MaxRoiPool                                               Unimplemented   Operator does not exist in NNabla
-Mean                                     1,6,8           Not test        Operator does not exist in NNabla
-Min                                      1,6,8           OK              Only input of two tensors is currently supported
-Mul                                                      OK              broadcast will be converted to a BroadcastTo
-Neg                                      1,6             Not test        Converted to MulScalar
-Not                                                      OK
-Or                                       1,7             OK              broadcast will be converted to a BroadcastTo
-PRelu                                    1,6             OK
-Pad                                      1,2             Not test        For NNP to ONNX conversion, input buffer's
-                                                                         dimension is assumed to be 4D if the shape cannot be determined.
-Pow                                      1               OK              broadcast will be converted to a BroadcastTo
-RNN                                                      Unimplemented   Operator does not exist in NNabla
-RandomNormal                                             Unimplemented   Should be able to map to Randn
-RandomNormalLike                                         Unimplemented   Operator does not exist in NNabla
-RandomUniform                                            Unimplemented   Should be able to map to Rand
-RandomUniformLike                                        Unimplemented   Operator does not exist in NNabla
-Reciprocal                               1,6             Not test        Converted to RDivScalar
-ReduceL1                                                 Unimplemented   Operator does not exist in NNabla
-ReduceL2                                                 Unimplemented   Operator does not exist in NNabla
-ReduceLogSum                                             Unimplemented   Operator does not exist in NNabla
-ReduceLogSumExp                                          Unimplemented   Operator does not exist in NNabla
-ReduceMax                                1               Not test
-ReduceMean                               1               OK
-ReduceMin                                1               Not test
-ReduceProd                               1               Not test
-ReduceSum                                1               OK
-ReduceSumSquare                                          Unimplemented   Operator does not exist in NNabla
-Relu                                     1,6             OK
-Reshape                                  1,5             Not test        Not completedly supported.
-Selu                                     1,6             OK
-Sigmoid                                  1,6             OK
-Size                                                     Unimplemented   Operator does not exist in NNabla
-Slice                                                    Unimplemented   Operator does not exist in NNabla
-Softmax                                  1               OK              Only works on input shape like N*C*1*1
-Softplus                                 1               OK              Converted to Exp + AddScalar + Log
-Softsign                                 1               OK              Converted to Abs + AddScalar + Div2
-SpaceToDepth                                             Unimplemented   Operator does not exist in NNabla
-Split                                                    Unimplemented   Operator does not exist in NNabla
-Sqrt                                                     Unimplemented   Operator does not exist in NNabla
-Squeeze                                                  Unimplemented   Operator does not exist in NNabla
-Sub                                      1,6             OK              broadcast will be converted to a BroadcastTo
-Sum                                      1,6,8           OK              Supporting two inputs only
-Tanh                                     1,6             OK
-Tile                                                     Unimplemented   Operator does not exist in NNabla
-TopK                                                     Unimplemented   Operator does not exist in NNabla
-Transpose                                1               OK
-Unsqueeze                                                Unimplemented   Operator does not exist in NNabla
-Xor                                      1               OK              broadcast will be converted to a BroadcastTo
-experimental ATen                                        Unimplemented
-experimental Affine                                      Unimplemented
-experimental ConstantFill                                Unimplemented
-experimental Crop                                        Unimplemented
-experimental FC                                          Unimplemented
-experimental GRUUnit                                     Unimplemented
-experimental GivenTensorFill                             Unimplemented
-experimental If                                          Unimplemented
-experimental ImageScaler                                 Unimplemented
-experimental Loop                                        Unimplemented
-experimental LoopIndexTensor                             Unimplemented
-experimental MeanVarianceNormalization                   Unimplemented
-experimental ParametricSoftplus                          Unimplemented
-experimental Scale                                       Unimplemented
-experimental ScaledTanh                                  Unimplemented
-experimental ThresholdedRelu                             Unimplemented
-experimental Upsample                                    Unimplemented
-======================================== =============== =============== =================================================
+.. table:: 
 
-Support status exporting to ONNX
-----------------------------------
+    ==============================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  =============
+            ONNX Operator            1    2    3    4    5    6    7    8    9    10    Description 
+    ==============================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  =============
+     Abs                            X                        √                                      
+     Acos                                                         √                                 
+     Acosh                                                                  √                       
+     Add                            X                        √    √                                 
+     And                            √                             √                                 
+     ArgMax                         √                                                               
+     ArgMin                         √                                                               
+     Asin                                                         √                                 
+     Asinh                                                                  √                       
+     Atan                                                         √                                 
+     Atanh                                                                  √                       
+     AveragePool                    √                             √              X                  
+     BatchNormalization             X                        √    X         √                       
+     Cast                           X                        X              X                       
+     Ceil                           X                        √                                      
+     Clip                           X                        √                                      
+     Compress                                                               X                       
+     Concat                         √              √                                                
+     Constant                       √                                       √                       
+     ConstantOfShape                                                        X                       
+     Conv                           √                                                               
+     ConvTranspose                  √                                                               
+     Cos                                                          √                                 
+     Cosh                                                                   √                       
+     DepthToSpace                   √                                                               
+     Div                            X                        √    √                                 
+     Dropout                        √                        √    √              X                  
+     Elu                            X                        √                                      
+     Equal                          √                             √                                 
+     Erf                                                                    X                       
+     Exp                            X                        √                                      
+     Expand                                                            X                            
+     EyeLike                                                                X                       
+     Flatten                        √                                       √                       
+     Floor                          X                        √                                      
+     GRU                            X         X                   X                                 
+     Gather                         X                                                               
+     Gemm                           √                        √    √         √                       
+     GlobalAveragePool              √                                                               
+     GlobalLpPool                   X    X                                                          
+     GlobalMaxPool                  X                                                               
+     Greater                        √                             √         √                       
+     HardSigmoid                    X                        X                                      
+     Hardmax                        X                                                               
+     Identity                       √                                                               
+     If                             X                                                               
+     InstanceNormalization          X                        X                                      
+     IsNaN                                                                  √                       
+     LRN                            √                                                               
+     LSTM                           X                             X                                 
+     LeakyRelu                      X                        √                                      
+     Less                           √                             √         √                       
+     Log                            X                        √                                      
+     LogSoftmax                     √                                                               
+     Loop                           X                                                               
+     LpNormalization                X                                                               
+     LpPool                         X    X                                                          
+     MatMul                         √                                       √                       
+     Max                            X                        √         √                            
+     MaxPool                        √                                  X         X                  
+     MaxRoiPool                     X                                                               
+     MaxUnpool                                                              X                       
+     Mean                           X                        √         √                            
+     Min                            X                        √         √                            
+     Mul                            X                        √    √                                 
+     Multinomial                                                  X                                 
+     Neg                            X                        √                                      
+     NonZero                                                                X                       
+     Not                            √                                                               
+     OneHot                                                                 X                       
+     Or                             √                             √                                 
+     PRelu                          X                        √    X         X                       
+     Pad                            X    √                                                          
+     Pow                            √                             √                                 
+     RNN                            X                             X                                 
+     RandomNormal                   X                                                               
+     RandomNormalLike               X                                                               
+     RandomUniform                  X                                                               
+     RandomUniformLike              X                                                               
+     Reciprocal                     X                        √                                      
+     ReduceL1                       X                                                               
+     ReduceL2                       X                                                               
+     ReduceLogSum                   X                                                               
+     ReduceLogSumExp                X                                                               
+     ReduceMax                      √                                                               
+     ReduceMean                     √                                                               
+     ReduceMin                      √                                                               
+     ReduceProd                     √                                                               
+     ReduceSum                      √                                                               
+     ReduceSumSquare                X                                                               
+     Relu                           X                        √                                      
+     Reshape                        X                   √                                           
+     Resize                                                                      X                  
+     Scan                                                              X    X                       
+     Scatter                                                                X                       
+     Selu                           X                        √                                      
+     Shape                          X                                                               
+     Shrink                                                                 X                       
+     Sigmoid                        X                        √                                      
+     Sign                                                                   √                       
+     Sin                                                          √                                 
+     Sinh                                                                   √                       
+     Size                           X                                                               
+     Slice                          √                                            X                  
+     Softmax                        √                                                               
+     Softplus                       √                                                               
+     Softsign                       √                                                               
+     SpaceToDepth                   √                                                               
+     Split                          √    √                                                          
+     Sqrt                           X                        √                                      
+     Squeeze                        √                                                               
+     StringNormalizer                                                            X                  
+     Sub                            X                        √    √                                 
+     Sum                            X                        √         √                            
+     Tan                                                          √                                 
+     Tanh                           X                        √                                      
+     TfIdfVectorizer                                                        X                       
+     ThresholdedRelu                                                             X                  
+     Tile                           X                        √                                      
+     TopK                           X                                            X                  
+     Transpose                      √                                                               
+     Unsqueeze                      √                                                               
+     Upsample                                                √    √         √    X                  
+     Where                                                                  X                       
+     Xor                            √                             √                                 
+     experimental ATen              X                                                               
+     experimental GRUUnit           X                                                               
+     experimental GivenTensorFill   X                                                               
+     experimental Scale             X                                                               
+    ==============================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  =============
 
-The column of opset means current operator is mapped with which the opset specifications. For example,
-Affine() is converted to 3 onnx functions, Reshape@5, Flatten@1, Gemm@6 and so on. Hence, the exporter
-will generate the onnx model which require the executor at least support opset 6, when the model contains
-Affine() function.
 
-Total 45/136
+Export
+------
 
-Neural Network Layer
-++++++++++++++++++++
+- √: Support to export this opset.
+- △: Partially support to export this opset (e.g. some cases cannot be supported, or not completely tested).
+- Empty: Not support corresponding opset version.
 
-Count 4/11
+:NNabla Version Info:
+  - Version: 1.0.15.dev1
+  - Commit id: 8a603de
 
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Affine                                   1,5,6           Not test        Implemented by Reshape,Flatten,Gemm
-Convolution                              1               OK              Implemented by Conv
-DepthwiseConvolution                     1               Not test        Implemented by Conv
-Deconvolution                            1,6             Not test        Implemented by ConvTranspose,Add
-DepthwiseDeconvolution                                   Not test        Not implemented
-MaxPooling                               1               OK              Implemented by MaxPool
-AveragePooling                           1               OK              Implemented by AveragePool
-GlobalAveragePooling                     1               OK              Implemented by GlobalAveragePool
-SumPooling                               1               Not test        Implemented by Mul
-Unpooling                                                Not test        Not implemented
-Embed                                                    Not test        Not implemented
-======================================== =============== =============== =================================================
+Total: 83/155
 
-Neural Network Activation Functions
-+++++++++++++++++++++++++++++++++++
+.. table:: 
 
-Count 8/11
+    ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
+         NNabla Functions        1    2    3    4    5    6    7    8    9    10                   Description                
+    ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
+     ACos                                                △              △          By ACos                                    
+     ACosh                                               △              △          By Acosh                                   
+     ASin                                                △              △          By ASin                                    
+     ASinh                                               △              △          By Asinh                                   
+     ATan                                                △              △          By ATan                                    
+     ATan2                                               △              △          By Div,ATan                                
+     ATanh                                               △              △          By Atanh                                   
+     Abs                                                 √              √          By Abs                                     
+     AbsoluteError                                                                                                            
+     Add2                                                √              √          By Add                                     
+     AddScalar                                           △              △          By Add                                     
+     Affine                                              △              △          By Reshape,Gemm                            
+     Arange                                                                                                                   
+     AveragePooling                                      √              √          By AveragePool                             
+     BatchMatmul                                         √              √          By Matmul                                  
+     BatchNormalization                                  √              √          By InstanceNormalization,BatchNormalization
+     BcAdd2                                                                                                                   
+     BinaryConnectAffine                                 △              △          By Reshape,Gemm                            
+     BinaryConnectConvolution                            △              △          By Conv,Reshape                            
+     BinaryCrossEntropy                                                                                                       
+     BinaryError                                                                                                              
+     BinarySigmoid                                       △              △          By Greater,Where                           
+     BinaryTanh                                          △              △          By Greater,Where                           
+     BinaryWeightAffine                                  △              △          By Reshape,MatMul,Mul,Add                  
+     BinaryWeightConvolution                             △              △          By Reshape,Conv,Mul,Add                    
+     Broadcast                                                                                                                
+     BroadcastTo                                         √              √                                                     
+     CELU                                                                                                                     
+     CReLU                                                                                                                    
+     CategoricalCrossEntropy                                                                                                  
+     Ceil                                                △              △          By Ceil                                    
+     ClipGradByNorm                                                                                                           
+     ClipGradByValue                                                                                                          
+     Concatenate                                         √              √          By Concat                                  
+     ConfusionMatrix                                                                                                          
+     Constant                                                                                                                 
+     Convolution                                         √              √          By Conv                                    
+     Cos                                                 △              △          By Cos                                     
+     Cosh                                                △              △          By Cosh                                    
+     Deconvolution                                       △              △          By ConvTranspose,Reshape                   
+     DepthwiseConvolution                                △              △          By Conv                                    
+     DepthwiseDeconvolution                              △              △          By ConvTranspose,Reshape                   
+     Div2                                                √              √          By Div                                     
+     Dropout                                             △              △          By Dropout                                 
+     ELU                                                 √              √          By ELU                                     
+     Embed                                                                                                                    
+     EpsilonInsensitiveLoss                                                                                                   
+     Equal                                               √              √          By Equal                                   
+     EqualScalar                                                                                                              
+     Exp                                                 √              √          By Exp                                     
+     FFT                                                                                                                      
+     FixedPointQuantize                                                                                                       
+     Flip                                                △              △          By Gather,Transpose,Identity               
+     Floor                                               △              △          By Floor                                   
+     GELU                                                                                                                     
+     GRU                                                                                                                      
+     GlobalAveragePooling                                √              √          By GlobalAveragePool                       
+     Greater                                             √              √          By Greater                                 
+     GreaterEqual                                                                                                             
+     GreaterEqualScalar                                                                                                       
+     GreaterScalar                                                                                                            
+     HuberLoss                                                                                                                
+     IFFT                                                                                                                     
+     INQAffine                                                                                                                
+     INQConvolution                                                                                                           
+     Identity                                            √              √          By Identity                                
+     ImageAugmentation                                                                                                        
+     Interpolate                                                                                                              
+     IsInf                                                                                                                    
+     IsNaN                                                                                                                    
+     KLMultinomial                                                                                                            
+     LSTM                                                                                                                     
+     LeakyReLU                                           √              √          By LeakyRelu                               
+     Less                                                √              √          By Less                                    
+     LessEqual                                                                                                                
+     LessEqualScalar                                                                                                          
+     LessScalar                                                                                                               
+     Log                                                 √              √          By Log                                     
+     LogicalAnd                                          √              √          By And                                     
+     LogicalAndScalar                                                                                                         
+     LogicalNot                                          √              √          By Not                                     
+     LogicalOr                                           √              √          By Or                                      
+     LogicalOrScalar                                                                                                          
+     LogicalXor                                          √              √          By Xor                                     
+     LogicalXorScalar                                                                                                         
+     MatrixDiag                                                                                                               
+     MatrixDiagPart                                                                                                           
+     Max                                                 √              √          By ReduceMax                               
+     MaxPooling                                          √              √          By MaxPool                                 
+     Maximum2                                            √              √          By Max                                     
+     MaximumScalar                                       √              √          By Clip                                    
+     Mean                                                √              √          By ReduceMean                              
+     MeanSubtraction                                                                                                          
+     Min                                                 √              √          By ReduceMin                               
+     Minimum2                                            √              √          By Min                                     
+     MinimumScalar                                       √              √          By Clip                                    
+     Mul2                                                √              √          By Mul                                     
+     MulScalar                                           √              √          By Mul                                     
+     NmsDetection2d                                                                                                           
+     NotEqual                                                                                                                 
+     NotEqualScalar                                                                                                           
+     OneHot                                              △              △          By Flatten,Gather,Reshape                  
+     PReLU                                               √              √          By PRelu                                   
+     Pad                                                 △              △          By Pad                                     
+     Pow2                                                √              √          By Pow                                     
+     Pow2Quantize                                                                                                             
+     PowScalar                                           √              △          By Pow                                     
+     Prod                                                △              △          By ReduceProd                              
+     Prune                                                                                                                    
+     RDivScalar                                          √              √          By Div                                     
+     RNN                                                                                                                      
+     RPowScalar                                          △              △          By Pow                                     
+     RSubScalar                                          △              △          By Sub                                     
+     Rand                                                                                                                     
+     Randint                                                                                                                  
+     Randn                                                                                                                    
+     RandomCrop                                                                                                               
+     RandomFlip                                                                                                               
+     RandomShift                                                                                                              
+     ReLU                                                √              √          By Relu                                    
+     ReduceMean                                                                                                               
+     ReduceSum                                                                                                                
+     ResetInf                                                                                                                 
+     ResetNaN                                                                                                                 
+     Reshape                                             △              △          By Reshape                                 
+     Round                                                                                                                    
+     SELU                                                √              √          By SELU                                    
+     Shift                                                                                                                    
+     Sigmoid                                             √              √          By Sigmoid                                 
+     SigmoidCrossEntropy                                                                                                      
+     Sign                                                △              △          By Sign                                    
+     Sin                                                 △              △          By Sin                                     
+     Sinh                                                △              △          By Sinh                                    
+     Sink                                                                                                                     
+     Slice                                               △              △          By Slice                                   
+     Softmax                                             √              √          By Softmax                                 
+     SoftmaxCrossEntropy                                                                                                      
+     Sort                                                                                                                     
+     Split                                               △              △          By Split,Squeeze                           
+     SquaredError                                                                                                             
+     Stack                                               △              △          By Unsqueeze,Concat                        
+     Sub2                                                √              √          By Sub                                     
+     Sum                                                 √              √          By ReduceSum                               
+     SumPooling                                          △              △          By Mul                                     
+     Swish                                                                                                                    
+     Tan                                                 △              △          By Tan                                     
+     Tanh                                                √              √          By Tanh                                    
+     TopKData                                                                                                                 
+     TopKGrad                                                                                                                 
+     TopNError                                                                                                                
+     Transpose                                           √              √          By Transpose                               
+     Unlink                                                                                                                   
+     Unpooling                                           △              △          By Upsample                                
+     VATNoise                                                                                                                 
+     Where                                                                                                                    
+    ==========================  ===  ===  ===  ===  ===  ===  ===  ===  ===  ====  ===========================================
 
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Sigmoid                                  6               OK              Implemented by Sigmoid
-Swish                                                    Not test        Not implemented
-Tanh                                     6               OK              Implemented by Tanh
-ReLU                                     6               OK              Implemented by Relu
-LeakyReLU                                6               OK              Implemented by LeakyRelu
-Softmax                                  1               OK              Implemented by Softmax
-ELU                                      6               OK              Implemented by ELU
-SELU                                     6               OK              Implemented by SELU
-CReLU                                                    Not test        Not implemented
-CELU                                                     Not test        Not implemented
-PReLU                                    6               OK              Implemented by PRelu
-======================================== =============== =================================================
-
-Normalization
-+++++++++++++
-
-Count 1/4
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-BatchNormalization                       6               OK              Implemented by InstanceNormalization,BatchNormalization
-MeanSubtraction                                          Not test        Not implemented
-ClipGradByValue                                          Not test        Not implemented
-ClipGradByNorm                                           Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Reduction
-+++++++++
-
-Count 5/7
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Sum                                      1               OK              Implemented by ReduceSum
-Mean                                     1               OK              Implemented by ReduceMean
-Max                                      1               OK              Implemented by ReduceMax
-Min                                      1               OK              Implemented by ReduceMin
-Prod                                     1               OK              Implemented by ReduceProd
-ReduceSum                                                Not test        Not implemented
-ReduceMean                                               Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Arithmetic
-++++++++++
-
-Count 8/12
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Add2                                     6               OK              Implemented by Add
-BcAdd2                                                   Not test        Not implemented
-Sub2                                     1               OK              Implemented by Sub
-Mul2                                     1               OK              Implemented by Mul
-Div2                                     6               OK              Implemented by Div
-Pow2                                     1               OK              Implemented by Pow
-AddScalar                                6               Not test        Implemented by Add
-MulScalar                                1               OK              Implemented by Mul
-PowScalar                                1               OK              Implemented by Pow
-RSubScalar                               6               Not test        Implemented by Sub
-RDivScalar                               6               OK              Implemented by Div
-RPowScalar                               1               Not test        Implemented by Pow
-======================================== =============== =============== =================================================
-
-Logical
-+++++++
-
-Count 11/24
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Sign                                                     Not test        Not implemented
-Minimum2                                 6               OK              Implemented by Min
-Maximum2                                 6               OK              Implemented by Max
-MinimumScalar                            6               OK              Implemented by Clip
-MaximumScalar                            6               OK              Implemented by Clip
-LogicalAnd                               1               OK              Implemented by And
-LogicalOr                                1               OK              Implemented by Or
-LogicalXor                               1               OK              Implemented by Xor
-Equal                                    1               OK              Implemented by Equal
-NotEqual                                                 Not test        Not implemented
-GreaterEqual                                             Not test        Not implemented
-Greater                                  1               OK              Implemented by Greater
-LessEqual                                                Not test        Not implemented
-Less                                     1               OK              Implemented by Less
-LogicalAndScalar                                         Not test        Not implemented
-LogicalOrScalar                                          Not test        Not implemented
-LogicalXorScalar                                         Not test        Not implemented
-EqualScalar                                              Not test        Not implemented
-NotEqualScalar                                           Not test        Not implemented
-GreaterEqualScalar                                       Not test        Not implemented
-GreaterScalar                                            Not test        Not implemented
-LessEqualScalar                                          Not test        Not implemented
-LessScalar                                               Not test        Not implemented
-LogicalNot                               1               OK              Implemented by Not
-======================================== =============== =============== =================================================
-
-Math
-++++
-
-Count 5/18
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Constant                                                 Not test        Not implemented
-Abs                                      6               OK              Implemented by Abs
-Exp                                      6               OK              Implemented by Exp
-Log                                      6               OK              Implemented by Log
-Identity                                 1               OK              Implemented by Identity
-BatchMatmul                              1               OK              Implemented by Matmul
-Round                                                    Not test        Not implemented
-Sin                                                      Not test        Not implemented
-Cos                                                      Not test        Not implemented
-Tan                                                      Not test        Not implemented
-Sinh                                                     Not test        Not implemented
-Cosh                                                     Not test        Not implemented
-ASin                                                     Not test        Not implemented
-ACos                                                     Not test        Not implemented
-ATan                                                     Not test        Not implemented
-ASinh                                                    Not test        Not implemented
-ACosh                                                    Not test        Not implemented
-ATanh                                                    Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Array Manipulation
-++++++++++++++++++
-
-Count 3/13
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Concatenate                              4               OK              Implemented by Concat
-Split                                    1,2             Not test        Implemented by Split,Squeeze
-Stack                                    1,4             Not test        Implemented by Unsqueeze,Concat
-Slice                                    1               Not test        Implemented by Slice
-Pad                                      2               OK              Implemented by Pad
-Transpose                                1               OK              Implemented by Transpose
-Broadcast                                                Not test        Not implemented
-OneHot                                   1,5             Not test        Implemented by Flatten,Gather,Reshape
-Flip                                     1               Not test        Implemented by Gather,Transpose,Identity
-Shift                                                    Not test        Not implemented
-Reshape                                  5               Not test        Implemented by Reshape
-MatrixDiag                                               Not test        Not implemented
-MatrixDiagPart                                           Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Stochasticity
-+++++++++++++
-
-Count 0/10
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-Dropout                                  6               NG              Implemented by Dropout
-TopKData                                                 Not test        Not implemented
-TopKGrad                                                 Not test        Not implemented
-Rand                                                     Not test        Not implemented
-Randint                                                  Not test        Not implemented
-Randn                                                    Not test        Not implemented
-RandomCrop                                               Not test        Not implemented
-RandomFlip                                               Not test        Not implemented
-RandomShift                                              Not test        Not implemented
-ImageAugmentation                                        Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Loss Functions
-++++++++++++++
-
-Count 0/9
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-SigmoidCrossEntropy                                      Not test        Not implemented
-BinaryCrossEntropy                                       Not test        Not implemented
-SoftmaxCrossEntropy                                      Not test        Not implemented
-CategoricalCrossEntropy                                  Not test        Not implemented
-SquaredError                                             Not test        Not implemented
-AbsoluteError                                            Not test        Not implemented
-HuberLoss                                                Not test        Not implemented
-EpsilonInsensitiveLoss                                   Not test        Not implemented
-KLMultinomial                                            Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Quantization Neural Network Layers
-++++++++++++++++++++++++++++++++++
-
-Count 0/10
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-BinarySigmoid                            6               Not test        Implemented by HardSigmoid
-BinaryTanh                                               Not test        Not implemented
-BinaryConnectAffine                                      Not test        Not implemented
-BinaryConnectConvolution                 1,5             Not test        Implemented by Conv,Reshape
-BinaryWeightAffine                                       Not test        Not implemented
-BinaryWeightConvolution                                  Not test        Not implemented
-INQAffine                                                Not test        Not implemented
-INQConvolution                                           Not test        Not implemented
-FixedPointQuantize                                       Not test        Not implemented
-Pow2Quantize                                             Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Validation
-++++++++++
-
-Count 0/3
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-TopNError                                                Not test        Not implemented
-BinaryError                                              Not test        Not implemented
-ConfusionMatrix                                          Not test        Not implemented
-======================================== =============== =============== =================================================
-
-Unsupported,SpecialUse
-++++++++++++++++++++++
-
-Count 0/4
-
-======================================== =============== =============== =================================================
-Operator                                 Opset           Status          Description
-======================================== =============== =============== =================================================
-VATNoise                                                 Not test        Not implemented
-Unlink                                                   Not test        Not implemented
-Sink                                                     Not test        Not implemented
-NmsDetection2d                                           Not test        Not implemented
-======================================== =============== =============== =================================================

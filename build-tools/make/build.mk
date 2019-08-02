@@ -14,7 +14,7 @@
 
 ########################################################################################################################
 # Suppress most of make message.
-.SILENT:
+#.SILENT:
 
 NNABLA_BUILD_INCLUDED = True
 
@@ -73,14 +73,54 @@ nnabla-cpplib:
 		-DBUILD_TEST=ON \
 		-DNNABLA_UTILS_STATIC_LINK_DEPS=$(NNABLA_UTILS_STATIC_LINK_DEPS) \
 		-DNNABLA_UTILS_WITH_HDF5=$(NNABLA_UTILS_WITH_HDF5) \
+		-DNNABLA_UTILS_WITH_NPY=ON \
 		-DBUILD_PYTHON_PACKAGE=OFF \
 		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) -j$(PARALLEL_BUILD_NUM)
 
+.PHONY: nnabla-cpplib-rpm
+nnabla-cpplib-rpm: nnabla-cpplib
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G RPM CPackConfig.cmake
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G TBZ2 CPackConfig.cmake
+
+.PHONY: nnabla-cpplib-deb
+nnabla-cpplib-deb: nnabla-cpplib
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G DEB CPackConfig.cmake
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G TBZ2 CPackConfig.cmake
+
+.PHONY: nnabla-cpplib-android
+nnabla-cpplib-android:
+	@mkdir -p $(BUILD_DIRECTORY_CPPLIB_ANDROID)
+	@cd $(BUILD_DIRECTORY_CPPLIB_ANDROID) \
+	&& cmake \
+	    -DCMAKE_TOOLCHAIN_FILE=$(NDK_PATH)/build/cmake/android.toolchain.cmake \
+	    -DANDROID_TOOLCHAIN=clang \
+	    -DCMAKE_SYSTEM_NAME=$(CMAKE_SYSTEM_NAME) \
+	    -DBUILD_CPP_UTILS=ON \
+	    -DBUILD_PYTHON_PACKAGE=OFF \
+	    -DNNABLA_UTILS_WITH_HDF5=OFF \
+	    -DANDROID_STL=c++_static \
+	    -DANDROID_ABI=$(EABI) \
+	    -DPYTHON_COMMAND_NAME=$(SYSTEM_PYTHON) \
+	    -DPROTOC_COMMAND=$(SYSTEM_PROTOC) \
+            -LA \
+	    $(NNABLA_DIRECTORY)
+	@$(TOOLCHAIN_INSTALL_DIR)/bin/make -C $(BUILD_DIRECTORY_CPPLIB_ANDROID) -j$(PARALLEL_BUILD_NUM)
+	@rm -rf $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)
+	@mkdir -p $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
+	@cp $(TOOLCHAIN_INSTALL_DIR)/lib/libarchive.so $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
+	@cp $(BUILD_DIRECTORY_CPPLIB_ANDROID)/lib/libnnabla.so $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
+	@cp $(BUILD_DIRECTORY_CPPLIB_ANDROID)/lib/libnnabla_utils.so $(BUILD_DIRECTORY_CPPLIB_ANDROID)/build_$(PLATFORM)_$(ARCHITECTURE)/$(EABI)
+
+
+.PHONY: nnabla-cpplib-android-test
+nnabla-cpplib-android-test:
+# Execute the binary on emulator
+
+
 .PHONY: nnabla-wheel
 nnabla-wheel:
-	echo @mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& cmake \

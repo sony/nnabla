@@ -35,3 +35,18 @@ def test_sigmoid_cross_entropy_forward_backward(seed, ctx, func_name):
                      * np.log(1 - 1 / (np.exp(-x) + 1))),
                     inputs,
                     atol_b=1e-2, ctx=ctx, func_name=func_name, backward=[True, False])
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_sigmoid_cross_entropy_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(
+        np.float32), rng.rand(2, 3, 4).astype(np.float32)]
+    inputs[1] = np.round(inputs[1])
+    backward_function_tester(rng, F.sigmoid_cross_entropy,
+                             None,
+                             inputs,
+                             atol_b=1e-2, atol_accum=1e-2, dstep=1e-3,
+                             ctx=ctx, func_name=func_name, backward=[True, False])

@@ -11,16 +11,13 @@ There are two options to build NNabla for Android.
 ## Quick build using Docker
 Execute the following command at the root directory of NNabla repository.  
 ```
-make PLATFORM=${platform} ARCHITECTURE=${architecture} ABI=${abi} bwd-nnabla-cpplib-android
-E.g. make PLATFORM=android-26 ARCHITECTURE=arm64 ABI=arm64-v8a bwd-nnabla-cpplib-android
+make bwd-nnabla-cpplib-android
 ```
 The above make will build NNabla C++ libraries and its dependent libraries within android docker container.  
-After successful build, you can find the libraries under ${NNabla_Root_Dir}/build/lib folder of your system.  
-You can find the configuration details of the android build in ${NNabla_Root_Dir}/build/android_setup.cfg file.  
-
+After successful build, you can find the libraries under ${NNabla_Root_Dir}/build/build_${PLATFORM}_${ARCHITECTURE}/${ABI} folder of your system.  
 The docker container uses Android NDK version r16b by default.  
+
 If you want to build docker image by yourself, then please refer build instructions of docker file at [Android Dockerfile section](https://github.com/sony/nnabla/blob/master/docker/README.md)  
-You can try with other Android NDK versions by manually invoking `sh build_nnabla.sh` with appropriate parameters inside Docker container.  
 
 ## Manual Build
 This section explains the manual building of NNabla using android NDK.  
@@ -91,11 +88,11 @@ To build NNabla using Android NDK, first clone the NNabla repository from git.
 ```shell
 git clone https://github.com/sony/nnabla
 ```
-Execute the build_nnabla.sh script with appropriate options from NNabla root directory.  
+Execute the build_nnabla.sh script with appropriate options.  
 ```
-cd ${NNabla_Root_Dir}
-sh build-tools/android/build_nnabla.sh -p=android-XX -a=[arm|arm64|x86|x86_64] -n=Path_to_your_ndk_folder -e=[armeabi|armeabi-v7a|arm64-v8a|x86|x86_64] (-e option is optional)
-E.g. sh build-tools/android/build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk-r16b -e=arm64-v8a 
+cd ${NNabla_Root_Dir}/build-tools/android
+sh build_nnabla.sh -p=android-XX -a=[arm|arm64|x86|x86_64] -n=Path_to_your_ndk_folder -e=[armeabi|armeabi-v7a|arm64-v8a|x86|x86_64] (-e option is optional)
+E.g. sh build_nnabla.sh -p=android-26 -a=arm64 -n=/usr/local/src/android-ndk-r16b -e=arm64-v8a
 ```
 The build_nnabla.sh script takes mainly 4 arguments,  
 -p (platform) option is to specify the android API level.  
@@ -104,17 +101,16 @@ The build_nnabla.sh script takes mainly 4 arguments,
 -e (ABI) option is to specify the instruction set.  
 <br>
 The above script will build NNabla C++ libraries and its dependent libraries.  
-After successful build, you can find the libraries under ${NNabla_Root_Dir}/build/lib folder of your system.  
-You can find the configuration details of the android build in ${NNabla_Root_Dir}/build/android_setup.cfg file.  
+After successful build, you can find the libraries under ${NNabla_Root_Dir}/build/build_${PLATFORM}_${ARCHITECTURE}/${ABI} folder of your system.  
 <br>
 
-#### Troubleshooting: 
+#### Troubleshooting:
 The build script modifies the some of NNabla source files dynamically to add support for android build.  
 At the end of the script the source modifications are reverted back.  
 Stopping the script in the middle might cause for build failure for later builds.  
 Request user to reset the NNabla repository and try the build again.  
 
-## Test 
+## Test
 We can verify the NNabla C++ android libraries by running the sample application in the native layer.  
 To do so, we need to first setup required environment as follows:   
 <br>
@@ -127,7 +123,7 @@ To verify the device or emulator running , please type following command:
 Your device/emulator should be listed as shown in following example.  
 ```
 $ adb devices
-List of devices attached 
+List of devices attached
 CB5A2AG8N7	device
 ```
 
@@ -140,9 +136,9 @@ Execute the following commands to run the mnist c++ inferencing sample program i
 $adb push ${NNabla_Root_Dir}/build/bin/mnist_runtime /data/local/tmp/
 $adb push ${NNabla_Root_Dir}/examples/cpp/mnist_runtime/lenet_010000.nnp /data/local/tmp/
 $adb push ${NNabla_Root_Dir}/examples/cpp/mnist_runtime/5.pgm /data/local/tmp/
-$adb push ${NNabla_Root_Dir}/build/lib/libarchive.so /data/local/tmp/
-$adb push ${NNabla_Root_Dir}/build/lib/libnnabla.so /data/local/tmp/
-$adb push ${NNabla_Root_Dir}/build/lib/libnnabla_utils.so /data/local/tmp/
+$adb push ${NNabla_Root_Dir}/build/android/build_${platform}_${architecture}/${ABI}/libarchive.so /data/local/tmp/
+$adb push ${NNabla_Root_Dir}/build/android/build_${platform}_${architecture}/${ABI}/libnnabla.so /data/local/tmp/
+$adb push ${NNabla_Root_Dir}/build/android/build_${platform}_${architecture}/${ABI}/libnnabla_utils.so /data/local/tmp/
 $adb shell
 $cd /data/local/tmp
 $export LD_LIBRARY_PATH=/data/local/tmp

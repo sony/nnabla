@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Warming up..." << std::endl;
   executor->execute();
 #ifdef WITH_CUDA
-  nbla::cuda_device_synchronize(0);
+  nbla::cuda_device_synchronize("0");
 #endif
   // Timing starts
   auto start = std::chrono::steady_clock::now();
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef TIMING
 #ifdef WITH_CUDA
-  nbla::cuda_device_synchronize(0);
+  nbla::cuda_device_synchronize("0");
 #endif
   // Timing ends
   auto end = std::chrono::steady_clock::now();

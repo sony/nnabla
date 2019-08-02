@@ -18,10 +18,13 @@ List of solvers
 
 .. autofunction:: Sgd
 .. autofunction:: Momentum
+.. autofunction:: Lars
 .. autofunction:: Nesterov
 .. autofunction:: Adadelta
 .. autofunction:: Adagrad
 .. autofunction:: RMSprop
 .. autofunction:: Adam
+.. autofunction:: AdaBound
 .. autofunction:: Adamax
 .. autofunction:: AMSGRAD
+.. autofunction:: AMSBound

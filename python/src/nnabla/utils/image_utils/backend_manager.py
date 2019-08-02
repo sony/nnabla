@@ -35,7 +35,7 @@ class ImageUtilsBackendManager(object):
 
     def __init__(self):
         if not self._loaded:
-            load_modules = ["cv2", "pypng", "pil"]
+            load_modules = ["cv2", "pypng", "pil", "dicom"]
             self.backends = OrderedDict()
 
             for module in load_modules:
@@ -78,8 +78,9 @@ class ImageUtilsBackendManager(object):
 
         self._backend = backend
 
-        logger.info(
-            "use {} for the backend of image utils".format(self._backend))
+        # Too verbose for common user
+        # logger.info(
+        #     "use {} for the backend of image utils".format(self._backend))
 
     @property
     def module(self):

@@ -36,6 +36,6 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(ATan, std::atan(x), dy / (1 + x * x), true);
+NBLA_DEFINE_TRANSFORM_UNARY(ATan, std::atan(x), dy / (1 + x * x), false);
 }
 #endif

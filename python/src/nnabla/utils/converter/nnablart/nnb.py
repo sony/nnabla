@@ -23,6 +23,7 @@ import nnabla.utils.converter
 
 from .utils import create_nnabart_info
 from .utils import preprocess_for_exporter
+from .utils import revise_buffer_size
 
 NN_BINARY_FORMAT_VERSION = 2
 
@@ -55,8 +56,9 @@ class NnbExporter:
         self._memory_data += b'\0' * (self._align(len(data)) - len(data))
         return (index, pointer)
 
-    def __init__(self, nnp, batch_size):
+    def __init__(self, nnp, batch_size, nnb_version=NN_BINARY_FORMAT_VERSION):
         self._info = create_nnabart_info(nnp, batch_size)
+        self._nnb_version = nnb_version
         preprocess_for_exporter(self._info, 'NNB')
 
         self._List = collections.namedtuple('List', ('size', 'list_index'))
@@ -123,6 +125,11 @@ class NnbExporter:
         index, pointer = self._alloc(data=struct.pack(
             '{}I'.format(len(output_list)), *output_list))
         outputs = self._List(len(output_list), index)
+
+        ####################################################################
+        # revise buffer size by bytes instead of data item.
+        if self._nnb_version > NN_BINARY_FORMAT_VERSION:
+            revise_buffer_size(self._info, settings)
 
         ####################################################################
         # make 2 data to save Variable Buffers in inference
@@ -294,7 +301,7 @@ class NnbExporter:
         functions = self._List(len(findexes), index)
 
         network = struct.pack('IIiIiIiIiIiIII',
-                              NN_BINARY_FORMAT_VERSION,
+                              self._nnb_version,
                               binary_format_revision,
                               buffers.size,
                               buffers.list_index,

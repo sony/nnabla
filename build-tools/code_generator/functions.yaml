@@ -15,10 +15,11 @@ Neural Network Layer:
           D_B \times ... \times D_N`). Dimensions before and after base_axis are flattened
           as if it is a matrix.
       weight:
-        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L`)
+        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L_{0}
+          \times \ldots \times L_{I}`)
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`)
+        doc: Bias vector (:math:`L_{0} \times \ldots \times L_{I}`)
         optional: true
         parameter: true
     arguments:
@@ -30,7 +31,7 @@ Neural Network Layer:
     outputs:
       y:
         doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
-          L`)
+          L_{0} \times \ldots \times L_{I}`)
     function_ids:
       i: 0
     c_runtime: support
@@ -44,25 +45,25 @@ Neural Network Layer:
       .. math::
           {\mathbf h_t} = {\mathbf \tanh}( {\mathbf w_{ih}} *{\mathbf x_t} + {\mathbf b_{ih}} + {\mathbf w_{hh}}* {\mathbf h_{(t-1)}} + {\mathbf b_{hh}}).
 
-      References:
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
-          * `Jeffrey Elman, Finding Structure in Time.`_
+      References:
+          * `Jeffrey Elman, Finding Structure in Time. <https://crl.ucsd.edu/~elman/Papers/fsit.pdf>`_
     inputs:
       x:
-        doc: Input N-D array with shape (sequence_length, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: Input N-D array with shape (num_directions, hidden_size, input_size +
-          hidden_size).
+        doc: Input N-D array with shape :math:`(D, H, I + H)`.
         parameter: true
       weight:
-        doc: Input N-D array with shape (num_layers -1, num_directions, hidden_size,
-          num_directions * hidden_size + hidden_size).
+        doc: Input N-D array with shape :math:`(L-1, D, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Input N-D array with shape (num_layers, num_directions, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, H)`.
         optional: true
         parameter: true
     arguments:
@@ -75,7 +76,10 @@ Neural Network Layer:
         doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
           relu. Default is tanh.
         type: string
-        default: tanh
+        available_values:
+        - tanh
+        - relu
+        default: '''tanh'''
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
         type: float
@@ -91,11 +95,12 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output N-D array of size (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`
       h_n:
-        doc: Output N-D array of size (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
       iifBB: 244
+    c_runtime: not support
   LSTM:
     snake_name: lstm
     doc: |2
@@ -106,31 +111,32 @@ Neural Network Layer:
           {\mathbf f_t} = {\mathbf \sigma}( {\mathbf W_f} *{\mathbf x_t} + {\mathbf U_f}* {\mathbf h_{(t-1)}} + {\mathbf b_f})\\
           {\mathbf i_t} = {\mathbf \sigma}( {\mathbf W_i} *{\mathbf x_t} + {\mathbf U_i}* {\mathbf h_{(t-1)}} + {\mathbf b_i})\\
           {\mathbf o_t} = {\mathbf \sigma}( {\mathbf W_o} *{\mathbf x_t} + {\mathbf U_o}* {\mathbf h_{(t-1)}} + {\mathbf b_o})\\
-          {\mathbf c_t} = {\mathbf f_t}\odot {mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
+          {\mathbf c_t} = {\mathbf f_t}\odot {\mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
           {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
 
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
       References:
-
-          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory.`_
+          * `S. Hochreiter and J. Schmidhuber, Long Short-Term Memory. <https://www.bioinf.jku.at/publications/older/2604.pdf>`_
     inputs:
       x:
-        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       c:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is (num_directions, 4, hidden_size,
-          input_size + hidden_size).
+        doc: weight parameters for the first layer. Shape is :math:`(D, 4, H, I +
+          H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is (num_layers
-          -1, num_directions, 4, hidden_size, num_directions * hidden_size + hidden_size)
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 4, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
         optional: true
         parameter: true
     arguments:
@@ -154,13 +160,15 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
+          can be reshaped as :math:`(T, B, D, H)`.
       h_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
       c_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`c_n` with shape :math:`(L, D, B, H)`
     function_ids:
       ifBB: 242
+    c_runtime: not support
   GRU:
     snake_name: gru
     doc: |2
@@ -170,28 +178,31 @@ Neural Network Layer:
       .. math::
           {\mathbf r_t} = {\mathbf \sigma}( {\mathbf W_r} *{\mathbf x_t} + {\mathbf U_r}* {\mathbf h_{(t-1)}} + {\mathbf b_r})\\
           {\mathbf z_t} = {\mathbf \sigma}( {\mathbf W_z} *{\mathbf x_t} + {\mathbf U_z}* {\mathbf h_{(t-1)}} + {\mathbf b_z})\\
-        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
-        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}{\mathbf h_{t-1}}.
+        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}\odot( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
+        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}\odot {\mathbf h_{t-1}}.
+
+      We use the following notations to describe the inputs and outputs below.
+      :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
 
       References:
 
-          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation.`_
+          * `K. cho et al., Learning Phrases Representations using RNN Encoder-Decoder for Statistical Machine Translation. <https://www.aclweb.org/anthology/D14-1179>`_
     inputs:
       x:
-        doc: Input N-D array with shape (seq_len, batch_size, input_size).
+        doc: Input N-D array with shape :math:`(T, B, I)`.
       h:
-        doc: Input N-D array with shape (num_layers, num_directions, batch_size, hidden_size).
+        doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is (num_directions, 3, hidden_size,
-          input_size + hidden_size).
+        doc: weight parameters for the first layer. Shape is :math:`(D, 3, H, I +
+          H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is (num_layers
-          -1, num_directions, 3, hidden_size, num_directions * hidden_size + hidden_size)
+        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+          D, 3, H, D * H + H)`.
         optional: true
         parameter: true
       bias:
-        doc: Bias vector (:math:`L`). Shape is (num_layers, num_directions, 4, hidden_size).
+        doc: Bias vector (:math:`L`). Shape is :math:`(L, D, 4, H)`.
         optional: true
         parameter: true
     arguments:
@@ -215,11 +226,13 @@ Neural Network Layer:
         default: 'True'
     outputs:
       y:
-        doc: Output variable of shape (seq_len, batch_size, num_directions * hidden_size)
+        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
+          can be reshaped as :math:`(T, B, D, H)`.
       h_n:
-        doc: Output variable of shape (num_layers, num_directions, batch_size, hidden_size)
+        doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
     function_ids:
       ifBB: 243
+    c_runtime: not support
   Convolution:
     snake_name: convolution
     doc: |2
@@ -286,6 +299,11 @@ Neural Network Layer:
           sparser, by grouping connections along the mapping direction.
         type: int64
         default: '1'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: |2
@@ -303,6 +321,7 @@ Neural Network Layer:
             
     function_ids:
       iiIiIiIi: 1
+      iiIiIiIiB: 265
     c_runtime: support
   DepthwiseConvolution:
     snake_name: depthwise_convolution
@@ -519,11 +538,17 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Maximum values variable
     function_ids:
       iIiIBiI: 5
+      iIiIBiIB: 266
     c_runtime: support
   AveragePooling:
     snake_name: average_pooling
@@ -555,6 +580,11 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
       including_pad:
         doc: If true, border padding values are considered for the output.
         type: bool
@@ -564,6 +594,7 @@ Neural Network Layer:
         doc: Average values variable
     function_ids:
       iIiIBiIB: 6
+      iIiIBiIBB: 267
     c_runtime: support
   GlobalAveragePooling:
     snake_name: global_average_pooling
@@ -611,11 +642,17 @@ Neural Network Layer:
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Summed values variable
     function_ids:
       iIiIBiI: 8
+      iIiIBiIB: 268
     c_runtime: support
   Unpooling:
     snake_name: unpooling
@@ -778,7 +815,7 @@ Neural Network Activation Functions:
       .. math::
           y_i = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 
-      along the dimension specified by `axis`, where :math:`y_i` is the input and :math:`x_i` is the output.
+      along the dimension specified by `axis`, where :math:`x_i` is the input and :math:`y_i` is the output.
     inputs:
       x:
         doc: N-D array. Typically indicates a score.
@@ -793,6 +830,46 @@ Neural Network Activation Functions:
     function_ids:
       i: 16
     c_runtime: support
+  LogSoftmax:
+    snake_name: log_softmax
+    doc: |2
+
+      Fused operation of Softmax normalization followed by log, which is defined as
+
+      .. math::
+          y_i = \log \frac{\exp(x_i)}{\sum_j \exp(x_j)},
+
+      where :math:`y_i` is the input and :math:`x_i` is the output at i-th channel.
+      An advantage of this fusion is reducing the numerical instability due to the log application.
+
+      The original definition can be rewritten as
+
+      .. math::
+          y_i = x_i - \max_j(x_j) - \log\left\(\sum_j \exp(x_j - \max_k(x_k))\right\).
+
+      It is more stable as a log is always applied to a value :math:`\ge e`, while a log can be evaluated for 0 in the non-fused operation.
+
+      Also, backward gradient computation is more stable than the original one as it doesn't perform division by x due to a gradient of log. The definition is as following.
+
+      .. math::
+          dx_i = dy_i - y_i * \sum_j dy_j
+
+      where :math:`dx_i` and :math:`dy_i` denote gradients of loss
+      wrt :math:`x_i` and :math:`y_i` respectively.
+    inputs:
+      x:
+        doc: N-D array. Typically indicates a score.
+    arguments:
+      axis:
+        doc: Axis normalization is taken.
+        type: int64
+        default: len(x.shape) - 1
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      i: 269
   ELU:
     snake_name: elu
     doc: |2
@@ -941,7 +1018,7 @@ Neural Network Activation Functions:
       Element-wise Parametrized Rectified Linear Unit function. Calculates:
 
       .. math::
-          y_i = \max(0, x_i) + w_i \min(0, -x_i)
+          y_i = \max(0, x_i) + w_i \min(0, x_i)
 
       where negative slope :math:`w` is learned and can vary across channels (an
       axis specified with `base_axis`).
@@ -961,7 +1038,237 @@ Neural Network Activation Functions:
     function_ids:
       i: 21
     c_runtime: support
+  GELU:
+    snake_name: gelu
+    doc: |2
+
+      Gaussian Error Unit (GELU) function.
+
+      .. math::
+          GELU(x) = xP(X \leq  x) = x \Phi (x)
+
+      which is approximated by
+
+      .. math::
+          GELU(x) = 0.5x (1 + \tanh ( \sqrt(2/\pi)(x + 0.044715x^3) ))
+
+      References:
+          * `Dan Hendrycks and Kevin Gimpel.
+            Gaussian Error Linera Units (GELUs).
+            <https://arxiv.org/abs/1606.08415>`_
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    function_ids:
+      Empty: 245
+    c_runtime: not support
+  ReLU6:
+    snake_name: relu6
+    doc: |2
+
+      Element-wise ReLU6 function.
+      Capping ReLU activation to 6 is often observed to learn sparse features earlier.
+
+      .. math::
+          ReLU6(x) = \min(\max(0,x,),6)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 256
+  HardSigmoid:
+    snake_name: hard_sigmoid
+    doc: |2
+
+      Segment-wise linear approximation of sigmoid.
+      Preferable when speed of computation is more important than precision.
+      Returns :math:`0` if :math:`x < -2.5`. 
+      Returns :math:`1` if :math:`x> 2.5`. 
+      Returns :math:`0.2x + 0.5` if :math:`-2.5 <= x <= 2.5`.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 249
+      ff: 259
+  HardTanh:
+    snake_name: hard_tanh
+    doc: |2
+
+      Element-wise HardTanh function.
+      Computationally cheaper than Tanh function.
+      Returns :math:`1` if :math:`x > 1`. 
+      Returns :math:`-1` if :math:`x < -1`. 
+      Returns :math:`x` otherwise.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      ii: 250
+      ff: 260
+      Empty: 261
+  LogSigmoid:
+    snake_name: log_sigmoid
+    doc: |2
+
+      Element-wise LogSigmoid function.
+
+      .. math::
+          LogSigmoid(x) = \log(1/(1+\exp(-x_i)))
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 251
+  SoftPlus:
+    snake_name: softplus
+    doc: |2
+
+      Element-wise SoftPlus function.
+      Unlike Sigmoid and Tanh that have upper and lower bound, SoftPlus is only lower-bounded by 0.
+
+      .. math::
+          SoftPlus(x) = \log(1+\exp(x_i))
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      ii: 252
+      Empty: 262
+  SoftSign:
+    snake_name: softsign
+    doc: |2
+
+      Element-wise SoftSign.
+      Can be used in place of Tanh function.
+      While Tanh converges exponentially, SoftSign converges polynomially.
+
+      .. math::
+          SoftSign(x) = x/(1+|x|)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 253
+  TanhShrink:
+    snake_name: tanh_shrink
+    doc: |2
+
+      Element-wies TanhShrink function.
+
+      .. math::
+          TanhShrink(x) = x - \tanh(x)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 254
+  Sinc:
+    snake_name: sinc
+    doc: |2
+
+      Element-wise Sinc function.
+      Unlike other popular activation functions, it has rises and falls.
+      returns :math:`1` if :math:`x = 0`.
+      returns :math:`\sin(x)/x` otherwise.
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 255
 Normalization:
+  FusedBatchNormalization:
+    snake_name: fused_batch_normalization
+    doc: |2
+
+      Batch normalization fused with add2 (adding a residual input) and activation.
+
+      This is an equivalent operation to the following,
+      but is more computationally efficient:
+
+      .. code-block:: python
+
+        h = nn.BatchNormalization(x, beta, gamma, mean, variance, *opts)
+        y = F.ReLU(h + z)
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+      gamma:
+        doc: N-D array of gamma which is learned.
+      mean:
+        doc: N-D array of running mean (modified during forward execution).
+      variance:
+        doc: N-D array of running variance (modified during forward execution).
+      z:
+        doc: N-D array of a residual input. By specifying None, the activation function
+          will follow immediately after BN operation.
+        optional: true
+    arguments:
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      decay_rate:
+        doc: Decay rate of running mean and variance.
+        type: float
+        default: '0.9'
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
+      nonlinearity:
+        doc: Activation chosen from ('relu').
+        type: string
+        available_values:
+        - relu
+        default: '''relu'''
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIffBi: 270
   BatchNormalization:
     snake_name: batch_normalization
     doc: |2
@@ -1017,6 +1324,69 @@ Normalization:
     function_ids:
       iIffB: 22
     c_runtime: support
+  SyncBatchNormalization:
+    snake_name: sync_batch_normalization
+    doc: |2
+
+      Synchronized Batch Normalization:
+
+      For some tasks (e.g., semantic segmentation), batch size will be too small and BatchNormalization layer might not work well.
+      SyncBatchNorlization layer solves these problems by synchronizing batch stats (mean and var) between multiple processes.
+
+      .. math::
+          \begin{eqnarray}
+            \mu &=& \frac{1}{M} \sum x_i \\
+            \sigma^2 &=& \frac{1}{M} \left(\sum x_i - \mu\right)^2 \\
+            \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
+            y_i &=& \hat{x}_i \gamma + \beta.
+          \end{eqnarray}
+
+      References:
+
+          * Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+      gamma:
+        doc: N-D array of gamma which is learned.
+      mean:
+        doc: N-D array of running mean (modified during forward execution).
+      variance:
+        doc: N-D array of running variance (modified during forward execution).
+    arguments:
+      comm:
+        doc: The communicator
+        type: Communicator
+      group:
+        doc: The name of the communicator group
+        type: string
+        available_values:
+        - world
+        default: world
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      decay_rate:
+        doc: Decay rate of running mean and variance.
+        type: float
+        default: '0.9'
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: Use mini-batch statistics rather than running ones.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      CiiIffB: 263
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
@@ -2154,6 +2524,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 236
+    c_runtime: not support
   IsInf:
     snake_name: isinf
     doc: |2
@@ -2167,6 +2538,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       Empty: 237
+    c_runtime: not support
   ResetNaN:
     snake_name: reset_nan
     doc: |2
@@ -2185,6 +2557,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 238
+    c_runtime: not support
   ResetInf:
     snake_name: reset_inf
     doc: |2
@@ -2203,6 +2576,7 @@ Logical:
         doc: N-D array with the same shape as x
     function_ids:
       f: 239
+    c_runtime: not support
   Where:
     snake_name: where
     doc: |2
@@ -2241,6 +2615,7 @@ Logical:
         doc: N-D array with the same shape as condition
     function_ids:
       Empty: 240
+    c_runtime: not support
 Math:
   Constant:
     snake_name: constant
@@ -2908,22 +3283,96 @@ Array Manipulation:
     function_ids:
       i: 184
     c_runtime: not support
+  Tile:
+    snake_name: tile
+    doc: |2
+
+      Forward input `x` repeated the number of times given by `reps`. If `reps`
+      is a sequence, the output has dimension of ``d = max(len(reps), x.ndim)``
+      and either `x` is promoted to be d-dimensional by prepending new axes or
+      `reps` is promoted to x.ndim by prepending 1's.
+    inputs:
+      x:
+        doc: N-D array
+    arguments:
+      reps:
+        doc: The number of repetitions of `x` along each axis.
+        type: repeated int64
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iI: 247
   OneHot:
     snake_name: one_hot
     doc: |2
 
-      OneHot creates one-hot vector based on input indices.
+      This function creates one-hot vector based on input indices.
+
+              Example:
+
+              .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import numpy as np
+
+                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [1], [0]]))
+                print(labels.shape)  # (5, 1)
+
+                num_class = 10
+
+                y_train = F.one_hot(labels, shape=(num_class, ))
+                y_train.forward()
+
+                print(y_train.shape)  # (5, 10)
+                print(y_train.d)
+
+                # [[0. 0. 0. 0. 0. 0. 0. 0. 0. 1.]
+                #  [0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
+                #  [0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
+                #  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
+                #  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+
+                # Can also be used for ndarray.
+
+                labels = nn.Variable.from_numpy_array(np.array([[1, 7], [4, 7], [8, 6], [5, 0], [2, 6]]))
+                print(labels.shape)  # (5, 2)
+
+                num_class_1, num_class_2  = 10, 8
+
+                y_train = F.one_hot(labels, shape=(num_class_1, num_class_2))
+                y_train.forward()
+        
+                print(y_train.shape)  # (5, 10, 8)
+                print(y_train.d)
+
+                # [[[0. 0. 0. 0. 0. 0. 0. 0.]          [[0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 1.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 1. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]    ...    [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]           [0. 0. 0. 0. 0. 0. 0. 0.]
+                #   [0. 0. 0. 0. 0. 0. 0. 0.]],         [0. 0. 0. 0. 0. 0. 0. 0.]]]
     inputs:
       x:
-        doc: N-D array
+        doc: N-D array representing label's indice.
         template: TI
     arguments:
       shape:
-        doc: No Description
+        doc: Number of classes. Note that it must be exactly the same as the number
+          of classes included in label data. Passing incorrect numbers might cause
+          an unexpected error and currently this function doesn't check if the input
+          is valid or not. Also, when nd-labels are given, dimensions must match.
+          See the example above.
         type: Shape
     outputs:
       output:
-        doc: N-D array
+        doc: N-D array one-hot vector/tensor.
     function_ids:
       iI: 80
     c_runtime: not support
@@ -3092,7 +3541,7 @@ Array Manipulation:
         doc: batched N-D array of inverted matrix
     c_runtime: not support
     function_ids:
-      Empty: 245
+      Empty: 273
   BatchDet:
     snake_name: batch_det
     doc: |2
@@ -3106,7 +3555,154 @@ Array Manipulation:
         doc: batched N-D array of inverted matrix
     c_runtime: not support
     function_ids:
-      Empty: 246
+      Empty: 274
+  Assign:
+    snake_name: assign
+    doc: |2
+
+      Assign source array to destination array just like `tf.assign`.
+      This is useful to synchronize or manually update parameters.
+
+      .. code-block:: python
+
+        dst = nn.Variable((2, 3, 4))
+        src = nn.Variable((2, 3, 4))
+        assign = F.assign(dst, src)
+
+        assign.forward()
+        assert np.allclose(dst.d, src.d) # dst and src have identical values.
+        assert np.allclose(assign.d dst.d) # returned Variable is also identical to dst.
+
+      Unlike TensorFlow, the returned Variable has a backward path to `dst`:
+
+      .. math::
+
+        g_{dst} = g_{y}
+    inputs:
+      dst:
+        doc: A destination N-D array
+      src:
+        doc: A source N-D array
+    outputs:
+      y:
+        doc: An assigned array
+    c_runtime: not support
+    function_ids:
+      Empty: 248
+  GatherNd:
+    snake_name: gather_nd
+    doc: |2
+
+      Gather elements or slices from `data` according to `indices`, which must
+      be at least two-dimensional with the first dimension :math:`M` being less
+      or equal to the :math:`N` dimensions of `data`. Given `data` with shape
+      :math:`(X_0, X_1, ..., X_{N-1})` and indices with shape
+      :math:`(M, Y_0, ..., Y_{K-1})` output has shape
+      :math:`(Y_0, ..., Y_{K-1}, X_M, ..., X_{N-1})`. If :math:`M == N`, output
+      shape is simply :math:`(Y_0, ..., Y_{K-1})`.
+
+      The forward of :func:`~nnabla.functions.gather_nd` is equivalent to:
+
+      .. code-block:: python
+
+        def gather_nd(data, index):
+            import numpy as np
+            tmp_index = index.reshape(index.shape[0], -1)
+            tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
+            out_shape = index.shape[1:] + data.shape[index.shape[0]:]
+            return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> data = F.arange(1, 11).reshape([2, 5])
+      >>> print(data.d)
+      [[ 1.  2.  3.  4.  5.]
+       [ 6.  7.  8.  9. 10.]]
+      >>> F.gather_nd(data, [[1, 1, 0]]).shape
+      (3, 5)
+      >>> F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).shape
+      (3,)
+      >>> print(F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).d)
+      [6. 7. 1.]
+      >>> print(F.gather_nd(data, [[1, 1, 0]]).d)
+      [[ 6.  7.  8.  9. 10.]
+       [ 6.  7.  8.  9. 10.]
+       [ 1.  2.  3.  4.  5.]]
+
+      When `indices` is provided as a :obj:`~nnabla.Variable` it will be
+      possible to change the actual index values after function creation.
+      It is important to note that out-of-bound indices raise error when
+      running on CPU but are ignored when using an accelerated computation
+      context.
+
+      >>> indices = nn.Variable((2, 1))
+      >>> indices.d = [[0], [0]]
+      >>> y = F.gather_nd(data, indices)
+      >>> print(y.d)
+      [1.]
+      >>> indices.d = [[1], [4]]
+      >>> y.forward()
+      >>> print(y.d)
+      [10.]
+    inputs:
+      x:
+        doc: N-D array input data
+      indices:
+        doc: N-D array indices
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      Empty: 264
+  ScatterNd:
+    snake_name: scatter_nd
+    doc: |2
+
+      Scatter `data` into a new array of given `shape` according to `indices`.
+      This operation is the inverse of :func:`~nnabla.functions.gather_nd`.
+
+      The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
+
+      .. code-block:: python
+
+        def scatter_nd(data, indices, shape):
+            import numpy as np
+            if isinstance(indices, np.ndarray)
+                indices = indices.tolist()
+            result = np.zeros(shape, dtype=data.dtype)
+            result[indices] = data
+            return result
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> data = nn.Variable.from_numpy_array(np.array([9, 10, 11, 12]))
+      >>> indices = nn.Variable.from_numpy_array(np.array([[4, 3, 1, 7]]))
+      >>> scattered = F.scatter_nd(data, indices, shape=(8,))
+      >>> print(scatterd.d)
+      [ 0. 11.  0. 10.  9.  0.  0. 12.]
+      >>> print(F.gather_nd(scattered, indices).d)
+      [ 9. 10. 11. 12.]
+    inputs:
+      data:
+        doc: N-D array input data.
+      indices:
+        doc: N-D array scatter indices.
+    arguments:
+      shape:
+        doc: Shape of output variable.
+        type: repeated int64
+    outputs:
+      y:
+        doc: N-D array of given `shape`.
+    c_runtime: not support
+    function_ids:
+      iI: 271
+>>>>>>> implement_inv
 Signal Processing:
   Interpolate:
     snake_name: interpolate
@@ -3458,6 +4054,79 @@ Stochasticity:
     function_ids:
       ffiIi: 91
     c_runtime: not support
+  RandomChoice:
+    snake_name: random_choice
+    doc: |2
+
+      Generate random samples from population `x` with selection probabilities
+      determined by the relative weights `w`. The number of samples to draw is
+      given by the product of `shape`s dimensions, and the samples are returned
+      with the given `shape`. By default, samples are drawn with replacement,
+      i.e. selection of a specific population member is solely determined by
+      its associated weight. Sampling without replacement, where any population
+      member may be drawn only once, is used if `replace` is set to False.
+
+      For both `x` and `w` the innermost dimension corresponds to the individual
+      populations and their weights from which samples are returned with the
+      requested `shape` following all outermost dimensions of the input.
+
+      .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.functions as F
+        import numpy as np
+        nn.set_auto_forward(True)
+
+        # x holds two populations
+        x = nn.Variable.from_numpy_array(np.array([[11, 22, 33], [110, 220, 330]]))
+        # w holds the weights for each population
+        w = nn.Variable.from_numpy_array(np.array([[10, 20, 70], [70, 20, 10]]))
+
+        # draw one sample from each population
+        y = F.random_choice(x, w)  # y.shape => (2, 1)
+
+        # draw 12 samples with shape (3, 4) from each population
+        y = F.random_choice(x, w, shape=(3, 4))  # y.shape => (2, 3, 4)
+
+      Note that weights must not be less than zero and for each population the
+      sum of weights must be greater than zero. Additionally, sampling without
+      replacement requires that the number of non-zero weights is not less than
+      the number of samples to be drawn. These conditions are verified in "cpu"
+      computation context but not when using "cuda" or "cudnn" acceleration
+      (this would require additional device synchronization steps penalizing
+      performance).
+
+      Random sampling from an implicit array of index values (like categorical
+      or multinomial) can be realized with input `x` constructed as indices.
+
+      .. code-block:: python
+
+        w = nn.Variable.from_numpy_array(np.array([1, 2, 3, 2, 1]))
+        y = F.random_choice(F.arange(0, 5), w)
+    inputs:
+      x:
+        doc: N-D array from which a random sample is generated.
+      w:
+        doc: N-D array of associated weights of elements in `x`.
+    arguments:
+      shape:
+        doc: Number and shape of generated samples.
+        type: Shape
+        default: '[]'
+      replace:
+        doc: Whether sampling is with or without replacement.
+        type: bool
+        default: 'True'
+      seed:
+        doc: Random seed.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIBi: 246
   RandomCrop:
     snake_name: random_crop
     doc: |2
@@ -4923,3 +5592,42 @@ Unsupported, Special Use:
     function_ids:
       ffB: 231
     c_runtime: not support
+  MaxPoolingBackward:
+    snake_name: max_pooling_backward
+    doc: |2
+
+      Max pooling backward. This is tentative and temporal solution to support the double backward of 
+      the max pooling. The document of this function must not be shown.
+    inputs:
+      x:
+        doc: Input variable.
+      dy:
+        doc: Input variable.
+    arguments:
+      kernel:
+        doc: Kernel sizes for each spatial axis.
+        type: Shape
+      stride:
+        doc: Subsampling factors for each spatial axis.
+        type: Shape
+        default: kernel
+      ignore_border:
+        doc: If false, kernels covering borders are also considered for the output.
+        type: bool
+        default: 'True'
+      pad:
+        doc: Border padding values for each spatial axis. Padding will be added both
+          sides of the dimension.
+        type: Shape
+        default: (0,) * len(kernel)
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
+    outputs:
+      dx:
+        doc: Output
+    c_runtime: not support
+    function_ids:
+      iIiIBiIB: 272

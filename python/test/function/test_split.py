@@ -43,3 +43,23 @@ def test_zero_value():
     a = nn.Variable((1, 6, 0))
     with pytest.raises(RuntimeError):
         F.split(a, axis=1)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("seed", [313])
+def test_split_double_backward(seed, axis, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    shape = [2, 3, 4]
+    x = rng.randn(*shape).astype(np.float32)
+    inputs = [x]
+    backward_function_tester(rng, F.split, None,
+                             inputs=inputs,
+                             func_args=[axis], func_kwargs={},
+                             atol_f=1e-3,
+                             atol_b=5e-3,
+                             atol_accum=5e-3,
+                             dstep=1e-2,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

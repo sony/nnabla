@@ -24,7 +24,8 @@ ctxs = list_context('ImageAugmentation')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_image_augmentation_forward(seed, ctx, func_name):
+@pytest.mark.parametrize("shape", [(3, 5, 8), (3, 10, 10)])
+def test_image_augmentation_forward(seed, shape, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(16, 3, 8, 8).astype(np.float32)]
     i = nn.Variable(inputs[0].shape)
@@ -33,7 +34,6 @@ def test_image_augmentation_forward(seed, ctx, func_name):
         o = F.image_augmentation(i)
     assert o.d.shape == inputs[0].shape
 
-    shape = (3, 5, 8)
     with nn.context_scope(ctx), nn.auto_forward():
         o = F.image_augmentation(i, shape=shape, pad=(2, 2),
                                  min_scale=0.8, max_scale=1.2, angle=0.2,
