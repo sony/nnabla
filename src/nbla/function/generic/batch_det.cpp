@@ -43,37 +43,6 @@ void BatchDet<T>::setup_impl(const Variables &inputs,
   offset_ = dim_ * dim_;
 
   outputs[0]->reshape(Shape_t{batch_size_}, true);
-
-  // for backward
-  reshaped_det_x_ = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
-  reshaped_gy_ = make_shared<Variable>(Shape_t{batch_size_, 1, 1});
-  gx_ = make_shared<Variable>(inputs[0]->grad());
-  inv_x_ = make_shared<Variable>(inputs[0]->shape());
-  transposed_inv_x_ = make_shared<Variable>();
-  mul1_out_ = make_shared<Variable>();
-  mul2_out_ = make_shared<Variable>();
-
-  reshaped_det_x_->data()->set_array(outputs[0]->data()->array());
-  reshaped_gy_->data()->set_array(outputs[0]->grad()->array());
-
-  f_batch_inv_ = create_BatchInv(this->ctx_);
-  f_batch_inv_->setup(inputs, Variables{inv_x_.get()});
-
-  f_transpose_ = create_Transpose(this->ctx_, vector<int>{0, 2, 1});
-  f_transpose_->setup(Variables{inv_x_.get()},
-                      Variables{transposed_inv_x_.get()});
-
-  f_mul1_ = create_Mul2(this->ctx_);
-  f_mul1_->setup(Variables{reshaped_gy_.get(), reshaped_det_x_.get()},
-                 Variables{mul1_out_.get()});
-
-  f_mul2_ = create_Mul2(this->ctx_);
-  f_mul2_->setup(Variables{mul1_out_.get(), transposed_inv_x_.get()},
-                 Variables{mul2_out_.get()});
-
-  f_add_ = create_Add2(this->ctx_, true);
-  f_add_->setup(Variables{gx_.get(), mul2_out_.get()},
-                Variables{gx_.get()});
 }
 
 template <typename T>
@@ -97,20 +66,53 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0]) {
     return;
   }
-  if (!accum[0]) {
-    inputs[0]->grad()->zero();
-  }
+
+  Variable gx(inputs[0]->grad());
+  Variable reshaped_gy(Shape_t{batch_size_, 1, 1});
+  Variable inv_x(inputs[0]->shape());
+  Variable transposed_inv_x(inv_x.data()->shape());
+  Variable reshaped_det_x(Shape_t{batch_size_, 1, 1});
+  Variable mul1_out(reshaped_det_x.data()->shape());
+  Variable mul2_out(mul1_out.data()->shape());
+
+  reshaped_gy.data()->set_array(outputs[0]->grad()->array());
+  reshaped_det_x.data()->set_array(outputs[0]->data()->array());
+
   // gx += gy * det_x * inv_x^T (element-wise multiplication)
-  f_batch_inv_->forward(inputs, Variables{inv_x_.get()});
-  f_transpose_->forward(Variables{inv_x_.get()},
-                        Variables{transposed_inv_x_.get()});
-  f_mul1_->forward(Variables{reshaped_gy_.get(), reshaped_det_x_.get()},
-                   Variables{mul1_out_.get()});
-  f_mul2_->forward(Variables{mul1_out_.get(), transposed_inv_x_.get()},
-                   Variables{mul2_out_.get()});
-  // set gradient to output
-  gx_->data()->set_array(inputs[0]->grad()->array());
-  f_add_->forward(Variables{gx_.get(), mul2_out_.get()},
-                  Variables{gx_.get()});
+
+  // batch_inv = input^-1
+  auto f_batch_inv = create_BatchInv(this->ctx_);
+  f_batch_inv->setup(inputs, Variables{&inv_x});
+  f_batch_inv->forward(inputs, Variables{&inv_x});
+
+  // mul1_out = gy * det_x = gy * output
+  auto f_mul1 = create_Mul2(this->ctx_);
+  f_mul1->setup(Variables{&reshaped_gy, &reshaped_det_x},
+                Variables{&mul1_out});
+  f_mul1->forward(Variables{&reshaped_gy, &reshaped_det_x},
+                  Variables{&mul1_out});
+
+  // inv_x^T
+  auto f_transpose = create_Transpose(this->ctx_, vector<int>{0, 2, 1});
+  f_transpose->setup(Variables{&inv_x}, Variables{&transposed_inv_x});
+  f_transpose->forward(Variables{&inv_x}, Variables{&transposed_inv_x});
+
+  // mul2_out = mul1_out * inv_x^T
+  auto f_mul2 = create_Mul2(this->ctx_);
+  f_mul2->setup(Variables{&mul1_out, &transposed_inv_x}, Variables{&mul2_out});
+  f_mul2->forward(Variables{&mul1_out, &transposed_inv_x},
+                  Variables{&mul2_out});
+
+  if (!accum[0]) {
+    // gx = mul2_out
+    const Array *mul2_ptr = mul2_out.data()->get(get_dtype<T>(), this->ctx_);
+    Array *gx_ptr = gx.data()->cast(get_dtype<T>(), this->ctx_, true);
+    gx_ptr->copy_from(mul2_ptr);
+  } else {
+    // gx = gx + mul2_out
+    auto f_add = create_Add2(this->ctx_, true);
+    f_add->setup(Variables{&gx, &mul2_out}, Variables{&gx});
+    f_add->forward(Variables{&gx, &mul2_out}, Variables{&gx});
+  }
 }
 }

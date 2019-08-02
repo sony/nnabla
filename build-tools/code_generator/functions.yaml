@@ -3552,7 +3552,7 @@ Array Manipulation:
         doc: batched N-D array
     outputs:
       y:
-        doc: batched N-D array of inverted matrix
+        doc: batched N-D array of determinant
     c_runtime: not support
     function_ids:
       Empty: 274
@@ -3703,6 +3703,9 @@ Array Manipulation:
     function_ids:
       iI: 271
 >>>>>>> implement_inv
+=======
+      Empty: 249
+>>>>>>> ad8e6a27f37cfd32e30272f23bcbc5e89d8c4ab4
 Signal Processing:
   Interpolate:
     snake_name: interpolate
