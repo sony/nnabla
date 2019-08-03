@@ -30,10 +30,11 @@ class Squeeze(gym.ObservationWrapper):
         return np.squeeze(observation)
 
 
-def make_atari_deepmind(rom_name):
+def make_atari_deepmind(rom_name, valid=False):
     from external.atari_wrappers import make_atari, wrap_deepmind
     env = make_atari(rom_name)
     # framestack is handled by sampler.py
-    env = wrap_deepmind(env, frame_stack=False, scale=True)
+    env = wrap_deepmind(env, episode_life=not valid,
+                        frame_stack=False, scale=True)
     env = Squeeze(env)
     return env

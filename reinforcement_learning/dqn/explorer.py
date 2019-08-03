@@ -21,71 +21,108 @@ import numpy as np
 
 import nnabla as nn
 
-
-class NnpExplorer(object):
-    def __init__(self, nnp_file, num_actions, name='qnet', rng=np.random):
-        self.num_actions = num_actions
-        self.rng = rng
-        if nnp_file is None:
-            self.network = None
-            return
-        from nnabla.utils import nnp_graph
-        nnp = nnp_graph.NnpLoader(nnp_file)
-        self.network = nnp.get_network(name, batch_size=1)
-        assert self.network.outputs['q'].shape[1] == num_actions
-
-    def select_greedy_action(self, obs):
-        if self.network is None:
-            return np.array([self.rng.randint(self.num_actions)])
-        s = self.network.inputs['s']
-        q = self.network.outputs['q']
-        s.d = obs
-        q.forward(clear_buffer=True)
-        return np.argmax(q.d, axis=1)
+from abc import ABC, abstractmethod
 
 
-class EpsilonGreedyQExplorer(object):
-    def __init__(self, q_builder, num_actions, eps_start=.9, eps_end=.1, eps_steps=10**6, name='q', rng=np.random):
-        self.built = False
-        self.q_builder = q_builder
+class Explorer(ABC):
+    def __init__(self, num_actions, name='q', network=None):
         self.num_actions = num_actions
         self.name = name
-        self.rng = rng
-        self.eps_start = eps_start
-        self.eps_end = eps_end
-        self.eps_steps = eps_steps
-        self.time = 0
+        self.network = network
 
-    def build_graph(self, obs):
+    @abstractmethod
+    def select_action(self, obs, val=False):
+        raise NotImplementedError()
+
+    def build_network(self, obs):
         s = nn.Variable(obs.shape)
         with nn.parameter_scope(self.name):
             q = self.q_builder(s, self.num_actions, test=True)
         Variables = namedtuple(
             'Variables', ['s', 'q'])
-        self.v = Variables(s, q)
-        self.built = True
+        self.network = Variables(s, q)
 
-    def sample_action(self, obs):
-        if not self.built:
-            self.build_graph(obs)
-        self.v.s.d = obs
-        self.v.q.forward(clear_buffer=True)
+    def build_network_from_nnp(self, nnp_file):
+        from nnabla.utils import nnp_graph
+        nnp = nnp_graph.NnpLoader(nnp_file)
+        net = nnp.get_network(self.name, batch_size=1)
+        s = net.inputs['s']
+        q = net.outputs['q']
+        Variables = namedtuple(
+            'Variables', ['s', 'q'])
+        assert q.shape[1] == self.num_actions
+        self.network = Variables(s, q)
 
-        if self.rng.rand() >= self.epsilon():
-            return np.argmax(self.v.q.d, axis=1)
+
+class GreedyExplorer(Explorer):
+    def __init__(self, num_actions, use_nnp=False,
+                 q_builder=None, nnp_file=None, name='q'):
+        self.num_actions = num_actions
+        self.q_builder = q_builder
+        self.network = None
+        self.name = name
+        if use_nnp:
+            if nnp_file is None:
+                return
+            super().build_network_from_nnp(nnp_file)
+
+    def select_action(self, obs, val=False):
+        if not self.network:
+            super().build_network(obs)
+        self.network.s.d = obs
+        self.network.q.forward(clear_buffer=True)
+        return np.argmax(self.network.q.d, axis=1)
+
+
+class EGreedyExplorer(Explorer):
+    def __init__(self, num_actions, epsilon=0.0, use_nnp=False,
+                 q_builder=None, nnp_file=None, name='q', rng=np.random):
+        self.num_actions = num_actions
+        self.epsilon = epsilon
+        self.q_builder = q_builder
+        self.network = None
+        self.name = name
+        self.rng = rng
+        if use_nnp:
+            if nnp_file is None:
+                return
+            super().build_network_from_nnp(nnp_file)
+
+    def select_action(self, obs, val=False):
+        if not self.network:
+            super().build_network(obs)
+        self.network.s.d = obs
+        self.network.q.forward(clear_buffer=True)
+        if self.rng.rand() >= self.epsilon:
+            return np.argmax(self.network.q.d, axis=1)
         return self.rng.randint(self.num_actions, size=(obs.shape[0],))
 
-    def select_greedy_action(self, obs):
-        if not self.built:
-            self.build_graph(obs)
-        self.v.s.d = obs
-        self.v.q.forward(clear_buffer=True)
-        return np.argmax(self.v.q.d, axis=1)
 
-    def epsilon(self):
-        return max(
-            self.eps_end,
-            self.eps_start + (self.eps_end - self.eps_start) * self.time / self.eps_steps)
+class LinearDecayEGreedyExplorer(EGreedyExplorer):
+    def __init__(self, num_actions, eps_val=0.05, eps_start=.9, eps_end=.1, eps_steps=1e6,
+                 use_nnp=False, q_builder=None, nnp_file=None,
+                 name='q', rng=np.random):
+        super().__init__(num_actions, epsilon=eps_start, use_nnp=use_nnp,
+                         q_builder=q_builder, nnp_file=nnp_file,
+                         name=name, rng=rng)
+        self.eps_start = eps_start
+        self.eps_end = eps_end
+        self.eps_steps = eps_steps
+        self.eps_val = eps_val
+        self.time = 0
 
     def update(self):
         self.time += 1
+
+    def linear_decay_epsilon(self):
+        self.epsilon = max(
+           self.eps_end,
+           self.eps_start +
+           (self.eps_end - self.eps_start) * self.time / self.eps_steps)
+
+    def select_action(self, obs, val=False):
+        if val:
+            self.epsilon = self.eps_val
+        else:
+            self.linear_decay_epsilon()
+        return super().select_action(obs)

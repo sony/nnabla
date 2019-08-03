@@ -62,7 +62,6 @@ def q_mlp(s, num_actions, test=False):
     for i, n in enumerate([64]):
         with nn.parameter_scope('fc%d' % (i + 1)):
             h = PF.affine(h, n, fix_parameters=test)
-            # h = PF.batch_normalization(h, batch_stat=not test, fix_parameters=test)
             h = F.relu(h)
     return PF.affine(h, num_actions, name='fc_fin', fix_parameters=test)
 
@@ -87,6 +86,7 @@ class QLearner(object):
         self.name_q = name_q
         self.name_qnext = name_qnext
 
+        # count of neural network update (steps / train_freq)
         self.update_count = 0
 
     def build_train_graph(self, batch):
@@ -152,7 +152,6 @@ class QLearner(object):
             self.solver.weight_decay(self.weight_decay)
         self.solver.update()
         self.update_count += 1
-        # print('{:5d} loss={}'.format(self.update_count, self.v.loss.d))
         if self.update_count % self.sync_freq == 0:
             self.sync_models()
         if self.update_count % self.save_freq == 0:

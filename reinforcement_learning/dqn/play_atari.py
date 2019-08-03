@@ -15,10 +15,15 @@
 from sampler import ObsSampler
 from replay_memory import ReplayMemory
 from validator import Validator
-from explorer import NnpExplorer
+from explorer import GreedyExplorer
 
 from nnabla.ext_utils import get_extension_context
+from nnabla.utils.data_source_loader import download
+from nnabla.logger import logger
+
 import nnabla as nn
+
+import os
 
 
 def get_args():
@@ -36,6 +41,11 @@ def get_args():
     return p.parse_args()
 
 
+def find_local_nnp(env_name):
+    nnp_fpath = os.path.join("asset", env_name, "qnet.nnp")
+    return os.path.exists(nnp_fpath)
+
+
 def main():
 
     args = get_args()
@@ -43,18 +53,35 @@ def main():
     nn.set_default_context(get_extension_context(
         args.extension, device_id=args.device_id))
 
+    if args.nnp is None:
+        local_nnp_dir = os.path.join("asset", args.gym_env)
+        local_nnp_file = os.path.join(local_nnp_dir, "qnet.nnp")
+
+        if not find_local_nnp(args.gym_env):
+            logger.info("Downloading nnp data since you didn't specify...")
+            nnp_uri = os.path.join("https://nnabla.org/pretrained-models/nnp_models/examples/dqn",
+                                   args.gym_env,
+                                   "qnet.nnp")
+            if not os.path.exists(local_nnp_dir):
+                os.mkdir(local_nnp_dir)
+            download(nnp_uri, output_file=local_nnp_file, open_file=False)
+            logger.info("Download done!")
+
+        args.nnp = local_nnp_file
+
     from atari_utils import make_atari_deepmind
-    env = make_atari_deepmind(args.gym_env)
+    env = make_atari_deepmind(args.gym_env, valid=False)
     print('Observation:', env.observation_space)
     print('Action:', env.action_space)
     obs_sampler = ObsSampler(args.num_frames)
-    val_replay_memory = ReplayMemory(
-        env.observation_space.shape, env.action_space.shape, max_memory=args.num_frames)
-    explorer = NnpExplorer(
-        args.nnp, env.action_space.n, name='qnet')
+    val_replay_memory = ReplayMemory(env.observation_space.shape,
+                                     env.action_space.shape,
+                                     max_memory=args.num_frames)
+    # just play greedily
+    explorer = GreedyExplorer(
+        env.action_space.n, use_nnp=True, nnp_file=args.nnp, name='qnet')
     validator = Validator(env, val_replay_memory, explorer, obs_sampler,
-                          num_episodes=1, render=not args.no_render,
-                          log_path=False)
+                          num_episodes=1, render=not args.no_render)
     while True:
         validator.step()
 
