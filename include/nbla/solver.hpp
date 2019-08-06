@@ -51,7 +51,7 @@ public:
   /** Struct for storing both parameter state Variable and iteration
    */
   struct SolverState {
-    unordered_map<string, VariablePtr> pstate; ///< Paramter state maps
+    unordered_map<string, VariablePtr> pstate; ///< Parameter state maps
     uint32_t t;                                ///< Iteration as state
     SolverState(){};
     SolverState(unordered_map<string, VariablePtr> pstate, uint32_t t) {

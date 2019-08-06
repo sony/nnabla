@@ -65,7 +65,7 @@ def set_kernel_parameter_and_add_padding(node, kp,
                                          base_name, func_counter):
     """Set kernel related parameters(strides, pads, kernel_shape) to the given
     parameter. This function also generates a padding function if we need a
-    seperate pad function for asymmetry padding.
+    separate pad function for asymmetry padding.
     """
     dims = []
     strides = []

@@ -579,7 +579,7 @@ def convolution(inp, outmaps, kernel,
     Note:
 
         Convolution is a computationally intensive operation that
-        should preferrably be run with the `cudnn` backend. NNabla
+        should preferably be run with the `cudnn` backend. NNabla
         then uses CuDNN library functions to determine and cache the
         fastest algorithm for the given set of convolution parameters,
         which results in additional memory consumption which may pose
@@ -588,7 +588,7 @@ def convolution(inp, outmaps, kernel,
         can be used to restrict the choice of algorithms to those that
         fit the given workspace memory limit, expressed in bytes. In
         some cases it may also be desired to restrict the automatic
-        search to algorithms that produce deterministic (reproducable)
+        search to algorithms that produce deterministic (reproducible)
         results. This can be requested by setting the the environment
         variable `NNABLA_CUDNN_DETERMINISTIC` to a non-zero value.
 
