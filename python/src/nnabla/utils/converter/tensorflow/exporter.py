@@ -60,6 +60,6 @@ class TensorflowExporter:
 
     def execute(self, output):
         onnx_model = OnnxExporter(
-            self._nnp, self._batch_size).export_model_proto()
+            self._nnp, self._batch_size, opset="9").export_model_proto()
         tf_rep = prepare(onnx_model)
         tf_rep.export_graph(output)
