@@ -70,18 +70,15 @@ public:
   };
 
 protected:
-  /** Struct for storing both parameter Variable and update status of gradient.
+  /** Struct for storing a parameter variable.
+
+      @note The previous implementation had another member variable in this
+            struct to manage update status of a parameter. Now it doesn't.
    */
   struct Params {
     /** Shared pointer to parameter Variable.
      */
     VariablePtr p;
-
-    /** Modification count of p.grad_, which tells whether or not the grad
-     * region
-     * is modified after the previous update.
-     */
-    size_t at;
   };
 
   unordered_map<string, SolverState> states_; ///< Hash map of states
