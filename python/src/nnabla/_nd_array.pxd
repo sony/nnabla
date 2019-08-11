@@ -32,6 +32,7 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
         void zero() except+
         void fill(float value) except+
         size_t modification_count() except+
+        cpp_bool zeroing() const
 
     ctypedef shared_ptr[CSyncedArray] SyncedArrayPtr
 
