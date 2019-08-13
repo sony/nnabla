@@ -39,60 +39,43 @@ namespace functions {
 ## full arguments
 <%
 fi = function_info[name]
-type_args = None
-args = None
-type_inputs = None
-inputs = None
-if 'arguments' in fi:
-    args_info = fi['arguments']
-    if 0 < len(args_info):
-	    type_args = ', '.join([x[0] + ' ' + x[1] for x in zip(arg_types, args_info)])
-	    args = ', '.join(args_info)
-if 'inputs' in fi :
-    inputs_info = fi['inputs']
-    if 0 < len(inputs_info):
-	    type_inputs = ', '.join(['CgVariablePtr ' + x for x in inputs_info])
-	    inputs = ', '.join(inputs_info)
+
+inputs_list = []
+inputs_info = fi.get('inputs', [])
+if 0 < len(inputs_info):
+    inputs_list += ['CgVariablePtr ' + x for x in inputs_info]
+
+args_info = fi.get('arguments', [])
+if 0 < len(args_info):
+    inputs_list += [x[0] + ' ' + x[1] for x in zip(arg_types, args_info)]
+
+inputs_types = ', '.join(inputs_list)
+
+context_and_inputs = "Context &ctx"
+if 0 < len(inputs_list) : context_and_inputs += ", " + inputs_types
+
+inputs = ', '.join(inputs_info)
+
+args = ', '.join(args_info)
+if args is not '':
+   args = ', ' + args
+
+output_type = 'CgVariablePtr'
+output_index = '[0]'
+for x in fi['outputs'].values():
+    if x['doc'] == 'list of N-D arrays':
+       output_type = 'vector<CgVariablePtr>'
+       output_index = ''
+
 %>
+vector<CgVariablePtr> ${snake_name}(${context_and_inputs}){
+  return connect(make_shared<CgFunction>(create_${name}(ctx${args})), {${inputs}});
+}
 
-% if type_args is None and type_inputs is None:
-	vector<CgVariablePtr> ${snake_name}(Context &ctx){
-	  return connect(make_shared<CgFunction>(create_${name}(ctx)));
-	}
-
-	CgVariablePtr ${snake_name}(){
-	  auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-	  return connect(make_shared<CgFunction>(create_${name}(global_ctx)))[0];
-	}
-% elif type_args is None:
-	vector<CgVariablePtr> ${snake_name}(Context &ctx, ${type_inputs}){
-	  return connect(make_shared<CgFunction>(create_${name}(ctx)), {${inputs}});
-	}
-
-	CgVariablePtr ${snake_name}(${type_inputs}){
-	  auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-	  return connect(make_shared<CgFunction>(create_${name}(global_ctx)), {${inputs}})[0];
-	}
-% elif type_inputs is None:
-	vector<CgVariablePtr> ${snake_name}(Context &ctx, ${type_args}){
-	  return connect(make_shared<CgFunction>(create_${name}(ctx, ${args})), {});
-	}
-
-	CgVariablePtr ${snake_name}(${type_args}){
-	  auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-	  return connect(make_shared<CgFunction>(create_${name}(global_ctx, ${args})), {})[0];
-	}
-% else:
-	vector<CgVariablePtr> ${snake_name}(Context &ctx, ${type_inputs}, ${type_args}){
-	  return connect(make_shared<CgFunction>(create_${name}(ctx, ${args})), {${inputs}});
-	}
-
-	CgVariablePtr ${snake_name}(${type_inputs}, ${type_args}){
-	  auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-	  return connect(make_shared<CgFunction>(create_${name}(global_ctx, ${args})), {${inputs}})[0];
-	}
-% endif
-
+${output_type} ${snake_name}(${inputs_types}){
+  auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
+  return connect(make_shared<CgFunction>(create_${name}(global_ctx${args})), {${inputs}})${output_index};
+}
 % endfor
 
 
