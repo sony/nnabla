@@ -18,6 +18,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('Dropout')
 
@@ -39,7 +40,7 @@ def test_dropout_forward_backward(p, seed, ctx, func_name):
         o = F.dropout(i, p)
     scale = 1. / (1. - p)
     mask = o.d != 0
-    assert np.allclose(o.d, i.d * mask * scale)
+    assert_allclose(o.d, i.d * mask * scale)
     assert o.parent.name == func_name
 
     # NNabla backward
@@ -50,13 +51,13 @@ def test_dropout_forward_backward(p, seed, ctx, func_name):
     ref_grad = o_grad * mask * scale
 
     # Verify
-    assert np.allclose(i.g, orig_grad + ref_grad)
+    assert_allclose(i.g, orig_grad + ref_grad)
 
     # Check if accum option works
     i.g[...] = 1
     o.g = o_grad
     o.parent.backward([i], [o], [False])
-    assert np.allclose(i.g, ref_grad)
+    assert_allclose(i.g, ref_grad)
 
     # Check accum=False with NaN gradient
     i.g = np.float32('nan')
@@ -94,4 +95,4 @@ def test_dropout_double_backward(p, seed, ctx, func_name):
     g_dy = grad.parent.inputs[1].g
     scale = 1. / (1. - p)
     mask = dout.d != 0
-    assert np.allclose(g_dy, mask * scale)
+    assert_allclose(g_dy, mask * scale)

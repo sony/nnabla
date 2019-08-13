@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('RandomChoice')
 
@@ -34,11 +35,11 @@ def test_random_choice_with_replacement(ctx, func_name, seed):
     hist_nn, _ = np.histogram(y.d)
     hist_np, _ = np.histogram(np.random.choice(
         x.d, trials, True, w.d / w.d.sum()))
-    assert np.allclose(hist_nn / trials, hist_np / trials, atol=1e-2)
+    assert_allclose(hist_nn / trials, hist_np / trials, atol=1e-2)
     x.g = w.g = 0
     y.backward()
-    assert np.allclose(x.g / trials, w.d / w.d.sum(), atol=1e-2)
-    assert np.allclose(w.g / trials, w.d / w.d.sum(), atol=1e-2)
+    assert_allclose(x.g / trials, w.d / w.d.sum(), atol=1e-2)
+    assert_allclose(w.g / trials, w.d / w.d.sum(), atol=1e-2)
 
     x = nn.Variable.from_numpy_array(np.array([[1, 2, 3], [-1, -2, -3]]))
     w = nn.Variable.from_numpy_array(np.array([[1, 1, 1], [10, 10, 10]]))

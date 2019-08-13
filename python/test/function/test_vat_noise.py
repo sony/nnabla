@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('VATNoise')
 
@@ -48,9 +49,9 @@ def test_vat_noise(seed, base_axis, shape, eps, ctx, func_name):
     res = y.d
 
     atol_f = 1e-6
-    assert np.allclose(ref, res, atol=atol_f)
+    assert_allclose(ref, res, atol=atol_f)
 
     atol_b = 1e-6
     ref = np.ones(shape) * eps
     res = w.d
-    assert np.allclose(ref, res, atol=atol_b)
+    assert_allclose(ref, res, atol=atol_b)

@@ -250,6 +250,7 @@ if __name__ == '__main__':
                 'nnabla.models.imagenet',
                 'nnabla.models.object_detection',
                 'nnabla.models.semantic_segmentation',
+                'nnabla.testing',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',

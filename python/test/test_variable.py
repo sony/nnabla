@@ -16,6 +16,7 @@ import pytest
 import numpy as np
 
 import nnabla as nn
+from nnabla.testing import assert_allclose
 
 
 def test_manip():
@@ -134,11 +135,11 @@ def test_persistent():
     x3.persistent = True
     x.data.zero()
     y.forward(clear_buffer=True)
-    assert np.allclose(x3.d, 3)
+    assert_allclose(x3.d, 3)
     y.forward(clear_no_need_grad=True)
     y.backward(clear_buffer=True)
-    assert np.allclose(x3.d, 3)
-    assert np.allclose(x3.g, 1)
+    assert_allclose(x3.d, 3)
+    assert_allclose(x3.g, 1)
 
 
 def test_name():

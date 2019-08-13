@@ -18,6 +18,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+from nnabla.testing import assert_allclose
 
 
 def initialize_grad(parameters):
@@ -64,7 +65,7 @@ def test_graph_logreg(seed):
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L1, inputs, 1e-3, False)
-    assert np.allclose(ngrad, agrad, atol=1e-2)
+    assert_allclose(ngrad, agrad, atol=1e-2)
 
     # Backprop for z2
     # Diff should be initialized since they are always accumulated
@@ -78,7 +79,7 @@ def test_graph_logreg(seed):
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L2, inputs, 1e-3, False)
-    assert np.allclose(ngrad, agrad, atol=1e-2)
+    assert_allclose(ngrad, agrad, atol=1e-2)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -143,7 +144,7 @@ def test_graph_model(model, seed):
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L1, inputs, 1e-3, False)
-    assert np.allclose(ngrad, agrad, atol=1.05e-2)
+    assert_allclose(ngrad, agrad, atol=1.05e-2)
 
     # Backprop for L2
     # Diff should be initialized since they are always accumulated
@@ -155,7 +156,7 @@ def test_graph_model(model, seed):
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L2, inputs, 1e-3, False)
-    assert np.allclose(ngrad, agrad, atol=1.05e-2)
+    assert_allclose(ngrad, agrad, atol=1.05e-2)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -263,8 +264,8 @@ def test_graph_forward_clear_buffer(seed, clear_buffer):
 
     # check
     nn.forward_all([y1, y2], clear_buffer=clear_buffer)
-    assert np.allclose(y1.d, ref_y1)
-    assert np.allclose(y2.d, ref_y2)
+    assert_allclose(y1.d, ref_y1)
+    assert_allclose(y2.d, ref_y2)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -313,8 +314,8 @@ def test_graph_rewire(seed, clear_buffer):
 
     # Checking forward
     nn.forward_all([yb1, yb2, yc1, yc2], clear_no_need_grad=clear_buffer)
-    assert np.allclose(yb1.d, yc1.d)
-    assert np.allclose(yb2.d, yc2.d)
+    assert_allclose(yb1.d, yc1.d)
+    assert_allclose(yb2.d, yc2.d)
 
     # Checking backward for yb1 and yc1
     # for now, the first backward cannot be called with clear_buffer=True
@@ -324,9 +325,9 @@ def test_graph_rewire(seed, clear_buffer):
     zero_grad()
     yc1.backward(clear_buffer=False)
     gc = backup_params()
-    assert np.allclose(xa.d, xc.d)
+    assert_allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
-        assert np.allclose(b, c)
+        assert_allclose(b, c)
 
     # Checking backward for yb2 and yc2
     zero_grad()
@@ -335,6 +336,6 @@ def test_graph_rewire(seed, clear_buffer):
     zero_grad()
     yc2.backward(clear_buffer=clear_buffer)
     gc = backup_params()
-    assert np.allclose(xa.d, xc.d)
+    assert_allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
-        assert np.allclose(b, c)
+        assert_allclose(b, c)

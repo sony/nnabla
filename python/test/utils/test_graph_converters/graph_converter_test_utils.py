@@ -25,6 +25,8 @@ from nnabla.ext_utils import get_extension_context
 
 import nnabla.experimental.graph_converters as GC
 
+from nnabla.testing import assert_allclose
+
 # -------
 # Testers
 # -------
@@ -65,7 +67,7 @@ def value_tester(vleaf_ref, vleaf_act, rtol=1e-04, atol=1e-05):
     print(np.abs(vleaf_ref.d - vleaf_act.d))
     print("--- Sign Diff ----")
     print(np.sign(vleaf_ref.d) - np.sign(vleaf_act.d))
-    assert np.allclose(vleaf_ref.d, vleaf_act.d, rtol=rtol, atol=atol)
+    assert_allclose(vleaf_ref.d, vleaf_act.d, rtol=rtol, atol=atol)
 
 # -------
 # Helpers

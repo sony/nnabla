@@ -19,6 +19,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.ext_utils import get_extension_context
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 # Proxy to get the appropriate context
 ctx_list = [ctx_fname[0] for ctx_fname in list_context('Convolution')]
@@ -49,7 +50,6 @@ def SmallResNet(x, test=False):
 @pytest.mark.parametrize("auto_forward", [True, False])
 @pytest.mark.parametrize("flag_grad_outputs", [True, False])
 def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs):
-    from nbla_test_utils import ArrayDiffStats
     nn.clear_parameters()
 
     # Settings
@@ -85,15 +85,14 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs):
     if backend == 'cuda':
         pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
     for inp, grad in zip(inputs, grads):
-        assert np.allclose(
-            inp.g, grad.d, atol=1e-6), str(ArrayDiffStats(inp.g, grad.d))
+        assert_allclose(
+            inp.g, grad.d, atol=1e-6)
 
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("auto_forward", [True, False])
 def test_multiple_objectives(seed, ctx, auto_forward):
-    from nbla_test_utils import ArrayDiffStats
 
     # Settings
     nn.set_default_context(ctx)
@@ -132,8 +131,8 @@ def test_multiple_objectives(seed, ctx, auto_forward):
 
     # Check between results of var.bacwkard and nn.grad
     for inp, grad in zip(inputs, grads):
-        assert np.allclose(
-            inp.g, grad.d, atol=1e-6), str(ArrayDiffStats(inp.g, grad.d))
+        assert_allclose(
+            inp.g, grad.d, atol=1e-6)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -141,7 +140,6 @@ def test_multiple_objectives(seed, ctx, auto_forward):
 @pytest.mark.parametrize("auto_forward", [True, False])
 @pytest.mark.parametrize("type_grad_outputs", [int, float, np.ndarray, nn.NdArray])
 def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
-    from nbla_test_utils import ArrayDiffStats
 
     # Settings
     nn.set_default_context(ctx)
@@ -181,5 +179,5 @@ def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
 
     # Check between results of var.bacwkard and nn.grad
     for inp, grad in zip(inputs, grads):
-        assert np.allclose(
-            inp.g, grad.d, atol=1e-6), str(ArrayDiffStats(inp.g, grad.d))
+        assert_allclose(
+            inp.g, grad.d, atol=1e-6)

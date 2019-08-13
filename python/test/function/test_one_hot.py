@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('OneHot')
 
@@ -51,5 +52,5 @@ def test_one_hot_forward(seed, inshape, shape, ctx, func_name):
         with nn.context_scope(ctx), nn.auto_forward():
             o = F.one_hot(vinput, shape)
         r = ref_one_hot(input, shape)
-        assert np.allclose(o.d, r)
+        assert_allclose(o.d, r)
         assert func_name == o.parent.name

@@ -17,6 +17,7 @@ import nnabla as nn
 import nnabla.parametric_functions as PF
 import nnabla.communicators as C
 import numpy as np
+from nnabla.testing import assert_allclose
 
 
 def ref_bcast(x_data_list, src):
@@ -61,4 +62,4 @@ def test_bcast(seed, src, inplace, comm_nccl_opts):
 
     # Check
     for x, ref in zip(x_list, refs):
-        assert np.allclose(x.d, ref, rtol=1e-3, atol=1e-6)
+        assert_allclose(x.d, ref, rtol=1e-3, atol=1e-6)

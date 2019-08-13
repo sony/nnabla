@@ -19,6 +19,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('BatchNormalization')
 
@@ -92,8 +93,8 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         with nn.context_scope(ctx), nn.auto_forward():
             y = F.batch_normalization(
                 *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
-        assert np.allclose(vinputs[3].d, inputs[3], atol=1e-7)
-        assert np.allclose(vinputs[4].d, inputs[4])
+        assert_allclose(vinputs[3].d, inputs[3], atol=1e-7)
+        assert_allclose(vinputs[4].d, inputs[4])
 
     # Check if global stat mode works
     batch_stat = False
@@ -104,7 +105,7 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     with nn.context_scope(ctx), nn.auto_forward():
         y = F.batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
-    assert np.allclose(ref_y, y.d, atol=1e-6)
+    assert_allclose(ref_y, y.d, atol=1e-6)
 
 
 def ref_batch_normalization_for_multiple_axes(x, beta, gamma, rmean, rvar, axes, decay_rate,
@@ -166,7 +167,7 @@ def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, deca
     with nn.context_scope(ctx), nn.auto_forward():
         y = F.batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
-    assert np.allclose(ref_y, y.d, atol=1e-6)
+    assert_allclose(ref_y, y.d, atol=1e-6)
 
 
 @pytest.mark.parametrize("seed", [313])
