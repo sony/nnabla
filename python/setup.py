@@ -42,6 +42,9 @@ install_requires = setup_requires + [
     'pillow'
 ]
 
+if sys.platform == 'win32':
+    install_requires.append('pywin32')
+
 
 def extopts(library_name, library_dir):
     import numpy as np
