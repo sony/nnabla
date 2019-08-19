@@ -526,6 +526,7 @@ class OnnxExporter:
         dilations = cp.dilation.dim[:]
         strides = cp.stride.dim[:]
         pads = cp.pad.dim[:]
+        outputs = func.output[:]
         if len(pads) == 1:  # 1-D convolution
             # Convert 1-D to 2-D for snpe
             kernel_shape += [1]
@@ -544,32 +545,45 @@ class OnnxExporter:
             input_x_shape = np.array(np.concatenate(
                 ([np.prod(input_x_shape[:cp.base_axis])], input_x_shape[cp.base_axis:])))
 
-        # Reshape input[0]
-        output_x_reshape_name = fork_name("output_x_reshape")
-        n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
-                             input_x_shape)
-        nl.append(n)
-        inputs[0] = output_x_reshape_name
+        if cp.base_axis > 1:
+            # Reshape input[0]
+            output_x_reshape_name = fork_name("output_x_reshape")
+            n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
+                                 input_x_shape)
+            nl.append(n)
+            inputs[0] = output_x_reshape_name
 
-        # Conv
-        output_conv = fork_name('output_conv')
-        n = onnx.helper.make_node(
-            'Conv',
-            inputs,
-            [output_conv],
-            kernel_shape=kernel_shape,
-            dilations=dilations,
-            strides=strides,
-            pads=pads * 2,
-            group=group
-        )
-        nl.append(n)
+            # Conv
+            outputs[0] = fork_name('output_conv')
+            n = onnx.helper.make_node(
+                'Conv',
+                inputs,
+                outputs,
+                kernel_shape=kernel_shape,
+                dilations=dilations,
+                strides=strides,
+                pads=pads * 2,
+                group=group
+            )
+            nl.append(n)
 
-        output_y_shape = np.array(
-            [d for d in self._var_dict[func.output[0]].dim])
-        n = generate_reshape(self._model_proto.graph, output_conv, func.output[0],
-                             output_y_shape)
-        nl.append(n)
+            output_y_shape = np.array(
+                [d for d in self._var_dict[func.output[0]].dim])
+            n = generate_reshape(self._model_proto.graph, outputs[0], func.output[0],
+                                 output_y_shape)
+            nl.append(n)
+        else:
+            n = onnx.helper.make_node(
+                'Conv',
+                inputs,
+                outputs,
+                kernel_shape=kernel_shape,
+                dilations=dilations,
+                strides=strides,
+                pads=pads * 2,
+                group=group
+            )
+            nl.append(n)
 
         return nl
 
@@ -610,12 +624,13 @@ class OnnxExporter:
             input_x_shape = np.array(np.concatenate(
                 ([np.prod(input_x_shape[:cp.base_axis])], input_x_shape[cp.base_axis:])))
 
-        # Reshape input[0]
-        output_x_reshape_name = fork_name("output_x_reshape")
-        n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
-                             input_x_shape)
-        nl.append(n)
-        inputs[0] = output_x_reshape_name
+        if cp.base_axis > 1:
+            # Reshape input[0]
+            output_x_reshape_name = fork_name("output_x_reshape")
+            n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
+                                 input_x_shape)
+            nl.append(n)
+            inputs[0] = output_x_reshape_name
 
         # Conv
         output_conv = fork_name('output_conv')
@@ -676,9 +691,12 @@ class OnnxExporter:
             nl.append(n)
             output = output_add
 
-        n = generate_reshape(self._model_proto.graph, output, func.output[0],
-                             output_y_shape)
-        nl.append(n)
+        if cp.base_axis > 1:
+            n = generate_reshape(self._model_proto.graph, output, func.output[0],
+                                 output_y_shape)
+            nl.append(n)
+        else:
+            nl[-1].output[0] = func.output[0]
 
         return nl
 
@@ -764,6 +782,7 @@ class OnnxExporter:
     def BatchNormalization(self, opset, func):
         nl = []
         bnp = func.batch_normalization_param
+        axes = bnp.axes[0]
         inputs = func.input[:]
         outputs = func.output[:]
         onnx_order = [0, 2, 1, 3, 4]
@@ -777,19 +796,23 @@ class OnnxExporter:
             self._var_dict[p] = b_shape
 
         input_shape = [d for d in self._var_dict[inputs[0]].dim]
-        ndim = len(input_shape)
-        if ndim < 3:
-            input_shape_reshape = np.array(
-                input_shape + [1] * (3 - len(input_shape)))
+        input_shape_reshape = input_shape[:]
+        if axes > 1:
+            input_shape_reshape = [
+                np.prod(input_shape_reshape[:axes])] + input_shape_reshape[axes:]
+        if len(input_shape_reshape) < 4:
+            input_shape_reshape = input_shape_reshape + \
+                [1] * (4 - len(input_shape_reshape))
+        if input_shape_reshape != input_shape:
             output_x_reshape = fork_name("output_x_reshape")
             n = generate_reshape(self._model_proto.graph, inputs[0], output_x_reshape,
-                                 input_shape_reshape)
+                                 np.array(input_shape_reshape))
             nl.append(n)
             inputs[0] = output_x_reshape
             outputs[0] = fork_name("reshape_output")
 
-        if func.batch_normalization_param.batch_stat:
-            bn_input = [func.input[i] for i in onnx_order[:3]]
+        if bnp.batch_stat:
+            bn_input = [inputs[i] for i in onnx_order[:3]]
             n = onnx.helper.make_node(
                 'InstanceNormalization',
                 bn_input,
@@ -815,7 +838,7 @@ class OnnxExporter:
                 n.attribute.extend([b])
         nl.append(n)
 
-        if ndim < 3:
+        if input_shape_reshape != input_shape:
             output_y_shape = np.array(
                 [d for d in self._var_dict[func.output[0]].dim])
             n = generate_reshape(self._model_proto.graph, outputs[0], func.output[0],
@@ -1065,6 +1088,7 @@ class OnnxExporter:
         dilations = dp.dilation.dim[:]
         strides = dp.stride.dim[:]
         pads = dp.pad.dim[:]
+        outputs = func.output[:]
         if len(pads) == 1:  # 1-D Deconvolution
             # Convert 1-D to 2-D for snpe
             kernel_shape += [1]
@@ -1082,32 +1106,45 @@ class OnnxExporter:
             input_x_shape = np.array(np.concatenate(
                 ([np.prod(input_x_shape[:dp.base_axis])], input_x_shape[dp.base_axis:])))
 
-        # Reshape input[0]
-        output_x_reshape = fork_name("output_x_reshape")
-        n = generate_reshape(self._model_proto.graph, func.input[0],
-                             output_x_reshape, input_x_shape)
-        nl.append(n)
-        inputs[0] = output_x_reshape
+        if dp.base_axis > 1:
+            # Reshape input[0]
+            output_x_reshape = fork_name("output_x_reshape")
+            n = generate_reshape(self._model_proto.graph, func.input[0],
+                                 output_x_reshape, input_x_shape)
+            nl.append(n)
+            inputs[0] = output_x_reshape
 
-        # ConvTranspose
-        output_conv = fork_name('output_convtranspose')
-        n = onnx.helper.make_node(
-            'ConvTranspose',
-            inputs,
-            [output_conv],
-            kernel_shape=kernel_shape,
-            dilations=dilations,
-            strides=strides,
-            pads=pads * 2,
-            group=group
-        )
-        nl.append(n)
+            # ConvTranspose
+            outputs[0] = fork_name('output_convtranspose')
+            n = onnx.helper.make_node(
+                'ConvTranspose',
+                inputs,
+                outputs,
+                kernel_shape=kernel_shape,
+                dilations=dilations,
+                strides=strides,
+                pads=pads * 2,
+                group=group
+            )
+            nl.append(n)
 
-        output_y_shape = np.array(
-            [d for d in self._var_dict[func.output[0]].dim])
-        n = generate_reshape(self._model_proto.graph, output_conv,
-                             func.output[0], output_y_shape)
-        nl.append(n)
+            output_y_shape = np.array(
+                [d for d in self._var_dict[func.output[0]].dim])
+            n = generate_reshape(self._model_proto.graph, outputs[0],
+                                 func.output[0], output_y_shape)
+            nl.append(n)
+        else:
+            n = onnx.helper.make_node(
+                'ConvTranspose',
+                inputs,
+                outputs,
+                kernel_shape=kernel_shape,
+                dilations=dilations,
+                strides=strides,
+                pads=pads * 2,
+                group=group
+            )
+            nl.append(n)
 
         return nl
 
