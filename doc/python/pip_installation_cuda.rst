@@ -28,11 +28,11 @@ The latest CUDA version is always preferred if your GPU accepts.
 Installation
 ------------
 
-The following is an example of installing the extension for CUDA 9.2.
+The following is an example of installing the extension for CUDA 10.1
 
 .. code-block:: bash
 
-	pip install nnabla_ext_cuda92
+	pip install nnabla-ext-cuda101
 
 and check if all works.
 
@@ -46,7 +46,7 @@ and check if all works.
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing CUDA extension...
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing cuDNN extension...
 
-**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla_ext_cuda92`` beforehand.
+**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla-ext-cuda100`` beforehand.
 
 
 .. _pip-installation-distributed:
@@ -76,7 +76,7 @@ You can install as the following.
 .. code-block:: bash
 
   pip install nnabla-ubuntu16
-  pip install nnabla-ext-cuda92-nccl2-ubuntu16
+  pip install nnabla-ext-cuda101-nccl2-ubuntu16
 
 
 If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, virtualenv, or pyenv.
@@ -121,6 +121,6 @@ Following is a sample error message.
 .. code-block:: bash
 
   [nnabla][INFO]: Initializing CPU extension...
-  Please install CUDA version 9.2.
-    and CUDNN version 7.3.1.
-    Or install correct nnabla_ext_cuda for installed version of CUDA/CUDNN.
+  Please install CUDA version 10.1.
+    and CUDNN version 7.6
+    Or install correct nnabla-ext-cuda for installed version of CUDA/CUDNN.
