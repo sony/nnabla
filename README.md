@@ -23,7 +23,7 @@ This installs the CPU version of Neural Network Libraries. GPU-acceleration can 
 ```
 pip install nnabla-ext-cuda101
 ```  
-for version 10.1 CUDA Toolkit.  
+Above command is for version 10.1 CUDA Toolkit.  
 
 for other versions:  
 `pip install nnabla-ext-cuda100` for CUDA version 10.0.  
