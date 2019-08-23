@@ -97,8 +97,8 @@ def update_progress(text):
         callback.update_progress(text)
 
 
-def load_image(file, shape, normalize):
+def get_load_image_func(ext):
     if callback is not None:
-        return callback.load_image(file, shape, normalize)
+        return callback.get_load_image_func(ext)
     else:
         return None
