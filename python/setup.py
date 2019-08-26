@@ -270,6 +270,8 @@ if __name__ == '__main__':
         install_requires=install_requires,
         extras_require={
             ':python_version == "2.7"': ['futures'],
+            ':python_version == "2.7"': ['scipy<1.3'],
+            ':python_version != "2.7"': ['scipy'],
             ':(python_version != "2.7" and python_version != "3.7")': ['onnx']
         },
         ext_modules=ext_modules,
