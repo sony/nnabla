@@ -14,7 +14,6 @@
 
 from six.moves import map
 
-import pytest
 import nnabla as nn
 
 

@@ -15,7 +15,6 @@
 from six import iteritems
 
 import nnabla as nn
-import nnabla.solvers as S
 import numpy as np
 from collections import OrderedDict
 import os

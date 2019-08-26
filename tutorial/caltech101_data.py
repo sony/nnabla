@@ -17,13 +17,7 @@ Provide data iterator for Caltech101 examples.
 '''
 from contextlib import contextmanager
 import numpy as np
-import struct
 import tarfile
-import zlib
-import time
-import os
-import errno
-import random
 
 from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
