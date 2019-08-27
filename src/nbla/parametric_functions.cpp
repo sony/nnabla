@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include <nbla/auto_forward.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
@@ -286,6 +287,9 @@ vector<CgVariablePtr> affine(Context &ctx, CgVariablePtr x, int base_axis,
   CgVariablePtr affine_w =
       parameters.get_parameter_or_create("affine/W", {n_in, n_out}, w_init);
 
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+
   if (with_bias) {
 
     if (b_init == nullptr) {
@@ -296,15 +300,13 @@ vector<CgVariablePtr> affine(Context &ctx, CgVariablePtr x, int base_axis,
     CgVariablePtr affine_b =
         parameters.get_parameter_or_create("affine/b", {n_out}, b_init);
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Affine(ctx, base_axis)),
-                   {x, affine_w, affine_b}, execute_forward);
+                   {x, affine_w, affine_b}, 1, {}, execute_forward);
 
   } else {
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Affine(ctx, base_axis)),
-                   {x, affine_w}, execute_forward);
+                   {x, affine_w}, 1, {}, execute_forward);
   }
 }
 
@@ -348,6 +350,9 @@ convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
   CgVariablePtr conv_w =
       parameters.get_parameter_or_create("conv/W", shape_w, w_init);
 
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+
   if (with_bias) {
 
     if (b_init == nullptr) {
@@ -358,19 +363,17 @@ convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
     CgVariablePtr conv_b =
         parameters.get_parameter_or_create("conv/b", {n_map_out}, b_init);
 
-    bool execute_forward = true;
     return connect(
         make_shared<CgFunction>(create_Convolution(
             ctx, base_axis, pad, stride, dilation, group, channel_last)),
-        {x, conv_w, conv_b}, execute_forward);
+        {x, conv_w, conv_b}, 1, {}, execute_forward);
 
   } else {
 
-    bool execute_forward = true;
     return connect(
         make_shared<CgFunction>(create_Convolution(
             ctx, base_axis, pad, stride, dilation, group, channel_last)),
-        {x, conv_w}, execute_forward);
+        {x, conv_w}, 1, {}, execute_forward);
   }
 }
 
@@ -419,6 +422,9 @@ deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
   CgVariablePtr deconv_w =
       parameters.get_parameter_or_create("deconv/W", shape_w, w_init);
 
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+
   if (with_bias) {
     if (b_init == nullptr) {
       shared_b_init = make_shared<ConstantInitializer>();
@@ -428,17 +434,15 @@ deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
     CgVariablePtr deconv_b =
         parameters.get_parameter_or_create("deconv/b", {n_map_out}, b_init);
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Deconvolution(
                        ctx, base_axis, pad, stride, dilation, group)),
-                   {x, deconv_w, deconv_b}, execute_forward);
+                   {x, deconv_w, deconv_b}, 1, {}, execute_forward);
 
   } else {
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Deconvolution(
                        ctx, base_axis, pad, stride, dilation, group)),
-                   {x, deconv_w}, execute_forward);
+                   {x, deconv_w}, 1, {}, execute_forward);
   }
 }
 
@@ -480,10 +484,11 @@ batch_normalization(Context &ctx, CgVariablePtr x, const vector<int> &axes,
   CgVariablePtr variance = parameters.get_parameter_or_create(
       "bn/variance", shape_stat, &variance_init, false);
 
-  bool execute_forward = true;
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
   return connect(make_shared<CgFunction>(create_BatchNormalization(
                      ctx, axes, decay_rate, eps, batch_stat)),
-                 {x, beta, gamma, mean, variance}, execute_forward);
+                 {x, beta, gamma, mean, variance}, 1, {}, execute_forward);
 }
 
 CgVariablePtr batch_normalization(CgVariablePtr x, bool batch_stat,

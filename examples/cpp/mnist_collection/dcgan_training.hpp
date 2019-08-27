@@ -19,6 +19,7 @@
 #include <vector>
 using namespace std;
 
+#include <nbla/auto_forward.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/context.hpp>
 #include <nbla/functions.hpp>
@@ -148,13 +149,15 @@ void print_array(CgVariablePtr x) {
 /******************************************/
 // Example of DCGAN Training
 /******************************************/
-bool dcgan_training(nbla::Context ctx) {
+bool dcgan_training_with_static_graph(nbla::Context ctx) {
 
   // Create a context for cpu
   nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
 
-  // Build network
+  // Setup context
   SingletonManager::get<GlobalContext>()->set_current_context(ctx);
+
+  // Build network
   int max_h = 256;
   int batch_size = 64;
   ParameterDirectory params;
@@ -203,62 +206,195 @@ bool dcgan_training(nbla::Context ctx) {
     return false;
   }
 
-  int max_iter = 20000;
-  int n_val_iter = 10;
-  float weight_decay = 1.0e-4;
-  float mean_loss_gen = 0.;
-  float mean_loss_dis = 0.;
-  for (int iter = 0; iter < max_iter; iter++) {
+  try {
+    int max_iter = 20000;
+    int n_val_iter = 10;
+    float weight_decay = 1.0e-4;
+    float mean_loss_gen = 0.;
+    float mean_loss_dis = 0.;
+    for (int iter = 0; iter < max_iter; iter++) {
 
-    // Get batch and copy to input variables
-    train_data_provider.provide_data(cpu_ctx, batch_size, x, t);
+      // Get batch and copy to input variables
+      train_data_provider.provide_data(cpu_ctx, batch_size, x, t);
 
-    float_t *z_d =
-        z->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, true);
-    for (int i = 0; i < z->variable()->size(); i++, z_d++)
-      *z_d = normal(engine);
+      float_t *z_d =
+          z->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, true);
+      for (int i = 0; i < z->variable()->size(); i++, z_d++)
+        *z_d = normal(engine);
 
-    //    # Generator update.
-    solver_gen->zero_grad();
-    loss_gen->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
-    loss_gen->variable()->grad()->fill(1.0);
-    loss_gen->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
-    solver_gen->weight_decay(weight_decay);
-    solver_gen->update();
+      //    # Generator update.
+      solver_gen->zero_grad();
+      loss_gen->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
+      loss_gen->variable()->grad()->fill(1.0);
+      loss_gen->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
+      solver_gen->weight_decay(weight_decay);
+      solver_gen->update();
 
-    //    # Discriminator update.
-    solver_dis->zero_grad();
-    loss_dis->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
-    loss_dis->variable()->grad()->fill(1.0);
-    loss_dis->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
-    solver_dis->weight_decay(weight_decay);
-    solver_dis->update();
+      //    # Discriminator update.
+      solver_dis->zero_grad();
+      loss_dis->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
+      loss_dis->variable()->grad()->fill(1.0);
+      loss_dis->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
+      solver_dis->weight_decay(weight_decay);
+      solver_dis->update();
 
-    // Get and print the average loss
-    float_t *loss_gen_d =
-        loss_gen->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
-                                                                 false);
-    mean_loss_gen += loss_gen_d[0];
+      // Get and print the average loss
+      float_t *loss_gen_d =
+          loss_gen->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                   false);
+      mean_loss_gen += loss_gen_d[0];
 
-    float_t *loss_dis_d =
-        loss_dis->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
-                                                                 false);
-    mean_loss_dis += loss_dis_d[0];
+      float_t *loss_dis_d =
+          loss_dis->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                   false);
+      mean_loss_dis += loss_dis_d[0];
 
-    if ((iter + 1) % n_val_iter == 0) {
-      mean_loss_gen /= n_val_iter;
-      mean_loss_dis /= n_val_iter;
-      fprintf(fp, "iter: %d, loss_gen: %f, loss_dis: %f\n", iter + 0,
-              mean_loss_gen, mean_loss_dis);
-      fprintf(stdout, "iter: %d, loss_gen: %f, loss_dis: %f\n", iter + 0,
-              mean_loss_gen, mean_loss_dis);
-      mean_loss_gen = 0.;
-      mean_loss_dis = 0.;
+      if ((iter + 1) % n_val_iter == 0) {
+        mean_loss_gen /= n_val_iter;
+        mean_loss_dis /= n_val_iter;
+        fprintf(fp, "iter: %d, loss_gen: %f, loss_dis: %f\n", iter + 0,
+                mean_loss_gen, mean_loss_dis);
+        fprintf(stdout, "iter: %d, loss_gen: %f, loss_dis: %f\n", iter + 0,
+                mean_loss_gen, mean_loss_dis);
+        mean_loss_gen = 0.;
+        mean_loss_dis = 0.;
+      }
+
+      // Get generated images"
+      if ((iter + 1) % max_iter == 0)
+        print_array(fake);
     }
+  } catch (...) {
+    cout << "Exception in dcgan_training_with_static_graph.\n";
+    fclose(fp);
+    return false;
+  }
+  fclose(fp);
+  return true;
+}
 
-    // Get generated images"
-    if ((iter + 1) % max_iter == 0)
-      print_array(fake);
+bool dcgan_training_with_dynamic_graph(nbla::Context ctx) {
+
+  // Create a context for cpu
+  nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
+
+  // Setup context
+  SingletonManager::get<GlobalContext>()->set_current_context(ctx);
+
+  // Setup auto_forward
+  SingletonManager::get<AutoForward>()->set_auto_forward(true);
+
+  // Setup parameter
+  ParameterDirectory params;
+
+  //  # Create Solver.
+  float learning_rate = 2.0e-4;
+  auto solver_gen = create_AdamSolver(ctx, learning_rate, 0.5, 0.999, 1.0e-8);
+  auto solver_dis = create_AdamSolver(ctx, learning_rate, 0.5, 0.999, 1.0e-8);
+
+  // Create mnist data iterator
+  MnistDataIterator train_data_provider("train");
+
+  //# Training loop.
+  FILE *fp;
+  fp = fopen("log.txt", "wt");
+  if (fp == NULL) {
+    fprintf(stderr, "Error in opening log file.");
+    return false;
+  }
+
+  try {
+    int batch_size = 64;
+    int max_h = 256;
+    int max_iter = 20000;
+    int n_val_iter = 10;
+    float weight_decay = 1.0e-4;
+    float mean_loss_gen = 0.;
+    float mean_loss_dis = 0.;
+    for (int iter = 0; iter < max_iter; iter++) {
+
+      // Get batch and copy to input variables
+      auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
+      auto t = make_shared<CgVariable>(Shape_t({batch_size, 1}), false);
+      train_data_provider.provide_data(cpu_ctx, batch_size, x, t);
+
+      auto z = make_shared<CgVariable>(Shape_t({batch_size, 100, 1, 1}), false);
+      float_t *z_d =
+          z->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, true);
+      for (int i = 0; i < z->variable()->size(); i++, z_d++)
+        *z_d = normal(engine);
+
+      //    # Generator update.
+      auto fake = generator(z, max_h, false, params["gen"]);
+      fake->set_persistent(true);
+
+      auto pred_fake = discriminator(fake, max_h, false, params["dis"]);
+      auto loss_gen = f::mean(
+          f::sigmoid_cross_entropy(pred_fake, f::constant(1, {batch_size, 1})),
+          {0, 1}, false);
+
+      solver_gen->set_parameters(params["gen"].get_parameters(),
+                                 /*reset=*/false, /*retain_state=*/true);
+      solver_gen->zero_grad();
+      loss_gen->variable()->grad()->fill(1.0);
+      loss_gen->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
+      solver_gen->weight_decay(weight_decay);
+      solver_gen->update();
+
+      //    # Discriminator update.
+      auto fake_dis = make_shared<CgVariable>(fake->variable(), true);
+      fake_dis->set_need_grad(true);
+
+      auto pred_fake_dis = discriminator(fake, max_h, false, params["dis"]);
+      pred_fake_dis->set_persistent(true);
+      auto loss_dis =
+          f::mean(f::sigmoid_cross_entropy(pred_fake_dis,
+                                           f::constant(0, {batch_size, 1})),
+                  {0, 1}, false);
+      auto pred_real = discriminator(x, max_h, false, params["dis"]);
+      loss_dis =
+          loss_dis + f::mean(f::sigmoid_cross_entropy(
+                                 pred_real, f::constant(1, {batch_size, 1})),
+                             {0, 1}, false);
+
+      solver_dis->set_parameters(params["dis"].get_parameters(),
+                                 /*reset=*/false, /*retain_state=*/true);
+      solver_dis->zero_grad();
+      loss_dis->variable()->grad()->fill(1.0);
+      loss_dis->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
+      solver_dis->weight_decay(weight_decay);
+      solver_dis->update();
+
+      // Get and print the average loss
+      float_t *loss_gen_d =
+          loss_gen->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                   false);
+      mean_loss_gen += loss_gen_d[0];
+
+      float_t *loss_dis_d =
+          loss_dis->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                   false);
+      mean_loss_dis += loss_dis_d[0];
+
+      if ((iter + 1) % n_val_iter == 0) {
+        mean_loss_gen /= n_val_iter;
+        mean_loss_dis /= n_val_iter;
+        fprintf(fp, "iter: %d, loss_gen: %f, loss_dis: %f\n", iter + 0,
+                mean_loss_gen, mean_loss_dis);
+        fprintf(stdout, "iter: %d, loss_gen: %f, loss_dis: %f\n", iter + 0,
+                mean_loss_gen, mean_loss_dis);
+        mean_loss_gen = 0.;
+        mean_loss_dis = 0.;
+      }
+
+      // Get generated images"
+      if ((iter + 1) % max_iter == 0)
+        print_array(fake);
+    }
+  } catch (...) {
+    cout << "Exception in dcgan_training_with_dynamic_graph.\n";
+    fclose(fp);
+    return false;
   }
   fclose(fp);
   return true;
