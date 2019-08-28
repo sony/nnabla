@@ -90,6 +90,34 @@ class NnpImporter:
             with open(filename, 'rb') as f:
                 self._nnp.MergeFromString(f.read())
 
+    def find_network(self, executor_name):
+        net = None
+        for network in self._nnp.network:
+            if network.name == executor_name:
+                net = network
+        return net
+
+    def find_parameter_variable(self, network):
+        var_list = []
+        for var in network.variable:
+            if var.type == "Parameter" and var.initializer:
+                var_list.append(var)
+        return var_list
+
+    def generate_parameters_data(self, var_list, batch_size):
+        from nnabla.utils.load import _create_variable
+        import numpy as np
+
+        rng = np.random.RandomState(0)
+        for var in var_list:
+            shape = tuple(
+                [d if d >= 1 else batch_size for d in var.shape.dim])
+            variable = _create_variable(var, var.name, shape, rng)
+            p = self._nnp.parameter.add()
+            p.variable_name = variable.name
+            p.shape.dim.extend(variable.shape)
+            p.data.extend(variable.variable_instance.d.flatten())
+
     def execute(self):
         self._nnp = nnabla_pb2.NNablaProtoBuf()
         other_files = []
@@ -119,6 +147,13 @@ class NnpImporter:
                 self.load_parameters(ifile)
             else:
                 other_files.append(ifile)
+
+        executor_name = self._nnp.executor[0].network_name
+        network = self.find_network(executor_name)
+        parameter_variable_list = self.find_parameter_variable(network)
+        if parameter_variable_list and not self._nnp.parameter:
+            self.generate_parameters_data(
+                parameter_variable_list, network.batch_size)
 
         if self._executor_index is not None:
             if self._executor_index < len(self._nnp.executor):
