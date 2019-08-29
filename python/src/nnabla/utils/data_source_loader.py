@@ -42,7 +42,6 @@ from shutil import rmtree
 from nnabla.utils import image_utils
 from nnabla.utils.image_utils import imresize, imread
 from nnabla.logger import logger
-import nnabla.utils.callback as callback
 
 
 # Expose for backward compatibility
@@ -323,10 +322,6 @@ def load_image_cv2(file, shape=None, max_range=1.0):
 
 
 def load_image(file, shape=None, normalize=False):
-    img = callback.load_image(file, shape, normalize)
-    if img is not None:
-        return img
-
     if normalize:
         max_range = 1.0
     else:
@@ -399,6 +394,10 @@ def register_load_function(ext, function):
 
 
 def load(ext):
+    import nnabla.utils.callback as callback
+    func = callback.get_load_image_func(ext)
+    if func is not None:
+        return func
     if ext in _load_functions:
         return _load_functions[ext]
     raise ValueError(
