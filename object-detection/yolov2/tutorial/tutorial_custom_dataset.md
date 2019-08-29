@@ -6,7 +6,7 @@ The dataset for training YOLO v2 consists of three parts:
 - The labels for the bounding boxes
 - The class names
 
-If possible, please first follow "Step 1: Prepare the Dataset" in [Tutorial: Training the YOLO v2 Network with YOLO-v2-NNabla](./tuorial_training.md), and see what kind of structure the dataset follows. Then, the custom dataset shall be created in the same format as the dataset obtained in that section. This tutorial will cover the format of these three components of the dataset in detail ... (TODO)
+If possible, please first follow "Step 1: Prepare the Dataset" in [Tutorial: Training the YOLO v2 Network with YOLO-v2-NNabla](./tuorial_training.md), and see what kind of structure the dataset follows. Then, the custom dataset shall be created in the same format as the dataset obtained in that section. This tutorial will cover the format of these three components of the dataset in detail.
 
 
 ## Calculating the Anchor Box Biases
@@ -30,22 +30,43 @@ Make sure the same bias values are used during training and during inference.
 
 
 ## The Image Format
-(TODO)
-
-Please follow the filename format... (TODO)
+Darknet model takes training and validation images as input by reading their paths from text file. So for this, Darknet needs two text files, one containing path of all the training images and the other containing path of all the validation images. Similarly two text files containing paths of training images and validation images should be created for the custom dataset. The contents of these text files has been depicted below,please follow the filename format:
+```
+Expected Output:
+----train2014.txt(text file inside images folder containing path of training images)
+--------------./coco/images/train2014/COCO_train2014_000000236955.jpg
+--------------./coco/images/train2014/COCO_train2014_000000203069.jpg and so on...
+----val2014.txt (text file inside images folder containing path of validation images)
+--------------./coco/images/val2014/COCO_val2014_000000000164.jpg
+--------------./coco/images/val2014/COCO_val2014_000000000283.jpg and so on...
+```
 
 
 ## The Label Format
-(TODO)
-
-It is a list of floats normalized by the image width and height... (TODO)
-
-Please follow the filename format... (TODO)
-
-
+The label files required by Darknet are in text file format. Each image in the dataset has its corresponding label file. These label files contain category IDs of the objects present in an image and their ground truth bounding box co-ordinates. The contents of a typical label file is ```<object-class> <x> <y> <width> <height>```  where x, y are co-ordinate of centre point of an object and w,h are width, and height of object are relative to the image's width and height. The same format should be used for label files of the custom dataset. The format of label files has been depicted below, please follow the same format:
+```
+labels (folder)
+----train2014(sub folder with training label files)
+--------COCO_train2014_000000000009.txt
+----------------45 0.479492 0.688771 0.955609 0.595500 (<category ID> <x> <y> <width> <height>)
+----------------45 0.736516 0.247188 0.498875 0.476417
+--------COCO_train2014_000000000349.txt
+----------------6 0.421352 0.540448 0.842703 0.537062 
+----------------58 0.668500 0.665531 0.098250 0.163271
+----val2014 (sub folder with validation label files)
+--------COCO_val2014_000000000042.txt
+----------------16 0.606688 0.341381 0.544156 0.510000 
+--------COCO_val2014_000000000626.txt
+----------------74 0.520594 0.303323 0.064562 0.088479 
+```
 ## The Class Name Format
-This is straightforward - simply list the names delimited by a newline in a single text file...
-(TODO)
-
+This is straightforward - simply list the names delimited by a newline in a single text file. For example, if there are 5 classes in the dataset then their name can be written as shown below:
+```
+aeroplane
+bicycle
+bird
+boat
+bottle
+```
 
 [1]: https://arxiv.org/abs/1612.08242 "YOLOv2 arxiv"

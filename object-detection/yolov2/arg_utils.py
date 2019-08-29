@@ -65,6 +65,8 @@ class Yolov2OptionCommon(Yolov2Option):
         parser.add_argument('-g', '--gpus', type=str,
                             help='GPU IDs to be used', default="0")
         parser.add_argument('--disable-cv2', action='store_true')
+        parser.add_argument('--fine-tune', action='store_true', default=False,
+                            help="Whether to fine tune model or not; False by default")
 
     def post_process_impl(self, args):
         args.anchors = get_anchors_by_name_or_parse(args.anchors)

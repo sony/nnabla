@@ -204,11 +204,16 @@ def main():
 
     ###############
 
-    train_graph = TrainGraph(args, (args.size_aug[-1], args.size_aug[-1]))
-
     # Load parameters
     print("Load", args.weight, "...")
-    nn.load_parameters(args.weight)
+    if args.fine_tune:
+        nn.load_parameters(args.weight)
+        nn.parameter.pop_parameter("detection/conv/W")
+        nn.parameter.pop_parameter("detection/conv/b")
+    else:
+        nn.load_parameters(args.weight)
+
+    train_graph = TrainGraph(args, (args.size_aug[-1], args.size_aug[-1]))
     yolo_solver = YoloSolver(args)
 
     if args.on_memory_data:
