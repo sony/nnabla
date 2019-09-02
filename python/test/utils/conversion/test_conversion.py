@@ -20,7 +20,6 @@ import pytest
 import nnabla
 import nnabla.utils.load as nnload
 import numpy as np
-import pdb
 CAFFE2_AVAILABLE = False
 try:
     import caffe2.python.onnx.backend as oc2

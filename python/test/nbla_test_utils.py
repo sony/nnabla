@@ -14,7 +14,6 @@
 
 from nnabla.utils import nnabla_pb2
 from six.moves import filter
-import collections
 import copy
 import nnabla as nn
 import nnabla.ext_utils as ext_utils
@@ -22,7 +21,6 @@ import nnabla.functions as F
 import nnabla.utils.converter
 import numpy
 import numpy as np
-import pytest
 from numpy.core import function_base
 
 

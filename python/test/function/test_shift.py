@@ -16,7 +16,6 @@ import pytest
 import numpy as np
 from scipy.ndimage.interpolation import shift as scipy_shift
 
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 

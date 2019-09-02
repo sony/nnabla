@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest
-import nnabla as nn
 import nnabla.solvers as S
 import numpy as np
 from solver_test_utils import solver_tester, RefSolver
