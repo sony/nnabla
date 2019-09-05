@@ -62,7 +62,6 @@ def cli_main():
 
     subparsers = parser.add_subparsers()
 
-    import nnabla
     from nnabla.utils.cli.train import add_train_command
     add_train_command(subparsers)
 

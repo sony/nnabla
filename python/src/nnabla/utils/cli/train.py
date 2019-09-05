@@ -46,7 +46,6 @@ def _all_reduce(comm, var, division, inplace):
 
     def _wait():
         import time
-        import sys
         count = 0
         while not _finish:
             if count > 10000:

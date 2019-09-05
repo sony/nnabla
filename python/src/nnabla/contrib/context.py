@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
-
 
 def extension_context(extension_name='cpu', **kw):
     """Get the context of the specified extension.

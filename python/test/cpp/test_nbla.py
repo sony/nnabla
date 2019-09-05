@@ -17,12 +17,10 @@ import pytest
 
 import nnabla as nn
 import nnabla.functions as F
-import nnabla.parametric_functions as PF
 import nnabla.utils.save
 import nnabla.utils.load
 
 import numpy as np
-import os
 from subprocess import check_call, call, check_output
 import platform
 

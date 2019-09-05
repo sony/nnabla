@@ -15,9 +15,7 @@
 import pytest
 
 
-import nnabla as nn
 import nnabla.initializer as I
-import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
 from function_benchmark import FunctionBenchmark, Inspec

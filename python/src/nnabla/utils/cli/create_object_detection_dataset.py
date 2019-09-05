@@ -14,7 +14,6 @@
 
 import os
 import re
-import time
 import multiprocessing as mp
 import numpy as np
 import nnabla.logger as logger

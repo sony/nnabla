@@ -24,7 +24,6 @@ import numpy
 import os
 import threading
 import atexit
-import sys
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load

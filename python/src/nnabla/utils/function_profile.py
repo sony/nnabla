@@ -15,7 +15,6 @@
 
 __all__ = ['profile']
 
-import sys
 import pstats
 import cProfile
 import atexit

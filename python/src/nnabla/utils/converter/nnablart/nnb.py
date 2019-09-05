@@ -18,7 +18,6 @@ import numpy as np
 import struct
 import yaml
 
-import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import nnabla.utils.converter
 
 from .utils import create_nnabart_info

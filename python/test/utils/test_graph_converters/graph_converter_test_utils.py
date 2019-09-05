@@ -13,14 +13,12 @@
 # limitations under the License.
 
 
-import os
-import time
 import numpy as np
 
-import nnabla as nn
-import nnabla.communicators as C
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+import nnabla as nn
+import nnabla.communicators as C
 from nnabla.ext_utils import get_extension_context
 
 import nnabla.experimental.graph_converters as GC

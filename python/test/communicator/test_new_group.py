@@ -13,9 +13,7 @@
 # limitations under the License.
 
 import pytest
-import nnabla as nn
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
 import numpy as np
 
 

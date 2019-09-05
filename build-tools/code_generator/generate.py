@@ -12,17 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
-import os
 import sys
 from collections import OrderedDict
-from os.path import abspath, dirname, join, exists
+from os.path import abspath, dirname, join
 
 here = abspath(dirname(abspath(__file__)))
 base = abspath(join(here, '../..'))
 
 import code_generator_utils as utils
-import yaml
 
 def type_to_pack_format(typestring):
     fmt = None

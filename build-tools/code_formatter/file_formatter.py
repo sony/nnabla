@@ -102,7 +102,6 @@ def format_file(file_ext, input):
         from six import StringIO
         import sys
         sys.path.append(os.path.join(os.path.dirname(__file__), '../code_generator'))
-        from collections import OrderedDict
         import code_generator_utils as utils
         d = utils.load_yaml_ordered(StringIO(input))
         output = StringIO()

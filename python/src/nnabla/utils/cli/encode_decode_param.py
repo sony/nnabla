@@ -15,7 +15,6 @@
 from __future__ import print_function
 
 import os
-import csv
 
 import numpy as np
 
@@ -25,7 +24,6 @@ from google.protobuf import text_format
 
 import nnabla as nn
 
-import nnabla.utils.nnabla_pb2 as nnabla_pb2
 
 from nnabla.parameter import get_parameters, set_parameter, save_parameters, load_parameters
 

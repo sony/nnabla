@@ -16,7 +16,6 @@ from __future__ import print_function
 
 import numpy as np
 import os
-import struct
 import time
 
 from nnabla.logger import logger
