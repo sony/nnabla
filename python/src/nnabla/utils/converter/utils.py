@@ -21,17 +21,20 @@ import zlib
 
 _nnabla_func_info = None
 _onnx_func_info = None
+_api_level_info = None
 
 
 def func_set_init(func):
     def __ensure_load_pickle(*args):
         global _nnabla_func_info
         global _onnx_func_info
+        global _api_level_info
         if _nnabla_func_info is None:
             with open(join(dirname(abspath(__file__)), 'functions.pkl'), 'rb') as f:
                 data = pickle.load(f)
                 _nnabla_func_info = data['nnabla_func_info']
                 _onnx_func_info = data['onnx_func_info']
+                _api_level_info = data['api_level_info']
         return func(*args)
     return __ensure_load_pickle
 
@@ -74,6 +77,51 @@ def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict)
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
+
+
+@func_set_init
+def get_api_level_info():
+    class FunctionInfo:
+        def __init__(self, argument, func_id):
+            self.argument = argument
+            self.func_id = func_id
+
+    class ApiLevelInfo:
+        def __init__(self, d):
+            self.api_level_dict = d
+            self.api_level = 1
+            self.function_dict = None
+
+        def set_api_level(self, level):
+            self.api_level = sorted(self.api_level_dict.keys()).pop()
+            if level != -1 and level <= self.api_level:
+                self.api_level = level
+            self.function_dict = {uniq_name.split('_')[0]: FunctionInfo(uniq_name.split('_')[1], func_id)
+                                  for uniq_name, func_id in self.api_level_dict[1].items()}
+            for le in range(2, self.api_level + 1):
+                f_dict = {uniq_name.split('_')[0]: FunctionInfo(uniq_name.split('_')[1], func_id)
+                          for uniq_name, func_id in self.api_level_dict[le].items()}
+                self.function_dict.update(f_dict)
+
+        def get_current_level(self):
+            return self.api_level
+
+        def get_function_list(self):
+            return self.function_dict.keys()
+
+        def get_func_id(self, func_name):
+            return self.function_dict[func_name].func_id
+
+        def get_argument_code(self, func_name):
+            argument_code = self.function_dict[func_name].argument
+            if argument_code == 'Empty':
+                argument_code = ''
+            return argument_code
+
+        def get_func_uniq_name(self, func_name):
+            return func_name + '_' + self.function_dict[func_name].argument
+
+    return ApiLevelInfo(_api_level_info)
 
 
 @func_set_init

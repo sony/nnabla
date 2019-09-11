@@ -55,8 +55,10 @@ class NnbExporter:
         self._memory_data += b'\0' * (self._align(len(data)) - len(data))
         return (index, pointer)
 
-    def __init__(self, nnp, batch_size, nnb_version=NN_BINARY_FORMAT_VERSION):
+    def __init__(self, nnp, batch_size, nnb_version=NN_BINARY_FORMAT_VERSION,
+                 api_level=-1):
         self._info = create_nnabart_info(nnp, batch_size)
+        self._api_level_info = nnabla.utils.converter.get_api_level_info()
         self._nnb_version = nnb_version
         preprocess_for_exporter(self._info, 'NNB')
 
@@ -64,15 +66,7 @@ class NnbExporter:
 
         self._memory_index = []
         self._memory_data = b''
-
-        self._argument_formats = {}
-        for fn, func in self._info._function_info.items():
-            if 'arguments' in func and len(func['arguments']) > 0:
-                argfmt = ''
-                for an, arg in func['arguments'].items():
-                    argfmt += nnabla.utils.converter.type_to_pack_format(
-                        arg['type'])
-                self._argument_formats[fn] = argfmt
+        self._api_level_info.set_api_level(api_level)
 
     @staticmethod
     def __compute_int_bit_num(param_array):
@@ -101,7 +95,7 @@ class NnbExporter:
 
         ####################################################################
         # Version
-        binary_format_revision = nnabla.utils.converter.get_category_info_version()
+        api_level = self._api_level_info.get_current_level()
 
         ####################################################################
         # Variables name index
@@ -238,9 +232,12 @@ class NnbExporter:
         # Functions
         findexes = []
         for n, f in enumerate(self._info._network.function):
+            if f.type not in self._api_level_info.get_function_list():
+                raise ValueError("{}() is not supported in current API Level(={}).".format(
+                    f.type, self._api_level_info.get_current_level()))
 
             function_data = struct.pack(
-                'H', self._info._function_info[f.type]['id'])
+                'H', self._api_level_info.get_func_id(f.type))
 
             # Default function implementation is 0(float)
             if f.name not in settings['functions']:
@@ -262,15 +259,31 @@ class NnbExporter:
                 '{}I'.format(len(foutputs)), *foutputs))
             function_data += struct.pack('iI', len(foutputs), index)
 
+            argcode = self._api_level_info.get_argument_code(f.type)
+            argcode_pos = 0
             if 'arguments' in finfo and len(finfo['arguments']) > 0:
                 argfmt = ''
                 values = []
                 for an, arg in finfo['arguments'].items():
                     val = eval('f.{}_param.{}'.format(
                         finfo['snake_name'], an))
-
-                    argfmt += nnabla.utils.converter.type_to_pack_format(
+                    arg_type_id = nnabla.utils.converter.type_to_pack_format(
                         arg['type'])
+                    if argcode_pos >= len(argcode):
+                        # ommit the parameter that is not supported
+                        # we only down-version by omitting the tail-appended parameters.
+                        print("{}.{} is ommited for lower API Level:{}".format(f.type, an,
+                                                                               self._api_level_info.get_current_level()))
+                        continue
+                    else:
+                        # If argument type is changed, this function will be
+                        # unable to down-version.
+                        if argcode[argcode_pos:argcode_pos + len(arg_type_id)] != arg_type_id:
+                            raise ValueError("{} is not supported by API Level:{}."
+                                             .format(self._api_level_info.get_func_uniq_name(f.type),
+                                                     self._api_level_info.get_current_level()))
+                        argcode_pos += len(arg_type_id)
+                    argfmt += arg_type_id
                     if arg['type'] == 'bool':
                         values.append(val)
                     elif arg['type'] == 'double' or arg['type'] == 'float':
@@ -291,6 +304,13 @@ class NnbExporter:
                         val = arg['available_values'].index(val)
                         values.append(val)
                 function_data += struct.pack(argfmt, *values)
+            else:
+                # Check if old version requires argument.
+                # If it is true, down-version is not allowed.
+                if argcode:
+                    raise ValueError("{} is not supported by API Level:{}."
+                                     .format(self._api_level_info.get_func_uniq_name(f.type),
+                                             self._api_level_info.get_current_level()))
 
             index, pointer = self._alloc(data=function_data)
             findexes.append(index)
@@ -301,7 +321,7 @@ class NnbExporter:
 
         network = struct.pack('IIiIiIiIiIiIII',
                               self._nnb_version,
-                              binary_format_revision,
+                              api_level,
                               buffers.size,
                               buffers.list_index,
                               variables.size,
