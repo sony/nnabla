@@ -18,6 +18,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+from nnabla.testing import assert_allclose
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -53,7 +54,7 @@ def test_graph_logreg(seed):
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L, inputs, 1e-3)
-    assert np.allclose(ngrad, agrad, atol=1e-2)
+    assert_allclose(ngrad, agrad, atol=1e-2)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -114,7 +115,7 @@ def test_graph_model(model, seed):
     from nbla_test_utils import \
         compute_analytical_and_numerical_grad_graph as grads
     agrad, ngrad = grads(L, inputs, 1e-3)
-    assert np.allclose(ngrad, agrad, atol=1.05e-2)
+    assert_allclose(ngrad, agrad, atol=1.05e-2)
 
 
 @pytest.mark.parametrize("seed", [311])
@@ -229,7 +230,7 @@ def test_graph_rewire(seed, clear_buffer):
     # Checking forward
     yb.forward(clear_no_need_grad=clear_buffer)
     yc.forward(clear_no_need_grad=clear_buffer)
-    assert np.allclose(yb.d, yc.d)
+    assert_allclose(yb.d, yc.d)
     # Checking backward
     zero_grad()
     yb.backward(clear_buffer=clear_buffer)
@@ -237,9 +238,9 @@ def test_graph_rewire(seed, clear_buffer):
     zero_grad()
     yc.backward(clear_buffer=clear_buffer)
     gc = backup_params()
-    assert np.allclose(xa.d, xc.d)
+    assert_allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
-        assert np.allclose(b, c)
+        assert_allclose(b, c)
 
 
 def test_deleted_outputs():
@@ -268,20 +269,20 @@ def test_function_hook():
     y.data.zero()
 
     def forward_pre_hook(f):
-        assert np.allclose(f.outputs[0].d, 0)
+        assert_allclose(f.outputs[0].d, 0)
 
     def forward_post_hook(f):
         if f.info.type_name == 'AddScalar':
-            assert np.allclose(f.outputs[0].d, 2)
+            assert_allclose(f.outputs[0].d, 2)
         if f.info.type_name == 'MulScalar':
-            assert np.allclose(f.outputs[0].d, 1)
+            assert_allclose(f.outputs[0].d, 1)
 
     def backward_pre_hook(f):
-        assert np.allclose(f.inputs[0].g, 0)
+        assert_allclose(f.inputs[0].g, 0)
 
     def backward_post_hook(f):
         # Both h and x grad will be 0.5
-        assert np.allclose(f.inputs[0].g, 0.5)
+        assert_allclose(f.inputs[0].g, 0.5)
 
     y.forward(function_pre_hook=forward_pre_hook,
               function_post_hook=forward_post_hook)

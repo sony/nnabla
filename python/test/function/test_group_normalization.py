@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.testing import assert_allclose
 
 from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
@@ -73,11 +74,11 @@ def test_group_normalization_forward_backward(seed, num_groups, x_shape, batch_a
 
         for o, r in zip(output, ref):
             assert o.shape == r.shape
-            assert np.allclose(o.d, r, atol=1e-2, rtol=1e-5)
+            assert_allclose(o.d, r, atol=1e-2, rtol=1e-5)
 
     else:
         output.forward()
         output.backward()
 
         assert output.shape == ref.shape
-        assert np.allclose(output.d, ref, atol=1e-2, rtol=1e-5)
+        assert_allclose(output.d, ref, atol=1e-2, rtol=1e-5)

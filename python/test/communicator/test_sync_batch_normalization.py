@@ -18,6 +18,7 @@ import nnabla as nn
 import nnabla.parametric_functions as PF
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('SyncBatchNormalization')
 
@@ -192,7 +193,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
             with nn.context_scope(ctx), nn.auto_forward():
                 y = F.sync_batch_normalization(
                     *(vinputs + [comm, "world", axes, decay_rate, eps, batch_stat, output_stat]))
-            assert np.allclose(vinputs[0].d, inputs[0])
+            assert_allclose(vinputs[0].d, inputs[0])
 
     # Check if running mean and var works.
     vinputs = []
@@ -207,5 +208,5 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
         with nn.context_scope(ctx), nn.auto_forward():
             y = F.sync_batch_normalization(
                 *(vinputs + [comm, "world", axes, decay_rate, eps, batch_stat, output_stat]))
-        assert np.allclose(vinputs[3].d, inputs[3])
-        assert np.allclose(vinputs[4].d, inputs[4], atol=1e-3)
+        assert_allclose(vinputs[3].d, inputs[3])
+        assert_allclose(vinputs[4].d, inputs[4], atol=1e-3)

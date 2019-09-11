@@ -16,6 +16,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.testing import assert_allclose
 
 
 from nbla_test_utils import (function_tester, list_context,
@@ -87,7 +88,7 @@ def test_max_with_index(seed, ctx, func_name, inshape, axis, keepdims):
     x = nn.Variable.from_numpy_array(x)
     with nn.context_scope(ctx), nn.auto_forward(True):
         val, idx = F.max(x, axis, keepdims, with_index=True)
-    assert np.allclose(val.d, np.amax(x.d, axis, keepdims=keepdims))
+    assert_allclose(val.d, np.amax(x.d, axis, keepdims=keepdims))
     shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
     assert np.all(idx.d == x.d.reshape(*shape).argmax(-1).reshape(idx.d.shape))
     with nn.context_scope(ctx), nn.auto_forward(True):
@@ -108,7 +109,7 @@ def test_min_with_index(seed, ctx, func_name, inshape, axis, keepdims):
     x = nn.Variable.from_numpy_array(x)
     with nn.context_scope(ctx), nn.auto_forward(True):
         val, idx = F.min(x, axis, keepdims, with_index=True)
-    assert np.allclose(val.d, np.amin(x.d, axis, keepdims=keepdims))
+    assert_allclose(val.d, np.amin(x.d, axis, keepdims=keepdims))
     shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
     assert np.all(idx.d == x.d.reshape(*shape).argmin(-1).reshape(idx.d.shape))
     with nn.context_scope(ctx), nn.auto_forward(True):

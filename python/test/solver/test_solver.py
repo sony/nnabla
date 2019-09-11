@@ -13,40 +13,36 @@
 # limitations under the License.
 
 import pytest
-import numpy as np
 import nnabla as nn
-import nnabla.functions as F
+import nnabla.solvers as S
+import numpy as np
+from solver_test_utils import solver_tester, RefSolver
 from nbla_test_utils import list_context
 from nnabla.testing import assert_allclose
 
-ctxs = list_context('Unlink')
 
+def test_solver_zeroing():
+    xs = [nn.Variable([2, 3, 4], need_grad=True) for _ in range(3)]
 
-def ref_unlink(x):
-    return x
+    s = S.Sgd(1)
+    s.set_parameters({str(i): x for i, x in enumerate(xs)})
 
+    for x in xs:
+        x.data.fill(1)
+        x.grad.zero()
 
-@pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("shape", [(3, 6), (3, 7, 13)])
-def test_unlink_forward_backward(seed, shape, ctx, func_name):
+    s.weight_decay(1.0)
+    s.update()
+    for x in xs:
+        # Grad is not referenced since neither weight decay nor update is performed.
+        assert x.grad.zeroing
+        assert_allclose(x.d, 1)
 
-    rng = np.random.RandomState(seed)
-    x0 = rng.randn(*(shape)).astype(np.float32)
-    ref = ref_unlink(x0)
+    for x in xs:
+        x.grad.fill(1)
 
-    x = nn.Variable(shape)
-    y = F.unlink(x)
-    x.d = x0
-    x.grad.zero()
-    y.forward()
-    y.backward()
-    res = y.d
+    s.weight_decay(0.1)
+    s.update()
 
-    atol_f = 1e-6
-    assert_allclose(ref, res, atol=atol_f)
-
-    atol_b = 1e-6
-    ref = np.zeros(shape)
-    res = x.g
-    assert_allclose(ref, res, atol=atol_b)
+    for x in xs:
+        assert_allclose(x.d, 1 - (1 + 0.1))

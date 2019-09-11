@@ -19,6 +19,7 @@ import nnabla as nn
 import nnabla.ext_utils as ext_utils
 import nnabla.functions as F
 import nnabla.utils.converter
+from nnabla.testing import assert_allclose
 import numpy
 import numpy as np
 from numpy.core import function_base
@@ -301,14 +302,12 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
     # 5. Check if output values are close between function data types.
     for ff, hh in zip(y_f, y_h):
         # TODO: set tol param
-        assert np.allclose(ff, hh, atol=atol), "Checking forward half: " + str(
-            ArrayDiffStats(ff, hh))
+        assert_allclose(ff, hh, atol=atol)
     if True not in backward:
         return
     for ff, hh in zip(g_f, g_h):
         # TODO: set tol param
-        assert np.allclose(ff, hh, atol=atol), "Checking backward half: " + str(
-            ArrayDiffStats(ff, hh))
+        assert_allclose(ff, hh, atol=atol)
 
 
 def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
@@ -530,8 +529,7 @@ def function_tester(rng, func, ref_func, inputs,
     assert len(o) == len(refs)
     for i, ref in enumerate(refs):
         res = o[i].d
-        assert np.allclose(ref, res, atol=atol_f), str(
-            ArrayDiffStats(ref, res))
+        assert_allclose(ref, res, atol=atol_f)
 
     # Checking function name
     try:
@@ -579,8 +577,7 @@ def function_tester(rng, func, ref_func, inputs,
         doutputs = [o_.g for o_ in o]
         ngrads = ref_grad(*(rinputs + doutputs + func_args), **func_kwargs)
 
-    assert np.allclose(ngrads, agrads, atol=atol_b), str(
-        ArrayDiffStats(ngrads, agrads))
+    assert_allclose(ngrads, agrads, atol=atol_b)
 
     # Check if need_grad works
     for v, b in zip(vinputs, backward):
@@ -630,8 +627,8 @@ def function_tester(rng, func, ref_func, inputs,
         v.g = rng.randn(*v.shape)
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
-        assert np.allclose(
-            v.g, true_g, atol=atol_accum), str(ArrayDiffStats(v.g, true_g))
+        assert_allclose(
+            v.g, true_g, atol=atol_accum)
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')
@@ -666,7 +663,7 @@ def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx
     l_i.backward()
     grads_i = [inp.g.copy() for inp in inputs]
     for g, g_i in zip(grads, grads_i):
-        assert np.allclose(g, g_i), str(ArrayDiffStats(g, g_i))
+        assert_allclose(g, g_i)
 
 
 def convert_to_float2_array(x_complex, dtype=np.float32):
@@ -808,8 +805,7 @@ def backward_function_tester(rng, func, ref_func, inputs,
             continue
         fgrads = vi.g
         bgrads = go.d
-        assert np.allclose(fgrads, bgrads, atol=atol_f), str(
-            ArrayDiffStats(fgrads, bgrads))
+        assert_allclose(fgrads, bgrads, atol=atol_f)
 
     # TODO: 1. Pass function argument directly to backward functions.
     # TODO: 2. should be changed for the simplier form by simply testing BackwardFunction
@@ -829,8 +825,7 @@ def backward_function_tester(rng, func, ref_func, inputs,
                               for inp in inputs if inp is not None])
     numerical_grads = approx_fprime(inputs0, obj_func, dstep, gp2, vinputs)
     # Check backward
-    assert np.allclose(analytical_grads, numerical_grads, atol=atol_b), \
-        str(ArrayDiffStats(analytical_grads, numerical_grads))
+    assert_allclose(analytical_grads, numerical_grads, atol=atol_b)
 
     # --- Backward (accum = True) test --- #
     # Random grads
@@ -846,5 +841,5 @@ def backward_function_tester(rng, func, ref_func, inputs,
                                  for rg in rand_grads])
     analytical_grads -= rand_grads
     # Check backward
-    assert np.allclose(analytical_grads, analytical_grads0, atol=atol_accum), \
-        str(ArrayDiffStats(analytical_grads, analytical_grads0))
+    assert_allclose(
+        analytical_grads, analytical_grads0, atol=atol_accum)

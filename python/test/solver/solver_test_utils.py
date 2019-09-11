@@ -15,6 +15,8 @@
 from six import iteritems
 
 import nnabla as nn
+import nnabla.solvers as S
+from nnabla.testing import assert_allclose
 import numpy as np
 from collections import OrderedDict
 import os
@@ -74,10 +76,10 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     params_ = s.get_parameters()
     for k0, v0 in iteritems(ref_s.params):
         v1 = params_[k0]
-        assert np.allclose(v0, v1.d, atol=atol)
+        assert_allclose(v0, v1.d, atol=atol)
     for k1, v1 in iteritems(params_):
         v0 = ref_s.params[k1]
-        assert np.allclose(v0, v1.d, atol=atol)
+        assert_allclose(v0, v1.d, atol=atol)
 
     # Check weight decay.
     grad_copy = OrderedDict([(k, p.g.copy())
@@ -85,7 +87,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     s.weight_decay(decay)
     ref_s.weight_decay(grad_copy, decay)
     for p, ref_p in zip(params.values(), grad_copy.values()):
-        assert np.allclose(ref_p, p.g, atol=atol)
+        assert_allclose(ref_p, p.g, atol=atol)
 
     # Check solver udpate.
     for i in range(num_itr):
@@ -97,7 +99,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
         ref_s.update(grads)
         # update check
         for p, ref_p in zip(params.values(), ref_s.params.values()):
-            assert np.allclose(ref_p, p.d, atol=atol)
+            assert_allclose(ref_p, p.d, atol=atol)
         # iteration state incrementaion check
         for state in s.get_states().values():
             assert state.t == (i + 1)
@@ -127,7 +129,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
         p.g *= scale
     s.scale_grad(1. / scale)
     for ref, p in zip(ref_grad, params.values()):
-        assert np.allclose(ref, p.g, atol=1e-4)
+        assert_allclose(ref, p.g, atol=1e-4)
 
     # Save/Load Test
     def test_save_load(s, name):
@@ -148,7 +150,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
             s1 = states1[k0]
             for sname, vx0 in iteritems(s0.pstate):
                 vx1 = s1.pstate[sname]
-                assert np.allclose(vx0.d, vx1.d)
+                assert_allclose(vx0.d, vx1.d)
             assert s1.t == s0.t
     test_save_load(s, "states.h5")
     test_save_load(s, "states.protobuf")
