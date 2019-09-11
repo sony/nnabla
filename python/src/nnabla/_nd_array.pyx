@@ -427,23 +427,31 @@ cdef class NdArray:
             F.pow_scalar(self, x, outputs=[self])
         return self
 
-    def copy_from(self, NdArray arr):
+    def copy_from(self, NdArray arr, use_current_context=True):
         """
         Copy values from another NdArray object.
 
         It returns the caller object itself.
-        :func:`nnabla.functions.identity` is called internally to copy values.
 
         Args:
             arr (~nnabla.NdArray): Values will be copied to the caller object.
                 The shape of ``arr``` must be same as the caller object.
+            use_current_context (bool):
+                If True, a copy is happening in a device and dtype specified
+                in the current context (equivalent to call
+                `F.identity(src, output=[self])`). Otherwise, a device and
+                dtype in the source array is used. The default is True.
 
         Returns:
             :obj:`nnabla.NdArray`
 
         """
         import nnabla.functions as F
-        F.identity(arr, outputs=[self])
+        if use_current_context:
+            F.identity(arr, outputs=[self])
+            return self
+        self.arrp.array().get().copy_from(
+            arr.arrp.array().get())
         return self
 
     def __getitem__(self, key):

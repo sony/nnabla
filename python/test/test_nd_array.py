@@ -36,3 +36,18 @@ def test_nd_array():
     assert np.all(a.data == 3)
     b.copy_from(a)
     assert np.all(a.data == b.data)
+
+
+def test_copy_from():
+    shape = [2, 3, 4]
+    src = nn.NdArray(shape)
+    dst = nn.NdArray(shape)
+    src.data = 0
+    src.cast(dtype=np.uint8)
+    dst.copy_from(src, use_current_context=False)
+    assert dst.dtype == np.uint8
+
+    from nnabla.ext_utils import get_extension_context
+    with nn.context_scope(get_extension_context('cpu', dtype='float')):
+        dst.copy_from(src, use_current_context=True)
+    assert dst.dtype == np.float32
