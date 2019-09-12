@@ -56,4 +56,4 @@ def test_all_gather(seed, comm_nccl_opts):
 
     # Check
     for y, ref in zip(y_list, refs):
-        assert np.allclose(y.d, ref, rtol=1e-3, atol=1e-6)
+        assert_allclose(y.d, ref, rtol=1e-3, atol=1e-6)

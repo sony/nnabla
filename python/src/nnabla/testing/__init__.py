@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2019 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import numpy as np
-from nnabla.testing import assert_allclose
 
 
-def scheduler_tester(scheduler, ref_scheduler, max_iter, scheduler_args=[], atol=1e-6):
-    # Create scheduler
-    s = scheduler(*scheduler_args)
-    ref_s = ref_scheduler(*scheduler_args)
+def assert_allclose(actual, desired, rtol=1e-5, atol=1e-6, equal_nan=True,
+                    err_msg='', verbose=True):
+    '''A wrapper of `numpy.testing.assert_allclose`.
 
-    # Check learning rate
-    lr = [s.get_learning_rate(iter) for iter in range(max_iter)]
-    ref_lr = [ref_s.get_learning_rate(iter) for iter in range(max_iter)]
-    assert_allclose(lr, ref_lr, atol=atol)
+    Using default values for `rtol` and `atol` that are consistent with
+    `numpy.allclose`.
+    '''
+    np.testing.assert_allclose(actual, desired, rtol=rtol, atol=atol,
+                               equal_nan=equal_nan, err_msg=err_msg, verbose=verbose)

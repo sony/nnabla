@@ -39,7 +39,7 @@ def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var, shape):
         vy = nn.NdArray.from_numpy_array(vy_data)
     vz = eval("vx {0} vy".format(op))
     ref_z = eval("vx_data {0} vy_data".format(op))
-    assert np.allclose(ref_z, vz.data)
+    assert_allclose(ref_z, vz.data)
 
     if x_var:
         return
@@ -47,7 +47,7 @@ def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var, shape):
     # Inplace test
     vx_bak = vx
     exec_("vx {0}= vy".format(op))
-    assert np.allclose(vx.data, vz.data)
+    assert_allclose(vx.data, vz.data)
     assert vx is vx_bak
 
 
@@ -62,12 +62,12 @@ def test_ndarray_arithmetic_scalar_ops(seed, op, shape):
         vx.data += - vx.data.min() + 1.0
     vz = eval("vx {0} a".format(op))
     ref_z = eval("vx.data {0} a".format(op))
-    assert np.allclose(ref_z, vz.data)
+    assert_allclose(ref_z, vz.data)
 
     # Inplace test
     vx_bak = vx
     exec_("vx {0}= a".format(op))
-    assert np.allclose(vx.data, vz.data)
+    assert_allclose(vx.data, vz.data)
     assert vx is vx_bak
 
 
@@ -82,7 +82,7 @@ def test_ndarray_arithmetic_scalar_rops(seed, op, shape):
         a = np.abs(a)
     vz = eval("a {0} vx".format(op))
     ref_z = eval("a {0} vx.data".format(op))
-    assert np.allclose(ref_z, vz.data)
+    assert_allclose(ref_z, vz.data)
 
 
 @pytest.mark.parametrize("seed", [313, 314])
@@ -93,4 +93,4 @@ def test_ndarray_arithmetic_unary_ops(seed, op, shape):
     vx = nn.NdArray.from_numpy_array(rng.randn(*shape).astype(np.float32))
     vz = eval("{0} vx".format(op))
     ref_z = eval("{0} vx.data".format(op))
-    assert np.allclose(ref_z, vz.data)
+    assert_allclose(ref_z, vz.data)

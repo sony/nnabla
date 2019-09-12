@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 
 def ref_clip_by_norm(x, clip_norm, axis):
@@ -43,13 +44,13 @@ def test_clip_by_norm_forward(seed, shape, clip_norm_type, clip_norm_value, x_va
                 with nn.auto_forward(True):
                     y = F.clip_by_norm(x, clip_norm, axis)
                 y_ref = ref_clip_by_norm(x_data, clip_norm_value, axis=axis)
-                assert np.allclose(y.d, y_ref)
+                assert_allclose(y.d, y_ref)
         else:
             if clip_norm_value > 0:
                 with nn.auto_forward(True):
                     y = F.clip_by_norm(x, clip_norm, axis)
                 y_ref = ref_clip_by_norm(x_data, clip_norm_value, axis=axis)
-                assert np.allclose(y.d, y_ref)
+                assert_allclose(y.d, y_ref)
             else:
                 with pytest.raises(ValueError):
                     y = F.clip_by_norm(x, clip_norm, axis)

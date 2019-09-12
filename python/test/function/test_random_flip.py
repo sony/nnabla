@@ -18,6 +18,7 @@ import nnabla as nn
 import nnabla.functions as F
 from test_flip import ref_flip
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('RandomFlip')
 
@@ -50,13 +51,13 @@ def test_random_flip_forward_backward(seed, axes, ctx, func_name):
         ref_grad = ref_flip(o_grad, axes)
     else:
         ref_grad = o_grad
-    assert np.allclose(i.g, orig_grad + ref_grad)
+    assert_allclose(i.g, orig_grad + ref_grad)
 
     # Check if accum option works
     i.g[...] = 1
     o.g = o_grad
     o.parent.backward([i], [o], [False])
-    assert np.allclose(i.g, ref_grad)
+    assert_allclose(i.g, ref_grad)
 
     # Check accum=False with NaN gradient
     i.g = np.float32('nan')

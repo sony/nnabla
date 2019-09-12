@@ -16,7 +16,6 @@ import pytest
 import numpy as np
 import nnabla as nn
 
-
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
 def test_variable_arithmetic_ops2(seed, op):
@@ -29,7 +28,7 @@ def test_variable_arithmetic_ops2(seed, op):
     with nn.auto_forward():
         vz = eval("vx {0} vy".format(op))
         ref_z = eval("vx.d {0} vy.d".format(op))
-        assert np.allclose(ref_z, vz.d)
+        assert_allclose(ref_z, vz.d)
 
 
 @pytest.mark.parametrize("seed", [313, 314])
@@ -43,7 +42,7 @@ def test_variable_arithmetic_scalar_ops(seed, op):
     with nn.auto_forward():
         vz = eval("vx {0} a".format(op))
         ref_z = eval("vx.d {0} a".format(op))
-        assert np.allclose(ref_z, vz.d)
+        assert_allclose(ref_z, vz.d)
 
 
 @pytest.mark.parametrize("seed", [313, 314])
@@ -57,7 +56,7 @@ def test_variable_arithmetic_scalar_rops(seed, op):
     with nn.auto_forward():
         vz = eval("a {0} vx".format(op))
         ref_z = eval("a {0} vx.d".format(op))
-        assert np.allclose(ref_z, vz.d)
+        assert_allclose(ref_z, vz.d)
 
 
 @pytest.mark.parametrize("seed", [313, 314])
@@ -68,4 +67,4 @@ def test_variable_arithmetic_unary_ops(seed, op):
     with nn.auto_forward():
         vz = eval("{0} vx".format(op))
         ref_z = eval("{0} vx.d".format(op))
-        assert np.allclose(ref_z, vz.d)
+        assert_allclose(ref_z, vz.d)

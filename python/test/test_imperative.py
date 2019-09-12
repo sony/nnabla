@@ -15,6 +15,7 @@
 import numpy as np
 
 import nnabla as nn
+from nnabla.testing import assert_allclose
 
 
 def test_imperative_i1_o1():
@@ -22,7 +23,7 @@ def test_imperative_i1_o1():
     x = nn.NdArray([2, 3, 4])
     x.fill(1)
     x1 = F.add_scalar(x, 1)
-    assert np.allclose(x1.data, 2)
+    assert_allclose(x1.data, 2)
 
 
 def test_imperative_i2_o1():
@@ -32,7 +33,7 @@ def test_imperative_i2_o1():
     x0.fill(3)
     x1.fill(0.5)
     y = F.mul2(x0, x1)
-    assert np.allclose(y.data, 1.5)
+    assert_allclose(y.data, 1.5)
 
 
 def test_imperative_pf():

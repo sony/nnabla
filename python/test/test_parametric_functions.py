@@ -18,6 +18,7 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
+from nnabla.testing import assert_allclose
 
 
 @pytest.fixture(scope='function')
@@ -110,14 +111,14 @@ def test_pf_affine_execution(g_rng, inshape, n_outmaps, base_axis, w_init, b_ini
     assert w.need_grad
     assert y.parent.inputs[1].need_grad == (not fix_parameters)
     if isinstance(w_init, np.ndarray):
-        assert np.allclose(w_init, w.d)
+        assert_allclose(w_init, w.d)
     if with_bias:
         b = nn.get_parameters()['affine/b']
         assert b.shape == b_shape
         assert b.need_grad
         assert y.parent.inputs[2].need_grad == (not fix_parameters)
         if isinstance(b_init, np.ndarray):
-            assert np.allclose(b_init, b.d)
+            assert_allclose(b_init, b.d)
 
 
 @pytest.mark.parametrize("inshape, outmaps, kernel, pad, stride, dilation, group, base_axis", [
@@ -177,14 +178,14 @@ def test_pf_convolution_execution(g_rng, inshape, outmaps, kernel, pad, stride, 
     assert w.need_grad
     assert y.parent.inputs[1].need_grad == (not fix_parameters)
     if isinstance(w_init, np.ndarray):
-        assert np.allclose(w_init, w.d)
+        assert_allclose(w_init, w.d)
     if with_bias:
         b = nn.get_parameters()['conv/b']
         assert b.shape == b_shape
         assert b.need_grad
         assert y.parent.inputs[2].need_grad == (not fix_parameters)
         if isinstance(b_init, np.ndarray):
-            assert np.allclose(b_init, b.d)
+            assert_allclose(b_init, b.d)
 
 
 def _get_bn_parameter_shape(inshape, axes):
@@ -237,15 +238,15 @@ def test_pf_batch_normalization_execution(
     h = y[0] if output_stat else y
     _, b, g, m, v = h.parent.inputs
     if param_init:
-        assert np.allclose(b.d, beta_init)
-        assert np.allclose(g.d, gamma_init)
-        assert np.allclose(m.d, mean_init)
-        assert np.allclose(v.d, var_init)
+        assert_allclose(b.d, beta_init)
+        assert_allclose(g.d, gamma_init)
+        assert_allclose(m.d, mean_init)
+        assert_allclose(v.d, var_init)
     else:
-        assert np.allclose(b.d, 0)
-        assert np.allclose(g.d, 1)
-        assert np.allclose(m.d, 0)
-        assert np.allclose(v.d, 1)
+        assert_allclose(b.d, 0)
+        assert_allclose(g.d, 1)
+        assert_allclose(m.d, 0)
+        assert_allclose(v.d, 1)
 
     # Check execution
     if output_stat:
@@ -345,15 +346,15 @@ def test_pf_fused_batch_normalization_execution(
     else:
         _, b, g, m, v = h.parent.inputs
     if param_init:
-        assert np.allclose(b.d, beta_init)
-        assert np.allclose(g.d, gamma_init)
-        assert np.allclose(m.d, mean_init)
-        assert np.allclose(v.d, var_init)
+        assert_allclose(b.d, beta_init)
+        assert_allclose(g.d, gamma_init)
+        assert_allclose(m.d, mean_init)
+        assert_allclose(v.d, var_init)
     else:
-        assert np.allclose(b.d, 0)
-        assert np.allclose(g.d, 1)
-        assert np.allclose(m.d, 0)
-        assert np.allclose(v.d, 1)
+        assert_allclose(b.d, 0)
+        assert_allclose(g.d, 1)
+        assert_allclose(m.d, 0)
+        assert_allclose(v.d, 1)
 
     # Check execution
     if output_stat:
@@ -458,7 +459,7 @@ def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
     # Check values
     w_sn_numpy = spectral_norm_numpy(
         w.d, dim, itr, test=test, u_init_d=u_init_d)
-    assert np.allclose(w_sn_numpy, w_sn.d, atol=1e-2, rtol=1e-5)
+    assert_allclose(w_sn_numpy, w_sn.d, atol=1e-2, rtol=1e-5)
 
     # Check args (cannot since this is the functions composite)
 
@@ -524,8 +525,8 @@ def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_par
     h = y[0]
     b = h.parent.inputs[1]
     g = h.parent.inputs[0].parent.inputs[1]
-    assert np.allclose(b.d, beta_init)
-    assert np.allclose(g.d, gamma_init)
+    assert_allclose(b.d, beta_init)
+    assert_allclose(g.d, gamma_init)
 
     # Check execution
     forward_backward_all(*y)
@@ -537,7 +538,7 @@ def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_par
         ref = [ref]
 
     for i in range(len(ref)):
-        assert np.allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
+        assert_allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
 
     # Check created parameters
     assert len(nn.get_parameters()) == 2
@@ -616,8 +617,8 @@ def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, out
     h = y[0]
     b = h.parent.inputs[1]
     g = h.parent.inputs[0].parent.inputs[1]
-    assert np.allclose(b.d, beta_init)
-    assert np.allclose(g.d, gamma_init)
+    assert_allclose(b.d, beta_init)
+    assert_allclose(g.d, gamma_init)
 
     # Check execution
     forward_backward_all(*y)
@@ -629,7 +630,7 @@ def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, out
         ref = [ref]
 
     for i in range(len(ref)):
-        assert np.allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
+        assert_allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
 
     # Check created parameters
     assert len(nn.get_parameters()) == 2
@@ -721,8 +722,8 @@ def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_
     h = y[0]
     b = h.parent.inputs[0].parent.inputs[1]
     g = h.parent.inputs[0].parent.inputs[0].parent.inputs[1]
-    assert np.allclose(b.d, beta_init)
-    assert np.allclose(g.d, gamma_init)
+    assert_allclose(b.d, beta_init)
+    assert_allclose(g.d, gamma_init)
 
     # Check execution
     forward_backward_all(*y)
@@ -734,7 +735,7 @@ def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_
         ref = [ref]
 
     for i in range(len(ref)):
-        assert np.allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
+        assert_allclose(y[i].d, ref[i], atol=1e-2, rtol=1e-5)
 
     # Check created parameters
     assert len(nn.get_parameters()) == 2
@@ -825,14 +826,14 @@ def test_pf_rnn_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, n
         assert w0.need_grad
         assert y.parent.inputs[2].need_grad == (not fix_parameters)
         if isinstance(w0_init, np.ndarray):
-            assert np.allclose(w0_init, w0.d)
+            assert_allclose(w0_init, w0.d)
         if num_layers > 1:
             w = nn.get_parameters()['rnn/weight']
             assert w.shape == w_shape
             assert w.need_grad
             assert y.parent.inputs[3].need_grad == (not fix_parameters)
             if isinstance(w_init, np.ndarray):
-                assert np.allclose(w_init, w.d)
+                assert_allclose(w_init, w.d)
         if with_bias:
             b = nn.get_parameters()['rnn/bias']
             assert b.shape == b_shape
@@ -842,7 +843,7 @@ def test_pf_rnn_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, n
             else:
                 assert y.parent.inputs[3].need_grad == (not fix_parameters)
             if isinstance(b_init, np.ndarray):
-                assert np.allclose(b_init, b.d)
+                assert_allclose(b_init, b.d)
 
 
 ctxs = list_context('GRU')
@@ -915,14 +916,14 @@ def test_pf_gru_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, d
         assert w0.need_grad
         assert y.parent.inputs[2].need_grad == (not fix_parameters)
         if isinstance(w0_init, np.ndarray):
-            assert np.allclose(w0_init, w0.d)
+            assert_allclose(w0_init, w0.d)
         if num_layers > 1:
             w = nn.get_parameters()['gru/weight']
             assert w.shape == w_shape
             assert w.need_grad
             assert y.parent.inputs[3].need_grad == (not fix_parameters)
             if isinstance(w_init, np.ndarray):
-                assert np.allclose(w_init, w.d)
+                assert_allclose(w_init, w.d)
         if with_bias:
             b = nn.get_parameters()['gru/bias']
             assert b.shape == b_shape
@@ -932,7 +933,7 @@ def test_pf_gru_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, d
             else:
                 assert y.parent.inputs[3].need_grad == (not fix_parameters)
             if isinstance(b_init, np.ndarray):
-                assert np.allclose(b_init, b.d)
+                assert_allclose(b_init, b.d)
 
 
 ctxs = list_context('LSTM')
@@ -1008,14 +1009,14 @@ def test_pf_lstm_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, 
         assert w0.need_grad
         assert y.parent.inputs[3].need_grad == (not fix_parameters)
         if isinstance(w0_init, np.ndarray):
-            assert np.allclose(w0_init, w0.d)
+            assert_allclose(w0_init, w0.d)
         if num_layers > 1:
             w = nn.get_parameters()['lstm/weight']
             assert w.shape == w_shape
             assert w.need_grad
             assert y.parent.inputs[4].need_grad == (not fix_parameters)
             if isinstance(w_init, np.ndarray):
-                assert np.allclose(w_init, w.d)
+                assert_allclose(w_init, w.d)
         if with_bias:
             b = nn.get_parameters()['lstm/bias']
             assert b.shape == b_shape
@@ -1025,7 +1026,7 @@ def test_pf_lstm_execution(g_rng, inshape, w0_init, w_init, b_init, num_layers, 
             else:
                 assert y.parent.inputs[4].need_grad == (not fix_parameters)
             if isinstance(b_init, np.ndarray):
-                assert np.allclose(b_init, b.d)
+                assert_allclose(b_init, b.d)
 
 
 @pytest.mark.parametrize("inshape", [(8, 2, 2, 2), (16, 1, 8)])
@@ -1068,7 +1069,7 @@ def test_pf_prelu_execution(g_rng, inshape, base_axis, shared, slope_init, fix_p
     assert slope.need_grad
     assert y.parent.inputs[1].need_grad == (not fix_parameters)
     if isinstance(slope_init, np.ndarray):
-        assert np.allclose(slope_init, slope.d)
+        assert_allclose(slope_init, slope.d)
 
 
 # TODO: Test all parametric functions.

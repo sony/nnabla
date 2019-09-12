@@ -16,6 +16,7 @@ import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
 import numpy as np
+from nnabla.testing import assert_allclose
 
 from six.moves import reduce
 
@@ -71,4 +72,4 @@ def test_reduce(seed, dst, inplace, division, comm_nccl_opts):
 
         # Check
         for x, ref in zip(x_list, refs):
-            assert np.allclose(x.d, ref, rtol=1e-3, atol=1e-6)
+            assert_allclose(x.d, ref, rtol=1e-3, atol=1e-6)

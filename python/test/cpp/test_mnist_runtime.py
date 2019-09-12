@@ -17,6 +17,7 @@ import pytest
 import nnabla as nn
 import nnabla.utils.save
 import nnabla.utils.load
+from nnabla.testing import assert_allclose
 
 import numpy as np
 import os
@@ -71,4 +72,4 @@ def test_examples_cpp_mnist_runtime(tmpdir, nnabla_examples_root, batch_size):
     img = imread(pgm_file, grayscale=True)
     x.d = img
     y.forward()
-    assert np.allclose(y.d.flatten(), cpp_result)
+    assert_allclose(y.d.flatten(), cpp_result)

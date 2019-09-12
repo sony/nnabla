@@ -339,6 +339,11 @@ cdef class NdArray:
         self.arrp.fill(value)
 
     @property
+    def zeroing(self):
+        '''Checking if the array is not modified after calling `zero()`.'''
+        return self.arrp.array().get().zeroing()
+
+    @property
     def dtype(self):
         """
         Get dtype.

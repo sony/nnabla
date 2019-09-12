@@ -131,7 +131,10 @@ public:
   /** Get whether or not it fills array values obtained in cast/get call later.
 
       This is provided to determine gradient accumulation flags in our
-     computation graph engine.
+     computation graph engine, as well as to determine whether or not solver and
+     communicator execute their operations by depending on whether gradients are
+     updated.
+
    */
   bool zeroing() const;
 

@@ -29,12 +29,7 @@ def test_new_group(seed, comm_nccl_opts):
         pytest.skip("{} is supported in CUDA device".format(
             sys._getframe().f_code.co_name))
 
-    n_devices = nnabla_ext.cuda.init.get_device_count()
-    if n_devices < 2:
-        pytest.skip("Number of cuda devices in this machine is less than 2.")
-
-    if n_devices != comm_nccl_opts.comm.size:
-        pytest.skip("Number of cuda devices is not same as that of processes.")
+    n_devices = comm_nccl_opts.comm.size
 
     # Reference
     rng = np.random.RandomState(seed)
