@@ -14,13 +14,11 @@
 
 from __future__ import absolute_import
 
-import os
-import pytest
 
-import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+import numpy as np
+import nnabla as nn
 
 from nnabla.parameter import get_parameter_or_create
 

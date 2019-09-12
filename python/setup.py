@@ -20,7 +20,6 @@ import os
 import shutil
 import sys
 from collections import namedtuple
-import copy
 
 setup_requires = [
     'setuptools',

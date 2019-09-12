@@ -15,8 +15,6 @@
 import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
-from nnabla.testing import assert_allclose
 import numpy as np
 
 

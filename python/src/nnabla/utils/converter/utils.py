@@ -14,9 +14,7 @@
 
 
 from collections import OrderedDict
-import json
 from os.path import abspath, join, dirname
-import os
 import pickle
 import yaml
 import zlib

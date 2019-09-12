@@ -15,9 +15,6 @@
 import pytest
 import numpy as np
 import nnabla as nn
-import nnabla.functions as F
-from nnabla.testing import assert_allclose
-
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])

@@ -16,8 +16,6 @@ from collections import OrderedDict
 from contextlib2 import ExitStack  # Backport from python3
 import numpy as np
 import os
-import copy
-import time
 
 import nnabla as nn
 import nnabla.function as F

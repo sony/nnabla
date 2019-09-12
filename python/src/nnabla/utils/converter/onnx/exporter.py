@@ -14,7 +14,6 @@
 
 from nnabla.utils import nnabla_pb2
 from functools import partial
-import nnabla.logger as logger
 import numpy as np
 import re
 try:

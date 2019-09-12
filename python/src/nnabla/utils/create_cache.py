@@ -3,7 +3,6 @@ import csv
 import numpy
 import os
 import shutil
-import sys
 import time
 
 

@@ -15,8 +15,6 @@
 import pytest
 
 import nnabla as nn
-import nnabla.functions as F
-import nnabla.parametric_functions as PF
 import nnabla.utils.save
 import nnabla.utils.load
 from nnabla.testing import assert_allclose

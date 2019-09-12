@@ -1,7 +1,5 @@
-import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
-import numpy as np
 
 
 class SequentialConverter(object):

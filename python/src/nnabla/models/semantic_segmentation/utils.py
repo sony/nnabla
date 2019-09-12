@@ -1,6 +1,5 @@
 import numpy as np
 from nnabla.utils.image_utils import imsave, imresize
-import imageio
 from nnabla.models.semantic_segmentation import image_preprocess
 
 
