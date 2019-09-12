@@ -16,6 +16,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 
+
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
 def test_variable_arithmetic_ops2(seed, op):
