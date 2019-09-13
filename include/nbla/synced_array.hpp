@@ -126,6 +126,12 @@ public:
   */
   size_t modification_count() const;
 
+  /** Copy values from another SynedArray.
+
+      @note The copy is happening in a device and a dtype of source array.
+   */
+  void copy_from(const SyncedArray *src);
+
   void clear();
 
   /** Get whether or not it fills array values obtained in cast/get call later.
