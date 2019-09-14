@@ -803,6 +803,10 @@ def backward_function_tester(rng, func, ref_func, inputs,
     grads = list(filter(lambda x: x is not None, grads))
     o = F.sink(*grads)
     o.forward()
+
+    # Intend to check @property decorator would be set properly.
+    o.visit(lambda x: None)
+
     # Check forward
     for vi, go in zip(vinputs, grads):
         if vi.need_grad is False:

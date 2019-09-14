@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class MaxPoolingBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'MaxPoolingBackward'
 
@@ -83,6 +84,5 @@ class MaxPoolingBackward(BackwardFunction):
 
         inputs_fwd, outputs_fwd = self._create_forward_inputs_and_outputs(
             inputs, outputs)
-        print(inputs_fwd)
         self.forward_func.backward(inputs_fwd, outputs_fwd, accum=[
                                    False] * self._num_inputs_fwd)

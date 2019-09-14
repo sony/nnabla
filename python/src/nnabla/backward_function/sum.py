@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class SumBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'SumBackward'
 

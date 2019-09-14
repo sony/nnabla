@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class PruneBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'PruneBackward'
 

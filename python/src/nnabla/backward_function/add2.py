@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class Add2Backward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Add2Backward'
 

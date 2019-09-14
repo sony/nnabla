@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class EmbedBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'EmbedBackward'
 

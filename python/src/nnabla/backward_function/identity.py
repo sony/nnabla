@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class IdentityBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'IdentityBackward'
 

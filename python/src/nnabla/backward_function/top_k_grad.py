@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class TopKGradBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'TopKGradBackward'
 

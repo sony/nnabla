@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class Maximum2Backward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Maximum2Backward'
 

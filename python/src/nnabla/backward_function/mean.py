@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class MeanBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'MeanBackward'
 

@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class UnpoolingBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'UnpoolingBackward'
 
