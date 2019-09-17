@@ -17,6 +17,7 @@
 #ifndef __NBLA_FUNCTION_ONEHOT_HPP__
 #define __NBLA_FUNCTION_ONEHOT_HPP__
 
+#include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
@@ -57,7 +58,7 @@ public:
   virtual int min_outputs() { return 1; }
   virtual string name() { return "OneHot"; }
   virtual vector<string> allowed_array_classes() {
-    return vector<string>{"CpuArray"};
+    return SingletonManager::get<Cpu>()->array_classes();
   }
 
 protected:
