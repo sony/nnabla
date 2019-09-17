@@ -26,11 +26,20 @@ from libcpp.unordered_map cimport unordered_map
 from libcpp.string cimport string
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
+from libcpp.functional cimport function as std_function
 cimport _variable
 from _variable cimport CVariable, CContext, dtypes
 
 
 cdef extern from "nbla/solver.hpp" namespace "nbla":
+    ctypedef std_function[void()] update_hook_type
+
+    cdef cppclass UpdateHookWithObject:
+        ctypedef std_function[void(void *)] cleanup_callback_type
+        ctypedef std_function[void(void *)] callback_type
+        UpdateHookWithObject()
+        UpdateHookWithObject(void *obj, callback_type cb, cleanup_callback_type clean_cb)
+
     cdef cppclass CSolverState "nbla::Solver::SolverState":
         CSolverState() except + 
         unordered_map[string, shared_ptr[CVariable]] pstate
@@ -45,7 +54,7 @@ cdef extern from "nbla/solver.hpp" namespace "nbla":
         vector[pair[string, shared_ptr[CVariable]]] get_parameters() except +
         vector[pair[string, CSolverState]] get_states() except +
         void set_states(vector[pair[string, CSolverState]]) except +
-        void update() nogil except +
+        void update(update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
         void weight_decay(float decay_rate) nogil except +
         void clip_grad_by_norm(float clip_norm) nogil except +
         cpp_bool check_inf_grad() nogil except +
@@ -72,3 +81,5 @@ cdef class Solver:
 
     @staticmethod
     cdef create(shared_ptr[CSolver] solver, info)
+
+cdef UpdateHookWithObject create_update_hook_with_object(object callback)

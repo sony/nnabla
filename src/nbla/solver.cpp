@@ -24,6 +24,17 @@ namespace nbla {
 using std::make_shared;
 using std::make_pair;
 
+UpdateHookWithObject::UpdateHookWithObject() {}
+UpdateHookWithObject::UpdateHookWithObject(
+  void *obj, 
+  UpdateHookWithObject::callback_type cb,
+  UpdateHookWithObject::cleanup_callback_type cleanup_cb)
+  : obj_(obj), callback_(cb), cleanup_callback_(cleanup_cb) {}
+
+UpdateHookWithObject::~UpdateHookWithObject() { cleanup_callback_(obj_); }
+void UpdateHookWithObject::operator()() { callback_(obj_); }
+
+
 Solver::Solver(const Context &ctx) : ctx_(ctx), setup_called_(false) {}
 
 Solver::~Solver() {}
@@ -121,14 +132,24 @@ void Solver::zero_grad() {
   }
 }
 
-void Solver::update() {
+void Solver::update(update_hook_type pre_callback,
+                    update_hook_type post_callback) {
+  auto call_callback = [](update_hook_type &h) {
+    if (h) {
+      h();
+    }
+  };
+
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+
+    call_callback(pre_callback);
     update_impl(kv.first, kv.second.p);
+    call_callback(post_callback);
   }
 }
 

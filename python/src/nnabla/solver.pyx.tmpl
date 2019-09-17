@@ -46,6 +46,21 @@ np.import_array()
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import google.protobuf.text_format as text_format
 
+cdef void callback_decref(void *obj) with gil:
+    # Note we do not decrement reference count because we do not increment.
+    # Py_DECREF(<object>obj)
+    pass
+
+cdef void callback_call_callable(void *obj) except+ with gil:
+    cdef object cbl = <object>obj
+    cbl()
+
+cdef UpdateHookWithObject create_update_hook_with_object(object callback):
+    # Note we do not have to increment reference count
+    # because we know callback will alive until FunctionHookWithObject dies.
+    # Py_INCREF(callback)
+    return UpdateHookWithObject(<void*>callback, <std_function[void(void*)]>callback_call_callable, <std_function[void(void*)]>callback_decref)
+
 
 class SolverState(object):
     """Solver State
@@ -330,16 +345,32 @@ cdef class Solver:
         with nogil:
             self.solverp.zero_grad()
 
-    def update(self):
+    def update(self, object update_pre_hook=None, object update_post_hook=None):
         """
         When this function is called, parameter values are updated using the gradients accumulated in backpropagation,
         stored in the ``grad`` field of the parameter ``Variable`` s.
         Update rules are implemented in the C++ core,
         in derived classes of Solver. The updated parameter values will be stored into the data field of
         the parameter ``Variable`` s.
+
+        Args:
+            update_pre_hook(callable):
+                This callable object is called immediately before each update of parameters.
+                The default is None.
+            update_post_hook(callable):
+                This callable object is called immediately after each update of parameters.
+                The default is None.
         """
+        cdef update_hook_type update_pre_hook_c
+        cdef update_hook_type update_post_hook_c
+
+        if update_pre_hook is not None:
+            update_pre_hook_c = create_update_hook_with_object(update_pre_hook)
+        if update_post_hook is not None:
+            update_post_hook_c = create_update_hook_with_object(update_post_hook)
+
         with nogil:
-            self.solverp.update()
+            self.solverp.update(update_pre_hook_c, update_post_hook_c)
 
     def weight_decay(self, float decay_rate):
         """
