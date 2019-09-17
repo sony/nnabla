@@ -132,6 +132,10 @@ public:
    */
   inline std::string head_array_class() { return head_.array_class; }
 
+  /** Get the number of arrays
+  */
+  inline Size_t get_num_arrays() const { return array_.size(); }
+
   /** Size. */
   inline Size_t size() const { return size_; }
 
