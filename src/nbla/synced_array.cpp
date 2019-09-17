@@ -15,6 +15,7 @@
 #include <nbla/array_registry.hpp>
 #include <nbla/context.hpp>
 #include <nbla/synced_array.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #ifdef ENABLE_SYNC_DEBUG
 #include <cstdlib>
@@ -73,7 +74,16 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
   // 3. Increment modification count to let solver to know whether it's modified
   // or not
   modification_count_++;
-  // 4. Return a requested array
+
+  // 4. Call a callback function
+  SingletonManager::get<SyncedArrayCallback>()
+    ->call_callback(shared_from_this(),
+                    SyncedArrayCallbackTag::CAST,
+                    created_array.first->dtype(),
+                    ctx,
+                    write_only);
+
+  // 5. Return a requested array
   return created_array.first;
 }
 
@@ -84,6 +94,15 @@ const Array *SyncedArray::get(dtypes dtype, const Context &ctx) {
 shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx) {
   ArrayDesc desc = sync(dtype, ctx); // get() does not change head.
   array_[desc.key].second = true;    // Set as at-head.
+
+  // Call a callback function
+  SingletonManager::get<SyncedArrayCallback>()
+    ->call_callback(shared_from_this(),
+                    SyncedArrayCallbackTag::GET,
+                    array_[desc.key].first->dtype(),
+                    ctx,
+                    false);
+
   return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
 
@@ -100,13 +119,13 @@ const void *SyncedArray::data_ptr(dtypes dtype, const Context &ctx,
 }
 
 void SyncedArray::zero() {
-  clear_all_array();
+  clear();
   zeroing_ = true;
   modification_count_++;
 }
 
 void SyncedArray::fill(float value) {
-  clear_all_array();
+  clear();
   filling_ = true;
   fill_value_ = value;
   modification_count_++;
@@ -178,14 +197,25 @@ void SyncedArray::copy_from(const SyncedArray *src) {
   dst_array->copy_from(src_array.get());
 }
 
+// Public clear calls a callback function.
 void SyncedArray::clear() {
+  this->clear_all_array();
+
+  // Call a callback function
+  SingletonManager::get<SyncedArrayCallback>()
+    ->call_callback(shared_from_this(),
+                    SyncedArrayCallbackTag::CLEAR,
+                    dtypes::BYTE, // dummy
+                    Context({ "dummy" }, "dummy", "dummy"),
+                    false);
+}
+
+// Reset head state. Private clear does not call a callback function.
+void SyncedArray::clear_all_array() {
   array_.clear();
   this->clear_flags();
   modification_count_ = 0;
 }
-
-// Reset head state
-void SyncedArray::clear_all_array() { this->clear(); }
 
 void SyncedArray::clear_flags() {
   zeroing_ = false;
@@ -193,4 +223,28 @@ void SyncedArray::clear_flags() {
 }
 
 bool SyncedArray::zeroing() const { return zeroing_; }
+
+// Callback function
+SyncedArrayCallback::SyncedArrayCallback() : callback_func_(nullptr) {}
+
+SyncedArrayCallback::~SyncedArrayCallback() {}
+
+
+bool SyncedArrayCallback::empty() { return callback_func_ == nullptr; }
+
+void SyncedArrayCallback::set_callback_func(synced_array_callback_func_type f) {
+  callback_func_ = f;
+}
+
+void SyncedArrayCallback::call_callback(SyncedArrayPtr saptr,
+                                        const SyncedArrayCallbackTag func_name,
+                                        const dtypes dtype,
+                                        const Context &ctx,
+                                        const bool write_only) {
+  if (!empty()) {
+    callback_func_(saptr, func_name, dtype, ctx, write_only);
+  }
+}
+
+NBLA_INSTANTIATE_SINGLETON(NBLA_API, SyncedArrayCallback);
 }

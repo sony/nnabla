@@ -33,7 +33,7 @@ using std::pair;
 over devices and data types.
 \ingroup NNablaCoreGrp
 */
-class NBLA_API SyncedArray {
+class NBLA_API SyncedArray : public std::enable_shared_from_this<SyncedArray> {
   struct ArrayDesc {
     string key;
     string array_class;
@@ -165,5 +165,48 @@ private:
 
 ///< Shared pointer of SyncedArray.
 typedef shared_ptr<SyncedArray> SyncedArrayPtr;
+
+class SingletonManager; // Forward declaration for friend
+
+/// Get, cast, or clear
+enum SyncedArrayCallbackTag { GET, CAST, CLEAR };
+
+/// Type of callback function for get, cast, and clear of SyncedArray.
+using synced_array_callback_func_type = 
+              std::function<void(SyncedArrayPtr saptr,
+                                 const SyncedArrayCallbackTag func_name,
+                                 const dtypes dtype,
+                                 const Context &ctx,
+                                 const bool write_only)>;
+
+/**
+Singleton class to store a callback function for the functions
+get, cast, and clear of SyncedArray.
+*/
+class NBLA_API SyncedArrayCallback {
+  synced_array_callback_func_type callback_func_;
+
+public:
+  ~SyncedArrayCallback();
+
+  /** Check if callback function is not set. */
+  bool empty();
+
+  /** Set a callback function */
+  void set_callback_func(synced_array_callback_func_type f);
+
+  /** Call callback */
+  void call_callback(SyncedArrayPtr saptr,
+                     const SyncedArrayCallbackTag func_name,
+                     const dtypes dtype,
+                     const Context &ctx,
+                     const bool write_only);
+
+private:
+  friend SingletonManager; // needs forward declaration
+                           // Never called by users.
+  SyncedArrayCallback();
+  DISABLE_COPY_AND_ASSIGN(SyncedArrayCallback);
+};
 }
 #endif
