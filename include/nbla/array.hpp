@@ -25,6 +25,7 @@ Array classes are not directly used by users
 #include <nbla/exception.hpp>
 #include <nbla/half.hpp>
 #include <nbla/memory/allocator.hpp>
+#include <nbla/event.hpp>
 
 #include <memory>
 #include <type_traits>
@@ -38,7 +39,7 @@ namespace nbla {
 
 This is extended to implement a new array class (see CpuArray, CudaArray etc.).
 */
-class Array {
+class Array : public std::enable_shared_from_this<Array> {
 protected:
   /// Size of array.
   Size_t size_;
@@ -51,6 +52,9 @@ protected:
 
   /// Holding nbla::Memory object.
   AllocatorMemory mem_;
+
+  /// Holding nbla::Event object to wait asynchronous memory copy.
+  EventPtr event_;
 
   /** The constructor must be called only from derived class.
 
@@ -112,6 +116,25 @@ public:
   /** Filter a Context into a minimal information to describe an Array.
   */
   static Context filter_context(const Context &ctx);
+
+  /** Set an event
+  */
+  virtual NBLA_API void set_event(EventPtr eptr);
+
+  /** Wait for the end of an event
+      
+      @param ctx Context where the event is waited for.
+      @param unsafe_flag if flag is true, no synchronization to host.
+  */
+  virtual NBLA_API void wait_event(const bool unsafe_flag = false);
+
+  /** Check an event exist
+  */
+  virtual NBLA_API bool have_event();
+
+  /** Get shared_ptr of this object
+  */
+  virtual NBLA_API Ptr getptr();
 
 protected:
   DISABLE_COPY_AND_ASSIGN(Array);

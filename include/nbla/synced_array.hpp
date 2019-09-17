@@ -29,6 +29,8 @@ using std::map;
 using std::shared_ptr;
 using std::pair;
 
+enum AsyncFlag { NONE = 0b0, ASYNC = 0b1, UNSAFE = 0b10 };
+
 /** Synchronized array interface that implicitly transfers and cast arrays
 over devices and data types.
 \ingroup NNablaCoreGrp
@@ -59,8 +61,16 @@ public:
 
   @param[in] write_only When true, just returns an Array instance requested
   without synchronization.
+  @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization happens.
+                         AsyncFlag::ASYNC -> Asynchronous synchronization happens.
+                         AsyncFlag::SAFE  -> Same as AsyncFlag::NONE.
+                         AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous synchronization happens and,
+                                    the source array of synchronization keeps safe
+                                    against the memory change by host.
+
   */
-  Array *cast(dtypes dtype, const Context &ctx, bool write_only = false);
+  Array *cast(dtypes dtype, const Context &ctx, 
+              bool write_only = false, const int async_flags = AsyncFlag::NONE);
 
   /** Cast and get array as a shared_ptr
 
@@ -68,7 +78,7 @@ public:
 
    */
   shared_ptr<Array> cast_sp(dtypes dtype, const Context &ctx,
-                            bool write_only = false);
+                            bool write_only = false, const int async_flags = AsyncFlag::NONE);
 
   /** Get array with dtype context.
 
@@ -79,11 +89,12 @@ public:
   TODO: Is "const" member function appropriate? This implicitly creates or
   modify array contents of specified dtype-context.
   */
-  const Array *get(dtypes dtype, const Context &ctx);
+  const Array *get(dtypes dtype, const Context &ctx, const int async_flags = AsyncFlag::NONE);
 
   /** Get array as a shared pointer.
    */
-  shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
+  shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx, 
+                                 const int async_flags = AsyncFlag::NONE);
 
   /** Get the head array.
   */
@@ -98,9 +109,15 @@ public:
       @param[in] dtype Enum of data type.
       @param[in] ctx Descriptor of array backend.
       @param[in] write_only No synchronization happens.
+      @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization happens. 
+                             AsyncFlag::ASYNC -> Asynchronous synchronization happens.
+                             AsyncFlag::SAFE  -> Same as AsyncFlag::NONE.
+                             AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous synchronization happens and,
+                                   the source array of synchronization keeps safe
+                                   against the memory change by host.
    */
   const void *data_ptr(dtypes dtype, const Context &ctx,
-                       bool write_only = false);
+                       bool write_only = false, const int async_flags = AsyncFlag::NONE);
 
   /** Get dtype
   */
@@ -153,7 +170,8 @@ public:
   bool zeroing() const;
 
 private:
-  ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false);
+  ArrayDesc sync(dtypes dtype, const Context &ctx, 
+                 bool write_only = false, const int async_flags = AsyncFlag::NONE);
 
   void clear_all_array();
 

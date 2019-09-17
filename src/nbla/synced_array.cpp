@@ -58,14 +58,15 @@ SyncedArray::SyncedArray(const Size_t size)
 
 SyncedArray::~SyncedArray() {}
 
-Array *SyncedArray::cast(dtypes dtype, const Context &ctx, bool write_only) {
-  return cast_sp(dtype, ctx, write_only).get();
+Array *SyncedArray::cast(dtypes dtype, const Context &ctx, 
+                         bool write_only, const int async_flags) {
+  return cast_sp(dtype, ctx, write_only, async_flags).get();
 }
 
 shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
-                                       bool write_only) {
+                                       bool write_only, const int async_flags) {
   // 1. Create an array and/or synchronize with the head.
-  head_ = sync(dtype, ctx, write_only); // cast() changes head.
+  head_ = sync(dtype, ctx, write_only, async_flags); // cast() changes head.
   // 2. Clear all previous arrays.
   auto created_array = array_[head_.key];
   clear_all_array();
@@ -87,12 +88,13 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
   return created_array.first;
 }
 
-const Array *SyncedArray::get(dtypes dtype, const Context &ctx) {
-  return get_sp(dtype, ctx).get();
+const Array *SyncedArray::get(dtypes dtype, const Context &ctx, const int async_flags) {
+  return get_sp(dtype, ctx, async_flags).get();
 }
 
-shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx) {
-  ArrayDesc desc = sync(dtype, ctx); // get() does not change head.
+shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
+                                            const int async_flags) {
+  ArrayDesc desc = sync(dtype, ctx, false, async_flags); // get() does not change head.
   array_[desc.key].second = true;    // Set as at-head.
 
   // Call a callback function
@@ -113,8 +115,8 @@ shared_ptr<Array> SyncedArray::head_array_sp() {
 }
 
 const void *SyncedArray::data_ptr(dtypes dtype, const Context &ctx,
-                                  bool write_only) {
-  cast_sp(dtype, ctx, write_only);
+                                  bool write_only, const int async_flags) {
+  cast_sp(dtype, ctx, write_only, async_flags);
   return array_[head_.key].first->const_pointer();
 }
 
@@ -140,7 +142,7 @@ inline string create_key(const dtypes &dtype, const Context &ctx) {
 }
 
 SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
-                                         bool write_only) {
+                                         bool write_only, const int async_flags) {
   Context ctx = ArrayCreator::filter_context(ctx_orig);
   ArrayDesc desc{create_key(dtype, ctx), ctx.array_class, dtype};
 
@@ -151,6 +153,13 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
     array_[desc.key] = std::make_pair(
         shared_ptr<Array>(ArrayCreator::create(size_, dtype, ctx)), false);
   }
+  else {
+    // Wait for the end of previous async_flags asynchronous memcpy
+    if (!(async_flags & AsyncFlag::ASYNC)) {
+      array_[desc.key].first->wait_event(async_flags & AsyncFlag::UNSAFE);
+    }
+  }
+
   if (write_only) {
     return desc;
   }
@@ -172,10 +181,11 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
     // TODO: Better heuristic choice from current heads
     Array *head_array = array_[head_.key].first.get();
     if (head_.array_class == desc.array_class) {
+      head_array->wait_event();
       array->copy_from(head_array);
     } else {
       ArraySynchronizer::synchronize(head_.array_class, head_array,
-                                     desc.array_class, array);
+                                     desc.array_class, array, async_flags);
       SYNC_DEBUG("SYNC: %s<%s> --[%ld elements (%ld bytes in %s)]--> %s<%s>.",
                  head_.array_class.c_str(),
                  dtype_to_string(head_.dtype).c_str(),

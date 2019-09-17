@@ -102,7 +102,8 @@ ArraySynchronizer::Registry_t &ArraySynchronizer::get_registry() {
 }
 
 void ArraySynchronizer::synchronize(const string &src_class, Array *src_array,
-                                    const string &dst_class, Array *dst_array) {
+                                    const string &dst_class, Array *dst_array,
+                                    const int async_flags) {
   init_cpu();
   Registry_t &registry = get_registry();
   pair<string, string> key{src_class, dst_class};
@@ -116,7 +117,7 @@ void ArraySynchronizer::synchronize(const string &src_class, Array *src_array,
                ss << ").";
                return ss.str();
              }().c_str()); // TODO: Display key list that has been registered.
-  registry[key](src_array, dst_array);
+  registry[key](src_array, dst_array, async_flags);
 }
 
 void ArraySynchronizer::add_synchronizer(const string &src_class,
@@ -128,5 +129,15 @@ void ArraySynchronizer::add_synchronizer(const string &src_class,
   registry[key] = synchronizer;
 }
 
-void synchronizer_default(Array *src, Array *dst) { dst->copy_from(src); }
+void synchronizer_default(Array *src, Array *dst, const int async_flags) {
+  // Wait for an previous asynchronous memcpy
+  src->wait_event();
+
+  if (dst->have_event()) {
+    NBLA_ERROR(error_code::target_specific_async,
+               "Duplicated memcpy to the same destination array");
+  }
+
+  dst->copy_from(src);
+}
 }
