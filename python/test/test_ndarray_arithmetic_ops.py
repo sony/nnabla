@@ -17,6 +17,7 @@ from six import exec_
 import pytest
 import numpy as np
 import nnabla as nn
+from nnabla.testing import assert_allclose
 
 
 @pytest.mark.parametrize("seed", [313])

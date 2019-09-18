@@ -34,8 +34,10 @@ def auto_forward(auto=True):
     global __auto_forward_state
     prev = __auto_forward_state
     __auto_forward_state = auto
-    yield
-    __auto_forward_state = prev
+    try:
+        yield
+    finally:
+        __auto_forward_state = prev
 
 
 def get_auto_forward():

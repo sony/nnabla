@@ -16,6 +16,7 @@ import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
 import numpy as np
+from nnabla.testing import assert_allclose
 
 
 def ref_all_gather(x_data, n_devices):

@@ -18,6 +18,8 @@ import pytest
 from collections import namedtuple
 import os
 
+import nnabla as nn
+
 
 @pytest.fixture(scope="module", autouse=True)
 def nnabla_examples_root():
@@ -28,3 +30,9 @@ def nnabla_examples_root():
     NNablaExamples = namedtuple(
         'NNablaExamples', ['available', 'path'])
     return NNablaExamples(os.path.isdir(root), root)
+
+
+@pytest.fixture(scope='function', autouse=True)
+def scope_function():
+    nn.set_auto_forward(False)
+    yield
