@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// transpose.cpp
-
 #include <nbla/array.hpp>
 #include <nbla/function/transpose.hpp>
+#include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 
 namespace nbla {
@@ -67,41 +66,21 @@ void Transpose<T>::setup_impl(const Variables &inputs,
 template <class T>
 void Transpose<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
+  auto ndim = inputs[0]->ndim();
+  auto x_data = inputs[0]->get_data_pointer<T>(this->ctx_);
+  auto y_data = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  auto y_index = ndi::make_index(ndim, Size_t(0));
+  auto y_shape = outputs[0]->shape();
 
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  const int64_t *axes = v_axes_.get_data_pointer<int64_t>(this->ctx_);
-  const int64_t *x_strides = v_x_strides_.get_data_pointer<int64_t>(this->ctx_);
-  const int64_t *y_strides = v_y_strides_.get_data_pointer<int64_t>(this->ctx_);
-  const int64_t *y_shape = v_y_shape_.get_data_pointer<int64_t>(this->ctx_);
-  const int ndim = inputs[0]->ndim();
-  const int size = outputs[0]->size();
-
-  for (int o = 0; o < size; ++o) {
-    int i = 0;
-    for (int d = 0; d < ndim; ++d) {
-      const int k = int(o / y_strides[d]) % y_shape[d];
-      i += k * x_strides[axes[d]];
-    }
-    y[o] = x[i];
+  auto y2x_strides = std::vector<Size_t>(ndim);
+  for (int i = 0; i < ndim; i++) {
+    y2x_strides.at(i) = inputs[0]->strides().at(axes_.at(i));
   }
-}
 
-template <typename T, bool accum>
-void transpose_backward_cpu(int size, int ndim, const int64_t *axes,
-                            const int64_t *x_strides, const int64_t *y_strides,
-                            const int64_t *y_shape, T *dx, const T *dy) {
-  for (int o = 0; o < size; ++o) {
-    int i = 0;
-    for (int d = 0; d < ndim; ++d) {
-      const int k = int(o / y_strides[d]) % y_shape[d];
-      i += k * x_strides[axes[d]];
-    }
-    if (accum)
-      dx[i] += dy[o];
-    else
-      dx[i] = dy[o];
-  }
+  int i = 0;
+  do {
+    y_data[i++] = x_data[ndi::nd2flat(y_index, y2x_strides)];
+  } while (ndi::increment(y_index, y_shape));
 }
 
 template <class T>
@@ -112,20 +91,26 @@ void Transpose<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
 
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
-  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  auto ndim = inputs[0]->ndim();
+  auto x_grad = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  auto y_grad = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  auto x_index = ndi::make_index(ndim, Size_t(0));
+  auto x_shape = inputs[0]->shape();
 
-  const int64_t *axes = v_axes_.get_data_pointer<int64_t>(this->ctx_);
-  const int64_t *x_strides = v_x_strides_.get_data_pointer<int64_t>(this->ctx_);
-  const int64_t *y_strides = v_y_strides_.get_data_pointer<int64_t>(this->ctx_);
-  const int64_t *y_shape = v_y_shape_.get_data_pointer<int64_t>(this->ctx_);
-  const int ndim = inputs[0]->ndim();
-  const int size = outputs[0]->size();
-  if (accum[0])
-    transpose_backward_cpu<T, true>(size, ndim, axes, x_strides, y_strides,
-                                    y_shape, dx, dy);
-  else
-    transpose_backward_cpu<T, false>(size, ndim, axes, x_strides, y_strides,
-                                     y_shape, dx, dy);
+  auto x2y_strides = std::vector<Size_t>(ndim);
+  for (int i = 0; i < ndim; i++) {
+    x2y_strides.at(axes_.at(i)) = outputs[0]->strides().at(i);
+  }
+
+  int i = 0;
+  if (accum[0]) {
+    do {
+      x_grad[i++] += y_grad[ndi::nd2flat(x_index, x2y_strides)];
+    } while (ndi::increment(x_index, x_shape));
+  } else {
+    do {
+      x_grad[i++] = y_grad[ndi::nd2flat(x_index, x2y_strides)];
+    } while (ndi::increment(x_index, x_shape));
+  }
 }
 }
