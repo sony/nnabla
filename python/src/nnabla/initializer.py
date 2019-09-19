@@ -288,9 +288,12 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
 
 def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the standard deviation proposed by Glorot et al.
+    Note: 
+        We have updated the definition as following from v.1.3. It may affect the
+        behavior of existing scripts that rely on the default initialization.
 
     .. math::
-        \sigma = \sqrt{\frac{2}{NK + M}}
+        \sigma = \sqrt{\frac{2}{K(N + M)}}
 
     Args:
         inmaps (int): Map size of an input Variable, :math:`N`.
@@ -319,14 +322,17 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
           <http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf>`_
 
     """
-    return np.sqrt(2. / (np.prod(kernel) * inmaps + outmaps))
+    return np.sqrt(2. / (np.prod(kernel) * (inmaps + outmaps)))
 
 
 def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the lower bound and the upper bound of the uniform distribution proposed by Glorot et al.
+    Note: 
+        We have updated the definition as following from v.1.3. It may affect the
+        behavior of existing scripts that rely on the default initialization.
 
     .. math::
-        b &= \sqrt{\frac{6}{NK + M}}\\
+        b &= \sqrt{\frac{6}{K(N + M)}}\\
         a &= -b
 
     Args:
@@ -357,5 +363,5 @@ def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
 
     """
 
-    d = np.sqrt(6. / (np.prod(kernel) * inmaps + outmaps))
+    d = np.sqrt(6. / (np.prod(kernel) * (inmaps + outmaps)))
     return -d, d
