@@ -289,7 +289,7 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
 def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the standard deviation proposed by Glorot et al.
     Note: 
-        We have updated the definition as following from v.1.2. It may affect the
+        We have updated the definition as following from v.1.3. It may affect the
         behavior of existing scripts that rely on the default initialization.
 
     .. math::
@@ -328,7 +328,7 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
 def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the lower bound and the upper bound of the uniform distribution proposed by Glorot et al.
     Note: 
-        We have updated the definition as following from v.1.2. It may affect the
+        We have updated the definition as following from v.1.3. It may affect the
         behavior of existing scripts that rely on the default initialization.
 
     .. math::
