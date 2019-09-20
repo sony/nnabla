@@ -1071,4 +1071,257 @@ def test_pf_prelu_execution(g_rng, inshape, base_axis, shared, slope_init, fix_p
         assert np.allclose(slope_init, slope.d)
 
 
+# Quantized parametric functions
+@pytest.mark.parametrize("inshape", [(4, 8, 32, 32), (4, 10)])
+@pytest.mark.parametrize("q_min, q_max", [(0, 255), (-127, 127), (-128, 127)])
+@pytest.mark.parametrize("decay", [0.999])
+@pytest.mark.parametrize("x_min_max", [True, False])
+@pytest.mark.parametrize("ema", [True, False])
+@pytest.mark.parametrize("ste_fine_grained", [True])
+@pytest.mark.parametrize("eps", [0.01])
+@pytest.mark.parametrize("qr_min_init, qr_max_init",
+                         [(None, None),
+                          (I.ConstantInitializer(-1.0),
+                           I.ConstantInitializer(1.0)),
+                          (I.ConstantInitializer(-6.0), I.ConstantInitializer(6.0))])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_min_max_quantize_execution(g_rng, inshape, q_min, q_max, decay, x_min_max, ema,
+                                       ste_fine_grained, eps,
+                                       qr_min_init, qr_max_init,
+                                       fix_parameters, rng):
+    rng = process_rng(rng)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+
+    # Check execution
+    y = PF.min_max_quantize(x, q_min, q_max, decay, x_min_max, ema,
+                            ste_fine_grained=ste_fine_grained, eps=eps,
+                            qr_min_init=qr_min_init, qr_max_init=qr_max_init,
+                            fix_parameters=fix_parameters)
+    y.forward()
+    y.backward()
+
+    # Check values
+    # TODO
+
+    # Check args
+    assert y.parent.info.type_name == 'MinMaxQuantize'
+    args = y.parent.info.args
+    assert np.allclose(args['decay'], decay)
+    assert args['x_min_max'] == x_min_max
+    assert args['ema'] == ema
+
+    # Check created parameters
+    assert len(nn.get_parameters(grad_only=False)) == 2
+    ema_min = nn.get_parameters(grad_only=False)['min_max_quantize/qr_min']
+    ema_max = nn.get_parameters(grad_only=False)['min_max_quantize/qr_max']
+    assert ema_min.shape == ema_max.shape
+
+
+@pytest.mark.parametrize("inshape", [(8, 2, 2, 2), (16, 1, 8)])
+@pytest.mark.parametrize("n_outmaps", [16, 32])
+@pytest.mark.parametrize("base_axis", [1, 2])
+@pytest.mark.parametrize("w_init", [None, I.NormalInitializer(), True])
+@pytest.mark.parametrize("b_init", [None, I.ConstantInitializer(), True])
+@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("quantize_w", [True])
+@pytest.mark.parametrize("ql_min_w", [0])
+@pytest.mark.parametrize("ql_max_w", [255])
+@pytest.mark.parametrize("w_min_max", [True, False])
+@pytest.mark.parametrize("ste_fine_grained_w", [True, False])
+@pytest.mark.parametrize("quantize_b", [True])
+@pytest.mark.parametrize("ql_min_b", [0])
+@pytest.mark.parametrize("ql_max_b", [255])
+@pytest.mark.parametrize("b_min_max", [True, False])
+@pytest.mark.parametrize("ste_fine_grained_b", [True, False])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_min_max_quantized_affine_execution(g_rng, inshape, n_outmaps, base_axis,
+                                               w_init, b_init, with_bias, fix_parameters,
+                                               quantize_w, ql_min_w, ql_max_w, w_min_max, ste_fine_grained_w,
+                                               quantize_b, ql_min_b, ql_max_b, b_min_max, ste_fine_grained_b,
+                                               rng):
+    w_shape = (int(np.prod(inshape[base_axis:])), n_outmaps)
+    b_shape = (n_outmaps,)
+    w_init = process_param_init(w_init, w_shape, g_rng)
+    b_init = process_param_init(b_init, b_shape, g_rng)
+    rng = process_rng(rng)
+
+    kw = {}
+    insert_if_not_none(kw, 'w_init', w_init)
+    insert_if_not_none(kw, 'b_init', b_init)
+    insert_if_not_none(kw, 'rng', rng)
+    insert_if_not_default(kw, 'base_axis', base_axis, 1)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_default(kw, 'with_bias', with_bias, True)
+    insert_if_not_default(kw, 'quantize_w', quantize_w, True)
+    insert_if_not_default(kw, 'ql_min_w', ql_min_w, True)
+    insert_if_not_default(kw, 'ql_max_w', ql_max_w, True)
+    insert_if_not_default(kw, 'w_min_max', w_min_max, False)
+    insert_if_not_default(kw, 'ste_fine_grained_w', ste_fine_grained_w, True)
+    insert_if_not_default(kw, 'quantize_b', quantize_b, True)
+    insert_if_not_default(kw, 'ql_min_b', ql_min_b, True)
+    insert_if_not_default(kw, 'ql_max_b', ql_max_b, True)
+    insert_if_not_default(kw, 'b_min_max', b_min_max, False)
+    insert_if_not_default(kw, 'ste_fine_grained_b', ste_fine_grained_b, True)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+
+    # Check execution
+    y = PF.min_max_quantized_affine(x, n_outmaps, **kw)
+    y.forward()
+    y.backward()
+
+    # Check values
+    # TODO
+
+    # Check args
+    assert y.parent.info.type_name == 'Affine'
+    args = y.parent.info.args
+    assert args['base_axis'] == base_axis
+    args_qw = y.parent.inputs[1].parent.info.args
+    assert args_qw['x_min_max'] == w_min_max
+    if len(y.parent.inputs) == 3:
+        args_qb = y.parent.inputs[2].parent.info.args
+        assert args_qb['x_min_max'] == b_min_max
+
+    # Check created parameters
+    assert y.parent.inputs[0] == x
+    assert len(y.parent.inputs) == 2 + int(with_bias)
+    assert len(nn.get_parameters()) == 3 + 3 * \
+        int(with_bias) if w_min_max or b_min_max else 1 + int(with_bias)
+    w = nn.get_parameters()['min_max_quantized_affine/W']
+    assert w.shape == w_shape
+    assert w.need_grad
+    assert y.parent.inputs[1].need_grad == (not fix_parameters)
+    if isinstance(w_init, np.ndarray):
+        assert np.allclose(w_init, w.d)
+    if with_bias:
+        b = nn.get_parameters()['min_max_quantized_affine/b']
+        assert b.shape == b_shape
+        assert b.need_grad
+        assert y.parent.inputs[2].need_grad == (not fix_parameters)
+        if isinstance(b_init, np.ndarray):
+            assert np.allclose(b_init, b.d)
+    # quantization-related parameters
+    assert len(nn.get_parameters(grad_only=False)) == 4 + int(with_bias) * 4
+    for k in nn.get_parameters(grad_only=False).keys():
+        assert k in ['min_max_quantized_affine/W',
+                     'min_max_quantized_affine/W_q',
+                     'min_max_quantized_affine/min_max_quantize_w/min_max_quantize/qr_min',
+                     'min_max_quantized_affine/min_max_quantize_w/min_max_quantize/qr_max',
+                     'min_max_quantized_affine/b',
+                     'min_max_quantized_affine/b_q',
+                     'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/qr_min',
+                     'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/qr_max']
+
+
+@pytest.mark.parametrize("inshape, outmaps, kernel, pad, stride, dilation, group, base_axis", [
+    ((1, 2, 1, 4, 4), 16, (3, 3), None, None, None, 1, 2),
+    ((1, 2, 2, 2, 8), 8, (1, 1, 3), (0, 0, 1), (1, 1, 2), (1, 1, 2), 2, 1),
+])
+@pytest.mark.parametrize("w_init", [None, I.NormalInitializer(), True])
+@pytest.mark.parametrize("b_init", [None, I.ConstantInitializer(), True])
+@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("quantize_w", [True])
+@pytest.mark.parametrize("ql_min_w", [0])
+@pytest.mark.parametrize("ql_max_w", [255])
+@pytest.mark.parametrize("w_min_max", [True, False])
+@pytest.mark.parametrize("ste_fine_grained_w", [True, False])
+@pytest.mark.parametrize("quantize_b", [True])
+@pytest.mark.parametrize("ql_min_b", [0])
+@pytest.mark.parametrize("ql_max_b", [255])
+@pytest.mark.parametrize("b_min_max", [True, False])
+@pytest.mark.parametrize("ste_fine_grained_b", [True, False])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_min_max_quantized_convolution_execution(g_rng, inshape, outmaps,
+                                                    kernel, pad, stride, dilation, group, base_axis,
+                                                    w_init, b_init, with_bias, fix_parameters,
+                                                    quantize_w, ql_min_w, ql_max_w, w_min_max, ste_fine_grained_w,
+                                                    quantize_b, ql_min_b, ql_max_b, b_min_max, ste_fine_grained_b,
+                                                    rng):
+    w_shape = (outmaps, inshape[base_axis] // group,) + kernel
+    b_shape = (outmaps,)
+    w_init = process_param_init(w_init, w_shape, g_rng)
+    b_init = process_param_init(b_init, b_shape, g_rng)
+    rng = process_rng(rng)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(*inshape))
+    kw = {}
+    insert_if_not_none(kw, 'pad', pad)
+    insert_if_not_none(kw, 'stride', stride)
+    insert_if_not_none(kw, 'dilation', dilation)
+    insert_if_not_none(kw, 'w_init', w_init)
+    insert_if_not_none(kw, 'b_init', b_init)
+    insert_if_not_none(kw, 'rng', rng)
+    insert_if_not_default(kw, 'group', group, 1)
+    insert_if_not_default(kw, 'base_axis', base_axis, 1)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_default(kw, 'with_bias', with_bias, True)
+    insert_if_not_default(kw, 'quantize_w', quantize_w, True)
+    insert_if_not_default(kw, 'ql_min_w', ql_min_w, True)
+    insert_if_not_default(kw, 'ql_max_w', ql_max_w, True)
+    insert_if_not_default(kw, 'w_min_max', w_min_max, False)
+    insert_if_not_default(kw, 'ste_fine_grained_w', ste_fine_grained_w, True)
+    insert_if_not_default(kw, 'quantize_b', quantize_b, True)
+    insert_if_not_default(kw, 'ql_min_b', ql_min_b, True)
+    insert_if_not_default(kw, 'ql_max_b', ql_max_b, True)
+    insert_if_not_default(kw, 'b_min_max', b_min_max, False)
+    insert_if_not_default(kw, 'ste_fine_grained_b', ste_fine_grained_b, True)
+
+    # Check execution
+    y = PF.min_max_quantized_convolution(x, outmaps, kernel, **kw)
+    y.forward()
+    y.backward()
+
+    # Check values
+    # TODO
+
+    # Check args
+    assert y.parent.info.type_name == 'Convolution'
+    args = y.parent.info.args
+    assert args['base_axis'] == base_axis
+    assert args['group'] == group
+    ndim = len(x.shape) - (base_axis + 1)
+    check_none_arg(tuple(args['pad']), pad, (0,) * ndim)
+    check_none_arg(tuple(args['stride']), stride, (1,) * ndim)
+    check_none_arg(tuple(args['dilation']), dilation, (1,) * ndim)
+    args_qw = y.parent.inputs[1].parent.info.args
+    assert args_qw['x_min_max'] == w_min_max
+    if len(y.parent.inputs) == 3:
+        args_qb = y.parent.inputs[2].parent.info.args
+        assert args_qb['x_min_max'] == b_min_max
+
+    # Check created parameters
+    assert y.parent.inputs[0] == x
+    assert len(y.parent.inputs) == 2 + int(with_bias)
+    assert len(nn.get_parameters()) == 3 + 3 * \
+        int(with_bias) if w_min_max or b_min_max else 1 + int(with_bias)
+    w = nn.get_parameters()['min_max_quantized_conv/W']
+    assert w.shape == w_shape
+    assert w.need_grad
+    assert y.parent.inputs[1].need_grad == (not fix_parameters)
+    if isinstance(w_init, np.ndarray):
+        assert np.allclose(w_init, w.d)
+    if with_bias:
+        b = nn.get_parameters()['min_max_quantized_conv/b']
+        assert b.shape == b_shape
+        assert b.need_grad
+        assert y.parent.inputs[2].need_grad == (not fix_parameters)
+        if isinstance(b_init, np.ndarray):
+            assert np.allclose(b_init, b.d)
+    # quantization-related parameters
+    assert len(nn.get_parameters(grad_only=False)) == 4 + int(with_bias) * 4
+    for k in nn.get_parameters(grad_only=False).keys():
+        assert k in ['min_max_quantized_conv/W',
+                     'min_max_quantized_conv/W_q',
+                     'min_max_quantized_conv/min_max_quantize_w/min_max_quantize/qr_min',
+                     'min_max_quantized_conv/min_max_quantize_w/min_max_quantize/qr_max',
+                     'min_max_quantized_conv/b',
+                     'min_max_quantized_conv/b_q',
+                     'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/qr_min',
+                     'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/qr_max']
+
 # TODO: Test all parametric functions.
