@@ -600,7 +600,7 @@ def convolution(inp, outmaps, kernel,
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
         group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
-        channel_last (bool): If True, the last dimension is considered as channel dimension, a.k.a NHWC order.
+        channel_last (bool): If True, the last dimension is considered as channel dimension, a.k.a. NHWC order.
         w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.  
         b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
         base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
@@ -2333,7 +2333,7 @@ def fixed_point_quantized_affine(inp, n_outmaps,
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def fixed_point_quantized_convolution(inp, outmaps, kernel,
-                                      pad=None, stride=None, dilation=None, group=1,
+                                      pad=None, stride=None, dilation=None, group=1, channel_last=False,
                                       w_init=None, b_init=None,
                                       base_axis=1, fix_parameters=False, rng=None, with_bias=True,
                                       quantize_w=True, sign_w=True, n_w=8, delta_w=2**-4, ste_fine_grained_w=True,
@@ -2393,9 +2393,15 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
         :class:`~nnabla.Variable`: N-D array.
 
     """
+    if channel_last:
+        channels = inp.shape[-1]
+        filter_shape = tuple(kernel) + (channels // group,)
+    else:
+        channels = inp.shape[base_axis]
+        filter_shape = (channels // group,) + tuple(kernel)
     if w_init is None:
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+            calc_uniform_lim_glorot(channels, outmaps, tuple(kernel)), rng=rng)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
 
@@ -2407,7 +2413,7 @@ def fixed_point_quantized_convolution(inp, outmaps, kernel,
     # Quantized Weight
     if quantize_w:
         w_q = get_parameter_or_create(
-            "W_q", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
+            "W_q", (outmaps,) + filter_shape,
             w_init, False)
         # Link computation graph
         real_w_q = F.fixed_point_quantize(w, quantize=quantize_w,
@@ -2783,7 +2789,7 @@ def pruned_affine(inp, n_outmaps,
     ('b_q', 'Quantized biases', '(outmaps,)', False),
 ])
 def pruned_convolution(inp, outmaps, kernel,
-                       pad=None, stride=None, dilation=None, group=1,
+                       pad=None, stride=None, dilation=None, group=1, channel_last=False,
                        w_init=None, b_init=None,
                        base_axis=1, fix_parameters=False, rng=None, with_bias=True,
                        prune_w=True, rate_w=0.9, prune_b=True, rate_b=0.9):
@@ -2836,15 +2842,21 @@ def pruned_convolution(inp, outmaps, kernel,
         :class:`~nnabla.Variable`: N-D array.
 
     """
+    if channel_last:
+        channels = inp.shape[-1]
+        filter_shape = tuple(kernel) + (channels // group,)
+    else:
+        channels = inp.shape[base_axis]
+        filter_shape = (channels // group,) + tuple(kernel)
     if w_init is None:
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(inp.shape[base_axis], outmaps, tuple(kernel)), rng=rng)
+            calc_uniform_lim_glorot(channels, outmaps, tuple(kernel)), rng=rng)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
 
     # Floating Weight
     w = get_parameter_or_create(
-        "W", (outmaps, inp.shape[base_axis] // group) + tuple(kernel),
+        "W", (outmaps,) + filter_shape,
         w_init, True, not fix_parameters)
 
     # Quantized Weight
@@ -2873,7 +2885,443 @@ def pruned_convolution(inp, outmaps, kernel,
         else:
             real_b_q = b
 
-    return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group)
+    return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group, channel_last)
+
+
+@parametric_function_api("min_max_quantize", [
+    ('qr_min', 'Minimum quantization range, the exponential movining average of min values of inputs initialized with -6.0 if ema is True', 'ql_min.shape', False),
+    ('qr_max', 'Maximum quantization range, the exponential movining average of max values of inputs initialized with 6.0 if ema is True', 'ql_max.shape', False),
+])
+def min_max_quantize(x, ql_min=0, ql_max=255, decay=0.999, x_min_max=False, ema=False,
+                     ste_fine_grained=True, eps=0.01,
+                     qr_min_init=None, qr_max_init=None, fix_parameters=False,
+                     outputs=None):
+    r"""Min-max quantization.
+
+    This function uniformly quantizes values in the range of min and max quantization levels.
+
+    Min-max quantization is defined as the following equation
+
+    .. math::
+
+        y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m, 
+
+    where the :math:`scale` is defined as 
+
+    .. math::
+
+        scale = \frac{M - m}{M_q - m_q}, 
+
+    and 
+
+    .. math::
+
+        m_q = ql_{min}, \\
+        M_q = ql_{max}, \\
+        m = qr_{min}, \\
+        M = qr_{max}.
+
+    In the backward pass when using `ste_fine_grained` as false,
+
+        .. math::
+
+          \frac{\partial q_i}{\partial x_i} = 1.
+
+
+    In the backward pass when using `ste_fine_grained` as true,
+
+        .. math::
+
+           \frac{\partial q_i}{\partial x_i}= \left\{
+         \begin{array}{ll}
+           0 & if \ \ \ x_i > M \\
+           1 & if \ \ m \le x_i \le M \\
+           0 & if \ \ x_i < m \\
+         \end{array} \right..
+
+    :math:`qr_{min}` and :math:`qr_{max}` are treaded as follows.
+
+        * `x_min_max` is `True` and `ema` is `True`: 
+          Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)` 
+          then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `True` and `ema` is `False`:
+          :math:`min(x)` and :math:`max(x)` are computed then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `False` and `ema` is `True`:
+          Exponential moving average stored in :math:`qr_{min}` and :math:`qr_{max}` are used.
+        * `x_min_max` is `False` and `ema` is `False`
+          Gradients of :math:`qr_{min}` and :math:`qr_{max}` are computed in the backward pass.
+
+    More precisely, in inference of the min-max quantization, one has to consider *zero-point (zp)*
+    which corresponds
+    to the real value 0, and its data type is an integer. *zero-point* is defined as 
+
+        .. math::
+
+           && zp_f = ql_{min} -\frac{qr_{min}}{scale}, \\
+           && zp = \left\{
+         \begin{array}{ll}
+           ql_{max} & if \ \ \ zp_f >= ql_{max} \\
+           round(zp_f) & if \ \ otherwise \\
+           ql_{min}  & if \ \ zp_f <= ql_{min} \\
+         \end{array} \right..
+
+    Accordingly, in order to simulate quantization effect of *zero-point*, 
+    during both forward and backward pass, :math:`qr_{min}` and :math:`qr_{max}` are adjusted as follows,
+
+        .. math::
+
+           qr_{min}^{adj} = ql_{min} - zp * scale, \\
+           qr_{max}^{adj} = ql_{max} - zp * scale.
+
+    These operations are often called *nudge*. 
+
+    Finally, in the formulas of the min-max quantization, :math:`m` and :math:`M` are replaced by
+    :math:`qr_{min}^{adj}` and :math:`qr_{max}^{adj}` respectively.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array.
+        ql_min (int, float, or ~nnabla.Variable): Minimum quantization level. Default is 0.
+        ql_max (int, float, or ~nnabla.Variable): Maximum quantization level. Default is 255.
+        decay (float): The decay rate for the exponential moving average.
+        x_min_max (bool): Use the min and max of x to compute quantization ranges. Default is `False`.
+        ema (bool): Use the exponential moving average for the min and max quantization ranges.
+                    Default is `False`.
+        ste_fine_grained (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
+        eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
+                     than the epsilon for both weights and bias.
+        qr_min_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-6.0).
+        qr_max_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization rage, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+
+    References:
+        Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, and Dmitry Kalenichenko, "Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference", https://arxiv.org/abs/1712.05877
+
+    """
+    def force_to_variable(qv):
+        if isinstance(qv, (int, float)):
+            reshape = [1 for _ in range(x.ndim)]
+            qv = nn.Variable.from_numpy_array(
+                np.array(qv).reshape(reshape)).apply(persistent=True)
+        return qv
+    ql_min = force_to_variable(ql_min)
+    ql_max = force_to_variable(ql_max)
+
+    qr_min_init = qr_min_init if qr_min_init else ConstantInitializer(-6.0)
+    qr_max_init = qr_max_init if qr_max_init else ConstantInitializer(6.0)
+
+    shape = ql_min.shape
+    qr_min = get_parameter_or_create(
+        "qr_min", shape, qr_min_init, not (x_min_max and ema), not fix_parameters)
+    qr_max = get_parameter_or_create(
+        "qr_max", shape, qr_max_init, not (x_min_max and ema), not fix_parameters)
+    x_q = F.min_max_quantize(x, qr_min, qr_max, ql_min, ql_max,
+                             decay, x_min_max, ema, ste_fine_grained, eps, outputs=outputs)
+    return x_q
+
+
+@parametric_function_api("min_max_quantized_affine", [
+    ('W', 'Weight matrix in float', '(inmaps, outmaps)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Quantized weights', '(inmaps, outmaps)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+    ('qr_min', 'Minimum quantization range. Minimum values of inputs or trainable range.',
+     'ql_min.shape', False),
+    ('qr_max', 'Maximum quantization range. Maximum values of inputs or trainable range.',
+     'ql_max.shape', False)
+])
+def min_max_quantized_affine(inp, n_outmaps,
+                             base_axis=1,
+                             w_init=None, b_init=None,
+                             fix_parameters=False, rng=None, with_bias=True,
+                             quantize_w=True, ql_min_w=0, ql_max_w=255, w_min_max=False,
+                             qr_min_w_init=None, qr_max_w_init=None,
+                             ste_fine_grained_w=True,
+                             quantize_b=True, ql_min_b=0, ql_max_b=255, b_min_max=False,
+                             qr_min_b_init=None, qr_max_b_init=None,
+                             ste_fine_grained_b=True,
+                             eps=0.01):
+    r"""Min-max Quantized Affine.
+
+    Min-max Quantized Affine is the affine function,
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_j = \sum_{i} Q(w_{ji}) x_i,
+
+    where :math:`Q(w_{ji})` is the min-max quantization function.
+
+    In the min_max_quantized affine, the exponential moving average is not used. the min and max quantization
+    ranges are either the min-max of weights and bias or trained.
+
+    Notice that the min and max values of inputs are always used instead of the exponential moving average.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): Input N-D array with shape (:math:`M_0 \times \ldots \times M_{B-1} \times D_B \times \ldots \times D_N`). Dimensions before and after base_axis are flattened as if it is a matrix.
+        n_outmaps (:obj:`int` or :obj:`tuple` of :obj:`int`): Number of output neurons per data.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`. 
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        quantize_w (bool): Quantize weights if `True`.
+        ql_min_w (int, float, or ~nnabla.Variable): Minimum quantization level for weights. Default is 0.
+        ql_max_w (int, float, or ~nnabla.Variable): Maximum quantization level for weights. Default is 255.
+        w_min_max (bool): Use the min and max of weights to compute quantization ranges. Default is `False`.
+        qr_min_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-2.0).
+        qr_max_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (2.0).
+        ste_fine_grained_w (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
+        quantize_b (bool): Quantize bias if `True`.
+        ql_min_b (int, float, or ~nnabla.Variable): Minimum quantization level for bias. Default is 0.
+        ql_max_b (int, float, or ~nnabla.Variable): Maximum quantization level for bias. Default is 255.
+        b_min_max (bool): Use the min and max of bias to compute quantization ranges. Default is `False`.
+        qr_min_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-6.0).
+        qr_max_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
+        ste_fine_grained_b (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
+        eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
+                     than the epsilon for both weights and bias.
+    Returns:
+        :class:`~nnabla.Variable`: :math:`(B + 1)`-D array. (:math:`M_0 \times \ldots \times M_{B-1} \times L`)
+
+    """
+
+    if not hasattr(n_outmaps, '__iter__'):
+        n_outmaps = [n_outmaps]
+    n_outmaps = list(n_outmaps)
+    n_outmap = int(np.prod(n_outmaps))
+    if w_init is None:
+        inmaps = np.prod(inp.shape[base_axis:])
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(inmaps, n_outmap), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    if qr_min_w_init is None:
+        qr_min_w_init = ConstantInitializer(-2.0)
+    if qr_max_w_init is None:
+        qr_max_w_init = ConstantInitializer(2.0)
+    if qr_min_b_init is None:
+        qr_min_b_init = ConstantInitializer(-6.0)
+    if qr_max_b_init is None:
+        qr_max_b_init = ConstantInitializer(6.0)
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+        w_init, True, not fix_parameters)
+
+    # Quantized Weight
+    if quantize_w:
+        w_q = get_parameter_or_create(
+            "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
+            w_init, False)
+        # Link computation graph
+        real_w_q = min_max_quantize(w, ql_min_w, ql_max_w, 0.999, w_min_max, False,
+                                    qr_min_init=qr_min_w_init, qr_max_init=qr_max_w_init,
+                                    ste_fine_grained=ste_fine_grained_w,
+                                    eps=eps,
+                                    fix_parameters=fix_parameters,
+                                    outputs=[w_q.data],
+                                    name="min_max_quantize_w")
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    b = None
+    b_q = None
+    real_b_q = None
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", n_outmaps, b_init, True, not fix_parameters)
+        if quantize_b:
+            b_q = get_parameter_or_create(
+                "b_q", n_outmaps, b_init, False)
+            # Link computation graph
+            real_b_q = min_max_quantize(b, ql_min_b, ql_max_b, 0.999, b_min_max, False,
+                                        qr_min_init=qr_min_b_init, qr_max_init=qr_max_b_init,
+                                        ste_fine_grained=ste_fine_grained_b,
+                                        eps=eps,
+                                        fix_parameters=fix_parameters,
+                                        outputs=[b_q],
+                                        name="min_max_quantize_b")
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.affine(inp, real_w_q, real_b_q, base_axis)
+
+
+@parametric_function_api("min_max_quantized_conv", [
+    ('W', 'Filter weights in float', '(outmaps, inmaps // group, *kernel)', True),
+    ('b', 'Bias vector in float', '(outmaps,)', True),
+    ('W_q', 'Quantized weights', '(outmaps, inmaps // group, *kernel)', False),
+    ('b_q', 'Quantized biases', '(outmaps,)', False),
+    ('qr_min', 'Minimum quantization range. Minimum values of inputs or trainable range.',
+     'ql_min.shape', False),
+    ('qr_max', 'Maximum quantization range. Maximum values of inputs or trainable range.',
+     'ql_max.shape', False)
+])
+def min_max_quantized_convolution(inp, outmaps, kernel,
+                                  pad=None, stride=None, dilation=None, group=1, channel_last=False,
+                                  w_init=None, b_init=None,
+                                  base_axis=1, fix_parameters=False, rng=None, with_bias=True,
+                                  quantize_w=True, ql_min_w=0, ql_max_w=255, w_min_max=False,
+                                  qr_min_w_init=None, qr_max_w_init=None,
+                                  ste_fine_grained_w=True,
+                                  quantize_b=True, ql_min_b=0, ql_max_b=255, b_min_max=False,
+                                  qr_min_b_init=None, qr_max_b_init=None,
+                                  ste_fine_grained_b=True,
+                                  eps=0.01):
+    r"""Min-max Quantized Convolution.
+
+    Min-max Quantized Convolution is the convolution function,
+    except the definition of the inner product is modified.
+    The input-output relation of this function is as follows:
+
+    .. math::
+
+        y_{n, a, b} = \sum_{m} \sum_{i} \sum_{j} Q(w_{n, m, i, j}) x_{m, a + i, b + j},
+
+    where :math:`Q(w_{n, m, i, j})` is the min-max quantization function.
+
+    In the min_max_quantized convolution, the exponential moving average is not used.
+    the min and max quantization ranges are either the min-max of weights and bias or trained.
+
+    Notice that the min and max values of inputs are always used instead of the exponential moving average.
+
+    .. note::
+
+        1) if you would like to share weights between some layers, please
+        make sure to share the standard, floating value weights (`weight`)
+        and not the quantized weights (`quantized weight`)
+
+        2) The weights and the quantized weights become synced only after :func:`~nnabla._variable.Variable.forward` is called,
+        and not after a call to :func:`~nnabla._variable.Variable.backward`.
+        To access the parameters of the network, remember to call :func:`~nnabla._variable.Variable.forward` once before doing so, otherwise the
+        float weights and the quantized weights will not be in sync.
+
+        3) CPU and GPU implementations now use float value for `quantized weight`,
+        since this function is only for simulation purposes.
+
+    Args:
+        inp (~nnabla.Variable): N-D array.
+        outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
+        kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
+        pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
+        stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
+        dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
+        group (int): Number of groups of channels. This makes connections across channels more sparse by grouping connections along map direction.
+        channel_last (bool): If True, the last dimension is considered as channel dimension, a.k.a. NHWC order.
+        w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for weight. By default, it is initialized with :obj:`nnabla.initializer.UniformInitializer` within the range determined by :obj:`nnabla.initializer.calc_uniform_lim_glorot`.  
+        b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for bias. By default, it is initialized with zeros if `with_bias` is `True`.
+        base_axis (int): Dimensions up to `base_axis` are treated as the sample dimensions.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
+        rng (numpy.random.RandomState): Random generator for Initializer.
+        with_bias (bool): Specify whether to include the bias term.
+        quantize_w (bool): Quantize weights if `True`.
+        ql_min_w (int, float, or ~nnabla.Variable): Minimum quantization level for weights. Default is 0.
+        ql_max_w (int, float, or ~nnabla.Variable): Maximum quantization level for weights. Default is 255.
+        w_min_max (bool): Use the min and max of weights to compute quantization ranges. Default is `False`.
+        qr_min_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-2.0).
+        qr_max_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization rage, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (2.0).
+        ste_fine_grained_w (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
+        quantize_b (bool): Quantize bias if `True`.
+        ql_min_b (int, float, or ~nnabla.Variable): Minimum quantization level for bias. Default is 0.
+        ql_max_b (int, float, or ~nnabla.Variable): Maximum quantization level for bias. Default is 255.
+        b_min_max (bool): Use the min and max of bias to compute quantization ranges. Default is `False`.
+        qr_min_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-6.0).
+        qr_max_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization rage, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
+        ste_fine_grained_b (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
+        eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
+                     than the epsilon for both weights and bias.
+    Returns:
+        :class:`~nnabla.Variable`: N-D array.
+
+    """
+    if channel_last:
+        channels = inp.shape[-1]
+        filter_shape = tuple(kernel) + (channels // group,)
+    else:
+        channels = inp.shape[base_axis]
+        filter_shape = (channels // group,) + tuple(kernel)
+    if w_init is None:
+        w_init = UniformInitializer(
+            calc_uniform_lim_glorot(channels, outmaps, tuple(kernel)), rng=rng)
+    if with_bias and b_init is None:
+        b_init = ConstantInitializer()
+    if qr_min_w_init is None:
+        qr_min_w_init = ConstantInitializer(-2.0)
+    if qr_max_w_init is None:
+        qr_max_w_init = ConstantInitializer(2.0)
+    if qr_min_b_init is None:
+        qr_min_b_init = ConstantInitializer(-6.0)
+    if qr_max_b_init is None:
+        qr_max_b_init = ConstantInitializer(6.0)
+
+    # Floating Weight
+    w = get_parameter_or_create(
+        "W", (outmaps,) + filter_shape,
+        w_init, True, not fix_parameters)
+
+    # Quantized Weight
+    if quantize_w:
+        w_q = get_parameter_or_create(
+            "W_q", (outmaps,) + filter_shape,
+            w_init, False)
+        # Link computation graph
+        real_w_q = min_max_quantize(w, ql_min_w, ql_max_w, 0.999, w_min_max, False,
+                                    qr_min_init=qr_min_w_init, qr_max_init=qr_max_w_init,
+                                    ste_fine_grained=ste_fine_grained_w,
+                                    eps=eps,
+                                    fix_parameters=fix_parameters,
+                                    outputs=[w_q.data],
+                                    name="min_max_quantize_w")
+        real_w_q.persistent = True
+    else:
+        real_w_q = w
+
+    # Bias
+    # Floating
+    b = None
+    b_q = None
+    real_b_q = None
+
+    if with_bias:
+        b = get_parameter_or_create(
+            "b", (outmaps,), b_init, True, not fix_parameters)
+        if quantize_b:
+            b_q = get_parameter_or_create(
+                "b_q", (outmaps,), b_init, False)
+            # Link computation graph
+            real_b_q = min_max_quantize(b, ql_min_b, ql_max_b, 0.999, b_min_max, False,
+                                        qr_min_init=qr_min_b_init, qr_max_init=qr_max_b_init,
+                                        ste_fine_grained=ste_fine_grained_b,
+                                        eps=eps,
+                                        fix_parameters=fix_parameters,
+                                        outputs=[b_q.data],
+                                        name="min_max_quantize_b")
+            real_b_q.persistent = True
+        else:
+            real_b_q = b
+
+    return F.convolution(inp, real_w_q, real_b_q, base_axis, pad, stride, dilation, group, channel_last)
 
 
 @parametric_function_api("lstm", [
