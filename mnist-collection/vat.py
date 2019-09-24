@@ -22,6 +22,7 @@ import nnabla.solver as S
 from nnabla.logger import logger
 import nnabla.utils.save as save
 from nnabla.utils.data_iterator import data_iterator_simple
+from _checkpoint_nnp_util import save_nnp
 
 import numpy as np
 import time
@@ -217,6 +218,10 @@ def main():
     monitor_verr = M.MonitorSeries("Test error", monitor, interval=240)
     monitor_time = M.MonitorTimeElapsed("Elapsed time", monitor, interval=240)
 
+    contents = save_nnp({'x': xv}, {'y': hv}, 1)
+    save.save(os.path.join(args.model_save_path,
+                           'result_epoch0.nnp'), contents)
+
     # Training Loop.
     t0 = time.time()
 
@@ -282,6 +287,10 @@ def main():
     parameter_file = os.path.join(
         args.model_save_path, 'params_%06d.h5' % args.max_iter)
     nn.save_parameters(parameter_file)
+
+    contents = save_nnp({'x': xv}, {'y': hv}, 1)
+    save.save(os.path.join(args.model_save_path,
+                           'result.nnp'), contents)
 
 
 if __name__ == '__main__':

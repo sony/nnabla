@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,6 +59,8 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
                         default=False, help="Enable data augmentation of training data.")
     parser.add_argument('--augment-test', action='store_true',
                         default=False, help="Enable data augmentation of testing data.")
+    parser.add_argument("--checkpoint", type=str, default=None,
+                        help='path to checkpoint file')
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
         os.makedirs(args.model_save_path)
