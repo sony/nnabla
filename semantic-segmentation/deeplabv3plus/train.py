@@ -21,12 +21,14 @@ import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 import nnabla.communicators as C
 
+import nnabla.utils.save as save
 from args import get_args
 from segmentation_data import data_iterator_segmentation
 import model
 
 import os
 from collections import namedtuple
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 
 
 def get_model(args, test=False):
@@ -172,6 +174,12 @@ def train():
     solver = S.Momentum(args.learning_rate, 0.9)
     solver.set_parameters(nn.get_parameters())
 
+    # Load checkpoint
+    start_point = 0
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
+
     # Setting warmup.
     base_lr = args.learning_rate / n_devices
     warmup_iter = int(1. * n_train_samples /
@@ -191,13 +199,17 @@ def train():
     monitor_vtime = M.MonitorTimeElapsed(
         "Validation time", monitor, interval=1)
 
+    # save_nnp
+    contents = save_nnp({'x': v_model.image}, {
+                        'y': v_model.pred}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Deeplabv3plus_result_epoch0.nnp'), contents, variable_batch_size=False)
+
     # Training loop
-    for i in range(int(args.max_iter / n_devices)):
+    for i in range(start_point, int(args.max_iter / n_devices)):
         # Save parameters
         if i % (args.model_save_interval // n_devices) == 0 and device_id == 0:
-            nn.save_parameters(os.path.join(
-                args.model_save_path, 'param_%06d.h5' % i))
-
+            save_checkpoint(args.model_save_path, i, solver)
         # Validation
         if i % (args.val_interval // n_devices) == 0 and i != 0:
             vmiou_local = 0.
@@ -299,6 +311,11 @@ def train():
     if device_id == 0:
         nn.save_parameters(os.path.join(args.model_save_path,
                                         'param_%06d.h5' % args.max_iter))
+
+    contents = save_nnp({'x': v_model.image}, {
+                        'y': v_model.pred}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Deeplabv3plus_result.nnp'), contents, variable_batch_size=False)
 
 
 if __name__ == '__main__':

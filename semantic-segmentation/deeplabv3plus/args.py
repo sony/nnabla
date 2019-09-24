@@ -112,6 +112,8 @@ def get_args(monitor_path='tmp.monitor', max_iter=10000, model_save_path=None, l
                         help="Sync weights every specified iteration. NCCL uses\
  the ring all reduce, so gradients in each device are not exactly same. When it\
  is accumulated in the weights, the weight values in each device diverge.")
+    parser.add_argument("--checkpoint", type=str, default=None,
+                        help='path to checkpoint file')
 
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
