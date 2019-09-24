@@ -472,6 +472,118 @@ def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fin
     return pow2_quantize_base(x, sign, with_zero, n, m, ste_fine_grained, outputs=outputs)
 
 
+def min_max_quantize(x, qr_min, qr_max, ql_min, ql_max, decay=0.999, x_min_max=False, ema=False,
+                     ste_fine_grained=True, eps=0.01, quantize=True, outputs=None):
+    r"""Min-max quantization.
+
+    This function uniformly quantizes values in the range of min and max quantization levels.
+
+    Min-max quantization is defined as the following equation
+
+    .. math::
+
+        y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m, 
+
+    where the :math:`scale` is defined as 
+
+    .. math::
+
+        scale = \frac{M - m}{M_q - m_q}, 
+
+    and 
+
+    .. math::
+
+        m_q = ql_{min}, \\
+        M_q = ql_{max}, \\
+        m = qr_{min}, \\
+        M = qr_{max}.
+
+    In the backward pass when using `ste_fine_grained` as false,
+
+        .. math::
+
+          \frac{\partial q_i}{\partial x_i} = 1.
+
+
+    In the backward pass when using `ste_fine_grained` as true,
+
+        .. math::
+
+           \frac{\partial q_i}{\partial x_i}= \left\{
+         \begin{array}{ll}
+           0 & if \ \ \ x_i > M \\
+           1 & if \ \ m \le x_i \le M \\
+           0 & if \ \ x_i < m \\
+         \end{array} \right..
+
+    :math:`qr_{min}` and :math:`qr_{max}` are treaded as follows.
+
+        * `x_min_max` is `True` and `ema` is `True`: 
+          Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)` 
+          then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `True` and `ema` is `False`:
+          :math:`min(x)` and :math:`max(x)` are computed then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `False` and `ema` is `True`:
+          Exponential moving average stored in :math:`qr_{min}` and :math:`qr_{max}` are used.
+        * `x_min_max` is `False` and `ema` is `False`
+          Gradients of :math:`qr_{min}` and :math:`qr_{max}` are computed in the backward pass.
+
+    More precisely, in inference of the min-max quantization, one has to consider *zero-point (zp)*
+    which corresponds
+    to the real value 0, and its data type is an integer. *zero-point* is defined as 
+
+        .. math::
+
+           && zp_f = ql_{min} -\frac{qr_{min}}{scale}, \\
+           && zp = \left\{
+         \begin{array}{ll}
+           ql_{max} & if \ \ \ zp_f >= ql_{max} \\
+           round(zp_f) & if \ \ otherwise \\
+           ql_{min}  & if \ \ zp_f <= ql_{min} \\
+         \end{array} \right..
+
+    Accordingly, in order to simulate quantization effect of *zero-point*, 
+    during both forward and backward pass, :math:`qr_{min}` and :math:`qr_{max}` are adjusted as follows,
+
+        .. math::
+
+           qr_{min}^{adj} = ql_{min} - zp * scale, \\
+           qr_{max}^{adj} = ql_{max} - zp * scale.
+
+    These operations are often called *nudge*. 
+
+    Finally, in the formulas of the min-max quantization, :math:`m` and :math:`M` are replaced by
+    :math:`qr_{min}^{adj}` and :math:`qr_{max}^{adj}` respectively.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array.
+        qr_min (~nnabla.Variable): Minimum quantization range (modified during forward execution).
+        qr_max (~nnabla.Variable): Maximum quantization range (modified during forward execution).
+        ql_min (~nnabla.Variable): Minimum quantization level, typically 0.
+        ql_max (~nnabla.Variable): Maximum quantization level, typically 255.
+        decay (float): The decay rate for the exponential moving average.
+        x_min_max (bool): Use the min and max of x to compute quantization ranges. Default is `False`.
+        ema (bool): Use the exponential moving average for the min and max quantization ranges.
+                    Default is `False`.
+        ste_fine_grained (bool): If `True`, STE is not 1, the {0, 1}-mask computed from the min-max is
+                                 applied to the gradient in the backward; otherwise, STE is 1.
+        eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
+                     than the epsilon.
+        quantize (bool): Apply quantization or not.
+
+    References:
+        Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, and Dmitry Kalenichenko, "Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference", https://arxiv.org/abs/1712.05877
+
+    """
+
+    from .function_bases import min_max_quantize as min_max_quantize_base
+    if not quantize:
+        return x
+    return min_max_quantize_base(x, qr_min, qr_max, ql_min, ql_max, decay, x_min_max, ema,
+                                 ste_fine_grained, eps, quantize, outputs=outputs)
+
+
 def clip_by_value(x, min, max):
     r"""Clip inputs by values.
 
