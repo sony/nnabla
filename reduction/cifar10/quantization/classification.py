@@ -24,7 +24,7 @@ import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 import nnabla.utils.save as save
 
-from args import get_args
+from args import get_args, save_args
 from cifar10_data import data_iterator_cifar10
 from models import (cifar10_resnet23_prediction,
                     cifar10_binary_connect_resnet23_prediction,
@@ -35,14 +35,13 @@ from models import (cifar10_resnet23_prediction,
                     cifar10_pow2_connect_resnet23_prediction,
                     cifar10_pow2_net_resnet23_prediction,
                     cifar10_inq_resnet23_prediction,
+                    cifar10_min_max_resnet23_prediction,
                     categorical_error)
 
 import functools
 
 
-def train():
-    args = get_args()
-
+def train(args):
     # Get context.
     from nnabla.ext_utils import get_extension_context
     logger.info("Running in %s" % args.context)
@@ -74,6 +73,11 @@ def train():
     elif args.net == 'cifar10_inq_resnet23_prediction':
         model_prediction = functools.partial(
             cifar10_inq_resnet23_prediction, num_bits=args.bit_width)
+    elif args.net == 'cifar10_min_max_resnet23_prediction':
+        model_prediction = functools.partial(
+            cifar10_min_max_resnet23_prediction, ql_min=args.ql_min, ql_max=args.ql_max,
+            p_min_max=args.p_min_max, a_min_max=args.a_min_max, a_ema=args.a_ema,
+            ste_fine_grained=args.ste_fine_grained)
 
     # TRAIN
     maps = 64
@@ -127,10 +131,10 @@ def train():
                 ve += categorical_error(vpred.d, vlabel.d)
             ve /= int(n_valid / args.batch_size)
             monitor_verr.add(i, ve)
-        if ve < best_ve:
-            nn.save_parameters(os.path.join(
-                args.model_save_path, 'params_%06d.h5' % i))
-            best_ve = ve
+            if ve < best_ve:
+                nn.save_parameters(os.path.join(
+                    args.model_save_path, 'params_%06d.h5' % i))
+                best_ve = ve
         # Training forward
         image.d, label.d = data.next()
         solver.zero_grad()
@@ -157,4 +161,6 @@ def train():
 
 
 if __name__ == '__main__':
-    train()
+    args = get_args()
+    save_args(args, "train")
+    train(args)

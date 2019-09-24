@@ -61,19 +61,49 @@ def get_args(monitor_path='tmp.monitor', max_iter=234375, model_save_path=None, 
                         "'cifar10_pow2_connect_resnet23_prediction'\n"
                         "'cifar10_pow2_net_resnet23_prediction'\n"
                         "'cifar10_inq_resnet23_prediction\n'"
+                        "'cifar10_min_max_resnet23_prediction\n'"
                         )
     parser.add_argument('--context', '-c', type=str,
                         default=None, help="Extension modules. ex) 'cpu', 'cudnn'.")
     parser.add_argument("--bit-width",
                         type=int, default=8,
                         help='Bitwidth used, corresponding to n.')
+    parser.add_argument("--ql-min",
+                        type=int, default=0,
+                        help='Mininum quantization level of the min-max quantization.')
+    parser.add_argument("--ql-max",
+                        type=int, default=255,
+                        help='Maximum quantization level of the min-max quantization.')
+    parser.add_argument("--p-min-max", action="store_true",
+                        help='Use the input min and max for the min-max quantization for weights and bias.')
+    parser.add_argument("--a-min-max", action="store_true",
+                        help='Use the input min and max for the min-max quantization for activation.')
+    parser.add_argument("--a-ema", action="store_true",
+                        help='Use the exponential moving average for the min-max quantization for activation.')
     parser.add_argument("--upper-bound",
                         type=int, default=1,
                         help='Upper bound for pow-of-2 quantization, corresponding to m')
     parser.add_argument("--delta",
                         type=float, default=2**-4,
                         help='Step size for fixed-point quantization, corresponding to delta')
+    parser.add_argument("--ste-fine-grained",
+                        type=bool, default=True,
+                        help='Use the fine-grained STE for the fixed-point, pow2, and min-max quantization.')
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):
         os.makedirs(args.model_save_path)
     return args
+
+
+def save_args(args, mode="train"):
+    from nnabla import logger
+    import os
+    if not os.path.exists(args.monitor_path):
+        os.makedirs(args.monitor_path)
+
+    path = "{}/Arguments-{}.txt".format(args.monitor_path, mode)
+    logger.info("Arguments are saved to {}.".format(path))
+    with open(path, "w") as fp:
+        for k, v in sorted(vars(args).items()):
+            logger.info("{}={}".format(k, v))
+            fp.write("{}={}\n".format(k, v))

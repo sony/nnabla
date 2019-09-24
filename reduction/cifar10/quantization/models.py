@@ -45,13 +45,13 @@ def cifar10_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                    with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                    with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -110,13 +110,13 @@ def cifar10_binary_connect_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.binary_connect_convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.binary_connect_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.binary_connect_convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.binary_connect_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -175,13 +175,13 @@ def cifar10_binary_net_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> BinaryTanh
             with nn.parameter_scope("conv1"):
-                h = PF.binary_connect_convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.binary_connect_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.binary_tanh(h)
             # Conv -> BN -> BinaryTanh
             with nn.parameter_scope("conv2"):
-                h = PF.binary_connect_convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.binary_connect_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.binary_tanh(h)
@@ -240,13 +240,13 @@ def cifar10_binary_weight_resnet23_prediction(image, maps=64,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.binary_weight_convolution(x, C / 2, kernel=(1, 1), pad=(0, 0),
+                h = PF.binary_weight_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),
                                                  with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.binary_weight_convolution(h, C / 2, kernel=(3, 3), pad=(1, 1),
+                h = PF.binary_weight_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),
                                                  with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -294,6 +294,7 @@ def cifar10_binary_weight_resnet23_prediction(image, maps=64,
 
 
 def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
+                                           ste_fine_grained=True,
                                            test=False):
     """
     Construct FixedPointConnect using resnet23.
@@ -305,19 +306,21 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.fixed_point_quantized_convolution(x, C / 2,
+                h = PF.fixed_point_quantized_convolution(x, C // 2,
                                                          kernel=(1, 1), pad=(0, 0),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
+                                                         ste_fine_grained_w=ste_fine_grained,
                                                          with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.fixed_point_quantized_convolution(h, C / 2,
+                h = PF.fixed_point_quantized_convolution(h, C // 2,
                                                          kernel=(3, 3), pad=(1, 1),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
+                                                         ste_fine_grained_w=ste_fine_grained,
                                                          with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -327,6 +330,7 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
                                                          kernel=(1, 1), pad=(0, 0),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
+                                                         ste_fine_grained_w=ste_fine_grained,
                                                          with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
             # Residual -> Relu
@@ -353,6 +357,7 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
                                                  kernel=(3, 3), pad=(1, 1),
                                                  n_w=n, delta_w=delta,
                                                  n_b=n, delta_b=delta,
+                                                 ste_fine_grained_w=ste_fine_grained,
                                                  with_bias=False)
         h = PF.batch_normalization(h, batch_stat=not test)
         h = F.relu(h)
@@ -367,12 +372,15 @@ def cifar10_fp_connect_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
     h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1
     pred = PF.fixed_point_quantized_affine(h, ncls,
                                            n_w=n, delta_w=delta,
-                                           n_b=n, delta_b=delta)
+                                           n_b=n, delta_b=delta,
+                                           ste_fine_grained_w=ste_fine_grained,
+                                           ste_fine_grained_b=ste_fine_grained)
 
     return pred
 
 
 def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
+                                       ste_fine_grained=True,
                                        test=False):
     """
     Construct FixedPointNet using resnet23.
@@ -384,23 +392,27 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
 
             # Conv -> BN -> FixedPointQuantize -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.fixed_point_quantized_convolution(x, C / 2,
+                h = PF.fixed_point_quantized_convolution(x, C // 2,
                                                          kernel=(1, 1), pad=(0, 0),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
+                                                         ste_fine_grained_w=ste_fine_grained,
                                                          with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-                h = F.fixed_point_quantize(h, n=n, delta=delta)
+                h = F.fixed_point_quantize(
+                    h, n=n, delta=delta, ste_fine_grained=ste_fine_grained)
                 h = F.relu(h)
             # Conv -> BN -> FixedPointQuantize -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.fixed_point_quantized_convolution(h, C / 2,
+                h = PF.fixed_point_quantized_convolution(h, C // 2,
                                                          kernel=(3, 3), pad=(1, 1),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
+                                                         ste_fine_grained_w=ste_fine_grained,
                                                          with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-                h = F.fixed_point_quantize(h, n=n, delta=delta)
+                h = F.fixed_point_quantize(
+                    h, n=n, delta=delta, ste_fine_grained=ste_fine_grained)
                 h = F.relu(h)
             # Conv -> BN
             with nn.parameter_scope("conv3"):
@@ -408,10 +420,12 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
                                                          kernel=(1, 1), pad=(0, 0),
                                                          n_w=n, delta_w=delta,
                                                          n_b=n, delta_b=delta,
+                                                         ste_fine_grained_w=ste_fine_grained,
                                                          with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
             # Residual -> FixedPointQuantize -> Relu
-            h = F.fixed_point_quantize(h, n=n, delta=delta)
+            h = F.fixed_point_quantize(
+                h, n=n, delta=delta, ste_fine_grained=ste_fine_grained)
             h = F.relu(h + x)
 
             # Maxpooling
@@ -435,9 +449,11 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
                                                  kernel=(3, 3), pad=(1, 1),
                                                  n_w=n, delta_w=delta,
                                                  n_b=n, delta_b=delta,
+                                                 ste_fine_grained_w=ste_fine_grained,
                                                  with_bias=False)
         h = PF.batch_normalization(h, batch_stat=not test)
-        h = F.fixed_point_quantize(h, n=n, delta=delta)
+        h = F.fixed_point_quantize(
+            h, n=n, delta=delta, ste_fine_grained=ste_fine_grained)
         h = F.relu(h)
 
     h = res_unit(h, "conv2", False)    # -> 32x32
@@ -450,12 +466,15 @@ def cifar10_fp_net_resnet23_prediction(image, maps=64, n=8, delta=2**-4,
     h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1
     pred = PF.fixed_point_quantized_affine(h, ncls,
                                            n_w=n, delta_w=delta,
-                                           n_b=n, delta_b=delta)
+                                           n_b=n, delta_b=delta,
+                                           ste_fine_grained_w=ste_fine_grained,
+                                           ste_fine_grained_b=ste_fine_grained,)
 
     return pred
 
 
 def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
+                                             ste_fine_grained=True,
                                              test=False):
     """
     Construct Pow2Connect using resnet23.
@@ -467,19 +486,21 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
 
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.pow2_quantized_convolution(x, C / 2,
+                h = PF.pow2_quantized_convolution(x, C // 2,
                                                   kernel=(1, 1), pad=(0, 0),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
+                                                  ste_fine_grained_w=ste_fine_grained,
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.pow2_quantized_convolution(h, C / 2,
+                h = PF.pow2_quantized_convolution(h, C // 2,
                                                   kernel=(3, 3), pad=(1, 1),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
+                                                  ste_fine_grained_w=ste_fine_grained,
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
                 h = F.relu(h)
@@ -489,6 +510,7 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
                                                   kernel=(1, 1), pad=(0, 0),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
+                                                  ste_fine_grained_w=ste_fine_grained,
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
             # Residual -> Relu
@@ -515,6 +537,7 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
                                           kernel=(3, 3), pad=(1, 1),
                                           n_w=n, m_w=m,
                                           n_b=n, m_b=m,
+                                          ste_fine_grained_w=ste_fine_grained,
                                           with_bias=False)
         h = PF.batch_normalization(h, batch_stat=not test)
         h = F.relu(h)
@@ -529,12 +552,15 @@ def cifar10_pow2_connect_resnet23_prediction(image, maps=64, n=8, m=1,
     h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1
     pred = PF.pow2_quantized_affine(h, ncls,
                                     n_w=n, m_w=m,
-                                    n_b=n, m_b=m)
+                                    n_b=n, m_b=m,
+                                    ste_fine_grained_w=ste_fine_grained,
+                                    ste_fine_grained_b=ste_fine_grained)
 
     return pred
 
 
 def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
+                                         ste_fine_grained=True,
                                          test=False):
     """
     Construct Pow2Net using resnet23.
@@ -545,23 +571,25 @@ def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Pow2Quantize -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.pow2_quantized_convolution(x, C / 2,
+                h = PF.pow2_quantized_convolution(x, C // 2,
                                                   kernel=(1, 1), pad=(0, 0),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-                h = F.pow2_quantize(h, n=n, m=m)
+                h = F.pow2_quantize(
+                    h, n=n, m=m, ste_fine_grained=ste_fine_grained)
                 h = F.relu(h)
             # Conv -> BN -> Pow2Quantize -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.pow2_quantized_convolution(h, C / 2,
+                h = PF.pow2_quantized_convolution(h, C // 2,
                                                   kernel=(3, 3), pad=(1, 1),
                                                   n_w=n, m_w=m,
                                                   n_b=n, m_b=m,
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
-                h = F.pow2_quantize(h, n=n, m=m)
+                h = F.pow2_quantize(
+                    h, n=n, m=m, ste_fine_grained=ste_fine_grained)
                 h = F.relu(h)
             # Conv -> BN
             with nn.parameter_scope("conv3"):
@@ -572,7 +600,7 @@ def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
                                                   with_bias=False)
                 h = PF.batch_normalization(h, batch_stat=not test)
             # Residual -> Pow2Quantize -> Relu
-            h = F.pow2_quantize(h, n=n, m=m)
+            h = F.pow2_quantize(h, n=n, m=m, ste_fine_grained=ste_fine_grained)
             h = F.relu(h + x)
 
             # Maxpooling
@@ -598,7 +626,7 @@ def cifar10_pow2_net_resnet23_prediction(image, maps=64, n=8, m=1,
                                           n_b=n, m_b=m,
                                           with_bias=False)
         h = PF.batch_normalization(h, batch_stat=not test)
-        h = F.pow2_quantize(h, n=n, m=m)
+        h = F.pow2_quantize(h, n=n, m=m, ste_fine_grained=ste_fine_grained)
         h = F.relu(h)
 
     h = res_unit(h, "conv2", False)    # -> 32x32
@@ -630,7 +658,7 @@ def cifar10_inq_resnet23_prediction(image, maps=64, num_bits=4,
         with nn.parameter_scope(scope_name):
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv1"):
-                h = PF.inq_convolution(x, C / 2,
+                h = PF.inq_convolution(x, C // 2,
                                        kernel=(1, 1), pad=(0, 0),
                                        inq_iterations=inq_iterations,
                                        selection_algorithm=selection_algorithm,
@@ -639,7 +667,7 @@ def cifar10_inq_resnet23_prediction(image, maps=64, num_bits=4,
                 h = F.relu(h)
             # Conv -> BN -> Relu
             with nn.parameter_scope("conv2"):
-                h = PF.inq_convolution(h, C / 2,
+                h = PF.inq_convolution(h, C // 2,
                                        kernel=(3, 3), pad=(1, 1),
                                        inq_iterations=inq_iterations,
                                        selection_algorithm=selection_algorithm,
@@ -693,4 +721,111 @@ def cifar10_inq_resnet23_prediction(image, maps=64, num_bits=4,
     pred = PF.inq_affine(h, ncls,
                          inq_iterations=inq_iterations,
                          selection_algorithm=selection_algorithm)
+    return pred
+
+
+def cifar10_min_max_resnet23_prediction(image, maps=64, ql_min=0, ql_max=255,
+                                        p_min_max=False,
+                                        a_min_max=False,
+                                        a_ema=False,
+                                        ste_fine_grained=True,
+                                        test=False):
+    """
+    Construct MinMaxNet using resnet23.
+
+    """
+    a_min_max = a_min_max if not test else False
+
+    # Residual Unit
+    def res_unit(x, scope_name, dn=False):
+        C = x.shape[1]
+        with nn.parameter_scope(scope_name):
+
+            # Conv -> BN -> MinMaxQuantize -> Relu
+            with nn.parameter_scope("conv1"):
+                h = PF.min_max_quantized_convolution(x, C // 2,
+                                                     kernel=(1, 1), pad=(0, 0),
+                                                     ql_min_w=ql_min, ql_max_w=ql_max,
+                                                     w_min_max=p_min_max,
+                                                     ste_fine_grained_w=ste_fine_grained,
+                                                     with_bias=False)
+                h = F.relu(h)
+                h = PF.batch_normalization(h, batch_stat=not test)
+                h = PF.min_max_quantize(
+                    h, x_min_max=a_min_max, ema=a_ema, ql_min=ql_min, ql_max=ql_max,
+                    ste_fine_grained=ste_fine_grained)
+            # Conv -> BN -> MinMaxQuantize -> Relu
+            with nn.parameter_scope("conv2"):
+                h = PF.min_max_quantized_convolution(h, C // 2,
+                                                     kernel=(3, 3), pad=(1, 1),
+                                                     ql_min_w=ql_min, ql_max_w=ql_max,
+                                                     w_min_max=p_min_max,
+                                                     ste_fine_grained_w=ste_fine_grained,
+                                                     with_bias=False)
+                h = F.relu(h)
+                h = PF.batch_normalization(h, batch_stat=not test)
+                h = PF.min_max_quantize(
+                    h, x_min_max=a_min_max, ema=a_ema, ql_min=ql_min, ql_max=ql_max,
+                    ste_fine_grained=ste_fine_grained)
+
+            # Conv -> BN
+            with nn.parameter_scope("conv3"):
+                h = PF.min_max_quantized_convolution(h, C,
+                                                     kernel=(1, 1), pad=(0, 0),
+                                                     ql_min_w=ql_min, ql_max_w=ql_max,
+                                                     w_min_max=p_min_max,
+                                                     ste_fine_grained_w=ste_fine_grained,
+                                                     with_bias=False)
+                h = PF.batch_normalization(h, batch_stat=not test)
+            # Residual -> MinMaxQuantize -> Relu
+            h = PF.min_max_quantize(
+                h, x_min_max=a_min_max, ema=a_ema, ql_min=ql_min, ql_max=ql_max, ste_fine_grained=ste_fine_grained)
+            h = F.relu(h + x)
+
+            # Maxpooling
+            if dn:
+                h = F.max_pooling(h, kernel=(2, 2), stride=(2, 2))
+
+        return h
+
+    ncls = 10
+
+    # Conv -> BN -> MinMaxQuantize
+    with nn.parameter_scope("conv1"):
+        # Preprocess
+        image /= 255.0
+        if not test:
+            image = F.image_augmentation(image, contrast=1.0,
+                                         angle=0.25,
+                                         flip_lr=True)
+            image.need_grad = False
+        h = PF.min_max_quantized_convolution(image, maps,
+                                             kernel=(3, 3), pad=(1, 1),
+                                             ql_min_w=ql_min, ql_max_w=ql_max,
+                                             w_min_max=p_min_max,
+                                             ste_fine_grained_w=ste_fine_grained,
+                                             with_bias=False)
+        h = PF.batch_normalization(h, batch_stat=not test)
+        h = PF.min_max_quantize(
+            h, x_min_max=a_min_max, ema=a_ema, ql_min=ql_min, ql_max=ql_max, ste_fine_grained=ste_fine_grained)
+        h = F.relu(h)
+
+    h = res_unit(h, "conv2", False)    # -> 32x32
+    h = res_unit(h, "conv3", True)     # -> 16x16
+    h = res_unit(h, "conv4", False)    # -> 16x16
+    h = res_unit(h, "conv5", True)     # -> 8x8
+    h = res_unit(h, "conv6", False)    # -> 8x8
+    h = res_unit(h, "conv7", True)     # -> 4x4
+    h = res_unit(h, "conv8", False)    # -> 4x4
+    h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1
+    pred = PF.min_max_quantized_affine(h, ncls,
+                                       ql_min_w=ql_min, ql_max_w=ql_max,
+                                       w_min_max=p_min_max,
+                                       ste_fine_grained_w=ste_fine_grained,
+                                       with_bias=False,
+                                       quantize_b=True,
+                                       ql_min_b=ql_min, ql_max_b=ql_max,
+                                       b_min_max=p_min_max,
+                                       ste_fine_grained_b=ste_fine_grained)
+
     return pred
