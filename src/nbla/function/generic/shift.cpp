@@ -27,73 +27,45 @@ NBLA_REGISTER_FUNCTION_SOURCE(Shift, const vector<int> &, const string &);
 template <typename T>
 void Shift<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   outputs[0]->reshape(inputs[0]->shape(), true);
-  prepare_addr_table(inputs);
 }
 
 template <typename T>
-void Shift<T>::prepare_addr_table(const Variables &inputs) {
-  const Shape_t &in_shape = inputs[0]->shape();
-  const int in_dim = in_shape.size();
-  addr_table_.resize(in_dim);
-  for (int id = 0; id < in_dim; ++id) {
-    const int stride = inputs[0]->strides()[id];
-    std::vector<int> &table = addr_table_[id];
-    const int size = inputs[0]->shape()[id];
-    table.resize(size);
-    const int shift_index = shifts_.size() - in_dim + id;
-    const int shift = shift_index >= 0 ? -shifts_[shift_index] : 0;
+template <bool is_backward>
+void Shift<T>::shift_recursive(Variable *inp, const T *src, T *dst,
+                               int x_offset, int y_offset, int dim) {
+  // Note src is x and dst is y in forward,
+  // while src is dy and dst is dx in backward.
 
-    if (border_mode_ == "reflect") {
-      for (int i = 0; i < size; i++) {
-        const int a =
-            size > 1 ? (std::abs(i + size * 2 + shift) % (size * 2)) : 0;
-        table[i] = (a >= size ? (size * 2) - 1 - a : a) * stride;
-      }
-    } else { // if (border_mode_ == "nearest") {
-      for (int i = 0; i < size; i++) {
-        table[i] = std::min(std::max(i + shift, 0), size - 1) * stride;
-      }
-    }
-  }
-}
-
-template <typename T>
-void Shift<T>::shift_recursive(Variable *inp, const T *x, T *y, int x_offset,
-                               int y_offset, int dim) {
   int current_y_offset = y_offset;
   const int stride = inp->strides()[dim];
   const int size = inp->shape()[dim];
-  const std::vector<int> &table = addr_table_[dim];
-  if (dim == inp->shape().size() - 1) {
-    for (int i = 0; i < size; ++i) {
-      y[current_y_offset] = x[x_offset + table[i]];
-      current_y_offset += stride;
-    }
-  } else {
-    for (int i = 0; i < size; ++i) {
-      shift_recursive(inp, x, y, x_offset + table[i], current_y_offset,
-                      dim + 1);
-      current_y_offset += stride;
-    }
-  }
-}
+  const int shift_index = shifts_.size() - inp->shape().size() + dim;
+  const int shift = shift_index >= 0 ? -shifts_[shift_index] : 0;
 
-template <typename T>
-void Shift<T>::shift_backward_recursive(Variable *outp, const T *dy, T *dx,
-                                        int x_offset, int y_offset, int dim) {
-  int current_y_offset = y_offset;
-  const int stride = outp->strides()[dim];
-  const int size = outp->shape()[dim];
-  const std::vector<int> &table = addr_table_[dim];
-  if (dim == outp->shape().size() - 1) {
-    for (int i = 0; i < size; ++i) {
-      dx[x_offset + table[i]] += dy[current_y_offset];
-      current_y_offset += stride;
+  for (int i = 0; i < size; ++i) {
+    // Determine shifted index j
+    int j;
+    if (border_mode_ == "reflect") {
+      const int a =
+          size > 1 ? (std::abs(i + size * 2 + shift) % (size * 2)) : 0;
+      j = (a >= size ? (size * 2) - 1 - a : a) * stride;
+
+    } else { // if (border_mode_ == "nearest") {
+      j = std::min(std::max(i + shift, 0), size - 1) * stride;
     }
-  } else {
-    for (int i = 0; i < size; ++i) {
-      shift_backward_recursive(outp, dy, dx, x_offset + table[i],
-                               current_y_offset, dim + 1);
+
+    // Copy src values to dst with shifted index recursively.
+    if (dim == inp->shape().size() - 1) {
+      if (is_backward) {
+        // In backward, dy is accumulated to dx.
+        dst[x_offset + j] += src[current_y_offset];
+      } else {
+        dst[current_y_offset] = src[x_offset + j];
+      }
+      current_y_offset += stride;
+    } else {
+      shift_recursive<is_backward>(inp, src, dst, x_offset + j,
+                                   current_y_offset, dim + 1);
       current_y_offset += stride;
     }
   }
@@ -103,7 +75,7 @@ template <typename T>
 void Shift<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  shift_recursive(inputs[0], x, y, 0, 0, 0);
+  shift_recursive<false>(inputs[0], x, y, 0, 0, 0);
 }
 
 template <typename T>
@@ -117,7 +89,7 @@ void Shift<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     inputs[0]->grad()->zero();
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, false);
-  shift_backward_recursive(outputs[0], dy, dx, 0, 0, 0);
+  shift_recursive<true>(outputs[0], dy, dx, 0, 0, 0);
 }
 
 } // namespace nbla
