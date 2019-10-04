@@ -28,6 +28,7 @@ using std::unordered_map;
 using std::string;
 using std::accumulate;
 using std::weak_ptr;
+using std::reference_wrapper;
 
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
@@ -149,15 +150,15 @@ class SwapInOutScheduler {
   */
   unordered_map<SyncedArrayPtr, bool> precleared;
 
-  // This is a switch separating the first iteration and others.
-  bool first_iter = true;
-
   // If a cast of an array to host is recorded, prefetch should stop
   // This flag prevents prefetching this array.
   unordered_map<unsigned int, bool> waiting_for_host_saptr;
 
   // This map is used only in the first iteration
   unordered_map<SyncedArrayPtr, unsigned int> synced_array_id_mapper;
+
+  // This is a switch separating the first iteration and others.
+  bool first_iter = true;
 
 public:
   /** Constructor.
@@ -203,6 +204,10 @@ public:
   */
   NBLA_API void post_update_callback();
 
+  /** Reset the internal state to that at construction.
+   */
+  NBLA_API void reset();
+
 private:
   // Common implementations of pre-function and pre-update callbacks
   void pre_callback_impl();
@@ -219,6 +224,7 @@ private:
   void proc_for_prev_func(); // 1.
   void proc_for_next_func(); // 2.
 
+  synced_array_callback_func_type synced_array_callback;
 
   // SyncedArray callback function to record get/cast/clear in the first iteration.
   void synced_array_callback_recorder(SyncedArrayPtr saptr,
@@ -243,8 +249,17 @@ private:
   void swap_in(); // swap in (prefetch)
   void swap_out(); // swap out
   void swap_out_impl(); // a subroutine of swap_out in charge of swap-out.
-  void wait_swap_out(RecType& r); // a subroutine of swap_out in charge of
+  void wait_swap_out(const bool final = false); // a subroutine of swap_out in charge of
                                   // waiting for swap-out and releasing GPU memory.
+
+  // Schedule
+  unordered_map<int, vector<reference_wrapper<RecType>>> prefetch_schedule;
+  unordered_map<int, vector<reference_wrapper<RecType>>> swap_out_schedule;
+  unordered_map<int, vector<reference_wrapper<RecType>>> wait_schedule;
+  void schedule(); // Schedule prefetch/swap out/preclear
+  vector<reference_wrapper<RecType>> schedule_swap_in();
+  vector<reference_wrapper<RecType>> schedule_swap_out(const int fid);
+  vector<reference_wrapper<RecType>> schedule_wait_for_swap_out();
 
   void init(); // Initialization subroutine of start_scheduling
   void finalize(); // Finalization subroutine of the end_scheduling
