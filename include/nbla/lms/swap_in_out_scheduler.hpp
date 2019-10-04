@@ -77,7 +77,8 @@ using std::reference_wrapper;
 */
 class SwapInOutScheduler {
   // Recorded tags of get/cast/clear
-  enum class RecTag {GET, CAST, CAST_WRITE_ONLY, CLEAR};
+  // In the current implementation, get and cast were not distinguished.
+  enum class RecTag {GETCAST, CLEAR};
 
   // Recorded information for get/cast/clear
   struct RecType {
@@ -100,11 +101,11 @@ class SwapInOutScheduler {
   const size_t max_bytes_swap_out; // for waiting to swap-out
 
   // The used size of GPU memory [bytes]
-  size_t used_bytes_swap_in = 0;  // for swap-in
+  //size_t used_bytes_swap_in = 0;  // for swap-in
   size_t used_bytes_swap_out = 0; // for waiting to swap-out
 
   // The recorded order of get/cast/clear in the first iteration
-  vector<RecType> rec_order;
+  vector<RecType> order;
   // The order of get/cast/clear different from recorded order in current iteration
   vector<RecType> wrong_ordered;
 
@@ -113,46 +114,28 @@ class SwapInOutScheduler {
      The tail of the queue moves on when waiting to finish swap-out 
      and to release memory.
      
-                      rec_tail               rec_use_idx         rec_head
-    rec_order --|-----[-------|---------|----*-----|----------|--]-----|-----
-                                          function_idx          head_function_idx
+                      tail               rec_use_idx         head
+    order --|-----[-------|---------|----*-----|----------|--]-----|-----
+                                          func_idx          head_func_idx
 
     -      : A hyphen is a record of get/cast/clear.
     |----| : An interval is the records used in a function.
     |      : A vertical line is one of functtion_ends.
     [  ]   : A queue.
   */
-  size_t rec_use_idx = 0;  // pointing the get/cast/clear just used in a function.
-  int rec_head = 0;        // pointing the next record to swap-in (prefetch).
-  int rec_tail = 0;        // pointing the next record to wait for swap-out
-  size_t function_idx = 0; // pointing the current function in the recorded order.
+  int order_idx = 0;  // pointing the get/cast/clear just used in a function.
+  int tail = 0;        // pointing the next record to wait for swap-out
+  size_t func_idx = 0; // pointing the current function in the recorded order.
   // The intervals in the recorded order which used in a function 
-  vector<size_t> rec_function_ends = {0}; // 0 is set for convinience.
-                                          // function_idx==0 points this virtual 
+  vector<size_t> func_block_ends = {0}; // 0 is set for convinience.
+                                          // func_idx==0 points this virtual 
                                           // 0-th function.
-
-  /* This counts the number of same arrays in the queue.
-     If count of an array > 0, no need to fetch the same array again.
-     If count of an array > 1, no need to swap out the array because it is
-     planed to be used soon in the queue.
-  */
-  unordered_map<unsigned int, unordered_map<dtypes, int>> swap_in_counts;
-
-  int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
-    return accumulate(count_map.begin(), count_map.end(), 0,
-      [](int value, const unordered_map<dtypes, int>::value_type& p)
-        { return value + p.second; });
-  }
 
   /* Remember arrays which are pre-cleared by SwapInOutScheduler in order to
      check the error by the unpredicted insertion of get/cast in the recorded order
      after clear.
   */
   unordered_map<SyncedArrayPtr, bool> precleared;
-
-  // If a cast of an array to host is recorded, prefetch should stop
-  // This flag prevents prefetching this array.
-  unordered_map<unsigned int, bool> waiting_for_host_saptr;
 
   // This map is used only in the first iteration
   unordered_map<SyncedArrayPtr, unsigned int> synced_array_id_mapper;
@@ -167,8 +150,8 @@ public:
   @param bytes Maximum GPU memory size managed by this class [bytes].
   */
   NBLA_API SwapInOutScheduler(const Context &h_ctx,
-                                   const Context &d_ctx,
-                                   const size_t bytes);
+                              const Context &d_ctx,
+                              const size_t bytes);
 
   /** Destructor.
   */
@@ -210,7 +193,7 @@ public:
 
 private:
   // Common implementations of pre-function and pre-update callbacks
-  void pre_callback_impl();
+  void pre_callback();
 
   /* Pre callback function is separated the two part.
      1. The post-process of the previous function.
@@ -248,22 +231,39 @@ private:
 
   void swap_in(); // swap in (prefetch)
   void swap_out(); // swap out
-  void swap_out_impl(); // a subroutine of swap_out in charge of swap-out.
-  void wait_swap_out(const bool final = false); // a subroutine of swap_out in charge of
-                                  // waiting for swap-out and releasing GPU memory.
+  void swap_out_first_iter();
+  void swap_out_after();
+  void wait_for_swap_out_first_iter();
+  void wait_for_swap_out_after();
+  void wait_for_all_swap_out();
+  void wait_for_swap_out_first_iter_impl();
+  void swap_out_wrong_order();
 
   // Schedule
-  unordered_map<int, vector<reference_wrapper<RecType>>> prefetch_schedule;
-  unordered_map<int, vector<reference_wrapper<RecType>>> swap_out_schedule;
-  unordered_map<int, vector<reference_wrapper<RecType>>> wait_schedule;
+  using SyncedArrayCountsInQueue = unordered_map<unsigned int,
+                                                 unordered_map<dtypes, int>>;
+  using ScheduleType = vector<reference_wrapper<RecType>>;
+
+  unordered_map<int, ScheduleType> prefetch_schedule;
+  unordered_map<int, ScheduleType> swap_out_schedule;
+  unordered_map<int, ScheduleType> wait_schedule;
+
   void schedule(); // Schedule prefetch/swap out/preclear
-  vector<reference_wrapper<RecType>> schedule_swap_in();
-  vector<reference_wrapper<RecType>> schedule_swap_out(const int fid);
-  vector<reference_wrapper<RecType>> schedule_wait_for_swap_out();
+
+  ScheduleType
+    schedule_swap_in(int& head, size_t& used_bytes_swap_in, 
+                     SyncedArrayCountsInQueue& synced_array_counts);
+  ScheduleType
+    schedule_swap_out(size_t& used_bytes_swap_in, 
+                      SyncedArrayCountsInQueue& synced_array_counts,
+                      const int fid);
+  ScheduleType schedule_wait_for_swap_out();
+  ScheduleType schedule_wait_for_all_swap_out();
+  void schedule_wait_for_swap_out_impl(ScheduleType& schedule);
+  void schedule_preclear(); // Subroutine to schedule preclear of end_scheduling
 
   void init(); // Initialization subroutine of start_scheduling
   void finalize(); // Finalization subroutine of the end_scheduling
-  void schedule_preclear(); // Subroutine to schedule preclear of end_scheduling
 
   /* Utilities
   */
