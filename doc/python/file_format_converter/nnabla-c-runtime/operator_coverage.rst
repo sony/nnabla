@@ -13,9 +13,10 @@ nnabla version: 1.0.21
 Export
 ------
 
-Total: 53/172
+Total: 52/172
 
-.. table:: Neural Network Layer
+Neural Network Layer
+^^^^^^^^^^^^^^^^^^^^
 
 Count 8/14
  
@@ -40,7 +41,8 @@ Count 8/14
     =========================  ========  =============
 
 
-.. table:: Neural Network Activation Functions
+Neural Network Activation Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 8/21
  
@@ -72,7 +74,8 @@ Count 8/21
     =================  ========  =============
 
 
-.. table:: Normalization
+Normalization
+^^^^^^^^^^^^^
 
 Count 1/6
  
@@ -89,7 +92,8 @@ Count 1/6
     ==========================  ========  =============
 
 
-.. table:: Reduction
+Reduction
+^^^^^^^^^
 
 Count 1/7
  
@@ -107,7 +111,8 @@ Count 1/7
     =================  ========  =============
 
 
-.. table:: Arithmetic
+Arithmetic
+^^^^^^^^^^
 
 Count 11/12
  
@@ -130,7 +135,8 @@ Count 11/12
     =================  ========  =============
 
 
-.. table:: Logical
+Logical
+^^^^^^^
 
 Count 5/29
  
@@ -170,7 +176,8 @@ Count 5/29
     =====================  ========  =============
 
 
-.. table:: Math
+Math
+^^^^
 
 Count 5/22
  
@@ -203,7 +210,8 @@ Count 5/22
     =================  ========  =============
 
 
-.. table:: Array Manipulation
+Array Manipulation
+^^^^^^^^^^^^^^^^^^
 
 Count 7/19
  
@@ -233,7 +241,8 @@ Count 7/19
     =================  ========  =============
 
 
-.. table:: Signal Processing
+Signal Processing
+^^^^^^^^^^^^^^^^^
 
 Count 0/3
  
@@ -247,15 +256,16 @@ Count 0/3
     =================  ========  =============
 
 
-.. table:: Stochasticity
+Stochasticity
+^^^^^^^^^^^^^
 
-Count 1/11
+Count 0/11
  
 
     ====================  ========  =============
       NNabla Function      Status    Description 
     ====================  ========  =============
-      Dropout             ✓                      
+      Dropout             X                      
       TopKData                                   
       TopKGrad                                   
       Rand                                       
@@ -269,7 +279,8 @@ Count 1/11
     ====================  ========  =============
 
 
-.. table:: Loss Functions
+Loss Functions
+^^^^^^^^^^^^^^
 
 Count 0/9
  
@@ -289,7 +300,8 @@ Count 0/9
     ==========================  ========  =============
 
 
-.. table:: Quantization Neural Network Layers
+Quantization Neural Network Layers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 6/11
  
@@ -311,7 +323,8 @@ Count 6/11
     ===========================  ========  =============
 
 
-.. table:: Validation
+Validation
+^^^^^^^^^^
 
 Count 0/3
  
@@ -325,7 +338,8 @@ Count 0/3
     ==================  ========  =============
 
 
-.. table:: Unsupported, Special Use
+Unsupported, Special Use
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 0/5
  

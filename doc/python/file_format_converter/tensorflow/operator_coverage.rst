@@ -17,130 +17,130 @@ Total: 86/120
 
 .. table:: Tensorflow support status
 
-    ======================================  ========  =======================================================================================================
-             Tensorflow Function             Status                                                 Description                                              
-    ======================================  ========  =======================================================================================================
-      Abs                                      ✓                                                                                                             
-      Acos                                     ✓                                                                                                             
-      Acosh                                    ✓                                                                                                             
-      Add                                      ✓                                                                                                             
-      AddN                                     ✓                                                                                                             
-      All                                                                                                                                                    
-      Any                                                                                                                                                    
-      ArgMax                                   ✓                                                                                                             
-      ArgMin                                   ✓                                                                                                             
-      Asin                                     ✓                                                                                                             
-      Asinh                                    ✓                                                                                                             
-      Atan                                     ✓                                                                                                             
-      Atan2                                                                                                                                                  
-      Atanh                                    ✓                                                                                                             
-      AvgPool                                  △      Some feature is not supported by Nnabla such as Pad's edge mode.                                       
-      AvgPool3D                                                                                                                                              
-      BatchMatMul                              ✓                                                                                                             
-      BiasAdd                                  ✓                                                                                                             
-      Cast                                                                                                                                                   
-      Ceil                                     ✓                                                                                                             
-      ConcatV2                                 ✓                                                                                                             
-      Const                                    ✓                                                                                                             
-      Conv2D                                   △      Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
-      Conv2DBackpropFilter                                                                                                                                   
-      Conv2DBackpropInput                      △      Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
-      Conv3D                                                                                                                                                 
-      Conv3DBackpropFilterV2                                                                                                                                 
-      Conv3DBackpropInputV2                                                                                                                                  
-      Cos                                      ✓                                                                                                             
-      Cosh                                     ✓                                                                                                             
-      DepthToSpace                             △      Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
-      DepthwiseConv2dNative                                                                                                                                  
-      DepthwiseConv2dNativeBackpropFilter                                                                                                                    
-      DepthwiseConv2dNativeBackpropInput                                                                                                                     
-      Div                                      ✓                                                                                                             
-      Elu                                      ✓                                                                                                             
-      Equal                                    ✓                                                                                                             
-      Erf                                                                                                                                                    
-      Erfc                                                                                                                                                   
-      Exp                                      ✓                                                                                                             
-      ExpandDims                               ✓                                                                                                             
-      Fill                                                                                                                                                   
-      Flatten                                  ✓                                                                                                             
-      Floor                                    ✓                                                                                                             
-      FloorDiv                                 ✓                                                                                                             
-      FloorMod                                 ✓                                                                                                             
-      FusedBatchNorm                           △      It did not pass testing for training mode.                                                             
-      GatherNd                                                                                                                                               
-      GatherV2                                                                                                                                               
-      Greater                                  ✓                                                                                                             
-      GreaterEqual                             ✓                                                                                                             
-      Identity                                 ✓                                                                                                             
-      IsInf                                                                                                                                                  
-      IsNan                                    ✓                                                                                                             
-      LeakyRelu                                ✓                                                                                                             
-      Less                                     ✓                                                                                                             
-      LessEqual                                ✓                                                                                                             
-      Log                                      ✓                                                                                                             
-      LogSoftmax                                                                                                                                             
-      LogicalAnd                               ✓                                                                                                             
-      LogicalNot                               ✓                                                                                                             
-      LogicalOr                                ✓                                                                                                             
-      LogicalXor                               ✓                                                                                                             
-      MatrixBandPart                                                                                                                                         
-      Max                                      ✓                                                                                                             
-      MaxPool                                  ✓                                                                                                             
-      MaxPool3D                                                                                                                                              
-      MaxPoolWithArgmax                                                                                                                                      
-      Maximum                                  ✓                                                                                                             
-      Mean                                     ✓                                                                                                             
-      Min                                      ✓                                                                                                             
-      Minimum                                  ✓                                                                                                             
-      Mul                                      ✓                                                                                                             
-      Neg                                      ✓                                                                                                             
-      NotEqual                                 ✓                                                                                                             
-      OneHot                                                                                                                                                 
-      Pack                                     ✓                                                                                                             
-      Pad                                      ✓                                                                                                             
-      Pow                                      ✓                                                                                                             
-      Prod                                     ✓                                                                                                             
-      RandomShuffle                                                                                                                                          
-      RandomStandardNormal                                                                                                                                   
-      RandomUniform                                                                                                                                          
-      RealDiv                                  ✓                                                                                                             
-      Reciprocal                               ✓                                                                                                             
-      Relu                                     ✓                                                                                                             
-      Relu6                                    ✓                                                                                                             
-      Reshape                                  △      Some test cases failed for some nnabla's implementation limitation (e.g. -1 is regarded as batch_size).
-      ReverseSequence                                                                                                                                        
-      Rsqrt                                    ✓                                                                                                             
-      Select                                                                                                                                                 
-      Selu                                     ✓                                                                                                             
-      Shape                                                                                                                                                  
-      Sigmoid                                  ✓                                                                                                             
-      Sign                                     ✓                                                                                                             
-      Sin                                      ✓                                                                                                             
-      Sinh                                     ✓                                                                                                             
-      Size                                                                                                                                                   
-      Slice                                    ✓                                                                                                             
-      Softmax                                                                                                                                                
-      Softplus                                 ✓                                                                                                             
-      Softsign                                 ✓                                                                                                             
-      SpaceToDepth                             △      Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
-      SplitV                                   ✓                                                                                                             
-      Sqrt                                     ✓                                                                                                             
-      Square                                   ✓                                                                                                             
-      SquaredDifference                        ✓                                                                                                             
-      Squeeze                                  ✓                                                                                                             
-      StopGradient                             ✓                                                                                                             
-      StridedSlice                             ✓                                                                                                             
-      Sub                                      ✓                                                                                                             
-      Sum                                      ✓                                                                                                             
-      Tan                                      ✓                                                                                                             
-      Tanh                                     ✓                                                                                                             
-      Tile                                     ✓                                                                                                             
-      TopKV2                                                                                                                                                 
-      Transpose                                ✓                                                                                                             
-      TruncateDiv                                                                                                                                            
-      TruncateMod                                                                                                                                            
-      Unpack                                   ✓                                                                                                             
-    ======================================  ========  =======================================================================================================
+    ======================================  ========  ==================================  =======================================================================================================
+             Tensorflow Function             Status              NNabla Func                                                            Description                                              
+    ======================================  ========  ==================================  =======================================================================================================
+      Abs                                      ✓      Abs                                                                                                                                        
+      Acos                                     ✓      ACos                                                                                                                                       
+      Acosh                                    ✓      ACosh                                                                                                                                      
+      Add                                      ✓      Add2                                                                                                                                       
+      AddN                                     ✓      Add2                                                                                                                                       
+      All                                                                                 Not yet implemented.                                                                                   
+      Any                                                                                 Not yet implemented.                                                                                   
+      ArgMax                                   ✓      Max                                                                                                                                        
+      ArgMin                                   ✓      Min                                                                                                                                        
+      Asin                                     ✓      ASin                                                                                                                                       
+      Asinh                                    ✓      ASinh                                                                                                                                      
+      Atan                                     ✓      ATan                                                                                                                                       
+      Atan2                                                                               Not yet implemented.                                                                                   
+      Atanh                                    ✓      ATanh                                                                                                                                      
+      AvgPool                                  △      Pad, AveragePooling, Transpose      Some feature is not supported by Nnabla such as Pad's edge mode.                                       
+      AvgPool3D                                                                           Not yet implemented.                                                                                   
+      BatchMatMul                              ✓      BatchMatmul, Transpose                                                                                                                     
+      BiasAdd                                  ✓      Reshape, Add2                                                                                                                              
+      Cast                                                                                Not yet implemented.                                                                                   
+      Ceil                                     ✓      Ceil                                                                                                                                       
+      ConcatV2                                 ✓      Concatenate                                                                                                                                
+      Const                                    ✓      Add2                                                                                                                                       
+      Conv2D                                   △      Convolution, Pad, Transpose         Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
+      Conv2DBackpropFilter                                                                Not yet implemented.                                                                                   
+      Conv2DBackpropInput                      △      Transpose, Deconvolution            Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
+      Conv3D                                                                              Not yet implemented.                                                                                   
+      Conv3DBackpropFilterV2                                                              Not yet implemented.                                                                                   
+      Conv3DBackpropInputV2                                                               Not yet implemented.                                                                                   
+      Cos                                      ✓      Cos                                                                                                                                        
+      Cosh                                     ✓      Cosh                                                                                                                                       
+      DepthToSpace                             △      Reshape, Transpose                  Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
+      DepthwiseConv2dNative                                                               Not yet implemented.                                                                                   
+      DepthwiseConv2dNativeBackpropFilter                                                 Not yet implemented.                                                                                   
+      DepthwiseConv2dNativeBackpropInput                                                  Not yet implemented.                                                                                   
+      Div                                      ✓      Div2                                                                                                                                       
+      Elu                                      ✓      ELU                                                                                                                                        
+      Equal                                    ✓      Equal                                                                                                                                      
+      Erf                                                                                 Not yet implemented.                                                                                   
+      Erfc                                                                                Not yet implemented.                                                                                   
+      Exp                                      ✓      Exp                                                                                                                                        
+      ExpandDims                               ✓      Reshape                                                                                                                                    
+      Fill                                                                                Not yet implemented.                                                                                   
+      Flatten                                  ✓      Reshape                                                                                                                                    
+      Floor                                    ✓      Floor                                                                                                                                      
+      FloorDiv                                 ✓      Div2, Floor                                                                                                                                
+      FloorMod                                 ✓      Sub2, Div2, Floor, Mul2                                                                                                                    
+      FusedBatchNorm                           △      BatchNormalization, Transpose       It did not pass testing for training mode.                                                             
+      GatherNd                                                                            Not yet implemented.                                                                                   
+      GatherV2                                                                            Not yet implemented.                                                                                   
+      Greater                                  ✓      Greater                                                                                                                                    
+      GreaterEqual                             ✓      Less, LogicalNot                                                                                                                           
+      Identity                                 ✓      Identity                                                                                                                                   
+      IsInf                                                                               Not yet implemented.                                                                                   
+      IsNan                                    ✓      IsNaN                                                                                                                                      
+      LeakyRelu                                ✓      LeakyReLU                                                                                                                                  
+      Less                                     ✓      Less                                                                                                                                       
+      LessEqual                                ✓      Greater, LogicalNot                                                                                                                        
+      Log                                      ✓      Log                                                                                                                                        
+      LogSoftmax                                                                          Not yet implemented.                                                                                   
+      LogicalAnd                               ✓      LogicalAnd                                                                                                                                 
+      LogicalNot                               ✓      LogicalNot                                                                                                                                 
+      LogicalOr                                ✓      LogicalOr                                                                                                                                  
+      LogicalXor                               ✓      LogicalOr, LogicalAnd, LogicalNot                                                                                                          
+      MatrixBandPart                                                                      Not yet implemented.                                                                                   
+      Max                                      ✓      Max                                                                                                                                        
+      MaxPool                                  ✓      MaxPooling, Pad, Transpose                                                                                                                 
+      MaxPool3D                                                                           Not yet implemented.                                                                                   
+      MaxPoolWithArgmax                                                                   Not yet implemented.                                                                                   
+      Maximum                                  ✓      Maximum2                                                                                                                                   
+      Mean                                     ✓      Mean                                                                                                                                       
+      Min                                      ✓      Min                                                                                                                                        
+      Minimum                                  ✓      Minimum2                                                                                                                                   
+      Mul                                      ✓      Mul2                                                                                                                                       
+      Neg                                      ✓      MulScalar                                                                                                                                  
+      NotEqual                                 ✓      LogicalNot, Equal                                                                                                                          
+      OneHot                                                                              Not yet implemented.                                                                                   
+      Pack                                     ✓      Reshape, Concatenate                                                                                                                       
+      Pad                                      ✓      Pad                                                                                                                                        
+      Pow                                      ✓      Pow2                                                                                                                                       
+      Prod                                     ✓      Prod                                                                                                                                       
+      RandomShuffle                                                                       Not yet implemented.                                                                                   
+      RandomStandardNormal                                                                Not yet implemented.                                                                                   
+      RandomUniform                                                                       Not yet implemented.                                                                                   
+      RealDiv                                  ✓      Div2                                                                                                                                       
+      Reciprocal                               ✓      RDivScalar                                                                                                                                 
+      Relu                                     ✓      ReLU                                                                                                                                       
+      Relu6                                    ✓      MaximumScalar, MinimumScalar                                                                                                               
+      Reshape                                  △      Reshape                             Some test cases failed for some nnabla's implementation limitation (e.g. -1 is regarded as batch_size).
+      ReverseSequence                                                                     Not yet implemented.                                                                                   
+      Rsqrt                                    ✓      RDivScalar, PowScalar                                                                                                                      
+      Select                                                                              Not yet implemented.                                                                                   
+      Selu                                     ✓      SELU                                                                                                                                       
+      Shape                                                                               Not yet implemented.                                                                                   
+      Sigmoid                                  ✓      Sigmoid                                                                                                                                    
+      Sign                                     ✓      Sign                                                                                                                                       
+      Sin                                      ✓      Sin                                                                                                                                        
+      Sinh                                     ✓      Sinh                                                                                                                                       
+      Size                                                                                Not yet implemented.                                                                                   
+      Slice                                    ✓      Slice                                                                                                                                      
+      Softmax                                                                             Not yet implemented.                                                                                   
+      Softplus                                 ✓      Log, Exp, AddScalar                                                                                                                        
+      Softsign                                 ✓      Div2, Abs, AddScalar                                                                                                                       
+      SpaceToDepth                             △      Reshape, Transpose                  Tensorflow require GPU to perform related test cases. This issue is recorded only for memo.            
+      SplitV                                   ✓      Split, Stack                                                                                                                               
+      Sqrt                                     ✓      PowScalar                                                                                                                                  
+      Square                                   ✓      Mul2                                                                                                                                       
+      SquaredDifference                        ✓      Sub2, Mul2                                                                                                                                 
+      Squeeze                                  ✓      Reshape                                                                                                                                    
+      StopGradient                             ✓      Identity                                                                                                                                   
+      StridedSlice                             ✓      Slice                                                                                                                                      
+      Sub                                      ✓      Sub2                                                                                                                                       
+      Sum                                      ✓      Sum                                                                                                                                        
+      Tan                                      ✓      Tan                                                                                                                                        
+      Tanh                                     ✓      Tanh                                                                                                                                       
+      Tile                                     ✓      Tile                                                                                                                                       
+      TopKV2                                                                              Not yet implemented.                                                                                   
+      Transpose                                ✓      Transpose                                                                                                                                  
+      TruncateDiv                                                                         Not yet implemented.                                                                                   
+      TruncateMod                                                                         Not yet implemented.                                                                                   
+      Unpack                                   ✓      Reshape, Split, Stack, Concatenate                                                                                                         
+    ======================================  ========  ==================================  =======================================================================================================
 
 
 
@@ -148,332 +148,346 @@ Total: 86/120
 Export
 ------
 
-Total: 82/172
+Total: 81/172
 
-.. table:: Neural Network Layer
+Neural Network Layer
+^^^^^^^^^^^^^^^^^^^^
 
 Count 10/14
  
 
-    =========================  ========  ==================================================================================
-         NNabla Function        Status                                      Description                                    
-    =========================  ========  ==================================================================================
-      Affine                   ✓                                                                                           
-      RNN                                                                                                                  
-      LSTM                                                                                                                 
-      GRU                                                                                                                  
-      Convolution              △         The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
-      DepthwiseConvolution     △         The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
-      Deconvolution            △         The cases `dilations` larger than 1 are not supported by tensorflow.              
-      DepthwiseDeconvolution   △         The cases `dilations` larger than 1 are not supported by tensorflow.              
-      MaxPooling               ✓                                                                                           
-      AveragePooling           △         Currently only supports the cases both ignore_border and including_pad are True.  
-      GlobalAveragePooling     ✓                                                                                           
-      SumPooling               ✓                                                                                           
-      Unpooling                △         The kernel only supports 2d.                                                      
-      Embed                                                                                                                
-    =========================  ========  ==================================================================================
+    =========================  ========  ================================================================================================================================================  ==================================================================================
+         NNabla Function        Status                                                                        TF Op                                                                                                           Description                                    
+    =========================  ========  ================================================================================================================================================  ==================================================================================
+      Affine                   ✓         Placeholder, Add, Const, Reshape, MatMul, Mul                                                                                                                                                                                       
+      RNN                                                                                                                                                                                  Not yet implemented.                                                              
+      LSTM                                                                                                                                                                                 Not yet implemented.                                                              
+      GRU                                                                                                                                                                                  Not yet implemented.                                                              
+      Convolution              △         Identity, Placeholder, SpaceToBatchND, Add, BatchToSpaceND, Const, ConcatV2, Reshape, Split, Pad, Conv2D, Transpose                               The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
+      DepthwiseConvolution     △         Placeholder, SpaceToBatchND, Add, BatchToSpaceND, Const, ConcatV2, Reshape, Split, Pad, Conv2D, Transpose                                         The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
+      Deconvolution            △         Slice, Identity, Conv2DBackpropInput, Placeholder, Add, Const, ConcatV2, Reshape, Split, Transpose                                                The cases `dilations` larger than 1 are not supported by tensorflow.              
+      DepthwiseDeconvolution   △         Slice, Conv2DBackpropInput, Placeholder, Add, Const, ConcatV2, Reshape, Split, Transpose                                                          The cases `dilations` larger than 1 are not supported by tensorflow.              
+      MaxPooling               ✓         PadV2, MaxPool3D, Placeholder, Const, Reshape, MaxPool, Transpose                                                                                                                                                                   
+      AveragePooling           △         AvgPool3D, Placeholder, AvgPool, Const, Reshape, Pad, Transpose                                                                                   Currently only supports the cases both ignore_border and including_pad are True.  
+      GlobalAveragePooling     ✓         Mean, SplitV, Sub, Const, Pack, Range                                                                                                                                                                                               
+      SumPooling               ✓         AvgPool3D, Placeholder, AvgPool, Const, Reshape, Pad, Mul, Transpose                                                                                                                                                                
+      Unpooling                △         StridedSlice, Identity, LogicalAnd, Mul, Placeholder, Equal, NoOp, Cast, ResizeNearestNeighbor, Const, Reshape, Switch, Merge, Assert, Transpose  The kernel only supports 2d.                                                      
+      Embed                                                                                                                                                                                Not yet implemented.                                                              
+    =========================  ========  ================================================================================================================================================  ==================================================================================
 
 
-.. table:: Neural Network Activation Functions
+Neural Network Activation Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 8/21
  
 
-    =================  ========  =============
-     NNabla Function    Status    Description 
-    =================  ========  =============
-      Sigmoid          ✓                      
-      Swish                                   
-      Tanh             ✓                      
-      ReLU             ✓                      
-      LeakyReLU        ✓                      
-      Softmax          ✓                      
-      LogSoftmax                              
-      ELU              ✓                      
-      SELU             ✓                      
-      CReLU                                   
-      CELU                                    
-      PReLU            ✓                      
-      GELU                                    
-      ReLU6                                   
-      HardSigmoid                             
-      HardTanh                                
-      LogSigmoid                              
-      SoftPlus                                
-      SoftSign                                
-      TanhShrink                              
-      Sinc                                    
-    =================  ========  =============
+    =================  ========  =====================================================================  ====================
+     NNabla Function    Status                                   TF Op                                      Description     
+    =================  ========  =====================================================================  ====================
+      Sigmoid          ✓         Sigmoid, Placeholder                                                                       
+      Swish                                                                                             Not yet implemented.
+      Tanh             ✓         Tanh, Placeholder                                                                          
+      ReLU             ✓         Relu, Placeholder                                                                          
+      LeakyReLU        ✓         LeakyRelu, Placeholder                                                                     
+      Softmax          ✓         Placeholder, Sum, Max, Sub, Const, Exp, RealDiv                                            
+      LogSoftmax                                                                                        Not yet implemented.
+      ELU              ✓         Less, Placeholder, Add, Sub, Const, Elu, Cast, Exp, Mul, GreaterEqual                      
+      SELU             ✓         Placeholder, Maximum, Add, Sub, Const, Minimum, Exp, Mul                                   
+      CReLU                                                                                             Not yet implemented.
+      CELU                                                                                              Not yet implemented.
+      PReLU            ✓         Relu, Placeholder, Add, Sub, Const, Abs, Reshape, Mul                                      
+      GELU                                                                                              Not yet implemented.
+      ReLU6                                                                                             Not yet implemented.
+      HardSigmoid                                                                                       Not yet implemented.
+      HardTanh                                                                                          Not yet implemented.
+      LogSigmoid                                                                                        Not yet implemented.
+      SoftPlus                                                                                          Not yet implemented.
+      SoftSign                                                                                          Not yet implemented.
+      TanhShrink                                                                                        Not yet implemented.
+      Sinc                                                                                              Not yet implemented.
+    =================  ========  =====================================================================  ====================
 
 
-.. table:: Normalization
+Normalization
+^^^^^^^^^^^^^
 
 Count 1/6
  
 
-    ==========================  ========  =======================================================================================================
-         NNabla Function         Status                                                 Description                                              
-    ==========================  ========  =======================================================================================================
-      FusedBatchNormalization                                                                                                                    
-      BatchNormalization        △         In inferring stage, caffe2 mistmatch onnx 1.4.x's implementation, "in-place" feature cannot be applied.
-      SyncBatchNormalization                                                                                                                     
-      MeanSubtraction                                                                                                                            
-      ClipGradByValue                                                                                                                            
-      ClipGradByNorm                                                                                                                             
-    ==========================  ========  =======================================================================================================
+    ==========================  ========  ========================================================================================  =======================================================================================================
+         NNabla Function         Status                                            TF Op                                                                                          Description                                              
+    ==========================  ========  ========================================================================================  =======================================================================================================
+      FusedBatchNormalization                                                                                                       Not yet implemented.                                                                                   
+      BatchNormalization        △         SquaredDifference, Placeholder, Mean, Add, Sub, Const, Rsqrt, Reshape, StopGradient, Mul  In inferring stage, caffe2 mistmatch onnx 1.4.x's implementation, "in-place" feature cannot be applied.
+      SyncBatchNormalization                                                                                                        Not yet implemented.                                                                                   
+      MeanSubtraction                                                                                                               Not yet implemented.                                                                                   
+      ClipGradByValue                                                                                                               Not yet implemented.                                                                                   
+      ClipGradByNorm                                                                                                                Not yet implemented.                                                                                   
+    ==========================  ========  ========================================================================================  =======================================================================================================
 
 
-.. table:: Reduction
+Reduction
+^^^^^^^^^
 
 Count 5/7
  
 
-    =================  ========  =============
-     NNabla Function    Status    Description 
-    =================  ========  =============
-      Sum              ✓                      
-      Mean             ✓                      
-      Max              ✓                      
-      Min              ✓                      
-      Prod             ✓                      
-      ReduceSum                               
-      ReduceMean                              
-    =================  ========  =============
+    =================  ========  ========================  ====================
+     NNabla Function    Status            TF Op                Description     
+    =================  ========  ========================  ====================
+      Sum              ✓         Sum, Const, Placeholder                       
+      Mean             ✓         Const, Placeholder, Mean                      
+      Max              ✓         Max, Const, Placeholder                       
+      Min              ✓         Min, Const, Placeholder                       
+      Prod             ✓         Prod, Const, Placeholder                      
+      ReduceSum                                            Not yet implemented.
+      ReduceMean                                           Not yet implemented.
+    =================  ========  ========================  ====================
 
 
-.. table:: Arithmetic
+Arithmetic
+^^^^^^^^^^
 
 Count 11/12
  
 
-    =================  ========  =============
-     NNabla Function    Status    Description 
-    =================  ========  =============
-      Add2             ✓                      
-      BcAdd2                                  
-      Sub2             ✓                      
-      Mul2             ✓                      
-      Div2             ✓                      
-      Pow2             ✓                      
-      AddScalar        ✓                      
-      MulScalar        ✓                      
-      PowScalar        ✓                      
-      RSubScalar       ✓                      
-      RDivScalar       ✓                      
-      RPowScalar       ✓                      
-    =================  ========  =============
+    =================  ========  ===========================  ====================
+     NNabla Function    Status              TF Op                 Description     
+    =================  ========  ===========================  ====================
+      Add2             ✓         Add, Placeholder                                 
+      BcAdd2                                                  Not yet implemented.
+      Sub2             ✓         Sub, Placeholder                                 
+      Mul2             ✓         Mul, Placeholder                                 
+      Div2             ✓         RealDiv, Placeholder                             
+      Pow2             ✓         Placeholder, Pow                                 
+      AddScalar        ✓         Add, Const, Placeholder                          
+      MulScalar        ✓         Mul, Const, Placeholder                          
+      PowScalar        ✓         Pow, Const, Placeholder                          
+      RSubScalar       ✓         Sub, Const, Placeholder                          
+      RDivScalar       ✓         RealDiv, Const, Placeholder                      
+      RPowScalar       ✓         Pow, Const, Placeholder                          
+    =================  ========  ===========================  ====================
 
 
-.. table:: Logical
+Logical
+^^^^^^^
 
 Count 12/29
  
 
-    =====================  ========  =============
-       NNabla Function      Status    Description 
-    =====================  ========  =============
-      Sign                 ✓                      
-      Minimum2             ✓                      
-      Maximum2             ✓                      
-      MinimumScalar        ✓                      
-      MaximumScalar        ✓                      
-      LogicalAnd           ✓                      
-      LogicalOr            ✓                      
-      LogicalXor           ✓                      
-      Equal                ✓                      
-      NotEqual                                    
-      GreaterEqual                                
-      Greater              ✓                      
-      LessEqual                                   
-      Less                 ✓                      
-      LogicalAndScalar                            
-      LogicalOrScalar                             
-      LogicalXorScalar                            
-      EqualScalar                                 
-      NotEqualScalar                              
-      GreaterEqualScalar                          
-      GreaterScalar                               
-      LessEqualScalar                             
-      LessScalar                                  
-      LogicalNot           ✓                      
-      IsNaN                                       
-      IsInf                                       
-      ResetNaN                                    
-      ResetInf                                    
-      Where                                       
-    =====================  ========  =============
+    =====================  ========  ==============================================  ====================
+       NNabla Function      Status                       TF Op                           Description     
+    =====================  ========  ==============================================  ====================
+      Sign                 ✓         Sign, Placeholder                                                   
+      Minimum2             ✓         Min, Placeholder, Add, Const, Pack                                  
+      Maximum2             ✓         Placeholder, Add, Max, Const, Pack                                  
+      MinimumScalar        ✓         Min, Placeholder, Add, Const, Pack                                  
+      MaximumScalar        ✓         Placeholder, Add, Max, Const, Pack                                  
+      LogicalAnd           ✓         LogicalAnd, Placeholder                                             
+      LogicalOr            ✓         LogicalOr, Placeholder                                              
+      LogicalXor           ✓         LogicalOr, LogicalAnd, LogicalNot, Placeholder                      
+      Equal                ✓         Placeholder, Equal                                                  
+      NotEqual                                                                       Not yet implemented.
+      GreaterEqual                                                                   Not yet implemented.
+      Greater              ✓         Greater, Placeholder                                                
+      LessEqual                                                                      Not yet implemented.
+      Less                 ✓         Less, Placeholder                                                   
+      LogicalAndScalar                                                               Not yet implemented.
+      LogicalOrScalar                                                                Not yet implemented.
+      LogicalXorScalar                                                               Not yet implemented.
+      EqualScalar                                                                    Not yet implemented.
+      NotEqualScalar                                                                 Not yet implemented.
+      GreaterEqualScalar                                                             Not yet implemented.
+      GreaterScalar                                                                  Not yet implemented.
+      LessEqualScalar                                                                Not yet implemented.
+      LessScalar                                                                     Not yet implemented.
+      LogicalNot           ✓         LogicalNot, Placeholder                                             
+      IsNaN                                                                          Not yet implemented.
+      IsInf                                                                          Not yet implemented.
+      ResetNaN                                                                       Not yet implemented.
+      ResetInf                                                                       Not yet implemented.
+      Where                                                                          Not yet implemented.
+    =====================  ========  ==============================================  ====================
 
 
-.. table:: Math
+Math
+^^^^
 
 Count 19/22
  
 
-    =================  ========  =============
-     NNabla Function    Status    Description 
-    =================  ========  =============
-      Constant                                
-      Arange                                  
-      Abs              ✓                      
-      Exp              ✓                      
-      Log              ✓                      
-      Identity         ✓                      
-      BatchMatmul      ✓                      
-      Round                                   
-      Ceil             ✓                      
-      Floor            ✓                      
-      Sin              ✓                      
-      Cos              ✓                      
-      Tan              ✓                      
-      Sinh             ✓                      
-      Cosh             ✓                      
-      ASin             ✓                      
-      ACos             ✓                      
-      ATan             ✓                      
-      ATan2            ✓                      
-      ASinh            ✓                      
-      ACosh            ✓                      
-      ATanh            ✓                      
-    =================  ========  =============
+    =================  ========  =====================================================  ====================
+     NNabla Function    Status                           TF Op                              Description     
+    =================  ========  =====================================================  ====================
+      Constant                                                                          Not yet implemented.
+      Arange                                                                            Not yet implemented.
+      Abs              ✓         Placeholder, Abs                                                           
+      Exp              ✓         Exp, Placeholder                                                           
+      Log              ✓         Log, Placeholder                                                           
+      Identity         ✓         Identity, Placeholder                                                      
+      BatchMatmul      ✓         BatchMatMulV2, Placeholder, Const, Reshape, Transpose                      
+      Round                                                                             Not yet implemented.
+      Ceil             ✓         Ceil, Placeholder                                                          
+      Floor            ✓         Floor, Placeholder                                                         
+      Sin              ✓         Sin, Placeholder                                                           
+      Cos              ✓         Cos, Placeholder                                                           
+      Tan              ✓         Tan, Placeholder                                                           
+      Sinh             ✓         Sinh, Placeholder                                                          
+      Cosh             ✓         Cosh, Placeholder                                                          
+      ASin             ✓         Asin, Placeholder                                                          
+      ACos             ✓         Acos, Placeholder                                                          
+      ATan             ✓         Atan, Placeholder                                                          
+      ATan2            ✓         Atan, RealDiv, Placeholder                                                 
+      ASinh            ✓         Asinh, Placeholder                                                         
+      ACosh            ✓         Acosh, Placeholder                                                         
+      ATanh            ✓         Placeholder, Atanh                                                         
+    =================  ========  =====================================================  ====================
 
 
-.. table:: Array Manipulation
+Array Manipulation
+^^^^^^^^^^^^^^^^^^
 
 Count 9/19
  
 
-    =================  ========  ================================================================================================================
-     NNabla Function    Status                                                     Description                                                   
-    =================  ========  ================================================================================================================
-      Concatenate      ✓                                                                                                                         
-      Split            ✓                                                                                                                         
-      Stack            ✓                                                                                                                         
-      Slice            △         step != 1" exceed the scope of onnx opset 9,  not supported.                                                    
-      Pad              △         When the mode of the pad is reflect, if the size of the pad exceeds the input size, tensorflow cannot handle it.
-      Transpose        ✓                                                                                                                         
-      Broadcast                                                                                                                                  
-      BroadcastTo      ✓                                                                                                                         
-      Tile                                                                                                                                       
-      OneHot                                                                                                                                     
-      Flip             ✓                                                                                                                         
-      Shift                                                                                                                                      
-      Sort                                                                                                                                       
-      Reshape          ✓                                                                                                                         
-      MatrixDiag                                                                                                                                 
-      MatrixDiagPart                                                                                                                             
-      Assign                                                                                                                                     
-      GatherNd                                                                                                                                   
-      ScatterNd                                                                                                                                  
-    =================  ========  ================================================================================================================
+    =================  ========  =================================================  ================================================================================================================
+     NNabla Function    Status                         TF Op                                                                          Description                                                   
+    =================  ========  =================================================  ================================================================================================================
+      Concatenate      ✓         Const, Placeholder, ConcatV2                                                                                                                                       
+      Split            ✓         Squeeze, SplitV, Const, Placeholder                                                                                                                                
+      Stack            ✓         ExpandDims, Const, Placeholder, ConcatV2                                                                                                                           
+      Slice            △         Slice, Const, Placeholder                          step != 1" exceed the scope of onnx opset 9,  not supported.                                                    
+      Pad              △         PadV2, MirrorPad, Const, Placeholder               When the mode of the pad is reflect, if the size of the pad exceeds the input size, tensorflow cannot handle it.
+      Transpose        ✓         Const, Placeholder, Transpose                                                                                                                                      
+      Broadcast                                                                     Not yet implemented.                                                                                            
+      BroadcastTo      ✓                                                                                                                                                                            
+      Tile                                                                          Not yet implemented.                                                                                            
+      OneHot                                                                        Not yet implemented.                                                                                            
+      Flip             ✓         Identity, Placeholder, Const, GatherV2, Transpose                                                                                                                  
+      Shift                                                                         Not yet implemented.                                                                                            
+      Sort                                                                          Not yet implemented.                                                                                            
+      Reshape          ✓         Reshape, Const, Placeholder                                                                                                                                        
+      MatrixDiag                                                                    Not yet implemented.                                                                                            
+      MatrixDiagPart                                                                Not yet implemented.                                                                                            
+      Assign                                                                        Not yet implemented.                                                                                            
+      GatherNd                                                                      Not yet implemented.                                                                                            
+      ScatterNd                                                                     Not yet implemented.                                                                                            
+    =================  ========  =================================================  ================================================================================================================
 
 
-.. table:: Signal Processing
+Signal Processing
+^^^^^^^^^^^^^^^^^
 
 Count 0/3
  
 
-    =================  ========  =============
-     NNabla Function    Status    Description 
-    =================  ========  =============
-      Interpolate                             
-      FFT                                     
-      IFFT                                    
-    =================  ========  =============
+    =================  ========  =======  ====================
+     NNabla Function    Status    TF Op       Description     
+    =================  ========  =======  ====================
+      Interpolate                         Not yet implemented.
+      FFT                                 Not yet implemented.
+      IFFT                                Not yet implemented.
+    =================  ========  =======  ====================
 
 
-.. table:: Stochasticity
+Stochasticity
+^^^^^^^^^^^^^
 
-Count 1/11
+Count 0/11
  
 
-    ====================  ========  =============
-      NNabla Function      Status    Description 
-    ====================  ========  =============
-      Dropout             ✓                      
-      TopKData                                   
-      TopKGrad                                   
-      Rand                                       
-      Randint                                    
-      Randn                                      
-      RandomChoice                               
-      RandomCrop                                 
-      RandomFlip                                 
-      RandomShift                                
-      ImageAugmentation                          
-    ====================  ========  =============
+    ====================  ========  ===========  ========================================================================================================================
+      NNabla Function      Status      TF Op                                                           Description                                                       
+    ====================  ========  ===========  ========================================================================================================================
+      Dropout             X         Placeholder  The Dropout in nnabla has no test mode and contains random parameters, so the test result is not the same as tensorflow.
+      TopKData                                   Not yet implemented.                                                                                                    
+      TopKGrad                                   Not yet implemented.                                                                                                    
+      Rand                                       Not yet implemented.                                                                                                    
+      Randint                                    Not yet implemented.                                                                                                    
+      Randn                                      Not yet implemented.                                                                                                    
+      RandomChoice                               Not yet implemented.                                                                                                    
+      RandomCrop                                 Not yet implemented.                                                                                                    
+      RandomFlip                                 Not yet implemented.                                                                                                    
+      RandomShift                                Not yet implemented.                                                                                                    
+      ImageAugmentation                          Not yet implemented.                                                                                                    
+    ====================  ========  ===========  ========================================================================================================================
 
 
-.. table:: Loss Functions
+Loss Functions
+^^^^^^^^^^^^^^
 
 Count 0/9
  
 
-    ==========================  ========  =============
-         NNabla Function         Status    Description 
-    ==========================  ========  =============
-      SigmoidCrossEntropy                              
-      BinaryCrossEntropy                               
-      SoftmaxCrossEntropy                              
-      CategoricalCrossEntropy                          
-      SquaredError                                     
-      AbsoluteError                                    
-      HuberLoss                                        
-      EpsilonInsensitiveLoss                           
-      KLMultinomial                                    
-    ==========================  ========  =============
+    ==========================  ========  =======  ====================
+         NNabla Function         Status    TF Op       Description     
+    ==========================  ========  =======  ====================
+      SigmoidCrossEntropy                          Not yet implemented.
+      BinaryCrossEntropy                           Not yet implemented.
+      SoftmaxCrossEntropy                          Not yet implemented.
+      CategoricalCrossEntropy                      Not yet implemented.
+      SquaredError                                 Not yet implemented.
+      AbsoluteError                                Not yet implemented.
+      HuberLoss                                    Not yet implemented.
+      EpsilonInsensitiveLoss                       Not yet implemented.
+      KLMultinomial                                Not yet implemented.
+    ==========================  ========  =======  ====================
 
 
-.. table:: Quantization Neural Network Layers
+Quantization Neural Network Layers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 6/11
  
 
-    ===========================  ========  ==================================================================================
-          NNabla Function         Status                                      Description                                    
-    ===========================  ========  ==================================================================================
-      BinarySigmoid              ✓                                                                                           
-      BinaryTanh                 ✓                                                                                           
-      BinaryConnectAffine        ✓                                                                                           
-      BinaryConnectConvolution   △         The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
-      BinaryWeightAffine         ✓                                                                                           
-      BinaryWeightConvolution    △         The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
-      INQAffine                                                                                                              
-      INQConvolution                                                                                                         
-      FixedPointQuantize                                                                                                     
-      Pow2Quantize                                                                                                           
-      Prune                                                                                                                  
-    ===========================  ========  ==================================================================================
+    ===========================  ========  ========================================================================================  ==================================================================================
+          NNabla Function         Status                                            TF Op                                                                               Description                                    
+    ===========================  ========  ========================================================================================  ==================================================================================
+      BinarySigmoid              ✓         Greater, Const, Select, Placeholder                                                                                                                                         
+      BinaryTanh                 ✓         Greater, Const, Select, Placeholder                                                                                                                                         
+      BinaryConnectAffine        ✓         Placeholder, Add, Const, Reshape, MatMul, Mul                                                                                                                               
+      BinaryConnectConvolution   △         Identity, Placeholder, Add, Const, ConcatV2, Reshape, Split, Pad, Conv2D, Transpose       The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
+      BinaryWeightAffine         ✓         Placeholder, Add, Const, Reshape, MatMul, Mul                                                                                                                               
+      BinaryWeightConvolution    △         Identity, Placeholder, Add, Const, ConcatV2, Reshape, Split, Pad, Mul, Conv2D, Transpose  The cases `dilations` and `strides` larger than 1 are not supported by tensorflow.
+      INQAffine                                                                                                                      Not yet implemented.                                                              
+      INQConvolution                                                                                                                 Not yet implemented.                                                              
+      FixedPointQuantize                                                                                                             Not yet implemented.                                                              
+      Pow2Quantize                                                                                                                   Not yet implemented.                                                              
+      Prune                                                                                                                          Not yet implemented.                                                              
+    ===========================  ========  ========================================================================================  ==================================================================================
 
 
-.. table:: Validation
+Validation
+^^^^^^^^^^
 
 Count 0/3
  
 
-    ==================  ========  =============
-     NNabla Function     Status    Description 
-    ==================  ========  =============
-      TopNError                                
-      BinaryError                              
-      ConfusionMatrix                          
-    ==================  ========  =============
+    ==================  ========  =======  ====================
+     NNabla Function     Status    TF Op       Description     
+    ==================  ========  =======  ====================
+      TopNError                            Not yet implemented.
+      BinaryError                          Not yet implemented.
+      ConfusionMatrix                      Not yet implemented.
+    ==================  ========  =======  ====================
 
 
-.. table:: Unsupported, Special Use
+Unsupported, Special Use
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 0/5
  
 
-    =====================  ========  =============
-       NNabla Function      Status    Description 
-    =====================  ========  =============
-      VATNoise                                    
-      Unlink                                      
-      Sink                                        
-      NmsDetection2d                              
-      MaxPoolingBackward                          
-    =====================  ========  =============
+    =====================  ========  =======  ====================
+       NNabla Function      Status    TF Op       Description     
+    =====================  ========  =======  ====================
+      VATNoise                                Not yet implemented.
+      Unlink                                  Not yet implemented.
+      Sink                                    Not yet implemented.
+      NmsDetection2d                          Not yet implemented.
+      MaxPoolingBackward                      Not yet implemented.
+    =====================  ========  =======  ====================
 
 
 
