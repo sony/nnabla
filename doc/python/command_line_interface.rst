@@ -323,7 +323,7 @@ File format converter
                               [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
-                              [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION]
+                              [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION] [--api API]
                               [--outputs OUTPUTS] [--inputs INPUTS] FILE [FILE ...]
     
     positional arguments:
@@ -363,6 +363,7 @@ File format converter
       -d DEFINE_VERSION, --define_version
                             [export][ONNX] define onnx opset version. e.g. opset_6
                             [export][NNB] define binary format version. e.g. nnb_3
+      --api API             [export][NNB] Set API Level to convert to, default is highest API Level.
 
 
 Plot Monitor class output files
@@ -503,7 +504,7 @@ Generate function information
 
     usage: nnabla_cli function_info [-h] [-o OUTFILE] [-f FUNC_SET] [-c CONFIG]
                                     [-t TARGET] [-q --query] [--nnp-no-expand-network]
-                                    [FILE] [FILE ...]
+                                    [--api API] [FILE] [FILE ...]
 
     positional arguments:
       FILE                  Path to nnp file.
@@ -523,6 +524,7 @@ Generate function information
                           query the detail of a function.
       --nnp-no-expand-network
                           [import][NNP] expand network with repeat or recurrent.
+      --api API           List up api levels
 
 Display version
 ---------------

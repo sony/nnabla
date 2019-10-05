@@ -14,7 +14,8 @@
 
 import sys
 from collections import OrderedDict
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, join, exists
+from contextlib import contextmanager
 
 here = abspath(dirname(abspath(__file__)))
 base = abspath(join(here, '../..'))
@@ -70,6 +71,85 @@ def generate_solver_python_interface(solver_info):
     utils.generate_from_template(
         join(base, 'python/src/nnabla/solver.pxd.tmpl'), solver_info=solver_info)
 
+
+def regenerate_api_level_yaml():
+    '''
+    regenerate api_level.yaml if there is no this file before.
+    This is only called when api_level.yaml is missing.
+    We re-constructed the revision history by its incremental id.
+    We supposed that the duplicated function id is the fork point
+    of API level. But once this file is created and committed,
+    this function should never be called so that api_levels.yaml
+    trace the revision history of nnabla APIs.
+    '''
+    d = utils.load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
+
+    class APIInstance:
+        pass
+
+    api_instance_list = []
+    for cat_name, cat_info in d.items():
+        for func_name, func_info in d[cat_name].items():
+            fids = func_info['function_ids']
+            for param, id in fids.items():
+                api_inst = APIInstance()
+                api_inst.func = func_name
+                api_inst.param = param
+                api_inst.id = id
+                api_instance_list.append(api_inst)
+
+    api_instance_list = sorted(api_instance_list, key=lambda api: api.id)
+
+    level = 1
+    api_level = {}
+    for api in api_instance_list:
+        if level not in api_level:
+            api_level[level] = {}
+            api_level[level][api.func] = (api.param, api.id)
+        elif api.func not in api_level[level]:
+            api_level[level][api.func] = (api.param, api.id)
+        else:
+            level += 1
+            api_level[level] = {}
+            api_level[level][api.func] = (api.param, api.id)
+
+    yaml_api_level = {}
+    for level, funcs in api_level.items():
+        if level not in yaml_api_level:
+            yaml_api_level[level] = {}
+        for func_name, (param, id) in funcs.items():
+            yaml_api_level[level][func_name + '_' + param] = id
+
+    utils.dump_yaml(yaml_api_level, open(join(here, 'api_levels.yaml'), 'w'),
+                    default_flow_style=False, width=80)
+
+
+@contextmanager
+def open_api_level_yaml():
+    class ApiLevelManager:
+        def __init__(self, d):
+            self.changed = False
+            self.api_level_d = d
+            self.current_level = sorted(self.api_level_d.keys()).pop() + 1
+
+        def append_new_id(self, uniq_name, id):
+            if self.current_level not in self.api_level_d:
+                self.api_level_d[self.current_level] = {uniq_name: id}
+            else:
+                self.api_level_d[self.current_level][uniq_name] = id
+            self.changed = True
+
+    api_level_yaml = join(here, 'api_levels.yaml')
+    if not exists(api_level_yaml):
+        regenerate_api_level_yaml()
+    d = utils.load_yaml_ordered(open(api_level_yaml, 'r'))
+    api_level_man = ApiLevelManager(d)
+    yield api_level_man
+    if api_level_man.changed:
+        utils.dump_yaml(api_level_man.api_level_d, open(join(here, 'api_levels.yaml'), 'w'),
+                        default_flow_style=False, width=80)
+
+
 def update_function_order_in_functsions_yaml():
     d = utils.load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
 
@@ -123,13 +203,16 @@ def update_function_order_in_functsions_yaml():
                 func_info['c_runtime'] = 'not support'
 
     current_id = sorted(order_info_by_id.keys()).pop() + 1
-    for cat_name in missing:
-        for func_name in missing[cat_name]:
-            for arg in missing[cat_name][func_name]:
-                if 'function_ids' not in d[cat_name][func_name] or d[cat_name][func_name]['function_ids'] is None:
-                    d[cat_name][func_name]['function_ids'] = OrderedDict()
-                d[cat_name][func_name]['function_ids'][arg] = current_id
-                current_id += 1
+    if missing:
+        with open_api_level_yaml() as api_level_yaml:
+            for cat_name in missing:
+                for func_name in missing[cat_name]:
+                    for arg in missing[cat_name][func_name]:
+                        if 'function_ids' not in d[cat_name][func_name] or d[cat_name][func_name]['function_ids'] is None:
+                            d[cat_name][func_name]['function_ids'] = OrderedDict()
+                        api_level_yaml.append_new_id(func_name + '_' + arg, current_id)
+                        d[cat_name][func_name]['function_ids'][arg] = current_id
+                        current_id += 1
 
     if len(duplicated):
         print('')
@@ -145,10 +228,14 @@ def update_function_order_in_functsions_yaml():
 
     utils.dump_yaml(d, open(join(here, 'functions.yaml'), 'w'), default_flow_style=False, width=80)
 
+
 def generate_functions_pkl():
     import pickle
     yaml_data = {}
     d = utils.load_yaml_ordered(open(join(here, 'functions.yaml'), 'r'))
+    if not exists(join(here, 'api_levels.yaml')):
+        regenerate_api_level_yaml()
+    api_level_info = utils.load_yaml_ordered(open(join(here, 'api_levels.yaml'), 'r'))
 
     for cat_name, cat_info in d.items():
         for func_name, func_info in d[cat_name].items():
@@ -176,6 +263,7 @@ def generate_functions_pkl():
         else:
             yaml_data['onnx_func_info'][func] = func_info
 
+    yaml_data['api_level_info'] = api_level_info
     with open(join(base, 'python/src/nnabla/utils/converter/functions.pkl'), 'wb') as f:
         pickle.dump(yaml_data, f, 2)
 

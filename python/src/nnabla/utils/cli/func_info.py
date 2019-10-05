@@ -44,6 +44,16 @@ class NnablaHandler:
             self._func_dict = {k: ['ALL'] for k in self._func_set}
 
     def execute(self):
+        if FuncInfo.params.api != 0:
+            api_info = cvt.get_api_level_info()
+            api_info.set_api_level(FuncInfo.params.api)
+            # query current api level
+            print("API_LEVEL: {}".format(api_info.get_current_level()))
+            if FuncInfo.params.api == -1:
+                return
+            for func in api_info.get_function_list():
+                print(api_info.get_func_uniq_name(func))
+            return
         if FuncInfo.params.output:
             output_ext = os.path.splitext(
                 FuncInfo.params.output)[1].lower()
@@ -198,4 +208,6 @@ def add_function_info_command(subparsers):
                            help='query the detail of a function')
     subparser.add_argument('--nnp-no-expand-network', action='store_true',
                            help='[import][NNP] expand network with repeat or recurrent.')
+    subparser.add_argument('--api', type=int, default=0,
+                           help='List up api levels')
     subparser.set_defaults(func=function_info_command)
