@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+#include <limits>
+
 #include <nbla/lms/swap_in_out_scheduler.hpp>
 #include <nbla/host_stream_synchronizer_registry.hpp>
 #include <nbla/singleton_manager.hpp>
@@ -570,7 +573,8 @@ void SwapInOutScheduler::wait_for_swap_out_scheduled() {
 
 // Setter of SyncedArray callback
 void SwapInOutScheduler::set_synced_array_callback() {
-  SingletonManager::get<SyncedArrayCallback>()->set_callback_func(synced_array_callback);
+  SingletonManager::
+    get<SyncedArrayCallback>()->set_callback_func(synced_array_callback);
 }
 
 // Remover of SyncedArray callback
@@ -587,7 +591,8 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
                                const bool write_only) {
   auto tag = get_tag(func_name, write_only);
 
-  if (synced_array_id_mapper.size() > UINT_MAX) {
+  if (synced_array_id_mapper.size() 
+      > std::numeric_limits<unsigned int>::max()) {
     NBLA_ERROR(error_code::unclassified, 
                "Too many SyncedArray in excess of the max of unsigned int. " 
                "Please contact the developer to expand the size of SyncedArray ID.");
