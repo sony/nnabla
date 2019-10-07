@@ -2997,18 +2997,20 @@ def min_max_quantize(x, ql_min=0, ql_max=255, decay=0.999, x_min_max=False, ema=
         Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, and Dmitry Kalenichenko, "Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference", https://arxiv.org/abs/1712.05877
 
     """
-    def force_to_variable(qv):
-        if isinstance(qv, (int, float)):
-            reshape = [1 for _ in range(x.ndim)]
-            qv = nn.Variable.from_numpy_array(
-                np.array(qv).reshape(reshape)).apply(persistent=True)
-        return qv
-    ql_min = force_to_variable(ql_min)
-    ql_max = force_to_variable(ql_max)
-
+    # ql_min and ql_max
+    if isinstance(ql_min, (int, float)):
+        reshape = [1 for _ in range(x.ndim)]
+        ql_min = np.array(ql_min).reshape(reshape)
+        ql_min = get_parameter_or_create(
+            "ql_min", reshape, ql_min, False, False)
+    if isinstance(ql_max, (int, float)):
+        reshape = [1 for _ in range(x.ndim)]
+        ql_max = np.array(ql_max).reshape(reshape)
+        ql_max = get_parameter_or_create(
+            "ql_max", reshape, ql_max, False, False)
+    # qr_min and qr_max
     qr_min_init = qr_min_init if qr_min_init else ConstantInitializer(-6.0)
     qr_max_init = qr_max_init if qr_max_init else ConstantInitializer(6.0)
-
     shape = ql_min.shape
     qr_min = get_parameter_or_create(
         "qr_min", shape, qr_min_init, not (x_min_max and ema), not fix_parameters)
