@@ -25,11 +25,13 @@ SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
                                        const size_t bytes)
   : host_ctx(h_ctx), device_ctx(d_ctx),
     // Balancing the maximum GPU memory size for swap in/out in half
-    max_bytes_swap_in(bytes / 2), max_bytes_swap_out(bytes / 2),
+    max_bytes_swap_in(bytes), max_bytes_swap_out(bytes / 2),
     // Set SyncedArrayCallback function for first iteration
-    synced_array_callback([&](SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
-                          const dtypes dtype, const Context &ctx, const bool write_only) {
-               synced_array_callback_recorder(saptr, func_name, dtype, ctx, write_only); }) {}
+    synced_array_callback(
+      [&](SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
+          const dtypes dtype, const Context &ctx, const bool write_only) {
+       synced_array_callback_recorder(saptr, func_name, dtype, 
+                                      ctx, write_only); }) {}
 
 
 SwapInOutScheduler::~SwapInOutScheduler() {}
@@ -57,9 +59,11 @@ void SwapInOutScheduler::end_scheduling() {
 void SwapInOutScheduler::reset() {
   init();
   order.clear();
-  synced_array_callback = [&](SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
-    const dtypes dtype, const Context &ctx, const bool write_only) {
-    synced_array_callback_recorder(saptr, func_name, dtype, ctx, write_only); };
+  synced_array_callback = 
+    [&](SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
+        const dtypes dtype, const Context &ctx, const bool write_only) {
+    synced_array_callback_recorder(saptr, func_name, dtype, 
+                                   ctx, write_only); };
 }
 
 
@@ -175,6 +179,8 @@ void SwapInOutScheduler::swap_out_wrong_order() {
 //----------------------------------------------------------------
 
 void SwapInOutScheduler::schedule() {
+  schedule_preclear(); // This is used in the schedule of swap out.
+
   /* This counts the number of same arrays in the queue.
   If count of an array > 0, no need to fetch the same array again.
   If count of an array > 1, no need to swap out the array because it is
@@ -183,7 +189,6 @@ void SwapInOutScheduler::schedule() {
   int head = 0;
   size_t used_bytes_swap_in = 0;
   SyncedArrayCountsInQueue synced_array_counts;
-
   auto last_function = func_block_ends.size() - 1;
 
   // Virtually iterate all layer functions and solver update
@@ -202,8 +207,6 @@ void SwapInOutScheduler::schedule() {
   }
 
   wait_schedule[last_function - 1] = schedule_wait_for_all_swap_out();
-
-  schedule_preclear();
 }
 
 
@@ -234,7 +237,8 @@ schedule_swap_in(int& head, size_t& used_bytes_swap_in,
     if (r.ctx.array_class == device_ctx.array_class) {
       auto next_array_bytes = r.size * sizeof_dtype(r.dtype);
 
-      if (used_bytes_swap_in + next_array_bytes > max_bytes_swap_in) {
+      if (used_bytes_swap_in + next_array_bytes
+          > max_bytes_swap_in - max_bytes_swap_out) {
         break; // Out of memory. Stop fetching.
       }
 
@@ -286,21 +290,27 @@ schedule_swap_out(size_t& used_bytes_swap_in,
 
     if (r.ctx.array_class == device_ctx.array_class) { 
       if (accumulate_counts(synced_array_counts[r.synced_array_id]) == 1) {
-        // In the first iteration, arrays used in a function are 
-        // always swapped out. After the first itreation, an array
-        // are swapped out when the same array is no longer in the queue.
-        // Swap out the array
+        // An array is swapped out when the same array is no longer
+        // in the queue.
         schedule.push_back(r);
-        r.swapped_out = true;
+
+        if (!r.preclear) {
+          r.swapped_out = true;
+
+          // Transfer memory usage of all types
+          r.swapped_out_bytes = 0;
+
+          for (auto it : synced_array_counts[r.synced_array_id]) {
+            auto array_bytes = r.size * sizeof_dtype(it.first);
+            used_bytes_swap_out += array_bytes;
+            r.swapped_out_bytes += array_bytes;
+          }
+        }
 
         // Transfer memory usage of all types
-        r.swapped_out_bytes = 0;
-
         for (auto it : synced_array_counts[r.synced_array_id]) {
           auto array_bytes = r.size * sizeof_dtype(it.first);
           used_bytes_swap_in -= array_bytes;
-          used_bytes_swap_out += array_bytes;
-          r.swapped_out_bytes += array_bytes;
         }
       }
 
@@ -333,14 +343,14 @@ SwapInOutScheduler::schedule_wait_for_swap_out() {
 
 SwapInOutScheduler::ScheduleType
 SwapInOutScheduler::schedule_wait_for_all_swap_out() {
-  SwapInOutScheduler::ScheduleType scheduled_wait;
+  SwapInOutScheduler::ScheduleType schedule;
 
   // When out of memory, wait to finish swap-out and release memory.
   while (tail < order.size()) {
-    schedule_wait_for_swap_out_impl(scheduled_wait);
+    schedule_wait_for_swap_out_impl(schedule);
   }
 
-  return scheduled_wait;
+  return schedule;
 }
 
 
@@ -448,8 +458,8 @@ void SwapInOutScheduler::swap_out() {
     wait_for_swap_out_first_iter();
   }
   else {
-    swap_out_after();
-    wait_for_swap_out_after();
+    swap_out_scheduled();
+    wait_for_swap_out_scheduled();
   }
 }
 
@@ -526,7 +536,7 @@ void SwapInOutScheduler::wait_for_swap_out_first_iter_impl() {
 }
 
 
-void  SwapInOutScheduler::swap_out_after() {
+void  SwapInOutScheduler::swap_out_scheduled() {
   for (auto r : swap_out_schedule[func_idx - 1]) {
     if (auto p = r.get().sawptr.lock()) {
       if (r.get().preclear) {
@@ -542,7 +552,7 @@ void  SwapInOutScheduler::swap_out_after() {
 }
 
 
-void SwapInOutScheduler::wait_for_swap_out_after() {
+void SwapInOutScheduler::wait_for_swap_out_scheduled() {
   for (auto r : wait_schedule[func_idx - 1]) {
     auto p = r.get().sawptr.lock();
 

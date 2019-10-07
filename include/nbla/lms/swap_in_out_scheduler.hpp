@@ -232,9 +232,9 @@ private:
   void swap_in(); // swap in (prefetch)
   void swap_out(); // swap out
   void swap_out_first_iter();
-  void swap_out_after();
+  void swap_out_scheduled();
   void wait_for_swap_out_first_iter();
-  void wait_for_swap_out_after();
+  void wait_for_swap_out_scheduled();
   void wait_for_all_swap_out();
   void wait_for_swap_out_first_iter_impl();
   void swap_out_wrong_order();
