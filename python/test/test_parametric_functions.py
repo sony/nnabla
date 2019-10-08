@@ -1114,10 +1114,12 @@ def test_pf_min_max_quantize_execution(g_rng, inshape, q_min, q_max, decay, x_mi
     assert args['ema'] == ema
 
     # Check created parameters
-    assert len(nn.get_parameters(grad_only=False)) == 2
+    assert len(nn.get_parameters(grad_only=False)) == 4
     ema_min = nn.get_parameters(grad_only=False)['min_max_quantize/qr_min']
     ema_max = nn.get_parameters(grad_only=False)['min_max_quantize/qr_max']
-    assert ema_min.shape == ema_max.shape
+    ql_min = nn.get_parameters(grad_only=False)['min_max_quantize/ql_min']
+    ql_max = nn.get_parameters(grad_only=False)['min_max_quantize/ql_max']
+    assert ema_min.shape == ema_max.shape and ema_max.shape == ql_min.shape and ql_min.shape == ql_max.shape
 
 
 @pytest.mark.parametrize("inshape", [(8, 2, 2, 2), (16, 1, 8)])
@@ -1206,16 +1208,20 @@ def test_pf_min_max_quantized_affine_execution(g_rng, inshape, n_outmaps, base_a
         if isinstance(b_init, np.ndarray):
             assert np.allclose(b_init, b.d)
     # quantization-related parameters
-    assert len(nn.get_parameters(grad_only=False)) == 4 + int(with_bias) * 4
+    assert len(nn.get_parameters(grad_only=False)) == 6 + int(with_bias) * 6
     for k in nn.get_parameters(grad_only=False).keys():
         assert k in ['min_max_quantized_affine/W',
                      'min_max_quantized_affine/W_q',
                      'min_max_quantized_affine/min_max_quantize_w/min_max_quantize/qr_min',
                      'min_max_quantized_affine/min_max_quantize_w/min_max_quantize/qr_max',
+                     'min_max_quantized_affine/min_max_quantize_w/min_max_quantize/ql_min',
+                     'min_max_quantized_affine/min_max_quantize_w/min_max_quantize/ql_max',
                      'min_max_quantized_affine/b',
                      'min_max_quantized_affine/b_q',
                      'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/qr_min',
-                     'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/qr_max']
+                     'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/qr_max',
+                     'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/ql_min',
+                     'min_max_quantized_affine/min_max_quantize_b/min_max_quantize/ql_max']
 
 
 @pytest.mark.parametrize("inshape, outmaps, kernel, pad, stride, dilation, group, base_axis", [
@@ -1314,15 +1320,19 @@ def test_pf_min_max_quantized_convolution_execution(g_rng, inshape, outmaps,
         if isinstance(b_init, np.ndarray):
             assert np.allclose(b_init, b.d)
     # quantization-related parameters
-    assert len(nn.get_parameters(grad_only=False)) == 4 + int(with_bias) * 4
+    assert len(nn.get_parameters(grad_only=False)) == 6 + int(with_bias) * 6
     for k in nn.get_parameters(grad_only=False).keys():
         assert k in ['min_max_quantized_conv/W',
                      'min_max_quantized_conv/W_q',
                      'min_max_quantized_conv/min_max_quantize_w/min_max_quantize/qr_min',
                      'min_max_quantized_conv/min_max_quantize_w/min_max_quantize/qr_max',
+                     'min_max_quantized_conv/min_max_quantize_w/min_max_quantize/ql_min',
+                     'min_max_quantized_conv/min_max_quantize_w/min_max_quantize/ql_max',
                      'min_max_quantized_conv/b',
                      'min_max_quantized_conv/b_q',
                      'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/qr_min',
-                     'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/qr_max']
+                     'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/qr_max',
+                     'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/ql_min',
+                     'min_max_quantized_conv/min_max_quantize_b/min_max_quantize/ql_max']
 
 # TODO: Test all parametric functions.
