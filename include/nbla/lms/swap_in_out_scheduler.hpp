@@ -29,6 +29,7 @@ using std::string;
 using std::accumulate;
 using std::weak_ptr;
 using std::reference_wrapper;
+using std::pair;
 
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
@@ -91,6 +92,7 @@ class SwapInOutScheduler {
     bool preclear; // If true, the saptr can be cleared after this record.
     bool swapped_out;
     size_t swapped_out_bytes;
+    bool no_need_swap_out;
   };
 
   const Context host_ctx; // Host context for swap-out
@@ -139,6 +141,10 @@ class SwapInOutScheduler {
 
   // This map is used only in the first iteration
   unordered_map<SyncedArrayPtr, unsigned int> synced_array_id_mapper;
+
+  // It is used to remove uneccesary swap-out
+  unordered_map<unsigned int, bool> swapped_out;
+  unordered_map<unsigned int, RecType*> swapped_out_r;
 
   // This is a switch separating the first iteration and others.
   bool first_iter = true;
@@ -204,8 +210,8 @@ private:
      post and pre callback function. it is easier to deal with the clear
      at the begining of pre callback function.
   */
-  void proc_for_prev_func(); // 1.
-  void proc_for_next_func(); // 2.
+  void swap_out_step(); // 1.
+  void swap_in_step(); // 2.
 
   synced_array_callback_func_type synced_array_callback;
 
@@ -244,7 +250,7 @@ private:
                                                  unordered_map<dtypes, int>>;
   using ScheduleType = vector<reference_wrapper<RecType>>;
 
-  unordered_map<int, ScheduleType> prefetch_schedule;
+  unordered_map<int, ScheduleType> swap_in_schedule;
   unordered_map<int, ScheduleType> swap_out_schedule;
   unordered_map<int, ScheduleType> wait_schedule;
 
