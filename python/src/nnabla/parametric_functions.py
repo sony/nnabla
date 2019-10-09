@@ -3586,3 +3586,120 @@ def _spectral_norm_outer_most_dim(w, dim, itr=1, eps=1e-12, test=False,
     w_sn = F.identity(w_sn, outputs=[W_sn.data])
     w_sn.persistent = True
     return w_sn
+
+
+@parametric_function_api("multi_head_attention", [
+    ('q_weight', 'weights for query', '(E, E)', True),
+    ('k_weight', 'weights for key', '(E_k, E)', True),
+    ('v_weight', 'weights for value', '(E_v, E)', True),
+    ('out_weight', 'weigths for out projection', '(E, E)', True),
+    ('q_bias', 'bias for query', '(E, )', True),
+    ('k_bias', 'bias for key', '(E, )', True),
+    ('v_bias', 'bais for value', '(E, )', True),
+    ('out_bias', 'bias for out projection', '(E, )', True),
+    ('attn_bias_k', 'attnetion bias for k', '(E, 1)', True),
+    ('attn_bias_v', 'attnetion bias for v', '(E, 1)', True),
+])
+def multi_head_attention(query, key, value, num_heads=12, dropout=0.0, rng=None, with_bias=True, add_attn_bias=False, additive_mask=None, key_padding_mask=None, fix_parameters=False, param_init=None):
+    '''MultiHeadAttention.
+
+    Computes multi-headed attention with query, key, and value.
+    We use the following notations to describe the inputs and outputs below.
+    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`E`: embedding dimension.
+
+    References:
+
+        A. Vaswani et al. "Attention is All You Need."
+        NIPS. 2017.
+        <https://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf>
+
+    Example:
+
+    .. code-block:: python
+
+        q = nn.Variable((tgt_len, batch_size, embed_dim))
+        k = nn.Variable((src_len, batch_size, kdim))
+        v = nn.Variable((src_len, batch_size, vdim))
+
+        out, w = PF.multi_head_attention(q, k, v)
+        out.forward()
+
+    Args:
+        query (~nnabla.Variable): Input N-D array with shape :math:`(L_T, B, E)`.
+        key (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_k)`.
+        value (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_v)`.
+        num_heads (int, optional): Number of attention heads. Note that embedding dimensoin E must be divisible by the number of heads. Default is 12 which is conventional.
+        dropout (float, optional): Dropout ratio applied to parameters. Default is 0.
+        rng (numpy.random.RandomState, optional): Random generator for Initializer. Default is None.
+        with_bias (bool, optional): Specify whether to include the bias parameters. Default is False.
+        add_attn_bias (bool, optional): Specify whether to add attention bias parameters for key and value. Default is False.
+        additive_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(L_T, L_S)`. Values will be added to the attention layer to prevent attention to certain positions.
+        key_padding_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        fix_parameters (bool, optional): When set to `True`, the weights and biases will not be updated. Default is False.
+        param_init (dict, optional):
+            Parameter initializers can be set with a dict. Possible keys of the dict include q_weight, k_weight, v_weight, q_bias, k_bias, v_bias, out_weight, out_bias, attn_bias_k, attn_bias_v.
+            A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
+            or a :obj:`numpy.ndarray`.
+            E.g. ``{'q_bias': ConstantIntializer(0)}``.
+
+    Returns:
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`
+        ~nnabla.Variable: Output :math:`h_n` with shape :math:`(B, L_T, L_S)`
+    '''
+
+    embed_dim = query.shape[2]
+    kdim = key.shape[2]
+    vdim = value.shape[2]
+
+    if param_init is None:
+        param_init = {}
+
+    q_weight = param_init.get('q_weight', UniformInitializer(
+        calc_uniform_lim_glorot(embed_dim, embed_dim), rng))
+    k_weight = param_init.get('k_weight', UniformInitializer(
+        calc_uniform_lim_glorot(kdim, embed_dim), rng))
+    v_weight = param_init.get('v_weight', UniformInitializer(
+        calc_uniform_lim_glorot(vdim, embed_dim), rng))
+
+    qw = get_parameter_or_create(
+        "q_weight", (embed_dim, embed_dim), q_weight, True, not fix_parameters)
+    kw = get_parameter_or_create(
+        "k_weight", (kdim, embed_dim), k_weight, True, not fix_parameters)
+    vw = get_parameter_or_create(
+        "v_weight", (vdim, embed_dim), v_weight, True, not fix_parameters)
+
+    out_weight = param_init.get('out_weight', UniformInitializer(
+        calc_uniform_lim_glorot(embed_dim, embed_dim), rng))
+
+    ow = get_parameter_or_create("out_weight", (
+        embed_dim, embed_dim), out_weight, True, not fix_parameters)
+
+    qb = kb = vb = ob = None
+    if with_bias:
+        q_bias = param_init.get('q_bias', ConstantInitializer())
+        k_bias = param_init.get('k_bias', ConstantInitializer())
+        v_bias = param_init.get('v_bias', ConstantInitializer())
+        out_bias = param_init.get('out_bias', ConstantInitializer())
+
+        qb = get_parameter_or_create(
+            "q_bias", (embed_dim, ), q_bias, True, not fix_parameters)
+        kb = get_parameter_or_create(
+            "k_bias", (embed_dim, ), k_bias, True, not fix_parameters)
+        vb = get_parameter_or_create(
+            "v_bias", (embed_dim, ), v_bias, True, not fix_parameters)
+        ob = get_parameter_or_create(
+            "out_bias", (embed_dim, ), out_bias, True, not fix_parameters)
+
+    abk = abv = None
+    if add_attn_bias:
+        attn_bias_k = param_init.get('attn_bias_k', UniformInitializer(
+            calc_uniform_lim_glorot(embed_dim, 1), rng))
+        attn_bias_v = param_init.get('attn_bias_v', UniformInitializer(
+            calc_uniform_lim_glorot(embed_dim, 1), rng))
+
+        abk = get_parameter_or_create(
+            "attn_bias_k", (1, 1, embed_dim), attn_bias_k, True, not fix_parameters)
+        abv = get_parameter_or_create(
+            "attn_bias_v", (1, 1, embed_dim), attn_bias_v, True, not fix_parameters)
+
+    return F.multi_head_attention(query, key, value, num_heads, qw, kw, vw, ow, qb, kb, vb, ob, abk, abv, dropout, additive_mask=additive_mask, key_padding_mask=key_padding_mask)
