@@ -17,6 +17,7 @@
 
 #include <nbla/defs.hpp>
 #include <nbla/context.hpp>
+#include <nbla/backend_base.hpp>
 
 #include <string>
 #include <sstream>
@@ -31,14 +32,14 @@ using std::stringstream;
 using std::getline;
 using std::unordered_map;
 
-/** HostStreamSynchronizer class
+/** DeviceSynchronizer class
 
 This class is never be instantiated.
 */
-class NBLA_API HostStreamSynchronizer {
+class NBLA_API DeviceSynchronizer {
 public:
   typedef std::function<void(void)> Synchronizer;
-  typedef unordered_map<string, Synchronizer> Registry_t;
+  typedef unordered_map<string, BackendBase*> Registry_t;
 
   /** Synchronize host to a stream
   */
@@ -46,19 +47,19 @@ public:
 
   /** Register new synchronizer
   */
-  static void add_synchronizer(const string& backend,
-                               Synchronizer synchronizer);
+  static void add_synchronizer(const string& backend_name,
+                               BackendBase* backend);
 
 private:
   //  Never be created
-  inline HostStreamSynchronizer() {}
+  inline DeviceSynchronizer() {}
 
   /** Get registry of creator function.
   */
   static Registry_t &get_registry();
 };
 
-#define NBLA_REGISTER_HOST_STREAM_SYNCHRONIZER(BACKEND, SYNCHRONIZER)   \
-  { HostStreamSynchronizer::add_synchronizer(#BACKEND, SYNCHRONIZER); }
+#define NBLA_REGISTER_DEVICE_SYNCHRONIZER(BACKEND_NAME, BACKEND)   \
+  { DeviceSynchronizer::add_synchronizer(#BACKEND_NAME, BACKEND); }
 }
 #endif

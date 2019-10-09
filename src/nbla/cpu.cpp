@@ -38,5 +38,9 @@ void Cpu::register_array_class(const string &name) {
 shared_ptr<Allocator> Cpu::caching_allocator() { return caching_allocator_; }
 shared_ptr<Allocator> Cpu::naive_allocator() { return naive_allocator_; }
 
+void Cpu::device_synchronize(const string &device) {
+  cpu_device_synchronize(device);
+}
+
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, Cpu);
 }

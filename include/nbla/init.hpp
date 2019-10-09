@@ -53,8 +53,5 @@ NBLA_API int cpu_get_device_count();
 
 NBLA_API vector<string> cpu_get_devices();
 
-/** host-stream synchronizer is implemented in each extension.
-*/
-NBLA_API void host_stream_synchronize();
 }
 #endif

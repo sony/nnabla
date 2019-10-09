@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/host_stream_synchronizer_registry.hpp>
+#include <nbla/device_synchronizer_registry.hpp>
 #include <nbla/common.hpp>
 
 namespace nbla {
 
-void HostStreamSynchronizer::synchronize(const Context ctx) {
+void DeviceSynchronizer::synchronize(const Context ctx) {
   init_cpu();
   Registry_t &registry = get_registry();
 
@@ -32,17 +32,17 @@ void HostStreamSynchronizer::synchronize(const Context ctx) {
   NBLA_CHECK(registry.count(key) == 1, error_code::unclassified,
     "'%s' cannot be found in host stream synchronizer.", key);
 
-  registry[key]();
+  registry[key]->device_synchronize(ctx.device_id);
 }
 
-void HostStreamSynchronizer::add_synchronizer(const string &backend,
-  Synchronizer synchronizer) {
+void DeviceSynchronizer::add_synchronizer(const string &backend_name,
+                                          BackendBase* backend) {
   Registry_t &registry = get_registry();
-  string key{ backend };
-  registry[key] = synchronizer;
+  string key{ backend_name };
+  registry[key] = backend;
 }
 
-HostStreamSynchronizer::Registry_t &HostStreamSynchronizer::get_registry() {
+DeviceSynchronizer::Registry_t &DeviceSynchronizer::get_registry() {
   static Registry_t registry_;
   return registry_;
 }
