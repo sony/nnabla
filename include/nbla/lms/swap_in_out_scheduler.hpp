@@ -142,6 +142,9 @@ class SwapInOutScheduler {
   // This map is used only in the first iteration
   unordered_map<SyncedArrayPtr, unsigned int> synced_array_id_mapper;
 
+  // Map between SyncedArray ID and the order
+  unordered_map<unsigned int, vector<int>> synced_array_id_to_order_idx;
+
   // It is used to remove uneccesary swap-out
   unordered_map<unsigned int, bool> swapped_out;
   unordered_map<unsigned int, RecType*> swapped_out_r;

@@ -622,6 +622,7 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
 
   order.push_back(RecType{tag, synced_array_id_mapper.at(saptr), saptr, 
                           saptr->size(), dtype, ctx, false, false, 0, false});
+  synced_array_id_to_order_idx[synced_array_id_mapper.at(saptr)].push_back(order_idx);
   order_idx++;
 }
 
@@ -650,13 +651,16 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
 
   // Compare between the real and recorded order.
   if (order_idx < func_block_ends[func_idx] &&
-      (tag == order[order_idx].tag ||
-       saptr != rec_saptr ||
-       dtype == order[order_idx].dtype ||
+      (tag == order[order_idx].tag &&
+       saptr != rec_saptr &&
+       dtype == order[order_idx].dtype &&
        get_array_key_from_context(ctx) ==
        get_array_key_from_context(order[order_idx].ctx))) {
     // The SyncedArray is replaced in the current iteration.
-    order[order_idx].sawptr = saptr;
+    // Replace all recorded SyncedArray
+    for (auto& i : synced_array_id_to_order_idx[order[order_idx].synced_array_id]) {
+        order[i].sawptr = saptr;
+    }
   }
   else if (order_idx >= func_block_ends[func_idx] ||
            (order_idx < func_block_ends[func_idx] && 
