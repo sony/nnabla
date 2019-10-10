@@ -210,8 +210,7 @@ public:
   /** It should be called just after the assignment of input data
       from dali data iterator
    */
-  NBLA_API void use_dali(const vector<std::array<const NdArrayPtr, 2>>&
-                         data_batches);
+  NBLA_API void use_dali(const NdArrayPtr x, const NdArrayPtr t);
 
 private:
   // Common implementations of pre-function and pre-update callbacks

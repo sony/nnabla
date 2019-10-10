@@ -71,21 +71,10 @@ void SwapInOutScheduler::reset() {
 
 
 void SwapInOutScheduler::
-use_dali(const vector<std::array<const NdArrayPtr, 2>>& data_batches) {
+use_dali(const NdArrayPtr x, const NdArrayPtr t) {
   /* Dali data iterator uses double buffering, meaning that
      it recycles two NdArray alternately.
    */
-  if (data_batches.empty()) {
-    NBLA_ERROR(error_code::unclassified, "Input data is empty.");
-  }
-  else if (data_batches.size() > 1) {
-    NBLA_ERROR(error_code::unclassified, 
-               "SwapInOutSchedule cannot deal with multi GPU.");
-  }
-
-  auto x = data_batches[0][0];
-  auto t = data_batches[0][1];
-
   if (iter_count == 0) {
     // Record one SyncedArray
     dali_sawptrs[0] = { x->array(), t->array() };

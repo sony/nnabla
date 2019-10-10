@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libcpp.vector cimport vector
 from libcpp cimport bool as cpp_bool
 from libcpp.memory cimport shared_ptr
 from nnabla._context cimport CContext
 from nnabla.function cimport CgFunctionPtr
+from _nd_array cimport *
 
 
 cdef extern from "nbla/lms/swap_in_out_scheduler.hpp" namespace "nbla":
@@ -23,6 +25,9 @@ cdef extern from "nbla/lms/swap_in_out_scheduler.hpp" namespace "nbla":
         CSwapInOutScheduler(const CContext &h_ctx, const CContext &d_ctx, const size_t s) except +
         void start_scheduling();
         void end_scheduling();
+        void reset();
+        void use_dali(const NdArrayPtr x, const NdArrayPtr t);
+
         void pre_function_callback(const CgFunctionPtr &ptr) except +
         void post_function_callback(const CgFunctionPtr &ptr) except +
         void pre_update_callback() except +
