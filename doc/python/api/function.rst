@@ -48,6 +48,7 @@ Neural Network Layers
 .. autofunction:: rnn
 .. autofunction:: lstm
 .. autofunction:: gru
+.. autofunction:: multi_head_attention
 
 
 Neural Network Activation
