@@ -70,6 +70,72 @@ void SwapInOutScheduler::reset() {
 }
 
 
+void SwapInOutScheduler::
+use_dali(const vector<std::array<const NdArrayPtr, 2>>& data_batches) {
+  /* Dali data iterator uses double buffering, meaning that
+     it recycles two NdArray alternately.
+   */
+  if (data_batches.empty()) {
+    NBLA_ERROR(error_code::unclassified, "Input data is empty.");
+  }
+  else if (data_batches.size() > 1) {
+    NBLA_ERROR(error_code::unclassified, 
+               "SwapInOutSchedule cannot deal with multi GPU.");
+  }
+
+  auto x = data_batches[0][0];
+  auto t = data_batches[0][1];
+
+  if (iter_count == 0) {
+    // Record one SyncedArray
+    dali_sawptrs[0] = { x->array(), t->array() };
+  }
+  else if (iter_count == 1) {
+    // Record SyncedArray ID of 0-th iteration
+    for (int i = 0; i < 2; i++) {
+      auto saptr = dali_sawptrs[0][i].lock();
+
+      if (!saptr) {
+        NBLA_ERROR(error_code::unclassified,
+          "Double buffered NdArray used by Dali data iterator "
+          "was unexpectedly expired.");
+      }
+
+      for (const auto& r : order) {
+        if (r.sawptr.lock() == saptr) {
+          dali_saptr_idxs[i] = r.synced_array_id;
+          break;
+        }
+      }
+    }
+
+    // Record another SyncedArray
+    dali_sawptrs[1] = { x->array(), t->array() };
+
+    // Switch the SyncedArray
+    for (int i = 0; i < 2; i++) {
+      const auto saptr_id = dali_saptr_idxs[i];
+
+      for (const auto j : synced_array_id_to_order_idx[saptr_id]) {
+        order[j].sawptr = dali_sawptrs[1][i];
+      }
+    }
+  }
+  else {
+    // Switch the recorded SyncedArray
+    auto current_data_batch = iter_count % 2;
+
+    for (int i = 0; i < 2; i++) {
+      const auto saptr_id = dali_saptr_idxs[i];
+
+      for (const auto j : synced_array_id_to_order_idx[saptr_id]) {
+        order[j].sawptr = dali_sawptrs[current_data_batch][i];
+      }
+    }
+  }
+}
+
+
 //----------------------------------------------------------------
 //  Pre/post hook of function and update
 //----------------------------------------------------------------
@@ -94,7 +160,7 @@ void SwapInOutScheduler::post_update_callback() {}
 
 // Initializer of the scheduler for each training iteration
 void SwapInOutScheduler::init() {
-  tail = schedule_start_idx;
+  tail = 0;
   used_bytes_swap_out = 0;
   order_idx = 0;
   func_idx = 0;
@@ -152,6 +218,7 @@ void SwapInOutScheduler::finalize() {
     synced_array_callback_tracer(saptr, func_name, dtype, ctx, write_only); };
 
   first_iter = false;
+  iter_count++;
 }
 
 
@@ -183,9 +250,6 @@ void SwapInOutScheduler::swap_out_wrong_order() {
 //----------------------------------------------------------------
 
 void SwapInOutScheduler::schedule() {
-  int head = schedule_start_idx;
-  tail = schedule_start_idx;
-
   schedule_preclear(); // This is used in the schedule of swap out.
 
   /* This counts the number of same arrays in the queue.
@@ -193,6 +257,7 @@ void SwapInOutScheduler::schedule() {
   If count of an array > 1, no need to swap out the array because it is
   planed to be used soon in the queue.
   */
+  int head = 0;
   size_t used_bytes_swap_in = 0;
   SyncedArrayCountsInQueue synced_array_counts;
   auto last_function = func_block_ends.size() - 1;
@@ -608,6 +673,11 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
                                const dtypes dtype,
                                const Context &ctx,
                                const bool write_only) {
+  if (func_idx == 0) {
+    // Do not record before forward propagation starts.
+    return;
+  }
+
   auto tag = get_tag(func_name, write_only);
 
   if (synced_array_id_mapper.size() 
@@ -626,10 +696,6 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
                           saptr->size(), dtype, ctx, false, false, 0, false});
   synced_array_id_to_order_idx[synced_array_id_mapper.at(saptr)].push_back(order_idx);
   order_idx++;
-
-  if (func_idx == 0) {
-    schedule_start_idx = order_idx;
-  }
 }
 
 
@@ -640,6 +706,11 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
                              const dtypes dtype,
                              const Context &ctx,
                              const bool write_only) {
+  if (func_idx == 0) {
+    // Do not trace before forward propagation starts.
+    return;
+  }
+
   auto tag = get_tag(func_name, write_only);
 
   // Return an error when encounting get/cast between preclear and actual clear.
@@ -664,7 +735,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
        get_array_key_from_context(order[order_idx].ctx))) {
     // The SyncedArray is replaced in the current iteration.
     // Replace all recorded SyncedArray
-    for (auto& i : synced_array_id_to_order_idx[order[order_idx].synced_array_id]) {
+    for (const auto i : synced_array_id_to_order_idx[order[order_idx].synced_array_id]) {
         order[i].sawptr = saptr;
     }
   }
