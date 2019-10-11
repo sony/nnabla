@@ -332,6 +332,15 @@ schedule_swap_in(int& head, size_t& used_bytes_swap_in,
         // the host process must be finished.
         host_uses_this_synced_array[r.synced_array_id] = true;
       }
+
+      // If the array was previously swapped out,
+      // the swap out is useful for host.
+      if (swapped_out[r.synced_array_id]) {
+        // reset flag
+        swapped_out[r.synced_array_id] = false;
+        swapped_out_r[r.synced_array_id] = nullptr;
+      }
+
       head++;
     }
     else {
