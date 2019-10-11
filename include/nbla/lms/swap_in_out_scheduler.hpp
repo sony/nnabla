@@ -129,9 +129,7 @@ class SwapInOutScheduler {
   int tail = 0;        // pointing the next record to wait for swap-out
   size_t func_idx = 0; // pointing the current function in the recorded order.
   // The intervals in the recorded order which used in a function 
-  vector<size_t> func_block_ends = {0}; // 0 is set for convinience.
-                                          // func_idx==0 points this virtual 
-                                          // 0-th function.
+  vector<size_t> func_block_ends; 
 
   /* Remember arrays which are pre-cleared by SwapInOutScheduler in order to
      check the error by the unpredicted insertion of get/cast in the recorded order

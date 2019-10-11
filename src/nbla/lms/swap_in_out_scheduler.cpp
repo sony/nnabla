@@ -112,9 +112,7 @@ void SwapInOutScheduler::init() {
 // Finalizer of the scheduler for each training iteration
 void SwapInOutScheduler::finalize() {
   // The post process of the last function of a network.
-  if (func_idx > 0) {
-    swap_out_step();
-  }
+  swap_out_step();
 
   // Swap out all arrays out of the recorded order.
   // In the first iteration, wrong_ordered.size() is always zero.
@@ -196,7 +194,16 @@ void SwapInOutScheduler::schedule() {
   auto last_function = func_block_ends.size() - 1;
 
   // Virtually iterate all layer functions and solver update
-  for (int fid = 0; fid < last_function; fid++) {
+  int fid = 0;
+
+  // Before forward
+  //swap_out_schedule[fid] = schedule_swap_out(used_bytes_swap_in,
+  //                                           synced_array_counts, fid);
+
+  //wait_schedule[fid] = schedule_wait_for_swap_out();
+
+  // Forward, backward, update
+  for (fid = 1; fid < last_function; fid++) {
     swap_in_schedule[fid] = schedule_swap_in(head, used_bytes_swap_in, 
                                               synced_array_counts);
 
@@ -424,9 +431,7 @@ void SwapInOutScheduler::schedule_preclear() {
 void SwapInOutScheduler::pre_callback() {
   unset_synced_array_callback(); // Avoid unnecessary record and trace
 
-  if (func_idx > 0) {
-    swap_out_step(); // post process of the previous function
-  }
+  swap_out_step(); // post process of the previous function
 
   swap_in_step(); // pre process of the next function
   
@@ -468,7 +473,7 @@ void SwapInOutScheduler::swap_in_step() {
 
 // Prefetch (swap in)
 void SwapInOutScheduler::swap_in() {
-  for (auto r : swap_in_schedule[func_idx - 1]) {
+  for (auto r : swap_in_schedule[func_idx]) {
     if (auto p = r.get().sawptr.lock()) {
       p->get(r.get().dtype, r.get().ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
     }
@@ -491,7 +496,7 @@ void SwapInOutScheduler::swap_out() {
 
 
 void SwapInOutScheduler::swap_out_first_iter() {
-  for (int i = func_block_ends[func_idx - 1]; 
+  for (int i = func_idx == 0 ? 0 : func_block_ends[func_idx - 1]; 
            i < func_block_ends[func_idx]; 
            i++) {
     if (order[i].tag == RecTag::CLEAR) {
@@ -563,7 +568,7 @@ void SwapInOutScheduler::wait_for_swap_out_first_iter_impl() {
 
 
 void  SwapInOutScheduler::swap_out_scheduled() {
-  for (auto r : swap_out_schedule[func_idx - 1]) {
+  for (auto r : swap_out_schedule[func_idx]) {
     if (auto p = r.get().sawptr.lock()) {
       if (r.get().preclear) {
         p->clear();
@@ -579,7 +584,7 @@ void  SwapInOutScheduler::swap_out_scheduled() {
 
 
 void SwapInOutScheduler::wait_for_swap_out_scheduled() {
-  for (auto r : wait_schedule[func_idx - 1]) {
+  for (auto r : wait_schedule[func_idx]) {
     if (r.get().no_need_swap_out) {
       continue;
     }
