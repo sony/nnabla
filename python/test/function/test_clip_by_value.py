@@ -41,6 +41,4 @@ def test_clip_by_value_forward(seed, shape):
     with nn.auto_forward(True):
         y = F.clip_by_value(x, min_, max_)
     y_ref = ref_clip_by_value(x_data, min_data, max_data)
-    print(y.d)
-    print(y_ref)
     assert_allclose(y.d, y_ref)

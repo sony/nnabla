@@ -44,7 +44,6 @@ def ref_max_pooling_3d(x, kernel, stride, ignore_border, pad):
     y = np.vstack(y)
     if x.ndim == 3:
         y = np.squeeze(y, 1)
-    print(y.reshape(x.shape[:-4] + y.shape[1:]).shape)
     return y.reshape(x.shape[:-4] + y.shape[1:])
 
 
