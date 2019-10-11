@@ -19,12 +19,6 @@ cdef class SwapInOutScheduler:
     def end_scheduling(self):
         self.scheduler.get().end_scheduling()
 
-    def reset(self):
-        self.scheduler.get().reset()
-
-    def use_dali(self, NdArray x, NdArray t):
-        self.scheduler.get().use_dali(x.arr, t.arr)
-
     def function_pre_hook(self, func):
         cdef CgFunctionPtr cg_func = (<Function>func).fun
         self.scheduler.get().pre_function_callback(cg_func)
