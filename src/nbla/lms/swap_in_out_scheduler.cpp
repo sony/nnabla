@@ -198,13 +198,11 @@ void SwapInOutScheduler::schedule() {
   int fid = 0;
 
   // Before forward
- 
-
-
-  //swap_out_schedule[fid] = schedule_swap_out(used_bytes_swap_in,
-  //                                           synced_array_counts, fid);
-
-  //wait_schedule[fid] = schedule_wait_for_swap_out();
+  detect_swap_in_before_forward(head, used_bytes_swap_in,
+                                synced_array_counts);
+  swap_out_schedule[fid] = schedule_swap_out(used_bytes_swap_in,
+                                             synced_array_counts, fid);
+  wait_schedule[fid] = schedule_wait_for_swap_out();
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
@@ -230,6 +228,41 @@ int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
   return accumulate(count_map.begin(), count_map.end(), 0,
     [](int value, const unordered_map<dtypes, int>::value_type& p)
     { return value + p.second; });
+}
+
+void SwapInOutScheduler::
+detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
+                              SyncedArrayCountsInQueue& synced_array_counts) {
+  while (head < func_block_ends[0]) {
+    RecType& r = order[head];
+
+    if (r.tag == RecTag::CLEAR) {
+      head++;
+      continue;
+    }
+
+    if (r.ctx.array_class == device_ctx.array_class) {
+      // All fetches were already done. Just calculate memory size.
+      auto array_bytes = r.size * sizeof_dtype(r.dtype);
+
+      // First fetch
+      if (synced_array_counts[r.synced_array_id][r.dtype] == 0) {
+        used_bytes_swap_in += array_bytes;
+      }
+
+      // Increment the number of the same SyncedArray in the queue.
+      synced_array_counts[r.synced_array_id][r.dtype]++;
+      head++; // Move on the head of the queue
+    }
+    else if (r.ctx.array_class == host_ctx.array_class) {
+      head++;
+    }
+    else {
+      // Get/cast of an array on an uncertain device
+      NBLA_ERROR(error_code::type,
+        "Unsupported array type: " + r.ctx.array_class);
+    }
+  }
 }
 
 

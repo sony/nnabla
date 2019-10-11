@@ -257,6 +257,9 @@ private:
 
   void schedule(); // Schedule prefetch/swap out/preclear
 
+  void detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
+                                     SyncedArrayCountsInQueue& synced_array_counts);
+
   ScheduleType
     schedule_swap_in(int& head, size_t& used_bytes_swap_in, 
                      SyncedArrayCountsInQueue& synced_array_counts,
