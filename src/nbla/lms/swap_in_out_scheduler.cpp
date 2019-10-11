@@ -255,9 +255,19 @@ schedule_swap_in(int& head, size_t& used_bytes_swap_in,
           // If the array was previously swapped out,
           // the memcpy was waited for by swap in.
           if (swapped_out[r.synced_array_id]) {
+            auto rptr = swapped_out_r[r.synced_array_id];
+            
             // the array will not be swapped out.
-            swapped_out_r[r.synced_array_id]->no_need_swap_out = true;
-            swapped_out[r.synced_array_id] = false; // reset flag
+            rptr->no_need_swap_out = true;
+
+            // Remove memory size from swap-out memory
+            rptr->swapped_out = false;
+            used_bytes_swap_out -= rptr->swapped_out_bytes;
+            rptr->swapped_out_bytes = 0;
+
+            // reset flag
+            swapped_out[r.synced_array_id] = false;
+            swapped_out_r[r.synced_array_id] = nullptr;
           }
         }
         // Increase memory usage
