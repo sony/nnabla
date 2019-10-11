@@ -94,7 +94,7 @@ void SwapInOutScheduler::post_update_callback() {}
 
 // Initializer of the scheduler for each training iteration
 void SwapInOutScheduler::init() {
-  tail = schedule_start_idx;
+  tail = 0;
   used_bytes_swap_out = 0;
   order_idx = 0;
   func_idx = 0;
@@ -183,9 +183,6 @@ void SwapInOutScheduler::swap_out_wrong_order() {
 //----------------------------------------------------------------
 
 void SwapInOutScheduler::schedule() {
-  int head = schedule_start_idx;
-  tail = schedule_start_idx;
-
   schedule_preclear(); // This is used in the schedule of swap out.
 
   /* This counts the number of same arrays in the queue.
@@ -193,6 +190,7 @@ void SwapInOutScheduler::schedule() {
   If count of an array > 1, no need to swap out the array because it is
   planed to be used soon in the queue.
   */
+  int head = 0;
   size_t used_bytes_swap_in = 0;
   SyncedArrayCountsInQueue synced_array_counts;
   auto last_function = func_block_ends.size() - 1;
@@ -626,10 +624,6 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
                           saptr->size(), dtype, ctx, false, false, 0, false});
   synced_array_id_to_order_idx[synced_array_id_mapper.at(saptr)].push_back(order_idx);
   order_idx++;
-
-  if (func_idx == 0) {
-    schedule_start_idx = order_idx;
-  }
 }
 
 

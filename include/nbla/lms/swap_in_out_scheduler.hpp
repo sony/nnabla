@@ -145,9 +145,6 @@ class SwapInOutScheduler {
   // Map between SyncedArray ID and the order
   unordered_map<unsigned int, vector<int>> synced_array_id_to_order_idx;
 
-  // The first index in the first function block.
-  int schedule_start_idx = 0;
-
   // It is used to remove uneccesary swap-out
   unordered_map<unsigned int, bool> swapped_out;
   unordered_map<unsigned int, RecType*> swapped_out_r;
