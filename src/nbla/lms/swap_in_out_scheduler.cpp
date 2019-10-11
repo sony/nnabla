@@ -121,15 +121,13 @@ void SwapInOutScheduler::finalize() {
   // Wait to swap out all arrays before the next iteration.
   if (first_iter) {
     wait_for_all_swap_out_first_iter();
+
+    // Schedule the timings
+    init();
+    schedule();
   }
   else {
     wait_for_all_swap_out_scheduled();
-  }
-
-  // Schedule the timings
-  if (first_iter) {
-    init();
-    schedule();
   }
   
   /* Host should wait for the all asynchronous processes in GPU managed
@@ -457,6 +455,7 @@ void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
     r.swapped_out_bytes = 0;
 
     swapped_out[r.synced_array_id] = false;
+    swapped_out_r[r.synced_array_id] = nullptr;
   }
 }
 
