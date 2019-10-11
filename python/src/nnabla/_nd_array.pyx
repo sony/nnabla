@@ -30,6 +30,15 @@ import numpy as np
 cimport numpy as np
 np.import_array()
 
+cdef int DTYPES_FLOAT = np.dtype(np.float32).num
+
+
+def _get_dtypes_from_value(value):
+    if hasattr(value, 'dtype'):
+        return value.dtype.num
+    return np.asarray(value).dtype.num
+
+
 # Older cython doesn't expose const_pointer_cast in <memory>
 cdef extern from "<memory>" namespace "std" nogil:
     cdef shared_ptr[T] const_pointer_cast[T, U](const shared_ptr[U] & )
@@ -63,7 +72,7 @@ cdef c_cast_numpy_array(CNdArray * arrp, vector[np.npy_intp] & shape,
     return ndarray
 
 
-cdef c_as_numpy_array(CNdArray * arrp, str mode):
+cdef c_as_numpy_array(CNdArray * arrp, str mode, cpp_bool force_dtype=False, int dtype=DTYPES_FLOAT):
     cdef int type_num
     cdef vector[np.npy_intp] shape
     cdef Shape_t shape_base
@@ -72,10 +81,12 @@ cdef c_as_numpy_array(CNdArray * arrp, str mode):
     cdef CContext cctx = <CContext > ctx
 
     # Getting current data type
-    try:
-        type_num = <int > arrp.array().get().dtype()
-    except:
-        type_num = np.dtype(np.float32).num
+    type_num = dtype
+    if not force_dtype:
+        try:
+            type_num = <int > arrp.array().get().dtype()
+        except:
+            pass
 
     # Create numpy shape array
     shape.resize(arrp.ndim())
@@ -284,7 +295,7 @@ cdef class NdArray:
         Note that only the references are returned, and the values are not copied. Therefore,
         modifying the returned :class:`nnabla._nd_array.NdArray` will affect the data contained inside the
         NNabla array.
-        This method can also be called as a setter.
+        This method can also be called as a setter (an array is initialized with a dtype of rhs).
         Note that this may implicitly invoke a data transfer from device arrays to the CPU.
 
         Args:
@@ -297,9 +308,10 @@ cdef class NdArray:
 
     @data.setter
     def data(self, value):
-        self.data[...] = value
+        d = c_as_numpy_array(self.arrp, 'w', True, _get_dtypes_from_value(value))
+        d[...] = value
 
-    def get_data(self, str mode='rw'):
+    def get_data(self, str mode='rw', dtype=None):
         '''
         Returns the values held by this array as a :class:`numpy.ndarray`
         with a specified mode.
@@ -309,11 +321,15 @@ cdef class NdArray:
                 * 'r': Read-only access.
                 * 'w': Write-only access.
                 * 'rw': You can both read and write.
+            dtype (:obj:`numpy.dtype`, optional): Force dtype of a returned array.
 
         See :function:`nnabla._nd_array.NdArray.data for more details.
 
         '''
-        return c_as_numpy_array(self.arrp, mode)
+        if dtype is None:
+            return c_as_numpy_array(self.arrp, mode)
+        return c_as_numpy_array(self.arrp, mode, True, dtype)
+
 
     def zero(self):
         """

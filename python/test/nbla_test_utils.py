@@ -58,6 +58,10 @@ def list_ctx_and_func_name2(fnames):
     return l
 
 
+def randn(rng, *shape):
+    return np.asarray(rng.randn(*shape), dtype=np.float32)
+
+
 def compute_analytical_and_numerical_grad_graph(terminal, inputs,
                                                 epsilon=1e-3,
                                                 recompute_graph=True):
@@ -116,7 +120,7 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
     for i in inputs:
         if i is None:  # Optional argument
             continue
-        i.g = rng.randn(*i.shape)
+        i.g = randn(rng, *i.shape)
     for o, d in zip(outputs, vgrads):
         o.g = d
 
@@ -262,7 +266,7 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
 
     def _set_output_grad_and_copy(os, grads=None):
         if grads is None:
-            grads = [rng.randn(*o.shape) for o in os]
+            grads = [randn(rng, *o.shape) for o in os]
         for o, g in zip(os, grads):
             o.g = g
         return grads
@@ -559,15 +563,15 @@ def function_tester(rng, func, ref_func, inputs,
         if v is None:
             continue
         if len(v.shape) == 0:
-            v.g = rng.randn()
+            v.g = randn(rng)
             continue
-        v.g = rng.randn(*v.shape).astype(v.data.dtype)
+        v.g = randn(rng, *v.shape)
     # Verify grad
     vinputs = create_variables(inputs, backward)
     rinputs = copy.deepcopy(inputs)
     rinputs = [rinput if test else None for rinput,
                test in zip(rinputs, backward)]
-    vgrads = [rng.randn(*o_.shape) for o_ in o]
+    vgrads = [randn(rng, *o_.shape) for o_ in o]
 
     agrads, ngrads = compute_analytical_and_numerical_grad(
         o[0].parent, vinputs, o, rinputs, vgrads, epsilon=dstep,
@@ -583,7 +587,7 @@ def function_tester(rng, func, ref_func, inputs,
     for v, b in zip(vinputs, backward):
         if not b or v is None:
             continue
-        v.g = 0
+        v.grad.zero()
         v.need_grad = False
         try:
             o[0].parent.backward(
@@ -616,7 +620,7 @@ def function_tester(rng, func, ref_func, inputs,
         finputs = list(filter(lambda x: x is not None, vinputs))
 
         # Save accum gradient result
-        g = rng.randn(*v.shape)
+        g = randn(rng, *v.shape)
         v.g = g
         f.forward(finputs, o)
         f.backward(finputs, o)
@@ -624,7 +628,7 @@ def function_tester(rng, func, ref_func, inputs,
 
         # Check accum=False
         accum = [j != i for j, vv in enumerate(vinputs) if vv is not None]
-        v.g = rng.randn(*v.shape)
+        v.g = randn(rng, *v.shape)
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert_allclose(
@@ -649,7 +653,7 @@ def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx
         a_s_i = [inp * 1.0 for inp in inputs]
         y_i = func(*(a_s_i + list(func_args)), inplace=True, **func_kwargs)
         l_i = F.sum(y_i)
-    data = [(rng.randn(*inp.shape), rng.randn(*inp.shape)) for inp in inputs]
+    data = [(randn(rng, *inp.shape), randn(rng, *inp.shape)) for inp in inputs]
     for i in range(len(data)):
         inputs[i].d = data[i][0]
         inputs[i].g = data[i][1]
@@ -719,10 +723,10 @@ def backward_function_tester(rng, func, ref_func, inputs,
         grad_outputs = []
         for o in outputs:
             if o.shape == ():
-                go = nn.NdArray.from_numpy_array(np.array(rng.randn()))
+                go = nn.NdArray.from_numpy_array(np.array(randn(rng)))
                 #go = nn.NdArray.from_numpy_array(np.array(1.0))
             else:
-                go = nn.NdArray.from_numpy_array(rng.randn(*o.shape))
+                go = nn.NdArray.from_numpy_array(randn(rng, *o.shape))
                 #go = nn.NdArray.from_numpy_array(np.ones(o.shape))
 
             grad_outputs.append(go)
@@ -829,7 +833,7 @@ def backward_function_tester(rng, func, ref_func, inputs,
 
     # --- Backward (accum = True) test --- #
     # Random grads
-    rand_grads = [rng.randn(*vi.shape) for vi in vinputs]
+    rand_grads = [randn(rng, *vi.shape) for vi in vinputs]
     fill_grads(vinputs, rand_grads)
     # Compute analytical grads
     gp2.forward()

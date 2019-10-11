@@ -432,7 +432,7 @@ cdef class Variable:
 
     @d.setter
     def d(self, value):
-        self.data.data[...] = value
+        self.data.data = value
 
     @property
     def g(self):
@@ -453,7 +453,7 @@ cdef class Variable:
 
     @g.setter
     def g(self, value):
-        self.grad.data[...] = value
+        self.grad.data = value
 
     @property
     def parent(self):
