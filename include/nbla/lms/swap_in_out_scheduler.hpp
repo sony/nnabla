@@ -18,7 +18,6 @@
 #include <vector>
 #include <unordered_map>
 #include <numeric>
-#include <array>
 
 #include <nbla/computation_graph/function.hpp>
 
@@ -31,7 +30,6 @@ using std::accumulate;
 using std::weak_ptr;
 using std::reference_wrapper;
 using std::pair;
-using std::array;
 
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
@@ -147,9 +145,8 @@ class SwapInOutScheduler {
   // Map between SyncedArray ID and the order
   unordered_map<unsigned int, vector<int>> synced_array_id_to_order_idx;
 
-  // Recording double buffered SyncedArray used in dali data iterator
-  array<array<weak_ptr<SyncedArray>, 2>, 2> dali_sawptrs;
-  array<unsigned int, 2> dali_saptr_idxs;
+  // The first index in the first function block.
+  int schedule_start_idx = 0;
 
   // It is used to remove uneccesary swap-out
   unordered_map<unsigned int, bool> swapped_out;
@@ -157,7 +154,6 @@ class SwapInOutScheduler {
 
   // This is a switch separating the first iteration and others.
   bool first_iter = true;
-  int iter_count = 0;
 
 public:
   /** Constructor.
@@ -206,12 +202,6 @@ public:
   /** Reset the internal state to that at construction.
    */
   NBLA_API void reset();
-
-  /** It should be called just after the assignment of input data
-      from dali data iterator
-   */
-  NBLA_API void use_dali(const vector<std::array<const NdArrayPtr, 2>>&
-                         data_batches);
 
 private:
   // Common implementations of pre-function and pre-update callbacks
