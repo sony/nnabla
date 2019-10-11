@@ -119,7 +119,12 @@ void SwapInOutScheduler::finalize() {
   swap_out_wrong_order();
 
   // Wait to swap out all arrays before the next iteration.
-  wait_for_all_swap_out();
+  if (first_iter) {
+    wait_for_all_swap_out_first_iter();
+  }
+  else {
+    wait_for_all_swap_out_scheduled();
+  }
 
   // Schedule the timings
   if (first_iter) {
@@ -220,7 +225,7 @@ void SwapInOutScheduler::schedule() {
     wait_schedule[fid] = schedule_wait_for_swap_out();
   }
 
-  wait_schedule[last_function - 1] = schedule_wait_for_all_swap_out();
+  wait_all_schedule = schedule_wait_for_all_swap_out();
 }
 
 
@@ -587,7 +592,7 @@ void SwapInOutScheduler::wait_for_swap_out_first_iter() {
 }
 
 
-void SwapInOutScheduler::wait_for_all_swap_out() {
+void SwapInOutScheduler::wait_for_all_swap_out_first_iter() {
   while (tail < order.size()) {
     wait_for_swap_out_first_iter_impl();
   }
@@ -647,6 +652,21 @@ void SwapInOutScheduler::wait_for_swap_out_scheduled() {
     if (p && p->head_array_class() == host_ctx.array_class &&
         p->get_num_arrays() > 0) {
         p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
+    }
+  }
+}
+
+void SwapInOutScheduler::wait_for_all_swap_out_scheduled() {
+  for (auto r : wait_all_schedule) {
+    if (r.get().no_need_swap_out) {
+      continue;
+    }
+
+    auto p = r.get().sawptr.lock();
+
+    if (p && p->head_array_class() == host_ctx.array_class &&
+      p->get_num_arrays() > 0) {
+      p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
     }
   }
 }

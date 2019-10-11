@@ -242,7 +242,8 @@ private:
   void swap_out_scheduled();
   void wait_for_swap_out_first_iter();
   void wait_for_swap_out_scheduled();
-  void wait_for_all_swap_out();
+  void wait_for_all_swap_out_first_iter();
+  void wait_for_all_swap_out_scheduled();
   void wait_for_swap_out_first_iter_impl();
   void swap_out_wrong_order();
 
@@ -254,6 +255,7 @@ private:
   unordered_map<int, ScheduleType> swap_in_schedule;
   unordered_map<int, ScheduleType> swap_out_schedule;
   unordered_map<int, ScheduleType> wait_schedule;
+  ScheduleType wait_all_schedule;
 
   void schedule(); // Schedule prefetch/swap out/preclear
 
