@@ -24,66 +24,88 @@ NBLA_REGISTER_FUNCTION_SOURCE(Transpose, const vector<int> &);
 template <typename T>
 void Transpose<T>::setup_impl(const Variables &inputs,
                               const Variables &outputs) {
+  vector<int> axes = this->axes_;
   const int ndim = inputs[0]->ndim();
-  NBLA_CHECK(ndim == axes_.size(), error_code::value,
-             "Length of axes must be same as inputs. Given %d != %d.", ndim,
-             axes_.size());
 
-  Shape_t shape(ndim);
+  NBLA_CHECK(ndim == axes.size(), error_code::value,
+             "Length of axes must be same as ndim of input. Given %d != %d.",
+             ndim, axes.size());
+
+  Shape_t ishape = inputs[0]->shape();
+  Shape_t oshape(ndim);
+
   for (int i = 0; i < ndim; i++) {
-    NBLA_CHECK(axes_[i] < inputs[0]->shape().size(), error_code::value,
-               "axes must be less than ndim of inputs[0]. "
-               "axes[%d]: %d >= ndim of inputs[0]: %d.",
-               i, axes_[i], inputs[0]->shape().size());
-    for (int i2 = 0; i2 < i; i2++) {
-      NBLA_CHECK(axes_[i] != axes_[i2], error_code::value,
-                 "Axes duplicated. axes[%d]: %d == axes[%d]: %d.", i, axes_[i],
-                 i2, axes_[i2]);
+    NBLA_CHECK(axes[i] < ndim, error_code::value,
+               "Each element of axes must be less than ndim of input. "
+               "axes[%d]: %d >= ndim of input: %d.",
+               i, axes[i], ndim);
+    for (int j = 0; j < i; j++) {
+      NBLA_CHECK(axes[i] != axes[j], error_code::value,
+                 "Axes duplicated. axes[%d]: %d == axes[%d]: %d.", i, axes[i],
+                 j, axes[j]);
     }
-    shape[i] = inputs[0]->shape()[axes_[i]];
+    oshape[i] = ishape[axes[i]];
   }
-  outputs[0]->reshape(shape, true);
+  outputs[0]->reshape(oshape, true);
 
-  v_axes_.reshape(Shape_t{ndim}, true);
-  v_x_strides_.reshape(Shape_t{ndim}, true);
-  v_y_strides_.reshape(Shape_t{ndim}, true);
-  v_y_shape_.reshape(Shape_t{ndim}, true);
-  Context cpu; // CPU Context
-  int64_t *p_axes = v_axes_.cast_data_and_get_pointer<int64_t>(cpu, true);
-  int64_t *p_x_strides =
-      v_x_strides_.cast_data_and_get_pointer<int64_t>(cpu, true);
-  int64_t *p_y_strides =
-      v_y_strides_.cast_data_and_get_pointer<int64_t>(cpu, true);
-  int64_t *p_y_shape = v_y_shape_.cast_data_and_get_pointer<int64_t>(cpu, true);
-  for (int i = 0; i < ndim; ++i) {
-    p_axes[i] = axes_[i];
-    p_x_strides[i] = inputs[0]->strides()[i];
-    p_y_strides[i] = outputs[0]->strides()[i];
-    p_y_shape[i] = outputs[0]->shape()[i];
+  // Combine all successively increasing by one transpose axes. For example,
+  // transposing shape (16, 3, 100, 100) by axes (0, 2, 3, 1) will be reduced
+  // to transposing (16, 3, 10000) by axes (0, 2, 1).
+  volatile auto axes_size = axes.size();
+  for (int i = 1; i < axes_size;) {
+    auto this_axis = axes[i];
+    auto prev_axis = axes[i - 1];
+    if (this_axis == prev_axis + 1) {
+      ishape[prev_axis] *= ishape[this_axis];
+      ishape.erase(ishape.begin() + this_axis);
+      axes.erase(axes.begin() + i);
+      axes_size = axes.size();
+      for (int j = 0; j < axes_size; j++) {
+        if (axes[j] > this_axis)
+          axes[j] -= 1;
+      }
+    } else
+      i++;
+  }
+
+  // Now ishape and axes are compacted and we compute the appropriate shapes,
+  // strides and transposed strides to be used in forward and backward.
+
+  this->x_shape_ = ishape;
+  this->y_shape_.resize(axes.size());
+  for (int i = 0; i < axes.size(); i++) {
+    this->y_shape_[i] = this->x_shape_[axes[i]];
+  }
+  this->x_strides_ = ndi::strides(this->x_shape_);
+  this->y_strides_ = ndi::strides(this->y_shape_);
+  this->x_strides_transposed_.resize(axes.size());
+  this->y_strides_transposed_.resize(axes.size());
+  for (int i = 0; i < axes.size(); i++) {
+    this->x_strides_transposed_[i] = this->x_strides_[axes[i]];
+    this->y_strides_transposed_[axes[i]] = this->y_strides_[i];
   }
 }
 
-template <class T>
+template <typename T>
+void transpose(const T *src, T *dst, const Shape_t dst_shape,
+               const Shape_t transposed_dst_strides, bool accum) {
+  auto dst_ndindex = ndi::make_index(dst_shape.size(), Size_t(0));
+  Size_t i = 0;
+  do {
+    T val = src[ndi::nd2flat(dst_ndindex, transposed_dst_strides)];
+    dst[i] = accum ? dst[i] + val : val;
+  } while (++i && ndi::increment(dst_ndindex, dst_shape));
+}
+
+template <typename T>
 void Transpose<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
-  auto ndim = inputs[0]->ndim();
-  auto x_data = inputs[0]->get_data_pointer<T>(this->ctx_);
-  auto y_data = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  auto y_index = ndi::make_index(ndim, Size_t(0));
-  auto y_shape = outputs[0]->shape();
-
-  auto y2x_strides = std::vector<Size_t>(ndim);
-  for (int i = 0; i < ndim; i++) {
-    y2x_strides.at(i) = inputs[0]->strides().at(axes_.at(i));
-  }
-
-  int i = 0;
-  do {
-    y_data[i++] = x_data[ndi::nd2flat(y_index, y2x_strides)];
-  } while (ndi::increment(y_index, y_shape));
+  auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  auto y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  transpose(x, y, this->y_shape_, this->x_strides_transposed_, false);
 }
 
-template <class T>
+template <typename T>
 void Transpose<T>::backward_impl(const Variables &inputs,
                                  const Variables &outputs,
                                  const vector<bool> &propagate_down,
@@ -91,26 +113,8 @@ void Transpose<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0])
     return;
 
-  auto ndim = inputs[0]->ndim();
-  auto x_grad = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
-  auto y_grad = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  auto x_index = ndi::make_index(ndim, Size_t(0));
-  auto x_shape = inputs[0]->shape();
-
-  auto x2y_strides = std::vector<Size_t>(ndim);
-  for (int i = 0; i < ndim; i++) {
-    x2y_strides.at(axes_.at(i)) = outputs[0]->strides().at(i);
-  }
-
-  int i = 0;
-  if (accum[0]) {
-    do {
-      x_grad[i++] += y_grad[ndi::nd2flat(x_index, x2y_strides)];
-    } while (ndi::increment(x_index, x_shape));
-  } else {
-    do {
-      x_grad[i++] = y_grad[ndi::nd2flat(x_index, x2y_strides)];
-    } while (ndi::increment(x_index, x_shape));
-  }
+  auto dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  auto dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  transpose(dy, dx, this->x_shape_, this->y_strides_transposed_, accum[0]);
 }
 }
