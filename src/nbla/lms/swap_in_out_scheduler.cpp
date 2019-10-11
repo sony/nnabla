@@ -656,11 +656,12 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
       NBLA_ERROR(error_code::target_specific_async, "Re-get/cast precleared array.");
     }
   }
-
+  
   auto rec_saptr = order[order_idx].sawptr.lock();
 
   // Compare between the real and recorded order.
-  if (order_idx < func_block_ends[func_idx] &&
+  if (!rec_saptr && // Expired
+      order_idx < func_block_ends[func_idx] &&
       (tag == order[order_idx].tag &&
        saptr != rec_saptr &&
        dtype == order[order_idx].dtype &&
@@ -669,7 +670,12 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
     // The SyncedArray is replaced in the current iteration.
     // Replace all recorded SyncedArray
     for (auto& i : synced_array_id_to_order_idx[order[order_idx].synced_array_id]) {
-        order[i].sawptr = saptr;
+      order[i].sawptr = saptr;
+
+      // The weak pointer is not expired. It has to be swapped out.
+      wrong_ordered.push_back({ order[i].tag, 0, rec_saptr, order[i].size,
+                               order[i].dtype, order[i].ctx, false, false,
+                               0, false });
     }
   }
   else if (order_idx >= func_block_ends[func_idx] ||
