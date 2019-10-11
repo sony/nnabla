@@ -289,7 +289,11 @@ schedule_swap_in(int& head, size_t& used_bytes_swap_in,
       // No need swap-in (prefetch) to CPU. The array will be gotten/casted 
       // synchronously by the function itself.
       // Stop prefetch until the end of use of the array.
-      host_uses_this_synced_array[r.synced_array_id] = true;
+      if (func_idx > 0) {
+        // Because func_idx == 0 means it happens before first prefetch step,
+        // the host process must be finished.
+        host_uses_this_synced_array[r.synced_array_id] = true;
+      }
       head++;
     }
     else {
