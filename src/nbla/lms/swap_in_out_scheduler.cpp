@@ -192,11 +192,15 @@ void SwapInOutScheduler::schedule() {
   size_t used_bytes_swap_in = 0;
   SyncedArrayCountsInQueue synced_array_counts;
   auto last_function = func_block_ends.size() - 1;
+  unordered_map<unsigned int, bool> host_uses_this_synced_array;
 
   // Virtually iterate all layer functions and solver update
   int fid = 0;
 
   // Before forward
+ 
+
+
   //swap_out_schedule[fid] = schedule_swap_out(used_bytes_swap_in,
   //                                           synced_array_counts, fid);
 
@@ -205,7 +209,8 @@ void SwapInOutScheduler::schedule() {
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
     swap_in_schedule[fid] = schedule_swap_in(head, used_bytes_swap_in, 
-                                              synced_array_counts);
+                                             synced_array_counts,
+                                             host_uses_this_synced_array);
 
     if (head < func_block_ends[fid]) {
       NBLA_ERROR(error_code::memory,
@@ -231,10 +236,10 @@ int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
 SwapInOutScheduler::ScheduleType
 SwapInOutScheduler::
 schedule_swap_in(int& head, size_t& used_bytes_swap_in,
-                 SyncedArrayCountsInQueue& synced_array_counts) {
+                 SyncedArrayCountsInQueue& synced_array_counts,
+                 unordered_map<unsigned int, bool>& host_uses_this_synced_array) {
   // If a cast of an array to host is recorded, prefetch should stop
   // This flag prevents prefetching this array.
-  unordered_map<unsigned int, bool> host_uses_this_synced_array;
   SwapInOutScheduler::ScheduleType schedule;
 
   while (head < order.size()) {
@@ -314,7 +319,9 @@ schedule_swap_out(size_t& used_bytes_swap_in,
                   const int fid) {
   SwapInOutScheduler::ScheduleType schedule;
 
-  for (size_t i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
+  for (size_t i = fid == 0 ? 0 : func_block_ends[fid - 1];
+              i < func_block_ends[fid];
+              i++) {
     RecType& r = order[i];
 
     if (r.tag == RecTag::CLEAR) {

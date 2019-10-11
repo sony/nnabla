@@ -259,7 +259,8 @@ private:
 
   ScheduleType
     schedule_swap_in(int& head, size_t& used_bytes_swap_in, 
-                     SyncedArrayCountsInQueue& synced_array_counts);
+                     SyncedArrayCountsInQueue& synced_array_counts,
+                     unordered_map<unsigned int, bool>& host_uses_this_synced_array);
   ScheduleType
     schedule_swap_out(size_t& used_bytes_swap_in, 
                       SyncedArrayCountsInQueue& synced_array_counts,
