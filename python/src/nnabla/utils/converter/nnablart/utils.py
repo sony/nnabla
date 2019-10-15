@@ -169,10 +169,20 @@ def affine_transpose_weight(params, info, func):
         info._parameters[weight_name].data.extend(data.flatten())
 
 
+def pack_bin_conv_unused_weight(index, info, func):
+    weight_name = func.input[index]
+    d = info._parameters[weight_name].data[:]
+    d = d[0:1]  # TRUNC TO 1
+    del info._parameters[weight_name].data[:]
+    info._parameters[weight_name].data.extend(d)
+
+
 NNB_PREPROCESS_LIST = {
     'Affine': partial(affine_transpose_weight, [1]),
     'BinaryConnectAffine': partial(affine_transpose_weight, [1, 2]),
-    'BinaryWeightAffine': partial(affine_transpose_weight, [1, 2])
+    'BinaryWeightAffine': partial(affine_transpose_weight, [1, 2]),
+    'BinaryWeightConvolution': partial(pack_bin_conv_unused_weight, 1),
+    'BinaryConnectConvolution': partial(pack_bin_conv_unused_weight, 1)
 }
 
 CSRC_PREPROCESS_LIST = {
