@@ -101,7 +101,6 @@ void SwapInOutScheduler::init() {
   wrong_ordered.clear();
   precleared.clear();
   synced_array_id_mapper.clear();
-  swapped_out.clear();
 }
 
 
@@ -196,6 +195,10 @@ void SwapInOutScheduler::schedule() {
   SyncedArrayCountsInQueue synced_array_counts;
   auto last_function = func_block_ends.size() - 1;
   unordered_map<unsigned int, bool> host_uses_this_synced_array;
+  // It is used to remove uneccesary swap-out
+  unordered_map<unsigned int, bool> swapped_out;
+  unordered_map<unsigned int, RecType*> swapped_out_r;
+
 
   // Virtually iterate all layer functions and solver update
   int fid = 0;
@@ -204,14 +207,16 @@ void SwapInOutScheduler::schedule() {
   detect_swap_in_before_forward(head, used_bytes_swap_in,
                                 synced_array_counts);
   swap_out_schedule[fid] = schedule_swap_out(used_bytes_swap_in,
-                                             synced_array_counts, fid);
-  wait_schedule[fid] = schedule_wait_for_swap_out();
+                                             synced_array_counts, fid,
+                                             swapped_out, swapped_out_r);
+  wait_schedule[fid] = schedule_wait_for_swap_out(swapped_out, swapped_out_r);
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
     swap_in_schedule[fid] = schedule_swap_in(head, used_bytes_swap_in, 
                                              synced_array_counts,
-                                             host_uses_this_synced_array);
+                                             host_uses_this_synced_array,
+                                             swapped_out, swapped_out_r);
 
     if (head < func_block_ends[fid]) {
       NBLA_ERROR(error_code::memory,
@@ -219,11 +224,13 @@ void SwapInOutScheduler::schedule() {
     }
 
     swap_out_schedule[fid] = schedule_swap_out(used_bytes_swap_in, 
-                                               synced_array_counts, fid);
-    wait_schedule[fid] = schedule_wait_for_swap_out();
+                                               synced_array_counts, fid,
+                                               swapped_out, swapped_out_r);
+
+    wait_schedule[fid] = schedule_wait_for_swap_out(swapped_out, swapped_out_r);
   }
 
-  wait_all_schedule = schedule_wait_for_all_swap_out();
+  wait_all_schedule = schedule_wait_for_all_swap_out(swapped_out, swapped_out_r);
 }
 
 
@@ -273,7 +280,9 @@ SwapInOutScheduler::ScheduleType
 SwapInOutScheduler::
 schedule_swap_in(int& head, size_t& used_bytes_swap_in,
                  SyncedArrayCountsInQueue& synced_array_counts,
-                 unordered_map<unsigned int, bool>& host_uses_this_synced_array) {
+                 unordered_map<unsigned int, bool>& host_uses_this_synced_array,
+                 unordered_map<unsigned int, bool>& swapped_out,
+                 unordered_map<unsigned int, RecType*>& swapped_out_r) {
   // If a cast of an array to host is recorded, prefetch should stop
   // This flag prevents prefetching this array.
   SwapInOutScheduler::ScheduleType schedule;
@@ -361,7 +370,9 @@ SwapInOutScheduler::ScheduleType
 SwapInOutScheduler::
 schedule_swap_out(size_t& used_bytes_swap_in, 
                   SyncedArrayCountsInQueue& synced_array_counts, 
-                  const int fid) {
+                  const int fid,
+                  unordered_map<unsigned int, bool>& swapped_out,
+                  unordered_map<unsigned int, RecType*>& swapped_out_r) {
   SwapInOutScheduler::ScheduleType schedule;
 
   for (size_t i = fid == 0 ? 0 : func_block_ends[fid - 1];
@@ -416,12 +427,13 @@ schedule_swap_out(size_t& used_bytes_swap_in,
 
 
 SwapInOutScheduler::ScheduleType
-SwapInOutScheduler::schedule_wait_for_swap_out() {
+SwapInOutScheduler::schedule_wait_for_swap_out(unordered_map<unsigned int, bool>& swapped_out,
+                                               unordered_map<unsigned int, RecType*>& swapped_out_r) {
   SwapInOutScheduler::ScheduleType schedule;
 
   // When out of memory, wait to finish swap-out and release memory.
   while (used_bytes_swap_out > max_bytes_swap_out) {
-    schedule_wait_for_swap_out_impl(schedule);
+    schedule_wait_for_swap_out_impl(schedule, swapped_out, swapped_out_r);
   }
 
   return schedule;
@@ -429,12 +441,13 @@ SwapInOutScheduler::schedule_wait_for_swap_out() {
 
 
 SwapInOutScheduler::ScheduleType
-SwapInOutScheduler::schedule_wait_for_all_swap_out() {
+SwapInOutScheduler::schedule_wait_for_all_swap_out(unordered_map<unsigned int, bool>& swapped_out,
+                                                   unordered_map<unsigned int, RecType*>& swapped_out_r) {
   SwapInOutScheduler::ScheduleType schedule;
 
   // When out of memory, wait to finish swap-out and release memory.
   while (tail < order.size()) {
-    schedule_wait_for_swap_out_impl(schedule);
+    schedule_wait_for_swap_out_impl(schedule, swapped_out, swapped_out_r);
   }
 
   return schedule;
@@ -442,7 +455,9 @@ SwapInOutScheduler::schedule_wait_for_all_swap_out() {
 
 
 void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
-  SwapInOutScheduler::ScheduleType& schedule) {
+  SwapInOutScheduler::ScheduleType& schedule,
+  unordered_map<unsigned int, bool>& swapped_out,
+  unordered_map<unsigned int, RecType*>& swapped_out_r) {
   RecType& r = order[tail++];
 
   if (r.swapped_out) {

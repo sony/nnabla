@@ -143,10 +143,6 @@ class SwapInOutScheduler {
   // Map between SyncedArray ID and the order
   unordered_map<unsigned int, vector<int>> synced_array_id_to_order_idx;
 
-  // It is used to remove uneccesary swap-out
-  unordered_map<unsigned int, bool> swapped_out;
-  unordered_map<unsigned int, RecType*> swapped_out_r;
-
   // This is a switch separating the first iteration and others.
   bool first_iter = true;
 
@@ -265,14 +261,22 @@ private:
   ScheduleType
     schedule_swap_in(int& head, size_t& used_bytes_swap_in, 
                      SyncedArrayCountsInQueue& synced_array_counts,
-                     unordered_map<unsigned int, bool>& host_uses_this_synced_array);
+                     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
+                     unordered_map<unsigned int, bool>& swapped_out,
+                     unordered_map<unsigned int, RecType*>& swapped_out_r);
   ScheduleType
     schedule_swap_out(size_t& used_bytes_swap_in, 
                       SyncedArrayCountsInQueue& synced_array_counts,
-                      const int fid);
-  ScheduleType schedule_wait_for_swap_out();
-  ScheduleType schedule_wait_for_all_swap_out();
-  void schedule_wait_for_swap_out_impl(ScheduleType& schedule);
+                      const int fid,
+                      unordered_map<unsigned int, bool>& swapped_out,
+                      unordered_map<unsigned int, RecType*>& swapped_out_r);
+  ScheduleType schedule_wait_for_swap_out(unordered_map<unsigned int, bool>& swapped_out,
+                                          unordered_map<unsigned int, RecType*>& swapped_out_r);
+  ScheduleType schedule_wait_for_all_swap_out(unordered_map<unsigned int, bool>& swapped_out,
+                                              unordered_map<unsigned int, RecType*>& swapped_out_r);
+  void schedule_wait_for_swap_out_impl(ScheduleType& schedule,
+                                       unordered_map<unsigned int, bool>& swapped_out,
+                                       unordered_map<unsigned int, RecType*>& swapped_out_r);
   void schedule_preclear(); // Subroutine to schedule preclear of end_scheduling
 
   void init(); // Initialization subroutine of start_scheduling
