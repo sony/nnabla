@@ -88,6 +88,8 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
 
+    # Clean up
+    nn.set_auto_forward(False)
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -134,6 +136,8 @@ def test_multiple_objectives(seed, ctx, auto_forward):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
 
+    # Clean up
+    nn.set_auto_forward(False)
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -181,3 +185,7 @@ def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
     for inp, grad in zip(inputs, grads):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
+
+    # Clean up
+    nn.set_auto_forward(False)
+
