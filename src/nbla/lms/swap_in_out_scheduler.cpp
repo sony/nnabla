@@ -16,7 +16,7 @@
 #include <limits>
 
 #include <nbla/lms/swap_in_out_scheduler.hpp>
-#include <nbla/device_synchronizer_registry.hpp>
+#include <nbla/backend_registry.hpp>
 #include <nbla/singleton_manager.hpp>
 
 
@@ -143,7 +143,7 @@ void SwapInOutScheduler::finalize() {
   In particular, one of the modification of CPU memory is the writing of
   the input data for the next training iteration.
   */
-  DeviceSynchronizer::synchronize(device_ctx);
+  BackendUtils::device_synchronize(device_ctx);
   
   // After first itration, not record
   synced_array_callback = 

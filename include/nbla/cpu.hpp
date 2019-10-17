@@ -31,7 +31,7 @@ using std::unique_ptr;
 /**
 Singleton class for storing some handles or configs for CPU Computation.
 */
-class NBLA_API Cpu : BackendBase {
+class NBLA_API Cpu : public BackendBase {
 
 public:
   ~Cpu();
