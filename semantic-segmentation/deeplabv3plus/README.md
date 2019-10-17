@@ -1,3 +1,6 @@
+# Deeplabv3plus
+This is a nnabla implementation for [Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation](https://arxiv.org/abs/1802.02611)
+
 # Neural Network Libraries - Examples
 
 Installation guide given in : https://github.com/sony/nnabla-examples/
