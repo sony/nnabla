@@ -25,7 +25,7 @@ from nnabla.testing import assert_allclose
 ctx_list = [ctx_fname[0] for ctx_fname in list_context('Convolution')]
 
 
-def SmallResNet(x, test=False):
+def SmallResNet(x, test=False, shared=False):
     h = x
 
     def conv(x, maps=8, name="conv"):
@@ -37,19 +37,20 @@ def SmallResNet(x, test=False):
             s = PF.convolution(h, maps, (3, 3), (1, 1), with_bias=False)
             h = PF.batch_normalization(h, batch_stat=not test)
         return F.relu(h + s)
-    h = conv(h, maps=8, name="conv1")
+    h = conv(h, maps=4, name="conv1")
     h = F.max_pooling(h, (2, 2))
-    h = conv(h, maps=16, name="conv2")
+    h = conv(h, maps=4, name="conv2")
+    h = conv(h, maps=8, name="conv3") if not shared else conv(h, maps=4, name="conv2")
     h = F.average_pooling(h, h.shape[2:])
     h = PF.affine(h, 10)
     return h
-
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("auto_forward", [True, False])
 @pytest.mark.parametrize("flag_grad_outputs", [True, False])
-def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs):
+@pytest.mark.parametrize("shared", [False, True])
+def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
     nn.clear_parameters()
 
     # Settings
@@ -62,7 +63,7 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs):
     # Network
     x = nn.Variable.from_numpy_array(rng.randn(b, c, h, w))
     y = nn.Variable.from_numpy_array(rng.randint(0, n_cls, b).reshape(b, 1))
-    p = SmallResNet(x)
+    p = SmallResNet(x, shared=shared)
     loss = F.mean(F.softmax_cross_entropy(p, y))
 
     # Zerograd, Forward, Backward on the forward graph
@@ -189,3 +190,57 @@ def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
     # Clean up
     nn.set_auto_forward(False)
 
+
+@pytest.mark.parametrize("seed", [311])
+@pytest.mark.parametrize("ctx", ctx_list)
+@pytest.mark.parametrize("auto_forward", [True, False])
+def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
+    def add(x, derivate=0):
+        if derivate == 0:
+            return x + x + x
+        if derivate == 1:
+            return 3 * np.ones_like(x)
+        if derivate == 2:
+            return np.zeros_like(x)
+    def sub(x, derivate=0):
+        if derivate == 0:
+            return x - x - x
+        if derivate == 1:
+            return -1 * np.ones_like(x)
+        if derivate == 2:
+            return np.zeros_like(x)
+    def mul(x, derivate=0):
+        if derivate == 0:
+            return x * x * x
+        if derivate == 1:
+            return 3 * x ** 2
+        if derivate == 2:
+            return 6 * x
+    def div(x, derivate=0):
+        if derivate == 0:
+            return x / x / x
+        if derivate == 1:
+            return - x ** -2
+        if derivate == 2:
+            return 2 * x ** -3
+
+    # Settings
+    nn.set_default_context(ctx)
+    nn.set_auto_forward(auto_forward)
+
+    for math_type in [add, sub, mul, div]:
+        xd = np.random.randn(2, 3) + 0.5
+        x = nn.Variable.from_numpy_array(xd).apply(need_grad=True)
+        x.grad.fill(0)
+        y = math_type(x)
+        # First-order gradient
+        dy_dx = nn.grad([y], [x])
+        if not auto_forward:
+            dy_dx[0].forward()
+        assert_allclose(dy_dx[0].d, math_type(xd, 1))
+        # Second-order gradient
+        dy_dx[0].backward()
+        assert_allclose(x.g, math_type(xd, 2))
+        
+    # Clean up
+    nn.set_auto_forward(False)
