@@ -73,5 +73,9 @@ def test_nd_array_data(value):
     # Use value dtype in setter
     a = nn.NdArray(shape)
     a.data = value
-    assert a.dtype == np.asarray(value).dtype
-    assert a.data.dtype == np.asarray(value).dtype
+    if not np.isscalar(value) or \
+       (np.dtype(type(value)).kind != 'f' and value > (1 << 53)):
+        assert a.dtype == np.asarray(value).dtype
+        assert a.data.dtype == np.asarray(value).dtype
+    else:
+        assert a.data.dtype == np.float32

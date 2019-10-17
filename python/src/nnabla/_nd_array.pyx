@@ -86,7 +86,12 @@ cdef c_as_numpy_array(CNdArray * arrp, str mode, cpp_bool force_dtype=False, int
         try:
             type_num = <int > arrp.array().get().dtype()
         except:
-            pass
+            from nnabla import logger
+            logger.warn('Calling the `.data` getter property in this `NdArray` '
+                        'is creating an array with a default data type because '
+                        'the array is not previously initialized by requesting '
+                        'a specific data type, or is not used after '
+                        'calling `zero()` or `fill(value)`.')
 
     # Create numpy shape array
     shape.resize(arrp.ndim())
@@ -295,7 +300,10 @@ cdef class NdArray:
         Note that only the references are returned, and the values are not copied. Therefore,
         modifying the returned :class:`nnabla._nd_array.NdArray` will affect the data contained inside the
         NNabla array.
-        This method can also be called as a setter (an array is initialized with a dtype of rhs).
+        This method can also be called as a setter where an array is created as the same type as rhs.
+        There is an exception where `zero()` or `fill(rhs)` is invoked if a scalar with a float or an
+        integer <= 2^53 (as filling value is maintained as float64) is given.
+
         Note that this may implicitly invoke a data transfer from device arrays to the CPU.
 
         Args:
@@ -308,6 +316,23 @@ cdef class NdArray:
 
     @data.setter
     def data(self, value):
+        # Try to use .zero or .fill as they are more efficient
+        if np.isscalar(value):
+            if value == 0:
+                self.zero()
+                return
+            dtype = np.dtype(type(value))
+            kind = dtype.kind
+            if kind == 'f' or value <= (1 << 53):
+                # Condition 1: If value is float, use fill(double).
+                # Condition 2: Use the fact that value is converted
+                #              to float64 (significand is 53 bits).
+                self.fill(value)
+                return
+            # Any scalar value which is not likely to be represented
+            # as float64 is fall into following.
+            pass
+
         d = c_as_numpy_array(self.arrp, 'w', True, _get_dtypes_from_value(value))
         d[...] = value
 
@@ -335,8 +360,10 @@ cdef class NdArray:
         """
         Fill all of the elements with 0.
 
-        Note: This method is lazily evaluated. It is evaluated during the forward or
-        backward propagation.
+        Note:
+            This doesn't not fill values in an internal array with 0 immediately.
+            An array is created as a requested data type when this array is used
+            (in forward or backward computation for exampe), and is filled with 0.
 
         """
         self.arrp.zero()
@@ -345,11 +372,14 @@ cdef class NdArray:
         """
         Fill all of the elements with the provided scalar value.
 
-        Note: This method is lazily evaluated. It is evaluated during the forward or
-        backward propagation.
+        Note:
+            This doesn't not fill values in an internal array with 0 immediately.
+            An array is created as a requested data type when this array is used
+            (in forward or backward computation for exampe), and is filled with
+            the value.
 
         Args:
-            value (int, float): The value filled with. 
+            value (float): The value filled with.
 
         """
         self.arrp.fill(value)
