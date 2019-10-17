@@ -68,7 +68,7 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
 
     # Zerograd, Forward, Backward on the forward graph
     inputs = nn.get_parameters().values()
-    [inp.grad.fill(0) for inp in inputs]
+    [inp.grad.zero() for inp in inputs]
     grad = nn.NdArray.from_numpy_array(
         np.asarray(rng.randn())) if flag_grad_outputs else 1
     if not auto_forward:
@@ -119,7 +119,7 @@ def test_multiple_objectives(seed, ctx, auto_forward):
     z = y0 * nn.Variable(g0.shape).apply(data=g0) + y1 * \
         nn.Variable(g1.shape).apply(data=g1)
     inputs = [x0, x1]
-    [inp.grad.fill(0) for inp in inputs]
+    [inp.grad.zero() for inp in inputs]
     if not auto_forward:
         z.forward()
     z.backward()
@@ -169,7 +169,7 @@ def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
 
     # Zerograd, Forward, Backward on the forward graph
     inputs = [x]
-    [inp.grad.fill(0) for inp in inputs]
+    [inp.grad.zero() for inp in inputs]
     if not auto_forward:
         y.forward()
     y.backward(g)
@@ -231,7 +231,7 @@ def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
     for math_type in [add, sub, mul, div]:
         xd = np.random.randn(2, 3) + 0.5
         x = nn.Variable.from_numpy_array(xd).apply(need_grad=True)
-        x.grad.fill(0)
+        x.grad.zero()
         y = math_type(x)
         # First-order gradient
         dy_dx = nn.grad([y], [x])
