@@ -40,10 +40,12 @@ def SmallResNet(x, test=False, shared=False):
     h = conv(h, maps=4, name="conv1")
     h = F.max_pooling(h, (2, 2))
     h = conv(h, maps=4, name="conv2")
-    h = conv(h, maps=8, name="conv3") if not shared else conv(h, maps=4, name="conv2")
+    h = conv(h, maps=8, name="conv3") if not shared else conv(
+        h, maps=4, name="conv2")
     h = F.average_pooling(h, h.shape[2:])
     h = PF.affine(h, 10)
     return h
+
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -89,8 +91,6 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
 
-    # Clean up
-    nn.set_auto_forward(False)
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -137,8 +137,6 @@ def test_multiple_objectives(seed, ctx, auto_forward):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
 
-    # Clean up
-    nn.set_auto_forward(False)
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -187,9 +185,6 @@ def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
 
-    # Clean up
-    nn.set_auto_forward(False)
-
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -202,6 +197,7 @@ def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
             return 3 * np.ones_like(x)
         if derivate == 2:
             return np.zeros_like(x)
+
     def sub(x, derivate=0):
         if derivate == 0:
             return x - x - x
@@ -209,6 +205,7 @@ def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
             return -1 * np.ones_like(x)
         if derivate == 2:
             return np.zeros_like(x)
+
     def mul(x, derivate=0):
         if derivate == 0:
             return x * x * x
@@ -216,6 +213,7 @@ def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
             return 3 * x ** 2
         if derivate == 2:
             return 6 * x
+
     def div(x, derivate=0):
         if derivate == 0:
             return x / x / x
@@ -241,6 +239,3 @@ def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
         # Second-order gradient
         dy_dx[0].backward()
         assert_allclose(x.g, math_type(xd, 2))
-        
-    # Clean up
-    nn.set_auto_forward(False)

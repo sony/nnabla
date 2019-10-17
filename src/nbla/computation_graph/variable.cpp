@@ -235,7 +235,8 @@ class BackwardCallback {
       if (!inputs[i]->need_grad_state())
         continue;
 
-      // If memset with 0 is reserved, accum is not used. For shared case, the first is only non-accum.
+      // If memset with 0 is reserved, accum is not used. For shared case, the
+      // first is only non-accum.
       auto array = inputs[i]->variable()->grad()->array();
       if (array->zeroing()) {
         bool input_shared = false;
