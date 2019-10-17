@@ -294,3 +294,14 @@ def test_function_hook():
     # Just calling test
     nn.forward_all((y, z), function_pre_hook=lambda f: None,
                    function_post_hook=lambda f: None)
+
+@pytest.mark.parametrize("seed", [313])
+def test_shared_variable_on_same_function(seed):
+    rng = np.random.RandomState(313)
+    xd = rng.randn(2, 3)
+    x = nn.Variable.from_numpy_array(xd).apply(need_grad=True)
+    x.grad.zero()
+    y = x * x * x
+    y.forward()
+    y.backward()
+    assert_allclose(x.g, 3 * xd ** 2)
