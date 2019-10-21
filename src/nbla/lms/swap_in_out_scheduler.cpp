@@ -14,6 +14,7 @@
 
 
 #include <limits>
+#include <numeric>
 
 #include <nbla/lms/swap_in_out_scheduler.hpp>
 #include <nbla/backend_registry.hpp>
@@ -21,6 +22,8 @@
 
 
 namespace nbla {
+
+using std::accumulate;
 
 
 SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
@@ -118,15 +121,20 @@ void SwapInOutScheduler::finalize() {
   swap_out_wrong_order();
 
   // Wait to swap out all arrays before the next iteration.
+  wait_for_all_swap_out_first_iter();
+
   if (first_iter) {
-    wait_for_all_swap_out_first_iter();
+    if (used_bytes_swap_out != 0) {
+      NBLA_ERROR(error_code::unclassified, "used_bytes_swap_out != 0");
+    }
+
+    if (tail != order.size()) {
+      NBLA_ERROR(error_code::unclassified, "tail != order.size()");
+    }
 
     // Schedule the timings
     init();
     schedule();
-  }
-  else {
-    wait_for_all_swap_out_scheduled();
   }
   
   /* Host should wait for the all asynchronous processes in GPU managed
@@ -193,7 +201,7 @@ void SwapInOutScheduler::schedule() {
   int head = 0;
   size_t used_bytes_swap_in = 0;
   SyncedArrayCountsInQueue synced_array_counts;
-  auto last_function = func_block_ends.size() - 1;
+  auto last_function = func_block_ends.size();
   unordered_map<unsigned int, bool> host_uses_this_synced_array;
   // It is used to remove uneccesary swap-out
   unordered_map<unsigned int, bool> swapped_out;
@@ -231,6 +239,22 @@ void SwapInOutScheduler::schedule() {
   }
 
   wait_all_schedule = schedule_wait_for_all_swap_out(swapped_out, swapped_out_r);
+
+  if (used_bytes_swap_in != 0) {
+    NBLA_ERROR(error_code::unclassified, "used_bytes_swap_in != 0");
+  }
+
+  if (used_bytes_swap_out != 0) {
+    NBLA_ERROR(error_code::unclassified, "used_bytes_swap_out != 0");
+  }
+
+  if (head != order.size()) {
+    NBLA_ERROR(error_code::unclassified, "head != order.size()");
+  }
+
+  if (tail != order.size()) {
+    NBLA_ERROR(error_code::unclassified, "tail != order.size()");
+  }
 }
 
 
@@ -410,10 +434,14 @@ schedule_swap_out(size_t& used_bytes_swap_in,
           auto array_bytes = r.size * sizeof_dtype(it.first);
           used_bytes_swap_in -= array_bytes;
         }
-      }
 
-      // Decrease the counts of a used array in the queue.
-      synced_array_counts[r.synced_array_id][r.dtype]--;
+        // Reset usage
+        synced_array_counts[r.synced_array_id].clear();
+      }
+      else {
+        // Decrease the counts of a used array in the queue.
+        synced_array_counts[r.synced_array_id][r.dtype]--;
+      }
     }
     else if (r.ctx.array_class != host_ctx.array_class) {
       // Get/cast of an array on an uncertain device
