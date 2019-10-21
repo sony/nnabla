@@ -114,7 +114,7 @@ def test_all_reduce_skip_by_zero(seed, inplace, division, comm_nccl_opts):
     # modify the grad values in rank 0
     if comm.rank == 0:
         for g in get_grads(xs):
-            g.data = 0
+            g.data = 1
     comm.all_reduce(get_grads(xs), division=division, inplace=inplace)
     for g in get_grads(xs):
         assert not g.zeroing

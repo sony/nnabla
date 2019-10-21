@@ -34,12 +34,13 @@ def test_random_choice_with_replacement(ctx, func_name, seed):
         y = F.random_choice(x, w, shape=[trials], replace=True, seed=seed)
     hist_nn, _ = np.histogram(y.d)
     hist_np, _ = np.histogram(np.random.choice(
-        x.d, trials, True, w.d / w.d.sum()))
+        x.d, trials, True, w.d / np.float32(w.d.sum())))
     assert_allclose(hist_nn / trials, hist_np / trials, atol=1e-2)
-    x.g = w.g = 0
+    x.grad.zero()
+    w.grad.zero()
     y.backward()
-    assert_allclose(x.g / trials, w.d / w.d.sum(), atol=1e-2)
-    assert_allclose(w.g / trials, w.d / w.d.sum(), atol=1e-2)
+    assert_allclose(x.g / trials, w.d / np.float32(w.d.sum()), atol=1e-2)
+    assert_allclose(w.g / trials, w.d / np.float32(w.d.sum()), atol=1e-2)
 
     x = nn.Variable.from_numpy_array(np.array([[1, 2, 3], [-1, -2, -3]]))
     w = nn.Variable.from_numpy_array(np.array([[1, 1, 1], [10, 10, 10]]))
@@ -53,7 +54,8 @@ def test_random_choice_with_replacement(ctx, func_name, seed):
     w.d = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     with nn.context_scope(ctx), nn.auto_forward(True):
         y = F.random_choice(x, w, shape=[10], replace=True, seed=seed)
-    x.g = w.g = 0
+    x.grad.zero()
+    w.grad.zero()
     y.backward(1)
     assert np.all(x.g == np.array([[10, 0, 0], [0, 10, 0], [0, 0, 10]]))
     assert np.all(w.g == np.array([[10, 0, 0], [0, 10, 0], [0, 0, 10]]))
@@ -72,5 +74,5 @@ def test_random_choice_without_replacement(ctx, func_name, seed):
     r = np.zeros((repeats, w.size)).astype(np.int32)
     for i in range(repeats):
         y.forward()
-        r[i] = y.d
+        r[i] = y.d.copy()
     assert np.all(np.bincount(r.flatten()) == x.size * [repeats])

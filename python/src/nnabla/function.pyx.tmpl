@@ -74,7 +74,7 @@ cdef vector[NdArrayPtr] list_to_vector_nd_array_force(varlist):
         vec[i] = (<NdArray> v).arr
     return vec
 
-cdef vector[NdArrayPtr] list_to_vector_nd_array(varlist):
+cdef vector[NdArrayPtr] list_to_vector_nd_array(varlist) except *:
     cdef vector[NdArrayPtr] vec
     cdef int i
     cdef int size
@@ -84,7 +84,7 @@ cdef vector[NdArrayPtr] list_to_vector_nd_array(varlist):
         vec[i] = (<NdArray?> varlist[i]).arr
     return vec
 
-cdef vector[CgVariablePtr] list_to_vector_cg_variable(varlist):
+cdef vector[CgVariablePtr] list_to_vector_cg_variable(varlist) except *:
     cdef vector[CgVariablePtr] vec
     cdef int i
     cdef int size
@@ -94,7 +94,7 @@ cdef vector[CgVariablePtr] list_to_vector_cg_variable(varlist):
         vec[i] = (<_Variable?> varlist[i]).var
     return vec
 
-cdef vector[CVariable*] list_to_vector_variable_p(varlist):
+cdef vector[CVariable*] list_to_vector_variable_p(varlist) except *:
     cdef vector[CVariable*] vec
     cdef int i
     cdef int size
@@ -104,7 +104,7 @@ cdef vector[CVariable*] list_to_vector_variable_p(varlist):
         vec[i] = (<_Variable?> varlist[i]).varp.variable().get()
     return vec
 
-cdef vector[cpp_bool] variables_to_prop_down_flags(varlist):
+cdef vector[cpp_bool] variables_to_prop_down_flags(varlist) except *:
     cdef int i
     cdef int size = len(varlist)
     cdef vector[cpp_bool] ret

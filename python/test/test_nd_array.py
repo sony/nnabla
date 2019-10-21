@@ -16,6 +16,8 @@ import numpy as np
 
 import nnabla as nn
 
+import pytest
+
 
 def test_nd_array():
     shape = [2, 3, 4]
@@ -51,3 +53,29 @@ def test_copy_from():
     with nn.context_scope(get_extension_context('cpu', dtype='float')):
         dst.copy_from(src, use_current_context=True)
     assert dst.dtype == np.float32
+
+
+@pytest.mark.parametrize("value", [
+    1,
+    1.3,
+    np.array(np.zeros((2, 3))),
+    np.arange(6).reshape(2, 3)])
+def test_nd_array_data(value):
+    shape = (2, 3)
+
+    # Use default dtype (float32) in getter
+    a = nn.NdArray(shape)
+    with pytest.raises(Exception):
+        _ = a.dtype
+    _ = a.data
+    assert a.dtype == np.float32
+
+    # Use value dtype in setter
+    a = nn.NdArray(shape)
+    a.data = value
+    if not np.isscalar(value) or \
+       (np.dtype(type(value)).kind != 'f' and value > (1 << 53)):
+        assert a.dtype == np.asarray(value).dtype
+        assert a.data.dtype == np.asarray(value).dtype
+    else:
+        assert a.data.dtype == np.float32

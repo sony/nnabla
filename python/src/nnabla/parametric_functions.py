@@ -3161,7 +3161,7 @@ def min_max_quantized_affine(inp, n_outmaps,
                                         ste_fine_grained=ste_fine_grained_b,
                                         eps=eps,
                                         fix_parameters=fix_parameters,
-                                        outputs=[b_q],
+                                        outputs=[b_q.data],
                                         name="min_max_quantize_b")
             real_b_q.persistent = True
         else:
