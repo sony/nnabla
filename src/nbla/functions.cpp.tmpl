@@ -26,6 +26,7 @@
 #include <nbla/context.hpp>
 #include <nbla/function.hpp>
 #include <nbla/functions.hpp>
+#include <nbla/auto_forward.hpp>
 
 using std::make_shared;
 % for name, snake_name, _ in function_list:
@@ -69,12 +70,14 @@ for x in fi['outputs'].values():
 
 %>
 vector<CgVariablePtr> ${snake_name}(${context_and_inputs}){
-  return connect(make_shared<CgFunction>(create_${name}(ctx${args})), {${inputs}});
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_${name}(ctx${args})), {${inputs}}, 1, {}, auto_forward);
 }
 
 ${output_type} ${snake_name}(${inputs_types}){
   auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-  return connect(make_shared<CgFunction>(create_${name}(global_ctx${args})), {${inputs}})${output_index};
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_${name}(global_ctx${args})), {${inputs}}, 1, {}, auto_forward)${output_index};
 }
 % endfor
 
@@ -211,7 +214,8 @@ vector<CgVariablePtr> max_pooling(Context &ctx, CgVariablePtr x, const vector<in
 
 CgVariablePtr max_pooling(CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts){
   auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-  return connect(make_shared<CgFunction>(create_MaxPooling(global_ctx, kernel, stride, pooling_opts.ignore_border(), pooling_opts.pad(), pooling_opts.channel_last())), {x})[0];
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_MaxPooling(global_ctx, kernel, stride, pooling_opts.ignore_border(), pooling_opts.pad(), pooling_opts.channel_last())), {x}, 1, {}, auto_forward)[0];
 }
 
 vector<CgVariablePtr> average_pooling(Context &ctx, CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts){
@@ -220,7 +224,8 @@ vector<CgVariablePtr> average_pooling(Context &ctx, CgVariablePtr x, const vecto
 
 CgVariablePtr average_pooling(CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts){
   auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-  return connect(make_shared<CgFunction>(create_AveragePooling(global_ctx, kernel, stride, pooling_opts.ignore_border(), pooling_opts.pad(), pooling_opts.channel_last(), pooling_opts.including_pad())), {x})[0];
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_AveragePooling(global_ctx, kernel, stride, pooling_opts.ignore_border(), pooling_opts.pad(), pooling_opts.channel_last(), pooling_opts.including_pad())), {x}, 1, {}, auto_forward)[0];
 }
 
 vector<CgVariablePtr> sum_pooling(Context &ctx, CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts){
@@ -229,7 +234,8 @@ vector<CgVariablePtr> sum_pooling(Context &ctx, CgVariablePtr x, const vector<in
 
 CgVariablePtr sum_pooling(CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts){
   auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-  return connect(make_shared<CgFunction>(create_SumPooling(global_ctx, kernel, stride, pooling_opts.ignore_border(), pooling_opts.pad(), pooling_opts.channel_last())), {x})[0];
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_SumPooling(global_ctx, kernel, stride, pooling_opts.ignore_border(), pooling_opts.pad(), pooling_opts.channel_last())), {x}, 1, {}, auto_forward)[0];
 }
 
 CgVariablePtr convolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts){

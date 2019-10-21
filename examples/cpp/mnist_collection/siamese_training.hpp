@@ -21,6 +21,7 @@ using namespace std;
 #include <nbla/solver/adam.hpp>
 using namespace nbla;
 using std::make_shared;
+#include <nbla/auto_forward.hpp>
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
@@ -128,7 +129,7 @@ public:
 /******************************************/
 // Example of Siamese Training
 /******************************************/
-bool siamese_training(nbla::Context ctx) {
+bool siamese_training_with_static_graph(nbla::Context ctx) {
 
   // Create a context for cpu
   nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
@@ -136,8 +137,10 @@ bool siamese_training(nbla::Context ctx) {
   //  # Create CNN network for both training and testing.
   float margin = 1.0; //# Margin for contrastive loss.
 
-  //  # Create input variables.
+  // Setup context
   SingletonManager::get<GlobalContext>()->set_current_context(ctx);
+
+  //  # Create input variables.
   ParameterDirectory params;
   int batch_size = 128;
   auto timage0 =
@@ -181,49 +184,162 @@ bool siamese_training(nbla::Context ctx) {
     return false;
   }
 
-  //  # Training loop.
-  int max_iter = 5000;
-  int n_val_interval = 10;
-  int n_val_iter = 10;
-  float weight_decay = 0.0e-4;
-  float mean_tloss = 0.;
-  for (int iter = 0; iter < max_iter; iter++) {
+  try {
+    //  # Training loop.
+    int max_iter = 5000;
+    int n_val_interval = 10;
+    int n_val_iter = 10;
+    float weight_decay = 0.;
+    float mean_tloss = 0.;
+    for (int iter = 0; iter < max_iter; iter++) {
 
-    // Get batch and copy to input variables
-    tdata_iterator.provide_data(timage0, timage1, tlabel);
+      // Get batch and copy to input variables
+      tdata_iterator.provide_data(timage0, timage1, tlabel);
 
-    // # Training forward, backward and update.
-    solver->zero_grad();
-    tloss->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
-    tloss->variable()->grad()->fill(1.0);
-    tloss->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
-    solver->weight_decay(weight_decay);
-    solver->update();
+      // # Training forward, backward and update.
+      solver->zero_grad();
+      tloss->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
+      tloss->variable()->grad()->fill(1.0);
+      tloss->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
+      solver->weight_decay(weight_decay);
+      solver->update();
 
-    // Get and print the average loss
-    float_t *tloss_d =
-        tloss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, false);
-    mean_tloss += tloss_d[0];
+      // Get and print the average loss
+      float_t *tloss_d =
+          tloss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, false);
+      mean_tloss += tloss_d[0];
 
-    if ((iter + 1) % n_val_interval == 0) {
-      float mean_vloss = 0.0;
-      for (int i = 0; i < n_val_iter; i++) {
-        vdata_iterator.provide_data(vimage0, vimage1, vlabel);
-        vloss->forward(/*clear_buffer=*/true, /*clear_no_need_grad=*/true);
-        float_t *vloss_d =
-            vloss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
-                                                                  false);
-        mean_vloss += vloss_d[0];
+      if ((iter + 1) % n_val_interval == 0) {
+        float mean_vloss = 0.0;
+        for (int i = 0; i < n_val_iter; i++) {
+          vdata_iterator.provide_data(vimage0, vimage1, vlabel);
+          vloss->forward(/*clear_buffer=*/true, /*clear_no_need_grad=*/true);
+          float_t *vloss_d =
+              vloss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                    false);
+          mean_vloss += vloss_d[0];
+        }
+        mean_tloss /= n_val_interval;
+        mean_vloss /= n_val_iter;
+        fprintf(fp, "iter: %d, tloss: %f, vloss: %f\n", iter, mean_tloss,
+                mean_vloss);
+        fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter, mean_tloss,
+                mean_vloss);
+        mean_tloss = 0.;
+        mean_vloss = 0.;
       }
-      mean_tloss /= n_val_interval;
-      mean_vloss /= n_val_iter;
-      fprintf(fp, "iter: %d, tloss: %f, vloss: %f\n", iter, mean_tloss,
-              mean_vloss);
-      fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter, mean_tloss,
-              mean_vloss);
-      mean_tloss = 0.;
-      mean_vloss = 0.;
     }
+  } catch (...) {
+    cout << "Exception in siamese_training_with_static_graph.\n";
+    fclose(fp);
+    return false;
+  }
+  fclose(fp);
+  return true;
+}
+
+bool siamese_training_with_dynamic_graph(nbla::Context ctx) {
+
+  // Create a context for cpu
+  nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
+
+  //  # Create CNN network for both training and testing.
+  float margin = 1.0; //# Margin for contrastive loss.
+
+  // Setup context
+  SingletonManager::get<GlobalContext>()->set_current_context(ctx);
+
+  // Setup auto_forward
+  SingletonManager::get<AutoForward>()->set_auto_forward(true);
+
+  // Setup parameter
+  ParameterDirectory params;
+
+  //  # Create Solver.
+  float learning_rate = 1.0e-3;
+  auto solver = create_AdamSolver(ctx, learning_rate, 0.9, 0.999, 1.0e-8);
+
+  // # Initialize DataIterator for MNIST.
+  int batch_size = 128;
+  MnistSiameseDataIterator tdata_iterator(batch_size, true);
+  MnistSiameseDataIterator vdata_iterator(batch_size, false);
+
+  //# Training loop.
+  FILE *fp;
+  fp = fopen("log.txt", "wt");
+  if (fp == NULL) {
+    fprintf(stderr, "Error in opening log file.");
+    return false;
+  }
+
+  try {
+    //  # Training loop.
+    int max_iter = 5000;
+    int n_val_interval = 10;
+    int n_val_iter = 10;
+    float weight_decay = 0.;
+    float mean_tloss = 0.;
+    for (int iter = 0; iter < max_iter; iter++) {
+
+      // Get batch and copy to input variables
+      auto timage0 =
+          make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
+      auto timage1 =
+          make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
+      auto tlabel = make_shared<CgVariable>(Shape_t({batch_size, 1}), false);
+      tdata_iterator.provide_data(timage0, timage1, tlabel);
+
+      // # Training forward, backward and update.
+      auto tpred = mnist_lenet_siamese(timage0, timage1, params, false);
+      auto tloss = f::mean(contrastive_loss(tpred, tlabel, margin), {0}, false);
+
+      solver->set_parameters(params.get_parameters(),
+                             /*reset=*/false, /*retain_state=*/true);
+      solver->zero_grad();
+      tloss->variable()->grad()->fill(1.0);
+      tloss->backward(/*NdArrayPtr grad=*/nullptr, /*clear_buffer=*/true);
+      solver->weight_decay(weight_decay);
+      solver->update();
+
+      // Get and print the average loss
+      float_t *tloss_d =
+          tloss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, false);
+      mean_tloss += tloss_d[0];
+
+      if ((iter + 1) % n_val_interval == 0) {
+        float mean_vloss = 0.0;
+        for (int i = 0; i < n_val_iter; i++) {
+          auto vimage0 =
+              make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
+          auto vimage1 =
+              make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
+          auto vlabel =
+              make_shared<CgVariable>(Shape_t({batch_size, 1}), false);
+
+          vdata_iterator.provide_data(vimage0, vimage1, vlabel);
+
+          auto vpred = mnist_lenet_siamese(vimage0, vimage1, params, true);
+          auto vloss =
+              f::mean(contrastive_loss(vpred, vlabel, margin), {0}, false);
+          float_t *vloss_d =
+              vloss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                    false);
+          mean_vloss += vloss_d[0];
+        }
+        mean_tloss /= n_val_interval;
+        mean_vloss /= n_val_iter;
+        fprintf(fp, "iter: %d, tloss: %f, vloss: %f\n", iter, mean_tloss,
+                mean_vloss);
+        fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter, mean_tloss,
+                mean_vloss);
+        mean_tloss = 0.;
+        mean_vloss = 0.;
+      }
+    }
+  } catch (...) {
+    cout << "Exception in siamese_training_with_dynamic_graph.\n";
+    fclose(fp);
+    return false;
   }
   fclose(fp);
   return true;
