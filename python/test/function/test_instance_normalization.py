@@ -14,12 +14,14 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
     axes = tuple(_get_axes_excluding(len(x.shape), ignore_axes))
 
     x_mean = x.mean(axis=axes, keepdims=True)
-    x_std = x.std(axis=axes, keepdims=True)
+    x_var = x.var(axis=axes, keepdims=True)
+
+    norm = (x - x_mean) / (x_var + eps) ** 0.5
 
     if output_stat:
-        return (x - x_mean) / (x_std + eps) * gamma + beta, x_mean, x_std
+        return norm * gamma + beta, x_mean, x_var
 
-    return (x - x_mean) / (x_std + eps) * gamma + beta
+    return norm * gamma + beta
 
 
 @pytest.mark.parametrize("seed", [313])

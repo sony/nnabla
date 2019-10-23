@@ -13,12 +13,14 @@ def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
     axes = tuple(_get_axes_excluding(len(x.shape), batch_axis))
 
     x_mean = x.mean(axis=axes, keepdims=True)
-    x_std = x.std(axis=axes, keepdims=True)
+    x_var = x.var(axis=axes, keepdims=True)
+
+    norm = (x - x_mean) / (x_var + eps) ** 0.5
 
     if output_stat:
-        return (x - x_mean) / (x_std + eps) * gamma + beta, x_mean, x_std
+        return norm * gamma + beta, x_mean, x_var
 
-    return (x - x_mean) / (x_std + eps) * gamma + beta
+    return norm * gamma + beta
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -34,8 +36,9 @@ def test_layer_normalization_forward_backward(seed, x_shape, batch_axis, output_
     rng = np.random.RandomState(seed)
     input = rng.randn(*x_shape).astype(np.float32)
 
-    stat_shape = tuple([x_shape[i] if i in _force_list(batch_axis) else 1
-                        for i in range(len(x_shape))])
+    stat_shape = list(x_shape)
+    for baxis in _force_list(batch_axis):
+        stat_shape[baxis] = 1
 
     beta = rng.randn(*stat_shape).astype(np.float32)
     gamma = rng.randn(*stat_shape).astype(np.float32)
