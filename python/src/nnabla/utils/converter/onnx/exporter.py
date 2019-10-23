@@ -33,7 +33,6 @@ TENSOR_TYPE_TO_DTYPE = {
 
 
 random_seed = 0
-R_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # Helper functions
 
@@ -102,26 +101,6 @@ def generate_value(type, dims, data_type, multiplier):
     return ret.astype(d).tostring()
 
 
-def merge_broadcast(node, func, target_name, broadcast_target):
-    # Set the broadcast attribute to the operator
-    # so we can combine BroadcastTo with this operator.
-    param = broadcast_target[target_name]
-    second_input = param[0]
-    axis = param[1]
-    a = onnx.helper.make_attribute("axis", axis)
-    b = onnx.helper.make_attribute("broadcast", 1)
-    node.attribute.extend([a, b])
-    # Replace the broadcasted input with the original input
-    del node.input[:]
-    node.input.extend([func.input[0], second_input])
-    # Remove the used target.
-    # We may have a problem if the same parameter is used from
-    # multiplier operators.
-    del broadcast_target[target_name]
-    # Return the merged input's name so we can use it if we need to
-    return second_input
-
-
 def set_reduction_attrs(node, param):
     a = onnx.helper.make_attribute("axes", param.axes)
     k = onnx.helper.make_attribute("keepdims", param.keep_dims)
@@ -160,8 +139,6 @@ def replace_negative_size_with_batch_size(shape, batch_size):
 def fork_name(name):
     global random_seed
     random_seed += 1
-    # rng = np.random.RandomState(random_seed)
-    # ret = ''.join(x for x in rng.choice(list(R_CHARS), 8)) + '_{:04}'.format(random_seed)
     ret = name + '_{:04}'.format(random_seed)
     return ret
 
@@ -257,6 +234,34 @@ class OnnxExporter:
             "Floor": "Floor",
             "DepthwiseDeconvolution": partial(self.BaseDeconvolution, 'DepthwiseDeconvolution'),
             "Softmax": partial(self.Softmax, '6'),
+            "Embed": self.Embed,
+            "Swish": self.Swish,
+            "LogSoftmax": partial(self.LogSoftmax, '6'),
+            "CReLU": self.CReLU,
+            "ReLU6": self.ReLU6,
+            "HardSigmoid": "HardSigmoid",
+            "HardTanh": self.HardTanh,
+            "LogSigmoid": self.LogSigmoid,
+            "SoftPlus": "Softplus",
+            "SoftSign": "Softsign",
+            "Constant": "Constant",
+            "CELU": self.CELU,
+            "GELU": partial(self.GELU, '6'),
+            "TanhShrink": self.TanhShrink,
+            "Arange": self.Arange,
+            "Tile": self.Tile,
+            "NotEqual": partial(self.NotEqual, '6'),
+            "GreaterEqual": partial(self.GreaterEqual, '6'),
+            "LessEqual": partial(self.LessEqual, '6'),
+            "LogicalAndScalar": partial(self.LogicalAndScalar, '6'),
+            "LogicalOrScalar": partial(self.LogicalOrScalar, '6'),
+            "LogicalXorScalar": partial(self.LogicalXorScalar, '6'),
+            "EqualScalar": partial(self.EqualScalar, '6'),
+            "NotEqualScalar": partial(self.NotEqualScalar, '6'),
+            "GreaterEqualScalar": partial(self.GreaterEqualScalar, '6'),
+            "GreaterScalar": partial(self.GreaterScalar, '6'),
+            "LessEqualScalar": partial(self.LessEqualScalar, '6'),
+            "LessScalar": partial(self.LessScalar, '6'),
         }
 
         table_op_set_7 = {
@@ -294,6 +299,20 @@ class OnnxExporter:
             "Tan": "Tan",
             "Sin": "Sin",
             "Softmax": partial(self.Softmax, '7'),
+            "GELU": partial(self.GELU, '7'),
+            "LogSoftmax": partial(self.LogSoftmax, '7'),
+            "NotEqual": partial(self.NotEqual, '7'),
+            "GreaterEqual": partial(self.GreaterEqual, '7'),
+            "LessEqual": partial(self.LessEqual, '7'),
+            "LogicalAndScalar": partial(self.LogicalAndScalar, '7'),
+            "LogicalOrScalar": partial(self.LogicalOrScalar, '7'),
+            "LogicalXorScalar": partial(self.LogicalXorScalar, '7'),
+            "EqualScalar": partial(self.EqualScalar, '7'),
+            "NotEqualScalar": partial(self.NotEqualScalar, '7'),
+            "GreaterEqualScalar": partial(self.GreaterEqualScalar, '7'),
+            "GreaterScalar": partial(self.GreaterScalar, '7'),
+            "LessEqualScalar": partial(self.LessEqualScalar, '7'),
+            "LessScalar": partial(self.LessScalar, '7'),
         }
         table_op_set_7 = dict(table_op_set_6, **table_op_set_7)
 
@@ -308,6 +327,10 @@ class OnnxExporter:
             "Sinh": "Sinh",
             "BinarySigmoid": self.BinarySigmoid,
             "BinaryTanh": self.BinaryTanh,
+            "Broadcast": self.Broadcast,
+            "Where": "Where",
+            "IsNaN": "IsNaN",
+            "Sinc": self.Sinc,
         }
         table_op_set_9 = dict(table_op_set_7, **table_op_set_9)
 
@@ -413,8 +436,8 @@ class OnnxExporter:
                 b = onnx.helper.make_attribute("broadcast", 1)
                 n.attribute.extend([b])
             nl.append(n)
-            if func_name == "And" or func_name == "Or" or func_name == "Xor":
-                self._input_types[func.input[1]] = TensorProto.BOOL
+        if func_name == "And" or func_name == "Or" or func_name == "Xor":
+            self._input_types[func.input[1]] = TensorProto.BOOL
         return nl
 
     def BinarySigmoid(self, func):
@@ -971,6 +994,7 @@ class OnnxExporter:
             [flatten_output],
             axis=0
         )
+        self._input_types[func.input[0]] = TensorProto.INT32
         nl.append(n)
 
         gather_out = fork_name('onehotgatherout')
@@ -983,7 +1007,7 @@ class OnnxExporter:
         nl.append(n)
 
         n = generate_reshape(self._model_proto.graph, gather_out,
-                             func.output[0], output_shape)
+                             func.output[0], np.array(output_shape))
         nl.append(n)
         return nl
 
@@ -1892,6 +1916,776 @@ class OnnxExporter:
             nl.append(n)
         return nl
 
+    def Embed(self, func):
+        n = onnx.helper.make_node(
+            'Gather',
+            [func.input[1], func.input[0]],
+            func.output,
+            axis=0
+        )
+        self._input_types[func.input[0]] = TensorProto.INT32
+        return [n]
+
+    def Swish(self, func):
+        # Convert Mul+Sigmoid
+        nl = []
+        # Sigmoid
+        dout = func.output[0] + "_sigmoid"
+        n = onnx.helper.make_node("Sigmoid",
+                                  func.input,
+                                  [dout])
+        nl.append(n)
+
+        # Mul
+        n = onnx.helper.make_node("Mul",
+                                  [func.input[0], dout],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def LogSoftmax(self, opset, func):
+        # Convert ReduceMax+Sub+Exp+ReduceSum+Log+Sub
+        nl = []
+        axis = func.log_softmax_param.axis
+
+        # ReduceMax
+        mout = func.input[0]+"_reducemax"
+        n = onnx.helper.make_node(
+            'ReduceMax',
+            [func.input[0]],
+            [mout],
+            axes=[axis],
+            keepdims=True
+        )
+        nl.append(n)
+
+        # Sub
+        sout = func.input[0]+"_sub"
+        n = onnx.helper.make_node(
+            'Sub',
+            [func.input[0], mout],
+            [sout],
+        )
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Exp
+        expout = sout+"_exp"
+        n = onnx.helper.make_node(
+            'Exp',
+            [sout],
+            [expout],
+        )
+        nl.append(n)
+
+        # ReduceSum
+        sumout = expout+"_reducesum"
+        n = onnx.helper.make_node(
+            'ReduceSum',
+            [expout],
+            [sumout],
+            axes=[axis],
+            keepdims=True
+        )
+        nl.append(n)
+
+        # Log
+        logout = sumout+"_log"
+        n = onnx.helper.make_node(
+            'Log',
+            [sumout],
+            [logout]
+        )
+        nl.append(n)
+
+        # Sub
+        n = onnx.helper.make_node(
+            'Sub',
+            [sout, logout],
+            func.output
+        )
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        return nl
+
+    def CReLU(self, func):
+        # Convert Concat+Neg+Relu
+        nl = []
+        # Neg
+        nout = func.output[0] + "_neg"
+        n = onnx.helper.make_node("Neg",
+                                  [func.input[0]],
+                                  [nout])
+        nl.append(n)
+
+        # Relu
+        rout0 = func.output[0] + "_relu0"
+        n = onnx.helper.make_node("Relu",
+                                  [func.input[0]],
+                                  [rout0])
+        nl.append(n)
+
+        # Relu
+        rout1 = func.output[0] + "_relu1"
+        n = onnx.helper.make_node("Relu",
+                                  [nout],
+                                  [rout1])
+        nl.append(n)
+
+        # Concat
+        n = onnx.helper.make_node("Concat",
+                                  [rout0, rout1],
+                                  func.output,
+                                  axis=func.crelu_param.axis)
+        nl.append(n)
+
+        return nl
+
+    def ReLU6(self, func):
+        # Convert Relu+Constant+Min
+        nl = []
+        # Relu
+        rout = func.output[0] + "_relu"
+        n = onnx.helper.make_node("Relu",
+                                  func.input,
+                                  [rout])
+        nl.append(n)
+
+        # Constant
+        constant_six = fork_name("constant")
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        value = [6.0] * np.prod(input_shape)
+        c = generate_constant(constant_six, func.name + "_constant_six",
+                              TensorProto.FLOAT, input_shape,
+                              value)
+        nl.append(c)
+
+        # Min
+        n = onnx.helper.make_node("Min",
+                                  [rout, constant_six],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def HardTanh(self, func):
+        # Convert Constant+Neg+Min+Max
+        nl = []
+        # Constant
+        constant_one = fork_name("constant")
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        value = [1.0] * np.prod(input_shape)
+        c = generate_constant(constant_one, func.name + "_constant_one",
+                              TensorProto.FLOAT, input_shape,
+                              value)
+        nl.append(c)
+
+        # Neg
+        neg_one = fork_name("constant")
+        n = onnx.helper.make_node("Neg",
+                                  [constant_one],
+                                  [neg_one])
+        nl.append(n)
+
+        # Min
+        mout = func.output[0] + "_min"
+        n = onnx.helper.make_node("Min",
+                                  [func.input[0], constant_one],
+                                  [mout])
+        nl.append(n)
+
+        # Max
+        n = onnx.helper.make_node("Max",
+                                  [mout, neg_one],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def LogSigmoid(self, func):
+        # Convert Sigmoid+Log
+        nl = []
+        # Sigmoid
+        sout = func.output[0] + "_sigmoid"
+        n = onnx.helper.make_node("Sigmoid",
+                                  func.input,
+                                  [sout])
+        nl.append(n)
+
+        # Log
+        n = onnx.helper.make_node("Log",
+                                  [sout],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def Broadcast(self, func):
+        # Convert Constant+Expand
+        nl = []
+        shape = func.broadcast_param.shape.dim
+        # Constant
+        constant_newshape = fork_name("constant")
+        c = generate_constant(constant_newshape, func.name + "_shape",
+                              TensorProto.INT64, [len(shape)],
+                              shape)
+        nl.append(c)
+
+        # Expand
+        n = onnx.helper.make_node("Expand",
+                                  [func.input[0], constant_newshape],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def CELU(self, func):
+        # Convert Neg+Elu+Concat
+        nl = []
+        alpha = func.celu_param.alpha
+        axis = func.celu_param.axis
+        # Neg
+        neg_out = func.input[0]+"_neg"
+        n = onnx.helper.make_node("Neg",
+                                  func.input,
+                                  [neg_out])
+        nl.append(n)
+
+        # Elu
+        elu_out0 = func.input[0]+"_elu0"
+        n = onnx.helper.make_node("Elu",
+                                  func.input,
+                                  [elu_out0],
+                                  alpha=alpha)
+        nl.append(n)
+
+        # Elu
+        elu_out1 = func.input[0]+"_elu1"
+        n = onnx.helper.make_node("Elu",
+                                  [neg_out],
+                                  [elu_out1],
+                                  alpha=alpha)
+        nl.append(n)
+
+        # Concat
+        n = onnx.helper.make_node("Concat",
+                                  [elu_out0, elu_out1],
+                                  func.output,
+                                  axis=axis)
+        nl.append(n)
+
+        return nl
+
+    def GELU(self, opset, func):
+        # Convert Constant+Pow+Mul+Add+Div+Sqrt+Tanh
+        nl = []
+        # Constant
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [3])
+        nl.append(c)
+
+        # Constant
+        constant1 = fork_name("constant")
+        c = generate_constant(constant1, func.name + "_constant1",
+                              TensorProto.FLOAT, [1],
+                              [0.044715])
+        nl.append(c)
+
+        # Constant
+        constant2 = fork_name("constant")
+        c = generate_constant(constant2, func.name + "_constant2",
+                              TensorProto.FLOAT, [1],
+                              [2])
+        nl.append(c)
+
+        # Constant
+        constant3 = fork_name("constant")
+        c = generate_constant(constant3, func.name + "_constant3",
+                              TensorProto.FLOAT, [1],
+                              [1])
+        nl.append(c)
+
+        # Constant
+        constant4 = fork_name("constant")
+        c = generate_constant(constant4, func.name + "_constant4",
+                              TensorProto.FLOAT, [1],
+                              [2/np.pi])
+        nl.append(c)
+
+        # Pow
+        pow_out = func.input[0]+"_pow"
+        n = onnx.helper.make_node("Pow",
+                                  [func.input[0], constant0],
+                                  [pow_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Mul
+        mul_out = func.input[0]+"_mul"
+        n = onnx.helper.make_node("Mul",
+                                  [pow_out, constant1],
+                                  [mul_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Add
+        add_out = func.input[0]+"_add"
+        n = onnx.helper.make_node("Add",
+                                  [func.input[0], mul_out],
+                                  [add_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Sqrt
+        sqrt_out = func.input[0]+"_sqrt"
+        n = onnx.helper.make_node("Sqrt",
+                                  [constant4],
+                                  [sqrt_out])
+        nl.append(n)
+
+        # Mul
+        mul_out1 = func.input[0]+"_mul1"
+        n = onnx.helper.make_node("Mul",
+                                  [add_out, sqrt_out],
+                                  [mul_out1])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Tanh
+        tanh_out = func.input[0]+"_tanh"
+        n = onnx.helper.make_node("Tanh",
+                                  [mul_out1],
+                                  [tanh_out])
+        nl.append(n)
+
+        # Add
+        add_out1 = func.input[0]+"_add1"
+        n = onnx.helper.make_node("Add",
+                                  [tanh_out, constant3],
+                                  [add_out1])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Div
+        div_out = func.input[0]+"_div"
+        n = onnx.helper.make_node("Div",
+                                  [func.input[0], constant2],
+                                  [div_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        # Mul
+        n = onnx.helper.make_node("Mul",
+                                  [div_out, add_out1],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        return nl
+
+    def TanhShrink(self, func):
+        # Convert Tanh+Sub
+        nl = []
+        # Tanh
+        tanh_out = func.input[0]+"_tanh"
+        n = onnx.helper.make_node("Tanh",
+                                  func.input,
+                                  [tanh_out])
+        nl.append(n)
+
+        # Sub
+        n = onnx.helper.make_node("Sub",
+                                  [func.input[0], tanh_out],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def Arange(self, func):
+        # Convert Constant
+        start = func.arange_param.start
+        stop = func.arange_param.stop
+        step = func.arange_param.step
+        constant_newshape = fork_name("constant")
+        output_shape = list(self._var_dict[func.output[0]].dim[:])
+        value = np.arange(start, stop, step).astype(np.float32)
+        c = generate_constant(func.output[0], func.name + "_arange",
+                              TensorProto.FLOAT, output_shape,
+                              value)
+        return [c]
+
+    def Tile(self, func):
+        # Convert Reshape+Constant+Tile
+        nl = []
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        reps = list(func.tile_param.reps)
+        input = func.input[0]
+        if len(reps) > len(input_shape):
+            new_input_shape = np.array(
+                [1] * (len(reps) - len(input_shape)) + input_shape)
+            input_reshape = func.input[0]+"_reshape"
+            n = generate_reshape(self._model_proto.graph, func.input[0], input_reshape,
+                                 new_input_shape)
+            nl.append(n)
+            input = input_reshape
+        else:
+            reps = (len(input_shape) - len(reps)) * [1] + reps
+        # Constant
+        constant_reps = fork_name("constant")
+        c = generate_constant(constant_reps, func.name + "_reps",
+                              TensorProto.INT64, [len(reps)],
+                              reps)
+        nl.append(c)
+
+        # Tile
+        n = onnx.helper.make_node("Tile",
+                                  [input, constant_reps],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def Sinc(self, func):
+        # Convert Constant+Equal+Sin+Div+Where
+        nl = []
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        # Constant
+        c_zero_out = fork_name("constant")
+        c_zero_data = np.zeros(input_shape)
+        c = generate_constant(c_zero_out, func.name + "_zero",
+                              TensorProto.FLOAT, input_shape,
+                              c_zero_data.flatten())
+        nl.append(c)
+
+        # Constant
+        c_one_out = fork_name("constant")
+        c_one_data = np.ones(input_shape)
+        c = generate_constant(c_one_out, func.name + "_one",
+                              TensorProto.FLOAT, input_shape,
+                              c_one_data.flatten())
+        nl.append(c)
+
+        # Equal
+        equal_out = func.output[0]+"_equal"
+        n = onnx.helper.make_node("Equal",
+                                  [func.input[0], c_zero_out],
+                                  [equal_out])
+        nl.append(n)
+
+        # Sin
+        sin_out = func.output[0]+"_sin"
+        n = onnx.helper.make_node("Sin",
+                                  func.input,
+                                  [sin_out])
+        nl.append(n)
+
+        # Div
+        div_out = func.output[0]+"_div"
+        n = onnx.helper.make_node("Div",
+                                  [sin_out, func.input[0]],
+                                  [div_out])
+        nl.append(n)
+
+        # Where
+        n = onnx.helper.make_node("Where",
+                                  [equal_out, c_one_out, div_out],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def NotEqual(self, opset, func):
+        nl = []
+        equal_out = func.output[0]+"_equal"
+        n = onnx.helper.make_node("Equal",
+                                  func.input,
+                                  [equal_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        n = onnx.helper.make_node("Not",
+                                  [equal_out],
+                                  func.output)
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def GreaterEqual(self, opset, func):
+        nl = []
+        less_out = func.output[0]+"_less"
+        n = onnx.helper.make_node("Less",
+                                  func.input,
+                                  [less_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        n = onnx.helper.make_node("Not",
+                                  [less_out],
+                                  func.output)
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def LessEqual(self, opset, func):
+        nl = []
+        greater_out = func.output[0]+"_greater"
+        n = onnx.helper.make_node("Greater",
+                                  func.input,
+                                  [greater_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        n = onnx.helper.make_node("Not",
+                                  [greater_out],
+                                  func.output)
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def LogicalAndScalar(self, opset, func):
+        nl = []
+        scalar = func.logical_and_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.BOOL, [1],
+                              [scalar])
+        nl.append(c)
+
+        n = onnx.helper.make_node("And",
+                                  [func.input[0], constant_scalar],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        self._input_types[func.input[0]] = TensorProto.BOOL
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def LogicalOrScalar(self, opset, func):
+        nl = []
+        scalar = func.logical_or_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.BOOL, [1],
+                              [scalar])
+        nl.append(c)
+
+        n = onnx.helper.make_node("Or",
+                                  [func.input[0], constant_scalar],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        self._input_types[func.input[0]] = TensorProto.BOOL
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def LogicalXorScalar(self, opset, func):
+        nl = []
+        scalar = func.logical_xor_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.BOOL, [1],
+                              [scalar])
+        nl.append(c)
+
+        n = onnx.helper.make_node("Xor",
+                                  [func.input[0], constant_scalar],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        self._input_types[func.input[0]] = TensorProto.BOOL
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def EqualScalar(self, opset, func):
+        nl = []
+        scalar = func.equal_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.FLOAT, [1],
+                              [scalar])
+        nl.append(c)
+
+        n = onnx.helper.make_node("Equal",
+                                  [func.input[0], constant_scalar],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def NotEqualScalar(self, opset, func):
+        nl = []
+        scalar = func.not_equal_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.FLOAT, [1],
+                              [scalar])
+        nl.append(c)
+
+        equal_out = func.output[0]+'_equal'
+        n = onnx.helper.make_node("Equal",
+                                  [func.input[0], constant_scalar],
+                                  [equal_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        n = onnx.helper.make_node("Not",
+                                  [equal_out],
+                                  func.output)
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def GreaterEqualScalar(self, opset, func):
+        nl = []
+        scalar = func.greater_equal_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.FLOAT, [1],
+                              [scalar])
+        nl.append(c)
+
+        less_out = func.output[0]+'_less'
+        n = onnx.helper.make_node("Less",
+                                  [func.input[0], constant_scalar],
+                                  [less_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        n = onnx.helper.make_node("Not",
+                                  [less_out],
+                                  func.output)
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def GreaterScalar(self, opset, func):
+        nl = []
+        scalar = func.greater_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.FLOAT, [1],
+                              [scalar])
+        nl.append(c)
+
+        n = onnx.helper.make_node("Greater",
+                                  [func.input[0], constant_scalar],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def LessEqualScalar(self, opset, func):
+        nl = []
+        scalar = func.less_equal_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.FLOAT, [1],
+                              [scalar])
+        nl.append(c)
+
+        greater_out = func.output[0]+'_greater'
+        n = onnx.helper.make_node("Greater",
+                                  [func.input[0], constant_scalar],
+                                  [greater_out])
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        n = onnx.helper.make_node("Not",
+                                  [greater_out],
+                                  func.output)
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
+    def LessScalar(self, opset, func):
+        nl = []
+        scalar = func.less_scalar_param.val
+        constant_scalar = fork_name("constant")
+        c = generate_constant(constant_scalar, func.name + "_scalar",
+                              TensorProto.FLOAT, [1],
+                              [scalar])
+        nl.append(c)
+
+        n = onnx.helper.make_node("Less",
+                                  [func.input[0], constant_scalar],
+                                  func.output)
+        if opset == "6":
+            b = onnx.helper.make_attribute("broadcast", 1)
+            n.attribute.extend([b])
+        nl.append(n)
+
+        self._output_types[func.output[0]] = TensorProto.BOOL
+
+        return nl
+
     def set_network(self):
         if len(self._nnp.executor) != 1:
             raise ValueError(
@@ -2123,6 +2917,22 @@ class OnnxExporter:
                 n.attribute.extend([pad, m, v])
             else:
                 n.attribute.extend([pad, m])
+            nl.append(n)
+        elif func.type == "Constant":
+            cp = func.constant_param
+            shape = list(self._var_dict[func.output[0]].dim[:])
+            val = [cp.val]*np.prod(shape)
+            t = onnx.helper.make_tensor("Constant",
+                                        data_type=TensorProto.FLOAT,
+                                        dims=shape, vals=val)
+            p = onnx.helper.make_attribute("value", t)
+            n.attribute.extend([p])
+            nl.append(n)
+        elif func.type == "IsNaN":
+            self._output_types[func.output[0]] = TensorProto.BOOL
+            nl.append(n)
+        elif func.type == "Where":
+            self._input_types[func.input[0]] = TensorProto.BOOL
             nl.append(n)
         else:
             # Simply append node to list
