@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class Sub2Backward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Sub2Backward'
 

@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class ShiftBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'ShiftBackward'
 

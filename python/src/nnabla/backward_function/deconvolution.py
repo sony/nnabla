@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class DeconvolutionBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'DeconvolutionBackward'
 

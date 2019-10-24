@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class ReshapeBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'ReshapeBackward'
 

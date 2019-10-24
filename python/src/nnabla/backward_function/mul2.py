@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class Mul2Backward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Mul2Backward'
 

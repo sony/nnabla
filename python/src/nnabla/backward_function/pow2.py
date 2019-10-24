@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class Pow2Backward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Pow2Backward'
 

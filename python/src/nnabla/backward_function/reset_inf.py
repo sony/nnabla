@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class ResetInfBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'ResetInfBackward'
 

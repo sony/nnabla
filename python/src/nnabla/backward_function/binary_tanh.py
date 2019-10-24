@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class BinaryTanhBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'BinaryTanhBackward'
 

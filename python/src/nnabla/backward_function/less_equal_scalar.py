@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class LessEqualScalarBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'LessEqualScalarBackward'
 

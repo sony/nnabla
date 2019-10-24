@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class RandnBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'RandnBackward'
 

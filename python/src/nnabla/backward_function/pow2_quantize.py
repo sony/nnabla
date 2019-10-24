@@ -18,6 +18,7 @@ from .backward_function import BackwardFunction
 
 class Pow2QuantizeBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Pow2QuantizeBackward'
 

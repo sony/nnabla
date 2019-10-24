@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class ConcatenateBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'ConcatenateBackward'
 

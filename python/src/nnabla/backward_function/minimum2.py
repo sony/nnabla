@@ -19,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class Minimum2Backward(BackwardFunction):
 
+    @property
     def name(self):
         return 'Minimum2Backward'
 
