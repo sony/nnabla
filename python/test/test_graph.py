@@ -79,18 +79,18 @@ def test_graph_model(model, seed):
             z3 = PF.affine(z2, 5)
     elif model == "recurrent":
         with nn.parameter_scope('fc1'):
-            z = PF.affine(x, 4)
+            z = PF.affine(x, 8)
             z2 = F.relu(z, inplace=True)
         h = z2
         for _ in range(2):
             with nn.parameter_scope('fc2'):
-                h = PF.affine(h, 4)
+                h = PF.affine(h, 8)
                 h = F.relu(h, inplace=True)
         with nn.parameter_scope('fc3'):
             z3 = PF.affine(h, 5)
     elif model == "convolution":
         with nn.parameter_scope('conv1'):
-            z = PF.convolution(x, 16, (2, 2))
+            z = PF.convolution(x, 3, (2, 2))
             z2 = F.relu(z, inplace=True)
         with nn.parameter_scope('fc2'):
             z3 = PF.affine(z2, 5)
@@ -294,3 +294,15 @@ def test_function_hook():
     # Just calling test
     nn.forward_all((y, z), function_pre_hook=lambda f: None,
                    function_post_hook=lambda f: None)
+
+
+@pytest.mark.parametrize("seed", [313])
+def test_shared_variable_on_same_function(seed):
+    rng = np.random.RandomState(313)
+    xd = rng.randn(2, 3)
+    x = nn.Variable.from_numpy_array(xd).apply(need_grad=True)
+    x.grad.zero()
+    y = x * x * x
+    y.forward()
+    y.backward()
+    assert_allclose(x.g, 3 * xd ** 2)
