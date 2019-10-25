@@ -323,7 +323,7 @@ schedule_swap_in(int& head, size_t& used_bytes_swap_in,
       auto next_array_bytes = r.size * sizeof_dtype(r.dtype);
 
       if (used_bytes_swap_in + next_array_bytes
-          > max_bytes_swap_in - max_bytes_swap_out) {
+          > max_bytes_swap_in - used_bytes_swap_out) {
         break; // Out of memory. Stop fetching.
       }
 
@@ -784,6 +784,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
       order_idx < func_block_ends[func_idx] &&
       (tag == order[order_idx].tag &&
        saptr != rec_saptr &&
+       saptr->size() == order[order_idx].size &&
        dtype == order[order_idx].dtype &&
        get_array_key_from_context(ctx) ==
        get_array_key_from_context(order[order_idx].ctx))) {
@@ -802,6 +803,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
            (order_idx < func_block_ends[func_idx] && 
             (tag != order[order_idx].tag || 
              saptr != rec_saptr || 
+             saptr->size() != order[order_idx].size ||
              dtype != order[order_idx].dtype ||
              get_array_key_from_context(ctx) != 
              get_array_key_from_context(order[order_idx].ctx)))) {
