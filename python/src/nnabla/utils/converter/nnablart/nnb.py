@@ -36,7 +36,8 @@ class Nnb:
     from_type_name = {
         'FLOAT32': NN_DATA_TYPE_FLOAT,
         'FIXED16': NN_DATA_TYPE_INT16,
-        'FIXED8': NN_DATA_TYPE_INT8
+        'FIXED8': NN_DATA_TYPE_INT8,
+        'SIGN': NN_DATA_TYPE_SIGN
     }
     fp_pos_max = {NN_DATA_TYPE_INT16: 15, NN_DATA_TYPE_INT8: 7}
 
@@ -174,6 +175,15 @@ class NnbExporter:
                 array = np.array(self._info._parameters[v.name].data)
                 if type_name == 'FLOAT32':
                     fmt_base = '{}f'
+                elif type_name == 'SIGN':
+                    array = array.astype(np.uint8)
+                    array[array == 255] = 0
+                    array = array.reshape(-1, 8)
+                    for i in range(array.shape[0]):
+                        array[i] = array[i][::-1]
+                    array = array.flatten()
+                    fmt_base = '{}B'
+                    array = np.packbits(array)
                 else:  # type_name == 'FIXED16' or type_name == 'FIXED8'
                     fmt_base = '{}h' if type_name == 'FIXED16' else '{}b'
                     # if fp_pos is not specified, compute it looking at its distribution
@@ -194,6 +204,9 @@ class NnbExporter:
                 index, pointer = self._alloc(data=data)
                 var.data_index = index
             elif v.type == 'Buffer':
+                if var.type == Nnb.NN_DATA_TYPE_SIGN:
+                    raise ValueError(
+                        'Unsupport SIGN type for Buffer Variable.')
                 # check fp_pos
                 if var.type != Nnb.NN_DATA_TYPE_FLOAT and fp_pos is None:
                     msg = 'fp_pos must be specified for Buffer Variable'

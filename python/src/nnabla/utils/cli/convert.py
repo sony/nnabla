@@ -98,7 +98,7 @@ def add_convert_command(subparsers):
     subparser = subparsers.add_parser(
         'nnb_template', help='Generate NNB config file template.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
-                           help='File or directory name(s) to convert.')
+                           help='File to generate NNB config file template. The last is setting yaml file.')
     # import option
     add_import_arg(subparser)
 
