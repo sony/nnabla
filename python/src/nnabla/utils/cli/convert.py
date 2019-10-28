@@ -106,6 +106,8 @@ def add_convert_command(subparsers):
                            help='[export] overwrite batch size.')
     subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
                            help='Default type of variable')
+    subparser.add_argument('--api', type=int, default=-1,
+                           help='Set API Level to convert to, default is highest API Level.')
 
     subparser.set_defaults(func=nnb_template_command)
 
