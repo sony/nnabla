@@ -131,8 +131,9 @@ class Encoder(BaseGenerator):
 
 
 class GlobalGenerator(BaseGenerator):
-    def __init__(self, padding_type="reflect"):
+    def __init__(self, padding_type="reflect", n_outputs=3):
         super(GlobalGenerator, self).__init__(padding_type=padding_type)
+        self.n_outputs = n_outputs
 
     @namescope_decorator("frontend")
     def front_end(self, x):
@@ -172,7 +173,7 @@ class GlobalGenerator(BaseGenerator):
             pad_width = get_symmetric_padwidth(
                 3, channel_last=self.channel_last)
             h = F.pad(h, pad_width=pad_width, mode=self.padding_type)
-            h = PF.convolution(h, 3, (7, 7), **self.conv_opts)
+            h = PF.convolution(h, self.n_outputs, (7, 7), **self.conv_opts)
             h = F.tanh(h)
 
         return h, last_feat
@@ -191,8 +192,9 @@ class GlobalGenerator(BaseGenerator):
 
 
 class LocalGenerator(BaseGenerator):
-    def __init__(self, padding_type="reflect"):
+    def __init__(self, padding_type="reflect", n_outputs=3):
         super(LocalGenerator, self).__init__(padding_type=padding_type)
+        self.n_outputs = n_outputs
 
     @namescope_decorator("frontend")
     def front_end(self, x):
@@ -227,7 +229,7 @@ class LocalGenerator(BaseGenerator):
             pad_width = get_symmetric_padwidth(
                 3, channel_last=self.channel_last)
             h = F.pad(h, pad_width=pad_width, mode=self.padding_type)
-            h = PF.convolution(h, 3, (7, 7), **self.conv_opts)
+            h = PF.convolution(h, self.n_outputs, (7, 7), **self.conv_opts)
             h = F.tanh(h)
 
         return h, last_feat
@@ -243,7 +245,7 @@ class LocalGenerator(BaseGenerator):
                 inputs[-1], (3, 3), (2, 2), pad=(1, 1), including_pad=False))
 
         # global generator (coarsest scale generator)
-        gg = GlobalGenerator(self.padding_type)
+        gg = GlobalGenerator(self.padding_type, self.n_outputs)
 
         _input = inputs.pop()  # get the coarsest scale input
         last_scale_out, last_scale_feat = gg(_input, downsample_input=False)
