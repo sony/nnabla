@@ -70,6 +70,7 @@ class Reporter(object):
         self.nimage_per_epoch = nimage_per_epoch
         self.buff = {k: nn.NdArray() for k in losses.keys()}
         self.show_interval = show_interval
+        self.flushed = True
 
         is_master = comm.rank == 0
         self.monitor = MonitorWrapper(save_path, self.epoch_losses) if (
@@ -129,16 +130,11 @@ class Reporter(object):
 
         self.piter = progress_iter
 
-    def __call__(self):
-        # update state
-        self.batch_cnt += 1
 
-        for loss_name, loss in self.losses:
-            self.buff[loss_name] += loss.data
-
-        if self.batch_cnt % self.show_interval > 0:
+    def _flush_losses(self):
+        if self.flushed:
             return
-
+        self.flushed = True
         desc = "[reporter][epoch {}]".format(self.epoch)
 
         for loss_name, loss in self.losses:
@@ -151,7 +147,23 @@ class Reporter(object):
 
         self._reset_buffer()
 
+
+    def __call__(self):
+        self.flushed = False
+        # update state
+        self.batch_cnt += 1
+
+        for loss_name, loss in self.losses:
+            self.buff[loss_name] += loss.data
+
+        if self.batch_cnt % self.show_interval > 0:
+            return
+
+        self._flush_losses()
+
+
     def epoch_end(self, images, epoch):
+        self._flush_losses()
         # images = {"image_name": image, ...}
         comm_values = {k: nn.NdArray.from_numpy_array(np.asarray(x / self.batch_cnt, dtype=np.float32))
                        for k, x in self.epoch_losses.items()}
