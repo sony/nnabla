@@ -21,6 +21,12 @@
 #include <nbla/singleton_manager.hpp>
 
 
+#define ENABLE_DEBUG_SWAPINOUTSCHEDULER 1
+
+#if ENABLE_DEBUG_SWAPINOUTSCHEDULER
+  std::vector<std::string> debug_func_names;
+#endif
+
 namespace nbla {
 
 using std::accumulate;
@@ -77,8 +83,12 @@ void SwapInOutScheduler::reset() {
 //  Pre/post hook of function and update
 //----------------------------------------------------------------
 
-void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) { 
-  pre_callback(); 
+void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) {
+  pre_callback();
+
+  #if ENABLE_DEBUG_SWAPINOUTSCHEDULER
+    debug_func_names.push_back(ptr->function()->name());
+  #endif
 }
 
 void SwapInOutScheduler::post_function_callback(const CgFunctionPtr &ptr) {}
@@ -221,6 +231,40 @@ void SwapInOutScheduler::schedule() {
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
+
+    #if (ENABLE_DEBUG_SWAPINOUTSCHEDULER) 
+      size_t bytes_required_in_this_func = 0;
+      unordered_map<unsigned int, bool> same_synced_array_flag;
+
+      for (size_t i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
+        RecType& r = order[i];
+
+        if (r.tag == RecTag::CLEAR) {
+          continue;
+        }
+
+        if (r.ctx.array_class == device_ctx.array_class) {
+          if (!same_synced_array_flag[r.synced_array_id]) {
+            bytes_required_in_this_func += r.size * sizeof_dtype(r.dtype);
+            same_synced_array_flag[r.synced_array_id] = true;
+          }
+        }
+        else if (r.ctx.array_class != host_ctx.array_class) {
+          // Get/cast of an array on an uncertain device
+          NBLA_ERROR(error_code::type,
+            "Unsupported array type: " + r.ctx.array_class);
+        }
+      }
+
+      std::cout << "DEBUG: " << debug_func_names[fid - 1] << "uses " 
+                << bytes_required_in_this_func 
+                << " bytes, and the current memory capacity is "
+                << max_bytes_swap_in - used_bytes_swap_out
+                << ". Ratio: " 
+                << (float)bytes_required_in_this_func  / (max_bytes_swap_in - used_bytes_swap_out)
+                << std::endl;
+    #endif
+
     swap_in_schedule[fid] = schedule_swap_in(head, used_bytes_swap_in, 
                                              synced_array_counts,
                                              host_uses_this_synced_array,

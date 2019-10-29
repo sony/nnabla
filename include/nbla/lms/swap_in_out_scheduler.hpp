@@ -22,11 +22,11 @@
 #include <nbla/computation_graph/function.hpp>
 
 namespace std {
-  template <class T>
-  struct hash {
-    static_assert(is_enum<T>::value, "This hash only works for enumeration types");
-    size_t operator()(T x) const noexcept {
-      using type = typename underlying_type<T>::type;
+  template <> struct hash<nbla::dtypes> {
+    static_assert(is_enum<nbla::dtypes>::value, 
+                  "This hash only works for enumeration types");
+    size_t operator()(nbla::dtypes x) const noexcept {
+      using type = typename underlying_type<nbla::dtypes>::type;
       return hash<type>{}(static_cast<type>(x));
     }
   };
