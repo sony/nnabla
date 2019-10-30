@@ -17,6 +17,8 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
 
+import numpy as np
+
 
 def namescope_decorator(scope):
     def wrapper1(builder_function):
@@ -379,6 +381,52 @@ def encode_inputs(inst_label, id_label, n_ids, use_encoder=False, channel_last=F
         return id_onehot, bm
 
     return F.transpose(id_onehot, (0, 3, 1, 2)), F.transpose(bm, (0, 3, 1, 2))
+
+
+def vgg16_loss(fake, real):
+    '''VGG perceptual loss based on VGG-16 network.
+
+    Assuming the values in fake and real are in [0, 255].
+
+    Features are obtained from all ReLU activations of the first convolution
+    after each downsampling (maxpooling) layer
+    (including the first convolution applied to an image).
+    '''
+    from nnabla.models.imagenet import VGG16
+
+    class VisitFeatures(object):
+        def __init__(self):
+            self.features = []
+            self.relu_counter = 0
+            self.features_at = set([0, 2, 4, 7, 10])
+
+        def __call__(self, f):
+            # print(f.name, end='')
+            if not f.name.startswith('ReLU'):
+                # print('')
+                return
+            if self.relu_counter in self.features_at:
+                self.features.append(f.outputs[0])
+                # print('*', end='')
+            # print('')
+            self.relu_counter +=1
+
+    # We use VGG16 model instead of VGG19 because VGG19
+    # is not in nnabla.models.
+    vgg = VGG16()
+
+    def get_features(x):
+        o = vgg(x, use_up_to='lastconv')
+        f = VisitFeatures()
+        o.visit(f)
+        return f
+
+    fake_features = get_features(fake)
+    real_features = get_features(real)
+
+    volumes = np.array([np.prod(f.shape) for f in fake_features.features], dtype=np.float32)
+    weights = volumes[-1] / volumes
+    return sum([w * F.mean(F.absolute_error(ff, fr)) for w, ff, fr in zip(weights, fake_features.features, real_features.features)])
 
 
 def define_loss(real_out, real_feats, fake_out, fake_feats, use_fm=True, fm_lambda=10.):
