@@ -21,11 +21,13 @@
 #include <nbla/singleton_manager.hpp>
 
 
-#define ENABLE_DEBUG_SWAPINOUTSCHEDULER 1
+#define ENABLE_DEBUG_SWAPINOUTSCHEDULER 0
 
 #if ENABLE_DEBUG_SWAPINOUTSCHEDULER
-  std::vector<std::string> debug_func_names;
+  std::vector<std::string> debug_func_names = {"pre_forward"};
 #endif
+
+#define ASYNC_FLAG_SWAPINOUTSCHEDULER (AsyncFlag::ASYNC | AsyncFlag::UNSAFE)
 
 namespace nbla {
 
@@ -43,7 +45,10 @@ SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
       [&](SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
           const dtypes dtype, const Context &ctx, const bool write_only) {
        synced_array_callback_recorder(saptr, func_name, dtype, 
-                                      ctx, write_only); }) {}
+                                      ctx, write_only); }) {
+    // Create non blocking data streams
+    BackendUtils::create_lms_streams(d_ctx);
+}
 
 
 SwapInOutScheduler::~SwapInOutScheduler() {}
@@ -94,7 +99,11 @@ void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) {
 void SwapInOutScheduler::post_function_callback(const CgFunctionPtr &ptr) {}
 
 void SwapInOutScheduler::pre_update_callback() { 
-  pre_callback(); 
+  pre_callback();
+
+  #if ENABLE_DEBUG_SWAPINOUTSCHEDULER
+    debug_func_names.push_back("Update");
+  #endif
 }
 
 void SwapInOutScheduler::post_update_callback() {}
@@ -183,14 +192,14 @@ void SwapInOutScheduler::swap_out_wrong_order() {
       auto p = wrong_ordered[i].sawptr.lock();
 
       if (p && p->get_num_arrays() > 0) {
-        // The array not cleared yet. Swap out the array synchronously
+        // The array not cleared yet. Swap out the array synchronously	
         p->cast(wrong_ordered[i].dtype, host_ctx, false);
       }
     }
     else if (wrong_ordered[i].ctx.array_class != host_ctx.array_class) {
       // Function used an array on an uncertain device
       NBLA_ERROR(error_code::type,
-        "Unsupported array class: " + wrong_ordered[i].ctx.array_class);
+                 "Unsupported array class: " + wrong_ordered[i].ctx.array_class);
     }
   }
 }
@@ -221,6 +230,48 @@ void SwapInOutScheduler::schedule() {
   // Virtually iterate all layer functions and solver update
   int fid = 0;
 
+   #if (ENABLE_DEBUG_SWAPINOUTSCHEDULER) 
+      size_t bytes_required_in_this_func = 0;
+      size_t max_bytes_required_in_this_func = 0;
+      unordered_map<unsigned int, unordered_map<dtypes, bool>> same_array_flag;
+
+      for (size_t i = 0; i < func_block_ends[fid]; i++) {
+        RecType& r = order[i];
+
+        if (r.tag == RecTag::CLEAR) {
+          if (!same_array_flag[r.synced_array_id].empty()) {
+	    for (const auto elem : same_array_flag[r.synced_array_id]) {
+	      bytes_required_in_this_func -= r.size * sizeof_dtype(elem.first);
+	    }
+            same_array_flag[r.synced_array_id].clear();;
+          }
+        }
+        else if (r.ctx.array_class == device_ctx.array_class) {
+          if (!same_array_flag[r.synced_array_id][r.dtype]) {
+            bytes_required_in_this_func += r.size * sizeof_dtype(r.dtype);
+            same_array_flag[r.synced_array_id][r.dtype] = true;
+          }
+        }
+        else if (r.ctx.array_class != host_ctx.array_class) {
+          // Get/cast of an array on an uncertain device
+          NBLA_ERROR(error_code::type,
+                     "Unsupported array type: " + r.ctx.array_class);
+        }
+
+	if (max_bytes_required_in_this_func < bytes_required_in_this_func) {
+	  max_bytes_required_in_this_func = bytes_required_in_this_func;
+	}
+      }
+
+      std::cout << "DEBUG: " << debug_func_names[fid] << " uses " 
+                << max_bytes_required_in_this_func 
+                << " bytes, and the current memory capacity is "
+                << max_bytes_swap_in - used_bytes_swap_out
+                << ". Ratio: " 
+                << (float)max_bytes_required_in_this_func  / (max_bytes_swap_in - used_bytes_swap_out)
+                << std::endl;
+    #endif
+
   // Before forward
   detect_swap_in_before_forward(head, used_bytes_swap_in,
                                 synced_array_counts);
@@ -234,34 +285,43 @@ void SwapInOutScheduler::schedule() {
 
     #if (ENABLE_DEBUG_SWAPINOUTSCHEDULER) 
       size_t bytes_required_in_this_func = 0;
-      unordered_map<unsigned int, bool> same_synced_array_flag;
+      size_t max_bytes_required_in_this_func = 0;
+      unordered_map<unsigned int, unordered_map<dtypes, bool>> same_array_flag;
 
       for (size_t i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
         RecType& r = order[i];
 
         if (r.tag == RecTag::CLEAR) {
-          continue;
+          if (!same_array_flag[r.synced_array_id].empty()) {
+	    for (const auto elem : same_array_flag[r.synced_array_id]) {
+	      bytes_required_in_this_func -= r.size * sizeof_dtype(elem.first);
+	    }
+            same_array_flag[r.synced_array_id].clear();;
+          }
         }
-
-        if (r.ctx.array_class == device_ctx.array_class) {
-          if (!same_synced_array_flag[r.synced_array_id]) {
+        else if (r.ctx.array_class == device_ctx.array_class) {
+          if (!same_array_flag[r.synced_array_id][r.dtype]) {
             bytes_required_in_this_func += r.size * sizeof_dtype(r.dtype);
-            same_synced_array_flag[r.synced_array_id] = true;
+            same_array_flag[r.synced_array_id][r.dtype] = true;
           }
         }
         else if (r.ctx.array_class != host_ctx.array_class) {
           // Get/cast of an array on an uncertain device
           NBLA_ERROR(error_code::type,
-            "Unsupported array type: " + r.ctx.array_class);
+                     "Unsupported array type: " + r.ctx.array_class);
         }
+
+	if (max_bytes_required_in_this_func < bytes_required_in_this_func) {
+	  max_bytes_required_in_this_func = bytes_required_in_this_func;
+	}
       }
 
-      std::cout << "DEBUG: " << debug_func_names[fid - 1] << "uses " 
-                << bytes_required_in_this_func 
+      std::cout << "DEBUG: " << debug_func_names[fid] << " uses " 
+                << max_bytes_required_in_this_func 
                 << " bytes, and the current memory capacity is "
                 << max_bytes_swap_in - used_bytes_swap_out
                 << ". Ratio: " 
-                << (float)bytes_required_in_this_func  / (max_bytes_swap_in - used_bytes_swap_out)
+                << (float)max_bytes_required_in_this_func  / (max_bytes_swap_in - used_bytes_swap_out)
                 << std::endl;
     #endif
 
@@ -338,7 +398,7 @@ detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
     else {
       // Get/cast of an array on an uncertain device
       NBLA_ERROR(error_code::type,
-        "Unsupported array type: " + r.ctx.array_class);
+                 "Unsupported array type: " + r.ctx.array_class);
     }
   }
 }
@@ -619,7 +679,7 @@ void SwapInOutScheduler::swap_in_step() {
 void SwapInOutScheduler::swap_in() {
   for (auto r : swap_in_schedule[func_idx]) {
     if (auto p = r.get().sawptr.lock()) {
-      p->get(r.get().dtype, r.get().ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+      p->get(r.get().dtype, r.get().ctx, ASYNC_FLAG_SWAPINOUTSCHEDULER);
     }
   }
 }
@@ -655,7 +715,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
         // always swapped out.
         // The array is not cleared yet. Swap out the array
         p->cast(p->dtype(), host_ctx, false,
-                AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+                ASYNC_FLAG_SWAPINOUTSCHEDULER);
 
         auto array_bytes = p->size() * sizeof_dtype(p->dtype());
         used_bytes_swap_out += array_bytes; // Increase memory usage
@@ -720,7 +780,7 @@ void  SwapInOutScheduler::swap_out_scheduled() {
       }
       else if (!r.get().no_need_swap_out) {
         p->cast(p->dtype(), host_ctx, false,
-          AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+            		ASYNC_FLAG_SWAPINOUTSCHEDULER);
       }
     }
   }
@@ -729,31 +789,27 @@ void  SwapInOutScheduler::swap_out_scheduled() {
 
 void SwapInOutScheduler::wait_for_swap_out_scheduled() {
   for (auto r : wait_schedule[func_idx]) {
-    if (r.get().no_need_swap_out) {
-      continue;
-    }
-
-    auto p = r.get().sawptr.lock();
-
-    if (p && p->head_array_class() == host_ctx.array_class &&
-        p->get_num_arrays() > 0) {
-        p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
-    }
+    wait_for_swap_out_scheduled_impl(r.get());
   }
 }
 
 void SwapInOutScheduler::wait_for_all_swap_out_scheduled() {
   for (auto r : wait_all_schedule) {
-    if (r.get().no_need_swap_out) {
-      continue;
-    }
+    wait_for_swap_out_scheduled_impl(r.get());
+  }
+}
 
-    auto p = r.get().sawptr.lock();
+  
+void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType& r) {
+  if (r.no_need_swap_out) {
+    return;
+  }
 
-    if (p && p->head_array_class() == host_ctx.array_class &&
+  auto p = r.sawptr.lock();
+
+  if (p && p->head_array_class() == host_ctx.array_class &&
       p->get_num_arrays() > 0) {
-      p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
-    }
+    p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
   }
 }
 

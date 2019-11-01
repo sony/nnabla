@@ -252,6 +252,7 @@ private:
   void wait_for_all_swap_out_first_iter();
   void wait_for_all_swap_out_scheduled();
   void wait_for_swap_out_first_iter_impl();
+  void wait_for_swap_out_scheduled_impl(const RecType& r);
   void swap_out_wrong_order();
 
   // Schedule

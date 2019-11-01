@@ -81,4 +81,8 @@ shared_ptr<Allocator> BackendUtils::naive_allocator(const Context ctx) {
 void BackendUtils::device_synchronize(const Context ctx) {
   return get_backend_getter(ctx)()->device_synchronize(ctx.device_id);
 }
+
+void BackendUtils::create_lms_streams(const Context ctx) {
+  return get_backend_getter(ctx)()->create_lms_streams(std::stoi(ctx.device_id));
+}
 }

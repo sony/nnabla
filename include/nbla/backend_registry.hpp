@@ -72,6 +72,10 @@ public:
    */
   static void device_synchronize(const Context ctx);
 
+  /** Call create_lms_streams of the backend in a context.
+  */
+  static void create_lms_streams(const Context ctx);
+
 private:
   //  Never be created
   inline BackendUtils() {}

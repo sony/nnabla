@@ -64,6 +64,10 @@ public:
    */
   virtual void device_synchronize(const string &device) = 0;
 
+  /** Create non blockuing streams for data transfer
+   */
+  virtual void create_lms_streams(int device = -1) = 0;
+
 protected:
   vector<string> array_classes_; ///< Available array classes
 

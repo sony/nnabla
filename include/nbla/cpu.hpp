@@ -59,8 +59,13 @@ public:
   shared_ptr<Allocator> naive_allocator();
 
   /** Synchronize host to device.
-  */
+   */
   void device_synchronize(const string &device);
+
+  /** Create non blockuing streams for data transfer.
+      Noting to do in CPU backend.
+   */
+  void create_lms_streams(int device = -1) {}
 
 protected:
   vector<string> array_classes_; ///< Available array classes
