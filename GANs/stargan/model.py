@@ -31,7 +31,7 @@ def resblock(x, dim_out, w_init=None, epsilon=1e-05):
     return x + h
 
 
-def generator(x, c, conv_dim=64, c_dim=5, repeat_num=6, w_init=None, epsilon=1e-05):
+def generator(x, c, conv_dim=64, c_dim=5, num_downsample=2, num_upsample=2, repeat_num=6, w_init=None, epsilon=1e-05):
     assert len(c.shape) == 4
     c = F.tile(c, (1, 1) + x.shape[2:])
     concat_input = F.concatenate(x, c, axis=1)
@@ -43,7 +43,7 @@ def generator(x, c, conv_dim=64, c_dim=5, repeat_num=6, w_init=None, epsilon=1e-
 
     # Down-sampling layers.
     curr_dim = conv_dim
-    for i in range(2):
+    for i in range(num_downsample):
         h = PF.convolution(h, curr_dim*2, kernel=(4, 4), pad=(1, 1), stride=(2, 2),
                            with_bias=False, w_init=w_init, name="downsample_{}".format(i))
         h = PF.instance_normalization(
@@ -57,7 +57,7 @@ def generator(x, c, conv_dim=64, c_dim=5, repeat_num=6, w_init=None, epsilon=1e-
             h = resblock(h, dim_out=curr_dim)
 
     # Up-sampling layers.
-    for i in range(2):
+    for i in range(num_upsample):
         h = PF.deconvolution(h, curr_dim//2, kernel=(4, 4), pad=(1, 1), stride=(
             2, 2), w_init=w_init, with_bias=False, name="upsample_{}".format(i))
         h = PF.instance_normalization(
