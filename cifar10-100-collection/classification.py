@@ -25,7 +25,9 @@ import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 import numpy as np
 import functools
+import nnabla.utils.save as save
 from models import (resnet23_prediction, categorical_error, loss_function)
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 
 
 def train():
@@ -83,6 +85,11 @@ def train():
     # Solvers
     solver = S.Adam()
     solver.set_parameters(nn.get_parameters())
+    start_point = 0
+
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
 
     # Create monitor
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
@@ -96,8 +103,13 @@ def train():
     tdata = data_iterator(args.batch_size, True)
     vdata = data_iterator(args.batch_size, False)
 
+    # save_nnp
+    contents = save_nnp({'x': image_valid}, {'y': pred_valid}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           '{}_epoch0_result.nnp'.format(args.net)), contents)
+
     # Training-loop
-    for i in range(args.max_iter):
+    for i in range(start_point, args.max_iter):
         # Validation
         if i % int(n_train_samples / args.batch_size) == 0:
             ve = 0.
@@ -109,8 +121,8 @@ def train():
             ve /= args.val_iter
             monitor_verr.add(i, ve)
         if int(i % args.model_save_interval) == 0:
-            nn.save_parameters(os.path.join(
-                args.model_save_path, 'params_%06d.h5' % i))
+            # save checkpoint file
+            save_checkpoint(args.model_save_path, i, solver)
 
         # Forward/Zerograd/Backward
         image, label = tdata.next()
@@ -131,6 +143,11 @@ def train():
 
     nn.save_parameters(os.path.join(args.model_save_path,
                                     'params_%06d.h5' % (args.max_iter)))
+
+    # save_nnp_lastepoch
+    contents = save_nnp({'x': image_valid}, {'y': pred_valid}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           '{}_result.nnp'.format(args.net)), contents)
 
 
 if __name__ == '__main__':
