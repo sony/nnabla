@@ -24,3 +24,4 @@ from .xception import Xception
 from .googlenet import GoogLeNet
 from .resnext import ResNeXt, ResNeXt50, ResNeXt101
 from .shufflenet import ShuffleNet, ShuffleNet10, ShuffleNet05, ShuffleNet20
+from .alexnet import AlexNet

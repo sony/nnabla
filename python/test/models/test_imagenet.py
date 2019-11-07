@@ -118,7 +118,9 @@ def test_nnabla_models_imagenet_etc(model_class, up_to_list, image_size_factor, 
     ('VGG16', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('ShuffleNet10', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
     ('ShuffleNet05', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
-    ('ShuffleNet20', ['classifier', 'pool', 'lastconv', 'lastconv+relu'])
+    ('ShuffleNet20', ['classifier', 'pool', 'lastconv', 'lastconv+relu']),
+    ('AlexNet', ['classifier', 'pool',
+                 'lastconv', 'lastconv+relu', 'lastfeature'])
     ])
 @pytest.mark.parametrize('batch_size', [1, 5])
 @pytest.mark.parametrize('training', [False, True])
