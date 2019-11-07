@@ -1478,4 +1478,113 @@ def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, 
         assert abk.need_grad
         assert abv.need_grad
 
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("src_len, tgt_len, batch_size", [
+    (2, 3, 2)])
+@pytest.mark.parametrize("embed_dim, num_heads, dropout, num_encoder_layers, num_decoder_layers", [
+    (12, 6, 0.0, 6, 6),
+    (24, 12, 0.0, 6, 3)])
+@pytest.mark.parametrize("fix_parameters", [True, False])
+@pytest.mark.parametrize("rng", [None, True])
+@pytest.mark.parametrize("add_attn_bias", [True, False])
+def test_pf_transformer_execution(g_rng, src_len, tgt_len, batch_size, embed_dim, num_heads, dropout, rng, add_attn_bias, num_encoder_layers, num_decoder_layers, fix_parameters, ctx, func_name):
+
+    rng = process_rng(rng)
+
+    kw = {}
+    insert_if_not_none(kw, 'embed_dim', embed_dim)
+    insert_if_not_none(kw, 'num_heads', num_heads)
+    insert_if_not_none(kw, 'num_encoder_layers', num_encoder_layers)
+    insert_if_not_none(kw, 'num_decoder_layers', num_decoder_layers)
+    insert_if_not_default(kw, 'dropout', dropout, 0.0)
+    insert_if_not_none(kw, 'rng', rng)
+    insert_if_not_default(kw, 'add_attn_bias', add_attn_bias, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+
+    src = nn.Variable.from_numpy_array(
+        g_rng.randn(src_len, batch_size, embed_dim).astype(np.float32), need_grad=True)
+    tgt = nn.Variable.from_numpy_array(
+        g_rng.randn(tgt_len, batch_size, embed_dim).astype(np.float32), need_grad=True)
+
+    # Check execution
+    y = PF.transformer(src, tgt, **kw)
+    y.forward()
+    y.backward()
+
+    if add_attn_bias:
+        assert len(nn.get_parameters()) == 18 * \
+                   num_encoder_layers + 30 * num_decoder_layers
+    else:
+        assert len(nn.get_parameters()) == 16 * \
+                   num_encoder_layers + 26 * num_decoder_layers
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("src_len, batch_size", [
+    (2, 3)])
+@pytest.mark.parametrize("embed_dim, num_heads, dropout, dim_feedforward", [
+    (24, 12, 0.0, 64)])
+@pytest.mark.parametrize("fix_parameters", [True, False])
+@pytest.mark.parametrize("rng", [None, True])
+@pytest.mark.parametrize("add_attn_bias", [True, False])
+def test_pf_transformer_encode_execution(g_rng, src_len, batch_size, embed_dim, num_heads, dropout, rng, add_attn_bias, dim_feedforward, fix_parameters, ctx, func_name):
+
+    rng = process_rng(rng)
+
+    kw = {}
+    insert_if_not_none(kw, 'dim_feedforward', dim_feedforward)
+    insert_if_not_default(kw, 'dropout', dropout, 0.0)
+    insert_if_not_none(kw, 'rng', rng)
+    insert_if_not_default(kw, 'add_attn_bias', add_attn_bias, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+
+    src = nn.Variable.from_numpy_array(
+        g_rng.randn(src_len, batch_size, embed_dim).astype(np.float32), need_grad=True)
+
+    # Check execution
+    y = PF.transformer_encode(src, embed_dim, num_heads, **kw)
+    y.forward()
+    y.backward()
+
+    if add_attn_bias:
+        assert len(nn.get_parameters()) == 18
+    else:
+        assert len(nn.get_parameters()) == 16
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("tgt_len, batch_size", [
+    (2, 3)])
+@pytest.mark.parametrize("embed_dim, num_heads, dropout, dim_feedforward", [
+    (24, 12, 0.0, 64)])
+@pytest.mark.parametrize("fix_parameters", [True, False])
+@pytest.mark.parametrize("rng", [None, True])
+@pytest.mark.parametrize("add_attn_bias", [True, False])
+def test_pf_transformer_decode_execution(g_rng, tgt_len, batch_size, embed_dim, num_heads, dropout, rng, add_attn_bias, dim_feedforward, fix_parameters, ctx, func_name):
+
+    rng = process_rng(rng)
+
+    kw = {}
+    insert_if_not_none(kw, 'dim_feedforward', dim_feedforward)
+    insert_if_not_default(kw, 'dropout', dropout, 0.0)
+    insert_if_not_none(kw, 'rng', rng)
+    insert_if_not_default(kw, 'add_attn_bias', add_attn_bias, False)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+
+    tgt = nn.Variable.from_numpy_array(
+        g_rng.randn(tgt_len, batch_size, embed_dim).astype(np.float32), need_grad=True)
+    memory = nn.Variable.from_numpy_array(
+        g_rng.randn(tgt_len, batch_size, embed_dim).astype(np.float32), need_grad=True)
+
+    # Check execution
+    y = PF.transformer_decode(tgt, memory, embed_dim, num_heads, **kw)
+    y.forward()
+    y.backward()
+
+    if add_attn_bias:
+        assert len(nn.get_parameters()) == 30
+    else:
+        assert len(nn.get_parameters()) == 26
+
 # TODO: Test all parametric functions.

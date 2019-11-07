@@ -3640,7 +3640,7 @@ def multi_head_attention(query, key, value, num_heads=12, dropout=0.0, rng=None,
         num_heads (int, optional): Number of attention heads. Note that embedding dimensoin E must be divisible by the number of heads. Default is 12 which is conventional.
         dropout (float, optional): Dropout ratio applied to parameters. Default is 0.
         rng (numpy.random.RandomState, optional): Random generator for Initializer. Default is None.
-        with_bias (bool, optional): Specify whether to include the bias parameters. Default is False.
+        with_bias (bool, optional): Specify whether to include the bias parameters. Default is True.
         add_attn_bias (bool, optional): Specify whether to add attention bias parameters for key and value. Default is False.
         additive_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(L_T, L_S)`. Values will be added to the attention layer to prevent attention to certain positions.
         key_padding_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
@@ -3712,3 +3712,192 @@ def multi_head_attention(query, key, value, num_heads=12, dropout=0.0, rng=None,
             "attn_bias_v", (1, 1, embed_dim), attn_bias_v, True, not fix_parameters)
 
     return F.multi_head_attention(query, key, value, num_heads, qw, kw, vw, ow, qb, kb, vb, ob, abk, abv, dropout, additive_mask=additive_mask, key_padding_mask=key_padding_mask)
+
+
+@parametric_function_api("transformer", [
+    ('encoder{layer#}', 'parameters for the n\'th encoder layer',
+     'Refer to transformer_encode for details', True),
+    ('decoder{layer#}', 'parameters for the n\'th decoder layer',
+     'Refer to transformer_decode for details', True),
+])
+def transformer(src, tgt, embed_dim=512, num_heads=8, num_encoder_layers=6, num_decoder_layers=6, dim_feedforward=2048, dropout=0.1, activation=None, src_additive_mask=None, tgt_additive_mask=None, memory_additive_mask=None, src_key_padding_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None, rng=None, add_attn_bias=False, fix_parameters=False):
+    r"""Transformer.
+
+    We use the following notations to describe the inputs and outputs below.
+    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`E`: embedding dimension.
+
+    References:
+
+        A. Vaswani et al. "Attention is All You Need."
+        NIPS. 2017.
+        <https://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf>
+
+    Examples:
+
+    .. code-block:: python
+
+        src = nn.Variable((src_len, batch_size, embed_dim),need_grad=True)
+        tgt = nn.Variable((tgt_len, batch_size, embed_dim),need_grad=True)
+        out = PF.transformer(src, tgt, num_heads=16, num_encoder_layers=12)
+        out.forward()
+
+    Args:
+        src (~nnabla.Variable): Input source sequence to the encoder with shape:math:`(L_S, B, E)`.
+        tgt (~nnabla.Variable): Input target sequence to the decoder with shape :math:`(L_T, B, E)`.
+        embed_dim (int, optional): Embedding dimension to be used. Default is 512.
+        num_heads (int, optional): Number of attention heads. Default is 12.
+        num_encoder_layers (int, optional): Number of encoder layers to stack. Default is 6.
+        num_decoder_layers (int, optional): Number of decoder layers to stack. Default is 6.
+        dim_feedforward (int, optional): Dimension of the feedforward network model. Default is 2048.
+        dropout (float, optional): Dropout ratio applied. Default is 0.1.
+        activation (function, optional): Non-linear activation function to be used. Default is None, which is set as F.relu in the code.
+        src_additive_mask (~nnabla.Variable, optional): Additive mask for the src sequence (optional). :math:`(L_S, L_S)`.
+        tgt_additive_mask (~nnabla.Variable, optional): Additive mask for the tgt sequence (optional).:math:`(L_T, L_T)`.
+        memory_additive_mask (~nnabla.Variable, optional): Additive mask for the encoder output (optional). :math:`(L_T, L_S)`.
+        src_key_padding_mask (~nnabla.Variable, optional): Key padding mask for src keys per batch (optional).:math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        tgt_key_padding_mask (~nnabla.Variable, optional): Key padding mask for tgt keys per batch (optional).:math:`(B, L_T)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        memory_key_padding_mask (~nnabla.Variable, optional): Key padding mask for memory keys per batch (optional).:math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        rng (numpy.random.RandomState, optional): Random generator for Initializer. Default is None.
+        add_attn_bias (bool, optional): Specify whether to add attention bias parameters for key and value. Default is False.
+        fix_parameters (bool, optional): When set to `True`, the weights and biases will not be updated. Default is False.
+
+    Returns:
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`
+   """
+    assert src.shape[1] == tgt.shape[1], "the batch number of source and target must be equal"
+    assert src.shape[2] == embed_dim and tgt.shape[2] == embed_dim, "the feature dimension of source and target must be equal to embed_dim"
+
+    memory = src
+
+    for i in range(num_encoder_layers):
+        memory = transformer_encode(
+            memory, embed_dim=embed_dim, num_heads=num_heads, dim_feedforward=dim_feedforward, dropout=dropout, activation=activation, src_additive_mask=src_additive_mask, src_key_padding_mask=src_key_padding_mask, rng=rng, add_attn_bias=add_attn_bias, fix_parameters=fix_parameters, name='encoder{:02d}'.format(i))
+
+    output = tgt
+
+    for i in range(num_decoder_layers):
+        output = transformer_decode(output, memory, embed_dim=embed_dim, num_heads=num_heads, dim_feedforward=dim_feedforward, dropout=dropout, activation=activation, tgt_additive_mask=tgt_additive_mask, memory_additive_mask=memory_additive_mask,
+                                    tgt_key_padding_mask=tgt_key_padding_mask, memory_key_padding_mask=memory_key_padding_mask, rng=rng, add_attn_bias=add_attn_bias, fix_parameters=fix_parameters, name='decoder{:02d}'.format(i))
+
+    return output
+
+
+@parametric_function_api("transformer_encode", [
+    ('src_self_attn', 'self-attention parameters for source sequence',
+     'Refer to multi_head_attention for details', True),
+    ('enc_affine1', 'first affine used in encoder',
+     'Refer to affine for details', True),
+    ('enc_affine2', 'second affine used in encoder',
+     'Refer to affine for details', True),
+    ('enc_layer_norm1', 'fist layer normalization used in encoder',
+     'Refer to layer_normalization for details', True),
+    ('enc_layer_norm2', 'second layer normalization used in encoder',
+     'Refer to layer_normalization for details', True),
+])
+def transformer_encode(src, embed_dim, num_heads, dim_feedforward=2048, dropout=0.1, activation=None, src_additive_mask=None, src_key_padding_mask=None, rng=None, add_attn_bias=False, fix_parameters=False):
+    r"""Transformer Encoder.
+
+    Args:
+        src (~nnabla.Variable): Input sequnce to the encoder layer with shape :math:`(L_S, B, E)`.
+        embed_dim (int): Number of embedding dimension.
+        num_heads (int): Number of attention heads.
+        dim_feedforward (int, optional): Dimension of the feedforward network model. Default is 2048.
+        dropout (float, optional): Dropout ratio. Default is 0.1.
+        activation (function, optional): Non-linear activation function to be used. Default is None, which is set as F.relu in the code.
+        src_additive_mask (~nnabla.Variable, optional): Additive mask for the source sequence with shape :math:`(L_S, L_S)`
+        src_key_padding_mask (~nnabla.Variable, optional): Padding mask for the source sequence with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        rng (numpy.random.RandomState, optional): Random generator for Initializer. Defalut is None.
+        add_attn_bias (bool, optional): Specify whether to add attention bias parameters for key and value. Default is False.
+        fix_parameters (bool, optional): When set to `True`, the weights and biases will not be updated. Default is False.
+
+    Returns:
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_S, B, E)`
+    """
+    if activation is None:
+        activation = F.relu
+    src_self_attn = multi_head_attention(
+        src, src, src, num_heads=num_heads, add_attn_bias=add_attn_bias, additive_mask=src_additive_mask, key_padding_mask=src_key_padding_mask, name='src_self_attn')[0]
+    if dropout > 0:
+        src_self_attn = F.dropout(src_self_attn, dropout)
+    src_self_attn = src + src_self_attn
+    src = layer_normalization(
+        src_self_attn, batch_axis=(0, 1), name='enc_layer_norm1')
+    src_affine = activation(affine(src, dim_feedforward,
+                                   base_axis=2, name='enc_affine1'))
+    if dropout > 0:
+        src_affine = F.dropout(src_affine, dropout)
+    src_affine = affine(src_affine, embed_dim, base_axis=2, name='enc_affine2')
+    if dropout > 0:
+        src_affine = F.dropout(src_affine, dropout)
+    src_affine = src + src_affine
+    src = layer_normalization(
+        src_affine, batch_axis=(0, 1), name='enc_layer_norm2')
+    return src
+
+
+@parametric_function_api("transformer_decode", [
+    ('tgt_self_attn', 'self-attention parameters for target sequence',
+     'Refer to multi_head_attention for details', True),
+    ('tgt_memory_attn', 'attention parameters for target sequence with output from encoder as key',
+     'Refer to multi_head_attention for details', True),
+    ('dec_affine1', 'first affine used in decoder',
+     'Refer to affine for details', True),
+    ('dec_affine2', 'second affine used in decoder',
+     'Refer to affine for details', True),
+    ('dec_layer_norm1', 'fist layer normalization used in decoder',
+     'Refer to layer_normalization for details', True),
+    ('dec_layer_norm2', 'second layer normalization used in decoder',
+     'Refer to layer_normalization for details', True),
+    ('dec_layer_norm3', 'third layer normalization used in decoder',
+     'Refer to layer_normalization for details', True),
+])
+def transformer_decode(tgt, memory, embed_dim, num_heads, dim_feedforward=2048, dropout=0.1, activation=None, tgt_additive_mask=None, memory_additive_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None, rng=None, add_attn_bias=False, fix_parameters=False):
+    r"""Transformer Decoder.
+
+    Args:
+        tgt (~nnabla.Variable): Input sequnce to the decoder layer with shape :math:`(L_T, B, E)`.
+        memory (~nnabla.Variable): Output sequnce from the last layer of the encoder with shape :math:`(L_T, B, E)`.
+        embed_dim (int): Number of embedding dimension.
+        num_heads (int): Number of attention heads.
+        dim_feedforward (int, optional): Dimension of the feedforward network model. Default is 2048.
+        dropout (float, optional): Dropout ratio. Default is 0.1.
+        activation (function, optional): Non-linear activation function to be used. Default is None, which is set as F.relu in the code.
+        tgt_additive_mask (~nnabla.Variable, optional): Additive mask for the target sequence with shape :math:`(L_T, L_T)`.
+        memory_additive_mask (~nnabla.Variable, optional): Additive mask for the memory sequcne with shape :math:`(L_T, L_S)`.
+        tgt_key_padding_mask (~nnabla.Variable, optional): Padding mask for the target sequence with shape :math:`(B, L_T)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        memory_key_padding_mask (~nnabla.Variable, optional): Padding mask for the mask sequence with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        rng (numpy.random.RandomState): Random generator for Initializer. Default is None.
+        add_attn_bias (bool, optional): Specify whether to add attention bias parameters for key and value. Default is False.
+        fix_parameters (bool): When set to `True`, the weights and biases will not be updated. Default is False.
+
+    Returns:
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`
+    """
+    if activation is None:
+        activation = F.relu
+    tgt_self_attn = multi_head_attention(
+        tgt, tgt, tgt, num_heads=num_heads, add_attn_bias=add_attn_bias, additive_mask=tgt_additive_mask, key_padding_mask=tgt_key_padding_mask, name='tgt_self_attn')[0]
+    if dropout > 0:
+        tgt_self_attn = F.dropout(tgt_self_attn, dropout)
+    tgt_self_attn = tgt + tgt_self_attn
+    tgt = layer_normalization(
+        tgt_self_attn, batch_axis=(0, 1), name='dec_layer_norm1')
+    tgt_multi_attn = multi_head_attention(
+        tgt, memory, memory, num_heads=num_heads, add_attn_bias=add_attn_bias, additive_mask=memory_additive_mask, key_padding_mask=memory_key_padding_mask, name='tgt_memory_attn')[0]
+    if dropout > 0:
+        tgt_multi_attn = F.dropout(tgt_multi_attn, dropout)
+    tgt_multi_attn = tgt + tgt_multi_attn
+    tgt = layer_normalization(
+        tgt_multi_attn, batch_axis=(0, 1), name='dec_layer_norm2')
+    tgt_affine = activation(affine(tgt, dim_feedforward,
+                                   base_axis=2, name='dec_affine1'))
+    if dropout > 0:
+        tgt_affine = F.dropout(tgt_affine, dropout)
+    tgt_affine = affine(tgt_affine, embed_dim, base_axis=2, name='dec_affine2')
+    if dropout > 0:
+        tgt_affine = F.dropout(tgt_affine, dropout)
+    tgt_affine = tgt + tgt_affine
+    tgt = layer_normalization(
+        tgt_affine, batch_axis=(0, 1), name='dec_layer_norm3')
+
+    return tgt

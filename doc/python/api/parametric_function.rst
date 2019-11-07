@@ -112,6 +112,9 @@ Here is the list of parametric functions.
 
 .. autofunction:: spectral_norm
 .. autofunction:: multi_head_attention
+.. autoclass:: transformer
+.. autoclass:: transformer_encode
+.. autoclass:: transformer_decode
 
 Parameter Initializer
 ---------------------
