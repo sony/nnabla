@@ -16,6 +16,6 @@
 # Multi-gpu training command for 1024 x 2048 generator on cityscapes dataset
 
 N_GPU=4
-LOAD_PATH="./result/cityscapes_512_1024/param_final.h5"
+LOAD_PATH="./results/cityscapes_512_1024/param_final.h5"
 
-mpirun -N ${N_GPU} python train.py --type-config half --fix-global-epoch 20 --d-n-scales 3 --g-n-scales 2 --save-path ./result/cityscapes_1024_2048 --load-path ${LOAD_PATH}
+mpirun -N ${N_GPU} python train.py --fix-global-epoch 20 --d-n-scales 3 --g-n-scales 2 --save-path ./results/cityscapes_1024_2048 --load-path ${LOAD_PATH}

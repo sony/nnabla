@@ -17,4 +17,4 @@
 
 DEVICE=0
 
-python train.py --device-id ${DEVICE} --fix-global-epoch 0 --d-n-scales 2 --g-n-scales 1 --save-path ./result/cityscapes_512_1024
+python train.py --device-id ${DEVICE} --fix-global-epoch 0 --d-n-scales 2 --g-n-scales 1 --save-path ./results/cityscapes_512_1024

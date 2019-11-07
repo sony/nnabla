@@ -14,7 +14,7 @@ __Result Examples (cherry picked)__
 ## Requirements
 ### system environments
 * CUDA, CUDNN
-* 11G GPU memory or larger for half, 20GB GPU memory or larger for float
+* 15G GPU memory or larger for half, 28GB GPU memory or larger for float are needed to train full model on 1024x2048 images.
 * (For multi GPUs execution) OpenMPI
 
 ### python environments
@@ -30,7 +30,7 @@ For more information, see [NNabla CUDA extension package installation guild](htt
 ## Dataset
 Download Cityscapes dataset from [here](https://www.cityscapes-dataset.com/).  
 In this example, `gtFine_trainvaltest.zip` and `leftImg8bit_trainvaltest.zip` are needed.  
-Once you download and extract them, create `./data/` dir and place extracted directories to it.
+Once you download and extract them, create `./data/Cityscapes` dir and place extracted directories to it.
 
 
 ## Running Code
@@ -78,7 +78,8 @@ Generated images will be saved at log directory (default is `./result/cityscapes
 
 
 ## Note 
-* Currently, this example is only for the cityscapes dataset.
+* All configurations are listed in config.yaml. You can change model settings by editing this.
+* Currently, this example only supports cityscapes dataset.
 * Instance encoding hasn't implemented yet. (Image manipulation is not supported.)
 
 

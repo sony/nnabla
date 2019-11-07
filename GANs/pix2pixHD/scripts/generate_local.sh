@@ -14,6 +14,6 @@
 
 # Generation command for 1024 x 2048 generator on cityscapes dataset
 
-MODEL_PATH="./result/cityscapes_1024_2048"
+MODEL_PATH="./results/cityscapes_1024_2048"
 
-python generate.py --g-n-scales 2 --save-path ${MODEL_PATH} --load-path "${MODEL_PATH}/param_final.h5"
+python generate.py --load-path "${MODEL_PATH}/param_final.h5"

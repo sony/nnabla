@@ -15,6 +15,6 @@
 # Generation command for 512 x 1024 generator on cityscapes dataset
 
 N_GPU=4
-MODEL_PATH="./result/cityscapes_512_1024"
+MODEL_PATH="./results/cityscapes_512_1024"
 
-mpirun -N ${N_GPU} python generate.py --g-n-scales 1 --save-path ${MODEL_PATH} --load-path "${MODEL_PATH}/param_final.h5"
+mpirun -N ${N_GPU} python generate.py --load-path "${MODEL_PATH}/param_final.h5"

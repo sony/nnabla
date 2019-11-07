@@ -16,6 +16,6 @@
 # Training command for 1024 x 2048 generator on cityscapes dataset
 
 DEVICE=0
-LOAD_PATH="./result/cityscapes_512_1024/param_final.h5"
+LOAD_PATH="./results/cityscapes_512_1024/param_final.h5"
 
-python train.py --device-id ${DEVICE} --fix-global-epoch 20 --d-n-scales 3 --g-n-scales 2 --save-path ./result/cityscapes_1024_2048 --load-path ${LOAD_PATH}
+python train.py --device-id ${DEVICE} --fix-global-epoch 20 --d-n-scales 3 --g-n-scales 2 --save-path ./results/cityscapes_1024_2048 --load-path ${LOAD_PATH}

@@ -17,7 +17,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
 
-import numpy as np
+from utils import get_gan_loss
 
 
 def namescope_decorator(scope):
@@ -43,13 +43,12 @@ def get_symmetric_padwidth(pad, dims=2, channel_last=False):
 
 class BaseGenerator(object):
     def __init__(self, padding_type="reflect", channel_last=False):
-        self.initializer = I.NormalInitializer(0.02)
         self.padding_type = padding_type
         self.channel_last = channel_last
         # currently deconv dose not support channel last.
-        self.conv_opts = dict(w_init=self.initializer)
+        self.conv_opts = dict(w_init=I.NormalInitializer(0.02))
         # don't use adaptive parameter
-        self.norm_opts = dict(fix_parameters=True)
+        self.norm_opts = dict(no_scale=True, no_bias=True)
 
     def instance_norm_relu(self, x):
         # return F.relu(PF.layer_normalization(x, **self.norm_opts), inplace=True)
@@ -138,16 +137,15 @@ class GlobalGenerator(BaseGenerator):
         self.n_outputs = n_outputs
 
     @namescope_decorator("frontend")
-    def front_end(self, x):
+    def front_end(self, x, channels):
         with nn.parameter_scope("first_layer"):
             pad_width = get_symmetric_padwidth(
                 3, channel_last=self.channel_last)
             h = F.pad(x, pad_width=pad_width, mode=self.padding_type)
-            h = PF.convolution(h, 64, (7, 7), **self.conv_opts)
+            h = PF.convolution(h, channels[0], (7, 7), **self.conv_opts)
             h = self.instance_norm_relu(h)
 
-        channels = [128, 256, 512, 1024]
-        for i, channel in enumerate(channels):
+        for i, channel in enumerate(channels[1:]):
             with nn.parameter_scope("down_sample_layer_{}".format(i)):
                 h = PF.convolution(h, channel, (3, 3), stride=(
                     2, 2), pad=(1, 1), **self.conv_opts)
@@ -156,13 +154,12 @@ class GlobalGenerator(BaseGenerator):
         return h
 
     @namescope_decorator("residual")
-    def residual(self, x):
-        return self.residual_loop(x, 1024, 9)
+    def residual(self, x, num_layers):
+        return self.residual_loop(x, 1024, num_layers)
 
     @namescope_decorator("backend")
-    def back_end(self, x):
+    def back_end(self, x, channels):
         h = x
-        channels = [512, 256, 128, 64]
         for i, channel in enumerate(channels):
             with nn.parameter_scope("up_sample_layer_{}".format(i)):
                 h = PF.deconvolution(h, channel, (4, 4), stride=(
@@ -180,15 +177,15 @@ class GlobalGenerator(BaseGenerator):
 
         return h, last_feat
 
-    def __call__(self, x, downsample_input=True):
+    def __call__(self, x, channels, downsample_input=True, n_residual_layers=9):
         if downsample_input:
             x = F.average_pooling(
                 x, (3, 3), (2, 2), pad=(1, 1), including_pad=False)
 
         with nn.parameter_scope("generator/global"):
-            h = self.front_end(x)
-            h = self.residual(h)
-            out, feat = self.back_end(h)
+            h = self.front_end(x, channels)
+            h = self.residual(h, n_residual_layers)
+            out, feat = self.back_end(h, channels[-2::-1])
 
         return out, feat
 
@@ -199,29 +196,31 @@ class LocalGenerator(BaseGenerator):
         self.n_outputs = n_outputs
 
     @namescope_decorator("frontend")
-    def front_end(self, x):
+    def front_end(self, x, channels):
+        assert len(channels) == 2
+
         with nn.parameter_scope("first_layer"):
             pad_width = get_symmetric_padwidth(
                 3, channel_last=self.channel_last)
             h = F.pad(x, pad_width=pad_width, mode=self.padding_type)
-            h = PF.convolution(h, 32, (7, 7), **self.conv_opts)
+            h = PF.convolution(h, channels[0], (7, 7), **self.conv_opts)
             h = self.instance_norm_relu(h)
 
         with nn.parameter_scope("down_sample_layer"):
-            h = PF.convolution(h, 64, (3, 3), stride=(2, 2),
+            h = PF.convolution(h, channels[1], (3, 3), stride=(2, 2),
                                pad=(1, 1), **self.conv_opts)
             h = self.instance_norm_relu(h)
 
         return h
 
     @namescope_decorator("residual")
-    def residual(self, x):
-        return self.residual_loop(x, 64, 3)
+    def residual(self, x, num_layers):
+        return self.residual_loop(x, 64, num_layers)
 
     @namescope_decorator("backend")
-    def back_end(self, x):
+    def back_end(self, x, channel):
         with nn.parameter_scope("up_sample_layer"):
-            h = PF.deconvolution(x, 32, (4, 4), stride=(
+            h = PF.deconvolution(x, channel, (4, 4), stride=(
                 2, 2), pad=(1, 1), **self.conv_opts)
             h = self.instance_norm_relu(h)
 
@@ -236,7 +235,8 @@ class LocalGenerator(BaseGenerator):
 
         return h, last_feat
 
-    def __call__(self, x, n_scales=1):
+    def __call__(self, x, lg_channels, gg_channels,
+                 n_scales=1, lg_n_residual_layers=3, gg_n_residual_layers=9):
         if n_scales < 1:
             raise ValueError("n_scale must be equal or greater than 1.")
 
@@ -250,15 +250,17 @@ class LocalGenerator(BaseGenerator):
         gg = GlobalGenerator(self.padding_type, self.n_outputs)
 
         _input = inputs.pop()  # get the coarsest scale input
-        last_scale_out, last_scale_feat = gg(_input, downsample_input=False)
+        last_scale_out, last_scale_feat = gg(_input, gg_channels,
+                                             downsample_input=False, n_residual_layers=gg_n_residual_layers)
 
         # if n_scales == 1, below loop is skipped and local generator is identical to global generator.
         for scale_id in range(n_scales - 1):
             _input = inputs.pop()  # get input from coarser scale.
             with nn.parameter_scope("generator/local_{}".format(scale_id)):
-                h = self.front_end(_input)
-                h = self.residual(h + last_scale_feat)
-                last_scale_out, last_scale_feat = self.back_end(h)
+                h = self.front_end(_input, lg_channels)
+                h = self.residual(h + last_scale_feat, lg_n_residual_layers)
+                last_scale_out, last_scale_feat = self.back_end(
+                    h, lg_channels[0])
 
         return last_scale_out, last_scale_feat
 
@@ -268,13 +270,11 @@ class Discriminator(object):
         self.n_layers = 4
         self.base_fdim = 64
 
-        self.initializer = I.NormalInitializer(0.02)
-        self.conv_opts = dict(w_init=self.initializer)
-        self.norm_opts = dict(fix_parameters=True)
+        self.conv_opts = dict(w_init=I.NormalInitializer(0.02))
 
     def instance_norm_lrelu(self, x, alpha=0.2):
-        # return F.leaky_relu(PF.layer_normalization(x, **self.norm_opts), alpha=alpha, inplace=True)
-        return F.leaky_relu(PF.instance_normalization(x, **self.norm_opts), alpha=alpha, inplace=True)
+        norm = PF.instance_normalization(x, no_scale=True, no_bias=True)
+        return F.leaky_relu(norm, alpha=alpha, inplace=True)
 
     def pad_conv(self, x, fdim, stride):
         h = PF.convolution(x, fdim, (4, 4), stride=stride,
@@ -383,58 +383,14 @@ def encode_inputs(inst_label, id_label, n_ids, use_encoder=False, channel_last=F
     return F.transpose(id_onehot, (0, 3, 1, 2)), F.transpose(bm, (0, 3, 1, 2))
 
 
-def vgg16_loss(fake, real):
-    '''VGG perceptual loss based on VGG-16 network.
-
-    Assuming the values in fake and real are in [0, 255].
-
-    Features are obtained from all ReLU activations of the first convolution
-    after each downsampling (maxpooling) layer
-    (including the first convolution applied to an image).
-    '''
-    from nnabla.models.imagenet import VGG16
-
-    class VisitFeatures(object):
-        def __init__(self):
-            self.features = []
-            self.relu_counter = 0
-            self.features_at = set([0, 2, 4, 7, 10])
-
-        def __call__(self, f):
-            # print(f.name, end='')
-            if not f.name.startswith('ReLU'):
-                # print('')
-                return
-            if self.relu_counter in self.features_at:
-                self.features.append(f.outputs[0])
-                # print('*', end='')
-            # print('')
-            self.relu_counter +=1
-
-    # We use VGG16 model instead of VGG19 because VGG19
-    # is not in nnabla.models.
-    vgg = VGG16()
-
-    def get_features(x):
-        o = vgg(x, use_up_to='lastconv')
-        f = VisitFeatures()
-        o.visit(f)
-        return f
-
-    fake_features = get_features(fake)
-    real_features = get_features(real)
-
-    volumes = np.array([np.prod(f.shape) for f in fake_features.features], dtype=np.float32)
-    weights = volumes[-1] / volumes
-    return sum([w * F.mean(F.absolute_error(ff, fr)) for w, ff, fr in zip(weights, fake_features.features, real_features.features)])
-
-
-def define_loss(real_out, real_feats, fake_out, fake_feats, use_fm=True, fm_lambda=10.):
+def define_loss(real_out, real_feats, fake_out, fake_feats,
+                use_fm=True, fm_lambda=10., gan_loss_type="ls"):
     g_gan = 0
     g_feat = 0 if use_fm else F.constant(0)
-    g_vgg = F.constant(0)  # todo
     d_real = 0
     d_fake = 0
+
+    gan_loss = get_gan_loss(gan_loss_type)
 
     n_disc = len(real_out)
 
@@ -445,15 +401,11 @@ def define_loss(real_out, real_feats, fake_out, fake_feats, use_fm=True, fm_lamb
         f_feats = fake_feats[disc_id]
 
         # define GAN loss
-        # # for D
-        d_real += F.mean(F.squared_error(r_out,
-                                         F.constant(1., shape=r_out.shape)))
-        d_fake += F.mean(F.squared_error(f_out,
-                                         F.constant(0., shape=f_out.shape)))
+        _d_real, _d_fake, _g_gan = gan_loss(r_out, f_out)
 
-        # # for G
-        g_gan += F.mean(F.squared_error(f_out,
-                                        F.constant(1., shape=f_out.shape)))
+        d_real += _d_real
+        d_fake += _d_fake
+        g_gan += _g_gan
 
         # feature matching
         if use_fm:
@@ -463,4 +415,4 @@ def define_loss(real_out, real_feats, fake_out, fake_feats, use_fm=True, fm_lamb
                 g_feat += F.mean(F.absolute_error(r_feat,
                                                   f_feats[layer_id])) * fm_lambda / n_disc
 
-    return g_gan, g_feat, g_vgg, d_real, d_fake
+    return g_gan, g_feat, d_real, d_fake

@@ -17,4 +17,4 @@
 
 N_GPU=4
 
-mpirun -N ${N_GPU} python train.py --fix-global-epoch 0 --d-n-scales 2 --g-n-scales 1 --save-path ./result/cityscapes_512_1024
+mpirun -N ${N_GPU} python train.py --fix-global-epoch 0 --d-n-scales 2 --g-n-scales 1 --save-path ./results/cityscapes_512_1024

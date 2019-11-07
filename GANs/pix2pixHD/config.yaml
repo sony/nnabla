@@ -1,0 +1,77 @@
+nnabla_context:
+  ext_name: cudnn
+  device_id: "0"
+  type_config: float
+
+train:
+  batch_size: 1
+  save_path: ./results
+  data_set: cityscapes
+
+  # Path to pre-trained weight file (.h5)
+  load_path:
+
+  # Total number of epochs training performed
+  max_epochs: 200
+  # Epoch number where linear learning rate decay starts at.
+  # The learning rate will be linearly approaching to 0 at max_epochs.
+  lr_decay_starts: 100
+  # Base learning rate
+  base_lr: 2e-4
+
+  # Number of mini-batch iterations per epoch.
+  # If omitted, dataset size will be used.
+  samples_per_epoch: 5000
+
+  # Number of epochs where the global generator's parameters are fixed.
+  fix_global_epoch: 0
+
+  # Coefficient of feature matching loss
+  lambda_feat: 10.0
+  # Coefficient of perceptual loss by VGG16
+  lambda_perceptual: 10.0
+
+  # Whether random image horizontal flipping is employed
+  flip: false
+
+  # Random seed
+  random_seed: 726
+
+model:
+  # Image size of lowest resolution generator (global generator)
+  # [height, width]
+  base_image_shape: [512, 1024]
+
+  # A number of generator resolution stacks
+  # If 1 only global generator is used.
+  g_n_scales: 1
+
+  # Number of layers of discriminator pyramids
+  d_n_scales: 2
+
+  # GlobalGenerator
+  # Number of channels at each resolution
+  gg_channels: [64, 128, 256, 512, 1024]
+  # Number of residual block loops
+  gg_num_residual_loop: 9
+
+  # LocalGenerator
+  # Number of channels at each resolution
+  lg_channels: [32, 64]
+  # Number of residual block loops
+  lg_num_residual_loop: 3
+
+  # Upsampling function "deconv" or "interp"
+  # If "interp", bilinear interpolation + conv3x3 is used rather than deconv4x4
+  upsampler: deconv
+
+  # The kernel size of the last convolution in each generator
+  last_conv_kernel: 7
+
+
+cityscapes:
+  # dataset directory. leftImg8bit and gtFine are needed here.
+  data_dir: ./data/Cityscapes
+
+  # Number of object ids.
+  n_label_ids: 35
