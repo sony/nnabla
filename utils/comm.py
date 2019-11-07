@@ -17,13 +17,13 @@ class CommunicatorWrapper(object):
     def __init__(self, ctx):
         try:
             import nnabla.communicators as C
-            comm = C.MultiProcessDataParalellCommunicator(ctx)
+            comm = C.MultiProcessDataParallelCommunicator(ctx)
         except Exception as e:
             print(e)
             print('No communicator found. Running with a single process. If you run this with MPI processes,'
                   ' all processes will perform totally same.')
             self.n_procs = 1
-            self.rank = 0
+            self.rank = 0 if ctx.context == "cpu" else int(ctx.device_id)
             self.ctx = ctx
             self.comm = None
             return
@@ -40,3 +40,11 @@ class CommunicatorWrapper(object):
             # skip all reduce since no processes have to be all-reduced
             return
         self.comm.all_reduce(params, division=division, inplace=inplace)
+
+    def all_reduced_solver_update(self, solver, division=False, inplace=True):
+        if self.n_procs > 1:
+            params = [
+                x.grad for x in solver.get_parameters().values()]
+            self.all_reduce(params, division=division, inplace=inplace)
+
+        solver.update()
