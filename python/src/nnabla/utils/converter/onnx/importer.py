@@ -372,6 +372,8 @@ def convert_parameter_shape(pb):
             # copy all input names for scale, bias, mean, variance
             batch_norm_constants.extend(f.input[1:5])
 
+    batch_norm_constants = list(set(batch_norm_constants))
+
     # This loop should be fairly slow since we loop through all variables and parameters per constant
     for c in batch_norm_constants:
         # Reshape all BatchNormalization constant inputs assuming the size is (1,size,1,1)
@@ -428,6 +430,22 @@ def add_tensor_as_parameter(pb, tensor):
         raise ValueError("Unsupported tensor data type for {}: {}"
                          .format(tensor.name, tensor.data_type))
     p.need_grad = False
+
+
+def create_parameter_variable(pb, name, shape, val):
+    p = pb.parameter.add()
+    p.variable_name = name
+    p.shape.dim.extend(shape)
+    p.data.extend(val)
+
+    v = pb.network[0].variable.add()
+    v.name = name
+    v.shape.dim.extend(shape)
+    v.type = "Parameter"
+    v.initializer.type = "Constant"
+    v.initializer.multiplier = 1.0
+
+    return v
 
 
 class OnnxImporter:
@@ -494,8 +512,8 @@ class OnnxImporter:
             "Reciprocal": partial(self.ElementWiseScalar, 'RDivScalar'),
             "Neg": partial(self.ElementWiseScalar, 'MulScalar'),
             "LogSoftmax": self.LogSoftmax,
-            "Softplus": self.Softplus,
-            "Softsign": self.Softsign,
+            "Softplus": partial(self.GeneralOperator, 'SoftPlus'),
+            "Softsign": partial(self.GeneralOperator, 'SoftSign'),
             "LRN": self.LRN,
             "Clip": self.Clip,
             # Constant does not get converted to a function
@@ -518,6 +536,10 @@ class OnnxImporter:
             "Upsample": self.Upsample_6,
             "Mean": self.Mean,
             "ConvTranspose": self.ConvTranspose,
+            "ConstantOfShape": self.ConstantOfShape,
+            "HardSigmoid": self.HardSigmoid,
+            "Hardmax": self.Hardmax,
+            "InstanceNormalization": self.InstanceNormalization,
         }
 
         # opset_7 table
@@ -560,6 +582,8 @@ class OnnxImporter:
             "IsNaN": partial(self.GeneralOperator, 'IsNaN'),
             "Sign": partial(self.GeneralOperator, 'Sign'),
             "Upsample": self.Upsample_9,
+            "Expand": self.Expand,
+            "Where": partial(self.GeneralOperator, 'Where'),
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -1736,51 +1760,6 @@ class OnnxImporter:
         self._shape_output[n.output[0]] = input_shape
         func_list.append(rp)
 
-    def Softplus(self, func_list, n):
-        # Convert to Exp+AddScalar+Log
-        func = self.generate_default_function("Log", n)
-        spin = n.input[0]
-        expout = spin+"_exp"
-        expf = generate_unary("Exp", n.name, spin,
-                              expout, self._graph.name, self._func_counter)
-        self._shape_output[expout] = self.get_func_input_shape(spin)
-        func_list.append(expf)
-        asout = expout+"_adds"
-        asf = generate_add_scalar(n.name, expout, asout, 1.0,
-                                  self._graph.name, self._func_counter)
-        self._shape_output[asout] = self._shape_output[expout]
-        func_list.append(asf)
-        # rewire Log input to AddScalar output
-        del func.input[:]
-        func.input.extend([asout])
-        self._shape_output[func.output[0]] = self._shape_output[asout]
-        func_list.append(func)
-
-    def Softsign(self, func_list, n):
-        # Convert to Abs+AddScalar+Div2
-        func = self.generate_default_function("Div2", n)
-        ssin = n.input[0]
-        expout = ssin+"_abs"
-        expf = generate_unary("Abs", n.name, ssin,
-                              expout, self._graph.name, self._func_counter)
-        self._shape_output[expout] = self.get_func_input_shape(ssin)
-        func_list.append(expf)
-        asout = expout+"_adds"
-        asf = generate_add_scalar(n.name, expout, asout, 1.0,
-                                  self._graph.name, self._func_counter)
-        self._shape_output[asout] = self._shape_output[expout]
-        func_list.append(asf)
-        # rewire Div2 input to original input and AddScalar output
-        del func.input[:]
-        func.input.extend([ssin, asout])
-        input0_shape = self.get_func_input_shape(ssin)
-        input1_shape = self.get_func_input_shape(asout)
-        output_shape = []
-        for i in range(len(input0_shape)):
-            output_shape.append(max(input0_shape[i], input1_shape[i]))
-        self._shape_output[func.output[0]] = output_shape
-        func_list.append(func)
-
     def Clip(self, func_list, n):
         func = self.generate_default_function("Clip", n)
         maxval = None
@@ -2430,6 +2409,225 @@ class OnnxImporter:
         else:
             func_list.append(func)
         self._shape_output[n.output[0]] = output_shape
+
+    def ConstantOfShape(self, func_list, n):
+        func = self.generate_default_function("Constant", n)
+        cp = func.constant_param
+        cp.val = 0.0
+        for attr in n.attribute:
+            if attr.name == "value":
+                if attr.t.data_type == TensorProto.FLOAT:
+                    cp.val = attr.t.float_data[0]
+                elif attr.t.data_type == TensorProto.INT32:
+                    cp.val = attr.t.int32_data[0]
+                elif attr.t.data_type == TensorProto.INT64:
+                    cp.val = attr.t.int64_data[0]
+                else:
+                    raise ValueError(
+                        "Unsupported tensor data type: {}".format(attr.t.data_type))
+
+        raw_data = self.get_input_raw_data(func.input[0])
+        if raw_data:
+            cp.shape.dim.extend(raw_data)
+        else:
+            raise ValueError("Not found shape")
+        self._merged_inputs.append(func.input[0])
+        del func.input[0]
+        self._shape_output[func.output[0]] = raw_data
+        func_list.append(func)
+
+    def Expand(self, func_list, n):
+        func = self.generate_default_function("Broadcast", n)
+        bp = func.broadcast_param
+        input = n.input[0]
+
+        input_shape = self.get_func_input_shape(n.input[0])
+
+        raw_data = self.get_input_raw_data(func.input[1])
+        if not raw_data:
+            raise ValueError("Not found shape")
+
+        if len(raw_data) > len(input_shape):
+            new_shape = [1] * (len(raw_data) - len(input_shape)) + input_shape
+            rout = n.input[0]+"_shape"
+            rp = generate_reshape(n.name, n.input[0], rout, new_shape,
+                                  self._graph.name, self._func_counter)
+            self._shape_output[rout] = new_shape
+            func_list.append(rp)
+            input = rout
+
+        bp.shape.dim.extend(raw_data)
+
+        self._merged_inputs.append(func.input[1])
+        del func.input[1]
+        func.input[0] = input
+        self._shape_output[func.output[0]] = raw_data
+        func_list.append(func)
+
+    def HardSigmoid(self, func_list, n):
+        alpha = 0.2
+        beta = 0.5
+        shape = self.get_func_input_shape(n.input[0])
+        for attr in n.attribute:
+            if attr.name == "alpha":
+                alpha = attr.f
+            elif attr.name == "beta":
+                beta = attr.f
+        if alpha == 0.2 and beta == 0.5:
+            func = self.generate_default_function("HardSigmoid", n)
+            func_list.append(func)
+        else:
+            muls_out = n.input[0]+"_muls"
+            muls = generate_mul_scalar(n.name, n.input[0], muls_out,
+                                       alpha, self._graph.name, self._func_counter)
+            self._shape_output[muls_out] = shape
+            func_list.append(muls)
+
+            adds_out = n.input[0]+"_adds"
+            adds = generate_add_scalar(n.name, muls_out, adds_out,
+                                       beta, self._graph.name, self._func_counter)
+            self._shape_output[adds_out] = shape
+            func_list.append(adds)
+
+            mins_out = n.input[0]+"_mins"
+            mins = generate_minimum_scalar(n.name, adds_out, mins_out,
+                                           1, self._graph.name, self._func_counter)
+            self._shape_output[mins_out] = shape
+            func_list.append(mins)
+
+            maxs = generate_maximum_scalar(n.name, mins_out, n.output[0],
+                                           0, self._graph.name, self._func_counter)
+            self._shape_output[n.output[0]] = shape
+            func_list.append(maxs)
+
+    def Hardmax(self, func_list, n):
+        axis = 1
+        for attr in n.attribute:
+            if attr.name == "axis":
+                axis = attr.i
+        input_shape = self.get_func_input_shape(n.input[0])
+        new_shape = [int(np.prod(input_shape[:axis])),
+                     int(np.prod(input_shape[axis:]))]
+        rout = n.input[0]+"_shape"
+        rp = generate_reshape(n.name, n.input[0], rout, new_shape,
+                              self._graph.name, self._func_counter)
+        self._shape_output[rout] = new_shape
+        func_list.append(rp)
+
+        max_func = self.generate_default_function("Max", n)
+        max_out = n.input[0]+"_max"
+        max_func.input[0] = rout
+        max_func.output[0] = max_out
+        mp = max_func.max_param
+        mp.only_index = True
+        mp.keep_dims = True
+        mp.axes.extend([1])
+        self._shape_output[max_out] = [new_shape[0], 1]
+        func_list.append(max_func)
+
+        one_hot_func = self.generate_default_function("OneHot", n)
+        one_hot_out = n.input[0]+"_one_hot"
+        one_hot_func.input[0] = max_out
+        one_hot_func.output[0] = one_hot_out
+        one_hot_p = one_hot_func.one_hot_param
+        one_hot_p.shape.dim.extend([new_shape[1]])
+        self._shape_output[one_hot_out] = new_shape
+        func_list.append(one_hot_func)
+
+        rp = generate_reshape(n.name, one_hot_out, n.output[0], input_shape,
+                              self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(rp)
+
+    def InstanceNormalization(self, func_list, n):
+        input_shape = self.get_func_input_shape(n.input[0])
+        scale_shape = self.get_func_input_shape(n.input[1])
+        nnp_order = [0, 2, 1]
+        nnp_input = [n.input[i] for i in nnp_order]
+
+        mean_out = n.input[0]+"_mean"
+        mean_param = create_parameter_variable(self._pb, mean_out,
+                                               scale_shape, [0]*scale_shape[0])
+        self._param_list.append(mean_param)
+        self._param_vars[mean_out] = None
+        nnp_input.append(mean_out)
+        variance_out = n.input[0]+"_variance"
+        variance_param = create_parameter_variable(self._pb, variance_out,
+                                                   scale_shape, [0]*scale_shape[0])
+        self._param_list.append(variance_param)
+        self._param_vars[variance_out] = None
+        nnp_input.append(variance_out)
+
+        epsilon = 1e-05
+        for attr in n.attribute:
+            if attr.name == "epsilon":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError(
+                        "Only FLOAT is supported for epsilon in InstanceNormalization op_type")
+                epsilon = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+
+        if input_shape[0] > 1:
+            # Split
+            sout = []
+            for i in range(input_shape[0]):
+                sout.append(n.input[0]+"_split_"+str(i))
+                self._shape_output[n.input[0] +
+                                   "_split_"+str(i)] = input_shape[1:]
+            sp = generate_split(n.name, n.input[0], sout, 0,
+                                self._graph.name, self._func_counter)
+            func_list.append(sp)
+
+            # Reshape
+            for i in range(len(sout)):
+                rout = sout[i]+"_reshape"
+                rp = generate_reshape(n.name, sout[i], rout, [1] + input_shape[1:],
+                                      self._graph.name, self._func_counter)
+                sout[i] = rout
+                func_list.append(rp)
+                self._shape_output[rout] = [1] + input_shape[1:]
+
+            # BatchNormalization
+            all_bn_out = []
+            for i in range(len(sout)):
+                bn_out = n.input[0]+"_bn_"+str(i)
+                all_bn_out.append(bn_out)
+                bn_func = self.generate_default_function(
+                    "BatchNormalization", n)
+                del bn_func.input[:]
+                bn_func.input.extend(nnp_input)
+                bnp = bn_func.batch_normalization_param
+                bnp.axes.extend([1])
+                bnp.eps = epsilon
+                bnp.decay_rate = 0.9
+                bnp.batch_stat = True
+                bn_func.input[0] = sout[i]
+                bn_func.output[0] = bn_out
+                func_list.append(bn_func)
+                self._shape_output[bn_out] = [1] + input_shape[1:]
+
+            # Concatenate
+            concatenate_func = self.generate_default_function("Concatenate", n)
+            del concatenate_func.input[:]
+            concatenate_func.input.extend(all_bn_out)
+            concatenate_func.output[0] = n.output[0]
+            concatenate_p = concatenate_func.concatenate_param
+            concatenate_p.axis = 0
+            self._shape_output[n.output[0]] = input_shape
+            func_list.append(concatenate_func)
+        else:
+            bn_func = self.generate_default_function("BatchNormalization", n)
+            del bn_func.input[:]
+            bn_func.input.extend(nnp_input)
+            bnp = bn_func.batch_normalization_param
+            bnp.axes.extend([1])
+            bnp.eps = epsilon
+            bnp.decay_rate = 0.9
+            bnp.batch_stat = True
+            func_list.append(bn_func)
+            self._shape_output[n.output[0]] = input_shape
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
