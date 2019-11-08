@@ -8,7 +8,7 @@ import nnabla.functions as F
 from nnabla.logger import logger
 
 from utils import *
-from models import LocalGenerator, Discriminator, encode_inputs, define_loss
+from models import LocalGenerator, encode_inputs
 
 
 class Trainer(object):
@@ -57,20 +57,14 @@ class Trainer(object):
         unlinked_fake = fake.get_unlinked_variable(need_grad=True)
 
         # discriminator
-        discriminator = Discriminator()
-
-        d_input_real = F.concatenate(real, x, axis=1)
-        d_input_fake = F.concatenate(unlinked_fake, x, axis=1)
-        d_real_out, d_real_feats = discriminator(
-            d_input_real, self.model_conf.d_n_scales)
-        d_fake_out, d_fake_feats = discriminator(
-            d_input_fake, self.model_conf.d_n_scales)
-
-        g_gan, g_feat, d_real, d_fake = define_loss(d_real_out, d_real_feats,
-                                                    d_fake_out, d_fake_feats,
-                                                    use_fm=True,
-                                                    fm_lambda=self.train_conf.lambda_feat,
-                                                    gan_loss_type="ls")
+        discriminator = PatchGAN(n_scales=self.model_conf.d_n_scales, use_spectral_normalization=False)
+        d_real_out, d_real_feats = discriminator(F.concatenate(real, x, axis=1))
+        d_fake_out, d_fake_feats = discriminator(F.concatenate(unlinked_fake, x, axis=1))
+        g_gan, g_feat, d_real, d_fake = discriminator.get_loss(d_real_out, d_real_feats,
+                                                               d_fake_out, d_fake_feats,
+                                                               use_fm=True,
+                                                               fm_lambda=self.train_conf.lambda_feat,
+                                                               gan_loss_type="ls")
 
         g_vgg = vgg16_perceptual_loss(
             real, unlinked_fake) * self.train_conf.lambda_perceptual
@@ -97,9 +91,9 @@ class Trainer(object):
         d_solver.set_parameters(get_params_startswith("discriminator"))
 
         # lr scheduler
-        lr_schduler = LearningRateScheduler(self.train_conf.base_lr,
-                                            training_epoch=self.train_conf.max_epochs,
-                                            decay_at=self.train_conf.lr_decay_starts)
+        lr_schduler = LinearDecayScheduler(self.train_conf.base_lr, 0.,
+                                           start_iter=self.train_conf.lr_decay_starts,
+                                           end_iter=self.train_conf.max_epochs)
 
         # Setup Reporter
         losses = {"g_gan": g_gan, "g_feat": g_feat,

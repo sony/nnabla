@@ -14,14 +14,12 @@
 
 from __future__ import absolute_import
 
-from .lr_scheduler import LearningRateScheduler
-
 import sys
 import os
 
 # Set path to neu
 common_utils_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', '..', '..', 'utils'))
+    os.path.join(os.path.dirname(__file__), '..', '..', 'utils'))
 sys.path.append(common_utils_path)
 
 from neu.reporter import Reporter
@@ -30,7 +28,8 @@ from neu.variable_utils import set_persistent_all, get_params_startswith
 from neu.yaml_wrapper import read_yaml, write_yaml
 from neu.misc import init_nnabla, get_current_time, AttrDict
 from neu.losses import get_gan_loss, vgg16_perceptual_loss
-
+from neu.lr_scheduler import LinearDecayScheduler
+from neu.layers import PatchGAN
 from neu.datasets.city_scapes import (create_data_iterator as create_cityscapes_iterator,
-                                      get_cityscape_datalist,
-                                      load_function as cityscapes_load_function)
+                                  get_cityscape_datalist,
+                                  load_function as cityscapes_load_function)

@@ -15,13 +15,13 @@
 import os
 
 
-def init_nnabla(ctx_config):
+def init_nnabla(conf):
     import nnabla as nn
     from nnabla.ext_utils import get_extension_context
     from .comm import CommunicatorWrapper
 
     # set context
-    ctx = get_extension_context(**ctx_config)
+    ctx = get_extension_context(ext_name=conf.ext_name, device_id=conf.device_id, type_config=conf.type_config)
 
     # init communicator
     comm = CommunicatorWrapper(ctx)
@@ -38,17 +38,37 @@ def init_nnabla(ctx_config):
 
 
 class AttrDict(dict):
+    # special internal variable used for error message.
+    _parent = []
+
     def __setattr__(self, key, value):
+        if key == "_parent":
+            self.__dict__["_parent"] = value
+
         self[key] = value
 
     def __getattr__(self, key):
         if key not in self:
-            raise AttributeError("No such attribute `{}`".format(key))
+            raise AttributeError(
+                "dict (AttrDict) has no chain of attributes '{}'".format(".".join(self._parent + [key])))
 
         if isinstance(self[key], dict):
             self[key] = AttrDict(self[key])
+            self[key]._parent = self._parent + [key]
 
         return self[key]
+
+    def __str__(self):
+        if "_parent" in self:
+            del self["_parent"]
+
+        return super(AttrDict, self).__str__()
+
+    def __repr__(self):
+        if "_parent" in self:
+            del self["_parent"]
+
+        return super(AttrDict, self).__repr__()
 
     def dump_to_stdout(self):
         print("================================configs================================")
@@ -73,3 +93,26 @@ def get_current_time():
     from datetime import datetime
 
     return datetime.now().strftime('%m%d_%H%M%S')
+
+
+def get_iteration_per_epoch(dataset_size, batch_size, round="ceil"):
+    """
+    Calculate a number of iterations to see whole images in dataset (= 1 epoch).
+
+    Args:
+     dataset_size (int): A number of images in dataset
+     batch_size (int): A number of batch_size.
+     round (str): Round method. One of ["ceil", "floor"].
+
+    return: int
+    """
+    import numpy as np
+
+    round_func = {"ceil": np.ceil, "floor": np.floor}
+    if round not in round_func:
+        raise ValueError("Unknown rounding method {}. must be one of {}.".format(round,
+                                                                                   list(round_func.keys())))
+
+    ipe = float(dataset_size) / batch_size
+
+    return int(round_func[round](ipe))
