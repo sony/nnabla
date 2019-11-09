@@ -1587,4 +1587,43 @@ def test_pf_transformer_decode_execution(g_rng, tgt_len, batch_size, embed_dim, 
     else:
         assert len(nn.get_parameters()) == 26
 
+
+@pytest.mark.parametrize("func", ["conv", "affine"])
+def test_pf_weight_norm_execution(g_rng, func):
+    # python implementation
+    def ref_weight_normalization(v, g, dim, eps=1e-12):
+        axis = tuple([i for i in range(len(v.shape)) if i != dim])
+        v_norm = np.sqrt(np.sum(v ** 2, axis=axis, keepdims=True) + eps)
+
+        return g * v / v_norm
+
+    dim = {"conv": 0, "affine": 1}[func]
+
+    def wn_clbk(v): return PF.weight_normalization(v, dim=dim)
+
+    x = nn.Variable.from_numpy_array(g_rng.randn(2, 4, 5, 5))
+    if func == "conv":
+        # assume channle first
+        y = PF.convolution(x, 8, (3, 3), apply_w=wn_clbk)
+    elif func == "affine":
+        y = PF.affine(x, 8, apply_w=wn_clbk)
+    else:
+        raise ValueError("unexpected function name {}".format(func))
+
+    # Setting
+    y.forward()
+    y.backward()
+
+    params = nn.get_parameters()
+    assert len(params) == 3  # w, b, g
+
+    # Check values
+    v = params["{}/W".format(func)]
+    w = y.parent.inputs[1]
+
+    v_np = v.d
+    w_np = ref_weight_normalization(v_np, 1, dim)
+
+    assert_allclose(w.d, w_np, atol=1e-2, rtol=1e-5)
+
 # TODO: Test all parametric functions.
