@@ -1,0 +1,111 @@
+
+################
+#nnabla context
+################
+ext_name: cudnn
+device_id: 0
+type_config: float
+
+
+################
+# training
+################
+
+batch_size: 4
+save_path: ./results/spade
+
+# learning rate for generator
+g_lr: 1e-4
+
+# learning rate for discriminato
+d_lr: 4e-4
+
+# Number of training iteration.
+# If blank, 200 epoch = dataset_size * 200 iteration is used as default for cityscapes.
+niter:
+
+# Iteration interval for saving parameters.
+# If blank, save parameters at the end of each epoch.
+# (epoch = number of iterations to see all images in dataset once).
+save_interval:
+
+# Iteration interval for showing generation results.
+# If blank, save parameters at the end of each epoch.
+# (epoch = number of iterations to see all images in dataset once).
+show_interval:
+
+# Feature mating related config
+use_fm: True
+lambda_fm: 10.
+
+# Whether to use perceptual loss
+use_vgg: True
+lambda_vgg: 10.
+
+# Loss type. One of {hinge, ls}
+gan_loss_type: hinge
+
+# Dataset. "cityscapes" or "ade20k"
+dataset: cityscapes
+
+# Whether to use horizontal flip augmentation
+use_flip: True
+
+# Whether to use crop augmentation
+use_crop: True
+
+#################
+# model
+#################
+# Base hidden dims for spade generator
+g_ndf: 64
+
+# Dim of latent random variable (input of spade generator)
+z_dim: 256
+
+# Number of Discriminator scales (PathGAN).
+d_n_scales: 2
+
+
+###################
+# dataset
+###################
+cityscapes:
+  data_dir: ./data/Cityscapes
+
+  # Number of object ids.
+  n_label_ids: 35
+
+  image_shape:
+    - 256
+    - 512
+
+ade20k:
+  data_dir: ./data/ADEChallengeData2016
+
+  # Number of object ids.
+  n_label_ids: 150
+
+  # use outdoor subset or full dataset.
+  outdoor_only: True
+
+  # Used to extract outdoor subset.
+  # When outdoor_only=False, these ids will be just ignored.
+  subset_labels:
+    - sky
+    - tree
+    - earth
+    - grass
+    - mountain
+    - sea
+    - river
+    - bridge
+    - hill
+    - land
+    - waterfall
+    - lake
+
+  image_shape:
+    - 256
+    - 256
+

@@ -1,0 +1,5 @@
+data/
+*data_list*.txt
+results/
+results
+__pycache__/

@@ -19,18 +19,17 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
 
-from initializer import w_init
-from losses import get_gan_loss, mae
-from callbacks import spectral_norm_callback
+from .initializer import w_init
+from .losses import get_gan_loss, mae
+from .callbacks import spectral_norm_callback
 
 # alias
 ps = nn.parameter_scope
 
 
 #################################################################
-# normalization
+# normalizations
 #################################################################
-
 def _normalize(x, norm_type, channel_axis=1):
     if norm_type.lower() == "in":
         return F.instance_normalization(x, gamma=None, beta=None, channel_axis=channel_axis)
@@ -66,15 +65,29 @@ def spade(x, m, hidden_dim=128, kernel=(3, 3), norm_type="in"):
         m = F.interpolate(m, output_size=x.shape[2:], mode="nearest")
 
         with ps("shared"):
-            actv = F.relu(PF.convolution(m, hidden_dim, w_init=w_init(m, hidden_dim), **conv_args))
+            actv = F.relu(PF.convolution(
+                m, hidden_dim, w_init=w_init(m, hidden_dim), **conv_args))
 
         with ps("gamma"):
-            gamma = PF.convolution(actv, c_dim, w_init=w_init(actv, c_dim), **conv_args)
+            gamma = PF.convolution(
+                actv, c_dim, w_init=w_init(actv, c_dim), **conv_args)
 
         with ps("beta"):
-            beta = PF.convolution(actv, c_dim, w_init=w_init(actv, c_dim), **conv_args)
+            beta = PF.convolution(
+                actv, c_dim, w_init=w_init(actv, c_dim), **conv_args)
 
     return normalized * gamma + beta
+
+
+def rescale_values(x, input_min=-1, input_max=1, output_min=0, output_max=255):
+    """
+    Rescale the range of values of `x` from [input_min, input_max] -> [output_min, output_max].
+    """
+
+    assert input_max > input_min
+    assert output_max > output_min
+
+    return (x - input_min) * (output_max - output_min) / (input_max - input_min) + output_min
 
 
 ##############################################
@@ -165,7 +178,8 @@ class PatchGAN(object):
                 f_feats = fake_feats[disc_id]
 
                 for layer_id, r_feat in r_feats.items():
-                    g_feat += mae(r_feat, f_feats[layer_id]) * fm_lambda / n_disc
+                    g_feat += mae(r_feat,
+                                  f_feats[layer_id]) * fm_lambda / n_disc
 
         return g_gan, g_feat, d_real, d_fake
 

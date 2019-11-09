@@ -1,0 +1,34 @@
+!!python/object/new:neu.misc.AttrDict
+dictitems: 
+  batch_size: 4
+  cfg: ./config.yaml
+  cityscapes: !!python/object/new:neu.misc.AttrDict
+    dictitems:
+      data_dir: ./data/Cityscapes
+      n_label_ids: 35
+    state:
+      _parent:
+      - cityscapes
+  d_lr: 0.0004
+  d_n_scales: 2
+  dataset: cityscapes
+  device_id: 0
+  ext_name: cudnn
+  g_lr: 0.0001
+  g_ndf: 64
+  gan_loss_type: hinge
+  image_shape: !!python/tuple
+  - 256
+  - 512
+  lambda_fm: 10.0
+  lambda_vgg: 10.0
+  load_params: null
+  niter: 37200
+  save_interval: 186
+  save_path: ./pretrained_model/cityscapes
+  show_interval: 186
+  type_config: float
+  use_flip: true
+  use_fm: true
+  use_vgg: true
+  z_dim: 256

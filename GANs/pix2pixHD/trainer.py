@@ -57,9 +57,12 @@ class Trainer(object):
         unlinked_fake = fake.get_unlinked_variable(need_grad=True)
 
         # discriminator
-        discriminator = PatchGAN(n_scales=self.model_conf.d_n_scales, use_spectral_normalization=False)
-        d_real_out, d_real_feats = discriminator(F.concatenate(real, x, axis=1))
-        d_fake_out, d_fake_feats = discriminator(F.concatenate(unlinked_fake, x, axis=1))
+        discriminator = PatchGAN(
+            n_scales=self.model_conf.d_n_scales, use_spectral_normalization=False)
+        d_real_out, d_real_feats = discriminator(
+            F.concatenate(real, x, axis=1))
+        d_fake_out, d_fake_feats = discriminator(
+            F.concatenate(unlinked_fake, x, axis=1))
         g_gan, g_feat, d_real, d_fake = discriminator.get_loss(d_real_out, d_real_feats,
                                                                d_fake_out, d_fake_feats,
                                                                use_fm=True,

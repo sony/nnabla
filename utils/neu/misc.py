@@ -21,7 +21,8 @@ def init_nnabla(conf):
     from .comm import CommunicatorWrapper
 
     # set context
-    ctx = get_extension_context(ext_name=conf.ext_name, device_id=conf.device_id, type_config=conf.type_config)
+    ctx = get_extension_context(
+        ext_name=conf.ext_name, device_id=conf.device_id, type_config=conf.type_config)
 
     # init communicator
     comm = CommunicatorWrapper(ctx)
@@ -111,7 +112,7 @@ def get_iteration_per_epoch(dataset_size, batch_size, round="ceil"):
     round_func = {"ceil": np.ceil, "floor": np.floor}
     if round not in round_func:
         raise ValueError("Unknown rounding method {}. must be one of {}.".format(round,
-                                                                                   list(round_func.keys())))
+                                                                                 list(round_func.keys())))
 
     ipe = float(dataset_size) / batch_size
 

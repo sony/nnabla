@@ -17,19 +17,19 @@ from __future__ import absolute_import
 import sys
 import os
 
-# Set path to neu
 common_utils_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', '..', 'utils'))
+            os.path.join(os.path.dirname(__file__), '..', '..', 'utils'))
 sys.path.append(common_utils_path)
 
 from neu.reporter import Reporter
 from neu.post_processing import Colorize
-from neu.variable_utils import set_persistent_all, get_params_startswith
-from neu.yaml_wrapper import read_yaml, write_yaml
-from neu.misc import init_nnabla, get_current_time, AttrDict
-from neu.losses import get_gan_loss, vgg16_perceptual_loss
+from neu.variable_utils import *
+from neu.layers import spade, PatchGAN, rescale_values
+from neu.losses import vgg16_perceptual_loss
 from neu.lr_scheduler import LinearDecayScheduler
-from neu.layers import PatchGAN
-from neu.datasets.city_scapes import (create_data_iterator as create_cityscapes_iterator,
-                                      get_cityscape_datalist,
-                                      load_function as cityscapes_load_function)
+from neu.initializer import w_init
+from neu.callbacks import spectral_norm_callback
+from neu.yaml_wrapper import read_yaml, write_yaml
+from neu.misc import AttrDict, get_current_time, init_nnabla, get_iteration_per_epoch
+from neu.datasets.city_scapes import get_cityscape_datalist, create_data_iterator as create_cityscapes_iterator
+from neu.datasets.ade20k import get_ade20k_datalist, create_data_iterator as create_ade20k_iterator
