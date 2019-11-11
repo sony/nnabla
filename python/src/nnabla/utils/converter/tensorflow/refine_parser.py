@@ -1,7 +1,7 @@
 import tensorflow as tf
 from ply import yacc
 import re
-from refine_graph import Token, RefineGraph
+from .refine_graph import Token, RefineGraph
 
 
 class RefineParser:
