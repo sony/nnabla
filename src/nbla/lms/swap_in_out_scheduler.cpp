@@ -747,11 +747,6 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
     // Replace all recorded SyncedArray
     for (auto& i : synced_array_id_to_order_idx[order[order_idx].synced_array_id]) {
       order[i].sawptr = saptr;
-
-      // If the weak pointer is not expired, it has to be swapped out.
-      wrong_ordered.push_back({ order[i].tag, 0, rec_saptr, order[i].size,
-                               order[i].dtype, order[i].ctx, false, false,
-                               0, false });
     }
   }
   else if (order_idx >= func_block_ends[func_idx] ||
