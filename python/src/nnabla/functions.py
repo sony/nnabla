@@ -1122,8 +1122,8 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
         k_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
         v_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
         out_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
-        attn_bias_k (~nnabla.Variable, optional): Input N-D array with shape :math:`(1, 1, E)`.
-        attn_bias_v (~nnabla.Variable, optional): Input N-D array with shape :math:`(1, 1, E)`.
+        attn_bias_k (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        attn_bias_v (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
         dropout (float, optional): Dropout ratio applied to parameters. Default is 0.
         additive_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(L_T, L_S)`. Values will be added to the attention layer to prevent attention to certain positions.
         key_padding_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
@@ -1156,6 +1156,8 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
     q *= float(head_dim) ** -0.5
 
     if attn_bias_k is not None:
+        attn_bias_k = F.reshape(attn_bias_k, (1, 1, embed_dim))
+        attn_bias_v = F.reshape(attn_bias_v, (1, 1, embed_dim))
         src_len += 1
         assert attn_bias_k is not None
         attn_bias_k = F.broadcast(
