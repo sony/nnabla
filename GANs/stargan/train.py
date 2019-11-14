@@ -82,7 +82,7 @@ def train(args):
 
     # Prepare Generator and Discriminator based on user config.
     generator = functools.partial(
-        model.generator, conv_dim=args.g_conv_dim, c_dim=args.c_dim, repeat_num=args.g_repeat_num)
+        model.generator, conv_dim=args.g_conv_dim, c_dim=args.c_dim, num_downsample=args.num_downsample, num_upsample=args.num_upsample, repeat_num=args.g_repeat_num)
     discriminator = functools.partial(model.discriminator, image_size=args.image_size,
                                       conv_dim=args.d_conv_dim, c_dim=args.c_dim, repeat_num=args.d_repeat_num)
 
@@ -207,6 +207,7 @@ def train(args):
         # Get real images and labels.
         real_ndarray, label_ndarray = data_iterator.next()
         label_ndarray = label_ndarray.reshape(label_ndarray.shape + (1, 1))
+        label_ndarray = label_ndarray.astype(float)
         x_real.d, label_org.d = real_ndarray, label_ndarray
 
         # Generate target domain labels randomly.
@@ -275,6 +276,7 @@ def train(args):
     for i in range(args.num_test):
         real_ndarray, label_ndarray = test_data_iterator.next()
         label_ndarray = label_ndarray.reshape(label_ndarray.shape + (1, 1))
+        label_ndarray = label_ndarray.astype(float)
         x_real.d, label_org.d = real_ndarray, label_ndarray
 
         rand_idx = np.random.permutation(label_org.shape[0])

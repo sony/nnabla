@@ -24,6 +24,10 @@ def get_args(monitor_path='tmp.monitor', max_epoch=600):
     # Model configuration.
     parser.add_argument('--c-dim', type=int, default=5,
                         help='dimension of domain labels')
+    parser.add_argument('--num-downsample', type=int, default=2,
+                        help='number of downsample')
+    parser.add_argument('--num-upsample', type=int, default=2,
+                        help='number of upsample')
     parser.add_argument('--celeba-crop-size', type=int,
                         default=178, help='crop size for the CelebA dataset')
     parser.add_argument('--image-size', type=int,
@@ -92,5 +96,8 @@ def get_args(monitor_path='tmp.monitor', max_epoch=600):
     args = parser.parse_args()
     if not os.path.isdir(args.monitor_path):
         os.makedirs(args.monitor_path)
+
+    if not os.path.isdir(args.model_save_path):
+        os.makedirs(args.model_save_path)
 
     return args

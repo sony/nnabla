@@ -92,8 +92,9 @@ python generate.py --pretrained-params <path to the parameter file .h5> --config
 Based on the learned attributes you used when training, you will be asked to choose attribute(s) used for translation. Note that currently in the generation process, original attributes of the input images are not considered. (Therefore, adding "Young" attribute to young people's image can happen.) After choosing attributes, generated images are saved in the directory specified by `--result-save-path`.
 
 
-## NOTE
-Pretrained weights are to be released.
+## Pretrained weights and config file
+You can download the pretrained weights named `pretrained_params_on_celebA.h5` from [here](https://nnabla.org/pretrained-models/nnabla-examples/GANs/stargan/pretrained_params_on_celebA.h5) and config file named `pretrained_conf_on_celebA.json` from [here](https://nnabla.org/pretrained-models/nnabla-examples/GANs/stargan/pretrained_conf_on_celebA.json).
+With these, you can try image-to-image translation using StarGAN model easily. Note that we used only 5 attributes (black hair, blond hair, brown hair, male/female, and young/aged) for training. For more detail, such as model architecture, please take a look into the `pretrained_conf_on_celebA.json`.
 
 
 ## References
