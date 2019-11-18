@@ -260,6 +260,7 @@ Unsupported, Special Use
 .. autofunction:: vat_noise
 .. autofunction:: unlink
 .. autofunction:: sink
+.. autofunction:: warp_by_flow
 
 
 Image Object Detection
