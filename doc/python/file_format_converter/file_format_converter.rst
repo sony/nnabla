@@ -57,8 +57,8 @@ File format converter has following functions.
 
 **IMPORTANT NOTICE**: This file format converter still has some known problems.
 
-- Supported ONNX operator is limited. See :any:`onnx/operator_coverage`.
-- Supported Tensorflow operator is limited. See :any:`tensorflow/operator_coverage`.
+- Supported ONNX operator is limited. See :any:`Function-Level_Support_Status`.
+- Supported Tensorflow operator is limited. See :any:`Function-Level_Support_Status`.
 - Converting NNP to C Source code is still experimental. It should work but did not tested well.
 
 
@@ -121,8 +121,8 @@ Limitation
 
 - Training is not supported.
 - Only supports operator set 6 and 9.
-- Not all functions are supported. See :any:`onnx/operator_coverage`.
-- Only limited Neural Network Console projects supported.  See :any:`onnx/neural_network_console_example_coverage`.
+- Not all functions are supported. See :any:`Function-Level_Support_Status`.
+- Only limited Neural Network Console projects supported.  See :any:`Model_Support_Status`.
 - In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
   
 NNB
@@ -149,7 +149,7 @@ As for the importer, 3 formats tends to be supported:
    - .ckpt, tensorflow check point format version 1
    - .ckpt.*, tensorflow check point format version 2
 
-As for the exporter, some of Neural Network Console projects are supported. See :any:`tensorflow/neural_network_console_example_coverage`.
+As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
 The output of converter is tensorflow frozen graph format(e.g. *.pb)
 
 Before using this converter, please confirm if tensorflow and related packages are installed:
@@ -283,32 +283,43 @@ Convert NNP to NNB
 
    $ nnabla_cli convert -b 1 input.nnp output.nnb
 
-Convert NNP to C source code.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convert NNP to C source code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
    $ nnabla_cli convert -b 1 -O CSRC input.onnx output-dir
 
 
-Convert NNP to Tensorflow frozen graph.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Quantization
+^^^^^^^^^^^^
+
+C-runtime library supports binary(or fixed point) weights, which can dramatically downsize the model (and footprint). See :any:`compress_network` for how
+to quantize your model.
+
+
+
+Tensorflow Operation
+++++++++++++++++++++
+
+Convert NNP to Tensorflow frozen graph
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
    $ nnabla_cli convert input.nnp output.pb
 
 
-Convert Tensorflow frozen graph to NNP.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convert Tensorflow frozen graph to NNP
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
    $ nnabla_cli convert input.pb output.nnp
 
 
-Convert Tensorflow checkpoint to NNP.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convert Tensorflow checkpoint to NNP
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For checkpoint version 1:
 
@@ -329,7 +340,6 @@ For checkpoint version 2:
 
 In the same directory of input.ckpt.meta, the related files, such as checkpoint, *.ckpt.index, ... and
 so on are required to exist.
-
 
 
 Splitting network
