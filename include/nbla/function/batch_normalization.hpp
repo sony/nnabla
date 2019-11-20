@@ -21,6 +21,14 @@
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
+#include <nbla/function/add2.hpp>
+#include <nbla/function/add_scalar.hpp>
+#include <nbla/function/identity.hpp>
+#include <nbla/function/mul2.hpp>
+#include <nbla/function/pow_scalar.hpp>
+#include <nbla/function/sub2.hpp>
+#include <nbla/function/sum.hpp>
+
 #include <vector>
 
 using std::vector;
@@ -77,6 +85,13 @@ protected:
   Variable mean_;
   Variable var_;
   int size0_, size1_, size2_, size02_, size12_;
+  shared_ptr<Function> identity_;
+  shared_ptr<Function> add2_;
+  shared_ptr<Function> sub2_;
+  shared_ptr<Function> mul2_;
+  shared_ptr<Function> add_scalar_;
+  shared_ptr<Function> pow_scalar_;
+  shared_ptr<Function> sum_;
 
 public:
   BatchNormalization(const Context &ctx, const vector<int> axes,

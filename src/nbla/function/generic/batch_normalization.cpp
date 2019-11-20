@@ -91,6 +91,23 @@ void BatchNormalization<T>::setup_impl(const Variables &inputs,
     mean_.reshape(shape_b, true); // batch mean
     var_.reshape(shape_g, true);  // batch var
   }
+
+  // Instantiate functions used for the backward in test mode (batch_stat_ =
+  // False)
+  if (!batch_stat_) {
+    identity_ = create_Identity(this->ctx_);
+    add2_ = create_Add2(this->ctx_, false);
+    sub2_ = create_Sub2(this->ctx_);
+    mul2_ = create_Mul2(this->ctx_);
+    add_scalar_ = create_AddScalar(this->ctx_, (T) this->eps_);
+    pow_scalar_ = create_PowScalar(this->ctx_, (T)-0.5);
+    std::vector<int> raxes;
+    for (int i = 0; i < inputs[0]->ndim(); ++i) {
+      if (i != axes_[0])
+        raxes.push_back(i);
+    }
+    sum_ = create_Sum(this->ctx_, raxes, true);
+  }
 }
 
 template <class T>
@@ -299,48 +316,108 @@ void BatchNormalization<T>::backward_impl_global(
   }
 
   // Common inputs wrt. gradient.
-  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  const T *rm = inputs[3]->get_data_pointer<T>(this->ctx_); // running mean
-  const T *rv = inputs[4]->get_data_pointer<T>(this->ctx_); // running var
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  auto x = inputs[0];
+  auto beta = inputs[1];
+  auto gamma = inputs[2];
+  auto rmean = inputs[3];
+  auto rvar = inputs[4];
+  auto y = outputs[0];
+
+  // Running std
+  shared_ptr<Variable> rstd_inv_sptr;
+  shared_ptr<Variable> g_y_sptr;
+  if (propagate_down[0] || propagate_down[2]) { // x or gamma
+    // running std
+    rstd_inv_sptr = make_shared<Variable>(rvar->shape());
+    auto rstd_inv = rstd_inv_sptr.get();
+    identity_->setup(Variables{rvar}, Variables{rstd_inv});
+    identity_->forward(Variables{rvar}, Variables{rstd_inv});
+    add_scalar_->setup(Variables{rstd_inv}, Variables{rstd_inv});
+    add_scalar_->forward(Variables{rstd_inv}, Variables{rstd_inv});
+    pow_scalar_->setup(Variables{rstd_inv}, Variables{rstd_inv});
+    pow_scalar_->forward(Variables{rstd_inv}, Variables{rstd_inv});
+    // g_y variable
+    g_y_sptr = make_shared<Variable>(y->shape());
+    g_y_sptr->set_data(y->grad());
+  }
 
   // Gradient wrt. x.
   if (propagate_down[0]) {
-    T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
-    const T *g = inputs[2]->get_data_pointer<T>(this->ctx_);
-
-    for (int i1 = 0; i1 < size1_; ++i1) {
-      // Compute gradient wrt x.
-      for (int i02 = 0; i02 < size02_; ++i02) {
-        const int i0 = i02 / size2_;
-        const int i2 = i02 % size2_;
-        const int i = i0 * size12_ + i1 * size2_ + i2;
-        const T grad = dy[i] * g[i1] / std::sqrt(rv[i1] + (T)eps_);
-        if (accum[0])
-          dx[i] += grad;
-        else
-          dx[i] = grad;
-      }
+    // gamma / rstd
+    auto iv_sptr = make_shared<Variable>(beta->shape());
+    auto rstd_inv = rstd_inv_sptr.get();
+    auto iv = iv_sptr.get();
+    mul2_->setup(Variables{gamma, rstd_inv}, Variables{iv});
+    mul2_->forward(Variables{gamma, rstd_inv}, Variables{iv});
+    // g_y * gamma / rstd
+    auto g_x_tmp_sptr = make_shared<Variable>(x->shape());
+    auto g_y = g_y_sptr.get();
+    auto g_x_tmp = g_x_tmp_sptr.get();
+    mul2_ = create_Mul2(this->ctx_);
+    mul2_->setup(Variables{g_y, iv}, Variables{g_x_tmp});
+    mul2_->forward(Variables{g_y, iv}, Variables{g_x_tmp});
+    // accum
+    auto g_x_sptr = make_shared<Variable>(x->shape());
+    g_x_sptr->set_data(x->grad());
+    auto g_x = g_x_sptr.get();
+    if (accum[0]) {
+      add2_->setup(Variables{g_x, g_x_tmp}, Variables{g_x});
+      add2_->forward(Variables{g_x, g_x_tmp}, Variables{g_x});
+    } else {
+      identity_->setup(Variables{g_x_tmp}, Variables{g_x});
+      identity_->forward(Variables{g_x_tmp}, Variables{g_x});
     }
   }
 
+  // Gradient wrt. beta and gamma.
   if (propagate_down[1] || propagate_down[2]) { // beta and gamma
     NBLA_CHECK(propagate_down[1] && propagate_down[2], error_code::value,
                "'need_grad' of beta and gamma must be the same.");
-    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
-    T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
-    for (int i1 = 0; i1 < size1_; ++i1) {
-      T dbv = accum[1] ? db[i1] : (T)0;
-      T dgv = accum[2] ? dg[i1] : (T)0;
-      for (int i02 = 0; i02 < size02_; ++i02) {
-        const int i0 = i02 / size2_;
-        const int i2 = i02 % size2_;
-        const int i = i0 * size12_ + i1 * size2_ + i2;
-        dbv += dy[i];
-        dgv += dy[i] * (x[i] - rm[i1]) / std::sqrt(rv[i1] + (T)eps_);
-      }
-      db[i1] = dbv;
-      dg[i1] = dgv;
+
+    auto g_y = g_y_sptr.get();
+    // 1. beta
+    auto g_beta_tmp_sptr = make_shared<Variable>(beta->shape());
+    auto g_beta_tmp = g_beta_tmp_sptr.get();
+    sum_->setup(Variables{g_y}, Variables{g_beta_tmp});
+    sum_->forward(Variables{g_y}, Variables{g_beta_tmp});
+    auto g_beta_sptr = make_shared<Variable>(beta->shape());
+    g_beta_sptr->set_data(beta->grad());
+    auto g_beta = g_beta_sptr.get();
+
+    if (accum[1]) {
+      add2_->setup(Variables{g_beta, g_beta_tmp}, Variables{g_beta});
+      add2_->forward(Variables{g_beta, g_beta_tmp}, Variables{g_beta});
+    } else {
+      identity_->setup(Variables{g_beta_tmp}, Variables{g_beta});
+      identity_->forward(Variables{g_beta_tmp}, Variables{g_beta});
+    }
+    // 2. gamma
+    // (x - rmean) / rstd
+    auto iv_sptr = make_shared<Variable>(x->shape());
+    auto iv = iv_sptr.get();
+    sub2_->setup(Variables{x, rmean}, Variables{iv});
+    sub2_->forward(Variables{x, rmean}, Variables{iv});
+    auto rstd_inv = rstd_inv_sptr.get();
+    mul2_->setup(Variables{iv, rstd_inv}, Variables{iv});
+    mul2_->forward(Variables{iv, rstd_inv}, Variables{iv});
+    // g_y * (x - rmean) / rstd
+    mul2_ = create_Mul2(this->ctx_);
+    mul2_->setup(Variables{g_y, iv}, Variables{iv});
+    mul2_->forward(Variables{g_y, iv}, Variables{iv});
+    // reduction
+    auto g_gamma_tmp_sptr = make_shared<Variable>(gamma->shape());
+    auto g_gamma_tmp = g_gamma_tmp_sptr.get();
+    sum_->setup(Variables{iv}, Variables{g_gamma_tmp});
+    sum_->forward(Variables{iv}, Variables{g_gamma_tmp});
+    auto g_gamma_sptr = make_shared<Variable>(gamma->shape());
+    g_gamma_sptr->set_data(gamma->grad());
+    auto g_gamma = g_gamma_sptr.get();
+    if (accum[2]) {
+      add2_->setup(Variables{g_gamma, g_gamma_tmp}, Variables{g_gamma});
+      add2_->forward(Variables{g_gamma, g_gamma_tmp}, Variables{g_gamma});
+    } else {
+      identity_->setup(Variables{g_gamma_tmp}, Variables{g_gamma});
+      identity_->forward(Variables{g_gamma_tmp}, Variables{g_gamma});
     }
   }
 }

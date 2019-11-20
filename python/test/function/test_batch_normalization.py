@@ -108,10 +108,7 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis))
     axes = [axis]
-    if ctx.backend[0].split(':')[0] != 'cpu' and batch_stat == False:
-        pytest.skip(
-            "cuda and cudnn implementation for batch_stat==False is not implemented yet")
-    elif not batch_stat and (no_mean or no_variance):
+    if not batch_stat and (no_mean or no_variance):
         # check prohibited condition for mean=None and variance=None
         vinputs = []
         for i in inputs:
@@ -247,14 +244,10 @@ def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis))
     axes = [axis]
-    if ctx.backend[0].split(':')[0] != 'cpu' and batch_stat == False:
-        pytest.skip(
-            "cuda and cudnn implementation for batch_stat==False is not implemented yet")
-    else:
-        backward_function_tester(rng, F.batch_normalization, None,
-                                 inputs,
-                                 func_args=[axes, decay_rate, eps,
-                                            batch_stat, output_stat],
-                                 backward=[True, True, True, False, False],
-                                 ctx=ctx, func_name=func_name,
-                                 atol_b=2e-2, atol_accum=2e-2, dstep=1e-3)
+    backward_function_tester(rng, F.batch_normalization, None,
+                             inputs,
+                             func_args=[axes, decay_rate, eps,
+                                        batch_stat, output_stat],
+                             backward=[True, True, True, False, False],
+                             ctx=ctx, func_name=func_name,
+                             atol_b=2e-2, atol_accum=2e-2, dstep=1e-3)
