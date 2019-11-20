@@ -72,7 +72,7 @@ def conv_block(inp, layer_name, bn_batch_stat, activation, args, init_params):
             conv_output = PF.convolution(
                 inp, args.num_filters, (k, k), pad=pad, stride=stride, name=layer_name)
         normed = normalize(conv_output, layer_name,
-                           bn_batch_stat, activation, args, init_params)
+                           bn_batch_stat, activation, args)
     else:
         if args.max_pool:
             conv_output = F.convolution(
@@ -81,21 +81,18 @@ def conv_block(inp, layer_name, bn_batch_stat, activation, args, init_params):
             conv_output = F.convolution(
                 inp, init_params[layer_name + '/conv/W'], init_params[layer_name + '/conv/b'], pad=pad, stride=stride)
         normed = normalize(conv_output, layer_name,
-                           bn_batch_stat, activation, args, init_params)
+                           bn_batch_stat, activation, args)
 
     if args.max_pool:
         normed = F.max_pooling(normed, stride, stride=stride)
     return normed
 
 
-def normalize(inp, layer_name, bn_batch_stat, activation, args, init_params):
+def normalize(inp, layer_name, bn_batch_stat, activation, args):
     if args.norm == 'batch_norm':
-        if init_params is None or layer_name + '/bn/beta' not in init_params:
-            inp = PF.batch_normalization(
+        inp = PF.batch_normalization(
                 inp, batch_stat=bn_batch_stat, name=layer_name)
-        else:
-            inp = F.batch_normalization(inp, init_params[layer_name + '/bn/beta'], init_params[layer_name + '/bn/gamma'],
-                                        init_params[layer_name + '/bn/mean'], init_params[layer_name + '/bn/var'], batch_stat=bn_batch_stat)
+
     if activation is not None:
         return activation(inp)
     else:
