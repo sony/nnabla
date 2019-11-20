@@ -19,6 +19,7 @@
 #include <array>
 #include <cassert>
 #include <functional>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <vector>
@@ -59,9 +60,11 @@ template <typename T>
 inline T nd2flat(const std::vector<T> &index, const std::vector<T> &stride,
                  int axis) {
   using std::inner_product;
-  axis = axis < 0 ? stride.size() + axis : axis;
-  assert(0 <= axis && axis < index.size());
+  assert(stride.size() <= std::numeric_limits<int>::max());
   assert(index.size() <= stride.size());
+  if (axis < 0)
+    axis += static_cast<int>(stride.size());
+  assert(0 <= axis && axis < static_cast<int>(index.size()));
   return inner_product(index.begin(), index.begin() + axis, stride.begin(), 0);
 }
 
@@ -70,15 +73,18 @@ inline T nd2flat(const std::vector<T> &index, const std::vector<T> &stride,
 // `axis.first` until and excluding `axis.second`.
 template <typename T>
 inline T nd2flat(const std::vector<T> &index, const std::vector<T> &stride,
-                 const std::pair<int, int> &axis) {
-  int axis_from = axis.first < 0 ? stride.size() + axis.first : axis.first;
-  int axis_last = axis.second < 0 ? stride.size() + axis.second : axis.second;
-  assert(0 <= axis_from && axis_from <= axis_last && axis_last <= index.size());
+                 std::pair<int, int> axis) {
+  assert(stride.size() <= std::numeric_limits<int>::max());
   assert(index.size() <= stride.size());
-  assert(index.begin() + axis_last == index.end());
+  if (axis.first < 0)
+    axis.first += static_cast<int>(stride.size());
+  if (axis.second < 0)
+    axis.second += static_cast<int>(stride.size());
+  assert(0 <= axis.first && axis.first <= axis.second);
+  assert(axis.second <= static_cast<int>(index.size()));
   T result = 0;
-  for (; axis_from < axis_last; ++axis_from) {
-    result += index[axis_from] * stride[axis_from];
+  for (; axis.first < axis.second; axis.first++) {
+    result += index[axis.first] * stride[axis.first];
   }
   return result;
 }
@@ -86,8 +92,9 @@ inline T nd2flat(const std::vector<T> &index, const std::vector<T> &stride,
 // Convert a flat `index` to a multidimensional index according to `stride`.
 template <typename T>
 inline std::vector<T> flat2nd(T index, const std::vector<T> &stride) {
+  assert(stride.size() <= std::numeric_limits<int>::max());
   std::vector<T> nd_index(stride.size());
-  for (int axis = 0; axis < nd_index.size(); ++axis) {
+  for (int axis = 0; axis < static_cast<int>(nd_index.size()); ++axis) {
     nd_index[axis] = index / stride[axis];
     index -= nd_index[axis] * stride[axis];
   }
@@ -103,8 +110,10 @@ template <typename T>
 inline T inner_size(const std::vector<T> &shape, int axis) {
   using std::accumulate;
   using std::multiplies;
-  axis = axis < 0 ? shape.size() + axis : axis;
-  assert(0 <= axis && axis < shape.size());
+  assert(shape.size() <= std::numeric_limits<int>::max());
+  if (axis < 0)
+    axis += static_cast<int>(shape.size());
+  assert(0 <= axis && axis < static_cast<int>(shape.size()));
   return accumulate(shape.begin() + axis, shape.end(), 1, multiplies<T>());
 }
 
@@ -117,8 +126,10 @@ template <typename T>
 inline T outer_size(const std::vector<T> &shape, int axis) {
   using std::accumulate;
   using std::multiplies;
-  axis = axis < 0 ? shape.size() + axis : axis;
-  assert(0 <= axis && axis < shape.size());
+  assert(shape.size() <= std::numeric_limits<int>::max());
+  if (axis < 0)
+    axis += static_cast<int>(shape.size());
+  assert(0 <= axis && axis < static_cast<int>(shape.size()));
   return accumulate(shape.begin(), shape.begin() + axis, 1, multiplies<T>());
 }
 
@@ -135,13 +146,14 @@ inline T outer_size(const std::vector<T> &shape, int axis) {
 //
 template <typename T>
 inline bool increment(std::vector<T> &index, const std::vector<T> &shape) {
+  assert(shape.size() <= std::numeric_limits<int>::max());
   assert(index.size() == shape.size());
-  for (int axis = index.size() - 1; axis >= 0; axis--) {
-    if (index.at(axis) + 1 < shape.at(axis)) {
-      index.at(axis) += 1;
+  for (int axis = static_cast<int>(index.size()) - 1; axis >= 0; axis--) {
+    if (index[axis] + 1 < shape[axis]) {
+      index[axis] += 1;
       return true;
     } else {
-      index.at(axis) = 0;
+      index[axis] = 0;
     }
   }
   return false;
@@ -161,15 +173,17 @@ inline bool increment(std::vector<T> &index, const std::vector<T> &shape) {
 template <typename T>
 inline bool increment(std::vector<T> &index, const std::vector<T> &shape,
                       int axis) {
+  assert(shape.size() <= std::numeric_limits<int>::max());
   assert(index.size() == shape.size());
-  assert(axis >= -shape.size());
-  assert(axis < shape.size());
-  for (axis = axis < 0 ? shape.size() + axis : axis; axis >= 0; axis--) {
-    if (index.at(axis) + 1 < shape.at(axis)) {
-      index.at(axis) += 1;
+  if (axis < 0)
+    axis += static_cast<int>(index.size());
+  assert(0 <= axis && axis < static_cast<int>(index.size()));
+  for (; axis >= 0; axis--) {
+    if (index[axis] + 1 < shape[axis]) {
+      index[axis] += 1;
       return true;
     } else {
-      index.at(axis) = 0;
+      index[axis] = 0;
     }
   }
   return false;
