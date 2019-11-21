@@ -244,7 +244,7 @@ class OrthogonalInitializer(BaseInitializer):
 
     def __init__(self, gain=1.0, rng=None):
         if rng is None:
-            rng = np.random
+            rng = random.prng
         self.rng = rng
         self.gain = gain
 

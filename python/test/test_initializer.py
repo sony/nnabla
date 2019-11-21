@@ -29,6 +29,7 @@ def orthogonal_test(x):
         target = np.matmul(flattened, flattened.T)
         return np.allclose(target, np.eye(rows), atol=1e-6)
 
+
 @pytest.mark.parametrize('rng', [None, np.random.RandomState(313)])
 @pytest.mark.parametrize('shape', [
     (10,),

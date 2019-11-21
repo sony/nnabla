@@ -138,6 +138,9 @@ listed below.
 .. autoclass:: UniformInitializer
     :show-inheritance:
 
+.. autoclass:: OrthogonalInitializer
+    :show-inheritance:
+
 .. autofunction:: calc_normal_std_he_forward
 .. autofunction:: calc_normal_std_he_backward
 .. autofunction:: calc_normal_std_glorot
