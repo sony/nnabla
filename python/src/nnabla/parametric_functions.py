@@ -3597,6 +3597,73 @@ def _spectral_norm_outer_most_dim(w, dim, itr=1, eps=1e-12, test=False,
     return w_sn
 
 
+@parametric_function_api("wn", [
+    ('g', 'Weight Normalization adaptive scale scalar.', 'w.shape[dim]', True),
+])
+def weight_normalization(v, dim=0, eps=1e-12, fix_parameters=False):
+    """Weight Normalization.
+
+    .. math::
+        \mathbf{w} = g \dfrac{\mathbf{v}}{\|\mathbf{v}\|}
+
+    where :math:`v` is the input matrix,
+    and :math:`g` is learnable multiplication factors each of which is applied to each output map at `dim`.
+    This function is in general used as callback passed to apply_w for PF.convolution, PF.affine and so on.
+    According to the author`s original implementation (https://github.com/TimSalimans/weight_norm), :math:`v` should be initialized by :math:`N(0, 0.05)`.
+    To meet this condition, initializer should be passed to convolution which Weight Normalization is applied, like an example below.
+
+
+    References:
+        * `Tim Salimans, Diederik P. Kingma, Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks.
+          <https://arxiv.org/abs/1602.07868>`_
+
+    Args:
+        W (~nnabla.Variable): Input N-D array with shape. This is normally network parameter.
+        dim (`int`):
+            Output dimension. Default is 0.
+            If the dimension is not 0, then the specified dimension becomes the most-left dimension by transposing.
+        eps (`float`): Epsilon for the normalization. Default is 1e-12.
+
+    Returns:
+        ~nnabla.Variable:  :math:`W_{sn}` with the same shape as :math:`W`.
+
+    Example:
+
+        .. code-block:: python
+
+            import nnabla as nn
+            import nnabla.parametric_functions as PF
+            import nnabla.initializer as I
+
+            # h is nn.Variable.
+
+            # convolution
+            # according to the original implementation, w should be initialized by N(0, 0.05).
+            h = PF.convolution(h, ..., apply_w=PF.weight_normalization, w_init=I.NormalInitializer(0.05))
+
+            # affine
+            h = PF.affine(h, ..., apply_w=lambda w: PF.weight_normalization(w, dim=1), w_init=I.NormalInitializer(0.05))
+
+    """
+    assert - \
+        len(v.shape) <= dim < len(
+            v.shape), "`dim` must be `-len(w.shape) <= dim < len(w.shape)`."
+    assert 0 < eps, "`eps` must be greater than 0."
+
+    # consider w as v.
+
+    outmaps = v.shape[dim]
+    g = get_parameter_or_create("g", (outmaps,),
+                                initializer=ConstantInitializer(1.), need_grad=True, as_need_grad=not fix_parameters)
+
+    sh = tuple([outmaps if i == dim else 1 for i in range(len(v.shape))])
+    ax = tuple([i for i in range(len(v.shape)) if i != dim])
+
+    normalized_v = v / (F.sum(v ** 2, axis=ax, keepdims=True) + eps) ** 0.5
+
+    return F.reshape(g, sh) * normalized_v
+
+
 @parametric_function_api("multi_head_attention", [
     ('q_weight', 'weights for query', '(E, E)', True),
     ('k_weight', 'weights for key', '(E_k, E)', True),
