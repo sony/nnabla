@@ -148,7 +148,7 @@ def inner_train_test(inputa, inputb, labela, labelb, data_generator, meta_traini
             task_accuracya_var.append(resulta[1])
 
         # Loss on queries is calculated only at the end of the inner loop
-        # Following the original implementation, 
+        # Following the original implementation,
         # we always use batch stats for batch normalization even in a test phase
         resultb = net(inputb, labelb, True, args, fast_weights)
 
