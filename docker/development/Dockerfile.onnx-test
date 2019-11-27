@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# for nnabla>=1.5.0
+
 FROM ubuntu:16.04
 
 ENV LC_ALL C
@@ -117,9 +119,9 @@ RUN umask 0 \
     && conda create -n nnabla-build python=${PYVERNAME} \
     && conda activate nnabla-build \
     && pip install numpy\<1.17 \
-    && pip install --only-binary -U -r /tmp/deps/setup_requirements.txt \
-    && pip install --only-binary -U -r /tmp/deps/requirements.txt \
-    && pip install --only-binary -U -r /tmp/deps/test_requirements.txt \
+    && pip install -U -r /tmp/deps/setup_requirements.txt \
+    && pip install -U -r /tmp/deps/requirements.txt \
+    && pip install -U -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
