@@ -61,12 +61,13 @@ public:
 
   @param[in] write_only When true, just returns an Array instance requested
   without synchronization.
-  @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization happens.
-                         AsyncFlag::ASYNC -> Asynchronous synchronization happens.
-                         AsyncFlag::SAFE  -> Same as AsyncFlag::NONE.
-                         AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous synchronization happens and,
-                                    the source array of synchronization keeps safe
-                                    against the memory change by host.
+  @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization
+                         AsyncFlag::ASYNC -> Asynchronous synchronization
+                         AsyncFlag::UNSAFE  -> No synchronization to host
+                         AsyncFlag::ASYNC | AsyncFlag::UNSAFE -> 
+                         The memory region of the source array of an 
+                         asynchronous data transfer is not guranteed to be
+                         kept safe until the end of the transfer.
 
   */
   Array *cast(dtypes dtype, const Context &ctx, 
@@ -202,8 +203,8 @@ using synced_array_callback_func_type =
                                  const bool write_only)>;
 
 /**
-Singleton class to store a callback function for the functions
-get, cast, and clear of SyncedArray.
+Singleton class to store a callback function for get, cast, and clear of
+SyncedArray.
 */
 class NBLA_API SyncedArrayCallback {
   synced_array_callback_func_type callback_func_;
