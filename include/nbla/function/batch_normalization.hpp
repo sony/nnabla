@@ -29,6 +29,7 @@
 #include <nbla/function/sub2.hpp>
 #include <nbla/function/sum.hpp>
 
+#include <nbla/imperative.hpp>
 #include <vector>
 
 using std::vector;

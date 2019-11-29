@@ -330,12 +330,9 @@ void BatchNormalization<T>::backward_impl_global(
     // running std
     rstd_inv_sptr = make_shared<Variable>(rvar->shape());
     auto rstd_inv = rstd_inv_sptr.get();
-    identity_->setup(Variables{rvar}, Variables{rstd_inv});
-    identity_->forward(Variables{rvar}, Variables{rstd_inv});
-    add_epsilon_->setup(Variables{rstd_inv}, Variables{rstd_inv});
-    add_epsilon_->forward(Variables{rstd_inv}, Variables{rstd_inv});
-    square_root_->setup(Variables{rstd_inv}, Variables{rstd_inv});
-    square_root_->forward(Variables{rstd_inv}, Variables{rstd_inv});
+    execute(identity_, Variables{rvar}, Variables{rstd_inv});
+    execute(add_epsilon_, Variables{rstd_inv}, Variables{rstd_inv});
+    execute(square_root_, Variables{rstd_inv}, Variables{rstd_inv});
     // g_y variable
     g_y_sptr = make_shared<Variable>(y->shape());
     g_y_sptr->set_data(y->grad());
@@ -347,25 +344,21 @@ void BatchNormalization<T>::backward_impl_global(
     auto iv_sptr = make_shared<Variable>(beta->shape());
     auto rstd_inv = rstd_inv_sptr.get();
     auto iv = iv_sptr.get();
-    mul2_->setup(Variables{gamma, rstd_inv}, Variables{iv});
-    mul2_->forward(Variables{gamma, rstd_inv}, Variables{iv});
+    execute(mul2_, Variables{gamma, rstd_inv}, Variables{iv});
     // g_y * gamma / rstd
     auto g_x_tmp_sptr = make_shared<Variable>(x->shape());
     auto g_y = g_y_sptr.get();
     auto g_x_tmp = g_x_tmp_sptr.get();
     mul2_ = create_Mul2(this->ctx_);
-    mul2_->setup(Variables{g_y, iv}, Variables{g_x_tmp});
-    mul2_->forward(Variables{g_y, iv}, Variables{g_x_tmp});
+    execute(mul2_, Variables{g_y, iv}, Variables{g_x_tmp});
     // accum
     auto g_x_sptr = make_shared<Variable>(x->shape());
     g_x_sptr->set_data(x->grad());
     auto g_x = g_x_sptr.get();
     if (accum[0]) {
-      add2_->setup(Variables{g_x, g_x_tmp}, Variables{g_x});
-      add2_->forward(Variables{g_x, g_x_tmp}, Variables{g_x});
+      execute(add2_, Variables{g_x, g_x_tmp}, Variables{g_x});
     } else {
-      identity_->setup(Variables{g_x_tmp}, Variables{g_x});
-      identity_->forward(Variables{g_x_tmp}, Variables{g_x});
+      execute(identity_, Variables{g_x_tmp}, Variables{g_x});
     }
   }
 
@@ -375,49 +368,41 @@ void BatchNormalization<T>::backward_impl_global(
                "'need_grad' of beta and gamma must be the same.");
 
     auto g_y = g_y_sptr.get();
+
     // 1. beta
     auto g_beta_tmp_sptr = make_shared<Variable>(beta->shape());
     auto g_beta_tmp = g_beta_tmp_sptr.get();
-    sum_->setup(Variables{g_y}, Variables{g_beta_tmp});
-    sum_->forward(Variables{g_y}, Variables{g_beta_tmp});
+    execute(sum_, Variables{g_y}, Variables{g_beta_tmp});
     auto g_beta_sptr = make_shared<Variable>(beta->shape());
     g_beta_sptr->set_data(beta->grad());
     auto g_beta = g_beta_sptr.get();
-
     if (accum[1]) {
-      add2_->setup(Variables{g_beta, g_beta_tmp}, Variables{g_beta});
-      add2_->forward(Variables{g_beta, g_beta_tmp}, Variables{g_beta});
+      execute(add2_, Variables{g_beta, g_beta_tmp}, Variables{g_beta});
     } else {
-      identity_->setup(Variables{g_beta_tmp}, Variables{g_beta});
-      identity_->forward(Variables{g_beta_tmp}, Variables{g_beta});
+      execute(identity_, Variables{g_beta_tmp}, Variables{g_beta});
     }
+
     // 2. gamma
     // (x - rmean) / rstd
     auto iv_sptr = make_shared<Variable>(x->shape());
     auto iv = iv_sptr.get();
-    sub2_->setup(Variables{x, rmean}, Variables{iv});
-    sub2_->forward(Variables{x, rmean}, Variables{iv});
+    execute(sub2_, Variables{x, rmean}, Variables{iv});
     auto rstd_inv = rstd_inv_sptr.get();
-    mul2_->setup(Variables{iv, rstd_inv}, Variables{iv});
-    mul2_->forward(Variables{iv, rstd_inv}, Variables{iv});
+    execute(mul2_, Variables{iv, rstd_inv}, Variables{iv});
     // g_y * (x - rmean) / rstd
     mul2_ = create_Mul2(this->ctx_);
-    mul2_->setup(Variables{g_y, iv}, Variables{iv});
-    mul2_->forward(Variables{g_y, iv}, Variables{iv});
+    execute(mul2_, Variables{g_y, iv}, Variables{iv});
     // reduction
     auto g_gamma_tmp_sptr = make_shared<Variable>(gamma->shape());
     auto g_gamma_tmp = g_gamma_tmp_sptr.get();
-    sum_->setup(Variables{iv}, Variables{g_gamma_tmp});
-    sum_->forward(Variables{iv}, Variables{g_gamma_tmp});
+    execute(sum_, Variables{iv}, Variables{g_gamma_tmp});
     auto g_gamma_sptr = make_shared<Variable>(gamma->shape());
     g_gamma_sptr->set_data(gamma->grad());
     auto g_gamma = g_gamma_sptr.get();
     if (accum[2]) {
-      add2_->setup(Variables{g_gamma, g_gamma_tmp}, Variables{g_gamma});
-      add2_->forward(Variables{g_gamma, g_gamma_tmp}, Variables{g_gamma});
+      execute(add2_, Variables{g_gamma, g_gamma_tmp}, Variables{g_gamma});
     } else {
-      identity_->setup(Variables{g_gamma_tmp}, Variables{g_gamma});
-      identity_->forward(Variables{g_gamma_tmp}, Variables{g_gamma});
+      execute(identity_, Variables{g_gamma_tmp}, Variables{g_gamma});
     }
   }
 }
