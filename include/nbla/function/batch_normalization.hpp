@@ -89,8 +89,8 @@ protected:
   shared_ptr<Function> add2_;
   shared_ptr<Function> sub2_;
   shared_ptr<Function> mul2_;
-  shared_ptr<Function> add_scalar_;
-  shared_ptr<Function> pow_scalar_;
+  shared_ptr<Function> add_epsilon_;
+  shared_ptr<Function> square_root_;
   shared_ptr<Function> sum_;
 
 public:

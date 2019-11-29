@@ -99,8 +99,8 @@ void BatchNormalization<T>::setup_impl(const Variables &inputs,
     add2_ = create_Add2(this->ctx_, false);
     sub2_ = create_Sub2(this->ctx_);
     mul2_ = create_Mul2(this->ctx_);
-    add_scalar_ = create_AddScalar(this->ctx_, (T) this->eps_);
-    pow_scalar_ = create_PowScalar(this->ctx_, (T)-0.5);
+    add_epsilon_ = create_AddScalar(this->ctx_, (T) this->eps_);
+    square_root_ = create_PowScalar(this->ctx_, (T)-0.5);
     std::vector<int> raxes;
     for (int i = 0; i < inputs[0]->ndim(); ++i) {
       if (i != axes_[0])
@@ -332,10 +332,10 @@ void BatchNormalization<T>::backward_impl_global(
     auto rstd_inv = rstd_inv_sptr.get();
     identity_->setup(Variables{rvar}, Variables{rstd_inv});
     identity_->forward(Variables{rvar}, Variables{rstd_inv});
-    add_scalar_->setup(Variables{rstd_inv}, Variables{rstd_inv});
-    add_scalar_->forward(Variables{rstd_inv}, Variables{rstd_inv});
-    pow_scalar_->setup(Variables{rstd_inv}, Variables{rstd_inv});
-    pow_scalar_->forward(Variables{rstd_inv}, Variables{rstd_inv});
+    add_epsilon_->setup(Variables{rstd_inv}, Variables{rstd_inv});
+    add_epsilon_->forward(Variables{rstd_inv}, Variables{rstd_inv});
+    square_root_->setup(Variables{rstd_inv}, Variables{rstd_inv});
+    square_root_->forward(Variables{rstd_inv}, Variables{rstd_inv});
     // g_y variable
     g_y_sptr = make_shared<Variable>(y->shape());
     g_y_sptr->set_data(y->grad());
