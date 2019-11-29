@@ -17,6 +17,7 @@
 
 #include <nbla/defs.hpp>
 #include <nbla/context.hpp>
+#include <nbla/common.hpp>
 
 #include <memory>
 
@@ -28,8 +29,12 @@ class NBLA_API Event {
 public:
   Event() {}
   virtual ~Event();
-  virtual void wait_event(const Context ctx, 
-                          const bool unsafe = false) {}
+
+  // Return the flag which is true if this event can be delete.
+  virtual bool wait_event(const Context ctx, 
+                          const int async_flags = AsyncFlag::NONE) {
+    return true; 
+  }
 };
 
 /// Shared pointer of Event.

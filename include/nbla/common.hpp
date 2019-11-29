@@ -42,6 +42,9 @@ using std::shared_ptr;
 typedef vector<int64_t> Shape_t; ///< Type of array shape and strides etc.
 typedef int64_t Size_t;          ///< Type of size of array
 
+// Flags for SyncedArray and data transfer
+enum AsyncFlag { NONE = 0b0, ASYNC = 0b1, UNSAFE = 0b10 };
+
 /** Compute array size by shape
 
 @param[in] axis size under given axis will be computed

@@ -131,7 +131,7 @@ void ArraySynchronizer::add_synchronizer(const string &src_class,
 
 void synchronizer_default(Array *src, Array *dst, const int async_flags) {
   // Wait for an previous asynchronous memcpy
-  src->wait_event();
+  src->wait_event(dst->context(), async_flags);
 
   if (dst->have_event()) {
     NBLA_ERROR(error_code::target_specific_async,

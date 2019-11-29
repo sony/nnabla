@@ -28,7 +28,7 @@ Array::Array(const Size_t size, dtypes dtype, const Context &ctx,
     : size_(size), dtype_(dtype), ctx_(ctx), mem_(std::move(mem)) {}
 
 Array::~Array() {
-  wait_event();
+  wait_event(ctx_);
 }
 
 size_t Array::size_as_bytes(Size_t size, dtypes dtype) {
@@ -42,12 +42,13 @@ Context Array::filter_context(const Context &ctx) {
 
 void Array::set_event(EventPtr e) { event_ = e; }
 
-void Array::wait_event(const bool unsafe_flag) {
+void Array::wait_event(const Context ctx, const int async_flags) {
   if (event_) {
-    event_->wait_event(ctx_, unsafe_flag);
+    auto delete_event = event_->wait_event(ctx, async_flags);
 
-    // Delete Event by removing a reference of the shared pointer
-    event_ = nullptr;
+    if (delete_event) {
+      event_ = nullptr;
+    }
   }
 }
 

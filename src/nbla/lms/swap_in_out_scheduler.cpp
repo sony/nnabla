@@ -21,8 +21,6 @@
 #include <nbla/singleton_manager.hpp>
 
 
-#define ASYNC_FLAG_SWAPINOUTSCHEDULER (AsyncFlag::ASYNC | AsyncFlag::UNSAFE)
-
 namespace nbla {
 
 using std::accumulate;
@@ -79,11 +77,11 @@ void SwapInOutScheduler::finalize() {
   // Swap out all arrays out of the recorded order.
   swap_out_wrong_order();
 
-  // Wait for swaping out all arrays and clean GPU memory for the next iteration.
-  wait_for_all_swap_out_first_iter();
-
   // Schedule at the end of first iteration
   if (first_iter) {
+    // Wait for swaping out all arrays and clean GPU memory for the next iteration.
+    wait_for_all_swap_out_first_iter();
+
     if (used_bytes_swap_out != 0) {
       NBLA_ERROR(error_code::unclassified, "used_bytes_swap_out != 0");
     }
@@ -95,7 +93,11 @@ void SwapInOutScheduler::finalize() {
     init();
     schedule();
   }
-  
+  else {
+    // Wait for swaping out all arrays and clean GPU memory for the next iteration.
+    wait_for_all_swap_out_scheduled();
+  }
+
   /* Host must wait for the all asynchronous memory manipulation for safety.
      That is because the destruction of data on CPU memory can occur
      by overriting CPU memory conflictedly between
@@ -517,7 +519,7 @@ void SwapInOutScheduler::swap_in_step() {
 void SwapInOutScheduler::swap_in() {
   for (auto r : swap_in_schedule[func_idx]) {
     if (auto p = r.get().sawptr.lock()) {
-      p->get(r.get().dtype, r.get().ctx, ASYNC_FLAG_SWAPINOUTSCHEDULER);
+      p->get(r.get().dtype, r.get().ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
     }
   }
 }
@@ -550,8 +552,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
 
       if (p && p->get_num_arrays() > 0) {
         // The array is not cleared yet. Swap out the array
-        p->cast(p->dtype(), host_ctx, false,
-                ASYNC_FLAG_SWAPINOUTSCHEDULER);
+        p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
 
         auto array_bytes = p->size() * sizeof_dtype(p->dtype());
         used_bytes_swap_out += array_bytes; // Increase memory usage
@@ -614,8 +615,7 @@ void  SwapInOutScheduler::swap_out_scheduled() {
         precleared[p] = true;
       }
       else if (!r.get().no_need_swap_out) {
-        p->cast(p->dtype(), host_ctx, false,
-            		ASYNC_FLAG_SWAPINOUTSCHEDULER);
+        p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
       }
     }
   }

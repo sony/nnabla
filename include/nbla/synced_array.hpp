@@ -29,8 +29,6 @@ using std::map;
 using std::shared_ptr;
 using std::pair;
 
-enum AsyncFlag { NONE = 0b0, ASYNC = 0b1, UNSAFE = 0b10 };
-
 /** Synchronized array interface that implicitly transfers and cast arrays
 over devices and data types.
 \ingroup NNablaCoreGrp

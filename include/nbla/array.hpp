@@ -124,9 +124,10 @@ public:
   /** Wait for the end of an event
       
       @param ctx Context where the event is waited for.
-      @param unsafe_flag if flag is true, no synchronization to host.
+      @param async_flags .
   */
-  virtual NBLA_API void wait_event(const bool unsafe_flag = false);
+  virtual NBLA_API void wait_event(const Context ctx,
+                                   const int async_flags = AsyncFlag::NONE);
 
   /** Check an event exist
   */

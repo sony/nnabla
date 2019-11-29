@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <numeric>
 
+#include <nbla/synced_array.hpp>
 #include <nbla/computation_graph/function.hpp>
 
 // Because older gcc cannot compile the hash of enum type,

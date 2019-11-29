@@ -156,7 +156,7 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
   else {
     // Wait for the end of previous async_flags asynchronous memcpy
     if (!(async_flags & AsyncFlag::ASYNC)) {
-      array_[desc.key].first->wait_event(async_flags & AsyncFlag::UNSAFE);
+      array_[desc.key].first->wait_event(ctx, async_flags);
     }
   }
 
@@ -181,7 +181,7 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
     // TODO: Better heuristic choice from current heads
     Array *head_array = array_[head_.key].first.get();
     if (head_.array_class == desc.array_class) {
-      head_array->wait_event();
+      head_array->wait_event(ctx, async_flags);
       array->copy_from(head_array);
     } else {
       ArraySynchronizer::synchronize(head_.array_class, head_array,
