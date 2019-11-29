@@ -122,7 +122,7 @@ def inner_train_test(inputa, inputb, labela, labelb, data_generator, meta_traini
         with nn.parameter_scope('meta'):
             resulta = net(inputa, labela, True, args)
             resultb = net(inputb, labelb, True, args)
-            fast_weights = nn.get_parameters(grad_only=False)
+            fast_weights = nn.get_parameters()
 
         # For saving training accuracies
         resulta[0].persistent = True
@@ -148,6 +148,8 @@ def inner_train_test(inputa, inputb, labela, labelb, data_generator, meta_traini
             task_accuracya_var.append(resulta[1])
 
         # Loss on queries is calculated only at the end of the inner loop
+        # Following the original implementation,
+        # we always use batch stats for batch normalization even in a test phase
         resultb = net(inputb, labelb, True, args, fast_weights)
 
         # Forward calculation
@@ -218,8 +220,8 @@ def meta_train(exp_string, monitor, args):
 
     with nn.parameter_scope('meta'):
         # Set weights
-        _ = net(inputa_t, labela_t, False, args)  # only definition of weights
-        weights = nn.get_parameters(grad_only=False)
+        _ = net(inputa_t, labela_t, True, args)  # only definition of weights
+        weights = nn.get_parameters()
 
         # Setup solver
         solver = S.Adam(args.meta_lr)
@@ -306,11 +308,6 @@ def meta_test(exp_string, monitor, args):
     param_file = os.path.join(args.logdir, exp_string, args.param_file)
     print('Restoring model weights from {}'.format(param_file))
     nn.load_parameters(param_file)
-
-    with nn.parameter_scope('meta'):
-        resulta_t = net(inputa_t, labela_t, False, args)
-        resultb_t = net(inputb_t, labelb_t, False, args)
-        weights = nn.get_parameters(grad_only=False)
 
     np.random.seed(1)
     random.seed(1)
