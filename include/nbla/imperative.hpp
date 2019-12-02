@@ -33,5 +33,9 @@ NBLA_API vector<NdArrayPtr> execute(FunctionPtr func,
                                     const vector<NdArrayPtr> &inputs,
                                     int n_outputs,
                                     vector<NdArrayPtr> outputs = {});
+
+NBLA_API void execute(FunctionPtr f, const Variables &inputs,
+                      const Variables &outputs);
 }
+
 #endif
