@@ -62,7 +62,6 @@ def cli_main():
 
     subparsers = parser.add_subparsers()
 
-    import nnabla
     from nnabla.utils.cli.train import add_train_command
     add_train_command(subparsers)
 
@@ -100,6 +99,9 @@ def cli_main():
 
     from nnabla.utils.cli.func_info import add_function_info_command
     add_function_info_command(subparsers)
+
+    from nnabla.utils.cli.optimize_pb_model import add_optimize_pb_model_command
+    add_optimize_pb_model_command(subparsers)
 
     from nnabla.utils.cli.plot import (
         add_plot_series_command, add_plot_timer_command)

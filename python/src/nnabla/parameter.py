@@ -53,7 +53,7 @@ def parameter_scope(name, scope=None):
         name (str): Parameter scope name.
 
         scope (OrderedDict, optional):
-            Specifiy current parameter scope as a local dictionary.
+            Specify current parameter scope as a local dictionary.
             The default value is ``None``. In this case,
             the current parameter scope maintained in global is used.
 
@@ -404,7 +404,7 @@ def load_parameters(path, proto=None, needs_proto=False):
                 shutil.rmtree(tmpdir)
                 logger.info("Parameter load ({}): {}".format(format, path))
         else:
-            pass  # TODO: Unknwon extension.
+            pass  # TODO: Unknown extension.
     return proto
 
 

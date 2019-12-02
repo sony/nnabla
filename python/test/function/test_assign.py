@@ -21,6 +21,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('Assign')
 
@@ -38,9 +39,9 @@ def test_assign_forward_backward(seed, ctx, func_name):
     assign.forward()
 
     # destination variable should be equal to source variable
-    assert np.allclose(dst.d, src.d)
+    assert_allclose(dst.d, src.d)
     # output variable of assign function should be equal to soure variable
-    assert np.allclose(assign.d, src.d)
+    assert_allclose(assign.d, src.d)
 
     dummy = assign + rng.rand()
 

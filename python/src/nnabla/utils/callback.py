@@ -95,3 +95,10 @@ def result_base(base, suffix, outdir):
 def update_progress(text):
     if callback is not None:
         callback.update_progress(text)
+
+
+def get_load_image_func(ext):
+    if callback is not None:
+        return callback.get_load_image_func(ext)
+    else:
+        return None

@@ -23,6 +23,7 @@ You can use the logger as follows:
 
     logger.debug('Log message(DEBUG)')
     logger.info('Log message(INFO)')
+    logger.warn('Log message(WARNING)')
     logger.error('Log message(ERROR)')
     logger.critical('Log message(CRITICAL)')
 
@@ -65,7 +66,6 @@ After this you can get following output.
 '''
 
 import logging
-import os
 from os.path import abspath, join, expanduser, exists, dirname
 
 from .config import nnabla_config

@@ -48,6 +48,7 @@ Neural Network Layers
 .. autofunction:: rnn
 .. autofunction:: lstm
 .. autofunction:: gru
+.. autofunction:: multi_head_attention
 
 
 Neural Network Activation
@@ -248,6 +249,7 @@ Quantized Neural Network Layers
 .. autofunction:: binary_weight_affine
 .. autofunction:: binary_weight_convolution
 .. autofunction:: fixed_point_quantize
+.. autofunction:: min_max_quantize
 .. autofunction:: pow2_quantize
 .. autofunction:: prune
 		  

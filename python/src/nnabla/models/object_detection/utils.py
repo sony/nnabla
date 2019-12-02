@@ -5,7 +5,7 @@ import numpy as np
 
 def draw_bounding_boxes(img, bboxes, names, colors=None, thresh=0.5):
     '''
-    The transformed cordinates are futher used to draw bounding boxes for the detected objects.
+    The transformed cordinates are further used to draw bounding boxes for the detected objects.
 
     Args:
         img (numpy.ndarray) : Input image

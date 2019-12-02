@@ -3,7 +3,6 @@ import csv
 import numpy
 import os
 import shutil
-import sys
 import time
 
 
@@ -52,13 +51,13 @@ class CreateCache(CsvDataSource):
                     h5.close()
                 else:
                     retry_count = 1
-                    is_create_cache_imcomplete = True
-                    while is_create_cache_imcomplete:
+                    is_create_cache_incomplete = True
+                    while is_create_cache_incomplete:
                         try:
                             with open(cache_filename, 'wb') as f:
                                 for v in data.values():
                                     numpy.save(f, v)
-                            is_create_cache_imcomplete = False
+                            is_create_cache_incomplete = False
                         except OSError:
                             retry_count += 1
                             if retry_count > 10:

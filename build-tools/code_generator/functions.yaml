@@ -3541,7 +3541,7 @@ Array Manipulation:
         doc: batched N-D array of inverted matrix
     c_runtime: not support
     function_ids:
-      Empty: 273
+      Empty: 275
   Assign:
     snake_name: assign
     doc: |2
@@ -5156,6 +5156,135 @@ Quantization Neural Network Layers:
     function_ids:
       BifB: 113
     c_runtime: not support
+  MinMaxQuantize:
+    snake_name: min_max_quantize
+    doc: |+
+      This function uniformly quantizes values in the range of min and max quantization levels.
+       
+      Min-max quantization is defined as the following equation
+       
+      .. math::
+       
+          y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m, 
+       
+      where the :math:`scale` is defined as 
+       
+      .. math::
+       
+          scale = \frac{M - m}{M_q - m_q}, 
+       
+      and 
+       
+      .. math::
+       
+          m_q = ql_{min}, \\
+          M_q = ql_{max}, \\
+          m = qr_{min}, \\
+          M = qr_{max}.
+       
+      In the backward pass when using `ste_fine_grained` as false,
+       
+          .. math::
+       
+            \frac{\partial q_i}{\partial x_i} = 1.
+       
+       
+      In the backward pass when using `ste_fine_grained` as true,
+       
+          .. math::
+       
+             \frac{\partial q_i}{\partial x_i}= \left\{
+           \begin{array}{ll}
+             0 & if \ \ \ x_i > M \\
+             1 & if \ \ m \le x_i \le M \\
+             0 & if \ \ x_i < m \\
+           \end{array} \right..
+       
+      :math:`qr_{min}` and :math:`qr_{max}` are treaded as follows.
+       
+          * `x_min_max` is `True` and `ema` is `True`: 
+            Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)` 
+            then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+          * `x_min_max` is `True` and `ema` is `False`:
+            :math:`min(x)` and :math:`max(x)` are computed then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+          * `x_min_max` is `False` and `ema` is `True`:
+            Exponential moving average stored in :math:`qr_{min}` and :math:`qr_{max}` are used.
+          * `x_min_max` is `False` and `ema` is `False`
+            Gradients of :math:`qr_{min}` and :math:`qr_{max}` are computed in the backward pass.
+       
+      More precisely, in inference of the min-max quantization, one has to consider *zero-point (zp)*
+      which corresponds
+      to the real value 0, and its data type is an integer. *zero-point* is defined as 
+       
+          .. math::
+       
+             && zp_f = ql_{min} -\frac{qr_{min}}{scale}, \\
+             && zp = \left\{
+           \begin{array}{ll}
+             ql_{max} & if \ \ \ zp_f >= ql_{max} \\
+             round(zp_f) & if \ \ otherwise \\
+             ql_{min}  & if \ \ zp_f <= ql_{min} \\
+           \end{array} \right..
+       
+      Accordingly, in order to simulate quantization effect of *zero-point*, 
+      during both forward and backward pass, :math:`qr_{min}` and :math:`qr_{max}` are adjusted as follows,
+       
+          .. math::
+           
+             qr_{min}^{adj} = ql_{min} - zp * scale, \\
+             qr_{max}^{adj} = ql_{max} - zp * scale.
+       
+      These operations are often called *nudge*. 
+       
+      Finally, in the formulas of the min-max quantization, :math:`m` and :math:`M` are replaced by
+      :math:`qr_{min}^{adj}` and :math:`qr_{max}^{adj}` respectively.
+
+      .. note::
+
+      	Quantized values are stored as floating point number, since this function is for simulation purposes.
+
+    inputs:
+      x:
+        doc: N-D array innput.
+      qr_min:
+        doc: Minimum value for the quantization range, modified during forward execution
+          when x_min_max is True.
+      qr_max:
+        doc: Maximum value for the quantization range, modified during forward execution
+          when x_min_max is True.
+      ql_min:
+        doc: Minimum value for the quantization level, typically 0.
+      ql_max:
+        doc: Maximum value for the quantization level, typically 255.
+    arguments:
+      decay:
+        doc: Decay rate for the exponential moving average.
+        type: float
+        default: '0.999'
+      x_min_max:
+        doc: Use the min and max of x to compute quantization ranges.
+        type: bool
+        default: 'False'
+      ema:
+        doc: Use the exponential moving average for the min and max quantization ranges.
+        type: bool
+        default: 'False'
+      ste_fine_grained:
+        doc: Straight Through Estimator is fine-grained or not.
+        type: bool
+        default: 'True'
+      eps:
+        doc: Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be
+          greater than the epsilon.
+        type: float
+        default: '0.01'
+    outputs:
+      y:
+        doc: N-D array.
+    c_runtime: not support
+    function_ids:
+      fBBB: 273
+      fBBBf: 274
   Pow2Quantize:
     snake_name: pow2_quantize
     doc: |2+

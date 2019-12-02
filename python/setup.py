@@ -20,7 +20,6 @@ import os
 import shutil
 import sys
 from collections import namedtuple
-import copy
 
 setup_requires = [
     'setuptools',
@@ -41,6 +40,9 @@ install_requires = setup_requires + [
     'imageio',
     'pillow'
 ]
+
+if sys.platform == 'win32':
+    install_requires.append('pywin32')
 
 
 def extopts(library_name, library_dir):
@@ -246,6 +248,8 @@ if __name__ == '__main__':
                 'nnabla.models',
                 'nnabla.models.imagenet',
                 'nnabla.models.object_detection',
+                'nnabla.models.semantic_segmentation',
+                'nnabla.testing',
                 'nnabla.utils',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
@@ -267,6 +271,8 @@ if __name__ == '__main__':
         install_requires=install_requires,
         extras_require={
             ':python_version == "2.7"': ['futures'],
+            ':python_version == "2.7"': ['scipy<1.3'],
+            ':python_version != "2.7"': ['scipy'],
             ':(python_version != "2.7" and python_version != "3.7")': ['onnx']
         },
         ext_modules=ext_modules,

@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context, function_tester
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('Slice')
 
@@ -67,7 +68,7 @@ def test_slice_forward_special(seed, inshape, start, stop, step, ctx, fname):
         x_key = F.slice(x, start, stop, step)
         x_key.forward()
 
-    assert np.allclose(x_data_key, x_key.d)
+    assert_allclose(x_data_key, x_key.d)
 
 
 @pytest.mark.parametrize("ctx, fname", ctxs)

@@ -15,6 +15,7 @@ This document describes how to use the Python API and C++ API, the contribution 
     data_exchange_file_format
     format.rst
     python/file_format_converter/file_format_converter.rst
+    support_status.rst
     contributing.rst
     license.rst
 

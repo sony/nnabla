@@ -156,10 +156,10 @@ def _export_from_nnp(args, nnp, output, output_ext):
             args.batch_size = 1
         if args.define_version and args.define_version.startswith('nnb_'):
             nnb_version = int(args.define_version.split("_")[1])
-            NnbExporter(nnp, args.batch_size, nnb_version=nnb_version).execute(
+            NnbExporter(nnp, args.batch_size, nnb_version=nnb_version, api_level=args.api).execute(
                 output, None, args.settings, args.default_variable_type)
         else:
-            NnbExporter(nnp, args.batch_size).execute(
+            NnbExporter(nnp, args.batch_size, api_level=args.api).execute(
                 output, None, args.settings, args.default_variable_type)
 
     elif os.path.isdir(output) and args.export_format == 'CSRC':
@@ -316,7 +316,7 @@ def convert_files(args, ifiles, output):
 
 
 def _generate_nnb_template(args, nnp, output):
-    NnbExporter(nnp, args.batch_size).execute(
+    NnbExporter(nnp, args.batch_size, api_level=args.api).execute(
         None, output, None, args.default_variable_type)
     return True
 

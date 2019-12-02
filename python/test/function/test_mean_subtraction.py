@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('MeanSubtraction')
 
@@ -63,11 +64,11 @@ def test_mean_subtraction_forward_backward(seed, inshape, base_axis, ctx, func_n
             y = F.mean_subtraction(*(vinputs + [base_axis, batch_stat]))
         # print('vinput[1].d', vinputs[1].d, vinputs[2].d)
         # print('inputs[1]', inputs[1], inputs[2])
-        assert np.allclose(vinputs[1].d, inputs[1])
+        assert_allclose(vinputs[1].d, inputs[1])
 
     # Check if global stat mode works
     batch_stat = False
     ref_y = ref_mean_subtraction(*(inputs + [base_axis, batch_stat]))
     with nn.auto_forward():
         y = F.mean_subtraction(*(vinputs + [base_axis, batch_stat]))
-    assert np.allclose(ref_y, y.d)
+    assert_allclose(ref_y, y.d)

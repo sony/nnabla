@@ -15,8 +15,8 @@
 import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
 import numpy as np
+from nnabla.testing import assert_allclose
 
 
 def test_data_parallel_communicator(comm_nccl_opts):
@@ -85,4 +85,4 @@ def test_data_parallel_communicator(comm_nccl_opts):
             params = nn.get_parameters()
             for i, elm in enumerate(params.items()):
                 k, v = elm
-                assert np.allclose(ref_grads[i], v.g, atol=atol)
+                assert_allclose(ref_grads[i], v.g, atol=atol)

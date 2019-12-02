@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
 
 import nnabla.utils.converter
 from nnabla.utils.converter import get_category_info_string
@@ -100,7 +98,7 @@ def add_convert_command(subparsers):
     subparser = subparsers.add_parser(
         'nnb_template', help='Generate NNB config file template.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
-                           help='File or directory name(s) to convert.')
+                           help='File to generate NNB config file template. The last is setting yaml file.')
     # import option
     add_import_arg(subparser)
 
@@ -108,6 +106,8 @@ def add_convert_command(subparsers):
                            help='[export] overwrite batch size.')
     subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
                            help='Default type of variable')
+    subparser.add_argument('--api', type=int, default=-1,
+                           help='Set API Level to convert to, default is highest API Level.')
 
     subparser.set_defaults(func=nnb_template_command)
 
@@ -162,5 +162,7 @@ def add_convert_command(subparsers):
                            help='Default type of variable')
     subparser.add_argument('-s', '--settings', type=str, nargs=1, default=None,
                            help='Settings in YAML format file.')
+    subparser.add_argument('--api', type=int, default=-1,
+                           help='Set API Level to convert to, default is highest API Level.')
 
     subparser.set_defaults(func=convert_command)

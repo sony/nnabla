@@ -14,7 +14,6 @@
 
 import os
 import shutil
-import sys
 from tqdm import tqdm
 
 from nnabla.utils.create_cache import CreateCache

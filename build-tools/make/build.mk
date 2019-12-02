@@ -169,4 +169,4 @@ nnabla-test-local: nnabla-install
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& PATH=$(PYTEST_PATH_EXTRA):$(PATH) \
 	LD_LIBRARY_PATH=$(PYTEST_LD_LIBRARY_PATH_EXTRA):$(LD_LIBRARY_PATH) \
-	python -m pytest $(NNABLA_DIRECTORY)/python/test
+	$(NNABLA_DIRECTORY)/build-tools/make/pytest.sh $(NNABLA_DIRECTORY)/python/test

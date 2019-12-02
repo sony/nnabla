@@ -10,6 +10,10 @@ The pre-trained models can be used for both inference and training as following:
 .. code-block:: python
 
     # Create ResNet-50 for inference
+    import nnabla as nn
+    import nnabla.functions as F
+    import nnabla.parametric_functions as PF
+    import numpy as np
     from nnabla.models.imagenet import ResNet50
     model = ResNet50()
     batch_size = 1

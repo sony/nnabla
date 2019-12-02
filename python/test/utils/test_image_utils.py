@@ -19,6 +19,7 @@ import numpy as np
 
 from nnabla.utils import image_utils
 from nnabla.logger import logger
+from nnabla.testing import assert_allclose
 
 SIZE = (8, 8, 3)
 
@@ -99,10 +100,10 @@ def test_minmax_auto_scale(img, as_uint16):
     # check if correctly scaled up
     reverted = image_utils.common.rescale_pixel_intensity(rescaled, rescaled.min(), rescaled.max(),
                                                           img.min(), img.max(), img.dtype)
-    assert np.allclose(img, reverted, atol=1 / 2 ** 4)
+    assert_allclose(img, reverted, atol=1 / 2 ** 4)
 
 
-@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2", "dicom"])
+@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
 @pytest.mark.parametrize("grayscale", [False, True])
 @pytest.mark.parametrize("size", [None, (16, 16)])
 @pytest.mark.parametrize("channel_first", [False, True])
@@ -117,10 +118,7 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
     _change_backend(backend)
 
     tmpdir.ensure(dir=True)
-    if backend != "dicom":
-        tmppath = tmpdir.join("tmp.png")
-    else:
-        tmppath = tmpdir.join("tmp.dcm")
+    tmppath = tmpdir.join("tmp.png")
     img_file = tmppath.strpath
 
     ref_size_axis = 0
@@ -180,11 +178,11 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
         scaler = get_scale_factor(img, auto_scale, as_uint16)
         dtype = img.dtype if img.dtype in [np.uint8, np.uint16] else np.float32
 
-        assert np.allclose(
+        assert_allclose(
             (img.astype(dtype) * scaler).astype(read_image.dtype), read_image)
 
 
-@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2", "dicom"])
+@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
 @pytest.mark.parametrize("size", [(16, 16), (64, 64)])
 @pytest.mark.parametrize("channel_first", [False, True])
 @pytest.mark.parametrize("img", imgs)

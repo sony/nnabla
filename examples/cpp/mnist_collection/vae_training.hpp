@@ -25,6 +25,7 @@ using namespace std;
 using namespace nbla;
 using std::make_shared;
 
+#include <nbla/auto_forward.hpp>
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
@@ -59,7 +60,7 @@ CgVariablePtr model(CgVariablePtr x, ParameterDirectory parameters) {
   vector<int> shape_z(shape_mu.size());
   for (int i = 0; i < shape_z.size(); i++)
     shape_z[i] = shape_mu[i];
-  auto epsilon = f::randn(0.0, 1.0, shape_z, 706);
+  auto epsilon = f::randn(0.0, 1.0, shape_z, -1);
   auto z = mu + sigma * epsilon;
 
   //#############################################
@@ -107,9 +108,9 @@ CgVariablePtr model(CgVariablePtr x, ParameterDirectory parameters) {
 }
 
 /******************************************/
-// Example of Lenet Classifier Training
+// Example of VAE Training
 /******************************************/
-bool vae_training(nbla::Context ctx) {
+bool vae_training_with_static_graph(nbla::Context ctx) {
 
   // Create a context for cpu
   nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
@@ -118,8 +119,10 @@ bool vae_training(nbla::Context ctx) {
   MnistDataIterator train_data_provider("train");
   MnistDataIterator test_data_provider("test");
 
-  // Build network
+  // Setup context
   SingletonManager::get<GlobalContext>()->set_current_context(ctx);
+
+  // Build network
   ParameterDirectory params;
   int batch_size = 100;
   auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
@@ -139,47 +142,141 @@ bool vae_training(nbla::Context ctx) {
     return false;
   }
 
-  int max_iter = 60000;
-  int n_val_interval = 10;
-  int n_val_iter = 10;
-  float mean_loss_t = 0.;
-  for (int iter = 0; iter < max_iter; iter++) {
+  try {
+    int max_iter = 60000;
+    int n_val_interval = 10;
+    int n_val_iter = 10;
+    float mean_loss_t = 0.;
+    for (int iter = 0; iter < max_iter; iter++) {
 
-    // Get batch and copy to input variables
-    train_data_provider.provide_data(cpu_ctx, batch_size, x, t);
+      // Get batch and copy to input variables
+      train_data_provider.provide_data(cpu_ctx, batch_size, x, t);
 
-    // Execute forward, backward and update
-    adam->zero_grad();
-    loss->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
-    loss->variable()->grad()->fill(1.0);
-    loss->backward(/*NdArrayPtr grad =*/nullptr,
-                   /*bool clear_buffer = */ true);
-    adam->update();
+      // Execute forward, backward and update
+      adam->zero_grad();
+      loss->forward(/*clear_buffer=*/false, /*clear_no_need_grad=*/true);
+      loss->variable()->grad()->fill(1.0);
+      loss->backward(/*NdArrayPtr grad =*/nullptr,
+                     /*bool clear_buffer = */ true);
+      adam->update();
 
-    // Get and print the average loss
-    float_t *loss_d =
-        loss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, false);
-    mean_loss_t += loss_d[0];
+      // Get and print the average loss
+      float_t *loss_d =
+          loss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, false);
+      mean_loss_t += loss_d[0];
 
-    if ((iter + 1) % n_val_interval == 0) {
+      if ((iter + 1) % n_val_interval == 0) {
 
-      float mean_loss_v = 0.0;
-      for (int v_iter = 0; v_iter < n_val_iter; v_iter++) {
-        test_data_provider.provide_data(cpu_ctx, batch_size, x, t);
-        loss->forward(/*clear_buffer=*/true, /*clear_no_need_grad=*/true);
-        float_t *loss_d = loss->variable()->cast_data_and_get_pointer<float_t>(
-            cpu_ctx, false);
-        mean_loss_v += loss_d[0];
+        float mean_loss_v = 0.0;
+        for (int v_iter = 0; v_iter < n_val_iter; v_iter++) {
+          test_data_provider.provide_data(cpu_ctx, batch_size, x, t);
+          loss->forward(/*clear_buffer=*/true, /*clear_no_need_grad=*/true);
+          float_t *loss_d =
+              loss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                   false);
+          mean_loss_v += loss_d[0];
+        }
+        mean_loss_t /= n_val_interval;
+        mean_loss_v /= n_val_iter;
+
+        fprintf(fp, "iter: %d, tloss: %f, vloss: %f\n", iter + 0, mean_loss_t,
+                mean_loss_v);
+        fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter + 0,
+                mean_loss_t, mean_loss_v);
+        mean_loss_t = 0;
       }
-      mean_loss_t /= n_val_interval;
-      mean_loss_v /= n_val_iter;
-
-      fprintf(fp, "iter: %d, tloss: %f, vloss: %f\n", iter + 0, mean_loss_t,
-              mean_loss_v);
-      fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter + 0, mean_loss_t,
-              mean_loss_v);
-      mean_loss_t = 0;
     }
+  } catch (...) {
+    cout << "Exception in vae_training_with_static_graph.\n";
+    fclose(fp);
+    return false;
+  }
+  fclose(fp);
+  return true;
+}
+
+bool vae_training_with_dynamic_graph(nbla::Context ctx) {
+
+  // Create a context for cpu
+  nbla::Context cpu_ctx{{"cpu:float"}, "CpuCachedArray", "0"};
+
+  // Create mnist data iterator
+  MnistDataIterator train_data_provider("train");
+  MnistDataIterator test_data_provider("test");
+
+  // Setup context
+  SingletonManager::get<GlobalContext>()->set_current_context(ctx);
+
+  // Setup auto_forward
+  SingletonManager::get<AutoForward>()->set_auto_forward(true);
+
+  // Setup parameter
+  ParameterDirectory params;
+
+  // Setup solver and input learnable parameters
+  float learning_rate = 3.0e-4;
+  auto adam = create_AdamSolver(ctx, learning_rate, 0.9, 0.999, 1.0e-8);
+
+  // Execute training
+  FILE *fp;
+  fp = fopen("log.txt", "wt");
+  if (fp == NULL) {
+    fprintf(stderr, "Error in opening log file.");
+    return false;
+  }
+
+  try {
+    int batch_size = 100;
+    int max_iter = 60000;
+    int n_val_interval = 10;
+    int n_val_iter = 10;
+    float mean_loss_t = 0.;
+    for (int iter = 0; iter < max_iter; iter++) {
+
+      // Get batch and copy to input variables
+      auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
+      auto t = make_shared<CgVariable>(Shape_t({batch_size, 1}), false);
+      train_data_provider.provide_data(cpu_ctx, batch_size, x, t);
+      auto loss = model(x, params);
+
+      // Execute forward, backward and update
+      adam->set_parameters(params.get_parameters(), false, true);
+      adam->zero_grad();
+      loss->variable()->grad()->fill(1.0);
+      loss->backward(/*NdArrayPtr grad =*/nullptr,
+                     /*bool clear_buffer = */ true);
+      adam->update();
+
+      // Get and print the average loss
+      float_t *loss_d =
+          loss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx, false);
+      mean_loss_t += loss_d[0];
+
+      if ((iter + 1) % n_val_interval == 0) {
+
+        float mean_loss_v = 0.0;
+        for (int v_iter = 0; v_iter < n_val_iter; v_iter++) {
+          test_data_provider.provide_data(cpu_ctx, batch_size, x, t);
+          auto loss = model(x, params);
+          float_t *loss_d =
+              loss->variable()->cast_data_and_get_pointer<float_t>(cpu_ctx,
+                                                                   false);
+          mean_loss_v += loss_d[0];
+        }
+        mean_loss_t /= n_val_interval;
+        mean_loss_v /= n_val_iter;
+
+        fprintf(fp, "iter: %d, tloss: %f, vloss: %f\n", iter + 0, mean_loss_t,
+                mean_loss_v);
+        fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter + 0,
+                mean_loss_t, mean_loss_v);
+        mean_loss_t = 0;
+      }
+    }
+  } catch (...) {
+    cout << "Exception in vae_training_with_dynamic_graph.\n";
+    fclose(fp);
+    return false;
   }
   fclose(fp);
   return true;

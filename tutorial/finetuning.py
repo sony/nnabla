@@ -15,7 +15,6 @@
 import os
 import importlib
 import nnabla as nn
-import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S

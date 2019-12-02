@@ -15,7 +15,6 @@
 import argparse
 import os
 import sys
-import time
 from tqdm import tqdm
 
 from nnabla.logger import logger

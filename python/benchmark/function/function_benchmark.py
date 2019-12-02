@@ -22,8 +22,6 @@ import time
 from collections import namedtuple, OrderedDict
 import csv
 
-import pytest
-
 
 Inspec = namedtuple("Inspec", ['shape', 'init', 'need_grad'])
 Inspec.__new__.__defaults__ = (I.NormalInitializer(), True)

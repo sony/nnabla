@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from .backward_function import BackwardFunction
@@ -20,6 +19,7 @@ from .backward_function import BackwardFunction
 
 class InterpolateBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'InterpolateBackward'
 

@@ -156,6 +156,16 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
   return desc;
 }
 
+void SyncedArray::copy_from(const SyncedArray *src) {
+  NBLA_CHECK(!src->head_.key.empty(), error_code::value,
+             "Source doesn't have any array.");
+  auto src_array = src->array_.at(src->head_.key).first;
+  auto ctx = src_array->context();
+  auto dtype = src_array->dtype();
+  auto dst_array = this->cast(dtype, ctx, true);
+  dst_array->copy_from(src_array.get());
+}
+
 void SyncedArray::clear() {
   array_.clear();
   this->clear_flags();

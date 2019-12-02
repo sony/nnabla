@@ -87,19 +87,22 @@ string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\2]] version_minor ${versi
 string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\3]] version_patch ${version})
 
 set(CPACK_PACKAGE_NAME "nnabla-cpplib")
-find_program(LSB_RELEASE lsb_release)
-if(EXISTS ${LSB_RELEASE})
 
-  execute_process(COMMAND ${LSB_RELEASE} -si
-    OUTPUT_VARIABLE LSB_RELEASE_ID
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  execute_process(COMMAND ${LSB_RELEASE} -sr
-    OUTPUT_VARIABLE LSB_RELEASE_RELEASE
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  set(CPACK_SYSTEM_NAME ${LSB_RELEASE_ID}${LSB_RELEASE_RELEASE})
+if(UNIX)
+  find_program(LSB_RELEASE lsb_release)
+  if(EXISTS ${LSB_RELEASE})
+    execute_process(COMMAND ${LSB_RELEASE} -si
+      OUTPUT_VARIABLE LSB_RELEASE_ID
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    execute_process(COMMAND ${LSB_RELEASE} -sr
+      OUTPUT_VARIABLE LSB_RELEASE_RELEASE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    set(CPACK_SYSTEM_NAME ${LSB_RELEASE_ID}${LSB_RELEASE_RELEASE})
+  endif()
 endif()
+
 set(CPACK_PACKAGE_VERSION_MAJOR ${version_major})
 set(CPACK_PACKAGE_VERSION_MINOR ${version_minor})
 set(CPACK_PACKAGE_VERSION_PATCH ${version_patch})

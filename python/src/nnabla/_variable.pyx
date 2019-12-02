@@ -421,6 +421,8 @@ cdef class Variable:
         modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the value held by this variable.
+        Refer to the documentation of the setter `nnabla._nd_array.NdArray.data`
+        for detailed behvaiors of the setter.
 
         Args:
             value(:obj:`numpy.ndarray`) (optional)
@@ -432,7 +434,7 @@ cdef class Variable:
 
     @d.setter
     def d(self, value):
-        self.data.data[...] = value
+        self.data.data = value
 
     @property
     def g(self):
@@ -442,6 +444,8 @@ cdef class Variable:
         modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the gradient held by this variable.        
+        Refer to the documentation of the setter `nnabla._nd_array.NdArray.data`
+        for detailed behvaiors of the setter.
 
         Args:
             value(:obj:`numpy.ndarray`)
@@ -453,7 +457,7 @@ cdef class Variable:
 
     @g.setter
     def g(self, value):
-        self.grad.data[...] = value
+        self.grad.data = value
 
     @property
     def parent(self):

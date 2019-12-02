@@ -1,13 +1,8 @@
-import argparse
 import boto3
-import configparser
 import csv
-import math
 import os
-import re
 import requests
 import shutil
-import sys
 import tarfile
 import tempfile
 import threading

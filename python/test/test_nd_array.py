@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 import numpy as np
 
 import nnabla as nn
+
+import pytest
 
 
 def test_nd_array():
@@ -37,3 +38,44 @@ def test_nd_array():
     assert np.all(a.data == 3)
     b.copy_from(a)
     assert np.all(a.data == b.data)
+
+
+def test_copy_from():
+    shape = [2, 3, 4]
+    src = nn.NdArray(shape)
+    dst = nn.NdArray(shape)
+    src.data = 0
+    src.cast(dtype=np.uint8)
+    dst.copy_from(src, use_current_context=False)
+    assert dst.dtype == np.uint8
+
+    from nnabla.ext_utils import get_extension_context
+    with nn.context_scope(get_extension_context('cpu', dtype='float')):
+        dst.copy_from(src, use_current_context=True)
+    assert dst.dtype == np.float32
+
+
+@pytest.mark.parametrize("value", [
+    1,
+    1.3,
+    np.array(np.zeros((2, 3))),
+    np.arange(6).reshape(2, 3)])
+def test_nd_array_data(value):
+    shape = (2, 3)
+
+    # Use default dtype (float32) in getter
+    a = nn.NdArray(shape)
+    with pytest.raises(Exception):
+        _ = a.dtype
+    _ = a.data
+    assert a.dtype == np.float32
+
+    # Use value dtype in setter
+    a = nn.NdArray(shape)
+    a.data = value
+    if not np.isscalar(value) or \
+       (np.dtype(type(value)).kind != 'f' and value > (1 << 53)):
+        assert a.dtype == np.asarray(value).dtype
+        assert a.data.dtype == np.asarray(value).dtype
+    else:
+        assert a.data.dtype == np.float32

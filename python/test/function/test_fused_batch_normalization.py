@@ -19,6 +19,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('FusedBatchNormalization')
 cpu_context = nn.Context(["cpu:float"])
@@ -113,6 +114,22 @@ def create_inputs(rng, axis, add):
     return x, beta, gamma, rmean, rvar, z
 
 
+def mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance):
+    if no_bias:
+        inputs[1] = np.zeros(inputs[1].shape)
+
+    if no_scale:
+        inputs[2] = np.ones(inputs[2].shape)
+
+    if no_mean:
+        inputs[3] = np.zeros(inputs[3].shape)
+
+    if no_variance:
+        inputs[4] = np.ones(inputs[4].shape)
+
+    return inputs
+
+
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [0, 3])
 @pytest.mark.parametrize("decay_rate", [0.9])
@@ -121,10 +138,14 @@ def create_inputs(rng, axis, add):
 @pytest.mark.parametrize("output_stat", [False])  # [True, False])
 @pytest.mark.parametrize("add", [True, False])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
+@pytest.mark.parametrize("no_mean", [True, False])
+@pytest.mark.parametrize("no_variance", [True, False])
 def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
                                                     nonlinearity,
                                                     output_stat, add,
-                                                    ctx, func_name):
+                                                    ctx, func_name,
+                                                    no_scale, no_bias, no_mean, no_variance):
     import platform
     if platform.system() == 'Windows' and len(ctx.backend) > 1:
         pytest.skip(
@@ -135,6 +156,7 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     inputs = list(create_inputs(rng, axis, add))
     axes = [axis]
     batch_stat = True
+    inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
     function_tester(rng, F.fused_batch_normalization, ref_fused_batch_normalization,
                     inputs,
                     ref_grad=ref_grad_fused_batch_normalization,
@@ -144,6 +166,9 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
                     ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
 
     # Check if running mean and var works.
+    if no_mean and no_variance:
+        return
+
     vinputs = []
     for i in inputs:
         if i is None:
@@ -158,8 +183,8 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         with nn.context_scope(ctx), nn.auto_forward():
             y = F.fused_batch_normalization(
                 *(vinputs + [axes, decay_rate, eps, batch_stat, nonlinearity, output_stat]))
-        assert np.allclose(vinputs[3].d, inputs[3])
-        assert np.allclose(vinputs[4].d, inputs[4], atol=1e-3)
+        assert_allclose(vinputs[3].d, inputs[3])
+        assert_allclose(vinputs[4].d, inputs[4], atol=1e-3)
 
     # Check if global stat mode works
     batch_stat = False
@@ -170,4 +195,4 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     with nn.context_scope(ctx), nn.auto_forward():
         y = F.fused_batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, nonlinearity, output_stat]))
-    assert np.allclose(ref_y, y.d, atol=1e-6)
+    assert_allclose(ref_y, y.d, atol=1e-6)

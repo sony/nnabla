@@ -1,7 +1,6 @@
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
-import numpy as np
 
 from .identity import IdentityConverter
 from .helpers import GraphInfo
@@ -26,7 +25,6 @@ class FixedPointActivationConverter(IdentityConverter):
                            "delta": 2e-4, "quantize": True},
                  name="fixed-point-activation-graph"):
         import nnabla.function_bases as FB
-        import nnabla as nn
         super(FixedPointActivationConverter, self).__init__(
             black_list, params, name)
 

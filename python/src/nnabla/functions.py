@@ -472,6 +472,118 @@ def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fin
     return pow2_quantize_base(x, sign, with_zero, n, m, ste_fine_grained, outputs=outputs)
 
 
+def min_max_quantize(x, qr_min, qr_max, ql_min, ql_max, decay=0.999, x_min_max=False, ema=False,
+                     ste_fine_grained=True, eps=0.01, quantize=True, outputs=None):
+    r"""Min-max quantization.
+
+    This function uniformly quantizes values in the range of min and max quantization levels.
+
+    Min-max quantization is defined as the following equation
+
+    .. math::
+
+        y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m, 
+
+    where the :math:`scale` is defined as 
+
+    .. math::
+
+        scale = \frac{M - m}{M_q - m_q}, 
+
+    and 
+
+    .. math::
+
+        m_q = ql_{min}, \\
+        M_q = ql_{max}, \\
+        m = qr_{min}, \\
+        M = qr_{max}.
+
+    In the backward pass when using `ste_fine_grained` as false,
+
+        .. math::
+
+          \frac{\partial q_i}{\partial x_i} = 1.
+
+
+    In the backward pass when using `ste_fine_grained` as true,
+
+        .. math::
+
+           \frac{\partial q_i}{\partial x_i}= \left\{
+         \begin{array}{ll}
+           0 & if \ \ \ x_i > M \\
+           1 & if \ \ m \le x_i \le M \\
+           0 & if \ \ x_i < m \\
+         \end{array} \right..
+
+    :math:`qr_{min}` and :math:`qr_{max}` are treaded as follows.
+
+        * `x_min_max` is `True` and `ema` is `True`: 
+          Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)` 
+          then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `True` and `ema` is `False`:
+          :math:`min(x)` and :math:`max(x)` are computed then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `False` and `ema` is `True`:
+          Exponential moving average stored in :math:`qr_{min}` and :math:`qr_{max}` are used.
+        * `x_min_max` is `False` and `ema` is `False`
+          Gradients of :math:`qr_{min}` and :math:`qr_{max}` are computed in the backward pass.
+
+    More precisely, in inference of the min-max quantization, one has to consider *zero-point (zp)*
+    which corresponds
+    to the real value 0, and its data type is an integer. *zero-point* is defined as 
+
+        .. math::
+
+           && zp_f = ql_{min} -\frac{qr_{min}}{scale}, \\
+           && zp = \left\{
+         \begin{array}{ll}
+           ql_{max} & if \ \ \ zp_f >= ql_{max} \\
+           round(zp_f) & if \ \ otherwise \\
+           ql_{min}  & if \ \ zp_f <= ql_{min} \\
+         \end{array} \right..
+
+    Accordingly, in order to simulate quantization effect of *zero-point*, 
+    during both forward and backward pass, :math:`qr_{min}` and :math:`qr_{max}` are adjusted as follows,
+
+        .. math::
+
+           qr_{min}^{adj} = ql_{min} - zp * scale, \\
+           qr_{max}^{adj} = ql_{max} - zp * scale.
+
+    These operations are often called *nudge*. 
+
+    Finally, in the formulas of the min-max quantization, :math:`m` and :math:`M` are replaced by
+    :math:`qr_{min}^{adj}` and :math:`qr_{max}^{adj}` respectively.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array.
+        qr_min (~nnabla.Variable): Minimum quantization range (modified during forward execution).
+        qr_max (~nnabla.Variable): Maximum quantization range (modified during forward execution).
+        ql_min (~nnabla.Variable): Minimum quantization level, typically 0.
+        ql_max (~nnabla.Variable): Maximum quantization level, typically 255.
+        decay (float): The decay rate for the exponential moving average.
+        x_min_max (bool): Use the min and max of x to compute quantization ranges. Default is `False`.
+        ema (bool): Use the exponential moving average for the min and max quantization ranges.
+                    Default is `False`.
+        ste_fine_grained (bool): If `True`, STE is not 1, the {0, 1}-mask computed from the min-max is
+                                 applied to the gradient in the backward; otherwise, STE is 1.
+        eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
+                     than the epsilon.
+        quantize (bool): Apply quantization or not.
+
+    References:
+        Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, and Dmitry Kalenichenko, "Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference", https://arxiv.org/abs/1712.05877
+
+    """
+
+    from .function_bases import min_max_quantize as min_max_quantize_base
+    if not quantize:
+        return x
+    return min_max_quantize_base(x, qr_min, qr_max, ql_min, ql_max, decay, x_min_max, ema,
+                                 ste_fine_grained, eps, quantize, outputs=outputs)
+
+
 def clip_by_value(x, min, max):
     r"""Clip inputs by values.
 
@@ -485,16 +597,28 @@ def clip_by_value(x, min, max):
 
     Args:
         x (Variable): An input variable.
-        min (Variable): A min variable by which `x` is clipped. Note that the shape of `min` must be the same as `x`'s.
-        max (Variable): A max variable by which `x` is clipped. Note that the shape of `max` must be the same as `x`'s
+        min (Variable or float): A min variable or float value by which `x` is clipped. Note that if Variable is given, its shape must be the same as `x`'s.
+        max (Variable or float): A max variable or float value by which `x` is clipped. Note that if Variable is given, its shape must be the same as `x`'s
 
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
-    from .function_bases import maximum2 as maximum2_base
-    from .function_bases import minimum2 as minimum2_base
-    return minimum2_base(maximum2_base(x, min), max)
+    if np.isscalar(min):
+        maximum_base = maximum_scalar
+    elif isinstance(min, (nn.Variable, nn.NdArray)):
+        maximum_base = maximum2
+    else:
+        raise TypeError("min must be Variable, NdArray, or scalar.")
+
+    if np.isscalar(max):
+        minimum_base = minimum_scalar
+    elif isinstance(max, (nn.Variable, nn.NdArray)):
+        minimum_base = minimum2
+    else:
+        raise TypeError("max must be Variable, NdArray, or scalar.")
+
+    return minimum_base(maximum_base(x, min), max)
 
 
 def clip_by_norm(x, clip_norm, axis=None):
@@ -511,31 +635,26 @@ def clip_by_norm(x, clip_norm, axis=None):
 
     Args:
         x (Variable): An input variable.
-        clip_norm (`Variable` or `float`): An input scalar variable or float value. Must be positive.
+        clip_norm (Variable or float): An input scalar variable or float value. Must be positive.
         axis (None, int or tuple of ints): Axis or axes along which the reduction is performed. Passing the default value `None` will reduce all dimensions.
 
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
-    from .function_bases import pow_scalar as pow_scalar_base
-    from .function_bases import maximum2 as maximum2_base
-    from .function_bases import maximum_scalar as maximum_scalar_base
     from .function_bases import sum as sum_base
-    from ._variable import Variable as Variable_base
-    from ._nd_array import NdArray as NdArray_base
 
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
-    if isinstance(clip_norm, (Variable_base, NdArray_base)):
-        y = x * clip_norm / maximum2_base(x_norm, clip_norm)
+    x_norm = pow_scalar(sum_base(x**2.0, axis, True), 0.5)
+    if isinstance(clip_norm, (nn.Variable, nn.NdArray)):
+        y = x * clip_norm / maximum2(x_norm, clip_norm)
     else:
         if clip_norm <= 0:
             raise ValueError("clip_norm must be positive.")
-        y = x * clip_norm / maximum_scalar_base(x_norm, clip_norm)
+        y = x * clip_norm / maximum_scalar(x_norm, clip_norm)
     return y
 
 
@@ -982,3 +1101,127 @@ def scatter_nd(data, indices, shape=None, out=None):
             shape = shape.tolist()
         outputs = None
     return scatter_nd_base(data, indices, shape, outputs=outputs)
+
+
+def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_weight, out_weight, q_bias=None, k_bias=None, v_bias=None, out_bias=None, attn_bias_k=None, attn_bias_v=None, dropout=0.0, additive_mask=None, key_padding_mask=None):
+    '''MultiHeadAttention.
+
+    Computes multi-headed attention with query, key, and value.
+    We use the following notations to describe the inputs and outputs below.
+    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`E`: embedding dimension, :math`H`: number of attention heads.
+
+    References:
+
+        A. Vaswani et al. "Attention is All You Need."
+        NIPS. 2017.
+        <https://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf>
+
+    Args:
+        query (~nnabla.Variable): Input N-D array with shape :math:`(L_T, B, E)`.
+        key (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_k)`.
+        value (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_v)`.
+        num_heads (int): Number of attention heads. Note that embedding dimensoin E must be divisible by the number of heads. Default is 12 which is conventional.
+        q_weight (~nnabla.Variable): Input N-D array with shape :math:`(E E)`.
+        k_weight (~nnabla.Variable): Input N-D array with shape :math:`(E_k, E)`.
+        v_weight (~nnabla.Variable): Input N-D array with shape :math:`(E_v, E)`.
+        out_weight (~nnabla.Variable): Input N-D array with shape :math:`(E, E)`.
+        q_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        k_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        v_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        out_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        attn_bias_k (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        attn_bias_v (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        dropout (float, optional): Dropout ratio applied to parameters. Default is 0.
+        additive_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(L_T, L_S)`. Values will be added to the attention layer to prevent attention to certain positions.
+        key_padding_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+
+    Returns:
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`
+        ~nnabla.Variable: Output :math:`h_n` with shape :math:`(B, L_T, L_S)`
+    '''
+
+    from . import functions as F
+
+    tgt_len, batch_size, embed_dim = query.shape
+    src_len, batch_size, kdim = key.shape
+    vdim = value.shape[2]
+    assert src_len == value.shape[0]
+    head_dim = embed_dim // num_heads
+    assert head_dim * num_heads == embed_dim
+
+    if key_padding_mask is not None:
+        assert key_padding_mask.shape[0] == batch_size
+        assert key_padding_mask.shape[1] == src_len
+
+    # query:(L_T, B, E) --> q:(L_T, B, E)
+    q = F.affine(query, q_weight, q_bias, base_axis=2)
+    # key:(L_S, B, E_k) --> k:(L_S, B, E)
+    k = F.affine(key, k_weight, k_bias, base_axis=2)
+    # value:(L_S, B, E_v) --> v:(L_S, B, E)
+    v = F.affine(value, v_weight, v_bias, base_axis=2)
+
+    q *= float(head_dim) ** -0.5
+
+    if attn_bias_k is not None:
+        attn_bias_k = F.reshape(attn_bias_k, (1, 1, embed_dim))
+        attn_bias_v = F.reshape(attn_bias_v, (1, 1, embed_dim))
+        src_len += 1
+        assert attn_bias_k is not None
+        attn_bias_k = F.broadcast(
+            attn_bias_k, (1, batch_size, attn_bias_k.shape[2]))
+        attn_bias_v = F.broadcast(
+            attn_bias_v, (1, batch_size, attn_bias_v.shape[2]))
+        k = F.concatenate(k, attn_bias_k, axis=0)
+        v = F.concatenate(v, attn_bias_v, axis=0)
+        if additive_mask is not None:
+            # additive_mask: (L_T, L_S) --> (L_T, L_S + 1)
+            additive_mask = F.pad(additive_mask, (0, 1))
+        if key_padding_mask is not None:
+            # key_padding_mask: (B, L_S) --> (B, L_S + 1)
+            key_padding_mask = F.pad(key_padding_mask, (0, 1))
+
+    q = F.transpose(
+        F.reshape(q, (tgt_len, batch_size * num_heads, head_dim)), (1, 0, 2))  # q:(B*H, L_T, dim_head)
+    k = F.transpose(
+        F.reshape(k, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # k:(B*H, L_S, dim_head)
+    v = F.transpose(
+        F.reshape(v, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # v:(B*H, L_S, dim_head)
+
+    # attn_output_weights: (B*H, L_T, L_S)
+    attn_output_weights = F.batch_matmul(q, k, transpose_b=True)
+    assert list(attn_output_weights.shape) == [
+                batch_size * num_heads, tgt_len, src_len]
+
+    if additive_mask is not None:
+        additive_mask = F.reshape(additive_mask, ((1,) + additive_mask.shape))
+        attn_output_weights += additive_mask
+
+    if key_padding_mask is not None:
+        attn_output_weights = F.reshape(
+            attn_output_weights, (batch_size, num_heads, tgt_len, src_len))
+        attn_output_weights = F.where(
+            F.broadcast(
+                F.reshape(key_padding_mask, (batch_size, 1, 1, src_len)),
+                attn_output_weights.shape),  # Condition
+            F.constant(val=float('-inf'),
+                       shape=attn_output_weights.shape),  # If true
+            attn_output_weights)  # If false
+        attn_output_weights = F.reshape(
+            attn_output_weights, (batch_size*num_heads, tgt_len, src_len))
+
+    attn_output_weights = F.softmax(
+        attn_output_weights, axis=len(attn_output_weights.shape)-1)
+    if dropout > 0:
+        attn_output_weights = F.dropout(
+            attn_output_weights, p=dropout)
+
+    # (B*H, L_T, L_S) x (B*H, L_S, dim_head) --> (B*H, L_T, dim_head)
+    attn_output = F.batch_matmul(attn_output_weights, v)
+    assert list(attn_output.shape) == [
+                batch_size * num_heads, tgt_len, head_dim]
+    attn_output = F.reshape(F.transpose(
+        attn_output, (1, 0, 2)), (tgt_len, batch_size, embed_dim))  # attn_output: (L_T, B, E)
+
+    attn_output = F.affine(attn_output, out_weight, out_bias, base_axis=2)
+
+    return attn_output, attn_output_weights

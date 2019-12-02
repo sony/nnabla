@@ -15,6 +15,7 @@
 import pytest
 import numpy as np
 import nnabla as nn
+from nnabla.testing import assert_allclose
 
 
 class Key2Key:
@@ -204,8 +205,8 @@ def test_update_index_variable():
     i_nn = nn.Variable.from_numpy_array(i_np)
     y_nn = x_nn[i_nn]
     y_nn.forward()
-    assert np.allclose(y_nn.d, x_np[i_np])
+    assert_allclose(y_nn.d, x_np[i_np])
     i_np = np.random.choice(np.arange(20), 10)
     i_nn.d = i_np
     y_nn.forward()
-    assert np.allclose(y_nn.d, x_np[i_np])
+    assert_allclose(y_nn.d, x_np[i_np])

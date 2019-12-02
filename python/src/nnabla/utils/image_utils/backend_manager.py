@@ -35,7 +35,7 @@ class ImageUtilsBackendManager(object):
 
     def __init__(self):
         if not self._loaded:
-            load_modules = ["cv2", "pypng", "pil", "dicom"]
+            load_modules = ["cv2", "pypng", "pil"]
             self.backends = OrderedDict()
 
             for module in load_modules:

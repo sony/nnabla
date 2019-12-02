@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+from nnabla.testing import assert_allclose
 
 
 def scheduler_tester(scheduler, ref_scheduler, max_iter, scheduler_args=[], atol=1e-6):
@@ -23,4 +24,4 @@ def scheduler_tester(scheduler, ref_scheduler, max_iter, scheduler_args=[], atol
     # Check learning rate
     lr = [s.get_learning_rate(iter) for iter in range(max_iter)]
     ref_lr = [ref_s.get_learning_rate(iter) for iter in range(max_iter)]
-    assert np.allclose(lr, ref_lr, atol=atol)
+    assert_allclose(lr, ref_lr, atol=atol)

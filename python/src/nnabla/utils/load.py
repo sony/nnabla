@@ -48,12 +48,12 @@ import nnabla as nn
 import nnabla.function as F
 import nnabla.solver as S
 
-import nnabla_ext.cpu
-
 
 ##########################################################################
 # Utilities for handling exceptional function arguments.
 #
+
+
 def resolve_reshape_params(inputs, function_proto, batch_size):
     '''Resolve shape parameter and returns shape.
     '''

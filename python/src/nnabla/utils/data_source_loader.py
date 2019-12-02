@@ -37,10 +37,12 @@ import os
 import six.moves.urllib.request as request
 import six
 import tempfile
+from shutil import rmtree
 
 from nnabla.utils import image_utils
 from nnabla.utils.image_utils import imresize, imread
 from nnabla.logger import logger
+
 
 # Expose for backward compatibility
 from .download import download, get_data_home
@@ -319,26 +321,6 @@ def load_image_cv2(file, shape=None, max_range=1.0):
     return img
 
 
-def load_image_dcm(file, shape=None, normalize=False):
-    if normalize:
-        max_range = 1.0
-    else:
-        max_range = -1
-
-    img = None
-    try:
-        if 'dicom' not in image_utils.get_available_backends():
-            raise ValueError("Please ensure cv2 and dicom is installed.")
-
-        current_backend = image_utils.get_backend()
-        image_utils.set_backend('dicom')
-        img = load_image_imread(file, shape, max_range)
-        return img
-    finally:
-        image_utils.set_backend(current_backend)
-        return img
-
-
 def load_image(file, shape=None, normalize=False):
     if normalize:
         max_range = 1.0
@@ -403,7 +385,6 @@ _load_functions = {
     '.gif': load_image,
     '.tif': load_image,
     '.tiff': load_image,
-    '.dcm': load_image_dcm,
     '.csv': load_csv,
     '.npy': load_npy}
 
@@ -413,6 +394,10 @@ def register_load_function(ext, function):
 
 
 def load(ext):
+    import nnabla.utils.callback as callback
+    func = callback.get_load_image_func(ext)
+    if func is not None:
+        return func
     if ext in _load_functions:
         return _load_functions[ext]
     raise ValueError(
