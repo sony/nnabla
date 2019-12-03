@@ -1781,7 +1781,7 @@ def batch_normalization(inp, axes=[1], decay_rate=0.9, eps=1e-5,
             be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+            E.g. ``{'beta': ConstantInitializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
         no_scale (bool): If `True`, the scale term is omitted.
         no_bias (bool): If `True`, the bias term is omitted.
 
@@ -1867,7 +1867,7 @@ def sync_batch_normalization(inp, comm, group="world", axes=[1], decay_rate=0.9,
             be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+            E.g. ``{'beta': ConstantInitializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
         no_scale (bool): If `True`, the scale term is omitted.
         no_bias (bool): If `True`, the bias term is omitted.
 
@@ -1993,7 +1993,7 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
             be ``'gamma'``, ``'beta'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantInitializer(0)}``.
         no_scale (bool): If `True`, the scale term is omitted.
         no_bias (bool): If `True`, the bias term is omitted.
 
@@ -2059,7 +2059,7 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
             be ``'gamma'``, ``'beta'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantInitializer(0)}``.
         no_scale (bool): If `True`, the scale term is omitted.
         no_bias (bool): If `True`, the bias term is omitted.
 
@@ -2128,7 +2128,7 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
             be ``'gamma'``, ``'beta'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantIntializer(0)}``.
+            E.g. ``{'gamma': np.ones(...) * 2, 'beta': ConstantInitializer(0)}``.
         no_scale (bool): If `True`, the scale term is omitted.
         no_bias (bool): If `True`, the bias term is omitted.
 
@@ -3716,7 +3716,7 @@ def multi_head_attention(query, key, value, num_heads=12, dropout=0.0, rng=None,
             Parameter initializers can be set with a dict. Possible keys of the dict include q_weight, k_weight, v_weight, q_bias, k_bias, v_bias, out_weight, out_bias, attn_bias_k, attn_bias_v.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'q_bias': ConstantIntializer(0)}``.
+            E.g. ``{'q_bias': ConstantInitializer(0)}``.
 
     Returns:
         ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`

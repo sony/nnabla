@@ -21,14 +21,18 @@ from .base import ImageNetBase
 
 class ShuffleNet(ImageNetBase):
     '''
-    Model for architecture ShuffleNet, ShuffleNet-0.5x and ShufffleNet-2.0x .
+    Model for architecture ShuffleNet, ShuffleNet-0.5x and ShufffleNet-2.0x.
+
     Args:
         Scaling Factor (str): To customize the network to a desired complexity,  we can simply apply a scale factor on the number of channnels. This can be chosen from '10', '5' and '20'.
+
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
+
     * ``'classifier'`` (default): The output of the final affine layer for classification.
     * ``'pool'``: The output of the final global average pooling.
     * ``'lastconv'``: The input of the final global average pooling without ReLU activation..
     * ``'lastconv+relu'``: Network up to ``'lastconv'`` followed by ReLU activation.
+
     References:
         * `Zhang. et al., ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices.
           <https://arxiv.org/abs/1707.01083>`_

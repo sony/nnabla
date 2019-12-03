@@ -23,10 +23,13 @@ from .base import ImageNetBase
 class InceptionV3(ImageNetBase):
     '''
     InceptionV3 architecture.
+
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
+
     * ``'classifier'`` (default): The output of the final affine layer for classification.
     * ``'pool'``: The output of the final global average pooling.
     * ``'prepool'``: The input of the final global average pooling, i.e. the output of the final inception block.
+
     References:
         * `Szegedy et al., Rethinking the Inception Architecture for Computer Vision.
           <https://arxiv.org/abs/1512.00567>`_
