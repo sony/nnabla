@@ -15,8 +15,8 @@
 import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
 import numpy as np
+from nnabla.testing import assert_allclose
 
 
 def ref_all_gather(x_data, n_devices):
@@ -57,4 +57,4 @@ def test_all_gather(seed, comm_nccl_opts):
 
     # Check
     for y, ref in zip(y_list, refs):
-        assert np.allclose(y.d, ref, rtol=1e-3, atol=1e-6)
+        assert_allclose(y.d, ref, rtol=1e-3, atol=1e-6)

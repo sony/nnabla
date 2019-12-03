@@ -68,4 +68,9 @@ vector<NdArrayPtr> execute(FunctionPtr func, const vector<NdArrayPtr> &inputs,
   func->forward(finputs, foutputs);
   return outputs;
 }
+
+void execute(FunctionPtr f, const Variables &inputs, const Variables &outputs) {
+  f->setup(inputs, outputs);
+  f->forward(inputs, outputs);
+}
 }

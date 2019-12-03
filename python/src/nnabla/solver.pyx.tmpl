@@ -201,7 +201,7 @@ cdef class Solver:
                     hd[pname].create_dataset("t", data=state.t)
                     hd[pname].attrs['index'] = i
                     for j, (sname, vx) in enumerate(iteritems(state.pstate)):
-                        hd[pname].create_dataset(sname, data=vx.d)
+                        hd[pname].create_dataset(sname, data=vx.data.get_data('r'))
                         hd[pname][sname].attrs['index'] = j
 
         elif ext == '.protobuf':
@@ -254,23 +254,23 @@ cdef class Solver:
                 # File's key is `/{parameter-name}/{state-name}` and `/{parameter-name}/t`
                 skeys = []
                 pkeys = set()
-                def _get_skeys(name):
-                    ds = hd[name]
-                    if not isinstance(ds, h5py.Dataset):
+                def _get_skeys(name, obj):
+                    if not isinstance(obj, h5py.Dataset):
                         # Group
                         return
                     # state key
                     skeys.append(name)                          
                     # To preserve order of parameters
-                    index = ds.parent.attrs.get('index', None)
-                    pname = "/".join(name.split("/")[:-1])
+                    index = obj.parent.attrs.get('index', None)
+                    pname = name[:name.rindex("/")]
                     # parameter key
                     pkeys.add((index, pname))
-                hd.visit(_get_skeys)
+                # TODO Refactoring visit logic for efficient execution
+                hd.visititems(_get_skeys)
                 for _, pkey in sorted(pkeys):
                     state = SolverState()
                     for skey in skeys:
-                        if pkey not in skey:
+                        if not skey.startswith(pkey):
                             continue
                         ds = hd[skey]
                         if skey.endswith("/t"):

@@ -14,7 +14,6 @@
 
 from six import iterkeys
 
-import pytest
 import numpy as np
 import nnabla.parametric_functions as PF
 from nnabla.initializer import UniformInitializer

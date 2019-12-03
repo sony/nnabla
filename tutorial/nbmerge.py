@@ -23,7 +23,6 @@ python nbmerge.py A.ipynb B.ipynb C.ipynb > merged.ipynb
 from __future__ import print_function
 
 import io
-import os
 import sys
 
 import nbformat

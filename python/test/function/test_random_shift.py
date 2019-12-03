@@ -20,6 +20,7 @@ from scipy.stats import pearsonr
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('RandomShift')
 
@@ -52,7 +53,7 @@ def test_random_shift_forward_backward(seed, inshape, shifts, border_mode, ctx, 
     for result, shift_range in zip(result_shifts, shifts):
         assert abs(result) <= shift_range
 
-    assert np.allclose(o.d, ref)
+    assert_allclose(o.d, ref)
     assert o.parent.name == func_name
 
     # Skipping Backward check
@@ -72,7 +73,7 @@ def test_random_shift_forward_backward(seed, inshape, shifts, border_mode, ctx, 
     i.g[...] = 1
     o.g = o_grad
     o.parent.backward([i], [o], [False])
-    assert np.allclose(i.g, ref_grad, atol=1e-6)
+    assert_allclose(i.g, ref_grad, atol=1e-6)
 
     # Check if need_grad works
     i.g[...] = 0

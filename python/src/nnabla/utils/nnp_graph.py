@@ -303,7 +303,6 @@ class NnpNetwork(object):
                 set_parameter(name, param)
 
         except:
-            import sys
             import traceback
             raise ValueError(
                 'An error occurs during creation of a variable `{}` as a'

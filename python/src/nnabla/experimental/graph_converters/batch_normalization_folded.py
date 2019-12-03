@@ -1,6 +1,4 @@
 import nnabla as nn
-import nnabla.functions as F
-import nnabla.parametric_functions as PF
 import numpy as np
 
 import os
@@ -28,7 +26,6 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
                  name="bn-folded"):
 
         import nnabla.function_bases as FB
-        import nnabla as nn
 
         super(BatchNormalizationFoldedConverter, self).__init__(black_list,
                                                                 params, name)

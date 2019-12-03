@@ -16,7 +16,6 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-import nnabla.parametric_functions as PF
 from nbla_test_utils import list_context
 
 ctxs = list_context('RNN')

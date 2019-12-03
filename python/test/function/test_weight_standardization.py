@@ -3,6 +3,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+from nnabla.testing import assert_allclose
 
 from nnabla.normalization_functions import _get_axes_excluding
 
@@ -18,12 +19,14 @@ def ref_weight_standardization(w, channel_axis, eps, output_stat):
     axes = tuple(_get_axes_excluding(len(w.shape), channel_axis))
 
     w_mean = w.mean(axis=axes, keepdims=True)
-    w_std = w.std(axis=axes, keepdims=True)
+    w_var = w.var(axis=axes, keepdims=True)
+
+    norm = (w - w_mean) / (w_var + eps) ** 0.5
 
     if output_stat:
-        return (w - w_mean) / (w_std + eps), w_mean, w_std
+        return norm, w_mean, w_var
 
-    return (w - w_mean) / (w_std + eps)
+    return norm
 
 
 @pytest.mark.parametrize("w_shape , channel_axis", [((32, 16, 3, 3), 0),  # convolution
@@ -46,13 +49,13 @@ def test_weight_standardization_forward_backward(rng, w_shape, channel_axis, out
 
         for o, r in zip(output, ref):
             assert o.shape == r.shape
-            assert np.allclose(o.d, r, atol=1e-2, rtol=1e-5)
+            assert_allclose(o.d, r, atol=1e-2, rtol=1e-5)
 
     else:
         output.forward()
         output.backward()
 
-        assert np.allclose(output.d, ref, atol=1e-2, rtol=1e-5)
+        assert_allclose(output.d, ref, atol=1e-2, rtol=1e-5)
 
 
 @pytest.mark.parametrize("function , channel_axis, kwargs, param_name",
@@ -87,5 +90,5 @@ def test_apply_weight_standardization(rng, function, channel_axis, kwargs, param
     ref_w_standardized = ref_weight_standardization(
         w, channel_axis, eps, output_stat)
 
-    assert np.allclose(w_standardized, ref_w_standardized,
-                       atol=1e-02, rtol=1e-5)
+    assert_allclose(w_standardized, ref_w_standardized,
+                    atol=1e-02, rtol=1e-5)

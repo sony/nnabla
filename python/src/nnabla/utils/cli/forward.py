@@ -14,10 +14,8 @@
 
 from six.moves import map
 import csv
-import glob
 import numpy as np
 import os
-import zipfile
 
 from nnabla.logger import logger
 from nnabla.utils.progress import configure_progress, progress

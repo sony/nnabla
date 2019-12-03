@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.testing import assert_allclose
 
 from nnabla.normalization_functions import _force_list, _get_axes_excluding
 
@@ -13,12 +14,14 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
     axes = tuple(_get_axes_excluding(len(x.shape), ignore_axes))
 
     x_mean = x.mean(axis=axes, keepdims=True)
-    x_std = x.std(axis=axes, keepdims=True)
+    x_var = x.var(axis=axes, keepdims=True)
+
+    norm = (x - x_mean) / (x_var + eps) ** 0.5
 
     if output_stat:
-        return (x - x_mean) / (x_std + eps) * gamma + beta, x_mean, x_std
+        return norm * gamma + beta, x_mean, x_var
 
-    return (x - x_mean) / (x_std + eps) * gamma + beta
+    return norm * gamma + beta
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -58,11 +61,11 @@ def test_instance_normalization_forward_backward(seed, x_shape, batch_axis, chan
 
         for o, r in zip(output, ref):
             assert o.shape == r.shape
-            assert np.allclose(o.d, r, atol=1e-2, rtol=1e-5)
+            assert_allclose(o.d, r, atol=1e-2, rtol=1e-5)
 
     else:
         output.forward()
         output.backward()
 
         assert output.shape == ref.shape
-        assert np.allclose(output.d, ref, atol=1e-2, rtol=1e-5)
+        assert_allclose(output.d, ref, atol=1e-2, rtol=1e-5)

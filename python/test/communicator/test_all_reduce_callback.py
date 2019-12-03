@@ -16,9 +16,9 @@ import pytest
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
 import numpy as np
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -73,4 +73,4 @@ def test_all_reduce_callback(seed, pack_size, division, comm_nccl_opts):
 
     # Check
     for x, ref in zip(x_list1, x_list2):
-        assert np.allclose(x.g, ref.g)
+        assert_allclose(x.g, ref.g)

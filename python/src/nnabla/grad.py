@@ -226,9 +226,12 @@ class Grad(object):
                 if inp not in wrt_inputs or inp.need_grad == False:
                     continue
                 idx = wrt_inputs.index(inp)
-                grads[idx] = grad_out
+                if grads[idx] is None:
+                    grads[idx] = grad_out
+                else:
+                    grads[idx] += grad_out  # accum at leaf
                 if bind_grad_output:
-                    inp.grad = grad_out.data
+                    inp.grad = grads[idx].data
 
             # Propagate down
             for inp in f.inputs:

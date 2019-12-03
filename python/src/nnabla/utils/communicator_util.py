@@ -26,7 +26,6 @@ def current_communicator():
 def create_communicator(ignore_error=False):
     global _current_communicator
 
-    import nnabla_ext.cudnn
     from nnabla.ext_utils import get_extension_context
     extension_module = "cudnn"
     context = get_extension_context(extension_module)

@@ -1,4 +1,3 @@
-import nnabla
 from nnabla.utils.load import load
 
 import sys

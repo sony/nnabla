@@ -15,8 +15,8 @@
 import pytest
 import nnabla as nn
 import nnabla.parametric_functions as PF
-import nnabla.communicators as C
 import numpy as np
+from nnabla.testing import assert_allclose
 
 from six.moves import reduce
 
@@ -66,4 +66,4 @@ def test_reduce_scatter(seed, division, comm_nccl_opts):
     refs = ref_reduce_scatter(x_data_list, n_devices, division)
 
     # Check
-    assert np.allclose(x.d, refs[device_id], rtol=1e-3, atol=1e-6)
+    assert_allclose(x.d, refs[device_id], rtol=1e-3, atol=1e-6)

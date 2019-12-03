@@ -15,9 +15,9 @@
 import pytest
 import numpy as np
 import nnabla as nn
-import nnabla.parametric_functions as PF
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('SyncBatchNormalization')
 
@@ -36,14 +36,50 @@ def create_inputs(rng, axis, device_id):
     return x, beta, gamma, rmean, rvar
 
 
+def mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance):
+    if no_bias:
+        inputs[1] = np.zeros(inputs[1].shape)
+
+    if no_scale:
+        inputs[2] = np.ones(inputs[2].shape)
+
+    if no_mean:
+        inputs[3] = np.zeros(inputs[3].shape)
+
+    if no_variance:
+        inputs[4] = np.ones(inputs[4].shape)
+
+    return inputs
+
+
+def mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance):
+    if no_bias:
+        vinputs[1] = None
+
+    if no_scale:
+        vinputs[2] = None
+
+    if no_mean:
+        vinputs[3] = None
+
+    if no_variance:
+        vinputs[4] = None
+
+    return vinputs
+
+
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [1, 2])
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True], [True, True]])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
+@pytest.mark.parametrize("no_mean", [True, False])
+@pytest.mark.parametrize("no_variance", [True, False])
 def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, batch_stat,
-                                                   output_stat, ctx, func_name, comm_nccl_opts):
+                                                   output_stat, ctx, func_name, comm_nccl_opts,
+                                                   no_scale, no_bias, no_mean, no_variance):
     if comm_nccl_opts is None:
         pytest.skip(
             "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
@@ -157,6 +193,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis, device_id))
+    inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
 
     if output_stat:
         ref_grad = ref_batch_normalize_grad_with_output_stat
@@ -179,11 +216,18 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
                         backward=[True, True, True, False, False],
                         ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
     else:
+        if no_mean or no_variance:
+            return
+
         # Forward test when batch_stat is False
         vinputs = []
         for i in inputs:
             vinputs.append(nn.Variable(i.shape, True))
             vinputs[-1].d = i
+
+        vinputs = mask_vinputs(
+            vinputs, no_scale, no_bias, no_mean, no_variance)
+
         for i in range(5):
             inputs[0] = rng.randn(*inputs[0].shape) + device_id
             vinputs[0].d[...] = inputs[0]
@@ -192,13 +236,19 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
             with nn.context_scope(ctx), nn.auto_forward():
                 y = F.sync_batch_normalization(
                     *(vinputs + [comm, "world", axes, decay_rate, eps, batch_stat, output_stat]))
-            assert np.allclose(vinputs[0].d, inputs[0])
+            assert_allclose(vinputs[0].d, inputs[0])
 
     # Check if running mean and var works.
+    if no_mean and no_variance:
+        return
+
     vinputs = []
     for i in inputs:
         vinputs.append(nn.Variable(i.shape, True))
         vinputs[-1].d = i
+
+    vinputs = mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance)
+
     for i in range(5):
         inputs[0] = rng.randn(*inputs[0].shape) + device_id
         vinputs[0].d[...] = inputs[0]
@@ -207,5 +257,8 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
         with nn.context_scope(ctx), nn.auto_forward():
             y = F.sync_batch_normalization(
                 *(vinputs + [comm, "world", axes, decay_rate, eps, batch_stat, output_stat]))
-        assert np.allclose(vinputs[3].d, inputs[3])
-        assert np.allclose(vinputs[4].d, inputs[4], atol=1e-3)
+        if not no_mean:
+            assert_allclose(vinputs[3].d, inputs[3])
+
+        if not no_variance:
+            assert_allclose(vinputs[4].d, inputs[4], atol=1e-3)

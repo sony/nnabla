@@ -14,10 +14,8 @@
 
 from six import iteritems
 
-import pytest
 import numpy as np
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
 
@@ -52,5 +50,7 @@ def test_save_load_parameters():
         for (n1, p1), (n2, p2) in zip(sorted(param1.items()), sorted(par2.items())):
             assert n1 == n2
             assert np.all(p1.d == p2.d)
-            assert p1.data.dtype == p2.data.dtype
+            if par2 is not param3:
+                # NOTE: data is automatically casted to fp32 in Protobuf
+                assert p1.data.dtype == p2.data.dtype
             assert p1.need_grad == p2.need_grad

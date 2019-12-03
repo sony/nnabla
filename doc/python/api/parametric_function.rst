@@ -96,10 +96,13 @@ Here is the list of parametric functions.
 
 .. autofunction:: fixed_point_quantized_affine
 .. autofunction:: fixed_point_quantized_convolution
+.. autofunction:: min_max_quantized_affine
+.. autofunction:: min_max_quantized_convolution
 .. autofunction:: pow2_quantized_affine
 .. autofunction:: pow2_quantized_convolution
 .. autofunction:: pruned_affine
 .. autofunction:: pruned_convolution
+.. autofunction:: min_max_quantize
 
 .. autofunction:: lstm_cell
 
@@ -108,6 +111,11 @@ Here is the list of parametric functions.
     .. automethod:: __call__(x, w_init, b_init, fix_parameters)
 
 .. autofunction:: spectral_norm
+.. autofunction:: weight_normalization
+.. autofunction:: multi_head_attention
+.. autoclass:: transformer
+.. autoclass:: transformer_encode
+.. autoclass:: transformer_decode
 
 Parameter Initializer
 ---------------------
@@ -128,6 +136,9 @@ listed below.
     :show-inheritance:
 
 .. autoclass:: UniformInitializer
+    :show-inheritance:
+
+.. autoclass:: OrthogonalInitializer
     :show-inheritance:
 
 .. autofunction:: calc_normal_std_he_forward

@@ -32,7 +32,6 @@ import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
-import collections
 import csv
 import numpy
 import os

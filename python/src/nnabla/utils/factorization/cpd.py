@@ -15,9 +15,7 @@
 from functools import reduce
 from multiprocessing.pool import ThreadPool
 from scipy.linalg import pinv
-import time
 
-import multiprocessing as mp
 import numpy as np
 
 

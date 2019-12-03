@@ -426,6 +426,9 @@ INQConvolution:
 FixedPointQuantize:
   float: [float]
   half: [Half]
+MinMaxQuantize:
+  float: [float]
+  half: [Half]
 Pow2Quantize:
   float: [float]
   half: [Half]

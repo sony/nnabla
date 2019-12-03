@@ -20,6 +20,7 @@ from .backward_function import BackwardFunction
 
 class BatchNormalizationBackward(BackwardFunction):
 
+    @property
     def name(self):
         return 'BatchNormalizationBackward'
 
