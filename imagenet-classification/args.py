@@ -86,6 +86,8 @@ def get_args(monitor_path='tmp.monitor.imagenet', max_iter=500000, model_save_pa
                         help="Random area of the RandomResizedCrop augmentation.")
     parser.add_argument("--num-threads", "-N", type=int, default=num_threads,
                         help="DALI's the number of threads.")
+    parser.add_argument("--checkpoint", type=str, default=None,
+                        help='path to checkpoint file')
 
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):

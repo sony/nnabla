@@ -20,11 +20,13 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 
+from _checkpoint_nnp_util import load_checkpoint, save_checkpoint, save_nnp
 from args import get_args
 from tiny_imagenet_data import data_iterator_tiny_imagenet
 from imagenet_data import data_iterator_imagenet
-import model_resnet
 
+import model_resnet
+import nnabla.utils.save as save
 import os
 from collections import namedtuple
 
@@ -135,9 +137,20 @@ def train():
 
     v_e = F.mean(F.top_n_error(v_pred2, v_model.label))
 
+    # Save_nnp_Epoch0
+    contents = save_nnp({'x': v_model.image}, {
+                        'y': v_model.pred}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Imagenet_result_epoch0.nnp'), contents)
+
     # Create Solver.
     solver = S.Momentum(args.learning_rate, 0.9)
     solver.set_parameters(nn.get_parameters())
+
+    start_point = 0
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
 
     # Create monitor.
     import nnabla.monitor as M
@@ -151,11 +164,11 @@ def train():
         "Validation time", monitor, interval=10)
 
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(start_point, args.max_iter):
         # Save parameters
         if i % args.model_save_interval == 0:
-            nn.save_parameters(os.path.join(
-                args.model_save_path, 'param_%06d.h5' % i))
+            # save checkpoint file
+            save_checkpoint(args.model_save_path, i, solver)
 
         # Validation
         if i % args.val_interval == 0 and i != 0:
@@ -216,6 +229,12 @@ def train():
             solver.set_learning_rate(solver.learning_rate() * 0.1)
     nn.save_parameters(os.path.join(args.model_save_path,
                                     'param_%06d.h5' % args.max_iter))
+
+    # Save_nnp
+    contents = save_nnp({'x': v_model.image}, {
+                        'y': v_model.pred}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Imagenet_result.nnp'), contents)
 
 
 if __name__ == '__main__':
