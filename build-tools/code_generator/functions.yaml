@@ -3542,6 +3542,20 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 275
+  BatchDet:
+    snake_name: batch_det
+    doc: |2
+
+      Returns determinant of an input array
+    inputs:
+      x:
+        doc: batched N-D array
+    outputs:
+      y:
+        doc: batched N-D array of determinant
+    c_runtime: not support
+    function_ids:
+      Empty: 276
   Assign:
     snake_name: assign
     doc: |2
