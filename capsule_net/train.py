@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 from six.moves import range
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 
 import os
 import sys
@@ -25,8 +26,8 @@ import nnabla.solvers as S
 import nnabla.utils.save as save
 
 import model
-
 from _mnist_data import data_iterator_mnist
+from reconstruct_tweaked_capsules import model_tweak_digitscaps
 
 
 def categorical_error(pred, label):
@@ -64,6 +65,8 @@ def get_args(monitor_path='tmp.monitor.capsnet'):
                         dest='grad_dynamic_routing',
                         action='store_false', default=True,
                         help='Disable gradient computation at dynamic routing.')
+    parser.add_argument("--checkpoint", type=str,
+                        help="path to the checkpoint")
     args = parser.parse_args()
     if not os.path.isdir(args.monitor_path):
         os.makedirs(args.monitor_path)
@@ -127,13 +130,25 @@ def train():
     monitor_verr = MonitorSeries("Test error", monitor, interval=1)
     monitor_lr = MonitorSeries("Learning rate", monitor, interval=1)
 
+    # To_save_nnp
+    m_image, m_label, m_noise, m_recon = model_tweak_digitscaps(
+        args.batch_size)
+    contents = save_nnp({'x1': m_image, 'x2': m_label, 'x3': m_noise}, {
+                          'y': m_recon}, args.batch_size)
+    save.save(os.path.join(args.monitor_path,
+                           'capsnet_epoch0_result.nnp'), contents)
+
     # Initialize DataIterator for MNIST.
     from numpy.random import RandomState
     data = data_iterator_mnist(args.batch_size, True, rng=RandomState(1223))
     vdata = data_iterator_mnist(args.batch_size, False)
+    start_point = 0
 
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
     # Training loop.
-    for e in range(args.max_epochs):
+    for e in range(start_point, args.max_epochs):
 
         # Learning rate decay
         learning_rate = solver.learning_rate()
@@ -177,8 +192,13 @@ def train():
         monitor_rloss.add(e, train_rloss)
         monitor_err.add(e, train_error)
         monitor_verr.add(e, val_error)
-        nn.save_parameters(os.path.join(
-            args.monitor_path, 'params_%06d.h5' % e))
+        save_checkpoint(args.monitor_path, e, solver)
+
+    # To_save_nnp
+    contents = save_nnp({'x1': m_image, 'x2': m_label, 'x3': m_noise}, {
+                          'y': m_recon}, args.batch_size)
+    save.save(os.path.join(args.monitor_path,
+                           'capsnet_result.nnp'), contents)
 
 
 if __name__ == '__main__':
