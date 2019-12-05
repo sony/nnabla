@@ -298,11 +298,30 @@ def _create_network(net, variable_batch_size):
     return n
 
 
-def _create_optimizer(name, solver, network, dataset, weight_decay, lr_decay, lr_decay_interval, update_interval):
+def _create_optimizer(datasets, name, solver, network, dataset_names, weight_decay, lr_decay, lr_decay_interval, update_interval):
     o = nnabla_pb2.Optimizer()
     o.name = name
     o.network_name = network.name
-    o.dataset_name = dataset.name
+    dataset = None
+
+    # Allow a list or tuple or a string for dataset names.
+    if isinstance(dataset_names, tuple):
+        dataset_names = list(dataset_names)
+    if isinstance(dataset_names, list):
+        for dataset_name in dataset_names:
+            if dataset_name in datasets:
+                o.dataset_name.append(dataset_name)
+                dataset = datasets[dataset_name]
+            else:
+                raise ValueError(
+                    "Invalid dataset_name is found in optimizer: {}".format(dataset_name))
+    elif isinstance(dataset_names, str):
+        dataset_name = dataset_names
+        if dataset_name in datasets:
+            o.dataset_name.append(dataset_name)
+            dataset = datasets[dataset_name]
+    if dataset is None:
+        raise ValueError("Dataset is not defined in optimizer.")
     o.solver.type = re.sub(r'(|Cuda)$', '', str(solver.name))
     if o.solver.type == 'Adadelta':
         o.solver.adadelta_param.lr = solver.info['lr']
@@ -353,11 +372,27 @@ def _create_optimizer(name, solver, network, dataset, weight_decay, lr_decay, lr
     return o
 
 
-def _create_monitor(name, network, dataset):
+def _create_monitor(datasets, name, network, dataset_names):
     m = nnabla_pb2.Monitor()
     m.name = name
     m.network_name = network.name
-    m.dataset_name = dataset.name
+    if isinstance(dataset_names, tuple):
+        dataset_names = list(dataset_names)
+    if isinstance(dataset_names, list):
+        for dataset_name in dataset_names:
+            if dataset_name in datasets:
+                m.dataset_name.append(dataset_name)
+                dataset = datasets[dataset_name]
+            else:
+                raise ValueError(
+                    "Invalid dataset name is found in monitor definition: {}".format(dataset_name))
+    elif isinstance(dataset_names, str):
+        dataset_name = dataset_names
+        if dataset_name in datasets:
+            m.dataset_name.append(dataset_name)
+            dataset = datasets[dataset_name]
+    if dataset is None:
+        raise ValueError("Dataset is not defined in monitor definition.")
     inputs, outputs, params = _get_net_variables(network)
     for n, inp in enumerate(inputs):
         d = m.data_variable.add()
@@ -444,9 +479,10 @@ def create_proto(contents, include_params=False, variable_batch_size=True):
     if 'optimizers' in contents:
         proto_optimizers = []
         for o in contents['optimizers']:
-            proto_optimizers.append(_create_optimizer(o['name'], o['solver'],
+            proto_optimizers.append(_create_optimizer(datasets,
+                                                      o['name'], o['solver'],
                                                       networks[o['network']],
-                                                      datasets[o['dataset']],
+                                                      o['dataset'],
                                                       o['weight_decay'],
                                                       o['lr_decay'],
                                                       o['lr_decay_interval'],
@@ -455,9 +491,10 @@ def create_proto(contents, include_params=False, variable_batch_size=True):
     if 'monitors' in contents:
         proto_monitors = []
         for m in contents['monitors']:
-            proto_monitors.append(_create_monitor(m['name'],
+            proto_monitors.append(_create_monitor(datasets,
+                                                  m['name'],
                                                   networks[m['network']],
-                                                  datasets[m['dataset']]))
+                                                  m['dataset']))
         proto.monitor.extend(proto_monitors)
     if 'executors' in contents:
         proto_executors = []
