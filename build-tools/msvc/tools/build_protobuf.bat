@@ -12,7 +12,7 @@
 :: See the License for the specific language governing permissions and
 :: limitations under the License.
 
-SET protobuf_tag=v3.4.1
+SET protobuf_tag=v3.10.1
 
 :: Build protobuf libs
 SET protobuf_folder=%third_party_folder%\protobuf-%protobuf_tag%
@@ -26,7 +26,7 @@ SET protobuf_library=%protobuf_bin_folder%\libprotobuf%protobuf_lib_suffix%
 SET protobuf_lite_library=%protobuf_bin_folder%\libprotobuf-lite%protobuf_lib_suffix%
 SET protobuf_protoc_executable=%protobuf_bin_folder%\protoc.exe
 IF NOT EXIST %protobuf_folder% (
-	git clone https://github.com/google/protobuf.git --branch %protobuf_tag% --depth=1 %protobuf_folder% || GOTO :error
+	git clone -c core.longpaths=true https://github.com/google/protobuf.git --branch %protobuf_tag% --depth=1 %protobuf_folder% || GOTO :error
 )
 
 CD %protobuf_folder%

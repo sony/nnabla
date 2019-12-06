@@ -53,7 +53,7 @@ After installing Chocolatey do following command on Administrator cmd.exe.
 choco feature enable -n allowGlobalConfirmation
 choco install cmake git miniconda3 vcbuildtools
 set PATH=C:\tools\Miniconda3\Scripts;%PATH%
-conda install -y pywin32 Cython=0.25 boto3 protobuf h5py ipython numpy=1.11 pip pytest scikit-image scipy virtualenv wheel pyyaml mako
+conda install -y pywin32 Cython=0.25 boto3 protobuf h5py ipython numpy=1.11 pip pytest scikit-image scipy wheel pyyaml mako
 pip install -U tqdm
 ```
 And make sure that `C:\tools\Miniconda3\Scripts` in your PATH environment.

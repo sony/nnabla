@@ -8,7 +8,7 @@ Our build system requires:
 
 * Git
 * [CMake](https://cmake.org/) (>=3.1)
-* Python 2.7: Devel, PIP
+* Python >= 3.6: Devel, PIP
 * Visual C++
 
 ## Setup build environment
@@ -57,7 +57,7 @@ After installed, make sure that following system environment variables are set.
 
 * PATH: `C:\\Utils\\protoc-3.3.0-win32\\bin`
 
-### Python (2.7, 3.5 or higher)
+### Python (3.5 or higher)
 
 In this instruction, we use [Miniconda](https://conda.io/miniconda.html).
 

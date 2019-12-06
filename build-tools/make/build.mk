@@ -118,7 +118,6 @@ nnabla-cpplib-android:
 nnabla-cpplib-android-test:
 # Execute the binary on emulator
 
-
 .PHONY: nnabla-wheel
 nnabla-wheel:
 	@mkdir -p $(BUILD_DIRECTORY_WHEEL)
@@ -135,6 +134,19 @@ nnabla-wheel:
 		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	@$(MAKE) -C $(BUILD_DIRECTORY_WHEEL) wheel
+
+.PHONY: nnabla-wheel-dependencies
+nnabla-wheel-dependencies:
+	rm -rf $(BUILD_DIRECTORY_WHEEL)/dependencies
+	mkdir -p $(BUILD_DIRECTORY_WHEEL)/dependencies
+	for p in $$(cat $(NNABLA_DIRECTORY)/python/requirements.txt) ;\
+	do \
+		whl=$$(find ~/.cache/pip/wheels/ -type f -iname $$p\*cp$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)\*.whl |xargs ls -rt|head -1);\
+		if [ -f $$whl ];\
+		then \
+			cp -v $$whl $(BUILD_DIRECTORY_WHEEL)/dependencies/;\
+		fi; \
+	done	
 
 .PHONY: nnabla-install-cpplib
 nnabla-install-cpplib:
@@ -160,9 +172,9 @@ nnabla-test-cpplib: nnabla-cpplib
 
 .PHONY: nnabla-test
 nnabla-test:
-	$(call with-virtualenv, $(NNABLA_DIRECTORY), \
-				$(BUILD_DIRECTORY_WHEEL)/env, \
-				-f build-tools/make/build.mk, nnabla-test-local)
+	$(call with-venv, $(NNABLA_DIRECTORY), \
+			$(BUILD_DIRECTORY_WHEEL)/env, \
+			-f build-tools/make/build.mk, nnabla-test-local)
 
 .PHONY: nnabla-test-local
 nnabla-test-local: nnabla-install

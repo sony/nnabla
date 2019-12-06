@@ -7,7 +7,6 @@ The available tags are as following.
 | Tag    | Python | Dockerfile location |
 | ------ |:------:|:------------------- |
 | latest | 3.5    | py3/                |
-| py2    | 2.7    | py2/                |
 
 A docker image can be executed as below.
 

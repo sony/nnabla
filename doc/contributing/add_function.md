@@ -251,7 +251,7 @@ After editing the above files with details of new function usage, compile the fi
 cd ${nnabla_root_directory}
 mkdir ${doc_dir_name}
 cd ${doc_dir_name}
-cmake -DPYTHON_VERSION=2.7 -DBUILD_CPP_LIB=ON -DBUILD_CPP_UTILS=OFF -DNNABLA_UTILS_STATIC_LINK_DEPS=ON -DBUILD_PYTHON_PACKAGE=ON ..
+cmake -DPYTHON_VERSION=3.6 -DBUILD_CPP_LIB=ON -DBUILD_CPP_UTILS=OFF -DNNABLA_UTILS_STATIC_LINK_DEPS=ON -DBUILD_PYTHON_PACKAGE=ON ..
 cd ..
 make -C ${doc_dir_name} all wheel doc
 ``` 

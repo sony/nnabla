@@ -12,7 +12,7 @@ Prerequisites
 This installation instruction describes how to install NNabla using pip
 on almost any Linux 64-bit systems.
 
-The supported Python versions for provided binary packages are 2.7, 3.5  3.6. It is recommended to use `Miniconda <https://conda.io/miniconda.html>`_ as a Python distribution. The following is a simple procedure to install Miniconda Python.
+The supported Python versions for provided binary packages are 3.5(not recommended), 3.6 and 3.7. It is recommended to use `Miniconda <https://conda.io/miniconda.html>`_ as a Python distribution. The following is a simple procedure to install Miniconda Python.
 
 .. code-block:: shell
 
@@ -33,20 +33,6 @@ See :ref:`pip-installation-workflow`.
 
 FAQ
 ---
-
-Q. I use Anaconda, and the installation fails.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use libgcc 5 and numpy 1.13.0 or the greater, and note that `numba` depends on the older `numpy` so please uninstall `numba` first (The following is for Python2).
-
-.. code-block:: bash
-
-		conda create -n py2 python=2.7 anaconda  # if necessary
-		source activate py2
-		conda install libgcc
-		conda install -c anaconda numpy=1.13.0
-
-Then, you can follow the usual installation workflow.
 
 Q. I want to use another linux distribution.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

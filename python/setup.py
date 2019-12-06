@@ -23,7 +23,7 @@ from collections import namedtuple
 
 setup_requires = [
     'setuptools',
-    'numpy>=1.16,<1.17',
+    'numpy',
     'Cython',  # Requires python-dev.
 ]
 
@@ -32,10 +32,12 @@ install_requires = setup_requires + [
     'configparser',
     'contextlib2',
     'h5py',
+    'onnx',
     'protobuf>=3.6',
     'pyyaml',
     'requests',
     'scipy',
+    'six',
     'tqdm',
     'imageio',
     'pillow'
@@ -130,8 +132,6 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering :: Artificial Intelligence',
             'License :: OSI Approved :: Apache Software License',
             'Programming Language :: C++',
-            'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             'Operating System :: MacOS :: MacOS X'
         ],
         keywords="deep learning artificial intelligence machine learning neural network",
-        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
+        python_requires='>=3.5',
     )
 
     ############################################################################
@@ -269,12 +269,6 @@ if __name__ == '__main__':
                       ["nnabla_cli=nnabla.utils.cli.cli:main"]},
         setup_requires=setup_requires,
         install_requires=install_requires,
-        extras_require={
-            ':python_version == "2.7"': ['futures'],
-            ':python_version == "2.7"': ['scipy<1.3'],
-            ':python_version != "2.7"': ['scipy'],
-            ':(python_version != "2.7" and python_version != "3.7")': ['onnx']
-        },
         ext_modules=ext_modules,
         package_dir=package_dir,
         packages=packages,
