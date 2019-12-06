@@ -3528,6 +3528,20 @@ Array Manipulation:
     function_ids:
       Empty: 85
     c_runtime: support
+  BatchInv:
+    snake_name: batch_inv
+    doc: |2
+
+      Returns an array of inverted matrix
+    inputs:
+      x:
+        doc: batched N-D array
+    outputs:
+      y:
+        doc: batched N-D array of inverted matrix
+    c_runtime: not support
+    function_ids:
+      Empty: 275
   Assign:
     snake_name: assign
     doc: |2

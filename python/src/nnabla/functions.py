@@ -597,16 +597,28 @@ def clip_by_value(x, min, max):
 
     Args:
         x (Variable): An input variable.
-        min (Variable): A min variable by which `x` is clipped. Note that the shape of `min` must be the same as `x`'s.
-        max (Variable): A max variable by which `x` is clipped. Note that the shape of `max` must be the same as `x`'s
+        min (Variable or float): A min variable or float value by which `x` is clipped. Note that if Variable is given, its shape must be the same as `x`'s.
+        max (Variable or float): A max variable or float value by which `x` is clipped. Note that if Variable is given, its shape must be the same as `x`'s
 
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
-    from .function_bases import maximum2 as maximum2_base
-    from .function_bases import minimum2 as minimum2_base
-    return minimum2_base(maximum2_base(x, min), max)
+    if np.isscalar(min):
+        maximum_base = maximum_scalar
+    elif isinstance(min, (nn.Variable, nn.NdArray)):
+        maximum_base = maximum2
+    else:
+        raise TypeError("min must be Variable, NdArray, or scalar.")
+
+    if np.isscalar(max):
+        minimum_base = minimum_scalar
+    elif isinstance(max, (nn.Variable, nn.NdArray)):
+        minimum_base = minimum2
+    else:
+        raise TypeError("max must be Variable, NdArray, or scalar.")
+
+    return minimum_base(maximum_base(x, min), max)
 
 
 def clip_by_norm(x, clip_norm, axis=None):
@@ -623,31 +635,26 @@ def clip_by_norm(x, clip_norm, axis=None):
 
     Args:
         x (Variable): An input variable.
-        clip_norm (`Variable` or `float`): An input scalar variable or float value. Must be positive.
+        clip_norm (Variable or float): An input scalar variable or float value. Must be positive.
         axis (None, int or tuple of ints): Axis or axes along which the reduction is performed. Passing the default value `None` will reduce all dimensions.
 
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
-    from .function_bases import pow_scalar as pow_scalar_base
-    from .function_bases import maximum2 as maximum2_base
-    from .function_bases import maximum_scalar as maximum_scalar_base
     from .function_bases import sum as sum_base
-    from ._variable import Variable as Variable_base
-    from ._nd_array import NdArray as NdArray_base
 
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
-    if isinstance(clip_norm, (Variable_base, NdArray_base)):
-        y = x * clip_norm / maximum2_base(x_norm, clip_norm)
+    x_norm = pow_scalar(sum_base(x**2.0, axis, True), 0.5)
+    if isinstance(clip_norm, (nn.Variable, nn.NdArray)):
+        y = x * clip_norm / maximum2(x_norm, clip_norm)
     else:
         if clip_norm <= 0:
             raise ValueError("clip_norm must be positive.")
-        y = x * clip_norm / maximum_scalar_base(x_norm, clip_norm)
+        y = x * clip_norm / maximum_scalar(x_norm, clip_norm)
     return y
 
 

@@ -1894,15 +1894,6 @@ class OnnxExporter:
             outputs[0] = func.output[0] + "_reshape"
             input_shape = list(input0_shape_reshape)
 
-        # Reshape for TF Exporter.
-        slope_shape_reshape = [1] * len(input_shape)
-        slope_shape_reshape[1] = slope_shape[0]
-        rout = inputs[1] + "_reshape"
-        n = generate_reshape(self._model_proto.graph, inputs[1],
-                             rout, np.array(slope_shape_reshape))
-        nl.append(n)
-        inputs[1] = rout
-
         n = onnx.helper.make_node(
             'PRelu',
             inputs,
