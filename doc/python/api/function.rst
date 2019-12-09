@@ -198,6 +198,7 @@ Array Manipulation
 .. autofunction:: reshape
 .. autofunction:: one_hot
 .. autofunction:: batch_inv
+.. autofunction:: batch_det
 .. autofunction:: assign
 
 
