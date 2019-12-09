@@ -44,7 +44,7 @@ class Nnb:
 
 class NnbExporter:
     def _align(self, size):
-        return int(math.ceil(size / 4) * 4)
+        return int(math.ceil(float(size) / 4) * 4)
 
     def _alloc(self, size=-1, data=b''):
         size = len(data) if size < 0 else size
