@@ -262,7 +262,7 @@ private:
   void detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
                                      SyncedArrayCountsInQueue& synced_array_counts);
   ScheduleType
-    schedule_swap_in(int& head, size_t& used_bytes_swap_in, 
+    schedule_swap_in(int& head, const int fid, size_t& used_bytes_swap_in,
                      SyncedArrayCountsInQueue& synced_array_counts,
                      unordered_map<unsigned int, bool>& host_uses_this_synced_array,
                      unordered_map<unsigned int, bool>& swapped_out,

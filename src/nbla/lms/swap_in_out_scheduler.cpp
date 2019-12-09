@@ -170,7 +170,7 @@ void SwapInOutScheduler::schedule() {
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
-    swap_in_schedule[fid] = schedule_swap_in(head, used_bytes_swap_in, 
+    swap_in_schedule[fid] = schedule_swap_in(head, fid, used_bytes_swap_in, 
                                              synced_array_counts,
                                              host_uses_this_synced_array,
                                              swapped_out, swapped_out_r);
@@ -253,7 +253,7 @@ detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
 
 SwapInOutScheduler::ScheduleType
 SwapInOutScheduler::
-schedule_swap_in(int& head, size_t& used_bytes_swap_in,
+schedule_swap_in(int& head, const int fid, size_t& used_bytes_swap_in,
                  SyncedArrayCountsInQueue& synced_array_counts,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
                  unordered_map<unsigned int, bool>& swapped_out,
@@ -315,7 +315,7 @@ schedule_swap_in(int& head, size_t& used_bytes_swap_in,
       // No need swap-in (prefetch) to CPU. The array will be gotten/casted 
       // synchronously by the function itself. 
       // Stop prefetch these type of arrays.
-      if (func_idx > 0) {
+      if (fid > 0) {
         // Because func_idx == 0 means all get/cast finished already
         // the host process must be finished.
         host_uses_this_synced_array[r.synced_array_id] = true;
