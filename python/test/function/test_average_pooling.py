@@ -71,6 +71,8 @@ def ref_average_pooling(x, kernel, stride, ignore_border, pad, channel_last, inc
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((4, 6), (2, 2), (2, 1), (1, 0)),
+    ((2, 4, 6), (2, 2), (2, 1), (1, 0)),
     ((2, 2, 4, 6), (2, 2), (2, 1), (1, 0)),
     ((2, 2, 2, 4, 6), (2, 2), (1, 2), (0, 1)),
 ])
@@ -97,6 +99,8 @@ def test_average_pooling_2d(seed, inshape, kernel, stride, pad, ignore_border, c
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
     ((2, 2, 3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
     ((2, 2, 2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
 ])
@@ -123,6 +127,8 @@ def test_average_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border, c
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((4, 6), (2, 2), (2, 1), (1, 0)),
+    ((2, 4, 6), (2, 2), (2, 1), (1, 0)),
     ((2, 2, 4, 6), (2, 2), (2, 1), (1, 0)),
     ((2, 2, 2, 4, 6), (2, 2), (1, 2), (0, 1)),
 ])
@@ -152,6 +158,8 @@ def test_average_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, 
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
     ((2, 2, 3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
     ((2, 2, 2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
 ])
