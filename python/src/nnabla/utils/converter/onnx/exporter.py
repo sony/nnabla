@@ -351,16 +351,18 @@ class OnnxExporter:
         table_op_set_11 = dict(table_op_set_10, **table_op_set_11)
 
         # opset_ support for SNPE
-        table_op_set_9_x = {
-            "Affine": partial(self.BaseAffine, "Affine", '9x')
+        table_op_set_6_x = {
+            "Affine": partial(self.BaseAffine, "Affine", '6x'),
+            "MulScalar": partial(self.ElementWiseScalar, "Mul", "6x"),
+            "AddScalar": partial(self.ElementWiseScalar, "Add", "6x"),
         }
-        table_op_set_9_x = dict(table_op_set_9, **table_op_set_9_x)
+        table_op_set_6_x = dict(table_op_set_6, **table_op_set_6_x)
 
         opver_impl_map = {
             "6": table_op_set_6,
             "7": table_op_set_7,
             "9": table_op_set_9,
-            "9x": table_op_set_9_x,
+            "6x": table_op_set_6_x
             "10": table_op_set_10,
             "11": table_op_set_11
         }
@@ -371,10 +373,10 @@ class OnnxExporter:
                     "6")
             else:
                 self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
-                    str(opset), table_op_set_9_x)
+                    str(opset), table_op_set_6_x)
         except:
             self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
-                opset, table_op_set_9_x)
+                opset, table_op_set_6_x)
 
     def Dropout(self, opset, func):
         # Since only export executor network from nnp,
@@ -1190,30 +1192,22 @@ class OnnxExporter:
         return nl
 
     def _elem_op(self, func, op_name, val):
-        # Todo: how to exploit broadcasting feature to shrink
-        #       the size of val is a topic remained to the
-        #       future.
-        v = np.ones(self._var_dict[func.input[0]].dim) * val
-        param_name = fork_name(func.input[0])
-        init = self._model_proto.graph.initializer.add()
-        init.name = param_name
-        init.data_type = TensorProto.FLOAT
-        init.dims.extend(list(v.shape))
-        init.raw_data = v.astype(np.float32).tostring()
-
-        i = self._model_proto.graph.input.add()
-        i.name = param_name
-        i.type.tensor_type.elem_type = TensorProto.FLOAT
-        dims = [create_dim(d) for d in v.shape]
-        i.type.tensor_type.shape.dim.extend(dims)
-        inputs = [i for i in func.input]
+        nl = []
+        x = func.input[0]
+        sval = x + "_scalar"
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        val = [val] * np.prod(input_shape)
+        c = generate_constant(sval, func.name + "_scalar",
+                              TensorProto.FLOAT, input_shape, val)
+        nl.append(c)
         n = onnx.helper.make_node(
             op_name,
-            [param_name] + inputs,
+            [sval, x],
             func.output,
             name=func.name
         )
-        return [n]
+        nl.append(n)
+        return nl
 
     def ScalarOperator(self, nn_funcname, func):
         if nn_funcname == 'RSubScalar':
@@ -1344,16 +1338,22 @@ class OnnxExporter:
         else:
             raise ValueError('Internal error!')
 
-        out_a = fork_name(inputs[0])
         base_axis = ap.base_axis
-
         x_shape = list(self._var_dict[inputs[0]].dim[:])
-        x_shape_dims = np.array([np.prod(x_shape[:base_axis]),
-                                 np.prod(x_shape[base_axis:])])
-        n = generate_reshape(self._model_proto.graph, inputs[0],
-                             out_a, x_shape_dims)
-        nl.append(n)
-        inputs[0] = out_a
+        w_shape = list(self._var_dict[inputs[1]].dim[:])
+        y_shape = list(self._var_dict[func.output[0]].dim[:])
+        x_shape_dims = [np.prod(x_shape[:base_axis]),
+                        np.prod(x_shape[base_axis:])]
+        w_shape_dims = [int(np.prod(w_shape) / w_shape[0]), w_shape[0]]
+        gemm_output_shape = [np.prod(x_shape[:base_axis]),
+                             np.prod(w_shape[1:])]
+
+        if x_shape_dims != x_shape:
+            rout = inputs[0] + "_reshape"
+            n = generate_reshape(self._model_proto.graph, inputs[0],
+                                 rout, np.array(x_shape_dims))
+            nl.append(n)
+            inputs[0] = rout
 
         # To support SNPE, default set to `transB=1`
         if func.input[1] not in self._parameters:
@@ -1361,12 +1361,10 @@ class OnnxExporter:
                 "{} is not in network's parameters.".format(func.input[1]))
 
         transB = 0
-        if opset == '9x':
+        if opset == '6x':
             state = self._parameters_state.get(inputs[1], 0)
             if not state & ParameterState.TRANSPOSED:
                 # make it to `transB=1`
-                w_shape = list(self._var_dict[inputs[1]].dim[:])
-                w_shape_dims = [int(np.prod(w_shape) / w_shape[0]), w_shape[0]]
                 proto_w_shape = self._var_dict[inputs[1]]
                 del proto_w_shape.dim[:]
                 proto_w_shape.dim.extend(w_shape_dims)
@@ -1380,15 +1378,13 @@ class OnnxExporter:
                                        ] = state | ParameterState.TRANSPOSED
             transB = 1
         else:
-            w_shape = list(self._var_dict[inputs[1]].dim[:])
-            w_shape_dims = [w_shape[0], int(np.prod(w_shape) / w_shape[0])]
             proto_w_shape = self._var_dict[inputs[1]]
             del proto_w_shape.dim[:]
             proto_w_shape.dim.extend(w_shape_dims)
 
-        if len(inputs) <= 2:
+        if len(inputs) <= 2 and opset == "6x":
             inputs.append(fork_name("affine_bias"))
-            shape = (1, )
+            shape = self._var_dict[inputs[1]].dim[:1]
             raw_data = np.zeros(shape).astype(np.float32).tostring()
             add_param(self._model_proto.graph,
                       inputs[2], TensorProto.FLOAT, shape, raw_data)
@@ -1399,33 +1395,39 @@ class OnnxExporter:
             proto_bias_shape.dim.extend(new_bias_shape)
             self._var_dict[inputs[2]] = proto_bias_shape
 
-        out = fork_name(func.output[0])
-        n = onnx.helper.make_node(
-            "Gemm",
-            inputs,
-            [out],
-            alpha=1.0,
-            beta=1.0,
-            transA=0,
-            transB=transB,
-            name='Gemm' + func.input[0])
-        if opset == "6":
-            b = onnx.helper.make_attribute("broadcast", 1)
-            n.attribute.extend([b])
-        nl.append(n)
+        if gemm_output_shape == y_shape:
+            n = onnx.helper.make_node(
+                "Gemm",
+                inputs,
+                func.output,
+                alpha=1.0,
+                beta=1.0,
+                transA=0,
+                transB=transB,
+                name='Gemm' + func.input[0])
+            if opset == "6" or opset == "6x":
+                b = onnx.helper.make_attribute("broadcast", 1)
+                n.attribute.extend([b])
+            nl.append(n)
+        else:
+            gemm_out = fork_name(func.output[0])
+            n = onnx.helper.make_node(
+                "Gemm",
+                inputs,
+                [gemm_out],
+                alpha=1.0,
+                beta=1.0,
+                transA=0,
+                transB=transB,
+                name='Gemm' + func.input[0])
+            if opset == "6" or opset == "6x":
+                b = onnx.helper.make_attribute("broadcast", 1)
+                n.attribute.extend([b])
+            nl.append(n)
 
-        param_name = func.output[0] + '_shape'
-        n = onnx.helper.make_node(
-            "Reshape",
-            [out, param_name],
-            func.output,
-            name='Reshape' + func.input[0])
-        nl.append(n)
-
-        output_shape = np.array(
-            self._var_dict[func.output[0]].dim).astype(np.int64)
-        add_param(self._model_proto.graph, param_name, TensorProto.INT64, list(
-            output_shape.shape), output_shape.tostring())
+            n = generate_reshape(self._model_proto.graph, gemm_out,
+                                 func.output[0], np.array(y_shape))
+            nl.append(n)
 
         return nl
 
@@ -1610,7 +1612,13 @@ class OnnxExporter:
         # Convert the scalar param to a Const node and add it with input
         x = func.input[0]
         sval = x + "_scalar"
-        c = generate_scalar_constant(sval, func.name + "_scalar", sp.val)
+        if opset == "6x":  # To support SNPE
+            input_shape = list(self._var_dict[func.input[0]].dim[:])
+            val = [sp.val] * np.prod(input_shape)
+            c = generate_constant(sval, func.name + "_scalar",
+                                  TensorProto.FLOAT, input_shape, val)
+        else:
+            c = generate_scalar_constant(sval, func.name + "_scalar", sp.val)
         nl.append(c)
         n = onnx.helper.make_node(func_name,
                                   [x, sval],
