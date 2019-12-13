@@ -362,7 +362,7 @@ class OnnxExporter:
             "6": table_op_set_6,
             "7": table_op_set_7,
             "9": table_op_set_9,
-            "6x": table_op_set_6_x
+            "6x": table_op_set_6_x,
             "10": table_op_set_10,
             "11": table_op_set_11
         }
