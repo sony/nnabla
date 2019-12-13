@@ -190,3 +190,10 @@
   SoftPlus_Empty: 262
   SumPooling_iIiIBiIB: 268
   SyncBatchNormalization_CiiIffB: 263
+5:
+  MinMaxQuantize_fBBB: 273
+  BatchInv_Empty: 275
+  BatchDet_Empty: 276
+  WarpByFlow_Empty: 277
+6:
+  MinMaxQuantize_fBBBf: 274

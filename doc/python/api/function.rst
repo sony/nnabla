@@ -198,6 +198,7 @@ Array Manipulation
 .. autofunction:: reshape
 .. autofunction:: one_hot
 .. autofunction:: batch_inv
+.. autofunction:: batch_det
 .. autofunction:: assign
 
 
@@ -260,6 +261,7 @@ Unsupported, Special Use
 .. autofunction:: vat_noise
 .. autofunction:: unlink
 .. autofunction:: sink
+.. autofunction:: warp_by_flow
 
 
 Image Object Detection
