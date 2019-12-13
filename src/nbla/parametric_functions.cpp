@@ -54,7 +54,7 @@ ParameterDirectory::ParameterDirectory()
       ordered_keys_(make_shared<vector<string>>()) {}
 
 ParameterDirectory ParameterDirectory::operator[](string name) {
-  auto new_scope_path = scope_path_ + '/' + name;
+  auto new_scope_path = name;
   return ParameterDirectory(new_scope_path, param_dict_, ordered_keys_);
 }
 
@@ -78,7 +78,12 @@ vector<pair<string, VariablePtr>> ParameterDirectory::get_parameters() {
 
 CgVariablePtr ParameterDirectory::get_parameter(string name) {
   // Parameter name.
-  auto param_path = scope_path_ + "/" + name;
+  string param_path;
+
+  if (!scope_path_.empty())
+    param_path = scope_path_ + "/" + name;
+  else
+    param_path = name;
 
   // Search exist one.
   auto it = param_dict_->find(param_path);
@@ -94,7 +99,12 @@ ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
                                             Initializer *initializer,
                                             bool need_grad = true) {
   // Parameter name.
-  auto param_path = scope_path_ + "/" + name;
+  string param_path;
+
+  if (!scope_path_.empty())
+    param_path = scope_path_ + "/" + name;
+  else
+    param_path = name;
 
   // Search exist one.
   auto it = param_dict_->find(param_path);

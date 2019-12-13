@@ -25,8 +25,11 @@ using std::make_shared;
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
+#include <nbla_utils/parameters.hpp>
+
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
+namespace utl = nbla::utils;
 
 #include "mnist_data.hpp"
 
@@ -142,6 +145,10 @@ bool siamese_training_with_static_graph(nbla::Context ctx) {
 
   //  # Create input variables.
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "siamese_param.protobuf");
+
   int batch_size = 128;
   auto timage0 =
       make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
@@ -227,6 +234,9 @@ bool siamese_training_with_static_graph(nbla::Context ctx) {
                 mean_vloss);
         mean_tloss = 0.;
         mean_vloss = 0.;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_siamese_param.protobuf");
       }
     }
   } catch (...) {
@@ -254,6 +264,9 @@ bool siamese_training_with_dynamic_graph(nbla::Context ctx) {
 
   // Setup parameter
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "siamese_param_d.protobuf");
 
   //  # Create Solver.
   float learning_rate = 1.0e-3;
@@ -334,6 +347,9 @@ bool siamese_training_with_dynamic_graph(nbla::Context ctx) {
                 mean_vloss);
         mean_tloss = 0.;
         mean_vloss = 0.;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_siamese_param_d.protobuf");
       }
     }
   } catch (...) {

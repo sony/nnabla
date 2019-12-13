@@ -134,7 +134,7 @@ TEST_F(ParameterDirectoryTest, get_parameters) {
   all_variables = params.get_parameters();
   ASSERT_EQ(1, all_variables.size());
   registered = all_variables[0];
-  ASSERT_EQ("/" + param_name, registered.first); // parameter name check
+  ASSERT_EQ(param_name, registered.first); // parameter name check
   checkVariablesDataSame(created1->variable(), registered.second);
 
   // create same named parameter again
@@ -145,7 +145,7 @@ TEST_F(ParameterDirectoryTest, get_parameters) {
   all_variables = params.get_parameters();
   ASSERT_EQ(1, all_variables.size());
   registered = all_variables[0];
-  ASSERT_EQ("/" + param_name, registered.first); // parameter name check
+  ASSERT_EQ(param_name, registered.first); // parameter name check
   checkVariablesDataSame(created2->variable(), registered.second);
 
   // create other parameter
@@ -161,7 +161,7 @@ TEST_F(ParameterDirectoryTest, get_parameters) {
   vector<CgVariablePtr> param_list = {created1, created3};
   REP(i, 2) {
     registered = all_variables[i];
-    ASSERT_EQ("/" + name_list[i], registered.first); // parameter name check
+    ASSERT_EQ(name_list[i], registered.first); // parameter name check
     checkVariablesDataSame(param_list[i]->variable(), registered.second);
   }
 
