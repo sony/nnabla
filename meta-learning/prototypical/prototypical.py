@@ -25,62 +25,31 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn import manifold
 
-
 import nnabla as nn
 import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.initializer as I
 import nnabla.solver as S
+from nnabla.monitor import Monitor, MonitorSeries
 
 
-def conv_initializer(f_in, n_out, base_axis, kernel, mode):
-    '''
-    Conv initializer function
-        This function returns various types of initialization for weights and bias parameters in convolution layer.
-
-        Args:
-            f_in (~nnabla.Variable): input variable.
-            n_out (int) : number of output neurons per data.
-            base_axis (int): dimensions up to base_axis are treated as the sample dimensions.
-            kernel (tuple of int) : convolution kernel size.
-            mode (str) : type of initialization to use.
-        Returns:
-            w (~nnabla.initializer.BaseInitializer): weight parameters
-            b (~nnabla.initializer.BaseInitializer): bias parameters
-    '''
-    if mode == 'nnabla':
-        # https://github.com/sony/nnabla/blob/master/python/src/nnabla/parametric_functions.py, line415, 417
-        # https://github.com/sony/nnabla/blob/master/python/src/nnabla/initializer.py, line224. 121
-        # uniform_lim_glorot = uniform(sqrt(6/(fin+fout)))
-        n_input_plane = f_in.shape[base_axis]
-        s = np.sqrt(6.0 / (n_input_plane * np.prod(kernel) + n_out))
-        w = I.UniformInitializer([-s, s])
-        b = I.ConstantInitializer(0)
-        return w, b
-
-
-def conv4(x, test=False, init_type='nnabla'):
+def conv4(x, test=False):
     '''
     Embedding function
         This network is a typical embedding network for the one-shot learning benchmark task.
         Args:
-            x (~nnabla.Variable) : input image.
-            test (boolean) : whether test of training for
+            x (~nnabla.Variable) : input images.
+            test (boolean) : whether test or training
         Returns:
             h (~nnabla.Variable): embedding vector.
 
     '''
     h = x
     for i in range(4):
-        w, b = conv_initializer(h, 64, 1, [3, 3], init_type)
-        h = PF.convolution(h, 64, [3, 3], w_init=w, b_init=b, pad=[
-                           1, 1], name='conv' + str(i))
+        h = PF.convolution(h, 64, [3, 3], pad=[1, 1], name='conv' + str(i))
         h = PF.batch_normalization(h, batch_stat=not test, name='bn' + str(i))
-        #h = F.relu(h)
-        # To avoid all 0 embedding vector for cosine similarity.
-        if i != 3:
-            h = F.relu(h)
+        h = F.relu(h)
         h = F.max_pooling(h, [2, 2])
     h = F.reshape(h, [h.shape[0], np.prod(h.shape[1:])])
     return h
@@ -90,17 +59,18 @@ def similarity(fq, fs, metric):
     '''
     Similarity function
         This function provides the various types of metrics to measure the similarity between the query and support.
-        We provide euclidean distance and cosine similarity.
+        We provide Euclidean distance and cosine similarity.
 
         Args:
-            fq (~nnabla.Variable) : input query image.
-            fs (~nnabla.Variable): input support image.
+            fq (~nnabla.Variable) : input query images.
+            fs (~nnabla.Variable): input support images.
             metric (str): similarity metric to use.
         Returns:
             h (~nnabla.Variable): computed similarity.
     '''
 
-    if metric == "euclid":  # euclid similarity of (n_query, n_support) tensor
+    # Euclidian-distance based similarity of (n_query, n_support)
+    if metric == "euclid":
         h = -F.sum((fs - fq) ** 2.0, axis=2)
     elif metric == "cosine":
         qs = F.sum(fq * fs, axis=2)
@@ -110,7 +80,7 @@ def similarity(fq, fs, metric):
     return h
 
 
-def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='prototypical', distance='euclid', test=False):
+def net(n_class, xs, xq, embedding='conv4', net_type='prototypical', distance='euclid', test=False):
     '''
     Similarity net function
         This function implements the network with settings as specified.
@@ -119,7 +89,6 @@ def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='protot
             n_class (int): number of classes. Typical setting is 5 or 20.
             xs (~nnabla.Variable): support images.
             xq (~nnabla.Variable): query images.
-            init_type (str, optional): initialization type for weights and bias parameters. See conv_initializer function.
             embedding(str, optional): embedding network.
             distance (str, optional): similarity metric to use. See similarity function.
             test (bool, optional): switch flag for training dataset and test dataset
@@ -131,13 +100,12 @@ def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='protot
     n_shot = xs.shape[0] / n_class
     n_query = xq.shape[0] / n_class
     if embedding == 'conv4':
-        fs = conv4(xs, test, init_type)  # tensor of (n_support, fdim)
-        fq = conv4(xq, test, init_type)  # tensor of (n_query, fdim)
+        fs = conv4(xs, test)  # (n_support, fdim)
+        fq = conv4(xq, test)  # (n_query, fdim)
 
     if net_type == 'matching':
         # This example does not include the full-context-embedding of matching networks.
-        fs = F.reshape(fs, (1,) + fs.shape)  # (1, n_way, fdim)
-        # (n_way*n_query, 1, fdim)
+        fs = F.reshape(fs, (1,) + fs.shape)
         fq = F.reshape(fq, (fq.shape[0], 1) + fq.shape[1:])
         h = similarity(fq, fs, distance)
         h = h - F.mean(h, axis=1, keepdims=True)
@@ -152,8 +120,7 @@ def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='protot
         if 1 < n_shot:
             fs = F.reshape(fs, (n_class, n_shot) + fs.shape[1:])
             fs = F.mean(fs, axis=1)
-        fs = F.reshape(fs, (1,) + fs.shape)  # (1, n_way, fdim)
-        # (n_way*n_query, 1, fdim)
+        fs = F.reshape(fs, (1,) + fs.shape)
         fq = F.reshape(fq, (fq.shape[0], 1) + fq.shape[1:])
         h = similarity(fq, fs, distance)
         h = h - F.mean(h, axis=1, keepdims=True)
@@ -163,22 +130,15 @@ def net(n_class, xs, xq, init_type='nnabla', embedding='conv4', net_type='protot
 
 def augmentation(data):
     # This function generates augmented class and data
-    data_1 = np.zeros(data.shape)
+    augmented_data = np.zeros((data.shape[0] * 4,) + data.shape[1:])
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
-            data_1[i][j] = np.rot90(data[i][j], 1)
+            augmented_data[i*4][j] = data[i][j]
+            augmented_data[i*4+1][j] = np.rot90(data[i][j], 1)
+            augmented_data[i*4+2][j] = np.rot90(data[i][j], 2)
+            augmented_data[i*4+3][j] = np.rot90(data[i][j], 3)
 
-    data_2 = np.zeros(data.shape)
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            data_2[i][j] = np.rot90(data[i][j], 2)
-
-    data_3 = np.zeros(data.shape)
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            data_3[i][j] = np.rot90(data[i][j], 3)
-
-    return np.concatenate((data, data_1, data_2, data_3))
+    return augmented_data
 
 
 def get_embeddings(batch, embedding):
@@ -208,54 +168,110 @@ def plot_tsne(x, y, color, image_file):
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description="Fewshot Learning")
-    parser.add_argument("--n_class", "-nw", type=int, default=5)
-    parser.add_argument("--n_shot", "-ns", type=int, default=1)
-    parser.add_argument("--n_query", "-nq", type=int, default=5)
-    parser.add_argument("--n_class_tr", "-nwt", type=int, default=60)
-    parser.add_argument("--n_shot_tr", "-nst", type=int, default=1)
-    parser.add_argument("--n_query_tr", "-nqt", type=int, default=5)
-    parser.add_argument("--dataset", "-ds", type=str, default="omniglot")
-    parser.add_argument("--dataset_root", "-dr", type=str, default=".")
-    parser.add_argument("--init_type", "-i", type=str, default='nnabla')
-    parser.add_argument("--embedding", "-e", type=str, default='conv4')
-    parser.add_argument("--net_type", "-n", type=str, default='prototypical')
-    parser.add_argument("--metric", "-d", type=str, default='euclid')
-    parser.add_argument("--max_iteration", "-mi", type=int, default=20001)
-    parser.add_argument("--iter_per_epoch", "-ei", type=int, default=100)
-    parser.add_argument("--iter_per_valid", "-vi", type=int, default=1000)
-    parser.add_argument("--n_episode_for_valid", "-ev", type=int, default=1000)
-    parser.add_argument("--n_episode_for_test", "-et", type=int, default=1000)
-    parser.add_argument("--lr_decay_interval", "-lrdi", type=int, default=2000)
-    parser.add_argument("--lr_decay", "-lrd", type=float, default=0.5)
+    parser = argparse.ArgumentParser(
+        description="Prototypical Networks for Few-shot Learning")
+
+    # Meta-evaluation/meta-test settings
+    parser.add_argument("--n_class", "-nw", type=int, default=5,
+                        help='number of classes used in few-shot classification (N for N-way classification)')
+    parser.add_argument("--n_shot", "-ns", type=int, default=1,
+                        help='number of examples in each few-shot class (K for K-shot learning)')
+    parser.add_argument("--n_query", "-nq", type=int, default=5,
+                        help='number of examples for few-shot classification')
+
+    # Meta learning settings
+    parser.add_argument("--n_class_tr", "-nwt", type=int, default=60,
+                        help='number of classes in each episode of meta-learning')
+    parser.add_argument("--n_shot_tr", "-nst", type=int, default=1,
+                        help='number of examples in each class of each episode')
+    parser.add_argument("--n_query_tr", "-nqt", type=int, default=5,
+                        help='number of examples in each episode')
+
+    # Dataset settings
+    parser.add_argument("--dataset", "-ds", type=str, default="omniglot",
+                        help='Default dataset is omniglot')
+    parser.add_argument("--dataset_root", "-dr", type=str, default="../data",
+                        help='Default dataset root is ../data')
+
+    # Network settings
+    parser.add_argument("--embedding", "-e", type=str, default='conv4',
+                        help='Benchmark embedding network with 4 layer convolutions')
+    parser.add_argument("--net_type", "-n", type=str, default='prototypical',
+                        help='prototypical and matching are available')
+    parser.add_argument("--metric", "-d", type=str, default='euclid',
+                        help='euclid and cosine are available')
+
+    # Solver settings
+    parser.add_argument("--max_iteration", "-mi", type=int, default=20000,
+                        help='Maximum number of mini-batch iterations')
+    parser.add_argument("--learning_rate", "-lr", type=float, default=1.0e-3,
+                        help='Learning rate of meta-learning step')
+    parser.add_argument("--lr_decay_interval", "-lrdi", type=int, default=2000,
+                        help='Learning rate decay interval of mini-batch iterations')
+    parser.add_argument("--lr_decay", "-lrd", type=float, default=0.5,
+                        help='Decay rate of each learning rate decay interval')
+    parser.add_argument("--iter_per_epoch", "-ei", type=int, default=100,
+                        help='Number of iterations per an epoch')
+    parser.add_argument("--iter_per_valid", "-vi", type=int, default=1000,
+                        help='Number of iterations per a validation')
+    parser.add_argument("--n_episode_for_valid", "-ev", type=int, default=1000,
+                        help='Number of episodes for validation')
+    parser.add_argument("--n_episode_for_test", "-et", type=int, default=1000,
+                        help='Number of episodes for test')
+
+    # Calculation settings
     parser.add_argument('--context', '-c', type=str, default='cudnn',
                         help="Extension modules. ex) 'cpu', 'cudnn'.")
     parser.add_argument("--device-id", "-gid", type=str, default='0',
                         help='Device ID the training run on. This is only valid if you specify `-c cuda.cudnn`.')
     parser.add_argument("--type-config", "-t", type=str, default='float',
                         help='Type of computation. e.g. "float", "half".')
-    parser.add_argument("--work-dir", "-w", type=str, default="tmp.result/")
+
+    # Log settings
+    parser.add_argument("--work-dir", "-w", type=str, default="tmp.result/",
+                        help='Directory for monitor results')
+
+    # Program mode train or test
+    parser.add_argument("--train-or-test", "-tt", type=str, default='train',
+                        help='Program mode: train or test')
+
     args = parser.parse_args()
+
     return args
 
 
 def load_omniglot(dataset_root):
+
+    # We cached omniglot dataset as npy files
     x_train, _ = np.load(dataset_root + "/train.npy", allow_pickle=True)
     x_valid, _ = np.load(dataset_root + "/val.npy", allow_pickle=True)
     x = np.r_[x_train, x_valid]
-    from nnabla.utils.image_utils import imresize
+
+    # A common setting for benchmarking with Omniglot dataset
+    # - Image shape: (1, 28, 28)
+    # - Number of classes: 1623
+    # - Number of images per class: 20
     shape_x = (1, 28, 28)
     x_resized = np.zeros([1623, 20, 28, 28])
+
+    # Resize images following the benchmark setting
+    from nnabla.utils.image_utils import imresize
     for xi, ri in zip(x, x_resized):
         for xij, rij in zip(xi, ri):
-            rij[:] = imresize(xij, size=(shape_x[2], shape_x[1])) / 255.
-    data = augmentation(x_resized)
+            rij[:] = imresize(xij, size=(shape_x[2], shape_x[1]),
+                              interpolate="nearest") / 255.
+
+    # Class augmentation following the benchmark setting
     rng = np.random.RandomState(706)
+    data = augmentation(x_resized)
     data = rng.permutation(data)
     data = data.reshape((1,) + data.shape).transpose(1, 2, 0, 3, 4)
+
+    # Divide dataset following the benchmark setting
     train_data = data[:4112]
     val_data = data[4112:4800]
     test_data = data[4800:]
+
     return train_data, val_data, test_data
 
 
@@ -308,7 +324,7 @@ class EpisodeGenerator:
         # episode classes
         support_class_ids = rng.choice(dataset.shape[0], n_class, False)
 
-        # operate for each support class
+        # episode sampling
         for i, support_class_id in enumerate(support_class_ids):
 
             # select support class
@@ -338,99 +354,58 @@ class EpisodeGenerator:
         return x_s, x_q, y_q
 
 
-def train_and_eval():
+def meta_train(args, train_data, valid_data, test_data):
 
-    # Settings
-    args = get_args()
-    n_class = args.n_class
-    n_shot = args.n_shot
-    n_query = args.n_query
-    n_class_tr = args.n_class_tr
-    n_shot_tr = args.n_shot_tr
-    if n_shot_tr == 0:
-        n_shot_tr = n_shot
-    n_query_tr = args.n_query_tr
-    if n_query_tr == 0:
-        n_query_tr = n_query
+    # Build episode generators
+    shape_x = (1, 28, 28)
+    train_episode_generator = EpisodeGenerator(
+        args.n_class_tr, args.n_shot_tr, args.n_query_tr, shape_x, train_data)
+    valid_episode_generator = EpisodeGenerator(
+        args.n_class, args.n_shot, args.n_query, shape_x, valid_data)
+    test_episode_generator = EpisodeGenerator(
+        args.n_class, args.n_shot, args.n_query, shape_x, test_data)
 
-    dataset = args.dataset
-    dataset_root = args.dataset_root
+    # Build training model
+    xs_t = nn.Variable((args.n_class_tr * args.n_shot_tr, ) + shape_x)
+    xq_t = nn.Variable((args.n_class_tr * args.n_query_tr, ) + shape_x)
+    hq_t = net(args.n_class_tr, xs_t, xq_t, args.embedding,
+               args.net_type, args.metric, False)
+    yq_t = nn.Variable((args.n_class_tr * args.n_query_tr, 1))
+    loss_t = F.mean(F.softmax_cross_entropy(hq_t, yq_t))
 
-    init_type = args.init_type
-    embedding = args.embedding
-    net_type = args.net_type
-    metric = args.metric
+    # Build evaluation model
+    xs_v = nn.Variable((args.n_class * args.n_shot, ) + shape_x)
+    xq_v = nn.Variable((args.n_class * args.n_query, ) + shape_x)
+    hq_v = net(args.n_class, xs_v, xq_v, args.embedding,
+               args.net_type, args.metric, True)
+    yq_v = nn.Variable((args.n_class * args.n_query, 1))
+    err_v = F.mean(F.top_n_error(hq_v, yq_v, n=1))
 
-    max_iteration = args.max_iteration
-    lr_decay_interval = args.lr_decay_interval
-    lr_decay = args.lr_decay
-    iter_per_epoch = args.iter_per_epoch
-    iter_per_valid = args.iter_per_valid
-    n_episode_for_valid = args.n_episode_for_valid
-    n_episode_for_test = args.n_episode_for_test
-    work_dir = args.work_dir
-
-    # Set context
-    from nnabla.ext_utils import get_extension_context
-    logger.info("Running in %s" % args.context)
-    ctx = get_extension_context(
-        args.context, device_id=args.device_id, type_config=args.type_config)
-    nn.set_default_context(ctx)
+    # Setup solver
+    solver = S.Adam(args.learning_rate)
+    solver.set_parameters(nn.get_parameters())
 
     # Monitor outputs
-    from nnabla.monitor import Monitor, MonitorSeries
     monitor = Monitor(args.work_dir)
     monitor_loss = MonitorSeries(
-        "Training loss", monitor, interval=iter_per_epoch)
+        "Training loss", monitor, interval=args.iter_per_epoch)
     monitor_valid_err = MonitorSeries(
-        "Validation error", monitor, interval=iter_per_valid)
+        "Validation error", monitor, interval=args.iter_per_valid)
     monitor_test_err = MonitorSeries("Test error", monitor)
     monitor_test_conf = MonitorSeries("Test error confidence", monitor)
 
     # Output files
-    param_file = work_dir + "params.h5"
-    tsne_file = work_dir + "tsne.png"
-
-    # Load data
-    shape_x = (1, 28, 28)
-    train_data, valid_data, test_data = load_omniglot(
-        dataset_root + "/omniglot/data/")
-    train_episode_generator = EpisodeGenerator(
-        n_class_tr, n_shot_tr, n_query_tr, shape_x, train_data)
-    valid_episode_generator = EpisodeGenerator(
-        n_class, n_shot, n_query, shape_x, valid_data)
-    test_episode_generator = EpisodeGenerator(
-        n_class, n_shot, n_query, shape_x, test_data)
-
-    # Build training model
-    xs_t = nn.Variable((n_class_tr * n_shot_tr, ) + shape_x)
-    xq_t = nn.Variable((n_class_tr * n_query_tr, ) + shape_x)
-    hq_t = net(n_class_tr, xs_t, xq_t, init_type,
-               embedding, net_type, metric, False)
-    yq_t = nn.Variable((n_class_tr * n_query_tr, 1))
-    loss_t = F.mean(F.softmax_cross_entropy(hq_t, yq_t))
-
-    # Build evaluation model
-    xs_v = nn.Variable((n_class * n_shot, ) + shape_x)
-    xq_v = nn.Variable((n_class * n_query, ) + shape_x)
-    hq_v = net(n_class, xs_v, xq_v, init_type,
-               embedding, net_type, metric, True)
-    yq_v = nn.Variable((n_class * n_query, 1))
-    err_v = F.mean(F.top_n_error(hq_v, yq_v, n=1))
-
-    # Setup solver
-    solver = S.Adam(1.0e-3)
-    solver.set_parameters(nn.get_parameters())
-    learning_rate_decay_activate = True
+    param_file = args.work_dir + "params.h5"
+    tsne_file = args.work_dir + "tsne.png"
 
     # Training loop
     train_losses = []
     best_err = 1.0
-    for i in range(max_iteration):
+    for i in range(args.max_iteration):
 
         # Decay learning rate
-        if learning_rate_decay_activate and ((i + 1) % lr_decay_interval == 0):
-            solver.set_learning_rate(solver.learning_rate() * lr_decay)
+        if (i + 1) % args.lr_decay_interval == 0:
+            solver.set_learning_rate(solver.learning_rate() * args.lr_decay)
 
         # Create an episode
         xs_t.d, xq_t.d, yq_t.d = train_episode_generator.next()
@@ -443,17 +418,16 @@ def train_and_eval():
         train_losses.append(loss_t.d.copy())
 
         # Evaluation
-        if (i + 1) % iter_per_valid == 0:
+        if (i + 1) % args.iter_per_valid == 0:
             train_loss = np.mean(train_losses)
             train_losses = []
             valid_errs = []
-            for k in range(n_episode_for_valid):
+            for k in range(args.n_episode_for_valid):
                 xs_v.d, xq_v.d, yq_v.d = valid_episode_generator.next()
                 err_v.forward(clear_no_need_grad=True, clear_buffer=True)
                 valid_errs.append(np.float(err_v.d.copy()))
             valid_err = np.mean(valid_errs)
 
-            #monitor_loss.add(i + 1, train_loss)
             monitor_valid_err.add(i + 1, valid_err * 100)
             if valid_err < best_err:
                 best_err = valid_err
@@ -462,14 +436,15 @@ def train_and_eval():
     # Final evaluation
     nn.load_parameters(param_file)
     v_errs = []
-    for k in range(n_episode_for_test):
+    for k in range(args.n_episode_for_test):
         xs_v.d, xq_v.d, yq_v.d = test_episode_generator.next()
         err_v.forward(clear_no_need_grad=True, clear_buffer=True)
         v_errs.append(np.float(err_v.d.copy()))
-    v_err = np.mean(v_errs)
-    v_err_conf = 1.96 * np.std(v_errs) / np.sqrt(n_episode_for_test)
-    monitor_test_err.add(0, v_err * 100)
-    monitor_test_conf.add(0, v_err_conf)
+    v_err_mean = np.mean(v_errs)
+    v_err_std = np.std(v_errs)
+    v_err_conf = 1.96 * v_err_std / np.sqrt(args.n_episode_for_test)
+    monitor_test_err.add(0, v_err_mean * 100)
+    monitor_test_conf.add(0, v_err_conf * 100)
 
     # Visualization
     n_class = 50
@@ -483,5 +458,72 @@ def train_and_eval():
     plot_tsne(v[:, 0], v[:, 1], label, tsne_file)
 
 
+def meta_test(args, test_data):
+
+    # Build episode generators
+    shape_x = (1, 28, 28)
+    test_episode_generator = EpisodeGenerator(
+        args.n_class, args.n_shot, args.n_query, shape_x, test_data)
+
+    # Build prototypical network
+    xs_v = nn.Variable((args.n_class * args.n_shot, ) + shape_x)
+    xq_v = nn.Variable((args.n_class * args.n_query, ) + shape_x)
+    hq_v = net(args.n_class, xs_v, xq_v, args.embedding,
+               args.net_type, args.metric, True)
+    yq_v = nn.Variable((args.n_class * args.n_query, 1))
+    err_v = F.mean(F.top_n_error(hq_v, yq_v, n=1))
+
+    # Load parameters
+    nn.load_parameters(args.work_dir + "params.h5")
+
+    # Evaluate error rate
+    v_errs = []
+    for k in range(args.n_episode_for_test):
+        xs_v.d, xq_v.d, yq_v.d = test_episode_generator.next()
+        err_v.forward(clear_no_need_grad=True, clear_buffer=True)
+        v_errs.append(np.float(err_v.d.copy()))
+    v_err_mean = np.mean(v_errs)
+    v_err_std = np.std(v_errs)
+    v_err_conf = 1.96 * v_err_std / np.sqrt(args.n_episode_for_test)
+
+    # Monitor error rate
+    monitor = Monitor(args.work_dir)
+    monitor_test_err = MonitorSeries("Test error", monitor)
+    monitor_test_conf = MonitorSeries("Test error confidence", monitor)
+    monitor_test_err.add(0, v_err_mean * 100)
+    monitor_test_conf.add(0, v_err_conf * 100)
+
+    return v_err_mean, v_err_conf
+
+
+def main():
+    # Get settings
+    args = get_args()
+
+    # Set context
+    from nnabla.ext_utils import get_extension_context
+    logger.info("Running in %s" % args.context)
+    ctx = get_extension_context(
+        args.context, device_id=args.device_id, type_config=args.type_config)
+    nn.set_default_context(ctx)
+
+    # Load data
+    if args.dataset is not "omniglot":
+        print("\nUse omniglot dataset\n")
+        exit()
+
+    dataset_path = args.dataset_root + "/omniglot/data/"
+    if not os.path.exists(dataset_path):
+        print("\nSet dataset path with --dataset_root option\n")
+        exit()
+
+    train_data, valid_data, test_data = load_omniglot(dataset_path)
+
+    if args.train_or_test == "train":
+        meta_train(args, train_data, valid_data, test_data)
+    elif args.train_or_test == "test":
+        meta_test(args, test_data)
+
+
 if __name__ == '__main__':
-    train_and_eval()
+    main()
