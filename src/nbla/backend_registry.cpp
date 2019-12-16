@@ -82,6 +82,10 @@ void BackendUtils::device_synchronize(const Context ctx) {
   return get_backend_getter(ctx)()->device_synchronize(ctx.device_id);
 }
 
+void BackendUtils::default_stream_synchronize(const Context ctx) {
+  return get_backend_getter(ctx)()->default_stream_synchronize(ctx.device_id);
+}
+
 void BackendUtils::create_lms_streams(const Context ctx) {
   return get_backend_getter(ctx)()->create_lms_streams(std::stoi(ctx.device_id));
 }

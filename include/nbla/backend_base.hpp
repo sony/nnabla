@@ -64,6 +64,10 @@ public:
    */
   virtual void device_synchronize(const string &device) = 0;
 
+  /** Synchronize host to default stream of device.
+   */
+  virtual void default_stream_synchronize(const string &device) = 0;
+
   /** Create non blockuing streams for data transfer
    */
   virtual void create_lms_streams(int device = -1) = 0;

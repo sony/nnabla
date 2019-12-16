@@ -62,6 +62,10 @@ public:
    */
   void device_synchronize(const string &device);
 
+  /** Synchronize host to default stream of device.
+   */
+  void default_stream_synchronize(const string &device);
+
   /** Create non blockuing streams for data transfer.
       Noting to do in CPU backend.
    */
