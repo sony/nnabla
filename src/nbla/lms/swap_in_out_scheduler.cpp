@@ -189,6 +189,8 @@ void SwapInOutScheduler::schedule() {
 
   wait_all_schedule = schedule_wait_for_all_swap_out(swapped_out, swapped_out_r);
 
+  check_which_is_host_func();
+
   // Debug
   if (used_bytes_swap_in != 0) {
     NBLA_ERROR(error_code::unclassified, "used_bytes_swap_in != 0");
@@ -209,6 +211,28 @@ int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
   return accumulate(count_map.begin(), count_map.end(), 0,
     [](int value, const unordered_map<dtypes, int>::value_type& p)
     { return value + p.second; });
+}
+
+
+void SwapInOutScheduler::check_which_is_host_func() {
+  for (int fid = 0; fid < func_block_ends.size(); fid++) {
+    bool host_func = false;
+
+    for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
+      i < func_block_ends[fid]; i++) {
+      RecType& r = order[i];
+
+      if (r.tag == RecTag::CLEAR) {
+        continue;
+      }
+
+      if (r.ctx.array_class == host_ctx.array_class) {
+        host_func = true;
+      }
+    }
+
+    is_host_func.push_back(host_func);
+  }
 }
 
 
@@ -483,6 +507,10 @@ void SwapInOutScheduler::pre_callback() {
   swap_out_step(); // post process of the previous function
   swap_in_step();  // pre process of the next function
   
+  if (!first_iter && is_host_func[func_idx]) {
+    BackendUtils::default_stream_synchronize(device_ctx);
+  }
+
   set_synced_array_callback(); // Restart record or trace
 }
 
