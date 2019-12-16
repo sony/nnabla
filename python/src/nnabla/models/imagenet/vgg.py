@@ -31,8 +31,9 @@ class VGG(ImageNetBase):
 
     * ``'classifier'`` (default): The output of the final affine layer for classification.
     * ``'pool'``: The output of the final global average pooling.
-    * ``'lastconv'``: The input of the final global average pooling without ReLU activation..
+    * ``'lastconv'``: The input of the final global average pooling without ReLU activation.
     * ``'lastconv+relu'``: Network up to ``'lastconv'`` followed by ReLU activation.
+    * ``'lastfeature'``: Network up to one layer before ``'classifier'``, but without activation.
 
     References:
         * `Simonyan and Zisserman, Very Deep Convolutional Networks for Large-Scale Image Recognition.
@@ -57,6 +58,7 @@ class VGG(ImageNetBase):
             'pool': 'VGG{}/MaxPooling_5'.format(num_layers),
             'lastconv': 'VGG{}/Convolution_12'.format(num_layers),
             'lastconv+relu': 'VGG{}/ReLU_12'.format(num_layers),
+            'lastfeature': 'VGG{}/Affine_2'.format(num_layers),
             }
 
     def _input_shape(self):
