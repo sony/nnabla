@@ -47,6 +47,7 @@ cdef extern from "nbla/solver.hpp" namespace "nbla":
         void set_states(vector[pair[string, CSolverState]]) except +
         void update() nogil except +
         void weight_decay(float decay_rate) nogil except +
+        void clip_grad_by_norm(float clip_norm) nogil except +
         cpp_bool check_inf_grad() nogil except +
         cpp_bool check_nan_grad() nogil except +
         cpp_bool check_inf_or_nan_grad() nogil except +

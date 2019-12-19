@@ -16,6 +16,7 @@
 #include <cmath>
 #include <limits>
 #include <nbla/solver/adamw.hpp>
+#include <nbla/solver/clip_grad.hpp>
 #include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/weight_decay.hpp>
 
@@ -82,6 +83,7 @@ void AdamW<T>::weight_decay_impl(const string &key, VariablePtr param,
   weight_decay_cpu<T>(this->ctx_, param, decay_rate);
 }
 
+NBLA_DEF_CLIP_GRAD_BY_NORM(AdamW, clip_grad_by_norm_cpu);
 NBLA_DEF_CHECK_INF_GRAD(AdamW, check_inf_grad_cpu);
 NBLA_DEF_CHECK_NAN_GRAD(AdamW, check_nan_grad_cpu);
 NBLA_DEF_CHECK_INF_OR_NAN_GRAD(AdamW, check_inf_or_nan_grad_cpu);

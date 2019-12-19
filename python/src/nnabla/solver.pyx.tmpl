@@ -76,6 +76,7 @@ cdef class Solver:
             solver.zero_grad()  # All gradient buffer being 0
             loss.backward()
             solver.weight_decay(decay_rate)  # Apply weight decay
+            solver.clip_grad_by_norm(clip_norm)  # Apply clip grad by norm
             solver.update()  # updating parameters
 
     Note:
@@ -352,6 +353,18 @@ cdef class Solver:
 
         with nogil:
             self.solverp.weight_decay(decay_rate)
+
+    def clip_grad_by_norm(self, float clip_norm):
+        """
+        Clip gradients by norm.
+        When called, the gradient will be clipped by the given norm.
+
+        Args:
+            clip_norm (float): The value of clipping norm.
+        """
+
+        with nogil:
+            self.solverp.clip_grad_by_norm(clip_norm)
 
     def check_inf_grad(self, ):
         """
