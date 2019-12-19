@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream/master
 #ifndef NBLA_FUNCTION_BATCH_DET_HPP
 #define NBLA_FUNCTION_BATCH_DET_HPP
 
@@ -27,11 +23,7 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(BatchDet);
 
-<<<<<<< HEAD
-/** 
-=======
 /**
->>>>>>> upstream/master
     @todo Write doc.
 
 Inputs:
@@ -45,22 +37,6 @@ protected:
   int dim_, offset_, batch_size_;
 
 public:
-<<<<<<< HEAD
-  BatchDet(const Context &ctx) : BaseFunction(ctx)
-    {}
-  virtual ~BatchDet() {}
-  virtual shared_ptr<Function> copy() const {
-    return create_BatchDet(ctx_);
-  }
-  virtual int min_inputs() { return 1; }
-  virtual int min_outputs() { return 1; }
-  virtual vector<dtypes> in_types() {
-    return vector<dtypes>{get_dtype<T>()};
-  }
-  virtual vector<dtypes> out_types() {
-    return vector<dtypes>{get_dtype<T>()};
-  }
-=======
   BatchDet(const Context &ctx) : BaseFunction(ctx) {}
   virtual ~BatchDet() {}
   virtual shared_ptr<Function> copy() const { return create_BatchDet(ctx_); }
@@ -68,7 +44,6 @@ public:
   virtual int min_outputs() { return 1; }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
->>>>>>> upstream/master
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
@@ -76,13 +51,6 @@ public:
   virtual bool grad_depends_output_data(int i, int o) const { return true; }
 
 protected:
-<<<<<<< HEAD
-  NBLA_API virtual void setup_impl(const Variables &inputs, const Variables &outputs);
-  NBLA_API virtual void forward_impl(const Variables &inputs, const Variables &outputs);
-  NBLA_API virtual void backward_impl(const Variables &inputs, const Variables &outputs,
-      const vector<bool> &propagate_down,
-      const vector<bool> &accum);
-=======
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs);
   NBLA_API virtual void forward_impl(const Variables &inputs,
@@ -91,7 +59,6 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
->>>>>>> upstream/master
 };
 }
 #endif

@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream/master
 #ifndef NBLA_FUNCTION_INVERSE_HPP
 #define NBLA_FUNCTION_INVERSE_HPP
 
@@ -46,22 +42,6 @@ protected:
   int dim_, offset_, batch_size_;
 
 public:
-<<<<<<< HEAD
-  BatchInv(const Context &ctx) : BaseFunction(ctx)
-    {}
-  virtual ~BatchInv() {}
-  virtual shared_ptr<Function> copy() const {
-    return create_BatchInv(ctx_);
-  }
-  virtual int min_inputs() { return 1; }
-  virtual int min_outputs() { return 1; }
-  virtual vector<dtypes> in_types() {
-    return vector<dtypes>{get_dtype<T>()};
-  }
-  virtual vector<dtypes> out_types() {
-    return vector<dtypes>{get_dtype<T>()};
-  }
-=======
   BatchInv(const Context &ctx) : BaseFunction(ctx) {}
   virtual ~BatchInv() {}
   virtual shared_ptr<Function> copy() const { return create_BatchInv(ctx_); }
@@ -69,7 +49,6 @@ public:
   virtual int min_outputs() { return 1; }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
->>>>>>> upstream/master
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
@@ -77,18 +56,12 @@ public:
   virtual bool grad_depends_output_data(int i, int o) const { return true; }
 
 protected:
-<<<<<<< HEAD
-  NBLA_API virtual void setup_impl(const Variables &inputs, const Variables &outputs);
-  NBLA_API virtual void forward_impl(const Variables &inputs, const Variables &outputs);
-  NBLA_API virtual void backward_impl(const Variables &inputs, const Variables &outputs,
-=======
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs);
   NBLA_API virtual void forward_impl(const Variables &inputs,
                                      const Variables &outputs);
   NBLA_API virtual void backward_impl(const Variables &inputs,
                                       const Variables &outputs,
->>>>>>> upstream/master
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
 };

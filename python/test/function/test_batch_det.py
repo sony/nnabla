@@ -21,20 +21,14 @@ from nbla_test_utils import list_context
 
 ctxs = list_context('BatchDet')
 
-<<<<<<< HEAD
-=======
 
->>>>>>> upstream/master
 def ref_det(x):
     y = np.zeros(x.shape[0], dtype=np.float32)
     for i in range(x.shape[0]):
         y[i] = np.linalg.det(x[i])
     return y
 
-<<<<<<< HEAD
-=======
 
->>>>>>> upstream/master
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
 def test_batch_inv_forward_backward(seed, ctx, func_name):
