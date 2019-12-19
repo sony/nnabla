@@ -547,7 +547,7 @@ void SwapInOutScheduler::swap_in_step() {
 void SwapInOutScheduler::swap_in() {
   for (auto r : swap_in_schedule[func_idx]) {
     if (auto p = r.get().sawptr.lock()) {
-      p->get(r.get().dtype, r.get().ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+      p->get(r.get().dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
     }
   }
 }
