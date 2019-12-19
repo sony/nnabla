@@ -1,17 +1,18 @@
 ACos:
-    - 'Not implemented'
+    - ACos@7
 ACosh:
-    - 'Not implemented'
+    - Acosh@9
 ASin:
-    - 'Not implemented'
+    - ASin@7
 ASinh:
-    - 'Not implemented'
+    - Asinh@9
 ATan:
-    - 'Not implemented'
+    - ATan@7
 ATan2:
-    - 'Not implemented'
+    - Div@7
+    - ATan@7
 ATanh:
-    - 'Not implemented'
+    - Atanh@9
 Abs:
     - Abs@6
 AbsoluteError:
@@ -22,7 +23,6 @@ AddScalar:
     - Add@6
 Affine:
     - Reshape@5
-    - Flatten@1
     - Gemm@6
 Arange:
     - 'Not implemented'
@@ -36,7 +36,8 @@ BatchNormalization:
 BcAdd2:
     - 'Not implemented'
 BinaryConnectAffine:
-    - 'Not implemented'
+    - Reshape@5
+    - Gemm@6
 BinaryConnectConvolution:
     - Conv@1
     - Reshape@5
@@ -45,13 +46,21 @@ BinaryCrossEntropy:
 BinaryError:
     - 'Not implemented'
 BinarySigmoid:
-    - HardSigmoid@6
+    - Greater@7
+    - Where@9
 BinaryTanh:
-    - 'Not implemented'
+    - Greater@7
+    - Where@9
 BinaryWeightAffine:
-    - 'Not implemented'
+    - Reshape@5
+    - MatMul@1
+    - Mul@6
+    - Add@6
 BinaryWeightConvolution:
-    - 'Not implemented'
+    - Reshape@5
+    - Conv@1
+    - Mul@6
+    - Add@6
 Broadcast:
     - 'Not implemented'
 BroadcastTo:
@@ -63,7 +72,7 @@ CReLU:
 CategoricalCrossEntropy:
     - 'Not implemented'
 Ceil:
-    - 'Not implemented'
+    - Ceil@6
 ClipGradByNorm:
     - 'Not implemented'
 ClipGradByValue:
@@ -77,16 +86,17 @@ Constant:
 Convolution:
     - Conv@1
 Cos:
-    - 'Not implemented'
+    - Cos@7
 Cosh:
-    - 'Not implemented'
+    - Cosh@9
 Deconvolution:
     - ConvTranspose@1
-    - Add@6
+    - Reshape@5
 DepthwiseConvolution:
     - Conv@1
 DepthwiseDeconvolution:
-    - 'Not implemented'
+    - ConvTranspose@1
+    - Reshape@5
 Div2:
     - Div@6
 Dropout:
@@ -112,7 +122,7 @@ Flip:
     - Transpose@1
     - Identity@1
 Floor:
-    - 'Not implemented'
+    - Floor@6
 GELU:
     - 'Not implemented'
 GRU:
@@ -268,11 +278,11 @@ Sigmoid:
 SigmoidCrossEntropy:
     - 'Not implemented'
 Sign:
-    - 'Not implemented'
+    - Sign@9
 Sin:
-    - 'Not implemented'
+    - Sin@7
 Sinh:
-    - 'Not implemented'
+    - Sinh@9
 Sink:
     - 'Not implemented'
 Slice:
@@ -300,7 +310,7 @@ SumPooling:
 Swish:
     - 'Not implemented'
 Tan:
-    - 'Not implemented'
+    - Tan@7
 Tanh:
     - Tanh@6
 TopKData:

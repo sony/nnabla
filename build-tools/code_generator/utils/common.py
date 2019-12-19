@@ -15,9 +15,7 @@
 import difflib
 import io
 import os
-import re
 import six
-import subprocess
 
 
 def check_update(filename, generated, force=False):

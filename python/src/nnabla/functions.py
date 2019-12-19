@@ -14,8 +14,10 @@
 
 from __future__ import absolute_import
 from .function_bases import *
-from six.moves import reduce as rd
+
+import nnabla as nn
 import numpy as np
+from .normalization_functions import *
 
 
 def sum(x, axis=None, keepdims=False):
@@ -248,22 +250,11 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     Returns:
         ~nnabla.Variable: Sliced N-D array
     """
-    import copy
-    start = copy.copy(start)
-    stop = copy.copy(stop)
-    step = copy.copy(step)
+    start = list(start[:]) if start is not None else len(x.shape) * (0,)
+    stop = list(stop[:]) if stop is not None else tuple(x.shape)
+    step = list(step[:]) if step is not None else len(x.shape) * (1,)
 
-    from .function_bases import slice as slice_base
-    if start is None:
-        start = (0,) * len(x.shape)
-    if stop is None:
-        stop = tuple(x.shape)
-    if step is None:
-        step = (1,) * len(x.shape)
-
-    shape = x.shape
-    for i, sss in enumerate(zip(start, stop, step)):
-        s0, s1, s2 = sss
+    for i, (s0, s1, s2) in enumerate(zip(start, stop, step)):
         # SPECIAL CASE: slice(-1, None, <0) or slice(None, None, <0)
         SLICE_NONE = 0x7fffffff
         if s0 == None:
@@ -272,112 +263,9 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
             stop[i] = SLICE_NONE
         if s2 == None:
             step[i] = SLICE_NONE
+
+    from .function_bases import slice as slice_base
     return slice_base(x, start, stop, step, n_outputs, outputs)
-
-
-def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9, eps=1e-05, batch_stat=True, output_stat=False, n_outputs=None):
-    r"""
-    Batch normalization.
-
-    .. math::
-        \begin{eqnarray}
-          \mu &=& \frac{1}{M} \sum x_i \\
-          \sigma^2 &=& \frac{1}{M} \sum \left(x_i - \mu\right)^2 \\
-          \hat{x}_i &=& \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} \\
-          y_i &=& \hat{x}_i \gamma + \beta.
-        \end{eqnarray}
-
-
-    At testing time, the mean and variance values used are those that were computed during training by moving average.
-
-    References:
-
-        * `Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.
-          <https://arxiv.org/abs/1502.03167>`_
-
-    Args:
-        x(~nnabla.Variable): N-D array of input.
-        beta(~nnabla.Variable): N-D array of beta which is learned.
-        gamma(~nnabla.Variable): N-D array of gamma which is learned.
-        mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
-        variance(~nnabla.Variable): N-D array of running variance (modified during forward execution).
-        axes(repeated int64): Axes mean and variance are taken.
-        decay_rate(float): Decay rate of running mean and variance.
-        eps(float): Tiny value to avoid zero division by std.
-        batch_stat(bool): Use mini-batch statistics rather than running ones.
-        output_stat(bool): It true, the batch statistics of mean and variance,
-            will be returned as Variables. They are also differentiable.
-
-    Returns:
-        Returns batch normalization output as :obj:`~nnabla.Variable`.
-        If ``output_stat=True``, it also returns the mean and variance
-        of the mini-batch
-
-        * :obj:`~nnabla.Variable`: Output of the batch normalization
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
-
-    See Also:
-        ``nnabla.function_bases.batch_normalization``.
-
-    """
-    from .function_bases import batch_normalization as batch_normalization_base
-    n_outputs = 3 if output_stat else 1
-    assert batch_stat or (not output_stat)
-    if batch_stat and (mean.parent or variance.parent) is not None:
-        raise ValueError(
-            "if batch_stat is True, mean and variable must not have a parent function")
-
-    if len(axes) == 1:
-        return batch_normalization_base(x, beta, gamma, mean, variance,
-                                        axes=axes,
-                                        decay_rate=decay_rate,
-                                        eps=eps,
-                                        batch_stat=batch_stat,
-                                        n_outputs=n_outputs)
-
-    def transpose_and_reshape(x, axes):
-        transposed = transpose(x, transpose_axes)
-        return reshape(transposed, [rd(lambda x, y: x * y, transposed.shape[:len(axes)])] + list(
-            transposed.shape[len(axes):])), transposed.shape
-
-    def inverse_transpose_and_reshape(x, axes, variable_shape):
-        un_reshaped = reshape(
-            x, list(variable_shape[:len(axes)] + variable_shape[len(axes):]))
-        return transpose(un_reshaped, inv_transpose_axes)
-
-    def get_tranpose_args(ndim, axes):
-        transpose_axes = [i for i in list(
-            axes)] + [i for i in range(ndim) if i not in list(axes)]
-        inv_transpose_axes = np.argsort(transpose_axes).tolist()
-        return transpose_axes, inv_transpose_axes
-
-    transpose_axes, inv_transpose_axes = get_tranpose_args(len(x.shape), axes)
-    inp, transposed_inp_shape = transpose_and_reshape(x, axes)
-    beta, transposed_beta_shape = transpose_and_reshape(beta, axes)
-    gamma, transposed_gamma_shape = transpose_and_reshape(gamma, axes)
-    mean, transposed_mean_shape = transpose_and_reshape(mean, axes)
-    variance, transposed_variance_shape = transpose_and_reshape(variance, axes)
-
-    if n_outputs == 1:
-        out = batch_normalization_base(inp, beta, gamma, mean, variance,
-                                       axes=[0],
-                                       decay_rate=decay_rate,
-                                       eps=eps,
-                                       batch_stat=batch_stat,
-                                       n_outputs=n_outputs)
-        return inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
-    out, mean, variance = batch_normalization_base(inp, beta, gamma, mean, variance,
-                                                   axes=[0],
-                                                   decay_rate=decay_rate,
-                                                   eps=eps,
-                                                   batch_stat=batch_stat,
-                                                   n_outputs=n_outputs)
-    out = inverse_transpose_and_reshape(out, axes, transposed_inp_shape)
-    mean = inverse_transpose_and_reshape(mean, axes, transposed_mean_shape)
-    variance = inverse_transpose_and_reshape(
-        variance, axes, transposed_variance_shape)
-    return out, mean, variance
 
 
 def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
@@ -584,6 +472,118 @@ def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fin
     return pow2_quantize_base(x, sign, with_zero, n, m, ste_fine_grained, outputs=outputs)
 
 
+def min_max_quantize(x, qr_min, qr_max, ql_min, ql_max, decay=0.999, x_min_max=False, ema=False,
+                     ste_fine_grained=True, eps=0.01, quantize=True, outputs=None):
+    r"""Min-max quantization.
+
+    This function uniformly quantizes values in the range of min and max quantization levels.
+
+    Min-max quantization is defined as the following equation
+
+    .. math::
+
+        y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m, 
+
+    where the :math:`scale` is defined as 
+
+    .. math::
+
+        scale = \frac{M - m}{M_q - m_q}, 
+
+    and 
+
+    .. math::
+
+        m_q = ql_{min}, \\
+        M_q = ql_{max}, \\
+        m = qr_{min}, \\
+        M = qr_{max}.
+
+    In the backward pass when using `ste_fine_grained` as false,
+
+        .. math::
+
+          \frac{\partial q_i}{\partial x_i} = 1.
+
+
+    In the backward pass when using `ste_fine_grained` as true,
+
+        .. math::
+
+           \frac{\partial q_i}{\partial x_i}= \left\{
+         \begin{array}{ll}
+           0 & if \ \ \ x_i > M \\
+           1 & if \ \ m \le x_i \le M \\
+           0 & if \ \ x_i < m \\
+         \end{array} \right..
+
+    :math:`qr_{min}` and :math:`qr_{max}` are treaded as follows.
+
+        * `x_min_max` is `True` and `ema` is `True`: 
+          Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)` 
+          then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `True` and `ema` is `False`:
+          :math:`min(x)` and :math:`max(x)` are computed then stored in :math:`qr_{min}` and :math:`qr_{max}`.
+        * `x_min_max` is `False` and `ema` is `True`:
+          Exponential moving average stored in :math:`qr_{min}` and :math:`qr_{max}` are used.
+        * `x_min_max` is `False` and `ema` is `False`
+          Gradients of :math:`qr_{min}` and :math:`qr_{max}` are computed in the backward pass.
+
+    More precisely, in inference of the min-max quantization, one has to consider *zero-point (zp)*
+    which corresponds
+    to the real value 0, and its data type is an integer. *zero-point* is defined as 
+
+        .. math::
+
+           && zp_f = ql_{min} -\frac{qr_{min}}{scale}, \\
+           && zp = \left\{
+         \begin{array}{ll}
+           ql_{max} & if \ \ \ zp_f >= ql_{max} \\
+           round(zp_f) & if \ \ otherwise \\
+           ql_{min}  & if \ \ zp_f <= ql_{min} \\
+         \end{array} \right..
+
+    Accordingly, in order to simulate quantization effect of *zero-point*, 
+    during both forward and backward pass, :math:`qr_{min}` and :math:`qr_{max}` are adjusted as follows,
+
+        .. math::
+
+           qr_{min}^{adj} = ql_{min} - zp * scale, \\
+           qr_{max}^{adj} = ql_{max} - zp * scale.
+
+    These operations are often called *nudge*. 
+
+    Finally, in the formulas of the min-max quantization, :math:`m` and :math:`M` are replaced by
+    :math:`qr_{min}^{adj}` and :math:`qr_{max}^{adj}` respectively.
+
+    Args:
+        x (~nnabla.Variable): Input N-D array.
+        qr_min (~nnabla.Variable): Minimum quantization range (modified during forward execution).
+        qr_max (~nnabla.Variable): Maximum quantization range (modified during forward execution).
+        ql_min (~nnabla.Variable): Minimum quantization level, typically 0.
+        ql_max (~nnabla.Variable): Maximum quantization level, typically 255.
+        decay (float): The decay rate for the exponential moving average.
+        x_min_max (bool): Use the min and max of x to compute quantization ranges. Default is `False`.
+        ema (bool): Use the exponential moving average for the min and max quantization ranges.
+                    Default is `False`.
+        ste_fine_grained (bool): If `True`, STE is not 1, the {0, 1}-mask computed from the min-max is
+                                 applied to the gradient in the backward; otherwise, STE is 1.
+        eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
+                     than the epsilon.
+        quantize (bool): Apply quantization or not.
+
+    References:
+        Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, and Dmitry Kalenichenko, "Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference", https://arxiv.org/abs/1712.05877
+
+    """
+
+    from .function_bases import min_max_quantize as min_max_quantize_base
+    if not quantize:
+        return x
+    return min_max_quantize_base(x, qr_min, qr_max, ql_min, ql_max, decay, x_min_max, ema,
+                                 ste_fine_grained, eps, quantize, outputs=outputs)
+
+
 def clip_by_value(x, min, max):
     r"""Clip inputs by values.
 
@@ -597,16 +597,28 @@ def clip_by_value(x, min, max):
 
     Args:
         x (Variable): An input variable.
-        min (Variable): A min variable by which `x` is clipped. Note that the shape of `min` must be the same as `x`'s.
-        max (Variable): A max variable by which `x` is clipped. Note that the shape of `max` must be the same as `x`'s
+        min (Variable or float): A min variable or float value by which `x` is clipped. Note that if Variable is given, its shape must be the same as `x`'s.
+        max (Variable or float): A max variable or float value by which `x` is clipped. Note that if Variable is given, its shape must be the same as `x`'s
 
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
-    from .function_bases import maximum2 as maximum2_base
-    from .function_bases import minimum2 as minimum2_base
-    return minimum2_base(maximum2_base(x, min), max)
+    if np.isscalar(min):
+        maximum_base = maximum_scalar
+    elif isinstance(min, (nn.Variable, nn.NdArray)):
+        maximum_base = maximum2
+    else:
+        raise TypeError("min must be Variable, NdArray, or scalar.")
+
+    if np.isscalar(max):
+        minimum_base = minimum_scalar
+    elif isinstance(max, (nn.Variable, nn.NdArray)):
+        minimum_base = minimum2
+    else:
+        raise TypeError("max must be Variable, NdArray, or scalar.")
+
+    return minimum_base(maximum_base(x, min), max)
 
 
 def clip_by_norm(x, clip_norm, axis=None):
@@ -623,31 +635,26 @@ def clip_by_norm(x, clip_norm, axis=None):
 
     Args:
         x (Variable): An input variable.
-        clip_norm (`Variable` or `float`): An input scalar variable or float value. Must be positive.
+        clip_norm (Variable or float): An input scalar variable or float value. Must be positive.
         axis (None, int or tuple of ints): Axis or axes along which the reduction is performed. Passing the default value `None` will reduce all dimensions.
 
     Returns:
         ~nnabla.Variable: N-D array.
 
     """
-    from .function_bases import pow_scalar as pow_scalar_base
-    from .function_bases import maximum2 as maximum2_base
-    from .function_bases import maximum_scalar as maximum_scalar_base
     from .function_bases import sum as sum_base
-    from ._variable import Variable as Variable_base
-    from ._nd_array import NdArray as NdArray_base
 
     if axis is None:
         axis = range(x.ndim)
     elif not hasattr(axis, '__iter__'):
         axis = [axis]
-    x_norm = pow_scalar_base(sum_base(x**2.0, axis, True), 0.5)
-    if isinstance(clip_norm, (Variable_base, NdArray_base)):
-        y = x * clip_norm / maximum2_base(x_norm, clip_norm)
+    x_norm = pow_scalar(sum_base(x**2.0, axis, True), 0.5)
+    if isinstance(clip_norm, (nn.Variable, nn.NdArray)):
+        y = x * clip_norm / maximum2(x_norm, clip_norm)
     else:
         if clip_norm <= 0:
             raise ValueError("clip_norm must be positive.")
-        y = x * clip_norm / maximum_scalar_base(x_norm, clip_norm)
+        y = x * clip_norm / maximum_scalar(x_norm, clip_norm)
     return y
 
 
@@ -760,7 +767,7 @@ def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
         with_index(bool): Return sorted values and index.
         only_index(bool): Return only the sort index.
 
-    Returns: :obj:`~nnabla.Variable` `sorted` or :obj:`~nnabla.Variable` `indices` or (:obj:`~nnabla.Variable` `sorted`, :obj:`~nnabla.Variable` `indices`)
+    Returns: ~nnabla.Variable `sorted` or ~nnabla.Variable `indices` or (~nnabla.Variable `sorted`, ~nnabla.Variable `indices`)
 
     """
     from .function_bases import sort as sort_base
@@ -782,9 +789,9 @@ def tile(x, reps):
         ~nnabla.Variable: N-D array.
 
     >>> import numpy as np, nnabla as nn, nnabla.functions as F
-    >>> F.tile(nn.Variable([2, 3], 3).shape    # reps is promoted to [1, 3]
+    >>> F.tile(nn.Variable([2, 3]), 3).shape    # reps is promoted to [1, 3]
     (2, 9)
-    >>> F.tile(nn.Variable([3], [2, 3]).shape  # x is promoted to shape (1, 3)
+    >>> F.tile(nn.Variable([3]), [2, 3]).shape  # x is promoted to shape (1, 3)
     (2, 9)
     >>> nn.set_auto_forward(True)
     >>> x = nn.Variable.from_numpy_array(np.array([1, 2, 3]))
@@ -807,3 +814,414 @@ def tile(x, reps):
     from .function_bases import tile as tile_base
     reps = [reps] if isinstance(reps, int) else reps
     return tile_base(x, reps)
+
+
+def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
+    """Computes the short-time Fourier transform
+
+    Args:
+        x (~nnabla.Variable): Time domain sequence of size `batch_size x sample_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
+        center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
+        pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+
+    Returns:
+        Returns real and imaginary parts of STFT result.
+
+        * :obj:`~nnabla.Variable`: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        * :obj:`~nnabla.Variable`: Imaginary part of STFT of size `batch x fft_size//2 + 1 x frame_size`.
+    """
+    from nnabla.parameter import get_parameter, get_parameter_or_create
+    conv_r = get_parameter('conv_r')
+    conv_i = get_parameter('conv_i')
+
+    if conv_r is None or conv_i is None:
+        if window_type == 'hanning':
+            window_func = np.hanning(window_size + 1)[:-1]
+        elif window_type == 'hamming':
+            window_func = np.hamming(window_size + 1)[:-1]
+        elif window_type == 'rectangular' or window_type is None:
+            window_func = np.ones(window_size)
+        else:
+            raise ValueError("Unknown window type {}.".format(window_type))
+
+        # pad window if `fft_size > window_size`
+        if fft_size > window_size:
+            diff = fft_size - window_size
+            window_func = np.pad(
+                window_func, (diff//2, diff - diff//2), mode='constant')
+        elif fft_size < window_size:
+            raise ValueError(
+                "FFT size has to be as least as large as window size.")
+
+        # compute STFT filter coefficients
+        mat_r = np.zeros((fft_size//2 + 1, 1, fft_size))
+        mat_i = np.zeros((fft_size//2 + 1, 1, fft_size))
+
+        for w in range(fft_size//2+1):
+            for t in range(fft_size):
+                mat_r[w, 0, t] = np.cos(2. * np.pi * w * t / fft_size)
+                mat_i[w, 0, t] = -np.sin(2. * np.pi * w * t / fft_size)
+        mat_r = mat_r * window_func
+        mat_i = mat_i * window_func
+
+        conv_r = get_parameter_or_create(
+            'conv_r', initializer=mat_r, need_grad=False)
+        conv_i = get_parameter_or_create(
+            'conv_i', initializer=mat_i, need_grad=False)
+
+    if center:
+        # pad at begin/end (per default this is a reflection padding)
+        x = pad(x, (fft_size // 2, fft_size // 2), mode=pad_mode)
+
+    # add channel dimension
+    x = reshape(x, (x.shape[0], 1, x.shape[1]), inplace=False)
+
+    # compute STFT
+    y_r = convolution(x, conv_r, stride=(stride,))
+    y_i = convolution(x, conv_i, stride=(stride,))
+
+    return y_r, y_i
+
+
+def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
+    """Computes the inverse shoft-time Fourier transform
+
+    Note: We use a constant square inverse window for the reconstruction
+    of the time-domain signal, therefore, the first and last
+    `window_size - stride` are not perfectly reconstructed.
+
+    Args:
+        y_r (~nnabla.Variable): Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        y_i (~nnabla.Variable): Imaginary part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, (STFT has `fft_size // 2 + 1` frequency bins).
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
+        center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
+
+    Returns:
+        ~nnabla.Variable: Time domain sequence of size `batch_size x sample_size`.
+    """
+    from nnabla.parameter import get_parameter, get_parameter_or_create
+    conv_cos = get_parameter('conv_cos')
+    conv_sin = get_parameter('conv_sin')
+
+    if conv_cos is None or conv_sin is None:
+        if window_type == 'hanning':
+            window_func = np.hanning(window_size + 1)[:-1]
+        elif window_type == 'hamming':
+            window_func = np.hamming(window_size + 1)[:-1]
+        elif window_type == 'rectangular' or window_type is None:
+            window_func = np.ones(window_size)
+        else:
+            raise ValueError("Unknown window type {}.".format(window_type))
+
+        # pad window if `fft_size > window_size`
+        if fft_size > window_size:
+            diff = fft_size - window_size
+            window_func = np.pad(
+                window_func, (diff//2, diff - diff//2), mode='constant')
+        elif fft_size < window_size:
+            raise ValueError(
+                "FFT size has to be as least as large as window size.")
+
+        # compute inverse STFT filter coefficients
+        if fft_size % stride != 0:
+            raise ValueError("FFT size needs to be a multiple of stride.")
+
+        inv_window_func = np.zeros_like(window_func)
+        for s in range(0, fft_size, stride):
+            inv_window_func += np.roll(np.square(window_func), s)
+
+        mat_cos = np.zeros((fft_size//2 + 1, 1, fft_size))
+        mat_sin = np.zeros((fft_size//2 + 1, 1, fft_size))
+
+        for w in range(fft_size//2+1):
+            alpha = 1.0 if w == 0 or w == fft_size//2 else 2.0
+            alpha /= fft_size
+            for t in range(fft_size):
+                mat_cos[w, 0, t] = alpha * \
+                    np.cos(2. * np.pi * w * t / fft_size)
+                mat_sin[w, 0, t] = alpha * \
+                    np.sin(2. * np.pi * w * t / fft_size)
+        mat_cos = mat_cos * window_func / inv_window_func
+        mat_sin = mat_sin * window_func / inv_window_func
+
+        conv_cos = get_parameter_or_create(
+            'conv_sin', initializer=mat_cos, need_grad=False)
+        conv_sin = get_parameter_or_create(
+            'conv_cos', initializer=mat_sin, need_grad=False)
+
+    # compute inverse STFT
+    x_cos = deconvolution(y_r, conv_cos, stride=(stride,))
+    x_sin = deconvolution(y_i, conv_sin, stride=(stride,))
+
+    x = reshape(x_cos - x_sin, (x_cos.shape[0], x_cos.shape[2]))
+
+    if center:
+        x = x[:, fft_size//2:-fft_size//2]
+
+    return x
+
+
+def gather_nd(data, indices):
+    """Gather elements or slices from `data` according to `indices`, which must
+    be at least two-dimensional with the first dimension :math:`M` being less or
+    equal to the :math:`N` dimensions of `data`. Given `data` with shape
+    :math:`(X_0, X_1, ..., X_{N-1})` and indices with shape :math:`(M, Y_0, ...,
+    Y_{K-1})` output has shape :math:`(Y_0, ..., Y_{K-1}, X_M, ..., X_{N-1})`.
+    If :math:`M == N`, output shape is simply :math:`(Y_0, ..., Y_{K-1})`.
+
+    The forward of :func:`~nnabla.functions.gather_nd` is equivalent to:
+
+    .. code-block:: python
+
+      def gather_nd(data, index):
+          import numpy as np
+          tmp_index = index.reshape(index.shape[0], -1)
+          tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
+          out_shape = index.shape[1:] + data.shape[index.shape[0]:]
+          return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+
+    Examples:
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> nn.set_auto_forward(True)
+    >>> data = F.arange(1, 11).reshape([2, 5])
+    >>> print(data.d)
+    [[ 1.  2.  3.  4.  5.]
+     [ 6.  7.  8.  9. 10.]]
+    >>> F.gather_nd(data, [[1, 1, 0]]).shape
+    (3, 5)
+    >>> F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).shape
+    (3,)
+    >>> print(F.gather_nd(data, [[1, 1, 0], [0, 1, 0]]).d)
+    [6. 7. 1.]
+    >>> print(F.gather_nd(data, [[1, 1, 0]]).d)
+    [[ 6.  7.  8.  9. 10.]
+     [ 6.  7.  8.  9. 10.]
+     [ 1.  2.  3.  4.  5.]]
+
+    When `indices` is provided as a :obj:`~nnabla.Variable` it will be possible
+    to change the actual index values after function creation. It is important
+    to note that out-of-bound indices raise errors when running on CPU but are
+    ignored when using an accelerated computation context.
+
+    >>> indices = nn.Variable((2, 1))
+    >>> indices.d = [[0], [0]]
+    >>> y = F.gather_nd(data, indices)
+    >>> print(y.d)
+    [1.]
+    >>> indices.d = [[1], [4]]
+    >>> y.forward()
+    >>> print(y.d)
+    [10.]
+
+    Args:
+        data(~nnabla.Variable, ~nnabla.NdArray): input data
+        indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): gather indices
+
+    Returns: ~nnabla.Variable or ~nnabla.NdArray of gathered elements.
+    """
+    from .function_bases import gather_nd as gather_nd_base
+    if not isinstance(indices, (nn.Variable, nn.NdArray)):
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.int)
+        indices = nn.Variable.from_numpy_array(indices)
+    return gather_nd_base(data, indices)
+
+
+def scatter_nd(data, indices, shape=None, out=None):
+    """Scatter `data` according to `indices` into a new array of given `shape`
+    or an existing array provided as `out`. Exactly one of the `shape` or `out`
+    argument must be given. Given output `shape`, or shape of `out` array,
+    :math:`(X_0,X_1,\ldots,X_{N-1})` and `indices` shape
+    :math:`(M,Y_0,\ldots,Y_{K-1})` the input `data` shape is
+    :math:`(Y_0,\ldots,Y_{K-1},X_M,\ldots,X_{N-1})`, where :math:`M<=N`. If
+    :math:`M==N` the `data` shape is simply :math:`(Y_0,\ldots,Y_{K-1})`.
+    Note that `indices` are treated as integers and potentially converted.
+
+    The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
+
+    .. code-block:: python
+
+      def scatter_nd(data, indices, shape=None, out=None):
+          assert (shape and not out) or (out and not shape)
+          if isinstance(indices, numpy.ndarray)
+              indices = indices.tolist()
+          result = out if out else numpy.zeros(shape)
+          result[indices] = data
+          return result
+
+    Examples:
+
+    >>> import numpy as np, nnabla as nn, nnabla.functions as F
+    >>> nn.set_auto_forward(True)
+    >>> data = nn.Variable.from_numpy_array(np.array([9, 10, 11, 12]))
+    >>> indices = nn.Variable.from_numpy_array(np.array([[4, 3, 1, 7]]))
+    >>> scattered = F.scatter_nd(data, indices, shape=(8,))
+    >>> print(scatterd.d)
+    [ 0. 11.  0. 10.  9.  0.  0. 12.]
+    >>> print(F.gather_nd(scattered, indices).d)
+    [ 9. 10. 11. 12.]
+
+    Args:
+        data(~nnabla.Variable, ~nnabla.NdArray): input data
+        indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): scatter indices
+        shape(tuple, list): shape of new output array
+        out(~nnabla.Variable, ~nnabla.NdArray): existing output array
+
+    Returns: ~nnabla.Variable or ~nnabla.NdArray of given `shape`.
+
+    """
+    from .function_bases import scatter_nd as scatter_nd_base
+    if not isinstance(indices, (nn.Variable, nn.NdArray)):
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.int)
+        indices = nn.Variable.from_numpy_array(indices)
+    if shape is None and out is None:
+        raise TypeError("One of `shape` or `out` argument must be supplied.")
+    if shape and out:
+        raise TypeError("Only one of `shape` or `out` argument may be used.")
+    if out:
+        if isinstance(out, nn.Variable):
+            out = out.data
+        if not isinstance(out, nn.NdArray):
+            raise TypeError("`out` argument must be NdArray or Variable type.")
+        shape = out.shape
+        outputs = [out]
+    else:
+        if isinstance(shape, np.ndarray):
+            shape = shape.tolist()
+        outputs = None
+    return scatter_nd_base(data, indices, shape, outputs=outputs)
+
+
+def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_weight, out_weight, q_bias=None, k_bias=None, v_bias=None, out_bias=None, attn_bias_k=None, attn_bias_v=None, dropout=0.0, additive_mask=None, key_padding_mask=None):
+    '''MultiHeadAttention.
+
+    Computes multi-headed attention with query, key, and value.
+    We use the following notations to describe the inputs and outputs below.
+    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`E`: embedding dimension, :math`H`: number of attention heads.
+
+    References:
+
+        A. Vaswani et al. "Attention is All You Need."
+        NIPS. 2017.
+        <https://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf>
+
+    Args:
+        query (~nnabla.Variable): Input N-D array with shape :math:`(L_T, B, E)`.
+        key (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_k)`.
+        value (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_v)`.
+        num_heads (int): Number of attention heads. Note that embedding dimensoin E must be divisible by the number of heads. Default is 12 which is conventional.
+        q_weight (~nnabla.Variable): Input N-D array with shape :math:`(E E)`.
+        k_weight (~nnabla.Variable): Input N-D array with shape :math:`(E_k, E)`.
+        v_weight (~nnabla.Variable): Input N-D array with shape :math:`(E_v, E)`.
+        out_weight (~nnabla.Variable): Input N-D array with shape :math:`(E, E)`.
+        q_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        k_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        v_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        out_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        attn_bias_k (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        attn_bias_v (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        dropout (float, optional): Dropout ratio applied to parameters. Default is 0.
+        additive_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(L_T, L_S)`. Values will be added to the attention layer to prevent attention to certain positions.
+        key_padding_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+
+    Returns:
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`
+        ~nnabla.Variable: Output :math:`h_n` with shape :math:`(B, L_T, L_S)`
+    '''
+
+    from . import functions as F
+
+    tgt_len, batch_size, embed_dim = query.shape
+    src_len, batch_size, kdim = key.shape
+    vdim = value.shape[2]
+    assert src_len == value.shape[0]
+    head_dim = embed_dim // num_heads
+    assert head_dim * num_heads == embed_dim
+
+    if key_padding_mask is not None:
+        assert key_padding_mask.shape[0] == batch_size
+        assert key_padding_mask.shape[1] == src_len
+
+    # query:(L_T, B, E) --> q:(L_T, B, E)
+    q = F.affine(query, q_weight, q_bias, base_axis=2)
+    # key:(L_S, B, E_k) --> k:(L_S, B, E)
+    k = F.affine(key, k_weight, k_bias, base_axis=2)
+    # value:(L_S, B, E_v) --> v:(L_S, B, E)
+    v = F.affine(value, v_weight, v_bias, base_axis=2)
+
+    q *= float(head_dim) ** -0.5
+
+    if attn_bias_k is not None:
+        attn_bias_k = F.reshape(attn_bias_k, (1, 1, embed_dim))
+        attn_bias_v = F.reshape(attn_bias_v, (1, 1, embed_dim))
+        src_len += 1
+        assert attn_bias_k is not None
+        attn_bias_k = F.broadcast(
+            attn_bias_k, (1, batch_size, attn_bias_k.shape[2]))
+        attn_bias_v = F.broadcast(
+            attn_bias_v, (1, batch_size, attn_bias_v.shape[2]))
+        k = F.concatenate(k, attn_bias_k, axis=0)
+        v = F.concatenate(v, attn_bias_v, axis=0)
+        if additive_mask is not None:
+            # additive_mask: (L_T, L_S) --> (L_T, L_S + 1)
+            additive_mask = F.pad(additive_mask, (0, 1))
+        if key_padding_mask is not None:
+            # key_padding_mask: (B, L_S) --> (B, L_S + 1)
+            key_padding_mask = F.pad(key_padding_mask, (0, 1))
+
+    q = F.transpose(
+        F.reshape(q, (tgt_len, batch_size * num_heads, head_dim)), (1, 0, 2))  # q:(B*H, L_T, dim_head)
+    k = F.transpose(
+        F.reshape(k, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # k:(B*H, L_S, dim_head)
+    v = F.transpose(
+        F.reshape(v, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # v:(B*H, L_S, dim_head)
+
+    # attn_output_weights: (B*H, L_T, L_S)
+    attn_output_weights = F.batch_matmul(q, k, transpose_b=True)
+    assert list(attn_output_weights.shape) == [
+                batch_size * num_heads, tgt_len, src_len]
+
+    if additive_mask is not None:
+        additive_mask = F.reshape(additive_mask, ((1,) + additive_mask.shape))
+        attn_output_weights += additive_mask
+
+    if key_padding_mask is not None:
+        attn_output_weights = F.reshape(
+            attn_output_weights, (batch_size, num_heads, tgt_len, src_len))
+        attn_output_weights = F.where(
+            F.broadcast(
+                F.reshape(key_padding_mask, (batch_size, 1, 1, src_len)),
+                attn_output_weights.shape),  # Condition
+            F.constant(val=float('-inf'),
+                       shape=attn_output_weights.shape),  # If true
+            attn_output_weights)  # If false
+        attn_output_weights = F.reshape(
+            attn_output_weights, (batch_size*num_heads, tgt_len, src_len))
+
+    attn_output_weights = F.softmax(
+        attn_output_weights, axis=len(attn_output_weights.shape)-1)
+    if dropout > 0:
+        attn_output_weights = F.dropout(
+            attn_output_weights, p=dropout)
+
+    # (B*H, L_T, L_S) x (B*H, L_S, dim_head) --> (B*H, L_T, dim_head)
+    attn_output = F.batch_matmul(attn_output_weights, v)
+    assert list(attn_output.shape) == [
+                batch_size * num_heads, tgt_len, head_dim]
+    attn_output = F.reshape(F.transpose(
+        attn_output, (1, 0, 2)), (tgt_len, batch_size, embed_dim))  # attn_output: (L_T, B, E)
+
+    attn_output = F.affine(attn_output, out_weight, out_bias, base_axis=2)
+
+    return attn_output, attn_output_weights

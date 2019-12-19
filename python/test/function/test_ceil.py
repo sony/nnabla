@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -36,10 +35,7 @@ def test_ceil_forward_backward(seed,
     from nbla_test_utils import cap_ignore_region, \
         function_tester
     rng = np.random.RandomState(seed)
-    inputs = [
-        cap_ignore_region(
-            rng.randn(2, 3, 4).astype(np.float32) * 2,
-            (-1e-3, 1e-3))]
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
 
     function_tester(rng, F.ceil,
                     ref_ceil,
@@ -47,3 +43,18 @@ def test_ceil_forward_backward(seed,
                     atol_b=1e-3, backward=[True],
                     ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_ceil)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_ceil_double_backward(seed,
+                              ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+
+    backward_function_tester(rng, F.ceil,
+                             None,
+                             inputs,
+                             atol_b=5e-1, atol_accum=5e-1, backward=[True],
+                             ctx=ctx, func_name=func_name)

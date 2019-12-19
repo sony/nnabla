@@ -18,10 +18,8 @@ from collections import OrderedDict
 from contextlib2 import ExitStack  # Backport from python3
 import numpy as np
 import os
-import copy
 import time
 
-import nnabla as nn
 import nnabla.function as F
 from nnabla.ext_utils import import_extension_module
 from nnabla.logger import logger
@@ -29,6 +27,8 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
+
+import nnabla.utils.callback as callback
 
 
 def profile(config, name, func, result_dict, synchromize):
@@ -196,6 +196,8 @@ def profile_optimizer(config, result_array, synchronize):
 
 
 def profile_command(args):
+    callback.update_status(args)
+
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
     files = []
     files.append(args.config)
@@ -234,6 +236,8 @@ def profile_command(args):
 
     result_array = [['time in ms']]
 
+    callback.update_status('processing', True)
+
     # Profile Optimizer
     with ExitStack() as stack:
         # Create data_iterator instance only once for each dataset in optimizers
@@ -256,6 +260,7 @@ def profile_command(args):
 
     logger.log(99, 'Profile Completed.')
     progress(None)
+    callback.update_status('finished')
     return True
 
 

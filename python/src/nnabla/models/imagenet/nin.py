@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-import nnabla as nn
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
 from nnabla import logger

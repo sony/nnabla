@@ -13,11 +13,12 @@
 # limitations under the License.
 
 type_from_proto = {
-    'Shape': {'cpp': 'const vector<int> &', 'cpp_var': 'const vector<int>', 'pyx': 'const vector[int]&'},
-    'int64': {'cpp': 'int', 'cpp_var': 'int', 'pyx': 'int'},
-    'bool': {'cpp': 'bool', 'cpp_var': 'bool', 'pyx': 'cpp_bool'},
-    'float': {'cpp': 'float', 'cpp_var': 'float', 'pyx': 'float'},
-    'double': {'cpp': 'double', 'cpp_var': 'double', 'pyx': 'double'},
-    'repeated int64': {'cpp': 'const vector<int> &', 'cpp_var': 'const vector<int>', 'pyx': 'const vector[int]&'},
-    'string': {'cpp': 'const string &', 'cpp_var': 'const string', 'pyx': 'const string&'}
+    'Shape': {'cpp': 'const vector<int> &', 'cpp_var': 'const vector<int>', 'pyx': 'const vector[int]&', 'pxd': 'const vector[int]&'},
+    'int64': {'cpp': 'int', 'cpp_var': 'int', 'pyx': 'int', 'pxd': 'int'},
+    'bool': {'cpp': 'bool', 'cpp_var': 'bool', 'pyx': 'cpp_bool', 'pxd': 'cpp_bool'},
+    'float': {'cpp': 'float', 'cpp_var': 'float', 'pyx': 'float', 'pxd': 'float'},
+    'double': {'cpp': 'double', 'cpp_var': 'double', 'pyx': 'double', 'pxd': 'double'},
+    'repeated int64': {'cpp': 'const vector<int> &', 'cpp_var': 'const vector<int>', 'pyx': 'const vector[int]&', 'pxd': 'const vector[int]&'},
+    'string': {'cpp': 'const string &', 'cpp_var': 'const string', 'pyx': 'const string&', 'pxd': 'const string&'},
+    'Communicator': {'cpp': 'const shared_ptr<Communicator> &', 'cpp_var': 'shared_ptr<const Communicator>', 'pyx': 'Communicator', 'pxd': 'shared_ptr[CCommunicator]&'}
 }

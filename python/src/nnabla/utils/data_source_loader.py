@@ -37,9 +37,12 @@ import os
 import six.moves.urllib.request as request
 import six
 import tempfile
+from shutil import rmtree
 
+from nnabla.utils import image_utils
 from nnabla.utils.image_utils import imresize, imread
 from nnabla.logger import logger
+
 
 # Expose for backward compatibility
 from .download import download, get_data_home
@@ -109,6 +112,23 @@ class FileReader:
         else:
             self._file_type = 'file'
 
+    def read_s3_object(self, key):
+        retry = 1
+        result = ''
+        while True:
+            if retry > 10:
+                logger.log(99, 'read_s3_object() retry count over give up.')
+                raise
+            try:
+                result = self._s3_bucket.Object(key).get()['Body'].read()
+                break
+            except:
+                logger.log(
+                    99, 'read_s3_object() fails retrying count {}/10.'.format(retry))
+                retry += 1
+
+        return result
+
     @contextlib.contextmanager
     def open(self, filename=None, textmode=False):
         if filename is None:
@@ -130,10 +150,9 @@ class FileReader:
             key = '/'.join(us)
             logger.info('Opening {}'.format(key))
             if textmode:
-                f = StringIO(self._s3_bucket.Object(key).get()
-                             ['Body'].read().decode('utf-8'))
+                f = StringIO(self.read_s3_object(key).decode('utf-8'))
             else:
-                f = BytesIO(self._s3_bucket.Object(key).get()['Body'].read())
+                f = BytesIO(self.read_s3_object(key))
         elif self._file_type == 'http':
             f = request.urlopen(filename)
         else:
@@ -153,7 +172,7 @@ class FileReader:
             key = '/'.join(filename.split('/')[3:])
             fn = '{}/{}'.format(tmpdir, os.path.basename(filename))
             with open(fn, 'wb') as f:
-                f.write(self._s3_bucket.Object(key).get()['Body'].read())
+                f.write(self.read_s3_object(key))
             with h5py.File(fn, 'r') as h5:
                 yield h5
             rmtree(tmpdir, ignore_errors=True)
@@ -375,6 +394,10 @@ def register_load_function(ext, function):
 
 
 def load(ext):
+    import nnabla.utils.callback as callback
+    func = callback.get_load_image_func(ext)
+    if func is not None:
+        return func
     if ext in _load_functions:
         return _load_functions[ext]
     raise ValueError(

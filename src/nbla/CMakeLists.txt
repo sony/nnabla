@@ -6,6 +6,7 @@ file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   communicator/*.cpp
   utils/*.cpp
   function/*.cpp
+  function/utils/*.cpp
   function/nontemplate/*.cpp
   computation_graph/*.cpp)
 
@@ -37,6 +38,7 @@ if (NOT WIN32)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla
     DESTINATION include
     )
+  include(CPack)
 endif()
 
 set(NBLA_LIBRARY_NAME nnabla PARENT_SCOPE)

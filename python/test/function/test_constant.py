@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -34,3 +33,6 @@ def test_constant_forward(value, shape, ctx, func_name):
     inputs = []
     function_tester(rng, F.constant, ref_constant, inputs, func_args=[value, shape],
                     ctx=ctx, func_name=func_name, backward=[])
+
+
+# No need to test backward_function

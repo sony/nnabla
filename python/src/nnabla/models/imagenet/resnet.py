@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
-import nnabla as nn
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
 from nnabla import logger
@@ -84,3 +83,48 @@ class ResNet(ImageNetBase):
         if returns_net:
             return net
         return list(net.outputs.values())[0]
+
+
+class ResNet18(ResNet):
+    '''ResNet18
+        An alias of :obj:`ResNet` `(18)`.
+    '''
+
+    def __init__(self):
+        super(ResNet18, self).__init__(18)
+
+
+class ResNet34(ResNet):
+    '''ResNet34
+        An alias of :obj:`ResNet` `(34)`.
+    '''
+
+    def __init__(self):
+        super(ResNet34, self).__init__(34)
+
+
+class ResNet50(ResNet):
+    '''ResNet50
+        An alias of :obj:`ResNet` `(50)`.
+    '''
+
+    def __init__(self):
+        super(ResNet50, self).__init__(50)
+
+
+class ResNet101(ResNet):
+    '''ResNet101
+        An alias of :obj:`ResNet` `(101)`.
+    '''
+
+    def __init__(self):
+        super(ResNet101, self).__init__(101)
+
+
+class ResNet152(ResNet):
+    '''ResNet152
+        An alias of :obj:`ResNet` `(152)`.
+    '''
+
+    def __init__(self):
+        super(ResNet152, self).__init__(152)

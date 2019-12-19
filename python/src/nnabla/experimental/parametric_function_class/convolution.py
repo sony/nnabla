@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 
 import nnabla as nn
 import nnabla.functions as F
@@ -36,7 +35,7 @@ class Convolution(Module):
     Note:
 
         Convolution is a computationally intensive operation that
-        should preferrably be run with the `cudnn` backend. NNabla
+        should preferably be run with the `cudnn` backend. NNabla
         then uses CuDNN library functions to determine and cache the
         fastest algorithm for the given set of convolution parameters,
         which results in additional memory consumption which may pose

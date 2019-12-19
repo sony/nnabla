@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest
-import nnabla as nn
 import nnabla.solvers as S
 import numpy as np
 from solver_test_utils import solver_tester, RefSolver
@@ -26,6 +25,7 @@ class RefAdaBound(RefSolver):
 
     def __init__(self, alpha, beta1, beta2, eps, final_lr, gamma):
         self.alpha = alpha
+        self.init_alpha = alpha
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -43,17 +43,18 @@ class RefAdaBound(RefSolver):
     def _update_impl(self, key, p, g):
         self.t[key] = min(self.t[key] + 1, np.iinfo(np.int32).max)
         _update_adabound(p, g, self.m[key], self.v[key], self.t[key],
-                         self.alpha, self.beta1, self.beta2, self.eps, self.final_lr, self.gamma)
+                         self.alpha, self.init_alpha, self.beta1, self.beta2, self.eps, self.final_lr, self.gamma)
 
 
-def _update_adabound(p, g, m, v, t, alpha, beta1, beta2, eps, final_lr, gamma):
+def _update_adabound(p, g, m, v, t, alpha, init_alpha, beta1, beta2, eps, final_lr, gamma):
     alpha_t = alpha * \
         np.sqrt(1. - beta2 ** t) / (1. - beta1 ** t)
+    final_lr_ = final_lr * (alpha / init_alpha)
     m[...] = beta1 * m + (1 - beta1) * g
     v[...] = beta2 * v + (1 - beta2) * g * g
     denom = np.sqrt(v) + eps
-    lb = final_lr * (1 - 1 / (gamma*t + 1))
-    ub = final_lr * (1 + 1 / (gamma*t))
+    lb = final_lr_ * (1 - 1 / (gamma*t + 1))
+    ub = final_lr_ * (1 + 1 / (gamma*t))
     eta = np.clip(alpha_t/denom, lb, ub)
     p[...] = p - eta * m
 

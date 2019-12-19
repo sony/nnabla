@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -33,3 +32,18 @@ def test_sigmoid_forward_backward(seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     function_tester(rng, F.sigmoid, ref_sigmoid, inputs,
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_sigmoid_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    backward_function_tester(rng, F.sigmoid, None,
+                             inputs=inputs,
+                             func_args=[], func_kwargs={},
+                             atol_b=1e-3, atol_accum=1e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

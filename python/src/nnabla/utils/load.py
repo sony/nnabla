@@ -35,6 +35,7 @@ from nnabla.parameter import get_parameter_or_create
 
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
+from nnabla.utils.create_cache import CreateCache
 from nnabla.utils.load_function import _create_function_instance
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
@@ -47,12 +48,12 @@ import nnabla as nn
 import nnabla.function as F
 import nnabla.solver as S
 
-import nnabla_ext.cpu
-
 
 ##########################################################################
 # Utilities for handling exceptional function arguments.
 #
+
+
 def resolve_reshape_params(inputs, function_proto, batch_size):
     '''Resolve shape parameter and returns shape.
     '''
@@ -425,10 +426,20 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.solver = S.Adamax(o.solver.adamax_param.alpha, o.solver.adamax_param.beta1,
                                         o.solver.adamax_param.beta2, o.solver.adamax_param.eps)
             init_lr = o.solver.adamax_param.alpha
+        elif o.solver.type == 'AdaBound':
+            optimizer.solver = S.AdaBound(o.solver.adabound_param.alpha, o.solver.adabound_param.beta1,
+                                          o.solver.adabound_param.beta2, o.solver.adabound_param.eps,
+                                          o.solver.adabound_param.final_lr, o.solver.adabound_param.gamma)
+            init_lr = o.solver.adabound_param.alpha
         elif o.solver.type == 'AMSGRAD':
             optimizer.solver = S.AMSGRAD(o.solver.amsgrad_param.alpha, o.solver.amsgrad_param.beta1,
                                          o.solver.amsgrad_param.beta2, o.solver.amsgrad_param.eps)
             init_lr = o.solver.amsgrad_param.alpha
+        elif o.solver.type == 'AMSBound':
+            optimizer.solver = S.AMSBound(o.solver.amsbound_param.alpha, o.solver.amsbound_param.beta1,
+                                          o.solver.amsbound_param.beta2, o.solver.amsbound_param.eps,
+                                          o.solver.amsbound_param.final_lr, o.solver.amsbound_param.gamma)
+            init_lr = o.solver.amsbound_param.alpha
         elif o.solver.type == 'Eve':
             p = o.solver.eve_param
             optimizer.solver = S.Eve(
@@ -577,11 +588,20 @@ def _training_config(proto):
     return config
 
 
-def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir, overwrite_cache, create_cache_explicitly, prepare_data_iterator, dataset_index):
+def _create_dataset(
+        uri,
+        batch_size,
+        shuffle, no_image_normalization,
+        cache_dir,
+        overwrite_cache,
+        create_cache_explicitly,
+        prepare_data_iterator,
+        dataset_index):
     class Dataset:
         pass
     dataset = Dataset()
     dataset.uri = uri
+    dataset.cache_dir = cache_dir
     dataset.normalize = not no_image_normalization
 
     comm = current_communicator()
@@ -607,8 +627,12 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                     except OSError:
                         pass  # python2 does not support exists_ok arg
 
-                    with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
-                        pass
+                    if os.path.exists(uri):
+                        cc = CreateCache(uri, rng=rng, shuffle=shuffle)
+                        cc.create(cache_dir, normalize=False)
+                    else:
+                        with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
+                            pass
 
             rng = numpy.random.RandomState(dataset_index)
             dataset.data_iterator = (lambda: data_iterator_cache(
@@ -639,7 +663,15 @@ def _datasets(proto, prepare_data_iterator=True):
     datasets = OrderedDict()
     for i, d in enumerate(proto.dataset):
         datasets[d.name] = _create_dataset(
-            d.uri, d.batch_size, d.shuffle, d.no_image_normalization, d.cache_dir, d.overwrite_cache, d.create_cache_explicitly, prepare_data_iterator, i)
+            d.uri,
+            d.batch_size,
+            d.shuffle,
+            d.no_image_normalization,
+            d.cache_dir,
+            d.overwrite_cache,
+            d.create_cache_explicitly,
+            prepare_data_iterator,
+            i)
     return datasets
 
 

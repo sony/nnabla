@@ -235,13 +235,26 @@ class BackwardCallback {
       if (!inputs[i]->need_grad_state())
         continue;
 
-      // Root variable is always accumulated.
-      if (!inputs[i]->parent()) {
-        accum[i] = true;
-        continue;
+      // If memset with 0 is reserved, accum is not used. For shared case, the
+      // first is only non-accum.
+      auto array = inputs[i]->variable()->grad()->array();
+      if (array->zeroing()) {
+        bool input_shared = false;
+        for (int j = 0; j < inputs.size(); j++) {
+          if (i == j) {
+            continue;
+          }
+          if (inputs[j]->variable()->grad()->array() == array) {
+            input_shared = true;
+            break;
+          }
+        }
+        if (!input_shared) {
+          continue;
+        }
       }
-      // First visit gradients are copied.
-      if (first_visit_flags[i]) {
+      // First visit gradients in intermediate layers are copied.
+      if (inputs[i]->parent() && first_visit_flags[i]) {
         continue;
       }
       accum[i] = true;

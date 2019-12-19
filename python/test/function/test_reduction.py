@@ -16,6 +16,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.testing import assert_allclose
 
 
 from nbla_test_utils import (function_tester, list_context,
@@ -73,3 +74,63 @@ def test_large_mean_reduction(seed, inshape, axis, ctx, func_name):
     inputs = [rng.randn(*inshape).astype(np.float32)]
     function_tester(rng, F.mean, np.mean, inputs, ctx=ctx, func_name=func_name,
                     func_args=[axis])
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ctx, func_name", list_context('Max'))
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("inshape, axis", [
+    ((8, 1, 128, 128), (2, 3)),
+    ((8, 128, 1, 128), (1, 3)),
+])
+def test_max_with_index(seed, ctx, func_name, inshape, axis, keepdims):
+    x = np.random.RandomState(seed).randn(*inshape).astype(np.float32)
+    x = nn.Variable.from_numpy_array(x)
+    with nn.context_scope(ctx), nn.auto_forward(True):
+        val, idx = F.max(x, axis, keepdims, with_index=True)
+    assert_allclose(val.d, np.amax(x.d, axis, keepdims=keepdims))
+    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
+    assert np.all(idx.d == x.d.reshape(*shape).argmax(-1).reshape(idx.d.shape))
+    with nn.context_scope(ctx), nn.auto_forward(True):
+        idx = F.max(x, axis, keepdims, only_index=True)
+    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
+    assert np.all(idx.d == x.d.reshape(*shape).argmax(-1).reshape(idx.d.shape))
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ctx, func_name", list_context('Min'))
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("inshape, axis", [
+    ((8, 1, 128, 128), (2, 3)),
+    ((8, 128, 1, 128), (1, 3)),
+])
+def test_min_with_index(seed, ctx, func_name, inshape, axis, keepdims):
+    x = np.random.RandomState(seed).randn(*inshape).astype(np.float32)
+    x = nn.Variable.from_numpy_array(x)
+    with nn.context_scope(ctx), nn.auto_forward(True):
+        val, idx = F.min(x, axis, keepdims, with_index=True)
+    assert_allclose(val.d, np.amin(x.d, axis, keepdims=keepdims))
+    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
+    assert np.all(idx.d == x.d.reshape(*shape).argmin(-1).reshape(idx.d.shape))
+    with nn.context_scope(ctx), nn.auto_forward(True):
+        idx = F.min(x, axis, keepdims, only_index=True)
+    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
+    assert np.all(idx.d == x.d.reshape(*shape).argmin(-1).reshape(idx.d.shape))
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, 3, (0, 2), (1, 2, 3)])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("inshape", [(2, 3, 4, 5), (2, 1, 4, 5)])
+@pytest.mark.parametrize("op, ctx, func_name", list_ctx_and_func_name(['sum', 'mean', 'max', 'min']))
+def test_reduction_double_backward(op, seed, inshape, axis, keepdims, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    func = getattr(F, op)
+    ref_func = getattr(np, op)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    backward_function_tester(rng, func, None, inputs,
+                             func_args=[axis],
+                             func_kwargs=dict(keepdims=keepdims),
+                             ctx=ctx, func_name=func_name,
+                             atol_b=6e-3, atol_accum=6e-3)

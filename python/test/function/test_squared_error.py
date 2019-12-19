@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -29,3 +28,13 @@ def test_squared_error_forward_backward(seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
     function_tester(rng, F.squared_error, lambda x, y: (x - y)**2, inputs,
                     atol_b=2e-2, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_squared_error_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    backward_function_tester(rng, F.squared_error, None, inputs,
+                             atol_b=2e-1, atol_accum=2e-1, ctx=ctx, func_name=func_name)

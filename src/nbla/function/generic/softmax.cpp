@@ -45,6 +45,7 @@ void Softmax<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <class T>
 void Softmax<T>::forward_impl(const Variables &inputs,
                               const Variables &outputs) {
+  typedef typename force_float<T>::type AccumType;
   // Setting up variables
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -58,7 +59,7 @@ void Softmax<T>::forward_impl(const Variables &inputs,
         max_x = (max_x >= x[k]) ? max_x : x[k];
       }
       // Compute exponential and sum
-      T exp_sum = 0;
+      AccumType exp_sum = 0;
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
         const T tmp = std::exp(x[k] - max_x);
@@ -82,6 +83,7 @@ void Softmax<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0]) {
     return;
   }
+  typedef typename force_float<T>::type AccumType;
   // Setting up variables
   const T *y = outputs[0]->get_data_pointer<T>(this->ctx_);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
@@ -91,7 +93,7 @@ void Softmax<T>::backward_impl(const Variables &inputs,
     for (int i2 = 0; i2 < size2_; ++i2) {
       const int j = i0 * size1_ * size2_ + i2;
       // compute sum of dy * y
-      T dyy_sum = 0;
+      AccumType dyy_sum = 0;
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i1 * size2_ + j;
         dyy_sum += dy[k] * y[k];

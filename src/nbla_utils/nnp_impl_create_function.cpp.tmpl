@@ -47,6 +47,11 @@ namespace nbla { namespace utils { namespace nnp {
 shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& func) {
 % for name, func in function_info.items():
   if (func.type() == "${name}") {
+% if name == 'SyncBatchNormalization':
+    NBLA_ERROR(error_code::not_implemented, "SyncBatchNormalization is not supported.");
+  }
+<% continue %>
+% endif
 % if 'arguments' in func:
     ${name}Parameter param = func.${func['snake_name']}_param();
 % for argname, arg in func['arguments'].items():

@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -42,3 +41,19 @@ def test_unpooling_forward_backward(seed, inshape, kernel, ctx, func_name):
                     func_args=[kernel],
                     ctx=ctx, func_name=func_name,
                     atol_f=1e-6, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape", [(1, 2, 3), (2, 4, 6), (2, 2, 4, 6), (2, 2, 2, 4, 6)])
+@pytest.mark.parametrize("kernel", [(1, 1), (2, 3), (2, 1, 2)])
+def test_unpooling_double_backward(seed, inshape, kernel, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    backward_function_tester(rng,
+                             F.unpooling, None,
+                             inputs=inputs,
+                             func_args=[kernel],
+                             ctx=ctx, func_name=func_name,
+                             atol_f=1e-6, atol_b=1e-1, atol_accum=1e-1)

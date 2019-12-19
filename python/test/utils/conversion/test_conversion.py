@@ -19,8 +19,9 @@ import shutil
 import pytest
 import nnabla
 import nnabla.utils.load as nnload
+from nnabla.testing import assert_allclose
+
 import numpy as np
-import pdb
 CAFFE2_AVAILABLE = False
 try:
     import caffe2.python.onnx.backend as oc2
@@ -164,7 +165,7 @@ def convert_onnx_to_nnp_and_compare(
         print(backend_out, nnout)
     assert backend_out.shape == nnout.shape
     if compare_values:
-        assert np.allclose(backend_out, nnout, atol=atol)
+        assert_allclose(backend_out, nnout, atol=atol)
         import_result[func_name] = 'OK'
 
 
@@ -246,7 +247,7 @@ def convert_nnp_to_onnx_and_compare(
             print(backend_out, nnout)
         assert backend_out.shape == nnout.shape
         if compare_values:
-            assert np.allclose(backend_out, nnout, atol=atol)
+            assert_allclose(backend_out, nnout, atol=atol)
             export_result[func_name][opset] = 'OK'
         onnxdir.remove()
 

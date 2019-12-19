@@ -1,7 +1,7 @@
 include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 
 option(NNABLA_UTILS_WITH_HDF5 "Enable HDF5 in C++ utils." OFF)
-option(NNABLA_UTILS_WITH_NPY "Enable NPY in C++ utils." ON)
+option(NNABLA_UTILS_WITH_NPY "Enable DataIterator with NPY Cache." ON)
 option(NNABLA_UTILS_STATIC_LINK_DEPS "Static link C++ NNabla utils deps." OFF)
 option(DEBUG_NETWORK_EXPANDER "Debug network expander." OFF)
 
@@ -20,21 +20,31 @@ list(APPEND nnabla_utils_SOURCES
   nnp_impl_optimizer.cpp
   nnp_impl_monitor.cpp
   nnp_impl_configs.cpp
-  data_iterator.cpp
   nnp_network_expander.cpp
 )
+
+if (UNIX)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()
 
 # NPY is prior option, if it is ON,
 # data iterator is set to NPY, and hdf5
 # is disabled.
 if (NNABLA_UTILS_WITH_NPY)
+  add_definitions(-DUSE_NPY_CACHE_DATA_ITERATOR)
   add_definitions(-DNBLA_UTILS_WITH_NPY)
   list(APPEND nnabla_utils_SOURCES
     nnp_impl_dataset_npy.cpp
+    data_iterator_npy.cpp
   )
 elseif (NNABLA_UTILS_WITH_HDF5)
   list(APPEND nnabla_utils_SOURCES
     nnp_impl_dataset_hdf5.cpp
+    data_iterator.cpp
+  )
+else()
+  list(APPEND nnabla_utils_SOURCES
+    data_iterator.cpp
   )
 endif()
 
@@ -105,8 +115,6 @@ else()
     endif()
   endif()
 
-
-
   include_directories(
     ${LibArchive_INCLUDE_DIR}
     ${PROTOBUF_INCLUDE_DIR}
@@ -147,6 +155,7 @@ if (NOT WIN32)
     LIBRARY DESTINATION lib)
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_utils
     DESTINATION include)
+  include(CPack)
 endif()
 
 if (BUILD_TEST)
@@ -158,8 +167,18 @@ if (BUILD_TEST)
   include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
   include_directories(${PROJECT_SOURCE_DIR}/src/nbla_utils/)
   include_directories(${PROJECT_SOURCE_DIR}/src/nbla_cli/)
-  file(GLOB NBLA_UTILS_TEST_SOURCES test/test_*.cpp)
-  list(APPEND NBLA_UTILS_TEST_SOURCES ${PROJECT_SOURCE_DIR}/src/nbla_cli/internal.cpp)
+  if (NNABLA_UTILS_WITH_HDF5)
+    list(APPEND NBLA_UTILS_TEST_SOURCES
+      test/test_expander.cpp
+      test/test_hdf5_load.cpp
+      ${PROJECT_SOURCE_DIR}/src/nbla_cli/internal.cpp
+    )
+  endif()
+  if (NNABLA_UTILS_WITH_NPY)
+    list(APPEND NBLA_UTILS_TEST_SOURCES
+      test/test_dataset.cpp
+    )
+  endif()
   add_executable(test_nbla_utils ${NBLA_UTILS_TEST_SOURCES})
   add_dependencies(test_nbla_utils ${NBLA_LIBRARY_NAME})
   target_link_libraries(test_nbla_utils gtest gtest_main)

@@ -16,3 +16,4 @@ If you want to run these step-by-step, follow the link and see the instruction f
     tutorial/multi_device_training.rst
     tutorial/debugging.rst
     tutorial/graph_converter_for_inference.rst
+    tutorial/function_list_and_converter.rst

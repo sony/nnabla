@@ -14,8 +14,6 @@
 
 import pytest
 
-import numpy as np
-import nnabla as nn
 import nnabla.initializer as I
 import nnabla.functions as F
 

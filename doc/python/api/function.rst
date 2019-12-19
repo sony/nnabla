@@ -48,6 +48,7 @@ Neural Network Layers
 .. autofunction:: rnn
 .. autofunction:: lstm
 .. autofunction:: gru
+.. autofunction:: multi_head_attention
 
 
 Neural Network Activation
@@ -65,17 +66,30 @@ Neural Network Activation
 .. autofunction:: gelu
 .. autofunction:: prelu
 .. autofunction:: leaky_relu
+.. autofunction:: relu6
+.. autofunction:: hard_sigmoid
+.. autofunction:: hard_tanh
+.. autofunction:: log_sigmoid
+.. autofunction:: softplus
+.. autofunction:: softsign
+.. autofunction:: tanh_shrink
+.. autofunction:: sinc
 
 
 Normalization
 -------------
 
 .. autofunction:: batch_normalization
+.. autofunction:: sync_batch_normalization
 .. autofunction:: mean_subtraction
 .. autofunction:: clip_by_value
 .. autofunction:: clip_grad_by_value
 .. autofunction:: clip_by_norm
 .. autofunction:: clip_grad_by_norm
+.. autofunction:: layer_normalization
+.. autofunction:: instance_normalization
+.. autofunction:: group_normalization
+.. autofunction:: weight_standardization
 
 
 Reduction
@@ -171,6 +185,8 @@ Array Manipulation
 .. autofunction:: split
 .. autofunction:: stack
 .. autofunction:: slice
+.. autofunction:: gather_nd
+.. autofunction:: scatter_nd
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast
@@ -182,6 +198,8 @@ Array Manipulation
 .. autofunction:: reshape
 .. autofunction:: one_hot
 .. autofunction:: batch_inv
+.. autofunction:: batch_det
+.. autofunction:: assign
 
 
 Stochasticity
@@ -219,6 +237,8 @@ Signal Processing
 .. autofunction:: interpolate
 .. autofunction:: fft
 .. autofunction:: ifft
+.. autofunction:: stft
+.. autofunction:: istft
 
 Quantized Neural Network Layers
 ----------------------------------
@@ -230,6 +250,7 @@ Quantized Neural Network Layers
 .. autofunction:: binary_weight_affine
 .. autofunction:: binary_weight_convolution
 .. autofunction:: fixed_point_quantize
+.. autofunction:: min_max_quantize
 .. autofunction:: pow2_quantize
 .. autofunction:: prune
 		  
@@ -240,6 +261,7 @@ Unsupported, Special Use
 .. autofunction:: vat_noise
 .. autofunction:: unlink
 .. autofunction:: sink
+.. autofunction:: warp_by_flow
 
 
 Image Object Detection

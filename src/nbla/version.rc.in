@@ -24,7 +24,7 @@ BLOCK "StringFileInfo"
 BEGIN
 BLOCK "040904E4"
 BEGIN
-VALUE "CompanyName", "sony"
+VALUE "CompanyName", "Sony Corporation"
 VALUE "FileDescription", "nnabla"
 VALUE "FileVersion", VER_FILEVERSION_STR
 VALUE "InternalName", "nnabla"

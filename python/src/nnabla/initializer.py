@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+from . import random
 
 
 class BaseInitializer(object):
@@ -64,7 +65,7 @@ class NormalInitializer(BaseInitializer):
 
     def __init__(self, sigma=1.0, rng=None):
         if rng is None:
-            rng = np.random.RandomState(313)
+            rng = random.prng
         self.rng = rng
         self.sigma = sigma
 
@@ -103,7 +104,7 @@ class UniformInitializer(BaseInitializer):
 
     def __init__(self, lim=(-1, 1), rng=None):
         if rng is None:
-            rng = np.random.RandomState(313)
+            rng = random.prng
         self.rng = rng
         self.lim = lim
 
@@ -142,7 +143,7 @@ class UniformIntInitializer(BaseInitializer):
 
     def __init__(self, lim=(0, 10), rng=None):
         if rng is None:
-            rng = np.random.RandomState(313)
+            rng = random.prng
         self.rng = rng
         self.lim = lim
 
@@ -211,6 +212,52 @@ class ConstantInitializer(BaseInitializer):
 
     def __call__(self, shape):
         return np.ones(shape) * self.value
+
+
+class OrthogonalInitializer(BaseInitializer):
+
+    r"""Generates an orthogonal matrix weights proposed by Saxe et al.
+
+    Args:
+        gain (float): scaling factor which should be decided depending on a type of units.
+        rng (numpy.random.RandomState): Random number generator.
+
+    Example:
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.parametric_functions as PF
+        import nnabla.initializer as I
+
+        x = nn.Variable([60,1,28,28])
+        w = I.OrthogonalInitializer(np.sqrt(2.0))
+        b = I.ConstantInitializer(0.0)
+        h = PF.convolution(x, 64, [3, 3], w_init=w, b_init=b, pad=[1, 1], name='conv')
+
+    References:
+        * `Saxe, et al. Exact solutions to the nonlinear dynamics of
+          learning in deep linear neural networks.
+          <https://arxiv.org/abs/1312.6120>`_
+    """
+
+    def __init__(self, gain=1.0, rng=None):
+        if rng is None:
+            rng = random.prng
+        self.rng = rng
+        self.gain = gain
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__,
+                               self.gain)
+
+    def __call__(self, shape):
+        flat_shape = (shape[0], int(np.prod(shape[1:])))
+        x = self.rng.normal(0.0, 1.0, flat_shape)
+        u, _, v = np.linalg.svd(x, full_matrices=False)
+        q = u if u.shape == flat_shape else v
+        return q.reshape(shape).astype('float32') * self.gain
 
 
 def calc_normal_std_he_forward(inmaps, outmaps, kernel=(1, 1)):
@@ -288,8 +335,12 @@ def calc_normal_std_he_backward(inmaps, outmaps, kernel=(1, 1)):
 def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the standard deviation proposed by Glorot et al.
 
+    Note: 
+        We have updated the definition as following from v.1.3. It may affect the
+        behavior of existing scripts that rely on the default initialization.
+
     .. math::
-        \sigma = \sqrt{\frac{2}{NK + M}}
+        \sigma = \sqrt{\frac{2}{K(N + M)}}
 
     Args:
         inmaps (int): Map size of an input Variable, :math:`N`.
@@ -318,14 +369,18 @@ def calc_normal_std_glorot(inmaps, outmaps, kernel=(1, 1)):
           <http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf>`_
 
     """
-    return np.sqrt(2. / (np.prod(kernel) * inmaps + outmaps))
+    return np.sqrt(2. / (np.prod(kernel) * (inmaps + outmaps)))
 
 
 def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the lower bound and the upper bound of the uniform distribution proposed by Glorot et al.
 
+    Note: 
+        We have updated the definition as following from v.1.3. It may affect the
+        behavior of existing scripts that rely on the default initialization.
+
     .. math::
-        b &= \sqrt{\frac{6}{NK + M}}\\
+        b &= \sqrt{\frac{6}{K(N + M)}}\\
         a &= -b
 
     Args:
@@ -356,5 +411,5 @@ def calc_uniform_lim_glorot(inmaps, outmaps, kernel=(1, 1)):
 
     """
 
-    d = np.sqrt(6. / (np.prod(kernel) * inmaps + outmaps))
+    d = np.sqrt(6. / (np.prod(kernel) * (inmaps + outmaps)))
     return -d, d

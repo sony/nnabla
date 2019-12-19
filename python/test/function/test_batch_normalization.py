@@ -19,12 +19,16 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('BatchNormalization')
 
 
 def ref_batch_normalization(x, beta, gamma, rmean, rvar, axes, decay_rate,
                             eps, batch_stat, output_stat):
+
+    beta, gamma, rmean, rvar
+
     assert len(axes) == 1
     reduc_axes = list(range(x.ndim))
     del reduc_axes[axes[0]]
@@ -56,22 +60,68 @@ def create_inputs(rng, axis):
     return x, beta, gamma, rmean, rvar
 
 
+def mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance):
+    if no_bias:
+        inputs[1] = np.zeros(inputs[1].shape)
+
+    if no_scale:
+        inputs[2] = np.ones(inputs[2].shape)
+
+    if no_mean:
+        inputs[3] = np.zeros(inputs[3].shape)
+
+    if no_variance:
+        inputs[4] = np.ones(inputs[4].shape)
+
+    return inputs
+
+
+def mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance):
+    if no_bias:
+        vinputs[1] = None
+
+    if no_scale:
+        vinputs[2] = None
+
+    if no_mean:
+        vinputs[3] = None
+
+    if no_variance:
+        vinputs[4] = None
+
+    return vinputs
+
+
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [0, 1, 2])
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True], [True, True]])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
+@pytest.mark.parametrize("no_mean", [True, False])
+@pytest.mark.parametrize("no_variance", [True, False])
 def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
-                                              output_stat, batch_stat, ctx, func_name):
+                                              output_stat, batch_stat, ctx, func_name,
+                                              no_scale, no_bias, no_mean, no_variance):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis))
     axes = [axis]
-    if ctx.backend[0].split(':')[0] != 'cpu' and batch_stat == False:
-        pytest.skip(
-            "cuda and cudnn implementation for batch_stat==False is not implemented yet")
+    if not batch_stat and (no_mean or no_variance):
+        # check prohibited condition for mean=None and variance=None
+        vinputs = []
+        for i in inputs:
+            vinputs.append(nn.Variable(i.shape, True))
+
+        vinputs = mask_vinputs(
+            vinputs, no_scale, no_bias, no_mean, no_variance)
+        with pytest.raises(ValueError):
+            F.batch_normalization(*vinputs, axes=axes, decay_rate=decay_rate,
+                                  eps=eps, batch_stat=batch_stat, output_stat=output_stat)
+        return
     else:
+        inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
         function_tester(rng, F.batch_normalization, ref_batch_normalization,
                         inputs,
                         func_args=[axes, decay_rate, eps,
@@ -80,10 +130,16 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
                         ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
 
     # Check if running mean and var works.
+    if no_mean and no_variance:
+        return
+
     vinputs = []
     for i in inputs:
         vinputs.append(nn.Variable(i.shape, True))
         vinputs[-1].d = i
+
+    vinputs = mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance)
+
     for i in range(5):
         inputs[0] = rng.randn(*inputs[0].shape)
         vinputs[0].d[...] = inputs[0]
@@ -92,11 +148,18 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         with nn.context_scope(ctx), nn.auto_forward():
             y = F.batch_normalization(
                 *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
-        assert np.allclose(vinputs[3].d, inputs[3], atol=1e-7)
-        assert np.allclose(vinputs[4].d, inputs[4])
+        if not no_mean:
+            assert_allclose(vinputs[3].d, inputs[3], atol=1e-7)
+
+        if not no_variance:
+            assert_allclose(vinputs[4].d, inputs[4])
 
     # Check if global stat mode works
     batch_stat = False
+
+    if no_mean or no_variance:
+        return
+
     if output_stat:
         return
     ref_y = ref_batch_normalization(
@@ -104,7 +167,7 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     with nn.context_scope(ctx), nn.auto_forward():
         y = F.batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
-    assert np.allclose(ref_y, y.d, atol=1e-6)
+    assert_allclose(ref_y, y.d, atol=1e-6)
 
 
 def ref_batch_normalization_for_multiple_axes(x, beta, gamma, rmean, rvar, axes, decay_rate,
@@ -166,4 +229,25 @@ def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, deca
     with nn.context_scope(ctx), nn.auto_forward():
         y = F.batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, output_stat]))
-    assert np.allclose(ref_y, y.d, atol=1e-6)
+    assert_allclose(ref_y, y.d, atol=1e-6)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("decay_rate", [0.9])
+@pytest.mark.parametrize("eps", [1e-5])
+@pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True]])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
+                                             output_stat, batch_stat, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = list(create_inputs(rng, axis))
+    axes = [axis]
+    backward_function_tester(rng, F.batch_normalization, None,
+                             inputs,
+                             func_args=[axes, decay_rate, eps,
+                                        batch_stat, output_stat],
+                             backward=[True, True, True, False, False],
+                             ctx=ctx, func_name=func_name,
+                             atol_b=2e-2, atol_accum=2e-2, dstep=1e-3)

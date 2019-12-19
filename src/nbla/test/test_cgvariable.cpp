@@ -14,6 +14,8 @@
 
 // test_cgvariable.cpp
 
+#include "macros.hpp"
+
 #include "gtest/gtest.h"
 #include <functional>
 #include <nbla/computation_graph/computation_graph.hpp>
@@ -147,5 +149,80 @@ TEST_F(CgVariableTest, CommunicatorBackwardCallback) {
   h3[0]->backward(nullptr, false, {p});
   EXPECT_EQ(expected, funcs);
   EXPECT_TRUE(is_called);
+}
+
+class CgVariableDeepCopyTest : public CgVariableTest {
+protected:
+  CgVariablePtr x_;
+  CgVariablePtr x_copy_;
+  int size_;
+
+  void SetUp() override {
+    CgVariableTest::SetUp();
+
+    x_ = make_shared<CgVariable>(Shape_t{5, 5}, false);
+
+    // make all data values 1
+    auto *d = x_->variable()->cast_data_and_get_pointer<float>(ctx_, true);
+    REP(i, x_->variable()->size()) { d[i] = 1.0f; }
+
+    // make all grad values 2
+    auto *g = x_->variable()->cast_grad_and_get_pointer<float>(ctx_, true);
+    REP(i, x_->variable()->size()) { g[i] = 2.0f; }
+
+    x_copy_ = x_->create_deep_copy(ctx_, true);
+
+    size_ = static_cast<int>(x_->variable()->size());
+  }
+};
+
+TEST_F(CgVariableDeepCopyTest, CheckCopyValues) {
+  ASSERT_EQ(x_->variable()->shape(), x_copy_->variable()->shape());
+
+  // check all data values 1
+  auto *d_copy =
+      x_copy_->variable()->cast_data_and_get_pointer<float>(ctx_, false);
+  REP(i, size_) { EXPECT_FLOAT_EQ(1.0f, d_copy[i]); }
+
+  // check all grad values 2
+  auto *g_copy =
+      x_copy_->variable()->cast_grad_and_get_pointer<float>(ctx_, false);
+  REP(i, size_) { EXPECT_FLOAT_EQ(2.0f, g_copy[i]); }
+}
+
+TEST_F(CgVariableDeepCopyTest, ChangeOriginalValues) {
+  // change original variable`s data values
+  auto *d = x_->variable()->cast_data_and_get_pointer<float>(ctx_, true);
+  REP(i, size_) { d[i] = -1.0f; }
+
+  auto *d_copy =
+      x_copy_->variable()->cast_data_and_get_pointer<float>(ctx_, false);
+  REP(i, size_) { EXPECT_FLOAT_EQ(1.0f, d_copy[i]); }
+
+  // change original variable`s data values
+  auto *g = x_->variable()->cast_grad_and_get_pointer<float>(ctx_, true);
+  REP(i, size_) { g[i] = -2.0f; }
+
+  auto *g_copy =
+      x_copy_->variable()->cast_grad_and_get_pointer<float>(ctx_, false);
+  REP(i, size_) { EXPECT_FLOAT_EQ(2.0f, g_copy[i]); }
+}
+
+TEST_F(CgVariableDeepCopyTest, ChangeCopyValues) {
+  // change original variable`s data values
+  auto *d_copy =
+      x_copy_->variable()->cast_data_and_get_pointer<float>(ctx_, true);
+  REP(i, size_) { d_copy[i] = -1.0f; }
+
+  auto *d = x_->variable()->cast_data_and_get_pointer<float>(ctx_, false);
+  REP(i, size_) { EXPECT_FLOAT_EQ(1.0f, d[i]); }
+
+  // change original variable`s data values
+  auto *g_copy =
+      x_copy_->variable()->cast_grad_and_get_pointer<float>(ctx_, true);
+  REP(i, size_) { g_copy[i] = -2.0f; }
+
+  auto *g = x_->variable()->cast_grad_and_get_pointer<float>(ctx_, false);
+  REP(i, size_) { EXPECT_FLOAT_EQ(2.0f, g[i]); }
 }
 }

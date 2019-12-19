@@ -45,10 +45,8 @@ template <typename T>
 class Transpose : public BaseFunction<const vector<int> &> {
 protected:
   vector<int> axes_;
-  Variable v_axes_;
-  Variable v_x_strides_;
-  Variable v_y_strides_;
-  Variable v_y_shape_;
+  Shape_t x_shape_, x_strides_, x_strides_transposed_;
+  Shape_t y_shape_, y_strides_, y_strides_transposed_;
 
 public:
   Transpose(const Context &ctx, const vector<int> &axes)

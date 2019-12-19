@@ -59,6 +59,9 @@ intersphinx_mapping = {
 
 blockdiag_html_image_format = "SVG"
 
+# Default role of markup `text`
+default_role = 'any'
+
 # At the bottom of conf.py
 def setup(app):
     app.add_config_value('recommonmark_config', {

@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -52,3 +51,26 @@ def test_affine_forward_backward(seed, base_axis, weight_shape, bias,
         inputs += [None]
     function_tester(rng, F.affine, ref_affine, inputs, func_args=[base_axis],
                     atol_b=1e-2, dstep=1e-3, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("base_axis, weight_shape",
+                         [(1, (12, 2, 3)), (2, (4, 4))])
+@pytest.mark.parametrize("bias", [True, False])
+def test_affine_double_backward(seed, base_axis, weight_shape, bias,
+                                ctx, func_name):
+
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(2, 3, 4).astype(np.float32)]
+    # Weight
+    inputs += [rng.randn(*weight_shape).astype(np.float32)]
+    # Bias
+    if bias:
+        inputs += [rng.randn(*weight_shape[1:]).astype(np.float32) * 1e2]
+    else:
+        inputs += [None]
+    backward_function_tester(rng, F.affine, None, inputs, func_args=[base_axis],
+                             atol_b=1e-2, atol_accum=1e-2, dstep=1e-3, ctx=ctx, func_name=func_name)

@@ -131,8 +131,14 @@ cdef class Variable:
     the arithmetic operation returns an :class:`~nnabla.NdArray` which stores the
     output of the computation immediately invoked. Otherwise, it returns
     :class:`~nnabla.Variable` holds the graph connection. The computation
-    is invoked immediately when :function:`nnabla.auto_forward`
-    or :function:`nnabla.set_auto_forward(True)` is used.
+    is invoked immediately when `nnabla.auto_forward`
+    or `nnabla.set_auto_forward(True)` is used.
+
+    Note:
+        Relational operators  :code:`==` and :code:`!=` of two  :obj:`Variable` s are
+        defined as an address comparison of underlying C++ instances
+        (:code:`nbla::Variable`). Also, :func:`hash` function, which is often used
+        in a key for :obj:`set` and :obj:`dict`, is based on the address.
 
     See also:
         `Python API Tutorial
@@ -186,13 +192,13 @@ cdef class Variable:
         Returns: ~nnabla.Variable
 
         """
-        assert isinstance(data, np.ndarray)
+        data = np.asarray(data)
         var = Variable(data.shape, need_grad)
         var.data.cast(data.dtype)
         var.d = data
         if grad is None:
             return var
-        assert isinstance(grad, np.ndarray)
+        grad = np.asarray(grad)
         assert data.shape == grad.shape
         var.grad.cast(grad.dtype)
         var.g = grad
@@ -206,14 +212,18 @@ cdef class Variable:
             self.shape, self.need_grad, hex(id(self)))
 
     def __eq__(self, other):
-        '''Determine equality by comparing the address of the C++ objects.
+        '''Equal operator compares the addresses of underlying C++ objects
+        (``nbla::Variable``).
         '''
-        return (< Variable > self).varp == ( < Variable ?> other).varp
+        cdef CVariable* v = (< Variable > self).varp.variable().get()
+        cdef CVariable* w = (< Variable ?> other).varp.variable().get()
+        return v == w
 
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        return hash(< intptr_t > (( < Variable > self).varp))
+        cdef CVariable* v = ( < Variable > self).varp.variable().get()
+        return hash(< intptr_t > (v))
 
     def apply(self, **kwargs):
         '''Helper for setting property, then return self.
@@ -338,7 +348,7 @@ cdef class Variable:
         Args:
             var (:obj:`nnabla.Variable`):
                 The array elements and the parent function of ``var`` is
-                copied to ```self`` as references.
+                copied to ``self`` as references.
                 Note that the parent function of ``var`` is removed.
 
         Example:
@@ -411,6 +421,8 @@ cdef class Variable:
         modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the value held by this variable.
+        Refer to the documentation of the setter `nnabla._nd_array.NdArray.data`
+        for detailed behaviors of the setter.
 
         Args:
             value(:obj:`numpy.ndarray`) (optional)
@@ -422,7 +434,7 @@ cdef class Variable:
 
     @d.setter
     def d(self, value):
-        self.data.data[...] = value
+        self.data.data = value
 
     @property
     def g(self):
@@ -432,6 +444,8 @@ cdef class Variable:
         modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the gradient held by this variable.        
+        Refer to the documentation of the setter `nnabla._nd_array.NdArray.data`
+        for detailed behaviors of the setter.
 
         Args:
             value(:obj:`numpy.ndarray`)
@@ -443,7 +457,7 @@ cdef class Variable:
 
     @g.setter
     def g(self, value):
-        self.grad.data[...] = value
+        self.grad.data = value
 
     @property
     def parent(self):
@@ -532,16 +546,20 @@ cdef class Variable:
         The propagation will stop at a variable with need_grad=False.
 
         Args:
-            grad(scalar, :obj:`numpy.ndarray`, or :obj:`nnabla._nd_array.NdArray`):
+            grad(scalar, :obj:`numpy.ndarray`, :obj:`nnabla._nd_array.NdArray`, or None):
                 The gradient signal value(s) of this variable.
-                The default value 1 is used in an usual neural network
-                training. This option is useful if you have a gradient
-                computation module outside NNabla, and want to use it as a
-                gradient signal of the neural network built in NNabla.
-                Note that this doesn't modifies the grad values of this
-                variable.
+                The default value 1 is used in an usual neural network training.
+                This option is useful if you have a gradient computation module outside NNabla,
+                and want to use that result as a gradient signal.
+                Note that this doesn't modifies the grad values of this variable,
+                instead assign received values to its gradient temporarily.
+                Also, if the :class:`~nnabla.Variable` you want to execute
+                `nnabla._variable.Variable.backward` is an unlinked variable from another,
+                and the corresponding :class:`~nnabla.Variable` holds the pre-computed gradient values,
+                **You need to set grad=None**, otherwise, for that backward pass (propagated from the unlinked :class:`~nnabla.Variable`),
+                pre-computed gradient values are **ignored**.
             clear_buffer(bool): Clears the no longer referenced variables
-                during backpropagation to save memory.  
+                during backpropagation to save memory.
             communicator_callbacks(:obj:`nnabla.CommunicatorBackwardCallback` or list of :obj:`nnabla.CommunicatorBackwardCallback`):
                 The callback functions invoked when 1) backward computation
                 of each function is finished and 2) all backward
@@ -554,6 +572,171 @@ cdef class Variable:
                 This callable object is called immediately after each function is executed.
                 It must take :obj:`~nnabla.function.Function` as an input.
                 The default is None.
+
+
+        Example:
+
+            We first explain simple backward usage.
+
+            .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import nnabla.parametric_functions as PF
+                import numpy as np
+                import nnabla.initializer as I
+
+                rng = np.random.seed(217)
+                initializer = I.UniformInitializer((-0.1, 0.1), rng=rng)
+
+                x = nn.Variable((8, 3, 32, 32))
+                x.d = np.random.random(x.shape)  # random input, just for example.
+
+                y0 = PF.convolution(x, outmaps=64, kernel=(3, 3), pad=(1, 1), stride=(2, 2), w_init=initializer, name="conv1", with_bias=False)
+                y1 = F.relu(y0)
+                y2 = PF.convolution(y1, outmaps=128, kernel=(3, 3), pad=(1, 1), stride=(2, 2), w_init=initializer, name="conv2", with_bias=False)
+                y3 = F.relu(y2)
+                y4 = F.average_pooling(y3, kernel=y3.shape[2:])
+                y5 = PF.affine(y4, 1, w_init=initializer)
+                loss = F.mean(F.abs(y5 - 1.))
+                loss.forward()  # Execute forward
+
+                # We can check the current gradient of parameter.
+                print(nn.get_parameters()["conv1/conv/W"].g)
+
+            Output :
+
+            .. code-block:: plaintext
+
+                [[[[0. 0. 0.]
+                   [0. 0. 0.]
+                   [0. 0. 0.]]
+                      ...
+
+            Initially all the gradient values should be zero.
+            Then let's see what happens after calling backward.
+
+            .. code-block:: python
+
+                loss.backward()
+                print(nn.get_parameters()["conv1/conv/W"].g)
+
+            Output :
+
+            .. code-block:: plaintext
+
+                [[[[ 0.00539637  0.00770839  0.0090611 ]
+                   [ 0.0078223   0.00978992  0.00720569]
+                   [ 0.00879023  0.00578172  0.00790895]]
+                                     ...
+
+            Now we know the gradient values are computed and registered by calling `backward`.
+            Note that calling `backward` successively **accumulates** the result.
+            It means if we execute `backward` again, we get the doubled result.
+
+            .. code-block:: python
+
+                loss.backward()  # execute again.
+                print(nn.get_parameters()["conv1/conv/W"].g)
+
+            We can see it's accumulated.
+
+            .. code-block:: plaintext
+
+                [[[[ 0.01079273  0.01541678  0.0181222 ]
+                   [ 0.01564459  0.01957984  0.01441139]
+                   [ 0.01758046  0.01156345  0.0158179 ]]
+                                     ...
+
+            Next is an advanced usage with an unlinked variable (please refer to `get_unlinked_variable`).
+            We use the same network, but it is separated by the unlinked variable.
+
+            .. code-block:: python
+
+                import nnabla as nn
+                import nnabla.functions as F
+                import nnabla.parametric_functions as PF
+                import numpy as np
+                import nnabla.initializer as I
+
+                rng = np.random.seed(217)  # use the same random seed.
+                initializer = I.UniformInitializer((-0.1, 0.1), rng=rng)
+
+                x = nn.Variable((8, 3, 32, 32))
+                x.d = np.random.random(x.shape)  # random input, just for example.
+
+                y0 = PF.convolution(x, outmaps=64, kernel=(3, 3), pad=(1, 1), stride=(2, 2), w_init=initializer, name="conv1", with_bias=False)
+                y1 = F.relu(y0)
+                y2 = PF.convolution(y1, outmaps=128, kernel=(3, 3), pad=(1, 1), stride=(2, 2), w_init=initializer, name="conv2", with_bias=False)
+                y3 = F.relu(y2)
+                y3_unlinked = y3.get_unlinked_variable()  # the computation graph is cut apart here.
+                y4 = F.average_pooling(y3_unlinked, kernel=y3_unlinked.shape[2:])
+                y5 = PF.affine(y4, 1, w_init=initializer)
+                loss = F.mean(F.abs(y5 - 1.))
+
+                # Execute forward.
+                y3.forward()  # you need to execute forward at the unlinked variable first.
+                loss.forward()  # Then execute forward at the leaf variable.
+
+                # Execute backward.
+                loss.backward()  # works, but backpropagation stops at y3_unlinked.
+                print(nn.get_parameters()["conv1/conv/W"].g)  # no gradient registered yet.
+
+            Output :
+
+            .. code-block:: plaintext
+
+                [[[[0. 0. 0.]
+                   [0. 0. 0.]
+                   [0. 0. 0.]]
+                      ...
+
+            We can confirm that backpropagation stops at `y3_unlinked`.
+            Then let's see how to execute backpropagation to the root variable (`x`).
+            Since it's a little bit complicated, let us give you an example of common pitfall first.
+            **Note that this is an incorrect way and intended just to show the backward's behavior.**
+
+            .. code-block:: python
+
+                y3.backward()  # this works, but computed gradient values are not correct.
+                print(nn.get_parameters()["conv1/conv/W"].g)
+
+            Output :
+
+            .. code-block:: plaintext
+
+                [[[[ 17.795254    23.960905    25.51168   ]
+                   [ 20.661646    28.484127    19.406212  ]
+                   [ 26.91042     22.239697    23.395714  ]]
+                                     ...
+
+            **Note that this is a wrong result.** The gradient held by `y3_unlinked` has been totally ignored.
+            As described above, just calling `backward`, the gradient (of the leaf variable where you call `backward`) is considered to be 1.
+
+            To execute backpropagation over 2 separate graphs **correctly**,  We need to specify `grad=None` as shown below, then present gradient held by that variable is used for computation.
+            (`y3.backward(grad=y3_unlinked.g)` does the same thing.)
+
+            .. code-block:: python
+
+                #reset all the gradient values.
+                for v in nn.get_parameters().values():
+                    v.g = 0.
+                for v in [y0, y1, y2, y3, y4, y5]:
+                    v.g = 0.  # need to reset all the gradient values.
+
+                loss.backward()  # backpropagation starts from the leaf variable again.
+                y3.backward(grad=None)  # By this, it can take over the gradient held by y3_unlinked.
+                print(nn.get_parameters()["conv1/conv/W"].g)  # correct result.
+
+            This time you should have the same result.
+
+            .. code-block:: plaintext
+
+                [[[[ 0.00539637  0.00770839  0.0090611 ]
+                   [ 0.0078223   0.00978992  0.00720569]
+                   [ 0.00879023  0.00578172  0.00790895]]
+                                     ...
+
 
         """
         cdef NdArrayPtr p
@@ -616,8 +799,14 @@ cdef class Variable:
                 It is recommended to explicitly specify this option to avoid an
                 unintended behavior.
 
-        Returns: nnabla._variable.Variable
+        Returns: :class:`~nnabla.Variable`
 
+
+        Note:
+            The unlinked Variable behaves equivalent to the original variable
+            in a comparison operator and hash function regardless whether or
+            not the `need_grad` attribute is changed.
+            See a note in the `Variable` class documentation. Also, for backward execution with unlinked variable(s), please refer to `backward` and its example.
 
         Example:
 
@@ -640,7 +829,7 @@ cdef class Variable:
                 # None
 
         """
-        var = Variable.create_from_cvariable(self.varp.variable().get().view())
+        var = Variable.create_from_cvariable(self.varp.variable())
         if need_grad is not None:
             var.need_grad = need_grad
         else:
@@ -707,7 +896,7 @@ cdef class Variable:
                     pred = PF.affine(h, 10, name="pred")
                     return pred
 
-                # You can modify this PrintFunc to get the other informations like inputs(nnabla_func.inputs), outputs and arguments(nnabla_func.info.args) of nnabla functions.
+                # You can modify this PrintFunc to get the other information like inputs(nnabla_func.inputs), outputs and arguments(nnabla_func.info.args) of nnabla functions.
                 class PrintFunc(object):
                     def __call__(self, nnabla_func):
                         print(nnabla_func.info.type_name)
@@ -796,7 +985,7 @@ cdef class Variable:
 
             .. code-block:: python
 
-                nn.clear_parameters()                         # call this in case you want to run the following code agian
+                nn.clear_parameters()                         # call this in case you want to run the following code again
                 output = network_graph(x, add_avg_pool=False) # Exclusion of AveragePooling function in the graph
                 print("The return value of visit_check() method is : {}".format(output.visit_check(PrintFunc())))
 
@@ -863,3 +1052,6 @@ cdef class Variable:
 
     def __getitem__(self, key):
         return IDX.getitem(self, key)
+
+    def __setitem__(self, key, value):
+        IDX.setitem(self, key, value)

@@ -35,7 +35,9 @@ def _import_file(args, ifiles):
         elif ext == '.pb':
             args.import_format = "TF_PB"
         elif ext == '.ckpt':
-            args.import_format = "TF_CKPT"
+            args.import_format = "TF_CKPT_V1"
+        elif ext == '.meta':
+            args.import_format = "TF_CKPT_V2"
 
     if args.import_format == 'NNP':
         # Input file that has unsupported extension store into output nnp
@@ -49,9 +51,10 @@ def _import_file(args, ifiles):
         return OnnxImporter(*ifiles).execute()
 
     elif args.import_format == 'TF_PB' or \
-            args.import_format == 'TF_CKPT':
+            args.import_format == 'TF_CKPT_V1' or \
+            args.import_format == "TF_CKPT_V2":
         from .tensorflow import TensorflowImporter
-        return TensorflowImporter(*ifiles, tf_format=args.import_format).execute()
+        return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     return None
 
 
@@ -147,15 +150,23 @@ def _export_from_nnp(args, nnp, output, output_ext):
         NnpExporter(nnp, args.batch_size, parameter_type).execute(output)
 
     elif output_ext == '.nnb':
+        if args.batch_size < 0:
+            print('NNB: Batch size adjust to 1.')
+            print('NNB: If you want to use with other size use `-b` option.')
+            args.batch_size = 1
         if args.define_version and args.define_version.startswith('nnb_'):
             nnb_version = int(args.define_version.split("_")[1])
-            NnbExporter(nnp, args.batch_size, nnb_version=nnb_version).execute(
+            NnbExporter(nnp, args.batch_size, nnb_version=nnb_version, api_level=args.api).execute(
                 output, None, args.settings, args.default_variable_type)
         else:
-            NnbExporter(nnp, args.batch_size).execute(
+            NnbExporter(nnp, args.batch_size, api_level=args.api).execute(
                 output, None, args.settings, args.default_variable_type)
 
     elif os.path.isdir(output) and args.export_format == 'CSRC':
+        if args.batch_size < 0:
+            print('CSRC: Batch size adjust to 1.')
+            print('CSRC: If you want to use with other size use `-b` option.')
+            args.batch_size = 1
         CsrcExporter(nnp, args.batch_size).execute(output)
 
     elif output_ext == '.onnx':
@@ -305,7 +316,7 @@ def convert_files(args, ifiles, output):
 
 
 def _generate_nnb_template(args, nnp, output):
-    NnbExporter(nnp, args.batch_size).execute(
+    NnbExporter(nnp, args.batch_size, api_level=args.api).execute(
         None, output, None, args.default_variable_type)
     return True
 
@@ -378,6 +389,15 @@ def _dump_protobuf(args, proto, prefix, depth):
                       ' Shape:{}'.format(shape))
 
         def _dump_network(prefix, net):
+            if args.dump_variable_name:
+                if args.dump_variable_name in net['variables']:
+                    v = args.dump_variable_name
+                    print('Variable Name: {:20} Shape: {}'.format(
+                        v, net['variables'][v]['shape']))
+                else:
+                    print('DUMP ERROR: variable {} not found.'.format(
+                        args.dump_variable_name))
+                return
             if args.dump_functions:
                 for i, f in enumerate(net['functions']):
                     func_prefix = '{}  Function[{:^5}]: '.format(prefix, i)

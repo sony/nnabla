@@ -19,6 +19,7 @@ import numpy as np
 
 from nnabla.utils import image_utils
 from nnabla.logger import logger
+from nnabla.testing import assert_allclose
 
 SIZE = (8, 8, 3)
 
@@ -99,7 +100,7 @@ def test_minmax_auto_scale(img, as_uint16):
     # check if correctly scaled up
     reverted = image_utils.common.rescale_pixel_intensity(rescaled, rescaled.min(), rescaled.max(),
                                                           img.min(), img.max(), img.dtype)
-    assert np.allclose(img, reverted, atol=1 / 2 ** 4)
+    assert_allclose(img, reverted, atol=1 / 2 ** 4)
 
 
 @pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
@@ -111,6 +112,8 @@ def test_minmax_auto_scale(img, as_uint16):
 @pytest.mark.parametrize("auto_scale", [False, True])
 @pytest.mark.parametrize("img", imgs)
 def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_uint16, num_channels, auto_scale, img):
+    # import pdb
+    # pdb.set_trace()
     # preprocess
     _change_backend(backend)
 
@@ -175,7 +178,7 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
         scaler = get_scale_factor(img, auto_scale, as_uint16)
         dtype = img.dtype if img.dtype in [np.uint8, np.uint16] else np.float32
 
-        assert np.allclose(
+        assert_allclose(
             (img.astype(dtype) * scaler).astype(read_image.dtype), read_image)
 
 

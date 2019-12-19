@@ -18,6 +18,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+from nnabla.testing import assert_allclose
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -60,8 +61,7 @@ def test_nnp_graph(seed, tmpdir):
     x2.d = d
     y.forward(clear_buffer=True)
     y2.forward(clear_buffer=True)
-    from nbla_test_utils import ArrayDiffStats
-    assert np.allclose(y.d, y2.d), str(ArrayDiffStats(y.d, y2.d))
+    assert_allclose(y.d, y2.d)
 
 
 def check_nnp_graph_save_load(tmpdir, x, y, batch_size, variable_batch_size):
@@ -110,7 +110,7 @@ def test_nnp_graph_reshape(tmpdir, variable_batch_size, batch_size, shape):
     shape2[0] = batch_size
     x2.d = np.random.randn(*x2.shape)
     y2.forward()
-    assert np.allclose(y2.d, x2.d.reshape(shape2))
+    assert_allclose(y2.d, x2.d.reshape(shape2))
 
 
 @pytest.mark.parametrize('variable_batch_size', [False, True])

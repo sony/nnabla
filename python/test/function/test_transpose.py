@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -27,11 +26,17 @@ def ref_transpose(x, axes):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("inshape, axes",
-                         [((11, 13, 7), (2, 1, 0)),
-                          ((3, 7, 4, 5), (3, 0, 1, 2)),
-                          ((4, 2, 5, 2, 3), (3, 0, 1, 2, 4)),
-                          ((4, 2, 3, 2, 3, 3), (5, 3, 0, 1, 2, 4))])
+@pytest.mark.parametrize("inshape, axes", [
+    ((10,), (0,)),
+    ((10, 11), (0, 1)),
+    ((10, 11), (1, 0)),
+    ((11, 13, 7), (0, 2, 1)),
+    ((11, 13, 7), (2, 1, 0)),
+    ((3, 7, 4, 5), (3, 0, 1, 2)),
+    ((4, 2, 5, 2, 3), (3, 0, 1, 2, 4)),
+    ((4, 2, 3, 2, 3, 3), (5, 3, 0, 1, 2, 4)),
+    ((4, 4, 4, 4, 4), (4, 3, 2, 1, 0)),
+])
 def test_transpose_forward_backward(seed, inshape, axes, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
@@ -39,3 +44,23 @@ def test_transpose_forward_backward(seed, inshape, axes, ctx, func_name):
     inputs = [rng.randn(*inshape).astype(np.float32)]
     function_tester(rng, F.transpose, ref_transpose, inputs, func_args=[
                     axes], ctx=ctx, func_name=func_name, atol_f=1e-6, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, axes", [
+    ((11, 13, 7), (2, 1, 0)),
+    ((3, 7, 4, 5), (3, 0, 1, 2)),
+    ((4, 2, 5, 2, 3), (3, 0, 1, 2, 4)),
+    ((4, 2, 3, 2, 3, 3), (5, 3, 0, 1, 2, 4)),
+    ((4, 4, 4, 4, 4), (4, 3, 2, 1, 0)),
+])
+def test_transpose_double_backward(seed, inshape, axes, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    # TODO: backward_ref
+    backward_function_tester(rng, F.transpose, ref_transpose, inputs,
+                             func_args=[axes], ctx=ctx, func_name=func_name,
+                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=1e-3)

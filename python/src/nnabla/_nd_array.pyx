@@ -30,6 +30,15 @@ import numpy as np
 cimport numpy as np
 np.import_array()
 
+cdef int DTYPES_FLOAT = np.dtype(np.float32).num
+
+
+def _get_dtypes_from_value(value):
+    if hasattr(value, 'dtype'):
+        return value.dtype.num
+    return np.asarray(value).dtype.num
+
+
 # Older cython doesn't expose const_pointer_cast in <memory>
 cdef extern from "<memory>" namespace "std" nogil:
     cdef shared_ptr[T] const_pointer_cast[T, U](const shared_ptr[U] & )
@@ -63,7 +72,7 @@ cdef c_cast_numpy_array(CNdArray * arrp, vector[np.npy_intp] & shape,
     return ndarray
 
 
-cdef c_as_numpy_array(CNdArray * arrp, str mode):
+cdef c_as_numpy_array(CNdArray * arrp, str mode, cpp_bool force_dtype=False, int dtype=DTYPES_FLOAT):
     cdef int type_num
     cdef vector[np.npy_intp] shape
     cdef Shape_t shape_base
@@ -72,10 +81,17 @@ cdef c_as_numpy_array(CNdArray * arrp, str mode):
     cdef CContext cctx = <CContext > ctx
 
     # Getting current data type
-    try:
-        type_num = <int > arrp.array().get().dtype()
-    except:
-        type_num = np.dtype(np.float32).num
+    type_num = dtype
+    if not force_dtype:
+        try:
+            type_num = <int > arrp.array().get().dtype()
+        except:
+            from nnabla import logger
+            logger.warn('Calling the `.data` getter property in this `NdArray` '
+                        'is creating an array with a default data type because '
+                        'the array is not previously initialized by requesting '
+                        'a specific data type, or is not used after '
+                        'calling `zero()` or `fill(value)`.')
 
     # Create numpy shape array
     shape.resize(arrp.ndim())
@@ -284,7 +300,10 @@ cdef class NdArray:
         Note that only the references are returned, and the values are not copied. Therefore,
         modifying the returned :class:`nnabla._nd_array.NdArray` will affect the data contained inside the
         NNabla array.
-        This method can also be called as a setter.
+        This method can also be called as a setter where an array is created as the same type as rhs.
+        There is an exception where `zero()` or `fill(rhs)` is invoked if a scalar with a float or an
+        integer <= 2^53 (as filling value is maintained as float64) is given.
+
         Note that this may implicitly invoke a data transfer from device arrays to the CPU.
 
         Args:
@@ -297,9 +316,27 @@ cdef class NdArray:
 
     @data.setter
     def data(self, value):
-        self.data[...] = value
+        # Try to use .zero or .fill as they are more efficient
+        if np.isscalar(value):
+            if value == 0:
+                self.zero()
+                return
+            dtype = np.dtype(type(value))
+            kind = dtype.kind
+            if kind == 'f' or value <= (1 << 53):
+                # Condition 1: If value is float, use fill(double).
+                # Condition 2: Use the fact that value is converted
+                #              to float64 (significand is 53 bits).
+                self.fill(value)
+                return
+            # Any scalar value which is not likely to be represented
+            # as float64 is fall into following.
+            pass
 
-    def get_data(self, str mode='rw'):
+        d = c_as_numpy_array(self.arrp, 'w', True, _get_dtypes_from_value(value))
+        d[...] = value
+
+    def get_data(self, str mode='rw', dtype=None):
         '''
         Returns the values held by this array as a :class:`numpy.ndarray`
         with a specified mode.
@@ -309,18 +346,24 @@ cdef class NdArray:
                 * 'r': Read-only access.
                 * 'w': Write-only access.
                 * 'rw': You can both read and write.
+            dtype (:obj:`numpy.dtype`, optional): Force dtype of a returned array.
 
         See :function:`nnabla._nd_array.NdArray.data for more details.
 
         '''
-        return c_as_numpy_array(self.arrp, mode)
+        if dtype is None:
+            return c_as_numpy_array(self.arrp, mode)
+        return c_as_numpy_array(self.arrp, mode, True, dtype)
+
 
     def zero(self):
         """
         Fill all of the elements with 0.
 
-        Note: This method is lazily evaluated. It is evaluated during the forward or
-        backward propagation.
+        Note:
+            This doesn't not fill values in an internal array with 0 immediately.
+            An array is created as a requested data type when this array is used
+            (in forward or backward computation for exampe), and is filled with 0.
 
         """
         self.arrp.zero()
@@ -329,14 +372,22 @@ cdef class NdArray:
         """
         Fill all of the elements with the provided scalar value.
 
-        Note: This method is lazily evaluated. It is evaluated during the forward or
-        backward propagation.
+        Note:
+            This doesn't not fill values in an internal array with 0 immediately.
+            An array is created as a requested data type when this array is used
+            (in forward or backward computation for exampe), and is filled with
+            the value.
 
         Args:
-            value (int, float): The value filled with. 
+            value (float): The value filled with.
 
         """
         self.arrp.fill(value)
+
+    @property
+    def zeroing(self):
+        '''Checking if the array is not modified after calling `zero()`.'''
+        return self.arrp.array().get().zeroing()
 
     @property
     def dtype(self):
@@ -422,24 +473,35 @@ cdef class NdArray:
             F.pow_scalar(self, x, outputs=[self])
         return self
 
-    def copy_from(self, NdArray arr):
+    def copy_from(self, NdArray arr, use_current_context=True):
         """
         Copy values from another NdArray object.
 
         It returns the caller object itself.
-        :func:`nnabla.functions.identity` is called internally to copy values.
 
         Args:
             arr (~nnabla.NdArray): Values will be copied to the caller object.
                 The shape of ``arr``` must be same as the caller object.
+            use_current_context (bool):
+                If True, a copy is happening in a device and dtype specified
+                in the current context (equivalent to call
+                `F.identity(src, output=[self])`). Otherwise, a device and
+                dtype in the source array is used. The default is True.
 
         Returns:
             :obj:`nnabla.NdArray`
 
         """
         import nnabla.functions as F
-        F.identity(arr, outputs=[self])
+        if use_current_context:
+            F.identity(arr, outputs=[self])
+            return self
+        self.arrp.array().get().copy_from(
+            arr.arrp.array().get())
         return self
 
     def __getitem__(self, key):
         return IDX.getitem(self, key)
+
+    def __setitem__(self, key, value):
+        IDX.setitem(self, key, value)

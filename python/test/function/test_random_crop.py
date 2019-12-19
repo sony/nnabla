@@ -19,6 +19,7 @@ from scipy.stats import pearsonr
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('RandomCrop')
 
@@ -49,7 +50,7 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
     else:
         max_correl = pearsonr(o.d.flatten(), inputs[0].flatten())[0]
 
-    assert(max_correl == 1.0)
+    np.testing.assert_almost_equal(max_correl, 1.0)
 
     assert o.parent.name == func_name
 
@@ -70,7 +71,7 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
     i.g[...] = 1
     o.g = o_grad
     o.parent.backward([i], [o], [False])
-    assert np.allclose(i.g, ref_grad, atol=1e-6)
+    assert_allclose(i.g, ref_grad, atol=1e-6)
 
     # Check if need_grad works
     i.g[...] = 0

@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -40,3 +39,16 @@ def test_epsilon_insensitive_loss_forward_backward(seed, ctx, func_name, epsilon
                     ref_epsilon_insensitive_loss_forward, inputs,
                     func_args=[epsilon],
                     atol_b=1e-2, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("epsilon", [0.001, 1])
+def test_epsilon_insensitive_loss_double_backward(seed, ctx, func_name, epsilon):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    backward_function_tester(rng, F.epsilon_insensitive_loss,
+                             None, inputs,
+                             func_args=[epsilon],
+                             atol_b=5e-3, atol_accum=5e-3, ctx=ctx, func_name=func_name)

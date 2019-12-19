@@ -14,7 +14,6 @@
 
 from six import iterkeys
 
-import pytest
 import numpy as np
 import nnabla.parametric_functions as PF
 from nnabla.initializer import UniformInitializer
@@ -41,23 +40,24 @@ def test_get_parameter_or_create_need_grad():
     import nnabla as nn
     from nnabla.parameter import get_parameter_or_create
     nn.clear_parameters()
-    param1 = get_parameter_or_create('p/param1', (2, 3, 4, 5), need_grad=True)
+    key1 = 'p/param1'
+    param1 = get_parameter_or_create(key1, (2, 3, 4, 5), need_grad=True)
     p1d = np.random.randn(*param1.shape).astype(np.float32)
     p1g = np.random.randn(*param1.shape).astype(np.float32)
     param1.d = p1d
     param1.g = p1g
     param1_f = get_parameter_or_create(
-        'p/param1', param1.shape, need_grad=False)
-    assert not param1_f.need_grad
-    assert not param1.need_grad
+        key1, param1.shape, need_grad=False)
+    assert not nn.get_parameters(grad_only=False)[key1].need_grad
+    param1_f = get_parameter_or_create(
+        key1, param1.shape, need_grad=True)
+    assert nn.get_parameters()[key1].need_grad
     assert np.all(param1.d == p1d)
     assert np.all(param1.d == param1_f.d)
     param1.d = 1
     assert np.all(param1_f.d == 1)
     param1_f2 = get_parameter_or_create(
-        'p/param1', param1.shape, need_grad=True, as_need_grad=False)
-    assert param1.need_grad
-    assert param1_f.need_grad
+        key1, param1.shape, need_grad=True, as_need_grad=False)
     assert not param1_f2.need_grad
     nn.clear_parameters()
 

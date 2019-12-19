@@ -35,7 +35,7 @@ void BinaryWeightConvolution<T>::setup_impl(const Variables &inputs,
   // Initialize internal `convolution` function
   convolution_ =
       create_Convolution(this->ctx_, this->base_axis_, this->pad_,
-                         this->stride_, this->dilation_, this->group_);
+                         this->stride_, this->dilation_, this->group_, false);
   if (inputs.size() == 5) { // with bias
     convolution_->setup(Variables{inputs[0], inputs[1], inputs[4]}, outputs);
   } else { // without bias

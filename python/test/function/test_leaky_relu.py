@@ -47,3 +47,25 @@ def test_leaky_relu_inplace(seed, alpha, ctx, func_name):
     x = nn.Variable([2, 3, 4], need_grad=True)
     inplace_function_test_helper(
         [x], F.leaky_relu, ctx=ctx, rng=np.random.RandomState(seed))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("alpha", [0, 0.2])
+def test_relu_double_backward(seed, alpha, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    backward_function_tester(rng, F.leaky_relu, None,
+                             inputs=inputs,
+                             func_args=[alpha], func_kwargs={},
+                             atol_b=1e-3,
+                             atol_accum=1e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)
+
+# TODO: inplace double_backward

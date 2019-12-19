@@ -18,6 +18,7 @@ List of solvers
 
 .. autofunction:: Sgd
 .. autofunction:: Momentum
+.. autofunction:: Lars
 .. autofunction:: Nesterov
 .. autofunction:: Adadelta
 .. autofunction:: Adagrad

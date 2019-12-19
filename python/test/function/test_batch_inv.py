@@ -21,12 +21,20 @@ from nbla_test_utils import list_context
 
 ctxs = list_context('BatchInv')
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 def ref_inv(x):
     y = np.zeros_like(x, dtype=np.float32)
     for i in range(x.shape[0]):
         y[i] = np.linalg.inv(x[i])
     return y
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
 def test_batch_inv_forward_backward(seed, ctx, func_name):

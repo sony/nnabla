@@ -34,6 +34,7 @@ string get_error_string(error_code code) {
     CASE_ERROR_STRING(os);
     CASE_ERROR_STRING(target_specific);
     CASE_ERROR_STRING(target_specific_async);
+    CASE_ERROR_STRING(runtime);
 #undef CASE_ERROR_STRING
   }
   return std::string();

@@ -15,6 +15,8 @@
 import os
 import numpy as np
 
+from nnabla.logger import logger
+
 
 def is_float(x):
     # x is string

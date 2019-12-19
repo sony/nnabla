@@ -68,7 +68,7 @@ void Solver::set_parameters(const vector<pair<string, VariablePtr>> &params,
         remove_state_impl(kv.first);
       }
     }
-    params_.insert({kv.first, {kv.second, 0}});
+    params_.insert({kv.first, {kv.second}});
     set_state_impl(kv.first, kv.second);
   }
 }
@@ -118,14 +118,13 @@ void Solver::zero_grad() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     g->zero();
-    kv.second.at = g->modification_count();
   }
 }
 
 void Solver::update() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
-    if (kv.second.at == g->modification_count()) {
+    if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
@@ -138,7 +137,7 @@ void Solver::weight_decay(float decay_rate) {
     return;
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
-    if (kv.second.at == g->modification_count()) {
+    if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
@@ -149,7 +148,7 @@ void Solver::weight_decay(float decay_rate) {
 bool Solver::check_inf_grad() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
-    if (kv.second.at == g->modification_count()) {
+    if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
@@ -164,7 +163,7 @@ bool Solver::check_inf_grad() {
 bool Solver::check_nan_grad() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
-    if (kv.second.at == g->modification_count()) {
+    if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
@@ -179,7 +178,7 @@ bool Solver::check_nan_grad() {
 bool Solver::check_inf_or_nan_grad() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
-    if (kv.second.at == g->modification_count()) {
+    if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
@@ -194,7 +193,7 @@ bool Solver::check_inf_or_nan_grad() {
 void Solver::scale_grad(float scale) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
-    if (kv.second.at == g->modification_count()) {
+    if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }

@@ -69,7 +69,7 @@ So replace `cmake ../`. with
 cmake ../ -DPYTHON_COMMAND_NAME=python3.6  # if you use python 3.6
 ```
 
-Be carefull if you have multiple python versions.
+Be careful if you have multiple python versions.
 
 Finally, you get the NNabla Python package installer as a wheel file found at `./dist`. You can install nnabla using the wheel file using `pip` command.
 

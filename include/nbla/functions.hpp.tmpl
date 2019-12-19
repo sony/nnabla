@@ -26,6 +26,7 @@
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
 #include <nbla/global_context.hpp>
+#include <nbla/communicator.hpp>
 
 namespace nbla {
 namespace functions {
@@ -33,34 +34,28 @@ namespace functions {
 ## full arguments
 <%
 fi = function_info[name]
-type_args = None
-args = None
-type_inputs = None
-inputs = None
-if 'arguments' in fi:
-    args_info = fi['arguments']
-    if 0 < len(args_info):
-	    type_args = ', '.join([x[0] + ' ' + x[1] for x in zip(arg_types, args_info)])
-	    args = ', '.join(args_info)
-if 'inputs' in fi :
-    inputs_info = fi['inputs']
-    if 0 < len(inputs_info):
-	    type_inputs = ', '.join(['CgVariablePtr ' + x for x in inputs_info])
-	    inputs = ', '.join(inputs_info)
+
+inputs_list = []
+inputs_info = fi.get("inputs", [])
+if 0 < len(inputs_info):
+    inputs_list += ['CgVariablePtr ' + x for x in inputs_info]
+
+args_info = fi.get("arguments", [])
+if 0 < len(args_info):
+    inputs_list += [x[0] + ' ' + x[1] for x in zip(arg_types, args_info)]
+
+inputs_types = ", ".join(inputs_list)
+
+context_and_inputs = "Context &ctx"
+if 0 < len(inputs_list) : context_and_inputs += ", " + inputs_types
+
+output_type = 'CgVariablePtr'
+for x in fi['outputs'].values():
+    if x['doc'] == 'list of N-D arrays': output_type = 'vector<CgVariablePtr>'
+
 %>
-% if type_args is None and type_inputs is None:
-NBLA_API vector<CgVariablePtr> ${snake_name}(Context &ctx);
-NBLA_API CgVariablePtr ${snake_name}();
-% elif type_args is None:
-NBLA_API vector<CgVariablePtr> ${snake_name}(Context &ctx, ${type_inputs});
-NBLA_API CgVariablePtr ${snake_name}(${type_inputs});
-% elif type_inputs is None:
-NBLA_API vector<CgVariablePtr> ${snake_name}(Context &ctx, ${type_args});
-NBLA_API CgVariablePtr ${snake_name}(${type_args});
-% else:
-NBLA_API vector<CgVariablePtr> ${snake_name}(Context &ctx, ${type_inputs}, ${type_args});
-NBLA_API CgVariablePtr ${snake_name}(${type_inputs}, ${type_args});
-% endif
+NBLA_API vector<CgVariablePtr> ${snake_name}(${context_and_inputs});
+NBLA_API ${output_type} ${snake_name}(${inputs_types});
 % endfor
 
 class NBLA_API ConvolutionOpts {
@@ -69,16 +64,19 @@ private:
   vector<int> pad_;
   vector<int> stride_;
   vector<int> dilation_;
+  bool channel_last_;
 public:
   ConvolutionOpts();
   ConvolutionOpts &group(int val);
   ConvolutionOpts &pad(const vector<int> &val);
   ConvolutionOpts &stride(const vector<int> &val);
   ConvolutionOpts &dilation(const vector<int> &val);
+  ConvolutionOpts &channel_last(bool val);
   int group();
   const vector<int> &pad() const;
   const vector<int> &stride() const;
   const vector<int> &dilation() const;
+  bool channel_last() const;
 };
 
 class NBLA_API BatchNormalizationOpts {
@@ -101,14 +99,17 @@ private:
   bool ignore_border_;
   bool including_pad_;
   vector<int> pad_;
+  bool channel_last_;
 public:
   PoolingOpts();
   PoolingOpts &ignore_border(bool ignore_border);
   PoolingOpts &including_pad(bool including_pad);
   PoolingOpts &pad(const vector<int> &val);
-  bool ignore_border();
-  bool including_pad();
+  PoolingOpts &channel_last(bool val);
+  bool ignore_border() const;
+  bool including_pad() const;
   const vector<int> &pad() const;
+  bool channel_last() const;
 };
 
 NBLA_API vector<CgVariablePtr> convolution(Context &ctx, CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts);

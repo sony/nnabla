@@ -17,12 +17,11 @@ import pytest
 
 import nnabla as nn
 import nnabla.functions as F
-import nnabla.parametric_functions as PF
 import nnabla.utils.save
 import nnabla.utils.load
+from nnabla.testing import assert_allclose
 
 import numpy as np
-import os
 from subprocess import check_call, call, check_output
 import platform
 
@@ -84,7 +83,7 @@ def check_nbla_infer(tmpdir, x, y, batch_size, on_memory):
     # D. Compare
     y3 = np.fromfile(output_bin.strpath + '_0.bin',
                      dtype=np.float32).reshape(y2.shape)
-    assert np.allclose(y2.d, y3)
+    assert_allclose(y2.d, y3)
 
 
 @pytest.mark.parametrize('batch_size', [1, 4])

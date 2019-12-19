@@ -18,10 +18,12 @@
 #include <string>
 #include <vector>
 
+#include <nbla/auto_forward.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
+#include <nbla/exception.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function/affine.hpp>
 #include <nbla/function/batch_normalization.hpp>
@@ -96,8 +98,17 @@ ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
 
   // Search exist one.
   auto it = param_dict_->find(param_path);
-  if (it != param_dict_->end())
+  if (it != param_dict_->end()) {
+    NBLA_CHECK(
+        shape == it->second->variable()->shape(), error_code::value,
+        "Parameter \"%s\" already exists but the shape you passed is mismatch."
+        "the shape of existed paremeter: (%s) != the shape you passed: (%s).",
+        param_path.c_str(),
+        string_join(it->second->variable()->shape(), ", ").c_str(),
+        string_join(shape, ", ").c_str());
+
     return it->second;
+  }
 
   // Create a new one and initialize with the initializer.
   auto parameter = make_parameter(shape, initializer, need_grad);
@@ -179,6 +190,11 @@ ConvolutionOpts &ConvolutionOpts::dilation(const vector<int> &val) {
   return *this;
 }
 
+ConvolutionOpts &ConvolutionOpts::channel_last(bool val) {
+  base_.channel_last(val);
+  return *this;
+}
+
 int ConvolutionOpts::group() { return base_.group(); }
 
 const vector<int> &ConvolutionOpts::pad() const { return base_.pad(); }
@@ -188,6 +204,7 @@ const vector<int> &ConvolutionOpts::stride() const { return base_.stride(); }
 const vector<int> &ConvolutionOpts::dilation() const {
   return base_.dilation();
 }
+bool ConvolutionOpts::channel_last() const { return base_.channel_last(); }
 
 ConvolutionOpts &ConvolutionOpts::with_bias(bool with_bias) {
   with_bias_ = with_bias;
@@ -270,6 +287,9 @@ vector<CgVariablePtr> affine(Context &ctx, CgVariablePtr x, int base_axis,
   CgVariablePtr affine_w =
       parameters.get_parameter_or_create("affine/W", {n_in, n_out}, w_init);
 
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+
   if (with_bias) {
 
     if (b_init == nullptr) {
@@ -280,15 +300,13 @@ vector<CgVariablePtr> affine(Context &ctx, CgVariablePtr x, int base_axis,
     CgVariablePtr affine_b =
         parameters.get_parameter_or_create("affine/b", {n_out}, b_init);
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Affine(ctx, base_axis)),
-                   {x, affine_w, affine_b}, execute_forward);
+                   {x, affine_w, affine_b}, 1, {}, execute_forward);
 
   } else {
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Affine(ctx, base_axis)),
-                   {x, affine_w}, execute_forward);
+                   {x, affine_w}, 1, {}, execute_forward);
   }
 }
 
@@ -305,8 +323,8 @@ vector<CgVariablePtr>
 convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
             const vector<int> &kernel, const vector<int> &pad,
             const vector<int> &stride, const vector<int> &dilation, int group,
-            ParameterDirectory parameters, bool with_bias, bool fix_parameters,
-            Initializer *w_init, Initializer *b_init) {
+            bool channel_last, ParameterDirectory parameters, bool with_bias,
+            bool fix_parameters, Initializer *w_init, Initializer *b_init) {
 
   shared_ptr<Initializer> shared_w_init;
   shared_ptr<Initializer> shared_b_init;
@@ -332,6 +350,9 @@ convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
   CgVariablePtr conv_w =
       parameters.get_parameter_or_create("conv/W", shape_w, w_init);
 
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+
   if (with_bias) {
 
     if (b_init == nullptr) {
@@ -342,17 +363,17 @@ convolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
     CgVariablePtr conv_b =
         parameters.get_parameter_or_create("conv/b", {n_map_out}, b_init);
 
-    bool execute_forward = true;
-    return connect(make_shared<CgFunction>(create_Convolution(
-                       ctx, base_axis, pad, stride, dilation, group)),
-                   {x, conv_w, conv_b}, execute_forward);
+    return connect(
+        make_shared<CgFunction>(create_Convolution(
+            ctx, base_axis, pad, stride, dilation, group, channel_last)),
+        {x, conv_w, conv_b}, 1, {}, execute_forward);
 
   } else {
 
-    bool execute_forward = true;
-    return connect(make_shared<CgFunction>(create_Convolution(
-                       ctx, base_axis, pad, stride, dilation, group)),
-                   {x, conv_w}, execute_forward);
+    return connect(
+        make_shared<CgFunction>(create_Convolution(
+            ctx, base_axis, pad, stride, dilation, group, channel_last)),
+        {x, conv_w}, 1, {}, execute_forward);
   }
 }
 
@@ -364,9 +385,9 @@ CgVariablePtr convolution(CgVariablePtr x, int base_axis, int n_map_out,
       SingletonManager::get<GlobalContext>()->get_current_context();
   return convolution(global_ctx, x, base_axis, n_map_out, kernel,
                      conv_opts.pad(), conv_opts.stride(), conv_opts.dilation(),
-                     conv_opts.group(), parameters, conv_opts.with_bias(),
-                     conv_opts.fix_parameters(), conv_opts.w_init(),
-                     conv_opts.b_init())[0];
+                     conv_opts.group(), conv_opts.channel_last(), parameters,
+                     conv_opts.with_bias(), conv_opts.fix_parameters(),
+                     conv_opts.w_init(), conv_opts.b_init())[0];
 }
 
 vector<CgVariablePtr>
@@ -401,6 +422,9 @@ deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
   CgVariablePtr deconv_w =
       parameters.get_parameter_or_create("deconv/W", shape_w, w_init);
 
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+
   if (with_bias) {
     if (b_init == nullptr) {
       shared_b_init = make_shared<ConstantInitializer>();
@@ -410,17 +434,15 @@ deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
     CgVariablePtr deconv_b =
         parameters.get_parameter_or_create("deconv/b", {n_map_out}, b_init);
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Deconvolution(
                        ctx, base_axis, pad, stride, dilation, group)),
-                   {x, deconv_w, deconv_b}, execute_forward);
+                   {x, deconv_w, deconv_b}, 1, {}, execute_forward);
 
   } else {
 
-    bool execute_forward = true;
     return connect(make_shared<CgFunction>(create_Deconvolution(
                        ctx, base_axis, pad, stride, dilation, group)),
-                   {x, deconv_w}, execute_forward);
+                   {x, deconv_w}, 1, {}, execute_forward);
   }
 }
 
@@ -462,10 +484,11 @@ batch_normalization(Context &ctx, CgVariablePtr x, const vector<int> &axes,
   CgVariablePtr variance = parameters.get_parameter_or_create(
       "bn/variance", shape_stat, &variance_init, false);
 
-  bool execute_forward = true;
+  bool execute_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
   return connect(make_shared<CgFunction>(create_BatchNormalization(
                      ctx, axes, decay_rate, eps, batch_stat)),
-                 {x, beta, gamma, mean, variance}, execute_forward);
+                 {x, beta, gamma, mean, variance}, 1, {}, execute_forward);
 }
 
 CgVariablePtr batch_normalization(CgVariablePtr x, bool batch_stat,

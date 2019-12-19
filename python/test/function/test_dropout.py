@@ -18,6 +18,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('Dropout')
 
@@ -39,7 +40,7 @@ def test_dropout_forward_backward(p, seed, ctx, func_name):
         o = F.dropout(i, p)
     scale = 1. / (1. - p)
     mask = o.d != 0
-    assert np.allclose(o.d, i.d * mask * scale)
+    assert_allclose(o.d, i.d * mask * scale)
     assert o.parent.name == func_name
 
     # NNabla backward
@@ -50,13 +51,13 @@ def test_dropout_forward_backward(p, seed, ctx, func_name):
     ref_grad = o_grad * mask * scale
 
     # Verify
-    assert np.allclose(i.g, orig_grad + ref_grad)
+    assert_allclose(i.g, orig_grad + ref_grad)
 
     # Check if accum option works
     i.g[...] = 1
     o.g = o_grad
     o.parent.backward([i], [o], [False])
-    assert np.allclose(i.g, ref_grad)
+    assert_allclose(i.g, ref_grad)
 
     # Check accum=False with NaN gradient
     i.g = np.float32('nan')
@@ -68,3 +69,30 @@ def test_dropout_forward_backward(p, seed, ctx, func_name):
     i.need_grad = False
     o.backward(o_grad)
     assert np.all(i.g == 0)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)])
+def test_dropout_double_backward(p, seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+
+    rng = np.random.RandomState(seed)
+    inpd = cap_ignore_region(
+        rng.randn(2, 3, 4).astype(np.float32) * 2,
+        (-1e-3, 1e-3))  # Ensure there is no zero.
+    inp = nn.Variable.from_numpy_array(inpd).apply(need_grad=True)
+    # ONLY test the double backward
+    with nn.context_scope(ctx):
+        dout = F.dropout(inp, p, seed)
+        out = F.sigmoid(dout)
+
+    # Check gradient w.r.t. dy only since no backward w.r.t. x
+    grads = nn.grad([out], [inp])
+    grad = grads[0]
+    grad.forward()
+    grad.backward(1.0, clear_buffer=False)
+    g_dy = grad.parent.inputs[1].g
+    scale = 1. / (1. - p)
+    mask = dout.d != 0
+    assert_allclose(g_dy, mask * scale)

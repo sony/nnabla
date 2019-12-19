@@ -126,12 +126,31 @@ public:
   */
   size_t modification_count() const;
 
+  /** Copy values from another SynedArray.
+
+      @note The copy is happening in a device and a dtype of source array.
+   */
+  void copy_from(const SyncedArray *src);
+
   void clear();
+
+  /** Get whether or not it fills array values obtained in cast/get call later.
+
+      This is provided to determine gradient accumulation flags in our
+     computation graph engine, as well as to determine whether or not solver and
+     communicator execute their operations by depending on whether gradients are
+     updated.
+
+   */
+  bool zeroing() const;
 
 private:
   ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false);
 
   void clear_all_array();
+
+  // Clearing zero and fill flags for lazy evaluation.
+  void clear_flags();
 
   DISABLE_COPY_AND_ASSIGN(SyncedArray);
 };

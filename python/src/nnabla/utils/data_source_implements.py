@@ -24,7 +24,6 @@ import numpy
 import os
 import threading
 import atexit
-import sys
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load
@@ -44,6 +43,8 @@ class SimpleDataSource(DataSource):
         return self._load_func(self._order[position])
 
     def reset(self):
+        self._indexes = self._rng.permutation(
+            self._size) if self._shuffle else numpy.arange(self._size)
         super(SimpleDataSource, self).reset()
 
     def __init__(self, load_func, num_examples, shuffle=False, rng=None):

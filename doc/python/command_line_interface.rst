@@ -7,13 +7,13 @@ convert param and dataset, measure performance, file format converter and so on.
 .. code-block:: none
 
     usage: nnabla_cli [-h] [-m]
-                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
+                      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,optimize,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
                       ...
     
     Command line interface for NNabla(Version 1.0.11.dev1, Build 181226024531)
     
     positional arguments:
-      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
+      {train,infer,forward,encode_param,decode_param,profile,conv_dataset,compare_with_cpu,create_image_classification_dataset,upload,create_tar,function_info,optimize,dump,nnb_template,convert,plot_series,plot_timer,draw_graph,version}
         train               Training with NNP.
         infer               Do inference with NNP and binary data file input.
         forward             Do evaluation with NNP and test dataset.
@@ -27,6 +27,7 @@ convert param and dataset, measure performance, file format converter and so on.
         upload              Upload dataset to Neural Network Console.
         create_tar          Create tar file for Neural Network Console.
         function_info       Output function info.
+        optimize            Optimize pb model.
         dump                Dump network with supported format.
         nnb_template        Generate NNB config file template.
         convert             File format converter.
@@ -261,7 +262,10 @@ Dump content of supported format
 
 .. code-block:: none
 
-    usage: nnabla_cli dump [-h] [-I IMPORT_FORMAT] [--nnp-no-expand-network]
+    usage: nnabla_cli dump [-h] [-v] [-F] [-V] [--dump-limit DUMP_LIMIT]
+                           [-n DUMP_VARIABLE_NAME] [-I IMPORT_FORMAT]
+                           [-E NNP_IMPORT_EXECUTOR_INDEX]
+                           [--nnp-exclude-preprocess] [--nnp-no-expand-network]
                            FILE [FILE ...]
     
     positional arguments:
@@ -269,8 +273,20 @@ Dump content of supported format
     
     optional arguments:
       -h, --help            show this help message and exit
+      -v, --dump-verbose    [dump] verbose output.
+      -F, --dump-functions  [dump] dump function list.
+      -V, --dump-variables  [dump] dump variable list.
+      --dump-limit DUMP_LIMIT
+                            [dump] limit num of items.
+      -n DUMP_VARIABLE_NAME, --dump-variable-name DUMP_VARIABLE_NAME
+                            [dump] Specific variable name to display.
       -I IMPORT_FORMAT, --import-format IMPORT_FORMAT
                             [import] import format. (one of [NNP,ONNX])
+      -E NNP_IMPORT_EXECUTOR_INDEX, --nnp-import-executor-index NNP_IMPORT_EXECUTOR_INDEX
+                            [import][NNP] import only specified executor.
+      --nnp-exclude-preprocess
+                            [import][NNP] EXPERIMENTAL exclude preprocess
+                            functions when import.
       --nnp-no-expand-network
                             [import][NNP] expand network with repeat or recurrent.
 
@@ -308,11 +324,14 @@ File format converter
                               [-O EXPORT_FORMAT] [-f] [-b BATCH_SIZE]
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
-                              [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION]
-                              FILE [FILE ...]
+                              [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION] [--api API]
+                              [--outputs OUTPUTS] [--inputs INPUTS] FILE [FILE ...]
     
     positional arguments:
       FILE                  File or directory name(s) to convert.
+                            (When convert ckpt format of the tensorflow model,
+                            If the version of the checkpoint is V1, need to enter the `.ckpt` file,
+                            otherwise need to enter the `.meta` file.)
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -320,6 +339,12 @@ File format converter
                             [import] import format. (one of [NNP,ONNX])
       --nnp-no-expand-network
                             [import][NNP] expand network with repeat or recurrent.
+      --outputs OUTPUTS
+                            [import][tensorflow] The name(s) of the output nodes, comma separated.
+                                                 Only needed when convert CKPT format.
+      --inputs INPUTS
+                            [import][tensorflow] The name(s) of the input nodes, comma separated.
+                                                 Only needed when convert CKPT format.
       -O EXPORT_FORMAT, --export-format EXPORT_FORMAT
                             [export] export format. (one of [NNP,NNB,CSRC,ONNX])
       -f, --force           [export] overwrite output file.
@@ -339,6 +364,18 @@ File format converter
       -d DEFINE_VERSION, --define_version
                             [export][ONNX] define onnx opset version. e.g. opset_6
                             [export][NNB] define binary format version. e.g. nnb_3
+      --api API             [export][NNB] Set API Level to convert to, default is highest API Level.
+
+Optimize pb model
+-----------------
+
+.. code-block:: none
+
+    usage: nnabla_cli optimize [-h] input_pb_file output_pb_file
+
+    positional arguments:
+      input_pb_file       Input pre-optimized pb model.
+      output_pb_file      Output optimized pb model.
 
 
 Plot Monitor class output files
@@ -479,7 +516,7 @@ Generate function information
 
     usage: nnabla_cli function_info [-h] [-o OUTFILE] [-f FUNC_SET] [-c CONFIG]
                                     [-t TARGET] [-q --query] [--nnp-no-expand-network]
-                                    [FILE] [FILE ...]
+                                    [--api API] [FILE] [FILE ...]
 
     positional arguments:
       FILE                  Path to nnp file.
@@ -499,6 +536,7 @@ Generate function information
                           query the detail of a function.
       --nnp-no-expand-network
                           [import][NNP] expand network with repeat or recurrent.
+      --api API           List up api levels
 
 Display version
 ---------------

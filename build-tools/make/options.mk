@@ -17,7 +17,7 @@ NNABLA_OPTIONS_INCLUDED = True
 ########################################################################################################################
 # Environments
 
-DOCKER_RUN_OPTS =--rm
+DOCKER_RUN_OPTS +=--rm
 DOCKER_RUN_OPTS += -v $$(pwd):$$(pwd)
 DOCKER_RUN_OPTS += -w $$(pwd)
 DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
@@ -69,7 +69,7 @@ DOCKER_RUN_OPTS += -e PARALLEL_BUILD_NUM=$(PARALLEL_BUILD_NUM)
 WHEEL_SUFFIX ?=
 DOCKER_RUN_OPTS += -e WHEEL_SUFFIX=$(WHEEL_SUFFIX)
 
-ARCH_SUFFIX ?=
+ARCH_SUFFIX ?= $(shell bash -c 'if [ "`uname -m`" == "ppc64le" ]; then echo -ppc64le ; fi')
 DOCKER_RUN_OPTS += -e ARCH_SUFFIX=$(ARCH_SUFFIX)
 
 ########################################################################################################################

@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -34,3 +33,21 @@ def test_r_sub_scalar_forward_backward(seed, val, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32)]
     function_tester(rng, F.r_sub_scalar, ref_r_sub_scalar,
                     inputs, func_args=[val], ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("val", [0.5, 1, 2])
+def test_r_sub_scalar_double_backward(seed, val, ctx, func_name):
+    from nbla_test_utils import backward_function_tester, cap_ignore_region
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3).astype(np.float32) * 3, (-0.5, 0.5))]
+    backward_function_tester(rng, F.r_sub_scalar, None,
+                             inputs=inputs,
+                             func_args=[val], func_kwargs={},
+                             atol_b=1e-3, atol_accum=1e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

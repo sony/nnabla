@@ -7,3 +7,5 @@ The ``nnabla.models`` package provides APIs that allow users to execute state-of
     :maxdepth: 1
 
     models/imagenet.rst
+    models/object_detection.rst
+    models/semantic_segmentation.rst

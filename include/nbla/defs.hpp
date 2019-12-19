@@ -28,4 +28,8 @@
 // C++11 gives alignas as standar
 // http://en.cppreference.com/w/cpp/language/alignas
 #define NBLA_ALIGN(N) alignas(N)
+
+// Helper macro to get this class type
+// To use this, <type_traits> must be included before using it.
+#define NBLA_THIS_TYPE std::remove_pointer<decltype(this)>::type
 #endif

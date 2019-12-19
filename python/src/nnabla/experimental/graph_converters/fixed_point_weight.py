@@ -1,5 +1,4 @@
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import numpy as np
 
@@ -15,7 +14,7 @@ class FixedPointWeightConverter(IdentityConverter):
         black_list (list): Black list of the function list.
         params (:obj:`OrderedDict`): Result of nn.get_parameters().
         inner_prod_functions (list of function name): Function names to be replaced. Default is ["Affine", "Convolution", "Deconvolution"].
-        call_forward (:obj:`bool`): Call forward function to obtain `W_q`. Default is "True", so ones do not need to call the forward function to synch quantized weights. Take care that if the network contains the batch normalization or like other normalization which computes running stats (e.g., a running mean and variance), these stats can not help being updated by this `call_forward`. To avoid that, change the argument `batch_stat` of the batch normalization layer to `False` when using this `call_foward` option `True`.
+        call_forward (:obj:`bool`): Call forward function to obtain `W_q`. Default is "True", so one does not need to call the forward function to sync quantized weights. Note that if the network contains batch normalization or any other normalization that computes running stats (e.g., a running mean and variance), these stats are automatically updated by call_forward. To avoid that, change the argument batch_stat of the batch normalization layer to False when using this call_forward option True.
         floor (:obj:`bool`): When computing the step size, it is coerced to be the power-of-2 by using either :math:`2^ceil(log_2(abs(W)_max / (2^n - 1)))` or :math:`2^floor(log_2(abs(W)_max / (2^n - 1)))`. Default is `False`.
         args_fpq (`dict`): Argument into F.quantize. Default is `{"sign_w": True, "n_w": 8, "delta_w": 2e-4, "quantize_w": True, "sign_b": True, "n_b": 8, "delta_b": 2e-4, "quantize_b": True}`
         name (:obj:`str`): Prefix of the parameter scope.
@@ -122,6 +121,11 @@ class FixedPointWeightConverter(IdentityConverter):
             omaps = w_init.shape[0]
             kernel = w_init.shape[2:]
             args = inner_prod_func.info.args
+            if args.get('channel_last', False):
+                raise ValueError(
+                    'channel_last=True is not supported in fixed_point_quantized_convolution.')
+            del args['channel_last']
+
             o = PF.fixed_point_quantized_convolution(x, omaps, kernel, with_bias=with_bias,
                                                      w_init=w_init, b_init=b_init,
                                                      sign_w=sign_w, n_w=n_w, delta_w=delta_w,

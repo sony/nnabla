@@ -54,7 +54,10 @@ LeakyReLU:
   half: [Half]
 Softmax:
   float: [float]
-  half: [Half]
+#   half: [Half]
+LogSoftmax:
+  float: [float]
+#   half: [Half]
 ELU:
   float: [float]
   half: [Half]
@@ -73,9 +76,39 @@ PReLU:
 GELU:
   float: [float]
   half: [Half]
+ReLU6:
+  float: [float]
+  half: [Half]
+HardSigmoid:
+  float: [float]
+  half: [Half]
+HardTanh:
+  float: [float]
+  half: [Half]
+LogSigmoid:
+  float: [float]
+  half: [Half]
+SoftPlus:
+  float: [float]
+  half: [Half]
+SoftSign:
+  float: [float]
+  half: [Half]
+TanhShrink:
+  float: [float]
+  half: [Half]
+Sinc:
+  float: [float]
+  half: [Half]
+FusedBatchNormalization:
+  float: [float]
+  half: [Half]
 BatchNormalization:
   float: [float]
   half: [Half]      
+SyncBatchNormalization:
+  float: [float]
+  half: [Half]
 MeanSubtraction:
   float: [float]
   half: [Half]
@@ -347,7 +380,7 @@ BinaryCrossEntropy:
   half: [Half]
 SoftmaxCrossEntropy:
   float: [float, int]
-  half: [Half, int]
+#   half: [Half, int]
 CategoricalCrossEntropy:
   float: [float, int]
   half: [Half, int]
@@ -391,6 +424,9 @@ INQConvolution:
   float: [float, int]
   half: [Half, int]
 FixedPointQuantize:
+  float: [float]
+  half: [Half]
+MinMaxQuantize:
   float: [float]
   half: [Half]
 Pow2Quantize:
@@ -473,3 +509,18 @@ IFFT:
 Prune:
   float: [float]
   Half: [Half]
+Assign:
+  float: [float]
+  half: [Half]
+GatherNd:
+  float: [float]
+  half: [Half]
+ScatterNd:
+  float: [float]
+  half: [Half]
+MaxPoolingBackward:
+  float: [float]
+  half: [Half]
+WarpByFlow:
+  float: [float]
+  half: [Half]

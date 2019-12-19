@@ -14,14 +14,11 @@
 
 from __future__ import absolute_import
 
-import os
 import pytest
 import numpy as np
 
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
-import nnabla.functions as F
-import nnabla.parametric_functions as PF
 
 from collections import OrderedDict
 

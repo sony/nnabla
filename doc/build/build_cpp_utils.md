@@ -81,6 +81,7 @@ make
 Some optional arguments for `cmake`:
 
 * `-DNNABLA_UTILS_WITH_HDF5=OFF` to turn off HDF5 feature if you stacked in HDF5 installation.
+* `-DNNABLA_UTILS_WITH_NPY=ON` to turn on NPY feature if you want to use *.npy cache files.
 * `-DBUILD_PYTHON_PACKAGE=ON` to build Python package too.
 
 The following command will install the libraries, the command line

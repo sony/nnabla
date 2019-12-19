@@ -29,7 +29,7 @@ template <typename T>
 AdaBound<T>::AdaBound(const Context &ctx, float alpha, float beta1, float beta2,
                       float eps, float final_lr, float gamma)
     : Solver(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2), eps_(eps),
-      final_lr_(final_lr), gamma_(gamma) {}
+      final_lr_(final_lr), gamma_(gamma), init_alpha_(alpha_) {}
 
 template <typename T> AdaBound<T>::~AdaBound() {}
 
@@ -63,12 +63,13 @@ void AdaBound<T>::update_impl(const string &key, VariablePtr param) {
   const T bias_correction =
       std::sqrt(1 - std::pow(beta2_, t)) / (1 - std::pow(beta1_, t));
   T alpha_t = alpha_ * bias_correction;
+  T final_lr = final_lr_ * (alpha_ / init_alpha_);
   for (int s = 0; s < size; ++s) {
     // Updating running mean and var.
     m[s] = beta1_ * m[s] + (1 - beta1_) * g[s];
     v[s] = beta2_ * v[s] + (1 - beta2_) * g[s] * g[s];
-    T lower_bound = final_lr_ * (1 - 1 / (gamma_ * t + 1));
-    T upper_bound = final_lr_ * (1 + 1 / (gamma_ * t));
+    T lower_bound = final_lr * (1 - 1 / (gamma_ * t + 1));
+    T upper_bound = final_lr * (1 + 1 / (gamma_ * t));
     T denom = std::sqrt(v[s]) + eps_;
     T eta = std::min(upper_bound, std::max(alpha_t / denom, lower_bound));
     // Update parameters.

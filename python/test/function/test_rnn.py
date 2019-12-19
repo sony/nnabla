@@ -16,7 +16,6 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-import nnabla.parametric_functions as PF
 from nbla_test_utils import list_context
 
 ctxs = list_context('RNN')
@@ -122,7 +121,7 @@ def execute_fixed_length_rnn(xs_np, h0_np, w0_np, w_np, b_np, num_layers=1, nonl
     dummy.forward()
 
     # returns numpy arrays
-    ys = F.reshape(ys, (seq_len, batch_size, hidden_size, num_directions))
+    ys = F.reshape(ys, (seq_len, batch_size, num_directions * hidden_size))
     ys.forward()
     return ys.d, hn.d
 

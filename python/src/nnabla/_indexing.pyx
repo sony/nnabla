@@ -1,127 +1,240 @@
 from _variable cimport Variable
 from _nd_array cimport NdArray
 
-# Numpy
 import numpy as np
-cimport numpy as np
-np.import_array()
+import itertools
+import sys
 
 
-def _align_key_and_shape(key, shape):
-    # TODO: refactor
-    if Ellipsis in key:  # it must be a single ellipsis ('...')
-        i = [i for i, k in enumerate(key) if k == Ellipsis][0]
-        n_newaxis = len([k for k in key if k == np.newaxis])
-        n = len(shape) - (len(key) - 1) + n_newaxis
-        k0 = key[:i] + tuple([slice(None)] * n)
-        key = k0 if i == len(key) - 1 else k0 + key[i + 1:]
+def is_numpy_array(a):
+    return isinstance(a, np.ndarray)
 
-        _shape = []
-        cnt = 0
-        for k in key:
-            if k == np.newaxis:
-                _shape.append(None)  # dummy
-                continue
-            _shape.append(shape[cnt])
-            cnt += 1
-        return key, _shape
-    elif len(key) < len(shape):
-        _key = []
-        _shape = []
-        for i in range(len(shape)):
-            if i < len(key):
-                _key.append(key[i])
-                _shape.append(shape[i])
+
+def broadcast(x, shape):
+    import nnabla.functions as F
+    new_shape = (len(shape) - len(x.shape)) * (1,) + x.shape
+    return F.broadcast(F.reshape(x, new_shape), shape=shape)
+
+
+def basic_getsetitem_prepare(self, key):
+    idx = [val for val in key if val is not None]
+
+    if len(idx) == 0:
+        idx = self.ndim * [slice(None)]
+        key.extend(idx)
+
+    if Ellipsis in idx:
+        ins = self.ndim - len(idx) + 1
+        pos = idx.index(Ellipsis)
+        idx[pos:pos+1] = ins * [slice(None)]
+        pos = key.index(Ellipsis)
+        key[pos:pos+1] = ins * [slice(None)]
+
+    if Ellipsis in idx:
+        raise IndexError("an index can only have a single ellipsis ('...')")
+
+    if len(idx) > self.ndim:
+        raise IndexError("too many indices for {0}-D array".format(self.ndim))
+
+    idx.extend((self.ndim - len(idx)) * [slice(None)])
+    key.extend((self.ndim - len(key)) * [slice(None)])
+
+    for i, s in enumerate(self.shape):
+        if isinstance(idx[i], int):
+            if 0 <= idx[i] < s:
+                idx[i] = slice(idx[i], idx[i] + 1, 1)
+            elif -s <= idx[i] < 0:
+                idx[i] = slice(s + idx[i], s + idx[i] + 1, 1)
             else:
-                _key.append(slice(None))
-                _shape.append(shape[i])
-        return _key, _shape
-    elif len(key) > len(shape):
-        raise IndexError("too many indices for array")
+                msg = "index {0} is out of bounds for axis {1} with size {2}"
+                raise IndexError(msg.format(idx[i], i, s))
+
+    start, stop, step = zip(*((s.start, s.stop, s.step) for s in idx))
+    if sys.version_info.major < 3:
+        stop = tuple(None if v == sys.maxsize else v for v in stop)
+
+    return key, idx, start, stop, step
+
+
+def basic_getsetitem_result_shape(self, key, array):
+    count = itertools.count()
+    shape = []
+
+    for k in key:
+        if isinstance(k, int):
+            next(count)  # integer axis gets removed in basic indexing
+        else:
+            shape.append(1 if k is None else array.shape[next(count)])
+
+    return tuple(shape)
+
+
+def basic_getitem(self, key):
+    """Basic numpy-like indexing where the `key` object contains only slices,
+    integers, Ellipsis or None (numpy.newaxis). Returns the indexed sub-space
+    of `self` as a :class:`nnabla.Variable` or :class:`nnabla.NdArray`
+    depending on the type of `self`.
+    """
+    import nnabla.functions as F
+
+    key, idx, start, stop, step = basic_getsetitem_prepare(self, key)
+    result = F.slice(self, start, stop, step)
+
+    shape = basic_getsetitem_result_shape(self, key, result)
+    
+    if result.shape != shape:
+        result = F.reshape(result, shape)
+    
+    return result
+
+
+def basic_setitem(self, key, value):
+    """Basic numpy-like indexing where the `key` object contains only slices,
+    integers, Ellipsis, or None (numpy.newaxis). Sets the sub-shape produced
+    by indexing `self` to the, potentially broadcast, `value` elements.
+    """
+    key, idx, start, stop, step = basic_getsetitem_prepare(self, key)
+    
+    import nnabla.functions as F
+    index = F.reshape(F.arange(0, self.size), self.shape)
+    index = F.slice(index, start, stop, step)
+
+    shape = basic_getsetitem_result_shape(self, key, index)
+
+    if index.shape != shape:
+        index = F.reshape(index, shape)
+    
+    if value.shape != index.shape:
+        value = broadcast(value, index.shape)
+    
+    value_flat = F.reshape(value, (value.size,))
+    index_flat = F.reshape(index, (1, index.size))
+    self_flat = F.reshape(self, (self.size,))
+    F.scatter_nd(value_flat, index_flat, out=self_flat)
+
+
+def advanced_getitem(self, key):
+    """Advanced numpy-like indexing where the `key` object contains
+    integer or boolean arrays. Returns the indexed sub-space of `self`
+    as a :class:`nnabla.Variable` or :class:`nnabla.NdArray` depending
+    on the type of `self`.
+    """
+    import nnabla.functions as F
+    idx = [val for val in key if val is not np.newaxis]
+    newaxes = list(1 if k is None else 0 for k in key)
+
+    if len(idx) == 1 and isinstance(idx[0], (list, tuple)):
+        a = np.array(idx[0])
+        if a.dtype == np.bool:
+            idx[0] = a
+
+    if len(idx) == 1 and is_numpy_array(idx[0]) and idx[0].dtype == np.bool:
+        result = F.gather_nd(self, np.vstack(np.nonzero(idx[0])))
+
+    elif all(isinstance(k, (NdArray, Variable)) for k in idx):
+        result = F.gather_nd(self, F.stack(*idx))
+
+    elif all(isinstance(k, (int, tuple, list, np.ndarray)) for k in idx):
+        result = F.gather_nd(self, np.array(idx))
+
     else:
-        return key, shape
+        indices = ', '.join(repr(val) for val in key)
+        message = "mixed advanced indexing: {}".format(indices)
+        raise NotImplementedError(message)
+
+    if sum(newaxes) > 0:
+        shape = newaxes[:newaxes.index(0)]  # leading new axes
+        shape.append(result.shape[0])       # selected subspace
+        shape.extend(sum(newaxes[newaxes.index(0):]) * (1,))  # other new axes
+        shape.extend(result.shape[1:])      # subspace dimensions
+        result = F.reshape(result, shape)
+
+    return result
 
 
-def _force_to_same_len_list(object key, shape):
-    reshape_hint = []
-    keys = []
-    if isinstance(key, int):
-        keys.append(slice(key, key + 1, 1))
-        # Do NOT add k to shape hint
-        for i, s in enumerate(shape[1:]):
-            keys.append(slice(0, s, 1))
-            reshape_hint.append(i + 1)
-    elif isinstance(key, slice):
-        _slice = key
-        keys.append(_slice)
-        reshape_hint.append(0)
-        for i, s in enumerate(shape[1:]):
-            keys.append(slice(0, s, 1))
-            reshape_hint.append(i + 1)
-    elif key == Ellipsis:
-        for i, s in enumerate(shape):
-            keys.append(slice(0, s, 1))
-            reshape_hint.append(i)
-    elif key == np.newaxis:
-        reshape_hint.append(np.newaxis)
-        for i, s in enumerate(shape):
-            keys.append(slice(0, s, 1))
-            reshape_hint.append(i)
-    elif isinstance(key, tuple):
-        key, shape = _align_key_and_shape(key, shape)
-        cnt = 0
-        for i, ks in enumerate(zip(key, shape)):
-            k, s = ks
-            if isinstance(k, int):
-                keys.append(slice(k, k + 1, 1))
-                # Do NOT add k to shape hint
-            elif isinstance(k, slice):
-                _slice = k
-                keys.append(_slice)
-                reshape_hint.append(i - cnt)
-            elif k == np.newaxis:
-                reshape_hint.append(np.newaxis)
-                cnt += 1
+def advanced_setitem(self, key, value):
+    """Advanced numpy-like indexing where the `key` object contains integer
+    or boolean arrays. Sets the sub-shape produced by indexing `self` to
+    the, potentially broadcast, `value` elements.
+    """
+    import nnabla.functions as F
+
+    # set idx to key without np.newaxis
+    idx = [k for k in key if k is not None]
+    newaxes = list(1 if k is None else 0 for k in key)
+
+    if sum(newaxes) > 0:
+        subax = newaxes.index(0)
+        shape = value.shape[subax:subax + 1] + value.shape[sum(newaxes) + 1:]
+        value = F.reshape(value, shape)
+
+    if len(idx) == 1 and isinstance(idx[0], (list, tuple)):
+        a = np.array(idx[0])
+        if a.dtype == np.bool:
+            idx[0] = a
+
+    if len(idx) == 1 and is_numpy_array(idx[0]) and idx[0].dtype == np.bool:
+        indices = np.vstack(np.nonzero(idx[0]))
+
+    elif all(isinstance(k, (NdArray, Variable)) for k in idx):
+        indices = F.stack(*idx)
+
+    elif all(isinstance(k, (int, tuple, list, np.ndarray)) for k in idx):
+        indices = np.array(idx)
+
     else:
-        raise IndexError(
-            "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`)")
+        indices = ', '.join(repr(val) for val in key)
+        message = "mixed advanced indexing: {}".format(indices)
+        raise NotImplementedError(message)
 
-    return keys, reshape_hint  # list of slice, list of integer
+    upshape = indices.shape[1:] + self.shape[indices.shape[0]:]
+    updates = broadcast(value, upshape) if value.shape != upshape else value
+    F.scatter_nd(updates, indices, out=self)
 
 
 cdef object getitem(object self, object key):
-    """Basic numpy-like indexing.
-    Returns: :class:`nnabla.Variable` or :class:`nnabla.NdArray`
-    """
+    """Return self[key]."""
+    assert isinstance(self, (NdArray, Variable))
 
-    import nnabla.functions as F
-    # Get shape
-    if isinstance(self, NdArray):
-        shape = (< NdArray > self).shape
-    elif isinstance(self, Variable):
-        shape = (< Variable > self).shape
-    else:
-        raise IndexError("self should be NdArray or Variable")
+    if isinstance(key, (list, np.ndarray, NdArray, Variable)):
+        return advanced_getitem(self, [key])
 
-    # TODO: Advanced Indexing
-    start, stop, step = [], [], []
-    keys, reshape_hint = _force_to_same_len_list(key, shape)
+    elif isinstance(key, (slice, int, type(Ellipsis), type(None))):
+        return basic_getitem(self, [key])
 
-    # Slice first
-    for key in keys:
-        start.append(key.start)
-        stop.append(key.stop)
-        step.append(key.step)
-    x_sliced = F.slice(self, start, stop, step)
-
-    # Reshape
-    shape = x_sliced.shape
-    shape_new = []
-    new_axis_cnt = 0
-    for rh in reshape_hint:
-        if rh == np.newaxis:
-            shape_new.append(1)
+    elif isinstance(key, tuple):
+        sequence_types = (tuple, list, np.ndarray, NdArray, Variable)
+        if any(isinstance(k, sequence_types) for k in key):
+            return advanced_getitem(self, key)
         else:
-            shape_new.append(shape[rh])
+            return basic_getitem(self, list(key))
 
-    return F.reshape(x_sliced, shape_new)
+    else:
+        raise TypeError("invalid index {}".format(repr(key)))
+
+
+cdef object setitem(object self, object key, object value):
+    """Perform self[key] = value.
+    """
+    assert isinstance(self, (NdArray, Variable))
+
+    if not isinstance(value, (NdArray, Variable)):
+        if not isinstance(value, np.ndarray):
+            value = np.array(value)
+        value = NdArray.from_numpy_array(value)
+
+    if isinstance(key, (list, np.ndarray, NdArray, Variable)):
+        return advanced_setitem(self, [key], value)
+
+    elif isinstance(key, (slice, int, type(Ellipsis), type(None))):
+        return basic_setitem(self, [key], value)
+
+    elif isinstance(key, tuple):
+        sequence_types = (tuple, list, np.ndarray, NdArray, Variable)
+        if any(isinstance(k, sequence_types) for k in key):
+            return advanced_setitem(self, key, value)
+        else:
+            return basic_setitem(self, list(key), value)
+
+    else:
+        raise TypeError("invalid index {}".format(repr(key)))

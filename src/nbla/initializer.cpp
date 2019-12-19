@@ -16,6 +16,7 @@
 #include <random>
 
 #include <nbla/context.hpp>
+#include <nbla/exception.hpp>
 #include <nbla/initializer.hpp>
 using std::make_shared;
 
@@ -57,7 +58,11 @@ void Initializer::initialize(NdArrayPtr parameter) {}
 UniformInitializer::UniformInitializer()
     : Initializer(), lower_(-1.0), upper_(1.0) {}
 UniformInitializer::UniformInitializer(float lower, float upper)
-    : Initializer(), lower_(lower), upper_(upper) {}
+    : Initializer(), lower_(lower), upper_(upper) {
+  NBLA_CHECK(lower_ <= upper_, error_code::value,
+             "lower must be smaller than upper (lower: (%f), upper: (%f))",
+             lower_, upper_);
+}
 void UniformInitializer::initialize(NdArrayPtr param) {
   const int size = param->size();
   Array *arr = param->cast(get_dtype<float_t>(), cpu_ctx, false);
@@ -79,7 +84,10 @@ void ConstantInitializer::initialize(NdArrayPtr param) {
 
 NormalInitializer::NormalInitializer() : Initializer(), mu_(0.0), sigma_(1.0) {}
 NormalInitializer::NormalInitializer(float mu, float sigma)
-    : Initializer(), mu_(mu), sigma_(sigma) {}
+    : Initializer(), mu_(mu), sigma_(sigma) {
+  NBLA_CHECK(sigma >= 0, error_code::value,
+             "sigma must be positive (sigma: (%f))", sigma_);
+}
 void NormalInitializer::initialize(NdArrayPtr param) {
   const int size = param->size();
   Array *arr = param->cast(get_dtype<float_t>(), cpu_ctx, false);
@@ -91,12 +99,21 @@ void NormalInitializer::initialize(NdArrayPtr param) {
 UniformIntInitializer::UniformIntInitializer()
     : Initializer(), lower_(0), upper_(INT_MAX) {}
 UniformIntInitializer::UniformIntInitializer(int lower, int upper)
-    : Initializer(), lower_(lower), upper_(upper) {}
+    : Initializer(), lower_(lower), upper_(upper) {
+  NBLA_CHECK(lower_ <= upper_, error_code::value,
+             "lower must be smaller than upper (lower: (%d), upper: (%d))",
+             lower_, upper_);
+}
 void UniformIntInitializer::initialize(NdArrayPtr param) {
   const int size = param->size();
   Array *arr = param->cast(get_dtype<int>(), cpu_ctx, false);
+  int range = upper_ - lower_;
   int *param_d = arr->pointer<int>();
   for (int i = 0; i < size; i++)
-    param_d[i] = uniform_int(engine) % (upper_ - lower_) + lower_;
+    if (range == 0) {
+      param_d[i] = lower_;
+    } else {
+      param_d[i] = uniform_int(engine) % range + lower_;
+    }
 }
 }

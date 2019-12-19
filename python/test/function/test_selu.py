@@ -14,7 +14,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 
 from nbla_test_utils import list_context
@@ -36,3 +35,21 @@ def test_selu_forward_backward(seed, scale, alpha, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     function_tester(rng, F.selu, ref_selu, inputs, func_args=[scale, alpha],
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("scale", [1.050700987355480, 1.0, 0.5, 0.0])
+@pytest.mark.parametrize("alpha", [1.673263242354377, 1.0, 0.5, 0.0])
+def test_selu_double_backward(seed, scale, alpha, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    backward_function_tester(rng, F.selu, None,
+                             inputs=inputs,
+                             func_args=[scale, alpha], func_kwargs={},
+                             atol_b=1e-3,
+                             atol_accum=1e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

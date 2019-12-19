@@ -14,9 +14,7 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
-import pdb
 
 from nbla_test_utils import (
     function_tester,

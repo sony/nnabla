@@ -54,3 +54,20 @@ def test_add2_inplace(seed, ctx, func_name):
     x1 = nn.Variable([2, 3, 4], need_grad=True)
     inplace_function_test_helper(
         [x0, x1], F.add2, ctx=ctx, rng=np.random.RandomState(seed))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_add2_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3).astype(np.float32),
+              rng.randn(2, 3).astype(np.float32)]
+    backward_function_tester(rng, F.add2, None,
+                             inputs=inputs,
+                             func_args=[], func_kwargs={},
+                             atol_b=1e-3,
+                             atol_accum=1e-3,
+                             dstep=1e-3,
+                             ctx=ctx, func_name=None,
+                             disable_half_test=True)

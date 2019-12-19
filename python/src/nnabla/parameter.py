@@ -53,7 +53,7 @@ def parameter_scope(name, scope=None):
         name (str): Parameter scope name.
 
         scope (OrderedDict, optional):
-            Specifiy current parameter scope as a local dictionary.
+            Specify current parameter scope as a local dictionary.
             The default value is ``None``. In this case,
             the current parameter scope maintained in global is used.
 
@@ -176,73 +176,116 @@ def set_parameter(key, param):
     current_scope[names[0]] = param
 
 
+def _create_parameter_by_initializer(initializer, shape, need_grad):
+
+    # If initializer is not set, just returns a new variable with zeros.
+    if initializer is None:
+        assert shape is not None
+        param = nn.Variable(shape, need_grad=need_grad)
+        param.data.zero()  # Initialize with zero.
+        return param
+
+    # Initialize by a numpy array.
+    if isinstance(initializer, numpy.ndarray):  # numpy init
+        assert (shape is None) or (tuple(shape) == initializer.shape)
+        return nn.Variable.from_numpy_array(
+            initializer, need_grad=need_grad)
+
+    # Initialize by Initializer or callable object which takes shape as an argument.
+    if callable(initializer):
+        assert shape is not None
+        return nn.Variable.from_numpy_array(
+            initializer(shape=list(map(int, shape))), need_grad=need_grad)
+
+    # Invalid initialzier argument.
+    raise ValueError(
+        "`initializer` must be either the :obj:`numpy.ndarray`"
+        " or an instance inherited from `nnabla.initializer.BaseInitializer`.")
+
+
 def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
                             as_need_grad=None):
     """
-    Returns an existing parameter variable with the provided name.
+    Returns an existing parameter variable in current parameter scope
+    with the provided name.
+
     If a variable with the provided name does not exist,
-    a new variable with the provided name is returned.
+    a new variable is created and registered to the current parameter scope
+    with the name, then returned.
 
     Args:
 
-      name(str): The name under the current scope. If it already exists, the name is queried from the
-          parameter manager.
-      shape (:obj:`tuple` of :obj:`int`): Shape of created parameter. The shape of the specified
-          parameter must match with this shape. The default is None which is only valid if initializer is given as an :obj:`numpy.ndarray`.
-      initializer (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): An initialization function to be applied to the parameter. :obj:`numpy.ndarray` can also be given to initialize parameters from numpy array data.
-      need_grad (bool):
-          Register the parameter with the specified ``need_grad`` flag.
-          The default is True. If the flag is different from the previously
-          specified one, the flag will be overwritten, but the values will be
-          kept.
-      as_need_grad (bool):
-          Get a parameter variable with the specified ``need_grad`` flag.
-          Note that this doesn't overwrite the flag of the registered parameter
-          variable with the provided name. Instead, if the given flag
-          mismatches with the previously registered ``need_grad`` flag, it
-          returns a new variable referring to the same array contents but with
-          ``need_grad=as_need_grad``.
+        name(str):
+            The name under the current scope. If it already exists, the name
+            is queried from the parameter manager.
+        shape (:obj:`tuple` of :obj:`int`):
+            Shape of created parameter. The shape of the specified
+            parameter must match with this shape. The default is None which is
+            only valid if initializer is given as an :obj:`numpy.ndarray`.
+        initializer (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`):
+            An initialization function to be applied to the parameter.
+            :obj:`numpy.ndarray` can also be given to initialize parameters
+            from numpy array data.
+        need_grad (bool):
+            Register the parameter with the specified ``need_grad`` flag.
+            The default is True. If the flag is different from the previously
+            specified one, the flag will be overwritten, but the values will be
+            kept.
+        as_need_grad (bool):
+            Get a parameter variable with the specified ``need_grad`` flag.
+            Note that this doesn't overwrite the flag of the registered parameter
+            variable with the provided name. Instead, if the given flag
+            mismatches with the previously registered ``need_grad`` flag, it
+            returns a new variable referring to the same array contents but with
+            ``need_grad=as_need_grad``.
+
+    Note:
+        It returns a `Variable` which is unlinked from the
+        registered one in the current parmeter scope
+        (using :py:meth:`nnabla.Variable.get_unlinked_variable`).
+        That means changing a `need_grad` attribute doesn't affect
+        the variable existing in the current parameter scope.
 
     """
+
+    # Resolve delimiter '/' in parameter name.
     names = name.split('/')
     if len(names) > 1:
         with parameter_scope(names[0]):
             return get_parameter_or_create('/'.join(names[1:]), shape, initializer, need_grad, as_need_grad)
-    param = get_parameter(names[0])
-    if param is None:
-        class VariableInfo:
-            pass
-        info = VariableInfo()
-        info.initializer = initializer
 
-        if initializer is not None:
-            if isinstance(initializer, numpy.ndarray):  # numpy init
-                param = nn.Variable(initializer.shape, need_grad=need_grad)
-                param.d = initializer
-            # initializer init
-            elif isinstance(initializer, nn.initializer.BaseInitializer) or initializer.__name__ == "<lambda>":
-                assert shape is not None
-                param = nn.Variable(shape, need_grad=need_grad)
-                param.d = initializer(shape=param.shape)
-            else:
-                raise ValueError(
-                    "`initializer` must be either the :obj:`numpy.ndarray` or an instance inherited from `nnabla.initializer.BaseInitializer`.")
-        else:  # default init
-            assert shape is not None
-            param = nn.Variable(shape, need_grad=need_grad)
-        set_parameter(name, param)
-    else:
+    # Set need_grad if as_need_grad is not specified.
+    if as_need_grad is None:
+        as_need_grad = need_grad
+
+    # Try to find a existing parameter.
+    param = get_parameter(names[0])
+
+    # If found, verify shape and flags, and returns it.
+    if param is not None:
         if param.shape != tuple(shape):
             raise ValueError(
-                'The size of existing parameter "{}" {} is different from the size of new parameter {}.\n'
-                'To clear all parameters, call nn.clear_parameters().'.format(name, param.shape, tuple(shape)))
+                'The size of existing parameter "{}" {} is different from the '
+                'size of new parameter {}.\n'
+                'To clear all parameters, call nn.clear_parameters().'.format(
+                    name, param.shape, tuple(shape)))
+
         if need_grad != param.need_grad:
             param.need_grad = need_grad
-    if as_need_grad is None:
-        return param
-    if param.need_grad != as_need_grad:
-        param = param.get_unlinked_variable(need_grad=as_need_grad)
-    return param
+            set_parameter(name, param)
+        return param.get_unlinked_variable(need_grad=as_need_grad)
+
+    # TODO: Initializer info must be stored in Variable?
+    # class VariableInfo:
+    #     pass
+    # info = VariableInfo()
+    # info.initializer = initializer
+
+    # Create a new parameter using specified configuration,
+    # and write it to current scope..
+    param = _create_parameter_by_initializer(initializer, shape, need_grad)
+    set_parameter(name, param)
+    return param.get_unlinked_variable(need_grad=as_need_grad)
 
 
 def get_parameters(params=None, path='', grad_only=True):
@@ -285,19 +328,20 @@ def clear_parameters():
 def set_parameter_from_proto(proto):
     for parameter in proto.parameter:
         var = get_parameter_or_create(
-            parameter.variable_name, parameter.shape.dim)
+            parameter.variable_name, parameter.shape.dim,
+            need_grad=parameter.need_grad)
         param = numpy.reshape(parameter.data, parameter.shape.dim)
         var.d = param
-        var.need_grad = parameter.need_grad
 
 
-def load_parameters(path):
+def load_parameters(path, proto=None, needs_proto=False):
     """Load parameters from a file with the specified format.
 
     Args:
       path : path or file object
     """
     _, ext = os.path.splitext(path)
+
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
         import warnings
@@ -316,32 +360,52 @@ def load_parameters(path):
             hd.visit(_get_keys)
             for _, key in sorted(keys):
                 ds = hd[key]
-                var = get_parameter_or_create(key, ds.shape,
-                                              need_grad=ds.attrs['need_grad'])
-                var.data.cast(ds.dtype)[...] = ds[...]
-    elif ext == '.protobuf':
-        proto = nnabla_pb2.NNablaProtoBuf()
-        with open(path, 'rb') as f:
-            proto.MergeFromString(f.read())
-            set_parameter_from_proto(proto)
-    elif ext == '.nntxt' or ext == '.prototxt':
-        proto = nnabla_pb2.NNablaProtoBuf()
-        with open(path, 'r') as f:
-            text_format.Merge(f.read(), proto)
-            set_parameter_from_proto(proto)
 
-    elif ext == '.nnp':
-        try:
-            tmpdir = tempfile.mkdtemp()
-            with zipfile.ZipFile(path, 'r') as nnp:
-                for name in nnp.namelist():
-                    nnp.extract(name, tmpdir)
-                    _, ext = os.path.splitext(name)
-                    if ext in ['.protobuf', '.h5']:
-                        load_parameters(os.path.join(tmpdir, name))
-        finally:
-            shutil.rmtree(tmpdir)
-    logger.info("Parameter load ({}): {}".format(format, path))
+                var = get_parameter_or_create(
+                    key, ds.shape, need_grad=ds.attrs['need_grad'])
+                var.data.cast(ds.dtype)[...] = ds[...]
+
+                if needs_proto:
+                    if proto is None:
+                        proto = nnabla_pb2.NNablaProtoBuf()
+                    parameter = proto.parameter.add()
+                    parameter.variable_name = key
+                    parameter.shape.dim.extend(ds.shape)
+                    parameter.data.extend(
+                        numpy.array(ds[...]).flatten().tolist())
+                    parameter.need_grad = False
+                    if ds.attrs['need_grad']:
+                        parameter.need_grad = True
+
+    else:
+        if proto is None:
+            proto = nnabla_pb2.NNablaProtoBuf()
+
+        if ext == '.protobuf':
+            with open(path, 'rb') as f:
+                proto.MergeFromString(f.read())
+                set_parameter_from_proto(proto)
+        elif ext == '.nntxt' or ext == '.prototxt':
+            with open(path, 'r') as f:
+                text_format.Merge(f.read(), proto)
+                set_parameter_from_proto(proto)
+
+        elif ext == '.nnp':
+            try:
+                tmpdir = tempfile.mkdtemp()
+                with zipfile.ZipFile(path, 'r') as nnp:
+                    for name in nnp.namelist():
+                        nnp.extract(name, tmpdir)
+                        _, ext = os.path.splitext(name)
+                        if ext in ['.protobuf', '.h5']:
+                            proto = load_parameters(os.path.join(
+                                tmpdir, name), proto, needs_proto)
+            finally:
+                shutil.rmtree(tmpdir)
+                logger.info("Parameter load ({}): {}".format(format, path))
+        else:
+            pass  # TODO: Unknown extension.
+    return proto
 
 
 def save_parameters(path, params=None):

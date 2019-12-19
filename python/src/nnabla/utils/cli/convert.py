@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
 
 import nnabla.utils.converter
 from nnabla.utils.converter import get_category_info_string
@@ -87,6 +85,8 @@ def add_convert_command(subparsers):
                            help='[dump] dump variable list.')
     subparser.add_argument('--dump-limit', type=int, default=-1,
                            help='[dump] limit num of items.')
+    subparser.add_argument('-n', '--dump-variable-name', type=str, default=None,
+                           help='[dump] Specific variable name to display.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
                            help='File or directory name(s) to convert.')
     # import option
@@ -98,7 +98,7 @@ def add_convert_command(subparsers):
     subparser = subparsers.add_parser(
         'nnb_template', help='Generate NNB config file template.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
-                           help='File or directory name(s) to convert.')
+                           help='File to generate NNB config file template. The last is setting yaml file.')
     # import option
     add_import_arg(subparser)
 
@@ -106,6 +106,8 @@ def add_convert_command(subparsers):
                            help='[export] overwrite batch size.')
     subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
                            help='Default type of variable')
+    subparser.add_argument('--api', type=int, default=-1,
+                           help='Set API Level to convert to, default is highest API Level.')
 
     subparser.set_defaults(func=nnb_template_command)
 
@@ -113,8 +115,17 @@ def add_convert_command(subparsers):
     # Converter
     subparser = subparsers.add_parser('convert', help='File format converter.')
     subparser.add_argument('files', metavar='FILE', type=str, nargs='+',
-                           help='File or directory name(s) to convert.')
+                           help='File or directory name(s) to convert. \
+                           (When convert ckpt format of the tensorflow model, \
+                           If the version of the checkpoint is V1, need to enter the `.ckpt` file, \
+                           otherwise need to enter the `.meta` file.)')
     # import option
+    subparser.add_argument('--outputs', type=str, default=None,
+                           help='[import][tensorflow] The name(s) of the output nodes, comma separated. \
+                           Only needed when convert CKPT format.')
+    subparser.add_argument('--inputs', type=str, default=None,
+                           help='[import][tensorflow] The name(s) of the input nodes, comma separated. \
+                           Only needed when convert CKPT format.')
     add_import_arg(subparser)
 
     # export option
@@ -151,5 +162,7 @@ def add_convert_command(subparsers):
                            help='Default type of variable')
     subparser.add_argument('-s', '--settings', type=str, nargs=1, default=None,
                            help='Settings in YAML format file.')
+    subparser.add_argument('--api', type=int, default=-1,
+                           help='Set API Level to convert to, default is highest API Level.')
 
     subparser.set_defaults(func=convert_command)

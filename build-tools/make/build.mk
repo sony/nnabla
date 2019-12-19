@@ -73,10 +73,21 @@ nnabla-cpplib:
 		-DBUILD_TEST=ON \
 		-DNNABLA_UTILS_STATIC_LINK_DEPS=$(NNABLA_UTILS_STATIC_LINK_DEPS) \
 		-DNNABLA_UTILS_WITH_HDF5=$(NNABLA_UTILS_WITH_HDF5) \
+		-DNNABLA_UTILS_WITH_NPY=ON \
 		-DBUILD_PYTHON_PACKAGE=OFF \
 		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) -j$(PARALLEL_BUILD_NUM)
+
+.PHONY: nnabla-cpplib-rpm
+nnabla-cpplib-rpm: nnabla-cpplib
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G RPM CPackConfig.cmake
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G TBZ2 CPackConfig.cmake
+
+.PHONY: nnabla-cpplib-deb
+nnabla-cpplib-deb: nnabla-cpplib
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G DEB CPackConfig.cmake
+	@cd $(BUILD_DIRECTORY_CPPLIB) && cpack -G TBZ2 CPackConfig.cmake
 
 .PHONY: nnabla-cpplib-android
 nnabla-cpplib-android:
@@ -110,7 +121,6 @@ nnabla-cpplib-android-test:
 
 .PHONY: nnabla-wheel
 nnabla-wheel:
-	echo @mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& cmake \
@@ -159,4 +169,4 @@ nnabla-test-local: nnabla-install
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& PATH=$(PYTEST_PATH_EXTRA):$(PATH) \
 	LD_LIBRARY_PATH=$(PYTEST_LD_LIBRARY_PATH_EXTRA):$(LD_LIBRARY_PATH) \
-	python -m pytest $(NNABLA_DIRECTORY)/python/test
+	$(NNABLA_DIRECTORY)/build-tools/make/pytest.sh $(NNABLA_DIRECTORY)/python/test
