@@ -5839,3 +5839,139 @@ Unsupported, Special Use:
     c_runtime: not support
     function_ids:
       Empty: 277
+  PatchCorrelation:
+    snake_name: patch_correlation
+    doc: |2
+
+        Multiplicative patch-wise comparision between inputs `x1` and `x2`, which
+        must both be 4-dimensional NCHW (with `channel_last=False`) or NHWC (with
+        `channel_last=True`) arrays (where *N* is the number of samples, *H* and
+        *W* are the sample height and width and *C* is the number of channels).
+        The function returns a 5-D array with shape :math:`(N, C_y, C_x, H_o, W_o)`
+        where :math:`H_o, W_o` are determined by the possible patch locations within
+        the, optionally padded, input image sizeand :math:`C_y, C_x` are determined
+        by the optionally shifted patch positions.
+
+        Mathmatically, the patch correlation is formulated as 
+
+        .. math::
+          
+          O(s_y, s_x, h_0, w_0) =
+          \sum_{c} \sum_{k_h} \sum_{k_w} I_1(c, h + k_h, w + k_w) \times I_2(c, h + k_h + s_h, w + k_w + s_w), 
+
+        where :math:`I_1(c, h, w)` and :math:`I_2(c, h, w)` are the inputs at :math:`c`-th channel, 
+        :math:`h`-th height, and :math:`w`-th width, :math:`k_h, k_w` indices for the patch size 
+        and :math:`s_h, s_w` indices for the shifts.
+          
+        A single correlation value (per sample) is produced if the patch extends
+        to the image dimensions and all other parameters use the default values.
+
+        >>> import numpy as np, nnabla as nn, nnabla.functions as F
+        >>> N, C, H, W = (1, 2, 3, 4)
+        >>> x = nn.Variable.from_numpy_array(np.ones([N, C, H, W]))
+        >>> F.patch_correlation(x, x, patch=(H, W)).d
+        array([[[[[24.]]]]], dtype=float32)
+
+        A patch that is smaller than the image size moves horizontal and vertical
+        producing a value per position. The `patch_step` argument may be used to
+        control the position increments.
+
+        >>> F.patch_correlation(x, x, patch=(H-1, W-1)).d
+        array([[[[[12., 12.],
+                  [12., 12.]]]]], dtype=float32)
+        >>> F.patch_correlation(x, x, patch=(H-1, W-1), patch_step=(2, 1)).d
+        array([[[[[12., 12.]]]]], dtype=float32)
+
+        Multiple correlations may be performed at each position between the patch
+        from `x1` and patches from `x2` at relative offsets striding the maximum
+        vertical and horizontal distance given by the `shift` values at increments
+        of `shift_step`. The shifted correlation values can be obtained for the
+        from the second and third output dimension for the vertical and horizontal
+        shifts.
+
+        >>> F.patch_correlation(x, x, (H, 1), shift=(0, 1)).shape
+        (1, 1, 3, 1, 4)
+        >>> F.patch_correlation(x, x, (H, 1), shift=(0, 1)).d
+        array([[[[[0., 6., 6., 6.]],
+                 [[6., 6., 6., 6.]],
+                 [[6., 6., 6., 0.]]]]], dtype=float32)
+        >>> F.patch_correlation(x, x, (H, 1), shift=(0, 1), shift_step=(1, 2)).d
+        array([[[[[0., 6., 6., 6.]],
+                 [[6., 6., 6., 0.]]]]], dtype=float32)
+
+        Padding with zero values may be applied individually to the top, bottom,
+        left and right side of the input image.
+
+        >>> F.patch_correlation(x, x, patch=(H, W), padding=(0, 1, W, W)).d
+        array([[[[[ 0.,  6., 12., 18., 24., 18., 12.,  6.,  0.],
+                  [ 0.,  4.,  8., 12., 16., 12.,  8.,  4.,  0.]]]]], dtype=float32)
+
+        This function may be used to implement the FlowNetC correlation layer.
+
+        >>> N, C, H, W = (1, 256, 44, 60)
+        >>> x1, x2 = nn.Variable((N, C, H, W)), nn.Variable((N, C, H, W))
+        >>> F.patch_correlation(x1, x2, shift=20, shift_step=2).shape
+        (1, 21, 21, 44, 60)
+
+        References:
+        
+            * `Fischer et al., FlowNet: Learning Optical Flow with Convolutional
+              Networks. <https://arxiv.org/abs/1504.06852>`_
+    inputs:
+      x1:
+        doc: Input N-D array with shape :math:`(N, H, W, C)`.
+      x2:
+        doc: Input N-D array with shape :math:`(N, H, W, C)`.
+    arguments:
+      patch:
+        doc: A tuple with height and width of the correlation patch. A single integer
+          expands to identical height and width.
+        type: Shape
+        default: (1, 1)
+      shift:
+        doc: A tuple of maximum vertical and horizontal displacement of patches from
+          `x2` that are correlated with a single patch from `x1`. A single integer
+          expands to identical vertical and horizontal displacement.
+        type: Shape
+        default: (0, 0)
+      patch_step:
+        doc: A tuple of vertical and horizontal increments for advancing the position
+          of the correlation patch within the input image shape. A single integer
+          expands to identical vertical and horizontal increments.
+        type: Shape
+        default: (1, 1)
+      shift_step:
+        doc: A tuple of vertical and horizontal increments for advancing the relative
+          offset position within the shift range. A single integer expands to identical
+          vertical and horizontal increments.
+        type: Shape
+        default: (1, 1)
+      padding:
+        doc: A tuple of top, bottom, left and right padding extent. A tuple of two
+          values yields identical top/bottom and left/right padding from the first
+          and second tuple value. A single integer expands to indential padding extent
+          for all sides.
+        type: Shape
+        default: (0, 0, 0, 0)
+    outputs:
+      y:
+        doc: |2
+
+          N-D array with shape :math:`(N, C_y, C_x, H_o, W_o)`.
+
+          A spatial size of the output is calculated as
+
+          .. math:: 
+
+            H_o = \frac{H + (top\_pad + bottom\_pad) - patch_v }{patch\_step_v} + 1.
+
+          A channel size of the ouptut is calculated as
+
+          .. math::
+            
+            C_y = \frac{2 \times shift_v}{shift\_step_v} + 1.
+
+          :math:`W_o` and :math:`C_x` are the same calculation with differenct components.
+    c_runtime: not support
+    function_ids:
+      iIiIiIiIiI: 280

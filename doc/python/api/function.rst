@@ -50,6 +50,7 @@ Neural Network Layers
 .. autofunction:: lstm
 .. autofunction:: gru
 .. autofunction:: multi_head_attention
+.. autofunction:: patch_correlation
 
 
 Neural Network Activation

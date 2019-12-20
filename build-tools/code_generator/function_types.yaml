@@ -527,3 +527,6 @@ MaxPoolingBackward:
 WarpByFlow:
   float: [float]
   half: [Half]
+PatchCorrelation:
+  float: [float]
+  half: [Half]
