@@ -59,6 +59,7 @@ Neural Network Activation
 .. autofunction:: tanh
 .. autofunction:: relu
 .. autofunction:: softmax
+.. autofunction:: log_softmax
 .. autofunction:: elu
 .. autofunction:: selu
 .. autofunction:: crelu
@@ -80,6 +81,7 @@ Normalization
 -------------
 
 .. autofunction:: batch_normalization
+.. autofunction:: fused_batch_normalization
 .. autofunction:: sync_batch_normalization
 .. autofunction:: mean_subtraction
 .. autofunction:: clip_by_value
@@ -146,6 +148,11 @@ Logical
 .. autofunction:: maximum2
 .. autofunction:: minimum_scalar
 .. autofunction:: maximum_scalar
+.. autofunction:: isnan
+.. autofunction:: isinf
+.. autofunction:: reset_nan
+.. autofunction:: reset_inf
+.. autofunction:: where
 
 
 Math
@@ -200,6 +207,8 @@ Array Manipulation
 .. autofunction:: batch_inv
 .. autofunction:: batch_det
 .. autofunction:: assign
+.. autofunction:: top_k_data
+.. autofunction:: top_k_grad
 
 
 Stochasticity
@@ -209,8 +218,6 @@ Stochasticity
 .. autofunction:: randint
 .. autofunction:: randn
 .. autofunction:: dropout
-.. autofunction:: top_k_data
-.. autofunction:: top_k_grad
 .. autofunction:: random_choice
 .. autofunction:: random_crop
 .. autofunction:: random_flip
@@ -253,7 +260,9 @@ Quantized Neural Network Layers
 .. autofunction:: min_max_quantize
 .. autofunction:: pow2_quantize
 .. autofunction:: prune
-		  
+.. autofunction:: inq_affine
+.. autofunction:: inq_convolution
+			  
    
 Unsupported, Special Use
 ------------------------
@@ -262,6 +271,7 @@ Unsupported, Special Use
 .. autofunction:: unlink
 .. autofunction:: sink
 .. autofunction:: warp_by_flow
+.. autofunction:: confusion_matrix
 
 
 Image Object Detection
@@ -274,3 +284,4 @@ Validation
 ----------
 
 .. autofunction:: top_n_error
+.. autofunction:: binary_error
