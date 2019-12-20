@@ -508,6 +508,51 @@ Neural Network Layer:
     function_ids:
       iiIiIiIi: 4
     c_runtime: not support
+  AdaptiveSeparableConvolution:
+    snake_name: adaptive_separable_convolution
+    doc: |2
+
+      2-D Adaptive Separable Convolution for NCHW (the channel-first tensor).
+      Sample and pixel dependent vertical and horizontal kernels are dynamically generated ones, 
+      which are used for approximating a feature-independent 2-D kernel in this function. 
+      Thus, the kernel used in this function is dependent on samples and pixels but independent on features.
+
+      If the padding is needed, use the pad function to the input :math:`x` before this function.
+
+      Adaptive separable convolution is formulated as 
+
+      .. math::
+
+        \tilde{I}(c, h, w) = \sum_{j, i} K_v(j, h, w) \times K_h(i, h, w) \times I(c, h + j, w + i), 
+
+      where :math:`I(c, h, w)` and :math:`\tilde{I}(c, h, w)` are the input and output images 
+      at :math:`c`-th channel, :math:`h`-th height, :math:`w`-th width.
+      :math:`K_V(:, h, w)` and :math:`K_h(:, h, w)` are vertical and horizontal 1-D kernels 
+      at :math:`h`-th height, :math:`w`-th width.
+
+      References:
+
+          * `Simon Niklaus, Long Mai, Feng Liu, 
+            Video Frame Interpolation via Adaptive Separable Convolution, 
+            <https://arxiv.org/abs/1708.01692>`_
+
+          * `Mart Kartašev, Carlo Rapisarda, Dominik Fay, 
+            Implementing Adaptive Separable Convolution for Video Frame Interpolation, 
+            <https://arxiv.org/abs/1809.07759>`_
+    inputs:
+      x:
+        doc: :math:`4-D` array (:math:`B \times C \times H \times W`)
+      vertical_kernel:
+        doc: :math:`4-D` array (:math:`B \times K_v \times H \times W`)
+      horizontal_kernel:
+        doc: :math:`4-D` array (:math:`B \times K_h \times H \times W`)
+    outputs:
+      y:
+        doc: :math:`4-D` array (:math:`B \times C \times H - K_v + 1 \times W - K_h
+          + 1`)
+    c_runtime: not support
+    function_ids:
+      Empty: 278
   MaxPooling:
     snake_name: max_pooling
     doc: |2
