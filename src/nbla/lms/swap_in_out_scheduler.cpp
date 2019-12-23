@@ -374,7 +374,7 @@ schedule_swap_out(size_t& used_bytes_swap_in,
                   unordered_map<unsigned int, RecType*>& swapped_out_r) {
   SwapInOutScheduler::ScheduleType schedule;
 
-  for (size_t i = fid == 0 ? 0 : func_block_ends[fid - 1];
+  for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
               i < func_block_ends[fid];
               i++) {
     RecType& r = order[i];
@@ -568,7 +568,7 @@ void SwapInOutScheduler::swap_out() {
 
 // In the first iteration, arrays used in a function are always swapped out.
 void SwapInOutScheduler::swap_out_first_iter() {
-  for (int i = func_idx == 0 ? 0 : func_block_ends[func_idx - 1]; 
+  for (int i = (func_idx == 0 ? 0 : func_block_ends[func_idx - 1]); 
            i < func_block_ends[func_idx]; 
            i++) {
     if (order[i].tag == RecTag::CLEAR) {
