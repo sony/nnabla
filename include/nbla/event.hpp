@@ -31,10 +31,8 @@ public:
   virtual ~Event();
 
   // Return the flag which is true if this event can be delete.
-  virtual bool wait_event(const Context ctx, 
-                          const int async_flags = AsyncFlag::NONE) {
-    return true; 
-  }
+  virtual void wait_event(const Context ctx, 
+                          const int async_flags = AsyncFlag::NONE) {}
 };
 
 /// Shared pointer of Event.

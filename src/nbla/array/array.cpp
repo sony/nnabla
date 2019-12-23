@@ -44,11 +44,8 @@ void Array::set_event(EventPtr e) { event_ = e; }
 
 void Array::wait_event(const Context ctx, const int async_flags) {
   if (event_) {
-    auto delete_event = event_->wait_event(ctx, async_flags);
-
-    if (delete_event) {
-      event_ = nullptr;
-    }
+    event_->wait_event(ctx, async_flags);
+    event_ = nullptr;
   }
 }
 
