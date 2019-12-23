@@ -568,30 +568,52 @@ void SwapInOutScheduler::swap_out() {
 
 // In the first iteration, arrays used in a function are always swapped out.
 void SwapInOutScheduler::swap_out_first_iter() {
-  for (int i = (func_idx == 0 ? 0 : func_block_ends[func_idx - 1]); 
-           i < func_block_ends[func_idx]; 
-           i++) {
-    if (order[i].tag == RecTag::CLEAR) {
-      continue;
+  // Counts SyncedArrays which were used in the previous function.
+  SyncedArrayCountsInQueue synced_array_counts;
+  const int start_idx = func_idx == 0 ? 0 : func_block_ends[func_idx - 1];
+
+  for (int i = start_idx; i < func_block_ends[func_idx]; i++) {
+    RecType& r = order[i];
+    if (r.tag == RecTag::CLEAR) continue;
+
+    if (r.ctx.array_class == device_ctx.array_class) {
+      synced_array_counts[r.synced_array_id][r.dtype]++;
     }
-
-    if (order[i].ctx.array_class == device_ctx.array_class) {
-      auto p = order[i].sawptr.lock();
-
-      if (p && p->get_num_arrays() > 0) {
-        // The array is not cleared yet. Swap out the array
-        p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
-
-        auto array_bytes = p->size() * sizeof_dtype(p->dtype());
-        used_bytes_swap_out += array_bytes; // Increase memory usage
-        order[i].swapped_out = true;
-        order[i].swapped_out_bytes = array_bytes;
-      }
-    }
-    else if (order[i].ctx.array_class != host_ctx.array_class) {
+    else if (r.ctx.array_class != host_ctx.array_class) {
       // Get/cast of an array on an uncertain device
-      NBLA_ERROR(error_code::type, 
-                 "Unsupported array type: " + order[i].ctx.array_class);
+      NBLA_ERROR(error_code::type, "Unsupported array type: " + r.ctx.array_class);
+    }
+  }
+
+  // Swap out
+  for (int i = start_idx; i < func_block_ends[func_idx]; i++) {
+    RecType& r = order[i];
+    if (r.tag == RecTag::CLEAR) continue;
+
+    if (r.ctx.array_class == device_ctx.array_class) {
+      if (accumulate_counts(synced_array_counts[r.synced_array_id]) == 1) {
+        auto p = r.sawptr.lock();
+
+        if (p && p->get_num_arrays() > 0) {
+          // The array is not cleared yet. Swap out the array
+          p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+          r.swapped_out = true;
+
+          // Counts memory usage of all types
+          r.swapped_out_bytes = 0;
+
+          for (auto it : synced_array_counts[r.synced_array_id]) {
+            auto array_bytes = r.size * sizeof_dtype(it.first);
+            used_bytes_swap_out += array_bytes;
+            r.swapped_out_bytes += array_bytes;
+          }
+        }
+
+        synced_array_counts[r.synced_array_id].clear();
+      }
+      else {
+        synced_array_counts[r.synced_array_id][r.dtype]--;
+      }
     }
   }
 }
