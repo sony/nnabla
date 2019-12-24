@@ -180,7 +180,7 @@ class OnnxExporter:
             "Equal": partial(self.BinaryOperator, "Equal", "6"),
             "Exp": "Exp",
             "Identity": "Identity",
-            "Pad": "Pad",
+            "Pad": partial(self.Pad, "6"),
             "ReLU": "Relu",
             "PReLU": self.PReLU,
             "LeakyReLU": "LeakyRelu",
@@ -347,6 +347,7 @@ class OnnxExporter:
         table_op_set_11 = {
             "Round": "Round",
             "Interpolate": self.Interpolate,
+            "Pad": partial(self.Pad, "11"),
         }
         table_op_set_11 = dict(table_op_set_10, **table_op_set_11)
 
@@ -386,7 +387,7 @@ class OnnxExporter:
             'Dropout',
             func.input,
             func.output,
-            name=func.name
+            name=fork_name('Dropout')
         )
         if opset == "6":
             b = onnx.helper.make_attribute("is_test", 1)
@@ -420,7 +421,7 @@ class OnnxExporter:
                     func.output,
                     axis=axis,
                     broadcast=1,
-                    name=func.name
+                    name=fork_name(func_name)
                 )
                 nl.append(n)
             else:  # opset >= 7
@@ -434,14 +435,14 @@ class OnnxExporter:
                     [second_input],
                     [unsqueeze_output],
                     axes=list(range(axis)) + trailing,
-                    name="broadcast_unsqueeze"
+                    name=fork_name("broadcast_unsqueeze")
                 )
                 nl.append(unsqueeze)
                 n = onnx.helper.make_node(
                     func_name,
                     [func.input[0], unsqueeze_output],
                     func.output,
-                    name=func.name)
+                    name=fork_name(func_name))
                 nl.append(n)
             if func_name == "And" or func_name == "Or" or func_name == "Xor":
                 self._input_types[second_input] = TensorProto.BOOL
@@ -451,7 +452,7 @@ class OnnxExporter:
                 func_name,
                 func.input,
                 func.output,
-                name=func.name)
+                name=fork_name(func_name))
             if opset == "6":
                 b = onnx.helper.make_attribute("broadcast", 1)
                 n.attribute.extend([b])
@@ -774,12 +775,12 @@ class OnnxExporter:
         if diff > 2:
             input_shape_reshape = np.concatenate((np.array(
                 [input_shape[0], np.prod(input_shape[1:diff])]), np.array(input_shape[diff:])))
-            rout = input + "_reshape"
+            rout = fork_name(input) + "_reshape"
             n = generate_reshape(self._model_proto.graph, input, rout,
                                  input_shape_reshape)
             nl.append(n)
             input = rout
-            output = func.output[0] + "_reshape"
+            output = fork_name(func.output[0]) + "_reshape"
 
         pads = [d for d in pads]
         if ignore_border:
@@ -792,7 +793,7 @@ class OnnxExporter:
             pads = [0, 0] + pads + [0, 0] + subs
 
         if any(pads):
-            pad_out = input + "_pad"
+            pad_out = fork_name(input) + "_pad"
             n = onnx.helper.make_node(
                 'Pad',
                 [input],
@@ -912,19 +913,19 @@ class OnnxExporter:
             elif diff > 2:
                 input_shape_reshape = np.concatenate((np.array(
                     [input_shape[0], np.prod(input_shape[1:diff])]), np.array(input_shape[diff:])))
-            rout = input + "_reshape"
+            rout = fork_name(input) + "_reshape"
             n = generate_reshape(self._model_proto.graph, input, rout,
                                  input_shape_reshape)
             nl.append(n)
             input = rout
-            output = func.output[0] + "_reshape"
+            output = fork_name(func.output[0]) + "_reshape"
         scales = list(
             map(lambda f: float(f), [1.0, 1.0] + func.unpooling_param.kernel.dim[:]))
         n = onnx.helper.make_node(
             'Upsample',
             [input],
             [output],
-            name=func.name,
+            name=fork_name('Upsample'),
             scales=scales
         )
         nl.append(n)
@@ -949,12 +950,12 @@ class OnnxExporter:
             elif diff > 2:
                 input_shape_reshape = np.concatenate((np.array(
                     [input_shape[0], np.prod(input_shape[1:diff])]), np.array(input_shape[diff:])))
-            rout = input + "_reshape"
+            rout = fork_name(input) + "_reshape"
             n = generate_reshape(self._model_proto.graph, input, rout,
                                  input_shape_reshape)
             nl.append(n)
             input = rout
-            output = func.output[0] + "_reshape"
+            output = fork_name(func.output[0]) + "_reshape"
         scales = np.array([1.0, 1.0] + func.unpooling_param.kernel.dim[:])
         scale_shape = (len(scales), )
         scale_param_name = fork_name("UpsampleScales")
@@ -966,7 +967,7 @@ class OnnxExporter:
             'Upsample',
             [input, scale_param_name],
             [output],
-            name=func.name
+            name=fork_name('Upsample')
         )
         nl.append(n)
 
@@ -986,7 +987,7 @@ class OnnxExporter:
             func.output,
             height_scale=dims[0] * 1.0,
             width_scale=dims[1] * 1.0,
-            name=func.name
+            name=fork_name('Upsample')
         )
         return [n]
 
@@ -1194,7 +1195,7 @@ class OnnxExporter:
     def _elem_op(self, func, op_name, val):
         nl = []
         x = func.input[0]
-        sval = x + "_scalar"
+        sval = fork_name(x) + "_scalar"
         input_shape = list(self._var_dict[func.input[0]].dim[:])
         val = [val] * np.prod(input_shape)
         c = generate_constant(sval, func.name + "_scalar",
@@ -1204,7 +1205,7 @@ class OnnxExporter:
             op_name,
             [sval, x],
             func.output,
-            name=func.name
+            name=fork_name(op_name)
         )
         nl.append(n)
         return nl
@@ -1243,22 +1244,22 @@ class OnnxExporter:
             nl.append(n)
         else:
             inputs = func.input
-            starts_out = func.input[0] + "_start"
+            starts_out = fork_name(func.input[0]) + "_start"
             starts_c = generate_constant(starts_out, func.name + "_starts",
                                          TensorProto.INT64, [len(starts)], starts)
             nl.append(starts_c)
             inputs.append(starts_out)
-            stops_out = func.input[0] + "_stop"
+            stops_out = fork_name(func.input[0]) + "_stop"
             stops_c = generate_constant(stops_out, func.name + "_stops",
                                         TensorProto.INT64, [len(stops)], stops)
             nl.append(stops_c)
             inputs.append(stops_out)
-            axes_out = func.input[0] + "_axes"
+            axes_out = fork_name(func.input[0]) + "_axes"
             axes_c = generate_constant(axes_out, func.name + "_axes",
                                        TensorProto.INT64, [len(axes)], axes)
             nl.append(axes_c)
             inputs.append(axes_out)
-            step_out = func.input[0] + "_step"
+            step_out = fork_name(func.input[0]) + "_step"
             step_c = generate_constant(step_out, func.name + "_step",
                                        TensorProto.INT64, [len(step)], step)
             nl.append(step_c)
@@ -1280,7 +1281,7 @@ class OnnxExporter:
                 "Unsqueeze",
                 [x],
                 [output_name],
-                name="Unsqueeze_Stack_{}".format(i))
+                name=fork_name("Unsqueeze"))
             attr = onnx.helper.make_attribute("axes", [func.stack_param.axis])
             n.attribute.extend([attr])
             nl.append(n)
@@ -1289,7 +1290,7 @@ class OnnxExporter:
             "Concat",
             outputs,
             func.output,
-            name="Concat_Stack")
+            name=fork_name("Concat"))
         attr = onnx.helper.make_attribute("axis", func.stack_param.axis)
         n.attribute.extend([attr])
         nl.append(n)
@@ -1303,7 +1304,7 @@ class OnnxExporter:
             "Split",
             func.input,
             outputs,
-            name=func.name)
+            name=fork_name("Split"))
         attr = onnx.helper.make_attribute("axis", func.split_param.axis)
         n.attribute.extend([attr])
         nl.append(n)
@@ -1313,7 +1314,7 @@ class OnnxExporter:
                 "Squeeze",
                 [x],
                 [func.output[i]],
-                name="squeeze_split_{}".format(i))
+                name=fork_name("Squeeze"))
             attr = onnx.helper.make_attribute("axes", [func.split_param.axis])
             n.attribute.extend([attr])
             nl.append(n)
@@ -1344,12 +1345,11 @@ class OnnxExporter:
         y_shape = list(self._var_dict[func.output[0]].dim[:])
         x_shape_dims = [np.prod(x_shape[:base_axis]),
                         np.prod(x_shape[base_axis:])]
-        w_shape_dims = [int(np.prod(w_shape) / w_shape[0]), w_shape[0]]
         gemm_output_shape = [np.prod(x_shape[:base_axis]),
                              np.prod(w_shape[1:])]
 
         if x_shape_dims != x_shape:
-            rout = inputs[0] + "_reshape"
+            rout = fork_name(inputs[0]) + "_reshape"
             n = generate_reshape(self._model_proto.graph, inputs[0],
                                  rout, np.array(x_shape_dims))
             nl.append(n)
@@ -1365,6 +1365,7 @@ class OnnxExporter:
             state = self._parameters_state.get(inputs[1], 0)
             if not state & ParameterState.TRANSPOSED:
                 # make it to `transB=1`
+                w_shape_dims = [int(np.prod(w_shape) / w_shape[0]), w_shape[0]]
                 proto_w_shape = self._var_dict[inputs[1]]
                 del proto_w_shape.dim[:]
                 proto_w_shape.dim.extend(w_shape_dims)
@@ -1378,13 +1379,14 @@ class OnnxExporter:
                                        ] = state | ParameterState.TRANSPOSED
             transB = 1
         else:
+            w_shape_dims = [w_shape[0], int(np.prod(w_shape) / w_shape[0])]
             proto_w_shape = self._var_dict[inputs[1]]
             del proto_w_shape.dim[:]
             proto_w_shape.dim.extend(w_shape_dims)
 
-        if len(inputs) <= 2 and opset == "6x":
+        if len(inputs) <= 2:
             inputs.append(fork_name("affine_bias"))
-            shape = self._var_dict[inputs[1]].dim[:1]
+            shape = [gemm_output_shape[1]]
             raw_data = np.zeros(shape).astype(np.float32).tostring()
             add_param(self._model_proto.graph,
                       inputs[2], TensorProto.FLOAT, shape, raw_data)
@@ -1404,7 +1406,7 @@ class OnnxExporter:
                 beta=1.0,
                 transA=0,
                 transB=transB,
-                name='Gemm' + func.input[0])
+                name=fork_name("Gemm"))
             if opset == "6" or opset == "6x":
                 b = onnx.helper.make_attribute("broadcast", 1)
                 n.attribute.extend([b])
@@ -1419,7 +1421,7 @@ class OnnxExporter:
                 beta=1.0,
                 transA=0,
                 transB=transB,
-                name='Gemm' + func.input[0])
+                name=fork_name("Gemm"))
             if opset == "6" or opset == "6x":
                 b = onnx.helper.make_attribute("broadcast", 1)
                 n.attribute.extend([b])
@@ -1534,7 +1536,7 @@ class OnnxExporter:
         if diff > 2:
             input_shape_reshape = np.concatenate((np.array(
                 [input_shape[0], np.prod(input_shape[1:diff])]), np.array(input_shape[diff:])))
-            rout = input + "_reshape"
+            rout = fork_name(input) + "_reshape"
             n = generate_reshape(self._model_proto.graph, input, rout,
                                  input_shape_reshape)
             nl.append(n)
@@ -1550,7 +1552,7 @@ class OnnxExporter:
                     for kk, ss, i in zip(k, s, new_input_shape)]
             pads = [0, 0] + pads + [0, 0] + subs
 
-        pad_out = input + "pad"
+        pad_out = fork_name(input) + "_pad"
         n = onnx.helper.make_node(
             'Pad',
             [input],
@@ -1562,7 +1564,7 @@ class OnnxExporter:
         input = pad_out
         nl.append(n)
 
-        apout = input + "_ap"
+        apout = fork_name(input) + "_ap"
         n = onnx.helper.make_node(
             "AveragePool",
             [input],
@@ -1574,7 +1576,7 @@ class OnnxExporter:
         )
         nl.append(n)
 
-        rout = func.output[0] + "_reshape"
+        rout = fork_name(func.output[0]) + "_reshape"
         output_shape = np.array(self._var_dict[func.output[0]].dim)
         n = generate_reshape(self._model_proto.graph, apout, rout,
                              output_shape)
@@ -1582,7 +1584,7 @@ class OnnxExporter:
 
         # Counter the averaging process by multiplying kernel size
         kernel_size = np.prod(spp.kernel.dim)
-        mulout = input + "_kernel"
+        mulout = fork_name(input) + "_kernel"
         c = generate_scalar_constant(
             mulout, func.name + "_kernel", kernel_size)
         nl.append(c)
@@ -1611,7 +1613,7 @@ class OnnxExporter:
                 "{} is not support".format(func_name))
         # Convert the scalar param to a Const node and add it with input
         x = func.input[0]
-        sval = x + "_scalar"
+        sval = fork_name(x) + "_scalar"
         if opset == "6x":  # To support SNPE
             input_shape = list(self._var_dict[func.input[0]].dim[:])
             val = [sp.val] * np.prod(input_shape)
@@ -1707,7 +1709,7 @@ class OnnxExporter:
         # Convert Div+Atan
         nl = []
         # Div
-        dout = func.output[0] + "_div"
+        dout = fork_name(func.output[0]) + "_div"
         n = onnx.helper.make_node("Div",
                                   func.input,
                                   [dout])
@@ -1731,7 +1733,7 @@ class OnnxExporter:
         # Reshape input_a
         input_a_shape = np.array(np.concatenate(
             ([np.prod(input_a_shape[:-2])], input_a_shape[-2:])))
-        rout_a = inputs[0] + "_reshape"
+        rout_a = fork_name(inputs[0]) + "_reshape"
         n = generate_reshape(self._model_proto.graph, inputs[0],
                              rout_a, input_a_shape)
         nl.append(n)
@@ -1740,7 +1742,7 @@ class OnnxExporter:
         # Reshape input_b
         input_b_shape = np.array(np.concatenate(
             ([np.prod(input_b_shape[:-2])], input_b_shape[-2:])))
-        rout_b = inputs[1] + "_reshape"
+        rout_b = fork_name(inputs[1]) + "_reshape"
         n = generate_reshape(self._model_proto.graph, inputs[1],
                              rout_b, input_b_shape)
         nl.append(n)
@@ -1748,7 +1750,7 @@ class OnnxExporter:
 
         # Transpse input_a
         if bmp.transpose_a:
-            transpose_out = inputs[0] + "_transpose"
+            transpose_out = fork_name(inputs[0]) + "_transpose"
             transpose = [0, 2, 1]
             n = onnx.helper.make_node(
                 'Transpose',
@@ -1761,7 +1763,7 @@ class OnnxExporter:
 
         # Transpse input_b
         if bmp.transpose_b:
-            transpose_out = inputs[1] + "_transpose"
+            transpose_out = fork_name(inputs[1]) + "_transpose"
             transpose = [0, 2, 1]
             n = onnx.helper.make_node(
                 'Transpose',
@@ -1773,7 +1775,7 @@ class OnnxExporter:
             inputs[1] = transpose_out
 
         # MatMul
-        mout = func.output[0] + "_matmul"
+        mout = fork_name(func.output[0]) + "_matmul"
         n = onnx.helper.make_node(
             'MatMul',
             inputs,
@@ -1795,7 +1797,7 @@ class OnnxExporter:
         axis = func.softmax_param.axis
 
         # ReduceMax
-        mout = func.input[0]+"_reducemax"
+        mout = fork_name(func.input[0]) + "_reducemax"
         n = onnx.helper.make_node(
             'ReduceMax',
             [func.input[0]],
@@ -1806,7 +1808,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Sub
-        sout = func.input[0]+"_sub"
+        sout = fork_name(func.input[0]) + "_sub"
         n = onnx.helper.make_node(
             'Sub',
             [func.input[0], mout],
@@ -1818,7 +1820,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Exp
-        expout = sout+"_exp"
+        expout = fork_name(func.input[0]) + "_exp"
         n = onnx.helper.make_node(
             'Exp',
             [sout],
@@ -1827,7 +1829,7 @@ class OnnxExporter:
         nl.append(n)
 
         # ReduceSum
-        sumout = expout+"_reducesum"
+        sumout = fork_name(func.input[0]) + "_reducesum"
         n = onnx.helper.make_node(
             'ReduceSum',
             [expout],
@@ -1867,13 +1869,21 @@ class OnnxExporter:
         if base_axis != 1:
             input0_shape_reshape = np.array(np.concatenate((
                 [np.prod(input_shape[:base_axis])], input_shape[base_axis:])))
-            rout = inputs[0] + "_reshape"
+            rout = fork_name(inputs[0]) + "_reshape"
             n = generate_reshape(self._model_proto.graph, inputs[0],
                                  rout, input0_shape_reshape)
             nl.append(n)
             inputs[0] = rout
-            outputs[0] = func.output[0] + "_reshape"
+            outputs[0] = fork_name(func.output[0]) + "_reshape"
             input_shape = list(input0_shape_reshape)
+
+        slope_shape_reshape = [1] * len(input_shape)
+        slope_shape_reshape[1] = slope_shape[0]
+        rout = fork_name(inputs[1]) + "_reshape"
+        n = generate_reshape(self._model_proto.graph, inputs[1],
+                             rout, np.array(slope_shape_reshape))
+        nl.append(n)
+        inputs[1] = rout
 
         n = onnx.helper.make_node(
             'PRelu',
@@ -1902,7 +1912,7 @@ class OnnxExporter:
         # Convert Mul+Sigmoid
         nl = []
         # Sigmoid
-        dout = func.output[0] + "_sigmoid"
+        dout = fork_name(func.output[0]) + "_sigmoid"
         n = onnx.helper.make_node("Sigmoid",
                                   func.input,
                                   [dout])
@@ -1922,7 +1932,7 @@ class OnnxExporter:
         axis = func.log_softmax_param.axis
 
         # ReduceMax
-        mout = func.input[0]+"_reducemax"
+        mout = fork_name(func.input[0]) + "_reducemax"
         n = onnx.helper.make_node(
             'ReduceMax',
             [func.input[0]],
@@ -1933,7 +1943,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Sub
-        sout = func.input[0]+"_sub"
+        sout = fork_name(func.input[0]) + "_sub"
         n = onnx.helper.make_node(
             'Sub',
             [func.input[0], mout],
@@ -1945,7 +1955,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Exp
-        expout = sout+"_exp"
+        expout = fork_name(func.input[0]) + "_exp"
         n = onnx.helper.make_node(
             'Exp',
             [sout],
@@ -1954,7 +1964,7 @@ class OnnxExporter:
         nl.append(n)
 
         # ReduceSum
-        sumout = expout+"_reducesum"
+        sumout = fork_name(func.input[0]) + "_reducesum"
         n = onnx.helper.make_node(
             'ReduceSum',
             [expout],
@@ -1965,7 +1975,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Log
-        logout = sumout+"_log"
+        logout = fork_name(func.input[0]) + "_log"
         n = onnx.helper.make_node(
             'Log',
             [sumout],
@@ -1990,21 +2000,21 @@ class OnnxExporter:
         # Convert Concat+Neg+Relu
         nl = []
         # Neg
-        nout = func.output[0] + "_neg"
+        nout = fork_name(func.output[0]) + "_neg"
         n = onnx.helper.make_node("Neg",
                                   [func.input[0]],
                                   [nout])
         nl.append(n)
 
         # Relu
-        rout0 = func.output[0] + "_relu0"
+        rout0 = fork_name(func.output[0]) + "_relu0"
         n = onnx.helper.make_node("Relu",
                                   [func.input[0]],
                                   [rout0])
         nl.append(n)
 
         # Relu
-        rout1 = func.output[0] + "_relu1"
+        rout1 = fork_name(func.output[0]) + "_relu1"
         n = onnx.helper.make_node("Relu",
                                   [nout],
                                   [rout1])
@@ -2023,7 +2033,7 @@ class OnnxExporter:
         # Convert Relu+Constant+Min
         nl = []
         # Relu
-        rout = func.output[0] + "_relu"
+        rout = fork_name(func.output[0]) + "_relu"
         n = onnx.helper.make_node("Relu",
                                   func.input,
                                   [rout])
@@ -2084,7 +2094,7 @@ class OnnxExporter:
         # Convert Sigmoid+Log
         nl = []
         # Sigmoid
-        sout = func.output[0] + "_sigmoid"
+        sout = fork_name(func.output[0]) + "_sigmoid"
         n = onnx.helper.make_node("Sigmoid",
                                   func.input,
                                   [sout])
@@ -2123,14 +2133,14 @@ class OnnxExporter:
         alpha = func.celu_param.alpha
         axis = func.celu_param.axis
         # Neg
-        neg_out = func.input[0]+"_neg"
+        neg_out = fork_name(func.input[0]) + "_neg"
         n = onnx.helper.make_node("Neg",
                                   func.input,
                                   [neg_out])
         nl.append(n)
 
         # Elu
-        elu_out0 = func.input[0]+"_elu0"
+        elu_out0 = fork_name(func.input[0]) + "_elu0"
         n = onnx.helper.make_node("Elu",
                                   func.input,
                                   [elu_out0],
@@ -2138,7 +2148,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Elu
-        elu_out1 = func.input[0]+"_elu1"
+        elu_out1 = fork_name(func.input[0]) + "_elu1"
         n = onnx.helper.make_node("Elu",
                                   [neg_out],
                                   [elu_out1],
@@ -2193,7 +2203,7 @@ class OnnxExporter:
         nl.append(c)
 
         # Pow
-        pow_out = func.input[0]+"_pow"
+        pow_out = fork_name(func.input[0]) + "_pow"
         n = onnx.helper.make_node("Pow",
                                   [func.input[0], constant0],
                                   [pow_out])
@@ -2203,7 +2213,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Mul
-        mul_out = func.input[0]+"_mul"
+        mul_out = fork_name(func.input[0]) + "_mul"
         n = onnx.helper.make_node("Mul",
                                   [pow_out, constant1],
                                   [mul_out])
@@ -2213,7 +2223,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Add
-        add_out = func.input[0]+"_add"
+        add_out = fork_name(func.input[0]) + "_add"
         n = onnx.helper.make_node("Add",
                                   [func.input[0], mul_out],
                                   [add_out])
@@ -2223,14 +2233,14 @@ class OnnxExporter:
         nl.append(n)
 
         # Sqrt
-        sqrt_out = func.input[0]+"_sqrt"
+        sqrt_out = fork_name(func.input[0]) + "_sqrt"
         n = onnx.helper.make_node("Sqrt",
                                   [constant4],
                                   [sqrt_out])
         nl.append(n)
 
         # Mul
-        mul_out1 = func.input[0]+"_mul1"
+        mul_out1 = fork_name(func.input[0]) + "_mul1"
         n = onnx.helper.make_node("Mul",
                                   [add_out, sqrt_out],
                                   [mul_out1])
@@ -2240,14 +2250,14 @@ class OnnxExporter:
         nl.append(n)
 
         # Tanh
-        tanh_out = func.input[0]+"_tanh"
+        tanh_out = fork_name(func.input[0]) + "_tanh"
         n = onnx.helper.make_node("Tanh",
                                   [mul_out1],
                                   [tanh_out])
         nl.append(n)
 
         # Add
-        add_out1 = func.input[0]+"_add1"
+        add_out1 = fork_name(func.input[0]) + "_add1"
         n = onnx.helper.make_node("Add",
                                   [tanh_out, constant3],
                                   [add_out1])
@@ -2257,7 +2267,7 @@ class OnnxExporter:
         nl.append(n)
 
         # Div
-        div_out = func.input[0]+"_div"
+        div_out = fork_name(func.input[0]) + "_div"
         n = onnx.helper.make_node("Div",
                                   [func.input[0], constant2],
                                   [div_out])
@@ -2281,7 +2291,7 @@ class OnnxExporter:
         # Convert Tanh+Sub
         nl = []
         # Tanh
-        tanh_out = func.input[0]+"_tanh"
+        tanh_out = fork_name(func.input[0]) + "_tanh"
         n = onnx.helper.make_node("Tanh",
                                   func.input,
                                   [tanh_out])
@@ -2317,7 +2327,7 @@ class OnnxExporter:
         if len(reps) > len(input_shape):
             new_input_shape = np.array(
                 [1] * (len(reps) - len(input_shape)) + input_shape)
-            input_reshape = func.input[0]+"_reshape"
+            input_reshape = fork_name(func.input[0]) + "_reshape"
             n = generate_reshape(self._model_proto.graph, func.input[0], input_reshape,
                                  new_input_shape)
             nl.append(n)
@@ -2360,21 +2370,21 @@ class OnnxExporter:
         nl.append(c)
 
         # Equal
-        equal_out = func.output[0]+"_equal"
+        equal_out = fork_name(func.output[0]) + "_equal"
         n = onnx.helper.make_node("Equal",
                                   [func.input[0], c_zero_out],
                                   [equal_out])
         nl.append(n)
 
         # Sin
-        sin_out = func.output[0]+"_sin"
+        sin_out = fork_name(func.output[0]) + "_sin"
         n = onnx.helper.make_node("Sin",
                                   func.input,
                                   [sin_out])
         nl.append(n)
 
         # Div
-        div_out = func.output[0]+"_div"
+        div_out = fork_name(func.output[0]) + "_div"
         n = onnx.helper.make_node("Div",
                                   [sin_out, func.input[0]],
                                   [div_out])
@@ -2390,7 +2400,7 @@ class OnnxExporter:
 
     def NotEqual(self, opset, func):
         nl = []
-        equal_out = func.output[0]+"_equal"
+        equal_out = fork_name(func.output[0]) + "_equal"
         n = onnx.helper.make_node("Equal",
                                   func.input,
                                   [equal_out])
@@ -2410,7 +2420,7 @@ class OnnxExporter:
 
     def GreaterEqual(self, opset, func):
         nl = []
-        less_out = func.output[0]+"_less"
+        less_out = fork_name(func.output[0]) + "_less"
         n = onnx.helper.make_node("Less",
                                   func.input,
                                   [less_out])
@@ -2430,7 +2440,7 @@ class OnnxExporter:
 
     def LessEqual(self, opset, func):
         nl = []
-        greater_out = func.output[0]+"_greater"
+        greater_out = fork_name(func.output[0]) + "_greater"
         n = onnx.helper.make_node("Greater",
                                   func.input,
                                   [greater_out])
@@ -2544,7 +2554,7 @@ class OnnxExporter:
                               [scalar])
         nl.append(c)
 
-        equal_out = func.output[0]+'_equal'
+        equal_out = fork_name(func.output[0]) + '_equal'
         n = onnx.helper.make_node("Equal",
                                   [func.input[0], constant_scalar],
                                   [equal_out])
@@ -2571,7 +2581,7 @@ class OnnxExporter:
                               [scalar])
         nl.append(c)
 
-        less_out = func.output[0]+'_less'
+        less_out = fork_name(func.output[0]) + '_less'
         n = onnx.helper.make_node("Less",
                                   [func.input[0], constant_scalar],
                                   [less_out])
@@ -2619,7 +2629,7 @@ class OnnxExporter:
                               [scalar])
         nl.append(c)
 
-        greater_out = func.output[0]+'_greater'
+        greater_out = fork_name(func.output[0]) + '_greater'
         n = onnx.helper.make_node("Greater",
                                   [func.input[0], constant_scalar],
                                   [greater_out])
@@ -2665,14 +2675,14 @@ class OnnxExporter:
         nl = []
 
         # Constant
-        val_name = func.input[0] + "_val"
+        val_name = fork_name(func.input[0]) + "_val"
         c = generate_constant(val_name, func.name + "_val",
                               TensorProto.FLOAT, input_shape,
                               [val] * np.prod(input_shape))
         nl.append(c)
 
         # IsNaN
-        isnan_out = func.input[0] + "_isnan"
+        isnan_out = fork_name(func.input[0]) + "_isnan"
         n = onnx.helper.make_node(
             "IsNaN",
             func.input,
@@ -2697,14 +2707,14 @@ class OnnxExporter:
         nl = []
 
         # Constant
-        val_name = func.input[0] + "_val"
+        val_name = fork_name(func.input[0]) + "_val"
         c = generate_constant(val_name, func.name + "_val",
                               TensorProto.FLOAT, input_shape,
                               [val] * np.prod(input_shape))
         nl.append(c)
 
         # IsInf
-        isinf_out = func.input[0] + "_isinf"
+        isinf_out = fork_name(func.input[0]) + "_isinf"
         n = onnx.helper.make_node(
             "IsInf",
             func.input,
@@ -2740,16 +2750,16 @@ class OnnxExporter:
             raise ValueError(
                 "Currently output_size not support greater than 2.")
 
-        roi_out = func.input[0]+'_roi'
+        roi_out = fork_name(func.input[0]) + '_roi'
         add_param(self._model_proto.graph, roi_out,
                   TensorProto.FLOAT, [0], b'')
 
-        scale_out = func.input[0]+'_scale'
+        scale_out = fork_name(func.input[0]) + '_scale'
         add_param(self._model_proto.graph, scale_out,
                   TensorProto.FLOAT, [0], b'')
 
         if len(input_shape) == 4:
-            sizes_out = func.input[0]+'_sizes'
+            sizes_out = fork_name(func.input[0]) + '_sizes'
             add_param(self._model_proto.graph, sizes_out, TensorProto.INT64, [
                       len(output_shape)], np.array(output_shape, dtype=np.int64).tostring())
 
@@ -2777,16 +2787,16 @@ class OnnxExporter:
             else:
                 new_input_shape = [1] * -diff + input_shape
                 new_output_shape = [1] * -diff + output_shape
-            sizes_out = func.input[0]+'_sizes'
+            sizes_out = fork_name(func.input[0]) + '_sizes'
             add_param(self._model_proto.graph, sizes_out, TensorProto.INT64, [
                       len(new_output_shape)], np.array(new_output_shape, dtype=np.int64).tostring())
 
-            reshape_out = func.input[0]+'_reshape'
+            reshape_out = fork_name(func.input[0]) + '_reshape'
             n = generate_reshape(self._model_proto.graph, func.input[0], reshape_out,
                                  np.array(new_input_shape))
             nl.append(n)
 
-            resize_out = func.input[0]+'_resize'
+            resize_out = fork_name(func.input[0]) + '_resize'
             n = onnx.helper.make_node(
                 "Resize",
                 [reshape_out, roi_out, scale_out, sizes_out],
@@ -2804,6 +2814,66 @@ class OnnxExporter:
 
             n = generate_reshape(self._model_proto.graph, resize_out, func.output[0],
                                  np.array(output_shape))
+            nl.append(n)
+        return nl
+
+    def Pad(self, opset, func):
+        nl = []
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        inputs = func.input[:]
+        pp = func.pad_param
+        mode_conv = {
+            "constant": "constant",
+            "replicate": "edge",
+            "reflect": "reflect"
+        }
+        # separate pad values to match ONNX format
+        # (S0,E0,S1,E1) => (S0,S1,E0,E1)
+        dim = len(pp.pad_width) // 2
+        zero_dim_num = len(input_shape) - dim
+        it = iter(pp.pad_width)
+        starts = [0] * zero_dim_num
+        ends = [0] * zero_dim_num
+        for x in it:
+            starts.append(x)
+            ends.append(next(it))
+        starts.extend(ends)
+        if opset == '11':
+            # Constant_Pads
+            pads_name = fork_name(func.input[0]) + "_pads"
+            c = generate_constant(pads_name, func.name + "_pads",
+                                  TensorProto.INT64, [len(starts)],
+                                  starts)
+            nl.append(c)
+            inputs.append(pads_name)
+
+            if pp.mode == "constant":
+                # Constant_Value
+                value_name = fork_name(func.input[0]) + "_value"
+                c = generate_constant(value_name, func.name + "_value",
+                                      TensorProto.FLOAT, [1],
+                                      [pp.constant_value])
+                nl.append(c)
+                inputs.append(value_name)
+
+            n = onnx.helper.make_node(
+                "Pad",
+                inputs,
+                func.output,
+                mode=pp.mode,
+            )
+            nl.append(n)
+        else:
+            n = onnx.helper.make_node(
+                "Pad",
+                inputs,
+                func.output,
+                mode=pp.mode,
+                pads=starts
+            )
+            if pp.mode == "constant":
+                v = onnx.helper.make_attribute("value", pp.constant_value)
+                n.attribute.extend([v])
             nl.append(n)
         return nl
 
@@ -2915,7 +2985,7 @@ class OnnxExporter:
             op_type,
             func.input,
             func.output,
-            name=func.name)
+            name=fork_name(op_type))
         nl = []
         if func.type == "GlobalAveragePooling":
             # We wipeout the node name to avoid a bug?
@@ -2996,49 +3066,6 @@ class OnnxExporter:
             bp = func.broadcast_to_param
             broadcast_target[func.output[0]] = (func.input[1], bp.axis)
             # we do not append node here because BroadcastTo should disappear
-        elif func.type == "Pad":
-            pp = func.pad_param
-            mode_conv = {
-                "constant": "constant",
-                "replicate": "edge",
-                "reflect": "reflect"
-            }
-            # separate pad values to match ONNX format
-            # (S0,E0,S1,E1) => (S0,S1,E0,E1)
-            dim = len(pp.pad_width) // 2
-            # If we can get the dimension of the input buffer,
-            # we get it here. If we cannot, we are assuming 4D input
-            in_name = func.input[0]
-            in_var = [v for v in variables if v.name == in_name]
-            in_dim = 4
-            if len(in_var) == 1 and len(in_var[0].shape.dim) > 0:
-                # Found variable with valid shape.
-                # If the shape dimension is zero, it means
-                # that is an intermediate buffer so we can't get
-                # the exact dimension at this point
-                # (thus assuming 4D input).
-                in_dim = len(in_var[0].shape.dim)
-            elif len(in_var) > 1:
-                raise ValueError("More than one buffer with"
-                                 " the same buffer name found.")
-            zero_dim_num = in_dim - dim
-            it = iter(pp.pad_width)
-            # We need to fill empty dimensions with zero padding
-            # (at least this is what Caffe2 expects)
-            starts = [0] * zero_dim_num
-            ends = [0] * zero_dim_num
-            for x in it:
-                starts.append(x)
-                ends.append(next(it))
-            starts.extend(ends)
-            pad = onnx.helper.make_attribute("pads", starts)
-            m = onnx.helper.make_attribute("mode", mode_conv[pp.mode])
-            if pp.mode == "constant":
-                v = onnx.helper.make_attribute("value", pp.constant_value)
-                n.attribute.extend([pad, m, v])
-            else:
-                n.attribute.extend([pad, m])
-            nl.append(n)
         elif func.type == "Constant":
             cp = func.constant_param
             shape = list(self._var_dict[func.output[0]].dim[:])

@@ -44,14 +44,6 @@ def add_value_info_as_variable(network, info):
     return v
 
 
-def add_value_info_as_parameter(network, info):
-    v = add_value_info_as_variable(network, info)
-    v.type = "Parameter"
-    v.initializer.type = "Constant"
-    v.initializer.multiplier = 1.0
-    return v
-
-
 def add_value_info_as_buffer(network, info):
     v = add_value_info_as_variable(network, info)
     v.type = "Buffer"
@@ -431,6 +423,14 @@ def add_tensor_as_parameter(pb, tensor):
                          .format(tensor.name, tensor.data_type))
     p.need_grad = False
 
+    # Add tensor as variable
+    v = pb.network[0].variable.add()
+    v.name = tensor.name
+    v.shape.dim.extend(tensor.dims)
+    v.type = "Parameter"
+    v.initializer.type = "Constant"
+    v.initializer.multiplier = 1.0
+
 
 def create_parameter_variable(pb, name, shape, val):
     p = pb.parameter.add()
@@ -456,7 +456,6 @@ class OnnxImporter:
         # to preserve order
         self._param_vars = OrderedDict()  # Dictionary for input parameters.
         self._all_vars = OrderedDict()  # Dictionary for all variables
-        self._param_list = []  # list of parameter variables
         self._merged_inputs = []  # list of input buffers that was merged to a function
         self._removed_outputs = []  # list of output buffers that was removed
         self._func_counter = {}  # a counter for all functions
@@ -650,6 +649,32 @@ class OnnxImporter:
 
     def get_input_raw_data(self, input_name, data_type):
         data = []
+
+        # Try to find data in constant node
+        for op in self._graph.node:
+            if op.output[0] == input_name and op.op_type == "Constant":
+                for attr in op.attribute:
+                    if attr.name == "value":
+                        if attr.t.data_type == TensorProto.INT64:
+                            if attr.t.raw_data:
+                                data.extend(np.fromstring(
+                                    attr.t.raw_data, dtype=np.int64))
+                            elif attr.t.int64_data:
+                                data.dim.extend(attr.t.int64_data)
+                            break
+                        elif attr.t.data_type == TensorProto.FLOAT:
+                            if attr.t.raw_data:
+                                data.extend(np.fromstring(
+                                    attr.t.raw_data, dtype=np.float32))
+                            elif attr.t.float_data:
+                                data.dim.extend(attr.t.float_data)
+                            break
+                        elif attr.t.data_type == TensorProto.BOOL:
+                            if attr.t.raw_data:
+                                data.extend(np.fromstring(
+                                    attr.t.raw_data, dtype=np.bool))
+                            break
+
         # Try to find data in the initializer.
         for init in self._graph.initializer:
             if init.name == input_name:
@@ -1622,14 +1647,6 @@ class OnnxImporter:
                 # add tensor as parameter
                 add_tensor_as_parameter(self._pb, t)
                 self._param_vars[t.name] = None
-                # Add tensor as variable
-                v = self._pb.network[0].variable.add()
-                v.name = t.name
-                v.shape.dim.extend(t.dims)
-                v.type = "Parameter"
-                v.initializer.type = "Constant"
-                v.initializer.multiplier = 1.0
-                self._param_list.append(v)
                 self._shape_output[name] = t.dims
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -2620,13 +2637,11 @@ class OnnxImporter:
         mean_out = n.input[0]+"_mean"
         mean_param = create_parameter_variable(self._pb, mean_out,
                                                scale_shape, [0]*scale_shape[0])
-        self._param_list.append(mean_param)
         self._param_vars[mean_out] = None
         nnp_input.append(mean_out)
         variance_out = n.input[0]+"_variance"
         variance_param = create_parameter_variable(self._pb, variance_out,
                                                    scale_shape, [0]*scale_shape[0])
-        self._param_list.append(variance_param)
         self._param_vars[variance_out] = None
         nnp_input.append(variance_out)
 
@@ -2821,9 +2836,7 @@ class OnnxImporter:
                 # to a function node
                 continue
             if i.name in self._param_vars:
-                # This input is a parameter
-                v = add_value_info_as_parameter(network, i)
-                self._param_list.append(v)
+                pass
             else:
                 # This input is a buffer
                 v = add_value_info_as_buffer(network, i)
@@ -2871,9 +2884,9 @@ class OnnxImporter:
             outv = exe.output_variable.add()
             outv.variable_name = ov.name
             outv.data_name = ov.name
-        for pv in self._param_list:
+        for name in list(self._param_vars.keys()):
             p = exe.parameter_variable.add()
-            p.variable_name = pv.name
+            p.variable_name = name
         convert_parameter_shape(pb)
 
     def onnx_model_to_nnp_protobuf(self):
