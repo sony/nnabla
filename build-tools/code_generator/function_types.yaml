@@ -145,6 +145,9 @@ ReduceMean:
 Add2:
   float: [float]
   half: [Half]
+AddN:
+  float: [float]
+  half: [Half]
 BcAdd2:
   float: [float]
   half: [Half]
