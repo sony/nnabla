@@ -157,6 +157,9 @@ Sub2:
 Mul2:
   float: [float]
   half: [Half]
+MulN:
+  float: [float]
+  half: [Half]
 Div2:
   float: [float]
   half: [Half]

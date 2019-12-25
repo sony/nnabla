@@ -1836,6 +1836,24 @@ Arithmetic:
     function_ids:
       Empty: 34
     c_runtime: support
+  MulN:
+    snake_name: mul_n
+    doc: |2
+
+      Element-wise multiplication.
+
+      .. math::
+         y_i = x^{(0)}_i . . . x^{(n-1)}_i
+    inputs:
+      x:
+        doc: N-D arrays
+        variadic: true
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: support
+    function_ids:
+      Empty: 282
   Div2:
     snake_name: div2
     doc: |2
