@@ -303,6 +303,10 @@ private:
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();
 
+  // Check if an array is not cleared.
+  bool is_not_cleared_yet(const SyncedArrayPtr saptr) {
+    return saptr->get_num_arrays() > 0;
+  }
 
   //---------------------------------------------------
   //              SyncedArrayCallback

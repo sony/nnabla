@@ -622,7 +622,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
       if (accumulate_counts(synced_array_counts[r.said]) == 1) {
         auto p = r.sawptr.lock();
 
-        if (p && p->get_num_arrays() > 0) {
+        if (p && is_not_cleared_yet(p)) {
           // The array is not cleared yet. Swap out the array
           p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
           r.swapped_out = true;
@@ -672,7 +672,7 @@ void SwapInOutScheduler::wait_for_swap_out_first_iter_impl() {
   if (r.swapped_out) {
     // Wait for finish swapping out and release the source array of memory copy.
     if (p && p->head_array_class() == host_ctx.array_class &&
-        p->get_num_arrays() > 0) { 
+        is_not_cleared_yet(p)) { 
       // Not cleared yet, in first iteration, precleaer does be scheduled.
       p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
     }
@@ -721,7 +721,7 @@ void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType& r) {
   auto p = r.sawptr.lock();
 
   if (p && p->head_array_class() == host_ctx.array_class &&
-      p->get_num_arrays() > 0) {
+      is_not_cleared_yet(p)) {
     p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
   }
 }
@@ -736,7 +736,7 @@ void SwapInOutScheduler::swap_out_wrong_order() {
     if (wrong_ordered[i].ctx.array_class == device_ctx.array_class) {
       auto p = wrong_ordered[i].sawptr.lock();
 
-      if (p && p->get_num_arrays() > 0) {
+      if (p && is_not_cleared_yet(p)) {
         // Not cleared yet. Swap out the array ***SYNCRONOUSLY***
         // because device synchronize will be called just after this call.
         p->cast(wrong_ordered[i].dtype, host_ctx, false);
