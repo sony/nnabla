@@ -303,7 +303,8 @@ private:
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();
 
-  // Check if an array is not cleared.
+  // Check if an array is not cleared. When a SyncedArray is empty,
+  // the scheduler should not call get/cast not to create a unnecessary array.
   bool is_not_cleared_yet(const SyncedArrayPtr saptr) {
     return saptr->get_num_arrays() > 0;
   }

@@ -582,7 +582,6 @@ void SwapInOutScheduler::swap_in() {
 
 // Swap out
 void SwapInOutScheduler::swap_out() {
-  // Swap out the arrays used in the previous function
   if (first_iter) {
     swap_out_first_iter();
     wait_for_swap_out_first_iter();
@@ -729,23 +728,25 @@ void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType& r) {
 
 void SwapInOutScheduler::swap_out_wrong_order() {
   for (int i = 0; i < wrong_ordered.size(); i++) {
-    if (wrong_ordered[i].tag == RecTag::CLEAR) {
+    RecType& r = wrong_ordered[i];
+
+    if (r.tag == RecTag::CLEAR) {
       continue;
     }
 
-    if (wrong_ordered[i].ctx.array_class == device_ctx.array_class) {
-      auto p = wrong_ordered[i].sawptr.lock();
+    if (r.ctx.array_class == device_ctx.array_class) {
+      auto p = r.sawptr.lock();
 
       if (p && is_not_cleared_yet(p)) {
-        // Not cleared yet. Swap out the array ***SYNCRONOUSLY***
-        // because device synchronize will be called just after this call.
-        p->cast(wrong_ordered[i].dtype, host_ctx, false);
+        // Swap out the array SYNCRONOUSLY because device synchronize will be 
+        // called just after this.
+        p->cast(r.dtype, host_ctx, false);
       }
     }
-    else if (wrong_ordered[i].ctx.array_class != host_ctx.array_class) {
+    else if (r.ctx.array_class != host_ctx.array_class) {
       // Function used an array on an uncertain device
       NBLA_ERROR(error_code::type,
-        "Unsupported array class: " + wrong_ordered[i].ctx.array_class);
+                 "Unsupported array class: " + r.ctx.array_class);
     }
   }
 }
