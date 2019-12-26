@@ -89,6 +89,11 @@ using std::pair;
     @endcode
  */
 class SwapInOutScheduler {
+  // Notation: "sa" stands for SyncedArray
+
+  //---------------------------------------------------
+  //    Types
+  //---------------------------------------------------
   // Recorded tags of get/cast/clear
   // In the current implementation, get and cast were not distinguished.
   enum class RecTag {GETCAST, CLEAR};
@@ -96,62 +101,76 @@ class SwapInOutScheduler {
   // Recorded information
   struct RecType {
     const RecTag tag;
-    const unsigned int synced_array_id;
+    const unsigned int said;
     weak_ptr<SyncedArray> sawptr;
     const Size_t size;
     const dtypes dtype;
     const Context ctx;
-    bool preclear; // If true, the synced array can be cleared after this record.
-    bool swapped_out; // If true, the synced arrat was swapped out.
-    size_t swapped_out_bytes;
-    bool no_need_swap_out; // If true, the synced arrat will not be swapped out.
+
+    bool preclear = false; // If true, the synced array will be precleared.
+    bool swapped_out = false; // If true, the synced array was swapped out.
+    size_t swapped_out_bytes = 0;
+    bool no_need_swap_out = false; // If true, the swap-out schedule is canceled.
+
+    RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
+            const Size_t size_, const dtypes dtype_, const Context ctx_)
+    : tag(tag_), said(said_), sawptr(saptr_), 
+      size(size_), dtype(dtype_), ctx(ctx_) {}
   };
 
+
+  //---------------------------------------------------
+  //    Variables
+  //---------------------------------------------------
   const Context host_ctx; // Host context, the distination of swap out.
   const Context device_ctx; // Device context
 
   // The maximum size of usable GPU memory [byte]
-  const size_t max_bytes_swap_in;  // for swap-in
-  const size_t max_bytes_swap_out; // for waiting for the end of swap out
-
-  // The used size of GPU memory [bytes]
-  size_t used_bytes_swap_out = 0;
+  const size_t max_bytes_swap_in;  // for swap in
+  const size_t max_bytes_swap_out; // for swap out
 
   // The recorded order of get/cast/clear in the first iteration
   vector<RecType> order;
-  // In the rest iterations, the differently ordered get/cast/clear is recorded.
+  
+  // The differently ordered get/cast/clear is recorded after first iteration
   vector<RecType> wrong_ordered;
 
   int order_idx = 0;   // pointing the current position in the order.
-  int tail = 0;        // pointing the next record to wait for swap out
   size_t func_idx = 0; // pointing the current layer function.
-  
-  // Get/cast/clear used in each layer function were memorized as intervals
-  // in the recorded order.
-  vector<size_t> func_block_ends; 
 
-  /* This is flags to monitor the occurence of preclear.
-     Scheduled preclear can destroy data. It is safe as long as every iteration
-     proceed in the same order as the recorded. However once disorder happens,
-     scheduler breaks data in unexpected timing. If this dangerous situation
-     is faced, the execution stops with error.
-   */
+  // Function blocks in the order
+  vector<size_t> func_block_ends;
+
+  // Flags to monitor preclear.
   unordered_map<SyncedArrayPtr, bool> precleared;
 
-  // Utility. This map is used only in the first iteration.
-  unordered_map<SyncedArrayPtr, unsigned int> synced_array_id_mapper;
+  // Map: SyncedArray ID -> the indices in order
+  unordered_map<unsigned int, vector<int>> said_to_order_idx;
 
-  // Utility. Map between SyncedArray ID and the order
-  unordered_map<unsigned int, vector<int>> synced_array_id_to_order_idx;
-
-  // Switch which separats the first iteration and others.
+  // Switch the first iteration and others.
   bool first_iter = true;
 
   // Check whether function blocks have get/cast on host
   vector<bool> is_host_func;
   void check_which_is_host_func();
 
+
+  //---------------------------------------------------
+  //    Variables used only in first iteration
+  //---------------------------------------------------
+  // The used size of GPU memory [byte]
+  size_t used_bytes_swap_out_first_iter = 0;
+
+  int tail_first_iter = 0; // pointing the next record to wait for swap out
+    
+  // Map: SyncedArrayPtr -> SyncedArray ID
+  unordered_map<SyncedArrayPtr, unsigned int> said_map;
+
+
 public:
+  //---------------------------------------------------
+  //               User interfaces
+  //---------------------------------------------------
   /** Constructor.
 
   @param h_ctx Host context used as the destination of swap-out.
@@ -196,63 +215,13 @@ public:
    */
   NBLA_API void post_update_callback();
 
+
 private:
-  void init();      // Called in start_scheduling()
-  void finalize();  // Called in end_scheduling()
-
-  // Common implementation of pre-function and pre-update callbacks
-  void pre_callback();
-
-  /* Pre callback function is separated the two parts.
-     (1). The post-process of the previous function.
-     (2). The pre-process of the next function.
-     This is because NNabla calls "clear"s between post- and pre-callback
-     functions and the scheduler should monitor these "clear"s.
-  */
-  void swap_out_step(); // (1)
-  void swap_in_step();  // (2)
-
-  synced_array_callback_func_type synced_array_callback;
-
-  // SyncedArray callback function to record get/cast/clear in the first iteration.
-  void synced_array_callback_recorder(SyncedArrayPtr saptr,
-                                      const SyncedArrayCallbackTag func_name,
-                                      const dtypes dtype,
-                                      const Context &ctx,
-                                      const bool write_only);
-
-  // SyncedArray callback function to trace get/cast/clear after the first iteration.
-  void synced_array_callback_tracer(SyncedArrayPtr saptr,
-                                    const SyncedArrayCallbackTag func_name,
-                                    const dtypes dtype,                                         
-                                    const Context &ctx,
-                                    const bool write_only);
-
-  // Setter of appropriate SyncedArray callback function.
-  void set_synced_array_callback();
-
-  // Remover of SyncedArray callback function.
-  void unset_synced_array_callback();
-
-  void swap_in();
-  void swap_out();
-  
-  // Subprocesses of swap_out()
-  void swap_out_first_iter();
-  void swap_out_scheduled();
-  void wait_for_swap_out_first_iter();
-  void wait_for_swap_out_scheduled();
-  void wait_for_swap_out_first_iter_impl();
-  void wait_for_swap_out_scheduled_impl(const RecType& r);
-
-  // They used in finalization
-  void wait_for_all_swap_out_first_iter();
-  void wait_for_all_swap_out_scheduled();
-  void swap_out_wrong_order();
-
+  //---------------------------------------------------
+  //                   Scheduler
+  //---------------------------------------------------
   // Rename of long types to shorter
-  using SyncedArrayCountsInQueue = unordered_map<unsigned int,
-                                                 unordered_map<dtypes, int>>;
+  using SyncedArrayCounts = unordered_map<unsigned int, unordered_map<dtypes, int>>;
   using ScheduleType = vector<reference_wrapper<RecType>>;
 
   // Schedules
@@ -261,33 +230,108 @@ private:
   unordered_map<int, ScheduleType> wait_schedule;
   ScheduleType wait_all_schedule;
 
-  // Schedulers
+  // Main function
   void schedule();
+
+  // Subprocesses of shcedule()
   void detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
-                                     SyncedArrayCountsInQueue& synced_array_counts);
-  ScheduleType
-    schedule_swap_in(int& head, const int fid, size_t& used_bytes_swap_in,
-                     SyncedArrayCountsInQueue& synced_array_counts,
-                     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
-                     unordered_map<unsigned int, bool>& swapped_out,
-                     unordered_map<unsigned int, RecType*>& swapped_out_r);
-  ScheduleType
-    schedule_swap_out(size_t& used_bytes_swap_in, 
-                      SyncedArrayCountsInQueue& synced_array_counts,
-                      const int fid,
-                      unordered_map<unsigned int, bool>& swapped_out,
-                      unordered_map<unsigned int, RecType*>& swapped_out_r);
-  ScheduleType schedule_wait_for_swap_out(unordered_map<unsigned int, bool>& swapped_out,
-                                          unordered_map<unsigned int, RecType*>& swapped_out_r);
-  ScheduleType schedule_wait_for_all_swap_out(unordered_map<unsigned int, bool>& swapped_out,
-                                              unordered_map<unsigned int, RecType*>& swapped_out_r);
-  void schedule_wait_for_swap_out_impl(ScheduleType& schedule,
-                                       unordered_map<unsigned int, bool>& swapped_out,
-                                       unordered_map<unsigned int, RecType*>& swapped_out_r);
+                                     SyncedArrayCounts& synced_array_counts);
+  
+  ScheduleType schedule_swap_in
+   (int& head, const int fid, 
+    size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
+    SyncedArrayCounts& synced_array_counts,
+    unordered_map<unsigned int, bool>& host_uses_this_synced_array,
+    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, RecType*>& swapped_out_r);
+  
+  ScheduleType schedule_swap_out
+   (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
+    SyncedArrayCounts& synced_array_counts,
+    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, RecType*>& swapped_out_r);
+  
+  ScheduleType schedule_wait_for_swap_out
+   (int& tail, size_t& used_bytes_swap_out, 
+    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, RecType*>& swapped_out_r);
+  
+  ScheduleType schedule_wait_for_all_swap_out
+   (int& tail, size_t& used_bytes_swap_out, 
+    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, RecType*>& swapped_out_r);
+  
+  void schedule_wait_for_swap_out_impl
+   (ScheduleType& schedule,
+    int& tail, size_t& used_bytes_swap_out,
+    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, RecType*>& swapped_out_r);
+  
   void schedule_preclear();
 
-  // Utility. Converter of tags
-  RecTag get_tag(const SyncedArrayCallbackTag func_name, const bool write_only);
+
+  //---------------------------------------------------
+  //               Swap in/out
+  //---------------------------------------------------
+  // Common implementation of pre-function and pre-update callbacks
+  void pre_callback();
+
+  /* Pre callback function is separated the two parts.
+  (1). The post-process of the previous function.
+  (2). The pre-process of the next function.
+  This is because NNabla calls "clear"s between post- and pre-callback
+  functions and the scheduler should monitor these "clear"s.
+  */
+  void swap_out_step(); // (1)
+  void swap_in_step();  // (2)
+
+  // Main functions
+  void swap_in();
+  void swap_out();
+
+  // Subprocesses of swap_out()
+  void swap_out_first_iter();
+  void wait_for_swap_out_first_iter();
+  void wait_for_all_swap_out_first_iter();
+  void wait_for_swap_out_first_iter_impl();
+
+  void swap_out_scheduled();
+  void wait_for_swap_out_scheduled();
+  void wait_for_all_swap_out_scheduled();
+  void wait_for_swap_out_scheduled_impl(const RecType& r);
+
+  // Swap out disordered arrays in finalization
+  void swap_out_wrong_order();
+
+
+  //---------------------------------------------------
+  //              SyncedArrayCallback
+  //---------------------------------------------------
+  synced_array_callback_func_type synced_array_callback;
+
+  // Setter
+  void set_synced_array_callback();
+
+  // Unsetter
+  void unset_synced_array_callback();
+
+  // SyncedArrayCallback to record get/cast/clear in the first iteration.
+  void synced_array_callback_recorder(SyncedArrayPtr saptr,
+                                      const SyncedArrayCallbackTag sa_tag,
+                                      const dtypes dtype,
+                                      const Context &ctx,
+                                      const bool write_only);
+
+  // SyncedArrayCallback to trace get/cast/clear after the first iteration.
+  void synced_array_callback_tracer(SyncedArrayPtr saptr,
+                                    const SyncedArrayCallbackTag sa_tag,
+                                    const dtypes dtype,
+                                    const Context &ctx,
+                                    const bool write_only);
+
+  // Tag converter
+  RecTag convert_tag(const SyncedArrayCallbackTag sa_tag,
+                     const bool write_only);
 };
 }
 #endif
