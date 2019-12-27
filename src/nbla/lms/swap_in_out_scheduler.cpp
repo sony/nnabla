@@ -162,6 +162,7 @@ void SwapInOutScheduler::schedule() {
   // They are used to remove uneccesary swap-out
   unordered_map<unsigned int, bool> swapped_out;
   unordered_map<unsigned int, RecType*> swapped_out_r;
+  vector<RecType*> canceled_swap_out;
 
   // Preclear schedule will be used in swap-out schedule.
   schedule_preclear();
@@ -179,7 +180,8 @@ void SwapInOutScheduler::schedule() {
                                              synced_array_counts,
                                              swapped_out, swapped_out_r);
   wait_schedule[fid] = schedule_wait_for_swap_out(tail, used_bytes_swap_out,
-                                                  swapped_out, swapped_out_r);
+                                                  swapped_out, swapped_out_r,
+                                                  canceled_swap_out);
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
@@ -188,7 +190,8 @@ void SwapInOutScheduler::schedule() {
                                              used_bytes_swap_out,
                                              synced_array_counts,
                                              host_uses_this_synced_array,
-                                             swapped_out, swapped_out_r);
+                                             swapped_out, swapped_out_r,
+                                             canceled_swap_out);
 
     if (head < func_block_ends[fid]) {
       NBLA_ERROR(error_code::memory,
@@ -202,11 +205,15 @@ void SwapInOutScheduler::schedule() {
                                                swapped_out, swapped_out_r);
 
     wait_schedule[fid] = schedule_wait_for_swap_out(tail, used_bytes_swap_out, 
-                                                    swapped_out, swapped_out_r);
+                                                    swapped_out, swapped_out_r,
+                                                    canceled_swap_out);
   }
 
   wait_all_schedule = schedule_wait_for_all_swap_out(tail, used_bytes_swap_out, 
-                                                     swapped_out, swapped_out_r);
+                                                     swapped_out, swapped_out_r,
+                                                     canceled_swap_out);
+
+  cancel_swap_out(canceled_swap_out);
 
   check_which_is_host_func();
 
@@ -301,7 +308,8 @@ schedule_swap_in(int& head, const int fid,
                  SyncedArrayCounts& synced_array_counts,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
                  unordered_map<unsigned int, bool>& swapped_out,
-                 unordered_map<unsigned int, RecType*>& swapped_out_r) {
+                 unordered_map<unsigned int, RecType*>& swapped_out_r,
+                 vector<RecType*>& canceled_swap_out) {
   vector<RecType*> schedule;
 
   while (head < order.size()) {
@@ -330,16 +338,16 @@ schedule_swap_in(int& head, const int fid,
           // If the array was previously swapped out,
           // the memcpy was waited for by swap in.
           if (swapped_out[r->said]) {
-            auto rptr = swapped_out_r[r->said];
+            auto sor = swapped_out_r[r->said];
             
             // The array is used before swap out is completed.
             // It is not required to swap out the array.
-            rptr->no_need_swap_out = true;
+            canceled_swap_out.push_back(sor);
 
             // Remove memory size from swap-out memory
-            rptr->swapped_out = false;
-            used_bytes_swap_out -= rptr->swapped_out_bytes;
-            rptr->swapped_out_bytes = 0;
+            sor->swapped_out = false;
+            used_bytes_swap_out -= sor->swapped_out_bytes;
+            sor->swapped_out_bytes = 0;
 
             // reset flag
             swapped_out[r->said] = false;
@@ -456,14 +464,15 @@ vector<SwapInOutScheduler::RecType*>
 SwapInOutScheduler::schedule_wait_for_swap_out(
   int& tail, size_t& used_bytes_swap_out,
   unordered_map<unsigned int, bool>& swapped_out,
-  unordered_map<unsigned int, RecType*>& swapped_out_r) 
+  unordered_map<unsigned int, RecType*>& swapped_out_r,
+  vector<RecType*>& canceled_swap_out)
 {
   vector<RecType*> schedule;
 
   // When out of memory, wait to finish swap-out and release memory.
   while (used_bytes_swap_out > max_bytes_swap_out) {
     schedule_wait_for_swap_out_impl(schedule, tail, used_bytes_swap_out, 
-                                    swapped_out, swapped_out_r);
+                                    swapped_out, swapped_out_r, canceled_swap_out);
   }
 
   return schedule;
@@ -474,14 +483,15 @@ vector<SwapInOutScheduler::RecType*>
 SwapInOutScheduler::schedule_wait_for_all_swap_out(
   int& tail, size_t& used_bytes_swap_out, 
   unordered_map<unsigned int, bool>& swapped_out,
-  unordered_map<unsigned int, RecType*>& swapped_out_r)
+  unordered_map<unsigned int, RecType*>& swapped_out_r,
+  vector<RecType*>& canceled_swap_out)
 {
   vector<RecType*> schedule;
 
   // When out of memory, wait for finishing swap out.
   while (tail < order.size()) {
     schedule_wait_for_swap_out_impl(schedule, tail, used_bytes_swap_out,
-                                    swapped_out, swapped_out_r);
+                                    swapped_out, swapped_out_r, canceled_swap_out);
   }
 
   return schedule;
@@ -492,11 +502,15 @@ void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
   vector<SwapInOutScheduler::RecType*>& schedule,
   int& tail, size_t& used_bytes_swap_out,
   unordered_map<unsigned int, bool>& swapped_out,
-  unordered_map<unsigned int, RecType*>& swapped_out_r)
+  unordered_map<unsigned int, RecType*>& swapped_out_r,
+  vector<RecType*>& canceled_swap_out)
 {
   RecType *r = &order[tail++];
 
-  if (r->swapped_out) {
+  if (r->swapped_out && std::find(canceled_swap_out.begin(), 
+                                  canceled_swap_out.end(),
+                                  r) == canceled_swap_out.end()) {
+    // Not canceled swap out
     // Wait for finishing swap out and release the source array of memory copy.
     schedule.push_back(r);
 
@@ -540,6 +554,22 @@ void SwapInOutScheduler::schedule_preclear() {
   }
 }
 
+
+void SwapInOutScheduler::cancel_swap_out(vector<RecType*>& canceled_swap_out) {
+  for (int fid = 0; fid < func_block_ends.size(); fid++) {
+    vector<RecType*> reschedule;
+
+    for (auto r : swap_out_schedule[fid]) {
+      if (std::find(canceled_swap_out.begin(), canceled_swap_out.end(), r)
+          == canceled_swap_out.end()) {
+        // Not canceled swap out
+        reschedule.push_back(r);
+      }
+    }
+
+    swap_out_schedule[fid] = reschedule;
+  }
+}
 
 
 //----------------------------------------------------------------
@@ -727,9 +757,7 @@ void SwapInOutScheduler::preclear_scheduled() {
 void SwapInOutScheduler::swap_out_scheduled() {
   for (auto r : swap_out_schedule[func_idx]) {
     if (auto p = r->sawptr.lock()) {
-      if (!r->no_need_swap_out) {
-        p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
-      }
+      p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
     }
   }
 }
@@ -749,10 +777,6 @@ void SwapInOutScheduler::wait_for_all_swap_out_scheduled() {
 
   
 void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType *r) {
-  if (r->no_need_swap_out) {
-    return;
-  }
-
   auto p = r->sawptr.lock();
 
   if (p && p->head_array_class() == host_ctx.array_class &&

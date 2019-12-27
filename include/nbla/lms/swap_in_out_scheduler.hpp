@@ -109,7 +109,6 @@ class SwapInOutScheduler {
 
     bool swapped_out = false; // If true, the synced array was swapped out.
     size_t swapped_out_bytes = 0;
-    bool no_need_swap_out = false; // If true, the swap-out schedule is canceled.
 
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
             const Size_t size_, const dtypes dtype_, const Context ctx_)
@@ -242,7 +241,8 @@ private:
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
     unordered_map<unsigned int, bool>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r);
+    unordered_map<unsigned int, RecType*>& swapped_out_r,
+    vector<RecType*>& canceled_swap_out);
   
   vector<RecType*> schedule_swap_out
    (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
@@ -253,20 +253,25 @@ private:
   vector<RecType*> schedule_wait_for_swap_out
    (int& tail, size_t& used_bytes_swap_out, 
     unordered_map<unsigned int, bool>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r);
+    unordered_map<unsigned int, RecType*>& swapped_out_r,
+    vector<RecType*>& canceled_swap_out);
   
   vector<RecType*> schedule_wait_for_all_swap_out
    (int& tail, size_t& used_bytes_swap_out, 
     unordered_map<unsigned int, bool>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r);
+    unordered_map<unsigned int, RecType*>& swapped_out_r,
+    vector<RecType*>& canceled_swap_out);
   
   void schedule_wait_for_swap_out_impl
    (vector<RecType*>& schedule,
     int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, bool>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r);
+    unordered_map<unsigned int, RecType*>& swapped_out_r,
+    vector<RecType*>& canceled_swap_out);
   
   void schedule_preclear();
+
+  void cancel_swap_out(vector<RecType*>& canceled_swap_out);
 
 
   //---------------------------------------------------
