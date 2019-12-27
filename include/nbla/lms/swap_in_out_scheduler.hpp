@@ -107,7 +107,6 @@ class SwapInOutScheduler {
     const dtypes dtype;
     const Context ctx;
 
-    bool preclear = false; // If true, the synced array will be precleared.
     bool swapped_out = false; // If true, the synced array was swapped out.
     size_t swapped_out_bytes = 0;
     bool no_need_swap_out = false; // If true, the swap-out schedule is canceled.
@@ -228,6 +227,7 @@ private:
   unordered_map<int, vector<RecType*>> swap_out_schedule;
   unordered_map<int, vector<RecType*>> wait_schedule;
   vector<RecType*> wait_all_schedule;
+  unordered_map<int, vector<RecType*>> preclear_schedule;
 
   // Main function
   void schedule();
@@ -272,8 +272,9 @@ private:
   //---------------------------------------------------
   //               Swap in/out
   //---------------------------------------------------
-  // Common implementation of pre-function and pre-update callbacks
+  // Common implementation of function and update callbacks
   void pre_callback();
+  void post_callback();
 
   /* Pre callback function is separated the two parts.
   (1). The post-process of the previous function.
@@ -298,6 +299,8 @@ private:
   void wait_for_swap_out_scheduled();
   void wait_for_all_swap_out_scheduled();
   void wait_for_swap_out_scheduled_impl(const RecType *r);
+
+  void preclear_scheduled();
 
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();

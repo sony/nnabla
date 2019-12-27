@@ -128,13 +128,17 @@ void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) {
   pre_callback();
 }
 
-void SwapInOutScheduler::post_function_callback(const CgFunctionPtr &ptr) {}
+void SwapInOutScheduler::post_function_callback(const CgFunctionPtr &ptr) {
+  post_callback();
+}
 
 void SwapInOutScheduler::pre_update_callback() {
   pre_callback();
 }
 
-void SwapInOutScheduler::post_update_callback() {}
+void SwapInOutScheduler::post_update_callback() {
+  post_callback();
+}
 
 
 //----------------------------------------------------------------
@@ -403,9 +407,12 @@ schedule_swap_out(const int fid,
       if (accumulate_counts(synced_array_counts[r->said]) == 1) {
         // An array is swapped out when the same array is no longer
         // in the queue.
-        schedule.push_back(r);
+        if (std::find(preclear_schedule[fid].begin(), 
+                      preclear_schedule[fid].end(), r)
+            == preclear_schedule[fid].end()) {
+          // Not precleared
+          schedule.push_back(r);
 
-        if (!r->preclear) {
           r->swapped_out = true;
           swapped_out[r->said] = true;
           swapped_out_r[r->said] = &order[i];
@@ -508,14 +515,27 @@ void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
 // time to preclear it instead of swapping it out.
 void SwapInOutScheduler::schedule_preclear() {
   unordered_map<unsigned int, bool> clear_flag;
+  int fid = func_block_ends.size() - 1;
 
   for (int i = order.size() - 1; i >= 0; i--) {
-    if (order[i].tag == RecTag::CLEAR) {
-      clear_flag[order[i].said] = true;
+    RecType *r = &order[i];
+
+    if (i < func_block_ends[fid - 1]) {
+      fid--;
     }
-    else {
-      order[i].preclear = clear_flag[order[i].said];
-      clear_flag[order[i].said] = false;
+
+    if (fid == 0) {
+      // fid == 0 is before the first pre-function hook.
+      // No chance to preclear.
+      break;
+    }
+
+    if (r->tag == RecTag::CLEAR) {
+      clear_flag[r->said] = true;
+    }
+    else if (clear_flag[r->said]) {
+      preclear_schedule[fid].push_back(r);
+      clear_flag[r->said] = false;
     }
   }
 }
@@ -540,6 +560,16 @@ void SwapInOutScheduler::pre_callback() {
   }
 
   set_synced_array_callback(); // Restart record or trace
+}
+
+
+// Common implementation of post callback
+void SwapInOutScheduler::post_callback() {
+  if (!first_iter) {
+    unset_synced_array_callback(); // Avoid unnecessary record and trace
+    preclear_scheduled(); // preclear
+    set_synced_array_callback(); // Restart record or trace
+  }
 }
 
 
@@ -684,14 +714,20 @@ void SwapInOutScheduler::wait_for_swap_out_first_iter_impl() {
 }
 
 
-void  SwapInOutScheduler::swap_out_scheduled() {
+void SwapInOutScheduler::preclear_scheduled() {
+  for (auto r : preclear_schedule[func_idx]) {
+    if (auto p = r->sawptr.lock()) {
+      p->clear();
+      precleared[p] = true;
+    }
+  }
+}
+
+
+void SwapInOutScheduler::swap_out_scheduled() {
   for (auto r : swap_out_schedule[func_idx]) {
     if (auto p = r->sawptr.lock()) {
-      if (r->preclear) {
-        p->clear();
-        precleared[p] = true;
-      }
-      else if (!r->no_need_swap_out) {
+      if (!r->no_need_swap_out) {
         p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
       }
     }
