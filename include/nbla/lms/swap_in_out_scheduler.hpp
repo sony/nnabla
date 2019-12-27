@@ -222,13 +222,12 @@ private:
   //---------------------------------------------------
   // Rename of long types to shorter
   using SyncedArrayCounts = unordered_map<unsigned int, unordered_map<dtypes, int>>;
-  using ScheduleType = vector<reference_wrapper<RecType>>;
 
   // Schedules
-  unordered_map<int, ScheduleType> swap_in_schedule;
-  unordered_map<int, ScheduleType> swap_out_schedule;
-  unordered_map<int, ScheduleType> wait_schedule;
-  ScheduleType wait_all_schedule;
+  unordered_map<int, vector<RecType*>> swap_in_schedule;
+  unordered_map<int, vector<RecType*>> swap_out_schedule;
+  unordered_map<int, vector<RecType*>> wait_schedule;
+  vector<RecType*> wait_all_schedule;
 
   // Main function
   void schedule();
@@ -237,7 +236,7 @@ private:
   void detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
                                      SyncedArrayCounts& synced_array_counts);
   
-  ScheduleType schedule_swap_in
+  vector<RecType*> schedule_swap_in
    (int& head, const int fid, 
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
@@ -245,24 +244,24 @@ private:
     unordered_map<unsigned int, bool>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
-  ScheduleType schedule_swap_out
+  vector<RecType*> schedule_swap_out
    (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, bool>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
-  ScheduleType schedule_wait_for_swap_out
+  vector<RecType*> schedule_wait_for_swap_out
    (int& tail, size_t& used_bytes_swap_out, 
     unordered_map<unsigned int, bool>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
-  ScheduleType schedule_wait_for_all_swap_out
+  vector<RecType*> schedule_wait_for_all_swap_out
    (int& tail, size_t& used_bytes_swap_out, 
     unordered_map<unsigned int, bool>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
   void schedule_wait_for_swap_out_impl
-   (ScheduleType& schedule,
+   (vector<RecType*>& schedule,
     int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, bool>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
@@ -298,7 +297,7 @@ private:
   void swap_out_scheduled();
   void wait_for_swap_out_scheduled();
   void wait_for_all_swap_out_scheduled();
-  void wait_for_swap_out_scheduled_impl(const RecType& r);
+  void wait_for_swap_out_scheduled_impl(const RecType *r);
 
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();

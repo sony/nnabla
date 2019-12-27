@@ -235,13 +235,13 @@ void SwapInOutScheduler::check_which_is_host_func() {
 
     for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
       i < func_block_ends[fid]; i++) {
-      RecType& r = order[i];
+      RecType *r = &order[i];
 
-      if (r.tag == RecTag::CLEAR) {
+      if (r->tag == RecTag::CLEAR) {
         continue;
       }
 
-      if (r.ctx.array_class == host_ctx.array_class) {
+      if (r->ctx.array_class == host_ctx.array_class) {
         host_func = true;
       }
     }
@@ -255,27 +255,27 @@ void SwapInOutScheduler::
 detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
                               SyncedArrayCounts& synced_array_counts) {
   while (head < func_block_ends[0]) {
-    RecType& r = order[head];
+    RecType *r = &order[head];
 
-    if (r.tag == RecTag::CLEAR) {
+    if (r->tag == RecTag::CLEAR) {
       head++;
       continue;
     }
 
-    if (r.ctx.array_class == device_ctx.array_class) {
+    if (r->ctx.array_class == device_ctx.array_class) {
       // All fetches were already done. Just calculate memory size.
-      auto array_bytes = r.size * sizeof_dtype(r.dtype);
+      auto array_bytes = r->size * sizeof_dtype(r->dtype);
 
       // First fetch
-      if (synced_array_counts[r.said][r.dtype] == 0) {
+      if (synced_array_counts[r->said][r->dtype] == 0) {
         used_bytes_swap_in += array_bytes;
       }
 
       // Increment the number of the same SyncedArray in the queue.
-      synced_array_counts[r.said][r.dtype]++;
+      synced_array_counts[r->said][r->dtype]++;
       head++; // Move on the head of the queue
     }
-    else if (r.ctx.array_class == host_ctx.array_class) {
+    else if (r->ctx.array_class == host_ctx.array_class) {
       // Because func_idx == 0 means all get/cast finished already
       // the host process must be finished.
 
@@ -284,13 +284,13 @@ detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
     else {
       // Get/cast of an array on an uncertain device
       NBLA_ERROR(error_code::type,
-                 "Unsupported array type: " + r.ctx.array_class);
+                 "Unsupported array type: " + r->ctx.array_class);
     }
   }
 }
 
 
-SwapInOutScheduler::ScheduleType
+vector<SwapInOutScheduler::RecType*>
 SwapInOutScheduler::
 schedule_swap_in(int& head, const int fid, 
                  size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
@@ -298,18 +298,18 @@ schedule_swap_in(int& head, const int fid,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
                  unordered_map<unsigned int, bool>& swapped_out,
                  unordered_map<unsigned int, RecType*>& swapped_out_r) {
-  SwapInOutScheduler::ScheduleType schedule;
+  vector<RecType*> schedule;
 
   while (head < order.size()) {
-    RecType& r = order[head];
+    RecType *r = &order[head];
 
-    if (r.tag == RecTag::CLEAR) {
+    if (r->tag == RecTag::CLEAR) {
       head++;
       continue;
     }
     
-    if (r.ctx.array_class == device_ctx.array_class) {
-      auto next_array_bytes = r.size * sizeof_dtype(r.dtype);
+    if (r->ctx.array_class == device_ctx.array_class) {
+      auto next_array_bytes = r->size * sizeof_dtype(r->dtype);
 
       if (used_bytes_swap_in + next_array_bytes
           > max_bytes_swap_in - used_bytes_swap_out) {
@@ -317,16 +317,16 @@ schedule_swap_in(int& head, const int fid,
       }
 
       // Fetch
-      if (synced_array_counts[r.said][r.dtype] == 0) {
+      if (synced_array_counts[r->said][r->dtype] == 0) {
         // The array is firstly appeared in the queue.
 
-        if (!host_uses_this_synced_array[r.said]) {
+        if (!host_uses_this_synced_array[r->said]) {
           schedule.push_back(r);
 
           // If the array was previously swapped out,
           // the memcpy was waited for by swap in.
-          if (swapped_out[r.said]) {
-            auto rptr = swapped_out_r[r.said];
+          if (swapped_out[r->said]) {
+            auto rptr = swapped_out_r[r->said];
             
             // The array is used before swap out is completed.
             // It is not required to swap out the array.
@@ -338,8 +338,8 @@ schedule_swap_in(int& head, const int fid,
             rptr->swapped_out_bytes = 0;
 
             // reset flag
-            swapped_out[r.said] = false;
-            swapped_out_r[r.said] = nullptr;
+            swapped_out[r->said] = false;
+            swapped_out_r[r->said] = nullptr;
           }
         }
 
@@ -348,24 +348,24 @@ schedule_swap_in(int& head, const int fid,
       }
 
       // Increment the number of the same SyncedArray in the queue.
-      synced_array_counts[r.said][r.dtype]++;
+      synced_array_counts[r->said][r->dtype]++;
       head++; // Move on the head of the queue
     }
-    else if (r.ctx.array_class == host_ctx.array_class) {
+    else if (r->ctx.array_class == host_ctx.array_class) {
       // No need swap-in (prefetch) to CPU. The array will be gotten/casted 
       // synchronously by the function itself. 
       // Stop prefetch these type of arrays.
       if (fid > 0) {
         // Because func_idx == 0 means all get/cast finished already
         // the host process must be finished.
-        host_uses_this_synced_array[r.said] = true;
+        host_uses_this_synced_array[r->said] = true;
       }
 
       // The arrray comes on to host by swap out.
-      if (swapped_out[r.said]) {
+      if (swapped_out[r->said]) {
         // reset flag
-        swapped_out[r.said] = false;
-        swapped_out_r[r.said] = nullptr;
+        swapped_out[r->said] = false;
+        swapped_out_r[r->said] = nullptr;
       }
 
       head++;
@@ -373,7 +373,7 @@ schedule_swap_in(int& head, const int fid,
     else {
       // Get/cast of an array on an uncertain device
       NBLA_ERROR(error_code::type, 
-                 "Unsupported array type: " + r.ctx.array_class);
+                 "Unsupported array type: " + r->ctx.array_class);
     }
   }
 
@@ -381,63 +381,63 @@ schedule_swap_in(int& head, const int fid,
 }
 
 
-SwapInOutScheduler::ScheduleType
+vector<SwapInOutScheduler::RecType*>
 SwapInOutScheduler::
 schedule_swap_out(const int fid,
                   size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
                   SyncedArrayCounts& synced_array_counts, 
                   unordered_map<unsigned int, bool>& swapped_out,
                   unordered_map<unsigned int, RecType*>& swapped_out_r) {
-  SwapInOutScheduler::ScheduleType schedule;
+  vector<RecType*> schedule;
 
   for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
               i < func_block_ends[fid];
               i++) {
-    RecType& r = order[i];
+    RecType *r = &order[i];
 
-    if (r.tag == RecTag::CLEAR) {
+    if (r->tag == RecTag::CLEAR) {
       continue;
     }
 
-    if (r.ctx.array_class == device_ctx.array_class) { 
-      if (accumulate_counts(synced_array_counts[r.said]) == 1) {
+    if (r->ctx.array_class == device_ctx.array_class) { 
+      if (accumulate_counts(synced_array_counts[r->said]) == 1) {
         // An array is swapped out when the same array is no longer
         // in the queue.
         schedule.push_back(r);
 
-        if (!r.preclear) {
-          r.swapped_out = true;
-          swapped_out[r.said] = true;
-          swapped_out_r[r.said] = &order[i];
+        if (!r->preclear) {
+          r->swapped_out = true;
+          swapped_out[r->said] = true;
+          swapped_out_r[r->said] = &order[i];
         
           // Transfer memory usage of all types
-          r.swapped_out_bytes = 0;
+          r->swapped_out_bytes = 0;
 
-          for (auto it : synced_array_counts[r.said]) {
-            auto array_bytes = r.size * sizeof_dtype(it.first);
+          for (auto it : synced_array_counts[r->said]) {
+            auto array_bytes = r->size * sizeof_dtype(it.first);
             used_bytes_swap_out += array_bytes;
-            r.swapped_out_bytes += array_bytes;
+            r->swapped_out_bytes += array_bytes;
           }
         }
 
         // Transfer memory usage of all types
-        for (auto it : synced_array_counts[r.said]) {
-          auto array_bytes = r.size * sizeof_dtype(it.first);
+        for (auto it : synced_array_counts[r->said]) {
+          auto array_bytes = r->size * sizeof_dtype(it.first);
           used_bytes_swap_in -= array_bytes;
         }
 
         // Reset usage
-        synced_array_counts[r.said].clear();
+        synced_array_counts[r->said].clear();
       }
       else {
         // Decrease the counts of a used array in the queue.
-        synced_array_counts[r.said][r.dtype]--;
+        synced_array_counts[r->said][r->dtype]--;
       }
     }
-    else if (r.ctx.array_class != host_ctx.array_class) {
+    else if (r->ctx.array_class != host_ctx.array_class) {
       // Get/cast of an array on an uncertain device
       NBLA_ERROR(error_code::type, 
-                 "Unsupported array type: " + r.ctx.array_class);
+                 "Unsupported array type: " + r->ctx.array_class);
     }
   }
 
@@ -445,13 +445,13 @@ schedule_swap_out(const int fid,
 }
 
 
-SwapInOutScheduler::ScheduleType
+vector<SwapInOutScheduler::RecType*>
 SwapInOutScheduler::schedule_wait_for_swap_out(
   int& tail, size_t& used_bytes_swap_out,
   unordered_map<unsigned int, bool>& swapped_out,
   unordered_map<unsigned int, RecType*>& swapped_out_r) 
 {
-  SwapInOutScheduler::ScheduleType schedule;
+  vector<RecType*> schedule;
 
   // When out of memory, wait to finish swap-out and release memory.
   while (used_bytes_swap_out > max_bytes_swap_out) {
@@ -463,13 +463,13 @@ SwapInOutScheduler::schedule_wait_for_swap_out(
 }
 
 
-SwapInOutScheduler::ScheduleType
+vector<SwapInOutScheduler::RecType*>
 SwapInOutScheduler::schedule_wait_for_all_swap_out(
   int& tail, size_t& used_bytes_swap_out, 
   unordered_map<unsigned int, bool>& swapped_out,
   unordered_map<unsigned int, RecType*>& swapped_out_r)
 {
-  SwapInOutScheduler::ScheduleType schedule;
+  vector<RecType*> schedule;
 
   // When out of memory, wait for finishing swap out.
   while (tail < order.size()) {
@@ -482,24 +482,24 @@ SwapInOutScheduler::schedule_wait_for_all_swap_out(
 
 
 void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
-  SwapInOutScheduler::ScheduleType& schedule,
+  vector<SwapInOutScheduler::RecType*>& schedule,
   int& tail, size_t& used_bytes_swap_out,
   unordered_map<unsigned int, bool>& swapped_out,
   unordered_map<unsigned int, RecType*>& swapped_out_r)
 {
-  RecType& r = order[tail++];
+  RecType *r = &order[tail++];
 
-  if (r.swapped_out) {
+  if (r->swapped_out) {
     // Wait for finishing swap out and release the source array of memory copy.
     schedule.push_back(r);
 
     // Decrease memory usage
-    r.swapped_out = false;
-    used_bytes_swap_out -= r.swapped_out_bytes;
-    r.swapped_out_bytes = 0;
+    r->swapped_out = false;
+    used_bytes_swap_out -= r->swapped_out_bytes;
+    r->swapped_out_bytes = 0;
 
-    swapped_out[r.said] = false;
-    swapped_out_r[r.said] = nullptr;
+    swapped_out[r->said] = false;
+    swapped_out_r[r->said] = nullptr;
   }
 }
 
@@ -574,8 +574,8 @@ void SwapInOutScheduler::swap_in_step() {
 // Swap in (prefetch)
 void SwapInOutScheduler::swap_in() {
   for (auto r : swap_in_schedule[func_idx]) {
-    if (auto p = r.get().sawptr.lock()) {
-      p->get(r.get().dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+    if (auto p = r->sawptr.lock()) {
+      p->get(r->dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
     }
   }
 }
@@ -600,46 +600,46 @@ void SwapInOutScheduler::swap_out_first_iter() {
   const int start_idx = func_idx == 0 ? 0 : func_block_ends[func_idx - 1];
 
   for (int i = start_idx; i < func_block_ends[func_idx]; i++) {
-    RecType& r = order[i];
-    if (r.tag == RecTag::CLEAR) continue;
+    RecType *r = &order[i];
+    if (r->tag == RecTag::CLEAR) continue;
 
-    if (r.ctx.array_class == device_ctx.array_class) {
-      synced_array_counts[r.said][r.dtype]++;
+    if (r->ctx.array_class == device_ctx.array_class) {
+      synced_array_counts[r->said][r->dtype]++;
     }
-    else if (r.ctx.array_class != host_ctx.array_class) {
+    else if (r->ctx.array_class != host_ctx.array_class) {
       // Get/cast of an array on an uncertain device
-      NBLA_ERROR(error_code::type, "Unsupported array type: " + r.ctx.array_class);
+      NBLA_ERROR(error_code::type, "Unsupported array type: " + r->ctx.array_class);
     }
   }
 
   // Swap out
   for (int i = start_idx; i < func_block_ends[func_idx]; i++) {
-    RecType& r = order[i];
-    if (r.tag == RecTag::CLEAR) continue;
+    RecType *r = &order[i];
+    if (r->tag == RecTag::CLEAR) continue;
 
-    if (r.ctx.array_class == device_ctx.array_class) {
-      if (accumulate_counts(synced_array_counts[r.said]) == 1) {
-        auto p = r.sawptr.lock();
+    if (r->ctx.array_class == device_ctx.array_class) {
+      if (accumulate_counts(synced_array_counts[r->said]) == 1) {
+        auto p = r->sawptr.lock();
 
         if (p && is_not_cleared_yet(p)) {
           // The array is not cleared yet. Swap out the array
           p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
-          r.swapped_out = true;
+          r->swapped_out = true;
 
           // Counts memory usage of all types
-          r.swapped_out_bytes = 0;
+          r->swapped_out_bytes = 0;
 
-          for (auto it : synced_array_counts[r.said]) {
-            auto array_bytes = r.size * sizeof_dtype(it.first);
+          for (auto it : synced_array_counts[r->said]) {
+            auto array_bytes = r->size * sizeof_dtype(it.first);
             used_bytes_swap_out_first_iter += array_bytes;
-            r.swapped_out_bytes += array_bytes;
+            r->swapped_out_bytes += array_bytes;
           }
         }
 
-        synced_array_counts[r.said].clear();
+        synced_array_counts[r->said].clear();
       }
       else {
-        synced_array_counts[r.said][r.dtype]--;
+        synced_array_counts[r->said][r->dtype]--;
       }
     }
   }
@@ -660,15 +660,15 @@ void SwapInOutScheduler::wait_for_all_swap_out_first_iter() {
 
 
 void SwapInOutScheduler::wait_for_swap_out_first_iter_impl() {
-  RecType& r = order[tail_first_iter++];
+  RecType *r = &order[tail_first_iter++];
 
-  if (r.tag == RecTag::CLEAR) {
+  if (r->tag == RecTag::CLEAR) {
     return;
   }
 
-  auto p = r.sawptr.lock();
+  auto p = r->sawptr.lock();
 
-  if (r.swapped_out) {
+  if (r->swapped_out) {
     // Wait for finish swapping out and release the source array of memory copy.
     if (p && p->head_array_class() == host_ctx.array_class &&
         is_not_cleared_yet(p)) { 
@@ -677,21 +677,21 @@ void SwapInOutScheduler::wait_for_swap_out_first_iter_impl() {
     }
 
     // Decrease memory usage
-    r.swapped_out = false;
-    used_bytes_swap_out_first_iter -= r.swapped_out_bytes;
-    r.swapped_out_bytes = 0;
+    r->swapped_out = false;
+    used_bytes_swap_out_first_iter -= r->swapped_out_bytes;
+    r->swapped_out_bytes = 0;
   }
 }
 
 
 void  SwapInOutScheduler::swap_out_scheduled() {
   for (auto r : swap_out_schedule[func_idx]) {
-    if (auto p = r.get().sawptr.lock()) {
-      if (r.get().preclear) {
+    if (auto p = r->sawptr.lock()) {
+      if (r->preclear) {
         p->clear();
         precleared[p] = true;
       }
-      else if (!r.get().no_need_swap_out) {
+      else if (!r->no_need_swap_out) {
         p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
       }
     }
@@ -701,23 +701,23 @@ void  SwapInOutScheduler::swap_out_scheduled() {
 
 void SwapInOutScheduler::wait_for_swap_out_scheduled() {
   for (auto r : wait_schedule[func_idx]) {
-    wait_for_swap_out_scheduled_impl(r.get());
+    wait_for_swap_out_scheduled_impl(r);
   }
 }
 
 void SwapInOutScheduler::wait_for_all_swap_out_scheduled() {
   for (auto r : wait_all_schedule) {
-    wait_for_swap_out_scheduled_impl(r.get());
+    wait_for_swap_out_scheduled_impl(r);
   }
 }
 
   
-void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType& r) {
-  if (r.no_need_swap_out) {
+void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType *r) {
+  if (r->no_need_swap_out) {
     return;
   }
 
-  auto p = r.sawptr.lock();
+  auto p = r->sawptr.lock();
 
   if (p && p->head_array_class() == host_ctx.array_class &&
       is_not_cleared_yet(p)) {
@@ -728,25 +728,25 @@ void SwapInOutScheduler::wait_for_swap_out_scheduled_impl(const RecType& r) {
 
 void SwapInOutScheduler::swap_out_wrong_order() {
   for (int i = 0; i < wrong_ordered.size(); i++) {
-    RecType& r = wrong_ordered[i];
+    RecType *r = &wrong_ordered[i];
 
-    if (r.tag == RecTag::CLEAR) {
+    if (r->tag == RecTag::CLEAR) {
       continue;
     }
 
-    if (r.ctx.array_class == device_ctx.array_class) {
-      auto p = r.sawptr.lock();
+    if (r->ctx.array_class == device_ctx.array_class) {
+      auto p = r->sawptr.lock();
 
       if (p && is_not_cleared_yet(p)) {
         // Swap out the array SYNCRONOUSLY because device synchronize will be 
         // called just after this.
-        p->cast(r.dtype, host_ctx, false);
+        p->cast(r->dtype, host_ctx, false);
       }
     }
-    else if (r.ctx.array_class != host_ctx.array_class) {
+    else if (r->ctx.array_class != host_ctx.array_class) {
       // Function used an array on an uncertain device
       NBLA_ERROR(error_code::type,
-                 "Unsupported array class: " + r.ctx.array_class);
+                 "Unsupported array class: " + r->ctx.array_class);
     }
   }
 }
