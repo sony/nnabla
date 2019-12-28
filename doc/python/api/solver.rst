@@ -28,3 +28,5 @@ List of solvers
 .. autofunction:: Adamax
 .. autofunction:: AMSGRAD
 .. autofunction:: AMSBound
+.. autofunction:: AdamW
+.. autofunction:: SgdW

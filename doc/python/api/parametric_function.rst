@@ -71,6 +71,7 @@ Here is the list of parametric functions.
 .. autofunction:: deconvolution
 .. autofunction:: depthwise_deconvolution
 .. autofunction:: batch_normalization
+.. autofunction:: fused_batch_normalization
 .. autofunction:: sync_batch_normalization
 .. autofunction:: mean_subtraction
 .. autofunction:: layer_normalization
@@ -113,9 +114,9 @@ Here is the list of parametric functions.
 .. autofunction:: spectral_norm
 .. autofunction:: weight_normalization
 .. autofunction:: multi_head_attention
-.. autoclass:: transformer
-.. autoclass:: transformer_encode
-.. autoclass:: transformer_decode
+.. autofunction:: transformer
+.. autofunction:: transformer_encode
+.. autofunction:: transformer_decode
 
 Parameter Initializer
 ---------------------
@@ -136,6 +137,12 @@ listed below.
     :show-inheritance:
 
 .. autoclass:: UniformInitializer
+    :show-inheritance:
+
+.. autoclass:: UniformIntInitializer
+    :show-inheritance:
+
+.. autoclass:: RangeInitializer
     :show-inheritance:
 
 .. autoclass:: OrthogonalInitializer
