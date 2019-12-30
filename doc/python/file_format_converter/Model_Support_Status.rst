@@ -149,7 +149,7 @@ Count 6/10
     meta_learning_         X     Failed to compare inferring result.                 
     wavenet_               X     The `onehot` dimension != 2 is not supported.       
     deeplabv3plus_         X     The `Interpolate` is currently not supported.       
-    word_embedding_       ✓                                                                                         
+    word_embedding_        ✓                                                         
     ==================  =======  ====================================================
 
 
