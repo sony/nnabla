@@ -42,7 +42,7 @@ python train_maml.py -c cpu
 In case of Prototypical networks or Matching networks, you can use
 
 ```
-python metric_based_meta_learning.py
+python prototypical.py
 ```
 
 
@@ -82,7 +82,7 @@ We have many options to change parameters including network structures.
 The following is an example of setting hyperparameters with corresponding options.
 
 ```
-python metric_based_meta_learning.py -nw 20 -ns 1 -nq 5 -nwt 20 -nst 1 -nqt 5
+python prototypical.py -nw 20 -ns 1 -nq 5 -nwt 20 -nst 1 -nqt 5
 ```
 
 Example of options are as follows.

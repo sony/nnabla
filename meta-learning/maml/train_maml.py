@@ -42,7 +42,7 @@ from net import net
 def get_args():
     parser = argparse.ArgumentParser(description='MAML for Few-shot Learning')
     # Dataset/method options
-    parser.add_argument('--dataset_root', '-dr', type=str, default='.')
+    parser.add_argument('--dataset_root', '-dr', type=str, default='../data')
     parser.add_argument('--datasource', type=str, default='omniglot',
                         help='omniglot')
     parser.add_argument('--method', type=str, default='maml',
