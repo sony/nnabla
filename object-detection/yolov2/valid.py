@@ -60,42 +60,10 @@ def valid(weightfile, outfile, outdir):
         args.valid_batchsize, args.height, args.width, test=True)
     nnabla.load_parameters(weightfile)
 
-    valid_dataset = dataset.listDataset(valid_images, args,
-                                        train=False,
-                                        shape=(args.width, args.height), shuffle=False)
+    valid_dataset = dataset.data_iterator_yolo(valid_images, args,
+                                               train=False,
+                                               shape=(args.width, args.height), shuffle=False, batch_size=args.valid_batchsize)
     assert(args.valid_batchsize > 1)
-
-    def batch_iter(it, batch_size):
-        def list2np(t):
-            imgs, labels = zip(*t)
-            retimgs = np.zeros((len(imgs),) + imgs[0].shape, dtype=np.float32)
-            retlabels = np.zeros(
-                (len(labels),) + labels[0].shape, dtype=np.float32)
-            for i, img in enumerate(imgs):
-                retimgs[i, :, :, :] = img
-            for i, label in enumerate(labels):
-                retlabels[i, :] = label
-            return retimgs, retlabels
-        retlist = []
-        for i, item in enumerate(it):
-            retlist.append(item)
-            if i % batch_size == batch_size - 1:
-                ret = list2np(retlist)
-                # # Don't train for batches that contain no labels
-                # # TODO: fix this
-                # if not (np.sum(ret[1].numpy()) == 0):
-                yield ret
-                retlist = []
-        # Excess data is discarded
-        if len(retlist) > 0:
-            ret = list2np(retlist)
-            # # Don't train for batches that contain no labels
-            # # TODO: fix this
-            # if not (np.sum(ret[1].numpy()) == 0):
-            yield ret
-
-    valid_loader = batch_iter(
-        iter(valid_dataset), batch_size=args.valid_batchsize)
 
     fps = [0]*args.num_classes
     if not os.path.exists(outdir):
@@ -104,27 +72,26 @@ def valid(weightfile, outfile, outdir):
         buf = '%s/%s%s.txt' % (prefix, outfile, names[i])
         fps[i] = open(buf, 'w')
 
-    lineId = -1
+    lineId = 0
+    total_samples = len(valid_files)
+    total_batches = (total_samples+args.valid_batchsize -
+                     1)//args.valid_batchsize
 
-    future_data = pool.apply_async(
-        utils.raise_info_thread(next), (valid_loader, None))
-    for batch_idx in itertools.count():
-        curr_data = future_data
-        future_data = pool.apply_async(
-            utils.raise_info_thread(next), (valid_loader, None))
-        ret = curr_data.get()
-        if ret is None:
-            break
+    for each_batch in range(0, total_batches):
+        ret = valid_dataset.next()
         data, target = ret
         yolo_x_nnabla.d = data
         yolo_features_nnabla.forward(clear_buffer=True)
         batch_boxes = utils.get_region_boxes(
             yolo_features_nnabla.d, args.conf_thresh, args.num_classes, args.anchors, args.num_anchors, 0, 1)
         for i in range(yolo_features_nnabla.d.shape[0]):
-            lineId = lineId + 1
+            if lineId >= total_samples:
+                print("Reached End of total_samples")
+                break
             fileId = os.path.basename(valid_files[lineId]).split('.')[0]
             width, height = utils.get_image_size(valid_files[lineId])
             print(valid_files[lineId])
+            lineId += 1
             boxes = batch_boxes[i]
             boxes = utils.nms(boxes, args.nms_thresh)
             for box in boxes:

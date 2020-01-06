@@ -29,8 +29,6 @@ import nnabla.solvers as S
 
 from train_graph import TrainGraph
 
-from multiprocessing.pool import ThreadPool
-
 import random
 random.seed(0)
 import numpy as np
@@ -42,27 +40,6 @@ def get_current_batch(seen, args):
     Get the current batch number from number of processed examples.
     '''
     return int(seen // (args.batch_size * args.accum_times))
-
-
-class PrefetchIterator(object):
-    '''
-    Creator of prefetch iterator from an iterable object.
-    '''
-
-    def __init__(self):
-        self.pool = ThreadPool(1)
-
-    def create(self, it):
-        future_data = self.pool.apply_async(
-            raise_info_thread(next), (it, None))
-        while True:
-            curr_data = future_data
-            future_data = self.pool.apply_async(
-                raise_info_thread(next), (it, None))
-            data = curr_data.get()
-            if data is None:
-                break
-            yield data
 
 
 class YoloSolver(object):
@@ -142,46 +119,30 @@ class YoloSolver(object):
         self.count = 0
 
 
-def train(args, epoch, max_epochs, train_graph, yolo_solver,
-          prefetch_iterator, on_memory_data):
-
-    sample_iter = dataset.listDataset(
-        args.train, args,
-        shuffle=True,
-        train=True,
-        seen=train_graph.seen,
-        image_sizes=args.size_aug,
-        image_size_change_freq=args.batch_size * args.accum_times * 10,
-        on_memory_data=on_memory_data,
-        use_cv2=not args.disable_cv2)
-    batch_iter = dataset.create_batch_iter(
-        iter(sample_iter), batch_size=args.batch_size)
+def train(args, sample_iter, nsamples, epoch, max_epochs, train_graph, yolo_solver, on_memory_data, total_batches):
 
     total_loss = []
     epoch_seen = 0
     tic = time.time()
-    for batch_idx, ((data_tensor, target_tensor), preprocess_time) \
-            in enumerate(prefetch_iterator.create(batch_iter)):
+    for each_batch in range(0, int(total_batches)):
+        data_tensor, target_tensor = sample_iter.next()
         lr = yolo_solver.get_current_lr(train_graph.seen)
         nB = data_tensor.shape[0]
-        print('size={}, '.format(sample_iter.shape[0]), end='')
+        print('size={}, '.format(data_tensor.shape[2]), end='')
         stats = train_graph.forward_backward(data_tensor, target_tensor)
-        print('s=%d/%d, b=%d/%d, e=%d/%d, lr %g, mIoU %.3f, nGT %d, recall %d,'
-              ' proposals %d, loss: %.3f, pre: %.1f [ms], exec: %.1f [ms]' % (
-                  stats.seen, len(sample_iter), get_current_batch(
-                      stats.seen, args),
-                  args.max_batches, epoch, max_epochs, lr, stats.mIoU, stats.nGT,
-                  stats.nCorrect, stats.nProposals, stats.loss,
-                  preprocess_time, stats.time))
+        print('s=%d/%d, b=%d/%d, e=%d/%d, lr %g, mIOU %.3f, nGT %d, recall %d,'
+              'proposals %d, loss: %.3f, exec: %.1f [ms]' % (
+                    (stats.seen % nsamples), nsamples,
+                    get_current_batch(stats.seen, args), args.max_batches,
+                    epoch, max_epochs, lr, stats.mIoU, stats.nGT,
+                    stats.nCorrect, stats.nProposals, stats.loss, stats.time))
         epoch_seen += nB
         total_loss.append(float(stats.loss))
-
         # Update parameters for every accum_times iterations.
         updated = yolo_solver.update_at_rate(lr)
 
     # Update if gradients are computed from previous update.
     yolo_solver.update_at_rate(lr, force=True)
-    print()
     if (epoch+1) % args.save_interval == 0:
         logging('save weights to %s/%06d.h5' % (args.output, epoch+1))
         nn.save_parameters('%s/%06d.h5' % (args.output, epoch+1))
@@ -198,6 +159,9 @@ def main():
 
     # Training parameters
     max_epochs = args.max_batches * args.batch_size * args.accum_times / nsamples + 1
+
+    # total number of batches
+    total_batches = (nsamples+args.batch_size-1)//args.batch_size
 
     if not os.path.exists(args.output):
         os.mkdir(args.output)
@@ -221,17 +185,24 @@ def main():
     else:
         on_memory_data = None
 
-    prefetch_iterator = PrefetchIterator()
-
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
     monitor = Monitor(args.output)
     monitor_loss = MonitorSeries('Training loss', monitor, interval=1)
     monitor_time = MonitorTimeElapsed('Time per epoch', monitor, interval=1)
 
+    sample_iter = dataset.data_iterator_yolo(
+        args.train, args,
+        shuffle=True,
+        train=True,
+        image_sizes=args.size_aug,
+        image_size_change_freq=args.batch_size * args.accum_times * 10,
+        on_memory_data=on_memory_data,
+        use_cv2=not args.disable_cv2, batch_size=args.batch_size)
+
     # Epoch loop
     for epoch in range(0, int(max_epochs)):
-        loss = train(args, epoch, max_epochs, train_graph,
-                     yolo_solver, prefetch_iterator, on_memory_data)
+        loss = train(args, sample_iter, nsamples, epoch, max_epochs, train_graph,
+                     yolo_solver, on_memory_data, total_batches)
         monitor_loss.add(epoch, loss)
         monitor_time.add(epoch)
 
