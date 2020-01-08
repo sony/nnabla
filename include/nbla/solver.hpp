@@ -165,6 +165,11 @@ public:
   */
   void weight_decay(float decay_rate);
 
+  /** Clip gradients by norm.
+  The norm is calculated at each variable.
+   */
+  void clip_grad_by_norm(float norm);
+
   /** Check if there is any inf on the gradients which were setup.
    */
   bool check_inf_grad();
@@ -225,6 +230,15 @@ protected:
   virtual void weight_decay_impl(const string &key, VariablePtr param,
                                  float decay_rate) = 0;
 
+  /** Clip gradients by norm implementation.
+
+  @param key Key of parameter.
+  @param param A parameter Variable.
+  @param norm A value of norm.
+  */
+  virtual void clip_grad_by_norm_impl(const string &key, VariablePtr param,
+                                      float clip_norm) = 0;
+
   /** Check if there is any inf on the gradients which were setup.
    */
   virtual bool check_inf_grad_impl(const string &key, VariablePtr param) = 0;
@@ -256,6 +270,17 @@ protected:
   void SOLVER<T>::weight_decay_impl(const string &key, VariablePtr param,      \
                                     float decay_rate) {                        \
     WEIGHT_DECAY_FUNC<T>(this->ctx_, param, decay_rate);                       \
+  }
+
+#define NBLA_DECL_CLIP_GRAD_BY_NORM()                                          \
+  virtual void clip_grad_by_norm_impl(const string &key, VariablePtr param,    \
+                                      float clip_norm)
+
+#define NBLA_DEF_CLIP_GRAD_BY_NORM(SOLVER, CLIP_GRAD_BY_NORM_FUNC)             \
+  template <typename T>                                                        \
+  void SOLVER<T>::clip_grad_by_norm_impl(const string &key, VariablePtr param, \
+                                         float clip_norm) {                    \
+    CLIP_GRAD_BY_NORM_FUNC<T>(this->ctx_, param, clip_norm);                   \
   }
 
 #define NBLA_DECL_CHECK_INF_GRAD()                                             \

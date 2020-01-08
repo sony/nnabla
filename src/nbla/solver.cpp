@@ -145,6 +145,19 @@ void Solver::weight_decay(float decay_rate) {
   }
 }
 
+void Solver::clip_grad_by_norm(float norm) {
+  if (norm == 0)
+    return;
+  for (auto &kv : params_) {
+    SyncedArrayPtr g = kv.second.p->grad()->array();
+    if (g->zeroing()) {
+      // The gradient is not computed. Skip.
+      continue;
+    }
+    clip_grad_by_norm_impl(kv.first, kv.second.p, norm);
+  }
+}
+
 bool Solver::check_inf_grad() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();

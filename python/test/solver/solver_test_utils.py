@@ -46,9 +46,14 @@ class RefSolver(object):
             param = self.params[key]
             grad[...] = grad + decay_rate * param
 
+    def clip_grad_by_norm(self, grads, clip_norm):
+        for key, grad in iteritems(grads):
+            norm = np.sqrt(np.sum(grad ** 2))
+            grad[...] = clip_norm * grad / max(clip_norm, norm)
+
 
 def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
-                  num_itr=5, decay=1e-4, atol=1e-6,
+                  num_itr=5, decay=1e-4, clip_norm=0.5, atol=1e-6,
                   ctx=None, solver_name=None):
     if ctx is None:
         ctx = nn.Context()
@@ -88,6 +93,14 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     ref_s.weight_decay(grad_copy, decay)
     for p, ref_p in zip(params.values(), grad_copy.values()):
         assert_allclose(ref_p, p.g, atol=atol)
+
+    # Check clip grad by norm.
+    grad_copy = OrderedDict([(k, p.g.copy())
+                             for k, p in iteritems(params)])
+    s.clip_grad_by_norm(clip_norm)
+    ref_s.clip_grad_by_norm(grad_copy, clip_norm)
+    for p, ref_p in zip(params.values(), grad_copy.values()):
+        assert np.allclose(ref_p, p.g, atol=atol)
 
     # Check solver udpate.
     for i in range(num_itr):

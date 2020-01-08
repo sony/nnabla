@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <nbla/solver/clip_grad.hpp>
 #include <nbla/solver/lars.hpp>
 #include <nbla/solver/mixed_precision_training.hpp>
 #include <nbla/solver/weight_decay.hpp>
@@ -90,6 +91,7 @@ void Lars<T>::weight_decay_impl(const string &key, VariablePtr param,
                "decay_rate should be same between all layers");
   }
 }
+NBLA_DEF_CLIP_GRAD_BY_NORM(Lars, clip_grad_by_norm_cpu);
 NBLA_DEF_CHECK_INF_GRAD(Lars, check_inf_grad_cpu);
 NBLA_DEF_CHECK_NAN_GRAD(Lars, check_nan_grad_cpu);
 NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Lars, check_inf_or_nan_grad_cpu);
