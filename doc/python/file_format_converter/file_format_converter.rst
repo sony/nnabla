@@ -253,7 +253,7 @@ Convert NNP to ONNX
 
    $ nnabla_cli convert input.nnp output.onnx
 
-If specify output onnx opset 9, please use the following (default is opset 6):
+If specify output onnx opset 9, please use the following (default is opset 7):
 
 .. code-block:: none
 
@@ -267,7 +267,7 @@ Convert ONNX to NNP
 
    $ nnabla_cli convert input.onnx output.nnp
 
-Currently, only opset 6 or opset 9 are supported to import.
+Currently, opset 6,7,9,10,11 are supported to import.
 
 C Runtime Operation
 +++++++++++++++++++
