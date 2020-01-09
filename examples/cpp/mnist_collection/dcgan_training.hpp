@@ -26,6 +26,9 @@ using namespace std;
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
 #include <nbla/solver/adam.hpp>
+
+#include <nbla_utils/parameters.hpp>
+
 using namespace nbla;
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
@@ -162,6 +165,8 @@ bool dcgan_training_with_static_graph(nbla::Context ctx) {
   int batch_size = 64;
   ParameterDirectory params;
 
+  nbla::utils::load_parameters(params, "dcgan_param.protobuf");
+
   //  # Fake path
   auto z = make_shared<CgVariable>(Shape_t({batch_size, 100, 1, 1}), false);
   auto fake = generator(z, max_h, false, params["gen"]);
@@ -258,6 +263,8 @@ bool dcgan_training_with_static_graph(nbla::Context ctx) {
                 mean_loss_gen, mean_loss_dis);
         mean_loss_gen = 0.;
         mean_loss_dis = 0.;
+
+        nbla::utils::save_parameters(params, "saved_dcgan_param.protobuf");
       }
 
       // Get generated images"
@@ -286,6 +293,8 @@ bool dcgan_training_with_dynamic_graph(nbla::Context ctx) {
 
   // Setup parameter
   ParameterDirectory params;
+
+  nbla::utils::load_parameters(params, "dcgan_param_d.protobuf");
 
   //  # Create Solver.
   float learning_rate = 2.0e-4;
@@ -385,6 +394,8 @@ bool dcgan_training_with_dynamic_graph(nbla::Context ctx) {
                 mean_loss_gen, mean_loss_dis);
         mean_loss_gen = 0.;
         mean_loss_dis = 0.;
+
+        nbla::utils::save_parameters(params, "saved_dcgan_param_d.protobuf");
       }
 
       // Get generated images"

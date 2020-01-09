@@ -29,8 +29,12 @@ using std::make_shared;
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
+
+#include <nbla_utils/parameters.hpp>
+
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
+namespace utl = nbla::utils;
 
 #include "mnist_data.hpp"
 
@@ -124,6 +128,10 @@ bool vae_training_with_static_graph(nbla::Context ctx) {
 
   // Build network
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "vae_param.protobuf");
+
   int batch_size = 100;
   auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
   auto t = make_shared<CgVariable>(Shape_t({batch_size, 1}), false);
@@ -184,6 +192,9 @@ bool vae_training_with_static_graph(nbla::Context ctx) {
         fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter + 0,
                 mean_loss_t, mean_loss_v);
         mean_loss_t = 0;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_vae_param.protobuf");
       }
     }
   } catch (...) {
@@ -212,6 +223,9 @@ bool vae_training_with_dynamic_graph(nbla::Context ctx) {
 
   // Setup parameter
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "vae_param_d.protobuf");
 
   // Setup solver and input learnable parameters
   float learning_rate = 3.0e-4;
@@ -271,6 +285,9 @@ bool vae_training_with_dynamic_graph(nbla::Context ctx) {
         fprintf(stdout, "iter: %d, tloss: %f, vloss: %f\n", iter + 0,
                 mean_loss_t, mean_loss_v);
         mean_loss_t = 0;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_vae_param_d.protobuf");
       }
     }
   } catch (...) {

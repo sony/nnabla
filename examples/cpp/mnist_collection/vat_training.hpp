@@ -25,8 +25,12 @@ using std::make_shared;
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
+
+#include <nbla_utils/parameters.hpp>
+
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
+namespace utl = nbla::utils;
 
 #include "mnist_data.hpp"
 std::random_device seed_gen;
@@ -105,6 +109,10 @@ bool vat_training_with_static_graph(nbla::Context ctx) {
   //  # Create networks
   //  # Network
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "vat_param.protobuf");
+
   int n_h = 1200;
   int n_y = 10;
 
@@ -236,6 +244,9 @@ bool vat_training_with_static_graph(nbla::Context ctx) {
         fprintf(stdout, "iter: %d, tloss: %f, verr: %f\n", iter + 1, mean_tloss,
                 *err_d);
         mean_tloss = 0;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_vat_param.protobuf");
       }
     }
   } catch (...) {
@@ -259,6 +270,9 @@ bool vat_training_with_dynamic_graph(nbla::Context ctx) {
 
   // Setup parameters
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "vat_param_d.protobuf");
 
   // Setup solver.
   float learning_rate = 2.0e-3;
@@ -396,6 +410,9 @@ bool vat_training_with_dynamic_graph(nbla::Context ctx) {
         fprintf(stdout, "iter: %d, tloss: %f, verr: %f\n", iter + 1, mean_tloss,
                 *err_d);
         mean_tloss = 0;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_vat_param_d.protobuf");
       }
     }
   } catch (...) {

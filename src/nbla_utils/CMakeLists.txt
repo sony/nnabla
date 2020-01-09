@@ -21,6 +21,7 @@ list(APPEND nnabla_utils_SOURCES
   nnp_impl_monitor.cpp
   nnp_impl_configs.cpp
   nnp_network_expander.cpp
+  parameters.cpp
 )
 
 if (UNIX)
@@ -171,6 +172,7 @@ if (BUILD_TEST)
     list(APPEND NBLA_UTILS_TEST_SOURCES
       test/test_expander.cpp
       test/test_hdf5_load.cpp
+      test/test_load_save_parameters.cpp
       ${PROJECT_SOURCE_DIR}/src/nbla_cli/internal.cpp
     )
   endif()

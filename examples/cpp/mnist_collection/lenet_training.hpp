@@ -29,8 +29,11 @@ using std::make_shared;
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
+
+#include <nbla_utils/parameters.hpp>
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
+namespace utl = nbla::utils;
 
 #include "mnist_data.hpp"
 
@@ -67,6 +70,10 @@ bool lenet_training_with_static_graph(nbla::Context ctx) {
 
   // Build network
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "lenet_param.protobuf");
+
   int batch_size = 128;
   auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
   auto t = make_shared<CgVariable>(Shape_t({batch_size, 1}), false);
@@ -127,6 +134,9 @@ bool lenet_training_with_static_graph(nbla::Context ctx) {
         fprintf(stdout, "iter: %d, tloss: %f, verr: %f\n", iter + 0,
                 mean_t_loss, mean_v_err);
         mean_t_loss = 0;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_lenet_param.protobuf");
       }
     }
   } catch (...) {
@@ -155,6 +165,9 @@ bool lenet_training_with_dynamic_graph(nbla::Context ctx) {
 
   // Setup parameter space
   ParameterDirectory params;
+
+  // Load pretrained parameter if it has.
+  utl::load_parameters(params, "lenet_param_d.protobuf");
 
   // Setup solver
   auto adam = create_AdamSolver(ctx, 0.001, 0.9, 0.999, 1.0e-8);
@@ -214,6 +227,9 @@ bool lenet_training_with_dynamic_graph(nbla::Context ctx) {
         fprintf(stdout, "iter: %d, tloss: %f, verr: %f\n", iter + 0,
                 mean_t_loss, mean_v_err);
         mean_t_loss = 0;
+
+        // Save parameters as a snapshot.
+        utl::save_parameters(params, "saved_lenet_param_d.protobuf");
       }
     }
   } catch (...) {
