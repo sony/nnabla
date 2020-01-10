@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ def pytorch_to_nnabla(input_file, h5_file):
     for k, v in read.items():
         key = rename_params(k)
         params = PF.get_parameter_or_create(key, shape=v.shape)
-        params.d = v
+        params.d = v.numpy()
     nn.parameter.save_parameters(h5_file)
 
 
