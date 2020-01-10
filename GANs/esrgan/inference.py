@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ from nnabla.ext_utils import get_extension_context
 import numpy as np
 import argparse
 
-parser = argparse.ArgumentParser(description='esrgan')
+parser = argparse.ArgumentParser(description='esrgan inference')
 parser.add_argument('--loadmodel', default='./ESRGAN_NNabla_model.h5',
                     help='load model')
 parser.add_argument('--input_image', default='./baboon.png',
                     help='input image')
 args = parser.parse_args()
 
-ctx = get_extension_context('cudnn', device_id=1)
+ctx = get_extension_context('cudnn', device_id=0)
 nn.set_default_context(ctx)
 nn.load_parameters(args.loadmodel)
 
