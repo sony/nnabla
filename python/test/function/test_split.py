@@ -22,7 +22,7 @@ ctxs = list_context('Split')
 
 
 def ref_split(x, axis):
-    return tuple(np.squeeze(np.split(x, x.shape[axis], axis=axis), axis))
+    return tuple([np.squeeze(sq, axis) for sq in np.split(x, x.shape[axis], axis=axis)])
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)

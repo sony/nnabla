@@ -84,7 +84,7 @@ RUN cd /tmp \
 ################################################## protobuf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && PROTOVER=3.4.1 \
+    && PROTOVER=3.10.1 \
     && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
@@ -104,7 +104,6 @@ ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-# Limitation: numpy>=1.17 does not support python2.7
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
@@ -118,7 +117,7 @@ RUN umask 0 \
     && . /opt/miniconda3/bin/activate \
     && conda create -n nnabla-build python=${PYVERNAME} \
     && conda activate nnabla-build \
-    && pip install numpy\<1.17 \
+    && pip install numpy \
     && pip install -U -r /tmp/deps/setup_requirements.txt \
     && pip install -U -r /tmp/deps/requirements.txt \
     && pip install -U -r /tmp/deps/test_requirements.txt \

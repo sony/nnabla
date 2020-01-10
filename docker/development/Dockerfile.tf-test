@@ -84,7 +84,7 @@ RUN cd /tmp \
 ################################################## protobuf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && PROTOVER=3.4.1 \
+    && PROTOVER=3.10.1 \
     && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \

@@ -79,7 +79,7 @@ You can install as the following.
   pip install nnabla-ext-cuda101-nccl2-ubuntu16
 
 
-If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, virtualenv, or pyenv.
+If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, venv.
 
 
 You should also install OpenMPI,

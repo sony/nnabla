@@ -98,11 +98,12 @@ export ARCH_SUFFIX
 
 ########################################################################################################################
 # Functions for makefile
-define with-virtualenv
+define with-venv
 	rm -rf $(2)
-	python$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR) -m virtualenv --system-site-packages $(2)
+	python$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR) -m venv --system-site-packages $(2)
 	. $(2)/bin/activate \
-	&& $(MAKE) -C $(1) $(2) $(3) $(4)\
+	&& python -m pip install -I pip \
+	&& $(MAKE) -C $(1) $(3) $(4) \
 	&& deactivate
 	rm -rf $(2)
 endef

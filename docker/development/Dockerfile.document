@@ -14,22 +14,22 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    clang-format-3.8 \
+    clang-format-3.9 \
     cmake \
     curl \
     g++ \
     git \
     make \
-    python-dev \
-    python-pip \
-    python-setuptools \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
     unzip \
     zip \
     zlib1g-dev \
@@ -37,14 +37,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libarchive-dev
 
 ADD python/setup_requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/setup_requirements.txt
+RUN pip3 install -U -r /tmp/deps/setup_requirements.txt
 ADD python/requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/requirements.txt
+RUN pip3 install -U -r /tmp/deps/requirements.txt
 ADD python/test_requirements.txt /tmp/deps/
-RUN pip install -U -r /tmp/deps/test_requirements.txt
+RUN pip3 install -U -r /tmp/deps/test_requirements.txt
 
 # Optional
-RUN pip install -U ipython
+RUN pip3 install -U ipython
 
 RUN apt-get -yqq update \
     && apt-get -yqq install --no-install-recommends \
@@ -53,7 +53,7 @@ RUN apt-get -yqq update \
         pkg-config \
     && git clone https://github.com/google/protobuf.git /protobuf \
     && cd /protobuf \
-    && git checkout v3.4.1 \
+    && git checkout v3.10.1 \
     && ./autogen.sh \
     && ./configure \
     && make \
@@ -73,7 +73,7 @@ RUN apt-get -yqq update \
         pandoc \
         plantuml \
         unzip \
-    && pip install -U \
+    && pip3 install -U \
         Sphinx \
         pygments \
         recommonmark==0.4.0 \

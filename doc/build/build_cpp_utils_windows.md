@@ -4,7 +4,7 @@
 
 * Required (See [Build Python Package on Windows](build_windows.md) for how to setup the build requirement.)
   * 64-bit Windows.
-  * Python 2.7 or >=3.4, 3.5 or 3.6
+  * Python >=3.6
   * Visual C++ 2015 or Build tools
   * [CMake](https://cmake.org/) (>=3.1)
 

@@ -23,10 +23,13 @@ CALL %~dp0tools\default_settings.bat || GOTO :error
 CALL %~dp0tools\default_folders.bat || GOTO :error
 
 :: Execute test
-IF EXIST %nnabla_test_virtualenv_folder% RMDIR /s /q %nnabla_test_virtualenv_folder%
-virtualenv --system-site-packages %nnabla_test_virtualenv_folder% || GOTO :error
+IF EXIST %nnabla_test_venv_folder% RMDIR /s /q %nnabla_test_venv_folder%
+python -m venv --system-site-packages %nnabla_test_venv_folder% || GOTO :error
 
-CALL %nnabla_test_virtualenv_folder%\scripts\activate.bat || GOTO :error
+CALL %nnabla_test_venv_folder%\scripts\activate.bat || GOTO :error
+
+REM Workaround for ONNX installation
+pip install "onnx<1.6"
 
 FOR /f %%i IN ('dir /b /s %nnabla_build_wheel_folder%\dist\*.whl') DO set WHL=%%~fi
 pip install %WHL% || GOTO :error

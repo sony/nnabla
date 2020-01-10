@@ -39,7 +39,7 @@ You can get config value as followings.
 
 CATEGORY and VALUE_NAME does not defined in config.py.
 You can add CATEGORY and VALUE as you like.
-See `Official document <http://docs.python.jp/2.7/library/configparser.html#mapping-protocol-access>`_ for more information.
+See `Official document <http://docs.python.jp/3.6/library/configparser.html#mapping-protocol-access>`_ for more information.
 
 .. code-block:: ini
 

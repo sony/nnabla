@@ -22,6 +22,6 @@ IF NOT DEFINED nnabla_build_wheel_folder (
   SET nnabla_build_wheel_folder=%nnabla_root%\build_wheel%nnabla_build_wheel_folder_suffix%
 )
 
-IF NOT DEFINED nnabla_test_virtualenv_folder (
-  SET nnabla_test_virtualenv_folder=%nnabla_build_wheel_folder%\env
+IF NOT DEFINED nnabla_test_venv_folder (
+  SET nnabla_test_venv_folder=%nnabla_build_wheel_folder%\env
 )

@@ -43,20 +43,22 @@ endif()
 ###############################################################################
 if (NOT PYTHON_COMMAND_NAME)
   if(NOT PYTHON_VERSION_MAJOR)
-    set(PYTHON_COMMAND_NAME "python")
+    set(PYTHON_COMMAND_NAME "python3")
   else()
     set(PYTHON_COMMAND_NAME "python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
   endif()
 endif()
 
-find_program(PYTHON_COMMAND ${PYTHON_COMMAND_NAME})
-if(NOT EXISTS ${PYTHON_COMMAND})
-  find_program(PYTHON_COMMAND "python")
-  if(NOT EXISTS ${PYTHON_COMMAND})
+find_program(PP ${PYTHON_COMMAND_NAME})
+if(NOT EXISTS ${PP})
+  find_program(PP "python3")
+  if(NOT EXISTS ${PP})
     message(FATAL_ERROR, "python [${PYTHON_COMMAND_NAME}] not found. Please install python or check your settings.")
     error() # Place Unknown command to stop cmake process here.
   endif()
 endif()
+set(PYTHON_COMMAND "${PP}")
+
 
 if(NOT EXISTS ${PROTOC_COMMAND})
   find_program(PROTOC_COMMAND protoc)

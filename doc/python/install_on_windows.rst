@@ -15,7 +15,7 @@ The following software are required for installation:
 
 * Required software.
 
-  * Python 2.7 or Python>=3.5: PIP
+  * Python>=3.6: PIP
   * Microsoft Visual C++ 2015 Redistributable
 
 * Recommended.
@@ -26,12 +26,12 @@ The following software are required for installation:
 Setup environment
 ^^^^^^^^^^^^^^^^^
 
-Python2.7
-"""""""""
+Python
+""""""
 
 In this instruction, we use `miniconda <https://conda.io/miniconda.html>`_.
 
-Get and install the windows binary from `here <https://repo.continuum.io/miniconda/Miniconda2-latest-Windows-x86_64.exe>`_
+Get and install the windows binary from `here <https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe>`_
 
 
 And then install required packages from command prompt.
