@@ -254,6 +254,7 @@ if __name__ == '__main__':
                 'nnabla.testing',
                 'nnabla.utils',
                 'nnabla.utils.inspection',
+                'nnabla.core',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
                 'nnabla.utils.converter.nnabla',
