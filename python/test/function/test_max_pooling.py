@@ -68,6 +68,8 @@ def ref_max_pooling(x, kernel, stride, ignore_border, pad, channel_last):
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((4, 6), (2, 2), (2, 1), (1, 0)),
+    ((2, 4, 6), (2, 2), (2, 1), (1, 0)),
     ((2, 2, 4, 6), (2, 2), (2, 1), (1, 0)),
     ((2, 2, 2, 4, 6), (2, 2), (1, 2), (0, 1)),
 ])
@@ -92,6 +94,8 @@ def test_max_pooling_2d(seed, inshape, kernel, stride, pad, ignore_border, chann
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
+    ((3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
     ((2, 2, 3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
     ((2, 2, 2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
 ])
@@ -116,8 +120,11 @@ def test_max_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border, chann
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
-   ((2, 2, 4, 6), (2, 2), (2, 1), (1, 0)),
-   ((2, 2, 2, 4, 6), (2, 2), (1, 2), (0, 1)),
+    # todo: These 2 cases below are failed because numerical and analytical grad are different. Need to investigate.
+    # ((4, 6), (2, 2), (2, 1), (1, 0)),
+    # ((2, 4, 6), (2, 2), (2, 1), (1, 0)),
+    ((2, 2, 4, 6), (2, 2), (2, 1), (1, 0)),
+    ((2, 2, 2, 4, 6), (2, 2), (1, 2), (0, 1)),
 ])
 def test_max_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, ignore_border, channel_last,
                                         ctx, func_name):
@@ -142,8 +149,11 @@ def test_max_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, igno
 @pytest.mark.parametrize("ignore_border", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("inshape, kernel, stride, pad", [
-   ((2, 2, 3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
-   ((2, 2, 2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
+    # todo: These 2 cases below are failed because numerical and analytical grad are different. Need to investigate.
+    # ((3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    # ((2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
+    ((2, 2, 3, 4, 6), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 2, 2, 3, 4, 6), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
 ])
 def test_max_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, ignore_border, channel_last,
                                         ctx, func_name):

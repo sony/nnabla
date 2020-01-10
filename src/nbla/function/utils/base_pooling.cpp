@@ -19,14 +19,12 @@ get_pooling_output_shape(const vector<int> &inshape, const vector<int> &kernel,
              "Length of kernel and stride must be same. "
              "kernel: %d != stride: %d.",
              kernel.size(), stride.size());
-  NBLA_CHECK(kernel.size() <= inshape.size() - 2, error_code::value,
-             "Length of kernel must be less than length of inshape - 2. There "
-             "must be a batch dimension and a channel dimension in addition to "
-             "spatial dimensions. "
-             "kernel: %d != inshape - 2: %d.",
-             kernel.size(), inshape.size() - 2);
+  NBLA_CHECK(kernel.size() <= inshape.size(), error_code::value,
+             "Length of kernel must be less than or equal to length of inshape."
+             "kernel: %d > inshape: %d.",
+             kernel.size(), inshape.size());
 
-  // TODO: support 1D
+  // TODO: support 1D. Expand 1d to 2d here.
   NBLA_CHECK(kernel.size() >= 2 && kernel.size() <= 3,
              error_code::not_implemented,
              "2D and 3D Pooling are only supported so far.");
@@ -56,6 +54,7 @@ get_pooling_output_shape(const vector<int> &inshape, const vector<int> &kernel,
       outshape[i] = shape[i - first_spatial_axis];
     }
   }
+
   return outshape;
 }
 } // namespace anonymous
@@ -69,6 +68,7 @@ PoolingConfiguration::PoolingConfiguration(const vector<int> &i,
       ignore_border(ib), channel_last(cl),
       outshape(get_pooling_output_shape(inshape, kernel, stride, pad,
                                         ignore_border, channel_last)),
-      base_axis(inshape.size() - kernel.size() - 1) {}
+      base_axis(
+          std::max(0, static_cast<int>(inshape.size() - kernel.size() - 1))) {}
 
 } // namespace nbla
