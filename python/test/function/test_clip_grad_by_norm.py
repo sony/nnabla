@@ -27,9 +27,9 @@ def ref_clip_grad_by_norm(x, clip_norm, axes):
 
 def ref_grad_clip_by_norm(x, dy, clip_norm, axes):
     dx = np.copy(dy)
-    dx = clip_norm * dy / \
-        np.broadcast_to(
-            np.sqrt(np.sum(dy**2, axis=axes, keepdims=True)), dy.shape)
+    norm = np.sqrt(np.sum(dy**2, axis=axes, keepdims=True))
+    norm[norm < clip_norm] = clip_norm
+    dx = clip_norm * dy / np.broadcast_to(norm, dy.shape)
     return dx.flatten()
 
 

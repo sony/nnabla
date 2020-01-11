@@ -56,7 +56,7 @@ template <typename T, bool accum>
 void clip_grad_by_norm_backward_cpu(int size, T clip_norm_grad, T *dx,
                                     const T *dy, const T *m) {
   for (int s = 0; s < size; ++s) {
-    T _dx = clip_norm_grad * dy[s] / std::sqrt(m[s]);
+    T _dx = clip_norm_grad * dy[s] / std::max(std::sqrt(m[s]), clip_norm_grad);
     accum ? dx[s] += _dx : dx[s] = _dx;
   }
 }
