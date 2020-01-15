@@ -26,6 +26,7 @@ import nnabla.utils.save as save
 
 from args import get_args
 from mnist_data import data_iterator_mnist
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 
 import numpy as np
 
@@ -162,9 +163,14 @@ def train():
     # Create prediction graph.
     vpred = mnist_cnn_prediction(vimage, test=True, aug=args.augment_test)
 
-    # Create Solver.
+    # Create Solver. If training from checkpoint, load the info.
     solver = S.Adam(args.learning_rate)
     solver.set_parameters(nn.get_parameters())
+    start_point = 0
+
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
 
     # Create monitor.
     from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
@@ -174,12 +180,17 @@ def train():
     monitor_time = MonitorTimeElapsed("Training time", monitor, interval=100)
     monitor_verr = MonitorSeries("Test error", monitor, interval=10)
 
+    # save_nnp
+    contents = save_nnp({'x': vimage}, {'y': vpred}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           '{}_result_epoch0.nnp'.format(args.net)), contents)
+
     # Initialize DataIterator for MNIST.
     from numpy.random import RandomState
     data = data_iterator_mnist(args.batch_size, True, rng=RandomState(1223))
     vdata = data_iterator_mnist(args.batch_size, False)
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(start_point, args.max_iter):
         if i % args.val_interval == 0:
             # Validation
             ve = 0.0
@@ -190,8 +201,8 @@ def train():
                 ve += categorical_error(vpred.d, vlabel.d)
             monitor_verr.add(i, ve / args.val_iter)
         if i % args.model_save_interval == 0:
-            nn.save_parameters(os.path.join(
-                args.model_save_path, 'params_%06d.h5' % i))
+            # save checkpoint file
+            save_checkpoint(args.model_save_path, i, solver)
         # Training forward
         image.d, label.d = data.next()
         solver.zero_grad()
@@ -217,20 +228,10 @@ def train():
         args.model_save_path, '{}_params_{:06}.h5'.format(args.net, args.max_iter))
     nn.save_parameters(parameter_file)
 
-    # append F.Softmax to the prediction graph so users see intuitive outputs
-    runtime_contents = {
-        'networks': [
-            {'name': 'Validation',
-             'batch_size': args.batch_size,
-             'outputs': {'y': F.softmax(vpred)},
-             'names': {'x': vimage}}],
-        'executors': [
-            {'name': 'Runtime',
-             'network': 'Validation',
-             'data': ['x'],
-             'output': ['y']}]}
+    # save_nnp_lastepoch
+    contents = save_nnp({'x': vimage}, {'y': vpred}, args.batch_size)
     save.save(os.path.join(args.model_save_path,
-                           '{}_result.nnp'.format(args.net)), runtime_contents)
+                           '{}_result.nnp'.format(args.net)), contents)
 
 
 if __name__ == '__main__':

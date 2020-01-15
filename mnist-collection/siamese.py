@@ -25,6 +25,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
 
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 from args import get_args
 from mnist_data import data_iterator_mnist
 import nnabla.utils.save as save
@@ -127,6 +128,11 @@ def train(args):
     solver = S.Adam(args.learning_rate)
     solver.set_parameters(nn.get_parameters())
 
+    start_point = 0
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
+
     # Create monitor.
     import nnabla.monitor as M
     monitor = M.Monitor(args.monitor_path)
@@ -138,8 +144,9 @@ def train(args):
     rng = np.random.RandomState(313)
     data = siamese_data_iterator(args.batch_size, True, rng)
     vdata = siamese_data_iterator(args.batch_size, False, rng)
+
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(start_point, args.max_iter):
         if i % args.val_interval == 0:
             # Validation
             ve = 0.0
@@ -149,8 +156,8 @@ def train(args):
                 ve += vloss.d
             monitor_vloss.add(i, ve / args.val_iter)
         if i % args.model_save_interval == 0:
-            nn.save_parameters(os.path.join(
-                args.model_save_path, 'params_%06d.h5' % i))
+            # save checkpoint file
+            save_checkpoint(args.model_save_path, i, solver)
         image0.d, image1.d, label.d = data.next()
         solver.zero_grad()
         # Training forward, backward and update
@@ -211,23 +218,12 @@ def visualize(args):
     plt.savefig(os.path.join(args.monitor_path, "embed.png"))
 
 
-def save_nnp(args):
+def save_siamese_nnp(args):
     image = nn.Variable([1, 1, 28, 28])
     feature = mnist_lenet_feature(image, test=True)
-    runtime_contents = {
-        'networks': [
-            {'name': 'Embedding',
-             'batch_size': 1,
-             'outputs': {'f': feature},
-             'names': {'image': image}}],
-        'executors': [
-            {'name': 'Executor',
-             'network': 'Embedding',
-             'data': ['image'],
-             'output': ['f']}]}
-    import nnabla.utils.save as save
-    save.save(os.path.join(args.monitor_path,
-                           'embedding.nnp'), runtime_contents)
+    contents = save_nnp({'x': image}, {'y': feature}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           '{}_result.nnp'.format(args.net)), contents)
 
 
 if __name__ == '__main__':
@@ -236,4 +232,4 @@ if __name__ == '__main__':
                     model_save_path=monitor_path, max_iter=5000)
     train(args)
     visualize(args)
-    save_nnp(args)
+    save_siamese_nnp(args)

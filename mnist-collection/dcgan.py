@@ -26,6 +26,7 @@ import nnabla.utils.save as save
 
 from args import get_args
 from mnist_data import data_iterator_mnist
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 
 import os
 
@@ -148,6 +149,12 @@ def train(args):
         solver_gen.set_parameters(nn.get_parameters())
     with nn.parameter_scope("dis"):
         solver_dis.set_parameters(nn.get_parameters())
+    start_point = 0
+
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint files.
+        start_point = load_checkpoint(
+            args.checkpoint, {"gen": solver_gen, "dis": solver_dis})
 
     # Create monitor.
     import nnabla.monitor as M
@@ -160,15 +167,20 @@ def train(args):
         "Fake images", monitor, normalize_method=lambda x: (x + 1) / 2.)
 
     data = data_iterator_mnist(args.batch_size, True)
+
+    # Save_nnp
+    contents = save_nnp({'x': z}, {'y': fake}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Generator_result_epoch0.nnp'), contents)
+    contents = save_nnp({'x': x}, {'y': pred_real}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Discriminator_result_epoch0.nnp'), contents)
+
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(start_point, args.max_iter):
         if i % args.model_save_interval == 0:
-            with nn.parameter_scope("gen"):
-                nn.save_parameters(os.path.join(
-                    args.model_save_path, "generator_param_%06d.h5" % i))
-            with nn.parameter_scope("dis"):
-                nn.save_parameters(os.path.join(
-                    args.model_save_path, "discriminator_param_%06d.h5" % i))
+            save_checkpoint(args.model_save_path, i, {
+                            "gen": solver_gen, "dis": solver_dis})
 
         # Training forward
         image, _ = data.next()
@@ -199,6 +211,14 @@ def train(args):
     with nn.parameter_scope("dis"):
         nn.save_parameters(os.path.join(
             args.model_save_path, "discriminator_param_%06d.h5" % i))
+
+    # Save_nnp
+    contents = save_nnp({'x': z}, {'y': fake}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Generator_result.nnp'), contents)
+    contents = save_nnp({'x': x}, {'y': pred_real}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Discriminator_result.nnp'), contents)
 
 
 if __name__ == '__main__':

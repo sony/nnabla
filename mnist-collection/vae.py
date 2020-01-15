@@ -19,10 +19,11 @@ import nnabla.parametric_functions as PF
 import nnabla.monitor as M
 import nnabla.solver as S
 from nnabla.logger import logger
-
+from _checkpoint_nnp_util import save_nnp
 from mnist_data import data_iterator_mnist
 from args import get_args
 
+import nnabla.utils.save as save
 import numpy as np
 import time
 import os
@@ -151,6 +152,11 @@ def main():
     monitor_test_loss = M.MonitorSeries("Test loss", monitor, interval=600)
     monitor_time = M.MonitorTimeElapsed("Elapsed time", monitor, interval=600)
 
+    # Save_nnp_at_epoch0
+    contents = save_nnp({'x': x}, {'y': loss_t}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           '{}_resultEpoch0.nnp'.format(args.net)), contents)
+
     # Training Loop.
     for i in range(args.max_iter):
 
@@ -176,6 +182,11 @@ def main():
     # Save the model
     nn.save_parameters(
         os.path.join(args.model_save_path, 'params_%06d.h5' % args.max_iter))
+
+    # save_nnp_lastepoch
+    contents = save_nnp({'x': x}, {'y': loss_t}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           '{}_result.nnp'.format(args.net)), contents)
 
 
 if __name__ == '__main__':
