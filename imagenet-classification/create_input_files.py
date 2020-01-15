@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import scipy.io
-import tarfile
 import argparse
 import os
 import glob
