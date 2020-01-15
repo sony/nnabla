@@ -46,5 +46,7 @@ def get_args(monitor_path='tmp.monitor', max_iter=40000, model_save_path='tmp.mo
                         help="Neural network architecture type (used only in classification.py).\n"
                         "'cifar10_resnet23'\n"
                         "'cifar100_resnet23'")
+    parser.add_argument("--checkpoint", type=str, default=None,
+                        help='path to checkpoint file')
 
     return parser.parse_args()
