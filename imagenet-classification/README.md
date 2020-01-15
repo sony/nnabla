@@ -1,152 +1,144 @@
-﻿# ImageNet classification example
+# ImageNet training examples
 
----
 
-## Overview
+This is an official training example of [ImageNet ILSVRC2012](http://www.image-net.org/) classification with NNabla.
+Note that the training completely relies on NVIDIA's GPUs, and uses NVIDIA's data processing library called [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/index.html) which runs only on Linux.
 
-The examples are written in python. These examples demonstrate learning on ImageNet and Tiny ImageNet dataset.
-In case of ImageNet, We need to get the dataset and to create the cache file by yourself. We changed a method of labeling for the cache file after ver.1.0.14.This label is based of a ascending order number of WordNet ID.
-(Previous version used the label with the development kits of ImageNet.)
-Please be careful about this update.
-Tiny ImageNet dataset will be cached by running the example script.
+The previous implementation (with lower performance both in speed & accuracy) has been moved to [`obsolete/`](./obsolete).
 
----
+## Setting up
 
-## classification.py
+### Clone repository
 
-In this example, "Residual Neural Network" (also called "ResNet") is trained on a [Imagenet](https://imagenet.herokuapp.com/) and [Tiny Imagenet](https://tiny-imagenet.herokuapp.com/) dataset.
-
-### ImageNet
-
-ImageNet consists of 1000 categories and each category has 1280 of images in training set.
-The ImageNet dataset(training and validation) requires 150[GBytes] of disk capacity.
-
-#### Prepare datasets
-
-To create cache files requires approximately 400[GBytes] of disk capacity.
-
-1. Prepare the data of ImageNet (You can get ImageNet dataset from the [link](https://imagenet.herokuapp.com/)). The following setup procedure requires the following two files.
-  - Training dataset: `ILSVRC2012_img_train.tar`
-  - Validation dataset: `ILSVRC2012_img_val.tar`
-
-2. Create the cache files of the datasets that improve the disk I/O overhead.
-
-We provides the tool for creating dataset cache.
-
-    usage: create_cache.py [-h]
-                           [-W WIDTH] [-H HEIGHT]
-                           [-m {trimming,padding}]
-                           [-S {True,False}]
-                           [-N FILE_CACHE_SIZE]
-                           [-C {h5,npy}]
-                           [--thinning THINNING]
-                           input [input ...] output
-
-    positional arguments:
-      input                 Source file or directory.
-      output                Destination directory.
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -W WIDTH, --width WIDTH
-                            width of output image (default:320)
-      -H HEIGHT, --height HEIGHT
-                            height of output image (default:320)
-      -m {trimming,padding}, --mode {trimming,padding}
-                            shaping mode (trimming or padding) (default:trimming)
-      -S {True,False}, --shuffle {True,False}
-                            shuffle mode if not specified, train:True, val:False. Otherwise specified value will be used for both.
-      -N FILE_CACHE_SIZE, --file-cache-size FILE_CACHE_SIZE
-                            num of data in cache file (default:100)
-      -C {h5,npy}, --cache-type {h5,npy}
-                            cache format (h5 or npy) (default:npy)
-      --thinning THINNING   Thinning rate
-
-This tools creates dataset cache directory from ImageNet data tar
-archive.
-
-It auto detect contents of tar archive, so you can change image file
-name and add/remove images from train tar archive.  Currently,
-converting validation archive includes hard coded information, then
-you can rename but cannot change contents order of tar archive.
-
-For example
-
-```
-$ python create_cache.py \
-    ImageNet/ILSVRC2012_img_train.tar \
-    ImageNet/ILSVRC2012_img_val.tar \
-    ImageNet/imagenet-320-320-trimming-npy
+```shell
+git clone git@github.com:sony/nnabla-examples.git
 ```
 
-It will create cache data from
+### Set up dependencies
 
-- ImageNet/ILSVRC2012_img_train.tar
-    - Training images
-- ImageNet/ILSVRC2012_img_val.tar
-    - Validation images
-- label_wordnetid.csv
-    - List of label and wordnet_id(ascending order of wordnet_id)
-- validation_data_label.txt
-    - Labeling list of validation data(label of file name order)
+We recommend you to follow [our Docker workflow](../doc/docker.md) to set up a training environment.
+If you would like to manually install all the requirements, install the following.
 
-Outputs are followings
+* CUDA (10.0 is recommended)
+* nnabla and a CUDA extension (with [multi-GPU](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#installation-with-multi-gpu-supported) support is recommended)
+* [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/index.html) (works with 0.14 only so far)
+* For distributed multi-GPU training:
+  * OpenMPI
+  * NCCL2
 
-- ImageNet/imagenet-train-320-320-trimming-npy/synsets_id_name.csv
-    - SYNSET_ID name list.
-- ImageNet/imagenet-train-320-320-trimming-npy/synsets_id_word.csv
-    - SYNSET_ID word list.
-- ImageNet/imagenet-train-320-320-trimming-npy/train
-    - Cache for training dataset. Shuffled.
-- ImageNet/imagenet-train-320-320-trimming-npy/val
-    - Cache for validation dataset. Not shuffled.
 
-#### Training
+### Preparing ImageNet dataset
 
-The following line executes the ImageNet training (See more options in the help by the `-h` option.).
+#### Download ILSVRC2012
 
-```
-4-1．Execute the example of ImageNet about Single GPU.
-  - python classification.py -c "device id" -b"batch size" -a"accumulate gradient" -L"number of layers" -T "directory of the training cache file" -V "directory of the validation cache file"
-    [ex):python classification.py -c cudnn -b64 -a4 -L34 -T train_cache -V val_cache]
+(You can skip this part if you already have ILSVRC2012 dataset on your machine.)
 
-4-2．Execute the example of ImageNet about Multi GPU.
-  - mpirun -n "Number of GPUs" multi_device_multi_process_classification.py -b"batch size" -a"accumulate gradient" -L"number of layers" -l"learning rate" -i"max iteration of training" -v"validation interval" -j"mini-batch iteration of validation" -s"interval of saving model parameters" -D"interval of learning rate decay" -T "directory of the training cache file" -V "directory of the validation cache file"
-    [ex):mpirun -n 4 python multi_device_multi_process_classification.py -b 32 -a 2 -L 50 -l 0.1 -i 2000000 -v 20004 -j 1563 -s 20004 -D 600000,1200000,1800000 -T train_cache -V val_cache]
+Download archived image files for both training and validation, `ILSVRC2012_img_train.tar` and `ILSVRC2012_img_val.tar`, from [the download page](http://image-net.org/download-images) (registration is required), and extract files as following.
+
+```shell
+tar zxvf ILSVRC2012_img_train.tar
+tar zxvf ILSVRC2012_img_val.tar
 ```
 
-After the learning completes successfully, the results will be saved in "tmp.montors.imagenet".
+#### Create a image list file
 
-In this folder you will find model files "\*.h5" and result files "\*.txt"
+Next, we create two text files which contain a list of image paths associated with their image category IDs. The files are used as inputs of the training script later. Run the following to obtain those.
 
-### Tiny Imagenet
-
-The training script for ImageNet also works on Tiny ImageNet dataset, which
-consists of 200 categories and each category has 500 of 64x64 size images in training set.
-The ResNet trained here is almost equivalent to the one used in ImageNet.
-The differences are the strides in both the first conv and the max pooling are removed.
-
-The following line executes the Tiny ImageNet training (with the setting the we recommended you to try first. It requires near 6GB memory available in the CUDA device. See more options in the help by the `-h` option.).
-
-```
-python classification.py -c cudnn -a4 -b64 -L34 -M true
+```shell
+python create_input_files.py -T <path/to/ILSVRC2012_img_train>
 ```
 
-## Inference
+You are going to get the files like the following.
 
-Perform inference on a test image using the trained model.
-
-```bash
-python model_inference.py --weight-file=/path to parameter file(.h5) --input-file=/path to input image file --num-layers=number of resnet layers
-ex):
-python model_inference.py -w param_500000.h5 -i file.jpg -L 50
+- train_label
+```
+n02172182/n02172182_4324.JPEG 625
+n02172182/n02172182_6601.JPEG 625
+n02172182/n02172182_1015.JPEG 625
+n02172182/n02172182_3296.JPEG 625
+...
 ```
 
-##### NOTE: weight-file is the path to the parameter file(.h5) obtained in training. As a result, we display values of Top-5（label,  words,  predicted value).
+- val_label
+```
+ILSVRC2012_val_00000001.JPEG 490
+ILSVRC2012_val_00000002.JPEG 361
+ILSVRC2012_val_00000003.JPEG 171
+...
+```
+
+Note that the category IDs are ranging from 0 to 999, and the numbers are sequentially assigned by an alphabetical order of WordNet IDs (e.g., `n02172182`).
+
+## Training
+
+The following is a command used when we run distributed training with 4 V100 GPUs.
+
+```shell
+mpirun -n 4 python train.py \
+  -L 50 \
+  -b 192 \
+  -t half --channel-last \
+  -T <path/to/ILSVRC2012 training data directory> \
+  -V <path/to/ILSVRC2012 validation data directory>
+```
+
+Training results including logs and parameters will be produced in `tmp.monitor.{datatime}`. Given the generated logs, you can visualize training curves of training loss and validation error as images by the following commands
+
+```shell
+nnabla_cli plot_series Train-loss.series.txt Validation-loss.series.txt -l training -l validation -o rn50-mixed-nhwc-loss.png -x Epochs -y "Loss"
+nnabla_cli plot_series Train-error.series.txt Validation-error.series.txt -l training -l validation -o rn50-mixed-nhwc-error.png -x Epochs -y "Top-1 error rate"
+```
+
+and those look like as following.
+
+| Loss | Error |
+|:---:|:---:|
+| ![Loss](results/rn50-mixed-nhwc-loss.png) | ![Error](results/rn50-mixed-nhwc-error.png) |
 
 
-## Use DALI data iterator
+**Options**:
 
-Go to [this REAMDE](README.dali.md).
+* `-L` specifies the number of layers of ResNet (18, 34, 50, 101, or 152).
+* `-b` specifies the number of batch size. If you see memory allocation error during execution, please adjust this to fit your training into your GPU.
+* `-t half` enables mixed precision training, which saves memory and also gives speedup with GPUs with NVIDIA's TensorCore.
+* `--channel-last` trains your model with NHWC memory layout. This reduces overheads due to transpose operations for each TensorCore execution. It also utilizes fused batch normalization operation which combines batch normalization, addition, and activation into a single kernel. It gives some advantages for speed and memory cost.
+* If you want to run it on a single GPU, just omit `mpirun -n 4`. You can specify gpu ID by `-d` option when single GPU mode.
+* Run `python train.py -h` to see other options.
+
+### Training results
+
+Training results are summarized as follows.
+
+| Arch. | GPUs | MP*1 | Batch size per GPU |Training time (h)*2 | Validation error (%) | Pretrained parameters | Note |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| ResNet18 | 4 x V100 | Yes | 256 | 6.67 | 29.42 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn18-nhwc.h5) | |
+| ResNet34 | 4 x V100 | Yes | 256 | 7.63 | 26.44 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn34-nhwc.h5) | |
+| ResNet50 | 4 x V100 | Yes | 192 | 7.29 (3.19) | 23.28 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nhwc.h5) | |
+| ResNet101 | 4 x V100 | Yes | 128 | 10.85 | 21.89 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn101-nhwc.h5) | |
+| ResNet152 | 4 x V100 | Yes | 96 | | | | Observed `NaN` loss after several epochs. We may need to adjust some hyper parameters for mixed precision and distributed training such as loss scaling value. |
+| ResNet50 | 4 x V100 | No | 112 | 23.25 | 23.27 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nchw.h5) | |
+
+* *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
+* *2 Number in `()` is speed up from full precision training
+
+### Convert memory layout and input channels of pretrained parameter file
+
+You may want to change the memory layout of trained parameters from NHWC (trained with `channel_last=True`) to NCHW and vice versa, for fine-tuning on differnt tasks for example.
+You may also want to the remove the 4-th channel in the first convolution which was padded to RGB input during training for speed advantage.
+
+The following command converts a parameter file to a desired configuration.
+
+```shell
+python convert_parameter_format.py {input h5 file} {output h5 file} -m {layout either nchw or nhwc} -3
+```
+
+See options with `python convert_parameter_format.py -h`.
 
 
+## Inference with a trained model
+
+A parameter file obtained after training can be used for inference as following. See help with `python infer.py -h` for more options.
+
+```shell
+python infer.py {input image file} {h5 parameter file} -L {number of layers}
+```
