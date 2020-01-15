@@ -41,6 +41,7 @@ def get_args():
     parser.add_argument("--num-layers", "-a", type=int, default=2)
     parser.add_argument("--gradient-clipping-max-norm",
                         "-g", type=int, default=0.25)
-
+    parser.add_argument("--checkpoint", type=str, default=None,
+                        help='path to checkpoint file')
     args = parser.parse_args()
     return args

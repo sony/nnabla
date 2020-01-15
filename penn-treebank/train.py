@@ -23,7 +23,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solver as S
 import nnabla.initializer as I
-
+from _checkpoint_util import save_checkpoint, load_checkpoint
 from args import get_args
 
 
@@ -167,11 +167,14 @@ def main():
     vloss = get_loss(l1, l2, vx, vt, w, b, num_words, batch_size, state_size)
     solver = S.Sgd(lr)
     solver.set_parameters(nn.get_parameters())
-
+    start_point = 0
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
     best_val = 10000
-    for epoch in range(max_epoch):
+    for epoch in range(start_point, max_epoch):
         l1.reset_state()
         l2.reset_state()
         for i in range(len(train_data)//(num_steps*batch_size)):
@@ -200,8 +203,8 @@ def main():
         if vper < best_val:
             best_val = vper
             if vper < 200:
-                save_name = "params_epoch_{:02d}.h5".format(epoch)
-                nn.save_parameters(os.path.join(args.save_dir, save_name))
+                # save checkpoint file
+                save_checkpoint(args.save_dir, epoch, solver)
         else:
             solver.set_learning_rate(solver.learning_rate()*0.25)
             logger.info("Decreased learning rate to {:05f}".format(
