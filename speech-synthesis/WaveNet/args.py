@@ -68,6 +68,8 @@ def get_args(monitor_path='tmp.monitor',
                         help='Training cache file dir. Create to use create_cache_file.py')
     parser.add_argument("--val-cachefile-dir", "-V", type=str, default=val_cachefile_dir,
                         help='Validation cache file dir. Create to use create_cache_file.py')
+    parser.add_argument("--checkpoint", type=str, default=None,
+                        help='path to checkpoint file')
 
     args = parser.parse_args()
     if not os.path.isdir(args.model_save_path):

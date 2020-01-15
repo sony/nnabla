@@ -22,8 +22,11 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import nnabla.solvers as S
+import nnabla.utils.save as save
+
 from nnabla.logger import logger
 from nnabla.monitor import Monitor, MonitorSeries
+from _checkpoint_nnp_util import save_checkpoint, load_checkpoint, save_nnp
 
 from model import WaveNet
 from args import get_args
@@ -84,6 +87,12 @@ def train():
     solver = S.Adam(args.learning_rate)
     solver.set_parameters(nn.get_parameters())
 
+    # load checkpoint
+    start_point = 0
+    if args.checkpoint is not None:
+        # load weights and solver state info from specified checkpoint file.
+        start_point = load_checkpoint(args.checkpoint, solver)
+
     # Create monitor.
     monitor = Monitor(args.monitor_path)
     monitor_loss = MonitorSeries("Training loss", monitor, interval=10)
@@ -94,8 +103,12 @@ def train():
     if audio_save_path and not os.path.exists(audio_save_path):
         os.makedirs(audio_save_path)
 
+    # save_nnp
+    contents = save_nnp({'x': x}, {'y': wavenet_output}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Speechsynthesis_result_epoch0.nnp'), contents)
     # Training loop.
-    for i in range(args.max_iter):
+    for i in range(start_point, args.max_iter):
         # todo: validation
 
         x.d, _speaker, t.d = data_iterator.next()
@@ -115,6 +128,13 @@ def train():
             audios = mu_law_decode(
                 np.argmax(prob.d, axis=-1), quantize=data_config.q_bit_len)  # (B, T)
             save_audio(audios, i, audio_save_path)
+            # save checkpoint file
+            save_checkpoint(audio_save_path, i, solver)
+
+    # save_nnp
+    contents = save_nnp({'x': x}, {'y': wavenet_output}, args.batch_size)
+    save.save(os.path.join(args.model_save_path,
+                           'Speechsynthesis_result.nnp'), contents)
 
 
 if __name__ == '__main__':
