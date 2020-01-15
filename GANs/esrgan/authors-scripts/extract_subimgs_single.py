@@ -39,8 +39,7 @@ def main():
     for path in img_list:
         pool.apply_async(worker,
                          args=(path, save_folder, crop_sz, step,
-                               thres_sz, compression_level),
-                         callback=update)
+                               thres_sz, compression_level))
     pool.close()
     pool.join()
     print('All subprocesses done.')

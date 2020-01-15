@@ -113,7 +113,7 @@ def main():
                 current_iter += 1
             train_gt.d, train_lq.d = data_iterator_train.next()
             lr = update_learning_rate_cosine(
-                current_iter, eta_max, eta_min, n_devices)
+                current_iter, args.eta_max, args.eta_min, n_devices)
             loss.forward(clear_no_need_grad=True)
             solver.zero_grad()
             # All-reduce gradients every 2MiB parameters during backward computation

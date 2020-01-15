@@ -154,7 +154,9 @@ def main():
     with nn.parameter_scope("dis"):
         unlinked_fake_h = fake_h.get_unlinked_variable()
         pred_d_fake = discriminator(unlinked_fake_h)
-    gan_loss_dis_out = define_loss(gan_loss, pred_d_real, pred_d_fake)
+    gan_loss = RelativisticAverageGanLoss(GanLoss())
+    gan_loss_dis_out = None
+    gan_loss_dis_out += gan_loss(pred_d_real, pred_d_fake)
     l_d_total = gan_loss_dis_out.discriminator_loss
     l_d_total.persistent = True
 
@@ -179,6 +181,8 @@ def main():
         # training loop
         index = 0
         if device_id == 0:
+            if not os.path.exists(args.savemodel):
+                os.makedirs(args.savemodel)
             with nn.parameter_scope("gen"):
                 nn.save_parameters(os.path.join(
                     args.savemodel, "generator_param_%06d.h5" % epoch))
