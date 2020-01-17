@@ -19,7 +19,8 @@ from .lr_scheduler import LearningRateScheduler
 import sys
 import os
 
-common_utils_path = os.path.join("/", *os.path.abspath(__file__).split("/")[:-4], "utils")
+common_utils_path = os.path.join(
+    "/", *os.path.abspath(__file__).split("/")[:-4], "utils")
 sys.path.append(common_utils_path)
 
 from reporter import Reporter

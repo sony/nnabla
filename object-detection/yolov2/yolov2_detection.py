@@ -132,11 +132,11 @@ def main():
     img[y0:y0 + new_h, x0:x0 + new_w] = patch
 
     # Execute YOLO v2
-    print ("forward")
+    print("forward")
     in_img = img.transpose(2, 0, 1).reshape(1, 3, args.width, args.width)
     x.d = in_img
     y.forward(clear_buffer=True)
-    print ("done")
+    print("done")
 
     bboxes = y.d[0]
     img_draw = draw_bounding_boxes(
