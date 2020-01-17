@@ -42,7 +42,6 @@ if(NNABLA_UTILS_WITH_HDF5)
 endif()
 
 download_and_extract_library(eigen-git-mirror-3.3.5 .zip https://github.com/eigenteam/eigen-git-mirror/archive/3.3.5.zip)
-download_and_extract_library(spdlog-0.16.3 .zip https://github.com/gabime/spdlog/archive/v0.16.3.zip)
 
 if(BUILD_TEST)
   download_and_extract_library(googletest-release-1.7.0 .zip https://github.com/google/googletest/archive/release-1.7.0.zip)

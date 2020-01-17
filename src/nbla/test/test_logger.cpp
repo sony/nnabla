@@ -29,7 +29,5 @@ TEST(LoggerTest, Logging) {
   NBLA_LOG_WARN("WARN LOG {}", num++);
   NBLA_LOG_ERROR("ERROR LOG {}", num++);
   NBLA_LOG_CRITICAL("CRITICAL LOG {}", num++);
-  WHOAMI("%d\n", num++);
-  ;
 }
 }

@@ -36,7 +36,7 @@ nnabla-clean-all:
 .PHONY: nnabla-auto-format
 nnabla-auto-format:
 	cd $(NNABLA_DIRECTORY) && \
-	python $(NNABLA_DIRECTORY)/build-tools/auto_format . --exclude \
+	python3 $(NNABLA_DIRECTORY)/build-tools/auto_format . --exclude \
 		'\./src/nbla/(function|solver)/\w+\.cpp' \
 		'\./src/nbla/init.cpp' \
 		'\./python/src/nnabla/\w+\.(cpp|hpp|h|c)' \
