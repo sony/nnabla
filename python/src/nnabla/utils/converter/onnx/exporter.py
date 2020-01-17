@@ -182,12 +182,12 @@ class OnnxExporter:
             "Identity": "Identity",
             "Pad": partial(self.Pad, "6"),
             "ReLU": "Relu",
-            "PReLU": self.PReLU,
+            "PReLU": partial(self.PReLU, "6"),
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
             "GlobalAveragePooling": "GlobalAveragePool",
-            "MaxPooling": partial(self.BasePooling, 'MaxPool'),
-            "AveragePooling": partial(self.BasePooling, 'AveragePool'),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool', "6"),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool', "6"),
             "Add2": partial(self.BinaryOperator, "Add", "6"),
             "BatchMatmul": self.BatchMatmul,
             "LogicalNot": "Not",
@@ -313,6 +313,8 @@ class OnnxExporter:
             "GreaterScalar": partial(self.GreaterScalar, '7'),
             "LessEqualScalar": partial(self.LessEqualScalar, '7'),
             "LessScalar": partial(self.LessScalar, '7'),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool', "7"),
+            "PReLU": partial(self.PReLU, '7'),
         }
         table_op_set_7 = dict(table_op_set_6, **table_op_set_7)
 
@@ -745,7 +747,7 @@ class OnnxExporter:
 
         return nl
 
-    def BasePooling(self, onnx_func, func):
+    def BasePooling(self, onnx_func, opset, func):
         nl = []
         input = func.input[0]
         output = func.output[0]
@@ -786,7 +788,20 @@ class OnnxExporter:
 
         pads = [d for d in pads]
         if ignore_border:
-            pads = ([0, 0] + pads) * 2
+            pads = pads * 2
+            n = onnx.helper.make_node(
+                onnx_func,
+                [input],
+                [output],
+                kernel_shape=k,
+                strides=s,
+                pads=pads
+            )
+            if onnx_func == 'AveragePool' and opset != '6':
+                c = onnx.helper.make_attribute(
+                    'count_include_pad', including_pad)
+                n.attribute.extend([c])
+            nl.append(n)
         else:
             new_input_shape = [shape + pads[i]
                                for i, shape in enumerate(input_shape[-len_kernel:])]
@@ -794,28 +809,28 @@ class OnnxExporter:
                     for kk, ss, i in zip(k, s, new_input_shape)]
             pads = [0, 0] + pads + [0, 0] + subs
 
-        if any(pads):
-            pad_out = fork_name(input) + "_pad"
-            n = onnx.helper.make_node(
-                'Pad',
-                [input],
-                [pad_out],
-                mode=pad_mode,
-                value=value,
-                pads=pads
-            )
-            input = pad_out
-            nl.append(n)
+            if any(pads):
+                pad_out = fork_name(input) + "_pad"
+                n = onnx.helper.make_node(
+                    'Pad',
+                    [input],
+                    [pad_out],
+                    mode=pad_mode,
+                    value=value,
+                    pads=pads
+                )
+                input = pad_out
+                nl.append(n)
 
-        n = onnx.helper.make_node(
-            onnx_func,
-            [input],
-            [output],
-            kernel_shape=k,
-            strides=s,
-            pads=[0] * len_kernel * 2
-        )
-        nl.append(n)
+            n = onnx.helper.make_node(
+                onnx_func,
+                [input],
+                [output],
+                kernel_shape=k,
+                strides=s,
+                pads=[0] * len_kernel * 2
+            )
+            nl.append(n)
 
         if diff > 2:
             output_shape = np.array(self._var_dict[func.output[0]].dim)
@@ -1854,7 +1869,7 @@ class OnnxExporter:
 
         return nl
 
-    def PReLU(self, func):
+    def PReLU(self, opset, func):
         nl = []
         inputs = func.input[:]
         outputs = func.output[:]
@@ -1879,13 +1894,14 @@ class OnnxExporter:
             outputs[0] = fork_name(func.output[0]) + "_reshape"
             input_shape = list(input0_shape_reshape)
 
-        slope_shape_reshape = [1] * len(input_shape)
-        slope_shape_reshape[1] = slope_shape[0]
-        rout = fork_name(inputs[1]) + "_reshape"
-        n = generate_reshape(self._model_proto.graph, inputs[1],
-                             rout, np.array(slope_shape_reshape))
-        nl.append(n)
-        inputs[1] = rout
+        if opset != "6":
+            slope_shape_reshape = [1] * len(input_shape)
+            slope_shape_reshape[1] = slope_shape[0]
+            rout = fork_name(inputs[1]) + "_reshape"
+            n = generate_reshape(self._model_proto.graph, inputs[1],
+                                 rout, np.array(slope_shape_reshape))
+            nl.append(n)
+            inputs[1] = rout
 
         n = onnx.helper.make_node(
             'PRelu',
