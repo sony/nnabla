@@ -19,13 +19,12 @@ FROM ubuntu:16.04
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-format-3.8 \
     make \
-    python-autopep8 \
-    python-pip \
-    python-setuptools \
+    python3-pip \
+    python3-setuptools \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install -U \
+RUN pip3 install -U \
     autopep8 \
     future \
     pyyaml \

@@ -36,36 +36,36 @@ DOCKER_IMAGE_TF_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-tf-test$(ARCH_SUFFIX):$(shell 
 ########################################################################################################################
 # Docker images
 
-.PHONY: docker_image_auto_format$(DOCKER_IMAGE_TARGET_SUFFIX)
-docker_image_auto_format$(DOCKER_IMAGE_TARGET_SUFFIX):
+.PHONY: docker_image_auto_format
+docker_image_auto_format:
 	if ! docker image inspect $(DOCKER_IMAGE_AUTO_FORMAT) >/dev/null 2>/dev/null; then \
 		docker pull ubuntu:16.04 && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .) \
 	fi
 
-.PHONY: docker_image_doc$(DOCKER_IMAGE_TARGET_SUFFIX)
-docker_image_doc$(DOCKER_IMAGE_TARGET_SUFFIX):
+.PHONY: docker_image_doc
+docker_image_doc:
 	if ! docker image inspect $(DOCKER_IMAGE_DOC) >/dev/null 2>/dev/null; then \
 		docker pull ubuntu:16.04 && \
 		( cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document . ) \
 	fi
 
-.PHONY: docker_image_build$(DOCKER_IMAGE_TARGET_SUFFIX)
-docker_image_build$(DOCKER_IMAGE_TARGET_SUFFIX):
+.PHONY: docker_image_build
+docker_image_build:
 	if ! docker image inspect $(DOCKER_IMAGE_BUILD) >/dev/null 2>/dev/null; then \
 		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .) \
 	fi
 
-.PHONY: docker_image_onnx_test$(DOCKER_IMAGE_TARGET_SUFFIX)
-docker_image_onnx_test$(DOCKER_IMAGE_TARGET_SUFFIX):
+.PHONY: docker_image_onnx_test
+docker_image_onnx_test:
 	if ! docker image inspect $(DOCKER_IMAGE_ONNX_TEST) >/dev/null 2>/dev/null; then \
 		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) -f docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) .) \
 	fi
 
-.PHONY: docker_image_tf_test$(DOCKER_IMAGE_TARGET_SUFFIX)
-docker_image_tf_test$(DOCKER_IMAGE_TARGET_SUFFIX):
+.PHONY: docker_image_tf_test
+docker_image_tf_test:
 	if ! docker image inspect $(DOCKER_IMAGE_TF_TEST) >/dev/null 2>/dev/null; then \
 		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.tf-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_TF_TEST) -f docker/development/Dockerfile.tf-test$(ARCH_SUFFIX) .) \
@@ -86,8 +86,8 @@ ANDROID_EABI ?= arm64-v8a
 
 DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android-$(ANDROID_PLATFORM)-$(ANDROID_ARCHITECTURE)-$(ANDROID_CMAKE_SYSTEM_NAME)-$(ANDROID_EABI):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.android |cut -d \  -f 1)
 
-.PHONY: docker_image_build_android$(DOCKER_IMAGE_TARGET_SUFFIX)
-docker_image_build_android$(DOCKER_IMAGE_TARGET_SUFFIX):
+.PHONY: docker_image_build_android
+docker_image_build_android:
 	if ! docker image inspect $(DOCKER_IMAGE_BUILD_ANDROID) >/dev/null 2>/dev/null; then \
 		docker pull ubuntu:16.04 && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \

@@ -16,33 +16,25 @@
 #ifndef __NBLA_LOGGER_HPP__
 #define __NBLA_LOGGER_HPP__
 
-#include <spdlog/spdlog.h>
-
 #include <nbla/defs.hpp>
 
-NBLA_API std::shared_ptr<spdlog::logger> get_logger(void);
-
-#define NBLA_LOG_TRACE(...)                                                    \
-  { get_logger()->trace(__VA_ARGS__); }
-#define NBLA_LOG_DEBUG(...)                                                    \
-  { get_logger()->debug(__VA_ARGS__); }
-#define NBLA_LOG_INFO(...)                                                     \
-  { get_logger()->info(__VA_ARGS__); }
-#define NBLA_LOG_WARN(...)                                                     \
-  { get_logger()->warn(__VA_ARGS__); }
-#define NBLA_LOG_ERROR(...)                                                    \
-  { get_logger()->error(__VA_ARGS__); }
-#define NBLA_LOG_CRITICAL(...)                                                 \
-  { get_logger()->critical(__VA_ARGS__); }
-
-#ifndef WHOAMI
 #include <cstdio>
-#define WHOAMI(...)                                                            \
+
+#define _NBLA_LOG_STDOUT(...)                                                  \
   {                                                                            \
     printf("%s:%d :", __FILE__, __LINE__);                                     \
     printf(__VA_ARGS__);                                                       \
     fflush(stdout);                                                            \
   }
-#endif // WHOAMI
+
+#define _NBLA_LOG_NONE(...)                                                    \
+  {}
+
+#define NBLA_LOG_TRACE _NBLA_LOG_NONE
+#define NBLA_LOG_DEBUG _NBLA_LOG_NONE
+#define NBLA_LOG_INFO _NBLA_LOG_NONE
+#define NBLA_LOG_WARN _NBLA_LOG_NONE
+#define NBLA_LOG_ERROR _NBLA_LOG_STDOUT
+#define NBLA_LOG_CRITICAL _NBLA_LOG_STDOUT
 
 #endif

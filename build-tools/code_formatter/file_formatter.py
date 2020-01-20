@@ -39,15 +39,15 @@ doc_extensions = ['.md', '.rst', '.txt', '.toc']
 
 
 def check_eol(filename):
-    eol = b'\n'
+    eol = u'\n'
     with open(filename, 'rb') as f:
         d = f.read()
         if b'\r\n' in d:
-            eol = b'\r\n'
+            eol = u'\r\n'
         elif b'\n' in d:
-            eol = b'\n'
+            eol = u'\n'
         elif b'\r' in d:
-            eol = b'\r'
+            eol = u'\r'
     return eol
 
 

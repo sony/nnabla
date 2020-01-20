@@ -36,6 +36,7 @@ def _convert_file(ext, filename):
         original = str(f.read())
     converted = file_formatter.format_file(ext, original)
     write_content = str(converted)
+
     if not write_content == original:
         print('Formatting {}'.format(filename))
         write_content = write_content.replace('\r\n', '\n')
