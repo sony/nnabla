@@ -98,7 +98,7 @@ def main():
 
     x.d = input_array
     y.forward(clear_buffer=True)
-    print ("done")
+    print("done")
     available_devices = ext.get_devices()
     ext.device_synchronize(available_devices[0])
     ext.clear_memory_cache()
