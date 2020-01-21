@@ -252,6 +252,7 @@ if __name__ == '__main__':
                 'nnabla.models.semantic_segmentation',
                 'nnabla.testing',
                 'nnabla.utils',
+                'nnabla.utils.inspection',
                 'nnabla.utils.cli',
                 'nnabla.utils.converter',
                 'nnabla.utils.converter.nnabla',
