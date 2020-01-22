@@ -111,25 +111,22 @@ class TimeProfiler(FunctionHookCallbackBase):
         Args:
             scope_name (str): Scope name.
         """
-        # create new profiler for the scope if not exist
-        if scope_name not in self.profilers:
-            self.create_new_profiler(scope_name)
-
         prev_scope = self._scope_name
 
-        self.call_pre_hook("summary", scope_name)
-
         try:
+            # create new profiler for the scope if not exist
+            if scope_name not in self.profilers:
+                self.create_new_profiler(scope_name)
+
+            self.call_pre_hook("summary", scope_name)
+
             self._scope_name = scope_name
 
             yield self
 
-        except:
+        finally:
             self._scope_name = prev_scope
-
-        self.call_post_hook("summary", scope_name)
-
-        self._scope_name = prev_scope
+            self.call_post_hook("summary", scope_name)
 
     @property
     def pre_hook(self):
