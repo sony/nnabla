@@ -34,5 +34,16 @@ def nnabla_examples_root():
 
 @pytest.fixture(scope='function', autouse=True)
 def scope_function():
+    # turn off auto forward mode
     nn.set_auto_forward(False)
+
+    # clear all parameters
+    nn.clear_parameters()
+
+    # keep context
+    ctx = nn.get_current_context()
+
     yield
+
+    # restore context
+    nn.set_default_context(ctx)

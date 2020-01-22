@@ -32,41 +32,43 @@ class TimeProfiler(FunctionHookCallbackBase):
     An utility API to create function_hook callbacks to profile the execution time of each function.
     Passing ``ext_name`` and ``device_id``, you can define which device time you want to profile.
     If `ext_name` = "cuda" or "cudnn", then cudaEvent will be used to measure the execution time.
-    For more information about cudaEvent, see CUDA docs by NVIDIA corp.(<https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html>)
+    For more information about cudaEvent, see CUDA docs by NVIDIA corp.(https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html)
     If `ext_name`="cpu" , then wall-clock-time on host will be used.
 
     Example:
-        .. code-block:: python
-            ext_name = "cpu"
-            device_id = "0"
 
-            from nnabla.ext_utils import get_extension_context
-            ctx = get_extension_context(ext_name, device_id=device_id)
-            nn.set_default_context(ctx)
+    .. code-block:: python
 
-            y = model(...)
+        ext_name = "cpu"
+        device_id = "0"
 
-            from nnabla.utils.inspection import TimeProfiler
-            tp = TimeProfiler(ext_name=ext_name, device_id=device_id)
+        from nnabla.ext_utils import get_extension_context
+        ctx = get_extension_context(ext_name, device_id=device_id)
+        nn.set_default_context(ctx)
 
-            for i in range(max_iter):
-                # All results of executions under "forward" scope are registered as "forward" execution.
-                with tp.scope("forward"):
-                    y.forward(function_pre_hook=tp.pre_hook, function_post_hook=tp.post_hook)
+        y = model(...)
 
-                # All results of executions under "backward" scope are registered as "backward" execution.
-                with tp.scope("backward") as tp:
-                    y.backward(function_pre_hook=tp.pre_hook, function_post_hook=tp.post_hook)
+        from nnabla.utils.inspection import TimeProfiler
+        tp = TimeProfiler(ext_name=ext_name, device_id=device_id)
 
-                # All results are evaluated by passing scopes to .calc_elapsed_time().
-                # Be sure to call calc_elapsed_time at each iteration, otherwise nothing is measured.
-                tp.calc_elapsed_time(["forward", "backward", "summary"])
+        for i in range(max_iter):
+            # All results of executions under "forward" scope are registered as "forward" execution.
+            with tp.scope("forward"):
+                y.forward(function_pre_hook=tp.pre_hook, function_post_hook=tp.post_hook)
 
-            # To output results on stdout, call instance as a function.
-            tp()
+            # All results of executions under "backward" scope are registered as "backward" execution.
+            with tp.scope("backward") as tp:
+                y.backward(function_pre_hook=tp.pre_hook, function_post_hook=tp.post_hook)
 
-            # To write out as csv file, call .to_csv().
-            tp.to_csv(output_file_name)
+            # All results are evaluated by passing scopes to .calc_elapsed_time().
+            # Be sure to call calc_elapsed_time at each iteration, otherwise nothing is measured.
+            tp.calc_elapsed_time(["forward", "backward", "summary"])
+
+        # To output results on stdout, call instance as a function.
+        tp()
+
+        # To write out as csv file, call .to_csv().
+        tp.to_csv(output_file_name)
     """
 
     def __init__(self, ext_name, device_id):
@@ -135,6 +137,7 @@ class TimeProfiler(FunctionHookCallbackBase):
         This function can be used like the example below:
 
         .. code-block:: python
+
             tp = TimeProfiler(..)
             with tp.scope("forward"):
                 v.forward(function_pre_hook=tp.pre_hook())
@@ -142,9 +145,6 @@ class TimeProfiler(FunctionHookCallbackBase):
             with tp.scope("backward"):
                 v.backward(function_pre_hook=tp.pre_hook())
 
-
-        Return:
-            Callable Object
         """
         profiler = self.profilers[self._scope_name]
 
@@ -160,6 +160,7 @@ class TimeProfiler(FunctionHookCallbackBase):
         This function can be used like the example below:
 
         .. code-block:: python
+
             tp = TimeProfiler(..)
             with tp.scope("forward"):
                 v.forward(function_post_hook=tp.post_hook())
@@ -167,8 +168,6 @@ class TimeProfiler(FunctionHookCallbackBase):
             with tp.scope("backward"):
                 v.backward(function_post_hook=tp.post_hook())
 
-        Return:
-             Callable Object
         """
         profiler = self.profilers[self._scope_name]
 

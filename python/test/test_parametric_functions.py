@@ -412,7 +412,7 @@ def test_pf_bn_no_scale_bias(no_scale, no_bias):
         x, batch_stat=True, no_scale=no_scale, no_bias=no_bias)
 
     params = nn.get_parameters()
-    assert len(params) == 2 - int(no_scale) + int(no_bias)
+    assert len(params) == 2 - int(no_scale) - int(no_bias)
 
 
 @pytest.mark.parametrize('no_scale, no_bias', [(False, False), (True, True)])
@@ -422,7 +422,7 @@ def test_pf_fused_bn_no_scale_bias(no_scale, no_bias):
         x, batch_stat=True, no_scale=no_scale, no_bias=no_bias)
 
     params = nn.get_parameters()
-    assert len(params) == 2 - int(no_scale) + int(no_bias)
+    assert len(params) == 2 - int(no_scale) - int(no_bias)
 
 
 @pytest.mark.parametrize("w_shape, dim", [((32, 16, 3, 3), 0),  # convolution

@@ -7,6 +7,6 @@ Utils
     utils/save_load.rst
     utils/image_utils.rst
     utils/data_iterator.rst
-    utils/profiling.rst
+    utils/debug_utils.rst
     utils/misc.rst
 
