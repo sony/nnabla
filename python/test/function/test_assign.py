@@ -52,8 +52,8 @@ def test_assign_forward_backward(seed, ctx, func_name):
 
     # gradients at destination are identical to gradients at assign operation
     assert not np.all(dst.g == np.zeros((2, 3, 4)))
-    assert np.all(dst.g == assign.g)
-    assert np.all(src.g == np.zeros((2, 3, 4)))
+    assert_allclose(dst.g, assign.g)
+    assert_allclose(src.g, np.zeros((2, 3, 4)))
 
     # check accum=False
     assign.grad.zero()
@@ -61,5 +61,29 @@ def test_assign_forward_backward(seed, ctx, func_name):
     f = assign.parent
     f.forward([dst, src], [assign])
     f.backward([dst, src], [assign], accum=[False])
-    assert np.all(dst.g == assign.g)
-    assert np.all(src.g == np.zeros((2, 3, 4)))
+    assert_allclose(dst.g, assign.g)
+    assert_allclose(src.g, np.zeros((2, 3, 4)))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+def test_assign_with_to_grad_true(seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    dst = nn.Variable((2, 3, 4), need_grad=True)
+    src = nn.Variable((2, 3, 4), need_grad=True)
+
+    assign = F.assign(dst, src, to_grad=True)
+
+    src.d = rng.rand(2, 3, 4)
+    assign.forward()
+
+    # destination variable should be equal to source variable
+    assert_allclose(dst.g, src.d)
+    # output variable of assign function should be equal to soure variable
+    assert_allclose(assign.g, src.d)
+
+    assign.backward()
+
+    # gradients remain in backward
+    assert_allclose(dst.g, assign.g)
+    assert_allclose(dst.g, src.d)

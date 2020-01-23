@@ -3575,6 +3575,18 @@ Array Manipulation:
 
       Unlike TensorFlow, the returned Variable has a backward path to `dst`:
 
+      If `to_grad` is `True`, the destination is the `gradient` property and the
+      same value remains in backward.
+
+      .. code-block:: python
+        dst = nn.Variable((2, 3, 4))
+        src = nn.Variable((2, 3, 4))
+        assign = F.assign(dst, src, to_grad=True)
+
+        assign.forward()
+        assert np.allclose(dst.g, src.d) # dst.grad is updated instead of dst.data
+        assert np.allclose(assign.g dst.d)
+
       .. math::
 
         g_{dst} = g_{y}
@@ -3583,12 +3595,18 @@ Array Manipulation:
         doc: A destination N-D array
       src:
         doc: A source N-D array
+    arguments:
+      to_grad:
+        doc: Flag whether the destination is gradient.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: An assigned array
     c_runtime: not support
     function_ids:
       Empty: 248
+      B: 278
   GatherNd:
     snake_name: gather_nd
     doc: |2
