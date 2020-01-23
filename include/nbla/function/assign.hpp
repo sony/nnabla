@@ -21,7 +21,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Assign);
+NBLA_REGISTER_FUNCTION_HEADER(Assign, bool);
 
 /** Assign source array to destination array
 The function is defined as
@@ -32,18 +32,24 @@ y_i = x_i
 Inputs:
 - destination N-D array
 - source N-D array
+- to_grad flag
 
 Outputs:
 - N-D array identical to source array
 
 \ingroup FunctionImplGrp
  */
-template <typename T> class Assign : public BaseFunction<> {
+template <typename T> class Assign : public BaseFunction<bool> {
 protected:
+  bool to_grad_;
+
 public:
-  Assign(const Context &ctx) : BaseFunction(ctx) {}
+  Assign(const Context &ctx, bool to_grad)
+      : BaseFunction<bool>(ctx, to_grad), to_grad_(to_grad) {}
   virtual ~Assign() {}
-  virtual shared_ptr<Function> copy() const { return create_Assign(ctx_); }
+  virtual shared_ptr<Function> copy() const {
+    return create_Assign(ctx_, to_grad_);
+  }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
   virtual vector<dtypes> in_types() {

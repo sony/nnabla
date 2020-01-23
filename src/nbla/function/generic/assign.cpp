@@ -20,7 +20,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Assign);
+NBLA_REGISTER_FUNCTION_SOURCE(Assign, bool);
 
 template <typename T>
 void Assign<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
@@ -35,9 +35,16 @@ void Assign<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <typename T>
 void Assign<T>::forward_impl(const Variables &inputs,
                              const Variables &outputs) {
-  Array *dst = inputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
+
+  Array *dst, *y;
+  if (to_grad_) {
+    dst = inputs[0]->grad()->cast(get_dtype<T>(), this->ctx_, true);
+    y = outputs[0]->grad()->cast(get_dtype<T>(), this->ctx_, true);
+  } else {
+    dst = inputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
+    y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
+  }
   const Array *src = inputs[1]->data()->get(get_dtype<T>(), this->ctx_);
-  Array *y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
   dst->copy_from(src);
   y->copy_from(src);
 }
@@ -46,7 +53,7 @@ template <typename T>
 void Assign<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                               const vector<bool> &propagate_down,
                               const vector<bool> &accum) {
-  if (!propagate_down[0])
+  if (!propagate_down[0] || to_grad_)
     return;
 
   Variable gy(outputs[0]->grad());
