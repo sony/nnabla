@@ -333,25 +333,25 @@ schedule_swap_in(int& head, const int fid,
         // The array is firstly appeared in the queue.
 
         if (!host_uses_this_synced_array[r->said]) {
-          schedule.push_back(r);
-
-          // If the array was previously swapped out,
-          // the memcpy was waited for by swap in.
+          // If the array is scheduled to be swapped out,
+          // by canceling it, this prefetch can be omitted.
           if (swapped_out[r->said]) {
             auto sor = swapped_out_r[r->said];
-            
-            // The array is used before swap out is completed.
-            // It is not required to swap out the array.
+
+            // Cancel the swap out
             canceled_swap_out.push_back(sor);
 
-            // Remove memory size from swap-out memory
+            // Remove the array sizes from swap-out memory
             sor->swapped_out = false;
-            used_bytes_swap_out -= sor->swapped_out_bytes;
+            used_bytes_swap_out -= next_array_bytes;
             sor->swapped_out_bytes = 0;
 
-            // reset flag
+            // Reset flags
             swapped_out[r->said] = false;
             swapped_out_r[r->said] = nullptr;
+          }
+          else {
+            schedule.push_back(r);
           }
         }
 
