@@ -88,7 +88,7 @@ string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\1]] version_major ${versi
 string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\2]] version_minor ${version})
 string(REGEX REPLACE [[^([0-9]+)\.([0-9]+)\.(.*)$]] [[\3]] version_patch ${version})
 
-set(CPACK_PACKAGE_NAME "nnabla-cpplib")
+set(CPACK_PACKAGE_NAME nnabla-cpplib${LIB_NAME_SUFFIX})
 
 if(UNIX)
   find_program(LSB_RELEASE lsb_release)
@@ -102,6 +102,14 @@ if(UNIX)
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
     set(CPACK_SYSTEM_NAME ${LSB_RELEASE_ID}${LSB_RELEASE_RELEASE})
+  endif()
+  find_program(UNAME uname)
+  if(EXISTS ${UNAME})
+    execute_process(COMMAND ${UNAME} -m
+      OUTPUT_VARIABLE UNAME_MACHINE_NAME
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    set(CPACK_SYSTEM_NAME ${CPACK_SYSTEM_NAME}_${UNAME_MACHINE_NAME})
   endif()
 endif()
 
@@ -221,7 +229,7 @@ if(BUILD_CPP_LIB)
     add_subdirectory(src/nbla_cli)
     add_subdirectory(examples/cpp)
   endif()
-    
+
   ###############################################################################
   # C++ Testing
   ###############################################################################
@@ -263,7 +271,6 @@ if(BUILD_CPP_LIB)
   endif()
 
   option(CONFIG_BUILD_DIR ${CMAKE_BINARY_DIR})
-
   
   # Two-step configure_file generation with generate-time property (target_file_name).
   # http://cmake.3232098.n2.nabble.com/cmp0026-file-GENERATE-and-configure-file-td7590275.html
@@ -279,13 +286,13 @@ if(BUILD_CPP_LIB)
   
   file(GENERATE OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg
     INPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured
-    CONDITION $<CONFIG:Release>)
+    CONDITION $<CONFIG:${CMAKE_BUILD_TYPE}>)
   
   set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg-$<CONFIG>)
-  
+
 endif() # BUILD_CPP_LIB
 
 ###############################################################################
@@ -309,7 +316,7 @@ if(BUILD_PYTHON_PACKAGE)
     endif()
     
     set(NBLA_LIBRARY_NAME ${CPPLIB_LIBRARY})  # No one sets if !BUILD_CPP_LIB
-    set(CPPLIB_LIBRARY_NAME "nnabla")
+    set(CPPLIB_LIBRARY_NAME nnabla${LIB_NAME_SUFFIX})
     set(CPPLIB_TARGET_FILE ${CPPLIB_LIBRARY})
     get_filename_component(CPPLIB_TARGET_FILE_NAME ${CPPLIB_TARGET_FILE} NAME)
 

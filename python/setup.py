@@ -32,7 +32,6 @@ install_requires = setup_requires + [
     'configparser',
     'contextlib2',
     'h5py',
-    'onnx',
     'protobuf>=3.6',
     'pyyaml',
     'requests',
@@ -45,6 +44,8 @@ install_requires = setup_requires + [
 
 if sys.platform == 'win32':
     install_requires.append('pywin32')
+else:
+    install_requires.append('onnx')
 
 
 def extopts(library_name, library_dir):

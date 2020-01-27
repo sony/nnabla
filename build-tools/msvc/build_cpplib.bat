@@ -56,23 +56,24 @@ CD %nnabla_build_folder%
 
 ECHO OFF
 cmake -G "%generate_target%" ^
-      -DPYTHON_COMMAND_NAME=python ^
       -DBUILD_CPP_UTILS=ON ^
       -DBUILD_PYTHON_PACKAGE=OFF ^
-      -DLibArchive_LIBRARY=%libarchive_library% ^
+      -DLIB_NAME_SUFFIX=%lib_name_suffix% ^
       -DLibArchive_INCLUDE_DIR=%libarchive_include_dir% ^
+      -DLibArchive_LIBRARY=%libarchive_library% ^
+      -DPROTOC_COMMAND=%protobuf_protoc_executable% ^
+      -DPYTHON_COMMAND_NAME=python ^
       -DProtobuf_INCLUDE_DIR=%protobuf_include_dir% ^
       -DProtobuf_LIBRARY=%protobuf_library% ^
       -DProtobuf_LITE_LIBRARY=%protobuf_lite_library% ^
       -DProtobuf_PROTOC_EXECUTABLE=%protobuf_protoc_executable% ^
-      -DPROTOC_COMMAND=%protobuf_protoc_executable% ^
-      -DZLIB_LIBRARY_RELEASE=%zlib_library% ^
       -DZLIB_INCLUDE_DIR=%zlib_include_dir% ^
+      -DZLIB_LIBRARY_RELEASE=%zlib_library% ^
       %nnabla_debug_options% ^
       %nnabla_root% || GOTO :error
 
 cmake --build . --config %build_type% || GOTO :error
-
+cpack -G ZIP -C %build_type%
 ENDLOCAL
 exit /b
 

@@ -16,6 +16,6 @@
 #define NBLA_CLI_NBLA_INFER_HPP_
 
 #include <nbla_utils/nnp.hpp>
-bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]);
+NBLA_API bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]);
 
 #endif // NBLA_CLI_NBLA_INFER_HPP_

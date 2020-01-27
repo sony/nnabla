@@ -66,11 +66,15 @@ DOCKER_RUN_OPTS += -e MAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL)
 PARALLEL_BUILD_NUM ?= 8
 DOCKER_RUN_OPTS += -e PARALLEL_BUILD_NUM=$(PARALLEL_BUILD_NUM)
 
-WHEEL_SUFFIX ?=
+SUFFIX ?=
+WHEEL_SUFFIX ?= $(SUFFIX)
 DOCKER_RUN_OPTS += -e WHEEL_SUFFIX=$(WHEEL_SUFFIX)
 
 ARCH_SUFFIX ?= $(shell bash -c 'if [ "`uname -m`" == "ppc64le" ]; then echo -ppc64le ; fi')
 DOCKER_RUN_OPTS += -e ARCH_SUFFIX=$(ARCH_SUFFIX)
+
+LIB_NAME_SUFFIX ?= $(SUFFIX)
+DOCKER_RUN_OPTS += -e LIB_NAME_SUFFIX=$(LIB_NAME_SUFFIX)
 
 ########################################################################################################################
 # Output directories

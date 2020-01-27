@@ -16,6 +16,6 @@
 #define NBLA_CLI_NBLA_TRAIN_HPP_
 
 #include <nbla_utils/nnp.hpp>
-bool nbla_train_core(nbla::Context ctx, int argc, char *argv[]);
+NBLA_API bool nbla_train_core(nbla::Context ctx, int argc, char *argv[]);
 
 #endif // NBLA_CLI_NBLA_TRAIN_HPP_

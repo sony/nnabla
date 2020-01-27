@@ -28,9 +28,6 @@ python -m venv --system-site-packages %nnabla_test_venv_folder% || GOTO :error
 
 CALL %nnabla_test_venv_folder%\scripts\activate.bat || GOTO :error
 
-REM Workaround for ONNX installation
-pip install "onnx<1.6"
-
 FOR /f %%i IN ('dir /b /s %nnabla_build_wheel_folder%\dist\*.whl') DO set WHL=%%~fi
 pip install %WHL% || GOTO :error
 python -m pytest %~dp0..\..\python\test || GOTO :error
