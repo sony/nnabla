@@ -240,32 +240,32 @@ private:
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
-    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
   vector<RecType*> schedule_swap_out
    (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
-    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
   vector<RecType*> schedule_wait_for_swap_out
    (int& tail, size_t& used_bytes_swap_out, 
-    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
   vector<RecType*> schedule_wait_for_all_swap_out
    (int& tail, size_t& used_bytes_swap_out, 
-    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
   void schedule_wait_for_swap_out_impl
    (vector<RecType*>& schedule,
     int& tail, size_t& used_bytes_swap_out,
-    unordered_map<unsigned int, bool>& swapped_out,
+    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
