@@ -528,7 +528,7 @@ Neural Network Layer:
       where :math:`I(c, h, w)` and :math:`\tilde{I}(c, h, w)` are the input and output images 
       at :math:`c`-th channel, :math:`h`-th height, :math:`w`-th width.
       :math:`K_V(:, h, w)` and :math:`K_h(:, h, w)` are vertical and horizontal 1-D kernels 
-      at :math:`h`-th height, :math:`w`-th width.
+      at :math:`h`-th height and :math:`w`-th width.
 
       References:
 
@@ -536,7 +536,7 @@ Neural Network Layer:
             Video Frame Interpolation via Adaptive Separable Convolution, 
             <https://arxiv.org/abs/1708.01692>`_
 
-          * `Mart Kartašev, Carlo Rapisarda, Dominik Fay, 
+          * `Mart Kartasev, Carlo Rapisarda, Dominik Fay, 
             Implementing Adaptive Separable Convolution for Video Frame Interpolation, 
             <https://arxiv.org/abs/1809.07759>`_
     inputs:
