@@ -31,10 +31,7 @@ class Monitor(object):
 
     def __init__(self, save_path):
         self._save_path = save_path
-        try:
-            os.makedirs(save_path)
-        except OSError:
-            pass  # python2 does not support exists_ok arg
+        os.makedirs(save_path, exist_ok=True)
 
     @property
     def save_path(self):
@@ -68,16 +65,15 @@ class MonitorSeries(object):
         self.name = name
         self.interval = interval
         self.verbose = verbose
-        self.fd = None
+        self.sp = None
         if monitor is not None:
-            self.fd = open(os.path.join(
-                monitor.save_path, name.replace(" ", "-")) + ".series.txt", 'w', 1)
+            self.sp = os.path.join(
+                monitor.save_path, name.replace(" ", "-")) + ".series.txt"
+            # refresh output file
+            with open(self.sp, "w") as f:
+                pass
         self.flush_at = -1
         self.buf = []
-
-    def __del__(self):
-        if self.fd is not None:
-            self.fd.close()
 
     def add(self, index, value):
         """Add a value to the series.
@@ -93,8 +89,9 @@ class MonitorSeries(object):
         value = np.mean(self.buf)
         if self.verbose:
             logger.info("iter={} {{{}}}={}".format(index, self.name, value))
-        if self.fd is not None:
-            print("{} {:g}".format(index, value), file=self.fd)
+        if self.sp is not None:
+            with open(self.sp, 'a') as fd:
+                print("{} {:g}".format(index, value), file=fd)
         self.flush_at = index
         self.buf = []
 
@@ -129,17 +126,16 @@ class MonitorTimeElapsed(object):
         self.name = name
         self.interval = interval
         self.verbose = verbose
-        self.fd = None
+        self.sp = None
         if monitor is not None:
-            self.fd = open(os.path.join(
-                monitor.save_path, name.replace(" ", "-")) + ".timer.txt", 'w', 1)
+            self.sp = os.path.join(
+                monitor.save_path, name.replace(" ", "-")) + ".timer.txt"
+            # refresh output file
+            with open(self.sp, "w") as f:
+                pass
         self.flush_at = -1
         self.start = time.time()
         self.lap = self.start
-
-    def __del__(self):
-        if self.fd is not None:
-            self.fd.close()
 
     def add(self, index):
         """Calculate time elapsed from the point previously called
@@ -159,9 +155,10 @@ class MonitorTimeElapsed(object):
         if self.verbose:
             logger.info("iter={} {{{}}}={}[sec/{}iter] {}[sec]".format(
                 index, self.name, elapsed, it, elapsed_total))
-        if self.fd is not None:
-            print("{} {} {} {}".format(index, elapsed,
-                                       it, elapsed_total), file=self.fd)
+        if self.sp is not None:
+            with open(self.sp, 'a') as fd:
+                print("{} {} {} {}".format(index, elapsed,
+                                           it, elapsed_total), file=fd)
         self.flush_at = index
 
 
