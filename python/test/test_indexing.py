@@ -210,3 +210,16 @@ def test_update_index_variable():
     i_nn.d = i_np
     y_nn.forward()
     assert_allclose(y_nn.d, x_np[i_np])
+
+
+def test_nnabla_boolean_array_as_index():
+    x_np = np.random.rand(20)
+    i_np = x_np > 0.5
+    x_nn = nn.Variable.from_numpy_array(x_np)
+    i_nn = nn.Variable.from_numpy_array(i_np)
+    with nn.auto_forward(True):
+        assert_allclose(x_nn[i_nn].d, x_np[i_np])
+        assert_allclose(x_nn.data[i_nn].data, x_np[i_np])
+        x_np[i_np] = -1
+        x_nn[i_nn] = -1
+        assert_allclose(x_nn.d, x_np)

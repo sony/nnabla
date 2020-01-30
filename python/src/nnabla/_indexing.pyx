@@ -6,8 +6,21 @@ import itertools
 import sys
 
 
-def is_numpy_array(a):
-    return isinstance(a, np.ndarray)
+def is_python_boolean_sequence(idx):
+    return (isinstance(idx, (tuple, list)) and len(idx) > 0
+            and all(isinstance(x, bool) for x in idx))
+
+
+def is_numpy_boolean_ndarray(idx):
+    return isinstance(idx, np.ndarray) and idx.dtype == np.bool
+
+
+def is_nnabla_boolean_ndarray(idx):
+    return isinstance(idx, NdArray) and idx.dtype == np.bool
+
+
+def is_nnabla_boolean_variable(idx):
+    return isinstance(idx, Variable) and idx.data.dtype == np.bool
 
 
 def broadcast(x, shape):
@@ -123,12 +136,22 @@ def advanced_getitem(self, key):
     idx = [val for val in key if val is not np.newaxis]
     newaxes = list(1 if k is None else 0 for k in key)
 
-    if len(idx) == 1 and isinstance(idx[0], (list, tuple)):
-        a = np.array(idx[0])
-        if a.dtype == np.bool:
-            idx[0] = a
+    # Note: For a boolean index array the result shape depends on the truth
+    # value of the index data elements and must be determined as part of the
+    # computation graph setup phase. Thus, even if the index is a Variable
+    # or NdArray, the data is evaluated here through np.nonzero() and not
+    # during forward.
 
-    if len(idx) == 1 and is_numpy_array(idx[0]) and idx[0].dtype == np.bool:
+    if len(idx) == 1 and is_nnabla_boolean_ndarray(idx[0]):
+        result = F.gather_nd(self, np.vstack(np.nonzero(idx[0].data)))
+
+    elif len(idx) == 1 and is_nnabla_boolean_variable(idx[0]):
+        result = F.gather_nd(self, np.vstack(np.nonzero(idx[0].d)))
+
+    elif len(idx) == 1 and is_python_boolean_sequence(idx[0]):
+        result = F.gather_nd(self, np.vstack(np.nonzero(idx[0])))
+
+    elif len(idx) == 1 and is_numpy_boolean_ndarray(idx[0]):
         result = F.gather_nd(self, np.vstack(np.nonzero(idx[0])))
 
     elif all(isinstance(k, (NdArray, Variable)) for k in idx):
@@ -168,12 +191,16 @@ def advanced_setitem(self, key, value):
         shape = value.shape[subax:subax + 1] + value.shape[sum(newaxes) + 1:]
         value = F.reshape(value, shape)
 
-    if len(idx) == 1 and isinstance(idx[0], (list, tuple)):
-        a = np.array(idx[0])
-        if a.dtype == np.bool:
-            idx[0] = a
+    if len(idx) == 1 and is_nnabla_boolean_ndarray(idx[0]):
+        indices = np.vstack(np.nonzero(idx[0].data))
 
-    if len(idx) == 1 and is_numpy_array(idx[0]) and idx[0].dtype == np.bool:
+    elif len(idx) == 1 and is_nnabla_boolean_variable(idx[0]):
+        indices = np.vstack(np.nonzero(idx[0].d))
+
+    elif len(idx) == 1 and is_python_boolean_sequence(idx[0]):
+        indices = np.vstack(np.nonzero(idx[0]))
+
+    elif len(idx) == 1 and is_numpy_boolean_ndarray(idx[0]):
         indices = np.vstack(np.nonzero(idx[0]))
 
     elif all(isinstance(k, (NdArray, Variable)) for k in idx):
