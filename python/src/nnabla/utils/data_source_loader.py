@@ -33,6 +33,7 @@ warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
 import numpy
+import scipy.io.wavfile
 import os
 import six.moves.urllib.request as request
 import six
@@ -360,21 +361,38 @@ def load_csv(file, shape=None, normalize=False):
     value_list = []
     if six.PY2:
         for row in csv.reader(file):
-            value_list.append(list(map(float, row)))
+            if len(row):
+                value_list.append(list(map(float, row)))
     elif six.PY34:
         for row in csv.reader([l.decode('utf-8') for l in file.readlines()]):
-            value_list.append(list(map(float, row)))
-    if shape is None:
-        return numpy.array(value_list)
-    else:
-        return numpy.array(value_list).reshape(shape)
+            if len(row):
+                value_list.append(list(map(float, row)))
+    try:
+        if shape is None:
+            return numpy.array(value_list)
+        else:
+            return numpy.array(value_list).reshape(shape)
+    except:
+        logger.log(99, 'Failed to load array from "{}".'.format(file.name))
+        raise
 
 
 def load_npy(path, shape=None, normalize=False):
     if shape is None:
-        return numpy.load(path)
+        return numpy.load(path, allow_pickle=True)
     else:
-        return numpy.load(path).reshape(shape)
+        return numpy.load(path, allow_pickle=True).reshape(shape)
+
+
+def load_wav(path, shape=None, normalize=False):
+    wav = scipy.io.wavfile.read(path)[1]
+    if shape is None:
+        if len(wav.shape) == 1:
+            return wav.reshape(-1, 1)
+        else:
+            return wav
+    else:
+        return wav.reshape(shape)
 
 
 _load_functions = {
@@ -386,7 +404,8 @@ _load_functions = {
     '.tif': load_image,
     '.tiff': load_image,
     '.csv': load_csv,
-    '.npy': load_npy}
+    '.npy': load_npy,
+    '.wav': load_wav}
 
 
 def register_load_function(ext, function):

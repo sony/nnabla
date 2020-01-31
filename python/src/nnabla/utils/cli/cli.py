@@ -42,8 +42,8 @@ def main():
     global return_value
     import six.moves._thread as thread
     import threading
-    thread.stack_size(128 * 1024 * 1024)
-    sys.setrecursionlimit(0x3fffffff)
+    thread.stack_size(8 * 1024 * 1024)
+    sys.setrecursionlimit(1024 * 1024)
     main_thread = threading.Thread(target=cli_main)
     main_thread.start()
     main_thread.join()
