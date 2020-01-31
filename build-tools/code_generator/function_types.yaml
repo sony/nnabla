@@ -19,6 +19,9 @@ DepthwiseConvolution:
 Deconvolution:
   float: [float]
   half: [Half]
+AdaptiveSeparableConvolution:
+  float: [float]
+  half: [Half]
 MaxPooling:
   float: [float]
   half: [Half]
