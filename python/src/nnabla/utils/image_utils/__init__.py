@@ -99,6 +99,13 @@ def imread(path, grayscale=False, size=None, interpolate="bilinear",
         as_uint16 (bool): If True, this function tries to read img as np.uint16. Default is False.
         num_channels (int): channel size of output array.
             Default is -1 which preserves raw image shape.
+        return_palette_indices (bool):
+            This argument can be used only by pil backend.
+            On pil backend, if this flag is True and PIL.Image has the mode "P",
+            then this function returns 2-D array containing the indices into palette.
+            Otherwise, 3-D array of "RGB" or "RGBA" (it depends on an image info) will be returned.
+            Default value is False.
+
     Returns:
          numpy.ndarray :
          if as_uint16=True output dtype is np.uint16, else np.uint8 (default).

@@ -35,10 +35,23 @@ if hasattr(Image, "LANCZOS"):  # version >1.1.3
     interpolations_map["lanczos"] = Image.LANCZOS
 
 
-def convert_pil(pil_image, grayscale, num_channels):
+def convert_pil(pil_image, grayscale, num_channels, return_palette_indices):
     if pil_image.mode == "I":
         raise ValueError(
             "Input img type seems int32. Currently we don`t support int32 image in pillow backend.")
+
+    # Note:
+    #   This code block below is copied from
+    #   https://github.com/scipy/scipy/blob/maintenance/1.2.x/scipy/misc/pilutil.py.
+    if pil_image.mode == 'P' and not return_palette_indices:
+        # Mode 'P' means there is an indexed "palette".  If we leave the mode
+        # as 'P', then when we do `a = array(im)` below, `a` will be a 2-D
+        # containing the indices into the palette, and not a 3-D array
+        # containing the RGB or RGBA values.
+        if 'transparency' in pil_image.info:
+            pil_image = pil_image.convert('RGBA')
+        else:
+            pil_image = pil_image.convert('RGB')
 
     if grayscale:
         ret = np.asarray(pil_image.convert("L"))
@@ -57,8 +70,9 @@ def convert_pil(pil_image, grayscale, num_channels):
     return pil_image
 
 
-def pil_image_to_ndarray(pil_image, grayscale, num_channels):
-    ret = convert_pil(pil_image, grayscale, num_channels)
+def pil_image_to_ndarray(pil_image, grayscale, num_channels, return_palette_indices):
+    ret = convert_pil(pil_image, grayscale, num_channels,
+                      return_palette_indices)
     return np.asarray(ret, dtype=np.uint8)
 
 
@@ -72,7 +86,7 @@ def pil_resize_from_ndarray(arr, size, resample):
 
 
 def imread(path, grayscale=False, size=None, interpolate="bilinear",
-           channel_first=False, as_uint16=False, num_channels=-1):
+           channel_first=False, as_uint16=False, num_channels=-1, return_palette_indices=False):
     """
     Read image by PIL module.
     Notice that PIL only supports uint8 for RGB (not uint16).
@@ -95,6 +109,11 @@ def imread(path, grayscale=False, size=None, interpolate="bilinear",
         num_channels (int):
             channel size of output array.
             Default is -1 which preserves raw image shape.
+        return_palette_indices (bool):
+            Whether to return a raw palette indices without any conversion or not.
+            If this flag is True and read Image has the mode "P",
+            then this function returns 2-D array containing the indices into palette.
+            We recommend that this flag should be False unless you intend to use the raw palette indices.
 
     Returns:
          numpy.ndarray
@@ -110,7 +129,8 @@ def imread(path, grayscale=False, size=None, interpolate="bilinear",
 
     pil_img = Image.open(path, mode="r")
 
-    img = pil_image_to_ndarray(pil_img, grayscale, num_channels)
+    img = pil_image_to_ndarray(
+        pil_img, grayscale, num_channels, return_palette_indices)
 
     return _imread_after(img, size, interpolate, channel_first, imresize)
 
