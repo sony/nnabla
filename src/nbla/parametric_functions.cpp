@@ -404,7 +404,7 @@ vector<CgVariablePtr>
 deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
               const vector<int> &kernel, const vector<int> &pad,
               const vector<int> &stride, const vector<int> &dilation, int group,
-              ParameterDirectory parameters, bool with_bias,
+              bool channel_last, ParameterDirectory parameters, bool with_bias,
               bool fix_parameters, Initializer *w_init, Initializer *b_init) {
 
   shared_ptr<UniformInitializer> shared_w_init;
@@ -444,15 +444,17 @@ deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
     CgVariablePtr deconv_b =
         parameters.get_parameter_or_create("deconv/b", {n_map_out}, b_init);
 
-    return connect(make_shared<CgFunction>(create_Deconvolution(
-                       ctx, base_axis, pad, stride, dilation, group)),
-                   {x, deconv_w, deconv_b}, 1, {}, execute_forward);
+    return connect(
+        make_shared<CgFunction>(create_Deconvolution(
+            ctx, base_axis, pad, stride, dilation, group, channel_last)),
+        {x, deconv_w, deconv_b}, 1, {}, execute_forward);
 
   } else {
 
-    return connect(make_shared<CgFunction>(create_Deconvolution(
-                       ctx, base_axis, pad, stride, dilation, group)),
-                   {x, deconv_w}, 1, {}, execute_forward);
+    return connect(
+        make_shared<CgFunction>(create_Deconvolution(
+            ctx, base_axis, pad, stride, dilation, group, channel_last)),
+        {x, deconv_w}, 1, {}, execute_forward);
   }
 }
 
@@ -462,11 +464,11 @@ CgVariablePtr deconvolution(CgVariablePtr x, int base_axis, int n_map_out,
                             ConvolutionOpts conv_opts) {
   auto global_ctx =
       SingletonManager::get<GlobalContext>()->get_current_context();
-  return deconvolution(global_ctx, x, base_axis, n_map_out, kernel,
-                       conv_opts.pad(), conv_opts.stride(),
-                       conv_opts.dilation(), conv_opts.group(), parameters,
-                       conv_opts.with_bias(), conv_opts.fix_parameters(),
-                       conv_opts.w_init(), conv_opts.b_init())[0];
+  return deconvolution(
+      global_ctx, x, base_axis, n_map_out, kernel, conv_opts.pad(),
+      conv_opts.stride(), conv_opts.dilation(), conv_opts.group(),
+      conv_opts.channel_last(), parameters, conv_opts.with_bias(),
+      conv_opts.fix_parameters(), conv_opts.w_init(), conv_opts.b_init())[0];
 }
 
 vector<CgVariablePtr>

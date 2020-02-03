@@ -1244,9 +1244,8 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
     ('W', 'Filter weights', '(inmaps, outmaps // group, *kernel)', True),
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
-def deconvolution(inp, outmaps, kernel,
-                  pad=None, stride=None, dilation=None, group=1,
-                  w_init=None, b_init=None,
+def deconvolution(inp, outmaps, kernel, pad=None, stride=None, dilation=None,
+                  group=1, channel_last=False, w_init=None, b_init=None,
                   base_axis=1, fix_parameters=False, rng=None, with_bias=True,
                   apply_w=None, apply_b=None):
     """
@@ -1273,14 +1272,19 @@ def deconvolution(inp, outmaps, kernel,
         :class:`~nnabla.Variable`: N-D array. See :obj:`~nnabla.functions.deconvolution` for the output shape.
 
     """
+    if channel_last:
+        channels = inp.shape[-1]
+        weights_shape = (channels,) + tuple(kernel) + (outmaps // group,)
+    else:
+        channels = inp.shape[base_axis]
+        weights_shape = (channels, outmaps // group,) + tuple(kernel)
     if w_init is None:
         w_init = UniformInitializer(
-            calc_uniform_lim_glorot(outmaps, inp.shape[base_axis], tuple(kernel)), rng=rng)
+            calc_uniform_lim_glorot(outmaps, channels, tuple(kernel)), rng=rng)
     if with_bias and b_init is None:
         b_init = ConstantInitializer()
     w = get_parameter_or_create(
-        "W", (inp.shape[base_axis], outmaps // group) + tuple(kernel),
-        w_init, True, not fix_parameters)
+            "W", weights_shape, w_init, True, not fix_parameters)
     if apply_w is not None:
         w = apply_w(w)
     b = None
@@ -1289,7 +1293,8 @@ def deconvolution(inp, outmaps, kernel,
             "b", (outmaps,), b_init, True, not fix_parameters)
         if apply_b is not None:
             b = apply_b(b)
-    return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group)
+    return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group,
+                           channel_last)
 
 
 @parametric_function_api("depthwise_deconv", [

@@ -33,7 +33,8 @@ NBLA_REGISTER_FUNCTION_SOURCE(Deconvolution, int,  // base_axis
                               const vector<int> &, // pad
                               const vector<int> &, // stride
                               const vector<int> &, // dilation
-                              int);                // group
+                              int,                 // group
+                              bool);               // channel_last
 
 template <typename T>
 void Deconvolution<T>::setup_impl(const Variables &inputs,
@@ -45,28 +46,34 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
              "base_axis must be less than ndim - 1 of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0] - 1: %d.",
              base_axis_, shape_out.size() - 1);
+
   spatial_dims_ = shape_out.size() - base_axis_ - 1;
   NBLA_CHECK(shape_weights.size() == 2 + spatial_dims_, error_code::value,
              "Weights must be a tensor more than 3D.");
+
+  auto channel_axis = base_axis_ + (channel_last_ ? spatial_dims_ : 0);
+  auto first_spatial_axis = base_axis_ + (channel_last_ ? 0 : 1);
+  auto weight_channel_axis = 1 + (channel_last_ ? spatial_dims_ : 0);
+  auto weight_first_spatial_axis = channel_last_ ? 1 : 2;
+
   // Storing shape variables
-  channels_i_ = shape_weights[1] * group_;
+  channels_i_ = shape_weights[weight_channel_axis] * group_;
   channels_o_ = shape_weights[0];
-  channels_g_ = shape_weights[1];
+  channels_g_ = shape_weights[weight_channel_axis];
   inner_size_k_ = channels_g_;
-  const int channels_i_mod_group = channels_i_ % group_;
-  NBLA_CHECK(channels_i_mod_group == 0, error_code::value,
+
+  NBLA_CHECK(channels_i_ % group_ == 0, error_code::value,
              "Number of input channel needs to be divisible by group. "
              "Input channel: %d, group: %d",
              channels_i_, group_);
-  const int channels_o_mod_group = channels_o_ % group_;
-  NBLA_CHECK(channels_o_mod_group == 0, error_code::value,
+  NBLA_CHECK(channels_o_ % group_ == 0, error_code::value,
              "Number of output channel needs to be divisible by group. "
              "Output channel: %d, group: %d",
              channels_o_, group_);
   NBLA_CHECK(channels_i_ / group_ == channels_g_, error_code::value,
              "Number of grouped channel mismatch."
-             "Input: %d != Weights[1]: %d",
-             channels_i_ / group_, channels_g_);
+             "Input: %d != Weights[%d]: %d",
+             channels_i_ / group_, weight_channel_axis, channels_g_);
   NBLA_CHECK(pad_.size() == spatial_dims_, error_code::value,
              "pad size mismatch. pad size: %d != spatial dims: %d.",
              pad_.size(), spatial_dims_);
@@ -76,10 +83,11 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(dilation_.size() == spatial_dims_, error_code::value,
              "dilation size mismatch. dilation size: %d != spatial dims: %d.",
              dilation_.size(), spatial_dims_);
+
   for (int i = 0; i < spatial_dims_; ++i) {
-    kernel_.push_back(shape_weights[2 + i]);
+    kernel_.push_back(shape_weights[weight_first_spatial_axis + i]);
     inner_size_k_ *= kernel_[i];
-    spatial_shape_o_.push_back(shape_out[base_axis_ + 1 + i]);
+    spatial_shape_o_.push_back(shape_out[first_spatial_axis + i]);
     const int k = dilation_[i] * (kernel_[i] - 1) + 1;
     const int size_i = stride_[i] * (spatial_shape_o_[i] - 1) + k - 2 * pad_[i];
     NBLA_CHECK(
@@ -91,26 +99,24 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
   }
 
   // Reshaping output
-  Shape_t shape_data;
+  Shape_t shape_data(shape_out.size());
   outer_size_ = 1;
-  for (int i = 0; i < base_axis_; ++i) { // Fill shapes up to base axis
-    shape_data.push_back(shape_out[i]);
+  // Fill shapes up to base axis.
+  for (int i = 0; i < base_axis_; ++i) {
+    shape_data.at(i) = (shape_out[i]);
     outer_size_ *= shape_out[i];
   }
-  shape_data.push_back(channels_i_); // output channels
+  // Fill output channels.
+  shape_data.at(channel_axis) = channels_i_;
   inner_size_i_ = channels_i_;
   inner_size_o_ = channels_o_;
+  // Fill spatial dimensions.
   for (int i = 0; i < spatial_dims_; ++i) {
-    shape_data.push_back(spatial_shape_i_[i]);
+    shape_data.at(first_spatial_axis + i) = spatial_shape_i_[i];
     inner_size_i_ *= spatial_shape_i_[i];
     inner_size_o_ *= spatial_shape_o_[i];
   }
   outputs[0]->reshape(shape_data, true);
-
-  // Reshaping col buffer
-  // Actual memory is not allocated until it is used.
-  col_.reshape(Shape_t{inner_size_k_ * group_, inner_size_o_ / channels_o_},
-               true);
 
   // Check for with bias
   if (inputs.size() == 3) {
@@ -121,11 +127,15 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
                "bias shape[0]: %d != weights shape[1] * group: %d.",
                inputs[2]->shape()[0], channels_i_);
   }
-  // Check for with bias
-  if (inputs.size() == 3) {
-    NBLA_CHECK(inputs[2]->shape().size() == 1, error_code::value, "");
-    NBLA_CHECK(inputs[2]->shape()[0] == channels_i_, error_code::value, "");
-  }
+
+  // TODO: The following logic until the end of this function should be moved to
+  // forward and backward function. Also we should not keep a Variable buffer as
+  // a class member but use CachedArray instead for an internal buffer array.
+
+  // Reshaping col buffer
+  // Actual memory is not allocated until it is used.
+  col_.reshape(Shape_t{inner_size_k_ * group_, inner_size_o_ / channels_o_},
+               true);
 
   // Set variables for convolution by matrix multiplication
   // In 2D case:
@@ -143,6 +153,10 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
 template <class T>
 void Deconvolution<T>::forward_impl(const Variables &inputs,
                                     const Variables &outputs) {
+  NBLA_CHECK(!channel_last_, error_code::not_implemented,
+             "The passed argument channel_last_=true is not supported in CPU "
+             "Deconvolution.");
+
   using namespace ::nbla::eigen;
   // Getting variable pointers
   const T *y = inputs[0]->get_data_pointer<T>(this->ctx_);
@@ -190,6 +204,10 @@ void Deconvolution<T>::backward_impl(const Variables &inputs,
         (inputs.size() == 3 && propagate_down[2]))) {
     return;
   }
+
+  NBLA_CHECK(!channel_last_, error_code::not_implemented,
+             "The passed argument channel_last_=true is not supported in CPU "
+             "Deconvolution.");
 
   using namespace ::nbla::eigen;
   const T *dx = outputs[0]->get_grad_pointer<T>(this->ctx_);

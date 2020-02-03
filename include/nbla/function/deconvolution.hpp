@@ -33,7 +33,9 @@ NBLA_REGISTER_FUNCTION_HEADER(Deconvolution, int,  // base_axis
                               const vector<int> &, // pad
                               const vector<int> &, // stride
                               const vector<int> &, // dilation
-                              int);                // group
+                              int,                 // group
+                              bool);               // channel_last
+
 /** N-D Deconvolution with bias operates backward convolution (derivative of
 output wrt input) plus channel-wise learned bias. The weights must be given with
 the same format as in forward convolution, hence the number of input channels
@@ -57,7 +59,7 @@ Networks for Semantic Segmentation. https://arxiv.org/abs/1605.06211
 template <typename T>
 class Deconvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
-                          const vector<int> &, int> {
+                          const vector<int> &, int, bool> {
 protected:
   // Note that member variables below are actually copied from Convolution. But
   // the meanings of input and output are back and forth. We consider the output
@@ -67,6 +69,7 @@ protected:
   vector<int> stride_;
   vector<int> dilation_;
   int group_;
+  bool channel_last_;
   vector<int> kernel_;
   int channels_i_, channels_o_, channels_g_;
   vector<int> spatial_shape_i_;
@@ -89,14 +92,15 @@ protected:
 public:
   Deconvolution(const Context &ctx, int base_axis, const vector<int> &pad,
                 const vector<int> &stride, const vector<int> &dilation,
-                int group)
-      : BaseFunction(ctx, base_axis, pad, stride, dilation, group),
+                int group, bool channel_last)
+      : BaseFunction(ctx, base_axis, pad, stride, dilation, group,
+                     channel_last),
         base_axis_(base_axis), pad_(pad), stride_(stride), dilation_(dilation),
-        group_(group) {}
+        group_(group), channel_last_(channel_last) {}
 
   virtual shared_ptr<Function> copy() const {
     return create_Deconvolution(ctx_, base_axis_, pad_, stride_, dilation_,
-                                group_);
+                                group_, channel_last_);
   }
 
   virtual vector<dtypes> in_types() {
