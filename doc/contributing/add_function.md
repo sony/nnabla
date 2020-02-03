@@ -144,6 +144,7 @@ cmake ..
 * Function class template (created only if they don't exist, and should be added to the Git version control)
   * `include/nbla/function/${snake_name}.hpp`
   * `src/nbla/function/generic/${snake_name}.cpp`
+  * `python/src/nnabla/backward_function/${snake_name}.py`
 
 * Template type instantiation of functions (overwritten)
   * `src/nbla/function/${snake_name}.cpp`
@@ -196,6 +197,18 @@ Implement the following three functions in the C++ file by adding your function 
 **Note:**
 The variable names must be valid names for Cython, Python and C++.   
 For example, the variable name lambda cannot be used for keywords, since it is an invalid name in Cython and Python, although it is valid in C++.   
+
+
+Optionally, if you need the gradient of gradient (i.e., double-backward) of the new function added, implement the following two methods:  
+1. **def backward_impl(self, inputs, outputs, prop_down, accum):**  
+   This method implements the backward pass of the backward function, meaning the gradient of gradient of the function added.  
+2. **def _create_forward_inputs_and_outputs(self, inputs, outputs):**  
+   You do not need to implement this method normally.  
+   This method creates the input and output variables used in the *def forward_impl(self, inputs, outputs):* of the backward function class.  
+   The exceptional case is for example the sigmoid funtion where the output of the forward\_impl of the forward function class is used again in the backward\_impl of the forward function class. Here, you have to implement this method to set the input and output variables manually.  
+   In this cases, the *def backward_impl(self, inputs, outputs, prop_down, accum):* implementation is slightly different since the inputs to the backward function class also contains the output of the forward function class in this case.  
+   See [sigmoid.py](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward_function/sigmoid.py) for details.  
+
 
 ## Write unit testing
 
