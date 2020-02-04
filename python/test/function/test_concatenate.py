@@ -71,4 +71,4 @@ def test_concatenate_double_backward(seed, axis, different_size, num_inputs, ctx
                              atol_accum=1e-2,
                              dstep=1e-3,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

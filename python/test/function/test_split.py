@@ -62,4 +62,4 @@ def test_split_double_backward(seed, axis, ctx, func_name):
                              atol_accum=5e-3,
                              dstep=1e-2,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

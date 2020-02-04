@@ -52,4 +52,4 @@ def test_hard_sigmoid_double_backward(seed, ctx, func_name):
                              atol_accum=1e-3,
                              dstep=1e-3,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

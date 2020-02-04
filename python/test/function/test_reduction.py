@@ -57,7 +57,7 @@ def test_large_sum_reduction(seed, inshape, axis, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     function_tester(rng, F.sum, np.sum, inputs, ctx=ctx, func_name=func_name,
-                    func_args=[axis], atol_b=1e-2, disable_half_test=True)
+                    func_args=[axis], atol_b=1e-2, disable_half_test=False)
 
 
 @pytest.mark.parametrize("seed", [313])
