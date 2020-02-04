@@ -102,7 +102,7 @@ def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
     base_axis = len(inshape) - 3
     b = None
     if with_bias:
-        b = rng.randn(outmaps).astype(np.float32) * 1e3  # long tailed
+        b = rng.randn(outmaps).astype(np.float32)
     inputs = [i, k, b]
     backward_function_tester(rng, F.deconvolution, None, inputs,
                              func_args=[base_axis, pad,
