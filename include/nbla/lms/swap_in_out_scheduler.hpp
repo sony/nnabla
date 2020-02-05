@@ -222,24 +222,41 @@ private:
   //---------------------------------------------------
   //                   Scheduler
   //---------------------------------------------------
+  enum class ScheduleTag { SWAP_IN, SWAP_OUT, WAIT };
+
+  struct ScheduleType {
+    ScheduleTag tag;
+    RecType *r;
+
+    ScheduleType(const ScheduleTag tag_, RecType *r_)
+      : tag(tag_), r(r_) {}
+
+    ScheduleType& operator=(const ScheduleType& other) {
+      tag = other.tag;
+      r = other.r;
+      return *this;
+    }
+  };
+
+  // Execute swap in/out, wait, and preclear on a schedule.
+  void run_on_schedule();
+
   // Rename of long types to shorter
   using SyncedArrayCounts = unordered_map<unsigned int, unordered_map<dtypes, int>>;
 
   // Schedules
-  unordered_map<int, vector<RecType*>> swap_in_schedule;
-  unordered_map<int, vector<RecType*>> swap_out_schedule;
-  unordered_map<int, vector<RecType*>> wait_schedule;
-  vector<RecType*> wait_all_schedule;
+  unordered_map<int, vector<ScheduleType>> schedules_swap;
   unordered_map<int, vector<RecType*>> preclear_schedule;
 
   // Main function
   void schedule();
 
   // Subprocesses of shcedule()
-  void detect_swap_in_before_forward(int& head, size_t& used_bytes_swap_in,
+  void calc_mem_usage_before_forward(int& head, 
+                                     size_t& used_bytes_swap_in,
                                      SyncedArrayCounts& synced_array_counts);
   
-  vector<RecType*> schedule_swap_in
+  void schedule_swap_in
    (int& head, const int fid, 
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
@@ -248,27 +265,26 @@ private:
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
-  vector<RecType*> schedule_swap_out
+  void schedule_swap_out
    (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
-  vector<RecType*> schedule_wait_for_swap_out
-   (int& tail, size_t& used_bytes_swap_out, 
+  void schedule_wait_for_swap_out
+   (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
-  vector<RecType*> schedule_wait_for_all_swap_out
-   (int& tail, size_t& used_bytes_swap_out, 
+  void schedule_wait_for_all_swap_out
+   (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
   
   void schedule_wait_for_swap_out_impl
-   (vector<RecType*>& schedule,
-    int& tail, size_t& used_bytes_swap_out,
+   (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out);
@@ -291,25 +307,12 @@ private:
   This is because NNabla calls "clear"s between post- and pre-callback
   functions and the scheduler should monitor these "clear"s.
   */
-  void swap_out_step(); // (1)
-  void swap_in_step();  // (2)
-
-  // Main functions
-  void swap_in();
-  void swap_out();
 
   // Subprocesses of swap_out()
   void swap_out_first_iter();
   void wait_for_swap_out_first_iter();
   void wait_for_all_swap_out_first_iter();
   void wait_for_swap_out_first_iter_impl();
-
-  void swap_out_scheduled();
-  void wait_for_swap_out_scheduled();
-  void wait_for_all_swap_out_scheduled();
-  void wait_for_swap_out_scheduled_impl(const RecType *r);
-
-  void preclear_scheduled();
 
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();
