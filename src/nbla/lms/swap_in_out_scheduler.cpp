@@ -107,11 +107,7 @@ void SwapInOutScheduler::end_scheduling() {
       order_idx = func_block_ends[func_idx];
     }
 
-    // Post process of the last function
-    func_idx++;
-    run_on_schedule();
-
-    // Swap out all arrays
+    // Post process of the last function and swap out all arrays
     func_idx++;
     run_on_schedule();
 
@@ -216,6 +212,7 @@ void SwapInOutScheduler::schedule() {
                                swapped_out_r, canceled_swap_out);
   }
 
+  fid = last_function - 1;
   schedule_wait_for_all_swap_out(fid, tail, used_bytes_swap_out, swapped_out,
                                  swapped_out_r, canceled_swap_out);
 
