@@ -4,11 +4,12 @@ from nnabla.function cimport Function
 
 
 cdef class SwapInOutScheduler:
-    def __cinit__(self, h_ctx, d_ctx, size):
+    def __cinit__(self, h_ctx, d_ctx, size, length):
         cdef CContext ch_ctx = h_ctx
         cdef CContext cd_ctx = d_ctx
         cdef size_t csize = size
-        self.scheduler = make_shared[CSwapInOutScheduler](ch_ctx, cd_ctx, csize)
+        cdef size_t clength = length
+        self.scheduler = make_shared[CSwapInOutScheduler](ch_ctx, cd_ctx, csize, clength)
 
     def __dealloc__(self):
         pass

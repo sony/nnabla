@@ -29,11 +29,12 @@ using std::accumulate;
  */
 SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
                                        const Context &d_ctx,
-                                       const size_t bytes)
+                                       const size_t bytes,
+                                       const size_t prefetch_length)
   : host_ctx(h_ctx), 
     device_ctx(d_ctx),
-    max_bytes_swap_in(bytes),
-    max_bytes_swap_out(bytes / 2), // Balance the max GPU memory in half
+    max_bytes(bytes),
+    max_prefetch_length(prefetch_length),
     synced_array_callback([&](SyncedArrayPtr saptr, 
                               const SyncedArrayCallbackTag sa_tag,
                               const dtypes dtype,
@@ -59,6 +60,7 @@ void SwapInOutScheduler::start_scheduling() {
   // Initialize
   order_idx = 0;
   func_idx = 0;
+  prefetch_length = 0;
   wrong_ordered.clear();
   precleared.clear();
 
@@ -190,13 +192,21 @@ void SwapInOutScheduler::schedule() {
                                 synced_array_counts);
   schedule_swap_out(fid, used_bytes_swap_in, used_bytes_swap_out,
                     synced_array_counts, swapped_out, swapped_out_r);
-  schedule_wait_for_swap_out(fid, tail, used_bytes_swap_out,
-                             swapped_out, swapped_out_r,
-                             canceled_swap_out);
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
-    schedule_swap_in(head, fid, used_bytes_swap_in, used_bytes_swap_out,
+    // Update prefetch counts
+    size_t proceed = 0;
+    for (size_t i = (fid == 1 ? 0 : func_block_ends[fid - 2]);
+                i < func_block_ends[fid - 1];
+                i++) {
+      if (order[i].ctx.array_class == device_ctx.array_class) {
+        proceed++;
+      }
+    }
+    prefetch_length -= proceed;
+
+    schedule_swap_in(head, tail, fid, used_bytes_swap_in, used_bytes_swap_out,
                      synced_array_counts, host_uses_this_synced_array,
                      swapped_out, swapped_out_r, canceled_swap_out);
 
@@ -207,9 +217,6 @@ void SwapInOutScheduler::schedule() {
 
     schedule_swap_out(fid, used_bytes_swap_in, used_bytes_swap_out,
                       synced_array_counts, swapped_out, swapped_out_r);
-
-    schedule_wait_for_swap_out(fid, tail, used_bytes_swap_out, swapped_out,
-                               swapped_out_r, canceled_swap_out);
   }
 
   fid = last_function - 1;
@@ -288,6 +295,7 @@ calc_mem_usage_before_forward(int& head, size_t& used_bytes_swap_in,
       // Increment the number of the same SyncedArray in the queue.
       synced_array_counts[r->said][r->dtype]++;
       head++; // Move on the head of the queue
+      prefetch_length++;
     }
     else if (r->ctx.array_class == host_ctx.array_class) {
       // Because func_idx == 0 means all get/cast finished already
@@ -305,7 +313,7 @@ calc_mem_usage_before_forward(int& head, size_t& used_bytes_swap_in,
 
 
 void SwapInOutScheduler::
-schedule_swap_in(int& head, const int fid, 
+schedule_swap_in(int& head, int& tail, const int fid, 
                  size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
                  SyncedArrayCounts& synced_array_counts,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
@@ -321,11 +329,25 @@ schedule_swap_in(int& head, const int fid,
     }
     
     if (r->ctx.array_class == device_ctx.array_class) {
+      if (func_block_ends[fid] <= head && 
+        max_prefetch_length <= prefetch_length) {
+        break;
+      }
+
       auto next_array_bytes = r->size * sizeof_dtype(r->dtype);
 
-      if (used_bytes_swap_in + next_array_bytes
-          > max_bytes_swap_in - used_bytes_swap_out) {
-        break; // Out of memory. Stop fetching.
+      while (used_bytes_swap_in + used_bytes_swap_out + next_array_bytes
+             > max_bytes) {
+        if (tail == func_block_ends[fid - 1]) {
+          NBLA_ERROR(error_code::memory, 
+                     "Out of memory. Max prefetch length is too long.");
+        }
+
+        // Out of memory
+        // Wait for swap out and release memory
+        schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
+                                        swapped_out, swapped_out_r, 
+                                        canceled_swap_out);
       }
 
       // Fetch
@@ -363,6 +385,7 @@ schedule_swap_in(int& head, const int fid,
       // Increment the number of the same SyncedArray in the queue.
       synced_array_counts[r->said][r->dtype]++;
       head++; // Move on the head of the queue
+      prefetch_length++;
     }
     else if (r->ctx.array_class == host_ctx.array_class) {
       // No need swap-in (prefetch) to CPU. The array will be gotten/casted 
@@ -451,20 +474,6 @@ schedule_swap_out(const int fid,
       NBLA_ERROR(error_code::type, 
                  "Unsupported array type: " + r->ctx.array_class);
     }
-  }
-}
-
-
-void SwapInOutScheduler::schedule_wait_for_swap_out(
-  const int fid, int& tail, size_t& used_bytes_swap_out,
-  unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-  unordered_map<unsigned int, RecType*>& swapped_out_r,
-  vector<RecType*>& canceled_swap_out)
-{
-  // When out of memory, wait to finish swap-out and release memory.
-  while (used_bytes_swap_out > max_bytes_swap_out) {
-    schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out, 
-                                    swapped_out, swapped_out_r, canceled_swap_out);
   }
 }
 
@@ -702,8 +711,10 @@ void SwapInOutScheduler::swap_out_first_iter() {
   }
 }
 
+// It is necessary to prefetch arrays of a single function at the first iter
+// And wait for swapped out.
 void SwapInOutScheduler::wait_for_swap_out_first_iter() {
-  while (used_bytes_swap_out_first_iter > max_bytes_swap_out) {
+  while (used_bytes_swap_out_first_iter > max_bytes / 2) { // temporary!!!!!!
     wait_for_swap_out_first_iter_impl();
   }
 }

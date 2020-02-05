@@ -126,8 +126,8 @@ class SwapInOutScheduler {
   const Context device_ctx; // Device context
 
   // The maximum size of usable GPU memory [byte]
-  const size_t max_bytes_swap_in;  // for swap in
-  const size_t max_bytes_swap_out; // for swap out
+  const size_t max_bytes;
+  const size_t max_prefetch_length;
 
   // The recorded order of get/cast/clear in the first iteration
   vector<RecType> order;
@@ -169,6 +169,8 @@ class SwapInOutScheduler {
   // To remember where get/cast/clear are called.
   bool in_func = false;
 
+  size_t prefetch_length; // clear is excluded.
+
 public:
   //---------------------------------------------------
   //               User interfaces
@@ -178,10 +180,12 @@ public:
   @param h_ctx Host context used as the destination of swap-out.
   @param d_ctx Device context.
   @param bytes Maximum GPU memory size managed by this class [bytes].
+  @param prefetch_length Maximum prefetch length.
    */
   NBLA_API SwapInOutScheduler(const Context &h_ctx,
                               const Context &d_ctx,
-                              const size_t bytes);
+                              const size_t bytes,
+                              const size_t prefetch_length);
 
   /** Destructor.
    */
@@ -257,7 +261,7 @@ private:
                                      SyncedArrayCounts& synced_array_counts);
   
   void schedule_swap_in
-   (int& head, const int fid, 
+   (int& head, int& tail, const int fid,
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
@@ -270,12 +274,6 @@ private:
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
-  
-  void schedule_wait_for_swap_out
-   (const int fid, int& tail, size_t& used_bytes_swap_out,
-    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out);
   
   void schedule_wait_for_all_swap_out
    (const int fid, int& tail, size_t& used_bytes_swap_out,
