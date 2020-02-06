@@ -521,12 +521,10 @@ void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
 // For the same SyncedArray, get/cast just before the clear is
 // time to preclear it instead of swapping it out.
 void SwapInOutScheduler::schedule_preclear() {
-  unordered_map<unsigned int, pair<bool, size_t>> 
-    clear_flag_in_func, clear_flag_out_func;
+  unordered_map<unsigned int, bool> clear_flag;
+  int fid = func_block_ends.size() - 1;
 
-  size_t fid = func_block_ends.size() - 1;
-
-  for (auto i = order.size() - 1; i >= 0; i--) {
+  for (int i = order.size() - 1; i >= 0; i--) {
     RecType *r = &order[i];
 
     if (i < func_block_ends[fid - 1]) {
@@ -540,20 +538,11 @@ void SwapInOutScheduler::schedule_preclear() {
     }
 
     if (r->tag == RecTag::CLEAR) {
-      if (r->in_func) {
-        clear_flag_in_func[r->said] = std::make_pair(true, fid);
-        clear_flag_out_func[r->said] = std::make_pair(false, fid);
-      }
-      else {
-        clear_flag_in_func[r->said] = std::make_pair(false, fid);
-        clear_flag_out_func[r->said] = std::make_pair(true, fid);
-      }
+      clear_flag[r->said] = true;
     }
-    else if (clear_flag_out_func[r->said].first && 
-      (fid != clear_flag_out_func[r->said].second || r->in_func)) {
-      // Preclear is scheduled in post-function hook.
+    else if (clear_flag[r->said]) {
       preclear_schedule[fid].push_back(r);
-      clear_flag_out_func[r->said] = std::make_pair(false, fid);
+      clear_flag[r->said] = false;
     }
   }
 }
@@ -612,8 +601,6 @@ void SwapInOutScheduler::pre_callback() {
   }
 
   set_synced_array_callback(); // Restart record or trace
-
-  in_func = true;
 }
 
 
@@ -629,8 +616,6 @@ void SwapInOutScheduler::post_callback() {
     }
     set_synced_array_callback(); // Restart record or trace
   }
-
-  in_func = false;
 }
 
 
@@ -812,7 +797,7 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
   auto said = said_map.at(saptr);
 
   // Record the order
-  order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx, in_func});
+  order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx});
   said_to_order_idx[said].push_back(order_idx);
   order_idx++;
 }
@@ -850,7 +835,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
 
   // Case: Over the current function block.
   if (order_idx >= func_block_ends[func_idx]) {
-    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx, false});
+    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx});
   }
   // Case: SyncedArray replacement in the same order
   else if (r.sawptr.expired() && // "expired" implies the replacement.
@@ -869,7 +854,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
            saptr->size() != r.size ||
            dtype != r.dtype ||
            ctx.array_class != r.ctx.array_class) {
-   wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx, false});
+   wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx});
   }
 
   order_idx++;
