@@ -39,10 +39,11 @@ SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
                               const SyncedArrayCallbackTag sa_tag,
                               const dtypes dtype,
                               const Context &ctx,
-                              const bool write_only) {
+                              const bool write_only,
+                              const bool first_creation) {
       // Set SyncedArrayCallback function for first iteration
       synced_array_callback_recorder(saptr, sa_tag, dtype, 
-                                     ctx, write_only);}) 
+                                     ctx, write_only, first_creation);}) 
 {
     // Create non blocking streams for data transfer
     BackendUtils::create_lms_streams(d_ctx);
@@ -60,7 +61,6 @@ void SwapInOutScheduler::start_scheduling() {
   // Initialize
   order_idx = 0;
   func_idx = 0;
-  prefetch_length = 0;
   wrong_ordered.clear();
   precleared.clear();
 
@@ -130,8 +130,10 @@ void SwapInOutScheduler::end_scheduling() {
                               const SyncedArrayCallbackTag sa_tag,
                               const dtypes dtype, 
                               const Context &ctx,
-                              const bool write_only) {
-    synced_array_callback_tracer(saptr, sa_tag, dtype, ctx, write_only);};
+                              const bool write_only, 
+                              const bool first_creation) {
+    synced_array_callback_tracer(saptr, sa_tag, dtype, ctx, write_only, 
+                                 first_creation);};
 
   first_iter = false;
 }
@@ -168,6 +170,9 @@ void SwapInOutScheduler::schedule() {
   */
   SyncedArrayCounts synced_array_counts;
 
+  size_t prefetch_length = 0; // clear is excluded.
+  vector<bool> unprefetched(order.size(), false);
+
   int head = 0;
   int tail = 0;
   size_t used_bytes_swap_in = 0;
@@ -188,7 +193,7 @@ void SwapInOutScheduler::schedule() {
 
   // Calculate used GPU memory before forward starts,
   // and swap out if necessary.
-  calc_mem_usage_before_forward(head, used_bytes_swap_in,
+  calc_mem_usage_before_forward(head, prefetch_length, used_bytes_swap_in,
                                 synced_array_counts);
   schedule_swap_out(fid, used_bytes_swap_in, used_bytes_swap_out,
                     synced_array_counts, swapped_out, swapped_out_r);
@@ -206,9 +211,44 @@ void SwapInOutScheduler::schedule() {
     }
     prefetch_length -= proceed;
 
-    schedule_swap_in(head, tail, fid, used_bytes_swap_in, used_bytes_swap_out,
-                     synced_array_counts, host_uses_this_synced_array,
-                     swapped_out, swapped_out_r, canceled_swap_out);
+    //reserve_unprefetched_memory();
+    schedule_swap_in(true, head, tail, fid, prefetch_length, used_bytes_swap_in,
+      used_bytes_swap_out, synced_array_counts,
+      host_uses_this_synced_array, swapped_out, swapped_out_r,
+      canceled_swap_out, unprefetched);
+
+    for (auto i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
+      RecType *r = &order[i];
+
+      if (r->tag == RecTag::CLEAR) {
+        continue;
+      }
+
+      if (unprefetched[i]) {
+        auto array_bytes = r->size * sizeof_dtype(r->dtype);
+
+        while (max_bytes - used_bytes_swap_in - used_bytes_swap_out < array_bytes) {
+          if (tail == func_block_ends[fid - 1]) {
+            NBLA_ERROR(error_code::memory,
+              "Fetch of unprefetched array was failed due to out of memory. "
+              "Max prefetch length is too long.");
+          }
+
+          // Out of memory
+          // Wait for swap out and release memory
+          schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
+                                          swapped_out, swapped_out_r,
+                                          canceled_swap_out);
+        }
+
+        used_bytes_swap_in += array_bytes;
+      }
+    }
+
+    schedule_swap_in(false, head, tail, fid, prefetch_length, used_bytes_swap_in,
+                     used_bytes_swap_out, synced_array_counts,
+                     host_uses_this_synced_array, swapped_out, swapped_out_r,
+                     canceled_swap_out, unprefetched);
 
     if (head < func_block_ends[fid]) {
       NBLA_ERROR(error_code::memory,
@@ -273,7 +313,8 @@ void SwapInOutScheduler::check_which_is_host_func() {
 
 
 void SwapInOutScheduler::
-calc_mem_usage_before_forward(int& head, size_t& used_bytes_swap_in,
+calc_mem_usage_before_forward(int& head, size_t& prefetch_length,
+                              size_t& used_bytes_swap_in,
                               SyncedArrayCounts& synced_array_counts) {
   while (head < func_block_ends[0]) {
     RecType *r = &order[head];
@@ -313,14 +354,15 @@ calc_mem_usage_before_forward(int& head, size_t& used_bytes_swap_in,
 
 
 void SwapInOutScheduler::
-schedule_swap_in(int& head, int& tail, const int fid, 
+schedule_swap_in(const bool pre, int& head, int& tail, const int fid, size_t& prefetch_length,
                  size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
                  SyncedArrayCounts& synced_array_counts,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
                  unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                  unordered_map<unsigned int, RecType*>& swapped_out_r,
-                 vector<RecType*>& canceled_swap_out) {
-  while (head < order.size()) {
+                 vector<RecType*>& canceled_swap_out, 
+                 vector<bool>& unprefetched) {
+  while (head < (pre ? func_block_ends[fid] : order.size())) {
     RecType *r = &order[head];
 
     if (r->tag == RecTag::CLEAR) {
@@ -372,14 +414,27 @@ schedule_swap_in(int& head, int& tail, const int fid,
             // Reset flags
             swapped_out[r->said].clear();
             swapped_out_r[r->said] = nullptr;
+
+            // Increase memory usage
+            used_bytes_swap_in += next_array_bytes;
           }
           else {
-            schedules_swap[fid].push_back(ScheduleType(ScheduleTag::SWAP_IN, r));
+            if (r->no_data_transfer) {
+              // Prefetch is unnecessary because data transfer will not happen.
+              unprefetched[head] = true;
+            }
+            else {
+              schedules_swap[fid].push_back(ScheduleType(ScheduleTag::SWAP_IN, r));
+
+              // Increase memory usage
+              used_bytes_swap_in += next_array_bytes;
+            }
           }
         }
-
-        // Increase memory usage
-        used_bytes_swap_in += next_array_bytes;
+        else {
+          // Increase memory usage
+          used_bytes_swap_in += next_array_bytes;
+        }
       }
 
       // Increment the number of the same SyncedArray in the queue.
@@ -540,14 +595,43 @@ void SwapInOutScheduler::schedule_preclear() {
     if (r->tag == RecTag::CLEAR) {
       clear_flag[r->said] = true;
     }
+    else if (clear_flag_out_func[r->said].first) {
+      // Preclear is scheduled in post-function hook.
+      if (r->in_func) {
+        preclear_schedule[fid].push_back(r);
+      }
+      clear_flag_out_func[r->said] = std::make_pair(false, fid);
+    }
+  }
+}
+/*
+void SwapInOutScheduler::schedule_preclear() {
+  unordered_map<unsigned int, bool> clear_flag;
+  int fid = func_block_ends.size() - 1;
+
+  for (int i = order.size() - 1; i >= 0; i--) {
+    RecType *r = &order[i];
+
+    if (i < func_block_ends[fid - 1]) {
+      fid--;
+    }
+
+    if (fid == 0) {
+      // fid == 0 is before the first pre-function hook.
+      // No chance to preclear.
+      break;
+    }
+
+    if (r->tag == RecTag::CLEAR) {
+      clear_flag[r->said] = true;
+    }
     else if (clear_flag[r->said]) {
       preclear_schedule[fid].push_back(r);
       clear_flag[r->said] = false;
     }
   }
 }
-
-
+*/
 void SwapInOutScheduler::cancel_swap_out(vector<RecType*>& canceled_swap_out) {
   for (int fid = 0; fid < func_block_ends.size(); fid++) {
     for (auto it = schedules_swap[fid].begin();
@@ -629,7 +713,9 @@ void SwapInOutScheduler::run_on_schedule() {
     else if (s.tag == ScheduleTag::SWAP_OUT) {
       // Swap out and preclear the arrays used in the previous function.
       if (auto p = s.r->sawptr.lock()) {
-        p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+        if (is_not_cleared_yet(p)) {
+          p->cast(p->dtype(), host_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+        }
       }
     }
     else if (s.tag == ScheduleTag::WAIT) {
@@ -787,7 +873,8 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
                                const SyncedArrayCallbackTag sa_tag,
                                const dtypes dtype,
                                const Context &ctx,
-                               const bool write_only) {
+                               const bool write_only,
+                               const bool first_creation) {
   auto tag = convert_tag(sa_tag, write_only);
 
   // Define SyncedArray ID
@@ -797,7 +884,9 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
   auto said = said_map.at(saptr);
 
   // Record the order
-  order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx});
+  order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx,
+                          in_func, write_only);// , write_only || first_creation});
+
   said_to_order_idx[said].push_back(order_idx);
   order_idx++;
 }
@@ -810,7 +899,8 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
                              const SyncedArrayCallbackTag sa_tag,
                              const dtypes dtype,
                              const Context &ctx,
-                             const bool write_only) {
+                             const bool write_only,
+                             const bool first_creation) {
   auto tag = convert_tag(sa_tag, write_only);
 
   // If unexpected get or cast appears between preclear and actual clear,
@@ -833,11 +923,12 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
   auto r = order[order_idx];
   auto rec_saptr = r.sawptr.lock();
 
-  // Case: Over the current function block.
+  // Case 1: Over the current function block.
   if (order_idx >= func_block_ends[func_idx]) {
-    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx});
+    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
+                             false, false});
   }
-  // Case: SyncedArray replacement in the same order
+  // Case 2: SyncedArray replacement in the same order
   else if (r.sawptr.expired() && // "expired" implies the replacement.
            tag == r.tag &&
            saptr->size() == r.size &&
@@ -848,13 +939,14 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
       order[i].sawptr = saptr;
     }
   }
-  // Case: Different entry
+  // Case 3: Different entry
   else if (tag != r.tag || 
            saptr != rec_saptr ||
            saptr->size() != r.size ||
            dtype != r.dtype ||
            ctx.array_class != r.ctx.array_class) {
-   wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx});
+   wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
+                            false, false});
   }
 
   order_idx++;

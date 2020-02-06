@@ -65,6 +65,8 @@ Array *SyncedArray::cast(dtypes dtype, const Context &ctx,
 
 shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
                                        bool write_only, const int async_flags) {
+  const bool first_creation = zeroing_ || filling_;
+
   // 1. Create an array and/or synchronize with the head.
   head_ = sync(dtype, ctx, write_only, async_flags); // cast() changes head.
   // 2. Clear all previous arrays.
@@ -81,8 +83,9 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
     ->call_callback(shared_from_this(),
                     SyncedArrayCallbackTag::CAST,
                     created_array.first->dtype(),
-                    ctx,
-                    write_only);
+                    ctx, 
+                    write_only,
+                    first_creation);
 
   // 5. Return a requested array
   return created_array.first;
@@ -94,6 +97,8 @@ const Array *SyncedArray::get(dtypes dtype, const Context &ctx, const int async_
 
 shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
                                             const int async_flags) {
+  const bool first_creation = zeroing_ || filling_;
+
   ArrayDesc desc = sync(dtype, ctx, false, async_flags); // get() does not change head.
   array_[desc.key].second = true;    // Set as at-head.
 
@@ -103,7 +108,8 @@ shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
                     SyncedArrayCallbackTag::GET,
                     array_[desc.key].first->dtype(),
                     ctx,
-                    false);
+                    false,
+                    first_creation);
 
   return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
@@ -217,7 +223,7 @@ void SyncedArray::clear() {
                     SyncedArrayCallbackTag::CLEAR,
                     dtypes::BYTE, // dummy
                     Context({ "dummy" }, "dummy", "dummy"),
-                    false);
+                    false, false);
 }
 
 // Reset head state. Private clear does not call a callback function.
@@ -250,9 +256,10 @@ void SyncedArrayCallback::call_callback(SyncedArrayPtr saptr,
                                         const SyncedArrayCallbackTag func_name,
                                         const dtypes dtype,
                                         const Context &ctx,
-                                        const bool write_only) {
+                                        const bool write_only,
+                                        const bool first_creation) {
   if (!empty()) {
-    callback_func_(saptr, func_name, dtype, ctx, write_only);
+    callback_func_(saptr, func_name, dtype, ctx, write_only, first_creation);
   }
 }
 

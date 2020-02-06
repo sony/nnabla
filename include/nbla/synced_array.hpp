@@ -198,7 +198,8 @@ using synced_array_callback_func_type =
                                  const SyncedArrayCallbackTag func_name,
                                  const dtypes dtype,
                                  const Context &ctx,
-                                 const bool write_only)>;
+                                 const bool write_only,
+                                 const bool first_creation)>;
 
 /**
 Singleton class to store a callback function for get, cast, and clear of
@@ -221,7 +222,8 @@ public:
                      const SyncedArrayCallbackTag func_name,
                      const dtypes dtype,
                      const Context &ctx,
-                     const bool write_only);
+                     const bool write_only,
+                     const bool first_creation);
 
 private:
   friend SingletonManager; // needs forward declaration

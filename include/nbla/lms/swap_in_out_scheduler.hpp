@@ -106,14 +106,18 @@ class SwapInOutScheduler {
     const Size_t size;
     const dtypes dtype;
     const Context ctx;
+    const bool in_func;
+    const bool no_data_transfer;
 
     bool swapped_out = false; // If true, the synced array was swapped out.
     size_t swapped_out_bytes = 0;
 
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
-            const Size_t size_, const dtypes dtype_, const Context ctx_)
+            const Size_t size_, const dtypes dtype_, const Context ctx_,
+            const bool in_func_, const bool no_data_transfer_)
     : tag(tag_), said(said_), sawptr(saptr_), 
-      size(size_), dtype(dtype_), ctx(ctx_) {}
+      size(size_), dtype(dtype_), ctx(ctx_), in_func(in_func_),
+      no_data_transfer(no_data_transfer_) {}
   };
 
 
@@ -165,7 +169,6 @@ class SwapInOutScheduler {
   unordered_map<SyncedArrayPtr, unsigned int> said_map;
 
 
-  size_t prefetch_length; // clear is excluded.
 
 public:
   //---------------------------------------------------
@@ -252,18 +255,19 @@ private:
   void schedule();
 
   // Subprocesses of shcedule()
-  void calc_mem_usage_before_forward(int& head, 
+  void calc_mem_usage_before_forward(int& head, size_t& prefetch_length,
                                      size_t& used_bytes_swap_in,
                                      SyncedArrayCounts& synced_array_counts);
   
   void schedule_swap_in
-   (int& head, int& tail, const int fid,
+   (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_length,
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out);
+    vector<RecType*>& canceled_swap_out, 
+    vector<bool>& unprefetched);
   
   void schedule_swap_out
    (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
@@ -333,14 +337,16 @@ private:
                                       const SyncedArrayCallbackTag sa_tag,
                                       const dtypes dtype,
                                       const Context &ctx,
-                                      const bool write_only);
+                                      const bool write_only,
+                                      const bool first_creation);
 
   // SyncedArrayCallback to trace get/cast/clear after the first iteration.
   void synced_array_callback_tracer(SyncedArrayPtr saptr,
                                     const SyncedArrayCallbackTag sa_tag,
                                     const dtypes dtype,
                                     const Context &ctx,
-                                    const bool write_only);
+                                    const bool write_only,
+                                    const bool first_creation);
 
   // Tag converter
   RecTag convert_tag(const SyncedArrayCallbackTag sa_tag,
