@@ -17,3 +17,8 @@ import numpy as np
 # Parameter random number generator
 pseed = 313
 prng = np.random.RandomState(pseed)
+
+
+def set_seed(seed):
+    global prng
+    prng = np.random.RandomState(seed)

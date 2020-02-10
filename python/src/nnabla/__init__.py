@@ -39,6 +39,7 @@ from .context import (
 from .auto_forward import auto_forward, set_auto_forward, get_auto_forward
 from._computation_graph import forward_all
 from .grad import grad
+from .random import set_seed
 
 # Prefer cached array by default for performance.
 prefer_cached_array(True)
