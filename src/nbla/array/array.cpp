@@ -45,7 +45,7 @@ void Array::set_event(EventPtr e) { event_ = e; }
 void Array::wait_event(const Context ctx, const int async_flags) {
   if (event_) {
     event_->wait_event(ctx, async_flags);
-    event_ = nullptr;
+    event_.reset();
   }
 }
 
