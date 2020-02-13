@@ -129,7 +129,7 @@ class SwapInOutScheduler {
 
   // The maximum size of usable GPU memory [byte]
   const size_t max_bytes;
-  const size_t max_prefetch_length;
+  const size_t max_prefetch_bytes;
 
   // The recorded order of get/cast/clear in the first iteration
   vector<RecType> order;
@@ -179,12 +179,12 @@ public:
   @param h_ctx Host context used as the destination of swap-out.
   @param d_ctx Device context.
   @param bytes Maximum GPU memory size managed by this class [bytes].
-  @param prefetch_length Maximum prefetch length.
+  @param prefetch_bytes Maximum prefetch length.
    */
   NBLA_API SwapInOutScheduler(const Context &h_ctx,
                               const Context &d_ctx,
                               const size_t bytes,
-                              const size_t prefetch_length);
+                              const size_t prefetch_bytes);
 
   /** Destructor.
    */
@@ -255,12 +255,12 @@ private:
   void schedule();
 
   // Subprocesses of shcedule()
-  void calc_mem_usage_before_forward(int& head, size_t& prefetch_length,
+  void calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
                                      size_t& used_bytes_swap_in,
                                      SyncedArrayCounts& synced_array_counts);
   
   void schedule_swap_in
-   (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_length,
+   (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_bytes,
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
@@ -270,7 +270,8 @@ private:
     vector<bool>& unprefetched);
   
   void schedule_swap_out
-   (const int fid, size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
+   (const int fid, size_t& prefetch_bytes, 
+    size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayCounts& synced_array_counts,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
@@ -290,6 +291,15 @@ private:
   void schedule_preclear();
 
   void cancel_swap_out(vector<RecType*>& canceled_swap_out);
+
+  void reserve_unprefetched_memory(int& tail, const int fid, 
+                                   size_t& prefetch_bytes,
+                                   size_t& used_bytes_swap_in,
+                                   size_t& used_bytes_swap_out,
+                                   unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
+                                   unordered_map<unsigned int, RecType*>& swapped_out_r,
+                                   vector<RecType*>& canceled_swap_out,
+                                   vector<bool>& unprefetched);
 
 
   //---------------------------------------------------

@@ -30,11 +30,11 @@ using std::accumulate;
 SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
                                        const Context &d_ctx,
                                        const size_t bytes,
-                                       const size_t prefetch_length)
+                                       const size_t prefetch_bytes)
   : host_ctx(h_ctx), 
     device_ctx(d_ctx),
     max_bytes(bytes),
-    max_prefetch_length(prefetch_length),
+    max_prefetch_bytes(prefetch_bytes),
     synced_array_callback([&](SyncedArrayPtr saptr, 
                               const SyncedArrayCallbackTag sa_tag,
                               const dtypes dtype,
@@ -170,12 +170,12 @@ void SwapInOutScheduler::schedule() {
   */
   SyncedArrayCounts synced_array_counts;
 
-  size_t prefetch_length = 0; // clear is excluded.
   vector<bool> unprefetched(order.size(), false);
 
   int head = 0;
   int tail = 0;
-  size_t used_bytes_swap_in = 0;
+  size_t used_bytes_swap_in = 0; // not including unprefetched arrays
+  size_t prefetch_bytes = 0;     // including unprefetched arrays
   size_t used_bytes_swap_out = 0;
   auto last_function = func_block_ends.size();
   unordered_map<unsigned int, bool> host_uses_this_synced_array;
@@ -193,69 +193,29 @@ void SwapInOutScheduler::schedule() {
 
   // Calculate used GPU memory before forward starts,
   // and swap out if necessary.
-  calc_mem_usage_before_forward(head, prefetch_length, used_bytes_swap_in,
+  calc_mem_usage_before_forward(head, prefetch_bytes, used_bytes_swap_in,
                                 synced_array_counts);
-  schedule_swap_out(fid, used_bytes_swap_in, used_bytes_swap_out,
+  schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
                     synced_array_counts, swapped_out, swapped_out_r);
 
   // Forward, backward, update
   for (fid = 1; fid < last_function; fid++) {
-    // Update prefetch counts
-    size_t proceed = 0;
-    for (size_t i = (fid == 1 ? 0 : func_block_ends[fid - 2]);
-                i < func_block_ends[fid - 1];
-                i++) {
-      if (order[i].ctx.array_class == device_ctx.array_class) {
-        proceed++;
-      }
-    }
-    prefetch_length -= proceed;
-
-    //reserve_unprefetched_memory();
-    schedule_swap_in(true, head, tail, fid, prefetch_length, used_bytes_swap_in,
-      used_bytes_swap_out, synced_array_counts,
-      host_uses_this_synced_array, swapped_out, swapped_out_r,
-      canceled_swap_out, unprefetched);
-
-    for (auto i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
-      RecType *r = &order[i];
-
-      if (r->tag == RecTag::CLEAR) {
-        continue;
-      }
-
-      if (unprefetched[i]) {
-        auto array_bytes = r->size * sizeof_dtype(r->dtype);
-
-        while (max_bytes - used_bytes_swap_in - used_bytes_swap_out < array_bytes) {
-          if (tail == func_block_ends[fid - 1]) {
-            NBLA_ERROR(error_code::memory,
-              "Fetch of unprefetched array was failed due to out of memory. "
-              "Max prefetch length is too long.");
-          }
-
-          // Out of memory
-          // Wait for swap out and release memory
-          schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
-                                          swapped_out, swapped_out_r,
-                                          canceled_swap_out);
-        }
-
-        used_bytes_swap_in += array_bytes;
-      }
-    }
-
-    schedule_swap_in(false, head, tail, fid, prefetch_length, used_bytes_swap_in,
+    schedule_swap_in(false, head, tail, fid, prefetch_bytes, used_bytes_swap_in,
                      used_bytes_swap_out, synced_array_counts,
                      host_uses_this_synced_array, swapped_out, swapped_out_r,
                      canceled_swap_out, unprefetched);
+
+    reserve_unprefetched_memory(tail, fid, prefetch_bytes, used_bytes_swap_in,
+                                used_bytes_swap_out, swapped_out,
+                                swapped_out_r, canceled_swap_out, unprefetched);
+
 
     if (head < func_block_ends[fid]) {
       NBLA_ERROR(error_code::memory,
         "Some arrays were not prefetched probably due to out of GPU memory. ");
     }
 
-    schedule_swap_out(fid, used_bytes_swap_in, used_bytes_swap_out,
+    schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
                       synced_array_counts, swapped_out, swapped_out_r);
   }
 
@@ -290,6 +250,46 @@ int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
 }
 
 
+void SwapInOutScheduler::
+reserve_unprefetched_memory(int& tail, const int fid, size_t& prefetch_bytes,
+                            size_t& used_bytes_swap_in,
+                            size_t& used_bytes_swap_out,
+                            unordered_map<unsigned int, 
+                                      unordered_map<dtypes, bool>>& swapped_out,
+                            unordered_map<unsigned int, 
+                                          RecType*>& swapped_out_r,
+                            vector<RecType*>& canceled_swap_out,
+                            vector<bool>& unprefetched) {
+  for (auto i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
+    RecType *r = &order[i];
+
+    if (r->tag == RecTag::CLEAR) {
+      continue;
+    }
+
+    if (unprefetched[i]) {
+      auto array_bytes = r->size * sizeof_dtype(r->dtype);
+
+      while (max_bytes - used_bytes_swap_in 
+                       - used_bytes_swap_out < array_bytes) {
+        if (tail == func_block_ends[fid - 1]) {
+          NBLA_ERROR(error_code::memory,
+            "Fetch of unprefetched array was failed due to out of memory. "
+            "Max prefetch length is too long.");
+        }
+
+        // Out of memory
+        // Wait for swap out and release memory
+        schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
+                                        swapped_out, swapped_out_r,
+                                        canceled_swap_out);
+      }
+
+      used_bytes_swap_in += array_bytes;
+    }
+  }
+}
+
 void SwapInOutScheduler::check_which_is_host_func() {
   for (int fid = 0; fid < func_block_ends.size(); fid++) {
     bool host_func = false;
@@ -313,7 +313,7 @@ void SwapInOutScheduler::check_which_is_host_func() {
 
 
 void SwapInOutScheduler::
-calc_mem_usage_before_forward(int& head, size_t& prefetch_length,
+calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
                               size_t& used_bytes_swap_in,
                               SyncedArrayCounts& synced_array_counts) {
   while (head < func_block_ends[0]) {
@@ -331,12 +331,12 @@ calc_mem_usage_before_forward(int& head, size_t& prefetch_length,
       // First fetch
       if (synced_array_counts[r->said][r->dtype] == 0) {
         used_bytes_swap_in += array_bytes;
+        prefetch_bytes += array_bytes;
       }
 
       // Increment the number of the same SyncedArray in the queue.
       synced_array_counts[r->said][r->dtype]++;
       head++; // Move on the head of the queue
-      prefetch_length++;
     }
     else if (r->ctx.array_class == host_ctx.array_class) {
       // Because func_idx == 0 means all get/cast finished already
@@ -354,7 +354,8 @@ calc_mem_usage_before_forward(int& head, size_t& prefetch_length,
 
 
 void SwapInOutScheduler::
-schedule_swap_in(const bool pre, int& head, int& tail, const int fid, size_t& prefetch_length,
+schedule_swap_in(const bool pre, int& head, int& tail, const int fid, 
+                 size_t& prefetch_bytes,
                  size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
                  SyncedArrayCounts& synced_array_counts,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
@@ -371,18 +372,19 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid, size_t& pr
     }
     
     if (r->ctx.array_class == device_ctx.array_class) {
-      if (func_block_ends[fid] <= head && 
-        max_prefetch_length <= prefetch_length) {
+      if (max_prefetch_bytes < prefetch_bytes) {
+        // Out of prefetch memory
         break;
       }
 
       auto next_array_bytes = r->size * sizeof_dtype(r->dtype);
 
-      while (used_bytes_swap_in + used_bytes_swap_out + next_array_bytes
-             > max_bytes) {
+      // Swap out for prefetch
+      while (used_bytes_swap_in + used_bytes_swap_out 
+                                + next_array_bytes > max_bytes) {
         if (tail == func_block_ends[fid - 1]) {
           NBLA_ERROR(error_code::memory, 
-                     "Out of memory. Max prefetch length is too long.");
+                     "Out of memory. Max prefetch bytes is larger than max bytes.");
         }
 
         // Out of memory
@@ -435,12 +437,14 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid, size_t& pr
           // Increase memory usage
           used_bytes_swap_in += next_array_bytes;
         }
+
+        // Count prefetch bytes regardless of prefetched or unprefetched.
+        prefetch_bytes += next_array_bytes;
       }
 
       // Increment the number of the same SyncedArray in the queue.
       synced_array_counts[r->said][r->dtype]++;
       head++; // Move on the head of the queue
-      prefetch_length++;
     }
     else if (r->ctx.array_class == host_ctx.array_class) {
       // No need swap-in (prefetch) to CPU. The array will be gotten/casted 
@@ -471,7 +475,7 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid, size_t& pr
 
 
 void SwapInOutScheduler::
-schedule_swap_out(const int fid,
+schedule_swap_out(const int fid, size_t& prefetch_bytes,
                   size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
                   SyncedArrayCounts& synced_array_counts, 
                   unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
@@ -514,6 +518,7 @@ schedule_swap_out(const int fid,
         for (auto it : synced_array_counts[r->said]) {
           auto array_bytes = r->size * sizeof_dtype(it.first);
           used_bytes_swap_in -= array_bytes;
+          prefetch_bytes -= array_bytes;
         }
 
         // Reset usage
@@ -885,7 +890,7 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
 
   // Record the order
   order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx,
-                          in_func, write_only);// , write_only || first_creation});
+                          in_func, write_only});// || first_creation
 
   said_to_order_idx[said].push_back(order_idx);
   order_idx++;
