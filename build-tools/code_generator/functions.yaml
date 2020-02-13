@@ -331,7 +331,7 @@ Neural Network Layer:
 
       References:
 
-          * `F. Chollet: Chollet, Francois. "Xception: Deep Learning with Depthwise Separable Convolutions.
+          * `F. Chollet. Xception: Deep Learning with Depthwise Separable Convolutions.
             <https://arxiv.org/abs/1610.02357>`_
     inputs:
       x:
@@ -432,6 +432,11 @@ Neural Network Layer:
           sparser, by grouping connections along the mapping direction.
         type: int64
         default: '1'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: |2
@@ -447,6 +452,7 @@ Neural Network Layer:
           where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.  
     function_ids:
       iiIiIiIi: 3
+      iiIiIiIiB: 279
     c_runtime: support
   DepthwiseDeconvolution:
     snake_name: depthwise_deconvolution

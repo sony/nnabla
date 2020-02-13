@@ -23,7 +23,15 @@ from nbla_test_utils import list_context
 ctxs = list_context('Deconvolution')
 
 
-def ref_deconvolution(x, w, b, base_axis, pad, stride, dilation, group):
+def ref_deconvolution(x, w, b, base_axis, pad, stride, dilation, group,
+                      channel_last=False):
+    if channel_last:
+        transpose_x = refs.ChannelLastToFirstTranspose(x.ndim, len(pad))
+        transpose_w = refs.ChannelLastToFirstTranspose(w.ndim, len(pad))
+        return transpose_x.inv(
+                ref_deconvolution(transpose_x(x), transpose_w(w), b, base_axis,
+                                  pad, stride, dilation, group))
+
     y = []
     for xx in x.reshape((-1,) + x.shape[base_axis:]):
         y += [refs.deconvolution_2d(xx, w, b, pad, stride,
@@ -41,25 +49,35 @@ def ref_deconvolution(x, w, b, base_axis, pad, stride, dilation, group):
 @pytest.mark.parametrize("dilation", [(1, 1), (2, 2)])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
-def test_deconvolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                           dilation, group, with_bias, seed, ctx,
-                                           func_name):
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_deconvolution_2d_forward_backward(inshape, kernel, outmaps, pad,
+                                           stride, dilation, group, with_bias,
+                                           channel_last, seed, ctx, func_name):
     from nbla_test_utils import function_tester
 
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('channel_last=True is only supported in CUDNN backend.')
+    base_axis = len(inshape) - len(kernel) - 1
+    inmaps = inshape[base_axis]
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
     i = rng.randn(*inshape).astype(np.float32)
-    inmaps = inshape[-3]
     kshape = (inmaps,) + (outmaps // group,) + kernel
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
+        kshape = tuple(kshape[i] for i in t.inv_axes)
     k = rng.randn(*kshape).astype(np.float32)
     base_axis = len(inshape) - 3
     b = None
     if with_bias:
         b = rng.randn(outmaps).astype(np.float32)
     inputs = [i, k, b]
+    func_args = [base_axis, pad, stride, dilation, group, channel_last]
     function_tester(rng, F.deconvolution, ref_deconvolution, inputs,
-                    func_args=[base_axis, pad, stride, dilation, group],
-                    atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2,
-                    ctx=ctx, func_name=func_name)
+                    func_args=func_args, func_name=func_name, ctx=ctx,
+                    atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
