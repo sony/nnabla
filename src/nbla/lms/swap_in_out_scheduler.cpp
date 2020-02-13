@@ -600,43 +600,14 @@ void SwapInOutScheduler::schedule_preclear() {
     if (r->tag == RecTag::CLEAR) {
       clear_flag[r->said] = true;
     }
-    else if (clear_flag_out_func[r->said].first) {
-      // Preclear is scheduled in post-function hook.
-      if (r->in_func) {
-        preclear_schedule[fid].push_back(r);
-      }
-      clear_flag_out_func[r->said] = std::make_pair(false, fid);
-    }
-  }
-}
-/*
-void SwapInOutScheduler::schedule_preclear() {
-  unordered_map<unsigned int, bool> clear_flag;
-  int fid = func_block_ends.size() - 1;
-
-  for (int i = order.size() - 1; i >= 0; i--) {
-    RecType *r = &order[i];
-
-    if (i < func_block_ends[fid - 1]) {
-      fid--;
-    }
-
-    if (fid == 0) {
-      // fid == 0 is before the first pre-function hook.
-      // No chance to preclear.
-      break;
-    }
-
-    if (r->tag == RecTag::CLEAR) {
-      clear_flag[r->said] = true;
-    }
     else if (clear_flag[r->said]) {
       preclear_schedule[fid].push_back(r);
       clear_flag[r->said] = false;
     }
   }
 }
-*/
+
+
 void SwapInOutScheduler::cancel_swap_out(vector<RecType*>& canceled_swap_out) {
   for (int fid = 0; fid < func_block_ends.size(); fid++) {
     for (auto it = schedules_swap[fid].begin();
@@ -890,7 +861,7 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
 
   // Record the order
   order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx,
-                          in_func, write_only});// || first_creation
+                          write_only});// || first_creation
 
   said_to_order_idx[said].push_back(order_idx);
   order_idx++;
@@ -931,7 +902,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
   // Case 1: Over the current function block.
   if (order_idx >= func_block_ends[func_idx]) {
     wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
-                             false, false});
+                             false});
   }
   // Case 2: SyncedArray replacement in the same order
   else if (r.sawptr.expired() && // "expired" implies the replacement.
@@ -951,7 +922,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
            dtype != r.dtype ||
            ctx.array_class != r.ctx.array_class) {
    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
-                            false, false});
+                            false});
   }
 
   order_idx++;

@@ -106,7 +106,6 @@ class SwapInOutScheduler {
     const Size_t size;
     const dtypes dtype;
     const Context ctx;
-    const bool in_func;
     const bool no_data_transfer;
 
     bool swapped_out = false; // If true, the synced array was swapped out.
@@ -114,9 +113,9 @@ class SwapInOutScheduler {
 
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
             const Size_t size_, const dtypes dtype_, const Context ctx_,
-            const bool in_func_, const bool no_data_transfer_)
+            const bool no_data_transfer_)
     : tag(tag_), said(said_), sawptr(saptr_), 
-      size(size_), dtype(dtype_), ctx(ctx_), in_func(in_func_),
+      size(size_), dtype(dtype_), ctx(ctx_),
       no_data_transfer(no_data_transfer_) {}
   };
 
@@ -167,7 +166,6 @@ class SwapInOutScheduler {
     
   // Map: SyncedArrayPtr -> SyncedArray ID
   unordered_map<SyncedArrayPtr, unsigned int> said_map;
-
 
 
 public:
