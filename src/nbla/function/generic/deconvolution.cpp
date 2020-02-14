@@ -192,6 +192,7 @@ void Deconvolution<T>::forward_impl(const Variables &inputs,
       mx.colwise() += ConstColVectorMap<T>(b, channels_i_);
     }
   }
+  col_.data()->array()->clear();
 }
 
 template <class T>
@@ -279,5 +280,6 @@ void Deconvolution<T>::backward_impl(const Variables &inputs,
       *mdb += mdx.rowwise().sum();
     }
   }
+  col_.data()->array()->clear();
 }
 }
