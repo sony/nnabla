@@ -356,6 +356,7 @@ class OnnxExporter:
             "Affine": partial(self.BaseAffine, "Affine", '6x'),
             "MulScalar": partial(self.ElementWiseScalar, "Mul", "6x"),
             "AddScalar": partial(self.ElementWiseScalar, "Add", "6x"),
+            "Tanh": self.Tanh,
         }
         table_op_set_6_x = dict(table_op_set_6, **table_op_set_6_x)
 
@@ -2876,6 +2877,16 @@ class OnnxExporter:
                 n.attribute.extend([v])
             nl.append(n)
         return nl
+
+    def Tanh(self, func):
+        # add attr alpha&beta for Tanh, This is the attr necessary for SNPE to handle Tanh.
+        n = onnx.helper.make_node(
+            "Tanh",
+            func.input,
+            func.output,
+            alpha=1.0,
+            beta=1.0)
+        return [n]
 
     def set_network(self):
         if len(self._nnp.executor) != 1:
