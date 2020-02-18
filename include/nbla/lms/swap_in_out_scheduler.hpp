@@ -106,17 +106,19 @@ class SwapInOutScheduler {
     const Size_t size;
     const dtypes dtype;
     const Context ctx;
-    const bool no_data_transfer;
+    const bool write_only_cast;
+    bool first_creation;
 
     bool swapped_out = false; // If true, the synced array was swapped out.
     size_t swapped_out_bytes = 0;
 
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
             const Size_t size_, const dtypes dtype_, const Context ctx_,
-            const bool no_data_transfer_)
+            const bool write_only_cast_, const bool first_creation_)
     : tag(tag_), said(said_), sawptr(saptr_), 
       size(size_), dtype(dtype_), ctx(ctx_),
-      no_data_transfer(no_data_transfer_) {}
+      write_only_cast(write_only_cast_), 
+      first_creation(first_creation_) {}
   };
 
 
@@ -298,6 +300,9 @@ private:
                                    unordered_map<unsigned int, RecType*>& swapped_out_r,
                                    vector<RecType*>& canceled_swap_out,
                                    vector<bool>& unprefetched);
+
+  void reconfirm_first_creation();
+  bool no_data_transfer(const RecType* r);
 
 
   //---------------------------------------------------

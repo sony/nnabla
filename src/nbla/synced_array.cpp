@@ -65,7 +65,8 @@ Array *SyncedArray::cast(dtypes dtype, const Context &ctx,
 
 shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
                                        bool write_only, const int async_flags) {
-  const bool first_creation = zeroing_ || filling_;
+  // This array is created at first time.
+  const bool first_creation = (get_num_arrays() == 0);
 
   // 1. Create an array and/or synchronize with the head.
   head_ = sync(dtype, ctx, write_only, async_flags); // cast() changes head.
@@ -97,7 +98,8 @@ const Array *SyncedArray::get(dtypes dtype, const Context &ctx, const int async_
 
 shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
                                             const int async_flags) {
-  const bool first_creation = zeroing_ || filling_;
+  // This array is created at first time.
+  const bool first_creation = (get_num_arrays() == 0);
 
   ArrayDesc desc = sync(dtype, ctx, false, async_flags); // get() does not change head.
   array_[desc.key].second = true;    // Set as at-head.

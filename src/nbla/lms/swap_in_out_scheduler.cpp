@@ -163,6 +163,8 @@ void SwapInOutScheduler::post_update_callback() {
 //  Scheduler
 //----------------------------------------------------------------
 void SwapInOutScheduler::schedule() {
+  reconfirm_first_creation();
+
   /* This counts the number of same arrays in the queue.
      If count of an array > 0, no need to fetch the same array again.
      If count of an array > 1, no need to swap out the array because it is
@@ -240,6 +242,39 @@ void SwapInOutScheduler::schedule() {
   if (tail != order.size()) {
     NBLA_ERROR(error_code::unclassified, "tail != order.size()");
   }
+}
+
+
+/* Recorded array creations could be fake in the first iteration.
+   This method confirms true those first creation.
+*/
+void SwapInOutScheduler::reconfirm_first_creation() {
+  unordered_map<unsigned int, bool> cleared;
+
+  for (auto& r : order) {
+    if (r.tag == RecTag::CLEAR) {
+      cleared[r.said] = true;
+    }
+    else {
+      if (auto p = r.sawptr.lock()) {
+        // If an array is firstly created in the first iteration
+        // and it is not cleared at the end, then in the next iteration
+        // the array would be alive and not be newly created.
+        // This is fake.
+        // However, clear() can destroy the alive array even in the next
+        // iteration. Therefore the array creation just before clear()
+        // is true. This situation could occur after zero() or fill().
+        if (r.first_creation && p->get_num_arrays() > 0 && !cleared[r.said]) {
+          r.first_creation = false;
+        }
+      }
+    }
+  }
+}
+
+
+bool SwapInOutScheduler::no_data_transfer(const RecType* r) {
+  return (r->write_only_cast || r->first_creation);
 }
 
 
@@ -421,7 +456,7 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
             used_bytes_swap_in += next_array_bytes;
           }
           else {
-            if (r->no_data_transfer) {
+            if (no_data_transfer(r)) {
               // Prefetch is unnecessary because data transfer will not happen.
               unprefetched[head] = true;
             }
@@ -861,7 +896,7 @@ synced_array_callback_recorder(SyncedArrayPtr saptr,
 
   // Record the order
   order.push_back(RecType{tag, said, saptr, saptr->size(), dtype, ctx,
-                          write_only});// || first_creation
+                          write_only, first_creation});
 
   said_to_order_idx[said].push_back(order_idx);
   order_idx++;
@@ -902,7 +937,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
   // Case 1: Over the current function block.
   if (order_idx >= func_block_ends[func_idx]) {
     wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
-                             false});
+                             false, false});
   }
   // Case 2: SyncedArray replacement in the same order
   else if (r.sawptr.expired() && // "expired" implies the replacement.
@@ -922,7 +957,7 @@ synced_array_callback_tracer(SyncedArrayPtr saptr,
            dtype != r.dtype ||
            ctx.array_class != r.ctx.array_class) {
    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
-                            false});
+                            false, false});
   }
 
   order_idx++;
