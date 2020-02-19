@@ -165,83 +165,98 @@ void SwapInOutScheduler::post_update_callback() {
 void SwapInOutScheduler::schedule() {
   reconfirm_first_creation();
 
-  /* This counts the number of same arrays in the queue.
-     If count of an array > 0, no need to fetch the same array again.
-     If count of an array > 1, no need to swap out the array because it is
-     planed to be used in the queue.
-  */
-  SyncedArrayCounts synced_array_counts;
+  bool do_reschedule = false;
 
-  vector<bool> unprefetched(order.size(), false);
+  do {
+    /* This counts the number of same arrays in the queue.
+       If count of an array > 0, no need to fetch the same array again.
+       If count of an array > 1, no need to swap out the array because it is
+       planed to be used in the queue.
+    */
+    SyncedArrayCounts synced_array_counts;
 
-  int head = 0;
-  int tail = 0;
-  size_t used_bytes_swap_in = 0; // not including unprefetched arrays
-  size_t prefetch_bytes = 0;     // including unprefetched arrays
-  size_t used_bytes_swap_out = 0;
-  auto last_function = func_block_ends.size();
-  unordered_map<unsigned int, bool> host_uses_this_synced_array;
+    vector<bool> unprefetched(order.size(), false);
 
-  // They are used to remove uneccesary swap-out
-  unordered_map<unsigned int, unordered_map<dtypes, bool>> swapped_out;
-  unordered_map<unsigned int, RecType*> swapped_out_r;
-  vector<RecType*> canceled_swap_out;
+    int head = 0;
+    int tail = 0;
+    size_t used_bytes_swap_in = 0; // not including unprefetched arrays
+    size_t prefetch_bytes = 0;     // including unprefetched arrays
+    size_t used_bytes_swap_out = 0;
+    auto last_function = func_block_ends.size();
+    unordered_map<unsigned int, bool> host_uses_this_synced_array;
 
-  // Preclear schedule will be used in swap-out schedule.
-  schedule_preclear();
+    // They are used to remove uneccesary swap-out
+    unordered_map<unsigned int, unordered_map<dtypes, bool>> swapped_out;
+    unordered_map<unsigned int, RecType*> swapped_out_r;
+    vector<RecType*> canceled_swap_out;
 
-  // Virtually iterate all layer functions and solver update
-  int fid = 0;
+    // Using for prefetch cancel
+    vector<unsigned int> prefetch_stopper(order.size(), 1);
 
-  // Calculate used GPU memory before forward starts,
-  // and swap out if necessary.
-  calc_mem_usage_before_forward(head, prefetch_bytes, used_bytes_swap_in,
-                                synced_array_counts);
-  schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
-                    synced_array_counts, swapped_out, swapped_out_r);
+    // Preclear schedule will be used in swap-out schedule.
+    schedule_preclear();
 
-  // Forward, backward, update
-  for (fid = 1; fid < last_function; fid++) {
-    schedule_swap_in(false, head, tail, fid, prefetch_bytes, used_bytes_swap_in,
-                     used_bytes_swap_out, synced_array_counts,
-                     host_uses_this_synced_array, swapped_out, swapped_out_r,
-                     canceled_swap_out, unprefetched);
+    // Virtually iterate all layer functions and solver update
+    int fid = 0;
 
-    reserve_unprefetched_memory(tail, fid, prefetch_bytes, used_bytes_swap_in,
-                                used_bytes_swap_out, swapped_out,
-                                swapped_out_r, canceled_swap_out, unprefetched);
-
-
-    if (head < func_block_ends[fid]) {
-      NBLA_ERROR(error_code::memory,
-        "Some arrays were not prefetched probably due to out of GPU memory. ");
-    }
-
+    // Calculate used GPU memory before forward starts,
+    // and swap out if necessary.
+    calc_mem_usage_before_forward(head, prefetch_bytes, used_bytes_swap_in,
+                                  synced_array_counts);
     schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
                       synced_array_counts, swapped_out, swapped_out_r);
-  }
 
-  fid = last_function - 1;
-  schedule_wait_for_all_swap_out(fid, tail, used_bytes_swap_out, swapped_out,
-                                 swapped_out_r, canceled_swap_out);
+    // Forward, backward, update
+    for (fid = 1; fid < last_function; fid++) {
+      schedule_swap_in(false, head, tail, fid, prefetch_bytes, used_bytes_swap_in,
+                       used_bytes_swap_out, synced_array_counts,
+                       host_uses_this_synced_array, swapped_out, swapped_out_r,
+                       canceled_swap_out, unprefetched, prefetch_stopper);
 
-  cancel_swap_out(canceled_swap_out);
+      do_reschedule =
+        reserve_unprefetched_memory(head, tail, fid, prefetch_bytes, used_bytes_swap_in,
+                                    used_bytes_swap_out, synced_array_counts, 
+                                    swapped_out, swapped_out_r, canceled_swap_out, 
+                                    unprefetched, prefetch_stopper);
 
-  check_which_is_host_func();
+      if (do_reschedule) {
+        continue;
+      }
 
-  // Debug
-  if (used_bytes_swap_in != 0) {
-    NBLA_ERROR(error_code::unclassified, "used_bytes_swap_in != 0");
-  }
-  if (used_bytes_swap_out != 0) {
-    NBLA_ERROR(error_code::unclassified, "used_bytes_swap_out != 0");
-  }
-  if (head != order.size()) {
-    NBLA_ERROR(error_code::unclassified, "head != order.size()");
-  }
-  if (tail != order.size()) {
-    NBLA_ERROR(error_code::unclassified, "tail != order.size()");
-  }
+      if (head < func_block_ends[fid]) {
+        NBLA_ERROR(error_code::memory,
+          "Some arrays were not prefetched probably due to out of GPU memory.");
+      }
+
+      schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
+                        synced_array_counts, swapped_out, swapped_out_r);
+    }
+
+    fid = last_function - 1;
+    schedule_wait_for_all_swap_out(fid, tail, used_bytes_swap_out, swapped_out,
+                                   swapped_out_r, canceled_swap_out);
+
+    cancel_swap_out(canceled_swap_out);
+
+    check_which_is_host_func();
+
+    // The end of schedule
+    do_reschedule = false;
+
+    // Debug
+    if (used_bytes_swap_in != 0) {
+      NBLA_ERROR(error_code::unclassified, "used_bytes_swap_in != 0");
+    }
+    if (used_bytes_swap_out != 0) {
+      NBLA_ERROR(error_code::unclassified, "used_bytes_swap_out != 0");
+    }
+    if (head != order.size()) {
+      NBLA_ERROR(error_code::unclassified, "head != order.size()");
+    }
+    if (tail != order.size()) {
+      NBLA_ERROR(error_code::unclassified, "tail != order.size()");
+    }
+  }  while (do_reschedule);
 }
 
 
@@ -286,15 +301,73 @@ int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
 
 
 void SwapInOutScheduler::
-reserve_unprefetched_memory(int& tail, const int fid, size_t& prefetch_bytes,
+backtrack_with_prefetch_cancel(int& head, const int fid,
+                               const size_t unprefetched_bytes,
+                               SyncedArrayCounts& synced_array_counts,
+                               vector<unsigned int>& prefetch_stopper) {
+  size_t cancel_bytes = 0;
+  auto back_head = head;
+  auto back_synced_array_counts = synced_array_counts;
+  int back_fid = 0;
+
+  for (int i = 0; i < func_block_ends.size(); i++) {
+    if (head < func_block_ends[i]) {
+      back_fid = i;
+    }
+  }
+
+  while (back_head >= func_block_ends[fid]) {
+    back_head--; // decrement first because head indicates the next prefetch array.
+
+    if (back_head < func_block_ends[back_fid - 1]) {
+      back_fid--;
+    }
+
+    RecType *r = &order[back_head];
+
+    if (r->tag == RecTag::CLEAR) {
+      continue;
+    }
+
+    if (r->ctx.array_class == device_ctx.array_class) {
+      if (accumulate_counts(back_synced_array_counts[r->said]) == 1) {
+        // Release memory
+        for (auto it : back_synced_array_counts[r->said]) {
+          cancel_bytes += r->size * sizeof_dtype(it.first);
+        }
+        prefetch_stopper[back_head] = fid + 1;
+      }
+
+      if (cancel_bytes >= unprefetched_bytes) {
+        // Ccanceled enough.
+        break;
+      }
+
+      back_synced_array_counts[r->said][r->dtype]--;
+    }
+  }
+
+  if (cancel_bytes < unprefetched_bytes) {
+    NBLA_ERROR(error_code::memory, "A function is out of memory.");
+  }
+}
+
+
+bool SwapInOutScheduler::
+reserve_unprefetched_memory(int& head, int& tail, const int fid,
+                            size_t& prefetch_bytes,
                             size_t& used_bytes_swap_in,
                             size_t& used_bytes_swap_out,
+                            SyncedArrayCounts synced_array_counts,
                             unordered_map<unsigned int, 
                                       unordered_map<dtypes, bool>>& swapped_out,
                             unordered_map<unsigned int, 
                                           RecType*>& swapped_out_r,
                             vector<RecType*>& canceled_swap_out,
-                            vector<bool>& unprefetched) {
+                            vector<bool>& unprefetched,
+                            vector<unsigned int>& prefetch_stopper) {
+  size_t unprefetched_bytes = 0;
+
   for (auto i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
     RecType *r = &order[i];
 
@@ -302,28 +375,32 @@ reserve_unprefetched_memory(int& tail, const int fid, size_t& prefetch_bytes,
       continue;
     }
 
-    if (unprefetched[i]) {
-      auto array_bytes = r->size * sizeof_dtype(r->dtype);
-
-      while (max_bytes - used_bytes_swap_in 
-                       - used_bytes_swap_out < array_bytes) {
-        if (tail == func_block_ends[fid - 1]) {
-          NBLA_ERROR(error_code::memory,
-            "Fetch of unprefetched array was failed due to out of memory. "
-            "Max prefetch length is too long.");
-        }
-
-        // Out of memory
-        // Wait for swap out and release memory
-        schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
-                                        swapped_out, swapped_out_r,
-                                        canceled_swap_out);
-      }
-
-      used_bytes_swap_in += array_bytes;
+    if (r->ctx.array_class == device_ctx.array_class && unprefetched[i]) {
+      unprefetched_bytes += r->size * sizeof_dtype(r->dtype);
     }
   }
+
+  while (max_bytes - used_bytes_swap_in - used_bytes_swap_out
+                                        < unprefetched_bytes) {
+    if (tail == func_block_ends[fid - 1]) {
+      // Out of memory, do backtrack with prefetch cancel and reschedule.
+      backtrack_with_prefetch_cancel(head, fid, unprefetched_bytes,
+                                     synced_array_counts, prefetch_stopper);
+      return true;
+    }
+
+    // Wait for swap out and release memory
+    schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
+                                    swapped_out, swapped_out_r,
+                                    canceled_swap_out);
+  }
+
+  // Memory for unprefetched arrays became available.
+  used_bytes_swap_in += unprefetched_bytes;
+
+  return false;
 }
+
 
 void SwapInOutScheduler::check_which_is_host_func() {
   for (int fid = 0; fid < func_block_ends.size(); fid++) {
@@ -397,7 +474,8 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
                  unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                  unordered_map<unsigned int, RecType*>& swapped_out_r,
                  vector<RecType*>& canceled_swap_out, 
-                 vector<bool>& unprefetched) {
+                 vector<bool>& unprefetched, 
+                 const vector<unsigned int> prefetch_stopper) {
   while (head < (pre ? func_block_ends[fid] : order.size())) {
     RecType *r = &order[head];
 
@@ -407,6 +485,11 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
     }
     
     if (r->ctx.array_class == device_ctx.array_class) {
+      if (prefetch_stopper[head] > fid) {
+        // Prefetch must be stopped to avoid out-of-memory in the future.
+        break;
+      }
+
       if (max_prefetch_bytes < prefetch_bytes) {
         // Out of prefetch memory
         break;
@@ -418,8 +501,8 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
       while (used_bytes_swap_in + used_bytes_swap_out 
                                 + next_array_bytes > max_bytes) {
         if (tail == func_block_ends[fid - 1]) {
-          NBLA_ERROR(error_code::memory, 
-                     "Out of memory. Max prefetch bytes is larger than max bytes.");
+          // No memory for more prefetch. 
+          break;
         }
 
         // Out of memory

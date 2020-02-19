@@ -267,7 +267,8 @@ private:
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out, 
-    vector<bool>& unprefetched);
+    vector<bool>& unprefetched,
+    const vector<unsigned int> prefetch_stopper);
   
   void schedule_swap_out
    (const int fid, size_t& prefetch_bytes, 
@@ -292,18 +293,24 @@ private:
 
   void cancel_swap_out(vector<RecType*>& canceled_swap_out);
 
-  void reserve_unprefetched_memory(int& tail, const int fid, 
+  // Return a flag to decide whether to do reschedule.
+  bool reserve_unprefetched_memory(int& head, int& tail, const int fid,
                                    size_t& prefetch_bytes,
                                    size_t& used_bytes_swap_in,
                                    size_t& used_bytes_swap_out,
+                                   SyncedArrayCounts synced_array_counts,
                                    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                                    unordered_map<unsigned int, RecType*>& swapped_out_r,
                                    vector<RecType*>& canceled_swap_out,
-                                   vector<bool>& unprefetched);
+                                   vector<bool>& unprefetched,
+                                   vector<unsigned int>& prefetch_stopper);
 
   void reconfirm_first_creation();
   bool no_data_transfer(const RecType* r);
-
+  void backtrack_with_prefetch_cancel(int& head, const int fid,
+                                      const size_t unprefetched_bytes,
+                                      SyncedArrayCounts& synced_array_counts,
+                                      vector<unsigned int>& prefetch_stopper);
 
   //---------------------------------------------------
   //               Swap in/out
