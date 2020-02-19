@@ -241,11 +241,19 @@ private:
     }
   };
 
+  enum class ArrayPlace { IN, OUT, CLEARED, OTHERS };
+
+  struct ArrayState {
+    int count = 0;
+    ArrayPlace place = ArrayPlace::CLEARED;
+  };
+
   // Execute swap in/out, wait, and preclear on a schedule.
   void run_on_schedule();
 
   // Rename of long types to shorter
-  using SyncedArrayCounts = unordered_map<unsigned int, unordered_map<dtypes, int>>;
+  using SyncedArrayStates = unordered_map<unsigned int, 
+                                          unordered_map<dtypes, ArrayState>>;
 
   // Schedules
   unordered_map<int, vector<ScheduleType>> schedules_swap;
@@ -257,12 +265,12 @@ private:
   // Subprocesses of shcedule()
   void calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
                                      size_t& used_bytes_swap_in,
-                                     SyncedArrayCounts& synced_array_counts);
+                                     SyncedArrayStates& synced_array_counts);
   
   void schedule_swap_in
    (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_bytes,
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-    SyncedArrayCounts& synced_array_counts,
+    SyncedArrayStates& synced_array_counts,
     unordered_map<unsigned int, bool>& host_uses_this_synced_array,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
@@ -273,7 +281,7 @@ private:
   void schedule_swap_out
    (const int fid, size_t& prefetch_bytes, 
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-    SyncedArrayCounts& synced_array_counts,
+    SyncedArrayStates& synced_array_counts,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r);
   
@@ -298,7 +306,7 @@ private:
                                    size_t& prefetch_bytes,
                                    size_t& used_bytes_swap_in,
                                    size_t& used_bytes_swap_out,
-                                   SyncedArrayCounts synced_array_counts,
+                                   SyncedArrayStates synced_array_counts,
                                    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                                    unordered_map<unsigned int, RecType*>& swapped_out_r,
                                    vector<RecType*>& canceled_swap_out,
@@ -309,8 +317,10 @@ private:
   bool no_data_transfer(const RecType* r);
   void backtrack_with_prefetch_cancel(int& head, const int fid,
                                       const size_t unprefetched_bytes,
-                                      SyncedArrayCounts& synced_array_counts,
+                                      SyncedArrayStates& synced_array_counts,
                                       vector<unsigned int>& prefetch_stopper);
+
+  int accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map);
 
   //---------------------------------------------------
   //               Swap in/out

@@ -173,7 +173,8 @@ void SwapInOutScheduler::schedule() {
        If count of an array > 1, no need to swap out the array because it is
        planed to be used in the queue.
     */
-    SyncedArrayCounts synced_array_counts;
+    SyncedArrayStates synced_array_states;
+    
 
     vector<bool> unprefetched(order.size(), false);
 
@@ -202,20 +203,20 @@ void SwapInOutScheduler::schedule() {
     // Calculate used GPU memory before forward starts,
     // and swap out if necessary.
     calc_mem_usage_before_forward(head, prefetch_bytes, used_bytes_swap_in,
-                                  synced_array_counts);
+                                  synced_array_states);
     schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
-                      synced_array_counts, swapped_out, swapped_out_r);
+                      synced_array_states, swapped_out, swapped_out_r);
 
     // Forward, backward, update
     for (fid = 1; fid < last_function; fid++) {
       schedule_swap_in(false, head, tail, fid, prefetch_bytes, used_bytes_swap_in,
-                       used_bytes_swap_out, synced_array_counts,
+                       used_bytes_swap_out, synced_array_states,
                        host_uses_this_synced_array, swapped_out, swapped_out_r,
                        canceled_swap_out, unprefetched, prefetch_stopper);
 
       do_reschedule =
         reserve_unprefetched_memory(head, tail, fid, prefetch_bytes, used_bytes_swap_in,
-                                    used_bytes_swap_out, synced_array_counts, 
+                                    used_bytes_swap_out, synced_array_states, 
                                     swapped_out, swapped_out_r, canceled_swap_out, 
                                     unprefetched, prefetch_stopper);
 
@@ -229,7 +230,7 @@ void SwapInOutScheduler::schedule() {
       }
 
       schedule_swap_out(fid, prefetch_bytes, used_bytes_swap_in, used_bytes_swap_out,
-                        synced_array_counts, swapped_out, swapped_out_r);
+                        synced_array_states, swapped_out, swapped_out_r);
     }
 
     fid = last_function - 1;
@@ -293,21 +294,22 @@ bool SwapInOutScheduler::no_data_transfer(const RecType* r) {
 }
 
 
-int accumulate_counts(const unordered_map<dtypes, int>& count_map) {
+int SwapInOutScheduler::
+accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map) {
   return accumulate(count_map.begin(), count_map.end(), 0,
-    [](int value, const unordered_map<dtypes, int>::value_type& p)
-    { return value + p.second; });
+    [](int value, const unordered_map<dtypes, ArrayState>::value_type& p)
+    { return value + p.second.count; });
 }
 
 
 void SwapInOutScheduler::
 backtrack_with_prefetch_cancel(int& head, const int fid,
                                const size_t unprefetched_bytes,
-                               SyncedArrayCounts& synced_array_counts,
+                               SyncedArrayStates& synced_array_states,
                                vector<unsigned int>& prefetch_stopper) {
   size_t cancel_bytes = 0;
   auto back_head = head;
-  auto back_synced_array_counts = synced_array_counts;
+  auto back_synced_array_states = synced_array_states;
   int back_fid = 0;
 
   for (int i = 0; i < func_block_ends.size(); i++) {
@@ -330,9 +332,9 @@ backtrack_with_prefetch_cancel(int& head, const int fid,
     }
 
     if (r->ctx.array_class == device_ctx.array_class) {
-      if (accumulate_counts(back_synced_array_counts[r->said]) == 1) {
+      if (accumulate_counts(back_synced_array_states[r->said]) == 1) {
         // Release memory
-        for (auto it : back_synced_array_counts[r->said]) {
+        for (auto it : back_synced_array_states[r->said]) {
           cancel_bytes += r->size * sizeof_dtype(it.first);
         }
         prefetch_stopper[back_head] = fid + 1;
@@ -343,7 +345,7 @@ backtrack_with_prefetch_cancel(int& head, const int fid,
         break;
       }
 
-      back_synced_array_counts[r->said][r->dtype]--;
+      back_synced_array_states[r->said][r->dtype].count--;
     }
   }
 
@@ -358,7 +360,7 @@ reserve_unprefetched_memory(int& head, int& tail, const int fid,
                             size_t& prefetch_bytes,
                             size_t& used_bytes_swap_in,
                             size_t& used_bytes_swap_out,
-                            SyncedArrayCounts synced_array_counts,
+                            SyncedArrayStates synced_array_states,
                             unordered_map<unsigned int, 
                                       unordered_map<dtypes, bool>>& swapped_out,
                             unordered_map<unsigned int, 
@@ -385,7 +387,7 @@ reserve_unprefetched_memory(int& head, int& tail, const int fid,
     if (tail == func_block_ends[fid - 1]) {
       // Out of memory, do backtrack with prefetch cancel and reschedule.
       backtrack_with_prefetch_cancel(head, fid, unprefetched_bytes,
-                                     synced_array_counts, prefetch_stopper);
+                                     synced_array_states, prefetch_stopper);
       return true;
     }
 
@@ -427,7 +429,7 @@ void SwapInOutScheduler::check_which_is_host_func() {
 void SwapInOutScheduler::
 calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
                               size_t& used_bytes_swap_in,
-                              SyncedArrayCounts& synced_array_counts) {
+                              SyncedArrayStates& synced_array_states) {
   while (head < func_block_ends[0]) {
     RecType *r = &order[head];
 
@@ -441,13 +443,13 @@ calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
       auto array_bytes = r->size * sizeof_dtype(r->dtype);
 
       // First fetch
-      if (synced_array_counts[r->said][r->dtype] == 0) {
+      if (synced_array_states[r->said][r->dtype].count == 0) {
         used_bytes_swap_in += array_bytes;
         prefetch_bytes += array_bytes;
       }
 
       // Increment the number of the same SyncedArray in the queue.
-      synced_array_counts[r->said][r->dtype]++;
+      synced_array_states[r->said][r->dtype].count++;
       head++; // Move on the head of the queue
     }
     else if (r->ctx.array_class == host_ctx.array_class) {
@@ -469,7 +471,7 @@ void SwapInOutScheduler::
 schedule_swap_in(const bool pre, int& head, int& tail, const int fid, 
                  size_t& prefetch_bytes,
                  size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-                 SyncedArrayCounts& synced_array_counts,
+                 SyncedArrayStates& synced_array_states,
                  unordered_map<unsigned int, bool>& host_uses_this_synced_array,
                  unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                  unordered_map<unsigned int, RecType*>& swapped_out_r,
@@ -513,7 +515,7 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
       }
 
       // Fetch
-      if (synced_array_counts[r->said][r->dtype] == 0) {
+      if (synced_array_states[r->said][r->dtype].count == 0) {
         // The array is firstly appeared in the queue.
 
         if (!host_uses_this_synced_array[r->said]) {
@@ -561,7 +563,7 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
       }
 
       // Increment the number of the same SyncedArray in the queue.
-      synced_array_counts[r->said][r->dtype]++;
+      synced_array_states[r->said][r->dtype].count++;
       head++; // Move on the head of the queue
     }
     else if (r->ctx.array_class == host_ctx.array_class) {
@@ -595,7 +597,7 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
 void SwapInOutScheduler::
 schedule_swap_out(const int fid, size_t& prefetch_bytes,
                   size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-                  SyncedArrayCounts& synced_array_counts, 
+                  SyncedArrayStates& synced_array_states, 
                   unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                   unordered_map<unsigned int, RecType*>& swapped_out_r) {
   for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
@@ -608,7 +610,7 @@ schedule_swap_out(const int fid, size_t& prefetch_bytes,
     }
 
     if (r->ctx.array_class == device_ctx.array_class) { 
-      if (accumulate_counts(synced_array_counts[r->said]) == 1) {
+      if (accumulate_counts(synced_array_states[r->said]) == 1) {
         // An array is swapped out when the same array is no longer
         // in the queue.
         if (std::find(preclear_schedule[fid].begin(), 
@@ -623,7 +625,7 @@ schedule_swap_out(const int fid, size_t& prefetch_bytes,
           // Transfer memory usage of all types
           r->swapped_out_bytes = 0;
 
-          for (auto it : synced_array_counts[r->said]) {
+          for (auto it : synced_array_states[r->said]) {
             swapped_out[r->said][it.first] = true;
 
             auto array_bytes = r->size * sizeof_dtype(it.first);
@@ -633,18 +635,18 @@ schedule_swap_out(const int fid, size_t& prefetch_bytes,
         }
 
         // Transfer memory usage of all types
-        for (auto it : synced_array_counts[r->said]) {
+        for (auto it : synced_array_states[r->said]) {
           auto array_bytes = r->size * sizeof_dtype(it.first);
           used_bytes_swap_in -= array_bytes;
           prefetch_bytes -= array_bytes;
         }
 
         // Reset usage
-        synced_array_counts[r->said].clear();
+        synced_array_states[r->said].clear();
       }
       else {
         // Decrease the counts of a used array in the queue.
-        synced_array_counts[r->said][r->dtype]--;
+        synced_array_states[r->said][r->dtype].count--;
       }
     }
     else if (r->ctx.array_class != host_ctx.array_class) {
@@ -827,7 +829,7 @@ void SwapInOutScheduler::run_on_schedule() {
 // In the first iteration, arrays used in a function are always swapped out.
 void SwapInOutScheduler::swap_out_first_iter() {
   // Counts SyncedArrays which were used in the previous function.
-  SyncedArrayCounts synced_array_counts;
+  SyncedArrayStates synced_array_states;
   const int start_idx = func_idx == 0 ? 0 : func_block_ends[func_idx - 1];
 
   for (int i = start_idx; i < func_block_ends[func_idx]; i++) {
@@ -835,7 +837,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
     if (r->tag == RecTag::CLEAR) continue;
 
     if (r->ctx.array_class == device_ctx.array_class) {
-      synced_array_counts[r->said][r->dtype]++;
+      synced_array_states[r->said][r->dtype].count++;
     }
     else if (r->ctx.array_class != host_ctx.array_class) {
       // Get/cast of an array on an uncertain device
@@ -849,7 +851,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
     if (r->tag == RecTag::CLEAR) continue;
 
     if (r->ctx.array_class == device_ctx.array_class) {
-      if (accumulate_counts(synced_array_counts[r->said]) == 1) {
+      if (accumulate_counts(synced_array_states[r->said]) == 1) {
         auto p = r->sawptr.lock();
 
         if (p && is_not_cleared_yet(p)) {
@@ -860,17 +862,17 @@ void SwapInOutScheduler::swap_out_first_iter() {
           // Counts memory usage of all types
           r->swapped_out_bytes = 0;
 
-          for (auto it : synced_array_counts[r->said]) {
+          for (auto it : synced_array_states[r->said]) {
             auto array_bytes = r->size * sizeof_dtype(it.first);
             used_bytes_swap_out_first_iter += array_bytes;
             r->swapped_out_bytes += array_bytes;
           }
         }
 
-        synced_array_counts[r->said].clear();
+        synced_array_states[r->said].clear();
       }
       else {
-        synced_array_counts[r->said][r->dtype]--;
+        synced_array_states[r->said][r->dtype].count--;
       }
     }
   }
