@@ -241,11 +241,11 @@ private:
     }
   };
 
-  enum class ArrayPlace { IN, OUT, CLEARED, OTHERS };
+  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, OUT_WAITED };
 
   struct ArrayState {
     int count = 0;
-    ArrayPlace place = ArrayPlace::CLEARED;
+    ArrayStateTag state = ArrayStateTag::CLEARED;
   };
 
   // Execute swap in/out, wait, and preclear on a schedule.
@@ -289,13 +289,15 @@ private:
    (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out);
+    vector<RecType*>& canceled_swap_out,
+    SyncedArrayStates& synced_array_states);
   
   void schedule_wait_for_swap_out_impl
    (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out);
+    vector<RecType*>& canceled_swap_out,
+    SyncedArrayStates& synced_array_states);
   
   void schedule_preclear();
 
@@ -306,7 +308,7 @@ private:
                                    size_t& prefetch_bytes,
                                    size_t& used_bytes_swap_in,
                                    size_t& used_bytes_swap_out,
-                                   SyncedArrayStates synced_array_counts,
+                                   SyncedArrayStates& synced_array_counts,
                                    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                                    unordered_map<unsigned int, RecType*>& swapped_out_r,
                                    vector<RecType*>& canceled_swap_out,
@@ -318,7 +320,8 @@ private:
   void backtrack_with_prefetch_cancel(int& head, const int fid,
                                       const size_t unprefetched_bytes,
                                       SyncedArrayStates& synced_array_counts,
-                                      vector<unsigned int>& prefetch_stopper);
+                                      vector<unsigned int>& prefetch_stopper,
+                                      size_t available_bytes);
 
   int accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map);
 
