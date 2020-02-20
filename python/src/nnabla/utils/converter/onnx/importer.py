@@ -460,6 +460,7 @@ class OnnxImporter:
         self._removed_outputs = []  # list of output buffers that was removed
         self._func_counter = {}  # a counter for all functions
         self._shape_output = {}  # The shape of the output that all functions
+        self._cast_node = {}  # Dict holding Cast node info, format: {output:input}
 
         # Dictionary used to convert ONNX op_type to processing method of NNabla function
         # opset_6 default op table
@@ -540,6 +541,10 @@ class OnnxImporter:
             "Hardmax": self.Hardmax,
             "InstanceNormalization": self.InstanceNormalization,
             "ReduceSumSquare": self.ReduceSumSquare,
+            # Currently, Cast does not get converted to a function
+            # but we list it here so we can accept it
+            "Cast": self.Cast,
+            "Gather": self.Gather,
         }
 
         # opset_7 table
@@ -631,6 +636,8 @@ class OnnxImporter:
 
     def get_func_input_shape(self, input_name):
         input_shape = []
+        if input_name in self._cast_node:
+            input_name = self._cast_node[input_name]
         if input_name in self._shape_output:
             input_shape.extend(self._shape_output[input_name])
         else:
@@ -2782,6 +2789,55 @@ class OnnxImporter:
         self._shape_output[n.output[0]] = output_shape
         func_list.append(sum_func)
 
+    def Cast(self, func_list, n):
+        # Save Cast Node Information, No need to add any function.
+        self._cast_node[n.output[0]] = n.input[0]
+        self._removed_outputs.append(n.output[0])
+
+    def Gather(self, func_list, n):
+        # Convert to Slice + Concatenate
+        input_shape = self.get_func_input_shape(n.input[0])
+        axis = 0
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.i < 0:
+                    axis = len(input_shape) + attr.i
+                else:
+                    axis = attr.i
+
+        indices = self.get_input_raw_data(n.input[1], TensorProto.INT64)
+        indices = [input_shape[axis] + index if index <
+                   0 else index for index in indices]
+
+        slice_outs = []
+        start = [0] * len(input_shape)
+        stop = input_shape[:]
+        step = [1] * len(input_shape)
+        for index in indices:
+            start[axis] = index
+            stop[axis] = index + 1
+            slice_out = n.input[0]+"_slice_"+str(index)
+            func = self.generate_default_function("Slice", n)
+            del func.input[1]
+            func.output[0] = slice_out
+            sp = func.slice_param
+            sp.start.extend(start)
+            sp.stop.extend(stop)
+            sp.step.extend(step)
+            slice_outs.append(slice_out)
+            self._shape_output[slice_out] = [
+                1 if index == axis else i for index, i in enumerate(input_shape)]
+            func_list.append(func)
+
+        func = self.generate_default_function("Concatenate", n)
+        del func.input[:]
+        func.input.extend(slice_outs)
+        concatenate_p = func.concatenate_param
+        concatenate_p.axis = axis
+        self._shape_output[n.output[0]] = [
+            len(indices) if index == axis else i for index, i in enumerate(input_shape)]
+        func_list.append(func)
+
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
         if ft is None:
@@ -2805,8 +2861,11 @@ class OnnxImporter:
 
         # Gather all unique names for input and output
         for f in network.function:
-            for i in f.input:
-                self._all_vars[i] = None
+            for index, i in enumerate(f.input):
+                if i in self._cast_node:
+                    f.input[index] = self._cast_node[i]
+                else:
+                    self._all_vars[i] = None
             for o in f.output:
                 self._all_vars[o] = None
 
