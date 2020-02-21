@@ -756,7 +756,7 @@ void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
                                   r) == canceled_swap_out.end()) {
     // Not canceled swap out
     // Wait for finishing swap out and release the source array of memory copy.
-    schedules_swap[fid + 1].push_back(ScheduleType(ScheduleTag::WAIT, r));
+    schedules_swap[fid].push_back(ScheduleType(ScheduleTag::WAIT, r));
 
     // Decrease memory usage
     r->swapped_out = false;
