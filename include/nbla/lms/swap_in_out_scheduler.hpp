@@ -225,7 +225,7 @@ private:
   //---------------------------------------------------
   //                   Scheduler
   //---------------------------------------------------
-  enum class ScheduleTag { SWAP_IN, SWAP_OUT, WAIT };
+  enum class ScheduleTag { SWAP_IN, SWAP_OUT, WAIT, PRECLEAR };
 
   struct ScheduleType {
     ScheduleTag tag;
@@ -249,15 +249,17 @@ private:
   };
 
   // Execute swap in/out, wait, and preclear on a schedule.
-  void run_on_schedule();
+  void run_on_beginning_schedule();
+  void run_on_end_schedule();
+  void run(const ScheduleType& s);
 
   // Rename of long types to shorter
   using SyncedArrayStates = unordered_map<unsigned int, 
                                           unordered_map<dtypes, ArrayState>>;
 
   // Schedules
-  unordered_map<int, vector<ScheduleType>> schedules_swap;
-  unordered_map<int, vector<RecType*>> preclear_schedule;
+  unordered_map<int, vector<ScheduleType>> beginning_schedules;
+  unordered_map<int, vector<ScheduleType>> end_schedules;
 
   // Main function
   void schedule();
@@ -265,13 +267,13 @@ private:
   // Subprocesses of shcedule()
   void calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
                                      size_t& used_bytes_swap_in,
-                                     SyncedArrayStates& synced_array_counts);
+                                     SyncedArrayStates& sa_states);
   
   void schedule_swap_in
    (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_bytes,
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-    SyncedArrayStates& synced_array_counts,
-    unordered_map<unsigned int, bool>& host_uses_this_synced_array,
+    SyncedArrayStates& sa_states,
+    unordered_map<unsigned int, bool>& host_uses_this_sa,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out, 
@@ -281,25 +283,26 @@ private:
   void schedule_swap_out
    (const int fid, size_t& prefetch_bytes, 
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-    SyncedArrayStates& synced_array_counts,
+    SyncedArrayStates& sa_states,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r);
+    unordered_map<unsigned int, RecType*>& swapped_out_r,
+    unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info);
   
   void schedule_wait_for_all_swap_out
    (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out,
-    SyncedArrayStates& synced_array_states);
+    SyncedArrayStates& sa_states);
   
   void schedule_wait_for_swap_out_impl
    (const int fid, int& tail, size_t& used_bytes_swap_out,
     unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
     unordered_map<unsigned int, RecType*>& swapped_out_r,
     vector<RecType*>& canceled_swap_out,
-    SyncedArrayStates& synced_array_states);
+    SyncedArrayStates& sa_states);
   
-  void schedule_preclear();
+  void schedule_preclear(unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info);
 
   void cancel_swap_out(vector<RecType*>& canceled_swap_out);
 
@@ -308,7 +311,7 @@ private:
                                    size_t& prefetch_bytes,
                                    size_t& used_bytes_swap_in,
                                    size_t& used_bytes_swap_out,
-                                   SyncedArrayStates& synced_array_counts,
+                                   SyncedArrayStates& sa_states,
                                    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
                                    unordered_map<unsigned int, RecType*>& swapped_out_r,
                                    vector<RecType*>& canceled_swap_out,
@@ -319,7 +322,7 @@ private:
   bool no_data_transfer(const RecType* r);
   void backtrack_with_prefetch_cancel(int& head, const int fid,
                                       const size_t unprefetched_bytes,
-                                      SyncedArrayStates& synced_array_counts,
+                                      SyncedArrayStates& sa_states,
                                       vector<unsigned int>& prefetch_stopper,
                                       size_t available_bytes);
 
@@ -357,29 +360,29 @@ private:
   //---------------------------------------------------
   //              SyncedArrayCallback
   //---------------------------------------------------
-  synced_array_callback_func_type synced_array_callback;
+  synced_array_callback_func_type sa_callback;
 
   // Setter
-  void set_synced_array_callback();
+  void set_sa_callback();
 
   // Unsetter
-  void unset_synced_array_callback();
+  void unset_sa_callback();
 
   // SyncedArrayCallback to record get/cast/clear in the first iteration.
-  void synced_array_callback_recorder(SyncedArrayPtr saptr,
-                                      const SyncedArrayCallbackTag sa_tag,
-                                      const dtypes dtype,
-                                      const Context &ctx,
-                                      const bool write_only,
-                                      const bool first_creation);
+  void sa_callback_recorder(SyncedArrayPtr saptr,
+                            const SyncedArrayCallbackTag sa_tag,
+                            const dtypes dtype,
+                            const Context &ctx,
+                            const bool write_only,
+                            const bool first_creation);
 
   // SyncedArrayCallback to trace get/cast/clear after the first iteration.
-  void synced_array_callback_tracer(SyncedArrayPtr saptr,
-                                    const SyncedArrayCallbackTag sa_tag,
-                                    const dtypes dtype,
-                                    const Context &ctx,
-                                    const bool write_only,
-                                    const bool first_creation);
+  void sa_callback_tracer(SyncedArrayPtr saptr,
+                          const SyncedArrayCallbackTag sa_tag,
+                          const dtypes dtype,
+                          const Context &ctx,
+                          const bool write_only,
+                          const bool first_creation);
 
   // Tag converter
   RecTag convert_tag(const SyncedArrayCallbackTag sa_tag,
