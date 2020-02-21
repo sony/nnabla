@@ -511,32 +511,16 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
         break;
       }
 
-      auto next_array_bytes = r->size * sizeof_dtype(r->dtype);
-
-      if (max_prefetch_bytes < prefetch_bytes + next_array_bytes) {
-        // Out of prefetch memory
-        break;
-      }
-
-      // Swap out for prefetch
-      while (used_bytes_swap_in + used_bytes_swap_out 
-                                + next_array_bytes > max_bytes) {
-        if (tail == func_block_ends[fid - 1]) {
-          // No memory for more prefetch. 
-          break;
-        }
-
-        // Out of memory
-        // Wait for swap out and release memory
-        schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
-                                        swapped_out, swapped_out_r, 
-                                        canceled_swap_out, synced_array_states);
-      }
-
       // Fetch
       if (synced_array_states[r->said][r->dtype].count == 0) {
         // The array is firstly appeared in the queue.
+        auto next_array_bytes = r->size * sizeof_dtype(r->dtype);
 
+        if (max_prefetch_bytes < prefetch_bytes + next_array_bytes) {
+          // Out of prefetch memory
+          break;
+        }
+       
         if (!host_uses_this_synced_array[r->said]) {
           // If the array is scheduled to be swapped out,
           // by canceling it, this prefetch can be omitted.
@@ -566,30 +550,49 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
               }
             }
           }
+          else if (no_data_transfer(r)) {
+            // Prefetch is unnecessary because data transfer will not happen.
+            unprefetched[head] = true;
+
+            // CLEARED -> UNPREFETCHED
+            if (synced_array_states[r->said][r->dtype].state != ArrayStateTag::CLEARED) {
+              NBLA_ERROR(error_code::type, "CLEARED");
+            }
+            synced_array_states[r->said][r->dtype].state = ArrayStateTag::UNPREFETCHED;
+          }
           else {
-            if (no_data_transfer(r)) {
-              // Prefetch is unnecessary because data transfer will not happen.
-              unprefetched[head] = true;
+            // Swap out for prefetch
+            bool no_memory = false;
 
-              // CLEARED -> UNPREFETCHED
-              if (synced_array_states[r->said][r->dtype].state != ArrayStateTag::CLEARED) {
-                NBLA_ERROR(error_code::type, "CLEARED");
+            while (used_bytes_swap_in + used_bytes_swap_out
+                                      + next_array_bytes > max_bytes) {
+              if (tail == func_block_ends[fid - 1]) {
+                no_memory = true;
+                break;
               }
-              synced_array_states[r->said][r->dtype].state = ArrayStateTag::UNPREFETCHED;
-            }
-            else {
-              schedules_swap[fid].push_back(ScheduleType(ScheduleTag::SWAP_IN, r));
 
-              // Increase memory usage
-              used_bytes_swap_in += next_array_bytes;
-
-              // CLEARED or OUT_WAITED to IN
-              if (synced_array_states[r->said][r->dtype].state != ArrayStateTag::CLEARED && 
-                  synced_array_states[r->said][r->dtype].state != ArrayStateTag::OUT_WAITED) {
-                NBLA_ERROR(error_code::type, "CLEARED");
-              }
-              synced_array_states[r->said][r->dtype].state = ArrayStateTag::IN;
+              // Out of memory
+              // Wait for swap out and release memory
+              schedule_wait_for_swap_out_impl(fid, tail, used_bytes_swap_out,
+                                              swapped_out, swapped_out_r,
+                                              canceled_swap_out, synced_array_states);
             }
+
+            if (no_memory) {
+              break;
+            }
+
+            schedules_swap[fid].push_back(ScheduleType(ScheduleTag::SWAP_IN, r));
+
+            // Increase memory usage
+            used_bytes_swap_in += next_array_bytes;
+
+            // CLEARED or OUT_WAITED to IN
+            if (synced_array_states[r->said][r->dtype].state != ArrayStateTag::CLEARED && 
+                synced_array_states[r->said][r->dtype].state != ArrayStateTag::OUT_WAITED) {
+              NBLA_ERROR(error_code::type, "CLEARED");
+            }
+            synced_array_states[r->said][r->dtype].state = ArrayStateTag::IN;
           }
         }
         else {
