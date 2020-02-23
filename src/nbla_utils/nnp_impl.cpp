@@ -51,7 +51,6 @@ namespace nbla {
 namespace utils {
 namespace nnp {
 
-#include <atomic>
 #include <chrono>
 #include <functional>
 #include <utility>
