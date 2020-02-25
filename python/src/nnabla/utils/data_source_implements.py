@@ -89,7 +89,7 @@ class CachePrefetcher(object):
             try:
                 with FileReader(file_name).open(textmode=False) as f:
                     for v in variables:
-                        result[v] = numpy.load(f)
+                        result[v] = numpy.load(f, allow_pickle=True)
                 if set(result.keys()) == set(variables):
                     break
                 else:
@@ -405,10 +405,12 @@ class CsvDataSource(DataSource):
                 value = [float(value)]
             else:
                 value = float(value)
-        except:
-            ext = (os.path.splitext(value)[1]).lower()
-            with self._filereader.open(value) as f:
-                value = load(ext)(f, normalize=self._normalize)
+            return value
+        except ValueError:
+            pass
+        ext = (os.path.splitext(value)[1]).lower()
+        with self._filereader.open(value) as f:
+            value = load(ext)(f, normalize=self._normalize)
         return value
 
     def _get_data(self, position):
@@ -428,12 +430,13 @@ class CsvDataSource(DataSource):
             csvreader = csv.reader(csv_lines)
             first_line = True
             for row in csvreader:
-                if first_line:
-                    self._process_header(row)
-                    first_line = False
-                else:
-                    self._rows.append(row)
-                    self._size += 1
+                if len(row):
+                    if first_line:
+                        self._process_header(row)
+                        first_line = False
+                    else:
+                        self._rows.append(row)
+                        self._size += 1
         self._original_source_uri = self._filename
         self._original_order = list(range(self._size))
         self._order = list(range(self._size))

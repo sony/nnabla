@@ -224,6 +224,7 @@ def forward_command(args):
             root_path = os.path.abspath(root_path.replace('/|\\', os.path.sep))
         else:
             root_path = '.'
+        rows = [row for row in rows if len(row)]
         rows = list(map(lambda row: list(map(lambda x: x if is_float(
             x) else compute_full_path(root_path, x), row)), rows))
         for i in range(len(rows)):
@@ -262,12 +263,15 @@ def forward_command(args):
             print('Cannot open', order_csv)
             for i in range(len(rows)):
                 orders[i] = i
+    else:
+        print('Unsupported extension "{}" in "{}".'.format(
+            os.path.splitext(args.dataset)[1], args.dataset))
 
     callback.update_status(('data.max', len(rows)))
     callback.update_status(('data.current', 0))
     callback.update_status('processing', True)
 
-    result_csv_filename = os.path.join(args.outdir, 'output_result.csv')
+    result_csv_filename = os.path.join(args.outdir, args.outfile)
     with open(result_csv_filename, 'w') as f:
         writer = csv.writer(f, lineterminator='\n')
         with data_iterator() as di:
@@ -400,6 +404,8 @@ def add_forward_command(subparsers):
         '-d', '--dataset', help='path to CSV dataset', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '-f', '--outfile', help='output file name', default='output_result.csv')
     subparser.add_argument(
         '--replace_path', help='replace data path in the dataset with absolute path', action='store_true')
     subparser.add_argument(

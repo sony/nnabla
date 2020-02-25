@@ -570,7 +570,6 @@ def train_command(args):
     result = False
     restart = False
     if max_iteration > 0:
-        data_iterators = {'optimizer': {}, 'monitor': {}}
         rng = np.random.RandomState(comm.rank if comm else 0)
         with ExitStack() as stack:
             # Create data_iterator instance only once for each dataset in optimizers

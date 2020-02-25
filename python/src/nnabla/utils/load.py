@@ -244,6 +244,15 @@ def _create_variable(v, name, shape, rng):
         elif v.initializer.type == 'NormalConvolutionGlorot':
             initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
                 shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
+        elif v.initializer.type == 'NormalCLConvHe' or v.initializer.type == 'NormalCLConvHeForward':
+            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
+                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
+        elif v.initializer.type == 'NormalCLConvHeBackward':
+            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
+                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
+        elif v.initializer.type == 'NormalCLConvGlorot':
+            initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
+                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Uniform':
             initializer = UniformInitializer(
                 lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
@@ -253,6 +262,9 @@ def _create_variable(v, name, shape, rng):
         elif v.initializer.type == 'UniformConvolutionGlorot':
             initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
                 shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
+        elif v.initializer.type == 'UniformCLConvGlorot':
+            initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
+                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
         elif v.initializer.type == 'Range':
             initializer = (lambda shape: RangeInitializer(0, 1)
                            (shape) * v.initializer.multiplier)
@@ -885,6 +897,16 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                 import nnabla_ext.cudnn
             except:
                 pass
+        try:
+            x = nn.Variable()
+            y = nn.Variable()
+            func = F.ReLU(default_context, inplace=True)
+            func.setup([x], [y])
+            func.forward([x], [y])
+        except:
+            logger.warn('Fallback to CPU context.')
+            import nnabla_ext.cpu
+            default_context = nnabla_ext.cpu.context()
     else:
         import nnabla_ext.cpu
         default_context = nnabla_ext.cpu.context()
