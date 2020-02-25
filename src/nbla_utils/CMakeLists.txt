@@ -1,3 +1,19 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set(LIB_NAME nnabla_utils${LIB_NAME_SUFFIX})
+
 include(${CMAKE_SOURCE_DIR}/build-tools/cmake/Utils.cmake)
 
 option(NNABLA_UTILS_WITH_HDF5 "Enable HDF5 in C++ utils." OFF)
@@ -11,7 +27,7 @@ endif()
 
 include_directories(${CMAKE_BINARY_DIR}/libraries/include)
 
-list(APPEND nnabla_utils_SOURCES
+list(APPEND nbla_utils_SOURCES
   nnp.cpp
   nnabla.pb.cc
   nnp_impl.cpp
@@ -34,17 +50,17 @@ endif()
 if (NNABLA_UTILS_WITH_NPY)
   add_definitions(-DUSE_NPY_CACHE_DATA_ITERATOR)
   add_definitions(-DNBLA_UTILS_WITH_NPY)
-  list(APPEND nnabla_utils_SOURCES
+  list(APPEND nbla_utils_SOURCES
     nnp_impl_dataset_npy.cpp
     data_iterator_npy.cpp
   )
 elseif (NNABLA_UTILS_WITH_HDF5)
-  list(APPEND nnabla_utils_SOURCES
+  list(APPEND nbla_utils_SOURCES
     nnp_impl_dataset_hdf5.cpp
     data_iterator.cpp
   )
 else()
-  list(APPEND nnabla_utils_SOURCES
+  list(APPEND nbla_utils_SOURCES
     data_iterator.cpp
   )
 endif()
@@ -53,8 +69,8 @@ if (NNABLA_UTILS_WITH_HDF5)
   add_definitions(-DNBLA_UTILS_WITH_HDF5)
 endif()
 
-add_library(nnabla_utils SHARED
-  ${nnabla_utils_SOURCES}
+add_library(${LIB_NAME} SHARED
+  ${nbla_utils_SOURCES}
 )
 
 if (WIN32)
@@ -70,8 +86,8 @@ if (WIN32)
     ${PROTOBUF_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIRS}
     )
-  target_link_libraries(nnabla_utils
-    nnabla
+  target_link_libraries(${LIB_NAME}
+    ${NBLA_LIBRARY_NAME}
     ${PROTOBUF_LIBRARY}
     ${LibArchive_LIBRARIES}
     ${ZLIB_LIBRARIES}
@@ -126,38 +142,33 @@ else()
   endif()
 
   if (ANDROID)
-    target_link_libraries(nnabla_utils
-      nnabla
+    target_link_libraries(${LIB_NAME}
+      ${NBLA_LIBRARY_NAME}
       Protobuf
       LibArchive
       ${ZLIB_LIBRARIES}
       )
   else()
-    target_link_libraries(nnabla_utils
-      nnabla
+    target_link_libraries(${LIB_NAME}
+      ${NBLA_LIBRARY_NAME}
       ${PROTOBUF_LIBRARY}
       ${LibArchive_LIBRARIES}
       ${ZLIB_LIBRARIES}
       )
   endif()
   if (NNABLA_UTILS_WITH_HDF5)
-    target_link_libraries(nnabla_utils
+    target_link_libraries(${LIB_NAME}
       ${HDF5_LIBRARIES}
       ${HDF5_HL_LIBRARIES})
   endif()
 endif()
 
-set_property(TARGET nnabla_utils PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 11)
 
 
-if (NOT WIN32)
-  # Install
-  install(TARGETS nnabla_utils
-    LIBRARY DESTINATION lib)
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_utils
-    DESTINATION include)
-  include(CPack)
-endif()
+install(TARGETS ${LIB_NAME} LIBRARY DESTINATION lib)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla_utils DESTINATION include)
+include(CPack)
 
 if (BUILD_TEST)
   if (WIN32)
@@ -185,10 +196,10 @@ if (BUILD_TEST)
   add_dependencies(test_nbla_utils ${NBLA_LIBRARY_NAME})
   target_link_libraries(test_nbla_utils gtest gtest_main)
   target_link_libraries(test_nbla_utils ${NBLA_LIBRARY_NAME})
-  target_link_libraries(test_nbla_utils nnabla_utils)
+  target_link_libraries(test_nbla_utils ${LIB_NAME})
   set_property(TARGET test_nbla_utils PROPERTY CXX_STANDARD 11)
   nbla_exclude_from_all(test_nbla_utils)
   add_test(NAME test_nbla_utils COMMAND test_nbla_utils)
 endif()
 
-set(NNABLA_UTILS_LIBRARY_NAME nnabla_utils PARENT_SCOPE)
+set(NBLA_UTILS_LIBRARY_NAME ${LIB_NAME} PARENT_SCOPE)

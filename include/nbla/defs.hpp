@@ -16,7 +16,9 @@
 #define __NBLA_DEFS_HPP__
 // For windows support
 #if defined(_MSC_VER) && !defined(__CUDACC__)
-#ifdef nnabla_EXPORTS
+#if defined(nnabla_EXPORTS) || defined(nnabla_dbg_EXPORTS) ||                  \
+    defined(nnabla_utils_EXPORTS) || defined(nnabla_utils_dbg_EXPORTS) ||      \
+    defined(nnabla_cli_EXPORTS) || defined(nnabla_cli_dbg_EXPORTS)
 #define NBLA_API __declspec(dllexport)
 #else
 #define NBLA_API __declspec(dllimport)

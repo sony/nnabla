@@ -31,11 +31,13 @@ IF NOT EXIST %nnabla_build_wheel_folder%\ MD %nnabla_build_wheel_folder%
 CD %nnabla_build_wheel_folder%
 
 cmake -G "%generate_target%" ^
-      -DPYTHON_COMMAND_NAME=python ^
       -DBUILD_CPP_LIB=OFF ^
       -DBUILD_PYTHON_PACKAGE=ON ^
       -DCPPLIB_BUILD_DIR=%nnabla_build_folder% ^
-      -DCPPLIB_LIBRARY=%nnabla_build_folder%\bin\%build_type%\nnabla.dll ^
+      -DCPPLIB_LIBRARY=%nnabla_build_folder%\bin\%build_type%\nnabla%lib_name_suffix%.dll ^
+      -DLIB_NAME_SUFFIX=%lib_name_suffix% ^
+      -DPYTHON_COMMAND_NAME=python ^
+      -DWHEEL_SUFFIX=%wheel_suffix% ^
       %nnabla_root% || GOTO :error
 
 msbuild wheel.vcxproj /p:Configuration=%build_type% || GOTO :error

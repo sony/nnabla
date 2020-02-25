@@ -14,12 +14,20 @@
 
 SET nnabla_root=%~dp0..\..\..
 
+IF NOT DEFINED nnabla_build_folder_name (
+  SET nnabla_build_folder_name=build
+)
+
 IF NOT DEFINED nnabla_build_folder (
-  SET nnabla_build_folder=%nnabla_root%\build
+  SET nnabla_build_folder=%nnabla_root%\%nnabla_build_folder_name%
+)
+
+IF NOT DEFINED nnabla_build_wheel_folder_name (
+  SET nnabla_build_wheel_folder_name=build_wheel
 )
 
 IF NOT DEFINED nnabla_build_wheel_folder (
-  SET nnabla_build_wheel_folder=%nnabla_root%\build_wheel%nnabla_build_wheel_folder_suffix%
+  SET nnabla_build_wheel_folder=%nnabla_root%\%nnabla_build_wheel_folder_name%%nnabla_build_wheel_folder_suffix%
 )
 
 IF NOT DEFINED nnabla_test_venv_folder (
