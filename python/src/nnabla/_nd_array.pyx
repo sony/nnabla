@@ -87,7 +87,7 @@ cdef c_as_numpy_array(CNdArray * arrp, str mode, cpp_bool force_dtype=False, int
             type_num = <int > arrp.array().get().dtype()
         except:
             from nnabla import logger
-            logger.warn('Calling the `.data` getter property in this `NdArray` '
+            logger.info('Calling the `.data` getter property in this `NdArray` '
                         'is creating an array with a default data type because '
                         'the array is not previously initialized by requesting '
                         'a specific data type, or is not used after '
