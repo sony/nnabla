@@ -39,7 +39,7 @@ To enable multi-GPU execution such as distributed training on NNabla, you have t
 Install from source
 -------------------
 
-Documentation of build from source has been moved to `Github repository <https://github.com/sony/nnabla-ext-cuda/tree/master/doc/build>`_ (`build <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_ or `build_distributed <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_).
+Documentation of build from source has been moved to `Github repository <https://github.com/sony/nnabla-ext-cuda/tree/master/doc/build>`_ (`build <https://github.com/sony/nnabla/tree/master/doc/build/build.md>`_ or `build_distributed <https://github.com/sony/nnabla-ext-cuda/blob/master/doc/build/build_distributed.md>`_).
 
 
 Running on Docker
