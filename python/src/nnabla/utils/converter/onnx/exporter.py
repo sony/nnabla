@@ -238,7 +238,7 @@ class OnnxExporter:
             "Swish": self.Swish,
             "LogSoftmax": partial(self.LogSoftmax, '6'),
             "CReLU": self.CReLU,
-            "ReLU6": self.ReLU6,
+            "ReLU6": partial(self.ReLU6, '6'),
             "HardSigmoid": "HardSigmoid",
             "HardTanh": self.HardTanh,
             "LogSigmoid": self.LogSigmoid,
@@ -356,6 +356,8 @@ class OnnxExporter:
             "Affine": partial(self.BaseAffine, "Affine", '6x'),
             "MulScalar": partial(self.ElementWiseScalar, "Mul", "6x"),
             "AddScalar": partial(self.ElementWiseScalar, "Add", "6x"),
+            "Tanh": self.Tanh,
+            "ReLU6": partial(self.ReLU6, "6x")
         }
         table_op_set_6_x = dict(table_op_set_6, **table_op_set_6_x)
 
@@ -2029,30 +2031,40 @@ class OnnxExporter:
 
         return nl
 
-    def ReLU6(self, func):
+    def ReLU6(self, opset, func):
         # Convert Relu+Constant+Min
         nl = []
-        # Relu
-        rout = fork_name(func.output[0]) + "_relu"
-        n = onnx.helper.make_node("Relu",
-                                  func.input,
-                                  [rout])
-        nl.append(n)
+        if opset == '6x':
+            # Convert Clip
+            n = onnx.helper.make_node("Clip",
+                                      func.input,
+                                      func.output,
+                                      min=0.0,
+                                      max=6.0)
+            nl.append(n)
+        else:
+            # Convert Relu+Constant+Min
+            # Relu
+            rout = fork_name(func.output[0]) + "_relu"
+            n = onnx.helper.make_node("Relu",
+                                      func.input,
+                                      [rout])
+            nl.append(n)
 
-        # Constant
-        constant_six = fork_name("constant")
-        input_shape = list(self._var_dict[func.input[0]].dim[:])
-        value = [6.0] * np.prod(input_shape)
-        c = generate_constant(constant_six, func.name + "_constant_six",
-                              TensorProto.FLOAT, input_shape,
-                              value)
-        nl.append(c)
+            # Constant
+            constant_six = fork_name("constant")
+            input_shape = list(self._var_dict[func.input[0]].dim[:])
+            value = [6.0] * np.prod(input_shape)
+            c = generate_constant(constant_six, func.name + "_constant_six",
+                                  TensorProto.FLOAT, input_shape,
+                                  value)
+            nl.append(c)
 
-        # Min
-        n = onnx.helper.make_node("Min",
-                                  [rout, constant_six],
-                                  func.output)
-        nl.append(n)
+            # Min
+            n = onnx.helper.make_node("Min",
+                                      [rout, constant_six],
+                                      func.output)
+            nl.append(n)
 
         return nl
 
@@ -2876,6 +2888,16 @@ class OnnxExporter:
                 n.attribute.extend([v])
             nl.append(n)
         return nl
+
+    def Tanh(self, func):
+        # add attr alpha&beta for Tanh, This is the attr necessary for SNPE to handle Tanh.
+        n = onnx.helper.make_node(
+            "Tanh",
+            func.input,
+            func.output,
+            alpha=1.0,
+            beta=1.0)
+        return [n]
 
     def set_network(self):
         if len(self._nnp.executor) != 1:
