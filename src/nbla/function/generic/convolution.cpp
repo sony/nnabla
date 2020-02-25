@@ -184,6 +184,7 @@ void Convolution<T>::forward_impl(const Variables &inputs,
       my.colwise() += ConstColVectorMap<T>(b, channels_o_);
     }
   }
+  col_.data()->array()->clear();
 }
 
 template <class T>
@@ -264,5 +265,6 @@ void Convolution<T>::backward_impl(const Variables &inputs,
       *mdb += mdy.rowwise().sum();
     }
   }
+  col_.data()->array()->clear();
 }
 }
