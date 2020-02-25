@@ -75,7 +75,7 @@ def load_instagan_dataset(args, train=True, domain="A"):
     # filter images by name
     for img_path, seg_path in zip(img_paths, seg_paths):
 
-            # load (and resize) image and mask
+        # load (and resize) image and mask
         image = imread(img_path, size=(args.loadSizeW, args.loadSizeH),
                        interpolate="bicubic", num_channels=3, channel_first=True)
         # clip image's value
