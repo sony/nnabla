@@ -109,9 +109,6 @@ class SwapInOutScheduler {
     const bool write_only_cast;
     bool first_creation;
 
-    bool swapped_out = false; // If true, the synced array was swapped out.
-    size_t swapped_out_bytes = 0;
-
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
             const Size_t size_, const dtypes dtype_, const Context ctx_,
             const bool write_only_cast_, const bool first_creation_)
@@ -160,12 +157,7 @@ class SwapInOutScheduler {
 
   //---------------------------------------------------
   //    Variables used only in first iteration
-  //---------------------------------------------------
-  // The used size of GPU memory [byte]
-  size_t used_bytes_swap_out_first_iter = 0;
-
-  int tail_first_iter = 0; // pointing the next record to wait for swap out
-    
+  //---------------------------------------------------    
   // Map: SyncedArrayPtr -> SyncedArray ID
   unordered_map<SyncedArrayPtr, unsigned int> said_map;
 
@@ -241,7 +233,8 @@ private:
     }
   };
 
-  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, OUT_WAITED };
+  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, OUT_WAITED,
+                             HOST_USING };
 
   struct ArrayState {
     int count = 0;
@@ -258,8 +251,8 @@ private:
                                           unordered_map<dtypes, ArrayState>>;
 
   // Schedules
-  unordered_map<int, vector<ScheduleType>> beginning_schedules;
-  unordered_map<int, vector<ScheduleType>> end_schedules;
+  vector<vector<ScheduleType>> beginning_schedules;
+  vector<vector<ScheduleType>> end_schedules;
 
   // Main function
   void schedule();
@@ -274,9 +267,6 @@ private:
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayStates& sa_states,
     unordered_map<unsigned int, bool>& host_uses_this_sa,
-    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out, 
     vector<bool>& unprefetched,
     const vector<unsigned int> prefetch_stopper);
   
@@ -284,27 +274,17 @@ private:
    (const int fid, size_t& prefetch_bytes, 
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayStates& sa_states,
-    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r,
     unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info);
   
   void schedule_wait_for_all_swap_out
    (const int fid, int& tail, size_t& used_bytes_swap_out,
-    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out,
     SyncedArrayStates& sa_states);
   
   void schedule_wait_for_swap_out_impl
    (const int fid, int& tail, size_t& used_bytes_swap_out,
-    unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-    unordered_map<unsigned int, RecType*>& swapped_out_r,
-    vector<RecType*>& canceled_swap_out,
     SyncedArrayStates& sa_states);
   
   void schedule_preclear(unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info);
-
-  void cancel_swap_out(vector<RecType*>& canceled_swap_out);
 
   // Return a flag to decide whether to do reschedule.
   bool reserve_unprefetched_memory(int& head, int& tail, const int fid,
@@ -312,9 +292,6 @@ private:
                                    size_t& used_bytes_swap_in,
                                    size_t& used_bytes_swap_out,
                                    SyncedArrayStates& sa_states,
-                                   unordered_map<unsigned int, unordered_map<dtypes, bool>>& swapped_out,
-                                   unordered_map<unsigned int, RecType*>& swapped_out_r,
-                                   vector<RecType*>& canceled_swap_out,
                                    vector<bool>& unprefetched,
                                    vector<unsigned int>& prefetch_stopper);
 
@@ -344,9 +321,6 @@ private:
 
   // Subprocesses of swap_out()
   void swap_out_first_iter();
-  void wait_for_swap_out_first_iter();
-  void wait_for_all_swap_out_first_iter();
-  void wait_for_swap_out_first_iter_impl();
 
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();
