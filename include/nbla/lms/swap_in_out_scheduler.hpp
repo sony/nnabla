@@ -21,6 +21,8 @@
 
 #include <nbla/synced_array.hpp>
 #include <nbla/computation_graph/function.hpp>
+#include <nbla/backend_registry.hpp>
+
 
 // Because older gcc cannot compile the hash of enum type,
 // here is provided the definition of the hash of enum for dtypes.
@@ -152,7 +154,7 @@ class SwapInOutScheduler {
 
   // Check whether function blocks have get/cast on host
   vector<bool> is_host_func;
-  void check_which_is_host_func();
+  void determine_which_is_host_func();
 
 
   //---------------------------------------------------
@@ -170,13 +172,13 @@ public:
 
   @param h_ctx Host context used as the destination of swap-out.
   @param d_ctx Device context.
-  @param bytes Maximum GPU memory size managed by this class [bytes].
-  @param prefetch_bytes Maximum prefetch length.
+  @param max Maximum GPU memory size managed by this class [bytes].
+  @param prefetch_max Maximum prefetch length.
    */
   NBLA_API SwapInOutScheduler(const Context &h_ctx,
                               const Context &d_ctx,
-                              const size_t bytes,
-                              const size_t prefetch_bytes);
+                              const size_t max,
+                              const size_t prefetch_max);
 
   /** Destructor.
    */
@@ -233,8 +235,7 @@ private:
     }
   };
 
-  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, OUT_WAITED,
-                             HOST_USING };
+  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, OUT_WAITED };
 
   struct ArrayState {
     int count = 0;
@@ -266,8 +267,6 @@ private:
    (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_bytes,
     size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
     SyncedArrayStates& sa_states,
-    unordered_map<unsigned int, bool>& host_uses_this_sa,
-    vector<bool>& unprefetched,
     const vector<unsigned int> prefetch_stopper);
   
   void schedule_swap_out
@@ -292,18 +291,25 @@ private:
                                    size_t& used_bytes_swap_in,
                                    size_t& used_bytes_swap_out,
                                    SyncedArrayStates& sa_states,
-                                   vector<bool>& unprefetched,
                                    vector<unsigned int>& prefetch_stopper);
 
   void reconfirm_first_creation();
   bool no_data_transfer(const RecType* r);
+  void cancel_swap_out(const RecType *r, size_t& prefetch_bytes, 
+                       size_t& swap_in_bytes, size_t& swap_out_bytes,
+                       SyncedArrayStates& sa_states);
   void backtrack_with_prefetch_cancel(int& head, const int fid,
                                       const size_t unprefetched_bytes,
                                       SyncedArrayStates& sa_states,
                                       vector<unsigned int>& prefetch_stopper,
                                       size_t available_bytes);
-
+  bool free_memory_to_prefetch(const int fid, int& tail,
+                               const size_t next_array_bytes,
+                               const size_t swap_in_bytes,
+                               size_t& swap_out_bytes,
+                               SyncedArrayStates& sa_states);
   int accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map);
+
 
   //---------------------------------------------------
   //               Swap in/out
@@ -311,13 +317,6 @@ private:
   // Common implementation of function and update callbacks
   void pre_callback();
   void post_callback();
-
-  /* Pre callback function is separated the two parts.
-  (1). The post-process of the previous function.
-  (2). The pre-process of the next function.
-  This is because NNabla calls "clear"s between post- and pre-callback
-  functions and the scheduler should monitor these "clear"s.
-  */
 
   // Subprocesses of swap_out()
   void swap_out_first_iter();
@@ -327,8 +326,15 @@ private:
 
   // Check if an array is not cleared. When a SyncedArray is empty,
   // the scheduler should not call get/cast not to create a unnecessary array.
-  bool is_not_cleared_yet(const SyncedArrayPtr saptr) {
+  inline bool is_not_cleared_yet(const SyncedArrayPtr saptr) {
     return saptr->get_num_arrays() > 0;
+  }
+
+  bool context_checker(const Context query_ctx, const Context ctx) {
+    auto array_classes = BackendUtils::array_classes(ctx);
+
+    return std::find(array_classes.begin(), array_classes.end(),
+                     query_ctx.array_class) != array_classes.end();
   }
 
   //---------------------------------------------------
