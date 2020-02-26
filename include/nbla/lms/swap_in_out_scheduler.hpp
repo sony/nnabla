@@ -170,10 +170,10 @@ public:
   //---------------------------------------------------
   /** Constructor.
 
-  @param h_ctx Host context used as the destination of swap-out.
-  @param d_ctx Device context.
-  @param max Maximum GPU memory size managed by this class [bytes].
-  @param prefetch_max Maximum prefetch length.
+  @params h_ctx Host context used as the destination of swap-out.
+  @params d_ctx Device context.
+  @params max Maximum GPU memory size managed by this class [bytes].
+  @params prefetch_max Maximum prefetch length.
    */
   NBLA_API SwapInOutScheduler(const Context &h_ctx,
                               const Context &d_ctx,
@@ -242,14 +242,18 @@ private:
     ArrayStateTag state = ArrayStateTag::CLEARED;
   };
 
-  // Execute swap in/out, wait, and preclear on a schedule.
-  void run_on_beginning_schedule();
-  void run_on_end_schedule();
-  void run(const ScheduleType& s);
-
   // Rename of long types to shorter
   using SyncedArrayStates = unordered_map<unsigned int, 
                                           unordered_map<dtypes, ArrayState>>;
+  struct ScheduleParams {
+    int head = 0;
+    int tail = 0;
+    int fid = 0;
+    size_t prefetch_bytes = 0;
+    size_t swap_in_bytes = 0;
+    size_t swap_out_bytes = 0;
+    SyncedArrayStates sa_states;
+  };
 
   // Schedules
   vector<vector<ScheduleType>> beginning_schedules;
@@ -259,57 +263,56 @@ private:
   void schedule();
 
   // Subprocesses of shcedule()
-  void calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
-                                     size_t& used_bytes_swap_in,
-                                     SyncedArrayStates& sa_states);
+  void calc_mem_usage_before_forward(ScheduleParams& params);
   
-  void schedule_swap_in
-   (const bool pre, int& head, int& tail, const int fid, size_t& prefetch_bytes,
-    size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-    SyncedArrayStates& sa_states,
-    const vector<unsigned int> prefetch_stopper);
+  void schedule_swap_in(ScheduleParams& params,
+                        const vector<unsigned int> prefetch_stopper);
   
-  void schedule_swap_out
-   (const int fid, size_t& prefetch_bytes, 
-    size_t& used_bytes_swap_in, size_t& used_bytes_swap_out,
-    SyncedArrayStates& sa_states,
-    unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info);
+  void schedule_swap_out(ScheduleParams& params, 
+                         unordered_map<unsigned int, 
+                             vector<pair<RecType*, bool>>>& clear_info);
   
-  void schedule_wait_for_all_swap_out
-   (const int fid, int& tail, size_t& used_bytes_swap_out,
-    SyncedArrayStates& sa_states);
+  void schedule_wait_for_all_swap_out(ScheduleParams& params);
   
-  void schedule_wait_for_swap_out_impl
-   (const int fid, int& tail, size_t& used_bytes_swap_out,
-    SyncedArrayStates& sa_states);
+  void schedule_wait_for_swap_out_impl(ScheduleParams& params);
   
-  void schedule_preclear(unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info);
+  void schedule_preclear(unordered_map<unsigned int, 
+                            vector<pair<RecType*, bool>>>& clear_info);
 
   // Return a flag to decide whether to do reschedule.
-  bool reserve_unprefetched_memory(int& head, int& tail, const int fid,
-                                   size_t& prefetch_bytes,
-                                   size_t& used_bytes_swap_in,
-                                   size_t& used_bytes_swap_out,
-                                   SyncedArrayStates& sa_states,
+  bool reserve_unprefetched_memory(ScheduleParams& params,
                                    vector<unsigned int>& prefetch_stopper);
 
   void reconfirm_first_creation();
+
+  // Return true when a recorded get/cast transfer data between host and device.
   bool no_data_transfer(const RecType* r);
-  void cancel_swap_out(const RecType *r, size_t& prefetch_bytes, 
-                       size_t& swap_in_bytes, size_t& swap_out_bytes,
-                       SyncedArrayStates& sa_states);
-  void backtrack_with_prefetch_cancel(int& head, const int fid,
-                                      const size_t unprefetched_bytes,
-                                      SyncedArrayStates& sa_states,
+
+  void cancel_swap_out(const RecType *r, ScheduleParams& params);
+
+  void backtrack_with_prefetch_cancel(ScheduleParams& params,
                                       vector<unsigned int>& prefetch_stopper,
+                                      const size_t unprefetched_bytes,                                      
                                       size_t available_bytes);
-  bool free_memory_to_prefetch(const int fid, int& tail,
-                               const size_t next_array_bytes,
-                               const size_t swap_in_bytes,
-                               size_t& swap_out_bytes,
-                               SyncedArrayStates& sa_states);
+
+  // Return true when memory is not enough to prefetch the next array.
+  bool free_memory_to_prefetch(ScheduleParams& params,
+                               const size_t next_array_bytes);
+
   int accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map);
 
+  // Check if an array is not cleared. When a SyncedArray is empty,
+  // the scheduler should not call get/cast not to create a unnecessary array.
+  inline bool is_not_cleared_yet(const SyncedArrayPtr saptr) {
+    return saptr->get_num_arrays() > 0;
+  }
+
+  bool context_checker(const Context query_ctx, const Context ctx) {
+    auto array_classes = BackendUtils::array_classes(ctx);
+
+    return std::find(array_classes.begin(), array_classes.end(),
+      query_ctx.array_class) != array_classes.end();
+  }
 
   //---------------------------------------------------
   //               Swap in/out
@@ -324,18 +327,10 @@ private:
   // Swap out disordered arrays in finalization
   void swap_out_wrong_order();
 
-  // Check if an array is not cleared. When a SyncedArray is empty,
-  // the scheduler should not call get/cast not to create a unnecessary array.
-  inline bool is_not_cleared_yet(const SyncedArrayPtr saptr) {
-    return saptr->get_num_arrays() > 0;
-  }
-
-  bool context_checker(const Context query_ctx, const Context ctx) {
-    auto array_classes = BackendUtils::array_classes(ctx);
-
-    return std::find(array_classes.begin(), array_classes.end(),
-                     query_ctx.array_class) != array_classes.end();
-  }
+  // Execute swap in/out, wait, and preclear on a schedule.
+  void run_on_beginning_schedule();
+  void run_on_end_schedule();
+  void run(const ScheduleType& s);
 
   //---------------------------------------------------
   //              SyncedArrayCallback

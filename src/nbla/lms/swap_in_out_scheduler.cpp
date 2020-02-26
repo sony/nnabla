@@ -20,6 +20,9 @@
 #include <nbla/singleton_manager.hpp>
 
 
+#define SWAPINOUTSCHEDULER_DEBUG true
+
+
 namespace nbla {
 
 using std::accumulate;
@@ -145,60 +148,48 @@ void SwapInOutScheduler::schedule() {
     end_schedules.clear();
     beginning_schedules.resize(last_function + 1); // +1 is for the last "wait for all"
     end_schedules.resize(last_function);
+    ScheduleParams params;
 
-    int head = 0;
-    int tail = 0;
-    size_t swap_in_bytes = 0;  // not including unprefetched arrays
-    size_t prefetch_bytes = 0; // including unprefetched arrays
-    size_t swap_out_bytes = 0;
-    SyncedArrayStates sa_states;
-   
     // Preclear schedule will be used in swap-out schedule.
     unordered_map<unsigned int, vector<pair<RecType*, bool>>> clear_info;
     schedule_preclear(clear_info);
 
-    int fid = 0;
-
     // Calculate used GPU memory before forward starts, and swap out if necessary.
-    calc_mem_usage_before_forward(head, prefetch_bytes, swap_in_bytes, sa_states);
-    schedule_swap_out(fid, prefetch_bytes, swap_in_bytes, swap_out_bytes,
-                      sa_states, clear_info);
+    calc_mem_usage_before_forward(params);
+    schedule_swap_out(params, clear_info);
 
     // Forward, backward, update
-    for (fid = 1; fid < last_function; fid++) {
-      schedule_swap_in(false, head, tail, fid, prefetch_bytes, swap_in_bytes,
-                       swap_out_bytes, sa_states, prefetch_stopper);
+    for (params.fid = 1; params.fid < last_function; params.fid++) {
+      schedule_swap_in(params, prefetch_stopper);
 
       do_reschedule =
-        reserve_unprefetched_memory(head, tail, fid, prefetch_bytes, swap_in_bytes,
-                                    swap_out_bytes, sa_states, prefetch_stopper);
+        reserve_unprefetched_memory(params, prefetch_stopper);
 
       if (do_reschedule) {
         break;
       }
 
-      if (head < func_block_ends[fid]) {
+      if (params.head < func_block_ends[params.fid]) {
         NBLA_ERROR(error_code::memory,
           "Some arrays were not prefetched probably due to out of GPU memory.");
       }
 
-      schedule_swap_out(fid, prefetch_bytes, swap_in_bytes, swap_out_bytes,
-                        sa_states, clear_info);
+      schedule_swap_out(params, clear_info);
     }
 
     if (do_reschedule) {
       continue;
     }
 
-    schedule_wait_for_all_swap_out(fid, tail, swap_out_bytes, sa_states);
-
+    schedule_wait_for_all_swap_out(params);
     determine_which_is_host_func();
 
     // The end of schedule
     do_reschedule = false;
 
     // Debug
-    for (const auto& s : sa_states) {
+    #if SWAPINOUTSCHEDULER_DEBUG
+    for (const auto& s : params.sa_states) {
       for (const auto& elem : s.second) {
         if (elem.second.state != ArrayStateTag::CLEARED &&
             elem.second.state != ArrayStateTag::OUT_WAITED) {
@@ -206,21 +197,22 @@ void SwapInOutScheduler::schedule() {
         }
       }
     }
-    if (prefetch_bytes != 0) {
+    if (params.prefetch_bytes != 0) {
       NBLA_ERROR(error_code::unclassified, "prefetch_bytes != 0");
     }
-    if (swap_in_bytes != 0) {
+    if (params.swap_in_bytes != 0) {
       NBLA_ERROR(error_code::unclassified, "swap_in_bytes != 0");
     }
-    if (swap_out_bytes != 0) {
+    if (params.swap_out_bytes != 0) {
       NBLA_ERROR(error_code::unclassified, "swap_out_bytes != 0");
     }
-    if (head != order.size()) {
+    if (params.head != order.size()) {
       NBLA_ERROR(error_code::unclassified, "head != order.size()");
     }
-    if (tail != order.size()) {
+    if (params.tail != order.size()) {
       NBLA_ERROR(error_code::unclassified, "tail != order.size()");
     }
+    #endif
   }  while (do_reschedule);
 }
 
@@ -267,15 +259,14 @@ accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map) {
 
 
 void SwapInOutScheduler::
-backtrack_with_prefetch_cancel(int& head, const int fid,
-                               const size_t unprefetched_bytes,
-                               SyncedArrayStates& sa_states,
+backtrack_with_prefetch_cancel(ScheduleParams& params,
                                vector<unsigned int>& prefetch_stopper,
+                               const size_t unprefetched_bytes,                               
                                size_t available_bytes) {
-  auto back_head = head;
-  auto back_sa_states = sa_states;
+  auto back_head = params.head;
+  auto back_sa_states = params.sa_states;
 
-  while (back_head >= func_block_ends[fid]) {
+  while (back_head >= func_block_ends[params.fid]) {
     back_head--; // decrement first because head indicates the next prefetch array.
     RecType *r = &order[back_head];
 
@@ -290,7 +281,7 @@ backtrack_with_prefetch_cancel(int& head, const int fid,
           available_bytes += r->size * sizeof_dtype(elem.first);
         }
       }
-      prefetch_stopper[back_head] = fid + 1;
+      prefetch_stopper[back_head] = params.fid + 1;
     }
 
     if (available_bytes >= unprefetched_bytes) {
@@ -308,24 +299,22 @@ backtrack_with_prefetch_cancel(int& head, const int fid,
 
 
 bool SwapInOutScheduler::
-reserve_unprefetched_memory(int& head, int& tail, const int fid,
-                            size_t& prefetch_bytes,
-                            size_t& swap_in_bytes,
-                            size_t& swap_out_bytes,
-                            SyncedArrayStates& sa_states,
+reserve_unprefetched_memory(ScheduleParams& params,
                             vector<unsigned int>& prefetch_stopper) {
   // Count unprefetched bytes only once
   unordered_map<unsigned int, 
                 unordered_map<dtypes, size_t>> uniq_unprefetched_bytes;
 
-  for (auto i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
+  for (auto i = func_block_ends[params.fid - 1]; 
+            i < func_block_ends[params.fid]; i++) {
     RecType *r = &order[i];
 
     if (r->tag == RecTag::CLEAR) {
       continue;
     }
 
-    if (sa_states[r->said][r->dtype].state == ArrayStateTag::UNPREFETCHED) {
+    if (params.sa_states[r->said][r->dtype].state
+        == ArrayStateTag::UNPREFETCHED) {
       uniq_unprefetched_bytes[r->said][r->dtype]
         = r->size * sizeof_dtype(r->dtype);
     }
@@ -338,25 +327,26 @@ reserve_unprefetched_memory(int& head, int& tail, const int fid,
     }
   }
 
-  while (max_bytes - swap_in_bytes - swap_out_bytes
+  while (max_bytes - params.swap_in_bytes - params.swap_out_bytes
                                         < unprefetched_bytes) {
-    if (tail == func_block_ends[fid - 1]) {
+    if (params.tail == func_block_ends[params.fid - 1]) {
       // Out of memory, do backtrack with prefetch cancel and reschedule.
-      auto available_bytes = max_bytes - swap_in_bytes - swap_out_bytes;
-      backtrack_with_prefetch_cancel(head, fid, unprefetched_bytes,
-                                     sa_states, prefetch_stopper,
-                                     available_bytes);
+      auto available_bytes
+        = max_bytes - params.swap_in_bytes - params.swap_out_bytes;
+      backtrack_with_prefetch_cancel(params, prefetch_stopper, 
+                                     unprefetched_bytes, available_bytes);
       return true;
     }
 
     // Wait for swap out and release memory
-    schedule_wait_for_swap_out_impl(fid, tail, swap_out_bytes, sa_states);
+    schedule_wait_for_swap_out_impl(params);
   }
 
   // Memory for unprefetched arrays became available.
-  swap_in_bytes += unprefetched_bytes;
+  params.swap_in_bytes += unprefetched_bytes;
 
-  for (auto i = func_block_ends[fid - 1]; i < func_block_ends[fid]; i++) {
+  for (auto i = func_block_ends[params.fid - 1];
+            i < func_block_ends[params.fid]; i++) {
     RecType *r = &order[i];
 
     if (r->tag == RecTag::CLEAR) {
@@ -364,8 +354,9 @@ reserve_unprefetched_memory(int& head, int& tail, const int fid,
     }
     
     // UNPREFETCHED to IN
-    if (sa_states[r->said][r->dtype].state == ArrayStateTag::UNPREFETCHED) {
-      sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
+    if (params.sa_states[r->said][r->dtype].state
+        == ArrayStateTag::UNPREFETCHED) {
+      params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
     }
   }
 
@@ -396,14 +387,12 @@ void SwapInOutScheduler::determine_which_is_host_func() {
 
 
 void SwapInOutScheduler::
-calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
-                              size_t& swap_in_bytes,
-                              SyncedArrayStates& sa_states) {
-  while (head < func_block_ends[0]) {
-    RecType *r = &order[head];
+calc_mem_usage_before_forward(ScheduleParams& params) {
+  while (params.head < func_block_ends[0]) {
+    RecType *r = &order[params.head];
 
     if (r->tag == RecTag::CLEAR) {
-      head++;
+      params.head++;
       continue;
     }
 
@@ -417,27 +406,25 @@ calc_mem_usage_before_forward(int& head, size_t& prefetch_bytes,
     auto array_bytes = r->size * sizeof_dtype(r->dtype);
 
     // First fetch
-    if (sa_states[r->said][r->dtype].count == 0) {
-      swap_in_bytes += array_bytes;
-      prefetch_bytes += array_bytes;
+    if (params.sa_states[r->said][r->dtype].count == 0) {
+      params.swap_in_bytes += array_bytes;
+      params.prefetch_bytes += array_bytes;
 
       // CLEARED to IN
-      if (sa_states[r->said][r->dtype].state != ArrayStateTag::CLEARED) {
+      if (params.sa_states[r->said][r->dtype].state != ArrayStateTag::CLEARED) {
         NBLA_ERROR(error_code::type, "CLEARED");
       }
-      sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
+      params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
     }
 
     // Increment the number of the same SyncedArray in the queue.
-    sa_states[r->said][r->dtype].count++;
-    head++; // Move on the head of the queue
+    params.sa_states[r->said][r->dtype].count++;
+    params.head++; // Move on the head of the queue
   }
 }
 
 void SwapInOutScheduler::
-cancel_swap_out(const RecType *r, size_t& prefetch_bytes,
-                size_t& swap_in_bytes, size_t& swap_out_bytes,
-                SyncedArrayStates& sa_states) {
+cancel_swap_out(const RecType *r, ScheduleParams& params) {
   [&] { // This lambda enables us to break double for-loop.
     for (size_t i = end_schedules.size(); i-- > 0;) {
       // Search for the last swap out and cancel it
@@ -452,34 +439,32 @@ cancel_swap_out(const RecType *r, size_t& prefetch_bytes,
   } ();
 
   size_t bytes = 0;
-  for (auto& elem : sa_states[r->said]) {
+  for (auto& elem : params.sa_states[r->said]) {
     if (elem.second.state == ArrayStateTag::OUT) {
       bytes += r->size * sizeof_dtype(elem.first);
       elem.second.state = ArrayStateTag::IN; // OUT to IN
     }
   }
 
-  swap_out_bytes -= bytes;
-  swap_in_bytes += bytes;
-  prefetch_bytes += bytes;
+  params.swap_out_bytes -= bytes;
+  params.swap_in_bytes += bytes;
+  params.prefetch_bytes += bytes;
 }
 
 
 bool SwapInOutScheduler::
-free_memory_to_prefetch(const int fid, int& tail,
-                        const size_t array_bytes, 
-                        const size_t swap_in_bytes, size_t& swap_out_bytes,
-                        SyncedArrayStates& sa_states) {
+free_memory_to_prefetch(ScheduleParams& params, const size_t array_bytes) {
   bool no_memory = false;
 
-  while (swap_in_bytes + swap_out_bytes + array_bytes > max_bytes) {
-    if (tail == func_block_ends[fid - 1]) {
+  while (params.swap_in_bytes + params.swap_out_bytes + array_bytes 
+                                                           > max_bytes) {
+    if (params.tail == func_block_ends[params.fid - 1]) {
       no_memory = true;
       break;
     }
 
     // Out of memory. Wait for swap out and release memory
-    schedule_wait_for_swap_out_impl(fid, tail, swap_out_bytes, sa_states);
+    schedule_wait_for_swap_out_impl(params);
   }
   
   return no_memory;
@@ -487,16 +472,13 @@ free_memory_to_prefetch(const int fid, int& tail,
 
 
 void SwapInOutScheduler::
-schedule_swap_in(const bool pre, int& head, int& tail, const int fid, 
-                 size_t& prefetch_bytes,
-                 size_t& swap_in_bytes, size_t& swap_out_bytes,
-                 SyncedArrayStates& sa_states,
+schedule_swap_in(ScheduleParams& params,
                  const vector<unsigned int> prefetch_stopper) {
-  while (head < (pre ? func_block_ends[fid] : order.size())) {
-    RecType *r = &order[head];
+  while (params.head < order.size()) {
+    RecType *r = &order[params.head];
 
     if (r->tag == RecTag::CLEAR) {
-      head++;
+      params.head++;
       continue;
     } 
 
@@ -508,77 +490,63 @@ schedule_swap_in(const bool pre, int& head, int& tail, const int fid,
     }
 
     // Prefetch must be stopped to avoid out-of-memory in the future.
-    if (prefetch_stopper[head] > fid) break;
+    if (prefetch_stopper[params.head] > params.fid) break;
 
-    if (sa_states[r->said][r->dtype].count == 0) {
+    if (params.sa_states[r->said][r->dtype].count == 0) {
       // The array is firstly appeared in the queue.
       const auto array_bytes = r->size * sizeof_dtype(r->dtype);
 
       // Out of prefetch memory
-      if (max_prefetch_bytes < prefetch_bytes + array_bytes) break;
+      if (max_prefetch_bytes < params.prefetch_bytes + array_bytes) break;
 
       if (context_checker(r->ctx, device_ctx)) {
-        if (sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
+        if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
           // Swap out cancel
-          cancel_swap_out(r, prefetch_bytes, swap_in_bytes, swap_out_bytes,
-                          sa_states);
+          cancel_swap_out(r, params);
         }
         else if (no_data_transfer(r)) { // Unprefetch due to no data transfer
-          prefetch_bytes += array_bytes;
+          params.prefetch_bytes += array_bytes;
 
           // CLEARED -> UNPREFETCHED
-          if (sa_states[r->said][r->dtype].state != ArrayStateTag::CLEARED) {
-            NBLA_ERROR(error_code::type, "UNPREFETCHED");
-          }
-          sa_states[r->said][r->dtype].state = ArrayStateTag::UNPREFETCHED;
+          params.sa_states[r->said][r->dtype].state = ArrayStateTag::UNPREFETCHED;
         }
         else { // Prefetch
           // Free memory to prefetch the next array
-          free_memory_to_prefetch(fid, tail, array_bytes,
-                                  swap_in_bytes, swap_out_bytes, sa_states);
+          free_memory_to_prefetch(params, array_bytes);
 
-          beginning_schedules[fid]
+          beginning_schedules[params.fid]
             .push_back(ScheduleType(ScheduleTag::SWAP_IN, r));
 
-          swap_in_bytes += array_bytes; // Increase memory usage
-          prefetch_bytes += array_bytes;
+          params.swap_in_bytes += array_bytes; // Increase memory usage
+          params.prefetch_bytes += array_bytes;
 
           // CLEARED or OUT_WAITED to IN
-          if (sa_states[r->said][r->dtype].state != ArrayStateTag::CLEARED &&
-            sa_states[r->said][r->dtype].state != ArrayStateTag::OUT_WAITED) {
-            NBLA_ERROR(error_code::type, "UNPREFETCHED");
-          }
-          sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
+          params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
         }
       }
       else { // Host array
         // Not prefetch and synchronous fetch in functions
-        swap_in_bytes += array_bytes;
-        prefetch_bytes += array_bytes;
+        params.swap_in_bytes += array_bytes;
+        params.prefetch_bytes += array_bytes;
 
         // CLEARED or OUT_WAITED to IN
-        if (sa_states[r->said][r->dtype].state != ArrayStateTag::CLEARED &&
-            sa_states[r->said][r->dtype].state != ArrayStateTag::OUT_WAITED) {
-          NBLA_ERROR(error_code::type, "UNPREFETCHED");
-        }
-        sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
+        params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
       }
     }
 
     // Increment the number of the same SyncedArray in the queue.
-    sa_states[r->said][r->dtype].count++;
-    head++; // Move on the head of the queue
+    params.sa_states[r->said][r->dtype].count++;
+    params.head++; // Move on the head of the queue
   }
 }
 
 
 void SwapInOutScheduler::
-schedule_swap_out(const int fid, size_t& prefetch_bytes,
-                  size_t& swap_in_bytes, size_t& swap_out_bytes,
-                  SyncedArrayStates& sa_states, 
-                  unordered_map<unsigned int, vector<pair<RecType*, bool>>>& clear_info) {
-  for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
-              i < func_block_ends[fid];
+schedule_swap_out(ScheduleParams& params,
+                  unordered_map<unsigned int, 
+                     vector<pair<RecType*, bool>>>& clear_info) {
+  for (size_t i = (params.fid == 0 ? 0 : func_block_ends[params.fid - 1]);
+              i < func_block_ends[params.fid];
               i++) {
     RecType *r = &order[i];
 
@@ -592,38 +560,40 @@ schedule_swap_out(const int fid, size_t& prefetch_bytes,
                  "Unsupported array type: " + r->ctx.array_class);
     }
 
-    if (accumulate_counts(sa_states[r->said]) == 1) {
+    if (accumulate_counts(params.sa_states[r->said]) == 1) {
       // An array is swapped out when the same array is no longer
       // in the queue.
-      auto do_preclear = std::find_if(clear_info[fid].begin(), 
-                                      clear_info[fid].end(), 
+      auto do_preclear = std::find_if(clear_info[params.fid].begin(),
+                                      clear_info[params.fid].end(),
         [&](pair<RecType*, bool> x) { return x.first == r; });
 
-      if (do_preclear != clear_info[fid].end()) { // Cleared
-        for (auto& elem : sa_states[r->said]) { // Any states to CLEARED
+      if (do_preclear != clear_info[params.fid].end()) { // Cleared
+        for (auto& elem : params.sa_states[r->said]) { // Any states to CLEARED
           if (elem.second.state == ArrayStateTag::IN) {
             auto array_bytes = r->size * sizeof_dtype(elem.first);
-            swap_in_bytes -= array_bytes;
-            prefetch_bytes -= array_bytes;
+            params.swap_in_bytes -= array_bytes;
+            params.prefetch_bytes -= array_bytes;
           }
 
           elem.second.state = ArrayStateTag::CLEARED;
         }
 
         if (do_preclear->second) {
-          end_schedules[fid].push_back(ScheduleType(ScheduleTag::PRECLEAR, r));
+          end_schedules[params.fid]
+            .push_back(ScheduleType(ScheduleTag::PRECLEAR, r));
         }
       }
       else { // Not precleared, Swap out
-        end_schedules[fid].push_back(ScheduleType(ScheduleTag::SWAP_OUT, r));
+        end_schedules[params.fid]
+          .push_back(ScheduleType(ScheduleTag::SWAP_OUT, r));
         
         // Transfer memory usage of all types
-        for (auto& elem : sa_states[r->said]) {
+        for (auto& elem : params.sa_states[r->said]) {
           if (elem.second.state == ArrayStateTag::IN) {
             auto array_bytes = r->size * sizeof_dtype(elem.first);
-            swap_out_bytes += array_bytes;
-            swap_in_bytes -= array_bytes;
-            prefetch_bytes -= array_bytes;
+            params.swap_out_bytes += array_bytes;
+            params.swap_in_bytes -= array_bytes;
+            params.prefetch_bytes -= array_bytes;
             elem.second.state = ArrayStateTag::OUT; // IN to OUT
           }
         }
@@ -631,42 +601,39 @@ schedule_swap_out(const int fid, size_t& prefetch_bytes,
     }
 
     // Decrease the counts of a used array in the queue.
-    sa_states[r->said][r->dtype].count--;
+    params.sa_states[r->said][r->dtype].count--;
   }
 }
 
 
 void SwapInOutScheduler::
-schedule_wait_for_all_swap_out(const int fid, int& tail, size_t& swap_out_bytes,
-                               SyncedArrayStates& sa_states)
-{
+schedule_wait_for_all_swap_out(ScheduleParams& params) {
   // When out of memory, wait for finishing swap out.
-  while (tail < order.size()) {
-    schedule_wait_for_swap_out_impl(fid, tail, swap_out_bytes, sa_states);
+  while (params.tail < order.size()) {
+    schedule_wait_for_swap_out_impl(params);
   }
 }
 
 
-void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
-  const int fid, int& tail, size_t& swap_out_bytes,
-  SyncedArrayStates& sa_states)
-{
-  RecType *r = &order[tail++];
+void SwapInOutScheduler::
+schedule_wait_for_swap_out_impl(ScheduleParams& params) {
+  RecType *r = &order[params.tail++];
 
-  if (sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
+  if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
     // Not canceled swap out
     // Wait for finishing swap out and release the source array of memory copy.
-    beginning_schedules[fid].push_back(ScheduleType(ScheduleTag::WAIT, r));
+    beginning_schedules[params.fid]
+      .push_back(ScheduleType(ScheduleTag::WAIT, r));
 
     // Decrease memory usage
     size_t bytes = 0;
-    for (auto& elem : sa_states[r->said]) {
+    for (auto& elem : params.sa_states[r->said]) {
       if (elem.second.state == ArrayStateTag::OUT) {
         bytes += r->size * sizeof_dtype(elem.first);
         elem.second.state = ArrayStateTag::OUT_WAITED; // OUT to OUT_WAITED
       }
     }
-    swap_out_bytes -= bytes;
+    params.swap_out_bytes -= bytes;
   }
 }
 
