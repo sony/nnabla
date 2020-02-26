@@ -428,7 +428,7 @@ cancel_swap_out(const RecType *r, ScheduleParams& params) {
   [&] { // This lambda enables us to break double for-loop.
     for (size_t i = end_schedules.size(); i-- > 0;) {
       // Search for the last swap out and cancel it
-      for (size_t j = end_schedules[i].size(); j-- > 0; j) {
+      for (size_t j = end_schedules[i].size(); j-- > 0;) {
         if (end_schedules[i][j].r->said == r->said &&
           end_schedules[i][j].tag == ScheduleTag::SWAP_OUT) {
           end_schedules[i].erase(end_schedules[i].begin() + j);
