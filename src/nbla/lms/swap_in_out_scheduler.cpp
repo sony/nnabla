@@ -482,7 +482,6 @@ schedule_swap_in(ScheduleParams& params,
       continue;
     } 
 
-
     if (!context_checker(r->ctx, device_ctx) &&
         !context_checker(r->ctx, host_ctx)) {
       NBLA_ERROR(error_code::type,
@@ -497,7 +496,10 @@ schedule_swap_in(ScheduleParams& params,
       const auto array_bytes = r->size * sizeof_dtype(r->dtype);
 
       // Out of prefetch memory
-      if (max_prefetch_bytes < params.prefetch_bytes + array_bytes) break;
+      if (max_prefetch_bytes < params.prefetch_bytes + array_bytes ||
+          max_bytes < params.swap_in_bytes + array_bytes) {
+        break;
+      }
 
       if (context_checker(r->ctx, device_ctx)) {
         if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
