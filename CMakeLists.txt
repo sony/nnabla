@@ -102,6 +102,15 @@ if(UNIX)
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
     set(CPACK_SYSTEM_NAME ${LSB_RELEASE_ID}${LSB_RELEASE_RELEASE})
+  else()
+    find_program(UNAME uname)
+    if(EXISTS ${UNAME})
+      execute_process(COMMAND ${UNAME} -s
+        OUTPUT_VARIABLE UNAME_SYSTEM_NAME
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+      set(CPACK_SYSTEM_NAME ${UNAME_SYSTEM_NAME})
+    endif()
   endif()
   find_program(UNAME uname)
   if(EXISTS ${UNAME})
