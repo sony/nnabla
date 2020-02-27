@@ -140,8 +140,6 @@ cdef class Communicator:
 
         Example: 
 
-        In case of the multi-process data parallel distributed training,
-
         .. code-block:: python
 
             # Communicator and Context
@@ -194,7 +192,7 @@ cdef class Communicator:
             self.communicatorp.allreduce(division, inplace)
 
     def all_reduce(self, data, cpp_bool division=False, cpp_bool inplace=False, string group="world"):
-        """All reduce over data.
+        """All reduce over data in different device.
 
         Args:
             data (:obj:`NdArray` or list of :obj:`NdArray`)
@@ -208,23 +206,36 @@ cdef class Communicator:
 
         Example: 
 
-        In case of the multi-process data parallel distributed training,
-
         .. code-block:: python
 
+            # Run like `mpirun -n 2 python <code_snippet.py>`
+            # note: the order of the output to stdout are stochastic because of multiprocesses.
+             
             # Communicator and Context
+            import numpy as np
+            import nnabla as nn
+            import nnabla.communicators as C
+            from nnabla.ext_utils import get_extension_context
+             
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
             comm = C.MultiProcessCommunicator(ctx)
             comm.init()
-
+             
             # Data
-            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]
+            print("Before the collective ({}-th)".format(comm.rank))
             for x in x_list:
-                x.d = np.random.rand(x.shape)                        
-
+                x.d = np.random.rand(*x.shape)
+                print(x.d)
+                
             # AllReduce
             comm.all_reduce([x.data for x in x_list], inplace=True)
+             
+            # Check
+            print("After the collective ({}-th)".format(comm.rank))
+            for x in x_list:
+                print(x.d)
 
         """
         cdef vector[shared_ptr[CNdArray]] cndarray_list
@@ -241,7 +252,7 @@ cdef class Communicator:
                     cndarray_list, division, inplace, group)
 
     def reduce(self, data, int dst, cpp_bool division=False, cpp_bool inplace=False, string group="world"):
-        """Reduce over data.
+        """Reduce over data in different device.
 
         Args:
             data (:obj:`NdArray` or list of :obj:`NdArray`)
@@ -256,23 +267,36 @@ cdef class Communicator:
 
         Example: 
 
-        In case of the multi-process data parallel distributed training,
-
         .. code-block:: python
 
+            # Run like `mpirun -n 2 python <code_snippet.py>`
+            # note: the order of the output to stdout are stochastic because of multiprocesses.
+             
             # Communicator and Context
+            import numpy as np
+            import nnabla as nn
+            import nnabla.communicators as C
+            from nnabla.ext_utils import get_extension_context
+             
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
             comm = C.MultiProcessCommunicator(ctx)
             comm.init()
-
+             
             # Data
-            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]
+            print("Before the collective ({}-th)".format(comm.rank))
             for x in x_list:
-                x.d = np.random.rand(x.shape)                        
-
+                x.d = np.random.rand(*x.shape)
+                print(x.d)
+                
             # Reduce
             comm.reduce([x.data for x in x_list], dst=0, inplace=True)
+             
+            # Check
+            print("After the collective ({}-th)".format(comm.rank))
+            for x in x_list:
+                print(x.d)
 
         """
         cdef vector[shared_ptr[CNdArray]] cndarray_list
@@ -289,7 +313,7 @@ cdef class Communicator:
                     cndarray_list, dst, division, inplace, group)
 
     def bcast(self, data, int src, cpp_bool inplace=False, string group="world"):
-        """Reduce over data.
+        """Broadcast data to different devices.
 
         Args:
             data (:obj:`NdArray` or list of :obj:`NdArray`)
@@ -302,23 +326,36 @@ cdef class Communicator:
 
         Example: 
 
-        In case of the multi-process data parallel distributed training,
-
         .. code-block:: python
 
+            # Run like `mpirun -n 2 python <code_snippet.py>`
+            # note: the order of the output to stdout are stochastic because of multiprocesses.
+             
             # Communicator and Context
+            import numpy as np
+            import nnabla as nn
+            import nnabla.communicators as C
+            from nnabla.ext_utils import get_extension_context
+             
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
             comm = C.MultiProcessCommunicator(ctx)
             comm.init()
-
+             
             # Data
-            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]
+            print("Before the collective ({}-th)".format(comm.rank))
             for x in x_list:
-                x.d = np.random.rand(x.shape)                        
-
+                x.d = np.random.rand(*x.shape)
+                print(x.d)
+                
             # Bcast
             comm.bcast([x.data for x in x_list], src=0, inplace=True)
+             
+            # Check
+            print("After the collective ({}-th)".format(comm.rank))
+            for x in x_list:
+                print(x.d)
 
         """
         cdef vector[shared_ptr[CNdArray]] cndarray_list
@@ -333,7 +370,7 @@ cdef class Communicator:
                 self.communicatorp.bcast(cndarray_list, src, inplace, group)
 
     def all_gather(self, ndarray, ndarray_list, string group="world"):
-        """All gather over data.
+        """All gather over data in different device.
 
         Args:
             ndarray (:obj:`NdArray`): Data to be gathered. 
@@ -342,23 +379,36 @@ cdef class Communicator:
 
         Example: 
 
-        In case of the multi-process data parallel distributed training,
-
         .. code-block:: python
 
+            # Run like `mpirun -n 2 python <code_snippet.py>`
+            # note: the order of the output to stdout are stochastic because of multiprocesses.
+             
             # Communicator and Context
+            import numpy as np
+            import nnabla as nn
+            import nnabla.communicators as C
+            from nnabla.ext_utils import get_extension_context
+             
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
             comm = C.MultiProcessCommunicator(ctx)
             comm.init()
-
+             
             # Data
-            x = nn.Variable(10, 10)
-            x.d = np.random.rand(y.shape)
-            y_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
-
+            x = nn.Variable([2, 2])
+            x.d = np.random.rand(*x.shape)
+            y_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]
+            print("Before the collective ({}-th)".format(comm.rank))
+            print(x.d)
+             
             # AllGather
             comm.all_gather(x.data, [y.data for y in y_list])
+             
+            # Check
+            print("After the collective ({}-th)".format(comm.rank))
+            for y in y_list:
+                print(y.d)
 
         """
         cdef shared_ptr[CNdArray] cndarray = ( < NdArray > ndarray).arr
@@ -369,33 +419,45 @@ cdef class Communicator:
             self.communicatorp.all_gather(cndarray, cndarray_list, group)
 
     def reduce_scatter(self, ndarray_list, ndarray, cpp_bool division=False, string group="world"):
-        """Reduce scatter over data.
+        """Reduce scatter over data in different device.
 
         Args:
-            ndarray_list (:obj:`NdArray`):  Data to be saved.
-            ndarray (:obj:`NdArray`): Data to be gathered. 
+            ndarray_list (:obj:`NdArray`):  List of data to be reduced over different devices.
+            ndarray (:obj:`NdArray`): Data to be saved.
             group (string): Name of a group. This groups is used when the collective is called.
 
         Example: 
 
-        In case of the multi-process data parallel distributed training,
-
         .. code-block:: python
 
+            # Run like `mpirun -n 2 python <code_snippet.py>`
+            # note: the order of the output to stdout are stochastic because of multiprocesses.
+             
             # Communicator and Context
+            import numpy as np
+            import nnabla as nn
+            import nnabla.communicators as C
+            from nnabla.ext_utils import get_extension_context
+             
             extension_module = "cudnn"
             ctx = get_extension_context(extension_module)
             comm = C.MultiProcessCommunicator(ctx)
             comm.init()
-
+             
             # Data
-            y = nn.Variable(10, 10)
-            x_list = [nn.Variable(10, 10), nn.Variable(10, 10), nn.Variable(10, 10)]
+            x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]
+            y = nn.Variable([2, 2])
+            print("Before the collective ({}-th)".format(comm.rank))
             for x in x_list:
-                x.d = np.random.rand(x.shape)                        
-
+                x.d = np.random.rand(*x.shape)
+                print(x.d)
+                
             # ReduceScatter
-                comm.reduce_scatter([x.data for x in x_list], y.data)
+            comm.reduce_scatter([x.data for x in x_list], y.data)
+             
+            # Check
+            print("After the collective ({}-th)".format(comm.rank))
+            print(y.d)
 
         """
         cdef shared_ptr[CNdArray] cndarray = ( < NdArray > ndarray).arr
@@ -407,7 +469,7 @@ cdef class Communicator:
                 cndarray_list, cndarray, division, group)
 
     def all_reduce_callback(self, data, size_t pack_size, cpp_bool division=False, string group="world"):
-        """All reduce over data.
+        """All reduce over data in different device.
 
         Note:
             This function does not support shared parameters (such as RNNs) currently.
@@ -425,9 +487,16 @@ cdef class Communicator:
 
         .. code-block:: python
 
+            # Run like `mpirun -n 2 python <code_snippet.py>`
+             
             # Communicator and Context
-            extension_module = "cuda.cudnn"
-            ctx = extension_context(extension_module)
+            import numpy as np
+            import nnabla as nn
+            import nnabla.communicators as C
+            from nnabla.ext_utils import get_extension_context
+
+            extension_module = "cudnn"
+            ctx = get_extension_context(extension_module)
             comm = C.MultiProcessCommunicator(ctx)
             comm.init()
 
@@ -548,7 +617,7 @@ def MultiProcessDataParallelCommunicator(CContext ctx):
             loss.backward()
 
             # Allreduce
-            comm.allreduce([v.grad for v in nn.get_parameters().values()])
+            comm.all_reduce([v.grad for v in nn.get_parameters().values()])
 
             # Update
             solver.update()
