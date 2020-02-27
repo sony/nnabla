@@ -27,7 +27,7 @@ class TrainPipeline(Pipeline):
             batch_size, num_threads, shard_id, seed=seed, prefetch_queue_depth=prefetch_queue)
         self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
                                     random_shuffle=True, num_shards=num_shards, shard_id=shard_id)
-        self.decode = ops.nvJPEGDecoder(device="mixed", output_type=types.RGB,
+        self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB,
                                         device_memory_padding=nvjpeg_padding,
                                         host_memory_padding=nvjpeg_padding)
 
@@ -56,7 +56,7 @@ class ValPipeline(Pipeline):
             batch_size, num_threads, shard_id, seed=seed)
         self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
                                     random_shuffle=False, num_shards=num_shards, shard_id=shard_id)
-        self.decode = ops.nvJPEGDecoder(device="mixed", output_type=types.RGB,
+        self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB,
                                         device_memory_padding=nvjpeg_padding,
                                         host_memory_padding=nvjpeg_padding)
         self.res = ops.Resize(device="gpu", resize_shorter=256)
