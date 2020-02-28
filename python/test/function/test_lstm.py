@@ -196,9 +196,6 @@ def get_lstm_grad(xs_np, h0_np, c0_np, w0_np, w_np, b_np, dy, dh, dc, num_layers
 def test_lstm(seed, num_layers, dropout, bidirectional, training, seq_len, batch_size, input_size, hidden_size, with_bias, ctx, func_name):
     from nbla_test_utils import function_tester
 
-    if func_name == "LSTM":
-        pytest.skip("Not implemented in CPU.")
-
     rng = np.random.RandomState(seed)
     num_directions = 1
     if bidirectional:
@@ -238,8 +235,6 @@ def test_lstm(seed, num_layers, dropout, bidirectional, training, seq_len, batch
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 def test_inference_backward(num_layers, bidirectional, seq_len, batch_size, input_size, hidden_size, ctx, func_name):
     with nn.context_scope(ctx):
-        if func_name == "LSTM":
-            pytest.skip("Not implemented in CPU.")
         num_directions = 1
         if bidirectional:
             num_directions = 2

@@ -590,6 +590,8 @@ def function_tester(rng, func, ref_func, inputs,
         v.grad.zero()
         v.need_grad = False
         try:
+            o[0].parent.forward(
+                list(filter(lambda x: x is not None, vinputs)), o)
             o[0].parent.backward(
                 list(filter(lambda x: x is not None, vinputs)), o)
         except RuntimeError as e:
