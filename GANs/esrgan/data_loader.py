@@ -67,13 +67,13 @@ def augment(img, hflip, rot90, vflip):
 
 
 def data_iterator_sr(num_examples, batch_size, gt_image, lq_image, train, shuffle, rng=None):
-    from train_esrgan import get_args
-    args = get_args()
+    from args import get_config
+    conf = get_config()
 
     def dataset_load_func(i):
         # get images from the list
-        scale = args.scale
-        gt_size = args.gt_size
+        scale = conf.train.scale
+        gt_size = conf.train.gt_size
         gt_img = read_image(gt_image[i])
         lq_img = read_image(lq_image[i])
         if not train:

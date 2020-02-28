@@ -16,6 +16,7 @@ import nnabla as nn
 import numpy as np
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+from args import get_config
 
 
 def vgg_prediction(image, test=False, ncls=1000, nmaps=64, act=F.relu, config="VGG19", with_bias=True, with_bn=False, finetune=True):
@@ -80,25 +81,25 @@ def vgg_prediction(image, test=False, ncls=1000, nmaps=64, act=F.relu, config="V
     return h
 
 
-def load_vgg19(x):
-    from args import get_args
-    args = get_args()
-    with nn.parameter_scope("vgg19"):
-        nn.load_parameters(args.vgg_pre_trained_weights)
-        # drop all the affine layers for finetuning.
-        drop_layers = ['classifier/0/affine',
-                       'classifier/3/affine', 'classifier/6/affine']
-        for layers in drop_layers:
-            nn.parameter.pop_parameter((layers + '/W'))
-            nn.parameter.pop_parameter((layers + '/b'))
+class PretrainedVgg19(object):
+    def __init__(self):
+        conf = get_config()
+        self.h5_file = conf.train.vgg_pre_trained_weights
+        with nn.parameter_scope("vgg19"):
+            print('loading vgg19 parameters')
+            nn.load_parameters(self.h5_file)
+            # drop all the affine layers for finetuning.
+            drop_layers = ['classifier/0/affine',
+                           'classifier/3/affine', 'classifier/6/affine']
+            for layers in drop_layers:
+                nn.parameter.pop_parameter((layers + '/W'))
+                nn.parameter.pop_parameter((layers + '/b'))
+            self.mean = nn.Variable.from_numpy_array(np.asarray(
+                [0.485, 0.456, 0.406]).reshape(1, 3, 1, 1))
+            self.std = nn.Variable.from_numpy_array(np.asarray(
+                [0.229, 0.224, 0.225]).reshape(1, 3, 1, 1))
 
-        # normalization by mean and standard deviation assuming the range for x is [0,1]
-        mean = nn.Variable.from_numpy_array(np.asarray(
-            [0.485, 0.456, 0.406]).reshape(1, 3, 1, 1))
-        std = nn.Variable.from_numpy_array(np.asarray(
-            [0.229, 0.224, 0.225]).reshape(1, 3, 1, 1))
-        x = F.div2(F.sub2(x, mean), std)
-        # For finetuning the output of last convolution is taken before ReLu and all the network parameters are frozen,
-        # If all the layers need to be used and trained again, set finetune to False.
-        y = vgg_prediction(x, finetune=True)
-        return y
+    def __call__(self, x):
+        with nn.parameter_scope("vgg19"):
+            self.x = F.div2(F.sub2(x, self.mean), self.std)
+            return vgg_prediction(self.x, finetune=True)

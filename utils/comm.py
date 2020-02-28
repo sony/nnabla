@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import nnabla as nn
+
 
 class CommunicatorWrapper(object):
     def __init__(self, ctx):
@@ -48,3 +50,11 @@ class CommunicatorWrapper(object):
             self.all_reduce(params, division=division, inplace=inplace)
 
         solver.update()
+
+    def get_all_reduce_callback(self, packing_size=2 << 20):
+        callback = None
+        if self.n_procs > 1:
+            params = [x.grad for x in nn.get_parameters().values()]
+            callback = self.comm.all_reduce_callback(
+                params, packing_size)
+        return callback

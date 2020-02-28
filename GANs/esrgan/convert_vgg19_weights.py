@@ -60,7 +60,7 @@ def pytorch_to_nnabla(input_file, h5_file):
         else:
             key = rename_params(str(k), affine=True)
         params = pf.get_parameter_or_create(key, shape=v.shape)
-        params.d = v
+        params.d = v.numpy()
     nn.parameter.save_parameters(h5_file)
 
 

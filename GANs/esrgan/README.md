@@ -17,7 +17,7 @@ __Result Examples__
 | :--------------------: | :---------------------: |
 | ![](results/baboon.png) | ![](results/baboon_SR.png) |
 | ![](results/comic.png) | ![](results/comic_SR.png) |
-| ![](results/lenna.png) | ![](results/lenna_SR.png) |
+| ![](results/result.png) | ![](results/result_SR.png) |
 
 ## Dataset Preparation
 In this example, DIV2K (DIVerse 2K resolution high quality images) dataset has been used for training, which contains 800 high definition images. This dataset can be downloaded from [here](https://data.vision.ee.ethz.ch/cvl/DIV2K/). For Validation, Set14 dataset has been used, which can be downloaded from [here](https://drive.google.com/drive/folders/1pRmhEmmY-tPF7uH8DuVthfHoApZWJ1QU). The steps for data pre-processing have been mentioned [here](https://github.com/xinntao/BasicSR/wiki/Prepare-datasets-in-LMDB-format#how-to-prepare) by original authors.
@@ -63,56 +63,58 @@ All the experiments are done using a scaling factor of 4 between LR and HR image
 A Residual-in-Residual Dense Block (RRDB) is used for training a PSNR oriented model. Use the below code to start the training.
 #### Single GPU training
 ```
-python train_psnr_rrdb.py \
+python train.py \
      --gt_train {path to GT training images} \
      --lq_train {path to LR training images} \
      --gt_val {path to GT val images} \
      --lq_val {path to LR val images} \
      --n_epochs 497 \
-     --savemodel {path to save the trained model}
+     --lr_g 2e-4 \
+     --savemodel {path to save the trained model} \
 ```
 #### Distributed Training
 For distributed training [install NNabla package compatible with Multi-GPU execution](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#pip-installation-distributed). Use the below code to start the distributed training.
 ```
 export CUDA_VISIBLE_DEVICES=0,1,2,3 {device ids that you want to use}
-mpirun -n {no. of devices} python train_psnr_rrdb.py \
+mpirun -n {no. of devices} python train.py \
      --gt_train {path to GT training images} \
      --lq_train {path to LR training images} \
      --gt_val {path to GT val images} \
      --lq_val {path to LR val images} \
      --n_epochs 497 \
-     --distributed True \
-     --savemodel {path to save the trained model}
+     --lr_g 2e-4 \
+     --savemodel {path to save the trained model} \
 ```
 ### Training ESRGAN
-As discussed in the introduction, ESRGAN uses VGG19 features before activation for improving the perceptual loss of generator. So, we are going to need VGG19 pre-trained weights to compute the perceptual loss. Download the VGG19 weights from [here](https://download.pytorch.org/models/vgg19-dcbb9e9d.pth) and then convert these weights to .h5 format using the below code:
-```
-python convert_vgg19_weights.py --input_file {pre-trained pytorch vgg19 weights} --output_file {path to save the converted model}
-```
+As discussed in the introduction, ESRGAN uses VGG19 features before activation for improving the perceptual loss of generator. So, we are going to need VGG19 pre-trained weights to compute the perceptual loss. Download the VGG19 NNabla weights from [here](https://nnabla.org/pretrained-models/nnabla-examples/esrgan/vgg19.h5). If you want to convert pytorch VGG19 weights to NNabla h5 format, see the following [link](./authors_weights_inference.md).  
 The pre-trained PSNR model is used for finetuning the ESRGAN network. To obtain this you can train a PSNR oriented RRDB network or use our [pre-trained weight.](https://nnabla.org/pretrained-models/nnabla-examples/esrgan/psnr_rrdb.h5) The intention of using a pre-trained PSNR oriented model as initializer for generator is to avoid undesired local optima for generator and to provide the discriminator relatively good super-resolved images instead of extreme fake or noisy ones. Use the code below to train ESRGAN:
 #### Single GPU training
 ```
 export CUDA_VISIBLE_DEVICES=0,1,2,3 {device ids that you want to use}
-python train_esrgan \
+python train.py \
      --gt_train {path to GT training images} \
      --lq_train {path to LR training images} \
      --gt_val {path to GT val images} \
      --lq_val {path to LR val images} \
      --n_epochs 199 \
+     --lr_g 1e-4 \
      --vgg_pre_trained_weights {path to pre-trained vgg19 weights} \
-     --psnr_rrdb_pretrained {path to pre-trained PSNR oriented model} \
-     --savemodel {path to save the trained model}
+     --gen_pretrained {path to pre-trained PSNR oriented model} \
+     --savemodel {path to save the trained model} \
+     --esrgan True
 ```
 #### Distributed training
 ```
-mpirun -n {no. of devices} python train_esrgan.py \
+mpirun -n {no. of devices} python train.py \
      --gt_train {path to GT training images} \
      --lq_train {path to LR training images} \
      --gt_val {path to GT val images} \
      --lq_val {path to LR val images} \
      --n_epochs 199 \
-     --distributed True \
+     --lr_g 1e-4 \
      --vgg_pre_trained_weights {path to pre-trained vgg19 weights} \
-     --psnr_rrdb_pretrained {path to pre-trained PSNR oriented model} \
-     --savemodel {path to save the trained model}
+     --gen_pretrained {path to pre-trained PSNR oriented model} \
+     --savemodel {path to save the trained model} \
+     --esrgan True
 ```
+
