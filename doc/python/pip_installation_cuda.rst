@@ -17,7 +17,6 @@ CUDA vs CUDNN Compatibility
 ================== ============ =====================
 Package name       CUDA version CUDNN version
 ================== ============ =====================
-nnabla-ext-cuda80  8.0          7.1(Linux & Win)
 nnabla-ext-cuda90  9.0          7.6(Linux & Win)
 nnabla-ext-cuda100 10.0         7.6(Linux & Win)
 nnabla-ext-cuda101 10.1         7.6(Linux & Win)
@@ -97,7 +96,7 @@ FAQ
 Q. How do I install CUDA?
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NNabla CUDA extension requires both CUDA toolkit and CUDNN library. You should select a proper CUDA version according to your CUDA device capability. See `the official installation guide <https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html>`_. NNabla supports CUDA versions later than 8.0. See :ref:`the table <cuda-cudnn-compatibility>` for the CUDNN compatibility with the specific CUDA versions.
+NNabla CUDA extension requires both CUDA toolkit and CUDNN library. You should select a proper CUDA version according to your CUDA device capability. See `the official installation guide <https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html>`_. NNabla supports CUDA versions later than 8.0. See `the table <https://github.com/nnabla/nnabla/blob/master/doc/python/pip_installation_cuda.rst#cuda-vs-cudnn-compatibility>`_ for the CUDNN compatibility with the specific CUDA versions.
 
 
 Q. How do I install NCCL
