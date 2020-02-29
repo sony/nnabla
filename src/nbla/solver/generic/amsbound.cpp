@@ -32,8 +32,8 @@ AMSBound<T>::AMSBound(const Context &ctx, float alpha, float beta1, float beta2,
                       float eps, float final_lr, float gamma,
                       bool bias_correction)
     : Solver(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2), eps_(eps),
-      final_lr_(final_lr), gamma_(gamma), bias_correction_(bias_correction),
-      init_alpha_(alpha_) {}
+      final_lr_(final_lr), gamma_(gamma), init_alpha_(alpha_),
+      bias_correction_(bias_correction) {}
 
 template <typename T> AMSBound<T>::~AMSBound() {}
 
