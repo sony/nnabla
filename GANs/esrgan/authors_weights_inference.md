@@ -8,3 +8,9 @@ cd nnabla-examples/GANs/esrgan
 python convert_weights.py --pre-trained_model {path to pre-trained weights} --save_path {path to save the h5 file}
 python inference.py --loadmodel {path to the converted h5 file} --input_image {sample LR image}
 ```
+
+### Convert VGG19 weights to NNabla
+Download the VGG19 weights from [here](https://download.pytorch.org/models/vgg19-dcbb9e9d.pth) and then convert these weights to .h5 format using the below code:
+```
+python convert_vgg19_weights.py --input_file {pre-trained pytorch vgg19 weights} --output_file {path to save the converted model}
+```

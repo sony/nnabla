@@ -16,6 +16,11 @@ import nnabla.functions as F
 __all__ = [
     'GanLossContainer',
     'GanLoss',
+    'LsGanLoss',
+    'WassersteinGanLoss',
+    'GeometricGanLoss',
+    'HingeGanLoss',
+    'SymmetricHingeGanLoss',
     'RelativisticAverageGanLoss',
 ]
 
@@ -219,6 +224,128 @@ class GanLoss(BaseGanLoss):
 
     def _loss_minus(self, dout):
         return -F.log_sigmoid(-dout)
+
+
+class LsGanLoss(BaseGanLoss):
+    '''
+    Least Square GAN loss defined as
+
+    .. math::
+        l^+(d) &= (d - 1)^2 \\
+        l^-(d) &= (d - 0)^2
+
+    in a generalized form described in `BaseGanLoss` documentation.
+
+    References:
+
+        `Xudong Mao, Qing Li, Haoran Xie, Raymond Y.K. Lau, Zhen Wang, Stephen Paul Smolley.
+        Least Squares Generative Adversarial Networks.
+        <https://arxiv.org/abs/1611.04076>`_
+
+    '''
+
+    def _loss_plus(self, dout):
+        return F.squared_error(dout,
+                               F.constant(1., shape=dout.shape))
+
+    def _loss_minus(self, dout):
+        return F.squared_error(dout,
+                               F.constant(0., shape=dout.shape))
+
+
+class WassersteinGanLoss(BaseGanLoss):
+    '''
+    Wasserstein GAN loss defined as
+
+    .. math::
+        l^+(d) &= d \\
+        l^-(d) &= -d
+
+    in a generalized form described in `BaseGanLoss` documentation.
+
+    References:
+
+        `Martin Arjovsky, Soumith Chintala, Leon Bottou.
+        Wasserstein GAN.
+        <https://arxiv.org/abs/1701.07875>`_
+
+    '''
+
+    def _loss_plus(self, dout):
+        return -dout
+
+    def _loss_minus(self, dout):
+        return dout
+
+
+class GeometricGanLoss(BaseGanLoss):
+    '''
+    Geometric GAN loss with SVM hyperplane defined as
+
+    .. math::
+        L^r_D &= \max(0, 1 - d) \\
+        L^f_D &= \max(0, 1 + d) \\
+        L^r_G &= d \\
+        L^f_G &= -d
+
+    in a generalized form described in `BaseGanLoss` documentation, but note that it's not symmetric.
+
+    References:
+
+        `Jae Hyun Lim, Jong Chul Ye.
+        Geometric GAN.
+        <https://arxiv.org/abs/1705.02894>`_
+
+    Note:
+        This is somestimes called as Hinge GAN.
+
+    '''
+
+    def _loss_plus(self, dout):
+        return F.relu(1. - dout)
+
+    def _loss_minus(self, dout):
+        return F.relu(1. + dout)
+
+    def _loss_gen_real(self, dout):
+        return dout
+
+    def _loss_gen_fake(self, dout):
+        return -1 * dout
+
+
+class HingeGanLoss(GeometricGanLoss):
+    '''
+    An alias of `GeometricGanLoss`.
+
+    '''
+    pass
+
+
+class SymmetricHingeGanLoss(BaseGanLoss):
+    '''
+    Symmetric hinge GAN loss defined as
+
+    .. math::
+        l^+ &= \max(0, 1 - d) \\
+        l^- &= \max(0, 1 + d)
+
+    in a generalized form described in `BaseGanLoss` documentation.
+
+    The loss function of RaHingeGAN can be created by passing this to `RelativisticAverageGanLoss`.
+
+    References:
+        `Alexia Jolicoeur-Martineau.
+        Relativistic Average GAN.
+        <https://arxiv.org/pdf/1807.00734.pdf>`_
+
+    '''
+
+    def _loss_plus(self, dout):
+        return F.relu(1. - dout)
+
+    def _loss_minus(self, dout):
+        return F.relu(1. + dout)
 
 
 class RelativisticAverageGanLoss(object):

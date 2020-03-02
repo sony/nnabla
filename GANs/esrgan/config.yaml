@@ -1,0 +1,58 @@
+# Configutaion file for ESRGAN implementation.
+nnabla_context:
+  context: cudnn
+  device_id: 0
+  type_config: float
+
+train:
+  batch_size: 16
+  seed: 10
+  scale: 4
+  # Number of epoch. Use 497 for PSNR training and 199 for ESRGAN
+  n_epochs: 199
+  gt_size: 128
+  # Path to save the trained weights
+  savemodel: ./output_esrgan
+  # Path of pre-trained VGG19 weights
+  vgg_pre_trained_weights: ./vgg19.h5
+  # Path of pre-trained psnr oriented rrdb weights
+  gen_pretrained: None 
+  # Learning rate steps for multi-step learning
+  lr_steps: [50000, 100000, 200000, 300000]
+  cosine_period: 250000
+  cosine_num_period: 4
+
+model:
+  # Select which model to train, PSNR based RRDB or ESRGAN model
+  esrgan: False
+
+val:
+  batch_size: 1
+  # Path to save the validation images.
+  save_results: ./esrgan
+
+hyperparameters:
+  # Co-efficient for pixel loss
+  eta_pixel_loss: 1e-2
+  # Co-efficient for feature loss
+  feature_loss_weight: 1
+  #Co-efficient for gan loss
+  lambda_gan_loss: 5e-3
+  # max learning rate for cosine annealing
+  eta_max: 2e-4
+  # min learning rate for cosine annealing
+  eta_min: 1e-7
+  # Initial learning rate for Generator 1e-4 for esrgan, 2e-4 for psnr
+  lr_g: 2e-4
+  # Initial learning rate for Discriminator
+  lr_d: 1e-4
+
+DIV2K:
+  # training dataset directory. HR ground truth images and LR images are needed here.
+  gt_train: ./dataset_esrgan/HR/x4
+  lq_train: ./dataset_esrgan/LR/x4
+
+SET14:
+  # validation dataset directory. HR ground truth images and LR images are needed here.
+  gt_val: ./Set14_LR/HR/x4
+  lq_val: ./Set14_LR/LR/x4/

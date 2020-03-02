@@ -15,7 +15,7 @@
 import numpy as np
 
 
-def lr_scheduler(curr_iter, T_max, eta_max, eta_min=0):
+def get_cosine_annealing_learning_rate(curr_iter, T_max, eta_max, eta_min=0):
     """
         cosine annealing scheduler.
     """
@@ -24,33 +24,24 @@ def lr_scheduler(curr_iter, T_max, eta_max, eta_min=0):
     return lr
 
 
-def update_learning_rate_cosine(current_iter, eta_max, eta_min, n_devices):
+def get_repeated_cosine_annealing_learning_rate(current_iter, eta_max, eta_min, period, num_periods):
     """
        restart cosine learning rate function after every quarter of tatal iteration.
     """
-    N_iter = 1000000//4//n_devices  # 1Mil iterations used by original authors
-    restart = [250000//n_devices, 500000//n_devices, 750000//n_devices]
-    if current_iter <= restart[0]:
-        current_lr = lr_scheduler(current_iter, N_iter, eta_max, eta_min)
-        return current_lr
-    if restart[0] < current_iter <= restart[1]:
-        current_lr = lr_scheduler(
-            current_iter-restart[0], N_iter, eta_max, eta_min)
-        return current_lr
-    if restart[1] < current_iter <= restart[2]:
-        current_lr = lr_scheduler(
-            current_iter - restart[1], N_iter, eta_max, eta_min)
-        return current_lr
-    if current_iter > restart[2]:
-        current_lr = lr_scheduler(
-            current_iter - restart[2], N_iter, eta_max, eta_min)
-        return current_lr
+    current_iter = current_iter
+
+    if current_iter >= period * num_periods:
+        return eta_min
+    mod_iter = current_iter % period
+    current_lr = get_cosine_annealing_learning_rate(
+        mod_iter, period, eta_max, eta_min)
+    return current_lr
 
 
-def update_learning_rate_multistep(current_iter, lr_steps, lr):
+def get_multistep_learning_rate(current_iter, lr_steps, current_lr):
     if current_iter in lr_steps:
-        lr *= 0.5
-    return lr
+        current_lr *= 0.5
+    return current_lr
 
 
 if __name__ == "__main__":
@@ -61,26 +52,27 @@ if __name__ == "__main__":
 
     #########################################################################
     # for cosine annealing learnig rate scheduler
-    n_devices = 4
-    train_size = 32208//16//n_devices
-    total_epochs = 497
-
-    #restart = [250000//n_devices,500000//n_devices,750000//n_devices]
-    eta_max = 2e-4
-    eta_min = 1e-7
-    i = 0
-    for epoch in range(total_epochs):
-        index = 0
-        while (index < train_size):
-            i += 1
-            lr = update_learning_rate_cosine(i, eta_max, eta_min, n_devices)
-            lr_l.append(lr)
-            index += 1
+    # n_devices = 1
+    # train_size = 32208//16//(n_devices)
+    # total_epochs = 497
+    # period = 250000
+    # num_periods = 4
+    # #restart = [250000//n_devices,500000//n_devices,750000//n_devices]
+    # eta_max = 2e-4
+    # eta_min = 1e-7
+    # i = 0
+    # for epoch in range(total_epochs):
+    #     index = 0
+    #     while (index < train_size):
+    #         i += n_devices
+    #         lr = get_repeated_cosine_annealing_learning_rate(i, eta_max, eta_min, period, num_periods)
+    #         lr_l.append(lr)
+    #         index += 1
     #########################################################################
     # for multistep learnig rate scheduler
     # lr = 1e-4
-    # n_devices = 4
-    # lr_steps = [50000//n_devices, 100000//n_devices, 200000//n_devices, 300000//n_devices]
+    # n_devices = 1
+    # lr_steps = [50000, 100000, 200000, 300000]
     # total_epochs = 199
     # N_iter = 400000/n_devices
     # train_size = 32208 // 16 // n_devices
@@ -88,8 +80,8 @@ if __name__ == "__main__":
     # for epoch in range(199):
     #     index = 0
     #     while (index < train_size):
-    #         i+=1
-    #         lr = update_learning_rate_multistep(i, lr_steps, lr)
+    #         i+=n_devices
+    #         lr = get_multistep_learning_rate(i, lr_steps, lr)
     #         lr_l.append(lr)
     #         index+=1
     ##########################################################################
