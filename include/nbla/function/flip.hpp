@@ -43,6 +43,7 @@ specify (2,3).
 template <typename T> class Flip : public BaseFunction<const vector<int> &> {
 protected:
   vector<int> axes_;
+  vector<bool> flip_;
 
 public:
   Flip(const Context &ctx, const vector<int> &axes)

@@ -47,7 +47,6 @@ class Shift : public BaseFunction<const vector<int> &, const string &> {
 protected:
   vector<int> shifts_;
   string border_mode_;
-  vector<vector<int>> addr_table_;
 
 public:
   Shift(const Context &ctx, const vector<int> &shifts,
@@ -68,7 +67,6 @@ public:
   }
 
   std::vector<int> &shifts() { return shifts_; }
-  void prepare_addr_table(const Variables &inputs);
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -81,10 +79,9 @@ protected:
                                       const vector<bool> &accum);
 
 private:
-  void shift_recursive(Variable *inp, const T *x, T *y, int x_offset,
+  template <bool is_backward>
+  void shift_recursive(Variable *inp, const T *src, T *dst, int x_offset,
                        int y_offset, int dim);
-  void shift_backward_recursive(Variable *outp, const T *dy, T *dx,
-                                int x_offset, int y_offset, int dim);
 };
 }
 #endif

@@ -28,6 +28,7 @@ NBLA_REGISTER_FUNCTION_SOURCE(Flip, const vector<int> &);
 template <typename T>
 void Flip<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   outputs[0]->reshape(inputs[0]->shape(), true);
+  flip_.resize(inputs[0]->ndim());
 }
 
 template <typename T>
@@ -91,12 +92,11 @@ template <typename T>
 void Flip<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  std::vector<bool> flip(inputs[0]->ndim());
   for (int id = 0; id < inputs[0]->ndim(); id++) {
     auto itr = std::find(axes_.begin(), axes_.end(), id);
-    flip[id] = itr != axes_.end();
+    flip_[id] = itr != axes_.end();
   }
-  flip_recursive(inputs[0], x, y, flip, false, 0, 0, 0);
+  flip_recursive(inputs[0], x, y, flip_, false, 0, 0, 0);
 }
 
 template <typename T>
@@ -108,12 +108,7 @@ void Flip<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   }
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
-  std::vector<bool> flip(outputs[0]->ndim());
-  for (int id = 0; id < outputs[0]->ndim(); id++) {
-    auto itr = std::find(axes_.begin(), axes_.end(), id);
-    flip[id] = itr != axes_.end();
-  }
-  flip_recursive(outputs[0], dy, dx, flip, accum[0], 0, 0, 0);
+  flip_recursive(outputs[0], dy, dx, flip_, accum[0], 0, 0, 0);
 }
 
 } // namespace nbla
