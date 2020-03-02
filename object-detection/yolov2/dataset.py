@@ -15,7 +15,8 @@
 
 # This file was forked from https://github.com/marvis/pytorch-yolo2 ,
 # licensed under the MIT License (see LICENSE.external for more details).
-
+from nnabla.utils.data_iterator import data_iterator
+from nnabla.utils.data_source import DataSource
 
 import os
 import random
@@ -32,48 +33,13 @@ except:
     allow_on_memory_data = False
 
 
-def read_truths(lab_path):
-    if not os.path.exists(lab_path):
-        return np.array([])
-    if os.path.getsize(lab_path):
-        truths = np.loadtxt(lab_path)
-        # to avoid single truth problem
-        truths = truths.reshape(truths.size/5, 5)
-        return truths
-    else:
-        return np.array([])
-
-
-def read_truths_args(lab_path, min_box_scale):
-    truths = read_truths(lab_path)
-    new_truths = []
-    for i in range(truths.shape[0]):
-        if truths[i][3] < min_box_scale:
-            continue
-        new_truths.append([truths[i][0], truths[i][1],
-                           truths[i][2], truths[i][3], truths[i][4]])
-    return np.array(new_truths)
-
-
-class listDataset(object):
+class YoloDataSource(DataSource):
     '''
-    TODO.
-
-    During training, the image size augmentation is applied to the image. The image size is randomly sampled from the tuple argument ``image_size`` at the specified rate by ``image_size_change_freq``.
-
-    Arg:
-        imaeg_sizes(tuple): A tuple or list of image sizes for image size
-            augmentation. The default value is the following multiples
-            of 32: (320, 352, ..., 608).
-            If you use the YOLOv2 network architecture, the numbers specified
-            must be multiples of 32 since the size of the network final
-            output is reduced by a factor of 32.
-        image_size_change_freq (int): At every number of samples specified, the image size is randomly sapmled from the tuple image_size
-        on_memory_data (tuple):
-            path, image (uint8), label (float)
+    data iterator for yolo 
     '''
 
-    def __init__(self, root, args, shuffle=True, train=False, seen=0, image_sizes=None, image_size_change_freq=6400, on_memory_data=None, use_cv2=True, shape=None):
+    def __init__(self, root, args, shuffle=False, train=False, image_sizes=None, image_size_change_freq=6400, on_memory_data=None, use_cv2=True, shape=None):
+        super(YoloDataSource, self).__init__(shuffle=shuffle)
         if not allow_on_memory_data or not use_cv2:
             print('On-memory data cannot be used if cv2 package is not available.')
             on_memory_data = None
@@ -81,14 +47,14 @@ class listDataset(object):
         if on_memory_data is None:
             with open(root, 'r') as file:
                 self.lines = file.readlines()
-            if shuffle:
-                random.shuffle(self.lines)
-            self.nSamples = len(self.lines)
+            self._size = len(self.lines)
         else:
             assert use_cv2
-            if shuffle:
-                self.indexes = np.random.permutation(len(on_memory_data[0]))
-            self.nSamples = len(on_memory_data[0])
+            self._size = len(on_memory_data[0])
+        if shuffle:
+            self.indexes = np.random.permutation(self._size)
+        else:
+            self.indexes = np.arange(self._size)
         if train:
             self.jitter = args.jitter
             self.hue = args.hue
@@ -96,7 +62,19 @@ class listDataset(object):
             self.exposure = args.exposure
 
         self.train = train
-        self.seen = seen
+
+        # The attribute self.seen maintains how many examples have been
+        # created after creating this data source. This will be used
+        # to determine the timing of size change for image size
+        # augmentation.
+        #
+        # WARNING: This initialization with -1 relies on an undocumented
+        # behavior of super classs DataSource where `_get_data(self, position)`
+        # is called to obtain the input size and attributes before the first
+        # call of next() method at `__init__(self, ...)`. This seen counter
+        # will fail if this behavior changes in the super class.
+        self.seen = -1
+
         if image_sizes is None:
             image_sizes = tuple(range(320, 608 + 1, 32))
         self.image_sizes = image_sizes
@@ -109,18 +87,12 @@ class listDataset(object):
         if allow_on_memory_data and use_cv2:
             self.image_module = image2
 
-    def __len__(self):
-        return self.nSamples
+        self._variables = ("img", "labels")
 
-    def __add__(self, other):
-        print("Not implemented!!!!")
-        raise NotImplementedError
-        # return ConcatDataset([self, other])
-
-    def __getitem__(self, index):
+    def _get_data(self, index):
         # random.seed(index)
         assert index <= len(self), 'index range error'
-        if self.train and index % self.image_size_change_freq == 0:
+        if self.train and self.seen % self.image_size_change_freq == 0:
             # TODO: Use the max image size at the end of training.
             # The original darknet implementation does, but not sure how much it
             # affects the performance in practical use-cases.
@@ -128,13 +100,12 @@ class listDataset(object):
             self.shape = (width, width)
 
         if self.on_memory_data is None:
-            imgpath = self.lines[index].rstrip()
+            imgpath = self.lines[self.indexes[index]].rstrip()
             labpath = imgpath.replace('images', 'labels').replace(
                 'JPEGImages', 'labels').replace('.jpg', '.txt').replace('.png', '.txt')
         else:
             imgpath = self.on_memory_data[1][self.indexes[index]]
             labpath = self.on_memory_data[2][self.indexes[index]]
-
         if self.train:
             img, label = self.image_module.load_data_detection(
                 imgpath, labpath, self.shape, self.jitter, self.hue, self.saturation, self.exposure)
@@ -167,49 +138,23 @@ class listDataset(object):
         self.seen = self.seen + 1
         return (img, label)
 
+    def reset(self):
+        if self._shuffle:
+            self._indexes = self._rng.permutation(self._size)
+        else:
+            self._indexes = np.arange(self._size)
+        super(YoloDataSource, self).reset()
 
-def list2np(t, batch_array):
-    ret = tuple()
-    for j, items in enumerate(zip(*t)):
-        shape = (len(items),) + items[0].shape
-        if j >= len(batch_array):
-            batch_array.append(np.empty(shape, dtype=np.float32))
-        elif batch_array[j].shape != shape:
-            batch_array[j] = np.empty(shape, dtype=np.float32)
-        arr = batch_array[j]
-        for i, item in enumerate(items):
-            arr[i] = item
-        ret += (arr,)
-    return ret
+    def __len__(self):
+        return self._size
 
 
-def next_batch(it, batch_size, batch_array):
-    i = 0
-    retlist = []
-    tic = time.time()
-    for i in range(batch_size):
-        item = next(it, None)
-        if item is None:
-            break
-        retlist.append(item)
+def data_iterator_yolo(root, args, batch_size, shuffle=True, train=False, image_sizes=None, image_size_change_freq=640, on_memory_data=None, use_cv2=True, shape=None):
 
-    # If no data, returns None
-    if len(retlist) == 0:
-        return
-    ret = list2np(retlist, batch_array)
+    # "dataItertor for YoloDataSource"
+    assert image_size_change_freq % batch_size == 0, 'image_size_change_freq should be divisible by batch_size'
 
-    # Don't train for batches that contain no labels
-    if not (np.sum(ret[1]) == 0):
-        return ret, (time.time() - tic) * 1000
-
-
-def create_batch_iter(it, batch_size):
-    batch_array = []
-    while True:
-        ret = next_batch(it, batch_size, batch_array)
-        if ret is None:
-            break
-        yield ret
+    return data_iterator(YoloDataSource(root, args, shuffle=shuffle, train=train, image_sizes=image_sizes, image_size_change_freq=image_size_change_freq, on_memory_data=on_memory_data, use_cv2=use_cv2, shape=shape), batch_size=batch_size)
 
 
 def load_on_memory_data(root):
