@@ -28,8 +28,8 @@ class TrainPipeline(Pipeline):
         self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
                                     random_shuffle=True, num_shards=num_shards, shard_id=shard_id)
         self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB,
-                                        device_memory_padding=nvjpeg_padding,
-                                        host_memory_padding=nvjpeg_padding)
+                                       device_memory_padding=nvjpeg_padding,
+                                       host_memory_padding=nvjpeg_padding)
 
         self.rrc = ops.RandomResizedCrop(device="gpu", size=(224, 224))
         self.cmnp = ops.CropMirrorNormalize(device="gpu",
@@ -57,8 +57,8 @@ class ValPipeline(Pipeline):
         self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
                                     random_shuffle=False, num_shards=num_shards, shard_id=shard_id)
         self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB,
-                                        device_memory_padding=nvjpeg_padding,
-                                        host_memory_padding=nvjpeg_padding)
+                                       device_memory_padding=nvjpeg_padding,
+                                       host_memory_padding=nvjpeg_padding)
         self.res = ops.Resize(device="gpu", resize_shorter=256)
         self.cmnp = ops.CropMirrorNormalize(device="gpu",
                                             output_dtype=types.FLOAT16 if dtype == "half" else types.FLOAT,
