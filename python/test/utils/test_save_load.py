@@ -24,7 +24,7 @@ from nnabla.ext_utils import get_extension_context
 
 
 def test_save_load_parameters():
-
+    nn.clear_parameters()
     batch_size = 16
     x0 = nn.Variable([batch_size, 100])
     x1 = nn.Variable([batch_size, 100])
@@ -47,7 +47,7 @@ def test_save_load_parameters():
              'data': ['x0', 'x1'],
              'output': ['y0', 'y1']}]}
     nnabla.utils.save.save('tmp.nnp', contents)
-    nnabla.utils.load.load('tmp.nnp')
+    nnabla.utils.load.load(['tmp.nnp'])
 
 
 def check_save_load(tmpdir, x, y, variable_batch_size):
@@ -68,12 +68,13 @@ def check_save_load(tmpdir, x, y, variable_batch_size):
     nnp_file = tmppath.strpath
     nnabla.utils.save.save(nnp_file, contents,
                            variable_batch_size=variable_batch_size)
-    nnabla.utils.load.load(nnp_file)
+    nnabla.utils.load.load([nnp_file])
 
 
 @pytest.mark.parametrize("variable_batch_size", [False, True])
 @pytest.mark.parametrize("shape", [(10, 56, -1), (-1, 56, 7, 20, 10)])
 def test_save_load_reshape(tmpdir, variable_batch_size, shape):
+    nn.clear_parameters()
     x = nn.Variable([10, 1, 28, 28, 10, 10])
     y = F.reshape(x, shape=shape)
     check_save_load(tmpdir, x, y, variable_batch_size)
@@ -81,6 +82,7 @@ def test_save_load_reshape(tmpdir, variable_batch_size, shape):
 
 @pytest.mark.parametrize("variable_batch_size", [False, True])
 def test_save_load_broadcast(tmpdir, variable_batch_size):
+    nn.clear_parameters()
     x = nn.Variable([10, 1, 4, 1, 8])
     y = F.broadcast(x, shape=[10, 1, 4, 3, 8])
     check_save_load(tmpdir, x, y, variable_batch_size)
@@ -91,6 +93,7 @@ def test_save_load_broadcast(tmpdir, variable_batch_size):
 @pytest.mark.parametrize("datasets_m", [['dataset1', 'dataset2'], ('dataset1', 'dataset2'),
                                         'dataset2'])
 def test_save_load_multi_datasets(tmpdir, datasets_o, datasets_m):
+    nn.clear_parameters()
     ctx = get_extension_context(
         'cpu', device_id=0, type_config='float')
     nn.set_default_context(ctx)
@@ -196,4 +199,4 @@ def test_save_load_multi_datasets(tmpdir, datasets_o, datasets_m):
     tmppath = tmpdir.join('testsave.nnp')
     nnp_file = tmppath.strpath
     nnabla.utils.save.save(nnp_file, contents)
-    nnabla.utils.load.load(nnp_file)
+    nnabla.utils.load.load([nnp_file])
