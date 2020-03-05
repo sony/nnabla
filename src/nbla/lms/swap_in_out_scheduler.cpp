@@ -133,8 +133,27 @@ void SwapInOutScheduler::post_update_callback() {
 //----------------------------------------------------------------
 //  Scheduler
 //----------------------------------------------------------------
+void SwapInOutScheduler::collect_info_about_dtype_conversion
+(unordered_map<unsigned int, bool>& type_converted) {
+  unordered_map<unsigned int, unordered_map<dtypes, int>> counter;
+
+  for (const auto& r : order) {
+    counter[r.said][r.dtype] = 1;
+  }
+
+  for (const auto& c : counter) {
+    if (c.second.size() > 1) {
+      type_converted[c.first] = true;
+    }
+  }
+}
+
+
 void SwapInOutScheduler::schedule() {
   reconfirm_first_creation();
+
+  unordered_map<unsigned int, bool> type_converted;
+  collect_info_about_dtype_conversion(type_converted);
 
   bool do_reschedule = false;
   auto last_function = func_block_ends.size();
@@ -160,7 +179,7 @@ void SwapInOutScheduler::schedule() {
 
     // Forward, backward, update
     for (params.fid = 1; params.fid < last_function; params.fid++) {
-      schedule_swap_in(params, prefetch_stopper);
+      schedule_swap_in(params, prefetch_stopper, type_converted);
 
       do_reschedule =
         reserve_unprefetched_memory(params, prefetch_stopper);
@@ -473,7 +492,8 @@ free_memory_to_prefetch(ScheduleParams& params, const size_t array_bytes) {
 
 void SwapInOutScheduler::
 schedule_swap_in(ScheduleParams& params,
-                 const vector<unsigned int> prefetch_stopper) {
+                 const vector<unsigned int> prefetch_stopper,
+                 unordered_map<unsigned int, bool>& type_converted) {
   while (params.head < order.size()) {
     RecType *r = &order[params.head];
 
@@ -516,8 +536,14 @@ schedule_swap_in(ScheduleParams& params,
           // Free memory to prefetch the next array
           free_memory_to_prefetch(params, array_bytes);
 
-          beginning_schedules[params.fid]
-            .push_back(ScheduleType(ScheduleTag::SWAP_IN, r));
+          if (type_converted[r->said]) {
+            beginning_schedules[params.fid]
+              .push_back(ScheduleType(ScheduleTag::SWAP_IN_GET, r));
+          }
+          else {
+            beginning_schedules[params.fid]
+              .push_back(ScheduleType(ScheduleTag::SWAP_IN_CAST, r));
+          }
 
           params.swap_in_bytes += array_bytes; // Increase memory usage
           params.prefetch_bytes += array_bytes;
@@ -726,9 +752,14 @@ void SwapInOutScheduler::post_callback() {}
 
 
 void SwapInOutScheduler::run(const ScheduleType& s) {
-  if (s.tag == ScheduleTag::SWAP_IN) {
+  if (s.tag == ScheduleTag::SWAP_IN_GET) {
     if (auto p = s.r->sawptr.lock()) {
       p->get(s.r->dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+    }
+  }
+  else if (s.tag == ScheduleTag::SWAP_IN_CAST) {
+    if (auto p = s.r->sawptr.lock()) {
+      p->cast(s.r->dtype, device_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
     }
   }
   else if (s.tag == ScheduleTag::SWAP_OUT) {

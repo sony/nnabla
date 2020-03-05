@@ -219,7 +219,8 @@ private:
   //---------------------------------------------------
   //                   Scheduler
   //---------------------------------------------------
-  enum class ScheduleTag { SWAP_IN, SWAP_OUT, WAIT, PRECLEAR };
+  enum class ScheduleTag { SWAP_IN_GET, SWAP_IN_CAST, 
+                           SWAP_OUT, WAIT, PRECLEAR };
 
   struct ScheduleType {
     ScheduleTag tag;
@@ -266,7 +267,8 @@ private:
   void calc_mem_usage_before_forward(ScheduleParams& params);
   
   void schedule_swap_in(ScheduleParams& params,
-                        const vector<unsigned int> prefetch_stopper);
+                        const vector<unsigned int> prefetch_stopper,
+                        unordered_map<unsigned int, bool>& type_converted);
   
   void schedule_swap_out(ScheduleParams& params, 
                          unordered_map<unsigned int, 
@@ -284,6 +286,9 @@ private:
                                    vector<unsigned int>& prefetch_stopper);
 
   void reconfirm_first_creation();
+
+  void collect_info_about_dtype_conversion
+  (unordered_map<unsigned int, bool>& type_converted);
 
   // Return true when a recorded get/cast transfer data between host and device.
   bool no_data_transfer(const RecType* r);
