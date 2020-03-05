@@ -17,7 +17,6 @@ CUDA vs CUDNN Compatibility
 ================== ============ =====================
 Package name       CUDA version CUDNN version
 ================== ============ =====================
-nnabla-ext-cuda80  8.0          7.1(Linux & Win)
 nnabla-ext-cuda90  9.0          7.6(Linux & Win)
 nnabla-ext-cuda100 10.0         7.6(Linux & Win)
 nnabla-ext-cuda101 10.1         7.6(Linux & Win)
