@@ -26,6 +26,7 @@ import zipfile
 import nnabla as nn
 from nnabla.logger import logger
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
+from nnabla.utils.get_file_handle import get_file_handle_load
 
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
@@ -334,20 +335,23 @@ def set_parameter_from_proto(proto):
         var.d = param
 
 
-def load_parameters(path, proto=None, needs_proto=False):
+def load_parameters(path, proto=None, needs_proto=False, file_like_type=".nntxt"):
     """Load parameters from a file with the specified format.
 
     Args:
       path : path or file object
     """
-    _, ext = os.path.splitext(path)
+    if isinstance(path, str):
+        _, ext = os.path.splitext(path)
+    else:
+        ext = file_like_type
 
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
         import warnings
         warnings.simplefilter('ignore', category=FutureWarning)
         import h5py
-        with h5py.File(path, 'r') as hd:
+        with get_file_handle_load(path, ext) as hd:
             keys = []
 
             def _get_keys(name):
@@ -382,18 +386,18 @@ def load_parameters(path, proto=None, needs_proto=False):
             proto = nnabla_pb2.NNablaProtoBuf()
 
         if ext == '.protobuf':
-            with open(path, 'rb') as f:
+            with get_file_handle_load(path, ext) as f:
                 proto.MergeFromString(f.read())
                 set_parameter_from_proto(proto)
         elif ext == '.nntxt' or ext == '.prototxt':
-            with open(path, 'r') as f:
+            with get_file_handle_load(path, ext) as f:
                 text_format.Merge(f.read(), proto)
                 set_parameter_from_proto(proto)
 
         elif ext == '.nnp':
             try:
                 tmpdir = tempfile.mkdtemp()
-                with zipfile.ZipFile(path, 'r') as nnp:
+                with get_file_handle_load(path, ext) as nnp:
                     for name in nnp.namelist():
                         nnp.extract(name, tmpdir)
                         _, ext = os.path.splitext(name)
