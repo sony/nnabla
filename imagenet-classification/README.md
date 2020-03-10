@@ -21,7 +21,7 @@ If you would like to manually install all the requirements, install the followin
 
 * CUDA (10.0 is recommended)
 * nnabla and a CUDA extension (with [multi-GPU](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#installation-with-multi-gpu-supported) support is recommended)
-* [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/index.html) (works with 0.14 only so far)
+* [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/index.html) (works with 0.16 or higher)
 * For distributed multi-GPU training:
   * OpenMPI
   * NCCL2

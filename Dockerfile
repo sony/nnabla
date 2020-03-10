@@ -5,7 +5,7 @@ FROM nvidia/cuda:${CUDA_VER}-cudnn${CUDNN_VER}-runtime-ubuntu16.04
 
 ARG PYTHON_VER=3.7
 ARG CUDA_VER=10.0
-ARG DALI_VER=0.14
+ARG DALI_VER=0.18
 ENV PATH /opt/miniconda3/bin:$PATH
 ENV OMP_NUM_THREADS 1
 
