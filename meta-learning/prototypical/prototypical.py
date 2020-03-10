@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn import manifold
-
+from _checkpoint_nnp_util import save_nnp
+import nnabla.utils.save as save
 import nnabla as nn
 import nnabla.logger as logger
 import nnabla.functions as F
@@ -381,6 +382,13 @@ def meta_train(args, train_data, valid_data, test_data):
     yq_v = nn.Variable((args.n_class * args.n_query, 1))
     err_v = F.mean(F.top_n_error(hq_v, yq_v, n=1))
 
+    # Save NNP
+    batch_size = 1
+    contents = save_nnp({'x0': xs_v, 'x1': xq_v}, {
+                          'y': hq_v}, batch_size)
+    save.save(os.path.join(work_dir,
+                           'MetricMetaLearning_epoch0.nnp'), contents, variable_batch_size=False)
+
     # Setup solver
     solver = S.Adam(args.learning_rate)
     solver.set_parameters(nn.get_parameters())
@@ -456,6 +464,12 @@ def meta_train(args, train_data, valid_data, test_data):
     u = get_embeddings(batch, conv4)
     v = get_tsne(u)
     plot_tsne(v[:, 0], v[:, 1], label, tsne_file)
+
+    # Save NNP
+    contents = save_nnp({'x0': xs_v, 'x1': xq_v}, {
+                          'y': hq_v}, batch_size)
+    save.save(os.path.join(work_dir,
+                           'MetricMetaLearning.nnp'), contents, variable_batch_size=False)
 
 
 def meta_test(args, test_data):
