@@ -540,13 +540,18 @@ schedule_swap_in(ScheduleParams& params,
           // Free memory to prefetch the next array
           free_memory_to_prefetch(params, array_bytes);
 
-          if (!cast_prefetch || type_converted[r->said]) {
+          if (cast_prefetch && (!type_converted[r->said] || 
+              (r->tag == RecTag::CAST && 
+               accumulate_counts(params.sa_states[r->said]) == 0))) {
+            // Prefetch using cast when the type of this array is not converted
+            // through the recorded order, or when this array is fetched firstly 
+            // by cast().
             beginning_schedules[params.fid]
-              .push_back(ScheduleType(ScheduleTag::SWAP_IN_GET, r));
+              .push_back(ScheduleType(ScheduleTag::SWAP_IN_CAST, r));
           }
           else {
             beginning_schedules[params.fid]
-              .push_back(ScheduleType(ScheduleTag::SWAP_IN_CAST, r));
+              .push_back(ScheduleType(ScheduleTag::SWAP_IN_GET, r));
           }
 
           params.swap_in_bytes += array_bytes; // Increase memory usage
@@ -938,10 +943,10 @@ SwapInOutScheduler::RecTag
 SwapInOutScheduler::convert_tag(const SyncedArrayCallbackTag sa_tag,
                             const bool write_only) {
   if (sa_tag == SyncedArrayCallbackTag::GET) {
-    return RecTag::GETCAST;
+    return RecTag::GET;
   }
   else if (sa_tag == SyncedArrayCallbackTag::CAST) {
-    return RecTag::GETCAST;
+    return RecTag::CAST;
   }
   else if (sa_tag == SyncedArrayCallbackTag::CLEAR) {
     return RecTag::CLEAR;

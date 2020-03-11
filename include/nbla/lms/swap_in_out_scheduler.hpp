@@ -99,7 +99,7 @@ class SwapInOutScheduler {
   //---------------------------------------------------
   // Recorded tags of get/cast/clear
   // In the current implementation, get and cast were not distinguished.
-  enum class RecTag {GETCAST, CLEAR};
+  enum class RecTag {GET, CAST, CLEAR};
 
   // Recorded information
   struct RecType {
