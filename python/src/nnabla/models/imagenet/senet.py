@@ -28,7 +28,7 @@ class SENet(ImageNetBase):
 
     * ``'classifier'`` (default): The output of the final affine layer for classification.
     * ``'pool'``: The output of the final global average pooling.
-    * ``'lastconv'``: The input of the final global average pooling without ReLU activation..
+    * ``'lastconv'``: The input of the final global average pooling without ReLU activation.
     * ``'lastconv+relu'``: Network up to ``'lastconv'`` followed by ReLU activation.
 
     References:
