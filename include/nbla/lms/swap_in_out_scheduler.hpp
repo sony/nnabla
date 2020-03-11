@@ -147,6 +147,9 @@ class SwapInOutScheduler {
   // Flags to monitor preclear.
   unordered_map<SyncedArrayPtr, bool> precleared;
 
+  // Flags to monitor cast prefetch.
+  unordered_map<SyncedArrayPtr, bool> cast_prefetched;
+
   // Map: SyncedArray ID -> the indices in order
   unordered_map<unsigned int, vector<int>> said_to_order_idx;
 

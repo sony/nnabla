@@ -769,6 +769,7 @@ void SwapInOutScheduler::run(const ScheduleType& s) {
   else if (s.tag == ScheduleTag::SWAP_IN_CAST) {
     if (auto p = s.r->sawptr.lock()) {
       p->cast(s.r->dtype, device_ctx, false, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+      cast_prefetched[p] = true;
     }
   }
   else if (s.tag == ScheduleTag::SWAP_OUT) {
@@ -894,16 +895,24 @@ sa_callback_tracer(SyncedArrayPtr saptr, const SyncedArrayCallbackTag sa_tag,
                    const bool write_only, const bool first_creation) {
   auto tag = convert_tag(sa_tag, write_only);
 
-  // Unexpected get/cast happens after preclear destroys data. Abort.
+  // Abort when off-scheduled get/cast happens after preclear destroyed data.
   if (precleared[saptr]) {
     if (tag == RecTag::CLEAR) { // Actual clear. it is Ok.
       precleared[saptr] = false;
     }
     else { // Unexpected get/cast. Abort.
       NBLA_ERROR(error_code::unclassified,
-                 "Unexpected get or cast appears after preclear.");
+                 "Off-scheduled get or cast appears after preclear.");
     }
   }
+
+  // Reset the cast prefetch flag when the real cast was called.
+  if (cast_prefetched[saptr]) {
+    if (tag == RecTag::CAST) {
+      cast_prefetched[saptr] = false;
+    }
+  }
+
 
   // Check if the on-going iteration follows the recorded order.
   auto r = order[order_idx];
@@ -931,7 +940,17 @@ sa_callback_tracer(SyncedArrayPtr saptr, const SyncedArrayCallbackTag sa_tag,
            saptr->size() != r.size ||
            dtype != r.dtype ||
            ctx.array_class != r.ctx.array_class) {
-   wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
+    // Abort when off-scheduled get/cast happens after prefetch cast erased
+    // the original data type.
+    if (cast_prefetched[saptr]) {
+      if (!cast_prefetch_no_abort && tag != RecTag::CAST) {
+        NBLA_ERROR(error_code::unclassified,
+          "Off-scheduled get or cast of the same array"
+          "appears after cast prefetch.");
+      }
+    }
+
+    wrong_ordered.push_back({tag, 0, saptr, saptr->size(), dtype, ctx,
                             false, false});
   }
 
