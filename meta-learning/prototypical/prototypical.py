@@ -241,6 +241,36 @@ def get_args():
     return args
 
 
+def load_celeb_a(dataset_path):
+
+    # We cached resized CelebA dataset as npy files
+    # Shapes of Images : (64, 64, 3)
+    # Number of IDs : 10177
+    # Number of Images : 202586
+    celeb_a_x = np.load(dataset_path + 'celeb_images.npy')
+    celeb_a_y = np.load(dataset_path + 'celeb_labels.npy')
+    celeb_a_x = celeb_a_x.transpose(0, 3, 1, 2)
+
+    # Original setting for few-shot face identification
+    # - Number of classes for training : 8000
+    # - Number of classes for validation : 1000
+    # - Number of classes for test : 1177
+    n_train = 8000
+    n_val = 1000
+    train_x = celeb_a_x[celeb_a_y < n_train]
+    train_y = celeb_a_y[celeb_a_y < n_train]
+    valid_x = celeb_a_x[(n_train <= celeb_a_y) & (celeb_a_y < n_train + n_val)]
+    valid_y = celeb_a_y[(n_train <= celeb_a_y) & (
+        celeb_a_y < n_train + n_val)] - n_train
+    test_x = celeb_a_x[n_train + n_val <= celeb_a_y]
+    test_y = celeb_a_y[n_train + n_val <= celeb_a_y] - n_train - n_val
+    train_y = train_y.reshape(train_y.shape[0], 1)
+    valid_y = valid_y.reshape(valid_y.shape[0], 1)
+    test_y = test_y.reshape(test_y.shape[0], 1)
+
+    return (train_x, train_y), (valid_x, valid_y), (test_x, test_y)
+
+
 def load_omniglot(dataset_root):
 
     # We cached omniglot dataset as npy files
@@ -270,101 +300,86 @@ def load_omniglot(dataset_root):
 
     # Divide dataset following the benchmark setting
     train_data = data[:4112]
-    val_data = data[4112:4800]
+    valid_data = data[4112:4800]
     test_data = data[4800:]
 
-    return train_data, val_data, test_data
+    def separate_data_to_xy(data):
+        n_class = data.shape[0]
+        n_shot = data.shape[1]
+        x = data.reshape((n_class * n_shot,) + data.shape[2:])
+        y = np.arange(n_class).reshape(n_class, 1).repeat(
+            n_shot).reshape(n_class * n_shot, 1)
+        return x, y
+
+    train_x, train_y = separate_data_to_xy(train_data)
+    valid_x, valid_y = separate_data_to_xy(valid_data)
+    test_x, test_y = separate_data_to_xy(test_data)
+
+    return (train_x, train_y), (valid_x, valid_y), (test_x, test_y)
 
 
-class EpisodeGenerator:
-    def __init__(self, n_class, n_shot, n_query, shape_x, dataset):
+class EpisodeGenerator():
+    def __init__(self, x, y, n_way, n_shot, n_query):
         """
-        Create episode function
+        Initialization function for episode generator class
             Args:
-                n_class (int): number of support classes, generally called n_way in one-shot litterateur
+                x (nd_array): nd_array of images (n_sample, image_shape)
+                y (nd_array): nd_array of labels (n_sample, 1)
+                n_way (int): number of support classes, generally called n_way in one-shot litterateur
                 n_shot (int): number of shots per class
                 n_query (int): number of queries per class.
-                shape_x : dimension of the input image.
-                dataset(nd_array): nd_array of (class, sample, shape)
         """
-        self.n_class = n_class
+        hist, _ = np.histogram(y, bins=max(y[:, 0]) + 1)
+        self.class_ids = np.where(n_shot + n_query <= hist)[0]
+        self.x = x
+        self.y = y
+        self.shape_x = x.shape[1:]
+        self.n_way = n_way
         self.n_shot = n_shot
         self.n_query = n_query
-        self.shape_x = shape_x
-        self.dataset = dataset
-        self.rng = np.random.RandomState(706)
+        self.s_x = np.zeros((n_way * n_shot, ) + x[0].shape)
+        self.q_x = np.zeros((n_way * n_query,) + x[0].shape)
+        self.q_y = np.zeros((n_way * n_query, 1))
 
     def next(self):
         """
-        Create episode function
-            Args:
-                n_class (int): number of support classes, generally called n_way in one-shot litterateur
-                n_shot (int): number of shots per class
-                n_query (int): number of queries per class.
-                shape_x : dimension of the input image.
-                dataset_mode (str, optional): data split to use.
+        Function for providing an episode
             Returns:
                 x_s (~nnabla.Variable): support images
                 x_q (~nnabla.Variable): query images
                 y_q (~nnabla.Variable): query class_id in support sets
         """
-        # parameters
-        n_class = self.n_class
-        n_shot = self.n_shot
-        n_query = self.n_query
-        shape_x = self.shape_x
-
-        # dataset selection
-        dataset = self.dataset
-
-        # memory allocations
-        x_s = np.zeros((n_class * n_shot, ) + shape_x)
-        x_q = np.zeros((n_class * n_query, ) + shape_x, dtype=np.int)
-        y_q = np.zeros((n_class * n_query, 1), dtype=np.int)
-
-        # episode classes
-        support_class_ids = rng.choice(dataset.shape[0], n_class, False)
-
-        # episode sampling
-        for i, support_class_id in enumerate(support_class_ids):
-
-            # select support class
-            xi = dataset[support_class_id]
-            n_sample = xi.shape[0]
-
-            if n_sample < n_shot + n_query:
-                print("Error: too few samples.")
-                exit()
-
-            # sample indices for support and queries
-            sample_ids = rng.choice(n_sample, n_shot + n_query, False)
-            s_sample_ids = sample_ids[:n_shot]
-            q_sample_ids = sample_ids[n_shot:]
-
-            # support set
-            for j in range(n_shot):
-                si = i * n_shot + j
-                x_s[si] = xi[s_sample_ids[j]]
-
-            # query set
-            for j in range(n_query):
-                qi = i * n_query + j
-                x_q[qi] = xi[q_sample_ids[j]]
-                y_q[qi] = i
-
-        return x_s, x_q, y_q
+        ids = np.random.choice(len(self.class_ids),
+                               self.n_way * (1 + self.n_query), False)
+        k_ids = ids[:self.n_way]
+        u_ids = ids[self.n_way:]
+        s_ids = []
+        q_ids = []
+        i = 0
+        for i in range(self.n_way):
+            support_id = i
+            support_class_id = self.class_ids[k_ids[i]]
+            a_ids = np.array(np.where(support_class_id == self.y[:, 0]))[0]
+            a_ids = np.random.choice(a_ids, self.n_shot + self.n_query, False)
+            s_ids = a_ids[:self.n_shot]
+            q_ids = a_ids[self.n_shot:]
+            for j in range(self.n_shot):
+                self.s_x[i * self.n_shot + j] = self.x[s_ids[j], :]
+            for j in range(self.n_query):
+                self.q_x[i * self.n_query + j] = self.x[q_ids[j], :]
+                self.q_y[i * self.n_query + j] = support_id
+        return self.s_x, self.q_x, self.q_y
 
 
-def meta_train(args, train_data, valid_data, test_data):
+def meta_train(args, shape_x, train_data, valid_data, test_data):
 
     # Build episode generators
-    shape_x = (1, 28, 28)
     train_episode_generator = EpisodeGenerator(
-        args.n_class_tr, args.n_shot_tr, args.n_query_tr, shape_x, train_data)
+        train_data[0], train_data[1], args.n_class_tr, args.n_shot_tr, args.n_query_tr)
     valid_episode_generator = EpisodeGenerator(
-        args.n_class, args.n_shot, args.n_query, shape_x, valid_data)
+        valid_data[0], valid_data[1], args.n_class, args.n_shot, args.n_query)
     test_episode_generator = EpisodeGenerator(
-        args.n_class, args.n_shot, args.n_query, shape_x, test_data)
+        test_data[0], test_data[1], args.n_class, args.n_shot, args.n_query)
 
     # Build training model
     xs_t = nn.Variable((args.n_class_tr * args.n_shot_tr, ) + shape_x)
@@ -382,13 +397,6 @@ def meta_train(args, train_data, valid_data, test_data):
     yq_v = nn.Variable((args.n_class * args.n_query, 1))
     err_v = F.mean(F.top_n_error(hq_v, yq_v, n=1))
 
-    # Save NNP
-    batch_size = 1
-    contents = save_nnp({'x0': xs_v, 'x1': xq_v}, {
-                          'y': hq_v}, batch_size)
-    save.save(os.path.join(work_dir,
-                           'MetricMetaLearning_epoch0.nnp'), contents, variable_batch_size=False)
-
     # Setup solver
     solver = S.Adam(args.learning_rate)
     solver.set_parameters(nn.get_parameters())
@@ -403,8 +411,15 @@ def meta_train(args, train_data, valid_data, test_data):
     monitor_test_conf = MonitorSeries("Test error confidence", monitor)
 
     # Output files
-    param_file = args.work_dir + "params.h5"
-    tsne_file = args.work_dir + "tsne.png"
+    param_file = args.work_dir + "/params.h5"
+    tsne_file = args.work_dir + "/tsne.png"
+
+    # Save NNP
+    batch_size = 1
+    contents = save_nnp({'x0': xs_v, 'x1': xq_v}, {
+                          'y': hq_v}, batch_size)
+    save.save(os.path.join(args.work_dir,
+                           'MetricMetaLearning_epoch0.nnp'), contents, variable_batch_size=False)
 
     # Training loop
     train_losses = []
@@ -436,6 +451,7 @@ def meta_train(args, train_data, valid_data, test_data):
                 valid_errs.append(np.float(err_v.d.copy()))
             valid_err = np.mean(valid_errs)
 
+            monitor_loss.add(i + 1, loss_t.d.copy())
             monitor_valid_err.add(i + 1, valid_err * 100)
             if valid_err < best_err:
                 best_err = valid_err
@@ -457,27 +473,25 @@ def meta_train(args, train_data, valid_data, test_data):
     # Visualization
     n_class = 50
     n_sample = 20
-    batch = test_data[:n_class].reshape(n_class * n_sample, 1, 28, 28)
-    label = []
-    for i in range(n_class):
-        label.extend(np.ones(n_sample) * (i % 50))
-    u = get_embeddings(batch, conv4)
+    visualize_episode_generator = EpisodeGenerator(
+        train_data[0], train_data[1], n_class, 0, n_sample)
+    _, samples, labels = visualize_episode_generator.next()
+    u = get_embeddings(samples, conv4)
     v = get_tsne(u)
-    plot_tsne(v[:, 0], v[:, 1], label, tsne_file)
+    plot_tsne(v[:, 0], v[:, 1], labels[:, 0], tsne_file)
 
     # Save NNP
     contents = save_nnp({'x0': xs_v, 'x1': xq_v}, {
                           'y': hq_v}, batch_size)
-    save.save(os.path.join(work_dir,
+    save.save(os.path.join(args.work_dir,
                            'MetricMetaLearning.nnp'), contents, variable_batch_size=False)
 
 
-def meta_test(args, test_data):
+def meta_test(args, shape_x, test_data):
 
     # Build episode generators
-    shape_x = (1, 28, 28)
     test_episode_generator = EpisodeGenerator(
-        args.n_class, args.n_shot, args.n_query, shape_x, test_data)
+        test_data[0], test_data[1], args.n_class, args.n_shot, args.n_query)
 
     # Build prototypical network
     xs_v = nn.Variable((args.n_class * args.n_shot, ) + shape_x)
@@ -488,7 +502,7 @@ def meta_test(args, test_data):
     err_v = F.mean(F.top_n_error(hq_v, yq_v, n=1))
 
     # Load parameters
-    nn.load_parameters(args.work_dir + "params.h5")
+    nn.load_parameters(args.work_dir + "/params.h5")
 
     # Evaluate error rate
     v_errs = []
@@ -511,6 +525,7 @@ def meta_test(args, test_data):
 
 
 def main():
+
     # Get settings
     args = get_args()
 
@@ -522,21 +537,32 @@ def main():
     nn.set_default_context(ctx)
 
     # Load data
-    if args.dataset is not "omniglot":
-        print("\nUse omniglot dataset\n")
-        exit()
+    if args.dataset == "omniglot":
+        dataset_path = args.dataset_root + "/omniglot/data"
+        if not os.path.exists(dataset_path):
+            print("\nSet dataset path with --dataset_root option\n")
+            exit()
+        shape_x = (1, 28, 28)
+        train_data, valid_data, test_data = load_omniglot(
+            dataset_path)
 
-    dataset_path = args.dataset_root + "/omniglot/data/"
-    if not os.path.exists(dataset_path):
-        print("\nSet dataset path with --dataset_root option\n")
-        exit()
+    elif args.dataset == "celeb_a":
+        dataset_path = args.dataset_root + "/celeb_a/data/"
+        if not os.path.exists(dataset_path):
+            print("\nSet dataset path with --dataset_root option\n")
+            exit()
+        shape_x = (3, 64, 64)
+        train_data, valid_data, test_data = load_celeb_a(
+            '../data/celeb_a/data/')
 
-    train_data, valid_data, test_data = load_omniglot(dataset_path)
+    else:
+        print("\nUse omniglot or celeb_a dataset\n")
+        exit()
 
     if args.train_or_test == "train":
-        meta_train(args, train_data, valid_data, test_data)
+        meta_train(args, shape_x, train_data, valid_data, test_data)
     elif args.train_or_test == "test":
-        meta_test(args, test_data)
+        meta_test(args, shape_x, test_data)
 
 
 if __name__ == '__main__':
