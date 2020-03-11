@@ -4,12 +4,22 @@ from nnabla.function cimport Function
 
 
 cdef class SwapInOutScheduler:
-    def __cinit__(self, h_ctx, d_ctx, size, length):
+    def __cinit__(self, h_ctx, d_ctx, size, prefetch_size=None,
+                  cpp_bool save_host_mem=False,
+                  cpp_bool save_host_mem_no_abort=False):
         cdef CContext ch_ctx = h_ctx
         cdef CContext cd_ctx = d_ctx
         cdef size_t csize = size
-        cdef size_t clength = length
-        self.scheduler = make_shared[CSwapInOutScheduler](ch_ctx, cd_ctx, csize, clength)
+
+        # prefetch size is 1.5 x size according to ResNet50 experiment.
+        if prefetch_size is None:
+            prefetch_size = size * 1.5
+
+        cdef size_t cprefetch_size = prefetch_size
+        
+        self.scheduler = make_shared[CSwapInOutScheduler]\
+                         (ch_ctx, cd_ctx, csize, cprefetch_size,
+                          save_host_mem, save_host_mem_no_abort)
 
     def __dealloc__(self):
         pass

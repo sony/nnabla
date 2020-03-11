@@ -21,7 +21,9 @@ from nnabla.function cimport CgFunctionPtr
 cdef extern from "nbla/lms/swap_in_out_scheduler.hpp" namespace "nbla":
     cdef cppclass CSwapInOutScheduler "nbla::SwapInOutScheduler":
         CSwapInOutScheduler(const CContext &h_ctx, const CContext &d_ctx, 
-                            const size_t s, const size_t l) except +
+                            const size_t s, const size_t l,
+                            const cpp_bool save_host_mem,
+                            const cpp_bool save_host_mem_no_abort) except +
         void start_scheduling();
         void end_scheduling();
         void pre_function_callback(const CgFunctionPtr &ptr) except +

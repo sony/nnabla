@@ -31,9 +31,13 @@ using std::accumulate;
 SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
                                        const Context &d_ctx,
                                        const size_t max,
-                                       const size_t prefetch_max)
-  : host_ctx(h_ctx), device_ctx(d_ctx),
-    max_bytes(max), max_prefetch_bytes(prefetch_max),
+                                       const size_t prefetch_max,
+                                       const bool save_host_mem,
+                                       const bool save_host_mem_no_abort)
+  : host_ctx(h_ctx), device_ctx(d_ctx), max_bytes(max),
+    max_prefetch_bytes(prefetch_max == 0 ? max * 1.5 : prefetch_max),
+    cast_prefetch(save_host_mem),
+    cast_prefetch_no_abort(save_host_mem_no_abort),
     sa_callback([&](SyncedArrayPtr saptr, 
                     const SyncedArrayCallbackTag sa_tag,
                     const dtypes dtype,
@@ -536,7 +540,7 @@ schedule_swap_in(ScheduleParams& params,
           // Free memory to prefetch the next array
           free_memory_to_prefetch(params, array_bytes);
 
-          if (type_converted[r->said]) {
+          if (!cast_prefetch || type_converted[r->said]) {
             beginning_schedules[params.fid]
               .push_back(ScheduleType(ScheduleTag::SWAP_IN_GET, r));
           }

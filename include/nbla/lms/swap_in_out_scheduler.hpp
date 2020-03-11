@@ -48,6 +48,7 @@ using std::weak_ptr;
 using std::reference_wrapper;
 using std::pair;
 
+
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
     
@@ -156,6 +157,9 @@ class SwapInOutScheduler {
   vector<bool> is_host_func;
   void determine_which_is_host_func();
 
+  // This option controlls whether prefeth uses cast().
+  const bool cast_prefetch;
+  const bool cast_prefetch_no_abort;
 
   //---------------------------------------------------
   //    Variables used only in first iteration
@@ -174,11 +178,15 @@ public:
   @params d_ctx Device context.
   @params max Maximum GPU memory size managed by this class [bytes].
   @params prefetch_max Maximum prefetch length.
-   */
-  NBLA_API SwapInOutScheduler(const Context &h_ctx,
-                              const Context &d_ctx,
-                              const size_t max,
-                              const size_t prefetch_max);
+  @params save_host_mem The flag to switch prefetch scheme to save host memory.
+  @params save_host_mem_no_abort Irregular off-schedule does not abort program
+                                 if cast prefetch irreversibly change the type
+                                 of array.
+  */
+  NBLA_API SwapInOutScheduler(const Context &h_ctx, const Context &d_ctx,
+                              const size_t max, const size_t prefetch_max = 0,
+                              const bool save_host_mem = false,
+                              const bool save_host_mem_no_abort = false);
 
   /** Destructor.
    */
