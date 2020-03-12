@@ -149,12 +149,40 @@ void SwapInOutScheduler::post_update_callback() {
 //----------------------------------------------------------------
 //  Scheduler
 //----------------------------------------------------------------
+void SwapInOutScheduler::
+determine_first_head_types(unordered_map<unsigned int,
+                                         pair<bool, dtypes>>&head_type) {
+  for (const auto& r : order) {
+    if (auto p = r.sawptr.lock()) {
+      if (is_not_cleared_yet(p)) {
+        head_type[r.said] = std::make_pair(true, p->dtype());
+      }
+      else {
+        head_type[r.said] = std::make_pair(false, dtypes::BYTE);
+      }
+    }
+    else {
+      head_type[r.said] = std::make_pair(false, dtypes::BYTE);
+    }
+  }
+}
+
+
 void SwapInOutScheduler::collect_info_about_dtype_conversion
-(unordered_map<unsigned int, bool>& type_converted) {
+(unordered_map<unsigned int, bool>& type_converted,
+ const unordered_map<unsigned int, pair<bool, dtypes>>&head_type) {
   unordered_map<unsigned int, unordered_map<dtypes, int>> counter;
 
+  // Count all dtypes in the recorded order.
   for (const auto& r : order) {
     counter[r.said][r.dtype] = 1;
+  }
+
+  // Count all dtypes before scheduling.
+  for (const auto& h : head_type) {
+    if (h.second.first) {
+      counter[h.first][h.second.second] = 1;
+    }
   }
 
   for (const auto& c : counter) {
@@ -168,8 +196,12 @@ void SwapInOutScheduler::collect_info_about_dtype_conversion
 void SwapInOutScheduler::schedule() {
   reconfirm_first_creation();
 
+  // Determine the first dtype of head array.
+  unordered_map<unsigned int, pair<bool, dtypes>> first_head_type;
   unordered_map<unsigned int, bool> type_converted;
-  collect_info_about_dtype_conversion(type_converted);
+  determine_first_head_types(first_head_type);
+  collect_info_about_dtype_conversion(type_converted, first_head_type);
+  unordered_map<unsigned int, pair<bool, dtypes>> head_type = first_head_type;
 
   bool do_reschedule = false;
   auto last_function = func_block_ends.size();
@@ -183,6 +215,7 @@ void SwapInOutScheduler::schedule() {
     end_schedules.clear();
     beginning_schedules.resize(last_function + 1); // +1 is for the last "wait for all"
     end_schedules.resize(last_function);
+    head_type = first_head_type;
     ScheduleParams params;
 
     // Preclear schedule will be used in swap-out schedule.
@@ -190,15 +223,13 @@ void SwapInOutScheduler::schedule() {
     schedule_preclear(clear_info);
 
     // Calculate used GPU memory before forward starts, and swap out if necessary.
-    calc_mem_usage_before_forward(params);
-    schedule_swap_out(params, clear_info);
+    calc_mem_usage_before_forward(params, head_type);
+    schedule_swap_out(params, clear_info, head_type);
 
     // Forward, backward, update
     for (params.fid = 1; params.fid < last_function; params.fid++) {
-      schedule_swap_in(params, prefetch_stopper, type_converted);
-
-      do_reschedule =
-        reserve_unprefetched_memory(params, prefetch_stopper);
+      schedule_swap_in(params, prefetch_stopper, type_converted, head_type);
+      do_reschedule = reserve_unprefetched_memory(params, prefetch_stopper);
 
       if (do_reschedule) {
         break;
@@ -209,7 +240,31 @@ void SwapInOutScheduler::schedule() {
           "Some arrays were not prefetched probably due to out of GPU memory.");
       }
 
-      schedule_swap_out(params, clear_info);
+      // Check the change of head array type just in Function.
+      for (size_t i = func_block_ends[params.fid - 1];
+                  i < func_block_ends[params.fid];
+                  i++) {
+        RecType *r = &order[i];
+        auto& htype = head_type[r->said];
+
+        if (r->tag == RecTag::CLEAR) {
+          // Remove head dtype
+          htype.first = false;
+        }
+        else if (htype.first) {
+          if (r->tag == RecTag::CAST) {
+            // Update head array type
+            htype.second = r->dtype;
+          }
+        }
+        else {
+          // The array was fetched firstly.
+          htype.first = true;
+          htype.second = r->dtype;
+        }
+      }
+
+      schedule_swap_out(params, clear_info, head_type);
     }
 
     if (do_reschedule) {
@@ -421,8 +476,9 @@ void SwapInOutScheduler::determine_which_is_host_func() {
 }
 
 
-void SwapInOutScheduler::
-calc_mem_usage_before_forward(ScheduleParams& params) {
+void SwapInOutScheduler::calc_mem_usage_before_forward
+(ScheduleParams& params, unordered_map<unsigned int, 
+                                       pair<bool, dtypes>>& head_type) {
   while (params.head < func_block_ends[0]) {
     RecType *r = &order[params.head];
 
@@ -435,6 +491,21 @@ calc_mem_usage_before_forward(ScheduleParams& params) {
         !context_checker(r->ctx, host_ctx)) {
       NBLA_ERROR(error_code::type,
                  "Unsupported array type: " + r->ctx.array_class);
+    }
+
+    // Check the change of head array type
+    // The changes were already done before first prefetch.
+    auto& htype = head_type[r->said];
+    if (htype.first) {
+      if (r->tag == RecTag::CAST) {
+        // Update head array type
+        htype.second = r->dtype;
+      }
+    }
+    else {
+      // The array was fetched firstly.
+      htype.first = true;
+      htype.second = r->dtype;
     }
 
     // All fetches were already done. Just calculate memory size.
@@ -509,7 +580,8 @@ free_memory_to_prefetch(ScheduleParams& params, const size_t array_bytes) {
 void SwapInOutScheduler::
 schedule_swap_in(ScheduleParams& params,
                  const vector<unsigned int> prefetch_stopper,
-                 unordered_map<unsigned int, bool>& type_converted) {
+                 unordered_map<unsigned int, bool>& type_converted,
+                 unordered_map<unsigned int, pair<bool, dtypes>>&head_type) {
   while (params.head < order.size()) {
     RecType *r = &order[params.head];
 
@@ -549,8 +621,21 @@ schedule_swap_in(ScheduleParams& params,
           params.sa_states[r->said][r->dtype].state = ArrayStateTag::UNPREFETCHED;
         }
         else { // Prefetch
+          size_t extra_array_bytes = 0; // Temporary buffer of type conversion
+
+          // Add the temporary buffer size if array type will be converted
+          // when prefetch.
+          auto& htype = head_type[r->said];
+          if (htype.first && htype.second != r->dtype) {
+            extra_array_bytes = r->size * sizeof_dtype(htype.second);
+          }
+
+          if (max_bytes < params.swap_in_bytes + array_bytes + extra_array_bytes) {
+            break;
+          }
+
           // Free memory to prefetch the next array
-          free_memory_to_prefetch(params, array_bytes);
+          free_memory_to_prefetch(params, array_bytes + extra_array_bytes);
 
           if (cast_prefetch && (!type_converted[r->said] || 
               (r->tag == RecTag::CAST && 
@@ -560,10 +645,19 @@ schedule_swap_in(ScheduleParams& params,
             // by cast().
             beginning_schedules[params.fid]
               .push_back(ScheduleType(ScheduleTag::SWAP_IN_CAST, r));
+
+            // Update head array type
+            htype.first = true;
+            htype.second = r->dtype;
           }
           else {
             beginning_schedules[params.fid]
               .push_back(ScheduleType(ScheduleTag::SWAP_IN_GET, r));
+
+            // Update head array type
+            if (!htype.first) {
+              htype.second = r->dtype;
+            }
           }
 
           params.swap_in_bytes += array_bytes; // Increase memory usage
@@ -593,7 +687,8 @@ schedule_swap_in(ScheduleParams& params,
 void SwapInOutScheduler::
 schedule_swap_out(ScheduleParams& params,
                   unordered_map<unsigned int, 
-                     vector<pair<RecType*, bool>>>& clear_info) {
+                                vector<pair<RecType*, bool>>>& clear_info,
+                  unordered_map<unsigned int, pair<bool, dtypes>>&head_type) {
   for (size_t i = (params.fid == 0 ? 0 : func_block_ends[params.fid - 1]);
               i < func_block_ends[params.fid];
               i++) {
@@ -630,6 +725,9 @@ schedule_swap_out(ScheduleParams& params,
         if (do_preclear->second) {
           end_schedules[params.fid]
             .push_back(ScheduleType(ScheduleTag::PRECLEAR, r));
+
+          // Update head array type
+          head_type[r->said].first = false;
         }
       }
       else { // Not precleared, Swap out

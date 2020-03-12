@@ -276,15 +276,21 @@ private:
   void schedule();
 
   // Subprocesses of shcedule()
-  void calc_mem_usage_before_forward(ScheduleParams& params);
+  void calc_mem_usage_before_forward(ScheduleParams& params,
+                                     unordered_map<unsigned int, 
+                                                pair<bool, dtypes>>& head_type);
   
   void schedule_swap_in(ScheduleParams& params,
                         const vector<unsigned int> prefetch_stopper,
-                        unordered_map<unsigned int, bool>& type_converted);
+                        unordered_map<unsigned int, bool>& type_converted,
+                        unordered_map<unsigned int, 
+                                      pair<bool, dtypes>>& head_type);
   
   void schedule_swap_out(ScheduleParams& params, 
                          unordered_map<unsigned int, 
-                             vector<pair<RecType*, bool>>>& clear_info);
+                             vector<pair<RecType*, bool>>>& clear_info,
+                         unordered_map<unsigned int, 
+                                       pair<bool, dtypes>>&head_type);
   
   void schedule_wait_for_all_swap_out(ScheduleParams& params);
   
@@ -300,7 +306,8 @@ private:
   void reconfirm_first_creation();
 
   void collect_info_about_dtype_conversion
-  (unordered_map<unsigned int, bool>& type_converted);
+  (unordered_map<unsigned int, bool>& type_converted,
+   const unordered_map<unsigned int, pair<bool, dtypes>>&head_type);
 
   // Return true when a recorded get/cast transfer data between host and device.
   bool no_data_transfer(const RecType* r);
@@ -311,6 +318,9 @@ private:
                                       vector<unsigned int>& prefetch_stopper,
                                       const size_t unprefetched_bytes,                                      
                                       size_t available_bytes);
+
+  void determine_first_head_types(unordered_map<unsigned int,
+                                                pair<bool, dtypes>>& head_dtype);
 
   // Return true when memory is not enough to prefetch the next array.
   bool free_memory_to_prefetch(ScheduleParams& params,
