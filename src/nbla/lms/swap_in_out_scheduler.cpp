@@ -59,6 +59,11 @@ SwapInOutScheduler::~SwapInOutScheduler() {}
 
 // User interface to start a scheduling code block
 void SwapInOutScheduler::start_scheduling() {
+  if (second_iter) {
+    schedule();            // Schedule swap in/out
+    said_map.clear();      // Clear variables used in the first iteration
+  }
+
   // Init
   order_idx = 0;
   func_idx = 0;
@@ -76,8 +81,6 @@ void SwapInOutScheduler::end_scheduling() {
   if (first_iter) {
     func_block_ends.push_back(order_idx); // Record the end of a function.
     swap_out_first_iter(); // Swap out the arrays of the last function
-    schedule();            // Schedule swap in/out
-    said_map.clear();      // Clear variables used in the first iteration
   }
   else {
     if (order_idx < func_block_ends[func_idx]) {
@@ -113,7 +116,13 @@ void SwapInOutScheduler::end_scheduling() {
     sa_callback_tracer(saptr, sa_tag, dtype, ctx, write_only,
                        first_creation, off_recording);};
 
-  first_iter = false;
+  if (first_iter) {
+    first_iter = false;
+    second_iter = true;
+  }
+  else if (second_iter) {
+    second_iter = false;
+  }
 }
 
 

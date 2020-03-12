@@ -155,6 +155,7 @@ class SwapInOutScheduler {
 
   // Switch the first iteration and others.
   bool first_iter = true;
+  bool second_iter = false;
 
   // Check whether function blocks have get/cast on host
   vector<bool> is_host_func;
