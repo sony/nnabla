@@ -365,7 +365,8 @@ private:
                             const dtypes dtype,
                             const Context &ctx,
                             const bool write_only,
-                            const bool first_creation);
+                            const bool first_creation,
+                            const bool off_recording);
 
   // SyncedArrayCallback to trace get/cast/clear after the first iteration.
   void sa_callback_tracer(SyncedArrayPtr saptr,
@@ -373,7 +374,8 @@ private:
                           const dtypes dtype,
                           const Context &ctx,
                           const bool write_only,
-                          const bool first_creation);
+                          const bool first_creation,
+                          const bool off_recording);
 
   // Tag converter
   RecTag convert_tag(const SyncedArrayCallbackTag sa_tag,

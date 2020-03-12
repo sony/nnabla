@@ -43,10 +43,11 @@ SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
                     const dtypes dtype,
                     const Context &ctx,
                     const bool write_only,
-                    const bool first_creation) {
+                    const bool first_creation,
+                    const bool off_recording) {
       // Set SyncedArrayCallback function for first iteration
       sa_callback_recorder(saptr, sa_tag, dtype, ctx, 
-                           write_only, first_creation);}) {
+                           write_only, first_creation, off_recording);}) {
     // Create non blocking streams for data transfer
     BackendUtils::create_lms_streams(d_ctx);
 }
@@ -107,8 +108,10 @@ void SwapInOutScheduler::end_scheduling() {
                               const dtypes dtype, 
                               const Context &ctx,
                               const bool write_only, 
-                              const bool first_creation) {
-    sa_callback_tracer(saptr, sa_tag, dtype, ctx, write_only, first_creation);};
+                              const bool first_creation,
+                              const bool off_recording) {
+    sa_callback_tracer(saptr, sa_tag, dtype, ctx, write_only,
+                       first_creation, off_recording);};
 
   first_iter = false;
 }
@@ -871,8 +874,13 @@ void SwapInOutScheduler::unset_sa_callback() {
 // SyncedArrayCallback function to record the order
 void SwapInOutScheduler::
 sa_callback_recorder(SyncedArrayPtr saptr, const SyncedArrayCallbackTag sa_tag,
-                     const dtypes dtype, const Context &ctx,
-                     const bool write_only, const bool first_creation) {
+                     const dtypes dtype, const Context &ctx, 
+                     const bool write_only, const bool first_creation,
+                     const bool off_recording) {
+  if (off_recording) {
+    return;
+  }
+
   // Define SyncedArray ID
   if (said_map.find(saptr) == said_map.end()) {
     said_map[saptr] = static_cast<unsigned int>(said_map.size());
@@ -892,7 +900,12 @@ sa_callback_recorder(SyncedArrayPtr saptr, const SyncedArrayCallbackTag sa_tag,
 void SwapInOutScheduler::
 sa_callback_tracer(SyncedArrayPtr saptr, const SyncedArrayCallbackTag sa_tag,
                    const dtypes dtype, const Context &ctx,
-                   const bool write_only, const bool first_creation) {
+                   const bool write_only, const bool first_creation,
+                   const bool off_recording) {
+  if (off_recording) {
+    return;
+  }
+
   auto tag = convert_tag(sa_tag, write_only);
 
   // Abort when off-scheduled get/cast happens after preclear destroyed data.

@@ -80,15 +80,12 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
   modification_count_++;
 
   // 4. Call a callback function
-  if (!(async_flags & AsyncFlag::OFFREC)) {
-    SingletonManager::get<SyncedArrayCallback>()
-      ->call_callback(shared_from_this(),
-                      SyncedArrayCallbackTag::CAST,
-                      created_array.first->dtype(),
-                      ctx, 
-                      write_only,
-                      first_creation);
-  }
+  const bool off_recording = (bool)(async_flags & AsyncFlag::OFFREC);
+  SingletonManager::get<SyncedArrayCallback>()
+    ->call_callback(shared_from_this(),
+                    SyncedArrayCallbackTag::CAST,
+                    created_array.first->dtype(),
+                    ctx, write_only, first_creation, off_recording);
 
   // 5. Return a requested array
   return created_array.first;
@@ -107,15 +104,12 @@ shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
   array_[desc.key].second = true;    // Set as at-head.
 
   // Call a callback function
-  if (!(async_flags & AsyncFlag::OFFREC)) {
-    SingletonManager::get<SyncedArrayCallback>()
-      ->call_callback(shared_from_this(),
-                      SyncedArrayCallbackTag::GET,
-                      array_[desc.key].first->dtype(),
-                      ctx,
-                      false,
-                      first_creation);
-  }
+  const bool off_recording = (bool)(async_flags & AsyncFlag::OFFREC);
+  SingletonManager::get<SyncedArrayCallback>()
+    ->call_callback(shared_from_this(),
+                    SyncedArrayCallbackTag::GET,
+                    array_[desc.key].first->dtype(),
+                    ctx, false, first_creation, off_recording);
 
   return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
@@ -229,7 +223,7 @@ void SyncedArray::clear() {
                     SyncedArrayCallbackTag::CLEAR,
                     dtypes::BYTE, // dummy
                     Context({ "dummy" }, "dummy", "dummy"),
-                    false, false);
+                    false, false, false);
 }
 
 // Reset head state. Private clear does not call a callback function.
@@ -263,9 +257,11 @@ void SyncedArrayCallback::call_callback(SyncedArrayPtr saptr,
                                         const dtypes dtype,
                                         const Context &ctx,
                                         const bool write_only,
-                                        const bool first_creation) {
+                                        const bool first_creation,
+                                        const bool off_recording) {
   if (!empty()) {
-    callback_func_(saptr, func_name, dtype, ctx, write_only, first_creation);
+    callback_func_(saptr, func_name, dtype, ctx, write_only, 
+                   first_creation, off_recording);
   }
 }
 
