@@ -858,7 +858,7 @@ void SwapInOutScheduler::pre_callback() {
     run_on_beginning_schedule();
 
     if (is_host_func[func_idx]) {
-      BackendUtils::default_stream_synchronize(device_ctx);
+      BackendUtils::device_synchronize(device_ctx);
     }
   }
 
