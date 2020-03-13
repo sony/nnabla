@@ -52,8 +52,7 @@ class DeconvolutionBackward(BackwardFunction):
         stride = self.forward_func.info.args["stride"]
         dilation = self.forward_func.info.args["dilation"]
         group = self.forward_func.info.args["group"]
-
-        # TODO: BHWC
+        channel_last = self.forward_func.info.args["channel_last"]
 
         # Inputs
         x0 = inputs[0].data
@@ -98,12 +97,16 @@ class DeconvolutionBackward(BackwardFunction):
         ## w.r.t. dy
         if (not with_bias and prop_down[2]) or (with_bias and prop_down[3]):
             accum_dy = accum[3] if with_bias else accum[2]
-            g_dy_ = F.deconvolution(g_dx0, w0, None, base_axis, pad, stride, dilation, group) \
+            g_dy_ = F.deconvolution(g_dx0, w0, None, base_axis, pad, stride, dilation, group, channel_last) \
                 + F.deconvolution(x0, g_dw0, None, base_axis,
-                                  pad, stride, dilation, group)
+                                  pad, stride, dilation, group, channel_last)
             if with_bias:
-                g_db0 = F.reshape(
-                    g_db0, [1 if i != base_axis else g_db0.shape[0] for i in range(g_dy.ndim)])
+                if not channel_last:
+                    g_db0 = F.reshape(
+                        g_db0, [1 if i != base_axis else g_db0.shape[0] for i in range(g_dy.ndim)])
+                else:
+                    g_db0 = F.reshape(
+                        g_db0, [1 if i != (g_dy.ndim - 1) else g_db0.shape[0] for i in range(g_dy.ndim)])
                 g_dy_ += g_db0
             if accum_dy:
                 g_dy += g_dy_
