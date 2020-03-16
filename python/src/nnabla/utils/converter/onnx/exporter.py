@@ -87,6 +87,43 @@ def generate_reshape(graph, input_name, output_name, shape):
     return n
 
 
+def generate_pad(input_name, output_name, pad_mode, pads, value, opset):
+    nl = []
+    if opset == "11":
+        # Constant_Pads
+        pads_name = fork_name(input_name)
+        c = generate_constant(pads_name, fork_name(input_name),
+                              TensorProto.INT64, [len(pads)],
+                              pads)
+        nl.append(c)
+
+        value_name = fork_name(input_name)
+        c = generate_constant(value_name, fork_name(input_name),
+                              TensorProto.FLOAT, [1],
+                              [value])
+        nl.append(c)
+
+        n = onnx.helper.make_node(
+            "Pad",
+            [input_name, pads_name, value_name],
+            [output_name],
+            mode=pad_mode,
+        )
+        nl.append(n)
+    else:
+        n = onnx.helper.make_node(
+            "Pad",
+            [input_name],
+            [output_name],
+            mode=pad_mode,
+            pads=pads,
+            value=value,
+            )
+        nl.append(n)
+
+    return nl
+
+
 def generate_value(type, dims, data_type, multiplier):
     d = TENSOR_TYPE_TO_DTYPE[data_type]
     if type == 'Normal':
@@ -286,7 +323,7 @@ class OnnxExporter:
             "Minimum2": partial(self.ElementWiseCmp, "Minimum2", '7'),
             "MinimumScalar": partial(self.ElementWiseCmp, "MinimumScalar", '7'),
             "MaximumScalar": partial(self.ElementWiseCmp, "MaximumScalar", '7'),
-            "SumPooling": self.SumPooling,
+            "SumPooling": partial(self.SumPooling, '7'),
             "Unpooling": self.Unpooling_7,
             "BinaryConnectAffine": partial(self.BaseAffine, "BinaryConnectAffine", '7'),
             "BinaryWeightAffine": partial(self.BinaryWeightAffine, '7'),
@@ -342,6 +379,7 @@ class OnnxExporter:
             "IsInf": "IsInf",
             "ResetInf": self.ResetInf,
             "Slice": partial(self.Slice, '10'),
+            "Unpooling": self.Unpooling_10,
         }
         table_op_set_10 = dict(table_op_set_9, **table_op_set_10)
 
@@ -350,6 +388,10 @@ class OnnxExporter:
             "Round": "Round",
             "Interpolate": self.Interpolate,
             "Pad": partial(self.Pad, "11"),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool', "11"),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool', "11"),
+            "SumPooling": partial(self.SumPooling, '11'),
+            "Unpooling": self.Unpooling_11,
         }
         table_op_set_11 = dict(table_op_set_10, **table_op_set_11)
 
@@ -811,16 +853,10 @@ class OnnxExporter:
 
             if any(pads):
                 pad_out = fork_name(input) + "_pad"
-                n = onnx.helper.make_node(
-                    'Pad',
-                    [input],
-                    [pad_out],
-                    mode=pad_mode,
-                    value=value,
-                    pads=pads
-                )
+                pad_nodes = generate_pad(
+                    input, pad_out, pad_mode, pads, value, opset)
+                nl.extend(pad_nodes)
                 input = pad_out
-                nl.append(n)
 
             n = onnx.helper.make_node(
                 onnx_func,
@@ -1006,6 +1042,46 @@ class OnnxExporter:
             width_scale=dims[1] * 1.0,
             name=fork_name('Upsample')
         )
+        return [n]
+
+    def Unpooling_10(self, func):
+        input_shape = [d for d in self._var_dict[func.input[0]].dim]
+        dims = list(func.unpooling_param.kernel.dim)
+        dims = [1] * (len(input_shape) - len(dims)) + dims
+
+        scale_out = fork_name(func.input[0]) + '_scale'
+        add_param(self._model_proto.graph, scale_out, TensorProto.FLOAT,
+                  [len(input_shape)], np.array(dims, dtype=np.float32).tostring())
+
+        n = onnx.helper.make_node(
+            "Resize",
+            [func.input[0], scale_out],
+            func.output,
+            mode='nearest',
+        )
+
+        return [n]
+
+    def Unpooling_11(self, func):
+        input_shape = [d for d in self._var_dict[func.input[0]].dim]
+        dims = list(func.unpooling_param.kernel.dim)
+        dims = [1] * (len(input_shape) - len(dims)) + dims
+
+        roi_out = fork_name(func.input[0]) + '_roi'
+        add_param(self._model_proto.graph, roi_out,
+                  TensorProto.FLOAT, [0], b'')
+
+        scale_out = fork_name(func.input[0]) + '_scale'
+        add_param(self._model_proto.graph, scale_out, TensorProto.FLOAT,
+                  [len(input_shape)], np.array(dims, dtype=np.float32).tostring())
+
+        n = onnx.helper.make_node(
+            "Resize",
+            [func.input[0], roi_out, scale_out],
+            func.output,
+            mode='nearest',
+        )
+
         return [n]
 
     def OneHot(self, func):
@@ -1533,7 +1609,7 @@ class OnnxExporter:
 
         return nl
 
-    def SumPooling(self, func):
+    def SumPooling(self, opset, func):
         # SumPooling gets converted to AveragePooling+Mul.
         # Mul is used to counter the division in AveragePooling
         # since SumPooling is just summing the values in each kernel.
@@ -1570,16 +1646,9 @@ class OnnxExporter:
             pads = [0, 0] + pads + [0, 0] + subs
 
         pad_out = fork_name(input) + "_pad"
-        n = onnx.helper.make_node(
-            'Pad',
-            [input],
-            [pad_out],
-            mode='constant',
-            value=0.0,
-            pads=pads
-        )
+        pad_nodes = generate_pad(input, pad_out, 'constant', pads, 0.0, opset)
         input = pad_out
-        nl.append(n)
+        nl.extend(pad_nodes)
 
         apout = fork_name(input) + "_ap"
         n = onnx.helper.make_node(
@@ -2846,7 +2915,6 @@ class OnnxExporter:
         return nl
 
     def Pad(self, opset, func):
-        nl = []
         input_shape = list(self._var_dict[func.input[0]].dim[:])
         inputs = func.input[:]
         pp = func.pad_param
@@ -2866,44 +2934,9 @@ class OnnxExporter:
             starts.append(x)
             ends.append(next(it))
         starts.extend(ends)
-        if opset == '11':
-            # Constant_Pads
-            pads_name = fork_name(func.input[0]) + "_pads"
-            c = generate_constant(pads_name, func.name + "_pads",
-                                  TensorProto.INT64, [len(starts)],
-                                  starts)
-            nl.append(c)
-            inputs.append(pads_name)
-
-            if pp.mode == "constant":
-                # Constant_Value
-                value_name = fork_name(func.input[0]) + "_value"
-                c = generate_constant(value_name, func.name + "_value",
-                                      TensorProto.FLOAT, [1],
-                                      [pp.constant_value])
-                nl.append(c)
-                inputs.append(value_name)
-
-            n = onnx.helper.make_node(
-                "Pad",
-                inputs,
-                func.output,
-                mode=pp.mode,
-            )
-            nl.append(n)
-        else:
-            n = onnx.helper.make_node(
-                "Pad",
-                inputs,
-                func.output,
-                mode=pp.mode,
-                pads=starts
-            )
-            if pp.mode == "constant":
-                v = onnx.helper.make_attribute("value", pp.constant_value)
-                n.attribute.extend([v])
-            nl.append(n)
-        return nl
+        pad_nodes = generate_pad(
+            func.input[0], func.output[0], pp.mode, starts, pp.constant_value, opset)
+        return pad_nodes
 
     def Tanh(self, func):
         # add attr alpha&beta for Tanh, This is the attr necessary for SNPE to handle Tanh.
