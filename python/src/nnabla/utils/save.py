@@ -32,6 +32,7 @@ from nnabla.parameter import get_parameters
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.save_function import _create_function_nntxt
 from nnabla.utils.nnp_format import nnp_version
+from nnabla.utils.get_file_handle import get_file_handle_save
 
 # ----------------------------------------------------------------------
 # Helper functions
@@ -516,12 +517,12 @@ def create_proto(contents, include_params=False, variable_batch_size=True):
     return proto
 
 
-def save(filename, contents, include_params=False, variable_batch_size=True):
+def save(filename, contents, include_params=False, variable_batch_size=True, file_like_type=".nntxt"):
     '''Save network definition, inference/training execution
     configurations etc.
 
     Args:
-        filename (str): Filename to store information. The file
+        filename (str or file object): Filename to store information. The file
             extension is used to determine the saving file format.
             ``.nnp``: (Recommended) Creating a zip archive with nntxt (network
             definition etc.) and h5 (parameters).
@@ -536,6 +537,7 @@ def save(filename, contents, include_params=False, variable_batch_size=True):
             as batch size, and left as a placeholder
             (more specifically ``-1``). The placeholder dimension will be
             filled during/after loading.
+        file_like_type: if files is file-like object, file_like_type is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
 
     Example:
         The following example creates a two inputs and two
@@ -628,16 +630,19 @@ def save(filename, contents, include_params=False, variable_batch_size=True):
 
 
     '''
-    _, ext = os.path.splitext(filename)
+    if isinstance(filename, str):
+        _, ext = os.path.splitext(filename)
+    else:
+        ext = file_like_type
     if ext == '.nntxt' or ext == '.prototxt':
         logger.info("Saving {} as prototxt".format(filename))
         proto = create_proto(contents, include_params, variable_batch_size)
-        with open(filename, 'w') as file:
+        with get_file_handle_save(filename, ext) as file:
             text_format.PrintMessage(proto, file)
     elif ext == '.protobuf':
         logger.info("Saving {} as protobuf".format(filename))
         proto = create_proto(contents, include_params, variable_batch_size)
-        with open(filename, 'wb') as file:
+        with get_file_handle_save(filename, ext) as file:
             file.write(proto.SerializeToString())
     elif ext == '.nnp':
         logger.info("Saving {} as nnp".format(filename))
@@ -651,7 +656,7 @@ def save(filename, contents, include_params=False, variable_batch_size=True):
 
             save_parameters('{}/parameter.protobuf'.format(tmpdir))
 
-            with zipfile.ZipFile(filename, 'w') as nnp:
+            with get_file_handle_save(filename, ext) as nnp:
                 nnp.write('{}/nnp_version.txt'.format(tmpdir),
                           'nnp_version.txt')
                 nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')

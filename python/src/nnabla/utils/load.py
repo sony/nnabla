@@ -44,6 +44,7 @@ from nnabla.utils.learning_rate_scheduler import (
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
+from nnabla.utils.get_file_handle import get_file_handle_load
 import nnabla as nn
 import nnabla.function as F
 import nnabla.solver as S
@@ -816,12 +817,13 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False):
+def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, file_like_type=".nntxt"):
     '''load
     Load network information from files.
 
     Args:
-        filenames (list): List of filenames.
+        filenames (list): file-like object or List of filenames.
+        file_like_type: if filenames is file-like object, file_like_type is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
     Returns:
         dict: Network information.
     '''
@@ -830,8 +832,17 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     info = Info()
 
     proto = nnabla_pb2.NNablaProtoBuf()
+
+    if isinstance(filenames, list) or isinstance(filenames, tuple):
+        pass
+    elif isinstance(filenames, str) or hasattr(filenames, 'read'):
+        filenames = [filenames]
+
     for filename in filenames:
-        _, ext = os.path.splitext(filename)
+        if isinstance(filename, str):
+            _, ext = os.path.splitext(filename)
+        else:
+            ext = file_like_type
 
         # TODO: Here is some known problems.
         #   - Even when protobuf file includes network structure,
@@ -841,7 +852,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
 
         if ext in ['.nntxt', '.prototxt']:
             if not parameter_only:
-                with open(filename, 'rt') as f:
+                with get_file_handle_load(filename, ext) as f:
                     try:
                         text_format.Merge(f.read(), proto)
                     except:
@@ -861,7 +872,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         elif ext == '.nnp':
             try:
                 tmpdir = tempfile.mkdtemp()
-                with zipfile.ZipFile(filename, 'r') as nnp:
+                with get_file_handle_load(filename, ext) as nnp:
                     for name in nnp.namelist():
                         _, ext = os.path.splitext(name)
                         if name == 'nnp_version.txt':
