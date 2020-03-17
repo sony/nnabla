@@ -4140,6 +4140,96 @@ Stochasticity:
     function_ids:
       ffiIi: 91
     c_runtime: not support
+  RandBinomial:
+    snake_name: rand_binomial
+    doc: |2
+
+      Samples numbers from a binomial distribution :math:`x \sim B(n, p)`
+      given the numbers of trials :math:`n`, probability :math:`p`,
+      and shape of the returned Variable.
+      When :math:`n = 1`, this behaves like the Bernoulli distriburion.
+    inputs: {}
+    arguments:
+      n:
+        doc: :math:`n` in definition, the number of trials.
+        type: int64
+        default: '1'
+      p:
+        doc: :math:`p` in definition, probability of success.
+        type: float
+        default: '0.5'
+      shape:
+        doc: Shape of returned variable.
+        type: Shape
+        default: '[]'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Variable with the shape specified in the argument.
+    function_ids:
+      ifiIi: 283
+    c_runtime: not support
+  RandBeta:
+    snake_name: rand_beta
+    doc: |2
+
+      Samples numbers from a beta distribution :math:`x \sim \Beta(\alpha, \beta)`.
+    inputs: {}
+    arguments:
+      alpha:
+        doc: :math:`\alpha`, scale parameter.
+        type: float
+        default: '0.5'
+      beta:
+        doc: :math:`\bata`, scale parameter.
+        type: float
+        default: '0.5'
+      shape:
+        doc: Shape of returned variable.
+        type: Shape
+        default: '[]'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Variable with the shape specified in the argument.
+    function_ids:
+      ffiIi: 284
+    c_runtime: not support
+  RandGamma:
+    snake_name: rand_gamma
+    doc: |2
+
+      Samples numbers from a gamma distribution :math:`x \sim \frac {\gamma(k, \frac {x}{\theta})}{\Gamma(k)}`.
+    inputs: {}
+    arguments:
+      k:
+        doc: k, scale parameter.
+        type: float
+        default: '0.5'
+      theta:
+        doc: :math:`\theta`, scale parameter.
+        type: float
+        default: '1'
+      shape:
+        doc: Shape of returned variable.
+        type: Shape
+        default: '[]'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+    outputs:
+      y:
+        doc: Variable with the shape specified in the argument.
+    function_ids:
+      ffiIi: 285
+    c_runtime: not support
   RandomChoice:
     snake_name: random_choice
     doc: |2

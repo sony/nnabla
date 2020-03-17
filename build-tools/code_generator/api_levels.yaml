@@ -206,3 +206,7 @@
 10:
   AddN_Empty: 281
   MulN_Empty: 282
+11:
+  RandBeta_ffiIi: 283
+  RandBinomial_ifiIi: 284
+  RandGamma_ffiIi: 285
