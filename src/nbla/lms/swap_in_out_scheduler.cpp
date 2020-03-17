@@ -69,6 +69,7 @@ void SwapInOutScheduler::start_scheduling() {
   func_idx = 0;
   wrong_ordered.clear();
   precleared.clear();
+  cast_prefetched.clear();
   set_sa_callback(); // Set SyncedArrayCallback
 }
 
