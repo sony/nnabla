@@ -57,7 +57,9 @@ CD %nnabla_build_folder%
 ECHO OFF
 cmake -G "%generate_target%" ^
       -DBUILD_CPP_UTILS=ON ^
+      -DBUILD_TEST=ON ^
       -DBUILD_PYTHON_PACKAGE=OFF ^
+      -Dgtest_force_shared_crt=TRUE ^
       -DLIB_NAME_SUFFIX=%lib_name_suffix% ^
       -DLibArchive_INCLUDE_DIR=%libarchive_include_dir% ^
       -DLibArchive_LIBRARY=%libarchive_library% ^
@@ -73,6 +75,7 @@ cmake -G "%generate_target%" ^
       %nnabla_root% || GOTO :error
 
 cmake --build . --config %build_type% || GOTO :error
+cmake --build . --config %build_type% --target test_nbla_utils || GOTO :error
 cpack -G ZIP -C %build_type%
 ENDLOCAL
 exit /b

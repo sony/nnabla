@@ -188,10 +188,19 @@ if (BUILD_TEST)
     )
   endif()
   if (NNABLA_UTILS_WITH_NPY)
-    list(APPEND NBLA_UTILS_TEST_SOURCES
-      test/test_dataset.cpp
-    )
+    if (NOT WIN32)
+      # The reason not test it in WIN32:
+      #   test_dataset tries to test internal classes
+      #   which is not exported by NBLA_API, which causes
+      #   link error.
+      list(APPEND NBLA_UTILS_TEST_SOURCES
+        test/test_dataset.cpp
+      )
+    endif()
   endif()
+  list(APPEND NBLA_UTILS_TEST_SOURCES
+    test/test_load_save_parameters.cpp
+  )
   add_executable(test_nbla_utils ${NBLA_UTILS_TEST_SOURCES})
   add_dependencies(test_nbla_utils ${NBLA_LIBRARY_NAME})
   target_link_libraries(test_nbla_utils gtest gtest_main)

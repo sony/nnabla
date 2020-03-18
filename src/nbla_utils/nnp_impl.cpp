@@ -611,7 +611,7 @@ vector<pair<string, VariablePtr>> NnpImpl::get_parameters() {
 }
 
 bool NnpImpl::save_parameters(const string &filename) {
-  std::ofstream ofs(filename.c_str());
+  std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofs.is_open()) {
     // std::cout << "Error in opening file";
     return false;

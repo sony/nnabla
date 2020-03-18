@@ -58,6 +58,14 @@ void set_input(CgVariablePtr x) {
   }
 }
 
+void set_t(CgVariablePtr t) {
+  float_t *t_d =
+      t->variable()->cast_data_and_get_pointer<float_t>(kCpuCtx, true);
+  for (int i = 0; i < 10; ++i) {
+    t_d[i] = i; // set value from 0 to 9
+  }
+}
+
 void check_result(CgVariablePtr x, CgVariablePtr y) {
   float_t *x_d =
       x->variable()->cast_data_and_get_pointer<float_t>(kCpuCtx, true);
@@ -95,6 +103,7 @@ CgVariablePtr simple_train(ParameterDirectory &params) {
   adam->set_parameters(params.get_parameters());
   adam->zero_grad();
   set_input(x);
+  set_t(t);
   loss->forward();
   loss->variable()->grad()->fill(1.0);
   loss->backward(nullptr, true);
