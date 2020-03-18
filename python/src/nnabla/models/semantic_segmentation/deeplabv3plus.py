@@ -13,7 +13,6 @@
 # limitations under the License.
 from __future__ import absolute_import
 from nnabla.utils.nnp_graph import NnpNetworkPass
-from nnabla import logger
 from .base import SemanticSegmentation
 
 

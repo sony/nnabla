@@ -1,4 +1,4 @@
-from nnabla.utils.image_utils import imread, imresize, imsave
+from nnabla.utils.image_utils import imresize
 from nnabla.models.object_detection.draw_utils import DrawBoundingBoxes
 import numpy as np
 
