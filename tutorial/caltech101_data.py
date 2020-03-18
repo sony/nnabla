@@ -15,7 +15,6 @@
 '''
 Provide data iterator for Caltech101 examples.
 '''
-from contextlib import contextmanager
 import numpy as np
 import tarfile
 

@@ -13,11 +13,9 @@
 # limitations under the License.
 
 import numpy as np
-from functools import reduce
 from collections import OrderedDict
 
 import nnabla as nn
-import nnabla.functions as F
 from nnabla.function import PythonFunction
 
 from .backward_functions import mappings

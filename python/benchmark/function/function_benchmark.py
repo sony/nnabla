@@ -19,7 +19,7 @@ import nnabla.initializer as I
 import sys
 import importlib
 import time
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 import csv
 
 

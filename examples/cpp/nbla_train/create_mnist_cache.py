@@ -15,7 +15,6 @@
 import argparse
 import os
 import sys
-from tqdm import tqdm
 
 from nnabla.logger import logger
 from nnabla.config import nnabla_config

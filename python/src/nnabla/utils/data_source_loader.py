@@ -20,7 +20,6 @@ Contents loader functions for DataSource.
 from __future__ import absolute_import
 
 from six.moves import map
-from shutil import rmtree
 from six import BytesIO
 from six import StringIO
 from six.moves.urllib.parse import urljoin

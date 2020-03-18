@@ -24,7 +24,6 @@ import os
 import re
 import shutil
 import tempfile
-import zipfile
 
 from nnabla import save_parameters
 from nnabla.logger import logger

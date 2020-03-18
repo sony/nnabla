@@ -66,7 +66,6 @@ After this you can get following output.
 '''
 
 import logging
-from os.path import abspath, join, expanduser, exists, dirname
 
 from .config import nnabla_config
 
