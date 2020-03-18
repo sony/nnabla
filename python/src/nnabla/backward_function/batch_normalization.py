@@ -48,7 +48,7 @@ class BatchNormalizationBackward(BackwardFunction):
                                    False] * self._num_inputs_fwd)
 
     def backward_impl(self, inputs, outputs, prop_down, accum):
-        # TOOD: output_stat (can not be obtained by self.forward_func.info.args["batch_stat"])
+        # TODO: output_stat (can not be obtained by self.forward_func.info.args["batch_stat"])
 
         batch_stat = self.forward_func.info.args["batch_stat"]
         if batch_stat:

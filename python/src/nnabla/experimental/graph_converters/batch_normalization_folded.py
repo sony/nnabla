@@ -11,7 +11,7 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
     """
     Single `Convolution -> BatchNormalization` pass is folded into one `Convolution`.
 
-    If there is a `Convolution -> BatchNormalization` pass, fold the batch normalization paramters to the kernel and bias (if it exists) of the preceeding convolution, then skip the batch normalization following the convolution.
+    If there is a `Convolution -> BatchNormalization` pass, fold the batch normalization parameters to the kernel and bias (if it exists) of the preceding convolution, then skip the batch normalization following the convolution.
 
     Args:
         black_list (list): Black list of the function list.

@@ -134,7 +134,7 @@ class Grad(object):
         elif isinstance(grad_outputs, list):
             if len(outputs) != len(grad_outputs):
                 raise ValueError(
-                    "Length of `grad_outputs` and lenght of `outputs` must be the same.")
+                    "Length of `grad_outputs` and length of `outputs` must be the same.")
             for i in range(len(outputs)):
                 o = outputs[i]
                 go = grad_outputs[i]
@@ -153,7 +153,7 @@ class Grad(object):
         if len(persistent_outputs) != 0 and len(outputs) != len(persistent_outputs):
             raise ValueError("Length of outputs and persistent_outputs "
                              "must be the same except for "
-                             "the case that the lenght of the persistent_outputs is 0.")
+                             "the case that the length of the persistent_outputs is 0.")
 
         # Persistent outputs since outputs are basically losses to be monitored
         persistent_outputs = [
@@ -256,7 +256,7 @@ def grad(outputs, inputs, grad_outputs=None, persistent_outputs=[], bind_grad_ou
         inputs (list of :obj:`~nnabla.Variable` or :obj:`~nnabla.Variable`): Inputs w.r.t. which the gradients of outputs are computed.
         grad_outputs (None, scalar, :obj:`numpy.ndarray`, :obj:`nnabla._nd_array.NdArray`, or list of scalar, :obj:`numpy.ndarray`, or :obj:`nnabla._nd_array.NdArray`, ): Gradient outputs corresponding to outputs. This is same as the grad argument of :meth:`~nnabla.Variable.backward`. Default is None, so the one is used as the in-coming gradient at the very end of the Variable in the backward graph.
         persistent_outputs (list of `bool`): Outputs become persistent accordingly. If not specified, all outputs become persistent.
-        bind_grad_output (`bool`): Bind data to grad of input Varaible. This is useful for the case where one wants to use the backward graph for training a neural network using the first-order gradients only. Default is False.
+        bind_grad_output (`bool`): Bind data to grad of input variable. This is useful for the case where one wants to use the backward graph for training a neural network using the first-order gradients only. Default is False.
 
     Returns
         List of :obj:`~nnabla.Variable`. 

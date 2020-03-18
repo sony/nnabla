@@ -1234,7 +1234,7 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
                       shift_step=(1, 1), padding=(0, 0, 0, 0),
                       channel_last=False):
     r"""
-    Multiplicative patch-wise comparision between inputs `x1` and `x2`, which
+    Multiplicative patch-wise comparison between inputs `x1` and `x2`, which
     must both be 4-dimensional NCHW (with `channel_last=False`) or NHWC (with
     `channel_last=True`) arrays (where *N* is the number of samples, *H* and
     *W* are the sample height and width and *C* is the number of channels).
@@ -1243,7 +1243,7 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
     the, optionally padded, input image sizeand :math:`C_y, C_x` are determined
     by the optionally shifted patch positions.
 
-    Mathmatically, the patch correlation is formulated as 
+    Mathematically, the patch correlation is formulated as
 
     .. math::
 

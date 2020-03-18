@@ -32,7 +32,7 @@ class ObjectDetection(object):
     def _load_nnp(self, rel_name, rel_url):
         '''
             Args:
-                rel_name: relative path to where donwloaded nnp is saved.
+                rel_name: relative path to where downloaded nnp is saved.
                 rel_url: relative url path to where nnp is downloaded from.
 
             '''
