@@ -21,6 +21,8 @@ Prepare omniglot dataset by
 python omniglot_data.py
 ```
 
+in "./data" directory.
+
 This script downloads the dataset into `~/nnabla_data`.
 Also it generates compressed dataset files `*.npy` in `./omniglot/data`.
 Extracting the dataset can take a while (around 1, 2 minutes).
@@ -43,6 +45,21 @@ In case of Prototypical networks or Matching networks, you can use
 
 ```
 python prototypical.py
+```
+
+If you want to try prototypical networks on celeb-a dataset,
+first, you need to download "img_align_celeba.zip" and "identity_CelebA.txt" from following site
+http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+and put them into "./data" directory. Then, generate compressed dataset files `*.npy` in `./data/celeb_a/data` by
+
+```
+python celeb_a_data.py
+```
+in "./data" directory.
+Finally, you can start training by
+
+```
+python prototypical.py --dataset celeb_a
 ```
 
 
@@ -89,14 +106,14 @@ Example of options are as follows.
 
 | Options | |
 | :--- | :--- |
-| -nw |	Number of ways in meta-test, typically 5 or 20 |
-| -ns |	Number of shots per class in meta-test, typically 1 or 5 |
-| -nq |	Number of queries per class in meta-test, typically 5 |
-| -nwt|	Number of ways in meta-training, typically 60, or same as meta-test |
-| -nst|	Number of shots per class in meta-training, typically same as meta-test |
-| -nqt|	Number of queries per class in meta-test, typically same as meta-test |
-| -d  | Similarity metric, you can select "cosine" or "euclid" |
-| -n  | Network type, you can select "matching" and "prototypical" |
+| --n_class |	Number of ways in meta-test, typically 5 or 20 |
+| --n_shot  |	Number of shots per class in meta-test, typically 1 or 5 |
+| --n_query |	Number of queries per class in meta-test, typically 5 |
+| --n_class_tr |	Number of ways in meta-training, typically 60, or same as meta-test |
+| --n_shot_tr  |	Number of shots per class in meta-training, typically same as meta-test |
+| --n_query_tr |	Number of queries per class in meta-test, typically same as meta-test |
+| --max_iteration | Maximum number of iterations |
+| --dataset       | "omniglot" and "celeb_a" are available after setup|
 
 ### Prototypical networks
 The default setting of this script is a prototypical network with euclid distance.

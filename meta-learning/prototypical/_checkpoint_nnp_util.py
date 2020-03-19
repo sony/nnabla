@@ -19,5 +19,5 @@ import sys
 
 # Import save/load_checkpoint from utils
 sys.path.append(os.path.join(
-    os.path.dirname(__file__), '../utils/'))
+    os.path.dirname(__file__), '../../utils/'))
 from save_nnp import save_nnp
