@@ -487,7 +487,7 @@ def _train(args, config):
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
                             timeinfo.past_time, timeinfo.estimate_time))
 
-                        if callback.check_training_time(args, config, timeinfo, epoch, last_epoch) == False:
+                        if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
                             _save_parameters(args, 'current', epoch, True)
                             return False, True
 

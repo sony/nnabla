@@ -765,7 +765,7 @@ def backward_function_tester(rng, func, ref_func, inputs,
         begin = 0
         for i in vinputs:
             end = begin + i.size
-            if i.need_grad == True:
+            if i.need_grad:
                 i.d = inputs0[begin:end].reshape(i.shape)
             begin = end
 

@@ -56,7 +56,7 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
                     i0 = func.inputs[0]
                     bn_func = func
                     # Test mode check
-                    if bn_func.info.args["batch_stat"] == False:
+                    if not bn_func.info.args["batch_stat"]:
                         # `Target Func -> BN` check from BN
                         if i0.parent.info.type_name in self.inner_prod_functions:
                             nn.logger.info("{} is skipped.".format(func.name))
@@ -75,7 +75,7 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
                         if bn_func.name == "BatchNormalization":
 
                             # Test mode check
-                            if bn_func.info.args["batch_stat"] == False:
+                            if not bn_func.info.args["batch_stat"]:
 
                                 # Perform `Target Func -> BN` conversion
                                 nn.logger.info("BatchNormalization parameters are folded to "
