@@ -4310,6 +4310,99 @@ Stochasticity:
     function_ids:
       iIiii: 94
     c_runtime: not support
+  RandomErase:
+    snake_name: random_erase
+    doc: |
+      Randomly erase patches of the inputs and replace with random values.
+
+      Erasing is applied for each sample and for each `n` with the given probability, the randomly 
+      selected area ratio and aspect ratio if `share` is `True`; 
+      otherwise (`share`=`False`), for each feature additionally. 
+
+      Random patch are selected by random coordinates as the following,
+
+      .. math::
+        
+        S_e &&= Uniform(s_l, s_h) \times S \\
+        r_e &&= Uniform(r_l, r_h) \\
+        H_e &&= \sqrt{S_e \times r_e} \\
+        W_e &&= \sqrt{S_e / r_e} \\
+        y_e &&= Uniform(0, H - H_e) \\
+        x_e &&= Uniform(0, W - W_e), 
+
+      where :math:`S` is the area, :math:`s_l` and :math:`s_h` are the low and high values of 
+      the area ratio range, :math:`r_l` and :math:`r_h` are the low and high values
+      of the aspect ratio range, :math:`H_e` and :math:`W_e` are height and width of a patch,  
+      and :math:`y_e` and :math:`x_e` are the start coordinates of a patch. If a pixel of the inputs
+      falls in this patch, the value of that pixel is replaced with a random value in `replacements` 
+      range.
+
+      Backward is implemented as passing gradients if `ste_fine_grained` is False; otherwise, 
+      the backward only occurs in regions not erased.
+
+      References:
+
+        * `Zhun Zhong, Liang Zheng, Guoliang Kang, Shaozi Li, Yi Yang,
+          Random Erasing Data Augmentation, 
+          <https://arxiv.org/abs/1708.04896>`_
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      prob:
+        doc: Probability to erase.
+        type: float
+        default: '0.5'
+      area_ratios:
+        doc: Low and high of the area ratio range.
+        type: repeated float
+        default: (0.02, 0.4)
+      aspect_ratios:
+        doc: Low and high of the aspect ratios range.
+        type: repeated float
+        default: (0.3, 3.3333)
+      replacements:
+        doc: Low and high of the replacement value range.
+        type: repeated float
+        default: (0.0, 255.0)
+      n:
+        doc: Max number of patches to be erased.
+        type: int64
+        default: 1
+      share:
+        doc: Use a same bounding box randomly picked over the feature dimension when
+          being True. Default is False.
+        type: bool
+        default: 'True'
+      inplace:
+        doc: The output array is shared with the input array if True.
+        type: bool
+        default: 'False'
+      base_axis:
+        doc: Dimensions up to base_axis is treated as sample dimension.
+        type: int64
+        default: '1'
+      seed:
+        doc: Random seed. When -1, seed is sampled from global random number generator.
+        type: int64
+        default: '-1'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
+      ste_fine_grained:
+        doc: Straight Through Estimator is fine-grained or not. Default is True.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array.
+    c_runtime: not support
+    function_ids:
+      ffFfFiBfFBiiB: 283
+      ffFfFfFiBBiiB: 284
+      ffFfFfFiBBiiBB: 285
   ImageAugmentation:
     snake_name: image_augmentation
     doc: |2
