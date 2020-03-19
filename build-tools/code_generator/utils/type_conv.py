@@ -19,6 +19,7 @@ type_from_proto = {
     'float': {'cpp': 'float', 'cpp_var': 'float', 'pyx': 'float', 'pxd': 'float'},
     'double': {'cpp': 'double', 'cpp_var': 'double', 'pyx': 'double', 'pxd': 'double'},
     'repeated int64': {'cpp': 'const vector<int> &', 'cpp_var': 'const vector<int>', 'pyx': 'const vector[int]&', 'pxd': 'const vector[int]&'},
+    'repeated float': {'cpp': 'const vector<float> &', 'cpp_var': 'const vector<float>', 'pyx': 'const vector[float]&', 'pxd': 'const vector[float]&'},
     'string': {'cpp': 'const string &', 'cpp_var': 'const string', 'pyx': 'const string&', 'pxd': 'const string&'},
     'Communicator': {'cpp': 'const shared_ptr<Communicator> &', 'cpp_var': 'shared_ptr<const Communicator>', 'pyx': 'Communicator', 'pxd': 'shared_ptr[CCommunicator]&'}
 }
