@@ -19,25 +19,29 @@ import h5py
 
 @contextlib.contextmanager
 def get_file_handle_load(path, ext):
-    if isinstance(path, str):
-        if ext in ['.nntxt', '.prototxt']:
-            need_close = True
-            f = open(path, 'r')
-        elif ext == '.protobuf':
-            need_close = True
-            f = open(path, 'rb')
-        elif ext == '.nnp':
-            need_close = True
-            f = zipfile.ZipFile(path, 'r')
-        elif ext == '.h5':
-            need_close = True
-            f = h5py.File(path, 'r')
-        else:
-            raise ValueError("Currently, ext == {} is not support".format(ext))
-    else:
+    if ext == '.nnp':
+        need_close = True
+        f = zipfile.ZipFile(path, 'r')
+    elif ext == '.h5':
+        need_close = True
+        f = h5py.File(path, 'r')
+    elif ext in ['.nntxt', '.prototxt']:
         if hasattr(path, 'read'):
             need_close = False
             f = path
+        else:
+            need_close = True
+            f = open(path, 'r')
+    elif ext == '.protobuf':
+        if hasattr(path, 'read'):
+            need_close = False
+            f = path
+        else:
+            need_close = True
+            f = open(path, 'rb')
+    else:
+        raise ValueError("Currently, ext == {} is not support".format(ext))
+
     yield f
     if need_close:
         f.close()
@@ -45,25 +49,29 @@ def get_file_handle_load(path, ext):
 
 @contextlib.contextmanager
 def get_file_handle_save(path, ext):
-    if isinstance(path, str):
-        if ext in ['.nntxt', '.prototxt']:
-            need_close = True
-            f = open(path, 'w')
-        elif ext == '.protobuf':
-            need_close = True
-            f = open(path, 'wb')
-        elif ext == '.nnp':
-            need_close = True
-            f = zipfile.ZipFile(path, 'w')
-        elif ext == '.h5':
-            need_close = True
-            f = h5py.File(path, 'w')
-        else:
-            raise ValueError("Currently, ext == {} is not support".format(ext))
-    else:
-        if hasattr(path, 'write'):
+    if ext == '.nnp':
+        need_close = True
+        f = zipfile.ZipFile(path, 'w')
+    elif ext == '.h5':
+        need_close = True
+        f = h5py.File(path, 'w')
+    elif ext in ['.nntxt', '.prototxt']:
+        if hasattr(path, 'read'):
             need_close = False
             f = path
+        else:
+            need_close = True
+            f = open(path, 'w')
+    elif ext == '.protobuf':
+        if hasattr(path, 'read'):
+            need_close = False
+            f = path
+        else:
+            need_close = True
+            f = open(path, 'wb')
+    else:
+        raise ValueError("Currently, ext == {} is not support".format(ext))
+
     yield f
     if need_close:
         f.close()
