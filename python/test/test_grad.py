@@ -83,7 +83,7 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
     if not auto_forward:
         F.sink(*grads, one_input_grad=1).forward()
 
-    # Check between results of var.bacwkard and nn.grad
+    # Check between results of var.backward and nn.grad
     backend = ctx.backend[0].split(":")[0]
     if backend == 'cuda':
         pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
@@ -132,7 +132,7 @@ def test_multiple_objectives(seed, ctx, auto_forward):
     if not auto_forward:
         F.sink(*grads, one_input_grad=1).forward()
 
-    # Check between results of var.bacwkard and nn.grad
+    # Check between results of var.backward and nn.grad
     for inp, grad in zip(inputs, grads):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
@@ -190,36 +190,36 @@ def test_grad_outputs(seed, ctx, auto_forward, type_grad_outputs):
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("auto_forward", [True, False])
 def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
-    def add(x, derivate=0):
-        if derivate == 0:
+    def add(x, derivative=0):
+        if derivative == 0:
             return x + x + x
-        if derivate == 1:
+        if derivative == 1:
             return 3 * np.ones_like(x)
-        if derivate == 2:
+        if derivative == 2:
             return np.zeros_like(x)
 
-    def sub(x, derivate=0):
-        if derivate == 0:
+    def sub(x, derivative=0):
+        if derivative == 0:
             return x - x - x
-        if derivate == 1:
+        if derivative == 1:
             return -1 * np.ones_like(x)
-        if derivate == 2:
+        if derivative == 2:
             return np.zeros_like(x)
 
-    def mul(x, derivate=0):
-        if derivate == 0:
+    def mul(x, derivative=0):
+        if derivative == 0:
             return x * x * x
-        if derivate == 1:
+        if derivative == 1:
             return 3 * x ** 2
-        if derivate == 2:
+        if derivative == 2:
             return 6 * x
 
-    def div(x, derivate=0):
-        if derivate == 0:
+    def div(x, derivative=0):
+        if derivative == 0:
             return x / x / x
-        if derivate == 1:
+        if derivative == 1:
             return - x ** -2
-        if derivate == 2:
+        if derivative == 2:
             return 2 * x ** -3
 
     # Settings
