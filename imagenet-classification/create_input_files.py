@@ -14,7 +14,7 @@
 
 import argparse
 import os
-import glob
+import pathlib
 
 
 def main(args):
@@ -26,12 +26,14 @@ def main(args):
             label, dname = l.rstrip().split(",")
             dname_label[dname] = label
 
-    paths = glob.glob("{}/*/*".format(args.train_file_dir))
+    train_root = pathlib.Path(args.train_file_dir)
+    paths = sorted(train_root.rglob('*.JPEG'))
     with open("train_label", "w") as fp:
         for path in paths:
-            dname, fname = path.rstrip().split("/")[-2:]
+            name_parts = path.parts[len(train_root.parts):]
+            dname = name_parts[-1].split('_')[0]
             label = dname_label[dname]
-            local_path = os.path.join(dname, fname)
+            local_path = str(pathlib.Path(*name_parts))
             fp.write("{} {}\n".format(local_path, label))
 
     # File list for valdiation
