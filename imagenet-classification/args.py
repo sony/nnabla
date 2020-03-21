@@ -13,9 +13,47 @@
 # limitations under the License.
 
 
-def get_args(max_epochs=90, learning_rate=1e-1, batch_size=256,
-             weight_decay=1e-4, train_dir='./', train_list="train_label",
-             val_dir='./', val_list="val_label", dali_num_threads=4):
+def check_arch_or_die(arch):
+    # See available archs
+    import sys
+    from models.registry import get_available_archs
+    archs = get_available_archs()
+    if arch in archs:
+        return
+    print('Available architectures (spcify with -a option):')
+    for an in archs:
+        print('*', an)
+    sys.exit(1)
+
+
+def lower_str(value):
+    if not isinstance(value, str):
+        value = str(value)
+    return value.lower()
+
+
+def parse_tuple(x):
+    return tuple(map(int, x.split(',')))
+
+
+def add_runtime_args(parser):
+    parser.add_argument("--device-id", "-d", type=str, default='0',
+                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
+    parser.add_argument("--type-config", "-t", type=str, default='float',
+                        help='Type configuration.')
+    parser.add_argument('--context', '-c', type=str,
+                        default=None, help="Extension module. 'cudnn' is highly.recommended.")
+
+
+def add_arch_args(parser):
+    parser.add_argument('--arch', '-a', type=lower_str,
+                        default='', help='Architecture type. See available choices for architecture by passing null string "".')
+
+
+def get_train_args(
+        max_epochs=90, learning_rate=1e-1, batch_size=256,
+        weight_decay=1e-4, train_dir='./', train_list="train_label",
+        val_dir='./', val_list="val_label", dali_num_threads=4):
     """
     Get command line arguments.
 
@@ -24,15 +62,15 @@ def get_args(max_epochs=90, learning_rate=1e-1, batch_size=256,
     import argparse
     import os
     parser = argparse.ArgumentParser(
-        description='''(Tiny) ImageNet classification example.
+        description='''ImageNet classification example.
         ''')
+    add_runtime_args(parser)
+    add_arch_args(parser)
     parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
     parser.add_argument("--learning-rate", "-l",
                         type=float, default=learning_rate,
                         help='Learning rate used when --batch-size=256. For other batch sizes, the learning rate is linearly scaled.')
 
-    def parse_tuple(x):
-        return tuple(map(int, x.split(',')))
     parser.add_argument("--learning-rate-decay-at", "-D",
                         default=(30, 60, 80), type=parse_tuple,
                         help='Step learning rate decay multiplied by 0.1 is performed at epochs specified, e.g. `-D 30,60,80`.')
@@ -49,23 +87,10 @@ def get_args(max_epochs=90, learning_rate=1e-1, batch_size=256,
     parser.add_argument("--warmup-epochs",
                         type=int, default=5,
                         help='Warmup learning rate during a specified number of epochs.')
-
-    parser.add_argument("--device-id", "-d", type=str, default='0',
-                        help='Device ID the training run on. This is only valid if you specify `-c cudnn`.')
-    parser.add_argument("--type-config", "-t", type=str, default='float',
-                        help='Type configuration.')
     parser.add_argument("--model-save-interval", "-s", type=int, default=10,
                         help='The epoch interval of saving model parameters.')
     parser.add_argument("--model-load-path", type=str, default=None,
                         help='Path to the model parameters to be loaded.')
-    parser.add_argument('--context', '-c', type=str,
-                        default=None, help="Extension module. 'cudnn' is highly.recommended.")
-    parser.add_argument("--num-layers", "-L", type=int,
-                        choices=[18, 34, 50, 101, 152], default=50,
-                        help='Number of layers of ResNet.')
-    parser.add_argument("--shortcut-type", "-S", type=str,
-                        choices=['b', 'c', ''], default='b',
-                        help='Skip connection type. See `resnet_imagenet()` in model_resent.py for description.')
     parser.add_argument("--channel-last", action='store_true',
                         help='Use a model with NHWC layout.')
     parser.add_argument("--train-dir", '-T', type=str, default=train_dir,
@@ -89,6 +114,9 @@ def get_args(max_epochs=90, learning_rate=1e-1, batch_size=256,
                         help='Loss scaling value. Only used in half precision (mixed precision) training.')
 
     args = parser.parse_args()
+
+    # Check arch is available
+    check_arch_or_die(args.arch)
 
     if args.monitor_path is None:
         import datetime

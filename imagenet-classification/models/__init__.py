@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+from . import (
+    resnet,
+    resnext,
+    senet,
+)
 
-_pixel_mean = [255 * x for x in (0.485, 0.456, 0.406)]
-_pixel_std = [255 * x for x in (0.229, 0.224, 0.225)]
 
+def build_network(x, num_classes, arch, test=True, channel_last=False):
 
-def get_normalize_config(key):
-    if key == 'default':
-        return np.asarray(_pixel_mean, dtype=np.float32), \
-            np.asarray(_pixel_std, dtype=np.float32)
-
-    if key == 'senet_author':
-        return np.asarray([104, 117, 123][::-1], dtype=np.float32), None
-    raise ValueError('Unknown normalization config: {}'.format(key))
+    from . import registry
+    args = (x, num_classes)
+    kwargs = dict(test=test, channel_last=channel_last)
+    arch_fn = registry.query_arch_fn(arch)
+    pred, hidden = arch_fn(*args, **kwargs)
+    return pred, hidden
