@@ -62,6 +62,10 @@ void SwapInOutScheduler::start_scheduling() {
   if (second_iter) {
     schedule();            // Schedule swap in/out
     said_map.clear();      // Clear variables used in the first iteration
+
+    // Free host caches allocated too much before scheduled execution.
+    BackendUtils::free_unused_host_caches(host_ctx);
+    BackendUtils::free_unused_host_caches(device_ctx);
   }
 
   // Init
