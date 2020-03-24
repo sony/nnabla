@@ -68,6 +68,10 @@ public:
    */
   static shared_ptr<Allocator> naive_allocator(const Context ctx);
 
+  /** Free all unused host memory caches
+   */
+  static void free_unused_host_caches(const Context ctx);
+
   /** Call device_synchronize of the backend in a context.
    */
   static void device_synchronize(const Context ctx);

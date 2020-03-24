@@ -78,6 +78,10 @@ shared_ptr<Allocator> BackendUtils::naive_allocator(const Context ctx) {
   return get_backend_getter(ctx)()->naive_allocator();
 }
 
+void BackendUtils::free_unused_host_caches(const Context ctx) {
+  return get_backend_getter(ctx)()->free_unused_host_caches();
+}
+
 void BackendUtils::device_synchronize(const Context ctx) {
   return get_backend_getter(ctx)()->device_synchronize(ctx.device_id);
 }

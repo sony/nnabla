@@ -60,6 +60,10 @@ public:
    */
   virtual shared_ptr<Allocator> naive_allocator() = 0;
 
+  /** Free all unused host memory caches
+   */
+  virtual void free_unused_host_caches() = 0;
+
   /** Synchronize host to device.
    */
   virtual void device_synchronize(const string &device) = 0;
