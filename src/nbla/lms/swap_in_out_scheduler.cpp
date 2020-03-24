@@ -38,6 +38,7 @@ SwapInOutScheduler::SwapInOutScheduler(const Context &h_ctx,
     max_prefetch_bytes(prefetch_max == 0 ? max * 1.5 : prefetch_max),
     cast_prefetch(save_host_mem),
     cast_prefetch_no_abort(save_host_mem_no_abort),
+    free_host_caches(save_host_mem),
     sa_callback([&](SyncedArrayPtr saptr, 
                     const SyncedArrayCallbackTag sa_tag,
                     const dtypes dtype,
@@ -64,8 +65,10 @@ void SwapInOutScheduler::start_scheduling() {
     said_map.clear();      // Clear variables used in the first iteration
 
     // Free host caches allocated too much before scheduled execution.
-    BackendUtils::free_unused_host_caches(host_ctx);
-    BackendUtils::free_unused_host_caches(device_ctx);
+    if (free_host_caches) {
+      BackendUtils::free_unused_host_caches(host_ctx);
+      BackendUtils::free_unused_host_caches(device_ctx);
+    }
   }
 
   // Init

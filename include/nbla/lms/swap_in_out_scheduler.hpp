@@ -164,6 +164,7 @@ class SwapInOutScheduler {
   // This option controlls whether prefeth uses cast().
   const bool cast_prefetch;
   const bool cast_prefetch_no_abort;
+  const bool free_host_caches;
 
   //---------------------------------------------------
   //    Variables used only in first iteration
@@ -189,7 +190,7 @@ public:
   */
   NBLA_API SwapInOutScheduler(const Context &h_ctx, const Context &d_ctx,
                               const size_t max, const size_t prefetch_max = 0,
-                              const bool save_host_mem = false,
+                              const bool save_host_mem = true,
                               const bool save_host_mem_no_abort = false);
 
   /** Destructor.
