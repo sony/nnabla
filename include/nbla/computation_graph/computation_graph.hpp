@@ -28,7 +28,8 @@ namespace nbla {
 
 */
 NBLA_API vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
-                                                       int n_outputs = -1);
+                                                       int n_outputs = -1,
+                                                       bool prohibit_clear_output = false);
 
 /** Connect function to network.
 
