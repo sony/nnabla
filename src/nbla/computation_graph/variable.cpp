@@ -120,7 +120,7 @@ public:
         continue;
       }
       if (vi->rank() == 0 || vi->persistent() ||
-          func->function()->inplace_data(i)) {
+          func->function()->inplace_data(i) || vi->prohibit_clear_data()) {
         continue;
       }
       if (clear_buffer_) {

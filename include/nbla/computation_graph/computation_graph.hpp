@@ -27,8 +27,9 @@ namespace nbla {
     flags are automatically applied to created outputs.
 
 */
-NBLA_API vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
-                                                       int n_outputs = -1);
+NBLA_API vector<CgVariablePtr>
+create_function_outputs(CgFunctionPtr cg_f, int n_outputs = -1,
+                        bool prohibit_clear_output = false);
 
 /** Connect function to network.
 

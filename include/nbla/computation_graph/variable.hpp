@@ -93,6 +93,7 @@ class CgVariable {
       function_references_;
   bool allow_modify_data_{true}; ///< Whether the data can be in-placed.
   bool persistent_{false};       ///<Persistency flag against clearing.
+  bool prohibit_clear_data_{false};
   string name_{""};
 
   void
@@ -185,6 +186,14 @@ public:
   /** Unset need grad state flag.
    */
   inline void unset_need_grad_state() { need_grad_state_ = NG_NONE; }
+
+  /** Get prohibit_clear_data_ flag.
+   */
+  inline bool prohibit_clear_data() { return prohibit_clear_data_; }
+
+  /** Set prohibit_clear_data_ flag.
+   */
+  inline void set_prohibit_clear_data(bool b) { prohibit_clear_data_ = b; }
 
   /** Set parent function.
 

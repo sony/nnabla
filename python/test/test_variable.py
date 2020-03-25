@@ -290,3 +290,80 @@ def test_variable_set():
 
     y.need_grad = True
     assert y in s
+
+
+def test_prohibit_clear_data():
+    import nnabla.functions as F
+    nn.prefer_cached_array(False)
+    shape = (2, 3, 4)
+    var_np = np.random.rand(*shape)
+
+    # the case of root variable
+    x1 = nn.Variable.from_numpy_array(var_np)
+    y1 = F.reshape(x1, (-1,), inplace=True)
+    y1 = F.reshape(y1, shape, inplace=True) * 2
+
+    x2 = nn.Variable.from_numpy_array(var_np)
+    y2 = F.reshape(x2, (-1,), inplace=False)
+    y2 = F.reshape(y2, shape, inplace=False) * 2
+
+    nn.forward_all([y1, y2], clear_buffer=True)
+    assert_allclose(x1.d, x2.d)
+    assert_allclose(y1.d, y2.d)
+
+    # the case of persistent variable
+    x1 = nn.Variable.from_numpy_array(var_np)
+    p_y1 = F.mul_scalar(x1, 2).apply(persistent=True)
+    y1 = F.reshape(p_y1, (-1,), inplace=True)
+    y1 = F.reshape(y1, shape, inplace=True) * 2
+
+    x2 = nn.Variable.from_numpy_array(var_np)
+    p_y2 = F.mul_scalar(x2, 2).apply(persistent=True)
+    y2 = F.reshape(p_y2, (-1,), inplace=False)
+    y2 = F.reshape(y2, shape, inplace=False) * 2
+
+    nn.forward_all([y1, y2], clear_buffer=True)
+    assert_allclose(p_y1.d, p_y2.d)
+    assert_allclose(y1.d, y2.d)
+
+    # the case of rewire_on root variable
+    # graph A: x11 -> f_inplace -> y11
+    x11 = nn.Variable.from_numpy_array(var_np)
+    y11 = F.reshape(x11, (-1,), inplace=True)
+
+    # graph B: x12 -> f_inplace -> mul_scalar -> y12
+    x12 = nn.Variable(shape=y11.shape)
+    y12 = F.reshape(x12, shape, inplace=True) * 2
+
+    # graph A->B: x11 -> f_inplace -> f_inplace -> mul_scalar -> y12
+    x12.rewire_on(y11)
+
+    x2 = nn.Variable.from_numpy_array(var_np)
+    y2 = F.reshape(x2, (-1,), inplace=False)
+    y2 = F.reshape(y2, shape, inplace=False) * 2
+
+    nn.forward_all([y12, y2], clear_buffer=True)
+    assert_allclose(x11.d, x2.d)
+    assert_allclose(y12.d, y2.d)
+
+    # the case of rewire_on persistent variable
+    # graph A: x11 -> mul_scalar -> p_x11 -> f_inplace -> y11
+    x11 = nn.Variable.from_numpy_array(var_np)
+    p_x11 = F.mul_scalar(x11, 2).apply(persistent=True)
+    y11 = F.reshape(p_x11, (-1,), inplace=True)
+
+    # graph B: x12 -> f_inplace -> mul_scalar -> y12
+    x12 = nn.Variable(shape=y11.shape)
+    y12 = F.reshape(x12, shape, inplace=True) * 2
+
+    # graph A->B: ... -> p_x11 -> f_inplace -> f_inplace -> mul_scalar -> y12
+    x12.rewire_on(y11)
+
+    x2 = nn.Variable.from_numpy_array(var_np)
+    p_x2 = F.mul_scalar(x2, 2).apply(persistent=True)
+    y2 = F.reshape(p_x2, (-1,), inplace=False)
+    y2 = F.reshape(y2, shape, inplace=False) * 2
+
+    nn.forward_all([y12, y2], clear_buffer=True)
+    assert_allclose(p_x11.d, p_x2.d)
+    assert_allclose(y12.d, y2.d)

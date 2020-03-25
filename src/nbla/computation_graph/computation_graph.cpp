@@ -36,8 +36,8 @@ static void set_function_inputs(CgFunctionPtr func,
   func->set_inputs_(inputs);
 }
 
-vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
-                                              int n_outputs) {
+vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f, int n_outputs,
+                                              bool prohibit_clear_output) {
   // Check inplace outputs size and create outputs.
   if (n_outputs < 0) {
     n_outputs = cg_f->function()->min_outputs();
@@ -47,6 +47,7 @@ vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
     auto v = make_shared<CgVariable>();
     v->set_need_grad_state(cg_f->need_grad());
     v->set_parent(cg_f);
+    v->set_prohibit_clear_data(prohibit_clear_output);
     outputs[i] = v;
   }
   // Weak references are held inside.
@@ -60,7 +61,20 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
                               int n_outputs, vector<NdArrayPtr> inplace_outputs,
                               bool execute) {
   set_function_inputs(cg_f, inputs);
-  vector<CgVariablePtr> outputs = create_function_outputs(cg_f, n_outputs);
+
+  // check if data can be cleared or not.
+  bool persistent = false, inplace = false, prohibit_clear = false;
+  for (int i = 0; i < inputs.size(); ++i) {
+    auto inp = inputs[i];
+    persistent |= inp->rank() == 0 || inp->persistent();
+    prohibit_clear |= inp->prohibit_clear_data();
+    inplace |= cg_f->function()->inplace_data(i) > 0;
+  }
+
+  bool prohibit_output_clear = (prohibit_clear || persistent) && inplace;
+
+  vector<CgVariablePtr> outputs =
+      create_function_outputs(cg_f, n_outputs, prohibit_output_clear);
 
   // Setup function.
   cg_f->setup();
@@ -127,6 +141,7 @@ void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to) {
   } else {
     to->unset_need_grad();
   }
+  to->set_prohibit_clear_data(from->prohibit_clear_data());
 
   // F. Reference contents
   to->set_variable(from->variable());
