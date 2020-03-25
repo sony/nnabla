@@ -25,7 +25,6 @@ import os
 import re
 import shutil
 import tempfile
-import zipfile
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,

@@ -18,7 +18,6 @@ import numpy as np
 import os
 
 import nnabla as nn
-import nnabla.function as F
 from nnabla.logger import logger
 from nnabla.parameter import save_parameters, get_parameters
 from nnabla.utils.progress import configure_progress, progress

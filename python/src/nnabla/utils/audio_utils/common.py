@@ -17,8 +17,6 @@ from __future__ import division, absolute_import
 import os
 import numpy as np
 
-from nnabla.logger import logger
-
 
 def normalize_intensity(audio_arr, input_low, input_high):
     denominator = input_high - input_low

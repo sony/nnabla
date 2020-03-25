@@ -16,10 +16,8 @@
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
-import h5py
 
 from collections import OrderedDict
-from contextlib import closing
 from contextlib import closing
 from multiprocessing import Queue
 from multiprocessing.pool import ThreadPool

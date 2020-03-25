@@ -22,7 +22,6 @@ import nnabla.utils.converter
 from nnabla.testing import assert_allclose
 import numpy
 import numpy as np
-from numpy.core import function_base
 
 
 def ext_to_camel(ext):

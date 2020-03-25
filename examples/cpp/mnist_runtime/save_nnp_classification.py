@@ -27,7 +27,6 @@ from __future__ import absolute_import, print_function
 # Python packages
 import nnabla as nn
 import nnabla.logger as logger
-import nnabla.utils.save
 import os
 import sys
 
