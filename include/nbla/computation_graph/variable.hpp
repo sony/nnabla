@@ -93,7 +93,7 @@ class CgVariable {
       function_references_;
   bool allow_modify_data_{true}; ///< Whether the data can be in-placed.
   bool persistent_{false};       ///<Persistency flag against clearing.
-  bool prohibit_clear_data_ {false};
+  bool prohibit_clear_data_{false};
   string name_{""};
 
   void

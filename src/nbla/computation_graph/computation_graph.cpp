@@ -36,8 +36,7 @@ static void set_function_inputs(CgFunctionPtr func,
   func->set_inputs_(inputs);
 }
 
-vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f,
-                                              int n_outputs,
+vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f, int n_outputs,
                                               bool prohibit_clear_output) {
   // Check inplace outputs size and create outputs.
   if (n_outputs < 0) {
@@ -65,7 +64,7 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
 
   // check if data can be cleared or not.
   bool persistent = false, inplace = false, prohibit_clear = false;
-  for (int i=0; i < inputs.size(); ++i) {
+  for (int i = 0; i < inputs.size(); ++i) {
     auto inp = inputs[i];
     persistent |= inp->rank() == 0 || inp->persistent();
     prohibit_clear |= inp->prohibit_clear_data();
@@ -74,7 +73,8 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
 
   bool prohibit_output_clear = (prohibit_clear || persistent) && inplace;
 
-  vector<CgVariablePtr> outputs = create_function_outputs(cg_f, n_outputs, prohibit_output_clear);
+  vector<CgVariablePtr> outputs =
+      create_function_outputs(cg_f, n_outputs, prohibit_output_clear);
 
   // Setup function.
   cg_f->setup();
