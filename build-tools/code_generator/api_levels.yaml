@@ -206,3 +206,5 @@
 10:
   AddN_Empty: 281
   MulN_Empty: 282
+11:
+  RandomErase_ffFfFfFiBBiiBB: 285
