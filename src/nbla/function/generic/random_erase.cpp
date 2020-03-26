@@ -53,8 +53,8 @@ void generate_random_coords(float *random_coords, const size_t N,
     We = std::sqrt(Se / Re);
     He = std::min(He, H);
     We = std::min(We, W);
-    std::uniform_int_distribution<decltype(H)> rdist0(0, H - He);
-    std::uniform_int_distribution<decltype(W)> rdist1(0, W - We);
+    std::uniform_int_distribution<int> rdist0(0, H - He);
+    std::uniform_int_distribution<int> rdist1(0, W - We);
     eprob = rdist_prob(rgen);
     ye_start = rdist0(rgen);
     xe_start = rdist1(rgen);
