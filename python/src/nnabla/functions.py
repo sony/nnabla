@@ -658,7 +658,7 @@ def clip_by_norm(x, clip_norm, axis=None):
     return y
 
 
-def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None):
+def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None, channel_last=False):
     '''
     Resize an ND array with interpolation.
 
@@ -711,6 +711,7 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
             same values with the input corner pixels.
             The default is ``None``, and it becomes ``True`` if mode is
             'linear', otherwise ``False``.
+        channel_last: Last dimension is the channel (NHWC order) if True.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -721,14 +722,16 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
     if scale is None and output_size is None:
         raise ValueError('Either scale or output_size must be given')
     elif output_size is None:
+        input_size = x.shape[-len(scale)-1:-1] if channel_last \
+          else x.shape[-len(scale):]
         output_size = [int(math.floor(s * d))
-                       for d, s in zip(x.shape[-len(scale):], scale)]
+                       for d, s in zip(input_size, scale)]
     if align_corners is None:
         if mode == 'linear':
             align_corners = True
         else:
             align_corners = False
-    return interpolate_base(x, output_size, mode, align_corners)
+    return interpolate_base(x, output_size, mode, align_corners, channel_last)
 
 
 def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):

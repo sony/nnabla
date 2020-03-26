@@ -231,4 +231,4 @@ def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
 
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name, atol_b=3e-1, atol_accum=3e-1, dstep=1e-3)
+                                          func_name, atol_b=3e-1, atol_accum=3e-1, dstep=5e-4)

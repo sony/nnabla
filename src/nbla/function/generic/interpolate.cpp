@@ -20,7 +20,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(Interpolate, const vector<int> &, const string &,
-                              bool);
+                              bool, bool);
 
 inline float compute_scale(int isize, int osize, bool align_corners) {
   return (osize <= 1) ? 0.0f : (align_corners ? float(isize - 1) / (osize - 1)
@@ -303,8 +303,10 @@ void Interpolate<T>::setup_impl(const Variables &inputs,
                "align_corners must be false for interpolation mode 'nearest'");
 
   Shape_t out_shape(inputs[0]->shape());
+  auto offset = channel_last_ ? out_shape.size() - output_size_.size() - 1
+                              : out_shape.size() - output_size_.size();
   for (int d = 0; d < output_size_.size(); d++) {
-    out_shape[d + out_shape.size() - output_size_.size()] = output_size_[d];
+    out_shape[d + offset] = output_size_[d];
   }
   outputs[0]->reshape(out_shape, true);
 }
@@ -312,6 +314,9 @@ void Interpolate<T>::setup_impl(const Variables &inputs,
 template <typename T>
 void Interpolate<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
+  NBLA_CHECK(!channel_last_, error_code::not_implemented,
+             "Interpolation with channel_last is not supported in CPU.");
+
   auto src = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto dst = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
@@ -425,6 +430,9 @@ void Interpolate<T>::backward_impl(const Variables &inputs,
                                    const Variables &outputs,
                                    const vector<bool> &propagate_down,
                                    const vector<bool> &accum) {
+  NBLA_CHECK(!channel_last_, error_code::not_implemented,
+             "Interpolation with channel_last is not supported in CPU.");
+
   if (!(propagate_down[0])) {
     return;
   }

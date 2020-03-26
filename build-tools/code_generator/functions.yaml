@@ -3816,11 +3816,17 @@ Signal Processing:
           pixels.
         type: bool
         default: False if mode == 'nearest' else True
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array.
     function_ids:
       iIiB: 127
+      iIiBB: 283
     c_runtime: not support
   FFT:
     snake_name: fft

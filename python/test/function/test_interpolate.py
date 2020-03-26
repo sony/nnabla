@@ -16,6 +16,7 @@ from __future__ import division
 import pytest
 import numpy as np
 import nnabla.functions as F
+import refs
 from nbla_test_utils import list_context
 
 ctxs = list_context('Interpolate')
@@ -33,10 +34,15 @@ def get_source_index(scale, dst_index, align_corners):
             np.maximum(0, scale * (dst_index + 0.5) - 0.5))
 
 
-def ref_interpolate(x, scale, output_size, mode, align_corners=None):
+def ref_interpolate(x, scale, output_size, mode, align_corners=None, channel_last=False):
     assert scale or output_size, 'Need either scale or output_size.'
     assert not scale or len(scale) in (1, 2, 3), 'Only 1D/2D/3D'
     assert not output_size or len(output_size) in (1, 2, 3), 'Only 1D/2D/3D'
+
+    if channel_last:
+        n_sdim = len(scale) if scale else len(output_size)
+        t = refs.ChannelLastToFirstTranspose(x.ndim, n_sdim)
+        x = t(x)
 
     if not output_size:
         output_size = np.floor(np.array(scale) * x.shape[-len(scale):])
@@ -52,16 +58,24 @@ def ref_interpolate(x, scale, output_size, mode, align_corners=None):
         xx = x.reshape(-1, *isize)
         ib = np.arange(xx.shape[0])
         yy = xx[np.ix_(ib, *index)]
-        return yy.reshape(x.shape[:-len(osize)] + osize)
+        out = yy.reshape(x.shape[:-len(osize)] + osize)
+        out = t.inv(out) if channel_last else out
+        return out
 
-    if len(output_size) == 1:
-        return ref_linear_interpolate_1d(x, output_size, mode, align_corners)
+    elif mode == "linear":
+        if len(output_size) == 1:
+            out = ref_linear_interpolate_1d(
+                x, output_size, mode, align_corners)
 
-    if len(output_size) == 2:
-        return ref_linear_interpolate_2d(x, output_size, mode, align_corners)
+        if len(output_size) == 2:
+            out = ref_linear_interpolate_2d(
+                x, output_size, mode, align_corners)
 
-    if len(output_size) == 3:
-        return ref_linear_interpolate_3d(x, output_size, mode, align_corners)
+        if len(output_size) == 3:
+            out = ref_linear_interpolate_3d(
+                x, output_size, mode, align_corners)
+        out = t.inv(out) if channel_last else out
+        return out
 
 
 def ref_linear_interpolate_1d(x, output_size, mode, align_corners):
@@ -181,153 +195,205 @@ def ref_linear_interpolate_3d(x, output_size, mode, align_corners):
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("inshape, outsize, scale", [
+@pytest.mark.parametrize("inshape, outsize, scale, sdim_only", [
     # 1-dimensional
-    ((3,), (6,), None),
-    ((3,), (8,), None),
-    ((3,), (2,), None),
-    ((3,), (1,), None),
-    ((3,), None, (2.5,)),
-    ((3,), None, (0.5,)),
-    ((2, 3, 4), (10,), None),
-    ((2, 3, 5), None, (1.3,)),
+    ((3,), (6,), None, True),
+    ((3,), (8,), None, True),
+    ((3,), (2,), None, True),
+    ((3,), (1,), None, True),
+    ((3,), None, (2.5,), True),
+    ((3,), None, (0.5,), True),
+    ((2, 3, 4), (10,), None, False),
+    ((2, 3, 5), None, (1.3,), False),
     # 2-dimensional
-    ((3, 3), (8, 6), None),
-    ((3, 3), (2, 1), None),
-    ((3, 3), None, (2.5, 1.0)),
-    ((3, 3), None, (0.5, 0.5)),
-    ((2, 3, 4, 4), (8, 6), None),
-    ((2, 3, 4, 4), (2, 1), None),
-    ((2, 3, 4, 4), None, (2.5, 1.0)),
-    ((2, 3, 4, 4), None, (0.5, 0.5)),
+    ((3, 3), (8, 6), None, True),
+    ((3, 3), (2, 1), None, True),
+    ((3, 3), None, (2.5, 1.0), True),
+    ((3, 3), None, (0.5, 0.5), True),
+    ((2, 3, 4, 4), (8, 6), None, False),
+    ((2, 3, 4, 4), (2, 1), None, False),
+    ((2, 3, 4, 4), None, (2.5, 1.0), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
     # 3-dimensional
-    ((3, 3, 3), (6, 8, 6), None),
-    ((3, 3, 3), (1, 2, 1), None),
-    ((3, 3, 3), None, (1.5, 2.5, 1.0)),
-    ((3, 3, 3), None, (1.2, 0.5, 0.5)),
-    ((2, 2, 3, 4, 4), (6, 8, 6), None),
-    ((2, 2, 3, 4, 4), (1, 2, 1), None),
-    ((2, 2, 3, 4, 4), None, (1.5, 2.5, 1.0)),
-    ((2, 2, 3, 4, 4), None, (1.2, 0.5, 0.5)),
+    ((3, 3, 3), (6, 8, 6), None, True),
+    ((3, 3, 3), (1, 2, 1), None, True),
+    ((3, 3, 3), None, (1.5, 2.5, 1.0), True),
+    ((3, 3, 3), None, (1.2, 0.5, 0.5), True),
+    ((2, 3, 3, 4, 4), (6, 8, 6), None, False),
+    ((2, 3, 3, 4, 4), (1, 2, 1), None, False),
+    ((2, 3, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
+    ((2, 3, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
 @pytest.mark.parametrize('align_corners', [False, True])
+@pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
-def test_interpolate_linear_forward_backward(seed, inshape, outsize, scale,
-                                             align_corners, ctx, func_name):
+def test_interpolate_linear_forward_backward(seed, inshape, outsize, scale, sdim_only,
+                                             align_corners, channel_last,
+                                             ctx, func_name):
+    if channel_last and func_name == "Interpolate":
+        pytest.skip("Interpolate with channel_last is only supported in CUDA.")
+    if sdim_only and channel_last:
+        pytest.skip(
+            "Interpolate for spatial dimension only data is only supported for channel_first option.")
+
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'linear', align_corners]
+    func_args = [scale, outsize, 'linear', align_corners, channel_last]
     function_tester(rng, F.interpolate, ref_interpolate, inputs,
                     func_name=func_name, func_args=func_args,
-                    atol_f=1e-6, atol_b=1e-2, ctx=ctx)
+                    atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("inshape, outsize, scale", [
+@pytest.mark.parametrize("inshape, outsize, scale, sdim_only", [
     # 1-dimensional
-    ((3,), (6,), None),
-    ((3,), (8,), None),
-    ((3,), (2,), None),
-    ((3,), (1,), None),
-    ((3,), None, (2.5,)),
-    ((3,), None, (0.5,)),
-    ((2, 3, 4), (10,), None),
-    ((2, 3, 5), None, (1.3,)),
+    ((3,), (6,), None, True),
+    ((3,), (8,), None, True),
+    ((3,), (2,), None, True),
+    ((3,), (1,), None, True),
+    ((3,), None, (2.5,), True),
+    ((3,), None, (0.5,), True),
+    ((2, 3, 4), (10,), None, False),
+    ((2, 3, 5), None, (1.3,), False),
     # 2-dimensional
-    ((3, 3), (8, 6), None),
-    ((3, 3), (2, 1), None),
-    ((3, 3), None, (2.5, 1.0)),
-    ((3, 3), None, (0.5, 0.5)),
-    ((2, 3, 4, 5), (8, 6), None),
-    ((2, 3, 4, 5), (2, 1), None),
-    ((2, 3, 4, 5), None, (2.5, 1.0)),
-    ((2, 3, 4, 5), None, (0.5, 0.5)),
+    ((3, 3), (8, 6), None, True),
+    ((3, 3), (2, 1), None, True),
+    ((3, 3), None, (2.5, 1.0), True),
+    ((3, 3), None, (0.5, 0.5), True),
+    ((2, 3, 4, 4), (8, 6), None, False),
+    ((2, 3, 4, 4), (2, 1), None, False),
+    ((2, 3, 4, 4), None, (2.5, 1.0), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
     # 3-dimensional
-    ((3, 3, 3), (6, 8, 6), None),
-    ((3, 3, 3), (1, 2, 1), None),
-    ((3, 3, 3), None, (1.5, 2.5, 1.0)),
-    ((3, 3, 3), None, (1.2, 0.5, 0.5)),
-    ((1, 2, 3, 4, 5), (6, 8, 6), None),
-    ((1, 2, 3, 4, 5), (1, 2, 3), None),
-    ((1, 2, 3, 4, 5), None, (1.5, 2.5, 1.0)),
-    ((1, 2, 3, 4, 5), None, (1.2, 0.5, 0.5)),
+    ((3, 3, 3), (6, 8, 6), None, True),
+    ((3, 3, 3), (1, 2, 1), None, True),
+    ((3, 3, 3), None, (1.5, 2.5, 1.0), True),
+    ((3, 3, 3), None, (1.2, 0.5, 0.5), True),
+    ((1, 2, 3, 4, 4), (6, 8, 6), None, False),
+    ((1, 2, 3, 4, 4), (1, 2, 1), None, False),
+    ((1, 2, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
+    ((1, 2, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
+@pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
-def test_interpolate_nearest_forward_backward(seed, inshape, outsize, scale,
+def test_interpolate_nearest_forward_backward(seed, inshape, outsize, scale, sdim_only,
+                                              channel_last,
                                               ctx, func_name):
+    if channel_last and func_name == "Interpolate":
+        pytest.skip("Interpolate with channel_last is only supported in CUDA.")
+    if sdim_only and channel_last:
+        pytest.skip(
+            "Interpolate for spatial dimension only data is only supported for channel_first option.")
+
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'nearest']
+    func_args = [scale, outsize, 'nearest', False, channel_last]
     function_tester(rng, F.interpolate, ref_interpolate, inputs,
                     func_name=func_name, func_args=func_args,
-                    atol_f=1e-6, atol_b=1e-2, ctx=ctx)
+                    atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("inshape, outsize, scale", [
+@pytest.mark.parametrize("inshape, outsize, scale, sdim_only", [
+    # 1-dimensional
+    ((3,), (6,), None, True),
+    ((3,), (8,), None, True),
+    ((3,), (2,), None, True),
+    ((3,), (1,), None, True),
+    ((3,), None, (2.5,), True),
+    ((3,), None, (0.5,), True),
+    ((2, 3, 4), (10,), None, False),
+    ((2, 3, 5), None, (1.3,), False),
     # 2-dimensional
-    ((3, 3), (8, 6), None),
-    ((3, 3), (2, 1), None),
-    ((3, 3), None, (2.5, 1.0)),
-    ((3, 3), None, (0.5, 0.5)),
-    ((2, 3, 4, 4), (8, 6), None),
-    ((2, 3, 4, 4), (2, 1), None),
-    ((2, 3, 4, 4), None, (2.5, 1.0)),
-    ((2, 3, 4, 4), None, (0.5, 0.5)),
+    ((3, 3), (8, 6), None, True),
+    ((3, 3), (2, 1), None, True),
+    ((3, 3), None, (2.5, 1.0), True),
+    ((3, 3), None, (0.5, 0.5), True),
+    ((2, 3, 4, 4), (8, 6), None, False),
+    ((2, 3, 4, 4), (2, 1), None, False),
+    ((2, 3, 4, 4), None, (2.5, 1.0), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
     # 3-dimensional
-    ((3, 3, 3), (6, 8, 6), None),
-    ((3, 3, 3), (1, 2, 1), None),
-    ((3, 3, 3), None, (1.5, 2.5, 1.0)),
-    ((3, 3, 3), None, (1.2, 0.5, 0.5)),
-    ((2, 2, 3, 4, 4), (6, 8, 6), None),
-    ((2, 2, 3, 4, 4), (1, 2, 1), None),
-    ((2, 2, 3, 4, 4), None, (1.5, 2.5, 1.0)),
-    ((2, 2, 3, 4, 4), None, (1.2, 0.5, 0.5)),
+    ((3, 3, 3), (6, 8, 6), None, True),
+    ((3, 3, 3), (1, 2, 1), None, True),
+    ((3, 3, 3), None, (1.5, 2.5, 1.0), True),
+    ((3, 3, 3), None, (1.2, 0.5, 0.5), True),
+    ((2, 3, 3, 4, 4), (6, 8, 6), None, False),
+    ((2, 3, 3, 4, 4), (1, 2, 1), None, False),
+    ((2, 3, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
+    ((2, 3, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
 @pytest.mark.parametrize('align_corners', [False, True])
+@pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
-def test_interpolate_linear_double_backward(seed, inshape, outsize, scale,
-                                            align_corners, ctx, func_name):
-    # TODO: some test fail.
+def test_interpolate_linear_double_backward(seed, inshape, outsize, scale, sdim_only,
+                                            align_corners, channel_last, ctx, func_name):
+    if channel_last and func_name == "Interpolate":
+        pytest.skip("Interpolate with channel_last is only supported in CUDA.")
+    if sdim_only and channel_last:
+        pytest.skip(
+            "Interpolate for spatial dimension only data is only supported for channel_first option.")
+
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'linear', align_corners]
+    func_args = [scale, outsize, 'linear', align_corners, channel_last]
     backward_function_tester(rng, F.interpolate, None, inputs,
                              func_name=func_name, func_args=func_args,
-                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=1e-3, ctx=ctx)
+                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=2e-3, ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("inshape, outsize, scale", [
+@pytest.mark.parametrize("inshape, outsize, scale, sdim_only", [
+    # 1-dimensional
+    ((3,), (6,), None, True),
+    ((3,), (8,), None, True),
+    ((3,), (2,), None, True),
+    ((3,), (1,), None, True),
+    ((3,), None, (2.5,), True),
+    ((3,), None, (0.5,), True),
+    ((2, 3, 4), (10,), None, False),
+    ((2, 3, 5), None, (1.3,), False),
     # 2-dimensional
-    ((3, 3), (8, 6), None),
-    ((3, 3), (2, 1), None),
-    ((3, 3), None, (2.5, 1.0)),
-    ((3, 3), None, (0.5, 0.5)),
-    ((2, 3, 4, 5), (8, 6), None),
-    ((2, 3, 4, 5), (2, 1), None),
-    ((2, 3, 4, 5), None, (2.5, 1.0)),
-    ((2, 3, 4, 5), None, (0.5, 0.5)),
+    ((3, 3), (8, 6), None, True),
+    ((3, 3), (2, 1), None, True),
+    ((3, 3), None, (2.5, 1.0), True),
+    ((3, 3), None, (0.5, 0.5), True),
+    ((2, 3, 4, 4), (8, 6), None, False),
+    ((2, 3, 4, 4), (2, 1), None, False),
+    ((2, 3, 4, 4), None, (2.5, 1.0), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
+    ((2, 3, 4, 4), None, (0.5, 0.5), False),
     # 3-dimensional
-    ((3, 3, 3), (6, 8, 6), None),
-    ((3, 3, 3), (1, 2, 1), None),
-    ((3, 3, 3), None, (1.5, 2.5, 1.0)),
-    ((3, 3, 3), None, (1.2, 0.5, 0.5)),
-    ((1, 2, 3, 4, 5), (6, 8, 6), None),
-    ((1, 2, 3, 4, 5), (1, 2, 3), None),
-    ((1, 2, 3, 4, 5), None, (1.5, 2.5, 1.0)),
-    ((1, 2, 3, 4, 5), None, (1.2, 0.5, 0.5)),
+    ((3, 3, 3), (6, 8, 6), None, True),
+    ((3, 3, 3), (1, 2, 1), None, True),
+    ((3, 3, 3), None, (1.5, 2.5, 1.0), True),
+    ((3, 3, 3), None, (1.2, 0.5, 0.5), True),
+    ((1, 2, 3, 4, 4), (6, 8, 6), None, False),
+    ((1, 2, 3, 4, 4), (1, 2, 1), None, False),
+    ((1, 2, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
+    ((1, 2, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
+@pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
-def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale,
+def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim_only,
+                                             channel_last,
                                              ctx, func_name):
+    if channel_last and func_name == "Interpolate":
+        pytest.skip("Interpolate with channel_last is only supported in CUDA.")
+    if sdim_only and channel_last:
+        pytest.skip(
+            "Interpolate for spatial dimension only data is only supported for channel_first option.")
+
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'nearest']
+    func_args = [scale, outsize, 'nearest', False, channel_last]
     backward_function_tester(rng, F.interpolate, ref_interpolate, inputs,
                              func_name=func_name, func_args=func_args,
-                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, ctx=ctx)
+                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=2e-3, ctx=ctx)
