@@ -19,7 +19,7 @@ from .base import ImageNetBase
 
 class VGG(ImageNetBase):
 
-    '''
+    """
     VGG architectures for 11, 13, 16 layers.
 
     Args:
@@ -37,7 +37,7 @@ class VGG(ImageNetBase):
         * `Simonyan and Zisserman, Very Deep Convolutional Networks for Large-Scale Image Recognition.
           <https://arxiv.org/pdf/1409.1556>`_
 
-    '''
+    """
 
     def __init__(self, num_layers=11):
 
@@ -88,27 +88,27 @@ class VGG(ImageNetBase):
 
 
 class VGG11(VGG):
-    '''VGG11
+    """VGG11
         An alias of :obj:`VGG` `(11)`.
-    '''
+    """
 
     def __init__(self):
         super(VGG11, self).__init__(11)
 
 
 class VGG13(VGG):
-    '''VGG13
+    """VGG13
         An alias of :obj:`VGG` `(13)`.
-    '''
+    """
 
     def __init__(self):
         super(VGG13, self).__init__(13)
 
 
 class VGG16(VGG):
-    '''VGG16
+    """VGG16
         An alias of :obj:`VGG` `(16)`.
-    '''
+    """
 
     def __init__(self):
         super(VGG16, self).__init__(16)

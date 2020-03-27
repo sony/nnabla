@@ -17,10 +17,10 @@ import numpy as np
 
 def assert_allclose(actual, desired, rtol=1e-5, atol=1e-6, equal_nan=True,
                     err_msg='', verbose=True):
-    '''A wrapper of `numpy.testing.assert_allclose`.
+    """A wrapper of `numpy.testing.assert_allclose`.
 
     Using default values for `rtol` and `atol` that are consistent with
     `numpy.allclose`.
-    '''
+    """
     np.testing.assert_allclose(actual, desired, rtol=rtol, atol=atol,
                                equal_nan=equal_nan, err_msg=err_msg, verbose=verbose)
