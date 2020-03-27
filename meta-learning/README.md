@@ -4,12 +4,12 @@
 
 ## Overview
 
-This example contains several meta-learning methods for few-shot learning of hand-written characters on Omniglot dataset.
+This example contains several meta-learning methods for few-shot learning.
 Currently, the following methods are implemented.
+- Model Agnostic Meta-Learning (MAML): http://proceedings.mlr.press/v70/finn17a/finn17a.pdf
 - Metric based meta-learning
     - Prototypical networks: https://arxiv.org/abs/1703.05175
     - Matching networks: https://arxiv.org/abs/1606.04080
-- Model Agnostic Meta-Learning (MAML): http://proceedings.mlr.press/v70/finn17a/finn17a.pdf
 
 ---
 
@@ -47,22 +47,6 @@ In case of Prototypical networks or Matching networks, you can use
 python prototypical.py
 ```
 
-If you want to try prototypical networks on celeb-a dataset,
-first, you need to download "img_align_celeba.zip" and "identity_CelebA.txt" from following site
-http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
-and put them into "./data" directory. Then, generate compressed dataset files `*.npy` in `./data/celeb_a/data` by
-
-```
-python celeb_a_data.py
-```
-in "./data" directory.
-Finally, you can start training by
-
-```
-python prototypical.py --dataset celeb_a
-```
-
-
 ## Model Agnostic Meta Learning
 
 In MAML, the parameters of the model are explicitly trained such that a small number of gradient steps with a small amount of training data from a new task will produce good generalization performance on that task.
@@ -91,32 +75,55 @@ The default setting is 5-way 1-shot learning without first-order approximation f
 | Reported in the original paper | 98.7% |
 | Reproduced by this implementation | 98.3% |
 
-## Metric based meta learning
+## Metric Based Meta Learning
 
-The script `metric_based_meta_learning.py` can demonstrate Matching networks and Prototypical networks.
-The default setting is a prototypical network with euclid distance of 20-way, 1-shot and 5-query setting.
+The script `prototypical.py` can demonstrate prototypical networks and matching networks.
+The default setting is 5-way 1-shot 5-query learning of the prototypical network with Euclidean distance.
 We have many options to change parameters including network structures.
-The following is an example of setting hyperparameters with corresponding options.
+The following is an example of the prototypical network with corresponding options.
 
 ```
-python prototypical.py -nw 20 -ns 1 -nq 5 -nwt 20 -nst 1 -nqt 5
+python prototypical.py -nw 5 -ns 1 -nq 5 -nwt 5 -nst 1 -nqt 5
 ```
 
-Example of options are as follows.
+We can also demonstrate an example of the matching network.
+
+```
+python prototypical.py --net-type matching --metric cosine
+```
+If you want to try the prototypical networks on CelebA dataset,
+first, you need to download "img_align_celeba.zip" and "identity_CelebA.txt" from the following website
+http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+and put them into "./data" directory.
+Then, generate compressed dataset files `*.npy` to `./data/celeb_a/data` by executing
+
+```
+python celeb_a_data.py
+```
+at "./data" directory.
+Finally, you can start training by
+
+```
+python prototypical.py --dataset celeb_a
+```
+
+Important options are as follows.
 
 | Options | |
 | :--- | :--- |
-| --n_class |	Number of ways in meta-test, typically 5 or 20 |
-| --n_shot  |	Number of shots per class in meta-test, typically 1 or 5 |
-| --n_query |	Number of queries per class in meta-test, typically 5 |
-| --n_class_tr |	Number of ways in meta-training, typically 60, or same as meta-test |
-| --n_shot_tr  |	Number of shots per class in meta-training, typically same as meta-test |
-| --n_query_tr |	Number of queries per class in meta-test, typically same as meta-test |
-| --max_iteration | Maximum number of iterations |
-| --dataset       | "omniglot" and "celeb_a" are available after setup|
+| --n_class   |	Number of ways in meta-test, typically 5 or 20 |
+| --n_shot    | Number of shots per class in meta-test, typically 1 or 5 |
+| --n_query   | Number of queries per class in meta-test, typically 5 |
+| --n_class_tr	|      Number of ways in meta-training, typically 60, or same as meta-test |
+| --n_shot_tr	|      Number of shots per class in meta-training, typically same as meta-test |
+| --n_query_tr	|      Number of queries per class in meta-test, typically same as meta-test |
+| --net_type	|      "prototypical" and "matching" are available |
+| --metric	|      "euclid" and "cosine" are available |
+| --max_iteration     |		      Maximum number of iterations |
+| --dataset	      |		      "omniglot" and "celeb_a" are available after setup |
 
 ### Prototypical networks
-The default setting of this script is a prototypical network with euclid distance.
+The default setting of this script is a prototypical network with Euclidean distance.
 The embedding architecture follows the typical network with 4 convolutions written in papers.
 To avoid all zero output from the embedding network, we omitted the last relu activation.
 You can refer the paper in the following site.
@@ -130,6 +137,9 @@ we implemented only the softmax attention part which works as soft nearest neigh
 You can refer the paper in the following site.
 https://arxiv.org/abs/1606.04080
 We omitted the full context embedding in this paper, which uses the context by using a LSTM module.
+
+
+
 
 ---
 
