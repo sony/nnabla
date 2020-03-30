@@ -35,9 +35,21 @@ If you would like to manually install all the requirements, install the followin
 
 Download archived image files for both training and validation, `ILSVRC2012_img_train.tar` and `ILSVRC2012_img_val.tar`, from [the download page](http://image-net.org/download-images) (registration is required), and extract files as following.
 
-```shell
-tar zxvf ILSVRC2012_img_train.tar
-tar zxvf ILSVRC2012_img_val.tar
+```bash
+# cd to dataset root and set path to tar files
+TRAIN_TAR=<path to tar>/ILSVRC2012_img_train.tar
+VAL_TAR=<path to tar>/ILSVRC2012_img_val.tar
+
+# Create a directory structure
+# We will extract images to `train/{WordNet ID; e.g. n01440764}/`
+tar tf $TRAIN_TAR | sed 's/.tar//g' | xargs -i mkdir -p train/{}
+
+# Untar training images
+tar xvf $TRAIN_TAR --to-command='tar xvf - -C train/${TAR_FILENAME%.*}'
+
+# Untar validation images
+mkdir val
+tar xvf $VAL_TAR -C val
 ```
 
 #### Create a image list file
@@ -69,13 +81,15 @@ ILSVRC2012_val_00000003.JPEG 171
 
 Note that the category IDs are ranging from 0 to 999, and the numbers are sequentially assigned by an alphabetical order of WordNet IDs (e.g., `n02172182`).
 
-## Training
+#
+# Training
 
 The following is a command used when we run distributed training with 4 V100 GPUs.
 
 ```shell
 mpirun -n 4 python train.py \
-  -L 50 \
+  -a resnet50
+
   -b 192 \
   -t half --channel-last \
   -T <path/to/ILSVRC2012 training data directory> \
@@ -98,7 +112,7 @@ and those look like as following.
 
 **Options**:
 
-* `-L` specifies the number of layers of ResNet (18, 34, 50, 101, or 152).
+* `-a` specifies a network archicture type such as `'resnet50'` and `'se_resnext50'`.
 * `-b` specifies the number of batch size. If you see memory allocation error during execution, please adjust this to fit your training into your GPU.
 * `-t half` enables mixed precision training, which saves memory and also gives speedup with GPUs with NVIDIA's TensorCore.
 * `--channel-last` trains your model with NHWC memory layout. This reduces overheads due to transpose operations for each TensorCore execution. It also utilizes fused batch normalization operation which combines batch normalization, addition, and activation into a single kernel. It gives some advantages for speed and memory cost.
@@ -117,9 +131,22 @@ Training results are summarized as follows.
 | ResNet101 | 4 x V100 | Yes | 128 | 10.85 | 21.89 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn101-nhwc.h5) | |
 | ResNet152 | 4 x V100 | Yes | 96 | | | | Observed `NaN` loss after several epochs. We may need to adjust some hyper parameters for mixed precision and distributed training such as loss scaling value. |
 | ResNet50 | 4 x V100 | No | 112 | 23.25 | 23.27 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nchw.h5) | |
+| ResNeXt50 | 4 x V100 | Yes | 96 | 11.85 | 22.46 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/resnext50_nhwc.h5) | |
+| SE-ResNet50 | 4 x V100 | Yes | 128 | 13.04 | 22.77 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnet50_nhwc.h5) | *3 |
+| SE-ResNeXt50 | 4 x V100 | Yes | 96 | 19.76 | 21.72 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_nhwc.h5) | *3 |
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
 * *2 Number in `()` is speed up from full precision training
+* *3 You may notice that we got the higher error rate than the author's model found below. The author mentions that they trained their model "with more epoches" than models reported in the paper, but such kind of hyperparametes for training are not provided (not clearly described) in their repository. We may obtain a comparable result if we train the model with more epoches.
+
+You can also find pretrained weights that are provided by some authors and converted to nnabla's weight format for performance evaluatation.
+
+| Arch. | MP | Validation error (%) | Pretrained parameters | Author's page | Note |
+|:---:|:---:|:---:|:---:|:---:|:---|
+| SE-ResNet50 | No | 22.42 (22.37 *1) | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnet50_by_author.h5) | [GitHub](https://github.com/hujie-frank/SENet) | Use `-n senet_author` in `infer.py` to specify how to normalize an input image. |
+| SE-ResNeXt50 | No | 20.98 (20.97 *1) | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_by_author.h5) | [GitHub](https://github.com/hujie-frank/SENet) | Use `-n senet_author` in `infer.py` to specify how to normalize an input image. |
+
+* *1 Numbers reported in [the author's repository](https://github.com/hujie-frank/SENet#trained-models).
 
 ### Convert memory layout and input channels of pretrained parameter file
 
@@ -140,5 +167,5 @@ See options with `python convert_parameter_format.py -h`.
 A parameter file obtained after training can be used for inference as following. See help with `python infer.py -h` for more options.
 
 ```shell
-python infer.py {input image file} {h5 parameter file} -L {number of layers}
+python infer.py {input image file} {h5 parameter file} -a {network architecture name such as `resnet50` and `se_resnext50}
 ```

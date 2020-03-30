@@ -1,0 +1,4 @@
+results/
+weights/
+train_label
+val_label

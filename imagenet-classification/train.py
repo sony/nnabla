@@ -21,8 +21,7 @@ import nnabla.monitor as M
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
-from args import get_args
-import model_resnet_nhwc
+from args import get_train_args
 
 import os
 from collections import namedtuple
@@ -52,14 +51,17 @@ def get_model(args, num_classes, test=False, channel_last=False, with_error=True
     """
     Create computation graph and variables.
     """
+    from models import build_network
+
     nn_in_size = 224
     if channel_last:
         image = nn.Variable([args.batch_size, nn_in_size, nn_in_size, 4])
     else:
         image = nn.Variable([args.batch_size, 4, nn_in_size, nn_in_size])
     label = nn.Variable([args.batch_size, 1])
-    pred, hidden = model_resnet_nhwc.resnet_imagenet(
-        image, num_classes, args.num_layers, args.shortcut_type, test=test, tiny=False, channel_last=channel_last)
+    pred, hidden = build_network(
+        image, num_classes, args.arch,
+        test=test, channel_last=channel_last)
     pred.persistent = True
     loss = F.mean(loss_function(pred, label, args.label_smoothing))
     error = F.sum(F.top_n_error(pred, label, n=1))
@@ -73,7 +75,7 @@ def train():
     Main script for training.
     """
 
-    args = get_args()
+    args = get_train_args()
 
     num_classes = 1000
 
