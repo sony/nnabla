@@ -22,7 +22,7 @@ import nnabla.monitor as M
 from nnabla.utils.image_utils import imsave
 from collections import OrderedDict
 
-from html_creator import HtmlCreator
+from .html_creator import HtmlCreator
 
 
 class MonitorWrapper(object):
