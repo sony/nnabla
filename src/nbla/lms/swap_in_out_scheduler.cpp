@@ -807,6 +807,7 @@ schedule_swap_out(ScheduleParams& params,
               params.swap_in_bytes -= array_bytes;
               params.prefetch_bytes -= array_bytes;
               elem.second.state = ArrayStateTag::OUT; // IN to OUT
+              elem.second.swapped_out_r = r;
             }
             else {
               auto array_bytes = r->size * sizeof_dtype(elem.first);
@@ -840,7 +841,8 @@ void SwapInOutScheduler::
 schedule_wait_for_swap_out_impl(ScheduleParams& params) {
   RecType *r = &order[params.tail++];
 
-  if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
+  if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT &&
+      params.sa_states[r->said][r->dtype].swapped_out_r == r) {
     // Not canceled swap out
     // Wait for finishing swap out and release the source array of memory copy.
     beginning_schedules[params.fid]

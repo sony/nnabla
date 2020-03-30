@@ -255,6 +255,7 @@ private:
   struct ArrayState {
     int count = 0;
     ArrayStateTag state = ArrayStateTag::CLEARED;
+    RecType *swapped_out_r;
   };
 
   // Rename of long types to shorter
