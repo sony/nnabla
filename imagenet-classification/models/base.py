@@ -42,7 +42,7 @@ def get_spatial_shape(shape, channel_last):
 def pf_convolution(x, ochannels, kernel, stride=(1, 1), group=1, channel_last=False, with_bias=False):
     axes = [get_channel_axis(channel_last)]
     ichannels = x.shape[axes[0]]
-    init = I.NormalInitializer(sigma=I.calc_normal_std_he_backward(
+    init = I.NormalInitializer(sigma=I.calc_normal_std_he_forward(
         ichannels, ochannels, kernel=kernel), rng=RNG)
     pad = tuple([int((k - 1) // 2) for k in kernel])
     return PF.convolution(x, ochannels, kernel, stride=stride, pad=pad, group=group,
@@ -51,8 +51,12 @@ def pf_convolution(x, ochannels, kernel, stride=(1, 1), group=1, channel_last=Fa
 
 
 def pf_affine(r, num_classes=1000, channel_last=False):
+    # Initializer supposes the final classifaction layer
+    fan_in = int(np.prod(r.shape[1:]))
+    k = 1 / np.sqrt(fan_in)
+    init = I.UniformInitializer((-k, k), rng=RNG)
     r = PF.convolution(r, num_classes, (1, 1), channel_last=channel_last,
-                       w_init=I.NormalInitializer(sigma=0.01, rng=RNG), name='fc')
+                       w_init=init, b_init=init, name='fc')
     return F.reshape(r, (r.shape[0], -1), inplace=False)
 
 

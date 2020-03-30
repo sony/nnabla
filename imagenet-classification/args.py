@@ -48,12 +48,62 @@ def add_runtime_args(parser):
 def add_arch_args(parser):
     parser.add_argument('--arch', '-a', type=lower_str,
                         default='', help='Architecture type. See available choices for architecture by passing null string "".')
+    parser.add_argument('--num-classes', type=int, default=1000,
+                        help='Number of categories of classification.')
 
 
-def get_train_args(
-        max_epochs=90, learning_rate=1e-1, batch_size=256,
-        weight_decay=1e-4, train_dir='./', train_list="train_label",
-        val_dir='./', val_list="val_label", dali_num_threads=4):
+def add_train_dataset_args(parser, train_dir='./', train_list="train_label"):
+    parser.add_argument("--train-dir", '-T', type=str, default=train_dir,
+                        help='Directory containing training data.')
+    parser.add_argument("--train-list", type=str, default=train_list,
+                        help='Training file list.')
+
+
+def add_val_dataset_args(parser, val_dir='./', val_list="val_label"):
+    parser.add_argument("--val-dir", '-V', type=str, default=val_dir,
+                        help='Directory containing validation data.')
+    parser.add_argument("--val-list", type=str, default=val_list,
+                        help='Validation file list.')
+
+
+def add_dataset_args(parser):
+    add_train_dataset_args(parser)
+    add_val_dataset_args(parser)
+
+
+def add_training_args(parser):
+    parser.add_argument("--batch-size", "-b", type=int, default=128,
+                        help='Batch size per worker. The default is 128.')
+    parser.add_argument("--epochs", "-e", type=int, default=None,
+                        help='Number of epochs for training. It overwrites the config described by `--train-config`.')
+    parser.add_argument("--monitor-path", "-m",
+                        type=str, default=None,
+                        help='Path monitoring logs saved.')
+    parser.add_argument("--val-interval", "-v", type=int, default=10,
+                        help='Evaluation with validation dataset is performed at every interval epochs specified.')
+    parser.add_argument("--model-save-interval", "-s", type=int, default=10,
+                        help='The epoch interval of saving model parameters.')
+    parser.add_argument("--model-load-path", type=str, default=None,
+                        help='Path to the model parameters to be loaded.')
+    parser.add_argument('--train-config', '-C', type=str, default='cfg/train_default.yaml',
+                        help='A config file which describes optimization configuration such as default batch size, solver, number of epochs, and learning rate scheduling.')
+
+
+def mb_to_b(mb):
+    return int(mb) * (1 << 20)
+
+
+def add_dali_args(parser):
+    parser.add_argument("--dali-num-threads", type=int, default=4,
+                        help="DALI's number of CPU threads.")
+    parser.add_argument('--dali-prefetch-queue', type=int,
+                        default=2, help="DALI prefetch queue depth")
+    parser.add_argument('--dali-nvjpeg-memory-padding-mb', type=mb_to_b, default=64,
+                        dest='dali_nvjpeg_memory_padding',
+                        help="Memory padding value for nvJPEG (in MB)")
+
+
+def get_train_args():
     """
     Get command line arguments.
 
@@ -66,52 +116,11 @@ def get_train_args(
         ''')
     add_runtime_args(parser)
     add_arch_args(parser)
-    parser.add_argument("--batch-size", "-b", type=int, default=batch_size)
-    parser.add_argument("--learning-rate", "-l",
-                        type=float, default=learning_rate,
-                        help='Learning rate used when --batch-size=256. For other batch sizes, the learning rate is linearly scaled.')
-
-    parser.add_argument("--learning-rate-decay-at", "-D",
-                        default=(30, 60, 80), type=parse_tuple,
-                        help='Step learning rate decay multiplied by 0.1 is performed at epochs specified, e.g. `-D 30,60,80`.')
-    parser.add_argument("--monitor-path", "-m",
-                        type=str, default=None,
-                        help='Path monitoring logs saved.')
-    parser.add_argument("--max-epochs", "-e", type=int, default=max_epochs,
-                        help='Max epochs of training.')
-    parser.add_argument("--val-interval", "-v", type=int, default=10,
-                        help='Evaluation with validation dataset is performed at every interval epochs specified.')
-    parser.add_argument("--weight-decay", "-w",
-                        type=float, default=weight_decay,
-                        help='Weight decay factor of SGD update.')
-    parser.add_argument("--warmup-epochs",
-                        type=int, default=5,
-                        help='Warmup learning rate during a specified number of epochs.')
-    parser.add_argument("--model-save-interval", "-s", type=int, default=10,
-                        help='The epoch interval of saving model parameters.')
-    parser.add_argument("--model-load-path", type=str, default=None,
-                        help='Path to the model parameters to be loaded.')
     parser.add_argument("--channel-last", action='store_true',
                         help='Use a model with NHWC layout.')
-    parser.add_argument("--train-dir", '-T', type=str, default=train_dir,
-                        help='Directory containing training data.')
-    parser.add_argument("--train-list", type=str, default=train_list,
-                        help='Training file list.')
-    parser.add_argument("--val-dir", '-V', type=str, default=val_dir,
-                        help='Directory containing validation data.')
-    parser.add_argument("--val-list", type=str, default=val_list,
-                        help='Validation file list.')
-    parser.add_argument("--dali-num-threads", type=int, default=dali_num_threads,
-                        help="DALI's number of CPU threads.")
-    parser.add_argument('--dali-prefetch-queue', type=int,
-                        default=2, help="DALI prefetch queue depth")
-    parser.add_argument('--dali-nvjpeg-memory-padding-mb', type=int, default=64,
-                        help="Memory padding value for nvJPEG (in MB)")
-
-    parser.add_argument('--label-smoothing', type=float, default=0.1,
-                        help='Ratio of label smoothing loss.')
-    parser.add_argument('--loss-scaling', type=float, default=256,
-                        help='Loss scaling value. Only used in half precision (mixed precision) training.')
+    add_training_args(parser)
+    add_dataset_args(parser)
+    add_dali_args(parser)
 
     args = parser.parse_args()
 
@@ -123,11 +132,8 @@ def get_train_args(
         args.monitor_path = 'tmp.monitor.' + \
             datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-    # to bytes
-    args.dali_nvjpeg_memory_padding = args.dali_nvjpeg_memory_padding_mb * \
-        (1 << 20)
-
-    # Learning rate is linearity scaled by batch size.
-    args.learning_rate *= args.batch_size / 256.0
-
-    return args
+    from utils import read_yaml
+    train_config = read_yaml(args.train_config)
+    if args.epochs is not None:
+        train_config.epochs = args.epochs
+    return args, train_config

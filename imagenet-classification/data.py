@@ -17,12 +17,23 @@ import nvidia.dali.ops as ops
 import nvidia.dali.types as types
 from nnabla_ext.cuda.experimental import dali_iterator
 
-from normalize_config import _pixel_mean, _pixel_std
+from normalize_config import (
+    _pixel_mean, _pixel_std,
+    get_normalize_config,
+)
+
+
+def int_div_ceil(a, b):
+    '''
+    returns int(ceil(a / b))
+    '''
+    return (a + b - 1) // b
 
 
 class TrainPipeline(Pipeline):
     def __init__(self, batch_size, num_threads, shard_id, image_dir, file_list, nvjpeg_padding,
-                 prefetch_queue=3, seed=1, num_shards=1, channel_last=True, dtype="half"):
+                 prefetch_queue=3, seed=1, num_shards=1, channel_last=True, dtype="half",
+                 mean=_pixel_mean, std=_pixel_std, pad_output=True):
         super(TrainPipeline, self).__init__(
             batch_size, num_threads, shard_id, seed=seed, prefetch_queue_depth=prefetch_queue)
         self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
@@ -37,9 +48,9 @@ class TrainPipeline(Pipeline):
                                             output_layout=types.NHWC if channel_last else types.NCHW,
                                             crop=(224, 224),
                                             image_type=types.RGB,
-                                            mean=_pixel_mean,
-                                            std=_pixel_std,
-                                            pad_output=True)
+                                            mean=mean,
+                                            std=std,
+                                            pad_output=pad_output)
         self.coin = ops.CoinFlip(probability=0.5)
 
     def define_graph(self):
@@ -51,7 +62,10 @@ class TrainPipeline(Pipeline):
 
 
 class ValPipeline(Pipeline):
-    def __init__(self, batch_size, num_threads, shard_id, image_dir, file_list, nvjpeg_padding, seed=1, num_shards=1, channel_last=True, dtype='half'):
+    def __init__(
+            self, batch_size, num_threads, shard_id, image_dir, file_list,
+            nvjpeg_padding, seed=1, num_shards=1, channel_last=True, dtype='half',
+            mean=_pixel_mean, std=_pixel_std, pad_output=True):
         super(ValPipeline, self).__init__(
             batch_size, num_threads, shard_id, seed=seed)
         self.input = ops.FileReader(file_root=image_dir, file_list=file_list,
@@ -65,9 +79,9 @@ class ValPipeline(Pipeline):
                                             output_layout=types.NHWC if channel_last else types.NCHW,
                                             crop=(224, 224),
                                             image_type=types.RGB,
-                                            mean=_pixel_mean,
-                                            std=_pixel_std,
-                                            pad_output=True)
+                                            mean=mean,
+                                            std=std,
+                                            pad_output=pad_output)
 
     def define_graph(self):
         jpegs, labels = self.input(name="Reader")
@@ -77,7 +91,57 @@ class ValPipeline(Pipeline):
         return images, labels.gpu()
 
 
-def get_data_iterators(args, comm, stream_event_handler):
+def get_pad_output_by_channels(channels):
+    if channels == 4:
+        return True
+    elif channels == 3:
+        return False
+    raise ValueError(f'channels must be 3 or 4. Given {channels}')
+
+
+def get_train_data_iterator(args, comm, channels, norm_config='default'):
+    # Pipelines and Iterators for training
+    mean, std = get_normalize_config(norm_config)
+    if std is None:
+        std = [1., 1., 1.]
+    pad_output = get_pad_output_by_channels(channels)
+    train_pipe = TrainPipeline(args.batch_size, args.dali_num_threads, comm.rank,
+                               args.train_dir,
+                               args.train_list, args.dali_nvjpeg_memory_padding,
+                               seed=comm.rank + 1,
+                               num_shards=comm.n_procs,
+                               channel_last=args.channel_last,
+                               dtype=args.type_config,
+                               mean=list(mean), std=list(std),
+                               pad_output=pad_output)
+
+    data = dali_iterator.DaliIterator(train_pipe)
+    data.size = int_div_ceil(
+        train_pipe.epoch_size("Reader"), comm.n_procs)
+    return data
+
+
+def get_val_data_iterator(args, comm, channels, norm_config='default'):
+    # Pipelines and Iterators for validation
+    mean, std = get_normalize_config(norm_config)
+    if std is None:
+        std = [1., 1., 1.]
+    pad_output = get_pad_output_by_channels(channels)
+    val_pipe = ValPipeline(args.batch_size, args.dali_num_threads, comm.rank,
+                           args.val_dir, args.val_list, args.dali_nvjpeg_memory_padding,
+                           seed=comm.rank + 1,
+                           num_shards=comm.n_procs,
+                           channel_last=args.channel_last,
+                           dtype=args.type_config,
+                           mean=list(mean), std=list(std),
+                           pad_output=pad_output)
+    vdata = dali_iterator.DaliIterator(val_pipe)
+    vdata.size = int_div_ceil(
+        val_pipe.epoch_size("Reader"), comm.n_procs)
+    return vdata
+
+
+def get_data_iterators(args, comm, channels, norm_config='default'):
     '''
     Creates and returns DALI data iterators for both datasets of training and
     validation.
@@ -85,27 +149,6 @@ def get_data_iterators(args, comm, stream_event_handler):
     The datasets are partitioned in distributed training
     mode according to comm rank and number of processes.
     '''
-
-    # Pipelines and Iterators for training
-    train_pipe = TrainPipeline(args.batch_size, args.dali_num_threads, comm.rank,
-                               args.train_dir,
-                               args.train_list, args.dali_nvjpeg_memory_padding,
-                               seed=comm.rank + 1,
-                               num_shards=comm.n_procs,
-                               channel_last=args.channel_last,
-                               dtype=args.type_config)
-
-    data = dali_iterator.DaliIterator(train_pipe)
-    data.size = train_pipe.epoch_size("Reader") // comm.n_procs
-
-    # Pipelines and Iterators for validation
-    val_pipe = ValPipeline(args.batch_size, args.dali_num_threads, comm.rank,
-                           args.val_dir, args.val_list, args.dali_nvjpeg_memory_padding,
-                           seed=comm.rank + 1,
-                           num_shards=comm.n_procs,
-                           channel_last=args.channel_last,
-                           dtype=args.type_config)
-    vdata = dali_iterator.DaliIterator(val_pipe)
-    vdata.size = val_pipe.epoch_size("Reader") // comm.n_procs
-
+    data = get_train_data_iterator(args, comm, channels, norm_config)
+    vdata = get_val_data_iterator(args, comm, channels, norm_config)
     return data, vdata
