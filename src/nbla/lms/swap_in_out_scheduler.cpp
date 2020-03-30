@@ -232,7 +232,6 @@ void SwapInOutScheduler::schedule() {
 
     // Calculate used GPU memory before forward starts, and swap out if necessary.
     calc_mem_usage_before_forward(params, head_type);
-    schedule_swap_out(params, clear_info, head_type);
 
     // Forward, backward, update
     for (params.fid = 1; params.fid < last_function; params.fid++) {
@@ -272,6 +271,12 @@ void SwapInOutScheduler::schedule() {
         }
       }
 
+      if (params.fid == 1) {
+        // Swap out arrays before first prefetch if needed
+        params.fid = 0;
+        schedule_swap_out(params, clear_info, head_type);
+        params.fid = 1;
+      }
       schedule_swap_out(params, clear_info, head_type);
     }
 
@@ -544,8 +549,8 @@ cancel_swap_out(const RecType *r, ScheduleParams& params) {
       // Search for the last swap out and cancel it
       for (size_t j = end_schedules[i].size(); j-- > 0;) {
         if (end_schedules[i][j].r->said == r->said &&
-          end_schedules[i][j].tag == ScheduleTag::SWAP_OUT) {
-          end_schedules[i].erase(end_schedules[i].begin() + j);
+            end_schedules[i][j].tag == ScheduleTag::SWAP_OUT) {
+            end_schedules[i].erase(end_schedules[i].begin() + j);
           return;
         }
       }
@@ -554,9 +559,10 @@ cancel_swap_out(const RecType *r, ScheduleParams& params) {
 
   size_t bytes = 0;
   for (auto& elem : params.sa_states[r->said]) {
-    if (elem.second.state == ArrayStateTag::OUT) {
+    if (elem.second.state == ArrayStateTag::OUT ||
+        elem.second.state == ArrayStateTag::OUT_CLEARED) {
       bytes += r->size * sizeof_dtype(elem.first);
-      elem.second.state = ArrayStateTag::IN; // OUT to IN
+      elem.second.state = ArrayStateTag::IN; // OUT and OUT_CLEARED to IN
     }
   }
 
@@ -618,7 +624,8 @@ schedule_swap_in(ScheduleParams& params,
       }
 
       if (context_checker(r->ctx, device_ctx)) {
-        if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) {
+        if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT ||
+            params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT_CLEARED) {
           // Swap out cancel
           cancel_swap_out(r, params);
         }
@@ -676,12 +683,35 @@ schedule_swap_in(ScheduleParams& params,
         }
       }
       else { // Host array
-        // Not prefetch and synchronous fetch in functions
-        params.swap_in_bytes += array_bytes;
-        params.prefetch_bytes += array_bytes;
+        // Do not prefetch, Do swap out
+        if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT ||
+            params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT_CLEARED) {
+          // Decrease bytes of swap out
+          size_t bytes = 0;
+          for (auto& elem : params.sa_states[r->said]) {
+            if (elem.second.state == ArrayStateTag::OUT) {
+              bytes += r->size * sizeof_dtype(elem.first);
+              elem.second.state = ArrayStateTag::IN; // OUT and OUT_CLEARED to IN
+            }
+            else if (elem.second.state == ArrayStateTag::OUT_CLEARED) {
+              elem.second.state = ArrayStateTag::CLEARED;
+            }
+          }
 
-        // CLEARED or OUT_WAITED to IN
-        params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
+          params.swap_out_bytes -= bytes;
+          params.swap_in_bytes += bytes;
+          params.prefetch_bytes += bytes;
+        }
+        else {
+          // Free memory to prefetch the next array
+          free_memory_to_prefetch(params, array_bytes);
+
+          params.swap_in_bytes += array_bytes; // Increase memory usage
+          params.prefetch_bytes += array_bytes;
+
+          // CLEARED or OUT_WAITED to IN
+          params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
+        }
       }
     }
 
@@ -745,11 +775,21 @@ schedule_swap_out(ScheduleParams& params,
         // Transfer memory usage of all types
         for (auto& elem : params.sa_states[r->said]) {
           if (elem.second.state == ArrayStateTag::IN) {
-            auto array_bytes = r->size * sizeof_dtype(elem.first);
-            params.swap_out_bytes += array_bytes;
-            params.swap_in_bytes -= array_bytes;
-            params.prefetch_bytes -= array_bytes;
-            elem.second.state = ArrayStateTag::OUT; // IN to OUT
+            if (elem.first == head_type[r->said].second) {
+              // Swap out only head
+              auto array_bytes = r->size * sizeof_dtype(elem.first);
+              params.swap_out_bytes += array_bytes;
+              params.swap_in_bytes -= array_bytes;
+              params.prefetch_bytes -= array_bytes;
+              elem.second.state = ArrayStateTag::OUT; // IN to OUT
+            }
+            else {
+              auto array_bytes = r->size * sizeof_dtype(elem.first);
+              // Do not add array_bytes to swap_out_bytes
+              params.swap_in_bytes -= array_bytes;
+              params.prefetch_bytes -= array_bytes;
+              elem.second.state = ArrayStateTag::OUT_CLEARED; // IN to OUT_CLREARED
+            }
           }
         }
       }
@@ -765,6 +805,7 @@ void SwapInOutScheduler::
 schedule_wait_for_all_swap_out(ScheduleParams& params) {
   // When out of memory, wait for finishing swap out.
   while (params.tail < order.size()) {
+
     schedule_wait_for_swap_out_impl(params);
   }
 }
@@ -786,6 +827,9 @@ schedule_wait_for_swap_out_impl(ScheduleParams& params) {
       if (elem.second.state == ArrayStateTag::OUT) {
         bytes += r->size * sizeof_dtype(elem.first);
         elem.second.state = ArrayStateTag::OUT_WAITED; // OUT to OUT_WAITED
+      }
+      else if (elem.second.state == ArrayStateTag::OUT_CLEARED) {
+        elem.second.state = ArrayStateTag::CLEARED; // OUT_CLEARED to CLEARED
       }
     }
     params.swap_out_bytes -= bytes;

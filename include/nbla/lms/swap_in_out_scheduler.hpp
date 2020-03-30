@@ -249,7 +249,8 @@ private:
     }
   };
 
-  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, OUT_WAITED };
+  enum class ArrayStateTag { CLEARED, IN, OUT, UNPREFETCHED, 
+                             OUT_WAITED, OUT_CLEARED };
 
   struct ArrayState {
     int count = 0;
