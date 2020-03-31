@@ -841,7 +841,8 @@ void SwapInOutScheduler::
 schedule_wait_for_swap_out_impl(ScheduleParams& params) {
   RecType *r = &order[params.tail++];
 
-  if (params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT &&
+  if ((params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT || 
+       params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) &&
       params.sa_states[r->said][r->dtype].swapped_out_r == r) {
     // Not canceled swap out
     // Wait for finishing swap out and release the source array of memory copy.
