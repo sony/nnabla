@@ -775,6 +775,10 @@ schedule_swap_out(ScheduleParams& params,
         [&](pair<RecType*, bool> x) { return x.first == r; });
 
       if (do_preclear != clear_info[params.fid].end()) { // Cleared
+        if (r->said == 0) {
+          std::cout << "CLEAR " << i << std::endl;
+        }
+
         for (auto& elem : params.sa_states[r->said]) { // Any states to CLEARED
           if (elem.second.state == ArrayStateTag::IN) {
             auto array_bytes = r->size * sizeof_dtype(elem.first);
@@ -794,6 +798,10 @@ schedule_swap_out(ScheduleParams& params,
         }
       }
       else { // Not precleared, Swap out
+        if (r->said == 0) {
+          std::cout << "Out " << i << " " << (unsigned long long)r << std::endl;
+        }
+
         end_schedules[params.fid]
           .push_back(ScheduleType(ScheduleTag::SWAP_OUT, r));
         
@@ -815,6 +823,7 @@ schedule_swap_out(ScheduleParams& params,
               params.swap_in_bytes -= array_bytes;
               params.prefetch_bytes -= array_bytes;
               elem.second.state = ArrayStateTag::OUT_CLEARED; // IN to OUT_CLREARED
+              elem.second.swapped_out_r = r;
             }
           }
         }
@@ -831,7 +840,6 @@ void SwapInOutScheduler::
 schedule_wait_for_all_swap_out(ScheduleParams& params) {
   // When out of memory, wait for finishing swap out.
   while (params.tail < order.size()) {
-
     schedule_wait_for_swap_out_impl(params);
   }
 }
@@ -839,10 +847,18 @@ schedule_wait_for_all_swap_out(ScheduleParams& params) {
 
 void SwapInOutScheduler::
 schedule_wait_for_swap_out_impl(ScheduleParams& params) {
-  RecType *r = &order[params.tail++];
+  RecType *r = &order[params.tail];
+
+  if (r->said == 0) {
+    std::cout << "Wait " << params.tail << " " 
+      << (int)(params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) << " "
+      << (int)(params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT_CLEARED) << " "
+      << (int)(params.sa_states[r->said][r->dtype].swapped_out_r == r) << " "
+      << (unsigned long long)params.sa_states[r->said][r->dtype].swapped_out_r << " " << (unsigned long long)r << std::endl;
+  }
 
   if ((params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT || 
-       params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT) &&
+       params.sa_states[r->said][r->dtype].state == ArrayStateTag::OUT_CLEARED) &&
       params.sa_states[r->said][r->dtype].swapped_out_r == r) {
     // Not canceled swap out
     // Wait for finishing swap out and release the source array of memory copy.
@@ -862,6 +878,8 @@ schedule_wait_for_swap_out_impl(ScheduleParams& params) {
     }
     params.swap_out_bytes -= bytes;
   }
+
+  params.tail++;
 }
 
 
