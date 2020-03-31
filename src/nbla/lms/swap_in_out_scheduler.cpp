@@ -584,14 +584,17 @@ cancel_swap_out(const RecType *r, ScheduleParams& params) {
 
   size_t bytes = 0;
   for (auto& elem : params.sa_states[r->said]) {
-    if (elem.second.state == ArrayStateTag::OUT ||
-        elem.second.state == ArrayStateTag::OUT_CLEARED) {
+    if (elem.second.state == ArrayStateTag::OUT) {
+      bytes += r->size * sizeof_dtype(elem.first);
+      params.swap_out_bytes -= r->size * sizeof_dtype(elem.first);
+      elem.second.state = ArrayStateTag::IN; // OUT and OUT_CLEARED to IN
+    }
+    else if (elem.second.state == ArrayStateTag::OUT_CLEARED) {
       bytes += r->size * sizeof_dtype(elem.first);
       elem.second.state = ArrayStateTag::IN; // OUT and OUT_CLEARED to IN
     }
   }
 
-  params.swap_out_bytes -= bytes;
   params.swap_in_bytes += bytes;
   params.prefetch_bytes += bytes;
 }
@@ -793,6 +796,7 @@ schedule_swap_out(ScheduleParams& params,
           head_type[r->said].first = false;
         }
       }
+      
       else { // Not precleared, Swap out
         end_schedules[params.fid]
           .push_back(ScheduleType(ScheduleTag::SWAP_OUT, r));
@@ -861,6 +865,7 @@ schedule_wait_for_swap_out_impl(ScheduleParams& params) {
       }
     }
     params.swap_out_bytes -= bytes;
+    params.sa_states[r->said][r->dtype].swapped_out_r = nullptr;
   }
 
   params.tail++;
