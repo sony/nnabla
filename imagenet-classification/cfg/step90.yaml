@@ -1,0 +1,34 @@
+# Legacy configuration of ImageNet training.
+
+# Weight decay
+weight_decay: 1e-4
+
+# Momentum of SGD
+momentum: 0.9
+
+# Number of epochs
+epochs: 90
+
+# Ratio of label smoothing loss
+label_smoothing: 0.1
+
+# Loss scaling value. Only used in half precision (mixed precision) training.
+loss_scaling: 256
+
+# Mixup ratio.
+mixup: 0
+
+# Learning rate scheduler config
+lr_scheduler:
+  type: EpochStepLearningRateScheduler
+  args:
+    # Learning rate per example
+    # We use learning rate 0.1 for 256 batch samples.
+    # 0.1 / 256 -> 0.000390625
+    # It will be multiplied by batch_size before using.
+    base_lr: 0.000390625
+
+    decay_at: [30, 60, 80]
+    decay_rate: 0.1
+    warmup_epochs: 5
+    legacy_warmup: true

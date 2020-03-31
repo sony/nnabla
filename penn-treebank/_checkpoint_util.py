@@ -1,3 +1,4 @@
+
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,4 +21,4 @@ import sys
 # Import save/load_checkpoint from utils
 sys.path.append(os.path.join(
     os.path.dirname(__file__), '../utils/'))
-from checkpoint_util import save_checkpoint, load_checkpoint
+from neu.checkpoint_util import save_checkpoint, load_checkpoint

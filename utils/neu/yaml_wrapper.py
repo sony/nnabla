@@ -17,7 +17,7 @@ import os
 import yaml
 import re
 
-from misc import AttrDict, makedirs
+from .misc import AttrDict, makedirs
 
 
 # Resolve scientific notation: https://github.com/yaml/pyyaml/pull/174/files

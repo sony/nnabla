@@ -1,7 +1,8 @@
-# ImageNet training examples
+# ImageNet ILSVRC2012 classification
 
 
-This is an official training example of [ImageNet ILSVRC2012](http://www.image-net.org/) classification with NNabla.
+This is an official training and inference example of [ImageNet ILSVRC2012](http://www.image-net.org/) classification with NNabla.
+We provide a bunch of different network architectures that can be trained using ILSVRC2012 dataset with our very fast and efficient training code.
 Note that the training completely relies on NVIDIA's GPUs, and uses NVIDIA's data processing library called [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/index.html) which runs only on Linux.
 
 The previous implementation (with lower performance both in speed & accuracy) has been moved to [`obsolete/`](./obsolete).
@@ -19,13 +20,28 @@ git clone git@github.com:sony/nnabla-examples.git
 We recommend you to follow [our Docker workflow](../doc/docker.md) to set up a training environment.
 If you would like to manually install all the requirements, install the following.
 
+* Python >= 3.6
 * CUDA (10.0 is recommended)
 * nnabla and a CUDA extension (with [multi-GPU](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#installation-with-multi-gpu-supported) support is recommended)
+
+## Inference with a pretrained model
+
+You can use a pretrained weights provided by us or obtained after training for inference as following. See help with `python infer.py -h` for more options.
+
+```shell
+python infer.py {input image file} {h5 parameter file} -a {network architecture name such as `resnet50` and `se_resnext50}
+```
+
+You can find links to pretrained parameter files at a section ["Training results"](#training-results). Most of the pretrained parameter file maintain weight tensors as NHWC memory layout. Please refer to a section ["Memory layout conversion"](#memory-layout-conversion) for how to convert to NCHW format.
+
+## Training
+
+### Additional dependencies for training
+
 * [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/index.html) (works with 0.16 or higher)
 * For distributed multi-GPU training:
   * OpenMPI
   * NCCL2
-
 
 ### Preparing ImageNet dataset
 
@@ -81,17 +97,16 @@ ILSVRC2012_val_00000003.JPEG 171
 
 Note that the category IDs are ranging from 0 to 999, and the numbers are sequentially assigned by an alphabetical order of WordNet IDs (e.g., `n02172182`).
 
-#
-# Training
+## Run training
 
 The following is a command used when we run distributed training with 4 V100 GPUs.
 
 ```shell
 mpirun -n 4 python train.py \
-  -a resnet50
-
+  -a resnet50 \
   -b 192 \
   -t half --channel-last \
+  -C cfg/cos90.yaml
   -T <path/to/ILSVRC2012 training data directory> \
   -V <path/to/ILSVRC2012 validation data directory>
 ```
@@ -99,45 +114,57 @@ mpirun -n 4 python train.py \
 Training results including logs and parameters will be produced in `tmp.monitor.{datatime}`. Given the generated logs, you can visualize training curves of training loss and validation error as images by the following commands
 
 ```shell
-nnabla_cli plot_series Train-loss.series.txt Validation-loss.series.txt -l training -l validation -o rn50-mixed-nhwc-loss.png -x Epochs -y "Loss"
-nnabla_cli plot_series Train-error.series.txt Validation-error.series.txt -l training -l validation -o rn50-mixed-nhwc-error.png -x Epochs -y "Top-1 error rate"
+nnabla_cli plot_series Train-loss.series.txt Validation-loss.series.txt -l training -l validation -o rn50-mp-cos90-loss.png -x Epochs -y "Loss"
+nnabla_cli plot_series Train-error.series.txt Validation-error.series.txt -l training -l validation -o rn50-mp-cos90-error.png -x Epochs -y "Top-1 error rate"
 ```
 
 and those look like as following.
 
 | Loss | Error |
 |:---:|:---:|
-| ![Loss](results/rn50-mixed-nhwc-loss.png) | ![Error](results/rn50-mixed-nhwc-error.png) |
+| ![Loss](results/rn50-mp-cos90-loss.png) | ![Error](results/rn50-mp-cos90-error.png) |
 
 
-**Options**:
+**Options**: You can specify some options for training as summarized here. Please run `python train.py -h` to see more options.
 
 * `-a` specifies a network archicture type such as `'resnet50'` and `'se_resnext50'`.
 * `-b` specifies the number of batch size. If you see memory allocation error during execution, please adjust this to fit your training into your GPU.
 * `-t half` enables mixed precision training, which saves memory and also gives speedup with GPUs with NVIDIA's TensorCore.
 * `--channel-last` trains your model with NHWC memory layout. This reduces overheads due to transpose operations for each TensorCore execution. It also utilizes fused batch normalization operation which combines batch normalization, addition, and activation into a single kernel. It gives some advantages for speed and memory cost.
+* `-C` can specify a training configuration file. Available configurations are summarized in the table below. 
 * If you want to run it on a single GPU, just omit `mpirun -n 4`. You can specify gpu ID by `-d` option when single GPU mode.
-* Run `python train.py -h` to see other options.
+
+
+**Training configuratios**:
+We provide some of preset training configurations as config files summerized below (see the details by opening the files). You can use it by specifying it with `-C` option for `train.py`. You can also create your own configuration to be used.
+
+| Name | File | Note |
+|:---:|:---:|:---:|
+| Step90 | [cfg/step90.yaml](./cfg/step90.yaml) | Similar setting with ResNet author's experiment. It trains for 90 epochs with step learning rate decay scheduler with warmup, label smoothing, and so on. | 
+| Cos90 | [cfg/cos90.yaml](./cfg/cos90.yaml) | It uses cosine annealing rate decay schedular, and some modified hyperparameters such as base learning rate and weight decay from Step90. |
+| Mixup250 | [cfg/mixup250.yaml](./cfg/mixup250.yaml) | It trains for more epochs (250 epochs) based on Cos90, and uses [mixup](https://arxiv.org/abs/1710.09412) regularization technique to prevent overfitting. |
+| Mixup90 | [cfg/mixup90.yaml](./cfg/mixup90.yaml) | All is the same as Mixup250 except for epochs as 90. |
+
+Some of these settings are compatible with the settings found in [NVIDIA's repository](https://github.com/NVIDIA/DeepLearningExamples)  for deep learning examples.
 
 ### Training results
 
 Training results are summarized as follows.
 
-| Arch. | GPUs | MP*1 | Batch size per GPU |Training time (h)*2 | Validation error (%) | Pretrained parameters | Note |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
-| ResNet18 | 4 x V100 | Yes | 256 | 6.67 | 29.42 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn18-nhwc.h5) | |
-| ResNet34 | 4 x V100 | Yes | 256 | 7.63 | 26.44 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn34-nhwc.h5) | |
-| ResNet50 | 4 x V100 | Yes | 192 | 7.29 (3.19) | 23.28 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nhwc.h5) | |
-| ResNet101 | 4 x V100 | Yes | 128 | 10.85 | 21.89 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn101-nhwc.h5) | |
-| ResNet152 | 4 x V100 | Yes | 96 | | | | Observed `NaN` loss after several epochs. We may need to adjust some hyper parameters for mixed precision and distributed training such as loss scaling value. |
-| ResNet50 | 4 x V100 | No | 112 | 23.25 | 23.27 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nchw.h5) | |
-| ResNeXt50 | 4 x V100 | Yes | 96 | 11.85 | 22.46 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/resnext50_nhwc.h5) | |
-| SE-ResNet50 | 4 x V100 | Yes | 128 | 13.04 | 22.77 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnet50_nhwc.h5) | *3 |
-| SE-ResNeXt50 | 4 x V100 | Yes | 96 | 19.76 | 21.72 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_nhwc.h5) | *3 |
+| Arch. | GPUs | MP*1 | Config*2 | Batch size per GPU | Training time (h) | Validation error (%) | Pretrained parameters (Click to download) | Note |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| ResNet18 | 4 x V100 | Yes | Step90 Mixup250 | 256 | 6.67 16.08 | 29.42 **28.25**| Download: [Step90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn18-nhwc.h5) [**Mixup250**](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn18-nhwc_mixup250.h5) | |
+| ResNet34 | 4 x V100 | Yes | Step90 Mixup250 | 256 | 7.63 18.91 | 26.44 **24.73** | Download: [Step90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn34-nhwc.h5) [**Mixup250**](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn34-nhwc_mixup250.h5) | |
+| ResNet50 | 4 x V100 | No | Step90 | 112 | 23.25 | 23.27 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nchw.h5) | |
+| ResNet50 | 4 x V100 | Yes | Step90 Cos90 Mixup250 | 192 | 7.29 7.44 20.19 | 23.28 22.98 **21.57** | Download: [Step90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nhwc.h5) [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nhwc_cos90.h5) [**Mixup250**](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn50-nhwc_mixup250.h5) | |
+| ResNet101 | 4 x V100 | Yes | Step90 | 128 | 10.85 | 21.89 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn101-nhwc.h5) | |
+| ResNet152 | 4 x V100 | Yes | Cos90 | 96 | 16.01 | 21.06 | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/rn152-nhwc_cos90.h5) | |
+| ResNeXt50 | 4 x V100 | Yes | Step90 Cos90 Mixup250 | 96 | 11.85 12.06 33.84 | 22.46 22.41 **20.98** | Download: [Step90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/resnext50_nhwc.h5) [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/resnext50_nhwc_cos90.h5) [**Mixup250**](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/resnext50_nhwc_mixup250.h5) | |
+| SE-ResNet50 | 4 x V100 | Yes | Step90 Cos90 Mixup250 | 128 | 14.59 15.03 42.22 | 22.77 22.58 **21.19** | Download: [Step90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnet50_nhwc.h5) [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnet50_nhwc_cos90.h5) [**Mixup250**](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnet50_nhwc_mixup250.h5) | |
+| SE-ResNeXt50 | 4 x V100 | Yes | Step90 Cos90 Mixup250 | 96 | 19.76 19.689 55.70 | 21.72 21.53 **20.08** | Download: [Step90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_nhwc.h5) [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_nhwc_cos90.h5) [**Mixup250**](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_nhwc_mixup250.h5) | |
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
-* *2 Number in `()` is speed up from full precision training
-* *3 You may notice that we got the higher error rate than the author's model found below. The author mentions that they trained their model "with more epoches" than models reported in the paper, but such kind of hyperparametes for training are not provided (not clearly described) in their repository. We may obtain a comparable result if we train the model with more epoches.
+* *2 We used training configuration summarized above.
 
 You can also find pretrained weights that are provided by some authors and converted to nnabla's weight format for performance evaluatation.
 
@@ -148,7 +175,15 @@ You can also find pretrained weights that are provided by some authors and conve
 
 * *1 Numbers reported in [the author's repository](https://github.com/hujie-frank/SENet#trained-models).
 
-### Convert memory layout and input channels of pretrained parameter file
+### Evalutation of pretrained model
+
+You can obtain Top-1 validation error rate with standard evaluation setting (256 scaling with center crop 224) of a trained model by using a command like below.
+
+```bash
+python validation.py -b <batch size> --arch <architecture name> -V <validation data folder> <weight file> -t half
+```
+
+### Memory layout conversion
 
 You may want to change the memory layout of trained parameters from NHWC (trained with `channel_last=True`) to NCHW and vice versa, for fine-tuning on differnt tasks for example.
 You may also want to the remove the 4-th channel in the first convolution which was padded to RGB input during training for speed advantage.
@@ -160,12 +195,3 @@ python convert_parameter_format.py {input h5 file} {output h5 file} -m {layout e
 ```
 
 See options with `python convert_parameter_format.py -h`.
-
-
-## Inference with a trained model
-
-A parameter file obtained after training can be used for inference as following. See help with `python infer.py -h` for more options.
-
-```shell
-python infer.py {input image file} {h5 parameter file} -a {network architecture name such as `resnet50` and `se_resnext50}
-```

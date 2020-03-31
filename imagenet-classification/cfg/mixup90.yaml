@@ -1,0 +1,31 @@
+# Default configuration for training ImageNet classification.
+
+# Weight decay
+weight_decay: 3.0517578125e-05
+
+# Momentum of SGD
+momentum: 0.875
+
+# Number of epochs
+epochs: 90
+
+# Ratio of label smoothing loss
+label_smoothing: 0.1
+
+# Loss scaling value. Only used in half precision (mixed precision) training.
+loss_scaling: 128
+
+# Mixup ratio.
+mixup: 0.2
+
+# Learning rate scheduler config
+lr_scheduler:
+  type: EpochCosineLearningRateScheduler
+  args:
+    # Learning rate per example
+    # We use learning rate 0.1 for 256 batch samples.
+    # 0.256 / 256 -> 0.001
+    # It will be multiplied by batch_size before using.
+    base_lr: 0.001
+    warmup_epochs: 16
+    epochs: 

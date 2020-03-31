@@ -1,4 +1,5 @@
-# Copyright (c) 2019 Sony Corporation. All Rights Reserved.
+
+# Copyright (c) 2019-2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import division
+
+import sys
+import os
+
+# Set path to neu
+common_utils_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'utils'))
+sys.path.append(common_utils_path)
+
+from neu.yaml_wrapper import read_yaml, write_yaml
+from neu.comm import CommunicatorWrapper
+
 import nnabla as nn
 import nnabla.communicators as C
 import nnabla.monitor as M
@@ -21,67 +35,11 @@ import numpy as np
 from tqdm import trange
 
 
-def create_float_context(ctx):
-    from nnabla.ext_utils import get_extension_context
-    ctx_float = get_extension_context(ctx.backend[0].split(':')[
-                                      0], device_id=ctx.device_id)
-    return ctx_float
-
-
 def ceil_to_multiple(x, mul):
     '''
     Get a minimum integer >= x of a multiple of ``mul``.
     '''
     return (x + mul - 1) // mul
-
-
-class CommunicatorWrapper(object):
-    def __init__(self, ctx):
-        try:
-            comm = C.MultiProcessDataParallelCommunicator(ctx)
-        except Exception as e:
-            print(e)
-            print('No communicator found. Running with a single process. If you run this with MPI processes, all processes will perform totally same.')
-            self.n_procs = 1
-            self.rank = 0
-            self.ctx = ctx
-            self.ctx_float = create_float_context(ctx)
-            self.comm = None
-            return
-
-        comm.init()
-        self.n_procs = comm.size
-        self.rank = comm.rank
-        self.ctx = ctx
-        self.ctx.device_id = str(self.rank)
-        self.ctx_float = create_float_context(self.ctx)
-        self.comm = comm
-
-    def all_reduce(self, params, division, inplace):
-        if self.n_procs == 1:
-            # skip all reduce since no processes have to be all-reduced
-            return
-        self.comm.all_reduce(params, division=division, inplace=inplace)
-
-
-class LearningRateScheduler(object):
-    '''Learning rate decay scheduler.
-    '''
-
-    def __init__(self, base_lr, decay_at=[30, 60, 80], decay_rate=0.1, warmup_epochs=5):
-        self.base_learning_rate = base_lr
-        self.decay_at = np.asarray(decay_at, dtype=np.int)
-        self.decay_rate = decay_rate
-        self.warmup_epochs = warmup_epochs
-
-    def __call__(self, epoch):
-        lr = self.base_learning_rate
-        if epoch < self.warmup_epochs:
-            lr = lr * (epoch + 1) / (self.warmup_epochs + 1)
-            return lr
-
-        p = np.sum(self.decay_at <= epoch)
-        return lr * (self.decay_rate ** p)
 
 
 class MomentumNoWeightDecayBn(object):
@@ -199,33 +157,41 @@ class EpochReporter(object):
 
 
 class EpochTrainer(object):
-    def __init__(self, model, solver, learning_rate_scheduler, data, comm, monitor, loss_scaling, weight_decay, stream_event_handler):
+    def __init__(self, model, solver, learning_rate_scheduler, data, comm, monitor,
+                 loss_scaling, weight_decay, stream_event_handler, mixup=None):
         batch_size = model.image.shape[0]
         self.model = model
+
         self.solver = solver
         self.data = data
         self.comm = comm
         self.learning_rate_scheduler = learning_rate_scheduler
         self.batch_size = batch_size
+        # LR is multiplied by batch size because the learning rate returned by
+        # scheduler is defined as learning rate per example.
+        # Also, to cancel loss scaling, learning rate is divided by loss_scaling.
+        # Note this assumes legacy SGD w/ moemntum implementation,
+        # otherwise, it is recommended to apply division at gradient itself
+        # using scale_grad for example.
+        self.lr_factor = batch_size / loss_scaling
         self.loss_scaling = loss_scaling
-        self.weight_decay = weight_decay
+        # Weight decay is multiplied by loss_scaling to cancel the effect of loss_scaling
+        # cancelling at learning rate.
+        # Also, note that is is multiplied by number GPUs (processes),
+        # because all-reduce sum over GPUs is performed before applying weight decay.
+        self.weight_decay = weight_decay * loss_scaling * comm.n_procs
         self.stream_event_handler = stream_event_handler
         self.num_iter_per_epoch = ceil_to_multiple(data.size, batch_size)
         self.reporter = EpochReporter(
             'Train', monitor, comm, model.loss, model.error, batch_size)
-
-    def _update_learning_rate(self, epoch):
-        # Set scheduled learning rate
-        lr = self.learning_rate_scheduler(epoch)
-        self.solver.set_learning_rate(lr)
-        return lr
+        self.mixup = mixup
 
     def run(self, epoch):
-        lr = self._update_learning_rate(epoch)
+
+        # Update epoch counter of lr scheduler
+        self.learning_rate_scheduler.set_epoch(epoch)
 
         # Training loop
-        epoch_loss = 0.0
-        epoch_error = 0
         pbar = trange(self.num_iter_per_epoch,
                       desc='Train at epoch %d' % epoch,
                       disable=self.comm.rank > 0)
@@ -237,6 +203,10 @@ class EpochTrainer(object):
         for i in pbar:
             # nvtx.range_push("train_{}".format(i))
 
+            # Update learning rate
+            lr = self.learning_rate_scheduler.get_lr_and_update()
+            self.solver.set_learning_rate(lr * self.lr_factor)
+
             # wait here until back-prop has been finished
             self.stream_event_handler.event_synchronize()
 
@@ -244,20 +214,19 @@ class EpochTrainer(object):
             self.model.image.data = next_image
             self.model.label.data = next_label
 
+            # Sample mixup ratios
+            if self.mixup is not None:
+                self.mixup.reset_mixup_ratio()
+
             # Synchronizing null-stream and host here makes update faster. I'm not sure why.
             self.stream_event_handler.default_stream_synchronize()
 
-            self.reporter(lr * self.loss_scaling)
+            self.reporter(lr)
 
             nn.forward_all([self.model.loss, self.model.error],
                            clear_no_need_grad=True)
             # self.model.loss.forward(clear_no_need_grad=True, function_pre_hook=None)
-
-            comm_callback = None
-            if self.comm.n_procs > 1:
-                params = [x.grad for x in nn.get_parameters().values()]
-                comm_callback = self.comm.comm.all_reduce_callback(
-                    params, 1024 * 1024 * 2)
+            comm_callback = self.comm.get_all_reduce_callback()
             self.solver.zero_grad()
             self.model.loss.backward(
                 self.loss_scaling, clear_buffer=True,
@@ -277,7 +246,7 @@ class EpochTrainer(object):
 
             # nvtx.range_pop()
 
-        self.reporter(lr * self.loss_scaling, force=True)
+        self.reporter(lr, force=True)
         self.reporter.on_epoch_end()
 
 
@@ -296,8 +265,6 @@ class EpochValidator(object):
 
     def run(self, epoch):
 
-        epoch_loss = 0.0
-        epoch_error = 0
         pbar = trange(self.num_iter_per_epoch,
                       desc='Val at epoch %d' % epoch,
                       disable=self.comm.rank > 0)

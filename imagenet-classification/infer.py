@@ -132,7 +132,7 @@ def main():
 
     # Perform inference
     from models import build_network
-    num_classes = 1000
+    num_classes = args.num_classes
     pred, _ = build_network(img, num_classes, args.arch,
                             test=True, channel_last=channel_last)
     prob = F.softmax(pred)

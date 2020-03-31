@@ -18,7 +18,7 @@ import os
 def init_nnabla(ctx_config):
     import nnabla as nn
     from nnabla.ext_utils import get_extension_context
-    from comm import CommunicatorWrapper
+    from .comm import CommunicatorWrapper
 
     # set context
     ctx = get_extension_context(**ctx_config)

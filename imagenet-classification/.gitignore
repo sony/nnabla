@@ -1,4 +1,5 @@
 results/
 weights/
+results*/
 train_label
 val_label

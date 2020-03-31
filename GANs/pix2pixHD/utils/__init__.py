@@ -19,17 +19,18 @@ from .lr_scheduler import LearningRateScheduler
 import sys
 import os
 
-common_utils_path = os.path.join(
-    "/", *os.path.abspath(__file__).split("/")[:-4], "utils")
+# Set path to neu
+common_utils_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', 'utils'))
 sys.path.append(common_utils_path)
 
-from reporter import Reporter
-from post_processing import Colorize
-from variable_utils import set_persistent_all, get_params_startswith
-from yaml_wrapper import read_yaml, write_yaml
-from misc import init_nnabla, get_current_time, AttrDict
-from losses import get_gan_loss, vgg16_perceptual_loss
+from neu.reporter import Reporter
+from neu.post_processing import Colorize
+from neu.variable_utils import set_persistent_all, get_params_startswith
+from neu.yaml_wrapper import read_yaml, write_yaml
+from neu.misc import init_nnabla, get_current_time, AttrDict
+from neu.losses import get_gan_loss, vgg16_perceptual_loss
 
-from datasets.city_scapes import (create_data_iterator as create_cityscapes_iterator,
-                                  get_cityscape_datalist,
-                                  load_function as cityscapes_load_function)
+from neu.datasets.city_scapes import (create_data_iterator as create_cityscapes_iterator,
+                                      get_cityscape_datalist,
+                                      load_function as cityscapes_load_function)
