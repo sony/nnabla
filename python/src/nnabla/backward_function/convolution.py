@@ -53,8 +53,6 @@ class ConvolutionBackward(BackwardFunction):
         dilation = self.forward_func.info.args["dilation"]
         group = self.forward_func.info.args["group"]
         channel_last = self.forward_func.info.args["channel_last"]
-        # TODO: BHWC
-        assert channel_last == False, "`channel_last = False` is only supported now."
 
         # Inputs
         x0 = inputs[0].data
@@ -103,8 +101,12 @@ class ConvolutionBackward(BackwardFunction):
                 + F.convolution(x0, g_dw0, None, base_axis, pad,
                                 stride, dilation, group, channel_last)
             if with_bias:
-                g_db0 = F.reshape(
-                    g_db0, [1 if i != base_axis else g_db0.shape[0] for i in range(g_dy.ndim)])
+                if not channel_last:
+                    g_db0 = F.reshape(
+                        g_db0, [1 if i != base_axis else g_db0.shape[0] for i in range(g_dy.ndim)])
+                else:
+                    g_db0 = F.reshape(
+                        g_db0, [1 if i != (g_dy.ndim - 1) else g_db0.shape[0] for i in range(g_dy.ndim)])
                 g_dy_ += g_db0
             if accum_dy:
                 g_dy += g_dy_

@@ -22,7 +22,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(Interpolate, const vector<int> &, const string &,
-                              bool);
+                              bool, bool);
 
 /**
 Resize an ND array with interpolation.
@@ -47,20 +47,23 @@ values of the input corner pixels.
  */
 template <typename T>
 class Interpolate
-    : public BaseFunction<const vector<int> &, const string &, bool> {
+    : public BaseFunction<const vector<int> &, const string &, bool, bool> {
 protected:
   const vector<int> output_size_;
   const string mode_;
   bool align_corners_;
+  bool channel_last_;
 
 public:
   Interpolate(const Context &ctx, const vector<int> &output_size,
-              const string &mode, bool align_corners)
-      : BaseFunction(ctx, output_size, mode, align_corners),
-        output_size_(output_size), mode_(mode), align_corners_(align_corners) {}
+              const string &mode, bool align_corners, bool channel_last)
+      : BaseFunction(ctx, output_size, mode, align_corners, channel_last),
+        output_size_(output_size), mode_(mode), align_corners_(align_corners),
+        channel_last_(channel_last) {}
   virtual ~Interpolate() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Interpolate(ctx_, output_size_, mode_, align_corners_);
+    return create_Interpolate(ctx_, output_size_, mode_, align_corners_,
+                              channel_last_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }

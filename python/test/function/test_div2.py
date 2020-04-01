@@ -34,4 +34,4 @@ def test_div2_double_backward(seed, ctx, func_name):
                              atol_accum=1e-1,
                              dstep=1e-4,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

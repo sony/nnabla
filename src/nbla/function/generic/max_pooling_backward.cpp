@@ -158,6 +158,10 @@ void MaxPoolingBackward<T>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &propagate_down,
                                           const vector<bool> &accum) {
+  NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
+             "The passed argument channel_last=true is not supported in CPU "
+             "pooling.");
+
   if (!(propagate_down[0] || propagate_down[1])) {
     return;
   }

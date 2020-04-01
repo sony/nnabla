@@ -50,5 +50,5 @@ def test_prune_forward_backward(rate, seed, ctx, func_name):
 
     function_tester(rng, F.prune, ref_func_prune, inputs, func_args=[rate],
                     ctx=ctx, func_name=func_name,
-                    ref_grad=ref_grad_prune)
-    # disable_half_test=True)
+                    ref_grad=ref_grad_prune,
+                    disable_half_test=True)

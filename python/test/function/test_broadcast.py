@@ -83,7 +83,7 @@ def test_broadcast_double_backward(ndim, broadcast_dim, seed, fname, ctx, func_n
                                  atol_accum=1e-3,
                                  dstep=1e-3,
                                  ctx=ctx, func_name=None,
-                                 disable_half_test=True)
+                                 disable_half_test=False)
 
     inputs = [np.array(rng.randn(*inshape)).astype("float32")]
     backward_function_tester(rng, F.broadcast, None,
@@ -94,4 +94,4 @@ def test_broadcast_double_backward(ndim, broadcast_dim, seed, fname, ctx, func_n
                              atol_accum=2e-2,
                              dstep=1e-3,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

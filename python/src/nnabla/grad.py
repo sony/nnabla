@@ -47,10 +47,7 @@ class GradEndFunction(PythonFunction):
 class Grad(object):
 
     def __init__(self, ):
-        ctx = nn.get_current_context()
-        if "half" in [x.split(":")[-1] for x in ctx.backend]:
-            raise ValueError(
-                "Half is not supported up to now, context = {}".format(ctx))
+        pass
 
     def _force_list(self, x):
         if isinstance(x, list):

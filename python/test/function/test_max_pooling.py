@@ -129,13 +129,11 @@ def test_max_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border, chann
 def test_max_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, ignore_border, channel_last,
                                         ctx, func_name):
     from nbla_test_utils import backward_function_tester, cap_ignore_region
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('Channel last is only supported in Cudnn so far')
     if channel_last:
-        pytest.skip('Channel last is not supported in the double backward.')
-    # if channel_last and not func_name.endswith('Cudnn'):
-    ##     pytest.skip('Channel last is only supported in Cudnn so far')
-    # if channel_last:
-    ##     t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
-    ##     inshape = tuple(inshape[i] for i in t.inv_axes)
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [kernel, stride, ignore_border, pad, channel_last]
@@ -160,13 +158,11 @@ def test_max_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, igno
     # pytest.skip('`>3`-dimension are not supported.')
     # TODO: some test fail
     from nbla_test_utils import backward_function_tester, cap_ignore_region
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('Channel last is only supported in Cudnn so far')
     if channel_last:
-        pytest.skip('Channel last is not supported in the double backward.')
-    # if channel_last and not func_name.endswith('Cudnn'):
-    ##     pytest.skip('Channel last is only supported in Cudnn so far')
-    # if channel_last:
-    ##     t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
-    ##     inshape = tuple(inshape[i] for i in t.inv_axes)
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [kernel, stride, ignore_border, pad, channel_last]
