@@ -13,18 +13,8 @@
 # limitations under the License.
 
 
-class LearningRateScheduler(object):
-    """Learning rate decay scheduler.
+# Multi-gpu training command for 256 x 256 generator on ade20k dataset
 
-    """
+N_GPU=4
+mpirun -N ${N_GPU} python train.py -D ade20k
 
-    def __init__(self, base_lr, training_epoch=200, decay_at=100):
-        self.base_learning_rate = base_lr
-        self.decay_at = decay_at
-        self.traing_epoch = training_epoch
-
-    def __call__(self, epoch):
-        if epoch < self.decay_at:
-            return self.base_learning_rate
-
-        return self.base_learning_rate * (self.traing_epoch - epoch) / (self.traing_epoch - self.decay_at)

@@ -14,6 +14,8 @@
 
 import nnabla as nn
 
+from nnabla.logger import logger
+
 
 def create_float_context(ctx):
     from nnabla.ext_utils import get_extension_context
@@ -39,10 +41,12 @@ class CommunicatorWrapper(object):
             self.rank = 0
             self.comm = None
 
-        if self.n_procs > 1:
-            ctx.device_id = str(self.rank)
         self.ctx = ctx
         self.ctx_float = create_float_context(ctx)
+        self.ctx.device_id = str(int(ctx.device_id) + int(self.rank))
+
+        logger.info("[Communicator] Using gpu_id = {} as rank = {}".format(
+            self.ctx.device_id, self.rank))
 
     def all_reduce(self, params, division, inplace):
         if self.n_procs == 1:
@@ -57,6 +61,11 @@ class CommunicatorWrapper(object):
             self.all_reduce(params, division=division, inplace=inplace)
 
         solver.update()
+
+    def all_reduced_solver_update_all(self, *solvers, division=False, inplace=True):
+        for solver in solvers:
+            self.all_reduced_solver_update(
+                solver, division=division, inplace=inplace)
 
     def get_all_reduce_callback(self, packing_size=2 << 20):
         callback = None

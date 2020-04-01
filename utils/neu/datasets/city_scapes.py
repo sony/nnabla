@@ -20,6 +20,8 @@ from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
 from nnabla.utils.image_utils import imread, imresize
 
+from . import _get_sliced_data_source
+
 
 image_extentions = [".png"]
 file_type_id = {"leftImg8bit": 0, "instanceIds": 1, "labelIds": 2}
@@ -30,7 +32,8 @@ file_type_id = {"leftImg8bit": 0, "instanceIds": 1, "labelIds": 2}
 
 
 def get_cityscape_datalist(args, data_type="train", save_file=False):
-    list_path = os.path.abspath("./data_list_{}.txt".format(data_type))
+    list_path = os.path.abspath(
+        "./cityscapes_data_list_{}.txt".format(data_type))
     if os.path.exists(list_path):
         with open(list_path, "r") as f:
             lines = f.readlines()
@@ -146,9 +149,14 @@ class CityScapesIterator(DataSource):
         return image, inst_map, label_map
 
 
-def create_data_iterator(batch_size, data_list, image_shape, shuffle=True, rng=None,
+def create_data_iterator(batch_size, data_list, image_shape, comm=None, shuffle=True, rng=None,
                          with_memory_cache=False, with_parallel=False, with_file_cache=False, flip=True):
-    return data_iterator(CityScapesIterator(data_list, image_shape, shuffle=shuffle, rng=rng, flip=flip),
+    ds = CityScapesIterator(data_list, image_shape,
+                            shuffle=shuffle, rng=rng, flip=flip)
+
+    ds = _get_sliced_data_source(ds, comm, shuffle=shuffle)
+
+    return data_iterator(ds,
                          batch_size,
                          with_memory_cache,
                          with_parallel,

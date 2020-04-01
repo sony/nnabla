@@ -1,0 +1,58 @@
+!!python/object/new:neu.misc.AttrDict
+dictitems:
+  ade20k: !!python/object/new:neu.misc.AttrDict
+    dictitems:
+      data_dir: ./data/ADEChallengeData2016
+      image_shape:
+      - 256
+      - 256
+      n_label_ids: 150
+      outdoor_only: true
+      subset_labels:
+      - sky
+      - tree
+      - earth
+      - grass
+      - mountain
+      - sea
+      - river
+      - bridge
+      - hill
+      - land
+      - waterfall
+      - lake
+    state:
+      _parent:
+      - ade20k
+  batch_size: 8
+  cfg: ./config.yaml
+  cityscapes:
+    data_dir: ./data/Cityscapes
+    image_shape:
+    - 256
+    - 512
+    n_label_ids: 35
+  d_lr: 0.0004
+  d_n_scales: 2
+  dataset: ade20k
+  device_id: 0
+  ext_name: cudnn
+  g_lr: 0.0001
+  g_ndf: 64
+  gan_loss_type: hinge
+  image_shape: !!python/tuple
+  - 256
+  - 256
+  lambda_fm: 10.0
+  lambda_vgg: 10.0
+  load_params: null
+  niter: 60400
+  save_interval: 302
+  save_path: ./pretrained_model/ade20k
+  show_interval: 302
+  type_config: float
+  use_crop: true
+  use_flip: true
+  use_fm: true
+  use_vgg: true
+  z_dim: 256
