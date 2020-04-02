@@ -128,7 +128,16 @@ Limitation
 NNB
 ^^^
 
-NNB is compact binary format for NNabla C Runtime.
+NNB is compact binary format for NNabla C Runtime. The file format is shown as
+the following diagram:
+
+.. figure:: ./file_format_converter/nnb.png
+
+There are several concepts, such as buffer, variable, function, input and output in this file. Each of them
+is represented as a list. Each list is recorded with 2 members: number of object, and index in memory
+block table. The index points to the position in a memory block index table. The index in memory block
+index table points to the start address of memory data block.
+
 It is designed for `nnabla-c-runtime`_.
 
 .. _nnabla-c-runtime: https://github.com/sony/nnabla-c-runtime
