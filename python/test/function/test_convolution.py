@@ -226,6 +226,8 @@ def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
     if channel_last:
         pytest.skip('3d')
     import platform
+    if platform.machine() == 'ppc64le':
+        pytest.skip('Skip the ppc64le platform temporarily.')
     if platform.system() == "Linux" and platform.uname().machine not in ["x86_64", "ppc64le"]:
         pytest.skip('Convolution 3-D for x86_64 and ppc64 are only supported.')
 

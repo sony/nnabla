@@ -39,8 +39,23 @@ RUN yum install -y \
         wget \
         zip \
         zlib-static \
+        libmpc-devel \
+        mpfr-devel \
+        gmp-devel \
     && yum group install -y "Development Tools" \
     && yum clean all
+
+################################################### gcc
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && wget http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
+    && tar xvfj gcc-4.9.2.tar.bz2 \
+    && cd gcc-4.9.2 \
+    && ./configure --disable-multilib --enable-languages=c,c++ \
+    && make -j8 \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
 
 ################################################### cmake
 ENV CMAKEVER=3.14.3
@@ -132,6 +147,7 @@ RUN umask 0 \
     && conda update --all -y \
     && conda install -y numpy scipy scikit-image six \
     && pip install -r /tmp/deps/setup_requirements.txt \
+    && sed -i '/tensorflow/d' /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
@@ -139,3 +155,6 @@ RUN umask 0 \
     && rm -rf /tmp/*
 
 ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
+ENV LD_LIBRARY_PATH /usr/local/lib64:$LD_LIBRARY_PATH
+ENV CC /usr/local/bin/gcc
+ENV CXX /usr/local/bin/g++

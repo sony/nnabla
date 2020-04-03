@@ -6,8 +6,8 @@ import os
 from collections import OrderedDict
 
 
-DATA_NUM = 1000
-RANGE = 100
+DATA_NUM = 640
+RANGE = 80
 CACHE_FOLDER = "cache_npy"
 
 

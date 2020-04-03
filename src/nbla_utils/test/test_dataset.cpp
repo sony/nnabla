@@ -97,10 +97,10 @@ void dump_shape(Shape_t s, Shape_t t) {
 }
 
 #if 1
-std::vector<int> batch_sizes = {1, 64, 128, 256};
+std::vector<int> batch_sizes = {1, 32};
 std::vector<bool> shuffle_setting = {true, false};
 std::vector<bool> normal_setting = {true, false};
-std::vector<int> iter_nums = {1, 10, 100, 400};
+std::vector<int> iter_nums = {1, 9};
 #else
 std::vector<int> batch_sizes = {128};
 std::vector<bool> shuffle_setting = {false};
@@ -114,8 +114,8 @@ TEST(test_load_variable_list, normalcase) {
   vector<string> data_names;
 
   EXPECT_TRUE(load_variable_list(path, data_names));
-  EXPECT_EQ(2, data_names.size());
-  EXPECT_EQ("x", data_names[0]);
+  EXPECT_EQ(4, data_names.size());
+  EXPECT_EQ("x0", data_names[0]);
   EXPECT_EQ("y", data_names[1]);
 }
 
@@ -125,7 +125,7 @@ TEST(test_search_for_cache_files, normalcase) {
   EXPECT_TRUE(load_variable_list(path, data_names));
   vector<shared_ptr<CacheFile>> cache_files;
   EXPECT_TRUE(search_for_cache_files(path, data_names, cache_files));
-  EXPECT_EQ(15, cache_files.size());
+  EXPECT_EQ(10, cache_files.size());
 }
 
 TEST(test_cache_file_object, test_all_preload) {
@@ -134,14 +134,14 @@ TEST(test_cache_file_object, test_all_preload) {
   EXPECT_TRUE(load_variable_list(path, data_names));
   vector<shared_ptr<CacheFile>> cache_files;
   EXPECT_TRUE(search_for_cache_files(path, data_names, cache_files));
-  EXPECT_EQ(15, cache_files.size());
+  EXPECT_EQ(10, cache_files.size());
 
   for (int i = 0; i < cache_files.size(); ++i) {
     cache_files[i]->preload();
     cout << cache_files[i]->get_name() << " preload." << endl;
     EXPECT_EQ(100, cache_files[i]->get_num_data());
     cout << "check variable x" << endl;
-    const VariableDesc *var_desc = cache_files[i]->get_variable_desc("x");
+    const VariableDesc *var_desc = cache_files[i]->get_variable_desc("x0");
     EXPECT_EQ(1, var_desc->word_size);
     EXPECT_EQ(dtypes::UBYTE, var_desc->data_type);
     dump_shape(var_desc->shape, {100, 1, 28, 28});
@@ -159,6 +159,7 @@ class RingBufferTester
 protected:
   map<string, shared_ptr<RingBuffer>> ring_buffers_;
   vector<string> data_names_;
+  int cache_file_num_{8};
 
   virtual void SetUp() {
     string path = "./cache_npy";
@@ -166,7 +167,7 @@ protected:
     EXPECT_TRUE(load_variable_list(path, data_names_));
     vector<shared_ptr<CacheFile>> cache_files;
     EXPECT_TRUE(search_for_cache_files(path, data_names_, cache_files));
-    EXPECT_EQ(15, cache_files.size());
+    EXPECT_EQ(cache_file_num_, cache_files.size());
 
     for (auto f : cache_files) {
       f->preload();

@@ -490,6 +490,8 @@ DatasetNpyCache::DatasetNpyCache(const ::Dataset &dataset)
     num_of_data_ += c->get_num_data();
   }
 
+  assert(cache_files.size() > 0);
+
   if (this->shuffle()) {
     int data_num = cache_files[0]->get_num_data();
     idx_list.resize(data_num);
