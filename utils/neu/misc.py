@@ -45,6 +45,7 @@ class AttrDict(dict):
     def __setattr__(self, key, value):
         if key == "_parent":
             self.__dict__["_parent"] = value
+            return
 
         self[key] = value
 
@@ -58,18 +59,6 @@ class AttrDict(dict):
             self[key]._parent = self._parent + [key]
 
         return self[key]
-
-    def __str__(self):
-        if "_parent" in self:
-            del self["_parent"]
-
-        return super(AttrDict, self).__str__()
-
-    def __repr__(self):
-        if "_parent" in self:
-            del self["_parent"]
-
-        return super(AttrDict, self).__repr__()
 
     def dump_to_stdout(self):
         print("================================configs================================")
