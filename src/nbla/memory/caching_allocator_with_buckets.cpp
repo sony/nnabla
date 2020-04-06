@@ -14,7 +14,7 @@
 
 #include <nbla/memory/caching_allocator_with_buckets.hpp>
 
-#if 0
+#if DEBUG_DEVICE_CACHE
 #include <cstdio>
 #define DEBUG_LOG(...) printf(__VA_ARGS__)
 #define DEBUG_PRINT_CACHES(M, S) print_device_cache_map(M, S)
@@ -98,6 +98,7 @@ size_t CachingAllocatorWithBucketsBase::round_size(size_t bytes) const {
   return bytes;
 }
 
+#if DEBUG_DEVICE_CACHE
 static void
 print_device_cache_map(const CachingAllocatorWithBucketsBase::DeviceCacheMap &m,
                        bool small) {
@@ -108,6 +109,7 @@ print_device_cache_map(const CachingAllocatorWithBucketsBase::DeviceCacheMap &m,
   printf("device_cache_map(%d): [%s]\n", (int)small,
          string_join(sizes, ", ").c_str());
 }
+#endif
 
 //----------------------------------------------------------------------
 // Overriding member functions
