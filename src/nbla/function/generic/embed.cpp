@@ -44,7 +44,7 @@ void Embed<T, T1>::forward_impl(const Variables &inputs,
 
   Size_t stride0 = inputs[1]->size(1);
   for (int i = 0; i < inputs[0]->size(); ++i) {
-    memcpy(y + i * stride0, w + x[i] * stride0, sizeof(T1) * stride0);
+    memcpy((void *)(y + i * stride0), w + x[i] * stride0, sizeof(T1) * stride0);
   }
 }
 

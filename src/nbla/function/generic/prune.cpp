@@ -52,7 +52,7 @@ void Prune<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 
   // copy buffer
   int x_size = inputs[0]->size();
-  memcpy(buffer, x, sizeof(T) * x_size);
+  memcpy((void *)buffer, x, sizeof(T) * x_size);
 
   // sort
   auto abs_comp = [](T i, T j) { return std::abs(i) < std::abs(j); };

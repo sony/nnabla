@@ -190,7 +190,7 @@ void Broadcast<T>::backward_impl(const Variables &inputs,
   int ndim = inputs[0]->ndim();
   int size = outputs[0]->size();
   if (!accum[0])
-    memset(g, 0, sizeof(*g) * inputs[0]->size());
+    memset((void *)g, 0, sizeof(*g) * inputs[0]->size());
   switch_broadcast_backward<NBLA_BROADCAST_MAX_DIM, T>::call(
       ndim, size, dy, stride_x, shape_y, g);
 }

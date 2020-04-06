@@ -61,7 +61,7 @@ void Unpooling<T>::unpooling_forward_recursive(const Variable *inp,
     const T *current_x = x + current_x_offset;
     T *current_y = y + current_y_offset;
     if (x_stride == 1 && kernel == 1) {
-      memcpy(current_y, current_x, sizeof(T) * size);
+      memcpy((void *)current_y, current_x, sizeof(T) * size);
     } else {
       const T *end_y = current_y + size * y_stride;
       int count = 0;
