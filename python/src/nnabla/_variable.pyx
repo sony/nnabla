@@ -1061,4 +1061,13 @@ cdef class Variable:
         return IDX.getitem(self, key)
 
     def __setitem__(self, key, value):
-        IDX.setitem(self, key, value)
+        if self.parent:
+            if not isinstance(value, Variable):
+                if isinstance(value, NdArray):
+                    value = Variable(value.shape).apply(data=value)
+                else:
+                    value = Variable.from_numpy_array(value)
+            var = self.get_unlinked_variable().apply(parent=self.parent)
+            self.rewire_on(IDX.setitem(var, key, value))
+        else:
+            IDX.setitem(self, key, value)

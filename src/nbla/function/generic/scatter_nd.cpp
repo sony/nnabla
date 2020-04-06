@@ -27,7 +27,6 @@ void ScatterNd<T>::setup_impl(const Variables &inputs,
                               const Variables &outputs) {
   auto data = inputs.at(0);
   auto indices = inputs.at(1);
-  auto outdata = outputs.at(0);
 
   NBLA_CHECK(indices->ndim() >= 2, error_code::value,
              "scatter_nd requires indices to have at least 2 dimensions");
@@ -55,15 +54,22 @@ void ScatterNd<T>::setup_impl(const Variables &inputs,
                data->shape()[K + i], M + i, indices->shape()[M + i]);
   }
 
-  Shape_t outdata_shape(N + M - K);
-  std::copy(shape_.begin(), shape_.end(), outdata_shape.begin());
-  outdata->reshape(outdata_shape, true);
-  outdata->data()->zero();
+  Shape_t output_shape(N + M - K);
+  std::copy(shape_.begin(), shape_.end(), output_shape.begin());
+  outputs.at(0)->reshape(output_shape, true);
+
+  if (inputs.size() > 2) {
+    outputs[0]->data()->set_array(inputs[2]->data()->array());
+    outputs[0]->grad()->set_array(inputs[2]->grad()->array());
+  }
 }
 
 template <typename T>
 void ScatterNd<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
+  if (inputs.size() < 3)
+    outputs[0]->data()->zero();
+
   auto src = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto idx = inputs[1]->get_data_pointer<int>(this->ctx_);
   auto dst = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, false);
@@ -109,6 +115,10 @@ void ScatterNd<T>::backward_impl(const Variables &inputs,
   auto g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   auto idx = inputs[1]->get_data_pointer<int>(this->ctx_);
 
+  T *g_o = nullptr;
+  if (inputs.size() > 2)
+    g_o = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, true);
+
   auto idx_shape = inputs[1]->shape();
   auto src_shape = outputs[0]->shape();
 
@@ -129,6 +139,9 @@ void ScatterNd<T>::backward_impl(const Variables &inputs,
       g_x[i * slice_length + k] =
           !accum[0] ? g_y[slice_offset + k]
                     : g_x[i * slice_length + k] + g_y[slice_offset + k];
+      if (inputs.size() > 2) {
+        g_o[slice_offset + k] = T(0);
+      }
     }
   }
 }

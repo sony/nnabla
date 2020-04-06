@@ -1140,17 +1140,12 @@ def scatter_nd(data, indices, shape=None, out=None):
     if shape and out:
         raise TypeError("Only one of `shape` or `out` argument may be used.")
     if out:
-        if isinstance(out, nn.Variable):
-            out = out.data
-        if not isinstance(out, nn.NdArray):
+        if not isinstance(out, (nn.Variable, nn.NdArray)):
             raise TypeError("`out` argument must be NdArray or Variable type.")
         shape = out.shape
-        outputs = [out]
-    else:
-        if isinstance(shape, np.ndarray):
-            shape = shape.tolist()
-        outputs = None
-    return scatter_nd_base(data, indices, shape, outputs=outputs)
+    elif isinstance(shape, np.ndarray):
+        shape = shape.tolist()
+    return scatter_nd_base(data, indices, out, shape)
 
 
 def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_weight, out_weight, q_bias=None, k_bias=None, v_bias=None, out_bias=None, attn_bias_k=None, attn_bias_v=None, dropout=0.0, additive_mask=None, key_padding_mask=None):
