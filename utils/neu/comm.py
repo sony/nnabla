@@ -41,9 +41,9 @@ class CommunicatorWrapper(object):
             self.rank = 0
             self.comm = None
 
+        ctx.device_id = str(int(ctx.device_id) + int(self.rank))
         self.ctx = ctx
         self.ctx_float = create_float_context(ctx)
-        self.ctx.device_id = str(int(ctx.device_id) + int(self.rank))
 
         logger.info("[Communicator] Using gpu_id = {} as rank = {}".format(
             self.ctx.device_id, self.rank))
