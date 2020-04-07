@@ -61,13 +61,20 @@ def test_unpooling_forward_backward(seed, inshape, channel_last, kernel, ctx, fu
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape", [(1, 2, 3), (2, 4, 6), (2, 2, 4, 6), (2, 2, 2, 4, 6)])
 @pytest.mark.parametrize("kernel", [(1, 1), (2, 3), (2, 1, 2)])
-def test_unpooling_double_backward(seed, inshape, kernel, ctx, func_name):
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_unpooling_double_backward(seed, inshape, kernel, channel_last, ctx, func_name):
+    if channel_last and func_name == "Unpooling":
+        pytest.skip("Unpooling with channel_last is only supported in CUDA.")
+    if channel_last and len(inshape) == len(kernel):
+        pytest.skip(
+            "len(input shape) == len(kernel) is only valid for the channel first.")
+
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     backward_function_tester(rng,
                              F.unpooling, None,
                              inputs=inputs,
-                             func_args=[kernel],
+                             func_args=[kernel, channel_last],
                              ctx=ctx, func_name=func_name,
                              atol_f=1e-6, atol_b=1e-1, atol_accum=1e-1)

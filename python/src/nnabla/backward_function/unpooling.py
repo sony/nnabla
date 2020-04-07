@@ -47,6 +47,7 @@ class UnpoolingBackward(BackwardFunction):
 
         # Args
         kernel = self.forward_func.info.args["kernel"]
+        channel_last = self.forward_func.info.args["channel_last"]
 
         # Inputs
         x0 = inputs[0].data
@@ -62,7 +63,7 @@ class UnpoolingBackward(BackwardFunction):
         # Compute
         if prop_down[1]:
             # Optimize by creating max_pooling with indeces
-            g_dy_ = F.unpooling(g_dx0, kernel)
+            g_dy_ = F.unpooling(g_dx0, kernel, channel_last)
             if accum[1]:
                 g_dy += g_dy_
             else:
