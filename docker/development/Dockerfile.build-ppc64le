@@ -126,11 +126,11 @@ RUN umask 0 \
     && bash Miniconda3-latest-Linux-ppc64le.sh -b -p /opt/miniconda3 \
     && rm -rf Miniconda3-latest-Linux-ppc64le.sh \
     && . /opt/miniconda3/bin/activate \
-    && conda create -n nnabla-build${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR} python=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} \
-    && conda activate nnabla-build${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR} \
+    && conda update -n base -c defaults conda \
+    && conda create -n nnabla-build python=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} \
+    && conda activate nnabla-build \
     && conda update --all -y \
-    && CFLAGS="--std=c99" pip install numpy \
-    && CFLAGS="--std=c99" pip install scipy\<1.4 \
+    && conda install -y numpy scipy scikit-image six \
     && pip install -r /tmp/deps/setup_requirements.txt \
     && pip install -r /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/test_requirements.txt \
@@ -138,4 +138,4 @@ RUN umask 0 \
     && cd / \
     && rm -rf /tmp/*
 
-ENV PATH /opt/miniconda3/envs/nnabla-build${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/bin:$PATH
+ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
