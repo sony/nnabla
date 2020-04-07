@@ -205,8 +205,8 @@ class OnnxExporter:
         # opset_6 default op table
         table_op_set_6 = {
             "Dropout": partial(self.Dropout, "6"),
-            "BatchNormalization": partial(self.BatchNormalization, "BatchNormalization", "6"),
-            "FusedBatchNormalization": partial(self.BatchNormalization, "FusedBatchNormalization", "6"),
+            "BatchNormalization": partial(self.BatchNormalization, "6"),
+            "FusedBatchNormalization": partial(self.FusedBatchNormalization, "6"),
             "Reshape": "Reshape",
             "Transpose": "Transpose",
             "Abs": "Abs",
@@ -305,7 +305,7 @@ class OnnxExporter:
         table_op_set_7 = {
             "Dropout": partial(self.Dropout, "7"),
             "BatchNormalization": partial(self.BatchNormalization, "7"),
-            "FusedBatchNormalization": partial(self.BatchNormalization, "FusedBatchNormalization", "7"),
+            "FusedBatchNormalization": partial(self.FusedBatchNormalization, "7"),
             "Less": partial(self.BinaryOperator, "Less", "7"),
             "Greater": partial(self.BinaryOperator, "Greater", "7"),
             "Equal": partial(self.BinaryOperator, "Equal", "7"),
@@ -877,7 +877,7 @@ class OnnxExporter:
             nl.append(n)
         return nl
 
-    def BatchNormalization(self, func_name, opset, func):
+    def BatchNormalization(self, opset, func, func_name="BatchNormalization"):
         nl = []
         if func_name == "BatchNormalization":
             bnp = func.batch_normalization_param
@@ -890,7 +890,7 @@ class OnnxExporter:
         if len(func.input) != len(onnx_order):
             raise ValueError(
                 "The number of BatchNormalization input must be {}".format(len(onnx_order)))
-        for p in inputs[1:4]:
+        for p in inputs[1:]:
             d = sum([d if d > 1 else 0 for d in self._var_dict[p].dim])
             b_shape = nnabla_pb2.Shape()
             b_shape.dim.extend([d])
@@ -959,8 +959,8 @@ class OnnxExporter:
             # Constant
             constant = fork_name("constant")
             c = generate_constant(constant, func.name + "_constant",
-                                TensorProto.FLOAT, [1],
-                                [np.prod(input_shape) / input_shape[axes]])
+                                  TensorProto.FLOAT, [1],
+                                  [np.prod(input_shape) / input_shape[axes]])
             nl.append(c)
 
             # Div
@@ -995,6 +995,43 @@ class OnnxExporter:
             n = generate_reshape(self._model_proto.graph, outputs[0], func.output[0],
                                  output_y_shape)
             nl.append(n)
+        return nl
+
+    def FusedBatchNormalization(self, opset, func):
+        nl = []
+        bnp = func.fused_batch_normalization_param
+        nonlinearity = bnp.nonlinearity
+        inputs = func.input[:]
+        outputs = func.output[:]
+
+        if len(func.input) != 6:
+            raise ValueError(
+                "The number of FusedBatchNormalization input must be 6")
+
+        del func.input[5]
+        bn_out = fork_name(func.input[0]) + "_bn"
+        func.output[0] = bn_out
+        nl.extend(self.BatchNormalization(
+            opset, func, func_name="FusedBatchNormalization"))
+
+        # Add
+        add_out = fork_name(func.input[0]) + "_add"
+        n = onnx.helper.make_node(
+            'Div',
+            [bn_out, inputs[5]],
+            [add_out],
+        )
+        nl.append(n)
+
+        if nonlinearity == "relu":
+            # Relu
+            n = onnx.helper.make_node("Relu",
+                                      [add_out],
+                                      outputs)
+            nl.append(n)
+        else:
+            raise ValueError(
+                "Currently, nonlinearity != relu is not supported!")
         return nl
 
     def Concatenate(self, func):
