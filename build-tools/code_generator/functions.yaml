@@ -108,11 +108,11 @@ Neural Network Layer:
       N-Step LSTM layer.
 
       .. math::
-          {\mathbf f_t} = {\mathbf \sigma}( {\mathbf W_f} *{\mathbf x_t} + {\mathbf U_f}* {\mathbf h_{(t-1)}} + {\mathbf b_f})\\
-          {\mathbf i_t} = {\mathbf \sigma}( {\mathbf W_i} *{\mathbf x_t} + {\mathbf U_i}* {\mathbf h_{(t-1)}} + {\mathbf b_i})\\
-          {\mathbf o_t} = {\mathbf \sigma}( {\mathbf W_o} *{\mathbf x_t} + {\mathbf U_o}* {\mathbf h_{(t-1)}} + {\mathbf b_o})\\
-          {\mathbf c_t} = {\mathbf f_t}\odot {\mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
-          {\mathbf h_t} = {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
+          {\mathbf f_t} &=& {\mathbf \sigma}( {\mathbf W_f} *{\mathbf x_t} + {\mathbf U_f}* {\mathbf h_{(t-1)}} + {\mathbf b_f})\\
+          {\mathbf i_t} &=& {\mathbf \sigma}( {\mathbf W_i} *{\mathbf x_t} + {\mathbf U_i}* {\mathbf h_{(t-1)}} + {\mathbf b_i})\\
+          {\mathbf o_t} &=& {\mathbf \sigma}( {\mathbf W_o} *{\mathbf x_t} + {\mathbf U_o}* {\mathbf h_{(t-1)}} + {\mathbf b_o})\\
+          {\mathbf c_t} &=& {\mathbf f_t}\odot {\mathbf c_{(t-1)}} + {\mathbf i_t}\odot {\mathbf \tanh}({\mathbf W_c}*{\mathbf x_t} + {\mathbf U_c} *{\mathbf h_{(t-1)}} + {\mathbf b_c})\\
+          {\mathbf h_t} &=& {\mathbf o_t} \odot {\mathbf \tanh}({\mathbf c_t}).
 
       We use the following notations to describe the inputs and outputs below.
       :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
@@ -176,10 +176,10 @@ Neural Network Layer:
       N-Step GRU layer.
 
       .. math::
-          {\mathbf r_t} = {\mathbf \sigma}( {\mathbf W_r} *{\mathbf x_t} + {\mathbf U_r}* {\mathbf h_{(t-1)}} + {\mathbf b_r})\\
-          {\mathbf z_t} = {\mathbf \sigma}( {\mathbf W_z} *{\mathbf x_t} + {\mathbf U_z}* {\mathbf h_{(t-1)}} + {\mathbf b_z})\\
-        {\mathbf n_t} = {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}\odot( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
-        {\mathbf h_t} = (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}\odot {\mathbf h_{t-1}}.
+          {\mathbf r_t} &=& {\mathbf \sigma}( {\mathbf W_r} *{\mathbf x_t} + {\mathbf U_r}* {\mathbf h_{(t-1)}} + {\mathbf b_r})\\
+          {\mathbf z_t} &=& {\mathbf \sigma}( {\mathbf W_z} *{\mathbf x_t} + {\mathbf U_z}* {\mathbf h_{(t-1)}} + {\mathbf b_z})\\
+        {\mathbf n_t} &=& {\mathbf \tanh}( {\mathbf W_n}{\mathbf x_t}+ {\mathbf b_{in}}+ {\mathbf r_n}\odot( {\mathbf U_n}{\mathbf h_{t-1}}+ {\mathbf b_{hn}})) \\
+        {\mathbf h_t} &=& (1- {\mathbf z_t})\odot {\mathbf n_t} + {\mathbf z_t}\odot {\mathbf h_{t-1}}.
 
       We use the following notations to describe the inputs and outputs below.
       :math:`T`: sequcne length, :math:`B`: batch size, :math:`I`: input size, :math:`L`: number of layers, :math:`D`: number of directions, can be either 1 or 2, :math:`H`: hidden size.
@@ -5698,7 +5698,7 @@ Validation:
 
     inputs:
       x:
-        doc: Probabilities N-D array. \f$-\infty\f$ to \f$\infty\f$.
+        doc: Probabilities N-D array. :math:`-\infty` to :math:`\infty`.
       target:
         doc: Labels N-D array. Usually set as 0 or 1, but, it allows probability (0
           to 1) as inputs.
@@ -5716,10 +5716,10 @@ Validation:
       The return value is already summed over samples.
     inputs:
       x:
-        doc: Probabilities N-D array. (\f$D_1 \times ... \times D_i \times ... \times
-          D_N\f$)
+        doc: Probabilities N-D array. (:math:`D_1 \times ... \times D_i \times ...
+          \times D_N`)
       target:
-        doc: Labels N-D array. (\f$D_1 \times ... \times 1 \times ... \times D_N\f$)
+        doc: Labels N-D array. (:math:`D_1 \times ... \times 1 \times ... \times D_N`)
         template: TI
     arguments:
       axis:
@@ -5956,8 +5956,13 @@ Unsupported, Special Use:
       the *flow* channel dimension (which is always 2).
 
       .. math::
-          output_{n,c,y,x} = data_{n,c,y',x'} \text{ with }
-          y' = y - flow_{n,1,y,x} \text{ and } x' = x - flow_{n,0,y,x}
+          output_{n,c,y,x} = data_{n,c,y',x'}, 
+
+      where
+
+      .. math::
+          y' &=& y - flow_{n,1,y,x}, \\
+          x' &=& x - flow_{n,0,y,x}.
 
       The output pixel values at :math:`y'` and :math:`x'` locations are
       obtained by bilinear interpolating between the 4 closest pixels of the
