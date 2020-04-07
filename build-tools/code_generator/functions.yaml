@@ -722,11 +722,17 @@ Neural Network Layer:
       kernel:
         doc: Kernel sizes for each spatial axis.
         type: Shape
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: Spread values variable
     function_ids:
       iI: 9
+      iIB: 287
     c_runtime: support
   Embed:
     snake_name: embed
