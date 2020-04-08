@@ -19,6 +19,7 @@ Save network structure into file.
 
 from collections import OrderedDict
 import google.protobuf.text_format as text_format
+import io
 import numpy
 import os
 import re
@@ -516,7 +517,7 @@ def create_proto(contents, include_params=False, variable_batch_size=True):
     return proto
 
 
-def save(filename, contents, include_params=False, variable_batch_size=True, file_like_type=".nntxt"):
+def save(filename, contents, include_params=False, variable_batch_size=True, extension=".nnp"):
     '''Save network definition, inference/training execution
     configurations etc.
 
@@ -536,7 +537,7 @@ def save(filename, contents, include_params=False, variable_batch_size=True, fil
             as batch size, and left as a placeholder
             (more specifically ``-1``). The placeholder dimension will be
             filled during/after loading.
-        file_like_type: if files is file-like object, file_like_type is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
+        extension: if files is file-like object, extension is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
 
     Example:
         The following example creates a two inputs and two
@@ -632,7 +633,7 @@ def save(filename, contents, include_params=False, variable_batch_size=True, fil
     if isinstance(filename, str):
         _, ext = os.path.splitext(filename)
     else:
-        ext = file_like_type
+        ext = extension
     if ext == '.nntxt' or ext == '.prototxt':
         logger.info("Saving {} as prototxt".format(filename))
         proto = create_proto(contents, include_params, variable_batch_size)
@@ -645,21 +646,21 @@ def save(filename, contents, include_params=False, variable_batch_size=True, fil
             file.write(proto.SerializeToString())
     elif ext == '.nnp':
         logger.info("Saving {} as nnp".format(filename))
-        try:
-            tmpdir = tempfile.mkdtemp()
-            save('{}/network.nntxt'.format(tmpdir),
-                 contents, include_params=False, variable_batch_size=variable_batch_size)
 
-            with open('{}/nnp_version.txt'.format(tmpdir), 'w') as file:
-                file.write('{}\n'.format(nnp_version()))
+        nntxt = io.StringIO()
+        save(nntxt, contents, include_params=False,
+             variable_batch_size=variable_batch_size, extension='.nntxt')
+        nntxt.seek(0)
 
-            save_parameters('{}/parameter.protobuf'.format(tmpdir))
+        version = io.StringIO()
+        version.write('{}\n'.format(nnp_version()))
+        version.seek(0)
 
-            with get_file_handle_save(filename, ext) as nnp:
-                nnp.write('{}/nnp_version.txt'.format(tmpdir),
-                          'nnp_version.txt')
-                nnp.write('{}/network.nntxt'.format(tmpdir), 'network.nntxt')
-                nnp.write('{}/parameter.protobuf'.format(tmpdir),
-                          'parameter.protobuf')
-        finally:
-            shutil.rmtree(tmpdir)
+        param = io.BytesIO()
+        save_parameters(param, extension='.protobuf')
+        param.seek(0)
+
+        with get_file_handle_save(filename, ext) as nnp:
+            nnp.writestr('nnp_version.txt', version.read())
+            nnp.writestr('network.nntxt', nntxt.read())
+            nnp.writestr('parameter.protobuf', param.read())
