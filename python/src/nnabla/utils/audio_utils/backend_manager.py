@@ -46,23 +46,28 @@ class AudioUtilsBackendManager(object):
                     self.backend = backend
                     break
             else:
-                raise ImportError("No backend module is found. "
-                                  "At least you must install pydub in your environment.")
+                try:
+                    import scipy.io.wavfile
+                except ImportError:
+                    raise ImportError("No backend module is found. "
+                                      "At least you must install scipy in your environment.")
 
             self._loaded = True
 
     def _import_backend(self, backend):
         try:
             module = importlib.import_module(
-                "audio_utils.{}_utils".format(backend))
+                "nnabla.utils.audio_utils.{}_utils".format(backend))
         except ImportError:
-            logger.error("Import {} as audio backend failed".format(backend))
             # log backend status in _check_backend
             module = None
 
         self.backends[backend] = module
 
     def _check_backend(self, backend):
+        if backend is None:
+            raise ModuleNotFoundError("No available audio backends in"
+                                      " your environment.")
         if self.backends.get(backend, None) is None:
             raise ValueError(
                 "{} is not found in your environment.".format(backend))

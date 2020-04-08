@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import, division
 
-from PIL import Image
 import warnings
 import os
 import math
@@ -65,7 +64,8 @@ def auread(path, channel_first=False, raw_format_param=None):
 
     _auread_before(path, raw_format_param)
 
-    audio_format = os.path.splitext(path)[-1][1:]
+    filepath = path if isinstance(path, str) else path.name
+    audio_format = os.path.splitext(filepath)[-1][1:]
     if audio_format == 'raw':
         audio = AudioSegment.from_file(
             path, format=audio_format, **raw_format_param)
@@ -98,7 +98,8 @@ def ausave(path, audio_arr, channel_first=False, frame_rate=48000):
     if str(audio_arr.dtype).find('float') > -1:
         raise ValueError(
             "pydub backend does not support save .wav file with float value.")
-    audio_format = os.path.splitext(path)[-1][1:]
+    filepath = path if isinstance(path, str) else path.name
+    audio_format = os.path.splitext(filepath)[-1][1:]
     audio_segment = get_audiosegment_from_nparray(
         audio_arr, frame_rate=frame_rate)
 
