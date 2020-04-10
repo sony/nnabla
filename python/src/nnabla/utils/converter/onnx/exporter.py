@@ -199,7 +199,7 @@ class OnnxExporter:
         self._output_types = {}
         self._broadcast_target = {}
         self._executor = None
-        self._opset = int(re.sub("\D", "", opset))
+        self._opset = 7
         # Dictionary used to convert NNabla function names to ONNX op_type
 
         # opset_6 default op table
@@ -223,8 +223,8 @@ class OnnxExporter:
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
             "GlobalAveragePooling": "GlobalAveragePool",
-            "MaxPooling": partial(self.BasePooling, 'MaxPool', "6"),
-            "AveragePooling": partial(self.BasePooling, 'AveragePool', "6"),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool'),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool'),
             "Add2": partial(self.BinaryOperator, "Add", "6"),
             "BatchMatmul": self.BatchMatmul,
             "LogicalNot": "Not",
@@ -323,7 +323,7 @@ class OnnxExporter:
             "Minimum2": partial(self.ElementWiseCmp, "Minimum2", '7'),
             "MinimumScalar": partial(self.ElementWiseCmp, "MinimumScalar", '7'),
             "MaximumScalar": partial(self.ElementWiseCmp, "MaximumScalar", '7'),
-            "SumPooling": partial(self.SumPooling, '7'),
+            "SumPooling": self.SumPooling,
             "Unpooling": self.Unpooling_7,
             "BinaryConnectAffine": partial(self.BaseAffine, "BinaryConnectAffine", '7'),
             "BinaryWeightAffine": partial(self.BinaryWeightAffine, '7'),
@@ -350,7 +350,6 @@ class OnnxExporter:
             "GreaterScalar": partial(self.GreaterScalar, '7'),
             "LessEqualScalar": partial(self.LessEqualScalar, '7'),
             "LessScalar": partial(self.LessScalar, '7'),
-            "AveragePooling": partial(self.BasePooling, 'AveragePool', "7"),
             "PReLU": partial(self.PReLU, '7'),
         }
         table_op_set_7 = dict(table_op_set_6, **table_op_set_7)
@@ -388,42 +387,62 @@ class OnnxExporter:
             "Round": "Round",
             "Interpolate": self.Interpolate,
             "Pad": partial(self.Pad, "11"),
-            "MaxPooling": partial(self.BasePooling, 'MaxPool', "11"),
-            "AveragePooling": partial(self.BasePooling, 'AveragePool', "11"),
-            "SumPooling": partial(self.SumPooling, '11'),
             "Unpooling": self.Unpooling_11,
         }
         table_op_set_11 = dict(table_op_set_10, **table_op_set_11)
 
         # opset_ support for SNPE
-        table_op_set_6_x = {
+        table_op_set_snpe = {
             "Affine": partial(self.BaseAffine, "Affine", '6x'),
             "MulScalar": partial(self.ElementWiseScalar, "Mul", "6x"),
             "AddScalar": partial(self.ElementWiseScalar, "Add", "6x"),
             "Tanh": self.Tanh,
-            "ReLU6": partial(self.ReLU6, "6x")
+            "ReLU6": partial(self.ReLU6, "6x"),
+            "MaxPooling": partial(self.BasePooling_6x, 'MaxPool', '6x'),
+            "AveragePooling": partial(self.BasePooling_6x, 'AveragePool', '6x'),
+            "SumPooling": self.SumPooling_6x,
         }
-        table_op_set_6_x = dict(table_op_set_6, **table_op_set_6_x)
+        table_op_set_snpe = dict(table_op_set_6, **table_op_set_snpe)
+
+        # opset_ support for TensorRT
+        table_op_set_tensorrt = {
+            "MaxPooling": partial(self.BasePooling_6x, 'MaxPool', '11'),
+            "AveragePooling": partial(self.BasePooling_6x, 'AveragePool', '11'),
+            "SumPooling": self.SumPooling_6x,
+        }
+        table_op_set_tensorrt = dict(table_op_set_11, **table_op_set_tensorrt)
 
         opver_impl_map = {
             "6": table_op_set_6,
             "7": table_op_set_7,
             "9": table_op_set_9,
-            "6x": table_op_set_6_x,
+            "snpe": table_op_set_snpe,
             "10": table_op_set_10,
-            "11": table_op_set_11
+            "11": table_op_set_11,
+            "tensorrt": table_op_set_tensorrt
         }
-        try:
+        if opset.isdigit():
             opset = int(opset)
             if opset <= 6:
                 self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
                     "6")
+                self._opset = 6
             else:
-                self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
-                    str(opset), table_op_set_6_x)
-        except:
-            self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
-                opset, table_op_set_6_x)
+                if str(opset) in opver_impl_map:
+                    self.nnabla_function_type_to_onnx_optype = opver_impl_map.get(
+                        str(opset))
+                    self._opset = opset
+                else:
+                    self.nnabla_function_type_to_onnx_optype = table_op_set_7
+                    self._opset = 7
+        elif opset.lower() == 'snpe' or opset.lower() == '6x':
+            self.nnabla_function_type_to_onnx_optype = table_op_set_snpe
+            self._opset = 6
+        elif opset.lower() == 'tensorrt':
+            self.nnabla_function_type_to_onnx_optype = table_op_set_tensorrt
+            self._opset = 11
+        else:
+            raise ValueError("Currently, No support {}".format(opset))
 
     def Dropout(self, opset, func):
         # Since only export executor network from nnp,
@@ -789,7 +808,7 @@ class OnnxExporter:
 
         return nl
 
-    def BasePooling(self, onnx_func, opset, func):
+    def BasePooling(self, onnx_func, func):
         nl = []
         input = func.input[0]
         output = func.output[0]
@@ -830,20 +849,7 @@ class OnnxExporter:
 
         pads = [d for d in pads]
         if ignore_border:
-            pads = pads * 2
-            n = onnx.helper.make_node(
-                onnx_func,
-                [input],
-                [output],
-                kernel_shape=k,
-                strides=s,
-                pads=pads
-            )
-            if onnx_func == 'AveragePool' and opset != '6':
-                c = onnx.helper.make_attribute(
-                    'count_include_pad', including_pad)
-                n.attribute.extend([c])
-            nl.append(n)
+            pads = ([0, 0] + pads) * 2
         else:
             new_input_shape = [shape + pads[i]
                                for i, shape in enumerate(input_shape[-len_kernel:])]
@@ -851,22 +857,94 @@ class OnnxExporter:
                     for kk, ss, i in zip(k, s, new_input_shape)]
             pads = [0, 0] + pads + [0, 0] + subs
 
-            if any(pads):
-                pad_out = fork_name(input) + "_pad"
-                pad_nodes = generate_pad(
-                    input, pad_out, pad_mode, pads, value, opset)
-                nl.extend(pad_nodes)
-                input = pad_out
-
+        if any(pads):
+            pad_out = fork_name(input) + "_pad"
             n = onnx.helper.make_node(
-                onnx_func,
+                'Pad',
                 [input],
-                [output],
-                kernel_shape=k,
-                strides=s,
-                pads=[0] * len_kernel * 2
+                [pad_out],
+                mode=pad_mode,
+                value=value,
+                pads=pads
             )
+            input = pad_out
             nl.append(n)
+
+        n = onnx.helper.make_node(
+            onnx_func,
+            [input],
+            [output],
+            kernel_shape=k,
+            strides=s,
+            pads=[0] * len_kernel * 2
+        )
+        nl.append(n)
+
+        if diff > 2:
+            output_shape = np.array(self._var_dict[func.output[0]].dim)
+            n = generate_reshape(self._model_proto.graph, output, func.output[0],
+                                 output_shape)
+            nl.append(n)
+        return nl
+
+    def BasePooling_6x(self, onnx_func, opset, func):
+        nl = []
+        input = func.input[0]
+        output = func.output[0]
+        input_shape = self._var_dict[input].dim
+        output_shape = self._var_dict[func.output[0]].dim
+        opset = int(re.sub("\D", "", opset))
+
+        if onnx_func == 'MaxPool':
+            k = func.max_pooling_param.kernel.dim
+            s = func.max_pooling_param.stride.dim
+            pads = func.max_pooling_param.pad.dim
+            ignore_border = func.max_pooling_param.ignore_border
+        elif onnx_func == 'AveragePool':
+            k = func.average_pooling_param.kernel.dim
+            s = func.average_pooling_param.stride.dim
+            pads = func.average_pooling_param.pad.dim
+            ignore_border = func.average_pooling_param.ignore_border
+            including_pad = func.average_pooling_param.including_pad
+        else:
+            raise ValueError('Internal error!')
+
+        len_input = len(input_shape)
+        len_kernel = len(k)
+        diff = len_input - len_kernel
+        if diff > 2:
+            input_shape_reshape = np.concatenate((np.array(
+                [input_shape[0], np.prod(input_shape[1:diff])]), np.array(input_shape[diff:])))
+            rout = fork_name(input) + "_reshape"
+            n = generate_reshape(self._model_proto.graph, input, rout,
+                                 input_shape_reshape)
+            nl.append(n)
+            input = rout
+            output = fork_name(func.output[0]) + "_reshape"
+
+        pads = [d for d in pads]
+        if ignore_border:
+            pads = pads * 2
+        else:
+            new_input_shape = [shape + pads[i]
+                               for i, shape in enumerate(input_shape[-len_kernel:])]
+            subs = [kk - i % ss if i % ss != 0 else kk - ss
+                    for kk, ss, i in zip(k, s, new_input_shape)]
+            pads = pads + subs
+
+        n = onnx.helper.make_node(
+            onnx_func,
+            [input],
+            [output],
+            kernel_shape=k,
+            strides=s,
+            pads=pads
+        )
+        if onnx_func == 'AveragePool' and opset > 6:
+            c = onnx.helper.make_attribute(
+                'count_include_pad', including_pad)
+            n.attribute.extend([c])
+        nl.append(n)
 
         if diff > 2:
             output_shape = np.array(self._var_dict[func.output[0]].dim)
@@ -1609,7 +1687,7 @@ class OnnxExporter:
 
         return nl
 
-    def SumPooling(self, opset, func):
+    def SumPooling(self, func):
         # SumPooling gets converted to AveragePooling+Mul.
         # Mul is used to counter the division in AveragePooling
         # since SumPooling is just summing the values in each kernel.
@@ -1646,9 +1724,16 @@ class OnnxExporter:
             pads = [0, 0] + pads + [0, 0] + subs
 
         pad_out = fork_name(input) + "_pad"
-        pad_nodes = generate_pad(input, pad_out, 'constant', pads, 0.0, opset)
+        n = onnx.helper.make_node(
+            'Pad',
+            [input],
+            [pad_out],
+            mode='constant',
+            value=0.0,
+            pads=pads
+        )
         input = pad_out
-        nl.extend(pad_nodes)
+        nl.append(n)
 
         apout = fork_name(input) + "_ap"
         n = onnx.helper.make_node(
@@ -1676,6 +1761,75 @@ class OnnxExporter:
         nl.append(c)
         n = onnx.helper.make_node("Mul",
                                   [rout, mulout],
+                                  func.output)
+        nl.append(n)
+        return nl
+
+    def SumPooling_6x(self, func):
+        # SumPooling gets converted to AveragePooling+Mul.
+        # Mul is used to counter the division in AveragePooling
+        # since SumPooling is just summing the values in each kernel.
+        # Copy kernel, stride, and pads values
+        nl = []
+        spp = func.sum_pooling_param
+        input = func.input[0]
+        output = func.output[0]
+        input_shape = list(self._var_dict[input].dim[:])
+        k = spp.kernel.dim
+        s = spp.stride.dim
+        pads = spp.pad.dim
+        ignore_border = spp.ignore_border
+
+        len_input = len(input_shape)
+        len_kernel = len(k)
+        diff = len_input - len_kernel
+        if diff > 2:
+            input_shape_reshape = np.concatenate((np.array(
+                [input_shape[0], np.prod(input_shape[1:diff])]), np.array(input_shape[diff:])))
+            rout = fork_name(input) + "_reshape"
+            n = generate_reshape(self._model_proto.graph, input, rout,
+                                 input_shape_reshape)
+            nl.append(n)
+            input = rout
+            output = fork_name(func.output[0]) + "_reshape"
+
+        pads = [d for d in pads]
+        if ignore_border:
+            pads = pads * 2
+        else:
+            new_input_shape = [shape + pads[i]
+                               for i, shape in enumerate(input_shape[-len_kernel:])]
+            subs = [kk - i % ss if i % ss != 0 else kk - ss
+                    for kk, ss, i in zip(k, s, new_input_shape)]
+            pads = pads + subs
+
+        n = onnx.helper.make_node(
+            'AveragePool',
+            [input],
+            [output],
+            kernel_shape=k,
+            strides=s,
+            pads=pads,
+            count_include_pad=1
+        )
+        nl.append(n)
+
+        if diff > 2:
+            rout = fork_name(func.output[0]) + "_reshape"
+            output_shape = np.array(self._var_dict[func.output[0]].dim)
+            n = generate_reshape(self._model_proto.graph, output, rout,
+                                 output_shape)
+            nl.append(n)
+            input = rout
+
+        # Counter the averaging process by multiplying kernel size
+        kernel_size = np.prod(spp.kernel.dim)
+        mulout = fork_name(input) + "_kernel"
+        c = generate_scalar_constant(
+            mulout, func.name + "_kernel", kernel_size)
+        nl.append(c)
+        n = onnx.helper.make_node("Mul",
+                                  [input, mulout],
                                   func.output)
         nl.append(n)
         return nl

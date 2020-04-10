@@ -363,6 +363,8 @@ File format converter
                             [export] config target function list.
       -d DEFINE_VERSION, --define_version
                             [export][ONNX] define onnx opset version. e.g. opset_6
+                            [export][ONNX] define convert to onnx for SNPE. e.g. opset_snpe
+                            [export][ONNX] define convert to onnx for TensorRT. e.g. opset_tensorrt
                             [export][NNB] define binary format version. e.g. nnb_3
       --api API             [export][NNB] Set API Level to convert to, default is highest API Level.
 
