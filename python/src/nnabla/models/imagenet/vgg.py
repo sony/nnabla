@@ -54,8 +54,8 @@ class VGG(ImageNetBase):
         self._KEY_VARIABLE = {
             'classifier': 'VGG{}/Affine_3'.format(num_layers),
             'pool': 'VGG{}/MaxPooling_5'.format(num_layers),
-            'lastconv': 'VGG{}/Convolution_12'.format(num_layers),
-            'lastconv+relu': 'VGG{}/ReLU_12'.format(num_layers),
+            'lastconv': 'VGG16/Convolution_13' if num_layers == 16 else 'VGG{}/Convolution_12'.format(num_layers),
+            'lastconv+relu': 'VGG16/ReLU_13' if num_layers == 16 else 'VGG{}/ReLU_12'.format(num_layers),
             'lastfeature': 'VGG{}/Affine_2'.format(num_layers),
             }
 
