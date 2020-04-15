@@ -257,7 +257,7 @@ def grad(outputs, inputs, grad_outputs=None, persistent_outputs=[], bind_grad_ou
         bind_grad_output (`bool`): Bind data to grad of input Varaible. This is useful for the case where one wants to use the backward graph for training a neural network using the first-order gradients only. Default is False.
 
     Returns
-        List of :obj:`~nnabla.Variable`. 
+        List of :obj:`~nnabla.Variable`s. 
 
         If the backpropagation does not reach input(s), the corresponding returned value(s) are None.
 
