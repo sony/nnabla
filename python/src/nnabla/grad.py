@@ -252,7 +252,7 @@ def grad(outputs, inputs, grad_outputs=None, persistent_outputs=[], bind_grad_ou
     Args: 
         outputs (list of :obj:`~nnabla.Variable` or :obj:`~nnabla.Variable`): Outputs of the differentiable function.
         inputs (list of :obj:`~nnabla.Variable` or :obj:`~nnabla.Variable`): Inputs w.r.t. which the gradients of outputs are computed.
-        grad_outputs (None, scalar, :obj:`numpy.ndarray`, :obj:`nnabla._nd_array.NdArray`, or list of scalar, :obj:`numpy.ndarray`, or :obj:`nnabla._nd_array.NdArray`, ): Gradient outputs corresponding to outputs. This is same as the grad argument of :meth:`~nnabla.Variable.backward`. Default is None, so the one is used as the in-coming gradient at the very end of the Variable in the backward graph.
+        grad_outputs (None, scalar, :obj:`numpy.ndarray`, :obj:`nnabla._nd_array.NdArray`, or list of scalar, :obj:`numpy.ndarray`, or :obj:`nnabla._nd_array.NdArray`, ): Gradient outputs corresponding to outputs. This is same as the grad argument of :meth:`~nnabla.Variable.backward`. Default is None, so the one is used as the in-coming gradient at the very beginning of the Variable in the backward graph.
         persistent_outputs (list of `bool`): Outputs become persistent accordingly. If not specified, all outputs become persistent.
         bind_grad_output (`bool`): Bind data to grad of input Varaible. This is useful for the case where one wants to use the backward graph for training a neural network using the first-order gradients only. Default is False.
 
