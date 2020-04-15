@@ -114,8 +114,6 @@ class Grad(object):
         # TODO: address auto_forward is very slow. It may be python overhead since small diff when BS is large.
         # TODO: address auto_forward consumes lots of memory, need to call v.get_unlinked_variable()?
         # TODO: address auto_forward consumes lots of memory, need to use NdArray as inputs?
-        # TODO: NHWC format
-        # TODO: Half
         # TODO: address `set default context`
 
         # Check outputs/inputs
