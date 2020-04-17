@@ -203,12 +203,18 @@ class GraphProfiler:
             this class stops measuring and goes to next function, unless the total times of measurement are less than n_run.
             Default value is 1 [sec].
         time_scale (str):
-
             Time scale to display. ['m', 'u', 'n'] (which stands for 'mili', 'micro' and 'nano')
+        backward_accum(bool):
+            Accumulation flag passed to the each backward function. The flag will fulfill the all accumulation flags
+            with the same value of backward_accum. This flag is only valid for the time measurement of each function.
+            For whole graph comutation, the NNabla graph engine set the appropriate accumulation flags to functions.
+            Pay attention to inplace flag for your graph because accumulation and inplace flags cannot be set
+            at the same time. If even one inplace flag is true in your graph, this backward_accum must be false.
+            Default value is False.
     """
 
     def __init__(self, graph, device_id, ext_name, solver=None, n_run=100, max_measure_execution_time=1,
-                 time_scale="m"):
+                 time_scale="m", backward_accum=False):
         self.graph = graph
         # if solver is None, training time (forward + backward + update) is not calculated
         self.solver = solver
@@ -220,6 +226,7 @@ class GraphProfiler:
         self.time_scale = time_scale
         self.result = dict()
         self.name2val = {v: k for k, v in nn.get_parameters().items()}
+        self.backward_accum = backward_accum
 
         if self.n_run < 1:
             raise AssertionError("n_run must be bigger than 1")
@@ -252,19 +259,22 @@ class GraphProfiler:
         return mean_time, measured_count
 
     def _time_profiling(self, f, target_process):
-        if target_process is "forward":
-            process = f.forward
-        elif target_process is "backward":
-            process = f.backward
-        else:
-            raise NotImplementedError(
-                "target process must be [forward, backward]")
         # Zero-ing to avoid invalid memory access in some layers
         # such as softmax cross entropy.
         _zero_variables(f.inputs)
         _zero_variables(f.outputs)
-        mean_time, measured_count = self._measure_execution_time(
-            process, f.inputs, f.outputs)
+
+        if target_process is "forward":
+            mean_time, measured_count = self._measure_execution_time(
+                f.forward, f.inputs, f.outputs)
+        elif target_process is "backward":
+            accum = [self.backward_accum] * len(f.inputs)
+            mean_time, measured_count = self._measure_execution_time(
+                f.backward, f.inputs, f.outputs, accum)
+        else:
+            raise NotImplementedError(
+                "target process must be [forward, backward]")
+
         # Releasing array memory to avoid the increasing memory usage
         # (`NdArray.zero()` releases any device memory internally.)
         _zero_variables(f.inputs)
