@@ -435,6 +435,11 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.solver = S.Adam(o.solver.adam_param.alpha, o.solver.adam_param.beta1,
                                       o.solver.adam_param.beta2, o.solver.adam_param.eps)
             init_lr = o.solver.adam_param.alpha
+        elif o.solver.type == 'AdamW':
+            optimizer.solver = S.AdamW(o.solver.adamw_param.alpha, o.solver.adamw_param.beta1,
+                                       o.solver.adamw_param.beta2, o.solver.adamw_param.eps,
+                                       o.solver.adamw_param.wd)
+            init_lr = o.solver.adamw_param.alpha
         elif o.solver.type == 'Adamax':
             optimizer.solver = S.Adamax(o.solver.adamax_param.alpha, o.solver.adamax_param.beta1,
                                         o.solver.adamax_param.beta2, o.solver.adamax_param.eps)
@@ -458,6 +463,10 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.solver = S.Eve(
                 p.alpha, p.beta1, p.beta2, p.beta3, p.k, p.k2, p.eps)
             init_lr = p.alpha
+        elif o.solver.type == 'Lars':
+            optimizer.solver = S.Lars(o.solver.lars_param.lr, o.solver.lars_param.momentum,
+                                      o.solver.lars_param.coefficient, o.solver.lars_param.eps)
+            init_lr = o.solver.lars_param.lr
         elif o.solver.type == 'Momentum':
             optimizer.solver = S.Momentum(
                 o.solver.momentum_param.lr, o.solver.momentum_param.momentum)
@@ -473,6 +482,10 @@ def _create_optimizer(ctx, o, networks, datasets):
         elif o.solver.type == 'Sgd' or o.solver.type == 'SGD':
             optimizer.solver = S.Sgd(o.solver.sgd_param.lr)
             init_lr = o.solver.sgd_param.lr
+        elif o.solver.type == 'SgdW':
+            optimizer.solver = S.SgdW(o.solver.sgdw_param.lr, o.solver.sgdw_param.momentum,
+                                      o.solver.sgdw_param.wd)
+            init_lr = o.solver.sgdw_param.lr
         else:
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
