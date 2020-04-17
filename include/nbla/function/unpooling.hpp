@@ -24,7 +24,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Unpooling, const vector<int> &);
+NBLA_REGISTER_FUNCTION_HEADER(Unpooling, const vector<int> &, bool);
 
 /** Unpooling function which upsample a feature map with an integer factor for
 each dimension.
@@ -46,17 +46,19 @@ Outputs:
 */
 
 template <typename T>
-class Unpooling : public BaseFunction<const vector<int> &> {
+class Unpooling : public BaseFunction<const vector<int> &, bool> {
 protected:
   vector<int> kernel_;
+  bool channel_last_;
 
 public:
-  Unpooling(const Context &ctx, const vector<int> &kernel)
-      : BaseFunction(ctx, kernel), kernel_(kernel) {}
+  Unpooling(const Context &ctx, const vector<int> &kernel, bool channel_last)
+      : BaseFunction(ctx, kernel, channel_last), kernel_(kernel),
+        channel_last_(channel_last) {}
 
   virtual ~Unpooling() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Unpooling(this->ctx_, this->kernel_);
+    return create_Unpooling(this->ctx_, this->kernel_, this->channel_last_);
   }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
