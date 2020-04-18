@@ -445,7 +445,7 @@ def _train(args, config):
                     timeinfo, max_iteration, last_iteration, iteration + 1)
                 callback.update_time_train(prediction=timeinfo.estimate_time)
 
-                if config.timelimit > 0 and timeinfo.estimate_time > config.timelimit:
+                if 0 < config.timelimit < timeinfo.estimate_time:
                     logger.log(99, 'Expected training time ({:.3f}s) will exceed time limit ({}s).'.format(
                         timeinfo.estimate_time, config.timelimit))
                     return False, False
@@ -487,7 +487,7 @@ def _train(args, config):
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
                             timeinfo.past_time, timeinfo.estimate_time))
 
-                        if callback.check_training_time(args, config, timeinfo, epoch, last_epoch) == False:
+                        if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
                             _save_parameters(args, 'current', epoch, True)
                             return False, True
 

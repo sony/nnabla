@@ -13,13 +13,12 @@
 # limitations under the License.
 from __future__ import absolute_import
 from nnabla.utils.nnp_graph import NnpNetworkPass
-from nnabla import logger
 from .base import ImageNetBase
 
 
 class DenseNet(ImageNetBase):
 
-    '''
+    """
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
 
@@ -32,7 +31,7 @@ class DenseNet(ImageNetBase):
         * `Huang et al., Densely Connected Convolutional Networks.
           <https://arxiv.org/abs/1608.06993>`_
 
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'DenseNet/Affine',

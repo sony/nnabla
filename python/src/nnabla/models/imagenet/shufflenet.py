@@ -20,7 +20,7 @@ from .base import ImageNetBase
 
 
 class ShuffleNet(ImageNetBase):
-    '''
+    """
     Model for architecture ShuffleNet, ShuffleNet-0.5x and ShufffleNet-2.0x.
 
     Args:
@@ -38,7 +38,7 @@ class ShuffleNet(ImageNetBase):
           <https://arxiv.org/abs/1707.01083>`_
         * `Ma, Zhang. et al., ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design.
           <https://arxiv.org/abs/1807.11164>`_
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Affine',
@@ -92,27 +92,27 @@ class ShuffleNet(ImageNetBase):
 
 
 class ShuffleNet10(ShuffleNet):
-    '''ShuffleNet10
+    """ShuffleNet10
         An alias of :obj:`ShuffleNet` `(10)`.
-    '''
+    """
 
     def __init__(self):
         super(ShuffleNet10, self).__init__(10)
 
 
 class ShuffleNet05(ShuffleNet):
-    '''ShuffleNet05
+    """ShuffleNet05
         An alias of :obj:`ShuffleNet` `(5)`.
-    '''
+    """
 
     def __init__(self):
         super(ShuffleNet05, self).__init__(5)
 
 
 class ShuffleNet20(ShuffleNet):
-    '''ShuffleNet20
+    """ShuffleNet20
         An alias of :obj:`ShuffleNet` `(20)`.
-    '''
+    """
 
     def __init__(self):
         super(ShuffleNet20, self).__init__(20)

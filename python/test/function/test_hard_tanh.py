@@ -25,7 +25,7 @@ def ref_hard_tanh(x):
 
 
 def ref_hard_tanh_backward(x, dy):
-    return np.array([dy if i <= 1 and i >= -1 else 0 for i in np.nditer(x)])
+    return np.array([dy if -1 <= i <= 1 else 0 for i in np.nditer(x)])
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)

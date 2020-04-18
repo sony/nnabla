@@ -18,7 +18,7 @@ Utilities for NNabla extensions.
 
 
 def import_extension_module(ext_name):
-    '''
+    """
     Import an extension module by name.
 
     The extension modules are installed under the `nnabla_ext` package as
@@ -40,7 +40,7 @@ def import_extension_module(ext_name):
             ext.device_synchronize(available_devices[0])
             ext.clear_memory_cache()
 
-    '''
+    """
     import importlib
     try:
         return importlib.import_module('.' + ext_name, 'nnabla_ext')
@@ -51,7 +51,7 @@ def import_extension_module(ext_name):
 
 
 def list_extensions():
-    '''
+    """
     List up available extensions.
 
     Note:
@@ -61,7 +61,7 @@ def list_extensions():
     Returns: list of str
         Names of available extensions.
 
-    '''
+    """
     import nnabla_ext.cpu
     from os.path import dirname, join, realpath
     from os import listdir

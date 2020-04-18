@@ -19,7 +19,7 @@ from .base import ImageNetBase
 
 
 class GoogLeNet(ImageNetBase):
-    '''
+    """
     GoogLeNet model.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -32,7 +32,7 @@ class GoogLeNet(ImageNetBase):
         * `Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed, Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich: Going Deeper with Convolutions.
           <https://arxiv.org/pdf/1409.4842.pdf>`_
 
-    '''
+    """
     _KEY_VARIABLE = {
         'classifier': 'Affine_5',
         'pool': 'AveragePooling_3',

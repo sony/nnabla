@@ -21,7 +21,7 @@ from .base import ImageNetBase
 
 class ResNeXt(ImageNetBase):
 
-    '''
+    """
     ResNeXt architectures for 50 and 101 of number of layers.
 
     Args:
@@ -39,7 +39,7 @@ class ResNeXt(ImageNetBase):
         * `Xie, Girshick. et al., Aggregated Residual Transformations for Deep Neural Networks.
           <https://arxiv.org/abs/1611.05431>`_
         * `ResNeXt: Aggregated Residual Transformations for Deep Neural Networks on GitHub <https://github.com/facebookresearch/ResNeXt>`_
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Affine',
@@ -86,18 +86,18 @@ class ResNeXt(ImageNetBase):
 
 
 class ResNeXt50(ResNeXt):
-    '''ResNeXt50
+    """ResNeXt50
         An alias of :obj:`ResNeXt` `(50)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNeXt50, self).__init__(50)
 
 
 class ResNeXt101(ResNeXt):
-    '''ResNeXt101
+    """ResNeXt101
         An alias of :obj:`ResNeXt` `(101)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNeXt101, self).__init__(101)

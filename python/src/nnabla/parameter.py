@@ -38,8 +38,8 @@ root_scope = current_scope
 
 
 def get_current_parameter_scope():
-    '''Returns current parameter scope.
-    '''
+    """Returns current parameter scope.
+    """
     global current_scope
     return current_scope
 
@@ -149,7 +149,7 @@ def get_parameter(key):
 
 
 def pop_parameter(key):
-    '''Remove and get parameter by key.
+    """Remove and get parameter by key.
 
     Args:
         key(str): Key of parameter.
@@ -157,7 +157,7 @@ def pop_parameter(key):
     Returns: ~nnabla.Variable
         Parameter if key found, otherwise None.
 
-    '''
+    """
     names = key.split('/')
     if len(names) > 1:
         with parameter_scope(names[0]):

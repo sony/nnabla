@@ -19,7 +19,7 @@ from .base import ImageNetBase
 
 
 class InceptionV3(ImageNetBase):
-    '''
+    """
     InceptionV3 architecture.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -31,7 +31,7 @@ class InceptionV3(ImageNetBase):
     References:
         * `Szegedy et al., Rethinking the Inception Architecture for Computer Vision.
           <https://arxiv.org/abs/1512.00567>`_
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Affine',

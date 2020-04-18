@@ -11,7 +11,7 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
     """
     Single `Convolution -> BatchNormalization` pass is folded into one `Convolution`.
 
-    If there is a `Convolution -> BatchNormalization` pass, fold the batch normalization paramters to the kernel and bias (if it exists) of the preceeding convolution, then skip the batch normalization following the convolution.
+    If there is a `Convolution -> BatchNormalization` pass, fold the batch normalization parameters to the kernel and bias (if it exists) of the preceding convolution, then skip the batch normalization following the convolution.
 
     Args:
         black_list (list): Black list of the function list.
@@ -56,7 +56,7 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
                     i0 = func.inputs[0]
                     bn_func = func
                     # Test mode check
-                    if bn_func.info.args["batch_stat"] == False:
+                    if not bn_func.info.args["batch_stat"]:
                         # `Target Func -> BN` check from BN
                         if i0.parent.info.type_name in self.inner_prod_functions:
                             nn.logger.info("{} is skipped.".format(func.name))
@@ -75,7 +75,7 @@ class BatchNormalizationFoldedConverter(IdentityConverter):
                         if bn_func.name == "BatchNormalization":
 
                             # Test mode check
-                            if bn_func.info.args["batch_stat"] == False:
+                            if not bn_func.info.args["batch_stat"]:
 
                                 # Perform `Target Func -> BN` conversion
                                 nn.logger.info("BatchNormalization parameters are folded to "

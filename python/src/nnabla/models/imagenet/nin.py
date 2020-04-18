@@ -21,7 +21,7 @@ from .base import ImageNetBase
 
 
 class NIN(ImageNetBase):
-    '''
+    """
     NIN(Network In Network) architecture.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -36,7 +36,7 @@ class NIN(ImageNetBase):
         * `Lin et al., Network In Network.
           <https://arxiv.org/abs/1312.4400>`_
 
-    '''
+    """
     _KEY_VARIABLE = {
         'classifier': 'NIN/Reshape',
         'pool': 'NIN/AveragePooling',

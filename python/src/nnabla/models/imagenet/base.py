@@ -19,16 +19,16 @@ from ..utils import *
 
 class ImageNetBase(object):
 
-    '''
+    """
     Most of ImageNet pretrained models are inherited from this class
     so that it provides some common interfaces.
-    '''
+    """
 
     @property
     def category_names(self):
-        '''
+        """
         Returns category names of 1000 ImageNet classes.
-        '''
+        """
         if hasattr(self, '_category_names'):
             return self._category_names
         with open(os.path.join(os.path.dirname(__file__), 'category_names.txt'), 'r') as fd:
@@ -37,21 +37,21 @@ class ImageNetBase(object):
 
     @property
     def input_shape(self):
-        '''
+        """
         Should returns default image size (channel, height, width) as a tuple.
-        '''
+        """
         return self._input_shape()
 
     def _input_shape(self):
         raise NotImplementedError('input size is not implemented')
 
     def _load_nnp(self, rel_name, rel_url):
-        '''
+        """
             Args:
                 rel_name: relative path to where downloaded nnp is saved.
                 rel_url: relative url path to where nnp is downloaded from.
 
-            '''
+            """
         from nnabla.utils.download import download
         path_nnp = os.path.join(
                 get_model_home(), 'imagenet/{}'.format(rel_name))
@@ -89,7 +89,7 @@ class ImageNetBase(object):
             callback.check_average_pooling_global(name, by_type=by_type)
 
     def __call__(self, input_var=None, use_from=None, use_up_to='classifier', training=False, force_global_pooling=False, check_global_pooling=True, returns_net=False, verbose=0):
-        '''
+        """
         Create a network (computation graph) from a loaded model.
 
         Args:
@@ -113,5 +113,5 @@ class ImageNetBase(object):
                 When ``True``, it returns a :obj:`~nnabla.utils.nnp_graph.NnpNetwork` object. Otherwise, It only returns the last variable of the constructed network. The default is ``False``.
             verbose (bool, or int):
                 Verbose level. With ``0``, it says nothing during network construction.
-        '''
+        """
         raise NotImplementedError()

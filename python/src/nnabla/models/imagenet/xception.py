@@ -15,13 +15,11 @@
 from __future__ import absolute_import
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
-from nnabla import logger
-
 from .base import ImageNetBase
 
 
 class Xception(ImageNetBase):
-    '''
+    """
     Xception model.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -35,7 +33,7 @@ class Xception(ImageNetBase):
         * `Francois Chollet, Xception: Deep Learning with Depthwise Separable Convolutions.
           <https://arxiv.org/abs/1610.02357>`_
 
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Unit/Affine',
