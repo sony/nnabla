@@ -534,6 +534,7 @@ def _create_optimizer(ctx, o, networks, datasets):
 
 
 def _context(proto):
+    comm = current_communicator()
     if not proto.backends:
         logger.warn('Old-style context. Updating to new format.')
         # Update from old Context
@@ -541,10 +542,14 @@ def _context(proto):
         compute_backends = [x.strip()
                             for x in proto.compute_backend.split('|')]
         if 'cuda' in backends:
+            device_id = str(proto.device_id)
+            if comm:
+                device_id = str(comm.local_rank)
+
             if 'cudnn' in compute_backends:
                 try:
                     import nnabla_ext.cudnn
-                    ctx = nnabla_ext.cudnn.context(device_id=proto.device_id)
+                    ctx = nnabla_ext.cudnn.context(device_id=device_id)
                 except ImportError:
                     logger.warn('Fallback to CPU context.')
                     import nnabla_ext.cpu
@@ -552,7 +557,7 @@ def _context(proto):
             elif 'default' in compute_backends:
                 try:
                     import nnabla_ext.cuda
-                    ctx = nnabla_ext.cuda.context(device_id=proto.device_id)
+                    ctx = nnabla_ext.cuda.context(device_id=device_id)
                 except ImportError:
                     logger.warn('Fallback to CPU context.')
                     import nnabla_ext.cpu
@@ -571,9 +576,8 @@ def _context(proto):
     ctx.backend = proto.backends
     ctx.array_class = str(proto.array_class)
 
-    comm = current_communicator()
     if comm:
-        ctx.device_id = str(comm.rank)
+        ctx.device_id = str(comm.local_rank)
     else:
         ctx.device_id = str(proto.device_id)
 
@@ -917,7 +921,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
 
     comm = current_communicator()
     if comm:
-        default_context.device_id = str(comm.rank)
+        default_context.device_id = str(comm.local_rank)
     if proto.HasField('training_config'):
         info.training_config = _training_config(proto)
 
