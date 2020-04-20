@@ -25,6 +25,7 @@ sys.path.append(common_utils_path)
 
 from neu.yaml_wrapper import read_yaml, write_yaml
 from neu.comm import CommunicatorWrapper
+from neu.save_args import save_args
 
 import nnabla as nn
 import nnabla.communicators as C

@@ -33,6 +33,7 @@ from utils import (
     EpochTrainer,
     EpochValidator,
     EpochReporter,
+    save_args
 )
 
 from data import (
@@ -163,6 +164,7 @@ def train():
         if not os.path.isdir(args.monitor_path):
             os.makedirs(args.monitor_path)
         monitor = M.Monitor(args.monitor_path)
+        save_args(args, train_config)
 
     # Epoch runner
     loss_scaling = train_config.loss_scaling if args.type_config == 'half' else 1
