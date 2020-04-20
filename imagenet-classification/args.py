@@ -118,11 +118,19 @@ def get_train_args():
     add_arch_args(parser)
     parser.add_argument("--channel-last", action='store_true',
                         help='Use a model with NHWC layout.')
+    parser.add_argument("--spatial-size", type=int, default=224, nargs="+",
+                        help='Spatial size.')
     add_training_args(parser)
     add_dataset_args(parser)
     add_dali_args(parser)
 
     args = parser.parse_args()
+
+    # Spatial size
+    if isinstance(args.spatial_size, int):
+        args.spatial_size = (args.spatial_size, args.spatial_size)
+    elif len(args.spatial_size) == 1:
+        args.spatial_size = args.spatial_size * 2
 
     # Check arch is available
     check_arch_or_die(args.arch)
