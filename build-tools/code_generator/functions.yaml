@@ -5411,7 +5411,7 @@ Quantization Neural Network Layers:
   FixedPointQuantize:
     snake_name: fixed_point_quantize
     doc: |+
-      This function uniformly quantizes values in fixed-point number representation.
+      This function simulates to uniformly quantize values in fixed-point number representation.
 
       In the forward pass,
 
@@ -5481,7 +5481,7 @@ Quantization Neural Network Layers:
   MinMaxQuantize:
     snake_name: min_max_quantize
     doc: |+
-      This function uniformly quantizes values in the range of min and max quantization levels.
+      This function simulates to uniformly quantize values in the range of min and max quantization levels.
        
       Min-max quantization is defined as the following equation
        
@@ -5611,7 +5611,7 @@ Quantization Neural Network Layers:
     snake_name: pow2_quantize
     doc: |2+
 
-      This function quantizes values in the power of 2 number representation,
+      This function simulates to quantize values in the power of 2 number representation,
       in other words, it is linear (uniform) quantization in :math:`log_2` domain.
 
       In the forward pass of `signed` case,

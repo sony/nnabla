@@ -310,7 +310,9 @@ def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
 
 
 def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine_grained=True, outputs=None):
-    r"""Fixed Point Quantize
+    r"""Fixed Point Quantize.
+
+    This function simulates to uniformly quantize values in fixed-point number representation.
 
     Args:
         x (Variable): An input variable.
@@ -377,7 +379,9 @@ def fixed_point_quantize(x, sign=True, n=8, delta=2**-4, quantize=True, ste_fine
 
 
 def pow2_quantize(x, sign=True, with_zero=True, n=8, m=1, quantize=True, ste_fine_grained=True, outputs=None):
-    r"""Pow2 Quantize
+    r"""Pow2 Quantize.
+
+    This function simulates to uniformly quantize values in fixed-point number representation.
 
     Args:
         x (Variable): An input variable.
@@ -476,7 +480,7 @@ def min_max_quantize(x, qr_min, qr_max, ql_min, ql_max, decay=0.999, x_min_max=F
                      ste_fine_grained=True, eps=0.01, quantize=True, outputs=None):
     r"""Min-max quantization.
 
-    This function uniformly quantizes values in the range of min and max quantization levels.
+    This function simulates to uniformly quantize values in fixed-point number representation.
 
     Min-max quantization is defined as the following equation
 
