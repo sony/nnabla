@@ -111,7 +111,7 @@ void PReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     }
     if (dw) {
       if (!accum[1])
-        memset(dw, 0, sizeof(*dw) * inputs[1]->size());
+        memset((void *)dw, 0, sizeof(*dw) * inputs[1]->size());
       for (int s = 0; s < size; ++s) {
         if (x[s] < 0) {
           const int iw = int(s / base_stride_) % base_shape_;

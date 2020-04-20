@@ -171,7 +171,7 @@ void DepthwiseDeconvolution<T>::forward_impl(const Variables &inputs,
   auto col_data = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
 
   for (int samp = 0; samp < batch_size_; samp++) {
-    memset(col_data, 0, col_.size() * sizeof(T));
+    memset((void *)col_data, 0, col_.size() * sizeof(T));
     {
       auto sample_data_ptr = sample_data;
       auto weight_data_ptr = weight_data;

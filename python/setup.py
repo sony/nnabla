@@ -188,6 +188,7 @@ if __name__ == '__main__':
     # Cythonize
     ext_modules = cythonize(ext_modules, compiler_directives={
                             "embedsignature": True,
+                            "language_level": "2",
                             "c_string_type": 'str',
                             "c_string_encoding": "ascii"})
 

@@ -65,7 +65,7 @@ void Max<T>::backward_impl_reduce(const T *dy, T *dx, int outer_size,
                                   int reduction_size, bool accum) {
   const int *ind = index_buff_->get_data_pointer<int>(this->ctx_);
   if (!accum)
-    memset(dx, 0, sizeof(*dx) * outer_size * reduction_size);
+    memset((void *)dx, 0, sizeof(*dx) * outer_size * reduction_size);
   for (int o = 0; o < outer_size; ++o) {
     dx[o * reduction_size + ind[o]] += dy[o];
   }

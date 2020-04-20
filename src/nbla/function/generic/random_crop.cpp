@@ -65,7 +65,7 @@ void RandomCrop<T>::slice_forward_recursive(const Variable *inp, Variable *outp,
     const T *current_x = x + current_x_offset;
     T *current_y = y + current_y_offset;
     if (x_stride == 1) {
-      memcpy(current_y, current_x, sizeof(T) * size);
+      memcpy((void *)current_y, current_x, sizeof(T) * size);
     } else {
       const T *end_x = current_x + size * x_stride;
       while (current_x != end_x) {

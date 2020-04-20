@@ -406,7 +406,6 @@ void MinMaxQuantize<T>::nudge_qr_min_max(Variable *qr_min, Variable *qr_max,
                                          Variable *qr_min_nudged,
                                          Variable *qr_max_nudged) {
   auto qr_min_data = qr_min->get_data_pointer<T>(ctx_);
-  auto qr_max_data = qr_max->get_data_pointer<T>(ctx_);
   auto ql_min_data = ql_min->get_data_pointer<T>(ctx_);
   auto ql_max_data = ql_max->get_data_pointer<T>(ctx_);
   auto scale_data = scale->get_data_pointer<T>(ctx_);
