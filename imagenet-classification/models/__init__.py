@@ -17,6 +17,7 @@ from . import (
     resnext,
     senet,
     mobilenet,
+    efficientnet
 )
 
 
