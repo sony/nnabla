@@ -41,11 +41,6 @@ def _change_backend(backend):
     assert image_utils.get_backend() == backend
 
 
-def test_image_utils_backend_manager():
-    with pytest.raises(ValueError):
-        image_utils.set_backend("not_installed_module")
-
-
 def check_imsave_condition(backend, img, as_uint16, auto_scale):
     if img.dtype not in [np.uint8, np.uint16]:
         if not auto_scale:
@@ -53,7 +48,7 @@ def check_imsave_condition(backend, img, as_uint16, auto_scale):
         if np.any(img < 0) or np.any(img > 1):
             return False
 
-    if backend == "pil":
+    if backend == "PilBackend":
         if img.dtype == np.uint16 or as_uint16:
             return False
     else:
@@ -98,12 +93,12 @@ def test_minmax_auto_scale(img, as_uint16):
     assert rescaled.min() >= 0
 
     # check if correctly scaled up
-    reverted = image_utils.common.rescale_pixel_intensity(rescaled, rescaled.min(), rescaled.max(),
-                                                          img.min(), img.max(), img.dtype)
+    reverted = image_utils.backend_events.common.rescale_pixel_intensity(rescaled, rescaled.min(), rescaled.max(),
+                                                                         img.min(), img.max(), img.dtype)
     assert_allclose(img, reverted, atol=1 / 2 ** 4)
 
 
-@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
+@pytest.mark.parametrize("backend", ["PilBackend", "PngBackend", "Cv2Backend"])
 @pytest.mark.parametrize("grayscale", [False, True])
 @pytest.mark.parametrize("size", [None, (16, 16)])
 @pytest.mark.parametrize("channel_first", [False, True])
@@ -182,7 +177,7 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
             (img.astype(dtype) * scaler).astype(read_image.dtype), read_image)
 
 
-@pytest.mark.parametrize("backend", ["pil", "pypng", "cv2"])
+@pytest.mark.parametrize("backend", ["PilBackend", "PngBackend", "Cv2Backend"])
 @pytest.mark.parametrize("size", [(16, 16), (64, 64)])
 @pytest.mark.parametrize("channel_first", [False, True])
 @pytest.mark.parametrize("img", imgs)

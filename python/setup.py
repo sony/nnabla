@@ -262,6 +262,7 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
+                'nnabla.utils.image_utils.backend_events',
                 'nnabla.utils.audio_utils',
                 'nnabla.backward_function',
                 'nnabla_ext',
