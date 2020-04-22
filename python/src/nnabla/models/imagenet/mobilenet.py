@@ -14,13 +14,11 @@
 from __future__ import absolute_import
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
-from nnabla import logger
-
 from .base import ImageNetBase
 
 
 class MobileNet(ImageNetBase):
-    '''
+    """
     MobileNet architecture.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -34,7 +32,7 @@ class MobileNet(ImageNetBase):
         * `Howard et al., MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications.
           <https://arxiv.org/abs/1704.04861>`_
 
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Affine',
@@ -71,7 +69,7 @@ class MobileNet(ImageNetBase):
 
 
 class MobileNetV2(ImageNetBase):
-    '''
+    """
     MobileNetV2 architecture.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -85,7 +83,7 @@ class MobileNetV2(ImageNetBase):
         * `Sandelr et al., MobileNetV2: Inverted Residuals and Linear Bottlenecks.
           <https://arxiv.org/abs/1801.04381>`_
 
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Reshape',

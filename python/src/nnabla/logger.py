@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
+"""
 Wrapper module for logging.
 
 You can use the logger as follows:
@@ -63,10 +63,9 @@ After this you can get following output.
     2017-01-19 14:41:35,132 [nnabla][CRITICAL]: scripts/logger_test.py : <module> : 6 : Log message(CRITICAL)
 
 
-'''
+"""
 
 import logging
-from os.path import abspath, join, expanduser, exists, dirname
 
 from .config import nnabla_config
 

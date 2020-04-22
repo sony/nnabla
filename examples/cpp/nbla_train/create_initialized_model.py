@@ -28,7 +28,6 @@ import nnabla as nn
 import nnabla.logger as logger
 import nnabla.functions as F
 import nnabla.solvers as S
-import nnabla.utils.save
 import os
 import sys
 

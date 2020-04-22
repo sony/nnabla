@@ -15,7 +15,7 @@ from __future__ import absolute_import
 import os
 
 from nnabla import logger
-from nnabla.utils.download import download, get_data_home
+from nnabla.utils.download import get_data_home
 
 from ..utils import *
 

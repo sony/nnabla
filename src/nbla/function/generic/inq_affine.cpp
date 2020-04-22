@@ -193,8 +193,8 @@ void INQAffine<T, T1>::forward_impl(const Variables &inputs,
   minibatch_counter_++;
 
   // F: Store weights/indicators
-  std::memcpy(old_weights, weights, inputs[1]->size() * sizeof(T));
-  std::memcpy(old_indicators, indicators, inputs[1]->size() * sizeof(T1));
+  memcpy((void *)old_weights, weights, inputs[1]->size() * sizeof(T));
+  memcpy((void *)old_indicators, indicators, inputs[1]->size() * sizeof(T1));
 }
 
 template <typename T, typename T1>

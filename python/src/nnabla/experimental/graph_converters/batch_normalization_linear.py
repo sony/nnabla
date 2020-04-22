@@ -40,7 +40,7 @@ class BatchNormalizationLinearConverter(IdentityConverter):
                 if func.name == "BatchNormalization":
                     bn_func = func
                     # TODO: should deal with both?
-                    if bn_func.info.args["batch_stat"] == False:
+                    if not bn_func.info.args["batch_stat"]:
                         o = self._bn_linear_conversion(bn_func, cnt)
                         cnt += 1
                         continue

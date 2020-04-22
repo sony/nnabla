@@ -285,7 +285,7 @@ class NnbExporter:
                     if argcode_pos >= len(argcode):
                         # ommit the parameter that is not supported
                         # we only down-version by omitting the tail-appended parameters.
-                        print("{}.{} is ommited for lower API Level:{}".format(f.type, an,
+                        print("{}.{} is omitted for lower API Level:{}".format(f.type, an,
                                                                                self._api_level_info.get_current_level()))
                         continue
                     else:

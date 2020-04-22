@@ -67,7 +67,7 @@ public:
 // ----------------------------------------------------------------------
 void load_parameters(ParameterDirectory &pd, string filename) {
   NNablaProtoBuf proto;
-  std::ifstream ifs(filename.c_str());
+  std::ifstream ifs(filename.c_str(), std::ios::in | std::ios::binary);
   if (!ifs.is_open()) {
     NBLA_LOG_WARN("Error in opening file {}", filename);
     return;
@@ -88,7 +88,7 @@ void load_parameters(ParameterDirectory &pd, string filename) {
 // Save parameters to file
 // ----------------------------------------------------------------------
 void save_parameters(ParameterDirectory &pd, string filename) {
-  std::ofstream ofs(filename.c_str());
+  std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofs.is_open()) {
     NBLA_LOG_WARN("Error in opening file {}", filename);
     return;

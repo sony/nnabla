@@ -182,7 +182,7 @@ void Deconvolution<T>::forward_impl(const Variables &inputs,
 
     // col2im for w * x
     T *x_n = x + n * inner_size_i_;
-    memset(x_n, 0, sizeof(*x_n) * inner_size_i_);
+    memset((void *)x_n, 0, sizeof(*x_n) * inner_size_i_);
     fold_from_patches<T>(col, x_n, channels_i_, spatial_shape_i_, kernel_, pad_,
                          stride_, dilation_);
 

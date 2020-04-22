@@ -23,7 +23,7 @@ from .common import rescale_pixel_intensity
 def set_backend(backend):
     """
     Set utils.image_utils` backend module.
-    If the backend which you specify is not instlled in your environment, Exception is raised.
+    If the backend which you specify is not installed in your environment, Exception is raised.
 
     Args:
         backend (str): the name of image_utils` backend

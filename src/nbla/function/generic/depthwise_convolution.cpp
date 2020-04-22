@@ -238,7 +238,7 @@ void DepthwiseConvolution<T>::backward_impl(const Variables &inputs,
 
   for (int samp = 0; samp < batch_size_; samp++) {
     if (propagate_down[0]) { // backprop to input gradient
-      memset(col, 0, col_.size() * sizeof(T));
+      memset((void *)col, 0, col_.size() * sizeof(T));
 
       auto weight_data_ptr = weight_data;
       auto outmap_grad_ptr = outmap_grad;

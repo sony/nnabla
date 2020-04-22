@@ -67,30 +67,6 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "MaxPoolingBackward"; }
-  // TODO: This must be overridden if any of input grad depends on a output
-  // data. See doc in function.hpp.
-  // virtual bool grad_depends_output_data(int i, int o) const {
-  // }
-  // TODO: If any of data/grad storage is inplaced with any of output, you must
-  // override some of these. See doc in function.hpp.
-  // virtual int inplace_data(int i) const {
-  // }
-  // virtual int inplace_data_with(int i) const {
-  // }
-  // virtual int inplace_grad(int i) const {
-  // }
-  // virtual int inplace_grad_with(int i) const {
-  // }
-  // TODO: If you want to avoid clearing input buffers in any case, define this
-  // function returning true.
-  // virtual bool prohibit_clear_input_buffers() const {
-  //   return true;
-  // }
-  // TODO: If you want to avoid zero-ing gradient of inputs even when accum is
-  // true, uncomment the following function definition.
-  // virtual bool prohibit_zero_input_grad() const {
-  //   return true;
-  // }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

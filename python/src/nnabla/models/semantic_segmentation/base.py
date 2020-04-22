@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
-import os
-from nnabla.utils.nnp_graph import NnpLoader, NnpNetworkPass
+from nnabla.utils.nnp_graph import NnpLoader
 
 from ..utils import *
 
@@ -49,7 +48,7 @@ class SemanticSegmentation(object):
     def _load_nnp(self, rel_name, rel_url):
         '''
             Args:
-                rel_name: relative path to where donwloaded nnp is saved.
+                rel_name: relative path to where downloaded nnp is saved.
                 rel_url: relative url path to where nnp is downloaded from.
 
             '''
@@ -68,7 +67,7 @@ class SemanticSegmentation(object):
 
     def use_up_to(self, key, callback, **variable_format_dict):
         if key not in self._KEY_VARIABLE:
-            raise ValueError('The key "{}" is not present in {}. Availble keys are {}.'.format(
+            raise ValueError('The key "{}" is not present in {}. Available keys are {}.'.format(
                 key, self.__class__.__name__, list(self._KEY_VARIABLE.keys())))
         callback.use_up_to(
             self._KEY_VARIABLE[key].format(**variable_format_dict))

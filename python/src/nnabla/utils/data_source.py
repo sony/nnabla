@@ -16,10 +16,8 @@
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
 warnings.simplefilter('ignore', category=FutureWarning)
-import h5py
 
 from collections import OrderedDict
-from contextlib import closing
 from contextlib import closing
 from multiprocessing import Queue
 from multiprocessing.pool import ThreadPool
@@ -240,13 +238,13 @@ class DataSourceWithFileCache(DataSource):
                 h5.close()
             else:
                 retry_count = 1
-                is_create_cache_imcomplete = True
-                while is_create_cache_imcomplete:
+                is_create_cache_incomplete = True
+                while is_create_cache_incomplete:
                     try:
                         with open(cache_filename, 'wb') as f:
                             for v in data.values():
                                 numpy.save(f, v)
-                        is_create_cache_imcomplete = False
+                        is_create_cache_incomplete = False
                     except OSError:
                         retry_count += 1
                         if retry_count > 10:

@@ -53,9 +53,6 @@ class AveragePoolingBackward(BackwardFunction):
         channel_last = self.forward_func.info.args["channel_last"]
         including_pad = self.forward_func.info.args["including_pad"]
 
-        # TODO: BHWC
-        assert channel_last == False, "`channel_last = False` is only supported now."
-
         # Inputs
         x0 = inputs[0].data
         dy = inputs[1].data

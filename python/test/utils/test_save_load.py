@@ -225,8 +225,7 @@ def test_save_load_with_file_object():
              'network': 'net1',
              'data': ['x0', 'x1'],
              'output': ['y0', 'y1']}]}
-    import zipfile
-    with zipfile.ZipFile('tmp.nnp', 'w') as nnp:
-        nnabla.utils.save.save(nnp, contents, file_like_type='.nnp')
-    with zipfile.ZipFile('tmp.nnp', 'r') as nnp:
-        nnabla.utils.load.load(nnp, file_like_type='.nnp')
+    import io
+    nnpdata = io.BytesIO()
+    nnabla.utils.save.save(nnpdata, contents, extension='.nnp')
+    nnabla.utils.load.load(nnpdata, extension='.nnp')

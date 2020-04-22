@@ -27,6 +27,7 @@ import nnabla as nn
 from nnabla.logger import logger
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 from nnabla.utils.get_file_handle import get_file_handle_load
+from nnabla.utils.get_file_handle import get_file_handle_save
 
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
@@ -37,8 +38,8 @@ root_scope = current_scope
 
 
 def get_current_parameter_scope():
-    '''Returns current parameter scope.
-    '''
+    """Returns current parameter scope.
+    """
     global current_scope
     return current_scope
 
@@ -148,7 +149,7 @@ def get_parameter(key):
 
 
 def pop_parameter(key):
-    '''Remove and get parameter by key.
+    """Remove and get parameter by key.
 
     Args:
         key(str): Key of parameter.
@@ -156,7 +157,7 @@ def pop_parameter(key):
     Returns: ~nnabla.Variable
         Parameter if key found, otherwise None.
 
-    '''
+    """
     names = key.split('/')
     if len(names) > 1:
         with parameter_scope(names[0]):
@@ -335,7 +336,7 @@ def set_parameter_from_proto(proto):
         var.d = param
 
 
-def load_parameters(path, proto=None, needs_proto=False, file_like_type=".nntxt"):
+def load_parameters(path, proto=None, needs_proto=False, extension=".nntxt"):
     """Load parameters from a file with the specified format.
 
     Args:
@@ -344,7 +345,7 @@ def load_parameters(path, proto=None, needs_proto=False, file_like_type=".nntxt"
     if isinstance(path, str):
         _, ext = os.path.splitext(path)
     else:
-        ext = file_like_type
+        ext = extension
 
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
@@ -412,7 +413,7 @@ def load_parameters(path, proto=None, needs_proto=False, file_like_type=".nntxt"
     return proto
 
 
-def save_parameters(path, params=None):
+def save_parameters(path, params=None, extension=None):
     """Save all parameters into a file with the specified format.
 
     Currently hdf5 and protobuf formats are supported.
@@ -421,14 +422,17 @@ def save_parameters(path, params=None):
       path : path or file object
       params (dict, optional): Parameters to be saved. Dictionary is of a parameter name (:obj:`str`) to :obj:`~nnabla.Variable`.
     """
-    _, ext = os.path.splitext(path)
+    if isinstance(path, str):
+        _, ext = os.path.splitext(path)
+    else:
+        ext = extension
     params = get_parameters(grad_only=False) if params is None else params
     if ext == '.h5':
         # TODO temporary work around to suppress FutureWarning message.
         import warnings
         warnings.simplefilter('ignore', category=FutureWarning)
         import h5py
-        with h5py.File(path, 'w') as hd:
+        with get_file_handle_save(path, ext) as hd:
             for i, (k, v) in enumerate(iteritems(params)):
                 hd[k] = v.d
                 hd[k].attrs['need_grad'] = v.need_grad
@@ -443,7 +447,7 @@ def save_parameters(path, params=None):
             parameter.data.extend(numpy.array(variable.d).flatten().tolist())
             parameter.need_grad = variable.need_grad
 
-        with open(path, "wb") as f:
+        with get_file_handle_save(path, ext) as f:
             f.write(proto.SerializeToString())
     else:
         logger.critical('Only supported hdf5 or protobuf.')

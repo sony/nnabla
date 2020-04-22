@@ -138,27 +138,25 @@ def core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
                                           func_name, atol_f=1e-4, atol_b=1e-1, atol_accum=1e-1, dstep=1e-3):
     from nbla_test_utils import backward_function_tester, cap_ignore_region
-    if channel_last:
-        pytest.skip('Channel last is not supported in the double backward.')
 
     if func_name == 'ConvolutionCuda':
         pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
-    # if channel_last and not func_name.endswith('Cudnn'):
-    # pytest.skip(
-    # 'channel_last=True is only supported in CUDNN backend so far.')
-    # if channel_last and func_name.endswith('Cudnn') and (np.any(np.asarray(dilation) > 1) or group > 1):
-    ##     import nnabla_ext.cuda as nc
-    ##     major, minor, revision = map(int, nc.__cudnn_version__.split('.'))
-    ##     version = major * 1000 + minor * 100
-    # if version < 7200:
-    # pytest.skip(
-    # 'channel_last dilated convolution not work in CUDNN {}.'.format(version))
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip(
+            'channel_last=True is only supported in CUDNN backend so far.')
+    if channel_last and func_name.endswith('Cudnn') and (np.any(np.asarray(dilation) > 1) or group > 1):
+        import nnabla_ext.cuda as nc
+        major, minor, revision = map(int, nc.__cudnn_version__.split('.'))
+        version = major * 1000 + minor * 100
+        if version < 7200:
+            pytest.skip(
+                'channel_last dilated convolution not work in CUDNN {}.'.format(version))
 
     base_axis = len(inshape) - len(kernel) - 1
     inmaps = inshape[base_axis]
-    # if channel_last:
-    ##     t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
-    ##     inshape = tuple(inshape[i] for i in t.inv_axes)
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
     i = rng.randn(*inshape).astype(np.float32)
     kshape = (outmaps,) + (inmaps // group,) + kernel
@@ -222,9 +220,15 @@ def test_convolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
-def test_convolution_3d_double_backward_with_bias(inshape, kernel, outmaps, pad, stride,
-                                                  dilation, group, channel_last, with_bias, seed, ctx,
-                                                  func_name):
+def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
+                                        dilation, group, channel_last, with_bias, seed, ctx,
+                                        func_name):
+    if channel_last:
+        pytest.skip('3d')
+    import platform
+    if platform.system() == "Linux" and platform.uname().machine not in ["x86_64", "ppc64le"]:
+        pytest.skip('Convolution 3-D for x86_64 and ppc64 are only supported.')
+
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name, atol_b=3e-1, atol_accum=3e-1, dstep=1e-3)
+                                          func_name, atol_b=3e-1, atol_accum=3e-1, dstep=5e-4)

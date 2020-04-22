@@ -17,8 +17,6 @@ from __future__ import division, absolute_import
 import os
 import numpy as np
 
-from nnabla.logger import logger
-
 
 def normalize_intensity(audio_arr, input_low, input_high):
     denominator = input_high - input_low
@@ -72,10 +70,12 @@ def _auto_scale_before(audio_arr, datatype):
 
 
 def _auread_before(path, raw_format_param):
-    if not os.path.exists(path):
+    filepath = path if isinstance(path, str) else path.name
+
+    if not os.path.exists(filepath):
         raise ValueError("path {} does not exist".format(path))
 
-    ext = os.path.splitext(path)[-1]
+    ext = os.path.splitext(filepath)[-1]
     if ext not in ['.wav', '.raw']:
         raise ValueError("path should contains filename extension and"
                          " only .raw .wav formats are now supported.")
@@ -101,11 +101,13 @@ def _ausave_before(path, audio_arr, channel_first):
     if len(audio_arr.shape) != 2:
         raise ValueError("size must be (samples, channels) liked")
 
-    npath = os.path.abspath(path)
+    filepath = path if isinstance(path, str) else path.name
+
+    npath = os.path.abspath(filepath)
     dir_name = os.path.dirname(npath)
     os.makedirs(dir_name, exist_ok=True)
 
-    ext = os.path.splitext(path)[-1]
+    ext = os.path.splitext(filepath)[-1]
     if ext not in ['.wav']:
         raise ValueError("only support save as .wav format for now.")
 

@@ -55,7 +55,7 @@ void Flip<T>::flip_recursive(Variable *inp, const T *x, T *y,
       }
     } else {
       if (x_stride == 1) {
-        memcpy(current_y, current_x, sizeof(T) * size);
+        memcpy((void *)current_y, current_x, sizeof(T) * size);
       } else
         while (current_x != end_x) {
           *current_y = *current_x;

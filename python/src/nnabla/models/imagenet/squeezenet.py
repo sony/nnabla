@@ -20,7 +20,7 @@ from .base import ImageNetBase
 
 
 class SqueezeNet(ImageNetBase):
-    '''
+    """
     SqueezeNet model for architecture-v1.0 and v1.1 .
 
     Args:
@@ -41,7 +41,7 @@ class SqueezeNet(ImageNetBase):
           <https://arxiv.org/abs/1602.07360v1>`_
         * `DeepScale/SqueezeNet on GitHub <https://github.com/DeepScale/SqueezeNet>`_
 
-    '''
+    """
     _KEY_VARIABLE = {
         'classifier': '{prefix}Reshape',
         'pool': '{prefix}AveragePooling',
@@ -90,18 +90,18 @@ class SqueezeNet(ImageNetBase):
 
 
 class SqueezeNetV10(SqueezeNet):
-    '''SquezeNetV10
+    """SquezeNetV10
         An alias of :obj:`SqueezeNet` `('v1.0')`.
-    '''
+    """
 
     def __init__(self):
         super(SqueezeNetV10, self).__init__('v1.0')
 
 
 class SqueezeNetV11(SqueezeNet):
-    '''SquezeNetV11
+    """SquezeNetV11
         An alias of :obj:`SqueezeNet` `('v1.1')`.
-    '''
+    """
 
     def __init__(self):
         super(SqueezeNetV11, self).__init__('v1.1')

@@ -21,7 +21,7 @@ from .base import ImageNetBase
 
 class ResNet(ImageNetBase):
 
-    '''
+    """
     ResNet architectures for 18, 34, 50, 101, and 152 of number of layers.
 
     Args:
@@ -38,7 +38,7 @@ class ResNet(ImageNetBase):
         * `He et al, Deep Residual Learning for Image Recognition.
           <https://arxiv.org/abs/1512.03385>`_
 
-    '''
+    """
 
     _KEY_VARIABLE = {
         'classifier': 'Affine',
@@ -86,45 +86,45 @@ class ResNet(ImageNetBase):
 
 
 class ResNet18(ResNet):
-    '''ResNet18
+    """ResNet18
         An alias of :obj:`ResNet` `(18)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNet18, self).__init__(18)
 
 
 class ResNet34(ResNet):
-    '''ResNet34
+    """ResNet34
         An alias of :obj:`ResNet` `(34)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNet34, self).__init__(34)
 
 
 class ResNet50(ResNet):
-    '''ResNet50
+    """ResNet50
         An alias of :obj:`ResNet` `(50)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNet50, self).__init__(50)
 
 
 class ResNet101(ResNet):
-    '''ResNet101
+    """ResNet101
         An alias of :obj:`ResNet` `(101)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNet101, self).__init__(101)
 
 
 class ResNet152(ResNet):
-    '''ResNet152
+    """ResNet152
         An alias of :obj:`ResNet` `(152)`.
-    '''
+    """
 
     def __init__(self):
         super(ResNet152, self).__init__(152)

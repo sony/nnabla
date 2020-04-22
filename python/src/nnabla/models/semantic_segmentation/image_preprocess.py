@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from nnabla.utils.image_utils import imsave, imresize
+from nnabla.utils.image_utils import imresize
 
 
 def resize(image, desired_size):

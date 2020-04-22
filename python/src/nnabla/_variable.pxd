@@ -100,7 +100,6 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         vector[VariablePtr] function_outputs_shared() except+
         string info() const
         void set_info(const string & info)
-    ctypedef shared_ptr[CgFunction] CgFunctionPtr
 
 cdef class Context:
     cdef vector[string] backend_

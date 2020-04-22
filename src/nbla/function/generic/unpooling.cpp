@@ -23,7 +23,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Unpooling, const vector<int> &);
+NBLA_REGISTER_FUNCTION_SOURCE(Unpooling, const vector<int> &, bool);
 
 template <typename T>
 void Unpooling<T>::setup_impl(const Variables &inputs,
@@ -31,17 +31,17 @@ void Unpooling<T>::setup_impl(const Variables &inputs,
 
   // compute out shape
   Shape_t inshape = inputs[0]->shape();
-  Shape_t outshape(inshape.size());
+  Shape_t outshape = inshape;
 
   NBLA_CHECK(this->kernel_.size() <= inshape.size(), error_code::value,
              "Length of kernel must be less than length of inshape. "
              "Length of kernel: %d > Length of inshape: %d.",
              kernel_.size(), inshape.size());
-  while (this->kernel_.size() < inshape.size()) {
-    kernel_.insert(kernel_.begin(), 1);
-  }
-  for (int i = 0; i < inshape.size(); i++) {
-    outshape[i] = inshape[i] * kernel_[i];
+  auto ndim = inputs[0]->ndim();
+  auto kdim = kernel_.size();
+  auto offset = channel_last_ ? (ndim - kdim - 1) : (ndim - kdim);
+  for (int i = 0; i < kdim; i++) {
+    outshape[offset + i] = inshape[offset + i] * kernel_[i];
   }
   outputs[0]->reshape(outshape, true);
 }
@@ -52,16 +52,19 @@ void Unpooling<T>::unpooling_forward_recursive(const Variable *inp,
                                                int x_offset, int y_offset,
                                                int dim) {
   int current_x_offset = x_offset, current_y_offset = y_offset;
+  auto ndim = inp->shape().size();
+  auto kdim = this->kernel_.size();
   const int x_stride = inp->strides()[dim];
   const int y_stride = outp->strides()[dim];
-  const int kernel = this->kernel_[dim];
+  const int kernel =
+      (dim < (ndim - kdim)) ? 1 : this->kernel_[dim - (ndim - kdim)];
   const int size = outp->shape()[dim];
 
   if (dim == inp->shape().size() - 1) {
     const T *current_x = x + current_x_offset;
     T *current_y = y + current_y_offset;
     if (x_stride == 1 && kernel == 1) {
-      memcpy(current_y, current_x, sizeof(T) * size);
+      memcpy((void *)current_y, current_x, sizeof(T) * size);
     } else {
       const T *end_y = current_y + size * y_stride;
       int count = 0;
@@ -91,6 +94,9 @@ void Unpooling<T>::unpooling_forward_recursive(const Variable *inp,
 template <class T>
 void Unpooling<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
+  NBLA_CHECK(!channel_last_, error_code::not_implemented,
+             "Unpooling with channel_last is not supported in CPU.");
+
   const T *px = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *py = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
@@ -104,9 +110,12 @@ void Unpooling<T>::unpooling_backward_recursive(Variable *outp,
                                                 int y_offset, int dim) {
 
   int current_x_offset = x_offset, current_y_offset = y_offset;
+  auto ndim = inp->shape().size();
+  auto kdim = this->kernel_.size();
   const int x_stride = outp->strides()[dim];
   const int y_stride = inp->strides()[dim];
-  const int kernel = this->kernel_[dim];
+  const int kernel =
+      (dim < (ndim - kdim)) ? 1 : this->kernel_[dim - (ndim - kdim)];
   const int size = inp->shape()[dim];
 
   if (dim == inp->shape().size() - 1) {

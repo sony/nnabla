@@ -207,6 +207,11 @@
   AddN_Empty: 281
   MulN_Empty: 282
 11:
-  RandBeta_ffiIi: 283
-  RandBinomial_ifiIi: 284
-  RandGamma_ffiIi: 285
+  RandomErase_ffFfFfFiBBiiBB: 285
+12:
+  Interpolate_iIiBB: 286
+13:
+  Unpooling_iIB: 287
+  RandBeta_ffiIi: 288
+  RandBinomial_ifiIi: 289
+  RandGamma_ffiIi: 290

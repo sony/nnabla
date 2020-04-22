@@ -25,7 +25,7 @@ def ref_hard_tanh(x):
 
 
 def ref_hard_tanh_backward(x, dy):
-    return np.array([dy if i <= 1 and i >= -1 else 0 for i in np.nditer(x)])
+    return np.array([dy if -1 <= i <= 1 else 0 for i in np.nditer(x)])
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -53,4 +53,4 @@ def test_hard_tanh_double_backward(seed, ctx, func_name):
                              atol_accum=1e-3,
                              dstep=1e-3,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

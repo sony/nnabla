@@ -332,7 +332,7 @@ def nnb_template(args, ifiles, output):
 
 def _dump_protobuf(args, proto, prefix, depth):
     if args.dump_verbose:
-        if depth >= 0 and len(prefix) >= depth:
+        if 0 <= depth <= len(prefix):
             print('{} ...'.format(':'.join(prefix)))
             return
         for desc, field in proto.ListFields():

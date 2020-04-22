@@ -46,6 +46,9 @@ class MaxPoolingBackward(BackwardFunction):
         # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
         # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
 
+        assert len(
+            inputs[0].shape) > 3, "len(inputs[0] shape) should be greater than 3."
+
         # Args
         kernel = self.forward_func.info.args["kernel"]
         stride = self.forward_func.info.args["stride"]

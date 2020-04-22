@@ -25,7 +25,6 @@ import os
 import re
 import shutil
 import tempfile
-import zipfile
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,
@@ -45,6 +44,7 @@ from nnabla.utils.learning_rate_scheduler import (
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
 from nnabla.utils.get_file_handle import get_file_handle_load
+
 import nnabla as nn
 import nnabla.function as F
 import nnabla.solver as S
@@ -817,13 +817,13 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, file_like_type=".nntxt"):
+def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, extension=".nntxt"):
     '''load
     Load network information from files.
 
     Args:
         filenames (list): file-like object or List of filenames.
-        file_like_type: if filenames is file-like object, file_like_type is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
+        extension: if filenames is file-like object, extension is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
     Returns:
         dict: Network information.
     '''
@@ -842,7 +842,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         if isinstance(filename, str):
             _, ext = os.path.splitext(filename)
         else:
-            ext = file_like_type
+            ext = extension
 
         # TODO: Here is some known problems.
         #   - Even when protobuf file includes network structure,
@@ -862,40 +862,33 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                         raise
             if len(proto.parameter) > 0:
                 if not exclude_parameter:
-                    nn.load_parameters(filename)
+                    nn.load_parameters(filename, extension=ext)
         elif ext in ['.protobuf', '.h5']:
             if not exclude_parameter:
-                nn.load_parameters(filename)
+                nn.load_parameters(filename, extension=ext)
             else:
                 logger.info('Skip loading parameter.')
 
         elif ext == '.nnp':
-            try:
-                tmpdir = tempfile.mkdtemp()
-                with get_file_handle_load(filename, ext) as nnp:
-                    for name in nnp.namelist():
-                        _, ext = os.path.splitext(name)
-                        if name == 'nnp_version.txt':
-                            nnp.extract(name, tmpdir)
-                            with open(os.path.join(tmpdir, name), 'rt') as f:
-                                pass  # TODO currently do nothing with version.
-                        elif ext in ['.nntxt', '.prototxt']:
-                            nnp.extract(name, tmpdir)
-                            if not parameter_only:
-                                with open(os.path.join(tmpdir, name), 'rt') as f:
-                                    text_format.Merge(f.read(), proto)
-                            if len(proto.parameter) > 0:
-                                if not exclude_parameter:
-                                    nn.load_parameters(
-                                        os.path.join(tmpdir, name))
-                        elif ext in ['.protobuf', '.h5']:
-                            nnp.extract(name, tmpdir)
+            with get_file_handle_load(filename, ext) as nnp:
+                for name in nnp.namelist():
+                    _, ext = os.path.splitext(name)
+                    if name == 'nnp_version.txt':
+                        pass  # TODO currently do nothing with version.
+                    elif ext in ['.nntxt', '.prototxt']:
+                        if not parameter_only:
+                            with nnp.open(name, 'r') as f:
+                                text_format.Merge(f.read(), proto)
+                        if len(proto.parameter) > 0:
                             if not exclude_parameter:
-                                nn.load_parameters(os.path.join(tmpdir, name))
-                            else:
-                                logger.info('Skip loading parameter.')
-            finally:
-                shutil.rmtree(tmpdir)
+                                with nnp.open(name, 'r') as f:
+                                    nn.load_parameters(f, extension=ext)
+                    elif ext in ['.protobuf', '.h5']:
+                        if not exclude_parameter:
+                            with nnp.open(name, 'r') as f:
+                                nn.load_parameters(f, extension=ext)
+                        else:
+                            logger.info('Skip loading parameter.')
 
     default_context = None
     if proto.HasField('global_config'):

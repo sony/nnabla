@@ -412,7 +412,7 @@ def test_pf_bn_no_scale_bias(no_scale, no_bias):
         x, batch_stat=True, no_scale=no_scale, no_bias=no_bias)
 
     params = nn.get_parameters()
-    assert len(params) == 2 - int(no_scale) + int(no_bias)
+    assert len(params) == 2 - int(no_scale) - int(no_bias)
 
 
 @pytest.mark.parametrize('no_scale, no_bias', [(False, False), (True, True)])
@@ -422,7 +422,7 @@ def test_pf_fused_bn_no_scale_bias(no_scale, no_bias):
         x, batch_stat=True, no_scale=no_scale, no_bias=no_bias)
 
     params = nn.get_parameters()
-    assert len(params) == 2 - int(no_scale) + int(no_bias)
+    assert len(params) == 2 - int(no_scale) - int(no_bias)
 
 
 @pytest.mark.parametrize("w_shape, dim", [((32, 16, 3, 3), 0),  # convolution
@@ -1356,20 +1356,20 @@ def test_pf_min_max_quantized_convolution_execution(g_rng, inshape, outmaps,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("src_len, tgt_len, batch_size", [
     (2, 3, 2)])
-@pytest.mark.parametrize("embed_dim, num_heads, dropout, kdim, vdim", [
-    (12, 6, 0.0, 12, 12),
-    (12, 12, 0.0, 10, 10)])
+@pytest.mark.parametrize("q_input_dim, k_input_dim, v_input_dim, k_embed_dim, v_embed_dim, out_dim, num_heads, dropout", [
+    (16, 16, 16, 12, 12, 12, 6, 0.0),
+    (16, 15, 14, 12, 24, 24, 12, 0.0)])
 @pytest.mark.parametrize("with_bias", [True, False])
 @pytest.mark.parametrize("fix_parameters", [True, False])
 @pytest.mark.parametrize("add_attn_bias", [True, False])
 @pytest.mark.parametrize("rng", [None, True])
 @pytest.mark.parametrize('param_init', [None, True])
-def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, embed_dim, num_heads, dropout, rng, with_bias, add_attn_bias, kdim, vdim, fix_parameters, param_init, ctx, func_name):
+def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, q_input_dim, k_input_dim, v_input_dim, k_embed_dim, v_embed_dim, out_dim, num_heads, dropout, rng, with_bias, add_attn_bias, fix_parameters, param_init, ctx, func_name):
 
-    q_shape = (embed_dim, embed_dim)
-    k_shape = (kdim, embed_dim)
-    v_shape = (vdim, embed_dim)
-    o_shape = (embed_dim, embed_dim)
+    q_shape = (q_input_dim, k_embed_dim)
+    k_shape = (k_input_dim, k_embed_dim)
+    v_shape = (v_input_dim, v_embed_dim)
+    o_shape = (v_embed_dim, out_dim)
 
     q_weight = process_param_init(I.NormalInitializer(), q_shape, g_rng)
     k_weight = process_param_init(I.NormalInitializer(), k_shape, g_rng)
@@ -1383,11 +1383,14 @@ def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, 
         out_weight=out_weight)
 
     if with_bias:
-        b_shape = (embed_dim, )
-        q_bias = process_param_init(I.ConstantInitializer(), b_shape, g_rng)
-        k_bias = process_param_init(I.ConstantInitializer(), b_shape, g_rng)
-        v_bias = process_param_init(I.ConstantInitializer(), b_shape, g_rng)
-        out_bias = process_param_init(I.ConstantInitializer(), b_shape, g_rng)
+        qb_shape = (k_embed_dim, )
+        kb_shape = (k_embed_dim, )
+        vb_shape = (v_embed_dim, )
+        ob_shape = (out_dim, )
+        q_bias = process_param_init(I.ConstantInitializer(), qb_shape, g_rng)
+        k_bias = process_param_init(I.ConstantInitializer(), kb_shape, g_rng)
+        v_bias = process_param_init(I.ConstantInitializer(), vb_shape, g_rng)
+        out_bias = process_param_init(I.ConstantInitializer(), ob_shape, g_rng)
 
         param_init['q_bias'] = q_bias
         param_init['k_bias'] = k_bias
@@ -1395,11 +1398,12 @@ def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, 
         param_init['out_bias'] = out_bias
 
     if add_attn_bias:
-        kv_shape = (1, 1, embed_dim)
+        attnk_shape = (1, 1, k_embed_dim)
+        attnv_shape = (1, 1, v_embed_dim)
         attn_bias_k = process_param_init(
-            I.NormalInitializer(), kv_shape, g_rng)
+            I.NormalInitializer(), attnk_shape, g_rng)
         attn_bias_v = process_param_init(
-            I.NormalInitializer(), kv_shape, g_rng)
+            I.NormalInitializer(), attnv_shape, g_rng)
 
         param_init['attn_bias_k'] = attn_bias_k
         param_init['attn_bias_v'] = attn_bias_v
@@ -1409,6 +1413,9 @@ def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, 
     kw = {}
     insert_if_not_none(kw, 'num_heads', num_heads)
     insert_if_not_default(kw, 'dropout', dropout, 0.0)
+    insert_if_not_none(kw, 'k_embed_dim', k_embed_dim)
+    insert_if_not_none(kw, 'v_embed_dim', v_embed_dim)
+    insert_if_not_none(kw, 'out_dim', out_dim)
     insert_if_not_none(kw, 'rng', rng)
     insert_if_not_default(kw, 'with_bias', with_bias, True)
     insert_if_not_default(kw, 'add_attn_bias', add_attn_bias, False)
@@ -1416,11 +1423,11 @@ def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, 
     insert_if_not_none(kw, 'param_init', param_init)
 
     q = nn.Variable.from_numpy_array(
-        g_rng.randn(tgt_len, batch_size, embed_dim).astype(np.float32), need_grad=True)
+        g_rng.randn(tgt_len, batch_size, q_input_dim).astype(np.float32), need_grad=True)
     k = nn.Variable.from_numpy_array(
-        g_rng.randn(src_len, batch_size, kdim).astype(np.float32), need_grad=True)
+        g_rng.randn(src_len, batch_size, k_input_dim).astype(np.float32), need_grad=True)
     v = nn.Variable.from_numpy_array(
-        g_rng.randn(src_len, batch_size, vdim).astype(np.float32), need_grad=True)
+        g_rng.randn(src_len, batch_size, v_input_dim).astype(np.float32), need_grad=True)
 
     # Check execution
     y, w = PF.multi_head_attention(q, k, v, **kw)
@@ -1463,18 +1470,18 @@ def test_pf_multi_head_attention_execution(g_rng, src_len, tgt_len, batch_size, 
     assert ow.need_grad
 
     if with_bias:
-        assert qb.shape == b_shape
-        assert kb.shape == b_shape
-        assert vb.shape == b_shape
-        assert ob.shape == b_shape
+        assert qb.shape == qb_shape
+        assert kb.shape == kb_shape
+        assert vb.shape == vb_shape
+        assert ob.shape == ob_shape
         assert qb.need_grad
         assert kb.need_grad
         assert vb.need_grad
         assert ob.need_grad
 
     if add_attn_bias:
-        assert abk.shape == kv_shape
-        assert abv.shape == kv_shape
+        assert abk.shape == attnk_shape
+        assert abv.shape == attnv_shape
         assert abk.need_grad
         assert abv.need_grad
 

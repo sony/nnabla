@@ -658,7 +658,7 @@ def clip_by_norm(x, clip_norm, axis=None):
     return y
 
 
-def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None):
+def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None, channel_last=False):
     '''
     Resize an ND array with interpolation.
 
@@ -711,6 +711,7 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
             same values with the input corner pixels.
             The default is ``None``, and it becomes ``True`` if mode is
             'linear', otherwise ``False``.
+        channel_last: Last dimension is the channel (NHWC order) if True.
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -721,14 +722,16 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
     if scale is None and output_size is None:
         raise ValueError('Either scale or output_size must be given')
     elif output_size is None:
+        input_size = x.shape[-len(scale)-1:-1] if channel_last \
+          else x.shape[-len(scale):]
         output_size = [int(math.floor(s * d))
-                       for d, s in zip(x.shape[-len(scale):], scale)]
+                       for d, s in zip(input_size, scale)]
     if align_corners is None:
         if mode == 'linear':
             align_corners = True
         else:
             align_corners = False
-    return interpolate_base(x, output_size, mode, align_corners)
+    return interpolate_base(x, output_size, mode, align_corners, channel_last)
 
 
 def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
@@ -1108,7 +1111,7 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
 
     Computes multi-headed attention with query, key, and value.
     We use the following notations to describe the inputs and outputs below.
-    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`E`: embedding dimension, :math`H`: number of attention heads.
+    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`D`: input dimension, :math:`E`: embedding dimension, :math`H`: number of attention heads.
 
     References:
 
@@ -1117,37 +1120,44 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
         <https://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf>
 
     Args:
-        query (~nnabla.Variable): Input N-D array with shape :math:`(L_T, B, E)`.
-        key (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_k)`.
-        value (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, E_v)`.
+        query (~nnabla.Variable): Input N-D array with shape :math:`(L_T, B, D_q)`.
+        key (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, D_k)`.
+        value (~nnabla.Variable): Input N-D array with shape :math:`(L_S, B, D_v)`.
         num_heads (int): Number of attention heads. Note that embedding dimensoin E must be divisible by the number of heads. Default is 12 which is conventional.
-        q_weight (~nnabla.Variable): Input N-D array with shape :math:`(E E)`.
-        k_weight (~nnabla.Variable): Input N-D array with shape :math:`(E_k, E)`.
-        v_weight (~nnabla.Variable): Input N-D array with shape :math:`(E_v, E)`.
-        out_weight (~nnabla.Variable): Input N-D array with shape :math:`(E, E)`.
+        q_weight (~nnabla.Variable): Input N-D array with shape :math:`(D_q, E)`.
+        k_weight (~nnabla.Variable): Input N-D array with shape :math:`(D_k, E)`.
+        v_weight (~nnabla.Variable): Input N-D array with shape :math:`(D_v, E_v)`.
+        out_weight (~nnabla.Variable): Input N-D array with shape :math:`(D_v, E_{out})`.
         q_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
         k_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
-        v_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
-        out_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        v_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E_v, )`.
+        out_bias (~nnabla.Variable, optional): Input N-D array with shape :math:`(E_{out}, )`.
         attn_bias_k (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
-        attn_bias_v (~nnabla.Variable, optional): Input N-D array with shape :math:`(E, )`.
+        attn_bias_v (~nnabla.Variable, optional): Input N-D array with shape :math:`(E_v, )`.
         dropout (float, optional): Dropout ratio applied to parameters. Default is 0.
         additive_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(L_T, L_S)`. Values will be added to the attention layer to prevent attention to certain positions.
         key_padding_mask (~nnabla.Variable, optional): Input N-D array with shape :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
 
     Returns:
-        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E)`
+        ~nnabla.Variable: Output :math:`y` with shape :math:`(L_T, B, E_{out})`
         ~nnabla.Variable: Output :math:`h_n` with shape :math:`(B, L_T, L_S)`
     '''
 
     from . import functions as F
 
-    tgt_len, batch_size, embed_dim = query.shape
-    src_len, batch_size, kdim = key.shape
-    vdim = value.shape[2]
+    tgt_len, batch_size, _ = query.shape
+    src_len, batch_size, _ = key.shape
+    q_embed_dim = q_weight.shape[1]
+    k_embed_dim = k_weight.shape[1]
+    v_embed_dim = v_weight.shape[1]
+    out_dim = out_weight.shape[1]
     assert src_len == value.shape[0]
-    head_dim = embed_dim // num_heads
-    assert head_dim * num_heads == embed_dim
+    head_dim = q_embed_dim // num_heads
+    head_vdim = v_embed_dim // num_heads
+    assert q_embed_dim == k_embed_dim, "embedding dimensions must be the same for query and key."
+    assert head_dim * num_heads == q_embed_dim, "embedding dimension must be divisibile by num_heads %d" % num_heads
+    assert head_vdim * \
+        num_heads == v_embed_dim, "v_embed_dim must be divisibile by num_heads %d." % num_heads
 
     if key_padding_mask is not None:
         assert key_padding_mask.shape[0] == batch_size
@@ -1155,16 +1165,16 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
 
     # query:(L_T, B, E) --> q:(L_T, B, E)
     q = F.affine(query, q_weight, q_bias, base_axis=2)
-    # key:(L_S, B, E_k) --> k:(L_S, B, E)
+    # key:(L_S, B, D_k) --> k:(L_S, B, E_k)
     k = F.affine(key, k_weight, k_bias, base_axis=2)
-    # value:(L_S, B, E_v) --> v:(L_S, B, E)
+    # value:(L_S, B, D_v) --> v:(L_S, B, E_v)
     v = F.affine(value, v_weight, v_bias, base_axis=2)
 
     q *= float(head_dim) ** -0.5
 
     if attn_bias_k is not None:
-        attn_bias_k = F.reshape(attn_bias_k, (1, 1, embed_dim))
-        attn_bias_v = F.reshape(attn_bias_v, (1, 1, embed_dim))
+        attn_bias_k = F.reshape(attn_bias_k, (1, 1, k_embed_dim))
+        attn_bias_v = F.reshape(attn_bias_v, (1, 1, v_embed_dim))
         src_len += 1
         assert attn_bias_k is not None
         attn_bias_k = F.broadcast(
@@ -1181,11 +1191,11 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
             key_padding_mask = F.pad(key_padding_mask, (0, 1))
 
     q = F.transpose(
-        F.reshape(q, (tgt_len, batch_size * num_heads, head_dim)), (1, 0, 2))  # q:(B*H, L_T, dim_head)
+        F.reshape(q, (tgt_len, batch_size * num_heads, head_dim)), (1, 0, 2))  # q:(B*H, L_T, head_dim)
     k = F.transpose(
-        F.reshape(k, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # k:(B*H, L_S, dim_head)
+        F.reshape(k, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # k:(B*H, L_S, head_dim)
     v = F.transpose(
-        F.reshape(v, (-1, batch_size * num_heads, head_dim)), (1, 0, 2))  # v:(B*H, L_S, dim_head)
+        F.reshape(v, (-1, batch_size * num_heads, head_vdim)), (1, 0, 2))  # v:(B*H, L_S, head_vdim)
 
     # attn_output_weights: (B*H, L_T, L_S)
     attn_output_weights = F.batch_matmul(q, k, transpose_b=True)
@@ -1215,12 +1225,12 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
         attn_output_weights = F.dropout(
             attn_output_weights, p=dropout)
 
-    # (B*H, L_T, L_S) x (B*H, L_S, dim_head) --> (B*H, L_T, dim_head)
+    # (B*H, L_T, L_S) x (B*H, L_S, head_vdim) --> (B*H, L_T, head_vdim)
     attn_output = F.batch_matmul(attn_output_weights, v)
     assert list(attn_output.shape) == [
-                batch_size * num_heads, tgt_len, head_dim]
+                batch_size * num_heads, tgt_len, head_vdim]
     attn_output = F.reshape(F.transpose(
-        attn_output, (1, 0, 2)), (tgt_len, batch_size, embed_dim))  # attn_output: (L_T, B, E)
+        attn_output, (1, 0, 2)), (tgt_len, batch_size, v_embed_dim))  # attn_output: (L_T, B, E_v)
 
     attn_output = F.affine(attn_output, out_weight, out_bias, base_axis=2)
 
@@ -1231,7 +1241,7 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
                       shift_step=(1, 1), padding=(0, 0, 0, 0),
                       channel_last=False):
     r"""
-    Multiplicative patch-wise comparision between inputs `x1` and `x2`, which
+    Multiplicative patch-wise comparison between inputs `x1` and `x2`, which
     must both be 4-dimensional NCHW (with `channel_last=False`) or NHWC (with
     `channel_last=True`) arrays (where *N* is the number of samples, *H* and
     *W* are the sample height and width and *C* is the number of channels).
@@ -1240,7 +1250,7 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
     the, optionally padded, input image sizeand :math:`C_y, C_x` are determined
     by the optionally shifted patch positions.
 
-    Mathmatically, the patch correlation is formulated as 
+    Mathematically, the patch correlation is formulated as
 
     .. math::
 

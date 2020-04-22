@@ -15,13 +15,11 @@
 from __future__ import absolute_import
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
-from nnabla import logger
-
 from .base import ImageNetBase
 
 
 class AlexNet(ImageNetBase):
-    '''
+    """
     AlexNet model.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -36,7 +34,7 @@ class AlexNet(ImageNetBase):
         * `Alex Krizhevsky, Ilya Sutskever, Geoffrey E. Hinton: ImageNet Classification with Deep ConvolutionalNeural Networks.
           <https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf>`_
 
-    '''
+    """
     _KEY_VARIABLE = {
         'classifier': 'TrainNet/Affine_3',
         'pool': 'TrainNet/MaxPooling_3',

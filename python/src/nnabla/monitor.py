@@ -307,7 +307,7 @@ class MonitorImageTile(MonitorImage):
         """
         import nnabla as nn
         from nnabla.utils.image_utils import imsave
-        if index != 0 and (index + 1) % self.interval != 0:
+        if index and (index + 1) % self.interval:
             return
         if isinstance(var, nn.Variable):
             data = var.d.copy()
@@ -372,7 +372,7 @@ def tile_images(data, padsize=1, padval=0):
 
 
 def plot_series(filename, plot_kwargs=None):
-    '''Plot series data from MonitorSeries output text file.
+    """Plot series data from MonitorSeries output text file.
 
     Args:
         filename (str): Path to *.series.txt file produced by :obj:`~nnabla.MonitorSeries` class.
@@ -382,7 +382,7 @@ def plot_series(filename, plot_kwargs=None):
     Note:
         matplotlib package is required.
 
-    '''
+    """
     import matplotlib.pyplot as plt
 
     if plot_kwargs is None:
@@ -395,7 +395,7 @@ def plot_series(filename, plot_kwargs=None):
 
 
 def plot_time_elapsed(filename, elapsed=False, unit='s', plot_kwargs=None):
-    '''Plot series data from MonitorTimeElapsed output text file.
+    """Plot series data from MonitorTimeElapsed output text file.
 
     Args:
         filename (str): Path to *.series.txt file produced by :obj:`~nnabla.MonitorSeries` class.
@@ -408,7 +408,7 @@ def plot_time_elapsed(filename, elapsed=False, unit='s', plot_kwargs=None):
     Note:
         matplotlib package is required.
 
-    '''
+    """
     import matplotlib.pyplot as plt
 
     if plot_kwargs is None:

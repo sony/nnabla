@@ -44,7 +44,7 @@ def test_stack_forward_backward(seed, axis, num_inputs, ctx, func_name):
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("num_inputs", [2, 3])
 def test_stack_double_backward(seed, axis, num_inputs, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     shape = [2, 3, 4]
     inputs = [rng.randn(*shape).astype(np.float32) for x in range(num_inputs)]
@@ -55,4 +55,4 @@ def test_stack_double_backward(seed, axis, num_inputs, ctx, func_name):
                              atol_accum=1e-3,
                              dstep=1e-3,
                              ctx=ctx, func_name=None,
-                             disable_half_test=True)
+                             disable_half_test=False)

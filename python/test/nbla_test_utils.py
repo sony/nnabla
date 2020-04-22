@@ -22,7 +22,6 @@ import nnabla.utils.converter
 from nnabla.testing import assert_allclose
 import numpy
 import numpy as np
-from numpy.core import function_base
 
 
 def ext_to_camel(ext):
@@ -697,8 +696,6 @@ def backward_function_tester(rng, func, ref_func, inputs,
     In the forward test, it compares the results of nn.grad and `func`.backward.
     In the backward test, it compares the analytical gradients and numerical gradient with `grad_outputs`.
     """
-    # TODO: half
-
     from scipy.optimize import approx_fprime
 
     if ctx is None:
@@ -768,7 +765,7 @@ def backward_function_tester(rng, func, ref_func, inputs,
         begin = 0
         for i in vinputs:
             end = begin + i.size
-            if i.need_grad == True:
+            if i.need_grad:
                 i.d = inputs0[begin:end].reshape(i.shape)
             begin = end
 
@@ -778,12 +775,12 @@ def backward_function_tester(rng, func, ref_func, inputs,
         gp2.forward()
         return gp2.d.copy()
 
-    # # Half test
-    # if not disable_half_test:
-    #     finputs = create_variables(inputs, backward)
-    #     hinputs = create_variables(inputs, backward)
-    #     half_test(rng, func, finputs, hinputs, func_args,
-    #               func_kwargs, backward, ctx, func_name, atol=atol_half)
+    # Half test
+    if not disable_half_test:
+        finputs = create_variables(inputs, backward)
+        hinputs = create_variables(inputs, backward)
+        half_test(rng, func, finputs, hinputs, func_args,
+                  func_kwargs, backward, ctx, func_name, atol=atol_half)
 
     # Create input variables
     vinputs = create_variables(inputs, backward)

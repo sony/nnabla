@@ -21,7 +21,7 @@ from .base import ImageNetBase
 
 
 class SENet(ImageNetBase):
-    '''
+    """
     SENet-154 model which integrates SE blocks with a modified ResNeXt architecture.
 
     The following is a list of string that can be specified to ``use_up_to`` option in ``__call__`` method;
@@ -36,7 +36,7 @@ class SENet(ImageNetBase):
         * `Hu et al., Squeeze-and-Excitation Networks.
           <https://arxiv.org/abs/1709.01507>`_
 
-    '''
+    """
     _KEY_VARIABLE = {
         'classifier': 'Affine',
         'pool': 'AveragePooling',

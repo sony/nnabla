@@ -20,7 +20,6 @@ Contents loader functions for DataSource.
 from __future__ import absolute_import
 
 from six.moves import map
-from shutil import rmtree
 from six import BytesIO
 from six import StringIO
 from six.moves.urllib.parse import urljoin
@@ -42,6 +41,7 @@ from shutil import rmtree
 
 from nnabla.utils import image_utils
 from nnabla.utils.image_utils import imresize, imread
+from nnabla.utils.audio_utils import auresize, auread
 from nnabla.logger import logger
 
 
@@ -61,6 +61,19 @@ try:
     # cv2_available = True
 except ImportError:
     pass
+
+pydub_available = False
+with warnings.catch_warnings():
+    warnings.simplefilter('error', RuntimeWarning)
+    try:
+        from pydub import AudioSegment
+        pydub_available = True
+    except ImportError:
+        pass
+    except RuntimeWarning as w:
+        if "Couldn't find ffmpeg or avconv" in w:
+            pydub_available = True
+    warnings.simplefilter('default', RuntimeWarning)
 
 
 class FileReader:
@@ -395,6 +408,20 @@ def load_wav(path, shape=None, normalize=False):
         return wav.reshape(shape)
 
 
+def load_audio_pydub(path, shape=None, normalize=False):
+    if shape:
+        return auresize(auread(path), shape)
+    return auread(path)
+
+
+def load_audio(file, shape=None, normalize=False):
+    global pydub_available
+    if pydub_available:
+        return load_audio_pydub(file, shape, normalize)
+    else:
+        return load_wav(file, shape, normalize)
+
+
 _load_functions = {
     '.bmp': load_image,
     '.jpg': load_image,
@@ -405,7 +432,7 @@ _load_functions = {
     '.tiff': load_image,
     '.csv': load_csv,
     '.npy': load_npy,
-    '.wav': load_wav}
+    '.wav': load_audio}
 
 
 def register_load_function(ext, function):

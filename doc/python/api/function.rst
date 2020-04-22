@@ -225,6 +225,7 @@ Stochasticity
 .. autofunction:: dropout
 .. autofunction:: random_choice
 .. autofunction:: random_crop
+.. autofunction:: random_erase
 .. autofunction:: random_flip
 .. autofunction:: random_shift
 .. autofunction:: image_augmentation

@@ -32,10 +32,14 @@ def type_to_pack_format(typestring):
         fmt = 'i'
     elif typestring == 'repeated int64' or typestring == 'Shape':
         fmt = 'iI'
+    elif typestring == 'repeated float':
+        fmt = 'fF'
     elif typestring == 'string':
         fmt = 'i'
     elif typestring == 'Communicator':
         fmt = 'C'
+    else:
+        raise ValueError("{} is not defined.".format(typestring))
     return fmt
 
 def generate_cpp_utils(function_info):

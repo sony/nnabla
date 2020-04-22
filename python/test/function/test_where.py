@@ -23,7 +23,7 @@ ctxs = list_context('Where')
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_where_forward_backward(seed, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inshape = (2, 3, 4)
     inputs = [
