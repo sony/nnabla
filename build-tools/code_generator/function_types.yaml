@@ -539,3 +539,12 @@ WarpByFlow:
 PatchCorrelation:
   float: [float]
   half: [Half]
+RandBinomial:
+  float: [float]
+  half: [Half]
+RandBeta:
+  float: [float]
+  half: [Half]
+RandGamma:
+  float: [float]
+  half: [Half]

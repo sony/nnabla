@@ -219,6 +219,9 @@ Stochasticity
 .. autofunction:: rand
 .. autofunction:: randint
 .. autofunction:: randn
+.. autofunction:: rand_binomial
+.. autofunction:: rand_beta
+.. autofunction:: rand_gamma
 .. autofunction:: dropout
 .. autofunction:: random_choice
 .. autofunction:: random_crop

@@ -212,3 +212,6 @@
   Interpolate_iIiBB: 286
 13:
   Unpooling_iIB: 287
+  RandBeta_ffiIi: 288
+  RandBinomial_ifiIi: 289
+  RandGamma_ffiIi: 290
