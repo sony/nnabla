@@ -409,7 +409,7 @@ def load_parameters(path, proto=None, needs_proto=False, extension=".nntxt"):
                 shutil.rmtree(tmpdir)
                 logger.info("Parameter load ({}): {}".format(format, path))
         else:
-            pass  # TODO: Unknown extension.
+            logger.error("Invalid parameter file '{}'".format(path))
     return proto
 
 
