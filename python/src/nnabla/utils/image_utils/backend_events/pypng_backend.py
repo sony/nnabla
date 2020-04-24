@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import os
 from nnabla.logger import logger
 from .common import upscale_pixel_intensity, check_type_and_cast_if_necessary,\
     _imread_before, _imread_after, _imsave_before
-from .utils_backend import ImageUtilsBackend
+from .image_utils_backend import ImageUtilsBackend
 
 
 class PngBackend(ImageUtilsBackend):
@@ -145,9 +145,7 @@ class PngBackend(ImageUtilsBackend):
         img = self.read_result_to_ndarray(
             pixels, width, height, metadata, grayscale, as_uint16, num_channels)
 
-        pil_backend = self.get_backend_from_name("PilBackend")
-
-        return _imread_after(img, size, interpolate, channel_first, pil_backend.imresize)
+        return _imread_after(img, size, interpolate, channel_first, self.imresize)
 
     def imsave(self, path, img, channel_first=False, as_uint16=False, auto_scale=True):
         """

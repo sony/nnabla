@@ -1,3 +1,17 @@
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import binascii
 from collections import OrderedDict
@@ -18,14 +32,25 @@ class ImageUtilsBackend(object):
     def accept(self):
         return "NG"
 
-    def imread(self):
-        pass
+    def imread(self, path, grayscale=False, size=None, interpolate="bilinear",
+               channel_first=False, as_uint16=False, num_channels=-1):
+        backend = self.get_best_backend(path, 'load')
+        if backend is None:
+            raise ValueError("No available backend to load image.")
+        return backend.imread(path, grayscale, size, interpolate, channel_first,
+                              as_uint16, num_channels)
 
-    def imsave(self):
-        pass
+    def imsave(self, path, img, channel_first=False, as_uint16=False, auto_scale=True):
+        backend = self.get_best_backend(path, 'save')
+        if backend is None:
+            raise ValueError("No available backend to save image.")
+        return backend.imsave(path, img, channel_first, as_uint16, auto_scale)
 
-    def imresize(self):
-        pass
+    def imresize(self, img, size, interpolate="bilinear", channel_first=False):
+        backend = self.get_best_backend('', 'resize')
+        if backend is None:
+            raise ValueError("No available backend to resize image.")
+        return backend.imresize(img, size, interpolate, channel_first)
 
     @staticmethod
     def get_file_extension(path):
@@ -44,14 +69,17 @@ class ImageUtilsBackend(object):
             '.ico': ['00000100'],
         }
         if hasattr(path, "read"):
-            data = binascii.hexlify(path.read()).decode('utf-8')
-            path.seek(0)
-            for extension, signature in file_signature.items():
-                for s in signature:
-                    if data.startswith(s):
-                        ext = extension
+            if hasattr(path, "name"):
+                ext = os.path.splitext(path.name)[1].lower()
+            else:
+                data = binascii.hexlify(path.read()).decode('utf-8')
+                path.seek(0)
+                for extension, signature in file_signature.items():
+                    for s in signature:
+                        if data.startswith(s):
+                            ext = extension
         elif isinstance(path, str):
-            ext = os.path.splitext(path)[1]
+            ext = os.path.splitext(path)[1].lower()
         return ext
 
     def get_best_backend(self, path, operator):
