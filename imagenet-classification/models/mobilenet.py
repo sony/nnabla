@@ -99,19 +99,32 @@ class MobileNetV1(MobileNetBase):
 
     def __call__(self, x):
         h = self.conv_bn_relu(x, 32, stride=(2, 2), name="first-conv")
-        h = self.depthwise_separable_conv(h, 64, stride=(1, 1), name="conv-ds-1")
-        h = self.depthwise_separable_conv(h, 128, stride=(2, 2), name="conv-ds-2")
-        h = self.depthwise_separable_conv(h, 128, stride=(1, 1), name="conv-ds-3")
-        h = self.depthwise_separable_conv(h, 256, stride=(2, 2), name="conv-ds-4")
-        h = self.depthwise_separable_conv(h, 256, stride=(1, 1), name="conv-ds-5")
-        h = self.depthwise_separable_conv(h, 512, stride=(2, 2), name="conv-ds-6")
-        h = self.depthwise_separable_conv(h, 512, stride=(1, 1), name="conv-ds-7")
-        h = self.depthwise_separable_conv(h, 512, stride=(1, 1), name="conv-ds-8")
-        h = self.depthwise_separable_conv(h, 512, stride=(1, 1), name="conv-ds-9")
-        h = self.depthwise_separable_conv(h, 512, stride=(1, 1), name="conv-ds-10")
-        h = self.depthwise_separable_conv(h, 512, stride=(1, 1), name="conv-ds-11")
-        h = self.depthwise_separable_conv(h, 1024, stride=(2, 2), name="conv-ds-12")
-        h = self.depthwise_separable_conv(h, 1024, stride=(1, 1), name="conv-ds-13")
+        h = self.depthwise_separable_conv(
+            h, 64, stride=(1, 1), name="conv-ds-1")
+        h = self.depthwise_separable_conv(
+            h, 128, stride=(2, 2), name="conv-ds-2")
+        h = self.depthwise_separable_conv(
+            h, 128, stride=(1, 1), name="conv-ds-3")
+        h = self.depthwise_separable_conv(
+            h, 256, stride=(2, 2), name="conv-ds-4")
+        h = self.depthwise_separable_conv(
+            h, 256, stride=(1, 1), name="conv-ds-5")
+        h = self.depthwise_separable_conv(
+            h, 512, stride=(2, 2), name="conv-ds-6")
+        h = self.depthwise_separable_conv(
+            h, 512, stride=(1, 1), name="conv-ds-7")
+        h = self.depthwise_separable_conv(
+            h, 512, stride=(1, 1), name="conv-ds-8")
+        h = self.depthwise_separable_conv(
+            h, 512, stride=(1, 1), name="conv-ds-9")
+        h = self.depthwise_separable_conv(
+            h, 512, stride=(1, 1), name="conv-ds-10")
+        h = self.depthwise_separable_conv(
+            h, 512, stride=(1, 1), name="conv-ds-11")
+        h = self.depthwise_separable_conv(
+            h, 1024, stride=(2, 2), name="conv-ds-12")
+        h = self.depthwise_separable_conv(
+            h, 1024, stride=(1, 1), name="conv-ds-13")
         h = F.average_pooling(h, get_spatial_shape(h.shape, self.channel_last))
         h = PF.affine(h, self.num_classes,
                       w_init=I.NormalInitializer(0.01), name="linear")
