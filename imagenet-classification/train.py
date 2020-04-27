@@ -33,6 +33,7 @@ from utils import (
     EpochTrainer,
     EpochValidator,
     EpochReporter,
+    save_args
 )
 
 from data import (
@@ -132,7 +133,7 @@ def train():
     stream_event_handler = StreamEventHandler(int(comm.ctx.device_id))
 
     # Create data iterater
-    data, vdata = get_data_iterators(args, comm, channels)
+    data, vdata = get_data_iterators(args, comm, channels, args.spatial_size)
 
     # Create mixup object
     mixup = create_mixup_or_none(train_config.mixup, num_classes, comm)
@@ -140,7 +141,7 @@ def train():
     # Network for training
     t_model = get_model(args, num_classes,
                         test=False, channel_last=args.channel_last,
-                        mixup=mixup, channels=channels,
+                        mixup=mixup, channels=channels, spatial_size=args.spatial_size,
                         label_smoothing=train_config.label_smoothing,
                         ctx_for_loss=comm.ctx_float)
 
@@ -163,6 +164,7 @@ def train():
         if not os.path.isdir(args.monitor_path):
             os.makedirs(args.monitor_path)
         monitor = M.Monitor(args.monitor_path)
+        save_args(args, train_config)
 
     # Epoch runner
     loss_scaling = train_config.loss_scaling if args.type_config == 'half' else 1

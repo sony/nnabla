@@ -89,6 +89,7 @@ def main():
     # Network for validation
     v_model = get_model(args, num_classes,
                         test=True, channel_last=channel_last,
+                        spatial_size=args.spatial_size,
                         channels=channels)
 
     vdata = get_val_data_iterator(args, comm, channels, args.norm_config)

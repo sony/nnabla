@@ -23,7 +23,7 @@ lr_scheduler:
   type: EpochCosineLearningRateScheduler
   args:
     # Learning rate per example
-    # We use learning rate 0.1 for 256 batch samples.
+    # We use learning rate 0.256 for 256 batch samples.
     # 0.256 / 256 -> 0.001
     # It will be multiplied by batch_size before using.
     base_lr: 0.001

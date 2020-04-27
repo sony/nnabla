@@ -92,7 +92,7 @@ docker_run_user () {
 
 **Example usages**:
 ```shell
-docker_run_user local/nnabla-examples echo "Hello nnnabla."
+docker_run_user local/nnabla-examples echo "Hello nnabla."
 docker_run_user local/nnabla-examples -v /data:/data ls /data  # Suppose /data is on host, and additionally you want to mount it
 ```
 

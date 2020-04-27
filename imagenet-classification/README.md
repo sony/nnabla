@@ -147,7 +147,7 @@ We provide some of preset training configurations as config files summerized bel
 
 Some of these settings are compatible with the settings found in [NVIDIA's repository](https://github.com/NVIDIA/DeepLearningExamples)  for deep learning examples.
 
-### Training results
+### Training results (ResNet Family)
 
 Training results are summarized as follows.
 
@@ -174,6 +174,20 @@ You can also find pretrained weights that are provided by some authors and conve
 | SE-ResNeXt50 | No | 20.98 (20.97 *1) | [Download](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/se_resnext50_by_author.h5) | [GitHub](https://github.com/hujie-frank/SENet) | Use `-n senet_author` in `infer.py` to specify how to normalize an input image. |
 
 * *1 Numbers reported in [the author's repository](https://github.com/hujie-frank/SENet#trained-models).
+
+### Training results (MobileNet Family)
+
+Training results are summarized as follows.
+
+| Arch. | GPUs | MP*1 | Config*2 | Batch size per GPU | Training time (h) | Validation error (%) | Pretrained parameters (Click to download) | Note |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| MobileNet-V1 | 4 x V100 | No | Cos90 | 256 | 8.63 | 27.77  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv1_nchw_cos90.h5) | |
+| MobileNet-V2 | 4 x V100 | No | Cos90 | 256 | 9.66 | 28.06  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nchw_cos90.h5) | |
+| MobileNet-V3-Large | 4 x RTX 2080 Ti | No | Cos90 Cos150(float16) | 128 | 13.41 16.24 | 25.80 25.48 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_cos90.h5) [Cos150](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_half_cos150.h5) | |
+| MobileNet-V3-Samll | 4 x RTX 2080 Ti | No | Cos90 | 128 | 5.69 | 33.37  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nchw_cos90.h5) | |
+
+* *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
+* *2 We used training configuration summarized above.
 
 ### Evalutation of pretrained model
 
