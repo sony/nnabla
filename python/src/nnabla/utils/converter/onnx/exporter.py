@@ -206,6 +206,7 @@ class OnnxExporter:
         table_op_set_6 = {
             "Dropout": partial(self.Dropout, "6"),
             "BatchNormalization": partial(self.BatchNormalization, "6"),
+            "FusedBatchNormalization": partial(self.FusedBatchNormalization, "6"),
             "Reshape": "Reshape",
             "Transpose": "Transpose",
             "Abs": "Abs",
@@ -304,6 +305,7 @@ class OnnxExporter:
         table_op_set_7 = {
             "Dropout": partial(self.Dropout, "7"),
             "BatchNormalization": partial(self.BatchNormalization, "7"),
+            "FusedBatchNormalization": partial(self.FusedBatchNormalization, "7"),
             "Less": partial(self.BinaryOperator, "Less", "7"),
             "Greater": partial(self.BinaryOperator, "Greater", "7"),
             "Equal": partial(self.BinaryOperator, "Equal", "7"),
@@ -875,9 +877,12 @@ class OnnxExporter:
             nl.append(n)
         return nl
 
-    def BatchNormalization(self, opset, func):
+    def BatchNormalization(self, opset, func, func_name="BatchNormalization"):
         nl = []
-        bnp = func.batch_normalization_param
+        if func_name == "BatchNormalization":
+            bnp = func.batch_normalization_param
+        elif func_name == "FusedBatchNormalization":
+            bnp = func.fused_batch_normalization_param
         axes = bnp.axes[0]
         inputs = func.input[:]
         outputs = func.output[:]
@@ -908,30 +913,80 @@ class OnnxExporter:
             outputs[0] = fork_name("reshape_output")
 
         if bnp.batch_stat:
-            bn_input = [inputs[i] for i in onnx_order[:3]]
+            reduc_axes = list(range(len(input_shape)))
+            del reduc_axes[axes]
+            # ReduceMean
+            mean_out = fork_name(func.input[3]) + "_reducemean"
             n = onnx.helper.make_node(
-                'InstanceNormalization',
-                bn_input,
-                [outputs[0]],
-                epsilon=1e-5
+                'ReduceMean',
+                [func.input[0]],
+                [mean_out],
+                axes=reduc_axes,
+                keepdims=True
             )
-        else:
-            bn_input = [inputs[i] for i in onnx_order]
-            eps = 1e-5 if bnp.eps == 0.0 else bnp.eps
-            decay_rate = 0.9 if bnp.decay_rate == 0.0 \
-                else bnp.decay_rate
+            nl.append(n)
+            inputs[3] = mean_out
+
+            # Sub
+            sout = fork_name(func.input[4]) + "_sub"
             n = onnx.helper.make_node(
-                'BatchNormalization',
-                bn_input,
-                [outputs[0]],
-                epsilon=eps,
-                momentum=decay_rate
-                # spatial=1 # say: "Don't know map unexpected argument spatial."
-                # different from SPEC.
+                'Sub',
+                [func.input[0], mean_out],
+                [sout],
             )
-            if opset == "6":
-                b = onnx.helper.make_attribute("is_test", 1)
-                n.attribute.extend([b])
+            nl.append(n)
+
+            # Mul
+            mul_out = fork_name(func.input[4]) + "_mul"
+            n = onnx.helper.make_node(
+                'Mul',
+                [sout, sout],
+                [mul_out],
+            )
+            nl.append(n)
+
+            # ReduceSum
+            sum_out = fork_name(func.input[4]) + "_sum"
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [mul_out],
+                [sum_out],
+                axes=reduc_axes,
+                keepdims=True
+            )
+            nl.append(n)
+
+            # Constant
+            constant = fork_name("constant")
+            c = generate_constant(constant, func.name + "_constant",
+                                  TensorProto.FLOAT, [1],
+                                  [np.prod(input_shape) / input_shape[axes]])
+            nl.append(c)
+
+            # Div
+            div_out = fork_name(func.input[4]) + "_div"
+            n = onnx.helper.make_node(
+                'Div',
+                [sum_out, constant],
+                [div_out],
+            )
+            nl.append(n)
+            inputs[4] = div_out
+
+        bn_input = [inputs[i] for i in onnx_order]
+        eps = 1e-5 if bnp.eps == 0.0 else bnp.eps
+        decay_rate = 0.9 if bnp.decay_rate == 0.0 \
+            else bnp.decay_rate
+        n = onnx.helper.make_node(
+            'BatchNormalization',
+            bn_input,
+            [outputs[0]],
+            epsilon=eps,
+            momentum=decay_rate
+        )
+        if opset == "6":
+            b = onnx.helper.make_attribute("is_test", 1)
+            n.attribute.extend([b])
         nl.append(n)
 
         if input_shape_reshape != input_shape:
@@ -940,6 +995,43 @@ class OnnxExporter:
             n = generate_reshape(self._model_proto.graph, outputs[0], func.output[0],
                                  output_y_shape)
             nl.append(n)
+        return nl
+
+    def FusedBatchNormalization(self, opset, func):
+        nl = []
+        bnp = func.fused_batch_normalization_param
+        nonlinearity = bnp.nonlinearity
+        inputs = func.input[:]
+        outputs = func.output[:]
+
+        if len(func.input) != 6:
+            raise ValueError(
+                "The number of FusedBatchNormalization input must be 6")
+
+        del func.input[5]
+        bn_out = fork_name(func.input[0]) + "_bn"
+        func.output[0] = bn_out
+        nl.extend(self.BatchNormalization(
+            opset, func, func_name="FusedBatchNormalization"))
+
+        # Add
+        add_out = fork_name(func.input[0]) + "_add"
+        n = onnx.helper.make_node(
+            'Div',
+            [bn_out, inputs[5]],
+            [add_out],
+        )
+        nl.append(n)
+
+        if nonlinearity == "relu":
+            # Relu
+            n = onnx.helper.make_node("Relu",
+                                      [add_out],
+                                      outputs)
+            nl.append(n)
+        else:
+            raise ValueError(
+                "Currently, nonlinearity != relu is not supported!")
         return nl
 
     def Concatenate(self, func):
