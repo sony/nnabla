@@ -143,6 +143,8 @@ def add_convert_command(subparsers):
                            '(eg. "1-9", "1-2,5-")')
     subparser.add_argument('-d', '--define_version', type=str, default=None,
                            help='[export][ONNX] define onnx opset version. e.g. opset_6' + '\n' +
+                           '[export][ONNX] define convert to onnx for SNPE. e.g. opset_snpe' + '\n' +
+                           '[export][ONNX] define convert to onnx for TensorRT. e.g. opset_tensorrt' + '\n' +
                            '[export][NNB] define binary format version. e.g. nnb_3')
 
     # For config function list
