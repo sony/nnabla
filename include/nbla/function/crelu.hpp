@@ -51,7 +51,7 @@ Units (ELUs). https://arxiv.org/abs/1511.07289
 template <typename T> class CReLU : public BaseFunction<int> {
 protected:
   int axis_;
-  int size0_, size1_;
+  Size_t size0_, size1_;
 
 public:
   CReLU(const Context &ctx, int axis) : BaseFunction(ctx, axis), axis_(axis) {}

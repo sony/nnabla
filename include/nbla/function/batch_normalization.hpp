@@ -85,7 +85,7 @@ protected:
   bool batch_stat_;
   Variable mean_;
   Variable var_;
-  int size0_, size1_, size2_, size02_, size12_;
+  Size_t size0_, size1_, size2_, size02_, size12_;
   shared_ptr<Function> identity_;
   shared_ptr<Function> add2_;
   shared_ptr<Function> sub2_;

@@ -56,7 +56,7 @@ template <typename T, typename Tl = int>
 class CategoricalCrossEntropy : public BaseFunction<int> {
 protected:
   int axis_;
-  int size0_, size1_, size2_;
+  Size_t size0_, size1_, size2_;
 
 public:
   CategoricalCrossEntropy(const Context &ctx, int axis)

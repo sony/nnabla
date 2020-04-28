@@ -70,7 +70,7 @@ protected:
   int base_axis_;
   bool update_running_mean_;
   Variable mean_;
-  int size0_, size1_;
+  Size_t size0_, size1_;
 
 public:
   MeanSubtraction(const Context &ctx, int base_axis, bool update_running_mean)
