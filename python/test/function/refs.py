@@ -128,13 +128,15 @@ def convolution_nd(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     return y
 
 
-def deconvolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
+def deconvolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32,
+                     output_padding=(0,)):
     y = x
     K, Ho = y.shape
     K, Cg, M = w.shape
     C = Cg * group
 
-    H = get_deconv_out_size(Ho, M, pad[0], stride[0], dilation[0])
+    H = (get_deconv_out_size(Ho, M, pad[0], stride[0], dilation[0])
+         + output_padding[0])
     x_pad = np.zeros((C, H + pad[0] * 2), dtype=dtype)
     for k in range(K):
         g = int(k // (K // group))
@@ -148,14 +150,17 @@ def deconvolution_1d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     return x
 
 
-def deconvolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32):
+def deconvolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32,
+                     output_padding=(0, 0)):
     y = x
     K, Ho, Wo = y.shape
     K, Cg, M, N = w.shape
     C = Cg * group
 
-    H = get_deconv_out_size(Ho, M, pad[0], stride[0], dilation[0])
-    W = get_deconv_out_size(Wo, N, pad[1], stride[1], dilation[1])
+    H = (get_deconv_out_size(Ho, M, pad[0], stride[0], dilation[0])
+         + output_padding[0])
+    W = (get_deconv_out_size(Wo, N, pad[1], stride[1], dilation[1])
+         + output_padding[1])
     x_pad = np.zeros((C, H + pad[0] * 2, W + pad[1] * 2), dtype=dtype)
     for k in range(K):
         g = int(k // (K // group))

@@ -109,24 +109,36 @@ ConvolutionOpts& ConvolutionOpts::channel_last(bool val) {
   return *this;
 }
 
-int ConvolutionOpts::group() {
-  return group_;
+DeconvolutionOpts::DeconvolutionOpts() : group_(1), pad_({ 0, 0 }), stride_({ 1, 1 }), dilation_({ 1, 1 }), channel_last_(false), output_padding_({0, 0}) {}
+
+DeconvolutionOpts& DeconvolutionOpts::group(int val){
+  group_ = val;
+  return *this;
 }
 
-const vector<int>& ConvolutionOpts::pad() const {
-  return pad_;
+DeconvolutionOpts& DeconvolutionOpts::pad(const vector<int> &val) {
+  pad_ = val;
+  return *this;
 }
 
-const vector<int>& ConvolutionOpts::stride() const {
-  return stride_;
+DeconvolutionOpts& DeconvolutionOpts::stride(const vector<int> &val) {
+  stride_ = val;
+  return *this;
 }
 
-const vector<int>& ConvolutionOpts::dilation() const {
-  return dilation_;
+DeconvolutionOpts& DeconvolutionOpts::dilation(const vector<int> &val) {
+  dilation_ = val;
+  return *this;
 }
 
-bool ConvolutionOpts::channel_last() const {
-  return channel_last_;
+DeconvolutionOpts& DeconvolutionOpts::channel_last(bool val) {
+  channel_last_ = val;
+  return *this;
+}
+
+DeconvolutionOpts& DeconvolutionOpts::output_padding(const vector<int> &val) {
+  output_padding_ = val;
+  return *this;
 }
 
 BatchNormalizationOpts::BatchNormalizationOpts() : axes_({ 1 }), decay_rate_(0.9), eps_(1.0e-5){}
@@ -200,8 +212,8 @@ vector<CgVariablePtr> convolution(Context &ctx, CgVariablePtr x, CgVariablePtr w
   return convolution(ctx, x, weight, bias, base_axis, conv_opts.pad(), conv_opts.stride(), conv_opts.dilation(), group, conv_opts.channel_last());
 }
 
-vector<CgVariablePtr> deconvolution(Context &ctx, CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts){
-  return deconvolution(ctx, x, weight, bias, base_axis, conv_opts.pad(), conv_opts.stride(), conv_opts.dilation(), group, conv_opts.channel_last());
+vector<CgVariablePtr> deconvolution(Context &ctx, CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, DeconvolutionOpts &opts){
+  return deconvolution(ctx, x, weight, bias, base_axis, opts.pad(), opts.stride(), opts.dilation(), group, opts.channel_last(), opts.output_padding());
 }
 
 vector<CgVariablePtr> batch_normalization(Context &ctx, CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, BatchNormalizationOpts batch_opts){
@@ -243,9 +255,9 @@ CgVariablePtr convolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr b
   return convolution(global_ctx, x, weight, bias, base_axis, conv_opts.pad(), conv_opts.stride(), conv_opts.dilation(), group, conv_opts.channel_last())[0];
 }
 
-CgVariablePtr deconvolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts){
+CgVariablePtr deconvolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, DeconvolutionOpts &opts){
   auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-  return deconvolution(global_ctx, x, weight, bias, base_axis, conv_opts.pad(), conv_opts.stride(), conv_opts.dilation(), group, conv_opts.channel_last())[0];
+  return deconvolution(global_ctx, x, weight, bias, base_axis, opts.pad(), opts.stride(), opts.dilation(), group, opts.channel_last(), opts.output_padding())[0];
 }
 
 CgVariablePtr batch_normalization(CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, BatchNormalizationOpts batch_opts){

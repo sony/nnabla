@@ -27,14 +27,17 @@
 #include <cstring>
 #include <memory>
 
+using std::max;
+
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(Deconvolution, int,  // base_axis
-                              const vector<int> &, // pad
-                              const vector<int> &, // stride
-                              const vector<int> &, // dilation
-                              int,                 // group
-                              bool);               // channel_last
+NBLA_REGISTER_FUNCTION_SOURCE(Deconvolution, int,   // base_axis
+                              const vector<int> &,  // pad
+                              const vector<int> &,  // stride
+                              const vector<int> &,  // dilation
+                              int,                  // group
+                              bool,                 // channel_last
+                              const vector<int> &); // output_padding
 
 template <typename T>
 void Deconvolution<T>::setup_impl(const Variables &inputs,
@@ -62,6 +65,13 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
   channels_g_ = shape_weights[weight_channel_axis];
   inner_size_k_ = channels_g_;
 
+  // Default value is 0 for all spatial dims. Note that this had to be added
+  // here because this parameter was added later and nnabla_cli does not set
+  // the correct defaults when reading an older nntxt file.
+  if (output_padding_.empty()) {
+    output_padding_.resize(spatial_dims_);
+  }
+
   NBLA_CHECK(channels_i_ % group_ == 0, error_code::value,
              "Number of input channel needs to be divisible by group. "
              "Input channel: %d, group: %d",
@@ -83,18 +93,27 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(dilation_.size() == spatial_dims_, error_code::value,
              "dilation size mismatch. dilation size: %d != spatial dims: %d.",
              dilation_.size(), spatial_dims_);
+  NBLA_CHECK(output_padding_.size() == spatial_dims_, error_code::value,
+             "output_padding size mismatch: %d != spatial dims: %d.",
+             output_padding_.size(), spatial_dims_);
 
   for (int i = 0; i < spatial_dims_; ++i) {
     kernel_.push_back(shape_weights[weight_first_spatial_axis + i]);
     inner_size_k_ *= kernel_[i];
     spatial_shape_o_.push_back(shape_out[first_spatial_axis + i]);
     const int k = dilation_[i] * (kernel_[i] - 1) + 1;
-    const int size_i = stride_[i] * (spatial_shape_o_[i] - 1) + k - 2 * pad_[i];
+    const int size_i = stride_[i] * (spatial_shape_o_[i] - 1) + k -
+                       2 * pad_[i] + output_padding_[i];
     NBLA_CHECK(
         size_i > 0, error_code::value,
         "Invalid configuration of deconvolution at %d-th spatial dimension. "
         "{input:%d, kernel:%d, pad:%d, stride:%d, dilation:%d}.",
         i, size_i, kernel_[i], pad_[i], stride_[i], dilation_[i]);
+    NBLA_CHECK(
+        output_padding_[i] < stride_[i], error_code::value,
+        "output padding must be smaller than either stride or dilation, but ",
+        "output padding:%d, stride:%d, dilation:%d at spatial dimension %d",
+        output_padding_[i], stride_[i], dilation_[i], i);
     spatial_shape_i_.push_back(size_i);
   }
 

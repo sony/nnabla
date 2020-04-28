@@ -1245,9 +1245,9 @@ def depthwise_convolution(inp, kernel, pad=None, stride=None, dilation=None,
     ('b', 'Bias vector', '(outmaps,)', True),
 ])
 def deconvolution(inp, outmaps, kernel, pad=None, stride=None, dilation=None,
-                  group=1, channel_last=False, w_init=None, b_init=None,
-                  base_axis=1, fix_parameters=False, rng=None, with_bias=True,
-                  apply_w=None, apply_b=None):
+                  group=1, channel_last=False, output_padding=None,
+                  w_init=None, b_init=None, base_axis=1, fix_parameters=False,
+                  rng=None, with_bias=True, apply_w=None, apply_b=None):
     """
     Deconvolution layer.
 
@@ -1294,7 +1294,7 @@ def deconvolution(inp, outmaps, kernel, pad=None, stride=None, dilation=None,
         if apply_b is not None:
             b = apply_b(b)
     return F.deconvolution(inp, w, b, base_axis, pad, stride, dilation, group,
-                           channel_last)
+                           channel_last, output_padding)
 
 
 @parametric_function_api("depthwise_deconv", [

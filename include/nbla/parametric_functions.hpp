@@ -109,20 +109,57 @@ public:
   ConvolutionOpts &dilation(const vector<int> &val);
   ConvolutionOpts &channel_last(bool val);
 
-  int group();
-  const vector<int> &pad() const;
-  const vector<int> &stride() const;
-  const vector<int> &dilation() const;
-  bool channel_last() const;
+  int group() { return base_.group(); };
+  const vector<int> &pad() const { return base_.pad(); };
+  const vector<int> &stride() const { return base_.stride(); };
+  const vector<int> &dilation() const { return base_.dilation(); };
+  bool channel_last() const { return base_.channel_last(); };
 
   ConvolutionOpts &with_bias(bool with_bias);
   ConvolutionOpts &fix_parameters(bool val);
   ConvolutionOpts &w_init(Initializer *w_init);
   ConvolutionOpts &b_init(Initializer *b_init);
-  bool with_bias();
-  bool fix_parameters();
-  Initializer *w_init();
-  Initializer *b_init();
+
+  bool with_bias() { return with_bias_; };
+  bool fix_parameters() { return fix_parameters_; };
+  Initializer *w_init() { return w_init_; };
+  Initializer *b_init() { return b_init_; };
+};
+
+class NBLA_API DeconvolutionOpts {
+private:
+  nbla::functions::DeconvolutionOpts base_;
+  bool with_bias_;
+  bool fix_parameters_;
+  Initializer *w_init_;
+  Initializer *b_init_;
+
+public:
+  DeconvolutionOpts();
+
+  DeconvolutionOpts &group(int val);
+  DeconvolutionOpts &pad(const vector<int> &val);
+  DeconvolutionOpts &stride(const vector<int> &val);
+  DeconvolutionOpts &dilation(const vector<int> &val);
+  DeconvolutionOpts &channel_last(bool val);
+  DeconvolutionOpts &output_padding(const vector<int> &val);
+
+  int group() { return base_.group(); };
+  const vector<int> &pad() const { return base_.pad(); };
+  const vector<int> &stride() const { return base_.stride(); };
+  const vector<int> &dilation() const { return base_.dilation(); };
+  bool channel_last() const { return base_.channel_last(); };
+  const vector<int> &output_padding() const { return base_.output_padding(); };
+
+  DeconvolutionOpts &with_bias(bool with_bias);
+  DeconvolutionOpts &fix_parameters(bool val);
+  DeconvolutionOpts &w_init(Initializer *w_init);
+  DeconvolutionOpts &b_init(Initializer *b_init);
+
+  bool with_bias() { return with_bias_; };
+  bool fix_parameters() { return fix_parameters_; };
+  Initializer *w_init() { return w_init_; };
+  Initializer *b_init() { return b_init_; };
 };
 
 class NBLA_API BatchNormalizationOpts {
@@ -184,7 +221,7 @@ deconvolution(Context &ctx, CgVariablePtr x, int base_axis, int n_map_out,
 NBLA_API CgVariablePtr
 deconvolution(CgVariablePtr x, int base_axis, int n_map_out,
               const vector<int> &kernel, ParameterDirectory parameters,
-              ConvolutionOpts conv_opts = ConvolutionOpts());
+              DeconvolutionOpts conv_opts = DeconvolutionOpts());
 }
 }
 

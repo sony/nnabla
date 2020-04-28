@@ -51,22 +51,22 @@ CgVariablePtr generator(CgVariablePtr z, int max_h, bool test,
   assert(max_h / 4 > 0);
 
   //  # (Z, 1, 1) --> (256, 4, 4)
-  pf::ConvolutionOpts opts1 = pf::ConvolutionOpts().with_bias(false);
+  pf::DeconvolutionOpts opts1 = pf::DeconvolutionOpts().with_bias(false);
   auto h1 = pf::deconvolution(z, 1, max_h, {4, 4}, params["deconv1"], opts1);
   auto b1 = pf::batch_normalization(h1, !test, params["deconv1"]);
   auto e1 = f::elu(b1, 1.0);
 
   //  # (256, 4, 4) --> (128, 8, 8)
-  pf::ConvolutionOpts opts2 =
-      pf::ConvolutionOpts().with_bias(false).pad({1, 1}).stride({2, 2});
+  pf::DeconvolutionOpts opts2 =
+      pf::DeconvolutionOpts().with_bias(false).pad({1, 1}).stride({2, 2});
   auto h2 =
       pf::deconvolution(e1, 1, max_h / 2, {4, 4}, params["deconv2"], opts2);
   auto b2 = pf::batch_normalization(h2, !test, params["deconv2"]);
   auto e2 = f::elu(b2, 1.0);
 
   //  # (128, 8, 8) --> (64, 16, 16)
-  pf::ConvolutionOpts opts3 =
-      pf::ConvolutionOpts().with_bias(false).pad({1, 1}).stride({2, 2});
+  pf::DeconvolutionOpts opts3 =
+      pf::DeconvolutionOpts().with_bias(false).pad({1, 1}).stride({2, 2});
   auto h3 =
       pf::deconvolution(e2, 1, max_h / 4, {4, 4}, params["deconv3"], opts3);
   auto b3 = pf::batch_normalization(h3, !test, params["deconv3"]);
@@ -76,8 +76,8 @@ CgVariablePtr generator(CgVariablePtr z, int max_h, bool test,
   //  # Convolution with kernel=4, pad=3 and stride=2 transforms a 28 x 28 map
   //  # to a 16 x 16 map. Deconvolution with those parameters behaves like an
   //  # inverse operation, i.e. maps 16 x 16 to 28 x 28.
-  pf::ConvolutionOpts opts4 =
-      pf::ConvolutionOpts().with_bias(false).pad({3, 3}).stride({2, 2});
+  pf::DeconvolutionOpts opts4 =
+      pf::DeconvolutionOpts().with_bias(false).pad({3, 3}).stride({2, 2});
   auto h4 =
       pf::deconvolution(e3, 1, max_h / 4, {4, 4}, params["deconv4"], opts4);
   auto b4 = pf::batch_normalization(h4, !test, params["deconv4"]);
