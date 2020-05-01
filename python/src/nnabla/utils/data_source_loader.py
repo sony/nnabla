@@ -255,109 +255,13 @@ def load_image_imread(file, shape=None, max_range=1.0):
         return img255 * (max_range / 255.0)
 
 
-def load_image_pypng(file, shape=None, max_range=1.0):
-    import png
-    r = png.Reader(file=file)
-    width, height, pixels, metadata = r.read()
-    bitscale = 2 ** metadata['bitdepth'] - 1
-    img = numpy.array(list(pixels), dtype=numpy.float32).reshape(
-        (height, width, -1)) / bitscale  # (height, width, n_channel)
-    if metadata['alpha'] and metadata['planes'] == 4:  # RGBA
-        # TODO: this case is note tested well
-        try:
-            bg = numpy.array(metadata['background']) / bitscale
-        except KeyError:
-            bg = numpy.array([1.0, 1.0, 1.0])
-        rgb = img[:, :, :3]
-        alpha = img[:, :, 3]
-        imshp = alpha.shape
-        img = numpy.outer((1 - alpha), bg).reshape(imshp + (3,)) +\
-            numpy.tile(alpha.reshape(imshp + (1,)), (1, 1, 3)) * rgb
-        out_n_color = 3
-    elif metadata['alpha'] and metadata['planes'] == 2:  # (gray, alpha)
-        # TODO: this case is note tested well
-        try:
-            bg = numpy.array(metadata['background']) / bitscale
-        except KeyError:
-            bg = numpy.array([1.0])
-        rgb = img[:, :, :1]
-        alpha = img[:, :, 1]
-        imshp = alpha.shape
-        img = numpy.outer((1 - alpha), bg).reshape(imshp + (1,)
-                                                   ) + alpha.reshape(imshp + (1,)) * rgb
-        out_n_color = 1
-    else:  # RGB or Gray
-        out_n_color = metadata['planes']
-
-    # Reshape image
-    if max_range < 0:
-        max_range = 255
-    if shape is None:
-        return img.transpose(2, 0, 1) * max_range
-    else:
-        out_n_color, out_height, out_width = shape
-        return imresize(img, (out_height, out_width)).transpose((2, 0, 1)) * max_range / 255.0
-
-
-def load_image_cv2(file, shape=None, max_range=1.0):
-    img = cv2.imdecode(numpy.asarray(bytearray(file.read()),
-                                     dtype=numpy.uint8), cv2.IMREAD_UNCHANGED)
-
-    if len(img.shape) == 2:  # gray image
-        height, width = img.shape
-        img = img.reshape(1, height, width)
-
-    elif len(img.shape) == 3:  # rgb image
-        if img.shape[2] == 3:
-            img = img[:, :, ::-1].copy()  # BGR to RGB
-            img = img.transpose(2, 0, 1)
-        elif img.shape[2] == 4:
-            img = img.transpose(2, 0, 1)  # BGRA to RGBA
-            img = numpy.array([img[2], img[1], img[0], img[3]])
-
-    if max_range < 0:
-        pass
-    elif max_range == 255:
-        if img.dtype == numpy.uint8:
-            pass
-        elif img.dtype == numpy.uint16:
-            img = numpy.uint8(img / 256)
-    elif max_range == 65535:
-        if img.dtype == numpy.uint8:
-            img = numpy.uint16(img * 256)
-        elif img.dtype == numpy.uint16:
-            pass
-    else:
-        if img.dtype == numpy.uint8:
-            img = numpy.float32(img) * max_range / 255.0
-        elif img.dtype == numpy.uint16:
-            img = numpy.float32(img) * max_range / 65535.0
-    return img
-
-
 def load_image(file, shape=None, normalize=False):
     if normalize:
         max_range = 1.0
     else:
         max_range = -1
-    global cv2_available
-    global pypng_available
 
-    if cv2_available:
-        return load_image_cv2(file, shape, max_range)
-    else:
-        ext = None
-        try:
-            ext = os.path.splitext(file.name)[1].lower()
-        except:
-            pass
-        if ext == '.png' and pypng_available:
-            r = png.Reader(file=file)
-            width, height, pixels, metadata = r.read()
-            file.seek(0)
-            if metadata['bitdepth'] > 8:  # if png with high bitdepth
-                return load_image_pypng(file, shape, max_range)
-        return load_image_imread(file, shape, max_range)
+    return load_image_imread(file, shape, max_range)
 
 
 def load_csv(file, shape=None, normalize=False):
@@ -430,13 +334,10 @@ _load_functions = {
     '.gif': load_image,
     '.tif': load_image,
     '.tiff': load_image,
+    '.dcm': load_image,
     '.csv': load_csv,
     '.npy': load_npy,
     '.wav': load_audio}
-
-
-def register_load_function(ext, function):
-    _load_functions[ext] = function
 
 
 def load(ext):

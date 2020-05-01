@@ -17,7 +17,7 @@ from __future__ import absolute_import
 import numpy as np
 
 from .backend_manager import backend_manager
-from .common import rescale_pixel_intensity
+from .backend_events.common import rescale_pixel_intensity
 
 
 def set_backend(backend):
@@ -29,7 +29,7 @@ def set_backend(backend):
         backend (str): the name of image_utils` backend
     """
 
-    backend_manager.backend = backend
+    backend_manager.set_backend(backend)
 
 
 def get_backend():
@@ -40,7 +40,7 @@ def get_backend():
         str
     """
 
-    return backend_manager.backend
+    return backend_manager.get_backend()
 
 
 def get_available_backends():
@@ -111,9 +111,10 @@ def imread(path, grayscale=False, size=None, interpolate="bilinear",
          if as_uint16=True output dtype is np.uint16, else np.uint8 (default).
     """
 
-    return backend_manager.module.imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
-                                         channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels,
-                                         **kwargs)
+    best_backend = backend_manager.get_best_backend(path, "load")
+    return best_backend.imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
+                               channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels,
+                               **kwargs)
 
 
 def imsave(path, img, channel_first=False, as_uint16=False, auto_scale=True, **kwargs):
@@ -137,7 +138,8 @@ def imsave(path, img, channel_first=False, as_uint16=False, auto_scale=True, **k
             The range of upscaled pixel values depends on output dtype, which is [0, 255] as uint8 and [0, 65535] as uint16.
     """
 
-    backend_manager.module.imsave(
+    best_backend = backend_manager.get_best_backend(path, "save")
+    best_backend.imsave(
         path, img, channel_first=channel_first, as_uint16=as_uint16, auto_scale=auto_scale, **kwargs)
 
 
@@ -162,7 +164,8 @@ def imresize(img, size, interpolate="bilinear", channel_first=False, **kwargs):
          numpy.ndarray
     """
 
-    return backend_manager.module.imresize(img, size, interpolate=interpolate, channel_first=channel_first, **kwargs)
+    best_backend = backend_manager.get_best_backend(img, "resize")
+    return best_backend.imresize(img, size, interpolate=interpolate, channel_first=channel_first, **kwargs)
 
 
 # alias
