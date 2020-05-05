@@ -3630,7 +3630,7 @@ def weight_normalization(v, dim=0, eps=1e-12, fix_parameters=False):
         eps (`float`): Epsilon for the normalization. Default is 1e-12.
 
     Returns:
-        ~nnabla.Variable:  :math:`W_{sn}` with the same shape as :math:`W`.
+        ~nnabla.Variable:  :math:`W` with the same shape as :math:`v`.
 
     Example:
 

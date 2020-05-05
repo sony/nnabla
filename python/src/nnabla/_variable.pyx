@@ -189,7 +189,8 @@ cdef class Variable:
                 Variable.
             need_grad (bool): Flag for backprop or not.
 
-        Returns: ~nnabla.Variable
+        Returns: 
+            Variable
 
         """
         data = np.asarray(data)
@@ -238,7 +239,8 @@ cdef class Variable:
         Gets the shape of the variable.
 
 
-        Returns: tuple of :obj:`int`
+        Returns: 
+            tuple of :obj:`int`
 
         """
         return tuple(self.varp.variable().get().shape())
@@ -248,7 +250,8 @@ cdef class Variable:
         """
         Gets the size of the variable.
 
-        Returns: :obj:`int`
+        Returns: 
+            :obj:`int`
 
         """
         return self.varp.variable().get().size(-1)
@@ -258,7 +261,8 @@ cdef class Variable:
         """
         Gets the number of dimensions of this variable.
 
-        Returns: int
+        Returns: 
+            int
 
         """
         return self.varp.variable().get().ndim()
@@ -849,7 +853,8 @@ cdef class Variable:
         Args:
             b(bool)
 
-        Returns: bool
+        Returns: 
+            bool
 
         """
         return self.varp.persistent()
@@ -878,7 +883,8 @@ cdef class Variable:
             f (function): Function object which takes
                 :obj:`nnabla._function.Function` object as an argument.
 
-        Returns: None
+        Returns: 
+            None
 
         Example:
 
@@ -938,7 +944,8 @@ cdef class Variable:
             f (function): Function object which takes
                 :obj:`nnabla._function.Function` object as an argument.
 
-        Returns: bool
+        Returns: 
+            bool
             Returns True if any of the function object call returns True.
 
         Example:

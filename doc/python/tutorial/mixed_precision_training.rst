@@ -40,7 +40,7 @@ Basically, the mixed precision training are composed of three parts.
 
 1. Use the accelerator for computation (here we assume Tensor Cores)
 2. Use loss scaling to prevent underflow
-3. Use dynamic loss calling to prevent overflow/underflow
+3. Use dynamic loss scaling to prevent overflow/underflow
 
 In NNabla, we can do the correspondences as follows.
 

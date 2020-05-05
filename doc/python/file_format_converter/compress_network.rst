@@ -621,8 +621,8 @@ got the the-state-of-art result:
 Summary
 -------
 
-After the quantization of variable buffer, the footprint is reduced obviously
-from 1.2M to 495.2K, and accuracy is almost kept, as the following table:
+After the quantization of variable buffer, the footprint is reduced noticeably
+from 1.2M to 495.2K, and accuracy is almost the same, as shown in the following table:
 
 +--------------------------------+------------+-----------+----------+
 |                                | model size | footprint | accuracy |
@@ -634,9 +634,9 @@ from 1.2M to 495.2K, and accuracy is almost kept, as the following table:
 | parameter-and-buffer-quantized | 126.0 KB   | 495.2 KB  | 0.79     |
 +--------------------------------+------------+-----------+----------+
 
-Comparing these 2 ways, the second way shows better result on current nnabla's implementation. The reason is currently
-nnabla does not support SIGN parameter mode, binarization weights lose accuracy without gaining the best benefit of saving memory.
-And a future improvement is needed that float-point weight parameters should be removed from ``*.nnb`` for binary series functions.
+Comparing these two ways, the second way shows better result on current nnabla's implementation. The reason is currently
+nnabla does not support SIGN parameter mode, so binarization weights lose accuracy without gaining the best benefit of saving memory.
+Future work is needed such that float-point weight parameters are removed from ``*.nnb`` for binary series functions.
 
 
-* Notice: Currently, all experiments focus on classification problem, softmax will reduce the effect of quantize tolerance. The testing against regression problem has not yet been performed, how the accuracy loss is still unconfirmed.
+* Notice: Currently, all experiments focus on classification problem, and softmax operation has higher tolerance to quantization error. The testing against regression problem has not yet been performed, so the accuracy loss is still unconfirmed.

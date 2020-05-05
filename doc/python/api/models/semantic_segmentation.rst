@@ -56,14 +56,14 @@ The pre-trained models can be used for inference as following:
 .. csv-table:: Available models trained on voc dataset
     :header: "Name", "Class", "Output stride", "mIOU", "Training framework", "Notes"
 
-    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-os-8.nnp>`_", "DeepLabv3+", 8, 81.48 , "Nnabla", "Backbone (Xception-65) weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_xception_2018_01_04.tar.gz/>`_ and used for finetuning"
-    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-os-16.nnp>`_", "DeepLabv3+", 16, 82.20 , "Nnabla", "Backbone (Xception-65) weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_xception_2018_01_04.tar.gz/>`_ and used for finetuning"
+    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-os-8.nnp>`_", "DeepLabv3+", 8, 81.48 , "Nnabla", "Backbone (Xception-65) weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_xception_2018_01_04.tar.gz>`_ and used for finetuning"
+    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-os-16.nnp>`_", "DeepLabv3+", 16, 82.20 , "Nnabla", "Backbone (Xception-65) weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_xception_2018_01_04.tar.gz>`_ and used for finetuning"
 
 .. csv-table:: Available models trained on Voc and coco dataset
     :header: "Name", "Class", "Output stride", "mIOU", "Training framework", "Notes"
 
-    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-coco-os-8.nnp>`_", "DeepLabv3+", 8, 82.20, "Tensorflow", "Weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_pascal_trainval_2018_01_04.tar.gz/>`_"
-    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-coco-os-16.nnp>`_", "DeepLabv3+", 16, 83.58, "Tensorflow", "Weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_pascal_trainval_2018_01_04.tar.gz/>`_"
+    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-coco-os-8.nnp>`_", "DeepLabv3+", 8, 82.20, "Tensorflow", "Weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_pascal_trainval_2018_01_04.tar.gz>`_"
+    "`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/semantic_segmentation/DeepLabV3-voc-coco-os-16.nnp>`_", "DeepLabv3+", 16, 83.58, "Tensorflow", "Weights converted from `author's model <http://download.tensorflow.org/models/deeplabv3_pascal_trainval_2018_01_04.tar.gz>`_"
     
 Common interfaces
 -----------------

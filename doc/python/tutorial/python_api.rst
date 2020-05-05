@@ -281,7 +281,7 @@ returns None.
 Function
 --------
 
-A function defines a operation block of a computation graph as we
+A function defines an operation block of a computation graph as we
 described above. The module ``nnabla.functions`` offers various
 functions (e.g. Convolution, Affine and ReLU). You can see the list of
 functions available in the `API reference
@@ -809,9 +809,9 @@ example.
 Note that in-place substitution from the rhs to the lhs cannot be done
 by the ``=`` operator. For example, when ``x`` is an ``NdArray``,
 writing ``x = x + 1`` will *not* increment all values of ``x`` -
-instead, the expression on the lhs will create a *new* ``NdArray``
-object that different from the one originally bound by ``x``, and binds
-the new ``NdArray`` object to the Python variable ``x`` on the rhs.
+instead, the expression on the rhs will create a *new* ``NdArray``
+object that is different from the one originally bound by ``x``, and binds
+the new ``NdArray`` object to the Python variable ``x`` on the lhs.
 
 For in-place editing of ``NdArrays``, the in-place assignment operators
 ``+=``, ``-=``, ``*=``, and ``/=`` can be used. The ``copy_from`` method
