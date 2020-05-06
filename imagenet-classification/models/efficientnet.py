@@ -79,8 +79,9 @@ class EfficientNet(MobileNetBase):
         s = x
         c = x.shape[get_channel_axis(self.channel_last)]
         conv_opts = dict(channel_last=self.channel_last, with_bias=True)
+        pool_shape = get_spatial_shape(x.shape, self.channel_last)
 
-        h = F.average_pooling(x, get_spatial_shape(x.shape, self.channel_last))
+        h = F.average_pooling(x, pool_shape, channel_last=self.channel_last)
         with nn.parameter_scope(name):
             with nn.parameter_scope("fc1"):
                 h = pf_convolution(h, rmaps, (1, 1), **conv_opts)
@@ -170,7 +171,8 @@ class EfficientNet(MobileNetBase):
         # Classifier
         if not self.test:
             h = F.dropout(h, p)
-        h = F.average_pooling(h, get_spatial_shape(h.shape, self.channel_last))
+        pool_shape = get_spatial_shape(x.shape, self.channel_last)
+        h = F.average_pooling(h, pool_shape, channel_last=self.channel_last)
         h = PF.affine(h, self.num_classes,
                       w_init=I.NormalInitializer(0.01), name="linear")
 

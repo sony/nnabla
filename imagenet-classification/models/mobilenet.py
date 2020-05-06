@@ -43,7 +43,7 @@ class MobileNetBase(object):
             linear=lambda x: x)
 
     def hswish(self, x):
-        return x * (F.relu6(x + 3.0)) / 6.0
+        return x * F.relu6(x + 3.0) / 6.0
 
     def conv_bn_act(self, x, maps=32, kernel=(3, 3), stride=(1, 1), group=1, act="linear",
                     name="conv-bn"):
@@ -52,7 +52,8 @@ class MobileNetBase(object):
         axes = [get_channel_axis(self.channel_last)]
         with nn.parameter_scope(name):
             h = pf_convolution(x, maps, kernel, **conv_opts)
-            h = PF.batch_normalization(h, axes, batch_stat=not self.test)
+            h = PF.batch_normalization(
+                h, axes, batch_stat=not self.test, decay_rate=0.99)
             h = self.act_map[act](h)
         return h
 
@@ -125,7 +126,9 @@ class MobileNetV1(MobileNetBase):
             h, 1024, stride=(2, 2), name="conv-ds-12")
         h = self.depthwise_separable_conv(
             h, 1024, stride=(1, 1), name="conv-ds-13")
-        h = F.average_pooling(h, get_spatial_shape(h.shape, self.channel_last))
+
+        pool_shape = get_spatial_shape(x.shape, self.channel_last)
+        h = F.average_pooling(h, pool_shape, channel_last=self.channel_last)
         h = PF.affine(h, self.num_classes,
                       w_init=I.NormalInitializer(0.01), name="linear")
         return h, {}
@@ -211,7 +214,8 @@ class MobileNetV2(MobileNetBase):
         # Classifier
         if not self.test:
             h = F.dropout(h, 0.2)
-        h = F.average_pooling(h, get_spatial_shape(h.shape, self.channel_last))
+        pool_shape = get_spatial_shape(x.shape, self.channel_last)
+        h = F.average_pooling(h, pool_shape, channel_last=self.channel_last)
         h = PF.affine(h, self.num_classes,
                       w_init=I.NormalInitializer(0.01), name="linear")
 
@@ -270,8 +274,9 @@ class MobileNetV3(MobileNetBase):
         c = x.shape[get_channel_axis(self.channel_last)]
         cr = c // rr
         conv_opts = dict(channel_last=self.channel_last, with_bias=True)
+        pool_shape = get_spatial_shape(x.shape, self.channel_last)
 
-        h = F.average_pooling(x, get_spatial_shape(x.shape, self.channel_last))
+        h = F.average_pooling(x, pool_shape, channel_last=self.channel_last)
         with nn.parameter_scope(name):
             with nn.parameter_scope("fc1"):
                 h = pf_convolution(h, cr, (1, 1), **conv_opts)
@@ -320,7 +325,8 @@ class MobileNetV3(MobileNetBase):
         # Conv -> Avepool -> Conv
         h = self.conv_bn_act(h, int(self.maps1 * self.depth_mul), (1, 1), act="hswish",
                              name="last-conv-1")
-        h = F.average_pooling(h, get_spatial_shape(h.shape, self.channel_last))
+        pool_shape = get_spatial_shape(x.shape, self.channel_last)
+        h = F.average_pooling(h, pool_shape, channel_last=self.channel_last)
         h = self.conv_act(h, int(self.maps2 * self.depth_mul), (1, 1), act="hswish",
                           name="last-conv-2")
 
