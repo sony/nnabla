@@ -143,9 +143,8 @@ class EfficientNet(MobileNetBase):
         width_coef = self.net_setting["width_coef"]
         resolution = self.net_setting["resolution"]
         p = self.net_setting["p"]
-        if not self.test:
-            assert get_spatial_shape(x.shape, self.channel_last) == [resolution, resolution], \
-              "(x.shape = {}, resolution = {})".format(x.shape, resolution)
+        assert get_spatial_shape(x.shape, self.channel_last) == [resolution, resolution], \
+            "(x.shape = {}, resolution = {})".format(x.shape, resolution)
 
         # First conv
         maps = self.round_filters(32, width_coef)
