@@ -148,6 +148,7 @@ def train():
     # Network for validation
     v_model = get_model(args, num_classes,
                         test=True, channel_last=args.channel_last,
+                        spatial_size=args.spatial_size,
                         channels=channels)
 
     # Solver

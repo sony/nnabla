@@ -103,6 +103,13 @@ def add_dali_args(parser):
                         help="Memory padding value for nvJPEG (in MB)")
 
 
+def post_process_spatial_size(args):
+    if isinstance(args.spatial_size, int):
+        args.spatial_size = (args.spatial_size, args.spatial_size)
+    elif len(args.spatial_size) == 1:
+        args.spatial_size = args.spatial_size * 2
+
+
 def get_train_args():
     """
     Get command line arguments.
@@ -126,11 +133,8 @@ def get_train_args():
 
     args = parser.parse_args()
 
-    # Spatial size
-    if isinstance(args.spatial_size, int):
-        args.spatial_size = (args.spatial_size, args.spatial_size)
-    elif len(args.spatial_size) == 1:
-        args.spatial_size = args.spatial_size * 2
+    # Post process
+    post_process_spatial_size(args)
 
     # Check arch is available
     check_arch_or_die(args.arch)

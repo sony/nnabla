@@ -136,6 +136,7 @@ def get_val_data_iterator(args, comm, channels, spatial_size=(224, 224), norm_co
                            seed=comm.rank + 1,
                            num_shards=comm.n_procs,
                            channel_last=args.channel_last,
+                           spatial_size=spatial_size,
                            dtype=args.type_config,
                            mean=list(mean), std=list(std),
                            pad_output=pad_output)
@@ -155,5 +156,6 @@ def get_data_iterators(args, comm, channels, spatial_size=(224, 224), norm_confi
     '''
     data = get_train_data_iterator(
         args, comm, channels, spatial_size, norm_config)
-    vdata = get_val_data_iterator(args, comm, channels, norm_config)
+    vdata = get_val_data_iterator(
+        args, comm, channels, spatial_size, norm_config)
     return data, vdata
