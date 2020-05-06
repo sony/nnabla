@@ -84,7 +84,7 @@ class EfficientNet(MobileNetBase):
         with nn.parameter_scope(name):
             with nn.parameter_scope("fc1"):
                 h = pf_convolution(h, rmaps, (1, 1), **conv_opts)
-                h = F.relu(h)
+                h = F.swish(h)
             with nn.parameter_scope("fc2"):
                 h = pf_convolution(h, c, (1, 1), **conv_opts)
                 h = F.sigmoid(h)
