@@ -27,9 +27,7 @@ Array::Array(const Size_t size, dtypes dtype, const Context &ctx,
              AllocatorMemory &&mem)
     : size_(size), dtype_(dtype), ctx_(ctx), mem_(std::move(mem)) {}
 
-Array::~Array() {
-  wait_event(ctx_);
-}
+Array::~Array() { wait_event(ctx_); }
 
 size_t Array::size_as_bytes(Size_t size, dtypes dtype) {
   return size * sizeof_dtype(dtype);
@@ -49,11 +47,7 @@ void Array::wait_event(const Context ctx, const int async_flags) {
   }
 }
 
-bool Array::have_event() {
-  return event_ != nullptr;
-}
+bool Array::have_event() { return event_ != nullptr; }
 
-Array::Ptr Array::getptr() {
-  return shared_from_this();
-}
+Array::Ptr Array::getptr() { return shared_from_this(); }
 }

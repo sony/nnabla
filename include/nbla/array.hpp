@@ -22,10 +22,10 @@ Array classes are not directly used by users
 
 #include <nbla/common.hpp>
 #include <nbla/dtypes.hpp>
+#include <nbla/event.hpp>
 #include <nbla/exception.hpp>
 #include <nbla/half.hpp>
 #include <nbla/memory/allocator.hpp>
-#include <nbla/event.hpp>
 
 #include <memory>
 #include <type_traits>
@@ -122,7 +122,7 @@ public:
   virtual NBLA_API void set_event(EventPtr eptr);
 
   /** Wait for the end of an event
-      
+
       @param ctx Context where the event is waited for.
       @param async_flags .
   */

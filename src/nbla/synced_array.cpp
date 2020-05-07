@@ -14,8 +14,8 @@
 
 #include <nbla/array_registry.hpp>
 #include <nbla/context.hpp>
-#include <nbla/synced_array.hpp>
 #include <nbla/singleton_manager-internal.hpp>
+#include <nbla/synced_array.hpp>
 
 #ifdef ENABLE_SYNC_DEBUG
 #include <cstdlib>
@@ -58,8 +58,8 @@ SyncedArray::SyncedArray(const Size_t size)
 
 SyncedArray::~SyncedArray() {}
 
-Array *SyncedArray::cast(dtypes dtype, const Context &ctx, 
-                         bool write_only, const int async_flags) {
+Array *SyncedArray::cast(dtypes dtype, const Context &ctx, bool write_only,
+                         const int async_flags) {
   return cast_sp(dtype, ctx, write_only, async_flags).get();
 }
 
@@ -81,17 +81,17 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
 
   // 4. Call a callback function
   const bool off_recording = (bool)(async_flags & AsyncFlag::OFFREC);
-  SingletonManager::get<SyncedArrayCallback>()
-    ->call_callback(shared_from_this(),
-                    SyncedArrayCallbackTag::CAST,
-                    created_array.first->dtype(),
-                    ctx, write_only, first_creation, off_recording);
+  SingletonManager::get<SyncedArrayCallback>()->call_callback(
+      shared_from_this(), SyncedArrayCallbackTag::CAST,
+      created_array.first->dtype(), ctx, write_only, first_creation,
+      off_recording);
 
   // 5. Return a requested array
   return created_array.first;
 }
 
-const Array *SyncedArray::get(dtypes dtype, const Context &ctx, const int async_flags) {
+const Array *SyncedArray::get(dtypes dtype, const Context &ctx,
+                              const int async_flags) {
   return get_sp(dtype, ctx, async_flags).get();
 }
 
@@ -100,16 +100,16 @@ shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
   // This array is created at first time.
   const bool first_creation = (get_num_arrays() == 0);
 
-  ArrayDesc desc = sync(dtype, ctx, false, async_flags); // get() does not change head.
-  array_[desc.key].second = true;    // Set as at-head.
+  ArrayDesc desc =
+      sync(dtype, ctx, false, async_flags); // get() does not change head.
+  array_[desc.key].second = true;           // Set as at-head.
 
   // Call a callback function
   const bool off_recording = (bool)(async_flags & AsyncFlag::OFFREC);
-  SingletonManager::get<SyncedArrayCallback>()
-    ->call_callback(shared_from_this(),
-                    SyncedArrayCallbackTag::GET,
-                    array_[desc.key].first->dtype(),
-                    ctx, false, first_creation, off_recording);
+  SingletonManager::get<SyncedArrayCallback>()->call_callback(
+      shared_from_this(), SyncedArrayCallbackTag::GET,
+      array_[desc.key].first->dtype(), ctx, false, first_creation,
+      off_recording);
 
   return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
@@ -148,7 +148,8 @@ inline string create_key(const dtypes &dtype, const Context &ctx) {
 }
 
 SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
-                                         bool write_only, const int async_flags) {
+                                         bool write_only,
+                                         const int async_flags) {
   Context ctx = ArrayCreator::filter_context(ctx_orig);
   ArrayDesc desc{create_key(dtype, ctx), ctx.array_class, dtype};
 
@@ -158,8 +159,7 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
       head_ = desc;
     array_[desc.key] = std::make_pair(
         shared_ptr<Array>(ArrayCreator::create(size_, dtype, ctx)), false);
-  }
-  else {
+  } else {
     // Wait for the end of previous async_flags asynchronous memcpy
     if (!(async_flags & AsyncFlag::ASYNC)) {
       array_[desc.key].first->wait_event(ctx, async_flags);
@@ -218,12 +218,10 @@ void SyncedArray::clear() {
   this->clear_all_array();
 
   // Call a callback function
-  SingletonManager::get<SyncedArrayCallback>()
-    ->call_callback(shared_from_this(),
-                    SyncedArrayCallbackTag::CLEAR,
-                    dtypes::BYTE, // dummy
-                    Context({ "dummy" }, "dummy", "dummy"),
-                    false, false, false);
+  SingletonManager::get<SyncedArrayCallback>()->call_callback(
+      shared_from_this(), SyncedArrayCallbackTag::CLEAR,
+      dtypes::BYTE, // dummy
+      Context({"dummy"}, "dummy", "dummy"), false, false, false);
 }
 
 // Reset head state. Private clear does not call a callback function.
@@ -245,7 +243,6 @@ SyncedArrayCallback::SyncedArrayCallback() : callback_func_(nullptr) {}
 
 SyncedArrayCallback::~SyncedArrayCallback() {}
 
-
 bool SyncedArrayCallback::empty() { return callback_func_ == nullptr; }
 
 void SyncedArrayCallback::set_callback_func(synced_array_callback_func_type f) {
@@ -254,14 +251,13 @@ void SyncedArrayCallback::set_callback_func(synced_array_callback_func_type f) {
 
 void SyncedArrayCallback::call_callback(SyncedArrayPtr saptr,
                                         const SyncedArrayCallbackTag func_name,
-                                        const dtypes dtype,
-                                        const Context &ctx,
+                                        const dtypes dtype, const Context &ctx,
                                         const bool write_only,
                                         const bool first_creation,
                                         const bool off_recording) {
   if (!empty()) {
-    callback_func_(saptr, func_name, dtype, ctx, write_only, 
-                   first_creation, off_recording);
+    callback_func_(saptr, func_name, dtype, ctx, write_only, first_creation,
+                   off_recording);
   }
 }
 

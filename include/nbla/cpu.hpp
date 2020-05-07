@@ -14,10 +14,10 @@
 
 #ifndef __NBLA_CPU_HPP__
 #define __NBLA_CPU_HPP__
+#include <nbla/backend_base.hpp>
 #include <nbla/defs.hpp>
 #include <nbla/memory/allocator.hpp>
 #include <nbla/singleton_manager.hpp>
-#include <nbla/backend_base.hpp>
 
 #include <memory>
 #include <string>

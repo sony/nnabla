@@ -62,14 +62,14 @@ public:
   @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization
                          AsyncFlag::ASYNC -> Asynchronous synchronization
                          AsyncFlag::UNSAFE  -> No synchronization to host
-                         AsyncFlag::ASYNC | AsyncFlag::UNSAFE -> 
-                         The memory region of the source array of an 
+                         AsyncFlag::ASYNC | AsyncFlag::UNSAFE ->
+                         The memory region of the source array of an
                          asynchronous data transfer is not guranteed to be
                          kept safe until the end of the transfer.
 
   */
-  Array *cast(dtypes dtype, const Context &ctx, 
-              bool write_only = false, const int async_flags = AsyncFlag::NONE);
+  Array *cast(dtypes dtype, const Context &ctx, bool write_only = false,
+              const int async_flags = AsyncFlag::NONE);
 
   /** Cast and get array as a shared_ptr
 
@@ -77,7 +77,8 @@ public:
 
    */
   shared_ptr<Array> cast_sp(dtypes dtype, const Context &ctx,
-                            bool write_only = false, const int async_flags = AsyncFlag::NONE);
+                            bool write_only = false,
+                            const int async_flags = AsyncFlag::NONE);
 
   /** Get array with dtype context.
 
@@ -88,11 +89,12 @@ public:
   TODO: Is "const" member function appropriate? This implicitly creates or
   modify array contents of specified dtype-context.
   */
-  const Array *get(dtypes dtype, const Context &ctx, const int async_flags = AsyncFlag::NONE);
+  const Array *get(dtypes dtype, const Context &ctx,
+                   const int async_flags = AsyncFlag::NONE);
 
   /** Get array as a shared pointer.
    */
-  shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx, 
+  shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx,
                                  const int async_flags = AsyncFlag::NONE);
 
   /** Get the head array.
@@ -108,15 +110,20 @@ public:
       @param[in] dtype Enum of data type.
       @param[in] ctx Descriptor of array backend.
       @param[in] write_only No synchronization happens.
-      @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization happens. 
-                             AsyncFlag::ASYNC -> Asynchronous synchronization happens.
+      @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization
+     happens.
+                             AsyncFlag::ASYNC -> Asynchronous synchronization
+     happens.
                              AsyncFlag::SAFE  -> Same as AsyncFlag::NONE.
-                             AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous synchronization happens and,
-                                   the source array of synchronization keeps safe
+                             AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous
+     synchronization happens and,
+                                   the source array of synchronization keeps
+     safe
                                    against the memory change by host.
    */
   const void *data_ptr(dtypes dtype, const Context &ctx,
-                       bool write_only = false, const int async_flags = AsyncFlag::NONE);
+                       bool write_only = false,
+                       const int async_flags = AsyncFlag::NONE);
 
   /** Get dtype
   */
@@ -173,8 +180,8 @@ public:
   bool zeroing() const;
 
 private:
-  ArrayDesc sync(dtypes dtype, const Context &ctx, 
-                 bool write_only = false, const int async_flags = AsyncFlag::NONE);
+  ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false,
+                 const int async_flags = AsyncFlag::NONE);
 
   void clear_all_array();
 
@@ -193,14 +200,10 @@ class SingletonManager; // Forward declaration for friend
 enum SyncedArrayCallbackTag { GET, CAST, CLEAR };
 
 /// Type of callback function for get, cast, and clear of SyncedArray.
-using synced_array_callback_func_type = 
-              std::function<void(SyncedArrayPtr saptr,
-                                 const SyncedArrayCallbackTag func_name,
-                                 const dtypes dtype,
-                                 const Context &ctx,
-                                 const bool write_only,
-                                 const bool first_creation,
-                                 const bool off_recording)>;
+using synced_array_callback_func_type = std::function<void(
+    SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
+    const dtypes dtype, const Context &ctx, const bool write_only,
+    const bool first_creation, const bool off_recording)>;
 
 /**
 Singleton class to store a callback function for get, cast, and clear of
@@ -220,12 +223,9 @@ public:
 
   /** Call callback */
   void call_callback(SyncedArrayPtr saptr,
-                     const SyncedArrayCallbackTag func_name,
-                     const dtypes dtype,
-                     const Context &ctx,
-                     const bool write_only,
-                     const bool first_creation,
-                     const bool off_recording);
+                     const SyncedArrayCallbackTag func_name, const dtypes dtype,
+                     const Context &ctx, const bool write_only,
+                     const bool first_creation, const bool off_recording);
 
 private:
   friend SingletonManager; // needs forward declaration

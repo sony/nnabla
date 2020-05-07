@@ -115,7 +115,7 @@ private:
 
    async_flags are not used in synchronizer_default.
  */
-NBLA_API void synchronizer_default(Array *src, Array *dst, 
+NBLA_API void synchronizer_default(Array *src, Array *dst,
                                    const int async_flags = AsyncFlag::NONE);
 
 #define NBLA_REGISTER_ARRAY_GROUP(CLASS, GROUP)                                \

@@ -59,7 +59,6 @@ UpdateHookWithObject::operator=(const UpdateHookWithObject& rhs) {
 void UpdateHookWithObject::operator()() { callback_(obj_); }
 
 
-
 /** Solver Implementation**/
 Solver::Solver(const Context &ctx) : ctx_(ctx), setup_called_(false) {}
 

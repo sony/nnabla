@@ -25,7 +25,6 @@ namespace nbla {
 using std::string;
 using std::vector;
 
-
 /**
 Initialize NNabla CPU features.
 
@@ -58,6 +57,5 @@ NBLA_API void cpu_device_synchronize(const string &device);
 NBLA_API int cpu_get_device_count();
 
 NBLA_API vector<string> cpu_get_devices();
-
 }
 #endif

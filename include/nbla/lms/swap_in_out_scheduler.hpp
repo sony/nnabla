@@ -15,27 +15,26 @@
 #ifndef __NBLA_CUDA_PREFETCH_HPP__
 #define __NBLA_CUDA_PREFETCH_HPP__
 
-#include <vector>
-#include <unordered_map>
 #include <numeric>
+#include <unordered_map>
+#include <vector>
 
-#include <nbla/synced_array.hpp>
-#include <nbla/computation_graph/function.hpp>
 #include <nbla/backend_registry.hpp>
-
+#include <nbla/computation_graph/function.hpp>
+#include <nbla/synced_array.hpp>
 
 // Because older gcc cannot compile the hash of enum type,
 // here is provided the definition of the hash of enum for dtypes.
 // In this code, the hash of nbla::dtypes (enum) is used in std::unordered_map.
 namespace std {
-  template <> struct hash<nbla::dtypes> {
-    static_assert(is_enum<nbla::dtypes>::value, 
-                  "This hash only works for enumeration types");
-    size_t operator()(nbla::dtypes x) const noexcept {
-      using type = typename underlying_type<nbla::dtypes>::type;
-      return hash<type>{}(static_cast<type>(x));
-    }
-  };
+template <> struct hash<nbla::dtypes> {
+  static_assert(is_enum<nbla::dtypes>::value,
+                "This hash only works for enumeration types");
+  size_t operator()(nbla::dtypes x) const noexcept {
+    using type = typename underlying_type<nbla::dtypes>::type;
+    return hash<type>{}(static_cast<type>(x));
+  }
+};
 }
 
 namespace nbla {
@@ -48,19 +47,18 @@ using std::weak_ptr;
 using std::reference_wrapper;
 using std::pair;
 
-
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
-    
-    If GPU memory is insufficient to train your model,  
+
+    If GPU memory is insufficient to train your model,
     SwapInOutScheduler enables you to compute it fast and effectively
     by using memory swapping strategy.
 
     This class schedules the timing to swap out tensors to avoid out of memory
     and to swap in them before they are reused in computation.
-    
-    The schedule is made to be based on the usage order of tensors 
-    in the first training iteration. It indicates the disorder of 
+
+    The schedule is made to be based on the usage order of tensors
+    in the first training iteration. It indicates the disorder of
     the usage order in the rest iteration will cause speed-down.
 
     A scheduler takes the size of GPU memory which you want to manage.
@@ -68,24 +66,28 @@ using std::pair;
     @code
     SwapInOutScheduler scheduler(cpu_ctx, gpu_ctx, 4e9);
     @endcode
-    If out-of-memory error occurs in this configuration, the gradul reduction 
-    of 4e9 could solve the problem; for example, let the next size be 3.5e9. 
+    If out-of-memory error occurs in this configuration, the gradul reduction
+    of 4e9 could solve the problem; for example, let the next size be 3.5e9.
 
     This scheduler can be used easily as extension by enclosing a training block
-    between SwapInOutScheduler::start_scheduling() and 
-    SwapInOutScheduler::end_scheduling(). And also you need set the callback 
+    between SwapInOutScheduler::start_scheduling() and
+    SwapInOutScheduler::end_scheduling(). And also you need set the callback
     functions into the arguments of forward, backward, and update.
     For example, in a training loop,
     @code
     shceduler.start_scheduling();
     // Input next data and label in this line.
     loss->forward(false, true, nullptr,
-                  [&](const CgFunctionPtr &ptr) { scheduler.pre_function_callback(ptr); },
-                  [&](const CgFunctionPtr &ptr) { scheduler.post_function_callback(ptr); });
+                  [&](const CgFunctionPtr &ptr) {
+   scheduler.pre_function_callback(ptr); },
+                  [&](const CgFunctionPtr &ptr) {
+   scheduler.post_function_callback(ptr); });
     loss->variable()->grad()->fill(1.0);
     loss->backward(nullptr, true, {},
-                   [&](const CgFunctionPtr &ptr) { scheduler.pre_function_callback(ptr); },
-                   [&](const CgFunctionPtr &ptr) { scheduler.post_function_callback(ptr); });
+                   [&](const CgFunctionPtr &ptr) {
+   scheduler.pre_function_callback(ptr); },
+                   [&](const CgFunctionPtr &ptr) {
+   scheduler.post_function_callback(ptr); });
     adam->update([&]() { swap_in_out_scheduler.pre_update_callback(); },
                  [&]() { swap_in_out_scheduler.post_update_callback(); });
     scheduler.end_scheduling();
@@ -99,7 +101,7 @@ class SwapInOutScheduler {
   //---------------------------------------------------
   // Recorded tags of get/cast/clear
   // In the current implementation, get and cast were not distinguished.
-  enum class RecTag {GET, CAST, CLEAR};
+  enum class RecTag { GET, CAST, CLEAR };
 
   // Recorded information
   struct RecType {
@@ -115,17 +117,15 @@ class SwapInOutScheduler {
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
             const Size_t size_, const dtypes dtype_, const Context ctx_,
             const bool write_only_cast_, const bool first_creation_)
-    : tag(tag_), said(said_), sawptr(saptr_), 
-      size(size_), dtype(dtype_), ctx(ctx_),
-      write_only_cast(write_only_cast_), 
-      first_creation(first_creation_) {}
+        : tag(tag_), said(said_), sawptr(saptr_), size(size_), dtype(dtype_),
+          ctx(ctx_), write_only_cast(write_only_cast_),
+          first_creation(first_creation_) {}
   };
-
 
   //---------------------------------------------------
   //    Variables
   //---------------------------------------------------
-  const Context host_ctx; // Host context, the distination of swap out.
+  const Context host_ctx;   // Host context, the distination of swap out.
   const Context device_ctx; // Device context
 
   // The maximum size of usable GPU memory [byte]
@@ -134,7 +134,7 @@ class SwapInOutScheduler {
 
   // The recorded order of get/cast/clear in the first iteration
   vector<RecType> order;
-  
+
   // The differently ordered get/cast/clear is recorded after first iteration
   vector<RecType> wrong_ordered;
 
@@ -168,10 +168,9 @@ class SwapInOutScheduler {
 
   //---------------------------------------------------
   //    Variables used only in first iteration
-  //---------------------------------------------------    
+  //---------------------------------------------------
   // Map: SyncedArrayPtr -> SyncedArray ID
   unordered_map<SyncedArrayPtr, unsigned int> said_map;
-
 
 public:
   //---------------------------------------------------
@@ -197,12 +196,12 @@ public:
    */
   NBLA_API ~SwapInOutScheduler();
 
-  /** This initializes the scheduler and starts the management of GPU memory 
+  /** This initializes the scheduler and starts the management of GPU memory
       in this iteration.
    */
   NBLA_API void start_scheduling();
 
-  /** This finalizes the scheduler and stops the management of GPU memory 
+  /** This finalizes the scheduler and stops the management of GPU memory
       in this iteration.
    */
   NBLA_API void end_scheduling();
@@ -227,22 +226,25 @@ public:
    */
   NBLA_API void post_update_callback();
 
-
 private:
   //---------------------------------------------------
   //                   Scheduler
   //---------------------------------------------------
-  enum class ScheduleTag { SWAP_IN_GET, SWAP_IN_CAST, 
-                           SWAP_OUT, WAIT, PRECLEAR };
+  enum class ScheduleTag {
+    SWAP_IN_GET,
+    SWAP_IN_CAST,
+    SWAP_OUT,
+    WAIT,
+    PRECLEAR
+  };
 
   struct ScheduleType {
     ScheduleTag tag;
     RecType *r;
 
-    ScheduleType(const ScheduleTag tag_, RecType *r_)
-      : tag(tag_), r(r_) {}
+    ScheduleType(const ScheduleTag tag_, RecType *r_) : tag(tag_), r(r_) {}
 
-    ScheduleType& operator=(const ScheduleType& other) {
+    ScheduleType &operator=(const ScheduleType &other) {
       tag = other.tag;
       r = other.r;
       return *this;
@@ -265,8 +267,8 @@ private:
   };
 
   // Rename of long types to shorter
-  using SyncedArrayStates = unordered_map<unsigned int, 
-                                          unordered_map<dtypes, ArrayState>>;
+  using SyncedArrayStates =
+      unordered_map<unsigned int, unordered_map<dtypes, ArrayState>>;
   struct ScheduleParams {
     int head = 0;
     int tail = 0;
@@ -285,57 +287,56 @@ private:
   void schedule();
 
   // Subprocesses of shcedule()
-  void calc_mem_usage_before_forward(ScheduleParams& params,
-                                     unordered_map<unsigned int, 
-                                                pair<bool, dtypes>>& head_type);
-  
-  void schedule_swap_in(ScheduleParams& params,
-                        const vector<unsigned int> prefetch_stopper,
-                        unordered_map<unsigned int, bool>& type_converted,
-                        unordered_map<unsigned int, 
-                                      pair<bool, dtypes>>& head_type);
-  
-  void schedule_swap_out(ScheduleParams& params, 
-                         unordered_map<unsigned int, 
-                             vector<pair<RecType*, bool>>>& clear_info,
-                         unordered_map<unsigned int, 
-                                       pair<bool, dtypes>>&head_type);
-  
-  void schedule_wait_for_all_swap_out(ScheduleParams& params);
-  
-  void schedule_wait_for_swap_out_impl(ScheduleParams& params);
-  
-  void schedule_preclear(unordered_map<unsigned int, 
-                            vector<pair<RecType*, bool>>>& clear_info);
+  void calc_mem_usage_before_forward(
+      ScheduleParams &params,
+      unordered_map<unsigned int, pair<bool, dtypes>> &head_type);
+
+  void
+  schedule_swap_in(ScheduleParams &params,
+                   const vector<unsigned int> prefetch_stopper,
+                   unordered_map<unsigned int, bool> &type_converted,
+                   unordered_map<unsigned int, pair<bool, dtypes>> &head_type);
+
+  void schedule_swap_out(
+      ScheduleParams &params,
+      unordered_map<unsigned int, vector<pair<RecType *, bool>>> &clear_info,
+      unordered_map<unsigned int, pair<bool, dtypes>> &head_type);
+
+  void schedule_wait_for_all_swap_out(ScheduleParams &params);
+
+  void schedule_wait_for_swap_out_impl(ScheduleParams &params);
+
+  void schedule_preclear(
+      unordered_map<unsigned int, vector<pair<RecType *, bool>>> &clear_info);
 
   // Return a flag to decide whether to do reschedule.
-  bool reserve_unprefetched_memory(ScheduleParams& params,
-                                   vector<unsigned int>& prefetch_stopper);
+  bool reserve_unprefetched_memory(ScheduleParams &params,
+                                   vector<unsigned int> &prefetch_stopper);
 
   void reconfirm_first_creation();
 
-  void collect_info_about_dtype_conversion
-  (unordered_map<unsigned int, bool>& type_converted,
-   const unordered_map<unsigned int, pair<bool, dtypes>>&head_type);
+  void collect_info_about_dtype_conversion(
+      unordered_map<unsigned int, bool> &type_converted,
+      const unordered_map<unsigned int, pair<bool, dtypes>> &head_type);
 
   // Return true when a recorded get/cast transfer data between host and device.
-  bool no_data_transfer(const RecType* r);
+  bool no_data_transfer(const RecType *r);
 
-  void cancel_swap_out(const RecType *r, ScheduleParams& params);
+  void cancel_swap_out(const RecType *r, ScheduleParams &params);
 
-  void backtrack_with_prefetch_cancel(ScheduleParams& params,
-                                      vector<unsigned int>& prefetch_stopper,
-                                      const size_t unprefetched_bytes,                                      
+  void backtrack_with_prefetch_cancel(ScheduleParams &params,
+                                      vector<unsigned int> &prefetch_stopper,
+                                      const size_t unprefetched_bytes,
                                       size_t available_bytes);
 
-  void determine_first_head_types(unordered_map<unsigned int,
-                                                pair<bool, dtypes>>& head_dtype);
+  void determine_first_head_types(
+      unordered_map<unsigned int, pair<bool, dtypes>> &head_dtype);
 
   // Return true when memory is not enough to prefetch the next array.
-  bool free_memory_to_prefetch(ScheduleParams& params,
+  bool free_memory_to_prefetch(ScheduleParams &params,
                                const size_t next_array_bytes);
 
-  int accumulate_counts(const unordered_map<dtypes, ArrayState>& count_map);
+  int accumulate_counts(const unordered_map<dtypes, ArrayState> &count_map);
 
   // Check if an array is not cleared. When a SyncedArray is empty,
   // the scheduler should not call get/cast not to create a unnecessary array.
@@ -347,7 +348,7 @@ private:
     auto array_classes = BackendUtils::array_classes(ctx);
 
     return std::find(array_classes.begin(), array_classes.end(),
-      query_ctx.array_class) != array_classes.end();
+                     query_ctx.array_class) != array_classes.end();
   }
 
   //---------------------------------------------------
@@ -366,7 +367,7 @@ private:
   // Execute swap in/out, wait, and preclear on a schedule.
   void run_on_beginning_schedule();
   void run_on_end_schedule();
-  void run(const ScheduleType& s);
+  void run(const ScheduleType &s);
 
   //---------------------------------------------------
   //              SyncedArrayCallback
@@ -382,19 +383,15 @@ private:
   // SyncedArrayCallback to record get/cast/clear in the first iteration.
   void sa_callback_recorder(SyncedArrayPtr saptr,
                             const SyncedArrayCallbackTag sa_tag,
-                            const dtypes dtype,
-                            const Context &ctx,
-                            const bool write_only,
-                            const bool first_creation,
+                            const dtypes dtype, const Context &ctx,
+                            const bool write_only, const bool first_creation,
                             const bool off_recording);
 
   // SyncedArrayCallback to trace get/cast/clear after the first iteration.
   void sa_callback_tracer(SyncedArrayPtr saptr,
                           const SyncedArrayCallbackTag sa_tag,
-                          const dtypes dtype,
-                          const Context &ctx,
-                          const bool write_only,
-                          const bool first_creation,
+                          const dtypes dtype, const Context &ctx,
+                          const bool write_only, const bool first_creation,
                           const bool off_recording);
 
   // Tag converter

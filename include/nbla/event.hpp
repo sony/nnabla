@@ -15,9 +15,9 @@
 #ifndef __NBLA_EVENT_HPP__
 #define __NBLA_EVENT_HPP__
 
-#include <nbla/defs.hpp>
-#include <nbla/context.hpp>
 #include <nbla/common.hpp>
+#include <nbla/context.hpp>
+#include <nbla/defs.hpp>
 
 #include <memory>
 
@@ -31,12 +31,11 @@ public:
   virtual ~Event();
 
   // Return the flag which is true if this event can be delete.
-  virtual void wait_event(const Context ctx, 
+  virtual void wait_event(const Context ctx,
                           const int async_flags = AsyncFlag::NONE) {}
 };
 
 /// Shared pointer of Event.
 typedef shared_ptr<Event> EventPtr;
-
 }
 #endif

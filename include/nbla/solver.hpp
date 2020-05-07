@@ -33,7 +33,6 @@ using std::unordered_map;
 
 typedef std::function<void(void)> update_hook_type;
 
-
 /** Callback helper class for update callbacks
 
 This is used from Python frontend.
@@ -45,7 +44,7 @@ public:
   typedef std::function<void(void *)> callback_type;
 
 private:
-  void *obj_{ nullptr };
+  void *obj_{nullptr};
   callback_type callback_;
   setup_callback_type  setup_callback_;
   cleanup_callback_type cleanup_callback_;
@@ -61,7 +60,6 @@ public:
 
   NBLA_API void operator()();
 };
-
 
 /** \addtogroup NNablaCoreGrp */
 /*@{*/

@@ -17,5 +17,4 @@
 namespace nbla {
 
 Event::~Event() {}
-
 }

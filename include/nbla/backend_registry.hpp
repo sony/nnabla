@@ -15,19 +15,19 @@
 #ifndef __NBLA_HOST_STREAM_SYNCHRONIZER_REGISTRY_HPP__
 #define __NBLA_HOST_STREAM_SYNCHRONIZER_REGISTRY_HPP__
 
-#include <nbla/defs.hpp>
-#include <nbla/context.hpp>
 #include <nbla/backend_base.hpp>
+#include <nbla/context.hpp>
+#include <nbla/defs.hpp>
 
-#include <string>
-#include <sstream>
-#include <istream>
 #include <functional>
-#include <unordered_map>
+#include <istream>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
 namespace nbla {
-  
+
 using std::string;
 using std::unordered_map;
 using std::shared_ptr;
@@ -38,12 +38,12 @@ This class is never be instantiated.
  */
 class NBLA_API BackendUtils {
 public:
-  typedef std::function<BackendBase*(void)> BackendGetter;
+  typedef std::function<BackendBase *(void)> BackendGetter;
   typedef unordered_map<string, BackendGetter> Registry_t;
 
   /** Register new synchronizer
    */
-  static void add_backend(const string& backend_name,
+  static void add_backend(const string &backend_name,
                           BackendGetter backend_getter);
 
   /** Call array_classes of the backend in a context.
@@ -97,7 +97,7 @@ private:
   static BackendGetter get_backend_getter(const Context ctx);
 };
 
-#define NBLA_REGISTER_BACKEND(BACKEND_NAME, BACKEND_GETTER)   \
-  {  BackendUtils::add_backend(BACKEND_NAME, BACKEND_GETTER); }
+#define NBLA_REGISTER_BACKEND(BACKEND_NAME, BACKEND_GETTER)                    \
+  { BackendUtils::add_backend(BACKEND_NAME, BACKEND_GETTER); }
 }
 #endif

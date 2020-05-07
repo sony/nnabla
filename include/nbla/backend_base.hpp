@@ -15,13 +15,13 @@
 #ifndef __NBLA_BACKEND_BASE_HPP__
 #define __NBLA_BACKEND_BASE_HPP__
 
+#include <nbla/common.hpp>
 #include <nbla/memory/allocator.hpp>
 #include <nbla/singleton_manager.hpp>
-#include <nbla/common.hpp>
 
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace nbla {
 
