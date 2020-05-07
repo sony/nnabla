@@ -30,7 +30,7 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 import nnabla.utils.callback as callback
 
-from nnabla.utils.cli.utility import let_data_to_variable
+from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
@@ -435,6 +435,9 @@ def _train(args, config):
 
             for iteration in range(last_iteration, max_iteration):
 
+                # instant load
+                measure_cpu_gpu_instant_load()
+
                 cost = _update(iteration, config, cost)
 
                 if np.isnan(cost.sum_epoch) or np.isinf(cost.sum_epoch):
@@ -465,6 +468,12 @@ def _train(args, config):
                         best_error, error_str = _evaluate(
                             args, config, monitoring_report, best_error, epoch)
 
+                    # Cpu/Gpu average load
+                    cg_load_str = ''
+                    cg_load = get_cpu_gpu_average_load()
+                    if len(cg_load):
+                        cg_load_str = 'average_load_matrix: {}'.format(cg_load)
+
                     if single_or_rankzero():
                         # Write to monitoring_report.yml
                         f = open(os.path.join(
@@ -483,9 +492,9 @@ def _train(args, config):
                         callback.update_status(('epoch.current', epoch))
                         callback.update_status()
 
-                        logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s)'.format(
+                        logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s) {}'.format(
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
-                            timeinfo.past_time, timeinfo.estimate_time))
+                            timeinfo.past_time, timeinfo.estimate_time, cg_load_str))
 
                         if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
                             _save_parameters(args, 'current', epoch, True)
