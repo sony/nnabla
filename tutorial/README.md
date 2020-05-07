@@ -21,3 +21,18 @@ Then, follow the instruction printed on your terminal to connect the server
 on your browser.
 
 Open the `.ipynb` files to start tutorials.
+
+
+You can also run it directly on [Colab](https://colab.research.google.com/) from the links in the table below.
+
+
+| Name        | Notebook           | Doc  |
+|:------------------------------------------------:|:-------------:|:-----:|
+| NNabla By Examples      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/by_examples.ipynb) | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/by_examples.html) |
+| NNabla Python API     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/python_api.ipynb) | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html) |
+| Model Finetuning      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/model_finetuning.ipynb) | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/model_finetuning.html) |
+| Debugging      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/debugging.ipynb) | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/debugging.html) |
+| Static vs. Dynamic Neural Network in NNabla      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/dynamic_and_static_nn.ipynb) | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/dynamic_and_static_nn.html) |
+| Mixed Precision Training      |  | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/mixed_precision_training.html) |
+| Data Parallel Distributed Training      |  | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/multi_device_training.html) |
+| Graph Converter for Inference      |  | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/graph_converter_for_inference.html) |

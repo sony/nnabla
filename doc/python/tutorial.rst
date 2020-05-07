@@ -11,9 +11,10 @@ If you want to run these step-by-step, follow the link and see the instruction f
 
     tutorial/by_examples.rst
     tutorial/python_api.rst
+    tutorial/model_finetuning.rst
+    tutorial/debugging.rst
     tutorial/dynamic_and_static_nn.rst
     tutorial/mixed_precision_training.rst
     tutorial/multi_device_training.rst
-    tutorial/debugging.rst
     tutorial/graph_converter_for_inference.rst
     tutorial/function_list_and_converter.rst
