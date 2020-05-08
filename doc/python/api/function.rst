@@ -112,8 +112,10 @@ Arithmetic
 ----------
 
 .. autofunction:: add2
+.. autofunction:: add_n
 .. autofunction:: sub2
 .. autofunction:: mul2
+.. autofunction:: mul_n
 .. autofunction:: div2
 .. autofunction:: pow2
 .. autofunction:: add_scalar
