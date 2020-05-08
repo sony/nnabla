@@ -46,7 +46,7 @@ class.
 template <typename T, typename T1> class ConfusionMatrix : public Function {
 protected:
   int axis_;
-  int size0_, size1_, size2_;
+  Size_t size0_, size1_, size2_;
 
 public:
   ConfusionMatrix(const Context &ctx, int axis) : Function(ctx), axis_(axis) {}

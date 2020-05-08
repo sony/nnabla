@@ -50,7 +50,7 @@ Outputs:
 template <typename T> class Softmax : public BaseFunction<int> {
 protected:
   int axis_;
-  int size0_, size1_, size2_;
+  Size_t size0_, size1_, size2_;
 
 public:
   Softmax(const Context &ctx, int axis)

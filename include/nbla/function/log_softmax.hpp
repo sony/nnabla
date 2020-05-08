@@ -42,7 +42,7 @@ Outputs:
 template <typename T> class LogSoftmax : public BaseFunction<int> {
 protected:
   int axis_;
-  int size0_, size1_, size2_;
+  Size_t size0_, size1_, size2_;
 
 public:
   LogSoftmax(const Context &ctx, int axis)
