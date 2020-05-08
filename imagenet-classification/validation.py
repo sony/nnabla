@@ -38,6 +38,10 @@ def get_args():
     A.add_dali_args(parser)
     parser.add_argument('--batch-size', '-b', default=100,
                         type=int, help='Batch size per GPU.')
+    parser.add_argument("--channel-last", action='store_true',
+                        help='Use a model with NHWC layout.')
+    parser.add_argument("--spatial-size", type=int, default=224, nargs="+",
+                        help='Spatial size.')
     parser.add_argument('--monitor-path', '-M', default='tmp.val',
                         help='A directory the results are produced.')
     parser.add_argument("weights", help='Path to a trained parameter h5 file.')
@@ -50,6 +54,8 @@ def get_args():
         '--disable-dataset-size-error', '-E', action='store_false', default=True, dest='raise_dataset_size',
         help='If not set, raising an error when the dataset size is divisible by (batch_size * num workers)')
     args = parser.parse_args()
+
+    A.post_process_spatial_size(args)
 
     # See available archs
     A.check_arch_or_die(args.arch)
@@ -77,8 +83,16 @@ def main():
             raise ValueError(f'The batchsize and number of workers must be set so that {imagenet_val_size} can be divisible by (batch_size * num_workers).')
 
     # Load parameters
-    channel_last, channels = load_parameters_and_config(args.weights)
-    logger.info('Parameter configuration is inferred as:')
+    try:
+        channel_last, channels = load_parameters_and_config(args.weights)
+        logger.info('Parameter configuration is inferred as:')
+    except:
+        logger.warn(
+            "Input shape deducation fails. Use the channel_last in the argument.")
+        logger.warn(
+            "Input shape deducation fails. Use the channels of 4 in half data type; otherwise, 3.")
+        channels = 4 if args.type_config == 'half' else 3
+        channel_last, channels = args.channel_last, channels
     logger.info(f'* channel_last={channel_last}')
     logger.info(f'* channels={channels}')
     args.channel_last = channel_last
@@ -92,7 +106,8 @@ def main():
                         spatial_size=args.spatial_size,
                         channels=channels)
 
-    vdata = get_val_data_iterator(args, comm, channels, args.norm_config)
+    vdata = get_val_data_iterator(
+        args, comm, channels, args.spatial_size, args.norm_config)
 
     from nnabla_ext.cuda import StreamEventHandler
     stream_event_handler = StreamEventHandler(int(comm.ctx.device_id))

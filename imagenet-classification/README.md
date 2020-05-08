@@ -183,8 +183,12 @@ Training results are summarized as follows.
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
 | MobileNet-V1 | 4 x V100 | No | Cos90 | 256 | 8.63 | 27.77  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv1_nchw_cos90.h5) | |
 | MobileNet-V2 | 4 x V100 | No | Cos90 | 256 | 9.66 | 28.06  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nchw_cos90.h5) | |
-| MobileNet-V3-Large | 4 x RTX 2080 Ti | No | Cos90 Cos150(float16) | 128 | 13.41 16.24 | 25.80 25.48 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_cos90.h5) [Cos150](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_half_cos150.h5) | |
+| MobileNet-V3-Large | 4 x RTX 2080 Ti | No | Cos90 | 128 | 13.41 | 25.80 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_cos90.h5) | |
 | MobileNet-V3-Samll | 4 x RTX 2080 Ti | No | Cos90 | 128 | 5.69 | 33.37  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nchw_cos90.h5) | |
+| MobileNet-V1 | 4 x V100 | Yes | Cos90 | 256 | 6.35  | 27.63  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv1_nhwc_cos90.h5) | |
+| MobileNet-V2 | 4 x V100 | Yes | Cos90 | 256 | 7.14  | 28.32  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nhwc_cos90.h5) | |
+| MobileNet-V3-Large | 4 x V100 | Yes | Cos90 | 256 | 8.09  | 25.98 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_cos90.h5) | |
+| MobileNet-V3-Samll | 4 x V100 | Yes | Cos90 | 256 | 5.96  | 33.64  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_cos90.h5) | |
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
 * *2 We used training configuration summarized above.
