@@ -55,12 +55,12 @@ cdef extern from "nbla/solver.hpp" namespace "nbla":
         vector[pair[string, CSolverState]] get_states() except +
         void set_states(vector[pair[string, CSolverState]]) except +
         void update(update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
-        void weight_decay(float decay_rate) nogil except +
-        void clip_grad_by_norm(float clip_norm) nogil except +
-        cpp_bool check_inf_grad() nogil except +
-        cpp_bool check_nan_grad() nogil except +
-        cpp_bool check_inf_or_nan_grad() nogil except +
-        void scale_grad(float scale) nogil except +
+        void weight_decay(float decay_rate, update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
+        void clip_grad_by_norm(float clip_norm, update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
+        cpp_bool check_inf_grad(update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
+        cpp_bool check_nan_grad(update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
+        cpp_bool check_inf_or_nan_grad(update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
+        void scale_grad(float scale, update_hook_type update_pre_hook, update_hook_type update_post_hook) nogil except +
         string name() except +
         float learning_rate() except +
         void set_learning_rate(float learning_rate) except +

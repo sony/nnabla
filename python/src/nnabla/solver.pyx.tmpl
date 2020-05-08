@@ -372,7 +372,7 @@ cdef class Solver:
         with nogil:
             self.solverp.update(update_pre_hook_c, update_post_hook_c)
 
-    def weight_decay(self, float decay_rate):
+    def weight_decay(self, float decay_rate, object pre_hook=None, object post_hook=None):
         """
         Apply weight decay to gradients.
         When called, the gradient weight will be decayed by a rate of the
@@ -381,11 +381,18 @@ cdef class Solver:
         Args:
             decay_rate (float): The coefficient of weight decay.
         """
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
 
         with nogil:
-            self.solverp.weight_decay(decay_rate)
+            self.solverp.weight_decay(decay_rate, pre_hook_c, post_hook_c)
 
-    def clip_grad_by_norm(self, float clip_norm):
+    def clip_grad_by_norm(self, float clip_norm, object pre_hook=None, object post_hook=None):
         """
         Clip gradients by norm.
         When called, the gradient will be clipped by the given norm.
@@ -393,48 +400,83 @@ cdef class Solver:
         Args:
             clip_norm (float): The value of clipping norm.
         """
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
 
         with nogil:
-            self.solverp.clip_grad_by_norm(clip_norm)
+            self.solverp.clip_grad_by_norm(clip_norm, pre_hook_c, post_hook_c)
 
-    def check_inf_grad(self, ):
+    def check_inf_grad(self, object pre_hook=None, object post_hook=None):
         """
         Check if there is any inf on the gradients which were setup.
 
         """
         cdef cpp_bool flag;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            flag = self.solverp.check_inf_grad()
+            flag = self.solverp.check_inf_grad(pre_hook_c, post_hook_c)
         return flag
 
-    def check_nan_grad(self, ):
+    def check_nan_grad(self, object pre_hook=None, object post_hook=None):
         """
         Check if there is any nan on the gradients which were setup.
 
         """
         cdef cpp_bool flag;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            flag = self.solverp.check_nan_grad()
+            flag = self.solverp.check_nan_grad(pre_hook_c, post_hook_c)
         return flag
 
-    def check_inf_or_nan_grad(self, ):
+    def check_inf_or_nan_grad(self, object pre_hook=None, object post_hook=None):
         """
         Check if there is any inf or nan on the gradients which were setup.
 
         """
         cdef cpp_bool flag;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            flag = self.solverp.check_inf_or_nan_grad()
+            flag = self.solverp.check_inf_or_nan_grad(pre_hook_c, post_hook_c)
         return flag
 
-    def scale_grad(self, scale):
+    def scale_grad(self, scale, object pre_hook=None, object post_hook=None):
         """
         Rescale gradient
 
         """
         cdef float _scale = scale;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            self.solverp.scale_grad(_scale)
+            self.solverp.scale_grad(_scale, pre_hook_c, post_hook_c)
             
     @property
     def name(self):

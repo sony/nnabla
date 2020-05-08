@@ -190,28 +190,34 @@ public:
 
   @param decay_rate Coefficient of weight decay.
   */
-  void weight_decay(float decay_rate);
+  void weight_decay(float decay_rate, update_hook_type pre_callback = nullptr,
+		    update_hook_type post_callback = nullptr);
 
   /** Clip gradients by norm.
   The norm is calculated at each variable.
    */
-  void clip_grad_by_norm(float norm);
+  void clip_grad_by_norm(float norm, update_hook_type pre_callback = nullptr,
+                         update_hook_type post_callback = nullptr);
 
   /** Check if there is any inf on the gradients which were setup.
    */
-  bool check_inf_grad();
+  bool check_inf_grad(update_hook_type pre_callback = nullptr,
+                      update_hook_type post_callback = nullptr);
 
   /** Check if there is any nan on the gradients which were setup.
    */
-  bool check_nan_grad();
+  bool check_nan_grad(update_hook_type pre_callback = nullptr,
+                      update_hook_type post_callback = nullptr);
 
   /** Check if there is any inf or nan on the gradients which were setup.
    */
-  bool check_inf_or_nan_grad();
+  bool check_inf_or_nan_grad(update_hook_type pre_callback = nullptr,
+                             update_hook_type post_callback = nullptr);
 
   /** Scale gradients,then increase the loss scale
    */
-  void scale_grad(float scale);
+  void scale_grad(float scale, update_hook_type pre_callback = nullptr,
+                  update_hook_type post_callback = nullptr);
 
   /** Get array classes that are allowed to be specified by Context
   */

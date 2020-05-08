@@ -132,13 +132,25 @@ void Solver::zero_grad() {
   }
 }
 
-void Solver::update(update_hook_type pre_callback,
-                    update_hook_type post_callback) {
-  auto call_callback = [](update_hook_type &h) {
-    if (h) {
-      h();
+namespace {
+
+  struct ScopedCallback {
+    update_hook_type post_;
+    ScopedCallback(update_hook_type &pre, update_hook_type &post) : post_(post) {
+      if (pre) {
+	pre();
+      }
+    }
+    ~ScopedCallback() {
+      if (post_) {
+	post_();
+      }
     }
   };
+}
+
+void Solver::update(update_hook_type pre_callback,
+                    update_hook_type post_callback) {
 
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
@@ -146,14 +158,13 @@ void Solver::update(update_hook_type pre_callback,
       // The gradient is not computed. Skip.
       continue;
     }
-
-    call_callback(pre_callback);
+    ScopedCallback(pre_callback, post_callback);
     update_impl(kv.first, kv.second.p);
-    call_callback(post_callback);
   }
 }
 
-void Solver::weight_decay(float decay_rate) {
+void Solver::weight_decay(float decay_rate, update_hook_type pre_callback,
+                          update_hook_type post_callback) {
   if (decay_rate == 0)
     return;
   for (auto &kv : params_) {
@@ -162,11 +173,13 @@ void Solver::weight_decay(float decay_rate) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     weight_decay_impl(kv.first, kv.second.p, decay_rate);
   }
 }
 
-void Solver::clip_grad_by_norm(float norm) {
+void Solver::clip_grad_by_norm(float norm, update_hook_type pre_callback,
+			       update_hook_type post_callback) {
   if (norm == 0)
     return;
   for (auto &kv : params_) {
@@ -175,17 +188,20 @@ void Solver::clip_grad_by_norm(float norm) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     clip_grad_by_norm_impl(kv.first, kv.second.p, norm);
   }
 }
 
-bool Solver::check_inf_grad() {
+bool Solver::check_inf_grad(update_hook_type pre_callback,
+			    update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     if (check_inf_grad_impl(kv.first, kv.second.p)) {
       return true;
     }
@@ -194,13 +210,15 @@ bool Solver::check_inf_grad() {
 }
 
 // TODO: potential to speed-up
-bool Solver::check_nan_grad() {
+bool Solver::check_nan_grad(update_hook_type pre_callback,
+			    update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     if (check_nan_grad_impl(kv.first, kv.second.p)) {
       return true;
     }
@@ -209,13 +227,15 @@ bool Solver::check_nan_grad() {
 }
 
 // TODO: potential to speed-up
-bool Solver::check_inf_or_nan_grad() {
+bool Solver::check_inf_or_nan_grad(update_hook_type pre_callback,
+				   update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     if (check_inf_or_nan_grad_impl(kv.first, kv.second.p)) {
       return true;
     }
@@ -224,13 +244,15 @@ bool Solver::check_inf_or_nan_grad() {
 }
 
 // Methods for the mixed-precision training
-void Solver::scale_grad(float scale) {
+void Solver::scale_grad(float scale, update_hook_type pre_callback,
+			update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     scale_grad_impl(kv.first, kv.second.p, scale);
   }
 }
