@@ -146,8 +146,12 @@ class PilBackend(ImageUtilsBackend):
 
         pil_img = Image.open(path, mode="r")
 
-        img = self.pil_image_to_ndarray(
-            pil_img, grayscale, num_channels, return_palette_indices)
+        try:
+            img = self.pil_image_to_ndarray(
+                pil_img, grayscale, num_channels, return_palette_indices)
+        except:
+            return self.next_available(path).imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
+                                                    channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels)
 
         return _imread_after(img, size, interpolate, channel_first, self.imresize)
 
