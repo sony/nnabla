@@ -24,8 +24,8 @@ cdef extern from "nbla/lms/swap_in_out_scheduler.hpp" namespace "nbla":
                             const size_t s, const size_t l,
                             const cpp_bool save_host_mem,
                             const cpp_bool save_host_mem_no_abort) except +
-        void start_scheduling();
-        void end_scheduling();
+        void start_scheduling() except +
+        void end_scheduling() except +
         void pre_function_callback(const CgFunctionPtr &ptr) except +
         void post_function_callback(const CgFunctionPtr &ptr) except +
         void pre_update_callback() except +
