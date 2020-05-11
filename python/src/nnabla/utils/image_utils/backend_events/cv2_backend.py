@@ -160,8 +160,11 @@ class Cv2Backend(ImageUtilsBackend):
                     "casting {} to uint16 is not safe.".format(img.dtype))
                 return self.next_available(path).imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
                                                         channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels)
-
-        img = self._cvtColor_helper(img, num_channels)
+        try:
+            img = self._cvtColor_helper(img, num_channels)
+        except:
+            return self.next_available(path).imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
+                                                    channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels)
 
         img = _imread_after(img, size, interpolate,
                             channel_first, self.imresize)

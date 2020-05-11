@@ -142,8 +142,12 @@ class PngBackend(ImageUtilsBackend):
             return self.next_available(path).imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
                                                     channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels)
 
-        img = self.read_result_to_ndarray(
-            pixels, width, height, metadata, grayscale, as_uint16, num_channels)
+        try:
+            img = self.read_result_to_ndarray(
+                pixels, width, height, metadata, grayscale, as_uint16, num_channels)
+        except:
+            return self.next_available(path).imread(path, grayscale=grayscale, size=size, interpolate=interpolate,
+                                                    channel_first=channel_first, as_uint16=as_uint16, num_channels=num_channels)
 
         return _imread_after(img, size, interpolate, channel_first, self.imresize)
 

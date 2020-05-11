@@ -100,7 +100,7 @@ class ImageUtilsBackend(object):
                             self._best_backend[ext].next[ext] = None
                         else:
                             end = self._best_backend[ext]
-                            while end.next[ext] is not None:
+                            while ext in end.next and end.next[ext] is not None:
                                 end = self._best_backend[ext].next[ext]
                             end.next[ext] = backend()
                     elif state == "Recommended":
