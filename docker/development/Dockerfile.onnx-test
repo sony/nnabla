@@ -117,7 +117,7 @@ RUN umask 0 \
     && . /opt/miniconda3/bin/activate \
     && conda create -n nnabla-build python=${PYVERNAME} \
     && conda activate nnabla-build \
-    && conda install -c conda-forge pydicom gdcm \
+    && if [ ${PYTHON_VERSION_MINOR} -gt 7 ]; then conda install -c conda-forge pydicom; else conda install -c conda-forge pydicom gdcm; fi \
     && pip install numpy \
     && pip install -U -r /tmp/deps/setup_requirements.txt \
     && pip install -U -r /tmp/deps/requirements.txt \
