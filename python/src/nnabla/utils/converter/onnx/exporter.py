@@ -2454,7 +2454,8 @@ class OnnxExporter:
     def Broadcast(self, func):
         # Convert Constant+Expand
         nl = []
-        shape = func.broadcast_param.shape.dim
+        shape = [self._batch_size if d <
+                 0 else d for d in func.broadcast_param.shape.dim]
         # Constant
         constant_newshape = fork_name("constant")
         c = generate_constant(constant_newshape, func.name + "_shape",
