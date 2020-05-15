@@ -1,4 +1,4 @@
-# Utilities for nNabla exampls
+# Utilities for NNabla examples
 
 NEU, nnabla examples utils, provides a bunch of reusable components for writing training and inference scripts in nnabla-examples. Please note that this package is not organized very well and not stable so far, the API might change without any notice.
 
