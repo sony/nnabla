@@ -50,6 +50,8 @@ class InterpolateBackward(BackwardFunction):
         output_size = self.forward_func.info.args["output_size"]
         mode = self.forward_func.info.args["mode"]
         align_corners = self.forward_func.info.args["align_corners"]
+        half_pixel = self.forward_func.info.args["half_pixel"]
+        half_pixel_for_nn = self.forward_func.info.args["half_pixel_for_nn"]
         channel_last = self.forward_func.info.args["channel_last"]
 
         # Inputs
@@ -66,7 +68,9 @@ class InterpolateBackward(BackwardFunction):
         # Computation
         if prop_down[1]:
             g_dy_ = F.interpolate(
-                g_dx0, output_size=output_size, mode=mode, align_corners=align_corners,
+                g_dx0, output_size=output_size, mode=mode,
+                align_corners=align_corners, half_pixel=half_pixel,
+                half_pixel_for_nn=half_pixel_for_nn,
                 channel_last=channel_last)
             if accum[1]:
                 g_dy += g_dy_

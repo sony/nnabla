@@ -3819,9 +3819,21 @@ Signal Processing:
       align_corners:
         doc: If true, the corner pixels of input and output arrays are aligned, such
           that the output corner pixels have the same values with the input corner
-          pixels.
+          pixels. The default is ``None``, and it becomes `True` if mode is 'linear',
+          otherwise `False`.
         type: bool
-        default: False if mode == 'nearest' else True
+        default: 'True'
+      half_pixel:
+        doc: If true, in the coordinate transformation, 0.5 is added to the output
+          coordinate and 0.5 is subtracted from the input coordinate after scaling.
+        type: bool
+        default: 'False'
+      half_pixel_for_nn:
+        doc: This is a special argument to support the backward-compatibility of the
+          nearest neighbor interpolation. Default is `False`. When in ``True``, the
+          implementation of nearest neighbor interpolation is the old one.
+        type: bool
+        default: 'False'
       channel_last:
         doc: If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
@@ -3833,6 +3845,7 @@ Signal Processing:
     function_ids:
       iIiB: 127
       iIiBB: 286
+      iIiBBBB: 291
     c_runtime: not support
   FFT:
     snake_name: fft
