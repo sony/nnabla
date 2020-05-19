@@ -381,13 +381,14 @@ class OnnxExporter:
             "ResetInf": self.ResetInf,
             "Slice": partial(self.Slice, '10'),
             "Unpooling": self.Unpooling_10,
+            "Interpolate": self.Interpolate_10,
         }
         table_op_set_10 = dict(table_op_set_9, **table_op_set_10)
 
         # opset_11 table
         table_op_set_11 = {
             "Round": "Round",
-            "Interpolate": self.Interpolate,
+            "Interpolate": self.Interpolate_11,
             "Pad": partial(self.Pad, "11"),
             "Unpooling": self.Unpooling_11,
         }
@@ -3075,51 +3076,27 @@ class OnnxExporter:
 
         return nl
 
-    def Interpolate(self, func):
-        '''
-        If the mode of Interpolate is `nearest`, coordinate transformation formula: i = s * (o + 0.5),
-        Onnx is not exactly the same, the results may differ.
-        Here i is the input, s is the scale, and o is the output.
-        '''
+    def Interpolate_10(self, func):
         input_shape = list(self._var_dict[func.input[0]].dim[:])
         output_shape = list(self._var_dict[func.output[0]].dim[:])
+        input = func.input[0]
+        output = func.output[0]
         output_size = func.interpolate_param.output_size
         mode = func.interpolate_param.mode
         align_corners = func.interpolate_param.align_corners
+        half_pixel = func.interpolate_param.half_pixel
+        half_pixel_for_nn = func.interpolate_param.half_pixel_for_nn
         scale = []
         nl = []
 
-        if len(output_size) > 2:
+        if (mode == "linear" and (align_corners or half_pixel)) or \
+                (mode == "nearest" and (align_corners or half_pixel or half_pixel_for_nn)):
             raise ValueError(
-                "Currently output_size not support greater than 2.")
-
-        roi_out = fork_name(func.input[0]) + '_roi'
-        add_param(self._model_proto.graph, roi_out,
-                  TensorProto.FLOAT, [0], b'')
-
-        scale_out = fork_name(func.input[0]) + '_scale'
-        add_param(self._model_proto.graph, scale_out,
-                  TensorProto.FLOAT, [0], b'')
+                "align_corners, half_pixel, and half_pixel_for_nn must be all false.")
 
         if len(input_shape) == 4:
-            sizes_out = fork_name(func.input[0]) + '_sizes'
-            add_param(self._model_proto.graph, sizes_out, TensorProto.INT64, [
-                      len(output_shape)], np.array(output_shape, dtype=np.int64).tostring())
-
-            n = onnx.helper.make_node(
-                "Resize",
-                [func.input[0], roi_out, scale_out, sizes_out],
-                func.output,
-                mode=mode,
-            )
-            if align_corners:
-                c = onnx.helper.make_attribute(
-                    "coordinate_transformation_mode", 'align_corners')
-            else:
-                c = onnx.helper.make_attribute(
-                    "coordinate_transformation_mode", 'pytorch_half_pixel')
-                n.attribute.extend([c])
-            nl.append(n)
+            scale = [float(output_shape[i]) / float(input_shape[i])
+                     for i in range(4)]
         else:
             diff = len(input_shape) - 4
             if diff > 0:
@@ -3130,32 +3107,126 @@ class OnnxExporter:
             else:
                 new_input_shape = [1] * -diff + input_shape
                 new_output_shape = [1] * -diff + output_shape
-            sizes_out = fork_name(func.input[0]) + '_sizes'
-            add_param(self._model_proto.graph, sizes_out, TensorProto.INT64, [
-                      len(new_output_shape)], np.array(new_output_shape, dtype=np.int64).tostring())
+            scale = [float(new_output_shape[i]) /
+                     float(new_input_shape[i]) for i in range(4)]
 
             reshape_out = fork_name(func.input[0]) + '_reshape'
             n = generate_reshape(self._model_proto.graph, func.input[0], reshape_out,
                                  np.array(new_input_shape))
             nl.append(n)
+            input = reshape_out
+            output = fork_name(func.input[0]) + '_resize'
 
-            resize_out = fork_name(func.input[0]) + '_resize'
-            n = onnx.helper.make_node(
-                "Resize",
-                [reshape_out, roi_out, scale_out, sizes_out],
-                [resize_out],
-                mode=mode,
-            )
-            if align_corners:
+        scale_out = fork_name(func.input[0]) + '_scale'
+        add_param(self._model_proto.graph, scale_out,
+                  TensorProto.FLOAT, [4], np.array(scale, dtype=np.float32).tostring())
+
+        n = onnx.helper.make_node(
+            "Resize",
+            [input, scale_out],
+            [output],
+            mode=mode,
+        )
+        nl.append(n)
+
+        if len(input_shape) != 4:
+            n = generate_reshape(self._model_proto.graph, output, func.output[0],
+                                 np.array(output_shape))
+            nl.append(n)
+        return nl
+
+    def Interpolate_11(self, func):
+        input_shape = list(self._var_dict[func.input[0]].dim[:])
+        output_shape = list(self._var_dict[func.output[0]].dim[:])
+        input = func.input[0]
+        output = func.output[0]
+        output_size = func.interpolate_param.output_size
+        mode = func.interpolate_param.mode
+        align_corners = func.interpolate_param.align_corners
+        half_pixel = func.interpolate_param.half_pixel
+        half_pixel_for_nn = func.interpolate_param.half_pixel_for_nn
+        scale = []
+        nl = []
+
+        if align_corners and half_pixel:
+            raise ValueError(
+                "Currently (align_corners == true) and (half_pixel == true) is not supported.")
+
+        roi_out = fork_name(func.input[0]) + '_roi'
+        add_param(self._model_proto.graph, roi_out,
+                  TensorProto.FLOAT, [8], np.array([0, 0, 0, 0, 1, 1, 1, 1], dtype=np.float32).tostring())
+
+        if len(input_shape) == 4:
+            scale = [float(output_shape[i]) / float(input_shape[i])
+                     for i in range(4)]
+        else:
+            diff = len(input_shape) - 4
+            if diff > 0:
+                diff += 1
+                new_input_shape = [
+                    np.prod(input_shape[:diff])] + input_shape[diff:]
+                new_output_shape = [new_input_shape[0]] + output_shape[diff:]
+            else:
+                new_input_shape = [1] * -diff + input_shape
+                new_output_shape = [1] * -diff + output_shape
+            scale = [float(new_output_shape[i]) /
+                     float(new_input_shape[i]) for i in range(4)]
+
+            reshape_out = fork_name(func.input[0]) + '_reshape'
+            n = generate_reshape(self._model_proto.graph, func.input[0], reshape_out,
+                                 np.array(new_input_shape))
+            nl.append(n)
+            input = reshape_out
+            output = fork_name(func.input[0]) + '_resize'
+
+        scale_out = fork_name(func.input[0]) + '_scale'
+        add_param(self._model_proto.graph, scale_out,
+                  TensorProto.FLOAT, [4], np.array(scale, dtype=np.float32).tostring())
+
+        n = onnx.helper.make_node(
+            "Resize",
+            [input, roi_out, scale_out],
+            [output],
+            mode=mode,
+        )
+        if mode == "nearest":
+            if half_pixel_for_nn:
+                c = onnx.helper.make_attribute(
+                    "coordinate_transformation_mode", 'tf_half_pixel_for_nn')
+                n.attribute.extend([c])
+            else:
+                if align_corners and not half_pixel:
+                    c = onnx.helper.make_attribute(
+                        "coordinate_transformation_mode", 'align_corners')
+                    n.attribute.extend([c])
+                elif half_pixel and not align_corners:
+                    c = onnx.helper.make_attribute(
+                        "coordinate_transformation_mode", 'pytorch_half_pixel')
+                    n.attribute.extend([c])
+                elif not half_pixel and not align_corners:
+                    c = onnx.helper.make_attribute(
+                        "coordinate_transformation_mode", 'asymmetric')
+                    n.attribute.extend([c])
+            c = onnx.helper.make_attribute(
+                "nearest_mode", 'floor')
+            n.attribute.extend([c])
+        elif mode == "linear":
+            if align_corners and not half_pixel:
                 c = onnx.helper.make_attribute(
                     "coordinate_transformation_mode", 'align_corners')
-            else:
+                n.attribute.extend([c])
+            elif half_pixel and not align_corners:
                 c = onnx.helper.make_attribute(
                     "coordinate_transformation_mode", 'pytorch_half_pixel')
-            n.attribute.extend([c])
-            nl.append(n)
+                n.attribute.extend([c])
+            elif not half_pixel and not align_corners:
+                c = onnx.helper.make_attribute(
+                    "coordinate_transformation_mode", 'asymmetric')
+                n.attribute.extend([c])
+        nl.append(n)
 
-            n = generate_reshape(self._model_proto.graph, resize_out, func.output[0],
+        if len(input_shape) != 4:
+            n = generate_reshape(self._model_proto.graph, output, func.output[0],
                                  np.array(output_shape))
             nl.append(n)
         return nl
