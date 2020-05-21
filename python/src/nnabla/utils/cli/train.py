@@ -41,25 +41,7 @@ _save_parameter_info = {}
 
 
 def _all_reduce(comm, var, division, inplace):
-    import threading
-    _finish = False
-
-    def _wait():
-        import time
-        count = 0
-        while not _finish:
-            if count > 10000:
-                logger.log(99, "STALLED MPI RANK {}".format(comm.rank))
-                os.kill(os.getpid(), 9)
-            time.sleep(0.01)
-            count += 1
-
-    th = threading.Thread(target=_wait)
-    th.start()
-
     comm.all_reduce(var, division=division, inplace=inplace)
-    _finish = True
-    th.join()
 
 
 def _save_parameters(args, suffix, epoch, force=False):
