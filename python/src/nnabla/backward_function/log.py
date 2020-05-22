@@ -59,9 +59,9 @@ class LogBackward(BackwardFunction):
         # Computation
         if prop_down[0]:
             if accum[0]:
-                g_x0 -= g_dx0 * F.pow_scalar(x0, -2.0)
+                g_x0 -= g_dx0 * dy * F.pow_scalar(x0, -2.0)
             else:
-                g_x0.copy_from(- g_dx0 * F.pow_scalar(x0, -2.0))
+                g_x0.copy_from(- g_dx0 * dy * F.pow_scalar(x0, -2.0))
         if prop_down[1]:
             inp = nn.Variable(x0.shape).apply(
                 data=x0, grad=g_dy, need_grad=True)
