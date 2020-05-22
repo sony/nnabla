@@ -22,7 +22,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(Interpolate, const vector<int> &, const string &,
-                              bool, bool);
+                              bool, bool, bool, bool);
 
 /**
 Resize an ND array with interpolation.
@@ -42,28 +42,42 @@ dimensions are replaced with the output_size.
 @param mode Interpolation mode chosen from linear or nearest.
 @param align_corners If true, the corner pixels are aligned to preserve the
 values of the input corner pixels.
+@param half_pixel If true, in the coordinate transformation, 0.5 is added to the
+output coordinate
+and 0.5 is subtracted from the input coordinate after scaling. Default is
+`False`.
+This option is only applicable to the `mode` being linear.
+@param half_pixel_for_nn This is a special argument to support the
+backward-compatibility of the nearest neighbor interpolation. Default is
+`False`.
+
 
 \ingroup FunctionImplGrp
  */
 template <typename T>
-class Interpolate
-    : public BaseFunction<const vector<int> &, const string &, bool, bool> {
+class Interpolate : public BaseFunction<const vector<int> &, const string &,
+                                        bool, bool, bool, bool> {
 protected:
   const vector<int> output_size_;
   const string mode_;
   bool align_corners_;
+  bool half_pixel_;
+  bool half_pixel_for_nn_;
   bool channel_last_;
 
 public:
   Interpolate(const Context &ctx, const vector<int> &output_size,
-              const string &mode, bool align_corners, bool channel_last)
-      : BaseFunction(ctx, output_size, mode, align_corners, channel_last),
+              const string &mode, bool align_corners, bool half_pixel,
+              bool half_pixel_for_nn, bool channel_last)
+      : BaseFunction(ctx, output_size, mode, align_corners, half_pixel,
+                     half_pixel_for_nn, channel_last),
         output_size_(output_size), mode_(mode), align_corners_(align_corners),
+        half_pixel_(half_pixel), half_pixel_for_nn_(half_pixel_for_nn),
         channel_last_(channel_last) {}
   virtual ~Interpolate() {}
   virtual shared_ptr<Function> copy() const {
     return create_Interpolate(ctx_, output_size_, mode_, align_corners_,
-                              channel_last_);
+                              half_pixel_, half_pixel_for_nn_, channel_last_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }

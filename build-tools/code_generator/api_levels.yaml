@@ -215,3 +215,5 @@
   RandBeta_ffiIi: 288
   RandBinomial_ifiIi: 289
   RandGamma_ffiIi: 290
+14:
+  Interpolate_iIiBBBB: 291

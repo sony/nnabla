@@ -658,7 +658,9 @@ def clip_by_norm(x, clip_norm, axis=None):
     return y
 
 
-def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=None, channel_last=False):
+def interpolate(x, scale=None, output_size=None, mode='linear',
+                align_corners=None, half_pixel=False, half_pixel_for_nn=False,
+                channel_last=False):
     '''
     Resize an ND array with interpolation.
 
@@ -671,7 +673,40 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
 
 
     If ``scale`` is given, the ``output_size`` is calculated by
-    ``output_size[i] = floor(scale[i] * x.shape[i - len(scale)])``.
+
+    .. code-block:: python
+
+      output_size[i] = floor(scale[i] * x.shape[i - len(scale)]).
+
+    Calculation of the coordinate transformation are as follows.
+
+    The input coordinate i_input is computed by the output coordinate i_output,
+    the input size size_input, and the output size size_output as
+
+    .. table:: 
+        :align: center
+        :widths: auto
+
+        ================= ============== =================================================================
+         align_corners     half_pixel                            i_input                                  
+        ================= ============== =================================================================
+              True             True       Not supported.
+        ----------------- -------------- -----------------------------------------------------------------
+              True             False      i_output * (size_input - 1) / (size_output - 1)                 
+        ----------------- -------------- -----------------------------------------------------------------
+              False            True       (i_output + 0.5) * size_input / size_output - 0.5               
+        ----------------- -------------- -----------------------------------------------------------------
+              False            False      i_output * size_input / size_output                             
+        ================= ============== =================================================================
+
+
+    In the case of the `nearest` mode and ``half_pixel_for_nn`` is ``True``, 
+    the input coordinate i_input is computed by the output coordinate i_output as
+
+    .. code-block::
+
+      i_input = (i_output + 0.5) * size_input / size_output.
+
 
     Example:
 
@@ -711,6 +746,13 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
             same values with the input corner pixels.
             The default is ``None``, and it becomes ``True`` if mode is
             'linear', otherwise ``False``.
+        half_pixel:
+            If true, in the coordinate transformation, 0.5 is added to the output coordinate
+            and 0.5 is subtracted from the input coordinate after scaling. Default is ``False``.
+        half_pixel_for_nn:
+            This is a special argument to support the backward-compatibility of the nearest neighbor interpolation.
+            Default is ``False``. When in ``True``, the implementation of nearest neighbor interpolation
+            is the old one.
         channel_last: Last dimension is the channel (NHWC order) if True.
 
     Returns:
@@ -731,7 +773,7 @@ def interpolate(x, scale=None, output_size=None, mode='linear', align_corners=No
             align_corners = True
         else:
             align_corners = False
-    return interpolate_base(x, output_size, mode, align_corners, channel_last)
+    return interpolate_base(x, output_size, mode, align_corners, half_pixel, half_pixel_for_nn, channel_last)
 
 
 def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):

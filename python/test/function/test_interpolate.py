@@ -29,12 +29,27 @@ def compute_scale(isize, osize, align_corners):
         return 0.0
 
 
-def get_source_index(scale, dst_index, align_corners):
-    return (scale * dst_index if align_corners else
-            np.maximum(0, scale * (dst_index + 0.5) - 0.5))
+def compute_scale_for_nn(isize, osize, align_corners, half_pixel_for_nn):
+    if half_pixel_for_nn:
+        return isize / float(osize)
+    else:
+        return compute_scale(isize, osize, align_corners)
 
 
-def ref_interpolate(x, scale, output_size, mode, align_corners=None, channel_last=False):
+def get_source_index(scale, dst_index, half_pixel):
+    return np.maximum(0, scale * (dst_index + 0.5) - 0.5) \
+      if half_pixel else scale * dst_index
+
+
+def get_source_index_for_nn(scale, dst_index, half_pixel, half_pixel_for_nn):
+    if half_pixel_for_nn:
+        return scale * (dst_index + 0.5)
+    else:
+        return get_source_index(scale, dst_index, half_pixel)
+
+
+def ref_interpolate(x, scale, output_size, mode, align_corners=True, half_pixel=False,
+                    half_pixel_for_nn=False, channel_last=False):
     assert scale or output_size, 'Need either scale or output_size.'
     assert not scale or len(scale) in (1, 2, 3), 'Only 1D/2D/3D'
     assert not output_size or len(output_size) in (1, 2, 3), 'Only 1D/2D/3D'
@@ -49,38 +64,35 @@ def ref_interpolate(x, scale, output_size, mode, align_corners=None, channel_las
         output_size = tuple(map(int, output_size))
 
     if mode == "nearest":
-        osize = output_size
-        isize = x.shape[-len(osize):]
-        scale = [i / o for i, o in zip(isize, osize)]
-        index = [s * (np.arange(o) + 0.5) for s, o in zip(scale, osize)]
-        index = [idx.astype(np.int32) for idx in index]
-        index = [np.minimum(idx, i - 1) for idx, i in zip(index, isize)]
-        xx = x.reshape(-1, *isize)
-        ib = np.arange(xx.shape[0])
-        yy = xx[np.ix_(ib, *index)]
-        out = yy.reshape(x.shape[:-len(osize)] + osize)
-        out = t.inv(out) if channel_last else out
-        return out
-
+        if len(output_size) == 1:
+            out = ref_nearest_interpolate_1d(
+                x, output_size, align_corners, half_pixel, half_pixel_for_nn)
+            out = t.inv(out) if channel_last else out
+        if len(output_size) == 2:
+            out = ref_nearest_interpolate_2d(
+                x, output_size, align_corners, half_pixel, half_pixel_for_nn)
+            out = t.inv(out) if channel_last else out
+        if len(output_size) == 3:
+            out = ref_nearest_interpolate_3d(
+                x, output_size, align_corners, half_pixel, half_pixel_for_nn)
+            out = t.inv(out) if channel_last else out
     elif mode == "linear":
         if len(output_size) == 1:
             out = ref_linear_interpolate_1d(
-                x, output_size, mode, align_corners)
+                x, output_size, align_corners, half_pixel)
 
         if len(output_size) == 2:
             out = ref_linear_interpolate_2d(
-                x, output_size, mode, align_corners)
+                x, output_size, align_corners, half_pixel)
 
         if len(output_size) == 3:
             out = ref_linear_interpolate_3d(
-                x, output_size, mode, align_corners)
+                x, output_size, align_corners, half_pixel)
         out = t.inv(out) if channel_last else out
-        return out
+    return out
 
 
-def ref_linear_interpolate_1d(x, output_size, mode, align_corners):
-    assert mode == 'linear'
-
+def ref_linear_interpolate_1d(x, output_size, align_corners, half_pixel):
     oshape = output_size          # output-width
     ishape = x.shape[-1:]         # input-width
     xx = x.reshape(-1, *ishape)
@@ -89,7 +101,7 @@ def ref_linear_interpolate_1d(x, output_size, mode, align_corners):
     scale = (compute_scale(ishape[0], oshape[0], align_corners),)  # x
 
     # Real input indices as floats
-    index = (get_source_index(scale[0], np.arange(oshape[0]), align_corners),)
+    index = (get_source_index(scale[0], np.arange(oshape[0]), half_pixel),)
 
     # Nearest input indices per axis
     index_1 = (index[0].astype(np.int32),)
@@ -107,9 +119,7 @@ def ref_linear_interpolate_1d(x, output_size, mode, align_corners):
     return yy.reshape(x.shape[:-len(oshape)] + oshape)
 
 
-def ref_linear_interpolate_2d(x, output_size, mode, align_corners):
-    assert mode == 'linear'
-
+def ref_linear_interpolate_2d(x, output_size, align_corners, half_pixel):
     oshape = output_size          # output-height, output-width
     ishape = x.shape[-2:]         # input-height, input-width
     xx = x.reshape(-1, *ishape)
@@ -119,8 +129,8 @@ def ref_linear_interpolate_2d(x, output_size, mode, align_corners):
              compute_scale(ishape[1], oshape[1], align_corners))  # x
 
     # Real input indices as floats
-    index = (get_source_index(scale[0], np.arange(oshape[0]), align_corners),
-             get_source_index(scale[1], np.arange(oshape[1]), align_corners))
+    index = (get_source_index(scale[0], np.arange(oshape[0]), half_pixel),
+             get_source_index(scale[1], np.arange(oshape[1]), half_pixel))
 
     # Nearest input indices per axis
     index_1 = (index[0].astype(np.int32),
@@ -144,9 +154,7 @@ def ref_linear_interpolate_2d(x, output_size, mode, align_corners):
     return yy.reshape(x.shape[:-len(oshape)] + oshape)
 
 
-def ref_linear_interpolate_3d(x, output_size, mode, align_corners):
-    assert mode == 'linear'
-
+def ref_linear_interpolate_3d(x, output_size, align_corners, half_pixel):
     oshape = output_size          # output-depth, output-height, output-width
     ishape = x.shape[-3:]         # input-depth, input-height, input-width
     xx = x.reshape(-1, *ishape)
@@ -157,9 +165,9 @@ def ref_linear_interpolate_3d(x, output_size, mode, align_corners):
              compute_scale(ishape[2], oshape[2], align_corners))  # x
 
     # Real input indices as floats
-    index = (get_source_index(scale[0], np.arange(oshape[0]), align_corners),
-             get_source_index(scale[1], np.arange(oshape[1]), align_corners),
-             get_source_index(scale[2], np.arange(oshape[2]), align_corners))
+    index = (get_source_index(scale[0], np.arange(oshape[0]), half_pixel),
+             get_source_index(scale[1], np.arange(oshape[1]), half_pixel),
+             get_source_index(scale[2], np.arange(oshape[2]), half_pixel))
 
     # Nearest input indices per axis
     index_1 = (index[0].astype(np.int32),
@@ -194,6 +202,84 @@ def ref_linear_interpolate_3d(x, output_size, mode, align_corners):
     return yy.reshape(x.shape[:-len(oshape)] + oshape)
 
 
+def ref_nearest_interpolate_1d(x, output_size, align_corners, half_pixel, half_pixel_for_nn):
+    oshape = output_size          # output-width
+    ishape = x.shape[-1:]         # input-width
+    xx = x.reshape(-1, *ishape)
+    ib = np.arange(xx.shape[0])  # batch index
+
+    scale = (compute_scale_for_nn(
+        ishape[0], oshape[0], align_corners, half_pixel_for_nn),)  # x
+
+    # Real input indices as floats
+    index = (get_source_index_for_nn(scale[0], np.arange(
+        oshape[0]), half_pixel, half_pixel_for_nn),)
+
+    # Nearest input indices per axis
+    index_1 = (np.minimum(index[0].astype(np.int32), ishape[0] - 1), )
+
+    # Nearest input
+    yy = xx[np.ix_(ib, index_1[0])]
+
+    return yy.reshape(x.shape[:-len(oshape)] + oshape)
+
+
+def ref_nearest_interpolate_2d(x, output_size, align_corners, half_pixel, half_pixel_for_nn):
+    oshape = output_size          # output-height, output-width
+    ishape = x.shape[-2:]         # input-height, input-width
+    xx = x.reshape(-1, *ishape)
+    ib = np.arange(xx.shape[0])  # batch index
+
+    scale = (compute_scale_for_nn(ishape[0], oshape[0], align_corners, half_pixel_for_nn),  # y
+             compute_scale_for_nn(ishape[1], oshape[1], align_corners, half_pixel_for_nn))  # x
+
+    # Real input indices as floats
+    index = (get_source_index_for_nn(scale[0], np.arange(oshape[0]), half_pixel, half_pixel_for_nn),
+             get_source_index_for_nn(scale[1], np.arange(oshape[1]), half_pixel, half_pixel_for_nn))
+
+    # Nearest input indices per axis
+    index_1 = (index[0].astype(np.int32),
+               index[1].astype(np.int32))
+    index_2 = (np.minimum(index_1[0], ishape[0] - 1),
+               np.minimum(index_1[1], ishape[1] - 1))
+
+    # Nearest input
+    yy = xx[np.ix_(ib, index_2[0], index_2[1])]
+
+    return yy.reshape(x.shape[:-len(oshape)] + oshape)
+
+
+def ref_nearest_interpolate_3d(x, output_size, align_corners, half_pixel, half_pixel_for_nn):
+    oshape = output_size          # output-depth, output-height, output-width
+    ishape = x.shape[-3:]         # input-depth, input-height, input-width
+    xx = x.reshape(-1, *ishape)
+    ib = np.arange(xx.shape[0])  # batch index
+
+    scale = (compute_scale_for_nn(ishape[0], oshape[0], align_corners, half_pixel_for_nn),  # z
+             compute_scale_for_nn(
+                 ishape[1], oshape[1], align_corners, half_pixel_for_nn),  # y
+             compute_scale_for_nn(ishape[2], oshape[2], align_corners, half_pixel_for_nn))  # x
+
+    # Real input indices as floats
+    index = (get_source_index_for_nn(scale[0], np.arange(oshape[0]), half_pixel, half_pixel_for_nn),
+             get_source_index_for_nn(scale[1], np.arange(
+                 oshape[1]), half_pixel, half_pixel_for_nn),
+             get_source_index_for_nn(scale[2], np.arange(oshape[2]), half_pixel, half_pixel_for_nn))
+
+    # Nearest input indices per axis
+    index_1 = (index[0].astype(np.int32),
+               index[1].astype(np.int32),
+               index[2].astype(np.int32))
+    index_2 = (np.minimum(index_1[0], ishape[0] - 1),
+               np.minimum(index_1[1], ishape[1] - 1),
+               np.minimum(index_1[2], ishape[2] - 1))
+
+    # Nearest input
+    yy = xx[np.ix_(ib, index_2[0], index_2[1], index_2[2])]
+
+    return yy.reshape(x.shape[:-len(oshape)] + oshape)
+
+
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("inshape, outsize, scale, sdim_only", [
     # 1-dimensional
@@ -225,11 +311,11 @@ def ref_linear_interpolate_3d(x, output_size, mode, align_corners):
     ((2, 3, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
     ((2, 3, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
-@pytest.mark.parametrize('align_corners', [False, True])
+@pytest.mark.parametrize('align_corners, half_pixel', [(True, False), (False, True), (False, False)])
 @pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
 def test_interpolate_linear_forward_backward(seed, inshape, outsize, scale, sdim_only,
-                                             align_corners, channel_last,
+                                             align_corners, half_pixel, channel_last,
                                              ctx, func_name):
     if channel_last and func_name == "Interpolate":
         pytest.skip("Interpolate with channel_last is only supported in CUDA.")
@@ -240,10 +326,11 @@ def test_interpolate_linear_forward_backward(seed, inshape, outsize, scale, sdim
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'linear', align_corners, channel_last]
+    func_args = [scale, outsize, 'linear',
+                 align_corners, half_pixel, False, channel_last]
     function_tester(rng, F.interpolate, ref_interpolate, inputs,
                     func_name=func_name, func_args=func_args,
-                    atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx)
+                    atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx, disable_half_test=True)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -277,9 +364,15 @@ def test_interpolate_linear_forward_backward(seed, inshape, outsize, scale, sdim
     ((1, 2, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
     ((1, 2, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
+@pytest.mark.parametrize('align_corners, half_pixel, half_pixel_for_nn',
+                         [(True, False, True),
+                          (True, False, False),
+                          (False, True, False),
+                          (False, False, False)])
 @pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
 def test_interpolate_nearest_forward_backward(seed, inshape, outsize, scale, sdim_only,
+                                              align_corners, half_pixel, half_pixel_for_nn,
                                               channel_last,
                                               ctx, func_name):
     if channel_last and func_name == "Interpolate":
@@ -291,7 +384,8 @@ def test_interpolate_nearest_forward_backward(seed, inshape, outsize, scale, sdi
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'nearest', False, channel_last]
+    func_args = [scale, outsize, 'nearest', align_corners,
+                 half_pixel, half_pixel_for_nn, channel_last]
     function_tester(rng, F.interpolate, ref_interpolate, inputs,
                     func_name=func_name, func_args=func_args,
                     atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx)
@@ -328,11 +422,11 @@ def test_interpolate_nearest_forward_backward(seed, inshape, outsize, scale, sdi
     ((2, 3, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
     ((2, 3, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
-@pytest.mark.parametrize('align_corners', [False, True])
+@pytest.mark.parametrize('align_corners, half_pixel', [(True, False), (False, True), (False, False)])
 @pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
 def test_interpolate_linear_double_backward(seed, inshape, outsize, scale, sdim_only,
-                                            align_corners, channel_last, ctx, func_name):
+                                            align_corners, half_pixel, channel_last, ctx, func_name):
     if channel_last and func_name == "Interpolate":
         pytest.skip("Interpolate with channel_last is only supported in CUDA.")
     if sdim_only and channel_last:
@@ -342,7 +436,8 @@ def test_interpolate_linear_double_backward(seed, inshape, outsize, scale, sdim_
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'linear', align_corners, channel_last]
+    func_args = [scale, outsize, 'linear',
+                 align_corners, half_pixel, False, channel_last]
     backward_function_tester(rng, F.interpolate, None, inputs,
                              func_name=func_name, func_args=func_args,
                              atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=2e-3, ctx=ctx)
@@ -379,9 +474,15 @@ def test_interpolate_linear_double_backward(seed, inshape, outsize, scale, sdim_
     ((1, 2, 3, 4, 4), None, (1.5, 2.5, 1.0), False),
     ((1, 2, 3, 4, 4), None, (1.2, 0.5, 0.5), False),
 ])
+@pytest.mark.parametrize('align_corners, half_pixel, half_pixel_for_nn',
+                         [(True, False, True),
+                          (True, False, False),
+                          (False, True, False),
+                          (False, False, False)])
 @pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
 def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim_only,
+                                             align_corners, half_pixel, half_pixel_for_nn,
                                              channel_last,
                                              ctx, func_name):
     if channel_last and func_name == "Interpolate":
@@ -393,7 +494,8 @@ def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    func_args = [scale, outsize, 'nearest', False, channel_last]
+    func_args = [scale, outsize, 'nearest', align_corners,
+                 half_pixel, half_pixel_for_nn, channel_last]
     backward_function_tester(rng, F.interpolate, ref_interpolate, inputs,
                              func_name=func_name, func_args=func_args,
                              atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=2e-3, ctx=ctx)
