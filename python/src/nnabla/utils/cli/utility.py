@@ -13,11 +13,14 @@
 # limitations under the License.
 
 import os
+import re
 import numpy as np
 
 import nnabla as nn
-from nnabla.utils.communicator_util import current_communicator
 import nnabla.utils.callback as callback
+from nnabla.utils.communicator_util import current_communicator
+from nnabla.utils import nnabla_pb2
+from nnabla.utils.get_file_handle import get_file_handle_save
 from nnabla.logger import logger
 
 cg_load_backend_ok = True
@@ -177,3 +180,21 @@ def get_cpu_gpu_average_load():
         return collect_and_shape_result(c_load, g_load)
     else:
         return []
+
+
+def _create_optimizer_lite(opti):
+    o = nnabla_pb2.Optimizer()
+    o.name = opti.name
+    o.solver.type = re.sub(r'(|Cuda)$', '', str(opti.solver.name))
+    opti.solver.set_states_to_protobuf(o)
+    return o
+
+
+def save_optimizer_states(filename, train_config):
+    proto = nnabla_pb2.NNablaProtoBuf()
+    proto_optimizers = []
+    for o in train_config.optimizers.values():
+        proto_optimizers.append(_create_optimizer_lite(o.optimizer))
+    proto.optimizer.extend(proto_optimizers)
+    with get_file_handle_save(filename, '.protobuf') as file:
+        file.write(proto.SerializeToString())

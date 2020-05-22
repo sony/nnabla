@@ -30,11 +30,18 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 import nnabla.utils.callback as callback
 
-from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load
+from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load, save_optimizer_states
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
 import nnabla.utils.load as load
+from nnabla.config import nnabla_config
+
+try:
+    _OPTIMIZER_CHECKPOINT_INTERVAL = int(
+        nnabla_config.get('CHECKPOINT', 'optimizer_interval'))
+except Exception:
+    _OPTIMIZER_CHECKPOINT_INTERVAL = 5
 
 
 _save_parameter_info = {}
@@ -44,7 +51,7 @@ def _all_reduce(comm, var, division, inplace):
     comm.all_reduce(var, division=division, inplace=inplace)
 
 
-def _save_parameters(args, suffix, epoch, force=False):
+def _save_parameters(args, suffix, epoch, train_config, force=False):
     global _save_parameter_info
 
     if suffix not in _save_parameter_info:
@@ -83,14 +90,23 @@ def _save_parameters(args, suffix, epoch, force=False):
         param_filename = base + '_param.protobuf'
         save_parameters(param_filename)
 
+        need_save_opti = train_config.optimizers and epoch % _OPTIMIZER_CHECKPOINT_INTERVAL == 0
+        if need_save_opti:
+            opti_filename = base + '_optimizer.protobuf'
+            save_optimizer_states(opti_filename, train_config)
+
         with zipfile.ZipFile(filename, 'w') as nnp:
             nnp.write(version_filename, 'nnp_version.txt')
             nnp.write(_save_parameter_info['config'], os.path.basename(
                 _save_parameter_info['config']))
             nnp.write(param_filename, 'parameter.protobuf')
+            if need_save_opti:
+                nnp.write(opti_filename, 'optimizer.protobuf')
 
         os.unlink(version_filename)
         os.unlink(param_filename)
+        if need_save_opti:
+            os.unlink(opti_filename)
 
         _save_parameter_info[suffix]['epoch'] = epoch
         _save_parameter_info[suffix]['time'] = current_time
@@ -325,7 +341,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             best_error = valid_error
             callback.update_status(('best.valid_error', best_error))
             callback.update_status(('best.epoch', epoch))
-            _save_parameters(args, 'best', epoch, True)
+            _save_parameters(args, 'best', epoch, config, True)
 
     return best_error, error_str
 
@@ -469,7 +485,7 @@ def _train(args, config):
                         callback.update_status((['monitoring_report', epoch, 'cost'],
                                                 cost_avg_epoch))
 
-                        _save_parameters(args, 'current', epoch)
+                        _save_parameters(args, 'current', epoch, config)
 
                         callback.update_status(('epoch.current', epoch))
                         callback.update_status()
@@ -479,11 +495,12 @@ def _train(args, config):
                             timeinfo.past_time, timeinfo.estimate_time, cg_load_str))
 
                         if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
-                            _save_parameters(args, 'current', epoch, True)
+                            _save_parameters(
+                                args, 'current', epoch, config, True)
                             return False, True
 
             if single_or_rankzero():
-                _save_parameters(args, 'current', epoch, True)
+                _save_parameters(args, 'current', epoch, config, True)
     return True, False
 
 
@@ -597,7 +614,7 @@ def train_command(args):
         # save parameters without training (0 epoch learning)
         logger.log(99, '0 epoch learning. (Just save parameter.)')
         if single_or_rankzero():
-            _save_parameters(args, None, 0, True)
+            _save_parameters(args, None, 0, config, True)
         result = True
 
     if single_or_rankzero() and not restart:
