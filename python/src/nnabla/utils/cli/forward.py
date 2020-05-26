@@ -329,6 +329,9 @@ def infer_command(args):
     class ForwardConfig:
         pass
     config = ForwardConfig
+
+    # To improve load performance
+    os.environ['NNABLA_CUDNN_ALGORITHM_BY_HEURISTIC'] = '1'
     info = load.load(files, prepare_data_iterator=False, batch_size=batch_size)
 
     config.executors = info.executors.values()
