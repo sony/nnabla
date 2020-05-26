@@ -15,6 +15,7 @@
 import contextlib
 import zipfile
 import h5py
+import io
 
 
 @contextlib.contextmanager
@@ -24,7 +25,10 @@ def get_file_handle_load(path, ext):
         f = zipfile.ZipFile(path, 'r')
     elif ext == '.h5':
         need_close = True
-        f = h5py.File(path, 'r')
+        if isinstance(path, str):
+            f = h5py.File(path, 'r')
+        else:
+            f = h5py.File(io.BytesIO(path.read()), 'r')
     elif ext in ['.nntxt', '.prototxt']:
         if hasattr(path, 'read'):
             need_close = False
