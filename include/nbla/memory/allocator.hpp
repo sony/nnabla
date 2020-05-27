@@ -130,6 +130,8 @@ protected:
   std::mutex mutex_;
 
 public:
+  std::function<void(void)> callback_tmp_ = nullptr;
+
   /** Constructor does nothing.
    */
   Allocator();
@@ -192,6 +194,8 @@ public:
    */
   virtual ~Allocator();
 
+  void print_memory_cache_map() { print_memory_cache_map_impl(); }
+
 protected:
   /** Call mem's Memory::alloc with retry.
 
@@ -242,6 +246,8 @@ protected:
 
    */
   virtual size_t free_unused_device_caches_impl(const string &device_id) = 0;
+
+  virtual void print_memory_cache_map_impl() {};
 
   DISABLE_COPY_AND_ASSIGN(Allocator);
 };

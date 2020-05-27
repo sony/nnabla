@@ -99,4 +99,30 @@ void Memory::try_merge(Memory *from) {
   bytes_ += from->bytes_;
   from->disable();
 }
+
+void Memory::bind() {
+  /*
+   * Try to bind physical memories (p_memories_) on virtual address, and make ptr_ usable as a data pointer.
+   * This method can be executed only if memory_type_ == MemoryType::Virtual.
+   * Actual implementation should be implemented as bind_impl()
+   * in a derived class whose memory_type == MemoryType::Virtual.
+   */
+  NBLA_CHECK(memory_type_ == MemoryType::Virtual,
+          error_code::memory, "This Memory instance is not Virtual Memory. Calling bind() is prohibited.");
+  this->bind_impl();
+}
+
+void Memory::unbind() {
+  /*
+   * Try to unbind physical memories (p_memories_) from virtual address, and make ptr_ disable.
+   * This method can be executed only if memory_type_ == MemoryType::Virtual.
+   * Actual implementation should be implemented as unbind_impl()
+   * in a derived class whose memory_type == MemoryType::Virtual.
+   */
+  NBLA_CHECK(memory_type_ == MemoryType::Virtual,
+             error_code::memory, "This Memory instance is not Virtual Memory. Calling unbind() is prohibited.");
+
+  this->unbind_impl();
+  ptr_ = nullptr; // reset ptr as nullptr just in case.
+}
 }

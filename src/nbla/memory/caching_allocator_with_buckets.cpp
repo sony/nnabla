@@ -221,4 +221,35 @@ size_t CachingAllocatorWithBucketsBase::free_unused_device_caches_impl(
   freed_bytes += free_unused_device_caches_in_map(large_cache_map_, device_id);
   return freed_bytes;
 }
+
+void CachingAllocatorWithBucketsBase::print_memory_cache_map_impl() {
+  auto print_func = [&] (const CacheMap& m, const string &map_type) {
+    for (auto &p1: m) {
+      vector<string> sz;
+      unsigned long long ss = 0;
+
+      string d_id = p1.first;
+      for (auto &p2: p1.second) {
+        size_t s = p2.second->bytes();
+        ss += s;
+        sz.push_back(byte_to_human_readable(s));
+      }
+
+      size_t used = device_memory_used_in_bytes(d_id);
+
+      printf("cache_map(device_id: %s, mem_type: %s, used: %s, free: %s): \n [%s]\n\n",
+              d_id.c_str(), map_type.c_str(),
+              byte_to_human_readable(used).c_str(),
+              byte_to_human_readable(ss).c_str(),
+              string_join(sz, ", ").c_str());
+    }
+  };
+
+  // small
+  print_func(small_cache_map_, "small");
+
+  // large
+  print_func(large_cache_map_, "large");
+}
+
 }

@@ -200,6 +200,10 @@ void SwapInOutScheduler::collect_info_about_dtype_conversion
   }
 }
 
+struct bytes_state {
+  size_t swap_in, swap_out, prefetch;
+  bytes_state(size_t i, size_t o, size_t p) : swap_in(i), swap_out(o), prefetch(p) {}
+};
 
 void SwapInOutScheduler::schedule() {
   reconfirm_first_creation();
@@ -217,6 +221,9 @@ void SwapInOutScheduler::schedule() {
   // Using for prefetch cancel
   vector<unsigned int> prefetch_stopper(order.size(), 1);
 
+  // todo : revisit
+  vector<bytes_state> bytes_debugger;
+
   do {
     // Reset schedules
     beginning_schedules.clear();
@@ -225,6 +232,9 @@ void SwapInOutScheduler::schedule() {
     end_schedules.resize(last_function);
     head_type = first_head_type;
     ScheduleParams params;
+
+    // todo : revisit
+    bytes_debugger.clear();
 
     // Preclear schedule will be used in swap-out schedule.
     unordered_map<unsigned int, vector<pair<RecType*, bool>>> clear_info;
@@ -278,6 +288,9 @@ void SwapInOutScheduler::schedule() {
         params.fid = 1;
       }
       schedule_swap_out(params, clear_info, head_type);
+
+      // todo revisit
+      bytes_debugger.emplace_back(params.swap_in_bytes, params.swap_out_bytes, params.prefetch_bytes);
     }
 
     if (do_reschedule) {
@@ -290,10 +303,22 @@ void SwapInOutScheduler::schedule() {
     // The end of schedule
     do_reschedule = false;
 
-    // Debug
-    #if SWAPINOUTSCHEDULER_DEBUG
-    for (const auto& s : params.sa_states) {
-      for (const auto& elem : s.second) {
+    // todo revisit
+#if 0
+    for (int i = 0; i < bytes_debugger.size(); i++) {
+      auto e = bytes_debugger[i];
+      printf("[fid :%d] SI: %s SO: %s PF: %s",
+              i,
+              byte_to_human_readable(e.swap_in).c_str(),
+              byte_to_human_readable(e.swap_out).c_str(),
+              byte_to_human_readable(e.prefetch).c_str());
+    }
+#endif
+
+// Debug
+#if SWAPINOUTSCHEDULER_DEBUG
+    for (const auto &s : params.sa_states) {
+      for (const auto &elem : s.second) {
         if (elem.second.state != ArrayStateTag::CLEARED &&
             elem.second.state != ArrayStateTag::OUT_WAITED) {
           NBLA_ERROR(error_code::unclassified, "Invalid ArrayState at the end");
@@ -388,7 +413,7 @@ backtrack_with_prefetch_cancel(ScheduleParams& params,
     }
 
     if (available_bytes >= unprefetched_bytes) {
-      // Ccanceled enough.
+      // Canceled enough.
       break;
     }
 

@@ -26,6 +26,43 @@ using std::string;
 using std::size_t;
 using std::shared_ptr;
 
+/** Memory status on the device.
+ */
+
+enum DeviceMemoryState {
+  Locked = 0, ///< This memory will be used on device in future. Cannot clear it.
+  Unlocked = 1, ///< This memory is no longer used on device. Can clear it.
+};
+
+/** Physical memory interface class
+ */
+
+class PhysicalMemory {
+protected:
+  bool allocated_;
+  size_t bytes_;
+  string device_id_;
+
+public:
+  explicit PhysicalMemory(size_t bytes, const string& device_id)
+    : allocated_(false), bytes_{bytes}, device_id_{device_id} {};
+
+  ~PhysicalMemory() = default;
+
+  /** Allocate physical memory at least larger than bytes_.
+   *  This method must be implemented in derived class.
+   * @return Size of allocated bytes. (Requested bytes and actual allocated bytes would be different.)
+   */
+  virtual size_t alloc() = 0;
+
+  inline size_t bytes() { return bytes_; };
+
+  inline bool allocated() {return allocated_; };
+};
+
+typedef shared_ptr<PhysicalMemory> PhysicalMemoryPtr;
+typedef std::vector<PhysicalMemoryPtr> VecPhysicalMemoryPtr;
+
 /** \addtogroup NNablaCoreGrp */
 /*@{*/
 /** Memory interface class.
@@ -42,8 +79,18 @@ private:
   Memory *next_{nullptr};
   Memory *prev_{nullptr};
 
+
 protected:
+  /** Type of Memory Flags.
+  */
+  enum MemoryType {
+    Normal = 0, ///< Default memory type.
+    Virtual = 1, ///< Virtual memory having physical memories internally.
+  };
+
   void *ptr_{nullptr};
+  MemoryType memory_type_{MemoryType::Normal};
+  VecPhysicalMemoryPtr p_memories_;
 
 private:
   inline void disable() { ptr_ = nullptr; }
@@ -128,11 +175,17 @@ public:
    */
   inline void lock() { locked_ = true; }
 
-  /** Relase a lock when it's not used.
+  /** Release a lock when it's not used.
 
       The lock is released by AllocatorMemory in its destructor.
    */
   inline void release() { locked_ = false; }
+
+  /** Get physical memory as reference. **/
+  inline VecPhysicalMemoryPtr& get_physical_memory() { return p_memories_; }
+
+  /** Clear physical memory. **/
+  inline void clear_physical_memory() { p_memories_.clear(); }
 
   // Logic
   /** Allocate memory by Memory::alloc_impl implemented in an implementation
@@ -172,6 +225,29 @@ public:
       connected.
    */
   static void associate_consecutive(Memory *left, Memory *right);
+
+  /** Bind physical memories on virtual address.
+   *  This method can be executed only if memory_type_ == MemType::Virtual.
+   */
+  void bind();
+
+  /** Unbind physical memories from corresponding virtual address, and return physical memory list as vector.
+   *  This method can be executed only if memory_type_ == MemType::Virtual.
+   */
+  void unbind();
+
+  /** Get device memory state.
+   *  In default this function does noting and return DeviceMemoryState::Unlocked.
+   */
+   virtual DeviceMemoryState get_device_memory_state() {
+     return DeviceMemoryState::Unlocked;
+   }
+
+   /** Request device memory state to `request`.
+    * `request` must be DeviceMemoryState.
+    * In default this function does nothing.
+    */
+   virtual void lock_device_memory() {};
 
   // Virtual functions
 protected:
@@ -214,6 +290,25 @@ protected:
       @see Memory::merge_next_impl
    */
   virtual void merge_prev_impl(Memory *from) = 0;
+
+  /** Implementation must perform following things:
+   * - Make sure physical memory is already allocated. (and alloc physical memory if needed.)
+   * - Reserve virtual address whose bytes size is larger than bytes_.
+   * - Map physical memory to virtual address and set virtual address to ptr_ as void*.
+   * In default, this function raises not implemented error.
+   */
+  virtual void bind_impl() {
+    NBLA_ERROR(error_code::not_implemented, "bind_impl() is not implemented.");
+  };
+
+  /** Implementation must perform following things:
+   * - Unmap virtual address from physical memory.
+   * - Release virtual address.
+   * In default, this function raises not implemented error.
+   */
+  virtual void unbind_impl() {
+    NBLA_ERROR(error_code::not_implemented, "unbind_impl() is not implemented.");
+  };
 };
 /*@}*/
 /** \defgroup MemoryImplGrp Memory list */

@@ -90,6 +90,26 @@ inline string string_join(const vector<T> &vec, const string &delim) {
   return oss.str();
 }
 
+/** size_t to byte strings that is readable by human.
+ */
+inline string byte_to_human_readable(long double byte) {
+  vector<string> units = {"B", "KB", "MB", "GB"};
+
+  string unit;
+  double div = 1 << 10;
+  for(auto &u: units) {
+    unit = u;
+    if (byte < div) break;
+    byte /= div;
+  }
+
+  std::ostringstream out;
+  out.precision(1);
+  out << std::fixed << byte;
+
+  return out.str() + unit;
+}
+
 /** Scoped callback
 */
 class DestructorCallback {

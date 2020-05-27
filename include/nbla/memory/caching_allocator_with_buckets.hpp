@@ -95,6 +95,8 @@ private:
 
   size_t free_unused_device_caches_impl(const string &device_id) override;
 
+  void print_memory_cache_map_impl() override;
+
 protected:
   /** Make Memory instance with a given configuration.
 

@@ -108,6 +108,10 @@ void clear_cpu_memory_cache() {
   SingletonManager::get<Cpu>()->caching_allocator()->free_unused_caches();
 }
 
+void print_cpu_memory_cache_map() {
+  SingletonManager::get<Cpu>()->caching_allocator()->print_memory_cache_map();
+}
+
 /** Get CPU array classes.
 */
 vector<string> cpu_array_classes() {
