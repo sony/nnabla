@@ -29,12 +29,13 @@ namespace nbla {
 using std::string;
 using std::vector;
 
-NBLA_REGISTER_FUNCTION_HEADER(Deconvolution, int,  // base_axis
-                              const vector<int> &, // pad
-                              const vector<int> &, // stride
-                              const vector<int> &, // dilation
-                              int,                 // group
-                              bool);               // channel_last
+NBLA_REGISTER_FUNCTION_HEADER(Deconvolution, int,   // base_axis
+                              const vector<int> &,  // pad
+                              const vector<int> &,  // stride
+                              const vector<int> &,  // dilation
+                              int,                  // group
+                              bool,                 // channel_last
+                              const vector<int> &); // output_padding
 
 /** N-D Deconvolution with bias operates backward convolution (derivative of
 output wrt input) plus channel-wise learned bias. The weights must be given with
@@ -59,7 +60,7 @@ Networks for Semantic Segmentation. https://arxiv.org/abs/1605.06211
 template <typename T>
 class Deconvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
-                          const vector<int> &, int, bool> {
+                          const vector<int> &, int, bool, const vector<int> &> {
 protected:
   // Note that member variables below are actually copied from Convolution. But
   // the meanings of input and output are back and forth. We consider the output
@@ -70,6 +71,7 @@ protected:
   vector<int> dilation_;
   int group_;
   bool channel_last_;
+  vector<int> output_padding_;
   vector<int> kernel_;
   int channels_i_, channels_o_, channels_g_;
   vector<int> spatial_shape_i_;
@@ -92,15 +94,16 @@ protected:
 public:
   Deconvolution(const Context &ctx, int base_axis, const vector<int> &pad,
                 const vector<int> &stride, const vector<int> &dilation,
-                int group, bool channel_last)
-      : BaseFunction(ctx, base_axis, pad, stride, dilation, group,
-                     channel_last),
+                int group, bool channel_last, const vector<int> &output_padding)
+      : BaseFunction(ctx, base_axis, pad, stride, dilation, group, channel_last,
+                     output_padding),
         base_axis_(base_axis), pad_(pad), stride_(stride), dilation_(dilation),
-        group_(group), channel_last_(channel_last) {}
+        group_(group), channel_last_(channel_last),
+        output_padding_(output_padding) {}
 
   virtual shared_ptr<Function> copy() const {
     return create_Deconvolution(ctx_, base_axis_, pad_, stride_, dilation_,
-                                group_, channel_last_);
+                                group_, channel_last_, output_padding_);
   }
 
   virtual vector<dtypes> in_types() {

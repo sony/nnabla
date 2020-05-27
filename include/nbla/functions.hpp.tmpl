@@ -72,11 +72,35 @@ public:
   ConvolutionOpts &stride(const vector<int> &val);
   ConvolutionOpts &dilation(const vector<int> &val);
   ConvolutionOpts &channel_last(bool val);
-  int group();
-  const vector<int> &pad() const;
-  const vector<int> &stride() const;
-  const vector<int> &dilation() const;
-  bool channel_last() const;
+  int group() { return group_; };
+  const vector<int> &pad() const { return pad_; };
+  const vector<int> &stride() const { return stride_; };
+  const vector<int> &dilation() const {return dilation_; };
+  bool channel_last() const { return channel_last_; };
+};
+
+class NBLA_API DeconvolutionOpts {
+private:
+  int group_;
+  vector<int> pad_;
+  vector<int> stride_;
+  vector<int> dilation_;
+  bool channel_last_;
+  vector<int> output_padding_;
+public:
+  DeconvolutionOpts();
+  DeconvolutionOpts &group(int val);
+  DeconvolutionOpts &pad(const vector<int> &val);
+  DeconvolutionOpts &stride(const vector<int> &val);
+  DeconvolutionOpts &dilation(const vector<int> &val);
+  DeconvolutionOpts &channel_last(bool val);
+  DeconvolutionOpts &output_padding(const vector<int> &val);
+  int group() { return group_; };
+  const vector<int> &pad() const { return pad_; };
+  const vector<int> &stride() const { return stride_; };
+  const vector<int> &dilation() const {return dilation_; };
+  bool channel_last() const { return channel_last_; };
+  const vector<int> &output_padding() const { return output_padding_; };
 };
 
 class NBLA_API BatchNormalizationOpts {
@@ -113,14 +137,14 @@ public:
 };
 
 NBLA_API vector<CgVariablePtr> convolution(Context &ctx, CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts);
-NBLA_API vector<CgVariablePtr> deconvolution(Context &ctx, CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts);
+NBLA_API vector<CgVariablePtr> deconvolution(Context &ctx, CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, DeconvolutionOpts &);
 NBLA_API vector<CgVariablePtr> batch_normalization(Context &ctx, CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, BatchNormalizationOpts batch_opts);
 NBLA_API vector<CgVariablePtr> max_pooling(Context &ctx, CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts = PoolingOpts());
 NBLA_API vector<CgVariablePtr> average_pooling(Context &ctx, CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts = PoolingOpts());
 NBLA_API vector<CgVariablePtr> sum_pooling(Context &ctx, CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts = PoolingOpts());
 
 NBLA_API CgVariablePtr convolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts);
-NBLA_API CgVariablePtr deconvolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, ConvolutionOpts &conv_opts);
+NBLA_API CgVariablePtr deconvolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr bias, int base_axis, int group, DeconvolutionOpts &);
 NBLA_API CgVariablePtr batch_normalization(CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, BatchNormalizationOpts batch_opts);
 NBLA_API CgVariablePtr max_pooling(CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts = PoolingOpts());
 NBLA_API CgVariablePtr average_pooling(CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts = PoolingOpts());

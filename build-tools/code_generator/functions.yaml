@@ -398,6 +398,14 @@ Neural Network Layer:
       The weights are specified in the same manner as :meth:`~nnabla.functions.convolution` , as if it was an ordinary convolution function.
       The forward operation of :meth:`~nnabla.functions.deconvolution` will then be operationally equivalent to the backward pass of :meth:`~nnabla.functions.convolution` .
       Therefore, the number of input channels (can be seen as output channels of forward convolution) is specified in the first dimension, and the number of the output channels divided by the number of groups is specified in the second dimension.
+
+      For `stride > 1`, a parameter-wise identical deconvolution on the output
+      of a convolution may not produce the same output shape as the input to
+      the convolution if, due to striding, the convolution did not fully cover
+      the input spatial dimension. The `output_padding` parameter can then be
+      used to appropriately increase the calculated output shape. Note that
+      this is used to find the output shape for the deconvolution operation,
+      but not to add zero-padding to the output.
     inputs:
       x:
         doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
@@ -437,6 +445,10 @@ Neural Network Layer:
           NHWC order.
         type: bool
         default: 'False'
+      output_padding:
+        doc: Additional size added to the output shape.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
     outputs:
       y:
         doc: |2
@@ -453,6 +465,7 @@ Neural Network Layer:
     function_ids:
       iiIiIiIi: 3
       iiIiIiIiB: 279
+      iiIiIiIiBiI: 292
     c_runtime: support
   DepthwiseDeconvolution:
     snake_name: depthwise_deconvolution

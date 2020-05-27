@@ -23,19 +23,20 @@ from nbla_test_utils import list_context
 ctxs = list_context('Deconvolution')
 
 
-def ref_deconvolution(x, w, b, base_axis, pad, stride, dilation, group,
-                      channel_last=False):
+def ref_deconvolution_2d(x, w, b, base_axis, pad, stride, dilation, group,
+                         channel_last=False, output_padding=(0, 0)):
     if channel_last:
         transpose_x = refs.ChannelLastToFirstTranspose(x.ndim, len(pad))
         transpose_w = refs.ChannelLastToFirstTranspose(w.ndim, len(pad))
         return transpose_x.inv(
-                ref_deconvolution(transpose_x(x), transpose_w(w), b, base_axis,
-                                  pad, stride, dilation, group))
+                ref_deconvolution_2d(transpose_x(x), transpose_w(w), b,
+                                     base_axis, pad, stride, dilation, group,
+                                     False, output_padding))
 
     y = []
     for xx in x.reshape((-1,) + x.shape[base_axis:]):
-        y += [refs.deconvolution_2d(xx, w, b, pad, stride,
-                                    dilation, group)[np.newaxis]]
+        y += [refs.deconvolution_2d(xx, w, b, pad, stride, dilation, group,
+                                    output_padding=output_padding)[np.newaxis]]
     y = np.vstack(y)
     return y.reshape(x.shape[:base_axis] + y.shape[1:])
 
@@ -43,16 +44,23 @@ def ref_deconvolution(x, w, b, base_axis, pad, stride, dilation, group,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape", [(2, 2, 4, 5), (2, 1, 4, 5, 4)])
-@pytest.mark.parametrize(
-    "kernel,outmaps,pad", [((3, 3), 2, (0, 1)), ((1, 3), 4, (1, 2))])
-@pytest.mark.parametrize("stride", [(1, 1), (2, 2)])
+@pytest.mark.parametrize("kernel, outmaps, pad", [
+    ((3, 3), 2, (0, 1)),
+    ((1, 3), 4, (1, 2)),
+])
+@pytest.mark.parametrize("stride, output_padding", [
+    ((1, 1), (0, 0)),
+    ((2, 2), (0, 0)),
+    ((2, 2), (1, 1)),
+])
 @pytest.mark.parametrize("dilation", [(1, 1), (2, 2)])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
 @pytest.mark.parametrize("channel_last", [False, True])
 def test_deconvolution_2d_forward_backward(inshape, kernel, outmaps, pad,
                                            stride, dilation, group, with_bias,
-                                           channel_last, seed, ctx, func_name):
+                                           channel_last, output_padding,
+                                           seed, ctx, func_name):
     from nbla_test_utils import function_tester
 
     if channel_last and not func_name.endswith('Cudnn'):
@@ -74,8 +82,9 @@ def test_deconvolution_2d_forward_backward(inshape, kernel, outmaps, pad,
     if with_bias:
         b = rng.randn(outmaps).astype(np.float32)
     inputs = [i, k, b]
-    func_args = [base_axis, pad, stride, dilation, group, channel_last]
-    function_tester(rng, F.deconvolution, ref_deconvolution, inputs,
+    func_args = [base_axis, pad, stride, dilation, group, channel_last,
+                 output_padding]
+    function_tester(rng, F.deconvolution, ref_deconvolution_2d, inputs,
                     func_args=func_args, func_name=func_name, ctx=ctx,
                     atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2)
 
@@ -83,19 +92,24 @@ def test_deconvolution_2d_forward_backward(inshape, kernel, outmaps, pad,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape", [(2, 2, 4, 5), (2, 1, 4, 5, 4)])
-@pytest.mark.parametrize(
-    "kernel,outmaps,pad", [((3, 3), 2, (0, 1)), ((1, 3), 4, (1, 2))])
-@pytest.mark.parametrize("stride", [(1, 1), (2, 2)])
+@pytest.mark.parametrize("kernel, outmaps, pad", [
+    ((3, 3), 2, (0, 1)),
+    ((1, 3), 4, (1, 2))
+])
+@pytest.mark.parametrize("stride, output_padding", [
+    ((1, 1), (0, 0)),
+    ((2, 2), (0, 0)),
+    ((2, 2), (1, 1)),
+])
 @pytest.mark.parametrize("dilation", [(1, 1), (2, 2)])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
-def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
-                                          dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name):
-    from nbla_test_utils import backward_function_tester
-
-    from nbla_test_utils import function_tester
+def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad,
+                                          stride, dilation, group, with_bias,
+                                          channel_last, output_padding,
+                                          seed, ctx, func_name):
+    from nbla_test_utils import function_tester, backward_function_tester
 
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip('channel_last=True is only supported in CUDNN backend.')
@@ -116,7 +130,8 @@ def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
     if with_bias:
         b = rng.randn(outmaps).astype(np.float32)
     inputs = [i, k, b]
-    func_args = [base_axis, pad, stride, dilation, group, channel_last]
+    func_args = [base_axis, pad, stride, dilation, group, channel_last,
+                 output_padding]
     backward_function_tester(rng, F.deconvolution, None, inputs,
                              func_args=func_args,
                              atol_f=1e-4, atol_b=1e-1, atol_accum=1e-1, dstep=1e-3,
