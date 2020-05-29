@@ -659,7 +659,7 @@ def clip_by_norm(x, clip_norm, axis=None):
 
 
 def interpolate(x, scale=None, output_size=None, mode='linear',
-                align_corners=None, half_pixel=False, half_pixel_for_nn=False,
+                align_corners=False, half_pixel=False, half_pixel_for_nn=False,
                 channel_last=False):
     '''
     Resize an ND array with interpolation.
@@ -743,13 +743,11 @@ def interpolate(x, scale=None, output_size=None, mode='linear',
             The default is 'linear'.
         align_corners(bool): If true, the corner pixels of input and output
             arrays are aligned, such that the output corner pixels have the
-            same values with the input corner pixels.
-            The default is ``None``, and it becomes ``True`` if mode is
-            'linear', otherwise ``False``.
+            same values with the input corner pixels. Default is ``False``.
         half_pixel:
             If true, in the coordinate transformation, 0.5 is added to the output coordinate
             and 0.5 is subtracted from the input coordinate after scaling. Default is ``False``.
-        half_pixel_for_nn:
+        half_pixel_for_nn: 
             This is a special argument to support the backward-compatibility of the nearest neighbor interpolation.
             Default is ``False``. When in ``True``, the implementation of nearest neighbor interpolation
             is the old one.
@@ -757,6 +755,14 @@ def interpolate(x, scale=None, output_size=None, mode='linear',
 
     Returns:
         ~nnabla.Variable: N-D array.
+
+    .. warning::
+        Up to the version 1.8.0, the default of `align_corners` was ``None``, and it becomes ``True``
+        if `mode` is linear, otherwise ``False``.
+
+    .. warning::
+        Up to the version 1.8.0, the nearest `mode` interpolation corresponds to
+        the nearest `mode` and `half_pixel_for_nn` = ``True`` after the version 1.8.0.
 
     '''
     from .function_bases import interpolate as interpolate_base
@@ -768,11 +774,6 @@ def interpolate(x, scale=None, output_size=None, mode='linear',
           else x.shape[-len(scale):]
         output_size = [int(math.floor(s * d))
                        for d, s in zip(input_size, scale)]
-    if align_corners is None:
-        if mode == 'linear':
-            align_corners = True
-        else:
-            align_corners = False
     return interpolate_base(x, output_size, mode, align_corners, half_pixel, half_pixel_for_nn, channel_last)
 
 
