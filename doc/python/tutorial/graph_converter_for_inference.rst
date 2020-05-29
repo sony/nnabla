@@ -105,7 +105,7 @@ Specifically, suppose that :math:`x` is the output of the
 :math:`N \times H \times W`). In the batch normalization, the number of
 :math:`c`\ s is the map size :math:`N`, respectively for :math:`c_0` and
 :math:`c_1`. Thus, the multiplication (:math:`c_0 \times x`) is
-:math:`N \times H \times W` and the addition ($ + c\_1$) is same
+:math:`N \times H \times W` and the addition :math:`c_0 \times x + c_1` is same
 :math:`N \times H \times W`. We can see much reduction compared to the
 native implementation.
 

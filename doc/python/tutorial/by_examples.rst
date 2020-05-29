@@ -573,14 +573,14 @@ package first. See `the install
 guide <http://nnabla.readthedocs.io/en/latest/python/installation.html>`__.
 After installing the CUDA extension, you can easily switch to run on
 CUDA by specifying a context before building a graph. We strongly
-recommend using a CUDNN context that is fast. Although the context class
+recommend using a cuDNN context that is fast. Although the context class
 can be instantiated by ``nn.Context()``, specifying a context descriptor
 might be a bit complicated for users. There for we recommend create a
 context by using a helper function ``get_extension_context()`` found in the
 ``nnabla.ext_utils`` module. NNabla officially supports ``cpu``
 and ``cudnn`` as a context specifier passed to the first argument
 (extension name). NOTE: By setting the cudnn context as a global default
-context, Functions and solves created are instantiated with CUDNN
+context, Functions and solves created are instantiated with cuDNN
 (preferred) mode. You can also specify a context using
 ``with nn.context_scope()``. See `API
 reference <http://nnabla.readthedocs.io/en/latest/python/api/common.html#context>`__

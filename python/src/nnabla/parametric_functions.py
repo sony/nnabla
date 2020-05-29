@@ -3004,7 +3004,7 @@ def min_max_quantize(x, ql_min=0, ql_max=255, decay=0.999, x_min_max=False, ema=
         eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
                      than the epsilon for both weights and bias.
         qr_min_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-6.0).
-        qr_max_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization rage, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
+        qr_max_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization range, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
         fix_parameters (bool): When set to `True`, the weights and biases will not be updated.
 
     References:
@@ -3101,14 +3101,14 @@ def min_max_quantized_affine(inp, n_outmaps,
         ql_max_w (int, float, or ~nnabla.Variable): Maximum quantization level for weights. Default is 255.
         w_min_max (bool): Use the min and max of weights to compute quantization ranges. Default is `False`.
         qr_min_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-2.0).
-        qr_max_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (2.0).
+        qr_max_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization range, qr_max. Default is :obj:`nnabla.initializer.ConstantInitializer` (2.0).
         ste_fine_grained_w (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
         quantize_b (bool): Quantize bias if `True`.
         ql_min_b (int, float, or ~nnabla.Variable): Minimum quantization level for bias. Default is 0.
         ql_max_b (int, float, or ~nnabla.Variable): Maximum quantization level for bias. Default is 255.
         b_min_max (bool): Use the min and max of bias to compute quantization ranges. Default is `False`.
         qr_min_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-6.0).
-        qr_max_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
+        qr_max_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization range, qr_max. Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
         ste_fine_grained_b (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
         eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
                      than the epsilon for both weights and bias.
@@ -3256,14 +3256,14 @@ def min_max_quantized_convolution(inp, outmaps, kernel,
         ql_max_w (int, float, or ~nnabla.Variable): Maximum quantization level for weights. Default is 255.
         w_min_max (bool): Use the min and max of weights to compute quantization ranges. Default is `False`.
         qr_min_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-2.0).
-        qr_max_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization rage, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (2.0).
+        qr_max_w_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization range, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (2.0).
         ste_fine_grained_w (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
         quantize_b (bool): Quantize bias if `True`.
         ql_min_b (int, float, or ~nnabla.Variable): Minimum quantization level for bias. Default is 0.
         ql_max_b (int, float, or ~nnabla.Variable): Maximum quantization level for bias. Default is 255.
         b_min_max (bool): Use the min and max of bias to compute quantization ranges. Default is `False`.
         qr_min_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the minimum quantization range, qr_min. Default is :obj:`nnabla.initializer.ConstantInitializer` (-6.0).
-        qr_max_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization rage, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
+        qr_max_b_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the maximum quantization range, qr_max Default is :obj:`nnabla.initializer.ConstantInitializer` (6.0).
         ste_fine_grained_b (bool): If true, STE is not 1, the {0, 1}-mask computed from the min-max is applied to the gradient in the backward; otherwise, STE is 1.
         eps (float): Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be greater
                      than the epsilon for both weights and bias.
@@ -3832,11 +3832,11 @@ def transformer(src, tgt, embed_dim=512, num_heads=8, num_encoder_layers=6, num_
         dropout (float, optional): Dropout ratio applied. Default is 0.1.
         activation (function, optional): Non-linear activation function to be used. Default is None, which is set as F.relu in the code.
         src_additive_mask (~nnabla.Variable, optional): Additive mask for the src sequence (optional). :math:`(L_S, L_S)`.
-        tgt_additive_mask (~nnabla.Variable, optional): Additive mask for the tgt sequence (optional).:math:`(L_T, L_T)`.
+        tgt_additive_mask (~nnabla.Variable, optional): Additive mask for the tgt sequence (optional). :math:`(L_T, L_T)`.
         memory_additive_mask (~nnabla.Variable, optional): Additive mask for the encoder output (optional). :math:`(L_T, L_S)`.
-        src_key_padding_mask (~nnabla.Variable, optional): Key padding mask for src keys per batch (optional).:math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
-        tgt_key_padding_mask (~nnabla.Variable, optional): Key padding mask for tgt keys per batch (optional).:math:`(B, L_T)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
-        memory_key_padding_mask (~nnabla.Variable, optional): Key padding mask for memory keys per batch (optional).:math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        src_key_padding_mask (~nnabla.Variable, optional): Key padding mask for src keys per batch (optional). :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        tgt_key_padding_mask (~nnabla.Variable, optional): Key padding mask for tgt keys per batch (optional). :math:`(B, L_T)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
+        memory_key_padding_mask (~nnabla.Variable, optional): Key padding mask for memory keys per batch (optional). :math:`(B, L_S)`. Specified padding elements will be ignored by the attention layer. Values must be either 1 or 0.
         rng (numpy.random.RandomState, optional): Random generator for Initializer. Default is None.
         add_attn_bias (bool, optional): Specify whether to add attention bias parameters for key and value. Default is False.
         fix_parameters (bool, optional): When set to `True`, the weights and biases will not be updated. Default is False.

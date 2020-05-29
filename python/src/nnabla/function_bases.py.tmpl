@@ -162,7 +162,7 @@ def arg_options(arg):
     if arg.get('parameter', False):
         ret.append('[parameter]')
     if 'default' in arg:
-        ret.append('[default=``%s``]' % arg['default'])
+        ret.append('[default= `%s` ]' % arg['default'])
     if ret:
         return ''.join(ret)
     return ''

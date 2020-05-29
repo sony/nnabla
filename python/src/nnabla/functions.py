@@ -1154,7 +1154,7 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
 
     Computes multi-headed attention with query, key, and value.
     We use the following notations to describe the inputs and outputs below.
-    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`D`: input dimension, :math:`E`: embedding dimension, :math`H`: number of attention heads.
+    :math:`L_T`: target sequence length, :math:`L_S`: source sequence length, :math:`B`: batch size, :math:`D`: input dimension, :math:`E`: embedding dimension, :math:`H`: number of attention heads.
 
     References:
 

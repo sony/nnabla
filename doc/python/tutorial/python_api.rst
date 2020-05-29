@@ -57,7 +57,7 @@ are not initialized, and are created as float32 by default.
 
 
 The accessor ``.data`` returns a reference to the values of NdArray as
-``numpy.ndarray``. You can modify these by using the Numpy API as
+``numpy.ndarray``. You can modify these by using the NumPy API as
 follows.
 
 .. code:: python
@@ -94,7 +94,7 @@ Note that the above operation is all done in the host device (CPU).
 NdArray provides more efficient functions in case you want to fill all
 values with a constant, ``.zero`` and ``.fill``. They are lazily
 evaluated when the data is requested (when neural network computation
-requests the data, or when numpy array is requested by Python) The
+requests the data, or when NumPy array is requested by Python) The
 filling operation is executed within a specific device (e.g. CUDA GPU),
 and more efficient if you specify the device setting, which we explain
 later.
@@ -116,7 +116,7 @@ later.
       [ 1.  1.  1.  1.]]]
 
 
-You can create an NdArray instance directly from a Numpy array object.
+You can create an NdArray instance directly from a NumPy array object.
 
 .. code:: python
 
@@ -240,7 +240,7 @@ respectively.
       [ 0.  0.  0.  0.]]]
 
 
-Like ``NdArray``, a ``Variable`` can also be created from Numpy
+Like ``NdArray``, a ``Variable`` can also be created from NumPy
 array(s).
 
 .. code:: python

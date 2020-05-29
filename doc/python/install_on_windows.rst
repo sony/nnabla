@@ -20,7 +20,7 @@ The following software are required for installation:
 
 * Recommended.
 
-  * CUDA Toolkit and CUDNN (if you have CUDA GPUs).
+  * CUDA Toolkit and cuDNN (if you have CUDA GPUs).
 
 
 Setup environment
@@ -29,7 +29,7 @@ Setup environment
 Python
 """"""
 
-In this instruction, we use `miniconda <https://conda.io/miniconda.html>`_.
+In this instruction, we use `Miniconda <https://conda.io/miniconda.html>`_.
 
 Get and install the windows binary from `here <https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe>`_
 
@@ -55,7 +55,7 @@ Microsoft Visual C++ 2015 Redistributable
 Get and install from `here <https://www.microsoft.com/en-us/download/details.aspx?id=52685>`_
 
 
-CUDA and CUDNN library
+CUDA and cuDNN library
 """"""""""""""""""""""
 
 If you are using a NVIDIA GPU, execution speed will be drastically improved by installing the following software.
@@ -66,7 +66,7 @@ If you are using a NVIDIA GPU, execution speed will be drastically improved by i
 
 To install cuDNN, copy bin, include and lib to C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v{CUDA_VERSION}
 
-See :ref:`a list of compatible CUDNN versions of CUDA extension packages <cuda-cudnn-compatibility>`.
+See :ref:`a list of compatible cuDNN versions of CUDA extension packages <cuda-cudnn-compatibility>`.
 
 
 Install

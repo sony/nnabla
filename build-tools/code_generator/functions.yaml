@@ -915,7 +915,7 @@ Neural Network Activation Functions:
       The original definition can be rewritten as
 
       .. math::
-          y_i = x_i - \max_j(x_j) - \log\left\(\sum_j \exp(x_j - \max_k(x_k))\right\).
+          y_i = x_i - \max_j(x_j) - \log \left(\sum_j \exp(x_j - \max_k(x_k)) \right).
 
       It is more stable as a log is always applied to a value :math:`\ge e`, while a log can be evaluated for 0 in the non-fused operation.
 
@@ -4274,7 +4274,7 @@ Stochasticity:
 
       Generate random samples from population `x` with selection probabilities
       determined by the relative weights `w`. The number of samples to draw is
-      given by the product of `shape`s dimensions, and the samples are returned
+      given by the product of `shape`\s dimensions, and the samples are returned
       with the given `shape`. By default, samples are drawn with replacement,
       i.e. selection of a specific population member is solely determined by
       its associated weight. Sampling without replacement, where any population
