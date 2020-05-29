@@ -1349,29 +1349,6 @@ class OnnxExporter:
         return nl
 
     def BaseDeconvolution(self, func_name, func):
-        # For the case where the dilations parameter is '1', the conversion, inference, compare results is no problem.
-        # If the dilations parameter is not '1', the conversion result is OK, But the inference results have problems,
-        # the inference tools currently in use are CNTK, Caffe2, ONNXRuntime:
-        # CNTK
-        # Currently, CNTK does not support 'ConvTranspose'.
-        #
-        # Caffe2
-        # Caffe2 seems not support the case that dilations not equal to '1'. According to investigation, when the input
-        # shapes are same, dilations are different, Caffe2 output same infer shape, which is not expected. We supposed
-        # Caffe2 did not support dilations != 1.
-        #
-        # ONNXRuntime
-        # The formula used to infer output shape is different from NNabla.
-        # ONNXRuntime calculates the output space size for 'ConvTranspose' as :
-        # L_i = (Li - 1) Si + Ki + Di - 1 + adj - padhead - padtail
-        # Where Li is the spatial size, Si is the stride, Ki is the kernel size, Di is the dilation,
-        # adj is output_padding, padhead is the pad start, padtail is the pad end.
-        #
-        # NNabla is using the formula as :
-        # L_i = (Li - 1) Si - 2Pi + Di (Ki - 1) + 1
-        # Where Si is the stride, Li is the spatial size, Pi is the padding, Di is the dilation,
-        # and Ki is the kernel size for i-th spatial dimension.
-        # If the dilations parameter is not '1', the output shape is different.
         nl = []
         inputs = func.input[:]
         input_x_shape = np.array(
@@ -1379,8 +1356,10 @@ class OnnxExporter:
         output_y_shape = np.array(
             [d for d in self._var_dict[func.output[0]].dim])
         weight_shape = [d for d in self._var_dict[func.input[1]].dim]
+        output_padding = [0] * (len(weight_shape[2:]))
         if func_name == "Deconvolution":
             dp = func.deconvolution_param
+            output_padding = dp.output_padding.dim[:]
             group = dp.group
         elif func_name == "DepthwiseDeconvolution":
             dp = func.depthwise_deconvolution_param
@@ -1403,6 +1382,7 @@ class OnnxExporter:
             dilations += [1]
             strides += [1]
             pads += [0]
+            output_padding += [0]
             input_x_shape = np.array(np.concatenate(
                 ([np.prod(input_x_shape[:dp.base_axis])], input_x_shape[dp.base_axis:], [1])))
 
@@ -1432,7 +1412,8 @@ class OnnxExporter:
                 dilations=dilations,
                 strides=strides,
                 pads=pads * 2,
-                group=group
+                group=group,
+                output_padding=output_padding
             )
             nl.append(n)
 
@@ -1450,7 +1431,8 @@ class OnnxExporter:
                 dilations=dilations,
                 strides=strides,
                 pads=pads * 2,
-                group=group
+                group=group,
+                output_padding=output_padding
             )
             nl.append(n)
 
