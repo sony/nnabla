@@ -479,6 +479,11 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.solver = S.RMSprop(
                 o.solver.rmsprop_param.lr, o.solver.rmsprop_param.decay, o.solver.rmsprop_param.eps)
             init_lr = o.solver.rmsprop_param.lr
+        elif o.solver.type == 'RMSpropgraves':
+            optimizer.solver = S.RMSpropgraves(
+                o.solver.rmspropgraves_param.lr, o.solver.rmspropgraves_param.decay,
+                o.solver.rmspropgraves_param.momentum, o.solver.rmspropgraves_param.eps)
+            init_lr = o.solver.rmspropgraves_param.lr
         elif o.solver.type == 'Sgd' or o.solver.type == 'SGD':
             optimizer.solver = S.Sgd(o.solver.sgd_param.lr)
             init_lr = o.solver.sgd_param.lr
