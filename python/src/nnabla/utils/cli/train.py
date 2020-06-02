@@ -589,7 +589,7 @@ def train_command(args):
                         monitor_data_iterators[di] = di_instance
                     else:
                         di_instance = monitor_data_iterators[di]
-                    m.data_iterators.append(stack.enter_context(di()))
+                    m.data_iterators.append(di_instance)
             monitor_data_iterators.update(optimizer_data_iterators)
 
             result, restart = _train(args, config)
