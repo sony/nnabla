@@ -16,46 +16,11 @@ import os
 from ..onnx import OnnxImporter
 import tensorflow as tf
 import tf2onnx
-import collections
 from tf2onnx import constants, loader
 from tf2onnx.graph import GraphUtil
 from tensorflow.core.framework import graph_pb2
 from tensorflow.python.tools import freeze_graph
-
-
-def _strip_node_name(name):
-    if name.startswith("^"):
-        return name[1:]
-    else:
-        return name.split(":")[0]
-
-
-def _find_out_terminal_node(graph_def, **kwargs):
-    def add_postfix(names):
-        return ["{}:0".format(n) for n in names]
-
-    unlike_output_types = ["Const", "Assign", "NoOp", "Placeholder"]
-    terminal_inputs = []
-    terminal_outputs = []
-    input_cnt = collections.Counter()
-    need_add_postfix = kwargs.get("postfix", False)
-    for node in graph_def.node:
-        for input in node.input:
-            input = _strip_node_name(input)
-            input_cnt[input] += 1
-        if node.op == 'Placeholder':
-            strip_name = _strip_node_name(node.name)
-            terminal_inputs.append(strip_name)
-
-    for node in graph_def.node:
-        if input_cnt[node.name] == 0 and node.op not in unlike_output_types:
-            terminal_outputs.append(node.name)
-
-    if need_add_postfix:
-        terminal_inputs = add_postfix(terminal_inputs)
-        terminal_outputs = add_postfix(terminal_outputs)
-
-    return terminal_inputs, terminal_outputs
+from .common import find_out_terminal_node
 
 
 class TensorflowImporter:
@@ -123,7 +88,7 @@ class TensorflowImporter:
             graph_def = graph_pb2.GraphDef()
             with tf.gfile.GFile(self._tf_file, 'rb') as f:
                 graph_def.ParseFromString(f.read())
-            inputs, outputs = _find_out_terminal_node(graph_def, postfix=True)
+            inputs, outputs = find_out_terminal_node(graph_def, postfix=True)
         else:
             if self._outputs is None:
                 raise ImportError("Missing '--outputs' parameter.")

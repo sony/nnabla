@@ -14,6 +14,8 @@
 
 from ..onnx import OnnxExporter
 from onnx_tf.backend import prepare
+import tensorflow as tf
+from .common import find_out_terminal_node
 
 
 class TensorflowExporter:
@@ -63,3 +65,36 @@ class TensorflowExporter:
             self._nnp, self._batch_size, opset="9").export_model_proto()
         tf_rep = prepare(onnx_model)
         tf_rep.export_graph(output)
+
+
+class TensorflowLiteExporter:
+    def __init__(self, nnp, batch_size):
+        self._nnp = nnp
+        self._batch_size = batch_size
+
+    def check_tf_graph(self, graph):
+        for op in graph.get_operations():
+            if op.type == "Placeholder":
+                shape = graph.get_tensor_by_name(op.name+':0').shape
+                if len(shape) > 4:
+                    raise ValueError("Dims is larger than 4 is not supported.")
+
+    def execute(self, output):
+        onnx_model = OnnxExporter(
+            self._nnp, self._batch_size, opset="9").export_model_proto()
+        tf_rep = prepare(onnx_model)
+        self.check_tf_graph(tf_rep.graph)
+        with tf.compat.v1.Session(graph=tf_rep.graph) as session:
+            inputs, outputs = find_out_terminal_node(
+                session.graph_def, postfix=True)
+
+            inputs_tensor = [
+                session.graph.get_tensor_by_name(inp) for inp in inputs]
+            outputs_tensor = [
+                session.graph.get_tensor_by_name(oup) for oup in outputs]
+
+            converter = tf.lite.TFLiteConverter.from_session(
+                session, inputs_tensor, outputs_tensor)
+            tflite_model = converter.convert()
+            with open(output, 'wb') as f:
+                f.write(tflite_model)

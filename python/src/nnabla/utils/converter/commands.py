@@ -179,6 +179,9 @@ def _export_from_nnp(args, nnp, output, output_ext):
     elif output_ext == '.pb':
         from .tensorflow import TensorflowExporter
         TensorflowExporter(nnp, args.batch_size).execute(output)
+    elif output_ext == '.tflite':
+        from .tensorflow import TensorflowLiteExporter
+        TensorflowLiteExporter(nnp, args.batch_size).execute(output)
     else:
         print('Output file ({})'.format(output_ext) +
               ' is not supported or output directory does not exist.')
