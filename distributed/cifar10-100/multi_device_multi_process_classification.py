@@ -133,9 +133,18 @@ def train():
     monitor_vtime = MonitorTimeElapsed("Validation time", monitor, interval=1)
 
     # Data Iterator
-    rng = np.random.RandomState(device_id)
-    _, tdata = data_iterator(args.batch_size, True, rng)
-    vsource, vdata = data_iterator(args.batch_size, False)
+    if mpi_local_rank == 0:
+        rng = np.random.RandomState(device_id)
+        _, tdata = data_iterator(args.batch_size, True, rng)
+        vsource, vdata = data_iterator(args.batch_size, False)
+
+    a = [nn.NdArray.from_numpy_array(np.ones(1))]
+    comm.all_reduce(a, division=False, inplace=False)
+
+    if mpi_local_rank != 0:
+        rng = np.random.RandomState(device_id)
+        _, tdata = data_iterator(args.batch_size, True, rng)
+        vsource, vdata = data_iterator(args.batch_size, False)
 
     # loss_error_train.forward()
 
