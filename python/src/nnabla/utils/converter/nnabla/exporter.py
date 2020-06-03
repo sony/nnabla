@@ -18,6 +18,7 @@ import os
 import shutil
 import tempfile
 import zipfile
+import numpy as np
 
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
@@ -45,8 +46,10 @@ class NnpExporter:
         import h5py
         with h5py.File(filename, 'w') as hd:
             for i, param in enumerate(nnp.parameter):
+                data = np.reshape(list(param.data),
+                                  tuple(list(param.shape.dim)))
                 dset = hd.create_dataset(
-                    param.variable_name, dtype='f4', data=list(param.data))
+                    param.variable_name, dtype='f4', data=data)
                 dset.attrs['need_grad'] = param.need_grad
                 dset.attrs['index'] = i
 
