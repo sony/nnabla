@@ -37,6 +37,7 @@ You can also run it directly on [Colab](https://colab.research.google.com/) from
 | Image Generation with DCGAN     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/dcgan_image_generation.ipynb) | Coming Soon |
 | Semi-Supervised Learning with VAT     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/vat_semi_supervised_learning.ipynb) | Coming Soon |
 | Unsupervised Learning with VAE     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/vae_unsupervised_learning.ipynb) | Coming Soon |
+| Feature Embedding with SiameseNet    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla/blob/master/tutorial/siamese_feature_embedding.ipynb) | Coming Soon |
 | Mixed Precision Training      |  | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/mixed_precision_training.html) |
 | Data Parallel Distributed Training      |  | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/multi_device_training.html) |
 | Graph Converter for Inference      |  | [read](https://nnabla.readthedocs.io/en/latest/python/tutorial/graph_converter_for_inference.html) |
