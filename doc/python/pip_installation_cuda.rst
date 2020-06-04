@@ -5,17 +5,17 @@ NNabla CUDA extension package installation using PIP
 
 Note: please refer to the :ref:`pip_os_specific` for the OS specific dependencies setup.
 
-By installing the NNabla CUDA extension package ``nnabla-ext-cuda``, you can accelerate the computation by NVidia CUDA GPU (CUDA must be setup on your environment accordingly).
+By installing the NNabla CUDA extension package ``nnabla-ext-cuda``, you can accelerate the computation by NVIDIA CUDA GPU (CUDA must be setup on your environment accordingly).
 
-Several pip packages of NNabla CUDA extension are provided for each CUDA version and its corresponding CUDNN version as following.
+Several pip packages of NNabla CUDA extension are provided for each CUDA version and its corresponding cuDNN version as following.
 
 .. _cuda-cudnn-compatibility:
 
-CUDA vs CUDNN Compatibility
+CUDA vs cuDNN Compatibility
 ---------------------------
 
 ================== ============ =====================
-Package name       CUDA version CUDNN version
+Package name       CUDA version cuDNN version
 ================== ============ =====================
 nnabla-ext-cuda90  9.0          7.6(Linux & Win)
 nnabla-ext-cuda100 10.0         7.6(Linux & Win)
@@ -57,11 +57,11 @@ Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+.
 
 .. _cuda-cudnn-compatibility:
 
-CUDA vs CUDNN Compatibility
+CUDA vs cuDNN Compatibility
 ---------------------------
 
 ================================= ============ =============
-Package name                      CUDA version CUDNN version
+Package name                      CUDA version cuDNN version
 ================================= ============ =============
 nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.6
 nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.6
@@ -96,7 +96,7 @@ FAQ
 Q. How do I install CUDA?
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NNabla CUDA extension requires both CUDA toolkit and CUDNN library. You should select a proper CUDA version according to your CUDA device capability. See `the official installation guide <https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html>`_. NNabla supports CUDA versions later than 8.0. See :ref:`the table <cuda-cudnn-compatibility>` for the CUDNN compatibility with the specific CUDA versions.
+NNabla CUDA extension requires both CUDA toolkit and cuDNN library. You should select a proper CUDA version according to your CUDA device capability. See `the official installation guide <https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html>`_. NNabla supports CUDA versions later than 8.0. See :ref:`the table <cuda-cudnn-compatibility>` for the cuDNN compatibility with the specific CUDA versions.
 
 
 Q. How do I install NCCL
@@ -121,5 +121,5 @@ Following is a sample error message.
 
   [nnabla][INFO]: Initializing CPU extension...
   Please install CUDA version 10.1.
-    and CUDNN version 7.6
-    Or install correct nnabla-ext-cuda for installed version of CUDA/CUDNN.
+    and cuDNN version 7.6
+    Or install correct nnabla-ext-cuda for installed version of CUDA/cuDNN.

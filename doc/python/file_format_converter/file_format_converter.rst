@@ -92,7 +92,7 @@ While this is not a generic file format converter, this is the specified convert
 
 This converter can specify both inputs and outputs for ONNX file, but if ONNX file contains a function unsupported by Neural Network Libraries, it may cause error in conversion.
 
-This converter also provides some intermediate process functionalities. See :ref:Process.
+This converter also provides some intermediate process functionalities. See :ref:`Process`.
 
 Conversion
 ++++++++++
@@ -199,14 +199,14 @@ NNP Operation
 Convert NNP to NNP
 ^^^^^^^^^^^^^^^^^^
 
-Sometimes we need convert NNP to NNP.
+Sometimes we need to convert NNP to NNP.
 
 Most major usecase, expand repeat or recurrent network supported by
-Neural Network Console but does not supported by C++ API.
+Neural Network Console but not supported by C++ API.
 
 .. code-block:: none
 
-   $ nnabla_cli convert --nnp-no-expand-network input.nnp output.nnp
+   $ nnabla_cli convert input.nnp output.nnp
 
 Convert console output to single NNP file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -145,7 +145,8 @@ cdef class NdArray:
         Args:
             nparr (~numpy.ndarray): Numpy multi-dimensional array.
 
-        Returns: ~nnabla._nd_array.NdArray
+        Returns: 
+            nnabla._nd_array.NdArray
 
         """
         assert isinstance(nparr, np.ndarray)
@@ -182,7 +183,8 @@ cdef class NdArray:
     def shape(self):
         """Shape of the N-d array.
 
-        Returns: tuple of int
+        Returns: 
+            tuple of int
 
         """
         return tuple(self.arrp.shape())
@@ -219,7 +221,8 @@ cdef class NdArray:
     def size(self):
         """Total size of the N-d array.
 
-        Returns: int
+        Returns: 
+            int
 
         """
         return self.arrp.size(-1)
@@ -255,7 +258,8 @@ cdef class NdArray:
     def strides(self):
         """Strides.
 
-        Returns: tuple of int
+        Returns: 
+            tuple of int
 
         """
         return self.arrp.strides()
@@ -264,7 +268,8 @@ cdef class NdArray:
     def ndim(self):
         """Number of dimensions.
 
-        Returns: int 
+        Returns: 
+            int 
 
         """
         return self.arrp.ndim()
@@ -309,7 +314,8 @@ cdef class NdArray:
         Args:
             value (:obj:`numpy.ndarray`)
 
-        Returns: :obj:`numpy.ndarray`
+        Returns: 
+            :obj:`numpy.ndarray`
 
         """
         return c_as_numpy_array(self.arrp, 'rw')
@@ -348,7 +354,7 @@ cdef class NdArray:
                 * 'rw': You can both read and write.
             dtype (:obj:`numpy.dtype`, optional): Force dtype of a returned array.
 
-        See :function:`nnabla._nd_array.NdArray.data for more details.
+        See :function:`nnabla._nd_array.NdArray.data` for more details.
 
         '''
         if dtype is None:
@@ -394,7 +400,8 @@ cdef class NdArray:
         """
         Get dtype.
 
-        Returns: :obj:`numpy.dtype`
+        Returns: 
+            :obj:`numpy.dtype`
 
         """
         cdef int type_num

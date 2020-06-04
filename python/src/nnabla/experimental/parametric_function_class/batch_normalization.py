@@ -57,7 +57,7 @@ class BatchNormalization(Module):
             be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+            E.g. ``{'beta': ConstantInitializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -143,7 +143,7 @@ class BatchNorm1d(BatchNormalization):
             be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+            E.g. ``{'beta': ConstantInitializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -203,7 +203,7 @@ class BatchNorm2d(BatchNormalization):
             be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+            E.g. ``{'beta': ConstantInitializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.
@@ -263,7 +263,7 @@ class BatchNorm3d(BatchNormalization):
             be ``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``.
             A value of the dict must be an :obj:`~nnabla.initializer.Initializer`
             or a :obj:`numpy.ndarray`.
-            E.g. ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
+            E.g. ``{'beta': ConstantInitializer(0), 'gamma': np.ones(gamma_shape) * 2}``.
 
     Returns:
         :class:`~nnabla.Variable`: N-D array.

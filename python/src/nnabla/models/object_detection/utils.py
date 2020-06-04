@@ -10,7 +10,7 @@ def draw_bounding_boxes(img, bboxes, names, colors=None, thresh=0.5):
     Args:
         img (numpy.ndarray) : Input image
         bboxes (numpy.ndarray): 
-            Transformed bounding box co-orinates from the model.
+            Transformed bounding box coorinates from the model.
         names (list of str): Name of categories in the dataset
         colors (list of tuple of 3 ints): Colors for bunding boxes
         thresh (float): Threshold of bounding boxes.
@@ -44,13 +44,13 @@ def draw_bounding_boxes(img, bboxes, names, colors=None, thresh=0.5):
 
 def apply_inverse_letterbox_coordinate_transform(bboxes, im_w, im_h, letterbox_w, letterbox_h):
     '''
-    The predicted bounding box co-ordinates from the model are not according to original image but the pre-processed image. This function transforms the co-orinates
+    The predicted bounding box coordinates from the model are not according to original image but the pre-processed image. This function transforms the coorinates
     according to original image by applying inverse letterbox co-rdinate trasforms mathematically.
 
     Args:
 
         bboxes: 
-             The bounding box co-ordinates predicted from the model.
+             The bounding box coordinates predicted from the model.
         im_w : 
              Width of original input image.
         im_h :

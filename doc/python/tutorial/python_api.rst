@@ -57,7 +57,7 @@ are not initialized, and are created as float32 by default.
 
 
 The accessor ``.data`` returns a reference to the values of NdArray as
-``numpy.ndarray``. You can modify these by using the Numpy API as
+``numpy.ndarray``. You can modify these by using the NumPy API as
 follows.
 
 .. code:: python
@@ -94,7 +94,7 @@ Note that the above operation is all done in the host device (CPU).
 NdArray provides more efficient functions in case you want to fill all
 values with a constant, ``.zero`` and ``.fill``. They are lazily
 evaluated when the data is requested (when neural network computation
-requests the data, or when numpy array is requested by Python) The
+requests the data, or when NumPy array is requested by Python) The
 filling operation is executed within a specific device (e.g. CUDA GPU),
 and more efficient if you specify the device setting, which we explain
 later.
@@ -116,7 +116,7 @@ later.
       [ 1.  1.  1.  1.]]]
 
 
-You can create an NdArray instance directly from a Numpy array object.
+You can create an NdArray instance directly from a NumPy array object.
 
 .. code:: python
 
@@ -240,7 +240,7 @@ respectively.
       [ 0.  0.  0.  0.]]]
 
 
-Like ``NdArray``, a ``Variable`` can also be created from Numpy
+Like ``NdArray``, a ``Variable`` can also be created from NumPy
 array(s).
 
 .. code:: python
@@ -281,7 +281,7 @@ returns None.
 Function
 --------
 
-A function defines a operation block of a computation graph as we
+A function defines an operation block of a computation graph as we
 described above. The module ``nnabla.functions`` offers various
 functions (e.g. Convolution, Affine and ReLU). You can see the list of
 functions available in the `API reference
@@ -809,9 +809,9 @@ example.
 Note that in-place substitution from the rhs to the lhs cannot be done
 by the ``=`` operator. For example, when ``x`` is an ``NdArray``,
 writing ``x = x + 1`` will *not* increment all values of ``x`` -
-instead, the expression on the lhs will create a *new* ``NdArray``
-object that different from the one originally bound by ``x``, and binds
-the new ``NdArray`` object to the Python variable ``x`` on the rhs.
+instead, the expression on the rhs will create a *new* ``NdArray``
+object that is different from the one originally bound by ``x``, and binds
+the new ``NdArray`` object to the Python variable ``x`` on the lhs.
 
 For in-place editing of ``NdArrays``, the in-place assignment operators
 ``+=``, ``-=``, ``*=``, and ``/=`` can be used. The ``copy_from`` method
