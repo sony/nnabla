@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include <nbla/computation_graph/computation_graph.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <algorithm>
 #include <memory>
+#include <mutex>
 
 namespace nbla {
 
@@ -168,4 +170,44 @@ void forward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
                           function_pre_hook, function_post_hook);
   }
 }
+
+#define SCOPED_MUTEX                                                           \
+  static std::mutex mtx;                                                       \
+  std::lock_guard<decltype(mtx)> lock(mtx)
+
+GlobalClearBufferState::GlobalClearBufferState() {}
+bool GlobalClearBufferState::clear_buffer() const {
+  SCOPED_MUTEX;
+  auto tid = std::this_thread::get_id();
+  return clear_buffer_[tid];
+}
+bool GlobalClearBufferState::clear_no_need_grad() const {
+  SCOPED_MUTEX;
+  auto tid = std::this_thread::get_id();
+  return clear_no_need_grad_[tid];
+}
+void GlobalClearBufferState::set(bool clear_buffer, bool clear_no_need_grad) {
+  SCOPED_MUTEX;
+  auto tid = std::this_thread::get_id();
+  clear_buffer_[tid] = clear_buffer;
+  clear_no_need_grad_[tid] = clear_no_need_grad;
+}
+std::unique_ptr<GlobalClearBufferState::ScopedState>
+GlobalClearBufferState::state(bool clear_buffer, bool clear_no_need_grad) {
+  return std::unique_ptr<GlobalClearBufferState::ScopedState>(
+      new GlobalClearBufferState::ScopedState(this, clear_buffer,
+                                              clear_no_need_grad));
+}
+GlobalClearBufferState::ScopedState::ScopedState(GlobalClearBufferState *self,
+                                                 bool clear_buffer,
+                                                 bool clear_no_need_grad)
+    : self_(self), clear_buffer_(self->clear_buffer()),
+      clear_no_need_grad_(self->clear_no_need_grad()) {
+  self->set(clear_buffer, clear_no_need_grad);
+}
+GlobalClearBufferState::ScopedState::~ScopedState() {
+  self_->set(clear_buffer_, clear_no_need_grad_);
+}
+
+NBLA_INSTANTIATE_SINGLETON(NBLA_API, GlobalClearBufferState);
 }

@@ -18,6 +18,10 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/nd_array.hpp>
+#include <nbla/singleton_manager.hpp>
+
+#include <memory>
+#include <thread>
 
 namespace nbla {
 
@@ -59,5 +63,61 @@ NBLA_API void forward_all(const vector<CgVariablePtr> variables,
                           bool clear_no_need_grad = false,
                           function_hook_type function_pre_hook = nullptr,
                           function_hook_type function_post_hook = nullptr);
+
+/** Clear buffer flags maintained in a global scope (per thread).
+ *
+ * This is used to inform nbla::Function class which buffer flag is used when
+ * the function is called.
+ * It's used in the forward & backward function in the nbla::CgVariable class.
+ */
+class NBLA_API GlobalClearBufferState {
+  mutable unordered_map<std::thread::id, bool> clear_buffer_;
+  mutable unordered_map<std::thread::id, bool> clear_no_need_grad_;
+
+  class NBLA_API ScopedState {
+    GlobalClearBufferState *self_;
+    bool clear_buffer_;
+    bool clear_no_need_grad_;
+
+  public:
+    ScopedState(GlobalClearBufferState *self, bool clear_buffer,
+                bool clear_no_need_grad);
+    ~ScopedState();
+    DISABLE_COPY_AND_ASSIGN(ScopedState);
+  };
+
+public:
+  bool clear_buffer() const;
+  bool clear_no_need_grad() const;
+  /** Set clear buffer flags globally until the life of the returned object
+     ends.
+
+      Note that this doesn't affect any decision of clearing buffers in
+      the graph exeuction. It's used to just inform anyone of the current
+      clear buffer flag.
+      Also, please keep in mind that the returned ScopedState instance
+      shouldn't be owned by any globally maintained instance because
+      it maintains a raw pointer of a global singleton instance of
+      this class (GlobalClearBufferState).
+
+      @code{.cpp}
+      // Set a global clear buffer flag as true.
+      auto clear_buffer_state =
+        SingletonManager::get<GlobalClearBufferState>()->state(true, false);
+
+      // The following will return true until clear_buffer_state is
+      // destroyed (at exiting this scope).
+      auto c = SingletonManager::get<GlobalClearBufferState>()->clear_buffer();
+      @endcode
+   */
+  std::unique_ptr<ScopedState> state(bool clear_buffer,
+                                     bool clear_no_need_grad);
+
+private:
+  friend SingletonManager;
+  void set(bool clear_buffer, bool clear_no_need_grad);
+  GlobalClearBufferState();
+  DISABLE_COPY_AND_ASSIGN(GlobalClearBufferState);
+};
 }
 #endif
