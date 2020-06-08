@@ -35,7 +35,7 @@ def ref_func_prune(x, rate):
     return y
 
 
-def ref_grad_prune(x, dy, rate):
+def ref_grad_prune(x, dy, rate, **kw):
     # pass through gradient from output to input
     return dy.flatten()
 

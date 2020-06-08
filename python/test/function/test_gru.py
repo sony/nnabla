@@ -130,7 +130,7 @@ def execute_fixed_length_gru(xs_np, h0_np, w0_np, w_np, b_np, num_layers=1, drop
     return ys.d, hn.d
 
 
-def get_gru_grad(xs_np, h0_np, w0_np, w_np, b_np, dy, dh, num_layers=1, dropout=0.0, bidirectional=False, training=True):
+def get_gru_grad(xs_np, h0_np, w0_np, w_np, b_np, dy, dh, num_layers=1, dropout=0.0, bidirectional=False, training=True, **kw):
     # Inputs are numpy arrays
     num_directions = 2 if bidirectional else 1
     seq_len = xs_np.shape[0]

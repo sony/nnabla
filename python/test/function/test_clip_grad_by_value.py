@@ -25,7 +25,7 @@ def ref_clip_grad_by_value(x, min_, max_):
     return y
 
 
-def ref_grad_clip_grad_by_value(x, min_, max_, dy):
+def ref_grad_clip_grad_by_value(x, min_, max_, dy, **kw):
     dx = dy
     idx_min = np.where(dy < min_)
     idx_max = np.where(dy > max_)

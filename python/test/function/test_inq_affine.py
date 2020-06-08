@@ -76,7 +76,7 @@ def ref_inq_affine(x, w, i, b, base_axis, num_bits,
 
 
 def ref_grad_inq_affine(x, w, i, b, dy, base_axis, num_bits,
-                        inq_iterations, selection_algorithm, seed):
+                        inq_iterations, selection_algorithm, seed, **kw):
     shape = list(x.shape[:base_axis])
 
     if inq_iterations[-1] == 0:

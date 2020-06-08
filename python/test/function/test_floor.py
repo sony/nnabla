@@ -24,7 +24,7 @@ def ref_floor(x):
     return np.floor(x)
 
 
-def ref_grad_floor(x, dy):
+def ref_grad_floor(x, dy, **kw):
     return dy.flatten()
 
 

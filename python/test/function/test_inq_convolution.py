@@ -77,7 +77,7 @@ def ref_inq_convolution(x, w, i, b, base_axis, pad, stride, dilation, group,
 
 
 def ref_grad_inq_convolution(x, w, i, b, dy, base_axis, pad, stride, dilation, group,
-                             num_bits, inq_iterations, selection_algorithm, seed):
+                             num_bits, inq_iterations, selection_algorithm, seed, **kw):
     if inq_iterations[-1] == 0:
         # last element in `inq_iterations`, quantize all weights
         i = np.ones_like(i)

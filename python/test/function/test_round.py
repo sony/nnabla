@@ -24,7 +24,7 @@ def ref_round(x):
     return np.sign(x) * np.floor(np.abs(x) + 0.5)
 
 
-def ref_grad_round(x, dy):
+def ref_grad_round(x, dy, **kw):
     return dy.flatten()
 
 

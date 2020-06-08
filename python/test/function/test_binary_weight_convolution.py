@@ -44,7 +44,7 @@ def ref_binary_weight_convolution(x, w, wb, alpha, b, base_axis, pad, stride, di
     return ref_convolution(x, binarize_kernel(w, quantize_zero_to), b, base_axis, pad, stride, dilation, group, quantize_zero_to)
 
 
-def ref_grad_binary_weight_convolution(x, w, wb, alpha, b, dy, base_axis, pad, stride, dilation, group, quantize_zero_to):
+def ref_grad_binary_weight_convolution(x, w, wb, alpha, b, dy, base_axis, pad, stride, dilation, group, quantize_zero_to, **kw):
     # Set variables
     vx = nn.Variable(x.shape, need_grad=True)
     vx.d = x

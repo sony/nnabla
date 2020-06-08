@@ -125,7 +125,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
     def ref_batch_normalize_grad(x, beta, gamma, rmean, rvar,
                                  dy,
                                  comm, axes, decay_rate,
-                                 eps, batch_stat, output_stat):
+                                 eps, batch_stat, output_stat, **kw):
         orig = x - device_id
         inputs = []
         for i in range(n_devices):
@@ -159,7 +159,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
     def ref_batch_normalize_grad_with_output_stat(x, beta, gamma, rmean, rvar,
                                                   dy, dmean, dvar,
                                                   comm, axes, decay_rate,
-                                                  eps, batch_stat, output_stat):
+                                                  eps, batch_stat, output_stat, **kw):
         orig = x - device_id
         inputs = []
         for i in range(n_devices):

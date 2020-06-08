@@ -27,7 +27,7 @@ def ref_func_sign(x, alpha):
     return y
 
 
-def ref_grad_sign(x, dy, alpha):
+def ref_grad_sign(x, dy, alpha, **kw):
     # pass through gradient from output to input
     return dy.flatten()
 

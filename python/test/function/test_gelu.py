@@ -24,7 +24,7 @@ def ref_gelu(x):
     return x/2*(1+np.tanh(np.sqrt(2/np.pi)*(x + 0.044715 * np.power(x, 3))))
 
 
-def ref_gelu_backward(x, dx):
+def ref_gelu_backward(x, dx, **kw):
     return np.array(np.array(0.5 + (0.398942*x + 0.0535161 * np.power(x, 3)) * np.power(1 / np.cosh(0.797885*x + 0.0356774 * np.power(x, 3)), 2) + 0.5*np.tanh(0.797885*x + 0.0356774*np.power(x, 3))).flat)
 
 

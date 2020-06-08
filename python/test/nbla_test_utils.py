@@ -578,7 +578,8 @@ def function_tester(rng, func, ref_func, inputs,
     if ref_grad is not None:
         rinputs = copy.deepcopy(inputs)
         doutputs = [o_.g for o_ in o]
-        ngrads = ref_grad(*(rinputs + doutputs + func_args), **func_kwargs)
+        ngrads = ref_grad(*(rinputs + doutputs + func_args),
+                          **func_kwargs, need_grad_flags=backward)
 
     assert_allclose(ngrads, agrads, atol=atol_b)
 

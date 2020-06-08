@@ -24,7 +24,7 @@ def ref_ceil(x):
     return np.ceil(x)
 
 
-def ref_grad_ceil(x, dy):
+def ref_grad_ceil(x, dy, **kw):
     return dy.flatten()
 
 

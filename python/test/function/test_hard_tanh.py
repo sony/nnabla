@@ -24,7 +24,7 @@ def ref_hard_tanh(x):
     return np.maximum(-1, np.minimum(1, x))
 
 
-def ref_hard_tanh_backward(x, dy):
+def ref_hard_tanh_backward(x, dy, **kw):
     return np.array([dy if -1 <= i <= 1 else 0 for i in np.nditer(x)])
 
 
