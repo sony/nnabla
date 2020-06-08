@@ -275,7 +275,6 @@ class MobileNetV3(MobileNetBase):
         cr = c // rr
         conv_opts = dict(channel_last=self.channel_last, with_bias=True)
         pool_shape = get_spatial_shape(x.shape, self.channel_last)
-
         h = F.average_pooling(x, pool_shape, channel_last=self.channel_last)
         with nn.parameter_scope(name):
             with nn.parameter_scope("fc1"):
@@ -296,7 +295,7 @@ class MobileNetV3(MobileNetBase):
         omaps = maps
         with nn.parameter_scope(name):
             h = self.conv_bn_act(h, hmaps, (1, 1), (1, 1),
-                                 act=act, name="conv-pw")
+                                 act=act, name="conv-pw") if ef != 1 else h
             h = self.conv_bn_act(h, hmaps, kernel, stride,
                                  group=hmaps, act=act, name="conv-dw")
             h = self.squeeze_and_excite(
