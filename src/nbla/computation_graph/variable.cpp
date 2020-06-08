@@ -320,6 +320,7 @@ class BackwardCallback {
       if (first) { // first visit
         // Terminal variable always doesn't allow to clear buffers.
         prohibit_clear[i] = true;
+        vseen_[v] = true; // It must be ok to add vseen_.
       } else {
         // Propagate prohibit_clear_inputs_buffers flag from the previous seen
         // inputs.
@@ -334,18 +335,36 @@ class BackwardCallback {
                                  CgFunctionPtr func) {
     vector<bool> ret(inputs.size());
     bool prohibit_clear = func->function()->prohibit_clear_input_buffers();
+    auto outputs = func->outputs();
     for (int i = 0; i < ret.size(); i++) {
       auto v = inputs[i];
       auto it = vseen_.find(v);
       bool first_visit = it == vseen_.end();
       ret[i] = first_visit;
       if (first_visit) {
-        vseen_.insert({v, prohibit_clear});
-        continue;
+        bool dummy;
+        std::tie(it, dummy) = vseen_.insert({v, prohibit_clear});
       }
+
       // Prohibits clearing if any of previous function prohibits clearing
       // inputs.
       it->second |= prohibit_clear;
+
+      // Propagate prohibit property from the output variables.
+      if (func->function()->inplace_data(i)) {
+        auto inplaced = outputs[func->function()->inplace_data_with(i)];
+        auto it2 = vseen_.find(inplaced);
+        if (it2 == vseen_.end() || it2->second) {
+          it->second = true;
+        }
+      }
+      if (func->function()->inplace_grad(i)) {
+        auto inplaced = outputs[func->function()->inplace_grad_with(i)];
+        auto it2 = vseen_.find(inplaced);
+        if (it2 == vseen_.end() || it2->second) {
+          it->second = true;
+        }
+      }
     }
     return ret;
   }
