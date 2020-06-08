@@ -57,9 +57,18 @@ vector<CgVariablePtr> create_function_outputs(CgFunctionPtr cg_f, int n_outputs,
 }
 
 vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
-                              const vector<CgVariablePtr> &inputs,
+                              const vector<CgVariablePtr> &inputs_orig,
                               int n_outputs, vector<NdArrayPtr> inplace_outputs,
                               bool execute) {
+  // Filter null inputs (since cpp functions doesn't handle optional inputs in
+  // functions.cpp)
+  vector<CgVariablePtr> inputs;
+  for (auto &inp : inputs_orig) {
+    if (inp) {
+      inputs.push_back(inp);
+    }
+  }
+
   set_function_inputs(cg_f, inputs);
 
   // check if data can be cleared or not.
