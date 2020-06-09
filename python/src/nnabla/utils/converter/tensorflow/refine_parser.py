@@ -128,6 +128,7 @@ class RefineParser:
 
     def p_rf_affine(self, p):
         """ rf_affine    :    Reshape Reshape MatMul Mul Add Reshape
+                         |    Reshape Reshape MatMul Mul Add
                          |    Reshape Reshape MatMul Mul Add Reshape Reshape Mul Add
         """
         p[0] = self.graph.affine(p[1:])
@@ -138,7 +139,4 @@ class RefineParser:
         p[0] = self.graph.binary_sigmoid(p[1:])
 
     def p_error(self, p):
-        if p:
-            print("error: {}".format(p.type))
-        else:
-            print('Error at the end of input.')
+        raise ValueError("Failed to optimize the model.")

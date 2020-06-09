@@ -146,6 +146,8 @@ def add_convert_command(subparsers):
                            '[export][ONNX] define convert to onnx for SNPE. e.g. opset_snpe' + '\n' +
                            '[export][ONNX] define convert to onnx for TensorRT. e.g. opset_tensorrt' + '\n' +
                            '[export][NNB] define binary format version. e.g. nnb_3')
+    subparser.add_argument('--enable-optimize-pb', action='store_true',
+                           help='[export][tensorflow] enable optimization when export to pb or tflite.')
 
     # For config function list
     subparser.add_argument('-c', '--config', type=str, default=None,
