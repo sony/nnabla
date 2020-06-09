@@ -20,6 +20,8 @@
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
+#include <nbla/imperative.hpp>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(MinMaxQuantize, float, bool, bool, bool, float);
