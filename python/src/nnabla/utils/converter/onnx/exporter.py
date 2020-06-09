@@ -27,6 +27,9 @@ except:
 TENSOR_TYPE_TO_DTYPE = {
     TensorProto.FLOAT: np.float32,
     TensorProto.BOOL: np.bool,
+    TensorProto.UINT8: np.uint8,
+    TensorProto.INT8: np.int8,
+    TensorProto.INT32: np.uint32,
     TensorProto.INT32: np.int32,
     TensorProto.INT64: np.int64,
 }
@@ -200,6 +203,7 @@ class OnnxExporter:
         self._broadcast_target = {}
         self._executor = None
         self._opset = 7
+        self._quantize_dtype = TensorProto.INT32
         # Dictionary used to convert NNabla function names to ONNX op_type
 
         # opset_6 default op table
@@ -382,6 +386,8 @@ class OnnxExporter:
             "Slice": partial(self.Slice, '10'),
             "Unpooling": self.Unpooling_10,
             "Interpolate": self.Interpolate_10,
+            "QuantizeLinear": self.QuantizeLinear,
+            "DequantizeLinear": self.DequantizeLinear,
         }
         table_op_set_10 = dict(table_op_set_9, **table_op_set_10)
 
@@ -3247,6 +3253,65 @@ class OnnxExporter:
             alpha=1.0,
             beta=1.0)
         return [n]
+
+    def DequantizeLinear(self, func):
+        nl = []
+        self._input_types[func.input[0]] = self._quantize_dtype
+        self._input_types[func.input[2]] = self._quantize_dtype
+        for p in func.input[1:]:
+            shape = np.prod(list(self._var_dict[p].dim[:]))
+            new_shape = nnabla_pb2.Shape()
+            new_shape.dim.extend([shape])
+            self._var_dict[p] = new_shape
+
+        n = onnx.helper.make_node(
+            "DequantizeLinear",
+            func.input,
+            func.output
+        )
+        nl.append(n)
+        return nl
+
+    def QuantizeLinear(self, func):
+        INT_TO_TENSOR_TYPE = {
+            # Currently, ONNX's QuantizeLinear only supports int8 and uint8
+            1: TensorProto.INT8,
+            2: TensorProto.UINT8,
+        }
+        nl = []
+        inputs = func.input[:]
+        round_mode = func.quantize_linear_param.round_mode
+        narrow_range = func.quantize_linear_param.narrow_range
+        dtype = func.quantize_linear_param.dtype
+
+        if round_mode == "HALF_AWAY_FROM_ZERO":
+            raise ValueError(
+                "Currently, round_mode is {} not supported.".format(round_mode))
+
+        if narrow_range:
+            raise ValueError("Currently, narrow_range is True not supported.")
+
+        if dtype not in INT_TO_TENSOR_TYPE:
+            raise ValueError(
+                "Currently, dtype is {} not supported.".format(dtype))
+        else:
+            self._input_types[func.input[2]] = INT_TO_TENSOR_TYPE[dtype]
+            self._output_types[func.output[0]] = INT_TO_TENSOR_TYPE[dtype]
+            self._quantize_dtype = INT_TO_TENSOR_TYPE[dtype]
+
+        for p in func.input[1:]:
+            shape = np.prod(list(self._var_dict[p].dim[:]))
+            new_shape = nnabla_pb2.Shape()
+            new_shape.dim.extend([shape])
+            self._var_dict[p] = new_shape
+
+        n = onnx.helper.make_node(
+            "QuantizeLinear",
+            inputs,
+            func.output
+        )
+        nl.append(n)
+        return nl
 
     def set_network(self):
         if len(self._nnp.executor) != 1:
