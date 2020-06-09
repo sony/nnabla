@@ -444,6 +444,12 @@ MinMaxQuantize:
 Pow2Quantize:
   float: [float]
   half: [Half]
+QuantizeLinear:
+  float: [float]
+  half: [Half]
+DequantizeLinear:  
+  float: [float]
+  half: [Half]
 TopNError:
   float: [float, int]
   half: [Half, int]

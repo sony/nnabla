@@ -14,7 +14,7 @@
 
 from __future__ import absolute_import
 from .function_bases import *
-
+from . import dtypes
 import nnabla as nn
 import numpy as np
 from .normalization_functions import *
@@ -1439,4 +1439,38 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
     if not channel_last:
         y = transpose(y, (0, 3, 4, 1, 2))
 
+    return y
+
+
+def quantize_linear(x, scale, zero_point,
+                    round_mode="HALF_AWAY_FROM_ZERO", narrow_range=False, dtype=np.int8):
+    r"""
+
+    Quantize linearly inputs with the scale and zero point.
+
+      .. math::
+
+          y = saturate(round(x / scale) + zero_point).
+
+    :math:`saturate` rage is determined by `dtype` and :math:`round` mode is selected
+    by `round_mode`. :math:`zero_point` is constrained by the `dtype` range and its values are
+    rounded by `round_mode`.
+
+    This function normally aligns with ONNX QuantizeLinear.
+
+
+    Args:
+        x (Variable): An input variable.
+        scale (Variable): Scale variable.
+        zero_point (Variable): Zero point variable.
+        round_mode (str): Rounding mode. HALF_AWAY_FROM_ZERO or HALF_TO_EVEN.
+        narrow_range (bool): If true, this function does not use the minimum quantized value. For
+            example, if `dtype` is int8 (the range is in [-128, 127]), the output range
+            is corrected in [-127, 127].
+        dtype (numpy.dtype): Data type for the output. Currently np.int8 or np.uint8 are supported.
+    """
+    from .function_bases import quantize_linear as quantize_linear_base
+    int_dtype = dtypes.np_dtpye_to_int[dtype]
+    y = quantize_linear_base(x, scale, zero_point,
+                             round_mode, narrow_range, int_dtype)
     return y

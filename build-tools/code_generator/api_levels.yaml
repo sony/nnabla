@@ -219,3 +219,6 @@
   Interpolate_iIiBBBB: 291
 15:
   Deconvolution_iiIiIiIiBiI: 292
+16:
+  DequantizeLinear_Empty: 294
+  QuantizeLinear_iBi: 293
