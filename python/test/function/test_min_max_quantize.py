@@ -21,6 +21,10 @@ from nbla_test_utils import list_context
 ctxs = list_context('MinMaxQuantize')
 
 
+def std_round(x):
+    return np.sign(x) * np.floor(np.abs(x) + 0.5)
+
+
 def ref_min_max_quantize(x, qr_min, qr_max, ql_min, ql_max,
                          decay, x_min_max, ema, ste_fine_grained, eps,
                          quantize):
@@ -44,7 +48,7 @@ def ref_min_max_quantize(x, qr_min, qr_max, ql_min, ql_max,
         qr_max[qr_max - qr_min < eps] = qr_min + eps
     # nudge min-max
     zero_point_from_min = ql_min - qr_min / scale
-    zero_point_nudged = np.round(zero_point_from_min)
+    zero_point_nudged = std_round(zero_point_from_min)
     if np.any(zero_point_from_min <= ql_min):
         zero_point_nudged[zero_point_from_min <=
                           ql_min] = q_min[zero_point_from_min <= ql_min]
@@ -53,8 +57,8 @@ def ref_min_max_quantize(x, qr_min, qr_max, ql_min, ql_max,
                           ql_max] = q_max[zero_point_from_min >= ql_max]
     qr_min_nudged = (ql_min - zero_point_nudged) * scale
     qr_max_nudged = (ql_max - zero_point_nudged) * scale
-    x_q = np.round((np.clip(x, qr_min_nudged, qr_max_nudged) - qr_min_nudged) /
-                   scale) * scale + qr_min_nudged
+    x_q = std_round((np.clip(x, qr_min_nudged, qr_max_nudged) - qr_min_nudged) /
+                    scale) * scale + qr_min_nudged
     return x_q
 
 
@@ -83,7 +87,7 @@ def ref_grad_min_max_quantize(x, qr_min, qr_max, ql_min, ql_max, dy,
         qr_max[qr_max - qr_min < eps] = qr_min + eps
     # nudge min-max
     zero_point_from_min = ql_min - qr_min / scale
-    zero_point_nudged = np.round(zero_point_from_min)
+    zero_point_nudged = std_round(zero_point_from_min)
     if np.any(zero_point_from_min <= ql_min):
         zero_point_nudged[zero_point_from_min <=
                           ql_min] = q_min[zero_point_from_min <= ql_min]

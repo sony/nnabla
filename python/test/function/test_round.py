@@ -21,7 +21,7 @@ ctxs = list_context('Round')
 
 
 def ref_round(x):
-    return np.round(x)
+    return np.sign(x) * np.floor(np.abs(x) + 0.5)
 
 
 def ref_grad_round(x, dy):
