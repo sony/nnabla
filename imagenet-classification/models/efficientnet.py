@@ -30,8 +30,7 @@ from .mobilenet import MobileNetBase
 
 
 class EfficientNet(MobileNetBase):
-    # TODO: We did not do any trainings/tests for EfficientNet yet.
-    # TODO: Parameter count is almost same as the original
+    # Parameter count is same as the original
 
     def __init__(self, num_classes=1000, test=True, channel_last=False, mode="b0"):
         super(EfficientNet, self).__init__(
@@ -80,7 +79,6 @@ class EfficientNet(MobileNetBase):
         c = x.shape[get_channel_axis(self.channel_last)]
         conv_opts = dict(channel_last=self.channel_last, with_bias=True)
         pool_shape = get_spatial_shape(x.shape, self.channel_last)
-
         h = F.average_pooling(x, pool_shape, channel_last=self.channel_last)
         with nn.parameter_scope(name):
             with nn.parameter_scope("fc1"):
@@ -101,7 +99,8 @@ class EfficientNet(MobileNetBase):
         omaps = maps
 
         with nn.parameter_scope(name):
-            h = self.conv_bn_swish(h, hmaps, (1, 1), (1, 1), name="conv-pw")
+            h = self.conv_bn_swish(
+                h, hmaps, (1, 1), (1, 1), name="conv-pw") if ef != 1 else h
             h = self.conv_bn_swish(
                 h, hmaps, kernel, stride, group=hmaps, name="conv-dw")
             h = self.squeeze_and_excite(h, rmaps, name="squeeze-and-excite")
@@ -126,7 +125,11 @@ class EfficientNet(MobileNetBase):
         return h
 
     def round_filters(self, filters, width_coefficient, depth_divisor=8):
-        """Round number of filters based on depth multiplier."""
+        """
+        Round number of filters based on depth multiplier.
+        This logic comes from the original implementation,
+        https://github.com/tensorflow/tpu/blob/2d9507360e3712715c584e2c21c639b39efd6ad1/models/official/efficientnet/efficientnet_model.py#L141.
+        """
         orig_f = filters
         multiplier = width_coefficient
         divisor = depth_divisor
