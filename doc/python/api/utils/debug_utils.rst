@@ -30,3 +30,15 @@ Nan/Inf Tracer
 
 .. autoclass:: NanInfTracer
     :members:
+
+
+Pretty Printer
+==============
+
+.. automodule:: nnabla.utils.inspection.pretty_print
+
+.. autoclass:: PrettyPrinter
+    :members:
+
+.. autofunction:: pprint
+
