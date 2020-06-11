@@ -80,14 +80,14 @@ def _save_parameters(args, suffix, epoch, force=False):
         with open(version_filename, 'w') as file:
             file.write('{}\n'.format(nnp_version()))
 
-        param_filename = base + '_param.protobuf'
+        param_filename = base + '_param.h5'
         save_parameters(param_filename)
 
         with zipfile.ZipFile(filename, 'w') as nnp:
             nnp.write(version_filename, 'nnp_version.txt')
             nnp.write(_save_parameter_info['config'], os.path.basename(
                 _save_parameter_info['config']))
-            nnp.write(param_filename, 'parameter.protobuf')
+            nnp.write(param_filename, 'parameter.h5')
 
         os.unlink(version_filename)
         os.unlink(param_filename)
