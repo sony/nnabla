@@ -6071,8 +6071,10 @@ Unsupported, Special Use:
     doc: |2
 
       Transform the image(s) *data* by *flow* field(s) of offset vectors such
-      that each output pixel corresponds to the input image pixel at the offset
-      location given by horizontal and vertical flow values. Both *data* and
+      that each output pixel corresponds to the input image pixel at the
+      relative offset location given by horizontal and vertical flow values
+      (in other words, the flow field describes the coordinate displacements
+      for each output pixel to the corresponding input pixel). Both *data* and
       *flow* are 4-D variables (in "NCHW" layout) with identical shape except
       the *flow* channel dimension (which is always 2).
 
@@ -6082,8 +6084,8 @@ Unsupported, Special Use:
       where
 
       .. math::
-          y' &=& y - flow_{n,1,y,x}, \\
-          x' &=& x - flow_{n,0,y,x}.
+          y' &=& y + flow_{n,1,y,x}, \\
+          x' &=& x + flow_{n,0,y,x}.
 
       The output pixel values at :math:`y'` and :math:`x'` locations are
       obtained by bilinear interpolating between the 4 closest pixels of the
