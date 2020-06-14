@@ -404,6 +404,7 @@ class OnnxExporter:
             "MaxPooling": partial(self.BasePooling_6x, 'MaxPool', '6x'),
             "AveragePooling": partial(self.BasePooling_6x, 'AveragePool', '6x'),
             "SumPooling": self.SumPooling_6x,
+            "Unpooling": self.Unpooling_9,
         }
         table_op_set_snpe = dict(table_op_set_6, **table_op_set_snpe)
 
