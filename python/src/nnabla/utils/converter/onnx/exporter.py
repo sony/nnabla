@@ -220,7 +220,7 @@ class OnnxExporter:
             "Identity": "Identity",
             "Pad": partial(self.Pad, "6"),
             "ReLU": "Relu",
-            "PReLU": partial(self.PReLU, "6"),
+            "PReLU": self.PReLU,
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
             "GlobalAveragePooling": "GlobalAveragePool",
@@ -352,7 +352,6 @@ class OnnxExporter:
             "GreaterScalar": partial(self.GreaterScalar, '7'),
             "LessEqualScalar": partial(self.LessEqualScalar, '7'),
             "LessScalar": partial(self.LessScalar, '7'),
-            "PReLU": partial(self.PReLU, '7'),
         }
         table_op_set_7 = dict(table_op_set_6, **table_op_set_7)
 
@@ -2168,7 +2167,7 @@ class OnnxExporter:
 
         return nl
 
-    def PReLU(self, opset, func):
+    def PReLU(self, func):
         nl = []
         inputs = func.input[:]
         outputs = func.output[:]
@@ -2193,14 +2192,11 @@ class OnnxExporter:
             outputs[0] = fork_name(func.output[0]) + "_reshape"
             input_shape = list(input0_shape_reshape)
 
-        if opset != "6":
-            slope_shape_reshape = [1] * len(input_shape)
-            slope_shape_reshape[1] = slope_shape[0]
-            rout = fork_name(inputs[1]) + "_reshape"
-            n = generate_reshape(self._model_proto.graph, inputs[1],
-                                 rout, np.array(slope_shape_reshape))
-            nl.append(n)
-            inputs[1] = rout
+        s_shape = [1] * len(input_shape)
+        s_shape[1] = slope_shape[0]
+        proto_s_shape = nnabla_pb2.Shape()
+        proto_s_shape.dim.extend(s_shape)
+        self._var_dict[inputs[1]] = proto_s_shape
 
         n = onnx.helper.make_node(
             'PRelu',
