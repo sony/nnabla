@@ -47,14 +47,14 @@ In NNabla, we can do the correspondences as follows.
 1. Use Tensor Cores
 ~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     ctx = get_extension_context("cudnn", type_config="half")
 
 2. Use loss scaling to prevent underflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     loss_scale = 8
     loss.backward(loss_scale)
@@ -64,7 +64,7 @@ In NNabla, we can do the correspondences as follows.
 3. Use dynamic loss scaling to prevent overflow/underflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     loss_scale = 8
     scaling_factor = 2
@@ -95,7 +95,7 @@ All-in-one Instruction
 In the previous step-by-step example, the 3rd step is lengthy in a
 training loop, thus we can write a wrapper class like the following.
 
-.. code:: python
+.. code:: ipython3
 
     class DynamicLossScalingUpdater(object):
         '''Dynamic Loss Scaling Updater for the mixed precision training.
@@ -228,7 +228,7 @@ training loop, thus we can write a wrapper class like the following.
 
 Then, call the update method in a training loop:
 
-.. code:: python
+.. code:: ipython3
 
     from nnabla.experimental.mixed_precision_training import DynamicLossScalingUpdater
     

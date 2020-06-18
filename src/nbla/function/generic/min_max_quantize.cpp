@@ -155,33 +155,24 @@ void MinMaxQuantize<T>::forward_impl(const Variables &inputs,
   // min(x) and ema(qr_min) = decay * qr_min_old + (1.0 - decay) * x_min
   // working with shape of qr_min
   if (x_min_max_ && ema_) {
-    min_->setup(Variables{x}, Variables{iv});
-    min_->forward(Variables{x}, Variables{iv});
-    mul_scalar2_->setup(Variables{iv}, Variables{iv});
-    mul_scalar2_->forward(Variables{iv}, Variables{iv});
-    mul_scalar_->setup(Variables{qr_min}, Variables{qr_min});
-    mul_scalar_->forward(Variables{qr_min}, Variables{qr_min});
-    add2_->setup(Variables{qr_min, iv}, Variables{qr_min});
-    add2_->forward(Variables{qr_min, iv}, Variables{qr_min});
+    execute(min_, Variables{x}, Variables{iv});
+    execute(mul_scalar2_, Variables{iv}, Variables{iv});
+    execute(mul_scalar_, Variables{qr_min}, Variables{qr_min});
+    execute(add2_, Variables{qr_min, iv}, Variables{qr_min});
   } else if (x_min_max_ && !ema_) {
-    min_->setup(Variables{x}, Variables{qr_min});
-    min_->forward(Variables{x}, Variables{qr_min});
+    execute(min_, Variables{x}, Variables{qr_min});
+    execute(min_, Variables{x}, Variables{qr_min});
   }
 
   // max(x) and ema(qr_max) = decay * qr_max_old + (1.0 - decay) * x_max
   // working with shape of qr_min
   if (x_min_max_ && ema_) {
-    max_->setup(Variables{x}, Variables{iv});
-    max_->forward(Variables{x}, Variables{iv});
-    mul_scalar2_->setup(Variables{iv}, Variables{iv});
-    mul_scalar2_->forward(Variables{iv}, Variables{iv});
-    mul_scalar_->setup(Variables{qr_max}, Variables{qr_max});
-    mul_scalar_->forward(Variables{qr_max}, Variables{qr_max});
-    add2_->setup(Variables{qr_max, iv}, Variables{qr_max});
-    add2_->forward(Variables{qr_max, iv}, Variables{qr_max});
+    execute(max_, Variables{x}, Variables{iv});
+    execute(mul_scalar2_, Variables{iv}, Variables{iv});
+    execute(mul_scalar_, Variables{qr_max}, Variables{qr_max});
+    execute(add2_, Variables{qr_max, iv}, Variables{qr_max});
   } else if (x_min_max_ && !ema_) {
-    max_->setup(Variables{x}, Variables{qr_max});
-    max_->forward(Variables{x}, Variables{qr_max});
+    execute(max_, Variables{x}, Variables{qr_max});
   }
 
   // TODO: optimize by writing down, naitve implementation is faster. Also we
@@ -192,12 +183,9 @@ void MinMaxQuantize<T>::forward_impl(const Variables &inputs,
 
   // scale = (qr_max - qr_min) / (ql_max - ql_min)
   // working with shape of qr_min
-  sub2_->setup(Variables{qr_max, qr_min}, Variables{scale});
-  sub2_->forward(Variables{qr_max, qr_min}, Variables{scale});
-  sub2_->setup(Variables{ql_max, ql_min}, Variables{iv});
-  sub2_->forward(Variables{ql_max, ql_min}, Variables{iv});
-  div2_->setup(Variables{scale, iv}, Variables{scale});
-  div2_->forward(Variables{scale, iv}, Variables{scale});
+  execute(sub2_, Variables{qr_max, qr_min}, Variables{scale});
+  execute(sub2_, Variables{ql_max, ql_min}, Variables{iv});
+  execute(div2_, Variables{scale, iv}, Variables{scale});
 
   // nudge qr_min and qr_max
   auto qr_min_nudged_sptr = make_shared<Variable>(qr_min->shape());
@@ -214,32 +202,22 @@ void MinMaxQuantize<T>::forward_impl(const Variables &inputs,
   auto _qr_max = _qr_max_sptr.get();
   auto _scale_sptr = make_shared<Variable>(x->shape());
   auto _scale = _scale_sptr.get();
-  broadcast_->setup(Variables{qr_min_nudged}, Variables{_qr_min});
-  broadcast_->forward(Variables{qr_min_nudged}, Variables{_qr_min});
-  broadcast_->setup(Variables{qr_max_nudged}, Variables{_qr_max});
-  broadcast_->forward(Variables{qr_max_nudged}, Variables{_qr_max});
-  broadcast_->setup(Variables{scale}, Variables{_scale});
-  broadcast_->forward(Variables{scale}, Variables{_scale});
+  execute(broadcast_, Variables{qr_min_nudged}, Variables{_qr_min});
+  execute(broadcast_, Variables{qr_max_nudged}, Variables{_qr_max});
+  execute(broadcast_, Variables{scale}, Variables{_scale});
 
   // x_q = min(max(x, qr_min), qr_max)
   // working with shape of x
-  maximum2_->setup(Variables{x, _qr_min}, Variables{x_q});
-  maximum2_->forward(Variables{x, _qr_min}, Variables{x_q});
-  minimum2_->setup(Variables{x_q, _qr_max}, Variables{x_q});
-  minimum2_->forward(Variables{x_q, _qr_max}, Variables{x_q});
+  execute(maximum2_, Variables{x, _qr_min}, Variables{x_q});
+  execute(minimum2_, Variables{x_q, _qr_max}, Variables{x_q});
 
   // x_q = round( (x_q - qr_min) / scale ) * scale + qr_min
   // working with shape of x
-  sub2_->setup(Variables{x_q, _qr_min}, Variables{x_q});
-  sub2_->forward(Variables{x_q, _qr_min}, Variables{x_q});
-  div2_->setup(Variables{x_q, _scale}, Variables{x_q});
-  div2_->forward(Variables{x_q, _scale}, Variables{x_q});
-  round_->setup(Variables{x_q}, Variables{x_q});
-  round_->forward(Variables{x_q}, Variables{x_q});
-  mul2_->setup(Variables{x_q, _scale}, Variables{x_q});
-  mul2_->forward(Variables{x_q, _scale}, Variables{x_q});
-  add2_->setup(Variables{x_q, _qr_min}, Variables{x_q});
-  add2_->forward(Variables{x_q, _qr_min}, Variables{x_q});
+  execute(sub2_, Variables{x_q, _qr_min}, Variables{x_q});
+  execute(div2_, Variables{x_q, _scale}, Variables{x_q});
+  execute(round_, Variables{x_q}, Variables{x_q});
+  execute(mul2_, Variables{x_q, _scale}, Variables{x_q});
+  execute(add2_, Variables{x_q, _qr_min}, Variables{x_q});
 }
 
 template <typename T>
@@ -275,10 +253,8 @@ void MinMaxQuantize<T>::backward_impl(const Variables &inputs,
   auto _qr_max_sptr = make_shared<Variable>(x->shape());
   auto _qr_max = _qr_max_sptr.get();
   if (ste_fine_grained_ || !x_min_max_) {
-    broadcast_->setup(Variables{qr_min_nudged}, Variables{_qr_min});
-    broadcast_->forward(Variables{qr_min_nudged}, Variables{_qr_min});
-    broadcast_->setup(Variables{qr_max_nudged}, Variables{_qr_max});
-    broadcast_->forward(Variables{qr_max_nudged}, Variables{_qr_max});
+    execute(broadcast_, Variables{qr_min_nudged}, Variables{_qr_min});
+    execute(broadcast_, Variables{qr_max_nudged}, Variables{_qr_max});
   }
 
   // w.r.t. x
@@ -295,31 +271,23 @@ void MinMaxQuantize<T>::backward_impl(const Variables &inputs,
       auto iv0 = iv0_sptr.get();
       auto iv1_sptr = make_shared<Variable>(x->shape());
       auto iv1 = iv1_sptr.get();
-      greater_equal_->setup(Variables{x, _qr_min}, Variables{iv0});
-      greater_equal_->forward(Variables{x, _qr_min}, Variables{iv0});
-      less_equal_->setup(Variables{x, _qr_max}, Variables{iv1});
-      less_equal_->forward(Variables{x, _qr_max}, Variables{iv1});
+      execute(greater_equal_, Variables{x, _qr_min}, Variables{iv0});
+      execute(less_equal_, Variables{x, _qr_max}, Variables{iv1});
       auto mask_sptr = make_shared<Variable>(x->shape());
       auto mask = mask_sptr.get();
-      mul2_->setup(Variables{iv0, iv1}, Variables{mask});
-      mul2_->forward(Variables{iv0, iv1}, Variables{mask});
+      execute(mul2_, Variables{iv0, iv1}, Variables{mask});
       // mul mask
-      mul2_->setup(Variables{mask, g_y}, Variables{mask});
-      mul2_->forward(Variables{mask, g_y}, Variables{mask});
+      execute(mul2_, Variables{mask, g_y}, Variables{mask});
       if (accum[0]) {
-        add2_->setup(Variables{mask, g_x}, Variables{g_x});
-        add2_->forward(Variables{mask, g_x}, Variables{g_x});
+        execute(add2_, Variables{mask, g_x}, Variables{g_x});
       } else {
-        identity_->setup(Variables{mask}, Variables{g_x});
-        identity_->forward(Variables{mask}, Variables{g_x});
+        execute(identity_, Variables{mask}, Variables{g_x});
       }
     } else {
       if (accum[0]) {
-        add2_->setup(Variables{g_y, g_x}, Variables{g_x});
-        add2_->forward(Variables{g_y, g_x}, Variables{g_x});
+        execute(add2_, Variables{g_y, g_x}, Variables{g_x});
       } else {
-        identity_->setup(Variables{g_y}, Variables{g_x});
-        identity_->forward(Variables{g_y}, Variables{g_x});
+        execute(identity_, Variables{g_y}, Variables{g_x});
       }
     }
   }
@@ -337,26 +305,21 @@ void MinMaxQuantize<T>::backward_impl(const Variables &inputs,
     // mask
     auto mask_sptr = make_shared<Variable>(x->shape());
     auto mask = mask_sptr.get();
-    less_->setup(Variables{x, _qr_min}, Variables{mask});
-    less_->forward(Variables{x, _qr_min}, Variables{mask});
+    execute(less_, Variables{x, _qr_min}, Variables{mask});
     auto g_y_sptr = make_shared<Variable>(y->shape());
     auto g_y = g_y_sptr.get();
     g_y_sptr->set_data(y->grad());
     // mul mask
-    mul2_->setup(Variables{mask, g_y}, Variables{iv0});
-    mul2_->forward(Variables{mask, g_y}, Variables{iv0});
+    execute(mul2_, Variables{mask, g_y}, Variables{iv0});
     // reduce
-    sum_->setup(Variables{iv0}, Variables{iv1});
-    sum_->forward(Variables{iv0}, Variables{iv1});
+    execute(sum_, Variables{iv0}, Variables{iv1});
     auto g_qr_min_sptr = make_shared<Variable>(qr_min->shape());
     auto g_qr_min = g_qr_min_sptr.get();
     g_qr_min_sptr->set_data(qr_min->grad());
     if (accum[1]) {
-      add2_->setup(Variables{g_qr_min, iv1}, Variables{g_qr_min});
-      add2_->forward(Variables{g_qr_min, iv1}, Variables{g_qr_min});
+      execute(add2_, Variables{g_qr_min, iv1}, Variables{g_qr_min});
     } else {
-      identity_->setup(Variables{iv1}, Variables{g_qr_min});
-      identity_->forward(Variables{iv1}, Variables{g_qr_min});
+      execute(identity_, Variables{iv1}, Variables{g_qr_min});
     }
   }
   // w.r.t. qr_max
@@ -365,26 +328,21 @@ void MinMaxQuantize<T>::backward_impl(const Variables &inputs,
     // mask
     auto mask_sptr = make_shared<Variable>(x->shape());
     auto mask = mask_sptr.get();
-    greater_->setup(Variables{x, _qr_max}, Variables{mask});
-    greater_->forward(Variables{x, _qr_max}, Variables{mask});
+    execute(greater_, Variables{x, _qr_max}, Variables{mask});
     auto g_y_sptr = make_shared<Variable>(y->shape());
     auto g_y = g_y_sptr.get();
     g_y_sptr->set_data(y->grad());
     // mul mask
-    mul2_->setup(Variables{mask, g_y}, Variables{iv0});
-    mul2_->forward(Variables{mask, g_y}, Variables{iv0});
+    execute(mul2_, Variables{mask, g_y}, Variables{iv0});
     // reduce
-    sum_->setup(Variables{iv0}, Variables{iv1});
-    sum_->forward(Variables{iv0}, Variables{iv1});
+    execute(sum_, Variables{iv0}, Variables{iv1});
     auto g_qr_max_sptr = make_shared<Variable>(qr_max->shape());
     auto g_qr_max = g_qr_max_sptr.get();
     g_qr_max_sptr->set_data(qr_max->grad());
     if (accum[2]) {
-      add2_->setup(Variables{g_qr_max, iv1}, Variables{g_qr_max});
-      add2_->forward(Variables{g_qr_max, iv1}, Variables{g_qr_max});
+      execute(add2_, Variables{g_qr_max, iv1}, Variables{g_qr_max});
     } else {
-      identity_->setup(Variables{iv1}, Variables{g_qr_max});
-      identity_->forward(Variables{iv1}, Variables{g_qr_max});
+      execute(identity_, Variables{iv1}, Variables{g_qr_max});
     }
   }
 }

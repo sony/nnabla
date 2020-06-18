@@ -5411,7 +5411,7 @@ Quantization Neural Network Layers:
   FixedPointQuantize:
     snake_name: fixed_point_quantize
     doc: |+
-      This function uniformly quantizes values in fixed-point number representation.
+      This function simulates to uniformly quantize values in fixed-point number representation.
 
       In the forward pass,
 
@@ -5481,7 +5481,7 @@ Quantization Neural Network Layers:
   MinMaxQuantize:
     snake_name: min_max_quantize
     doc: |+
-      This function uniformly quantizes values in the range of min and max quantization levels.
+      This function simulates to uniformly quantize values in the range of min and max quantization levels.
        
       Min-max quantization is defined as the following equation
        
@@ -5611,7 +5611,7 @@ Quantization Neural Network Layers:
     snake_name: pow2_quantize
     doc: |2+
 
-      This function quantizes values in the power of 2 number representation,
+      This function simulates to quantize values in the power of 2 number representation,
       in other words, it is linear (uniform) quantization in :math:`log_2` domain.
 
       In the forward pass of `signed` case,
@@ -5765,6 +5765,78 @@ Quantization Neural Network Layers:
     function_ids:
       f: 135
     c_runtime: not support
+  QuantizeLinear:
+    snake_name: quantize_linear
+    doc: |
+      Quantize linearly inputs with the scale and zero point.
+
+      .. math::
+
+          y = saturate(round(x / scale) + zero_point).
+
+      :math:`saturate` rage is determined by `dtype` and :math:`round` mode is selected
+      by `round_mode`. :math:`zero_point` is constrained by the `dtype` range and its values are
+      rounded by `round_mode`.
+
+      This function aligns with ONNX.
+    inputs:
+      x:
+        doc: Input N-D array.
+      scale:
+        doc: Scale N-D array. The values must be positive number.
+      zero_point:
+        doc: Zero point N-D array.
+    arguments:
+      round_mode:
+        doc: Rounding mode. HALF_AWAY_FROM_ZERO or HALF_TO_EVEN.
+        type: string
+        available_values:
+        - HALF_AWAY_FROM_ZERO
+        - HALF_TO_EVEN
+        default: '''HALF_AWAY_FROM_ZERO'''
+      narrow_range:
+        doc: If true, this function does not use the minimum quantized value. For
+          example, if `dtype` is int8 (the range is in [-128, 127]), the output range
+          is corrected in [-127, 127].
+        type: bool
+        default: 'False'
+      dtype:
+        doc: Data type for the output. The int value is compatible to the enumtype
+          for the data type defined in `the numpy <https://github.com/numpy/numpy/blob/master/numpy/core/include/numpy/ndarraytypes.h>`_.
+        type: int64
+        default: '1'
+    outputs:
+      y:
+        doc: Input N-D array.
+    c_runtime: not support
+    function_ids:
+      iBi: 293
+  DequantizeLinear:
+    snake_name: dequantize_linear
+    doc: |
+      Dequantize linearly inputs with the scale and zero point.
+
+      .. math::
+
+          y = (x - zero_point) * scale.
+
+      :math:`zero_point` is constrained by the `dtype` range.
+
+      This function aligns with ONNX.
+    inputs:
+      x:
+        doc: Input N-D array.
+      scale:
+        doc: Scale N-D array. The values must be positive number. This should be same
+          as one used in QuantizeLinear.
+      zero_point:
+        doc: Zero point N-D array. This should be same as one used in QuantizeLinear.
+    outputs:
+      y:
+        doc: Input N-D array.
+    c_runtime: not support
+    function_ids:
+      Empty: 294
 Validation:
   TopNError:
     snake_name: top_n_error
