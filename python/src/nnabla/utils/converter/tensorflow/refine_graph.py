@@ -96,14 +96,23 @@ class RefineGraph:
             return tok
         return None
 
+    def _strip_node_name(self, name):
+        if name.startswith("^"):
+            return name[1:]
+        else:
+            return name.split(":")[0]
+
     def _build_graph(self):
         op_dict = {}
         for node in self.graph_def.node:
             op_dict[node.name] = Operator(node)
 
         for node in self.graph_def.node:
+            if node.op == 'Const':
+                del op_dict[node.name].node.input[:]
+                continue
             for inp in node.input:
-                inp = inp.split(":")[0]
+                inp = self._strip_node_name(inp)
                 if inp not in op_dict:
                     raise ValueError(
                         "{} has unresolved input:{}.".format(node.op, inp))
@@ -180,25 +189,14 @@ class RefineGraph:
     def _recursive_del_node(self, op):
         for inp in op.inputs:
             self._recursive_del_node(inp)
-        if not self.decrease_refcount(op):
-            value = self._run_tensor(op.node.name)
-            node = self._create_const_node(op.node.name, value)
-            self.op_dict[op.node.name] = Operator(node)
+        self.decrease_refcount(op)
 
     def _merge_run_list(self):
         for r in self.run_list:
-            if r.node.op == "Split":
-                num_splits = r.node.attr['num_split'].i
-                if num_splits > 1:
-                    self._recursive_del_node(self.op_dict[r.node.input[1]])
-                    value = self._run_tensor(r.node.input[1])
-                    node = self._create_const_node(r.node.input[1], value)
-                    self.op_dict[r.node.input[1]] = Operator(node)
-            else:
-                self._recursive_del_node(self.op_dict[r.node.name])
-                value = self._run_tensor(r.node.name)
-                node = self._create_const_node(r.node.name, value)
-                self.op_dict[r.node.name] = Operator(node)
+            self._recursive_del_node(self.op_dict[r.node.name])
+            value = self._run_tensor(r.node.name)
+            node = self._create_const_node(r.node.name, value)
+            self.op_dict[r.node.name] = Operator(node)
 
     def _nchw_to_nhwc(self, op):
         node_name = [inp.node.name for inp in op.inputs if inp.const]
@@ -239,6 +237,32 @@ class RefineGraph:
         gdef.node.extend([op.node for op in self.op_dict.values()])
         with tf.io.gfile.GFile(pb_file_name, 'wb') as f:
             f.write(gdef.SerializeToString())
+
+    def export_graph_def(self):
+        gdef = tf.compat.v1.GraphDef()
+        gdef.CopyFrom(self.graph_def)
+        del gdef.node[:]
+        gdef.node.extend([op.node for op in self.op_dict.values()])
+        return gdef
+
+    def export_optimization_rate(self):
+        before_nodes_size = len(self.graph_def.node)
+        after_nodes_size = len(self.op_dict)
+        info_dict = {'optimize': {'input': True}}
+        doc = 'After optimization, the input of the model will be in NHWC format.\n'
+        if self.affine_resolved:
+            doc += 'However, the output of the model is the same as the model before optimization.' \
+                ' And the inferred results can be directly compared.\n'
+            info_dict['optimize']['output'] = False
+        else:
+            doc += 'The output of the model should also be in the NHWC format.' \
+                ' Compare the inferred results of the model before optimization, it will need to transpose the inferred results.\n'
+            info_dict['optimize']['output'] = True
+        doc += 'The number of nodes before optimization is {}, after optimization is {}, the optimization rate is {:.2%}.'.format(
+               before_nodes_size, after_nodes_size, (before_nodes_size - after_nodes_size) / before_nodes_size)
+
+        info_dict['optimize']['doc'] = doc
+        return info_dict
 
     def decrease_refcount(self, op):
         op.refcount -= 1
@@ -380,14 +404,27 @@ class RefineGraph:
         return op_list[0]
 
     def bn(self, op_list):
-        for op in op_list:
-            if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub":
-                self._nchw_to_nhwc(op)
-            elif op.node.op == "Mean":
-                indices = np.array([1, 2], dtype=np.int32)
-                indices_tensor = self._create_const_node(
-                    op.node.input[1], indices)
-                self.op_dict[op.node.input[1]] = Operator(indices_tensor)
+        if not self.affine_resolved:
+            for op in op_list:
+                if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub":
+                    self._nchw_to_nhwc(op)
+                elif op.node.op == "Mean":
+                    indices = np.array([1, 2], dtype=np.int32)
+                    indices_tensor = self._create_const_node(
+                        op.node.input[1], indices)
+                    self.op_dict[op.node.input[1]] = Operator(indices_tensor)
+        else:
+            for op in op_list:
+                if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub":
+                    node_name = [
+                        inp.node.name for inp in op.inputs if inp.const]
+                    if node_name:
+                        node_name = node_name[0]
+                        value = self._run_tensor(node_name)
+                        if len(value.shape) == 4:
+                            self._remove_node(self.op_dict[node_name])
+                            node = self._create_const_node(node_name, value)
+                            self.op_dict[node_name] = Operator(node)
         return op_list[-1]
 
     def affine(self, op_list):

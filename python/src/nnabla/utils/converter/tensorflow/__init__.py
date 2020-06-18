@@ -13,4 +13,4 @@
 # limitations under the License.
 
 from .importer import TensorflowImporter
-from .exporter import TensorflowExporter
+from .exporter import TensorflowExporter, TensorflowLiteExporter
