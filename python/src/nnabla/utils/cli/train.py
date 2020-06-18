@@ -379,9 +379,24 @@ def _calc_estimate_time(timeinfo, max_iter, last_iter, iter):
     return timeinfo
 
 
+def _calc_epoch_span(timeinfo):
+    cur_time = time.time()
+    span = cur_time - timeinfo.last_epoch_start_time
+    timeinfo.last_epoch_start_time = cur_time
+    return span
+
+
+def _format_cgload_log(cg_load):
+    narr = np.array(cg_load).T
+    log_str = 'average load:{{cpu:{:.1f}%, gpu:{:.1f}%}}'.format(
+        np.mean(narr[1]), np.mean(narr[3]))
+    return log_str
+
+
 def _train(args, config):
     global _save_parameter_info
     comm = current_communicator()
+    _CGLOAD_LOG_INTERVAL = 20
 
     best_epoch = None
     best_error = None
@@ -428,6 +443,7 @@ def _train(args, config):
         if last_iteration < max_iteration:
 
             timeinfo.start_time = time.time()
+            timeinfo.last_epoch_start_time = timeinfo.start_time
 
             callback.update_status('processing', True, timeinfo.start_time)
 
@@ -468,9 +484,14 @@ def _train(args, config):
 
                     # Cpu/Gpu average load
                     cg_load_str = ''
+                    cgload_log = ''
                     cg_load = get_cpu_gpu_average_load()
                     if len(cg_load):
-                        cg_load_str = 'average_load_matrix: {}'.format(cg_load)
+                        cg_load_str = 'epoch {} average_load_matrix: {}'.format(
+                            epoch, cg_load)
+                        span = _calc_epoch_span(timeinfo)
+                        if span > _CGLOAD_LOG_INTERVAL:
+                            cgload_log = _format_cgload_log(cg_load)
 
                     if single_or_rankzero():
                         # Write to monitoring_report.yml
@@ -492,7 +513,12 @@ def _train(args, config):
 
                         logger.log(99, 'epoch {} of {} cost={:.6f} {} time=({:.1f}s /{:.1f}s) {}'.format(
                             epoch, config.training_config.max_epoch, cost_avg_epoch, error_str,
-                            timeinfo.past_time, timeinfo.estimate_time, cg_load_str))
+                            timeinfo.past_time, timeinfo.estimate_time, cgload_log))
+
+                        if cg_load_str:
+                            callback.update_status(
+                                (['cg_load', epoch], cg_load))
+                            progress(cg_load_str, 1)
 
                         if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
                             _save_parameters(
