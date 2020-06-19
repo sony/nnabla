@@ -1,0 +1,345 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-01 11:38+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/common.rst:2
+msgid "Common"
+msgstr "共通"
+
+#: ../../python/api/common.rst:7
+msgid "Config"
+msgstr "コンフィグ"
+
+#: nnabla.config:1 of
+msgid "Search config file and get config information from config file."
+msgstr "コンフィグファイルを検索して、コンフィグファイルからコンフィグ情報を入手してください。"
+
+#: nnabla.config:3 of
+msgid ""
+"Config file search order is described in following table. Each config "
+"value is overwritten by the following configs."
+msgstr "コンフィグファイルの検索順序については、次の表に記載しています。各コンフィグの値は下記のコンフィグで上書きされます。"
+
+#: nnabla.config:7 of
+msgid "Type"
+msgstr ""
+
+#: nnabla.config:7 of
+msgid "Posix"
+msgstr ""
+
+#: nnabla.config:7 of
+msgid "Windows"
+msgstr ""
+
+#: nnabla.config:9 of
+msgid "System wide"
+msgstr ""
+
+#: nnabla.config:9 of
+msgid "/etc/nnabla.conf"
+msgstr ""
+
+#: nnabla.config:9 of
+msgid "c:\\\\ProgramData\\\\NNabla\\\\nnabla.ini"
+msgstr ""
+
+#: nnabla.config:11 of
+msgid "User"
+msgstr ""
+
+#: nnabla.config:11 of
+msgid "~/.nnabla"
+msgstr ""
+
+#: nnabla.config:11 of
+msgid "c:\\\\Users\\\\[USERNAME]\\\\AppData\\\\Roaming\\\\NNabla\\\\nnabla.ini"
+msgstr ""
+
+#: nnabla.config:13 of
+msgid "Default"
+msgstr ""
+
+#: nnabla.config:13 of
+msgid "(Same directory with 'config.py')/nnabla.conf"
+msgstr "( ‘config.py’ と同じディレクトリ ) / nnabla.conf"
+
+#: nnabla.config:15 of
+msgid "Local"
+msgstr ""
+
+#: nnabla.config:15 of
+msgid "[CURRENT DIRECTORY]/nnabla.conf"
+msgstr ""
+
+#: nnabla.config:18 of
+msgid "You can get config value as followings."
+msgstr "以下のようにコンフィグの値を取得することができます。"
+
+#: nnabla.config:20 of
+msgid ""
+"from utils.config import nnabla_config\n"
+"value = nnabla_config.get(CATEGORY, VALUE_NAME)"
+msgstr ""
+
+#: nnabla.config:25 of
+msgid ""
+"CATEGORY and VALUE_NAME does not defined in config.py. You can add "
+"CATEGORY and VALUE as you like. See `Official document "
+"<http://docs.python.jp/3.6/library/configparser.html#mapping-protocol-"
+"access>`_ for more information."
+msgstr ""
+"CATEGORY と VALUE_NAME は、 config.py 内で定義されていません。 CATEGORY と VALUE "
+"は自由に追加できます。詳細については、 `公式ドキュメント "
+"<http://docs.python.jp/3.6/library/configparser.html#mapping-protocol-"
+"access>`_ を参照してください。"
+
+#: nnabla.config:29 of
+msgid ""
+"[CATEGORY]\n"
+"VALUE_NAME = value"
+msgstr ""
+
+#: nnabla.config:35 of
+msgid ""
+"Default values defined in 'nnabla.conf' placed same directory with "
+"config.py is here."
+msgstr "これは、 config.py と同じディレクトリにある 'nnabla.conf' 内で定義されているデフォルト値です。"
+
+#: ../../python/api/common.rst:12
+msgid "Logger"
+msgstr "ロガー"
+
+#: nnabla.logger:1 of
+msgid "Wrapper module for logging."
+msgstr "ログのためのラッパーモジュール。"
+
+#: nnabla.logger:3 of
+msgid "You can use the logger as follows:"
+msgstr "次のようなロガーを使うことができます。"
+
+#: nnabla.logger:5 of
+msgid ""
+"from utils.logger import logger\n"
+"\n"
+"logger.debug('Log message(DEBUG)')\n"
+"logger.info('Log message(INFO)')\n"
+"logger.warn('Log message(WARNING)')\n"
+"logger.error('Log message(ERROR)')\n"
+"logger.critical('Log message(CRITICAL)')"
+msgstr ""
+
+#: nnabla.logger:16 of
+msgid "With the default settings, it should yield the following output:"
+msgstr "デフォルトの設定では、以下の出力となります。"
+
+#: nnabla.logger:18 of
+msgid ""
+"$ python scripts/logger_test.py\n"
+"[nnabla][ERROR]: logger_test.py : <module> : 5 : Log message(ERROR)\n"
+"[nnabla][CRITICAL]: logger_test.py : <module> : 6 : Log message(CRITICAL)"
+msgstr ""
+
+#: nnabla.logger:25 of
+msgid ""
+"If you want to output log to file. You must create `nnabla.conf` file and"
+" put following entry."
+msgstr "ログをファイルに出力したい場合は、 `nnabla.conf` ファイルを生成し、以下のエントリを記載する必要があります。"
+
+#: nnabla.logger:28 of
+msgid "See :py:mod:`nnabla.config` for more information about config file."
+msgstr "コンフィグファイルの詳細については、 :py:mod:`nnabla.config` を参照してください。"
+
+#: nnabla.logger:30 of
+msgid ""
+"[LOG]\n"
+"log_file_name = /tmp/nbla.log"
+msgstr ""
+
+#: nnabla.logger:36 of
+msgid "After this you can get following output."
+msgstr "その後、以下にように出力されます。"
+
+#: nnabla.logger:38 of
+msgid ""
+"$ python scripts/logger_test.py\n"
+"[nnabla][ERROR]: logger_test.py : <module> : 5 : Log message(ERROR)\n"
+"[nnabla][CRITICAL]: logger_test.py : <module> : 6 : Log message(CRITICAL)"
+"\n"
+"$ cat /tmp/nbla.log\n"
+"2017-01-19 14:41:35,132 [nnabla][DEBUG]: scripts/logger_test.py : "
+"<module> : 3 : Log message(DEBUG)\n"
+"2017-01-19 14:41:35,132 [nnabla][INFO]: scripts/logger_test.py : <module>"
+" : 4 : Log message(INFO)\n"
+"2017-01-19 14:41:35,132 [nnabla][ERROR]: scripts/logger_test.py : "
+"<module> : 5 : Log message(ERROR)\n"
+"2017-01-19 14:41:35,132 [nnabla][CRITICAL]: scripts/logger_test.py : "
+"<module> : 6 : Log message(CRITICAL)"
+msgstr ""
+
+#: ../../python/api/common.rst:27
+msgid "Auto-forward mode"
+msgstr "Auto-forward モード"
+
+#: ../../python/api/common.rst:29
+msgid ""
+"NNabla provides the dynamic computation graph feature, which enables "
+"automatic forward propagation during graph construction. This can be "
+"enabled using the :meth:`set_auto_forward` function. Backpropagation "
+"shall be manually executed on the dynamically constructed graph."
+msgstr ""
+"NNabla は動的計算グラフの機能を提供し、グラフの構築中に自動フォーワードプロパゲーションを可能にします。これは、 "
+":meth:`set_auto_forward` "
+"関数を使うことで可能になります。バックプロパゲーションは動的に構築されたグラフにおいて手動で実行されます。"
+
+#: nnabla.auto_forward:1 of
+msgid "Context for dynamic graph execution mode."
+msgstr "動的グラフ実行モードのコンテキスト。"
+
+#: ../../docstring nnabla.Context nnabla.auto_forward nnabla.set_auto_forward
+#: nnabla.set_default_context of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.auto_forward:3 of
+msgid ""
+"Whether forward computation is executed during a computation graph "
+"construction."
+msgstr "計算グラフの構築中に順方向の計算が実行されるかどうか。"
+
+#: nnabla.auto_forward:7 nnabla.set_auto_forward:10 of
+msgid "Returns: bool"
+msgstr "戻り値 : bool"
+
+#: nnabla.set_auto_forward:1 of
+msgid "Set the default mode for automatic forward propagation."
+msgstr "自動フォーワードプロパゲーションに対してデフォルトのモードをセットします。"
+
+#: nnabla.set_auto_forward:3 of
+msgid ""
+"When it is set to `True` , forward propagation is invoked immediately "
+"when the computation graph is updated."
+msgstr "`True` をセットした場合、計算グラフが更新されるとすぐにフォワードプロパゲーションが呼び出されます。"
+
+#: nnabla.set_auto_forward:6 of
+msgid ""
+"Whether forward computation is executed when the computation graph is "
+"updated."
+msgstr "計算グラフが更新される時、順方向の計算が実行されるかどうか。"
+
+#: nnabla.get_auto_forward:1 of
+msgid "Get the state of automatic forward execution."
+msgstr "自動フォワード実行の状態を取得します。"
+
+#: nnabla.get_auto_forward:3 of
+msgid ""
+"When it is true, forward execution is invoked during a computation graph "
+"definition."
+msgstr "true のとき、計算グラフの定義中にフォワード実行が呼び出されます。"
+
+#: nnabla.get_auto_forward:6 of
+msgid "This is called by users usually."
+msgstr "自動フォワード実行は、通常ユーザーによって呼び出されます。"
+
+#: ../../python/api/common.rst:41
+msgid "Context"
+msgstr "コンテキスト"
+
+#: ../../docstring nnabla.Context:1 of
+msgid ""
+"Context is used to specify the computation engine (cpu, cuda, cudnn etc.)"
+" which the function operator modules and optimizer modules shall be ran "
+"on. The context can be set for each function, as well as set globally "
+"with functions listed in the :meth:`context-specifier`."
+msgstr ""
+"コンテキストは、関数オペレーターモジュールと最適化モジュールが実行される計算エンジン ( cpu、 cuda、 cudnn など ) "
+"を指定するために使われます。コンテキストは、各関数に対してセットすることが可能であり、また、 :meth:`context-specifier` "
+"に列挙されている関数を使って広く全体的にセットすることも可能です。"
+
+#: ../../docstring nnabla.Context:6 of
+msgid "'cpu', 'cuda', 'cudnn' etc."
+msgstr "'cpu' 、 'cuda' 、 'cudnn' など。"
+
+#: ../../docstring nnabla.Context:8 of
+msgid "str, 'CpuArray', 'CpuCachedArray', 'CudaArray', 'CudaCachedArray' etc."
+msgstr "str 、 'CpuArray' 、 'CpuCachedArray' 、 'CudaArray' 、 'CudaCachedArray' など。"
+
+#: ../../docstring nnabla.Context:10 of
+msgid "str, default '0'"
+msgstr "str 、 デフォルト ‘0’"
+
+#: ../../python/api/common.rst:48
+msgid "Context Specifier API"
+msgstr "コンテキスト指定子 API"
+
+#: nnabla.context_scope:1 of
+msgid "Context as Python context."
+msgstr "Python コンテキストとしてのコンテキスト。"
+
+#: nnabla.context_scope:3 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"x = nn.Variable([2, 3 ,4])\n"
+"ctx = nnabla_ext.cuda.context('0')\n"
+"with context_scope(ctx):\n"
+"    # Inside with scope, the specified context is used.\n"
+"    with parameter_scope('w1'):\n"
+"        l1 = F.relu(F.affine(x, 64))\n"
+"    with parameter_scope('w2'):\n"
+"        l2 = F.relu(F.affine(x, 64))"
+msgstr ""
+
+#: nnabla.set_default_context:1 of
+msgid "Set the default context."
+msgstr "デフォルトのコンテキストをセットします。"
+
+#: nnabla.set_default_context:3 of
+msgid "It cannot be called inside any `context_scope`."
+msgstr "`context_scope` 内で呼び出すことができません。"
+
+#: nnabla.set_default_context:5 of
+msgid "A Context."
+msgstr "コンテキスト。"
+
+#: nnabla.get_current_context:1 of
+msgid "Get the current context."
+msgstr "現在のコンテキストを取得します。"
+
+#: nnabla.get_current_context:3 of
+msgid ""
+"It can be set using :meth:`nnabla.context_scope` or "
+":meth:`nnabla.set_default_context` ."
+msgstr ""
+":meth:`nnabla.context_scope` か :meth:`nnabla.set_default_context` "
+"を使ってセットすることができます。"
+
+#: nnabla.get_current_context of
+msgid "戻り値"
+msgstr ""
+
+#: nnabla.get_current_context:5 of
+msgid "a current context."
+msgstr "現在のコンテキスト。"
+
+#: nnabla.get_current_context of
+msgid "戻り値の型"
+msgstr ""
+

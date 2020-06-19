@@ -4,7 +4,7 @@ C++ API
 The C++ libraries currently provide:
 
 * APIs to execute an inference of a trained model created by `Python APIs <http://nnabla.readthedocs.io/en/latest/python.html>`_
- and `Neural Network Console <https://dl.sony.com>`_, a Sony's GUI neural network IDE.
+  and `Neural Network Console <https://dl.sony.com>`_, a Sony's GUI neural network IDE.
 * A command line interface written in C++ which executes an inference.
 * An example of how to use C++ API with a trained model.
 

@@ -1,0 +1,75 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-26 09:34+0900\n"
+"PO-Revision-Date: 2020-05-01 18:41+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja\n"
+"X-Generator: Poedit 2.3\n"
+
+#: ../../index.rst:3
+msgid "Neural Network Libraries"
+msgstr "Neural Network Libraries"
+
+#: ../../index.rst:5
+msgid ""
+"Neural Network Libraries is deep learning framework that is intended to "
+"be used for research, development, and production. We aim it running "
+"everywhere like desktop PCs, HPC clusters, embedded devices and "
+"production servers."
+msgstr ""
+"Neural Network Libraries は、研究、開発、製品化のための深層学習フレーム"
+"ワークです。このフレームワークはデスクトップパソコン、 HPC クラスター、"
+"組込機器や商用サーバーといった、どんなマシン上でも動作することを目指して"
+"います。"
+
+#: ../../index.rst:7
+msgid ""
+"This document describes how to use the Python API and C++ API, the "
+"contribution guide for developers, and the license term of this "
+"software. The Python API is more suitable for fast prototyping and "
+"experimentation of deep learning systems, while the C++ API is for "
+"deploying inference or training algorithms into embedded systems and "
+"servers (The documentation is not available so far. We will make it "
+"available soon). The framework is designed modularity and extensibility "
+"in mind. Community contributors can add a new operator or optimizer "
+"module of neural networks, and a specialized implementation of neural "
+"network modules for a specific target device as an extension."
+msgstr ""
+"このドキュメントでは、 Python API と C++ API の使い方、開発者のためのコ"
+"ントリビューションガイド、またソフトウェアライセンスについて解説します。"
+"Python API は、深層学習システムの迅速な試作と実験により適している一方、C"
+"++ API は、推論や学習アルゴリズムを組込機器やサーバー上へデプロイするこ"
+"とに適しています ( 現在ドキュメントを準備中です ) 。このフレームワーク"
+"は、モジュール性と拡張性を念頭に設計されています。コミュニティのコントリ"
+"ビューターは、ニューラルネットワークの新しいオペレーターまたは最適化モ"
+"ジュール、そして特定機器に特化したニューラルネットワークモジュールの実装"
+"を拡張機能として追加することが可能です。"
+
+#: ../../index.rst:24
+msgid "Indices and tables"
+msgstr "インデックスと表"
+
+#: ../../index.rst:26
+msgid ":ref:`genindex`"
+msgstr ":ref:`genindex`"
+
+#: ../../index.rst:27
+msgid ":ref:`modindex`"
+msgstr ":ref:`modindex`"
+
+#: ../../index.rst:28
+msgid ":ref:`search`"
+msgstr ":ref:`search`"

@@ -1,0 +1,277 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-01 11:29+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/tutorial/debugging.rst:3
+msgid "Debugging"
+msgstr "デバッグ"
+
+#: ../../python/tutorial/debugging.rst:5
+msgid ""
+"Deep neural networks are going deeper and deeper every year, requiring "
+"more components in the networks. Such complexity often misleads us to "
+"mal-configure the networks that can turn out be critical. Even if we "
+"correctly configure a neural network as desired, we may still want to "
+"find out its performance bottleneck, e.g., from which layer(s) the "
+"computational bottleneck comes from."
+msgstr ""
+"ネットワーク内において多くのコンポーネントが必要となり、深層ニューラルネットワークは年々ますます複雑になっています。その複雑さにより、重大な問題となり得るような誤った構成のネットワークを構築してしまうことが頻繁に起こります。必要に応じてニューラルネットワークを正しく構成したとしても、"
+" 例えばどの層が計算のボトルネックになっているかといった、パフォーマンスのボトルネックを見つけたい場合があります。"
+
+#: ../../python/tutorial/debugging.rst:12
+msgid ""
+"In this debugging tutorial, we introduce three techniques to deal with "
+"such cases:"
+msgstr "このデバッグのチュートリアルでは、そのような場合の対処法として 3 つのテクニックを紹介します。"
+
+#: ../../python/tutorial/debugging.rst:15
+msgid "``visit`` method of a variable"
+msgstr "変数の ``visit`` メソッド"
+
+#: ../../python/tutorial/debugging.rst:16
+msgid "simple graph viewer"
+msgstr "簡単なグラフビューアー"
+
+#: ../../python/tutorial/debugging.rst:17
+msgid "profiling utils"
+msgstr "プロファイリング・ユーティリティー"
+
+#: ../../python/tutorial/debugging.rst:19
+msgid ""
+"We will go over each technique, but first prepare the following reference"
+" model."
+msgstr "それぞれのテクニックについて説明しますが、まず、次のような参照モデルを準備しましょう。"
+
+#: ../../python/tutorial/debugging.rst:22
+msgid ""
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.logger as logger\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import nnabla.solvers as S\n"
+"\n"
+"def block(x, maps, test=False, name=\"block\"):\n"
+"    h = x\n"
+"    with nn.parameter_scope(name):\n"
+"        with nn.parameter_scope(\"in-block-1\"):\n"
+"            h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), "
+"with_bias=False)\n"
+"            h = PF.batch_normalization(h, batch_stat=not test)\n"
+"            h = F.relu(h)\n"
+"        with nn.parameter_scope(\"in-block-2\"):\n"
+"            h = PF.convolution(h, maps // 2, kernel=(3, 3), pad=(1, 1), "
+"with_bias=False)\n"
+"            h = PF.batch_normalization(h, batch_stat=not test)\n"
+"            h = F.relu(h)\n"
+"        with nn.parameter_scope(\"in-block-3\"):\n"
+"            h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), "
+"with_bias=False)\n"
+"            h = PF.batch_normalization(h, batch_stat=not test)\n"
+"\n"
+"        if h.shape[1] != x.shape[1]:\n"
+"            with nn.parameter_scope(\"skip\"):\n"
+"                s = PF.convolution(x, maps, kernel=(3, 3), pad=(1, 1), "
+"with_bias=False)\n"
+"                s = PF.batch_normalization(s, batch_stat=not test)\n"
+"\n"
+"    return F.relu(h + s)\n"
+"\n"
+"def network(x, maps=16, test=False):\n"
+"    h = x\n"
+"    h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), name=\"first-"
+"conv\", with_bias=False)\n"
+"    h = PF.batch_normalization(h, batch_stat=not test, name=\"first-bn\")"
+"\n"
+"    h = F.relu(h)\n"
+"    for l in range(4):\n"
+"        h = block(h, maps * 2 ** (l + 1), name=\"block-{}\".format(l))\n"
+"        h = F.max_pooling(h, (2, 2))\n"
+"    h = F.average_pooling(h, h.shape[2:])\n"
+"    pred = PF.affine(h, 100, name=\"pred\")\n"
+"    return pred"
+msgstr ""
+
+#: ../../python/tutorial/debugging.rst:66
+msgid "Visit Method"
+msgstr "visit メソッド"
+
+#: ../../python/tutorial/debugging.rst:68
+msgid ""
+"Visit method of a variable takes either lambda, function, callable object"
+" as an argument and calls it over all NNabla functions where the variable"
+" can traverse in the forward order. It is easier to see the usage than "
+"expalined."
+msgstr ""
+"変数の visit メソッドは、引数としてラムダ、関数、または呼び出し可能なオブジェクトをとり、変数が順方向でトラバースできる NNabla "
+"関数経由で呼び出されます。説明より使い方を見る方が簡単です。"
+
+#: ../../python/tutorial/debugging.rst:73
+msgid "First of all, define the callable class."
+msgstr "まず最初に、呼び出し可能なクラスを定義します。"
+
+#: ../../python/tutorial/debugging.rst:75
+msgid ""
+"class PrintFunc(object):\n"
+"    def __call__(self, nnabla_func):\n"
+"        print(\"==========\")\n"
+"        print(nnabla_func.info.type_name)\n"
+"        print(nnabla_func.inputs)\n"
+"        print(nnabla_func.outputs)\n"
+"        print(nnabla_func.info.args)"
+msgstr ""
+
+#: ../../python/tutorial/debugging.rst:85
+msgid ""
+"This callable object takes a NNabla function, e.g., convolution, relu, "
+"etc., so a user can get information of that function."
+msgstr ""
+"この呼び出し可能なオブジェクトは、たとえば畳み込み ( コンボリューション ) や ReLU などの NNabla "
+"関数をとるので、ユーザーはその関数から情報を得ることができます。"
+
+#: ../../python/tutorial/debugging.rst:88
+msgid ""
+"nn.clear_parameters()  # this call is just in case to do the following "
+"code again\n"
+"\n"
+"x = nn.Variable([4, 3, 128, 128])\n"
+"pred = network(x)\n"
+"pred.visit(PrintFunc())"
+msgstr ""
+
+#: ../../python/tutorial/debugging.rst:97
+msgid "Simple Graph Viewer"
+msgstr "簡単なグラフビューアー"
+
+#: ../../python/tutorial/debugging.rst:99
+msgid ""
+"Visit method is very useful for getting information about each function "
+"used in a graph, but it is hard to see the details of the whole network "
+"structure, e.g., which variable is connected to which variable. So we "
+"have a graph viewer that visually shows the whole structure of network, "
+"enabling us to debug more efficiently. Using this graph viewer is "
+"straightforward, as shown in the following code:"
+msgstr ""
+"visit "
+"メソッドは、グラフで使われる各関数に関する情報を得るのにとても役立ちますが、例えばどの変数がどの変数に結合しているかといった、ネットワーク全体の構成の詳細を見るのは困難です。そこで、視覚的にネットワーク全体の構成を示すグラフビューアーを用いて、より効率的にデバッグできるようにします。次のコードで示すように、グラフビューアーを使うことは簡単です。"
+
+#: ../../python/tutorial/debugging.rst:106
+msgid ""
+"# Create graph again just in case\n"
+"\n"
+"nn.clear_parameters()  # call this in case you want to run the following "
+"code agian\n"
+"\n"
+"x = nn.Variable([4, 3, 128, 128])\n"
+"pred = network(x)"
+msgstr ""
+
+#: ../../python/tutorial/debugging.rst:115
+msgid ""
+"import nnabla.experimental.viewers as V\n"
+"\n"
+"graph = V.SimpleGraph(verbose=False)\n"
+"graph.view(pred)"
+msgstr ""
+
+#: ../../python/tutorial/debugging.rst:122
+msgid ""
+"If one would like to see more detailed information as in ``visit`` method"
+" case, change verbose option to ``True``."
+msgstr "``visit`` メソッドの場合と同様により詳細な情報を見たい場合は、 verbose オプションを ``True`` に変えてください。"
+
+#: ../../python/tutorial/debugging.rst:125
+msgid ""
+"graph = V.SimpleGraph(verbose=True)\n"
+"graph.view(pred)"
+msgstr ""
+
+#: ../../python/tutorial/debugging.rst:130
+msgid "Now one can see detailed information!"
+msgstr "これで詳細な情報が見ることができます !"
+
+#: ../../python/tutorial/debugging.rst:132
+msgid ""
+"Note that this viewer is mainly for NNabla users who want to write codes "
+"in python, so for those who like to see more beautiful network and play "
+"with that, please use Neural Network Console and visit "
+"https://dl.sony.com/."
+msgstr ""
+"このビューアーは主に Python でコードを書きたい NNabla "
+"ユーザー向けのためであり、より美しいネットワークを見てみたい、そのようなネットワークを試したい方は Neural Network Console "
+"をご利用いただき、https://dl.sony.com/ をご覧ください。"
+
+#: ../../python/tutorial/debugging.rst:138
+msgid "Profiling utils"
+msgstr "プロファイリング・ユーティリティー"
+
+#: ../../python/tutorial/debugging.rst:140
+msgid ""
+"Basically, this feature is **for developers** who want to know the whole "
+"stats in speed and which functions could be bottlenecks. NNabla provides "
+"a simple profiling tool. Once a network is prepared, one better to have "
+"other components to train the network like a loss function and solvers."
+msgstr ""
+"基本的に、この機能は、速度における全統計量やどの関数がボトルネックになっているかを知りたい **開発者向け** です。 NNabla "
+"では簡単なプロファイリングツールを用意されています。ネットワークの準備ができたら、Loss 関数や solver "
+"のようなネットワークを学習するための他のコンポーネントを備えることを推奨します。"
+
+#: ../../python/tutorial/debugging.rst:145
+msgid "First, to create the profile and see the results, run the following codes."
+msgstr "まず、プロファイルを作り、結果を見るために、次のコードを実行してみましょう。"
+
+#: ../../python/tutorial/debugging.rst:148
+msgid ""
+"# Create graph again just in case\n"
+"\n"
+"nn.clear_parameters()  # call this in case you want to run the following "
+"code agian\n"
+"\n"
+"# Context\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"device = \"cudnn\"\n"
+"ctx = get_extension_context(device)\n"
+"nn.set_default_context(ctx)\n"
+"\n"
+"# Network\n"
+"x = nn.Variable([4, 3, 128, 128])\n"
+"t = nn.Variable([4, 1])\n"
+"pred = network(x)\n"
+"loss = F.mean(F.softmax_cross_entropy(pred, t))\n"
+"\n"
+"# Solver\n"
+"solver = S.Momentum()\n"
+"solver.set_parameters(nn.get_parameters())\n"
+"\n"
+"# Profiler\n"
+"from nnabla.utils.profiler import GraphProfiler\n"
+"B = GraphProfiler(loss, solver=solver, device_id=0, ext_name=device, "
+"n_run=100)\n"
+"B.run()\n"
+"print(\"Profile finished.\")\n"
+"\n"
+"# Report\n"
+"from nnabla.utils.profiler import GraphProfilerCsvWriter\n"
+"with open(\"./profile.csv\", \"w\") as f:\n"
+"    writer = GraphProfilerCsvWriter(B, file=f)\n"
+"    writer.write()\n"
+"print(\"Report is prepared.\")"
+msgstr ""
+

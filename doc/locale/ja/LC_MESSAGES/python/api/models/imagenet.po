@@ -1,0 +1,939 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-15 16:14+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/models/imagenet.rst:2
+msgid "ImageNet Models"
+msgstr "ImageNet モデル"
+
+#: ../../python/api/models/imagenet.rst:4
+msgid ""
+"This subpackage provides a variety of pre-trained state-of-the-art models"
+" which is trained on ImageNet_ dataset."
+msgstr "このサブパッケージは、ImageNet_ データセットで学習された様々な最先端の学習済みモデルを提供します。"
+
+#: ../../python/api/models/imagenet.rst:8
+msgid ""
+"The pre-trained models can be used for both inference and training as "
+"following:"
+msgstr "学習済みモデルは、以下のようにして推論や学習に用いることができます。"
+
+#: ../../python/api/models/imagenet.rst:10
+msgid ""
+"# Create ResNet-50 for inference\n"
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import numpy as np\n"
+"from nnabla.models.imagenet import ResNet50\n"
+"model = ResNet50()\n"
+"batch_size = 1\n"
+"# model.input_shape returns (3, 224, 224) when ResNet-50\n"
+"x = nn.Variable((batch_size,) + model.input_shape)\n"
+"y = model(x, training=False)\n"
+"\n"
+"# Execute inference\n"
+"# Load input image as uint8 array with shape of (3, 224, 224)\n"
+"from nnabla.utils.image_utils import imread\n"
+"img = imread('example.jpg', size=model.input_shape[1:], "
+"channel_first=True)\n"
+"x.d[0] = img\n"
+"y.forward()\n"
+"predicted_label = np.argmax(y.d[0])\n"
+"print('Predicted label:', model.category_names[predicted_label])\n"
+"\n"
+"\n"
+"# Create ResNet-50 for fine-tuning\n"
+"batch_size=32\n"
+"x = nn.Variable((batch_size,) + model.input_shape)\n"
+"# * By training=True, it sets batch normalization mode for training\n"
+"#   and gives trainable attributes to parameters.\n"
+"# * By use_up_to='pool', it creats a network up to the output of\n"
+"#   the final global average pooling.\n"
+"pool = model(x, training=True, use_up_to='pool')\n"
+"\n"
+"# Add a classification layer for another 10 category dataset\n"
+"# and loss function\n"
+"num_classes = 10\n"
+"y = PF.affine(pool, num_classes, name='classifier10')\n"
+"t = nn.Variable((batch_size, 1))\n"
+"loss = F.sum(F.softmax_cross_entropy(y, t))\n"
+"\n"
+"# Training..."
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:52
+msgid ""
+"Available models are summarized in the following table. Error rates are "
+"calculated using single center crop."
+msgstr "利用可能なモデルを次の表にまとめます。エラー率は single center crop を用いて算出しています。"
+
+#: ../../python/api/models/imagenet.rst:55
+msgid "Available ImageNet models"
+msgstr "利用可能な ImageNet モデル"
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Name"
+msgstr "名前"
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Class"
+msgstr "クラス"
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Top-1 error"
+msgstr "Top-1 エラー"
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Top-5 error"
+msgstr "Top-5 エラー"
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Trained by/with"
+msgstr "学習手法"
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNet-18 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Resnet-18/Resnet-18.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNet18"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "30.28"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "10.90"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Neural Network Console"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNet-34 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Resnet-34/Resnet-34.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNet34"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "26.72"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "8.89"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNet-50 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Resnet-50/Resnet-50.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNet50"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "24.59"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "7.48"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNet-101 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Resnet-101/Resnet-101.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNet101"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "23.81"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "7.01"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNet-152 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Resnet-152/Resnet-152.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNet152"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "23.48"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "7.09"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`MobileNet <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/MobileNet/MobileNet.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "MobileNet"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "29.51"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "10.34"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`MobileNetV2 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/MobileNet-v2/MobileNet-v2.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "MobileNetV2"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "29.94"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "10.82"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`SENet-154 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/SENet-154/SENet-154.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "SENet"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "22.04"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "6.29"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`SqueezeNet v1.0 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/SqueezeNet-1.0/SqueezeNet-1.0.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "SqueezeNetV10"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "42.71"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "20.12"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`SqueezeNet v1.1 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/SqueezeNet-1.1/SqueezeNet-1.1.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "SqueezeNetV11"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "41.23"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "19.18"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`VGG-11 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/VGG-11/VGG-11.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "VGG11"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "30.85"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "11.38"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`VGG-13 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/VGG-13/VGG-13.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "VGG13"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "10.46"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`VGG-16 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/VGG-16/VGG-16.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "VGG16"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "29.03"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "10.07"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`NIN <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/NIN/NIN.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "NIN"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "42.91"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "20.66"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`DenseNet-161 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/DenseNet-161/DenseNet-161.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "DenseNet"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "23.82"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "7.02"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`InceptionV3 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Inception-v3/Inception-v3.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "InceptionV3"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "21.82"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "5.88"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`Xception <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/Xception/Xception.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "Xception"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "23.59"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "6.91"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`GoogLeNet <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/GoogLeNet/GoogLeNet.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "GoogLeNet"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "31.22"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "11.34"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNeXt-50 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/ResNeXt-50/ResNeXt-50.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNeXt50"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "22.95"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "6.73"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ResNeXt-101 <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/ResNeXt-101/ResNeXt-101.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ResNeXt101"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "22.80"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "6.74"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ShuffleNet <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/ShuffleNet/ShuffleNet.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ShuffleNet10"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "34.15"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "13.85"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ShuffleNet-0.5x <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/ShuffleNet-0.5x/ShuffleNet-0.5x.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ShuffleNet05"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "41.99"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "19.64"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid ""
+"`ShuffleNet-2.0x <https://nnabla.org/pretrained-"
+"models/nnp_models/imagenet/ShuffleNet-2.0x/ShuffleNet-2.0x.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "ShuffleNet20"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "30.34"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:1
+msgid "11.12"
+msgstr ""
+
+#: ../../python/api/models/imagenet.rst:84
+msgid "Common interfaces"
+msgstr "共通インターフェイス"
+
+#: nnabla.models.imagenet.base.ImageNetBase:1 of
+msgid ""
+"Most of ImageNet pretrained models are inherited from this class so that "
+"it provides some common interfaces."
+msgstr "ほとんどの ImageNet 学習済みモデルは、このクラスから継承され、いくつかの共通インターフェイスを提供します。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:1 of
+msgid "Create a network (computation graph) from a loaded model."
+msgstr "読み込んだモデルからネットワーク (計算グラフ) を生成します。"
+
+#: nnabla.models.imagenet.ResNeXt nnabla.models.imagenet.ResNet
+#: nnabla.models.imagenet.ShuffleNet nnabla.models.imagenet.SqueezeNet
+#: nnabla.models.imagenet.VGG nnabla.models.imagenet.base.ImageNetBase.__call__
+#: of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:3 of
+msgid ""
+"If given, input variable is replaced with the given variable and a "
+"network is constructed on top of the variable. Otherwise, a variable with"
+" batch size as 1 and a default shape from ``self.input_shape``."
+msgstr ""
+"指定された場合、入力Variableは指定されたVariableに置き換えられ、そのVariable上にネットワークが構築されます。特に指定がない場合は、バッチサイズを１としたVariable、"
+" ``self.input_shape`` を元にしたデフォルトのShapeとなります。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:5 of
+msgid ""
+"Network is constructed up to a variable specified by a string. A list of "
+"string-variable correspondences in a model is described in documentation "
+"for each model class."
+msgstr "ネットワークは文字列で指定したVariableまで構築されます。モデルに対応したVariableの文字列のリストは、各モデルクラスのドキュメントに記載されています。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:7 of
+msgid ""
+"This option enables additional training (fine-tuning, transfer learning "
+"etc.) for the constructed network. If True, the ``batch_stat`` option in "
+"batch normalization is turned ``True``, and ``need_grad`` attribute in "
+"trainable variables (conv weights and gamma and beta of bn etc.) is "
+"turned ``True``. The default is ``False``."
+msgstr ""
+"このオプションは、構築されたネットワークの追加学習 (ファインチューニング、転移学習など) を有効にします。True の場合、batch "
+"normalization の ``batch_stat`` オプションが ``True`` になり、学習可能なVariable (conv "
+"weights および bn のガンマとベータなど) の ``need_grad`` 属性が ``True`` になります。 デフォルトは "
+"``False`` です。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:9 of
+msgid ""
+"Regardless the input image size, the final average pooling before "
+"classification layer will be automatically transformed to a global "
+"average pooling. The default is ``False``."
+msgstr ""
+"入力画像のサイズに関わらず、分類層の前の最終 average pooling は、自動的に global average pooling "
+"に変換されます。デフォルトは ``False`` です。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:11 of
+msgid ""
+"If ``True``, and if the stride configuration of the final average pooling"
+" is not for global pooling, it raises an exception. The default is "
+"``True``. Use ``False`` when user want to do the pooling with the trained"
+" stride ``(7, 7)`` regardless the input spatial size."
+msgstr ""
+"``True`` かつ最終 average pooling のストライド設定が global pooling "
+"を目的としない場合、例外を発生させます。デフォルトは ``True`` です。入力空間サイズに関わらず、 ``(7, 7)`` "
+"などの学習時のストライド で pooling を実行したい場合、 ``False`` を指定してください。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:13 of
+msgid ""
+"When ``True``, it returns a :obj:`~nnabla.utils.nnp_graph.NnpNetwork` "
+"object. Otherwise, It only returns the last variable of the constructed "
+"network. The default is ``False``."
+msgstr ""
+"``True`` の場合、 :obj:`~nnabla.utils.nnp_graph.NnpNetwork` "
+"オブジェクトを返します。それ以外の場合は、単に構築したネットワークの最後のVariableを返します。デフォルトは ``False`` です。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.__call__:15 of
+msgid "Verbose level. With ``0``, it says nothing during network construction."
+msgstr "Verbose レベル。 ``0`` に設定した場合、ネットワーク構築中は何も出力しません。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.category_names:1 of
+msgid "Returns category names of 1000 ImageNet classes."
+msgstr "1000 の ImageNet クラスのカテゴリー名を返します。"
+
+#: nnabla.models.imagenet.base.ImageNetBase.input_shape:1 of
+msgid "Should returns default image size (channel, height, width) as a tuple."
+msgstr "デフォルトの画像サイズを、 (チャネル、高さ、幅) のタプルとして返します。"
+
+#: ../../python/api/models/imagenet.rst:92
+msgid "List of models"
+msgstr "モデルのリスト"
+
+#: nnabla.models.imagenet.ResNet18:1 of
+msgid "An alias of :obj:`ResNet` `(18)`."
+msgstr ":obj:`ResNet` `(18)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNet34:1 of
+msgid "An alias of :obj:`ResNet` `(34)`."
+msgstr ":obj:`ResNet` `(34)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNet50:1 of
+msgid "An alias of :obj:`ResNet` `(50)`."
+msgstr ":obj:`ResNet` `(50)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNet101:1 of
+msgid "An alias of :obj:`ResNet` `(101)`."
+msgstr ":obj:`ResNet` `(101)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNet152:1 of
+msgid "An alias of :obj:`ResNet` `(152)`."
+msgstr ":obj:`ResNet` `(152)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNet:1 of
+msgid "ResNet architectures for 18, 34, 50, 101, and 152 of number of layers."
+msgstr "18、34、50、101、152 層用の ResNet アーキテクチャ。"
+
+#: nnabla.models.imagenet.ResNet:3 of
+msgid "Number of layers chosen from 18, 34, 50, 101, and 152."
+msgstr "層数 (18、34、50、101、152 のいずれかの値)"
+
+#: nnabla.models.imagenet.DenseNet:1 nnabla.models.imagenet.GoogLeNet:3
+#: nnabla.models.imagenet.InceptionV3:3 nnabla.models.imagenet.MobileNet:3
+#: nnabla.models.imagenet.MobileNetV2:3 nnabla.models.imagenet.NIN:3
+#: nnabla.models.imagenet.ResNeXt:6 nnabla.models.imagenet.ResNet:6
+#: nnabla.models.imagenet.SENet:3 nnabla.models.imagenet.ShuffleNet:6
+#: nnabla.models.imagenet.SqueezeNet:6 nnabla.models.imagenet.VGG:6
+#: nnabla.models.imagenet.Xception:3 of
+msgid ""
+"The following is a list of string that can be specified to ``use_up_to`` "
+"option in ``__call__`` method;"
+msgstr "``__call__`` method にある ``use_up_to`` オプションで指定できる文字列リストは以下の通り;"
+
+#: nnabla.models.imagenet.DenseNet:3 nnabla.models.imagenet.GoogLeNet:5
+#: nnabla.models.imagenet.InceptionV3:5 nnabla.models.imagenet.MobileNet:5
+#: nnabla.models.imagenet.MobileNetV2:5 nnabla.models.imagenet.NIN:5
+#: nnabla.models.imagenet.ResNeXt:8 nnabla.models.imagenet.ResNet:8
+#: nnabla.models.imagenet.SENet:5 nnabla.models.imagenet.ShuffleNet:8
+#: nnabla.models.imagenet.SqueezeNet:8 nnabla.models.imagenet.VGG:8
+#: nnabla.models.imagenet.Xception:5 of
+msgid ""
+"``'classifier'`` (default): The output of the final affine layer for "
+"classification."
+msgstr "``'classifier'`` (デフォルト): 分類のための最終 affine 層の出力。"
+
+#: nnabla.models.imagenet.DenseNet:4 nnabla.models.imagenet.GoogLeNet:6
+#: nnabla.models.imagenet.InceptionV3:6 nnabla.models.imagenet.MobileNet:6
+#: nnabla.models.imagenet.MobileNetV2:6 nnabla.models.imagenet.NIN:6
+#: nnabla.models.imagenet.ResNeXt:9 nnabla.models.imagenet.ResNet:9
+#: nnabla.models.imagenet.SENet:6 nnabla.models.imagenet.ShuffleNet:9
+#: nnabla.models.imagenet.SqueezeNet:9 nnabla.models.imagenet.VGG:9
+#: nnabla.models.imagenet.Xception:6 of
+msgid "``'pool'``: The output of the final global average pooling."
+msgstr "``'pool'`` : 最終 global average pooling の出力。"
+
+#: nnabla.models.imagenet.MobileNet:7 nnabla.models.imagenet.MobileNetV2:7
+#: nnabla.models.imagenet.NIN:7 nnabla.models.imagenet.ResNeXt:10
+#: nnabla.models.imagenet.ResNet:10 nnabla.models.imagenet.SENet:7
+#: nnabla.models.imagenet.ShuffleNet:10 nnabla.models.imagenet.SqueezeNet:10
+#: nnabla.models.imagenet.VGG:10 nnabla.models.imagenet.Xception:7 of
+msgid ""
+"``'lastconv'``: The input of the final global average pooling without "
+"ReLU activation."
+msgstr "``'lastconv'`` : ReLU 活性化なしでの最終 global average pooling の入力。"
+
+#: nnabla.models.imagenet.DenseNet:6 nnabla.models.imagenet.MobileNet:8
+#: nnabla.models.imagenet.MobileNetV2:8 nnabla.models.imagenet.NIN:8
+#: nnabla.models.imagenet.ResNeXt:11 nnabla.models.imagenet.ResNet:11
+#: nnabla.models.imagenet.SENet:8 nnabla.models.imagenet.ShuffleNet:11
+#: nnabla.models.imagenet.SqueezeNet:11 nnabla.models.imagenet.VGG:11
+#: nnabla.models.imagenet.Xception:8 of
+msgid ""
+"``'lastconv+relu'``: Network up to ``'lastconv'`` followed by ReLU "
+"activation."
+msgstr "``'lastconv+relu'``: ReLU 活性化に続く ``'lastconv'`` までのネットワーク。"
+
+#: nnabla.models.imagenet.DenseNet:9 nnabla.models.imagenet.GoogLeNet:10
+#: nnabla.models.imagenet.InceptionV3:10 nnabla.models.imagenet.MobileNet:11
+#: nnabla.models.imagenet.MobileNetV2:11 nnabla.models.imagenet.NIN:11
+#: nnabla.models.imagenet.ResNeXt:15 nnabla.models.imagenet.ResNet:14
+#: nnabla.models.imagenet.SENet:11 nnabla.models.imagenet.ShuffleNet:14
+#: nnabla.models.imagenet.SqueezeNet:14 nnabla.models.imagenet.VGG:15
+#: nnabla.models.imagenet.Xception:11 of
+msgid "参照"
+msgstr ""
+
+#: nnabla.models.imagenet.ResNet:15 of
+msgid ""
+"`He et al, Deep Residual Learning for Image Recognition. "
+"<https://arxiv.org/abs/1512.03385>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.MobileNet:1 of
+msgid "MobileNet architecture."
+msgstr "MobileNet アーキテクチャ。"
+
+#: nnabla.models.imagenet.MobileNet:12 of
+msgid ""
+"`Howard et al., MobileNets: Efficient Convolutional Neural Networks for "
+"Mobile Vision Applications. <https://arxiv.org/abs/1704.04861>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.MobileNetV2:1 of
+msgid "MobileNetV2 architecture."
+msgstr "MobileNetV2 アーキテクチャ。"
+
+#: nnabla.models.imagenet.MobileNetV2:12 of
+msgid ""
+"`Sandelr et al., MobileNetV2: Inverted Residuals and Linear Bottlenecks. "
+"<https://arxiv.org/abs/1801.04381>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.SENet:1 of
+msgid ""
+"SENet-154 model which integrates SE blocks with a modified ResNeXt "
+"architecture."
+msgstr "改良された ResNeXt アーキテクチャに SE ブロックを統合する SENet-154 モデル。"
+
+#: nnabla.models.imagenet.SENet:12 of
+msgid ""
+"`Hu et al., Squeeze-and-Excitation Networks. "
+"<https://arxiv.org/abs/1709.01507>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.SqueezeNetV10:1 of
+msgid "SquezeNetV10 An alias of :obj:`SqueezeNet` `('v1.0')`."
+msgstr "SquezeNetV10 :obj:`SqueezeNet` `('v1.0')` のエイリアス。"
+
+#: nnabla.models.imagenet.SqueezeNetV11:1 of
+msgid "SquezeNetV11 An alias of :obj:`SqueezeNet` `('v1.1')`."
+msgstr "SquezeNetV11 :obj:`SqueezeNet` `('v1.1')` のエイリアス。"
+
+#: nnabla.models.imagenet.SqueezeNet:1 of
+msgid "SqueezeNet model for architecture-v1.0 and v1.1 ."
+msgstr "アーキテクチャ v1.0 および v1.1 のための SqueezeNet モデル。"
+
+#: nnabla.models.imagenet.SqueezeNet:3 of
+msgid "Version chosen from 'v1.0' and 'v1.1'."
+msgstr "バージョン ('v1.0' または 'v1.1')"
+
+#: nnabla.models.imagenet.SqueezeNet:15 of
+msgid ""
+"`Iandola, Forrest N. et al., SqueezeNet: AlexNet-level accuracy with 50x "
+"fewer parameters and <0.5MB model size. "
+"<https://arxiv.org/abs/1602.07360>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.SqueezeNet:17 of
+msgid ""
+"`Iandola, Forrest N. et al., SqueezeNet: AlexNet-level accuracy with 50x "
+"fewer parameters and <1MB model size. "
+"<https://arxiv.org/abs/1602.07360v1>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.SqueezeNet:19 of
+msgid ""
+"`DeepScale/SqueezeNet on GitHub "
+"<https://github.com/DeepScale/SqueezeNet>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.VGG11:1 of
+msgid "An alias of :obj:`VGG` `(11)`."
+msgstr ":obj:`VGG` `(11)` のエイリアス。"
+
+#: nnabla.models.imagenet.VGG13:1 of
+msgid "An alias of :obj:`VGG` `(13)`."
+msgstr ":obj:`VGG` `(13)` のエイリアス。"
+
+#: nnabla.models.imagenet.VGG16:1 of
+msgid "An alias of :obj:`VGG` `(16)`."
+msgstr ":obj:`VGG` `(16)` のエイリアス。"
+
+#: nnabla.models.imagenet.VGG:1 of
+msgid "VGG architectures for 11, 13, 16 layers."
+msgstr "11, 13, 16 層用の VGG アーキテクチャ。"
+
+#: nnabla.models.imagenet.VGG:3 of
+msgid "Number of layers chosen from 11, 13, 16."
+msgstr "層の数 (11、13、16 のいずれかの数)"
+
+#: nnabla.models.imagenet.VGG:12 of
+msgid ""
+"``'lastfeature'``: Network up to one layer before ``'classifier'``, but "
+"without activation."
+msgstr "``'lastfeature'``: 活性化を除く、 ``'classifier'`` 直前の層までのネットワーク。"
+
+#: nnabla.models.imagenet.VGG:16 of
+msgid ""
+"`Simonyan and Zisserman, Very Deep Convolutional Networks for Large-Scale"
+" Image Recognition. <https://arxiv.org/pdf/1409.1556>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.NIN:1 of
+msgid "NIN(Network In Network) architecture."
+msgstr "NIN (Network In Network) アーキテクチャ。"
+
+#: nnabla.models.imagenet.NIN:12 of
+msgid "`Lin et al., Network In Network. <https://arxiv.org/abs/1312.4400>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.DenseNet:5 of
+msgid "``'lastconv'``: The output from last denseblock."
+msgstr "``'lastconv'`` : 最後の denseblock からの出力。"
+
+#: nnabla.models.imagenet.DenseNet:10 of
+msgid ""
+"`Huang et al., Densely Connected Convolutional Networks. "
+"<https://arxiv.org/abs/1608.06993>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.InceptionV3:1 of
+msgid "InceptionV3 architecture."
+msgstr "InceptionV3 アーキテクチャ。"
+
+#: nnabla.models.imagenet.GoogLeNet:7 nnabla.models.imagenet.InceptionV3:7 of
+msgid ""
+"``'prepool'``: The input of the final global average pooling, i.e. the "
+"output of the final inception block."
+msgstr "最終 global average pooling の入力。すなわち、最終インセプションブロックの出力。"
+
+#: nnabla.models.imagenet.InceptionV3:11 of
+msgid ""
+"`Szegedy et al., Rethinking the Inception Architecture for Computer "
+"Vision. <https://arxiv.org/abs/1512.00567>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.Xception:1 of
+msgid "Xception model."
+msgstr "Xception モデル。"
+
+#: nnabla.models.imagenet.Xception:12 of
+msgid ""
+"`Francois Chollet, Xception: Deep Learning with Depthwise Separable "
+"Convolutions. <https://arxiv.org/abs/1610.02357>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.GoogLeNet:1 of
+msgid "GoogLeNet model."
+msgstr "GoogLeNet モデル。"
+
+#: nnabla.models.imagenet.GoogLeNet:11 of
+msgid ""
+"`Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed, "
+"Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich: "
+"Going Deeper with Convolutions. <https://arxiv.org/pdf/1409.4842.pdf>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.ResNeXt50:1 of
+msgid "An alias of :obj:`ResNeXt` `(50)`."
+msgstr ":obj:`ResNeXt` `(50)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNeXt101:1 of
+msgid "An alias of :obj:`ResNeXt` `(101)`."
+msgstr ":obj:`ResNeXt` `(101)` のエイリアス。"
+
+#: nnabla.models.imagenet.ResNeXt:1 of
+msgid "ResNeXt architectures for 50 and 101 of number of layers."
+msgstr "50 と 101 層用の ResNeXt アーキテクチャ。"
+
+#: nnabla.models.imagenet.ResNeXt:3 of
+msgid "Number of layers chosen from 50 and 101."
+msgstr "層の数 (50、101 のいずれかの数)"
+
+#: nnabla.models.imagenet.ResNeXt:16 of
+msgid ""
+"`Xie, Girshick. et al., Aggregated Residual Transformations for Deep "
+"Neural Networks. <https://arxiv.org/abs/1611.05431>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.ResNeXt:18 of
+msgid ""
+"`ResNeXt: Aggregated Residual Transformations for Deep Neural Networks on"
+" GitHub <https://github.com/facebookresearch/ResNeXt>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.ShuffleNet10:1 of
+msgid "An alias of :obj:`ShuffleNet` `(10)`."
+msgstr ":obj:`ShuffleNet` `(10)` のエイリアス。"
+
+#: nnabla.models.imagenet.ShuffleNet05:1 of
+msgid "An alias of :obj:`ShuffleNet` `(5)`."
+msgstr ":obj:`ShuffleNet` `(5)` のエイリアス。"
+
+#: nnabla.models.imagenet.ShuffleNet20:1 of
+msgid "An alias of :obj:`ShuffleNet` `(20)`."
+msgstr ":obj:`ShuffleNet` `(20)` のエイリアス。"
+
+#: nnabla.models.imagenet.ShuffleNet:1 of
+msgid "Model for architecture ShuffleNet, ShuffleNet-0.5x and ShufffleNet-2.0x."
+msgstr "ShuffleNet、 ShuffleNet-0.5x、ShufffleNet-2.0x アーキテクチャ用のモデル。"
+
+#: nnabla.models.imagenet.ShuffleNet:3 of
+msgid ""
+"To customize the network to a desired complexity,  we can simply apply a "
+"scale factor on the number of channnels. This can be chosen from '10', "
+"'5' and '20'."
+msgstr ""
+"ネットワークを希望の複雑さにカスタマイズするには、チャネル数に scale factor を適用するだけで実現できます。'10'、'5' または "
+"'20' から指定します。"
+
+#: nnabla.models.imagenet.ShuffleNet:15 of
+msgid ""
+"`Zhang. et al., ShuffleNet: An Extremely Efficient Convolutional Neural "
+"Network for Mobile Devices. <https://arxiv.org/abs/1707.01083>`_"
+msgstr ""
+
+#: nnabla.models.imagenet.ShuffleNet:17 of
+msgid ""
+"`Ma, Zhang. et al., ShuffleNet V2: Practical Guidelines for Efficient CNN"
+" Architecture Design. <https://arxiv.org/abs/1807.11164>`_"
+msgstr ""
+

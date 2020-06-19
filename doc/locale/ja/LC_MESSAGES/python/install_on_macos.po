@@ -1,0 +1,86 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-26 09:34+0900\n"
+"PO-Revision-Date: 2020-05-01 19:36+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja_JP\n"
+"X-Generator: Poedit 2.3\n"
+
+#: ../../python/install_on_macos.rst:2
+msgid "Installation on macOS"
+msgstr "macOS へのインストール"
+
+#: ../../python/install_on_macos.rst:8
+msgid ""
+"NOTE: Our testing coverage in terms of environments and machines on "
+"macOS is very limited. Please submit an issue if you face any issue."
+msgstr ""
+"注 : macOS の環境とマシンのテスト範囲は非常に限られています。何らかの問題"
+"に直面した場合は、その問題をお知らせください。"
+
+#: ../../python/install_on_macos.rst:12
+msgid "Prerequisites"
+msgstr "前提条件"
+
+#: ../../python/install_on_macos.rst:14
+msgid "We test the installation on macOS Sierra."
+msgstr "macOS Sierra 上でのインストールはテスト済みです。"
+
+#: ../../python/install_on_macos.rst:16
+msgid "The following software are required for installation:"
+msgstr "インストールには次のソフトウェアが必要です。"
+
+#: ../../python/install_on_macos.rst:18
+msgid ""
+"Python>=3.6 (We'd recommend you to setup Python using Anaconda or "
+"`Miniconda <https://conda.io/miniconda.html>`_)."
+msgstr ""
+"Python 3.6 以上 ( Anaconda または `Miniconda <https://conda.io/miniconda."
+"html>`_ を使った Python のセットアップを推奨します ) 。"
+
+#: ../../python/install_on_macos.rst:20
+msgid "pip (bundled in Conda Python)"
+msgstr "pip ( Conda Python にバンドルされています )"
+
+#: ../../python/install_on_macos.rst:21
+msgid "wheel (bundled in Conda Python)"
+msgstr "wheel ( Conda Python にバンドルされています )"
+
+#: ../../python/install_on_macos.rst:22
+msgid ""
+"setuptools (bundled in Conda Python. You may need to upgrade the version "
+"of setuptools with ``pip install -U --no-deps setuptools``.)"
+msgstr ""
+"setuptools ( Conda Python にバンドルされています。場合によっては、 ``pip "
+"install -U --no-deps setuptools`` で setuptools のバージョンアップが必要"
+"となります。 )"
+
+#: ../../python/install_on_macos.rst:25
+msgid "Install"
+msgstr "インストール"
+
+#: ../../python/install_on_macos.rst:27
+msgid ""
+"See :ref:`pip-installation-workflow` (note that the binary packages for "
+"the CUDA extension are not available for macOS. Please `build it from "
+"source <https://github.com/sony/nnabla/tree/master/doc/build/build."
+"md>`_)."
+msgstr ""
+":ref:`pip-installation-workflow` を参照してください ( macOS 用の CUDA 拡"
+"張のバイナリパッケージはありません。`ソースコードからのビルド <https://"
+"github.com/sony/nnabla/tree/master/doc/build/build.md>`_ を参照してくださ"
+"い ) 。"

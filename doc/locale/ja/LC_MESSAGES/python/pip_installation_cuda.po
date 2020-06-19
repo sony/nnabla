@@ -1,0 +1,281 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-10 15:10+0900\n"
+"PO-Revision-Date: 2020-06-11 14:38+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../python/pip_installation_cuda.rst:4
+msgid "NNabla CUDA extension package installation using PIP"
+msgstr "PIP を使用した NNabla CUDA 拡張機能パッケージのインストール"
+
+#: ../../python/pip_installation_cuda.rst:6
+msgid ""
+"Note: please refer to the :ref:`pip_os_specific` for the OS specific "
+"dependencies setup."
+msgstr ""
+"注 : OS 固有の依存関係の設定については、 :ref:`pip_os_specific` を参照してくだ"
+"さい。"
+
+#: ../../python/pip_installation_cuda.rst:8
+msgid ""
+"By installing the NNabla CUDA extension package ``nnabla-ext-cuda``, you can "
+"accelerate the computation by NVIDIA CUDA GPU (CUDA must be setup on your "
+"environment accordingly)."
+msgstr ""
+"NNabla CUDA 拡張機能パッケージである ``nnabla-ext-cuda`` をインストールするこ"
+"とで、 NVIDIA CUDA GPU による計算の高速化が可能です( CUDA を環境に合わせて設定"
+"する必要があります ) 。"
+
+#: ../../python/pip_installation_cuda.rst:10
+msgid ""
+"Several pip packages of NNabla CUDA extension are provided for each CUDA "
+"version and its corresponding cuDNN version as following."
+msgstr ""
+"各 CUDA バージョンとそれに対応する cuDNN バージョンに対して NNabla CUDA 拡張機"
+"能の pip パッケージが次のようにいくつか提供されています。"
+
+#: ../../python/pip_installation_cuda.rst:15
+#: ../../python/pip_installation_cuda.rst:61
+msgid "CUDA vs cuDNN Compatibility"
+msgstr "CUDA vs cuDNN 互換性"
+
+#: ../../python/pip_installation_cuda.rst:18
+#: ../../python/pip_installation_cuda.rst:64
+msgid "Package name"
+msgstr "パッケージ名"
+
+#: ../../python/pip_installation_cuda.rst:18
+#: ../../python/pip_installation_cuda.rst:64
+msgid "CUDA version"
+msgstr "CUDA バージョン"
+
+#: ../../python/pip_installation_cuda.rst:18
+#: ../../python/pip_installation_cuda.rst:64
+msgid "cuDNN version"
+msgstr "cuDNN バージョン"
+
+#: ../../python/pip_installation_cuda.rst:20
+msgid "nnabla-ext-cuda90"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:20
+#: ../../python/pip_installation_cuda.rst:66
+msgid "9.0"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:20
+#: ../../python/pip_installation_cuda.rst:21
+#: ../../python/pip_installation_cuda.rst:22
+msgid "7.6(Linux & Win)"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:21
+msgid "nnabla-ext-cuda100"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:21
+#: ../../python/pip_installation_cuda.rst:67
+#: ../../python/pip_installation_cuda.rst:68
+msgid "10.0"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:22
+msgid "nnabla-ext-cuda101"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:22
+#: ../../python/pip_installation_cuda.rst:69
+#: ../../python/pip_installation_cuda.rst:70
+msgid "10.1"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:25
+msgid "The latest CUDA version is always preferred if your GPU accepts."
+msgstr ""
+"お使いの GPU が対応可能であれば、常に最新の CUDA バージョンを使用することを推"
+"奨します。"
+
+#: ../../python/pip_installation_cuda.rst:28
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../python/pip_installation_cuda.rst:30
+msgid "The following is an example of installing the extension for CUDA 10.1"
+msgstr "以下は、CUDA 10.1 の拡張機能のインストール例です。"
+
+#: ../../python/pip_installation_cuda.rst:32
+msgid "pip install nnabla-ext-cuda101"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:36
+msgid "and check if all works."
+msgstr "次に、すべて機能するか確認します。"
+
+#: ../../python/pip_installation_cuda.rst:38
+#: ../../python/pip_installation_cuda.rst:113
+msgid "python -c \"import nnabla_ext.cuda, nnabla_ext.cudnn\""
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:42
+msgid ""
+"2018-06-26 15:20:36,085 [nnabla][INFO]: Initializing CPU extension...\n"
+"2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing CUDA extension...\n"
+"2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing cuDNN extension..."
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:48
+msgid ""
+"**Note**: If you want to make sure the latest version will be installed, try "
+"to uninstall previously installed one with ``pip uninstall -y nnabla nnabla-"
+"ext-cuda100`` beforehand."
+msgstr ""
+"**注** : 確実に最新バージョンをインストールしたい場合は、 ``pip uninstall -y "
+"nnabla nnabla-ext-cuda100`` で以前にインストールしたバージョンをアンインストー"
+"ルしてください。"
+
+#: ../../python/pip_installation_cuda.rst:54
+msgid "Installation with Multi-GPU supported"
+msgstr "Multi-GPU サポートのインストール"
+
+#: ../../python/pip_installation_cuda.rst:56
+msgid "Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+."
+msgstr ""
+"Multi-GPU ホイールパッケージは、ubuntu16.04 および python 3.5 以上でのみ利用で"
+"きます。"
+
+#: ../../python/pip_installation_cuda.rst:66
+msgid "nnabla-ext-cuda90_nccl2_ubuntu16"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:66
+#: ../../python/pip_installation_cuda.rst:67
+#: ../../python/pip_installation_cuda.rst:68
+#: ../../python/pip_installation_cuda.rst:69
+#: ../../python/pip_installation_cuda.rst:70
+msgid "7.6"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:67
+msgid "nnabla-ext-cuda100_nccl2_ubuntu16"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:68
+msgid "nnabla-ext-cuda100_nccl2_ubuntu18"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:69
+msgid "nnabla-ext-cuda101_nccl2_ubuntu16"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:70
+msgid "nnabla-ext-cuda101_nccl2_ubuntu18"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:73
+msgid "You can install as the following."
+msgstr "以下のようにインストールできます。"
+
+#: ../../python/pip_installation_cuda.rst:75
+msgid ""
+"pip install nnabla-ubuntu16\n"
+"pip install nnabla-ext-cuda101-nccl2-ubuntu16"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:81
+msgid ""
+"If you already installed NNabla, uninstall all of it, or start from a clean "
+"environment which you create using Anaconda, venv."
+msgstr ""
+"すでに NNabla をインストールしている場合は、すべてアンインストールするか、"
+"Anaconda 、venv を使って作成したクリーンな環境から始めてください。"
+
+#: ../../python/pip_installation_cuda.rst:84
+msgid "You should also install OpenMPI,"
+msgstr "OpenMPI もインストールする必要があります。"
+
+#: ../../python/pip_installation_cuda.rst:86
+msgid "apt-get install libopenmpi-dev"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:90
+msgid "and NCCL in addition to CUDA and CuDNN."
+msgstr "また、CUDA と CuDNN に加えて NCCL のインストールも必要となります。"
+
+#: ../../python/pip_installation_cuda.rst:94
+msgid "FAQ"
+msgstr ""
+
+#: ../../python/pip_installation_cuda.rst:97
+msgid "Q. How do I install CUDA?"
+msgstr "Q. どの様に CUDA をインストールしますか？"
+
+#: ../../python/pip_installation_cuda.rst:99
+msgid ""
+"NNabla CUDA extension requires both CUDA toolkit and cuDNN library. You "
+"should select a proper CUDA version according to your CUDA device capability. "
+"See `the official installation guide <https://docs.nvidia.com/deeplearning/"
+"sdk/cudnn-install/index.html>`_. NNabla supports CUDA versions later than "
+"8.0. See :ref:`the table <cuda-cudnn-compatibility>` for the cuDNN "
+"compatibility with the specific CUDA versions."
+msgstr ""
+"NNabla CUDA 拡張機能は、 CUDA ツールキットと cuDNN ライブラリーの両方が必要で"
+"す。 CUDA デバイスの機能に応じて、適切な CUDA バージョンを選択する必要がありま"
+"す。 `公式のインストールガイド <https://docs.nvidia.com/deeplearning/sdk/"
+"cudnn-install/index.html>`_ をご覧ください。 NNabla は CUDA バージョン 8.0 以"
+"降をサポートしています。特定の CUDA バージョンとのcuDNN の互換性については、 :"
+"ref:`上記の表 <cuda-cudnn-compatibility>` をご覧ください。"
+
+#: ../../python/pip_installation_cuda.rst:103
+msgid "Q. How do I install NCCL"
+msgstr "Q. どの様に NCCL をインストールしますか？"
+
+#: ../../python/pip_installation_cuda.rst:105
+msgid ""
+"Please visit `NCCL <https://developer.nvidia.com/nccl>`_, then follow the "
+"instruction."
+msgstr ""
+"`NCCL <https://developer.nvidia.com/nccl>`_ にアクセスして、指示に従ってくださ"
+"い。"
+
+#: ../../python/pip_installation_cuda.rst:109
+msgid "Q. How do I check proper version of cuDNN"
+msgstr "Q. どの様に cuDNN の適切なバージョンを確認しますか？"
+
+#: ../../python/pip_installation_cuda.rst:111
+msgid "Enter the following command:"
+msgstr "以下のコマンドを入力。"
+
+#: ../../python/pip_installation_cuda.rst:117
+msgid ""
+"If there is a version mismatch on your machine, you can see proper versions "
+"in the error message. Following is a sample error message."
+msgstr ""
+"お使いのマシン上でバージョンの不一致が発生した場合は、エラーメッセージに適切な"
+"バージョンが表示されます。以下は、エラーメッセージの例です。"
+
+#: ../../python/pip_installation_cuda.rst:120
+msgid ""
+"[nnabla][INFO]: Initializing CPU extension...\n"
+"Please install CUDA version 10.1.\n"
+"  and cuDNN version 7.6\n"
+"  Or install correct nnabla-ext-cuda for installed version of CUDA/cuDNN."
+msgstr ""
+
+#~ msgid "CUDNN version"
+#~ msgstr "cuDNN バージョン"

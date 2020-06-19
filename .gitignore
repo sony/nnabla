@@ -8,6 +8,7 @@
 
 /build-tools/msvc/cmake_cpp_utils.bat
 /doc/?/
+/doc/locale/ja/LC_MESSAGES/
 /docker/development/Dockerfile.build.py*
 /docker/development/Dockerfile.onnx-test.py*
 /examples/cpp/forward_check/*/tmp.*

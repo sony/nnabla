@@ -1,0 +1,207 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-26 09:34+0900\n"
+"PO-Revision-Date: 2020-05-14 12:17+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../format.rst:2
+msgid "Data Format"
+msgstr "データフォーマット"
+
+#: ../../format.rst:4
+msgid ""
+"Here is data format for exchange network structures and trained "
+"parameters."
+msgstr ""
+"ネットワーク構造と学習済みパラメータを交換するためのデータフォーマットで"
+"す。"
+
+#: ../../format.rst:8
+msgid "Network Structure"
+msgstr "ネットワーク構造"
+
+#: ../../format.rst:10
+msgid ""
+"Network structure and parameter will store with Google Protocol Buffer "
+"format internally."
+msgstr ""
+"ネットワーク構造とパラメータは Google Protocol Buffer 形式として内部的に"
+"格納されます。"
+
+#: ../../format.rst:14
+msgid "Overview"
+msgstr "概要"
+
+#: ../../format.rst:16
+msgid "Overview of network structure defined as following."
+msgstr "ネットワーク構造の全体像を以下のように定義します。"
+
+#: ../../format.rst:143
+msgid "NNablaProtoBuf"
+msgstr "NNablaProtoBuf"
+
+#: ../../format.rst:143
+msgid ""
+"Root message of NNabla network structure. This message could be store "
+"GlobalConfig, TrainingConfig, Network(s), Parameter(s), Dataset(s), "
+"Optimizer(s), Monitor(s) and Executor(s)."
+msgstr ""
+"NNabla ネットワーク構造のルートメッセージです。このメッセージには "
+"GlobalConfig 、 TrainingConfig 、 Network 、 Parameter 、 Dataset 、 "
+"Optimizer 、 Monitor 、 Executor 等が格納されます。"
+
+#: ../../format.rst:145
+msgid "Variable"
+msgstr "Variable"
+
+#: ../../format.rst:146
+msgid ""
+"Internal data structure to store tensor for Neural network I/O and "
+"parameters."
+msgstr ""
+"ニューラルネットワーク I / O のためのテンソルとパラメータを格納する内部"
+"データ構造です。"
+
+#: ../../format.rst:147
+msgid "GlobalConfig"
+msgstr "GlobalConfig"
+
+#: ../../format.rst:148
+msgid "Configuration of environment that suggest to do train or inference."
+msgstr "学習や推論を実行指示するための環境設定です。"
+
+#: ../../format.rst:149
+msgid "TrainingConfig"
+msgstr "TrainingConfig"
+
+#: ../../format.rst:150
+msgid "Configuration of training."
+msgstr "学習の設定です。"
+
+#: ../../format.rst:151
+msgid "Network"
+msgstr "Network"
+
+#: ../../format.rst:152
+msgid "Network structure."
+msgstr "ネットワーク構造です。"
+
+#: ../../format.rst:153 ../../format.rst:453
+msgid "Parameter"
+msgstr "Parameter"
+
+#: ../../format.rst:154
+msgid ""
+"Special variable to store train result. (e.g Weight or Bias of affine "
+"layer)"
+msgstr ""
+"学習結果を格納する特別な変数 ( 例 : アフィン層の重みやバイアス値 ) です。"
+
+#: ../../format.rst:155
+msgid "Dataset"
+msgstr "Dataset"
+
+#: ../../format.rst:156
+msgid "Specify dataset for training."
+msgstr "学習のためのデータセットを指定します。"
+
+#: ../../format.rst:157
+msgid "Optimizer"
+msgstr "Optimizer"
+
+#: ../../format.rst:158
+msgid "Define network, dataset,  and input/output variables for train."
+msgstr "学習のためのネットワーク、データセット、入出力変数を定義します。"
+
+#: ../../format.rst:159
+msgid "Monitor"
+msgstr "Monitor"
+
+#: ../../format.rst:160
+msgid ""
+"Define network, dataset, and input/output variables for monitor training "
+"status.."
+msgstr ""
+"学習状況を監視するネットワーク、データセット、入出力変数を定義します。"
+
+#: ../../format.rst:163
+msgid "Executor"
+msgstr "Executor"
+
+#: ../../format.rst:162
+msgid "Define network and input/output variables for train."
+msgstr "学習のためのネットワーク、入出力変数を定義します。"
+
+#: ../../format.rst:166
+msgid "Structure for Training"
+msgstr "学習の構造"
+
+#: ../../format.rst:168 ../../format.rst:173
+msgid "TBD"
+msgstr "TBD"
+
+#: ../../format.rst:171
+msgid "Structure for Inference"
+msgstr "推論の構造"
+
+#: ../../format.rst:176
+msgid "Overall structure"
+msgstr "全体構造"
+
+#: ../../format.rst:455
+msgid ""
+"From the performance point of view, parameters can be saved in HDF 5 "
+"format."
+msgstr "パフォーマンスの観点から、パラメータは HDF 5 形式で保存されます。"
+
+#: ../../format.rst:458
+msgid "File Format and extensions"
+msgstr "ファイル形式と拡張子"
+
+#: ../../format.rst:460
+msgid "Protocol buffer text format file"
+msgstr "Protocol buffer がシリアライズされたバイナリファイル"
+
+#: ../../format.rst:461
+msgid ".nntxt or .prototxt"
+msgstr ".nntxt または .prototxt"
+
+#: ../../format.rst:462
+msgid "Protocol buffer serialized binary file"
+msgstr "Protocol buffer text 形式ファイル"
+
+#: ../../format.rst:463
+msgid ".protobuf"
+msgstr ".protobuf"
+
+#: ../../format.rst:464
+msgid "HDF5"
+msgstr "HDF5"
+
+#: ../../format.rst:465
+msgid ".h5"
+msgstr ".h5"
+
+#: ../../format.rst:467
+msgid "NNP (ZIP archived file with above formats.)"
+msgstr "NNP ( 上記形式での ZIP 形式ファイル )"
+
+#: ../../format.rst:467
+msgid ".nnp"
+msgstr ".nnp"

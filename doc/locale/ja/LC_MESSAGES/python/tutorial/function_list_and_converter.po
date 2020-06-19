@@ -1,0 +1,396 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-14 11:50+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/tutorial/function_list_and_converter.rst:3
+msgid "Function list and converter"
+msgstr "関数リストとコンバーター"
+
+#: ../../python/tutorial/function_list_and_converter.rst:5
+msgid ""
+"``nnabla_cli`` is the command line interface of nnabla. With this command"
+" line interface, user may know current NNabla support status, and know "
+"whether or how to convert a nnabla model(e.g. *.nnp) to other format of "
+"model(e.g. *.onnx)."
+msgstr ""
+"``nnabla_cli`` は nnabla のコマンドラインインターフェイスです。このコマンドラインインターフェイスを使って、ユーザーは現在の"
+" NNabla のサポート状況や nnabla のモデル ( 例 *.nnp ) を他のモデルのフォーマット ( 例 *.onnx ) "
+"に変換できるかどうか、またはその方法を知ることができます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:8
+msgid ""
+"The subcommand ``function_info`` provides a set of functions to output "
+"implemented function information. With this information, you may build "
+"tailored nnabla-c-runtime library for your model, or skip some "
+"unsupported functions for the target model."
+msgstr ""
+"サブコマンド ``function_info`` は、nnablaですでに実装されている関数のリストを出力してくれます。 "
+"この情報により、モデルに合った nnabla-c-runtime "
+"ライブラリを構築したり、対象モデルに対してサポートされていない関数をスキップすることができます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:14
+msgid "Some simple use cases"
+msgstr "簡単なユースケース"
+
+#: ../../python/tutorial/function_list_and_converter.rst:16
+msgid "Please let us introduce some simple use cases:"
+msgstr "簡単なユースケースをいくつか紹介しましょう。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:18
+msgid ""
+"At first, you want to know how many functions (which functions) nnabla "
+"currently supports:"
+msgstr "まず、nnabla が現在サポートしている関数やその数を知りたい場合です。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:20
+msgid "$ nnabla_cli function_info"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:24
+msgid "You get the following list:"
+msgstr "次のリストが得られます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:28
+msgid ""
+"2019-06-14 16:16:13,106 [nnabla][INFO]: Initializing CPU extension...\n"
+"NNabla command line interface (Version:1.0.18.dev1, Build:190531084842)\n"
+"LSTM\n"
+"Sub2\n"
+"Mul2\n"
+"GreaterEqual\n"
+"Sigmoid\n"
+"NotEqual\n"
+"Unpooling\n"
+"Log\n"
+"CategoricalCrossEntropy\n"
+"..."
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:41
+msgid ""
+"That is the list of current nnabla all supported functions. Only function"
+" names are shown, no more detail, only for seeking certain function by "
+"name. For the detail of each function, you have to check with online "
+"document."
+msgstr ""
+"これは、現在 nnabla "
+"でサポートされているすべての関数のリストです。名前によって関数を探す目的のみのため、詳細はなく、関数名だけが表示されます。各関数の詳細については、オンラインドキュメントで調べる必要があります。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:45
+msgid ""
+"As you known, nnabla's model *.nnp can be converted to a compact version,"
+" it has the postfix ``.nnb``, can be inferred by nnabla-c-runtime "
+"library. We simply named this format as ``NNB``. To know how many "
+"functions are supported in this format, you may use this command:"
+msgstr ""
+"ご存じのように、 nnabla のモデル *.nnp は接尾辞 ``.nnb`` を持つコンパクトバージョンに変換することができ 、 "
+"nnabla-c-runtime ライブラリによる推論に用いることが可能です。 このフォーマットを簡潔に ``NNB`` "
+"と名付けました。このフォーマットでサポートされている関数がいくつあるかを知るために、このコマンドを使うことができます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:47
+msgid "$ nnabla_cli function_info -f NNB"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:51
+msgid "Similar as above, a function list is shown."
+msgstr "上記と同様に、関数リストが表示されます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:54
+msgid "Do we simple list the functions used in a .nnp model? Yes, of course."
+msgstr "指定した.nnpモデルで使われている関数を調べることもできます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:56
+msgid "$ nnabla_cli function_info my_model.nnp"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:60
+msgid "Similar as above, a function list used in this model is listed."
+msgstr "上記と同様に、このモデルで使われる関数リストが列挙されます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:63
+msgid ""
+"Then, we may know whether our model can be converted to nnabla-c-runtime "
+"model format, or formally speaking, we can know the intersection of 2 "
+"function sets, one is the function set in .nnp and the other is "
+"nnabla-c-runtime has supported."
+msgstr ""
+"そして、使用しているモデルを nnabla-c-runtime モデルフォーマットに変換できるかどうかを知ることができます。厳密には、 .nnp "
+"における関数セットと nnabla-c-runtime がサポートする関数セットの共通部分を知ることができます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:66
+msgid "$ nnabla_cli function_info my_model.nnp -f NNB"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:71
+msgid "The output looks like:"
+msgstr "この出力は次のようになります。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:75
+msgid ""
+"2019-06-14 17:01:29,393 [nnabla][INFO]: Initializing CPU extension...\n"
+"NNabla command line interface (Version:1.0.18.dev1, Build:190531084842)\n"
+"Importing mnist_nnp/lenet_010000.nnp\n"
+" Expanding runtime.\n"
+"nnabla-c-runtime currently support the following functions in model:\n"
+"Convolution\n"
+"MulScalar\n"
+"Affine\n"
+"MaxPooling\n"
+"ReLU\n"
+"..."
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:87
+msgid "Unsupported functions are also listed up if there are any in this model."
+msgstr "また、このモデルでサポートされていない関数がある場合は、それらもリストアップされます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:91
+msgid "Tailored nnabla-c-runtime library"
+msgstr "適合する nnabla-c-runtime ライブラリ"
+
+#: ../../python/tutorial/function_list_and_converter.rst:93
+msgid ""
+"When implementing nnabla-c-runtime library, we hope to implement all "
+"functions we can. But from customer's aspect, that is sometimes no need. "
+"If user only wants to use nnabla-c-runtime for enumerable models, the "
+"nnabla-c-runtime should be tailed exactly as what these models required. "
+"How to do then?"
+msgstr ""
+"nnabla-c-runtime "
+"ライブラリを実装するとき、できる限りすべての関数を含んだ状態で実装したいところです。しかし、顧客の観点からはそこまでの必要はない場合もあります。ユーザーが可算モデルに対して"
+" nnabla-c-runtime を使いたいだけならば、 nnabla-c-runtime "
+"はこのモデルが必要とする演算セットだけを含んでいれば十分です。これはどのように行うのでしょうか？"
+
+#: ../../python/tutorial/function_list_and_converter.rst:96
+msgid "It can be implemented with the following steps:"
+msgstr "それは、次のステップで実装できます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:98
+msgid "generate function list"
+msgstr "関数リストの生成"
+
+#: ../../python/tutorial/function_list_and_converter.rst:99
+msgid "config your nnabla-c-runtime library"
+msgstr "nnabla-c-runtime ライブラリのコンフィグ"
+
+#: ../../python/tutorial/function_list_and_converter.rst:100
+msgid "build nnabla-c-runtime library"
+msgstr "nnabla-c-runtime ライブラリの構築"
+
+#: ../../python/tutorial/function_list_and_converter.rst:104
+msgid "1. Generate function list"
+msgstr "1. 関数リストの生成"
+
+#: ../../python/tutorial/function_list_and_converter.rst:106
+msgid "$ nnabla_cli function_info my_model.nnp -f NNB -o functions.txt"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:110
+msgid ""
+"This is similar as above, except that with ``-o`` parameter, which "
+"pointed out which file should be written to. (of course, the format is "
+"different from the version output to stdout, it is more compact)"
+msgstr ""
+"これは、どのファイルに記述するかを指定する ``-o`` パラメータ以外は上記と同じです。 ( もちろんフォーマットは標準出力 "
+"へ出力されるバージョンと異なり、よりコンパクトです )"
+
+#: ../../python/tutorial/function_list_and_converter.rst:114
+msgid "2. config your nnabla-c-runtime library"
+msgstr "2. nnabla-c-runtime ライブラリのコンフィグ"
+
+#: ../../python/tutorial/function_list_and_converter.rst:116
+msgid ""
+"User may manually modify ``functions.txt``. Then, this file is used as "
+"input, used to generate nnabla-c-runtime library's config file:"
+msgstr ""
+"ユーザーは手動で ``functions.txt`` を変更することができます。そして、このファイルは入力として使われ、 "
+"nnabla-c-runtime ライブラリのコンフィグファイルを生成するために使われます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:118
+msgid ""
+"$ nnabla_cli function_info -c functions.txt -o nnabla-c-runtime/build-"
+"tools/code-generator/functions.yaml"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:123
+msgid ""
+"As we inferred, if there is no ``-c`` parameter, a full function set will"
+" be used to generate this config file, of course, the library will "
+"finally contain all implemented functions. This is the default behavior."
+msgstr ""
+"``-c`` オプションがない場合は、 nnabla "
+"で実装されている関数セットすべてを含む形でコンフィグファイルが作成されます。この場合、作成されるライブラリにはすべての関数が含まれることになります"
+" ( デフォルトではこのような動作になります ) 。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:127
+msgid "3. build nnabla-c-runtime library"
+msgstr "3. nnabla-c-runtime ライブラリの構築"
+
+#: ../../python/tutorial/function_list_and_converter.rst:129
+msgid "The build process is relatively directly, as the following:"
+msgstr "ビルドプロセスは、次のように比較的直接的です。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:131
+msgid ""
+"#> nnabla-c-runtime>mkdir build\n"
+"#> nnabla-c-runtime>cd build\n"
+"#> nnabla-c-runtime>cmake ..\n"
+"#> nnabla-c-runtime>make"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:138
+msgid ""
+"The nnabla-c-runtime library ``libnnablart_functions.a`` will contain the"
+" functions what you want."
+msgstr "nnabla-c-runtime ライブラリの ``libnnablart_functions.a`` には、必要な関数が入っています。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:143
+msgid "Skip functions unsupported"
+msgstr "サポートされていない関数のスキップ"
+
+#: ../../python/tutorial/function_list_and_converter.rst:145
+msgid ""
+"When you want to convert ``*.nnp`` to ``*.onnx`` or ``*.nnb``, there are "
+"some functions are not supported in target function list. For example, "
+"you want to convert a network to nnabla-c-runtime. The network looks "
+"like:"
+msgstr ""
+"``*.nnp`` を ``*.onnx`` または ``*.nnb`` "
+"に変換したいとき、対象のフォーマットではサポートされていない関数があります。例えば、ネットワークを nnabla-c-runtime "
+"に変換したいとします。ネットワークは以下のようになります。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:149
+msgid ""
+"Affine\n"
+"Softmax\n"
+"Tanh\n"
+"Convolution\n"
+"MaxPooling\n"
+"ReLU"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:156
+msgid ""
+"You do not want to use nnabla-c-runtime library's ``Convolution``, you "
+"want to split the network in 2 pieces at the point of ``Convolution``. 2 "
+"Steps are needed to do so:"
+msgstr ""
+"nnabla-c-runtime ライブラリの ``Convolution`` を使いたくないとします。その際には、 "
+"``Convolution`` 演算の箇所でネットワークを 2 つに分割することになります。そのためには、次の 2 ステップが必要です。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:159
+msgid "comment out the function in functions.txt"
+msgstr "functions.txt で関数をコメントアウト"
+
+#: ../../python/tutorial/function_list_and_converter.rst:160
+msgid "convert the network with ``-c`` parameter"
+msgstr "``-c`` パラメータでネットワークを変換"
+
+#: ../../python/tutorial/function_list_and_converter.rst:164
+msgid "1. comment out the function in functions.txt"
+msgstr "1. functions.txt で関数をコメントアウト"
+
+#: ../../python/tutorial/function_list_and_converter.rst:168
+msgid ""
+"...\n"
+";Affine\n"
+"..."
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:174
+msgid "2. convert the network with ``-c`` parameter"
+msgstr "2. ``-c`` パラメータでネットワークを変換"
+
+#: ../../python/tutorial/function_list_and_converter.rst:177
+msgid "$ nnabla_cli convert -c functions.txt a.nnp b.nnb"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:181
+msgid ""
+"Thus, the network is splitted into pieces, the output shows as the "
+"following:"
+msgstr "このように、ネットワークを分割すると、次のように出力されます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:185
+msgid ""
+"...\n"
+"LeNet_036_0_5.nnb:\n"
+"  input:\n"
+"  - name: Input\n"
+"    shape: (-1, 1, 28, 28)\n"
+"  output:\n"
+"  - name: Tanh_2\n"
+"    shape: (-1, 30, 4, 4)\n"
+"LeNet_036_7_7.nnb:\n"
+"  input:\n"
+"  - name: Affine\n"
+"    shape: (-1, 150)\n"
+"  output:\n"
+"  - name: ReLU_2\n"
+"    shape: (-1, 150)\n"
+"LeNet_036_9_9.nnb:\n"
+"  input:\n"
+"  - name: Affine_2\n"
+"    shape: (-1, 10)\n"
+"  output:\n"
+"  - name: Softmax\n"
+"    shape: (-1, 10)"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:208
+msgid ""
+"The network is split at the ``Affine`` function. Since there are 2 "
+"``Affine`` in network, 3 sub-networks is generated."
+msgstr ""
+"ネットワークは ``Affine`` 関数の箇所で分割されます。ネットワークに 2 つの ``Affine`` があるので、 3 "
+"つのサブネットワークが生成されます。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:213
+msgid "Converting to ONNX"
+msgstr "ONNX への変換"
+
+#: ../../python/tutorial/function_list_and_converter.rst:216
+msgid "The following commands just do similar as above, exactly to *.onnx."
+msgstr "次のコマンドは、上記と同様の動作を行い、 *.onnx ファイルへと変換を行います。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:218
+msgid "List all functions supported:"
+msgstr "サポートされているすべての関数を列挙します。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:220
+msgid "$ nnabla_cli function_info -f ONNX"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:225
+msgid "List the intersection of function sets, in a model and supported by ONNX:"
+msgstr "モデルと ONNX によってサポートされている関数セットの共通部分を列挙します。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:227
+msgid "$ nnabla_cli function_info LeNet_036.nnp -f ONNX"
+msgstr ""
+
+#: ../../python/tutorial/function_list_and_converter.rst:232
+msgid "Split network to skip some function:"
+msgstr "ネットワークを分割して、いくつかの関数をスキップします。"
+
+#: ../../python/tutorial/function_list_and_converter.rst:234
+msgid "$ nnabla_cli convert -c functions.txt a.nnp a.onnx"
+msgstr ""
+

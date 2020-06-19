@@ -410,16 +410,20 @@ if(BUILD_PYTHON_PACKAGE)
               cat build-tools/doxygen/config >Doxyfile &&
               echo OUTPUT_DIRECTORY  = ${CMAKE_BINARY_DIR}/doc/doxygen >>Doxyfile &&
               doxygen && rm -f Doxyfile
+      COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/html ${CMAKE_BINARY_DIR}/doc/html-cpp
+      COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen
+      # English
       COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
       COMMAND cd ${CMAKE_SOURCE_DIR} &&
               PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
-              sphinx-build -M html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
-      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/protoc
-      COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx/doctrees ${CMAKE_BINARY_DIR}/doc
-      COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx/html ${CMAKE_BINARY_DIR}/doc
-      COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/sphinx
-      COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/html ${CMAKE_BINARY_DIR}/doc/html/doxygen
-      COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen)
+              sphinx-build -b html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
+      COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html
+      # Japanese
+      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
+      COMMAND cd ${CMAKE_SOURCE_DIR} &&
+              PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
+              sphinx-build -b html -D language=ja doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
+      COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html-ja)
     add_dependencies(doc wheel)
     nbla_exclude_from_all(doc)
   endif()

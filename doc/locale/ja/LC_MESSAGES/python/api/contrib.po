@@ -1,0 +1,81 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-15 15:02+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/contrib.rst:2
+msgid "Contrib"
+msgstr "Contrib"
+
+#: ../../python/api/contrib.rst:10
+msgid "Extension Context"
+msgstr "拡張コンテキスト"
+
+#: nnabla.contrib.context.extension_context:1 of
+msgid "Get the context of the specified extension."
+msgstr "指定した拡張機能のコンテキストを取得できます。"
+
+#: nnabla.contrib.context.extension_context:3 of
+msgid "All extension's module must provide `context(**kw)` function."
+msgstr "すべての拡張モジュールにおいて、 `context(**kw)` 関数を提供する必要があります。"
+
+#: nnabla.contrib.context.extension_context of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.contrib.context.extension_context:5 of
+msgid "Module path relative to `nnabla_ext`."
+msgstr "`nnabla_ext` に関連するモジュールパス。"
+
+#: nnabla.contrib.context.extension_context:7 of
+msgid "Additional keyword arguments for context function in a extension module."
+msgstr "拡張モジュールにおける context 関数の追加キーワード引数。"
+
+#: nnabla.contrib.context.extension_context of
+msgid "戻り値"
+msgstr "戻り値"
+
+#: nnabla.contrib.context.extension_context:10 of
+msgid "The current extension context."
+msgstr "現在の拡張機能コンテキスト。"
+
+#: nnabla.contrib.context.extension_context of
+msgid "戻り値の型"
+msgstr "戻り値の型"
+
+#: nnabla.contrib.context.extension_context:11 of
+msgid ":class:`nnabla.Context`"
+msgstr ":class:`nnabla.Context`"
+
+#: nnabla.contrib.context.extension_context:13 of
+msgid ""
+"Deprecated. Use :function:`nnabla.ext_utils.get_extension_context` "
+"instead."
+msgstr "非推奨です。代わりに、 :function:`nnabla.ext_utils.get_extension_context` を使用してください。"
+
+#: nnabla.contrib.context.extension_context:16 of
+msgid "サンプル"
+msgstr "例"
+
+#: nnabla.contrib.context.extension_context:17 of
+msgid ""
+"ctx = extension_context('cuda.cudnn', device_id=0)\n"
+"nn.set_default_context(ctx)"
+msgstr ""
+

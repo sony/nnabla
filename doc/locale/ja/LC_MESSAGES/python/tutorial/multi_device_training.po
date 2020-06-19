@@ -1,0 +1,495 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-09 10:41+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/tutorial/multi_device_training.rst:3
+msgid "Data Parallel Distributed Training"
+msgstr "データ並列分散学習"
+
+#: ../../python/tutorial/multi_device_training.rst:5
+msgid ""
+"DataParallelCommunicator enables to train your neural network using "
+"multiple devices. It is normally used for gradients exchange in data "
+"parallel distributed training. Basically, there are two types of "
+"distributed trainings in Neural Network literature: Data Parallel and "
+"Model Parallel. Here we only focus on the former, Data Parallel Training."
+" Data Parallel Distributed Training is based on the very simple equation "
+"used for the optimization of a neural network called (Mini-Batch) "
+"Stochastic Gradient Descent."
+msgstr ""
+"DataParallelCommunicator は、複数のデバイスを使ってニューラルネットワークを学習することができます。 "
+"DataParallelCommunicator は通常、データ並列分散学習において勾配交換に使われます。基本的に、ニューラルネットワークには、 "
+"データ並列とモデル並列、 2 つのタイプの分散学習があります。ここでは、前者のデータ並列学習のみに焦点を当てます。データ並列分散学習は、 ( "
+"ミニバッチ ) 確率的勾配降下法と呼ばれるニューラルネットワークの最適化に使われる非常に簡単な式に基づいています。"
+
+#: ../../python/tutorial/multi_device_training.rst:14
+msgid "In the optimization process, the objective one tries to minimize is"
+msgstr "最適化プロセスにおいて、最小化を試みる目的関数は以下となります。"
+
+#: ../../python/tutorial/multi_device_training.rst:16
+msgid ""
+"f(\\mathbf{w}; X) = \\frac{1}{B \\times N} \\sum_{i=1}^{B \\times N} "
+"\\ell(\\mathbf{w}, \\mathbf{x}_i),"
+msgstr ""
+"f(\\mathbf{w}; X) = \\frac{1}{B \\times N} \\sum_{i=1}^{B \\times N} "
+"\\ell(\\mathbf{w}, \\mathbf{x}_i),"
+
+#: ../../python/tutorial/multi_device_training.rst:21
+msgid ""
+"where :math:`f` is a neural network, :math:`B \\times N` is the batch "
+"size, :math:`\\ell` is a loss function for each data point "
+":math:`\\mathbf{x} \\in X`, and :math:`\\mathbf{w}` is the trainable "
+"parameter of the neural network."
+msgstr ""
+"ここで、 :math:`f` はニューラルネットワーク、 :math:`B \\times N` はバッチサイズ、 :math:`\\ell` "
+"はそれぞれのデータポイント :math:`\\mathbf{x} \\in X` に対する loss 関数、 "
+":math:`\\mathbf{w}` はニューラルネットワークの学習可能なパラメータを表しています。"
+
+#: ../../python/tutorial/multi_device_training.rst:26
+msgid "When taking the derivative of this objective, one gets,"
+msgstr "この関数を微分すると、以下が得られます。"
+
+#: ../../python/tutorial/multi_device_training.rst:28
+msgid ""
+"\\nabla_{\\mathbf{w}} f(\\mathbf{w}; X) = \\frac{1}{B \\times N} "
+"\\sum_{i=1}^{B \\times N} \\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, "
+"\\mathbf{x}_i)."
+msgstr ""
+"\\nabla_{\\mathbf{w}} f(\\mathbf{w}; X) = \\frac{1}{B \\times N} "
+"\\sum_{i=1}^{B \\times N} \\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, "
+"\\mathbf{x}_i)."
+
+#: ../../python/tutorial/multi_device_training.rst:33
+msgid ""
+"Since the derivative has linearity, one can change the objective to the "
+"sum of summations each of which is the sum of derivatives over :math:`B` "
+"data points."
+msgstr "この導関数は線形なので、上記の目的関数を各 :math:`B` データポイントにおける導関数の合計の総和に変えることができます。"
+
+#: ../../python/tutorial/multi_device_training.rst:37
+msgid ""
+"\\nabla_{\\mathbf{w}} f(\\mathbf{w}; X) = \\frac{1}{N} \\left(  "
+"\\frac{1}{B} \\sum_{i=1}^{B} \\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, "
+"\\mathbf{x}_i) \\  + \\frac{1}{B} \\sum_{i=B+1}^{B \\times 2} "
+"\\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, \\mathbf{x}_i) \\  + \\ldots \\"
+"  + \\frac{1}{B} \\sum_{i=B \\times (N-1) + 1}^{B \\times N} "
+"\\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, \\mathbf{x}_i) \\right)"
+msgstr ""
+"\\nabla_{\\mathbf{w}} f(\\mathbf{w}; X) = \\frac{1}{N} \\left(  "
+"\\frac{1}{B} \\sum_{i=1}^{B} \\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, "
+"\\mathbf{x}_i) \\  + \\frac{1}{B} \\sum_{i=B+1}^{B \\times 2} "
+"\\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, \\mathbf{x}_i) \\  + \\ldots \\"
+"  + \\frac{1}{B} \\sum_{i=B \\times (N-1) + 1}^{B \\times N} "
+"\\nabla_{\\mathbf{w}} \\ell (\\mathbf{w}, \\mathbf{x}_i) \\right)"
+
+#: ../../python/tutorial/multi_device_training.rst:47
+msgid ""
+"In data parallel distributed training, the following steps are performed "
+"according to the above equation,"
+msgstr "データ並列分散学習では、上記の式に従って次のステップが実行されます。"
+
+#: ../../python/tutorial/multi_device_training.rst:50
+msgid ""
+"each term, summation of derivatives (gradients) divided by batch size "
+":math:`B`, is computed on a separated device (typically GPU),"
+msgstr "各項ごとに、導関数 ( 勾配 ) の合計をバッチサイズ :math:`B` で割る計算を個別のデバイス ( 一般的には GPU ) で行い、"
+
+#: ../../python/tutorial/multi_device_training.rst:52
+msgid "take the sum over devices,"
+msgstr "それらのデバイスの結果を総和し、"
+
+#: ../../python/tutorial/multi_device_training.rst:53
+msgid "divide the result by the number of devices, :math:`N`."
+msgstr "その結果をデバイスの個数 :math:`N` で割ります。"
+
+#: ../../python/tutorial/multi_device_training.rst:55
+msgid "That is the underlying foundation of Data Parallel Distributed Training."
+msgstr "これはデータ並列分散学習の基礎となります。"
+
+#: ../../python/tutorial/multi_device_training.rst:57
+msgid ""
+"This tutorial shows the usage of Multi Process Data Parallel Communicator"
+" for data parallel distributed training with a very simple example."
+msgstr ""
+"このチュートリアルでは、とても簡単なサンプルを使って、データ並列分散学習に対する Multi Process Data Parallel "
+"Communicator の使い方を示します。"
+
+#: ../../python/tutorial/multi_device_training.rst:62
+msgid "NOTE"
+msgstr "注意"
+
+#: ../../python/tutorial/multi_device_training.rst:64
+msgid ""
+"This tutorial depends on **IPython Cluster**, thus when you want to run "
+"the following excerpts of the scripts on Jupyter Notebook, follow `this "
+"<https://ipython.org/ipython-doc/3/parallel/parallel_process.html#using-"
+"ipcluster-in-mpiexec-mpirun-mode>`__ to enable mpiexec/mpirun mode, then "
+"launch a corresponding Ipython Cluster on Ipython Clusters tab."
+msgstr ""
+"このチュートリアルは **IPython Cluster** に依拠しているため、次のような Jupyter Notebook "
+"のスクリプトの抜粋を実行する場合は、 `ここ <https://ipython.org/ipython-"
+"doc/3/parallel/parallel_process.html#using-ipcluster-in-mpiexec-mpirun-"
+"mode>`__ に従い mpiexec/mpirun モードを有効し、Ipython Clusters タブで対応する Ipython "
+"Cluster を起動します。"
+
+#: ../../python/tutorial/multi_device_training.rst:71
+msgid "Launch client"
+msgstr "クライアントの起動"
+
+#: ../../python/tutorial/multi_device_training.rst:73
+msgid "This code is **only** needed for this tutorial via **Jupyter Notebook**."
+msgstr "以下のコードは、 **Jupyter Notebook** を用いるこのチュートリアル **のみ** で必要となります。"
+
+#: ../../python/tutorial/multi_device_training.rst:75
+msgid ""
+"import ipyparallel as ipp\n"
+"rc = ipp.Client(profile='mpi')"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:81
+msgid "Prepare the dependencies"
+msgstr "依存関係の準備"
+
+#: ../../python/tutorial/multi_device_training.rst:83
+#, python-format
+msgid ""
+"%%px\n"
+"import os\n"
+"import time\n"
+"\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"import nnabla.functions as F\n"
+"from nnabla.initializer import (\n"
+"    calc_uniform_lim_glorot,\n"
+"    UniformInitializer)\n"
+"import nnabla.parametric_functions as PF\n"
+"import nnabla.solvers as S\n"
+"import numpy as np"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:101
+msgid "Define the communicator for gradients exchange."
+msgstr "勾配交換のためのコミュニケーターの定義"
+
+#: ../../python/tutorial/multi_device_training.rst:103
+#, python-format
+msgid ""
+"%%px\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"n_devices = comm.size\n"
+"mpi_rank = comm.rank\n"
+"device_id = mpi_rank\n"
+"ctx = get_extension_context(extension_module, device_id=device_id)"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:115
+msgid "Check different ranks are assigned to different devices"
+msgstr "異なるランクが異なるデバイスに割り当てられていることを確認します"
+
+#: ../../python/tutorial/multi_device_training.rst:117
+#, python-format
+msgid ""
+"%%px\n"
+"print(\"n_devices={}\".format(n_devices))\n"
+"print(\"mpi_rank={}\".format(mpi_rank))"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:126
+msgid ""
+"[stdout:0]\n"
+"n_devices=2\n"
+"mpi_rank=1\n"
+"[stdout:1]\n"
+"n_devices=2\n"
+"mpi_rank=0"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:135
+msgid "Create data points and a very simple neural network"
+msgstr "データポイントととても簡単なニューラルネットワークの作成"
+
+#: ../../python/tutorial/multi_device_training.rst:137
+#, python-format
+msgid ""
+"%%px\n"
+"# Data points setting\n"
+"n_class = 2\n"
+"b, c, h, w = 4, 1, 32, 32\n"
+"\n"
+"# Data points\n"
+"x_data = np.random.rand(b, c, h, w)\n"
+"y_data = np.random.choice(n_class, b).reshape((b, 1))\n"
+"x = nn.Variable(x_data.shape)\n"
+"y = nn.Variable(y_data.shape)\n"
+"x.d = x_data\n"
+"y.d = y_data\n"
+"\n"
+"# Network setting\n"
+"C = 1\n"
+"kernel = (3, 3)\n"
+"pad = (1, 1)\n"
+"stride = (1, 1)"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:159
+#, python-format
+msgid ""
+"%%px\n"
+"rng = np.random.RandomState(0)\n"
+"w_init = UniformInitializer(\n"
+"                    calc_uniform_lim_glorot(C, C/2, kernel=(1, 1)),\n"
+"                    rng=rng)"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:168
+#, python-format
+msgid ""
+"%%px\n"
+"# Network\n"
+"with nn.context_scope(ctx):\n"
+"    h = PF.convolution(x, C, kernel, pad, stride, w_init=w_init)\n"
+"    pred = PF.affine(h, n_class, w_init=w_init)\n"
+"    loss = F.mean(F.softmax_cross_entropy(pred, y))"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:177
+msgid ""
+"**Important notice** here is that ``w_init`` is passed to parametric "
+"functions to let the network on each GPU start from the same values of "
+"trainable parameters in the optimization process."
+msgstr ""
+"**留意事項** ここでは、最適化プロセスにおいて、各 GPU のネットワークが学習可能なパラメータ同士の同じ値から開始できるように "
+"``w_init`` をパラメトリック関数に渡しています。"
+
+#: ../../python/tutorial/multi_device_training.rst:182
+msgid "Create a solver."
+msgstr "Solver の作成"
+
+#: ../../python/tutorial/multi_device_training.rst:184
+#, python-format
+msgid ""
+"%%px\n"
+"# Solver and add parameters\n"
+"solver = S.Adam()\n"
+"solver.set_parameters(nn.get_parameters())"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:192
+msgid "Training"
+msgstr "学習"
+
+#: ../../python/tutorial/multi_device_training.rst:194
+msgid ""
+"Recall the basic usage of ``nnabla`` API for training a neural network, "
+"it is"
+msgstr "ニューラルネットワークを学習するための ``nnabla`` API の基本的な使い方を思い出しましょう。"
+
+#: ../../python/tutorial/multi_device_training.rst:197
+#: ../../python/tutorial/multi_device_training.rst:208
+msgid "loss.forward()"
+msgstr "loss.forward()"
+
+#: ../../python/tutorial/multi_device_training.rst:198
+#: ../../python/tutorial/multi_device_training.rst:209
+msgid "solver.zero\\_grad()"
+msgstr "solver.zero\\_grad()"
+
+#: ../../python/tutorial/multi_device_training.rst:199
+#: ../../python/tutorial/multi_device_training.rst:210
+msgid "loss.backward()"
+msgstr "loss.backward()"
+
+#: ../../python/tutorial/multi_device_training.rst:200
+#: ../../python/tutorial/multi_device_training.rst:212
+msgid "solver.update()"
+msgstr "solver.update()"
+
+#: ../../python/tutorial/multi_device_training.rst:202
+msgid ""
+"In use of ``C.MultiProcessCommunicator``, these steps are performed in "
+"different GPUs, and the **only difference** from these steps is "
+"``comm.all_reduce()``. Thus, in case of ``C.MultiProcessCommunicator`` "
+"training steps are as follows,"
+msgstr ""
+"``C.MultiProcessCommunicator`` を使用する場合、これらのステップは異なる GPU で実行され、これらのステップと "
+"**唯一異なる** のは ``comm.all_reduce()`` です。従って、 ``C.MultiProcessCommunicator``"
+" の場合、学習のステップは次のようになります。"
+
+#: ../../python/tutorial/multi_device_training.rst:211
+msgid "**comm.all\\_reduce([x.grad for x in nn.get\\_parameters().values()])**"
+msgstr "**comm.all\\_reduce([x.grad for x in nn.get\\_parameters().values()])**"
+
+#: ../../python/tutorial/multi_device_training.rst:214
+msgid "First, forward, zero\\_grad, and backward,"
+msgstr "まず、順方向、 zero\\_grad 、そして逆方向。"
+
+#: ../../python/tutorial/multi_device_training.rst:216
+#, python-format
+msgid ""
+"%%px\n"
+"# Training steps\n"
+"loss.forward()\n"
+"solver.zero_grad()\n"
+"loss.backward()"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:224
+msgid "Check gradients of weights once,"
+msgstr "一度、重みの勾配を確かめます。"
+
+#: ../../python/tutorial/multi_device_training.rst:226
+#: ../../python/tutorial/multi_device_training.rst:277
+#, python-format
+msgid ""
+"%%px\n"
+"for n, v in nn.get_parameters().items():\n"
+"    print(n, v.g)"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:235
+msgid ""
+"[stdout:0]\n"
+"('conv/W', array([[[[ 5.0180483,  0.457942 , -2.8701296],\n"
+"         [ 2.0715926,  3.0698593, -1.6650047],\n"
+"         [-2.5591214,  6.4248834,  9.881935 ]]]], dtype=float32))\n"
+"('conv/b', array([8.658947], dtype=float32))\n"
+"('affine/W', array([[-0.93160367,  0.9316036 ],\n"
+"       [-1.376812  ,  1.376812  ],\n"
+"       [-1.8957546 ,  1.8957543 ],\n"
+"       ...,\n"
+"       [-0.33000934,  0.33000934],\n"
+"       [-0.7211893 ,  0.72118926],\n"
+"       [-0.25237036,  0.25237036]], dtype=float32))\n"
+"('affine/b', array([-0.48865744,  0.48865741], dtype=float32))\n"
+"[stdout:1]\n"
+"('conv/W', array([[[[ -1.2505884 ,  -0.87151337,  -8.685524  ],\n"
+"         [ 10.738419  ,  14.676786  ,   7.483423  ],\n"
+"         [  5.612471  , -12.880402  ,  19.141157  ]]]], dtype=float32))\n"
+"('conv/b', array([13.196114], dtype=float32))\n"
+"('affine/W', array([[-1.6865108 ,  1.6865108 ],\n"
+"       [-0.938529  ,  0.938529  ],\n"
+"       [-1.028422  ,  1.028422  ],\n"
+"       ...,\n"
+"       [-0.98217344,  0.98217344],\n"
+"       [-0.97528917,  0.97528917],\n"
+"       [-0.413546  ,  0.413546  ]], dtype=float32))\n"
+"('affine/b', array([-0.7447065,  0.7447065], dtype=float32))"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:263
+msgid "You can see the different values on each device, then call ``all_reduce``,"
+msgstr "それぞれのデバイスで異なる値を確認できたら、 ``all_reduce`` を呼び出します。"
+
+#: ../../python/tutorial/multi_device_training.rst:266
+#, fuzzy, python-format
+msgid ""
+"%%px\n"
+"comm.all_reduce([x.grad for x in nn.get_parameters().values()], "
+"division=True)"
+msgstr "**comm.all\\_reduce([x.grad for x in nn.get\\_parameters().values()])**"
+
+#: ../../python/tutorial/multi_device_training.rst:271
+msgid ""
+"Commonly, ``all_reduce`` only means the sum; however, ``comm.all_reduce``"
+" addresses both cases: summation and summation division."
+msgstr ""
+"一般に、 ``all_reduce`` は合計を意味するだけですが、 ``comm.all_reduce`` "
+"は合計と加算除算どちらの場合にも対応します。"
+
+#: ../../python/tutorial/multi_device_training.rst:275
+msgid "Again, check gradients of weights,"
+msgstr "再度、重みの勾配を確かめます。"
+
+#: ../../python/tutorial/multi_device_training.rst:286
+msgid ""
+"[stdout:0]\n"
+"('conv/W', array([[[[ 1.8837299 , -0.20678568, -5.777827  ],\n"
+"         [ 6.4050055 ,  8.8733225 ,  2.9092093 ],\n"
+"         [ 1.5266749 , -3.2277591 , 14.511546  ]]]], dtype=float32))\n"
+"('conv/b', array([21.85506], dtype=float32))\n"
+"('affine/W', array([[-2.6181145,  2.6181145],\n"
+"       [-2.315341 ,  2.315341 ],\n"
+"       [-2.9241767,  2.9241762],\n"
+"       ...,\n"
+"       [-1.3121828,  1.3121828],\n"
+"       [-1.6964785,  1.6964784],\n"
+"       [-0.6659163,  0.6659163]], dtype=float32))\n"
+"('affine/b', array([-1.233364 ,  1.2333639], dtype=float32))\n"
+"[stdout:1]\n"
+"('conv/W', array([[[[ 1.8837299 , -0.20678568, -5.777827  ],\n"
+"         [ 6.4050055 ,  8.8733225 ,  2.9092093 ],\n"
+"         [ 1.5266749 , -3.2277591 , 14.511546  ]]]], dtype=float32))\n"
+"('conv/b', array([21.85506], dtype=float32))\n"
+"('affine/W', array([[-2.6181145,  2.6181145],\n"
+"       [-2.315341 ,  2.315341 ],\n"
+"       [-2.9241767,  2.9241762],\n"
+"       ...,\n"
+"       [-1.3121828,  1.3121828],\n"
+"       [-1.6964785,  1.6964784],\n"
+"       [-0.6659163,  0.6659163]], dtype=float32))\n"
+"('affine/b', array([-1.233364 ,  1.2333639], dtype=float32))"
+msgstr ""
+
+#: ../../python/tutorial/multi_device_training.rst:314
+msgid "You can see the same values over the devices because of ``all_reduce``."
+msgstr "``all_reduce`` を使うことで、これらのデバイス上で同じ値を確認できます。"
+
+#: ../../python/tutorial/multi_device_training.rst:316
+msgid "Update weights,"
+msgstr "重みを更新します。"
+
+#: ../../python/tutorial/multi_device_training.rst:318
+#, fuzzy, python-format
+msgid ""
+"%%px\n"
+"solver.update()"
+msgstr "solver.update()"
+
+#: ../../python/tutorial/multi_device_training.rst:323
+msgid ""
+"This concludes the usage of ``C.MultiProcessDataCommunicator`` for Data "
+"Parallel Distributed Training."
+msgstr "これで、データ並列分散学習に対する ``C.MultiProcessDataCommunicator`` の使用については終了です。"
+
+#: ../../python/tutorial/multi_device_training.rst:326
+msgid ""
+"Now you should have an understanding of how to use "
+"``C.MultiProcessCommunicator``, go to the cifar10 example,"
+msgstr ""
+"さて、 ``C.MultiProcessCommunicator`` の使い方について理解できたら、さらに詳細については 以下の cifar10 "
+"example を参照してください。"
+
+#: ../../python/tutorial/multi_device_training.rst:329
+msgid "**multi\\_device\\_multi\\_process\\_classification.sh**"
+msgstr "**multi\\_device\\_multi\\_process\\_classification.sh**"
+
+#: ../../python/tutorial/multi_device_training.rst:330
+msgid "**multi\\_device\\_multi\\_process\\_classification.py**"
+msgstr "**multi\\_device\\_multi\\_process\\_classification.py**"
+
+#: ../../python/tutorial/multi_device_training.rst:332
+msgid "for more details."
+msgstr "​​​"
+

@@ -1,0 +1,97 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-04-24 16:51+0900\n"
+"PO-Revision-Date: 2020-05-14 12:14+0900\n"
+"Last-Translator: \n"
+"Language: ja\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../data_exchange_file_format.rst:2
+msgid "Data exchange file format"
+msgstr "データファイルフォーマット"
+
+#: nnabla.utils.nnp_format:1 of
+msgid "Data exchange format for \"Neural Network Library\"."
+msgstr "\"Neural Network Library\" 向けデータフォーマットです。"
+
+#: nnabla.utils.nnp_format:3 of
+msgid ""
+"Current version of .nnp file is just a ZIP format archive file but "
+"filename extension is '.nnp'."
+msgstr ""
+".nnp ファイルの現在のバージョンは単なる ZIP 形式の圧縮ファイルですが、"
+"ファイルの拡張子は ‘.nnp’ となります。"
+
+#: nnabla.utils.nnp_format:5 of
+msgid ""
+"'.nnp' file will contain following files. If '.nnp' file contain other "
+"file, nnabla will just ignore that files."
+msgstr ""
+"‘.nnp’ ファイルは次のファイルを含みます。 ‘.nnp’ が他のファイルを含む場"
+"合、 nnabla はそれらのファイルを無視します。"
+
+#: nnabla.utils.nnp_format:7 of
+msgid "'nnp_version.txt'"
+msgstr "'nnp_version.txt'"
+
+#: nnabla.utils.nnp_format:9 of
+msgid ""
+"Specify version of nnp file. Version string in this file is got from "
+"nnp_version()."
+msgstr ""
+"nnpファイルのバージョンを指定します。ファイル内のバージョン文字列は "
+"nnp_version() から得ています。"
+
+#: nnabla.utils.nnp_format:10 of
+msgid "'*.nntxt' (or '*.prototxt')"
+msgstr "'*.nntxt' ( または '*.prototxt' )"
+
+#: nnabla.utils.nnp_format:12 of
+msgid "Network structure in Protocol buffer text format."
+msgstr "Protocol buffer text フォーマットのネットワーク構造です。"
+
+#: nnabla.utils.nnp_format:13 of
+msgid "'*.protobuf'"
+msgstr "'*.protobuf'"
+
+#: nnabla.utils.nnp_format:15 of
+msgid "Trained parameter in Protocol buffer binary format."
+msgstr "Protocol buffer バイナリフォーマットの学習パラメータです。"
+
+#: nnabla.utils.nnp_format:16 of
+msgid "'*.h5'"
+msgstr "'*.h5'"
+
+#: nnabla.utils.nnp_format:18 of
+msgid "Trained parameter in HDF5 format.(Will be obsolete soon.)"
+msgstr "HDF5 フォーマットの学習パラメータです。 ( まもなく廃止します )"
+
+#: nnabla.utils.nnp_format.nnp_version:1 of
+msgid "Current version is \"0.1\""
+msgstr "現在のバージョンは “0.1” です。"
+
+#: nnabla.utils.nnp_format.nnp_version:3 of
+msgid "Version history"
+msgstr "バージョン履歴"
+
+#: nnabla.utils.nnp_format.nnp_version:5 of
+msgid "Version 0.1"
+msgstr "Version 0.1"
+
+#: nnabla.utils.nnp_format.nnp_version:7 of
+msgid "First version."
+msgstr "初版"
