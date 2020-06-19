@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 
@@ -320,6 +321,12 @@ class BackwardCallback {
       if (first) { // first visit
         // Terminal variable always doesn't allow to clear buffers.
         prohibit_clear[i] = true;
+
+        // Note that the following vseen_[v] won't be referred in the current
+        // implementation because query_input_flags is called earlier than
+        // query_output_flags. TODO: We may be able to call query_output_flags
+        // before query_input_flags.
+        vseen_[v] = true;
       } else {
         // Propagate prohibit_clear_inputs_buffers flag from the previous seen
         // inputs.
@@ -334,18 +341,36 @@ class BackwardCallback {
                                  CgFunctionPtr func) {
     vector<bool> ret(inputs.size());
     bool prohibit_clear = func->function()->prohibit_clear_input_buffers();
+    auto outputs = func->outputs();
     for (int i = 0; i < ret.size(); i++) {
       auto v = inputs[i];
       auto it = vseen_.find(v);
       bool first_visit = it == vseen_.end();
       ret[i] = first_visit;
       if (first_visit) {
-        vseen_.insert({v, prohibit_clear});
-        continue;
+        bool dummy;
+        std::tie(it, dummy) = vseen_.insert({v, prohibit_clear});
       }
+
       // Prohibits clearing if any of previous function prohibits clearing
       // inputs.
       it->second |= prohibit_clear;
+
+      // Propagate prohibit property from the output variables.
+      if (func->function()->inplace_data(i)) {
+        auto inplaced = outputs[func->function()->inplace_data_with(i)];
+        auto it2 = vseen_.find(inplaced);
+        if (it2 == vseen_.end() || it2->second) {
+          it->second = true;
+        }
+      }
+      if (func->function()->inplace_grad(i)) {
+        auto inplaced = outputs[func->function()->inplace_grad_with(i)];
+        auto it2 = vseen_.find(inplaced);
+        if (it2 == vseen_.end() || it2->second) {
+          it->second = true;
+        }
+      }
     }
     return ret;
   }
@@ -549,6 +574,9 @@ void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
                          function_hook_type function_pre_hook,
                          function_hook_type function_post_hook) {
   unordered_set<CgFunctionPtr> scoped_fclosed;
+  auto clear_buffer_state =
+      SingletonManager::get<GlobalClearBufferState>()->state(
+          clear_buffer, clear_no_need_grad);
   if (fclosed == nullptr) {
     fclosed = &scoped_fclosed;
   }
@@ -566,6 +594,9 @@ void CgVariable::backward(
     function_hook_type function_pre_hook,
     function_hook_type function_post_hook) {
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
+  auto clear_buffer_state =
+      SingletonManager::get<GlobalClearBufferState>()->state(clear_buffer,
+                                                             false);
 
   // Scoped context.
   // Set flags used during backward of this variable to avoid clearing

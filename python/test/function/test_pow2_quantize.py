@@ -51,7 +51,7 @@ def ref_pow2_quantize(x, sign, with_zero, n, m, quantize, ste_fine_grained):
 
 
 def ref_grad_pow2_quantize(x, dy, sign,
-                           with_zero, n, m, quantize, ste_fine_grained):
+                           with_zero, n, m, quantize, ste_fine_grained, **kw):
     if not ste_fine_grained:
         return dy.flatten()
 

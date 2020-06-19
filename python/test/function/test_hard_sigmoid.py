@@ -24,7 +24,7 @@ def ref_hard_sigmoid(x):
     return np.maximum(0, np.minimum(1, x*0.2 + 0.5))
 
 
-def ref_hard_sigmoid_backward(x, dy):
+def ref_hard_sigmoid_backward(x, dy, **kw):
     return np.array([dy*0.2 if 2.5 >= i >= -2.5 else 0 for i in np.nditer(x)])
 
 

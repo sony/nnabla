@@ -323,6 +323,141 @@ Neural Network Layer:
       iiIiIiIi: 1
       iiIiIiIiB: 265
     c_runtime: support
+  FusedConvolution:
+    snake_name: fused_convolution
+    doc: |2
+
+      Fused operation of Convolution, Batch Normalization, Add2 and Activation.
+
+      This is an equivalent operation to the following,
+      but may be more computationally efficient depending on the backend implementation
+      (currently we don't provide an efficient implementation on any backend).
+
+      .. code-block:: python
+
+        h = F.convolution(x, weight, bias, *conv_opts)
+        h = F.batch_normalization(h, beta, gamma, mean, variance, *bn_opts)
+        y = F.relu(h + z)
+
+      You can optionally disable either of batch normalization, residual addition and activation.
+    inputs:
+      x:
+        doc: N-D array of input.
+      weight:
+        doc: |
+          `weight` in :meth:`~nnabla.functions.convolution`.
+        parameter: true
+      bias:
+        doc: |
+          `bias` in :meth:`~nnabla.functions.convolution`.
+        optional: true
+        parameter: true
+      beta:
+        doc: |
+          `beta` in :meth:`~nnabla.functions.batch_normalization`.
+        optional: true
+        parameter: true
+      gamma:
+        doc: |
+          `gamma` in :meth:`~nnabla.functions.batch_normalization`.
+        optional: true
+        parameter: true
+      mean:
+        optional: true
+        doc: |
+          `mean` in :meth:`~nnabla.functions.batch_normalization`.
+      variance:
+        optional: true
+        doc: |
+          `variance` in :meth:`~nnabla.functions.batch_normalization`.
+      z:
+        optional: true
+        doc: N-D array of a residual input. By specifying None, the activation function
+          will follow immediately after BN operation.
+    arguments:
+      base_axis:
+        doc: |
+          `base_axis` in :meth:`~nnabla.functions.convolution`. Note that the batch normalization `axes` is determined by this and `channel_last` option.
+        type: int64
+        default: '1'
+      pad:
+        doc: |
+          `pad` in :meth:`~nnabla.functions.convolution`.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: |
+          `stride` in :meth:`~nnabla.functions.convolution`.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: |
+          `dilation` in :meth:`~nnabla.functions.convolution`.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: |
+          `group` in :meth:`~nnabla.functions.convolution`.
+        type: int64
+        default: '1'
+      channel_last:
+        doc: |
+          `channel_last` in :meth:`~nnabla.functions.convolution`.group
+        type: bool
+        default: 'False'
+      decay_rate:
+        doc: |
+          `decay_rate` in :meth:`~nnabla.functions.batch_normalization`.
+        type: float
+        default: '0.9'
+      eps:
+        doc: |
+          `eps` in :meth:`~nnabla.functions.batch_normalization`.
+        type: float
+        default: 1e-05
+      batch_stat:
+        doc: |
+          `batch_stat` in :meth:`~nnabla.functions.batch_normalization`.
+        type: bool
+        default: 'True'
+      nonlinearity:
+        doc: |
+          Activation type as string. The following is a list of available activation types
+          and optional parameters specified as a vector of float by `nonlinearity_args`.
+
+          =============== ===============================
+          Activation type Arguments (`nonlinearity_args`)
+          =============== ===============================
+          identity        No argument
+          relu            No argument
+          sigmoid         No argument
+          tanh            No argument
+          leaky_relu      [alpha] (see LeakyReLU doc)
+          elu             [alpha] (see ELU doc)
+          relu6           No argument
+          =============== ===============================
+        type: string
+        available_values:
+        - identity
+        - relu
+        - sigmoid
+        - tanh
+        - leaky_relu
+        - elu
+        - relu6
+        default: '''relu'''
+      nonlinearity_args:
+        doc: |
+          Optional arguments of nonlinearity as a vector of float.
+          See the description of the `nonlinearity` argument.
+        type: repeated float
+        default: list()
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iiIiIiIiBffBifF: 295
   DepthwiseConvolution:
     snake_name: depthwise_convolution
     doc: |2
@@ -1293,8 +1428,8 @@ Normalization:
 
       .. code-block:: python
 
-        h = nn.BatchNormalization(x, beta, gamma, mean, variance, *opts)
-        y = F.ReLU(h + z)
+        h = F.batch_normalization(x, beta, gamma, mean, variance, *opts)
+        y = F.relu(h + z)
     inputs:
       x:
         doc: N-D array of input.

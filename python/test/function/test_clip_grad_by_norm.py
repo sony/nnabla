@@ -25,7 +25,7 @@ def ref_clip_grad_by_norm(x, clip_norm, axes):
     return y
 
 
-def ref_grad_clip_by_norm(x, dy, clip_norm, axes):
+def ref_grad_clip_by_norm(x, dy, clip_norm, axes, **kw):
     dx = np.copy(dy)
     dx = clip_norm * dy / \
         np.broadcast_to(

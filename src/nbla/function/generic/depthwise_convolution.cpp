@@ -117,6 +117,7 @@ void DepthwiseConvolution<T>::setup_impl(const Variables &inputs,
   copy_dims_to(sample_shape_, input_shape, base_axis_ + 1);
   sample_size_ = multiply_dimensions(sample_shape_);
 
+  outmap_shape_.clear();
   outmap_shape_.reserve(kernel_shape_.size());
   for (int i = 0; i < kernel_shape_.size(); i++) {
     auto kernel = dilation_[i] * (kernel_shape_[i] - 1) + 1; // dilated kernel

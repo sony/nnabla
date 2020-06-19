@@ -58,7 +58,7 @@ def ref_fused_batch_normalization(x, beta, gamma, rmean, rvar, z, axes, decay_ra
 
 
 def ref_grad_fused_batch_normalization(x, beta, gamma, rmean, rvar, z, dy, axes, decay_rate,
-                                       eps, batch_stat, nonlinearity, output_stat):
+                                       eps, batch_stat, nonlinearity, output_stat, **kw):
     with nn.context_scope(cpu_context):
         xvar = nn.Variable.from_numpy_array(x, need_grad=True)
         xvar.g = 0

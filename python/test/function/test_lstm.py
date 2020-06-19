@@ -135,7 +135,7 @@ def execute_fixed_length_lstm(xs_np, h0_np, c0_np, w0_np, w_np, b_np, num_layers
     return ys.d, hn.d, cn.d
 
 
-def get_lstm_grad(xs_np, h0_np, c0_np, w0_np, w_np, b_np, dy, dh, dc, num_layers=1, dropout=0.0, bidirectional=False, training=True):
+def get_lstm_grad(xs_np, h0_np, c0_np, w0_np, w_np, b_np, dy, dh, dc, num_layers=1, dropout=0.0, bidirectional=False, training=True, **kw):
     num_directions = 2 if bidirectional else 1
     seq_len = xs_np.shape[0]
     batch_size = xs_np.shape[1]

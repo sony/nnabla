@@ -157,6 +157,10 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
                 bind += i.size
             else:
                 assert not i.need_grad
+        f.setup(vinputs, outputs)
+        # Need to call reset output grads since output might be inplaced
+        for o, d in zip(outputs, vgrads):
+            o.g = d
         f.forward(vinputs, outputs)
         f.backward(vinputs, outputs)
 
@@ -572,13 +576,23 @@ def function_tester(rng, func, ref_func, inputs,
                test in zip(rinputs, backward)]
     vgrads = [randn(rng, *o_.shape) for o_ in o]
 
+    def reset_ograds():
+        '''
+        Reset output grads everytime we call backward.
+        This is required because the output grad might
+        be inplaced and modified during backward operation.
+        '''
+        for ovar, g in zip(o, vgrads):
+            ovar.g = g
+
     agrads, ngrads = compute_analytical_and_numerical_grad(
         o[0].parent, vinputs, o, rinputs, vgrads, epsilon=dstep,
         rng=rng, ref_grad=ref_grad)
     if ref_grad is not None:
         rinputs = copy.deepcopy(inputs)
-        doutputs = [o_.g for o_ in o]
-        ngrads = ref_grad(*(rinputs + doutputs + func_args), **func_kwargs)
+        doutputs = copy.deepcopy(vgrads)
+        ngrads = ref_grad(*(rinputs + doutputs + func_args),
+                          **func_kwargs, need_grad_flags=backward)
 
     assert_allclose(ngrads, agrads, atol=atol_b)
 
@@ -588,6 +602,7 @@ def function_tester(rng, func, ref_func, inputs,
             continue
         v.grad.zero()
         v.need_grad = False
+        reset_ograds()
         try:
             o[0].parent.forward(
                 list(filter(lambda x: x is not None, vinputs)), o)
@@ -623,6 +638,7 @@ def function_tester(rng, func, ref_func, inputs,
         # Save accum gradient result
         g = randn(rng, *v.shape)
         v.g = g
+        reset_ograds()
         f.forward(finputs, o)
         f.backward(finputs, o)
         true_g = v.g - g
@@ -630,6 +646,7 @@ def function_tester(rng, func, ref_func, inputs,
         # Check accum=False
         accum = [j != i for j, vv in enumerate(vinputs) if vv is not None]
         v.g = randn(rng, *v.shape)
+        reset_ograds()
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert_allclose(
@@ -637,6 +654,7 @@ def function_tester(rng, func, ref_func, inputs,
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')
+        reset_ograds()
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert not np.any(np.isnan(v.g))

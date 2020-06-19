@@ -35,7 +35,7 @@ def ref_fft(x, signal_ndim, normalized):
     return ref_data_float2
 
 
-def ref_grad_fft(x, dy, signal_ndim, normalized):
+def ref_grad_fft(x, dy, signal_ndim, normalized, **kw):
     from nbla_test_utils import convert_to_float2_array, convert_to_complex_array
 
     dy_complex = convert_to_complex_array(dy)

@@ -64,7 +64,7 @@ def ref_min_max_quantize(x, qr_min, qr_max, ql_min, ql_max,
 
 def ref_grad_min_max_quantize(x, qr_min, qr_max, ql_min, ql_max, dy,
                               decay, x_min_max, ema, ste_fine_grained, eps,
-                              quantize):
+                              quantize, **kw):
     if not quantize:
         return dy.flatten()
 

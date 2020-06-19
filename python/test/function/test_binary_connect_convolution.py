@@ -43,7 +43,7 @@ def ref_binary_connect_convolution(x, w, wb, b, base_axis, pad, stride, dilation
     return ref_convolution(x, binarize(w, quantize_zero_to), b, base_axis, pad, stride, dilation, group, quantize_zero_to)
 
 
-def ref_grad_binary_connect_convolution(x, w, wb, b, dy, base_axis, pad, stride, dilation, group, quantize_zero_to):
+def ref_grad_binary_connect_convolution(x, w, wb, b, dy, base_axis, pad, stride, dilation, group, quantize_zero_to, **kw):
     # Set variables
     vx = nn.Variable(x.shape, need_grad=True)
     vx.d = x

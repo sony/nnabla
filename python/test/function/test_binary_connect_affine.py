@@ -41,7 +41,7 @@ def ref_binary_connect_affine(x, w, dummy, b, base_axis, quantize_zero_to):
     return y.reshape(tuple(shape[:-1]) + tuple(out_shape))
 
 
-def ref_grad_binary_connect_affine(x, w, wb, b, dy, base_axis, quantize_zero_to):
+def ref_grad_binary_connect_affine(x, w, wb, b, dy, base_axis, quantize_zero_to, **kw):
     shape = list(x.shape[:base_axis])
 
     x_ = x.reshape(np.prod(shape), -1)

@@ -26,7 +26,7 @@ def ref_func_binary_tanh(x):
     return 2 * np.round(np.clip((x + 1) / 2, 0, 1)) - 1
 
 
-def ref_grad_binary_tanh(x, dy):
+def ref_grad_binary_tanh(x, dy, **kw):
     return (dy * (1 - np.floor(np.minimum(np.abs(x), 1)))).flatten()
 
 
@@ -35,7 +35,7 @@ def ref_func_binary_sigmoid(x):
     return np.round(np.clip((x + 1) / 2, 0, 1))
 
 
-def ref_grad_binary_sigmoid(x, dy):
+def ref_grad_binary_sigmoid(x, dy, **kw):
     return (dy * (1 - np.floor(np.minimum(np.abs(x), 1))) / 2).flatten()
 
 

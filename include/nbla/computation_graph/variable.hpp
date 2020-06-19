@@ -96,15 +96,6 @@ class CgVariable {
   bool prohibit_clear_data_{false};
   string name_{""};
 
-  void
-  visit_function_recursive(CgFunctionPtr func,
-                           unordered_set<CgFunctionPtr> &fclosed,
-                           std::function<void(CgFunctionPtr)> forward_callback);
-
-  void visit_function_backward(
-      CgFunctionPtr func, std::function<void(CgFunctionPtr)> backward_callback,
-      vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
-
 public:
   typedef shared_ptr<CgVariable> Ptr;
 
@@ -336,6 +327,19 @@ public:
    */
   NBLA_API
   Ptr create_deep_copy(Context ctx, bool copy_grad = true);
+
+  /** Execute callback at functions in forward order in a graph.
+   */
+  void
+  visit_function_recursive(CgFunctionPtr func,
+                           unordered_set<CgFunctionPtr> &fclosed,
+                           std::function<void(CgFunctionPtr)> forward_callback);
+
+  /** Execute callback at functions in backward order in a graph.
+   */
+  void visit_function_backward(
+      CgFunctionPtr func, std::function<void(CgFunctionPtr)> backward_callback,
+      vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
 };
 
 /** shared_ptr typedef of CGVariable

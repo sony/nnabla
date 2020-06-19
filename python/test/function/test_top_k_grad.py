@@ -36,7 +36,7 @@ def ref_top_k_grad_fw(x, k, abs, base_axis):
     return x
 
 
-def ref_top_k_grad_bw(x, g, k, abs, base_axis):
+def ref_top_k_grad_bw(x, g, k, abs, base_axis, **kw):
     return ref_top_k_grad(k, abs, base_axis, g).flatten()
 
 

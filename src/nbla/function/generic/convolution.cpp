@@ -81,6 +81,9 @@ void Convolution<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(dilation_.size() == spatial_dims_, error_code::value,
              "dilation size mismatch. dilation size: %d != spatial dims: %d.",
              dilation_.size(), spatial_dims_);
+  kernel_.clear();
+  spatial_shape_i_.clear();
+  spatial_shape_o_.clear();
   for (int i = 0; i < spatial_dims_; ++i) {
     kernel_.push_back(shape_weights[weight_first_spatial_axis + i]);
     inner_size_k_ *= kernel_[i];

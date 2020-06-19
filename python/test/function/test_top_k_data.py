@@ -44,7 +44,7 @@ def ref_top_k_data_fw(x, k, abs, reduce, base_axis):
     return ref_top_k_data(x, k, abs, reduce, base_axis)[0]
 
 
-def ref_top_k_data_bw(x, g, k, abs, reduce, base_axis):
+def ref_top_k_data_bw(x, g, k, abs, reduce, base_axis, **kw):
     return ref_top_k_data(x, k, abs, reduce, base_axis, g)[1].flatten()
 
 

@@ -13,6 +13,9 @@ GRU:
 Convolution:
   float: [float]
   half: [Half]
+FusedConvolution:
+  float: [float]
+  half: [Half]
 DepthwiseConvolution:
   float: [float]
   half: [Half]

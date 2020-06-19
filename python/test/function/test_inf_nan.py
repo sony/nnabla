@@ -54,7 +54,7 @@ def test_reset_nan_reset_inf_forward_backward(seed, val, fname, ctx, func_name):
         y[np_fun(x)] = val
         return y
 
-    def ref_backward(x, dy, val):
+    def ref_backward(x, dy, val, **kw):
         dx = dy.copy()
         dx[np_fun(x)] = 0
         return dx.flatten()

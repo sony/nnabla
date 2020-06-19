@@ -97,6 +97,9 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
              "output_padding size mismatch: %d != spatial dims: %d.",
              output_padding_.size(), spatial_dims_);
 
+  kernel_.clear();
+  spatial_shape_i_.clear();
+  spatial_shape_o_.clear();
   for (int i = 0; i < spatial_dims_; ++i) {
     kernel_.push_back(shape_weights[weight_first_spatial_axis + i]);
     inner_size_k_ *= kernel_[i];
