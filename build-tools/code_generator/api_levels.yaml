@@ -222,3 +222,5 @@
 16:
   DequantizeLinear_Empty: 294
   QuantizeLinear_iBi: 293
+17:
+  FusedConvolution_iiIiIiIiBffBifF: 295
