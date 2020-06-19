@@ -29,7 +29,7 @@ from libc.stdint cimport int64_t, intptr_t
 cimport function
 from function cimport CFunction, Variables, CgFunction
 cimport _variable
-from _variable cimport Variable as _Variable, CVariable, CgVariable, CContext
+from _variable cimport Variable as _Variable, CVariable, CgVariable, CContext, Context
 from _nd_array cimport NdArray
 from _nd_array import NdArray
 from _imperative cimport *
@@ -216,6 +216,12 @@ cdef class Function:
             list_to_vector_variable_p(outputs),
 	    prop_down,
             caccum)
+
+    @property
+    def context(self):
+        ccontext = self.funp.function().get().context()
+        ctx = Context(**ccontext)
+        return ctx
 
     @property
     def name(self):
