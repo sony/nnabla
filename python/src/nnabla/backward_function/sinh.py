@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import nnabla as nn
+import nnabla.functions as F
 from .backward_function import BackwardFunction
 
 
@@ -44,5 +45,25 @@ class SinhBackward(BackwardFunction):
         # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
         # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
 
-        raise NotImplementedError(
-            "The backward method of SinhBackward class is not implemented.")
+        # Inputs
+        x0 = inputs[0].data
+        dy = inputs[1].data
+        # Outputs
+        dx0 = outputs[0].data
+        # Grads of inputs
+        g_x0 = inputs[0].grad
+        g_dy = inputs[1].grad
+        # Grads of outputs
+        g_dx0 = outputs[0].grad
+
+        if prop_down[0]:
+            if accum[0]:
+                g_x0 += g_dx0 * dy * F.sinh(x0)
+            else:
+                g_x0.copy_from(g_dx0 * dy * F.sinh(x0))
+
+        if prop_down[1]:
+            if accum[1]:
+                g_dy += g_dx0 * F.cosh(x0)
+            else:
+                g_dy.copy_from(g_dx0 * F.cosh(x0))
