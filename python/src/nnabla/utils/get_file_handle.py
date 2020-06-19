@@ -79,3 +79,7 @@ def get_file_handle_save(path, ext):
     yield f
     if need_close:
         f.close()
+
+
+def get_buf_type(filename):
+    return filename.split('_')[-1].split('.')[1].lower()
