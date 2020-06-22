@@ -81,7 +81,7 @@ class Grad(object):
             raise ValueError(
                 "{} is not in the backward function mappings".format(f_fwd_name))
         f_bwd_class = mappings[f_fwd_name]
-        f_bwd = f_bwd_class()
+        f_bwd = f_bwd_class(f.context)
         f_bwd.set_num_inputs_and_outputs(len(f.inputs) + len(f_outputs) + len(grad_inputs),
                                          len(f.inputs),
                                          len(f.inputs),
