@@ -37,14 +37,14 @@ train:
   movingFirstFrame: True
   # The crop size of the training image
   crop_size: 32
-  # Number of residual blocks in the generator
+  # Number of residual blocks in the generator 10 for FRVSR and 16 for tecogan
   num_resblock: 16
   # If provided, the weight will be restored from the provided checkpoint
   checkpoint: True
   # The weight of generator will be loaded as an initial point
-  pre_trained_model: nn_frvsr.h5
+  pre_trained_model: ./FRVSR_NNabla_model.h5
   # path to pre-trained weights for the vgg19
-  vgg_pre_trained_weights: /home/ubuntu/Basavaraj/TeCoGAN/trial/nnabla-examples/GANs/tecogan/vgg_tf_2_nnabla.h5
+  vgg_pre_trained_weights: ./vgg_tf_2_nnabla.h5
   
 
 gan:
@@ -67,7 +67,7 @@ gan:
   
 data:
   # The directory of the video input data, for training
-  input_video_dir: /home/ubuntu/Basavaraj/TeCoGAN/TecoGAN/TrainingDataPath/
+  input_video_dir: ./TecoGAN/TrainingDataPath/
   # The pre of the directory of the video input data
   input_video_pre: scene
   # The starting index of the video directory

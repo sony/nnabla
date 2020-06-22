@@ -16,9 +16,7 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 import cv2 as cv
-import collections
 import numpy as np
-import os
 
 
 class ExponentialMovingAverage():
@@ -30,8 +28,10 @@ class ExponentialMovingAverage():
         self.shadow_variable.copy_from(val)
 
     def __call__(self, variable):
-        self.shadow_variable.copy_from(self.decay * self.shadow_variable + (1.0 - self.decay) * variable)
+        self.shadow_variable.copy_from(
+            self.decay * self.shadow_variable + (1.0 - self.decay) * variable)
         return self.shadow_variable.data
+
 
 def save_img(out_path, img):
     img = np.clip(img*255.0, 0, 255).astype(np.uint8)
@@ -93,11 +93,7 @@ def exp_moving_average(x, decay):
 
 
 def upscale_four(inputs, scope='upscale_four'):
-    size = inputs.shape
-    b = size[0]
-    h = size[1]
-    w = size[2]
-    c = size[3]
+    b, h, w, c = inputs.shape
 
     p_inputs = F.concatenate(
         inputs, inputs[:, -1:, :, :], axis=1)  # pad bottom
@@ -124,10 +120,8 @@ def upscale_four(inputs, scope='upscale_four'):
                     + hi_res_bin[1][0] * (0.25 * hi) * (1.0 - 0.25 * wj)
                     + hi_res_bin[1][1] * (0.25 * hi) * (0.25 * wj)
                     )
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16 = (
-        x for x in hi_res_array)
-    hi_res = F.stack(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10,
-                     x11, x12, x13, x14, x15, x16, axis=3)  # shape (b,h,w,16,c)
+
+    hi_res = F.stack(*hi_res_array, axis=3)  # shape (b,h,w,16,c)
     hi_res_reshape = F.reshape(hi_res, (b, h, w, 4, 4, c))
     hi_res_reshape = F.transpose(hi_res_reshape, (0, 1, 3, 2, 4, 5))
     hi_res_reshape = F.reshape(hi_res_reshape, (b, h*4, w*4, c))
@@ -136,11 +130,7 @@ def upscale_four(inputs, scope='upscale_four'):
 
 def bicubic_four(inputs, scope='bicubic_four'):
     with nn.parameter_scope(scope):
-        size = inputs.shape
-        b = size[0]
-        h = size[1]
-        w = size[2]
-        c = size[3]
+        b, h, w, c = inputs.shape
 
         p_inputs = F.concatenate(
             inputs[:, :1, :, :], inputs, axis=1)  # pad top
@@ -164,8 +154,7 @@ def bicubic_four(inputs, scope='bicubic_four'):
             cur_data = cur_wei[0] * hi_res_bin[0] + cur_wei[1] * hi_res_bin[1] + \
                 cur_wei[2] * hi_res_bin[2] + cur_wei[3] * hi_res_bin[3]
             hi_res_array.append(cur_data)
-        x1, x2, x3, x4 = (x for x in hi_res_array)
-        hi_res_y = F.stack(x1, x2, x3, x4, axis=2)  # shape (b,h,4,w,c)
+        hi_res_y = F.stack(*hi_res_array, axis=2)  # shape (b,h,4,w,c)
         hi_res_y = F.reshape(hi_res_y, (b, h*4, w+3, c))
         hi_res_bin = [hi_res_y[:, :, bj:bj+w, :] for bj in range(4)]
 
@@ -175,8 +164,7 @@ def bicubic_four(inputs, scope='bicubic_four'):
             cur_data = cur_wei[0] * hi_res_bin[0] + cur_wei[1] * hi_res_bin[1] + \
                 cur_wei[2] * hi_res_bin[2] + cur_wei[3] * hi_res_bin[3]
             hi_res_array.append(cur_data)
-        y1, y2, y3, y4 = (x for x in hi_res_array)
-        hi_res = F.stack(y1, y2, y3, y4, axis=3)  # shape (b,h*4,w,4,c)
+        hi_res = F.stack(*hi_res_array, axis=3)  # shape (b,h*4,w,4,c)
         hi_res = F.reshape(hi_res, (b, h*4, w*4, c))
 
     return hi_res

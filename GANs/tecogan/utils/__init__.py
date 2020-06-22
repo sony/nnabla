@@ -7,3 +7,5 @@ print(common_utils_path)
 sys.path.append(common_utils_path)
 from neu.yaml_wrapper import read_yaml
 from neu.misc import AttrDict
+from neu.comm import CommunicatorWrapper
+from neu.variable_utils import set_persistent_all

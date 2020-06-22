@@ -18,7 +18,8 @@ import nnabla.parametric_functions as PF
 from tensorflow.python import pywrap_tensorflow
 import argparse
 
-parser = argparse.ArgumentParser(description='TecoGAN')
+parser = argparse.ArgumentParser(
+    description='Convert TF TecoGAN weights to NNabla format')
 parser.add_argument('--pre-trained-model', default='./model/TecoGAN',
                     help='path to tensorflow pretrained model')
 parser.add_argument(
@@ -27,8 +28,9 @@ args = parser.parse_args()
 
 
 def tf_to_nn_param_map():
-    '''map from tensorflow tensor name to NNabla default parameter names 
-    '''
+    """ 
+    Map from tensorflow default param names to NNabla default param names 
+    """
     return {
         'Conv/weights': 'conv/W',
         'Conv/biases': 'conv/b',
@@ -38,9 +40,9 @@ def tf_to_nn_param_map():
 
 
 def rename_params(param_name):
-    '''
-       Rename the tensorflow tensor names to corresponding NNabla param names
-    '''
+    """ 
+    Rename the tensorflow param names to corresponding NNabla param names
+    """
     tf_to_nn_dict = tf_to_nn_param_map()
     for key in tf_to_nn_dict:
         if key in param_name:
@@ -49,18 +51,20 @@ def rename_params(param_name):
     return param_name
 
 
-def convert(ckpt_file, h5_file):
-    ''' Convert the input checkpoint file to output hdf5 file
-    '''
+def convert_tf_ckpt_to_nn_h5(ckpt_file, h5_file):
+    """ 
+    Convert the input checkpoint file to output hdf5 file
+    """
     # Get tensorflow checkpoint reader
     reader = pywrap_tensorflow.NewCheckpointReader(ckpt_file)
     var_to_shape_map = reader.get_variable_to_shape_map()
 
     # Loop through each tensor name from the variable to shape map
-    for key in sorted(var_to_shape_map):
+    for key in var_to_shape_map:
         # Read tensor values for each tensor name
         weight = reader.get_tensor(key)
         if(weight.ndim == 4):
+            # transpose TF weight to NNabla weight format
             weight = np.transpose(weight, (3, 0, 1, 2))
         key = rename_params(key)
 
@@ -73,7 +77,7 @@ def convert(ckpt_file, h5_file):
 
 
 def main():
-    convert(args.pre_trained_model, args.save_path)
+    convert_tf_ckpt_to_nn_h5(args.pre_trained_model, args.save_path)
 
 
 if __name__ == '__main__':

@@ -20,7 +20,7 @@ import cv2 as cv
 import argparse
 import youtube_dl
 
-from lib.data import video
+from data import video
 
 
 # ------------------------------------parameters------------------------------#
