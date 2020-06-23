@@ -24,7 +24,7 @@ def std_round(x):
     return np.sign(x) * np.floor(np.abs(x) + 0.5)
 
 
-def ref_quantize_linear(x, scale, zero_point, round_mode, narrow_range, dtype):
+def ref_quantize_linear(x, scale, zero_point, round_mode, narrow_range, dtype, **kw):
     y = x / scale
     if round_mode == "HALF_AWAY_FROM_ZERO":
         y = std_round(y)
@@ -39,7 +39,7 @@ def ref_quantize_linear(x, scale, zero_point, round_mode, narrow_range, dtype):
     return y
 
 
-def ref_grad_quantize_linear(x, scale, zero_point, dy, round_mode, narrow_range, dtype):
+def ref_grad_quantize_linear(x, scale, zero_point, dy, round_mode, narrow_range, dtype, **kw):
     dx = dy / scale
     return dx.flatten()
 
