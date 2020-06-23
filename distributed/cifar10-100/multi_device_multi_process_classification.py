@@ -133,9 +133,27 @@ def train():
     monitor_vtime = MonitorTimeElapsed("Validation time", monitor, interval=1)
 
     # Data Iterator
-    rng = np.random.RandomState(device_id)
-    _, tdata = data_iterator(args.batch_size, True, rng)
-    vsource, vdata = data_iterator(args.batch_size, False)
+
+    # If the data does not exist, it will try to download it from the server
+    # and prepare it. When executing multiple processes on the same host, it is
+    # necessary to execute initial data preparation by the representative
+    # process (local_rank is 0) on the host.
+
+    # Prepare data only when local_rank is 0
+    if mpi_local_rank == 0:
+        rng = np.random.RandomState(device_id)
+        _, tdata = data_iterator(args.batch_size, True, rng)
+        vsource, vdata = data_iterator(args.batch_size, False)
+
+    # Wait for data to be prepared with dummy data
+    a = [nn.NdArray.from_numpy_array(np.ones(1))]
+    comm.all_reduce(a, division=False, inplace=False)
+
+    # Prepare data when local_rank is not 0
+    if mpi_local_rank != 0:
+        rng = np.random.RandomState(device_id)
+        _, tdata = data_iterator(args.batch_size, True, rng)
+        vsource, vdata = data_iterator(args.batch_size, False)
 
     # loss_error_train.forward()
 
