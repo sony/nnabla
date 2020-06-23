@@ -28,7 +28,7 @@ def ref_dequantize_linear(x, scale, zero_point):
     return (x - zero_point) * scale
 
 
-def ref_grad_dequantize_linear(x, scale, zero_point, dy):
+def ref_grad_dequantize_linear(x, scale, zero_point, dy, **kw):
     dx = dy * scale
     return dx.flatten()
 
