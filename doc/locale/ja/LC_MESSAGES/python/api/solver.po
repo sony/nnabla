@@ -1,0 +1,721 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-02 15:41+0900\n"
+"PO-Revision-Date: 2020-05-14 14:49+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/solver.rst:2
+msgid "Solvers"
+msgstr "Solvers"
+
+#: ../../python/api/solver.rst:4
+msgid ""
+"The :class:`nnabla.solvers.Solver` class represents a stochastic gradient"
+" descent based optimizer for optimizing the parameters in the computation"
+" graph. NNabla provides various solvers listed below."
+msgstr ""
+":class:`nnabla.solvers.Solver` "
+"クラスは、計算グラフのパラメータを最適化するための確率的勾配降下法ベースのオプティマイザーを表します。NNabla は、以下にリストされた様々な "
+"solver を提供します。"
+
+#: ../../python/api/solver.rst:11
+msgid "Solver"
+msgstr "Solver"
+
+#: ../../docstring nnabla.solvers.Solver:1 of
+msgid "Solver interface class."
+msgstr "Solver インターフェイスクラス。"
+
+#: ../../docstring nnabla.solvers.Solver:3 of
+msgid ""
+"The same API provided in this class can be used to implement various "
+"types of solvers."
+msgstr "このクラスに提供される同じ API を使用して、様々な種類の solver を実装できます。"
+
+#: ../../docstring nnabla.solvers.Solver:5 of
+msgid "Example:"
+msgstr "例:"
+
+#: ../../docstring nnabla.solvers.Solver:7 of
+msgid ""
+"# Network building comes above\n"
+"import nnabla.solvers as S\n"
+"solver = S.Sgd(lr=1e-3)\n"
+"solver.set_parameters(nn.get_parameters())\n"
+"\n"
+"for itr in range(num_itr):\n"
+"    x.d = ... # set data\n"
+"    t.d = ... # set label\n"
+"    loss.forward()\n"
+"    solver.zero_grad()  # All gradient buffer being 0\n"
+"    loss.backward()\n"
+"    solver.weight_decay(decay_rate)  # Apply weight decay\n"
+"    solver.clip_grad_by_norm(clip_norm)  # Apply clip grad by norm\n"
+"    solver.update()  # updating parameters"
+msgstr ""
+
+#: ../../docstring nnabla.solvers.Solver:24 of
+msgid ""
+"All solvers provided by NNabla belong to an inherited class of ``Solver``"
+" . A solver is never instantiated by this class itself."
+msgstr ""
+"NNable で提供される全ての solver は、 ``Solver`` の継承クラスに属します。solver "
+"は、このクラス自体からインスタンス化されることはありません。"
+
+#: ../../docstring nnabla.solvers.Solver.check_inf_grad:1 of
+msgid "Check if there is any inf on the gradients which were setup."
+msgstr "設定された勾配に inf があるかを確認します。"
+
+#: ../../docstring nnabla.solvers.Solver.check_inf_or_nan_grad:1 of
+msgid "Check if there is any inf or nan on the gradients which were setup."
+msgstr "設定された勾配に inf または nan があるかを確認します。"
+
+#: ../../docstring nnabla.solvers.Solver.check_nan_grad:1 of
+msgid "Check if there is any nan on the gradients which were setup."
+msgstr "設定された勾配に nan があるかを確認します。"
+
+#: ../../docstring nnabla.solvers.Solver.clear_parameters:1 of
+msgid "Clear all registered parameters and states."
+msgstr "登録されているすべてのパラメータと状態をクリアします。"
+
+#: ../../docstring nnabla.solvers.Solver.clip_grad_by_norm:1 of
+msgid ""
+"Clip gradients by norm. When called, the gradient will be clipped by the "
+"given norm."
+msgstr "ノルムにより勾配をクリッピングします。この関数が呼び出されると、指定されたノルムで勾配をクリッピングします。"
+
+#: ../../docstring nnabla.solvers.AMSBound nnabla.solvers.AMSGRAD
+#: nnabla.solvers.AdaBound nnabla.solvers.Adadelta nnabla.solvers.Adagrad
+#: nnabla.solvers.Adam nnabla.solvers.AdamW nnabla.solvers.Adamax
+#: nnabla.solvers.Lars nnabla.solvers.Momentum nnabla.solvers.Nesterov
+#: nnabla.solvers.RMSprop nnabla.solvers.Sgd nnabla.solvers.SgdW
+#: nnabla.solvers.Solver.clip_grad_by_norm nnabla.solvers.Solver.load_states
+#: nnabla.solvers.Solver.save_states nnabla.solvers.Solver.set_parameters
+#: nnabla.solvers.Solver.weight_decay of
+msgid "パラメータ"
+msgstr "パラメータ"
+
+#: ../../docstring nnabla.solvers.Solver.clip_grad_by_norm:4 of
+msgid "The value of clipping norm."
+msgstr "クリッピングノルムの値。"
+
+#: ../../docstring nnabla.solvers.Solver.get_parameters:1 of
+msgid "Get all registered parameters"
+msgstr "登録されている全てのパラメータを取得します。"
+
+#: ../../docstring nnabla.solvers.Solver.get_states:1 of
+msgid "Get all states"
+msgstr "全ての状態を取得します。"
+
+#: ../../docstring nnabla.solvers.Solver.info:1 of
+msgid "object"
+msgstr "オブジェクト"
+
+#: ../../docstring nnabla.solvers.Solver.info of
+msgid "type"
+msgstr "型"
+
+#: ../../docstring nnabla.solvers.Solver.info:3 of
+msgid "info"
+msgstr "info"
+
+#: ../../docstring nnabla.solvers.Solver.learning_rate:1 of
+msgid "Get the learning rate."
+msgstr "学習率を取得します。"
+
+#: ../../docstring nnabla.solvers.Solver.load_states:1 of
+msgid "Load solver states."
+msgstr "solver の状態を読み込みます。"
+
+#: ../../docstring nnabla.solvers.Solver.load_states:3 of
+msgid "path to the state file to be loaded."
+msgstr "読み込む state ファイルへのパス。"
+
+#: ../../docstring nnabla.solvers.Solver.name:1 of
+msgid "Get the name of the solver."
+msgstr "solver の名前を取得します。"
+
+#: ../../docstring nnabla.solvers.Solver.remove_parameters:1 of
+msgid ""
+"Remove previously registered parameters, specified by a ``vector`` of its"
+" keys."
+msgstr "keys の ``vector`` で指定された、登録済みのパラメータを削除します。"
+
+#: ../../docstring nnabla.solvers.Solver.save_states:1 of
+msgid "Save solver states."
+msgstr "solver の状態を保存します。"
+
+#: ../../docstring nnabla.solvers.Solver.save_states:3 of
+msgid "path or file object"
+msgstr "パスまたはファイルオブジェクト。"
+
+#: ../../docstring nnabla.solvers.Solver.scale_grad:1 of
+msgid "Rescale gradient"
+msgstr "勾配のスケールを定数倍にします。"
+
+#: ../../docstring nnabla.solvers.Solver.set_learning_rate:1 of
+msgid "Set the learning rate."
+msgstr "学習率を設定します。"
+
+#: ../../docstring nnabla.solvers.Solver.set_parameters:1 of
+msgid "Set parameters by dictionary of keys and parameter Variables."
+msgstr "辞書で指定されたキーとパラメータ Variable でパラメータを設定します。"
+
+#: ../../docstring nnabla.solvers.Solver.set_parameters:3 of
+msgid "key:string, value: Variable."
+msgstr "キー: 文字列, 値: Variable。"
+
+#: ../../docstring nnabla.solvers.Solver.set_parameters:5 of
+msgid ""
+"If true, clear all parameters before setting parameters. If false, "
+"parameters are overwritten or added (if it's new)."
+msgstr ""
+"true の場合、パラメータを設定する前に、全てのパラメータをクリアします。false の場合、パラメータは上書きされるか、(新しい場合は) "
+"追加されます 。"
+
+#: ../../docstring nnabla.solvers.Solver.set_parameters:8 of
+msgid ""
+"The value is only considered if reset is false. If true and a key already"
+" exists (overwriting), a state (such as momentum) associated with the key"
+" will be kept if the shape of the parameter and that of the new param "
+"match."
+msgstr ""
+"この値は、reset が false の場合のみ考慮されます。 この値が true 、かつキーが既に存在する場合 ( 上書き ) "
+"、キーに関連付けられた状態 ( モメンタムなど ) は、パラメータの形状と新しいパラメータの形状が一致する場合に保持されます。"
+
+#: ../../docstring nnabla.solvers.Solver.set_states:1 of
+msgid ""
+"Set states. Call `set_parameters` to initialize states of a solver first,"
+" otherwise this method raise an value error."
+msgstr ""
+"状態を設定します。 `set_parameters` を呼び出し、最初に solver "
+"の状態を初期化してください。それを行わずにこのメソッドを呼び出すと、値エラーが発生します。"
+
+#: ../../docstring nnabla.solvers.Solver.set_states_from_protobuf:1 of
+msgid "Set states to the solver from the protobuf file."
+msgstr "protobuf ファイルから solver に状態を設定します。"
+
+#: ../../docstring nnabla.solvers.Solver.set_states_from_protobuf:3
+#: nnabla.solvers.Solver.set_states_to_protobuf:3 of
+msgid "Internally used helper method."
+msgstr "内部的に使用される helper メソッド。"
+
+#: ../../docstring nnabla.solvers.Solver.set_states_to_protobuf:1 of
+msgid "Set states to the protobuf file from the solver."
+msgstr "Optimizer から protobuf ファイルに状態を保存します。"
+
+#: ../../docstring nnabla.solvers.Solver.setup:1 of
+msgid "Deprecated. Call ``set_parameters`` with ``param_dict`` ."
+msgstr "非推奨です。 ``param_dict`` で ``set_parameters`` を呼び出してください。"
+
+#: ../../docstring nnabla.solvers.Solver.update:1 of
+msgid ""
+"When this function is called, parameter values are updated using the "
+"gradients accumulated in backpropagation, stored in the ``grad`` field of"
+" the parameter ``Variable`` s. Update rules are implemented in the C++ "
+"core, in derived classes of Solver. The updated parameter values will be "
+"stored into the data field of the parameter ``Variable`` s."
+msgstr ""
+"この関数を呼び出すと、パラメータ値は、パラメータ ``Variable`` の ``grad`` に保存されている backpropagation"
+" で蓄積された勾配を使用して更新されます。更新ルールは、Solver の派生クラスにおいて C++ "
+"コアで実装されています。更新されたパラメータ値は、パラメータ ``Variable`` の data フィールドに保存されます。"
+
+#: ../../docstring nnabla.solvers.Solver.weight_decay:1 of
+msgid ""
+"Apply weight decay to gradients. When called, the gradient weight will be"
+" decayed by a rate of the current parameter value."
+msgstr "勾配に、weight decay を適用します。これが呼ばれると、現在のパラメータ値の一定割合の分だけ勾配が減衰します。"
+
+#: ../../docstring nnabla.solvers.Solver.weight_decay:5 of
+msgid "The coefficient of weight decay."
+msgstr "weight decay の係数。"
+
+#: ../../docstring nnabla.solvers.Solver.zero_grad:1 of
+msgid "Initialize gradients of all registered parameter by zero."
+msgstr "登録されている全てのパラメータの勾配をゼロで初期化します。"
+
+#: ../../python/api/solver.rst:17
+msgid "List of solvers"
+msgstr "Solver のリスト"
+
+#: ../../docstring nnabla.solvers.Sgd:1 of
+msgid "Stochastic gradient descent (SGD) optimizer."
+msgstr "確率的勾配降下法（SGD）オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.Sgd:3 of
+msgid "w_{t+1} \\leftarrow w_t - \\eta \\Delta w_t"
+msgstr "w_{t+1} \\leftarrow w_t - \\eta \\Delta w_t"
+
+#: ../../docstring nnabla.solvers.Adadelta:10 nnabla.solvers.Adagrad:9
+#: nnabla.solvers.Lars:11 nnabla.solvers.Momentum:8 nnabla.solvers.Nesterov:8
+#: nnabla.solvers.RMSprop:9 nnabla.solvers.Sgd:7 nnabla.solvers.SgdW:9 of
+msgid "Learning rate (:math:`\\eta`)."
+msgstr "学習率 (:math:`\\eta`)。"
+
+#: ../../docstring nnabla.solvers.AMSBound nnabla.solvers.AMSGRAD
+#: nnabla.solvers.AdaBound nnabla.solvers.Adadelta nnabla.solvers.Adagrad
+#: nnabla.solvers.Adam nnabla.solvers.AdamW nnabla.solvers.Adamax
+#: nnabla.solvers.Lars nnabla.solvers.Momentum nnabla.solvers.Nesterov
+#: nnabla.solvers.RMSprop nnabla.solvers.Sgd nnabla.solvers.SgdW of
+msgid "戻り値"
+msgstr "戻り値"
+
+#: ../../docstring nnabla.solvers.AMSBound:28 nnabla.solvers.AMSGRAD:25
+#: nnabla.solvers.AdaBound:25 nnabla.solvers.Adadelta:17
+#: nnabla.solvers.Adagrad:14 nnabla.solvers.Adam:23 nnabla.solvers.AdamW:25
+#: nnabla.solvers.Adamax:25 nnabla.solvers.Lars:20 nnabla.solvers.Momentum:13
+#: nnabla.solvers.Nesterov:13 nnabla.solvers.RMSprop:16 nnabla.solvers.Sgd:10
+#: nnabla.solvers.SgdW:16 of
+msgid "An instance of Solver class.     See Solver API guide for details."
+msgstr ""
+"Solver クラスのインスタンス。 \n"
+"詳しくは Solver API ガイドを参照してください。"
+
+#: ../../docstring nnabla.solvers.AMSBound nnabla.solvers.AMSGRAD
+#: nnabla.solvers.AdaBound nnabla.solvers.Adadelta nnabla.solvers.Adagrad
+#: nnabla.solvers.Adam nnabla.solvers.AdamW nnabla.solvers.Adamax
+#: nnabla.solvers.Lars nnabla.solvers.Momentum nnabla.solvers.Nesterov
+#: nnabla.solvers.RMSprop nnabla.solvers.Sgd nnabla.solvers.SgdW of
+msgid "戻り値の型"
+msgstr "戻り値の型"
+
+#: ../../docstring nnabla.solvers.AMSBound:36 nnabla.solvers.AMSGRAD:33
+#: nnabla.solvers.AdaBound:33 nnabla.solvers.Adadelta:25
+#: nnabla.solvers.Adagrad:22 nnabla.solvers.Adam:31 nnabla.solvers.AdamW:33
+#: nnabla.solvers.Adamax:33 nnabla.solvers.Lars:28 nnabla.solvers.Momentum:21
+#: nnabla.solvers.Nesterov:21 nnabla.solvers.RMSprop:24 nnabla.solvers.Sgd:18
+#: nnabla.solvers.SgdW:24 of
+msgid ""
+"You can instantiate a preferred target implementation (ex. CUDA) of a "
+"Solver given a `Context`. A `Context` can be set by "
+"``nnabla.set_default_context(ctx)`` or ``nnabla.context_scope(ctx)``. See"
+" API docs."
+msgstr ""
+"`Context` を指定して、指定されたタイプの Solver の優先ターゲット実装（CUDA など）をインスタンス化できます。 "
+"`Context` は ``nnabla.set_default_context(ctx)`` または "
+"``nnabla.context_scope(ctx)`` で設定できます。API ドキュメントを参照してください。"
+
+#: ../../docstring nnabla.solvers.Momentum:1 of
+msgid "SGD with Momentum."
+msgstr "モメンタムを使った SGD。"
+
+#: ../../docstring nnabla.solvers.Momentum:3 of
+msgid ""
+"v_t &\\leftarrow \\gamma v_{t-1} + \\eta \\Delta w_t\\\\ w_{t+1} "
+"&\\leftarrow w_t - v_t"
+msgstr ""
+"v_t &\\leftarrow \\gamma v_{t-1} + \\eta \\Delta w_t\\\\ w_{t+1} "
+"&\\leftarrow w_t - v_t"
+
+#: ../../docstring nnabla.solvers.Lars:13 nnabla.solvers.Momentum:10
+#: nnabla.solvers.Nesterov:10 nnabla.solvers.SgdW:11 of
+msgid "Decay rate of momentum."
+msgstr "モメンタムの減衰率。"
+
+#: ../../docstring nnabla.solvers.AMSBound:42 nnabla.solvers.AMSGRAD:39
+#: nnabla.solvers.AdaBound:39 nnabla.solvers.Adadelta:31
+#: nnabla.solvers.Adagrad:28 nnabla.solvers.Adam:37 nnabla.solvers.AdamW:39
+#: nnabla.solvers.Adamax:39 nnabla.solvers.Lars:34 nnabla.solvers.Momentum:27
+#: nnabla.solvers.Nesterov:27 nnabla.solvers.RMSprop:30 nnabla.solvers.SgdW:30
+#: of
+msgid "参照"
+msgstr "参照"
+
+#: ../../docstring nnabla.solvers.Momentum:28 of
+msgid ""
+"`Ning Qian : On the Momentum Term in Gradient Descent Learning "
+"Algorithms. <http://www.columbia.edu/~nq6/publications/momentum.pdf>`_"
+msgstr ""
+"`Ning Qian : On the Momentum Term in Gradient Descent Learning "
+"Algorithms. <http://www.columbia.edu/~nq6/publications/momentum.pdf>`_"
+
+#: ../../docstring nnabla.solvers.Lars:1 of
+msgid "LARS with Momentum."
+msgstr "モメンタムを使った LARS。"
+
+#: ../../docstring nnabla.solvers.Lars:3 of
+msgid ""
+"\\lambda &\\leftarrow \\eta   \\frac{\\| w_t \\|}{\\| \\Delta w_t + "
+"\\beta w_t \\|} \\\\ v_{t+1} &\\leftarrow m v_t + \\gamma \\lambda   "
+"(\\Delta w_t + \\beta w_t) \\\\ w_{t+1} &\\leftarrow w_t - v_{t+1}"
+msgstr ""
+"\\lambda &\\leftarrow \\eta   \\frac{\\| w_t \\|}{\\| \\Delta w_t + "
+"\\beta w_t \\|} \\\\ v_{t+1} &\\leftarrow m v_t + \\gamma \\lambda   "
+"(\\Delta w_t + \\beta w_t) \\\\ w_{t+1} &\\leftarrow w_t - v_{t+1}"
+
+#: ../../docstring nnabla.solvers.Lars:15 of
+msgid "Trust coefficient"
+msgstr "Trust 係数。"
+
+#: ../../docstring nnabla.solvers.Lars:17 of
+msgid "Small value for avoiding zero devision(:math:`\\epsilon`)."
+msgstr "ゼロ除算を回避するための小さな値 (:math:`\\epsilon`)。"
+
+#: ../../docstring nnabla.solvers.Lars:35 of
+msgid ""
+"`Yang You, Igor Gitman, Boris Ginsburg Large Batch Training of "
+"Convolutional Networks <https://arxiv.org/abs/1708.03888>`_"
+msgstr ""
+"`Yang You, Igor Gitman, Boris Ginsburg : Large Batch Training of "
+"Convolutional Networks <https://arxiv.org/abs/1708.03888>`_"
+
+#: ../../docstring nnabla.solvers.Nesterov:1 of
+msgid "Nesterov Accelerated Gradient optimizer."
+msgstr "Nesterov 加速勾配オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.Nesterov:3 of
+msgid ""
+"v_t &\\leftarrow \\gamma v_{t-1} - \\eta \\Delta w_t\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\gamma v_{t-1} + \\left(1 + \\gamma \\right) v_t"
+msgstr ""
+"v_t &\\leftarrow \\gamma v_{t-1} - \\eta \\Delta w_t\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\gamma v_{t-1} + \\left(1 + \\gamma \\right) v_t"
+
+#: ../../docstring nnabla.solvers.Nesterov:28 of
+msgid ""
+"Yurii Nesterov. A method for unconstrained convex minimization problem "
+"with the rate of convergence :math:`o(1/k2)`."
+msgstr ""
+"Yurii Nesterov. A method for unconstrained convex minimization problem "
+"with the rate of convergence :math:`o(1/k2)`."
+
+#: ../../docstring nnabla.solvers.Adadelta:1 of
+msgid "AdaDelta optimizer."
+msgstr "AdaDelta オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.Adadelta:3 of
+msgid ""
+"g_t &\\leftarrow \\Delta w_t\\\\ v_t &\\leftarrow - \\frac{RMS \\left[ "
+"v_t \\right]_{t-1}}     {RMS \\left[ g \\right]_t}g_t\\\\ w_{t+1} "
+"&\\leftarrow w_t + \\eta v_t"
+msgstr ""
+"g_t &\\leftarrow \\Delta w_t\\\\ v_t &\\leftarrow - \\frac{RMS \\left[ "
+"v_t \\right]_{t-1}}     {RMS \\left[ g \\right]_t}g_t\\\\ w_{t+1} "
+"&\\leftarrow w_t + \\eta v_t"
+
+#: ../../docstring nnabla.solvers.Adadelta:12 nnabla.solvers.RMSprop:11 of
+msgid "Decay rate (:math:`\\gamma`)."
+msgstr "減衰率 (:math:`\\gamma`)。"
+
+#: ../../docstring nnabla.solvers.AdaBound:18 nnabla.solvers.Adadelta:14
+#: nnabla.solvers.Adagrad:11 nnabla.solvers.Adam:20 nnabla.solvers.AdamW:20
+#: nnabla.solvers.Adamax:22 nnabla.solvers.RMSprop:13 of
+msgid "Small value for avoiding zero division(:math:`\\epsilon`)."
+msgstr "ゼロ除算を回避するための小さな値 (:math:`\\epsilon`)。"
+
+#: ../../docstring nnabla.solvers.Adadelta:32 of
+msgid ""
+"`Matthew D. Zeiler. ADADELTA: An Adaptive Learning Rate Method. "
+"<https://arxiv.org/abs/1212.5701>`_"
+msgstr ""
+"`Matthew D. Zeiler. ADADELTA: An Adaptive Learning Rate Method. "
+"<https://arxiv.org/abs/1212.5701>`_"
+
+#: ../../docstring nnabla.solvers.Adagrad:1 of
+msgid "ADAGrad optimizer."
+msgstr "ADAGrad オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.Adagrad:3 of
+msgid ""
+"g_t &\\leftarrow \\Delta w_t\\\\ G_t &\\leftarrow G_{t-1} + g_t^2\\\\ "
+"w_{t+1} &\\leftarrow w_t - \\frac{\\eta}{\\sqrt{G_t} + \\epsilon} g_t"
+msgstr ""
+"g_t &\\leftarrow \\Delta w_t\\\\ G_t &\\leftarrow G_{t-1} + g_t^2\\\\ "
+"w_{t+1} &\\leftarrow w_t - \\frac{\\eta}{\\sqrt{G_t} + \\epsilon} g_t"
+
+#: ../../docstring nnabla.solvers.Adagrad:29 of
+msgid ""
+"`John Duchi, Elad Hazan and Yoram Singer (2011). Adaptive Subgradient "
+"Methods for Online Learning and Stochastic Optimization. "
+"<http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf>`_"
+msgstr ""
+"`John Duchi, Elad Hazan and Yoram Singer (2011). Adaptive Subgradient "
+"Methods for Online Learning and Stochastic Optimization. "
+"<http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf>`_"
+
+#: ../../docstring nnabla.solvers.RMSprop:1 of
+msgid "RMSprop optimizer (Geoffery Hinton)."
+msgstr "RMSprop オプティマイザー (Geoffery Hinton) 。"
+
+#: ../../docstring nnabla.solvers.RMSprop:3 of
+msgid ""
+"g_t &\\leftarrow \\Delta w_t\\\\ v_t &\\leftarrow \\gamma v_{t-1} + "
+"\\left(1 - \\gamma \\right) g_t^2\\\\ w_{t+1} &\\leftarrow w_t - \\eta "
+"\\frac{g_t}{\\sqrt{v_t} + \\epsilon}"
+msgstr ""
+"g_t &\\leftarrow \\Delta w_t\\\\ v_t &\\leftarrow \\gamma v_{t-1} + "
+"\\left(1 - \\gamma \\right) g_t^2\\\\ w_{t+1} &\\leftarrow w_t - \\eta "
+"\\frac{g_t}{\\sqrt{v_t} + \\epsilon}"
+
+#: ../../docstring nnabla.solvers.RMSprop:31 of
+msgid ""
+"`Geoff Hinton. Lecture 6a : Overview of mini-batch gradient descent. "
+"<http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf>`_"
+msgstr ""
+"`Geoff Hinton. Lecture 6a : Overview of mini-batch gradient descent. "
+"<http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf>`_"
+
+#: ../../docstring nnabla.solvers.Adam:1 of
+msgid "ADAM optimizer."
+msgstr "ADAM オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.Adam:3 of
+msgid ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\alpha     \\frac{\\sqrt{1 - \\beta_2^t}}{1 - "
+"\\beta_1^t}     \\frac{m_t}{\\sqrt{v_t} + \\epsilon}"
+msgstr ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\alpha     \\frac{\\sqrt{1 - \\beta_2^t}}{1 - "
+"\\beta_1^t}     \\frac{m_t}{\\sqrt{v_t} + \\epsilon}"
+
+#: ../../docstring nnabla.solvers.AMSGRAD:10 nnabla.solvers.Adam:10 of
+msgid ""
+"where :math:`g_t` denotes a gradient, and let :math:`m_0 \\leftarrow 0` "
+"and :math:`v_0 \\leftarrow 0`."
+msgstr ""
+":math:`g_t` は勾配を示し、 :math:`m_0 \\leftarrow 0` および :math:`v_0 \\leftarrow "
+"0` とする。"
+
+#: ../../docstring nnabla.solvers.AMSBound:13 nnabla.solvers.AMSGRAD:14
+#: nnabla.solvers.AdaBound:12 nnabla.solvers.Adam:14 nnabla.solvers.AdamW:14
+#: nnabla.solvers.Adamax:16 of
+msgid "Step size (:math:`\\alpha`)."
+msgstr "ステップサイズ (:math:`\\alpha`)。"
+
+#: ../../docstring nnabla.solvers.AMSBound:15 nnabla.solvers.AMSGRAD:16
+#: nnabla.solvers.AdaBound:14 nnabla.solvers.Adam:16 nnabla.solvers.AdamW:16
+#: nnabla.solvers.Adamax:18 of
+msgid "Decay rate of first-order momentum (:math:`\\beta_1`)."
+msgstr "一次モメンタムの減衰率 (:math:`\\beta_1`)。"
+
+#: ../../docstring nnabla.solvers.AMSBound:17 nnabla.solvers.AMSGRAD:18
+#: nnabla.solvers.AdaBound:16 nnabla.solvers.Adam:18 nnabla.solvers.AdamW:18 of
+msgid "Decay rate of second-order momentum (:math:`\\beta_2`)."
+msgstr "二次モメンタムの減衰率 (:math:`\\beta_2`)。"
+
+#: ../../docstring nnabla.solvers.Adam:38 nnabla.solvers.Adamax:40 of
+msgid ""
+"`Kingma and Ba, Adam: A Method for Stochastic Optimization. "
+"<https://arxiv.org/abs/1412.6980>`_"
+msgstr ""
+"`Kingma and Ba, Adam: A Method for Stochastic Optimization. "
+"<https://arxiv.org/abs/1412.6980>`_"
+
+#: ../../docstring nnabla.solvers.AdaBound:1 of
+msgid "AdaBound optimizer applies dynamic bounds on learning rates to Adam."
+msgstr "AdaBound オプティマイザーは、Adam に学習率の上限と下限を動的を適用します。"
+
+#: ../../docstring nnabla.solvers.AdaBound:3 of
+msgid ""
+"w_{t+1} &\\leftarrow w_t - \\eta_t*m_t\\\\ \\eta_t = clip( "
+"\\alpha\\frac{\\sqrt{1 - \\beta_2^t}}{(1 - \\beta_1^t)(\\sqrt{v_t} + "
+"\\epsilon)}, \\eta_l(t), \\eta_u(t))\\\\ \\eta_l(t) = (1 - "
+"(1/((1-\\gamma)t+1)))\\alpha^*\\\\ \\eta_u(t) = (1 + "
+"(1/((1-\\gamma)t)))\\alpha^*"
+msgstr ""
+"w_{t+1} &\\leftarrow w_t - \\eta_t*m_t\\\\ \\eta_t = clip( "
+"\\alpha\\frac{\\sqrt{1 - \\beta_2^t}}{(1 - \\beta_1^t)(\\sqrt{v_t} + "
+"\\epsilon)}, \\eta_l(t), \\eta_u(t))\\\\ \\eta_l(t) = (1 - "
+"(1/((1-\\gamma)t+1)))\\alpha^*\\\\ \\eta_u(t) = (1 + "
+"(1/((1-\\gamma)t)))\\alpha^*"
+
+#: ../../docstring nnabla.solvers.AMSBound:10 nnabla.solvers.AdaBound:9 of
+msgid ""
+"where :math:`\\alpha^*` (``final_lr``) is scaled by a factor defined as "
+"the current value of :math:`\\alpha` (set by ``set_learning_rate(lr)``) "
+"over initial value of :math:`\\alpha`, so that learnign rate scheduling "
+"is properly applied to both :math:`\\alpha` and :math:`\\alpha^*`."
+msgstr ""
+"学習率のスケジューリングが :math:`\\alpha` と :math:`\\alpha^*` の両方に適切に適用されるように、 "
+":math:`\\alpha` の現在の値 ( ``set_learning_rate(lr)`` により設定) を "
+":math:`\\alpha` の初期値で割った値を用いて :math:`\\alpha^*` (``final_lr``) "
+"がスケーリングされます。"
+
+#: ../../docstring nnabla.solvers.AdaBound:20 of
+msgid "Final (SGD) learning rate."
+msgstr "最終的な (SGD) 学習率。"
+
+#: ../../docstring nnabla.solvers.AdaBound:22 of
+msgid "Convergence speed of the bound functions."
+msgstr "bound 関数の収束速度。"
+
+#: ../../docstring nnabla.solvers.AMSBound:43 nnabla.solvers.AdaBound:40 of
+msgid ""
+"`L. Luo, Y. Xiong, Y. Liu and X. Sun. Adaptive Gradient Methods with "
+"Dynamic Bound of Learning Rate. <https://arxiv.org/abs/1902.09843>`_"
+msgstr ""
+"`L. Luo, Y. Xiong, Y. Liu and X. Sun. Adaptive Gradient Methods with "
+"Dynamic Bound of Learning Rate. <https://arxiv.org/abs/1902.09843>`_"
+
+#: ../../docstring nnabla.solvers.Adamax:1 of
+msgid "ADAMAX Optimizer."
+msgstr "ADAMAX オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.Adamax:3 of
+msgid ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\max\\left(\\beta_2 v_{t-1}, |g_t|\\right)\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\alpha     \\frac{\\sqrt{1 - \\beta_2^t}}{1 - "
+"\\beta_1^t}     \\frac{m_t}{v_t + \\epsilon}"
+msgstr ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\max\\left(\\beta_2 v_{t-1}, |g_t|\\right)\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\alpha     \\frac{\\sqrt{1 - \\beta_2^t}}{1 - "
+"\\beta_1^t}     \\frac{m_t}{v_t + \\epsilon}"
+
+#: ../../docstring nnabla.solvers.Adamax:10 of
+msgid ""
+"where :math:`g_t` denotes a gradient, and let :math:`m_0 \\leftarrow 0` "
+"and :math:`v_0 \\leftarrow 0`, :math:`v_t` is an exponentially weighted "
+"infinity norm of a sequence of gradients :math:`t=0,...,t`."
+msgstr ""
+":math:`g_t` が勾配を示し、 :math:`m_0 \\leftarrow 0` および :math:`v_0 \\leftarrow "
+"0` とすると、 :math:`v_t` は一連の勾配 :math:`t=0,...,t` の指数関数的に重み付けされた無限大ノルムになります。"
+
+#: ../../docstring nnabla.solvers.Adamax:20 of
+msgid "Decay rate of inf-order momentum (:math:`\\beta_2`)."
+msgstr "二次モメンタムの減衰率 (:math:`\\beta_2`)。"
+
+#: ../../docstring nnabla.solvers.AMSGRAD:1 of
+msgid "AMSGRAD optimizer."
+msgstr "AMSGRAD オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.AMSGRAD:3 of
+msgid ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2\\\\ \\hat{v_t} = "
+"\\max(\\hat{v_{t-1}}, v_t)\\\\ w_{t+1} &\\leftarrow w_t - \\alpha     "
+"\\frac{m_t}{\\sqrt{\\hat{v_t}} + \\epsilon}"
+msgstr ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2\\\\ \\hat{v_t} = "
+"\\max(\\hat{v_{t-1}}, v_t)\\\\ w_{t+1} &\\leftarrow w_t - \\alpha     "
+"\\frac{m_t}{\\sqrt{\\hat{v_t}} + \\epsilon}"
+
+#: ../../docstring nnabla.solvers.AMSBound:19 nnabla.solvers.AMSGRAD:20 of
+msgid ""
+"Small value for avoiding zero division(:math:`\\epsilon`). Note this does"
+" not appear in the paper."
+msgstr "ゼロ除算を回避するための小さな値 (:math:`\\epsilon`) 。 注意 こちらは論文には記載されていません。"
+
+#: ../../docstring nnabla.solvers.AMSBound:25 nnabla.solvers.AMSGRAD:22 of
+msgid ""
+"Apply bias correction to moving averages defined in ADAM. Note this does "
+"not appear in the paper."
+msgstr "ADAM で定義された移動平均にバイアス補正を適用します。注意 こちらは論文には記載されていません。"
+
+#: ../../docstring nnabla.solvers.AMSGRAD:40 of
+msgid ""
+"`Reddi et al. On the convergence of ADAM and beyond. "
+"<https://openreview.net/pdf?id=ryQu7f-RZ>`_"
+msgstr ""
+"`Reddi et al. On the convergence of ADAM and beyond. "
+"<https://openreview.net/pdf?id=ryQu7f-RZ>`_"
+
+#: ../../docstring nnabla.solvers.AMSBound:1 of
+msgid "AMSBound optimizer applies dynamic bounds on learning rates to AMSGrad."
+msgstr "AMSBound オプティマイザーは AMSGrad に対して学習率の上限と下限を動的に適用します。"
+
+#: ../../docstring nnabla.solvers.AMSBound:3 of
+msgid ""
+"w_{t+1} &\\leftarrow w_t - \\eta_t*m_t\\\\ \\eta_t = clip( "
+"\\alpha\\frac{\\sqrt{1 - \\beta_2^t}}{(1 - \\beta_1^t)(\\sqrt{\\hat{v_t}}"
+" + \\epsilon)}, \\eta_l(t), \\eta_u(t))\\\\ \\hat{v_t} = "
+"\\max(\\hat{v_{t-1}}, v_t)\\\\ \\eta_l(t) = (1 - "
+"(1/((1-\\gamma)t+1)))\\alpha^*\\\\ \\eta_u(t) = (1 + "
+"(1/((1-\\gamma)t)))\\alpha^*"
+msgstr ""
+"w_{t+1} &\\leftarrow w_t - \\eta_t*m_t\\\\ \\eta_t = clip( "
+"\\alpha\\frac{\\sqrt{1 - \\beta_2^t}}{(1 - \\beta_1^t)(\\sqrt{\\hat{v_t}}"
+" + \\epsilon)}, \\eta_l(t), \\eta_u(t))\\\\ \\hat{v_t} = "
+"\\max(\\hat{v_{t-1}}, v_t)\\\\ \\eta_l(t) = (1 - "
+"(1/((1-\\gamma)t+1)))\\alpha^*\\\\ \\eta_u(t) = (1 + "
+"(1/((1-\\gamma)t)))\\alpha^*"
+
+#: ../../docstring nnabla.solvers.AMSBound:21 of
+msgid "Final (SGD) learning rtae"
+msgstr "最終的な (SGD) 学習率。"
+
+#: ../../docstring nnabla.solvers.AMSBound:23 of
+msgid "Convergence speed of the bound functions"
+msgstr "bound 関数の収束速度。"
+
+#: ../../docstring nnabla.solvers.AdamW:1 of
+msgid "ADAM optimizer with decoupled weight decay."
+msgstr "減結合 weight decay を使ったADAM オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.AdamW:3 of
+msgid ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\alpha     \\frac{\\sqrt{1 - \\beta_2^t}}{1 - "
+"\\beta_1^t}     \\frac{m_t}{\\sqrt{v_t} + \\epsilon} - "
+"\\eta_t\\lambda\\w_{t-1}"
+msgstr ""
+"m_t &\\leftarrow \\beta_1 m_{t-1} + (1 - \\beta_1) g_t\\\\ v_t "
+"&\\leftarrow \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2\\\\ w_{t+1} "
+"&\\leftarrow w_t - \\alpha     \\frac{\\sqrt{1 - \\beta_2^t}}{1 - "
+"\\beta_1^t}     \\frac{m_t}{\\sqrt{v_t} + \\epsilon} - "
+"\\eta_t\\lambda\\w_{t-1}"
+
+#: ../../docstring nnabla.solvers.AdamW:10 of
+msgid ""
+"where :math:`g_t` denotes a gradient, :math:`\\lambda` is the decoupled "
+"weight decay rate, and :math:`m_0 \\leftarrow 0` and :math:`v_0 "
+"\\leftarrow 0`."
+msgstr ""
+"ここでは、 :math:`g_t` は勾配を示し、 :math:`\\lambda` は減結合 weight decay 率、 "
+":math:`m_0 \\leftarrow 0` および :math:`v_0 \\leftarrow 0` です。"
+
+#: ../../docstring nnabla.solvers.AdamW:22 nnabla.solvers.SgdW:13 of
+msgid "Weight decay rate."
+msgstr "Weight decay 率。"
+
+#: ../../docstring nnabla.solvers.AdamW:40 nnabla.solvers.SgdW:31 of
+msgid ""
+"`Loshchilov and Hutter, Decoupled Weight Decay Regularization. "
+"<https://arxiv.org/abs/1711.05101>`_"
+msgstr ""
+"`Loshchilov and Hutter, Decoupled Weight Decay Regularization. "
+"<https://arxiv.org/abs/1711.05101>`_"
+
+#: ../../docstring nnabla.solvers.SgdW:1 of
+msgid "Stochastic gradient descent (SGD) optimizer with decoupled weight decay."
+msgstr "減結合 weight decay を使ったStochastic gradient descent (SGD) オプティマイザー。"
+
+#: ../../docstring nnabla.solvers.SgdW:3 of
+msgid ""
+"w_{t+1} \\leftarrow w_t - \\eta \\Delta w_t - (\\eta / "
+"\\eta_0)\\lambda\\w_t"
+msgstr ""
+"w_{t+1} \\leftarrow w_t - \\eta \\Delta w_t - (\\eta / "
+"\\eta_0)\\lambda\\w_t"
+
+#: ../../docstring nnabla.solvers.SgdW:6 of
+msgid "where :math:`\\lambda` is the decoupled weight decay rate."
+msgstr "ここでは、 :math:`\\lambda` は減結合 weight decay 率です。"
+
+#~ msgid "An instance of Solver class."
+#~ msgstr "Solver クラスのインスタンス。"
+
+#~ msgid "See Solver API guide for details."
+#~ msgstr "詳しくは Solver API ガイドを参照してください。"
+

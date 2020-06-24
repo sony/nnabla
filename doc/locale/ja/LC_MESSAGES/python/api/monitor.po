@@ -1,0 +1,287 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-14 15:04+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/monitor.rst:2
+msgid "Monitors"
+msgstr "Monitor"
+
+#: ../../python/api/monitor.rst:4
+msgid ""
+"The Monitor API provides helpers for logging the progress of neural "
+"network training."
+msgstr "Monitor API は、ニューラルネットワークの学習の進行状況を記録するための helper を提供します。"
+
+#: nnabla.monitor.Monitor:1 of
+msgid ""
+"This class is created to setup the output directory of the monitoring "
+"logs. The created :class:`nnabla.monitor.Monitor` instance is passed to "
+"classes in the following :ref:`monitors`."
+msgstr ""
+"このクラスは、ログの出力ディレクトリを設定するために作成されます。作成された :class:`nnabla.monitor.Monitor` "
+"インスタンスは、以下の :ref:`monitors` のクラスに渡されます。"
+
+#: ../../python/api/monitor.rst:13
+msgid "List of Monitors"
+msgstr "Monitor のリスト"
+
+#: nnabla.monitor.MonitorSeries:1 of
+msgid "Logs a series of values."
+msgstr "学習中の様々な値を記録します。"
+
+#: nnabla.monitor.MonitorSeries:3 of
+msgid "The values are displayed and/or output to the file ``<name>-series.txt``."
+msgstr "値は画面に表示されるほか、ファイル ``<name>-series.txt`` に出力されます。"
+
+#: nnabla.monitor.MonitorImage:10 nnabla.monitor.MonitorImageTile:10
+#: nnabla.monitor.MonitorSeries:6 nnabla.monitor.MonitorTimeElapsed:6 of
+msgid "Example:"
+msgstr "例 :"
+
+#: nnabla.monitor.MonitorSeries:8 of
+msgid ""
+"mons = MonitorSeries('mon', interval=2)\n"
+"for i in range(10):\n"
+"    mons.add(i, i * 2)"
+msgstr ""
+
+#: nnabla.monitor.MonitorImage nnabla.monitor.MonitorImage.add
+#: nnabla.monitor.MonitorImageTile nnabla.monitor.MonitorImageTile.add
+#: nnabla.monitor.MonitorSeries nnabla.monitor.MonitorSeries.add
+#: nnabla.monitor.MonitorTimeElapsed nnabla.monitor.MonitorTimeElapsed.add
+#: nnabla.monitor.plot_series nnabla.monitor.plot_time_elapsed
+#: nnabla.monitor.tile_images of
+msgid "パラメータ"
+msgstr "パラメータ"
+
+#: nnabla.monitor.MonitorImage:21 nnabla.monitor.MonitorImageTile:21
+#: nnabla.monitor.MonitorSeries:14 nnabla.monitor.MonitorTimeElapsed:16 of
+msgid "Name of the monitor. Used in the log."
+msgstr "monitor の名前。画面に表示されるログの中で使用される他、出力される .txt ファイルの名前の一部としても使われます。"
+
+#: nnabla.monitor.MonitorImage:23 nnabla.monitor.MonitorImageTile:23
+#: nnabla.monitor.MonitorSeries:16 nnabla.monitor.MonitorTimeElapsed:18 of
+msgid "Monitor class instance."
+msgstr "Monitor クラスのインスタンス。"
+
+#: nnabla.monitor.MonitorSeries:18 of
+msgid ""
+"Interval of flush the outputs. The values added by ``.add()`` are "
+"averaged during interval."
+msgstr "出力を表示する間隔。 ``.add()`` によって追加された値は、その間隔内で平均されます。"
+
+#: nnabla.monitor.MonitorSeries:21 nnabla.monitor.MonitorTimeElapsed:23 of
+msgid "Output to screen."
+msgstr "画面へ出力を表示するか選択できます。"
+
+#: nnabla.monitor.MonitorSeries.add:1 of
+msgid "Add a value to the series."
+msgstr "モニタに値を追加し、ログとして記録します。"
+
+#: nnabla.monitor.MonitorImage.add:3 nnabla.monitor.MonitorImageTile.add:3
+#: nnabla.monitor.MonitorSeries.add:3 of
+msgid "Index."
+msgstr "値のインデックス。通常は現在のイテレーションなど。"
+
+#: nnabla.monitor.MonitorSeries.add:5 of
+msgid "Value."
+msgstr "記録する値。"
+
+#: nnabla.monitor.MonitorTimeElapsed:1 of
+msgid "Logs the elapsed time."
+msgstr "経過時間を記録します。"
+
+#: nnabla.monitor.MonitorTimeElapsed:3 of
+msgid "The values are displayed and/or output to the file ``<name>-timer.txt``."
+msgstr "値は画面に表示されるほか、ファイル ``<name>-timer.txt`` に出力されます。"
+
+#: nnabla.monitor.MonitorTimeElapsed:8 of
+msgid ""
+"import time\n"
+"mont = MonitorTimeElapsed(\"time\", interval=2)\n"
+"for i in range(10):\n"
+"    time.sleep(1)\n"
+"    mont.add(i)"
+msgstr ""
+
+#: nnabla.monitor.MonitorTimeElapsed:20 of
+msgid ""
+"Interval of flush the outputs. The elapsed time is calculated within the "
+"interval."
+msgstr "出力を表示する間隔。経過時間はその間隔内で計算されます。"
+
+#: nnabla.monitor.MonitorTimeElapsed.add:1 of
+msgid ""
+"Calculate time elapsed from the point previously called this method or "
+"this object is created to this is called."
+msgstr "以前にこのメソッドが呼び出された時点もしくはこのオブジェクトが作成された時点から、次にこのメソッドが呼び出されるまでの経過時間を計算します。"
+
+#: nnabla.monitor.MonitorTimeElapsed.add:4 of
+msgid "Index to be displayed, and be used to take intervals."
+msgstr "表示、そしてインターバルを取得するために使用されるインデックス。"
+
+#: nnabla.monitor.MonitorImage:1 of
+msgid "Saves a series of images."
+msgstr "画像を保存します。"
+
+#: nnabla.monitor.MonitorImage:3 of
+msgid ""
+"The `.add()` method takes a ``(N,..., C, H, W)`` array as an input, and "
+"``num_images`` of ``[H, W, :min(3, C)]`` are saved into the monitor "
+"folder for each interval."
+msgstr ""
+"この `.add()` メソッドは ``(N,..., C, H, W)`` 配列を入力として取り、 ``[H, W, :min(3, C)]``"
+" の形式で ``num_images`` 枚の画像に変換したのち、 monitor で指定したフォルダへ保存します。"
+
+#: nnabla.monitor.MonitorImage:7 nnabla.monitor.MonitorImageTile:7 of
+msgid ""
+"The values are displayed and/or output to the file ``<name>/{iter}-{image"
+" index}.png``."
+msgstr "値は画面に表示されるほか、ファイル ``<name>/{iter}-{image index}.png`` に出力されます 。"
+
+#: nnabla.monitor.MonitorImage:12 of
+msgid ""
+"import numpy as np\n"
+"m = Monitor('tmp.monitor')\n"
+"mi = MonitorImage('noise', m, interval=2, num_images=2)\n"
+"x = np.random.randn(10, 3, 8, 8)\n"
+"for i in range(10):\n"
+"    mi.add(i, x)"
+msgstr ""
+
+#: nnabla.monitor.MonitorImage:25 nnabla.monitor.MonitorImageTile:25 of
+msgid "Interval of flush the outputs."
+msgstr "出力を表示する間隔。"
+
+#: nnabla.monitor.MonitorImage:27 of
+msgid "Number of images to be saved in each iteration."
+msgstr "各イテレーションで保存される画像の数。"
+
+#: nnabla.monitor.MonitorImage:29 nnabla.monitor.MonitorImageTile:30 of
+msgid ""
+"A function that takes a NCHW format image minibatch as "
+":obj:`numpy.ndarray`. The function should define a normalizer which map "
+"any inputs to a range of [0, 1]. The default normalizer normalizes the "
+"images into min-max normalization."
+msgstr ""
+"出力する画像に適用する正規化関数を指定します。この関数はNCHW形式の画像のミニバッチを :obj:`numpy.ndarray` "
+"として受け取り、入力を [0、1] の範囲にマッピングするものである必要があります。デフォルトでは、画像に対して min-max "
+"正規化を行う関数が用いられます。"
+
+#: nnabla.monitor.MonitorImage.add:1 nnabla.monitor.MonitorImageTile.add:1 of
+msgid "Add a minibatch of images to the monitor."
+msgstr "画像のミニバッチを monitor に追加します。"
+
+#: nnabla.monitor.MonitorImage.add:5 nnabla.monitor.MonitorImageTile.add:5 of
+msgid ""
+"A minibatch of images with ``(N, ..., C, H, W)`` format. If C == 2, blue "
+"channel is appended with ones. If C > 3, the array will be sliced to "
+"remove C > 3 sub-array."
+msgstr ""
+"``(N, ..., C, H, W)`` 形式の画像のミニバッチ 。C == 2 の場合、ブルーチャネルが追加されます。C > 3 "
+"の場合、配列がスライスされ、C > 3 部分は無視されます。"
+
+#: nnabla.monitor.MonitorImageTile:1 of
+msgid "Saving a series of images."
+msgstr "複数枚の画像をタイルしてまとめた画像を保存します。"
+
+#: nnabla.monitor.MonitorImageTile:3 of
+msgid ""
+"The `.add()` method takes a ``(N,..., C, H, W)`` array as an input, and "
+"``num_images`` tiled  ``(H, W, :min(3, C))`` images are saved into the "
+"monitor folder for each interval."
+msgstr ""
+"この `.add()` メソッドは ``(N,..., C, H, W)`` 配列を入力として受け取り、``(H, W, :min(3, "
+"C))`` の形式で ``num_images`` 枚の画像をタイルしたうえで、 monitorで指定したフォルダへ保存します。"
+
+#: nnabla.monitor.MonitorImageTile:12 of
+msgid ""
+"import numpy as np\n"
+"m = Monitor('tmp.monitor')\n"
+"mi = MonitorImageTile('noise_noise', m, interval=2, num_images=4)\n"
+"x = np.random.randn(10, 3, 8, 8)\n"
+"for i in range(10):\n"
+"    mi.add(i, x)"
+msgstr ""
+
+#: nnabla.monitor.MonitorImageTile:27 of
+msgid "Number of images tiled to be saved into a single image in each iteration."
+msgstr "各イテレーションで単一の画像に保存するためにタイル化された画像の数。"
+
+#: ../../python/api/monitor.rst:25
+msgid "Utility functions"
+msgstr "ユーティリティ関数"
+
+#: nnabla.monitor.tile_images:1 of
+msgid "Convert an array with shape of (B, C, H, W) into a tiled image."
+msgstr "( B, C, H, W ) の形状の配列をタイル化された画像に変換します。"
+
+#: nnabla.monitor.tile_images:3 of
+msgid "An array with shape of (B, C, H, W)."
+msgstr "( B, C, H, W ) の形状の配列。"
+
+#: nnabla.monitor.tile_images:5 of
+msgid "Each tile has padding with this size."
+msgstr "各タイルのパティングをこのサイズにします。"
+
+#: nnabla.monitor.tile_images:7 of
+msgid "Padding pixels are filled with this value."
+msgstr "パディングピクセルをこの値で埋めます。"
+
+#: nnabla.monitor.tile_images of
+msgid "戻り値"
+msgstr "戻り値"
+
+#: nnabla.monitor.tile_images:10 of
+msgid "A tile image."
+msgstr "タイル画像。"
+
+#: nnabla.monitor.tile_images of
+msgid "戻り値の型"
+msgstr "戻り値の型"
+
+#: nnabla.monitor.plot_series:1 of
+msgid "Plot series data from MonitorSeries output text file."
+msgstr "MonitorSeries の出力テキストファイルから系列データをプロットします。"
+
+#: nnabla.monitor.plot_series:3 nnabla.monitor.plot_time_elapsed:3 of
+msgid "Path to *.series.txt file produced by :obj:`~nnabla.MonitorSeries` class."
+msgstr ":obj:`~nnabla.MonitorSeries` クラスによって生成された *.series.txt ファイルへのパス。"
+
+#: nnabla.monitor.plot_series:5 nnabla.monitor.plot_time_elapsed:9 of
+msgid "Keyward arguments passed to :function:`matplotlib.pyplot.plot`."
+msgstr ":function:`matplotlib.pyplot.plot` に渡されるキーワード引数。"
+
+#: nnabla.monitor.plot_series:8 nnabla.monitor.plot_time_elapsed:12 of
+msgid "matplotlib package is required."
+msgstr "matplotlib パッケージが必要です。"
+
+#: nnabla.monitor.plot_time_elapsed:1 of
+msgid "Plot series data from MonitorTimeElapsed output text file."
+msgstr "MonitorTimeElapsed の出力テキストファイルから系列データをプロットします。"
+
+#: nnabla.monitor.plot_time_elapsed:5 of
+msgid "If ``True``, it plots the total elapsed time."
+msgstr "``True`` の場合、合計経過時間をプロットします。"
+
+#: nnabla.monitor.plot_time_elapsed:7 of
+msgid "Time unit chosen from ``'s'``, ``'m'``, ``'h'``, or ``'d'``."
+msgstr "``'s'`` , ``'m'`` , ``'h'`` , ``'d'`` のいずれかから選択される時間単位。"
+

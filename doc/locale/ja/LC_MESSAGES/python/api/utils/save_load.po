@@ -1,0 +1,266 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-02 15:41+0900\n"
+"PO-Revision-Date: 2020-05-15 11:06+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/utils/save_load.rst:4
+msgid "NNP save and load utilities"
+msgstr "NNP の保存やロードのユーティリティ"
+
+#: ../../python/api/utils/save_load.rst:6
+msgid ""
+"**IMPORTANT NOTICE**: To handle NNP file from Neural Network Console, if "
+"the network you want to save/load contains `LoopControl` functions "
+"`RepeatStart`_,  `RepeatEnd`_, `RecurrentInput`_, `RecurrentOutput`_ or "
+"`Delay`_, you must expand network with "
+":any:`../../file_format_converter/file_format_converter`."
+msgstr ""
+"**重要なお知らせ**: Neural Network Console で NPP ファイルを扱うには、保存する / 読み込むネットワークが "
+"`LoopControl` 関数である `RepeatStart`_, `RepeatEnd`_, `RecurrentInput`_, "
+"`RecurrentOutput`_ または `Delay`_ を含む場合、 "
+":any:`../../file_format_converter/file_format_converter` "
+"を使ってネットワークを拡張する必要があります。"
+
+#: nnabla.utils.save.save:1 of
+msgid "Save network definition, inference/training execution configurations etc."
+msgstr "ネットワーク定義の保存、推論/学習実行の設定等。"
+
+#: nnabla.utils.save.save of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.utils.save.save:4 of
+msgid ""
+"Filename to store information. The file extension is used to determine "
+"the saving file format. ``.nnp``: (Recommended) Creating a zip archive "
+"with nntxt (network definition etc.) and h5 (parameters). ``.nntxt``: "
+"Protobuf in text format. ``.protobuf``: Protobuf in binary format (unsafe"
+" in terms of  backward compatibility)."
+msgstr ""
+"情報を保存するためのファイル名。ファイルの拡張子は、保存するファイルフォーマットを決定します。``.nnp``: (推奨) nntxt "
+"(ネットワーク定義等) と h5 (パラメータ) で ZIP圧縮ファイルを生成します。``.nntxt``: テキスト形式の Protobuf 。"
+" ``.protobuf``: バイナリ形式の Protobuf (下位互換性の点で安全でありません)"
+
+#: nnabla.utils.save.save:12 of
+msgid "Information to store."
+msgstr "保存する情報。"
+
+#: nnabla.utils.save.save:14 of
+msgid ""
+"Includes parameter into single file. This is ignored when the extension "
+"of filename is nnp."
+msgstr "単一ファイルにパラメータを含めます。ファイル名の拡張子が nnp の場合、無視されます。"
+
+#: nnabla.utils.save.save:17 of
+msgid ""
+"By ``True``, the first dimension of all variables is considered as batch "
+"size, and left as a placeholder (more specifically ``-1``). The "
+"placeholder dimension will be filled during/after loading."
+msgstr ""
+"``True`` の場合、すべての変数の最初の次元は batch size、残りは placeholder (より具体的には ``-1``) "
+"とみなされます。 placeholder の次元は読み込み中、あるいは読み込み後に埋められます。"
+
+#: nnabla.utils.save.save:22 of
+msgid ""
+"if files is file-like object, file_like_type is one of \".nntxt\", "
+"\".prototxt\", \".protobuf\", \".h5\", \".nnp\"."
+msgstr ""
+"files がファイルオブジェクトの場合、file_like_type は “.nntxt”, “.prototxt”, “.protobuf”,"
+" “.h5”, “.nnp”. のいずれかになります。"
+
+#: nnabla.utils.nnp_graph.NnpLoader:4 nnabla.utils.save.save:25 of
+msgid "サンプル"
+msgstr ""
+
+#: nnabla.utils.save.save:26 of
+msgid ""
+"The following example creates a two inputs and two outputs MLP, and save "
+"the network structure and the initialized parameters."
+msgstr "次の例では、2 つの入力と 2 つの出力 MLP を作成し、ネットワーク構造と初期化されたパラメータを保存します。"
+
+#: nnabla.utils.save.save:30 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"from nnabla.utils.save import save\n"
+"\n"
+"batch_size = 16\n"
+"x0 = nn.Variable([batch_size, 100])\n"
+"x1 = nn.Variable([batch_size, 100])\n"
+"h1_0 = PF.affine(x0, 100, name='affine1_0')\n"
+"h1_1 = PF.affine(x1, 100, name='affine1_0')\n"
+"h1 = F.tanh(h1_0 + h1_1)\n"
+"h2 = F.tanh(PF.affine(h1, 50, name='affine2'))\n"
+"y0 = PF.affine(h2, 10, name='affiney_0')\n"
+"y1 = PF.affine(h2, 10, name='affiney_1')\n"
+"\n"
+"contents = {\n"
+"    'networks': [\n"
+"        {'name': 'net1',\n"
+"         'batch_size': batch_size,\n"
+"         'outputs': {'y0': y0, 'y1': y1},\n"
+"         'names': {'x0': x0, 'x1': x1}}],\n"
+"    'executors': [\n"
+"        {'name': 'runtime',\n"
+"         'network': 'net1',\n"
+"         'data': ['x0', 'x1'],\n"
+"         'output': ['y0', 'y1']}]}\n"
+"save('net.nnp', contents)"
+msgstr ""
+
+#: nnabla.utils.save.save:61 of
+msgid "To get a trainable model, use following code instead."
+msgstr "学習可能なモデルを取得するには、以下のコードを代わりにお使いください。"
+
+#: nnabla.utils.save.save:63 of
+msgid ""
+"contents = {\n"
+"'global_config': {'default_context': ctx},\n"
+"'training_config':\n"
+"    {'max_epoch': args.max_epoch,\n"
+"     'iter_per_epoch': args_added.iter_per_epoch,\n"
+"     'save_best': True},\n"
+"'networks': [\n"
+"    {'name': 'training',\n"
+"     'batch_size': args.batch_size,\n"
+"     'outputs': {'loss': loss_t},\n"
+"     'names': {'x': x, 'y': t, 'loss': loss_t}},\n"
+"    {'name': 'validation',\n"
+"     'batch_size': args.batch_size,\n"
+"     'outputs': {'loss': loss_v},\n"
+"     'names': {'x': x, 'y': t, 'loss': loss_v}}],\n"
+"'optimizers': [\n"
+"    {'name': 'optimizer',\n"
+"     'solver': solver,\n"
+"     'network': 'training',\n"
+"     'dataset': 'mnist_training',\n"
+"     'weight_decay': 0,\n"
+"     'lr_decay': 1,\n"
+"     'lr_decay_interval': 1,\n"
+"     'update_interval': 1}],\n"
+"'datasets': [\n"
+"    {'name': 'mnist_training',\n"
+"     'uri': 'MNIST_TRAINING',\n"
+"     'cache_dir': args.cache_dir + '/mnist_training.cache/',\n"
+"     'variables': {'x': x, 'y': t},\n"
+"     'shuffle': True,\n"
+"     'batch_size': args.batch_size,\n"
+"     'no_image_normalization': True},\n"
+"    {'name': 'mnist_validation',\n"
+"     'uri': 'MNIST_VALIDATION',\n"
+"     'cache_dir': args.cache_dir + '/mnist_test.cache/',\n"
+"     'variables': {'x': x, 'y': t},\n"
+"     'shuffle': False,\n"
+"     'batch_size': args.batch_size,\n"
+"     'no_image_normalization': True\n"
+"     }],\n"
+"'monitors': [\n"
+"    {'name': 'training_loss',\n"
+"     'network': 'validation',\n"
+"     'dataset': 'mnist_training'},\n"
+"    {'name': 'validation_loss',\n"
+"     'network': 'validation',\n"
+"     'dataset': 'mnist_validation'}],\n"
+"}"
+msgstr ""
+
+#: nnabla.utils.nnp_graph.NnpLoader:1 of
+msgid "An NNP file loader."
+msgstr "NNP ファイルローダー。"
+
+#: nnabla.utils.nnp_graph.NnpLoader:5 of
+msgid ""
+"from nnabla.utils.nnp_graph import NnpLoader\n"
+"\n"
+"# Read a .nnp file.\n"
+"nnp = NnpLoader('/path/to/nnp.nnp')\n"
+"# Assume a graph `graph_a` is in the nnp file.\n"
+"net = nnp.get_network(network_name, batch_size=1)\n"
+"# `x` is an input of the graph.\n"
+"x = net.inputs['x']\n"
+"# 'y' is an outputs of the graph.\n"
+"y = net.outputs['y']\n"
+"# Set random data as input and perform forward prop.\n"
+"x.d = np.random.randn(x.shape)\n"
+"y.forward(clear_buffer=True)\n"
+"print('output:', y.d)"
+msgstr ""
+
+#: nnabla.utils.nnp_graph.NnpLoader.get_network:1 of
+msgid "Create a variable graph given  network by name"
+msgstr "name で指定されたネットワークの variable graph を作成します。"
+
+#: nnabla.utils.nnp_graph.NnpLoader.get_network:3 of
+msgid "Returns: NnpNetwork"
+msgstr "戻り値: NnpNetwork"
+
+#: nnabla.utils.nnp_graph.NnpLoader.get_network_names:1 of
+msgid "Returns network names available."
+msgstr "利用可能なネットワーク名を返します。"
+
+#: nnabla.utils.nnp_graph.NnpNetwork:1 of
+msgid "A graph object which is read from nnp file."
+msgstr "nnp ファイルから読み込んだ graph object。"
+
+#: nnabla.utils.nnp_graph.NnpNetwork:4 of
+msgid ""
+"An instance of NnpNetwork is usually created by an NnpLoader instance. "
+"See an example usage described in :obj:`NnpLoader`."
+msgstr ""
+"NnpNetwork のインスタンスは通常 NnpLoader インスタンスにより作成されます。詳しくは、:obj:`NnpLoader` "
+"にある使用例をご覧ください。"
+
+#: nnabla.utils.nnp_graph.NnpNetwork:10 of
+msgid ""
+"A dict of all variables in a created graph with a variable name as a key,"
+" and a nnabla.Variable as a value."
+msgstr "変数名をキーとして、nnabla.Variable を値として作成した graph にある全ての変数の辞書。"
+
+#: nnabla.utils.nnp_graph.NnpNetwork of
+msgid "type"
+msgstr "型"
+
+#: nnabla.utils.nnp_graph.NnpNetwork:13 nnabla.utils.nnp_graph.NnpNetwork:19
+#: nnabla.utils.nnp_graph.NnpNetwork:25 of
+msgid "dict"
+msgstr ""
+
+#: nnabla.utils.nnp_graph.NnpNetwork:17 of
+msgid "All input variables."
+msgstr "すべての入力変数。"
+
+#: nnabla.utils.nnp_graph.NnpNetwork:23 of
+msgid "All output variables."
+msgstr "すべての出力変数。"
+
+#~ msgid ""
+#~ "Filename to store information. The file"
+#~ " extension is used to determine the"
+#~ " saving file format. ``.nnp``: "
+#~ "(Recommended) Creating a zip archive "
+#~ "with nntxt (network definition etc.) and"
+#~ " h5 (parameters). ``.nntxt``: Protobuf in"
+#~ " text format. ``.protobuf``: Protobuf in"
+#~ " binary format (unsafe in terms of"
+#~ msgstr ""
+
+#~ msgid "backward compatibility)."
+#~ msgstr ""
+

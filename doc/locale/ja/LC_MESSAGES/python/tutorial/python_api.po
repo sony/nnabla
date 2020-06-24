@@ -1,0 +1,1477 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-10 15:10+0900\n"
+"PO-Revision-Date: 2020-06-11 16:09+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../python/tutorial/python_api.rst:3
+msgid "NNabla Python API Demonstration Tutorial"
+msgstr "NNabla Python API デモ・チュートリアル"
+
+#: ../../python/tutorial/python_api.rst:5
+msgid "Let us import nnabla first, and some additional useful tools."
+msgstr "はじめに、 nnabla およびいくつかの役に立つツールをインポートしましょう。"
+
+#: ../../python/tutorial/python_api.rst:7
+msgid ""
+"# python2/3 compatibility\n"
+"from __future__ import print_function\n"
+"from __future__ import absolute_import\n"
+"from __future__ import division"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:14
+msgid ""
+"import nnabla as nn  # Abbreviate as nn for convenience.\n"
+"\n"
+"import numpy as np\n"
+"%matplotlib inline\n"
+"import matplotlib.pyplot as plt"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:25
+msgid "2017-09-27 14:00:30,785 [nnabla][INFO]: Initializing CPU extension..."
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:29
+msgid "NdArray"
+msgstr "NdArray"
+
+#: ../../python/tutorial/python_api.rst:31
+msgid ""
+"NdArray is a data container of a multi-dimensional array. NdArray is device (e."
+"g. CPU, CUDA) and type (e.g. uint8, float32) agnostic, in which both type and "
+"device are implicitly casted or transferred when it is used. Below, you create a "
+"NdArray with a shape of ``(2, 3, 4)``."
+msgstr ""
+"NdArray は多次元配列のデータコンテナーです。NdArray はデバイス ( 例 CPU、CUDA ) "
+"やタイプ ( 例 uint8、float32 ) に依存せず、タイプおよびデバイスは使用される際に暗"
+"黙でキャストまたは転送されます。以下のとおり、 ``(2, 3, 4)`` の 形状の NdArray を"
+"作成します。"
+
+#: ../../python/tutorial/python_api.rst:36
+msgid "a = nn.NdArray((2, 3, 4))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:40
+msgid ""
+"You can see the values held inside ``a`` by the following. The values are not "
+"initialized, and are created as float32 by default."
+msgstr ""
+"以下のように、内部に保持している値を表示することができます。値は初期化されず、デ"
+"フォルトで float32 として生成されます。"
+
+#: ../../python/tutorial/python_api.rst:43
+msgid "print(a.data)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:50
+msgid ""
+"[[[  9.42546995e+24   4.56809286e-41   8.47690058e-38   0.00000000e+00]\n"
+"  [  7.38056336e+34   7.50334969e+28   1.17078231e-32   7.58387310e+31]\n"
+"  [  7.87001454e-12   9.84394250e-12   6.85712044e+22   1.81785692e+31]]\n"
+"\n"
+" [[  1.84681296e+25   1.84933247e+20   4.85656319e+33   2.06176836e-19]\n"
+"  [  6.80020530e+22   1.69307638e+22   2.11235872e-19   1.94316151e-19]\n"
+"  [  1.81805047e+31   3.01289097e+29   2.07004908e-19   1.84648795e+25]]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:59
+msgid ""
+"The accessor ``.data`` returns a reference to the values of NdArray as ``numpy."
+"ndarray``. You can modify these by using the NumPy API as follows."
+msgstr ""
+"アクセサである ``.data`` は ``numpy.ndarray`` として NdArray の値への参照を返しま"
+"す。次のように NumPy API を使うことによって、これらの値を変えることができます。"
+
+#: ../../python/tutorial/python_api.rst:63
+msgid ""
+"print('[Substituting random values]')\n"
+"a.data = np.random.randn(*a.shape)\n"
+"print(a.data)\n"
+"print('[Slicing]')\n"
+"a.data[0, :, ::2] = 0\n"
+"print(a.data)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:75
+msgid ""
+"[Substituting random values]\n"
+"[[[ 0.36133638  0.22121875 -1.5912329  -0.33490974]\n"
+"  [ 1.35962474  0.2165522   0.54483992 -0.61813235]\n"
+"  [-0.13718799 -0.44104072 -0.51307833  0.73900551]]\n"
+"\n"
+" [[-0.59464753 -2.17738533 -0.28626776 -0.45654735]\n"
+"  [ 0.73566747  0.87292582 -0.41605178  0.04792296]\n"
+"  [-0.63856047  0.31966645 -0.63974309 -0.61385244]]]\n"
+"[Slicing]\n"
+"[[[ 0.          0.22121875  0.         -0.33490974]\n"
+"  [ 0.          0.2165522   0.         -0.61813235]\n"
+"  [ 0.         -0.44104072  0.          0.73900551]]\n"
+"\n"
+" [[-0.59464753 -2.17738533 -0.28626776 -0.45654735]\n"
+"  [ 0.73566747  0.87292582 -0.41605178  0.04792296]\n"
+"  [-0.63856047  0.31966645 -0.63974309 -0.61385244]]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:93
+msgid ""
+"Note that the above operation is all done in the host device (CPU). NdArray "
+"provides more efficient functions in case you want to fill all values with a "
+"constant, ``.zero`` and ``.fill``. They are lazily evaluated when the data is "
+"requested (when neural network computation requests the data, or when NumPy "
+"array is requested by Python) The filling operation is executed within a "
+"specific device (e.g. CUDA GPU), and more efficient if you specify the device "
+"setting, which we explain later."
+msgstr ""
+"上記の演算はすべてホストデバイス ( CPU ) で行われていることに注意してください。す"
+"べての値を定数で埋めたい場合、 NdArray の ``.zero`` 、および ``.fill`` メソッドを"
+"用いてより効率的に行うことができます。データが要求されるとき ( ニューラルネット"
+"ワークの計算がデータを要求するとき、あるいは、 Python によって NumPy 配列が要求さ"
+"れるとき ) 、それらの値は遅延評価されます。充填演算は特定のデバイス ( 例 CUDA "
+"GPU ) 内で実行され、デバイス設定を指定するとより効率的に演算が行われます。これに"
+"ついては後ほど説明します。"
+
+#: ../../python/tutorial/python_api.rst:102
+msgid ""
+"a.fill(1)  # Filling all values with one.\n"
+"print(a.data)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:110
+#: ../../python/tutorial/python_api.rst:129
+msgid ""
+"[[[ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]]\n"
+"\n"
+" [[ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:119
+msgid "You can create an NdArray instance directly from a NumPy array object."
+msgstr "NumPy 配列オブジェクトから直接 NdArray インスタンスを作ることができます。"
+
+#: ../../python/tutorial/python_api.rst:121
+msgid ""
+"b = nn.NdArray.from_numpy_array(np.ones(a.shape))\n"
+"print(b.data)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:138
+msgid ""
+"NdArray is used in Variable class, as well as NNabla's imperative computation of "
+"neural networks. We describe them in the later sections."
+msgstr ""
+"NdArray は Variable クラスで使用され、ニューラルネットワークの命令型計算でも使用"
+"されます。これらについては、後述の章で説明します。"
+
+#: ../../python/tutorial/python_api.rst:142
+msgid "Variable"
+msgstr "Variable"
+
+#: ../../python/tutorial/python_api.rst:144
+msgid ""
+"Variable class is used when you construct a neural network. The neural network "
+"can be described as a graph in which an edge represents a function (a.k.a "
+"operator and layer) which defines operation of a minimum unit of computation, "
+"and a node represents a variable which holds input/output values of a function "
+"(Function class is explained later). The graph is called \"Computation Graph\"."
+msgstr ""
+"Variable クラスは、ニューラルネットワークを構築するときに使用されます。ニューラル"
+"ネットワークは、計算の最小ユニットの演算を定義する Function ( 別名 演算子や層、 "
+"Function クラスは後述します ) であるエッジと、 Function の入力 / 出力の値を保持し"
+"ている Variable を表すノードで構成されるグラフとして記述されます。このグラフを "
+"“計算グラフ” と呼びます。"
+
+#: ../../python/tutorial/python_api.rst:151
+msgid ""
+"In NNabla, a Variable, a node of a computation graph, holds two ``NdArray``\\ s, "
+"one for storing the input or output values of a function during forward "
+"propagation (executing computation graph in the forward order), while another "
+"for storing the backward error signal (gradient) during backward propagation "
+"(executing computation graph in backward order to propagate error signals down "
+"to parameters (weights) of neural networks). The first one is called ``data``, "
+"the second is ``grad`` in NNabla."
+msgstr ""
+"NNabla では、計算グラフのノードである Variable は 2 つの ``NdArray`` を保持してい"
+"ます。1 つは ( 順方向に計算グラフを実行する ) Forward propagation 中に、 "
+"Function の入力値や出力値を格納するためのもので、ニューラルネットワークのパラメー"
+"タ ( 重み ) へのエラー信号をグラフ上で逆方向に伝播する ) back propagation 中に、"
+"エラー信号 ( 勾配 ) を格納するためのものです。 NNabla では、1 つ目を ``データ`` "
+"と呼び、2 つ目を ``勾配`` と呼びます。"
+
+#: ../../python/tutorial/python_api.rst:160
+msgid ""
+"The following line creates a Variable instance with a shape of (2, 3, 4). It has "
+"``data`` and ``grad`` as ``NdArray``. The flag ``need_grad`` is used to omit "
+"unnecessary gradient computation during backprop if set to False."
+msgstr ""
+"次の行で、 (2, 3, 4) の形状の Variable インスタンスを作ります。このインスタンス"
+"は ``NdArray`` として ``データ`` と ``勾配`` を持っています。 ``need_grad`` フラ"
+"グは、False にセットされた場合に backprop 中の不必要な勾配計算を省くために使われ"
+"ます。"
+
+#: ../../python/tutorial/python_api.rst:165
+msgid ""
+"x = nn.Variable([2, 3, 4], need_grad=True)\n"
+"print('x.data:', x.data)\n"
+"print('x.grad:', x.grad)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:174
+msgid ""
+"x.data: <NdArray((2, 3, 4)) at 0x7f575caf4ea0>\n"
+"x.grad: <NdArray((2, 3, 4)) at 0x7f575caf4ea0>"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:178
+msgid "You can get the shape by:"
+msgstr "以下により、形状を取得することができます。"
+
+#: ../../python/tutorial/python_api.rst:180
+msgid "x.shape"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:189
+msgid "(2, 3, 4)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:193
+msgid ""
+"Since both ``data`` and ``grad`` are ``NdArray``, you can get a reference to its "
+"values as NdArray with the ``.data`` accessor, but also it can be referred by ``."
+"d`` or ``.g`` property for ``data`` and ``grad`` respectively."
+msgstr ""
+"``データ`` も ``勾配`` も ``NdArray`` なので、 ``.data`` アクセサをもつ NdArray "
+"のようにその値への参照を取得することができますが、 ``データ`` や ``勾配`` をそれ"
+"ぞれ ``.d`` と ``.g`` プロパティで参照することもできます。"
+
+#: ../../python/tutorial/python_api.rst:198
+msgid ""
+"print('x.data')\n"
+"print(x.d)\n"
+"x.d = 1.2345  # To avoid NaN\n"
+"assert np.all(x.d == x.data.data), 'd: {} != {}'.format(x.d, x.data.data)\n"
+"print('x.grad')\n"
+"print(x.g)\n"
+"x.g = 1.2345  # To avoid NaN\n"
+"assert np.all(x.g == x.grad.data), 'g: {} != {}'.format(x.g, x.grad.data)\n"
+"\n"
+"# Zeroing grad values\n"
+"x.grad.zero()\n"
+"print('x.grad (after `.zero()`)')\n"
+"print(x.g)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:217
+msgid ""
+"x.data\n"
+"[[[  9.42553452e+24   4.56809286e-41   8.32543479e-38   0.00000000e+00]\n"
+"  [             nan              nan   0.00000000e+00   0.00000000e+00]\n"
+"  [  3.70977305e+25   4.56809286e-41   3.78350585e-44   0.00000000e+00]]\n"
+"\n"
+" [[  5.68736600e-38   0.00000000e+00   1.86176378e-13   4.56809286e-41]\n"
+"  [  4.74367616e+25   4.56809286e-41   5.43829710e+19   4.56809286e-41]\n"
+"  [  0.00000000e+00   0.00000000e+00   2.93623372e-38   0.00000000e+00]]]\n"
+"x.grad\n"
+"[[[  9.42576510e+24   4.56809286e-41   9.42576510e+24   4.56809286e-41]\n"
+"  [  9.27127763e-38   0.00000000e+00   9.27127763e-38   0.00000000e+00]\n"
+"  [  1.69275966e+22   4.80112800e+30   1.21230330e+25   7.22962302e+31]]\n"
+"\n"
+" [[  1.10471027e-32   4.63080422e+27   2.44632805e+20   2.87606258e+20]\n"
+"  [  4.46263300e+30   4.62311881e+30   7.65000750e+28   3.01339003e+29]\n"
+"  [  2.08627352e-10   1.03961868e+21   7.99576678e+20   1.74441223e+22]]]\n"
+"x.grad (after `.zero()`)\n"
+"[[[ 0.  0.  0.  0.]\n"
+"  [ 0.  0.  0.  0.]\n"
+"  [ 0.  0.  0.  0.]]\n"
+"\n"
+" [[ 0.  0.  0.  0.]\n"
+"  [ 0.  0.  0.  0.]\n"
+"  [ 0.  0.  0.  0.]]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:243
+msgid "Like ``NdArray``, a ``Variable`` can also be created from NumPy array(s)."
+msgstr "``NdArray`` のように、 ``Variable`` は NumPy 配列から作ることもできます。"
+
+#: ../../python/tutorial/python_api.rst:246
+msgid ""
+"x2 = nn.Variable.from_numpy_array(np.ones((3,)), need_grad=True)\n"
+"print(x2)\n"
+"print(x2.d)\n"
+"x3 = nn.Variable.from_numpy_array(np.ones((3,)), np.zeros((3,)), "
+"need_grad=True)\n"
+"print(x3)\n"
+"print(x3.d)\n"
+"print(x3.g)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:259
+msgid ""
+"<Variable((3,), need_grad=True) at 0x7f572a5242c8>\n"
+"[ 1.  1.  1.]\n"
+"<Variable((3,), need_grad=True) at 0x7f572a5244a8>\n"
+"[ 1.  1.  1.]\n"
+"[ 0.  0.  0.]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:266
+msgid ""
+"Besides storing values of a computation graph, pointing a parent edge (function) "
+"to trace the computation graph is an important role. Here ``x`` doesn't have any "
+"connection. Therefore, the ``.parent`` property returns None."
+msgstr ""
+"Variable では、計算グラフ内の値を格納することだけでなく、計算グラフをトレースする"
+"ために親エッジ ( Function ) を指すことも重要な役割です。ここでは、 ``x`` は何の繋"
+"がりも持っていません。そのため、 ``.parent`` プロパティは None を返します。"
+
+#: ../../python/tutorial/python_api.rst:271
+msgid "print(x.parent)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:278
+msgid "None"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:282
+msgid "Function"
+msgstr "Function"
+
+#: ../../python/tutorial/python_api.rst:284
+msgid ""
+"A function defines an operation block of a computation graph as we described "
+"above. The module ``nnabla.functions`` offers various functions (e.g. "
+"Convolution, Affine and ReLU). You can see the list of functions available in "
+"the `API reference guide <http://nnabla.readthedocs.io/en/latest/python/api/"
+"function.html#module-nnabla.functions>`__."
+msgstr ""
+"上述のとおり、 Function は計算グラフの演算部分を定義します。モジュール ``nnabla."
+"functions`` は様々な Function ( 例 Convolution、 Affine や ReLU ) を提供します。 "
+"`API リファレンスガイド <http://nnabla.readthedocs.io/jp/latest/python/api/"
+"function.html#module-nnabla.functions>`__ で利用可能な Function リストを参照して"
+"ください。"
+
+#: ../../python/tutorial/python_api.rst:290
+msgid "import nnabla.functions as F"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:294
+msgid ""
+"As an example, here you will defines a computation graph that computes the "
+"element-wise Sigmoid function outputs for the input variable and sums up all "
+"values into a scalar. (This is simple enough to explain how it behaves but a "
+"meaningless example in the context of neural network training. We will show you "
+"a neural network example later.)"
+msgstr ""
+"例えば、ここでは、入力 Variable に対して要素ごとに Sigmoid Function の出力を計算"
+"し、すべての値の和をとる計算グラフを定義するとしましょう。 (これはどのように動作"
+"するかを説明するのには十分簡単な例ですが、ニューラルネットワーク学習のコンテキス"
+"トにおいては意味のない例です。後述でニューラルネットワークの例を示します。)"
+
+#: ../../python/tutorial/python_api.rst:300
+msgid ""
+"sigmoid_output = F.sigmoid(x)\n"
+"sum_output = F.reduce_sum(sigmoid_output)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:305
+msgid ""
+"The function API in ``nnabla.functions`` takes one (or several) Variable(s) and "
+"arguments (if any), and returns one (or several) output Variable(s). The ``."
+"parent`` points to the function instance which created it. Note that no "
+"computation occurs at this time since we just define the graph. (This is the "
+"default behavior of NNabla computation graph API. You can also fire actual "
+"computation during graph definition which we call \"Dynamic mode\" (explained "
+"later))."
+msgstr ""
+"``nnabla.functions`` では、 Function API は 1 つ ( または複数 ) の Variable と引"
+"数 ( あれば ) を取り、 1 つ ( または複数 ) の出力 Variable を返します。 ``."
+"parent`` は、それを作成した Function インスタンスを指します。ここではグラフを定義"
+"しただけなので、計算は行われないことに注意してください。 ( これは NNabla の計算グ"
+"ラフ API のデフォルトの動作です。グラフ定義中に実際の計算を開始することも可能であ"
+"り、これは “Dynamic モード” と呼ばれます ( 後ほど説明します ) 。"
+
+#: ../../python/tutorial/python_api.rst:313
+msgid ""
+"print(\"sigmoid_output.parent.name:\", sigmoid_output.parent.name)\n"
+"print(\"x:\", x)\n"
+"print(\"sigmoid_output.parent.inputs refers to x:\", sigmoid_output.parent."
+"inputs)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:322
+msgid ""
+"sigmoid_output.parent.name: Sigmoid\n"
+"x: <Variable((2, 3, 4), need_grad=True) at 0x7f572a51a778>\n"
+"sigmoid_output.parent.inputs refers to x: [<Variable((2, 3, 4), need_grad=True) "
+"at 0x7f572a273a48>]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:327
+msgid ""
+"print(\"sum_output.parent.name:\", sum_output.parent.name)\n"
+"print(\"sigmoid_output:\", sigmoid_output)\n"
+"print(\"sum_output.parent.inputs refers to sigmoid_output:\", sum_output.parent."
+"inputs)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:336
+msgid ""
+"sum_output.parent.name: ReduceSum\n"
+"sigmoid_output: <Variable((2, 3, 4), need_grad=True) at 0x7f572a524638>\n"
+"sum_output.parent.inputs refers to sigmoid_output: [<Variable((2, 3, 4), "
+"need_grad=True) at 0x7f572a273a48>]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:341
+msgid ""
+"The ``.forward()`` at a leaf Variable executes the forward pass computation in "
+"the computation graph."
+msgstr ""
+"グラフの末端 Variable で ``.forward()`` を呼び出すことで、計算グラフにおける "
+"forward propagation を実行します。"
+
+#: ../../python/tutorial/python_api.rst:344
+msgid ""
+"sum_output.forward()\n"
+"print(\"CG output:\", sum_output.d)\n"
+"print(\"Reference:\", np.sum(1.0 / (1.0 + np.exp(-x.d))))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:353
+msgid ""
+"CG output: 18.59052085876465\n"
+"Reference: 18.5905"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:357
+msgid ""
+"The ``.backward()`` does the backward propagation through the graph. Here we "
+"initialize the ``grad`` values as zero before backprop since the NNabla backprop "
+"algorithm always accumulates the gradient in the root variables."
+msgstr ""
+"``.backward()`` は、グラフ乗で back propagation を行います。 NNabla の backprop "
+"アルゴリズムでは、入力 Variable に対して勾配を積算しているので、ここでは、"
+"backprop の前に ``勾配`` の値を 0 に初期化します。"
+
+#: ../../python/tutorial/python_api.rst:362
+msgid ""
+"x.grad.zero()\n"
+"sum_output.backward()\n"
+"print(\"d sum_o / d sigmoid_o:\")\n"
+"print(sigmoid_output.g)\n"
+"print(\"d sum_o / d x:\")\n"
+"print(x.g)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:374
+msgid ""
+"d sum_o / d sigmoid_o:\n"
+"[[[ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]]\n"
+"\n"
+" [[ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]\n"
+"  [ 1.  1.  1.  1.]]]\n"
+"d sum_o / d x:\n"
+"[[[ 0.17459197  0.17459197  0.17459197  0.17459197]\n"
+"  [ 0.17459197  0.17459197  0.17459197  0.17459197]\n"
+"  [ 0.17459197  0.17459197  0.17459197  0.17459197]]\n"
+"\n"
+" [[ 0.17459197  0.17459197  0.17459197  0.17459197]\n"
+"  [ 0.17459197  0.17459197  0.17459197  0.17459197]\n"
+"  [ 0.17459197  0.17459197  0.17459197  0.17459197]]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:392
+msgid ""
+"NNabla is developed by mainly focused on neural network training and inference. "
+"Neural networks have parameters to be learned associated with computation blocks "
+"such as Convolution, Affine (a.k.a. fully connected, dense etc.). In NNabla, the "
+"learnable parameters are also represented as ``Variable`` objects. Just like "
+"input variables, those parameter variables are also used by passing into "
+"``Function``\\ s. For example, Affine function takes input, weights and biases "
+"as inputs."
+msgstr ""
+"NNabla は主にニューラルネットワークの学習と推論に焦点を当てて開発されています。"
+"ニューラルネットワークには、 Convolution、 Affine ( 別名 全結合、 Dense 、など ) "
+"のように、計算ブロックと付随して学習可能なパラメータがあります。 NNabla では、学"
+"習可能なパラメータも ``Variable`` オブジェクトとして表されています。入力 "
+"Variable と同様に、それらのパラメータ Variable も ``Function`` に渡すことによって"
+"使われます。例えば、 Affine 関数は入力、重み、そしてバイアスを入力として受け取り"
+"ます。"
+
+#: ../../python/tutorial/python_api.rst:400
+msgid ""
+"x = nn.Variable([5, 2])  # Input\n"
+"w = nn.Variable([2, 3], need_grad=True)  # Weights\n"
+"b = nn.Variable([3], need_grad=True)  # Biases\n"
+"affine_out = F.affine(x, w, b)  # Create a graph including only affine"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:407
+msgid ""
+"The above example takes an input with B=5 (batchsize) and D=2 (dimensions) and "
+"maps it to D'=3 outputs, i.e. (B, D') output."
+msgstr ""
+"上記の例は、 B = 5 ( バッチサイズ ) および D = 2 ( 次元 ) の入力を受け取り、それ"
+"を D’ = 3 出力、すなわち (B , D’) 出力にマップします。"
+
+#: ../../python/tutorial/python_api.rst:410
+msgid ""
+"You may also notice that here you set ``need_grad=True`` only for parameter "
+"variables (w and b). The x is a non-parameter variable and the root of "
+"computation graph. Therefore, it doesn't require gradient computation. In this "
+"configuration, the gradient computation for x is not executed in the first "
+"affine, which will omit the computation of unnecessary backpropagation."
+msgstr ""
+"ここで、パラメータ Variable ( w と b ) に対してだけ ``need_grad=True`` をセットし"
+"ました。 x は非パラメータ Variable で、計算グラフのルートです。従って、 x は勾配"
+"計算が必要ありません。これにより、 x に対する勾配計算は最初のaffineでは実行され"
+"ず、不必要なバックプロパゲーションの計算を省くことができます。"
+
+#: ../../python/tutorial/python_api.rst:417
+msgid ""
+"The next block sets data and initializes grad, then applies forward and backward "
+"computation."
+msgstr ""
+"次の部分で、データをセットし、勾配を初期化し、それから順方向の計算と逆方向の計算"
+"を行います。"
+
+#: ../../python/tutorial/python_api.rst:420
+msgid ""
+"# Set random input and parameters\n"
+"x.d = np.random.randn(*x.shape)\n"
+"w.d = np.random.randn(*w.shape)\n"
+"b.d = np.random.randn(*b.shape)\n"
+"# Initialize grad\n"
+"x.grad.zero()  # Just for showing gradients are not computed when "
+"need_grad=False (default).\n"
+"w.grad.zero()\n"
+"b.grad.zero()\n"
+"\n"
+"# Forward and backward\n"
+"affine_out.forward()\n"
+"affine_out.backward()\n"
+"# Note: Calling backward at non-scalar Variable propagates 1 as error message "
+"from all element of outputs. ."
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:436
+msgid "You can see that affine\\_out holds an output of Affine."
+msgstr "affine\\_out が Affine の出力を保持します。"
+
+#: ../../python/tutorial/python_api.rst:438
+msgid ""
+"print('F.affine')\n"
+"print(affine_out.d)\n"
+"print('Reference')\n"
+"print(np.dot(x.d, w.d) + b.d)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:448
+msgid ""
+"F.affine\n"
+"[[-0.17701732  2.86095762 -0.82298267]\n"
+" [-0.75544345 -1.16702223 -2.44841242]\n"
+" [-0.36278027 -3.4771595  -0.75681627]\n"
+" [ 0.32743117  0.24258983  1.30944324]\n"
+" [-0.87201929  1.94556415 -3.23357344]]\n"
+"Reference\n"
+"[[-0.1770173   2.86095762 -0.82298267]\n"
+" [-0.75544345 -1.16702223 -2.44841242]\n"
+" [-0.3627803  -3.4771595  -0.75681627]\n"
+" [ 0.32743117  0.24258983  1.309443  ]\n"
+" [-0.87201929  1.94556415 -3.23357344]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:462
+msgid "The resulting gradients of weights and biases are as follows."
+msgstr "結果として重みとバイアスの勾配は次のようになります。"
+
+#: ../../python/tutorial/python_api.rst:464
+msgid ""
+"print(\"dw\")\n"
+"print(w.g)\n"
+"print(\"db\")\n"
+"print(b.g)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:474
+msgid ""
+"dw\n"
+"[[ 3.10820675  3.10820675  3.10820675]\n"
+" [ 0.37446201  0.37446201  0.37446201]]\n"
+"db\n"
+"[ 5.  5.  5.]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:481
+msgid "The gradient of ``x`` is not changed because ``need_grad`` is set as False."
+msgstr ""
+"``need_grad`` が False にセットされているため、 ``x`` の勾配は変わりません。"
+
+#: ../../python/tutorial/python_api.rst:484
+msgid "print(x.g)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:491
+msgid ""
+"[[ 0.  0.]\n"
+" [ 0.  0.]\n"
+" [ 0.  0.]\n"
+" [ 0.  0.]\n"
+" [ 0.  0.]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:499
+msgid "Parametric Function"
+msgstr "Parametric function"
+
+#: ../../python/tutorial/python_api.rst:501
+msgid ""
+"Considering parameters as inputs of ``Function`` enhances expressiveness and "
+"flexibility of computation graphs. However, to define all parameters for each "
+"learnable function is annoying for users to define a neural network. In NNabla, "
+"trainable models are usually created by composing functions that have "
+"optimizable parameters. These functions are called \"Parametric Functions\". The "
+"Parametric Function API provides various parametric functions and an interface "
+"for composing trainable models."
+msgstr ""
+"``Function`` の入力としてのパラメータを考えることにより、計算グラフの表現性と柔軟"
+"性が高まります。しかし、学習できる Function それぞれに対してすべてのパラメータを"
+"定義することは、ニューラルネットワークを定義するユーザーにとって面倒です。 "
+"NNabla では、学習できるモデルは通常、最適化可能なパラメータをもつ Function を構成"
+"することによって作られます。 これらの Function は \"Parametric function\" と呼ば"
+"れています。 Parametric function API は、様々な Parametric function と学習できる"
+"モデルを構成するためのインターフェイスを提供します。"
+
+#: ../../python/tutorial/python_api.rst:509
+msgid "To use parametric functions, import:"
+msgstr "Parametric function を使うために、以下のようにインポートを行います。"
+
+#: ../../python/tutorial/python_api.rst:511
+msgid "import nnabla.parametric_functions as PF"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:515
+msgid "The function with optimizable parameter can be created as below."
+msgstr "最適化可能なパラメータをもつ Function は以下のように作ることができます。"
+
+#: ../../python/tutorial/python_api.rst:517
+msgid ""
+"with nn.parameter_scope(\"affine1\"):\n"
+"    c1 = PF.affine(x, 3)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:522
+msgid ""
+"The first line creates a **parameter scope**. The second line then applies ``PF."
+"affine`` - an affine transform - to ``x``, and creates a variable ``c1`` holding "
+"that result. The parameters are created and initialized randomly at function "
+"call, and registered by a name \"affine1\" using ``parameter_scope`` context. "
+"The function ``nnabla.get_parameters()`` allows to get the registered parameters."
+msgstr ""
+"1 行目で **parameter scope** を作っています。そして、 2 行目で ``PF.affine`` - "
+"affine変換 - を ``x`` に対して適用し、その結果を保持する変数 ``c1`` を作っていま"
+"す。パラメータは関数呼び出しで作られ、ランダムに初期化され、 ``parameter_scope`` "
+"コンテキストを使って “affine1” という名前で登録されます。関数 ``nnabla."
+"get_parameters()`` で登録されたパラメータを取得することができます。"
+
+#: ../../python/tutorial/python_api.rst:529
+#: ../../python/tutorial/python_api.rst:599
+#: ../../python/tutorial/python_api.rst:678
+msgid "nn.get_parameters()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:538
+#: ../../python/tutorial/python_api.rst:562
+msgid ""
+"OrderedDict([('affine1/affine/W',\n"
+"              <Variable((2, 3), need_grad=True) at 0x7f572822f0e8>),\n"
+"             ('affine1/affine/b',\n"
+"              <Variable((3,), need_grad=True) at 0x7f572822f138>)])"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:545
+msgid ""
+"The ``name=`` argument of any PF function creates the equivalent parameter space "
+"to the above definition of ``PF.affine`` transformation as below. It could save "
+"the space of your Python code. The ``nnabla.parametric_scope`` is more useful "
+"when you group multiple parametric functions such as Convolution-"
+"BatchNormalization found in a typical unit of CNNs."
+msgstr ""
+"どんな PF Function でも ``name=`` 引数は、下記のような ``PF.affine`` 変換の上記の"
+"定義と同等のパラメータ空間を作ります。これにより、 Python コードのスペースを節約"
+"できます。 CNN の典型的なユニットで見られる Convolution-BatchNormalization のよう"
+"な多数の Parametric function をグループ化する場合、 ``nnabla.parametric_scope`` "
+"はより有益です。"
+
+#: ../../python/tutorial/python_api.rst:552
+msgid ""
+"c1 = PF.affine(x, 3, name='affine1')\n"
+"nn.get_parameters()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:569
+msgid ""
+"It is worth noting that the shapes of both outputs and parameter variables (as "
+"you can see above) are automatically determined by only providing the output "
+"size of affine transformation(in the example above the output size is 3). This "
+"helps to create a graph in an easy way."
+msgstr ""
+"出力およびパラメータの形状 ( 上記のとおり ) が affine 変換の出力サイズ ( 上記の例"
+"では出力サイズは 3 ) により自動的に決まるということは注目すべき点です。これによ"
+"り、簡単にグラフを作ることができます。"
+
+#: ../../python/tutorial/python_api.rst:574
+msgid "c1.shape"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:583
+msgid "(5, 3)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:587
+msgid "Parameter scope can be nested as follows (although a meaningless example)."
+msgstr ""
+"( 特に意味のない例ですが ) パラメータのスコープは次のように入れ子にすることができ"
+"ます。"
+
+#: ../../python/tutorial/python_api.rst:590
+msgid ""
+"with nn.parameter_scope('foo'):\n"
+"    h = PF.affine(x, 3)\n"
+"    with nn.parameter_scope('bar'):\n"
+"        h = PF.affine(h, 4)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:597
+msgid "This creates the following."
+msgstr "結果として以下が作成されます。"
+
+#: ../../python/tutorial/python_api.rst:608
+msgid ""
+"OrderedDict([('affine1/affine/W',\n"
+"              <Variable((2, 3), need_grad=True) at 0x7f572822f0e8>),\n"
+"             ('affine1/affine/b',\n"
+"              <Variable((3,), need_grad=True) at 0x7f572822f138>),\n"
+"             ('foo/affine/W',\n"
+"              <Variable((2, 3), need_grad=True) at 0x7f572822fa98>),\n"
+"             ('foo/affine/b',\n"
+"              <Variable((3,), need_grad=True) at 0x7f572822fae8>),\n"
+"             ('foo/bar/affine/W',\n"
+"              <Variable((3, 4), need_grad=True) at 0x7f572822f728>),\n"
+"             ('foo/bar/affine/b',\n"
+"              <Variable((4,), need_grad=True) at 0x7f572822fdb8>)])"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:623
+msgid "Also, ``get_parameters()`` can be used in ``parameter_scope``. For example:"
+msgstr ""
+"また、 ``get_parameters()`` は ``parameter_scope`` で使用できます。例えば、"
+
+#: ../../python/tutorial/python_api.rst:626
+msgid ""
+"with nn.parameter_scope(\"foo\"):\n"
+"    print(nn.get_parameters())"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:634
+msgid ""
+"OrderedDict([('affine/W', <Variable((2, 3), need_grad=True) at 0x7f572822fa98>), "
+"('affine/b', <Variable((3,), need_grad=True) at 0x7f572822fae8>), ('bar/affine/"
+"W', <Variable((3, 4), need_grad=True) at 0x7f572822f728>), ('bar/affine/b', "
+"<Variable((4,), need_grad=True) at 0x7f572822fdb8>)])"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:637
+msgid ""
+"``nnabla.clear_parameters()`` can be used to delete registered parameters under "
+"the scope."
+msgstr ""
+"``nnabla.clear_parameters()`` により、スコープの中で登録されたパラメータを消去す"
+"ることができます。"
+
+#: ../../python/tutorial/python_api.rst:640
+msgid ""
+"with nn.parameter_scope(\"foo\"):\n"
+"    nn.clear_parameters()\n"
+"print(nn.get_parameters())"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:649
+msgid ""
+"OrderedDict([('affine1/affine/W', <Variable((2, 3), need_grad=True) at "
+"0x7f572822f0e8>), ('affine1/affine/b', <Variable((3,), need_grad=True) at "
+"0x7f572822f138>)])"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:653
+msgid "MLP Example For Explanation"
+msgstr "多層パーセプトロンのサンプル"
+
+#: ../../python/tutorial/python_api.rst:655
+msgid ""
+"The following block creates a computation graph to predict one dimensional "
+"output from two dimensional inputs by a 2 layer fully connected neural network "
+"(multi-layer perceptron)."
+msgstr ""
+"次のブロックは、 2 層の完全結合のニューラルネットワーク ( 多層パーセプトロン ) に"
+"よって、2 次元の入力から 1 次元の出力を予測するための計算グラフを作ります。"
+
+#: ../../python/tutorial/python_api.rst:659
+msgid ""
+"nn.clear_parameters()\n"
+"batchsize = 16\n"
+"x = nn.Variable([batchsize, 2])\n"
+"with nn.parameter_scope(\"fc1\"):\n"
+"    h = F.tanh(PF.affine(x, 512))\n"
+"with nn.parameter_scope(\"fc2\"):\n"
+"    y = PF.affine(h, 1)\n"
+"print(\"Shapes:\", h.shape, y.shape)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:673
+msgid "Shapes: (16, 512) (16, 1)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:676
+msgid "This will create the following parameter variables."
+msgstr "結果として次のようなパラメータ Variable が作成されます。"
+
+#: ../../python/tutorial/python_api.rst:687
+msgid ""
+"OrderedDict([('fc1/affine/W',\n"
+"              <Variable((2, 512), need_grad=True) at 0x7f572822fef8>),\n"
+"             ('fc1/affine/b',\n"
+"              <Variable((512,), need_grad=True) at 0x7f572822f9a8>),\n"
+"             ('fc2/affine/W',\n"
+"              <Variable((512, 1), need_grad=True) at 0x7f572822f778>),\n"
+"             ('fc2/affine/b',\n"
+"              <Variable((1,), need_grad=True) at 0x7f572822ff98>)])"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:698
+msgid ""
+"As described above, you can execute the forward pass by calling forward method "
+"at the terminal variable."
+msgstr ""
+"上記で説明したように、末端の Variable で順方向メソッドを呼び出すことで順方向パス"
+"を実行することができます。"
+
+#: ../../python/tutorial/python_api.rst:701
+msgid ""
+"x.d = np.random.randn(*x.shape)  # Set random input\n"
+"y.forward()\n"
+"print(y.d)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:710
+msgid ""
+"[[-0.05708594]\n"
+" [ 0.01661986]\n"
+" [-0.34168088]\n"
+" [ 0.05822293]\n"
+" [-0.16566885]\n"
+" [-0.04867431]\n"
+" [ 0.2633169 ]\n"
+" [ 0.10496549]\n"
+" [-0.01291842]\n"
+" [-0.09726256]\n"
+" [-0.05720493]\n"
+" [-0.09691752]\n"
+" [-0.07822668]\n"
+" [-0.17180404]\n"
+" [ 0.11970415]\n"
+" [-0.08222144]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:728
+msgid ""
+"Training a neural networks needs a loss value to be minimized by gradient "
+"descent with backprop. In NNabla, loss function is also a just function, and "
+"packaged in the functions module."
+msgstr ""
+"ニューラルネットワークの学習では、 backprop を用いた勾配降下法によって loss の値"
+"を最小化する必要があります。 NNabla では、 loss 関数は単一の Function であり、 "
+"Function モジュールに含まれます。"
+
+#: ../../python/tutorial/python_api.rst:732
+msgid ""
+"# Variable for label\n"
+"label = nn.Variable([batchsize, 1])\n"
+"# Set loss\n"
+"loss = F.reduce_mean(F.squared_error(y, label))\n"
+"\n"
+"# Execute forward pass.\n"
+"label.d = np.random.randn(*label.shape)  # Randomly generate labels\n"
+"loss.forward()\n"
+"print(loss.d)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:747
+msgid "1.9382084608078003"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:750
+msgid ""
+"As you've seen above, NNabla ``backward`` accumulates the gradients at the root "
+"variables. You have to initialize the grad of the parameter variables before "
+"backprop (We will show you the easiest way with ``Solver`` API)."
+msgstr ""
+"上記のとおり、 NNabla で ``backward`` を実行するとルートの Variable で勾配を蓄積"
+"します。そのため、 backprop の前にパラメータ Variable の勾配を初期化する必要があ"
+"ります ( 別途 ``Solver`` APIで簡単な方法を説明します ) 。"
+
+#: ../../python/tutorial/python_api.rst:755
+msgid ""
+"# Collect all parameter variables and init grad.\n"
+"for name, param in nn.get_parameters().items():\n"
+"    param.grad.zero()\n"
+"# Gradients are accumulated to grad of params.\n"
+"loss.backward()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:764
+msgid "Imperative Mode"
+msgstr "Imperative モード"
+
+#: ../../python/tutorial/python_api.rst:766
+msgid ""
+"After performing backprop, gradients are held in parameter variable grads. The "
+"next block will update the parameters with vanilla gradient descent."
+msgstr ""
+"backprop を実行すると、勾配はパラメータ Variable の grad 領域に保持されます。次の"
+"ブロックでは、基本的な勾配降下法でパラメータを更新します。"
+
+#: ../../python/tutorial/python_api.rst:770
+msgid ""
+"for name, param in nn.get_parameters().items():\n"
+"    param.data -= param.grad * 0.001  # 0.001 as learning rate"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:775
+msgid ""
+"The above computation is an example of NNabla's \"Imperative Mode\" for "
+"executing neural networks. Normally, NNabla functions (instances of `nnabla."
+"functions <https://nnabla.readthedocs.io/en/latest/python/api/function."
+"html#module-nnabla.functions>`__) take ``Variable``\\ s as their input. When at "
+"least one ``NdArray`` is provided as an input for NNabla functions (instead of "
+"``Variable``\\ s), the function computation will be fired immediately, and "
+"returns an ``NdArray`` as the output, instead of returning a ``Variable``. In "
+"the above example, the NNabla functions ``F.mul_scalar`` and ``F.sub2`` are "
+"called by the overridden operators ``*`` and ``-=``, respectively."
+msgstr ""
+"上記の計算は、ニューラルネットワークを実行するための NNabla の “ Imperative モー"
+"ド” の例です。通常、 NNabla Function ( `nnabla.functions <https://nnabla."
+"readthedocs.io/jp/latest/python/api/function.html#module-nnabla.functions>`__ の"
+"インスタンス ) は入力として ``Variable`` を取ります。 ( ``Variable`` の代わり"
+"に ) NNabla Function への入力として少なくとも 1 つの ``NdArray`` が与えられる"
+"と、 Function の計算はすぐに開始し、出力として ``Variable`` を返す代わりに "
+"``NdArray`` を返します。上記の例で、NNabla Function ``F.mul_scalar`` と ``F."
+"sub2`` がそれぞれオーバーライドされた演算子 ``*`` と ``-=`` によって呼び出されま"
+"す。"
+
+#: ../../python/tutorial/python_api.rst:785
+msgid ""
+"In other words, NNabla's \"Imperative mode\" doesn't create a computation graph, "
+"and can be used like NumPy. If device acceleration such as CUDA is enabled, it "
+"can be used like NumPy empowered with device acceleration. Parametric functions "
+"can also be used with NdArray input(s). The following block demonstrates a "
+"simple imperative execution example."
+msgstr ""
+"つまり、 NNabla の “ Imperative モード ” は計算グラフを作成しませんが、NumPy のよ"
+"うに使うことができます。もし CUDA のようなデバイスアクセラレーションが有効なら"
+"ば、それにより高速化された NumPy のように使うことができます。 Parametric "
+"function は NdArray 入力でも使うことができます。次のブロックでは、簡単な "
+"Imperative 実行の例を説明します。"
+
+#: ../../python/tutorial/python_api.rst:792
+msgid ""
+"# A simple example of imperative mode.\n"
+"xi = nn.NdArray.from_numpy_array(np.arange(4).reshape(2, 2))\n"
+"yi = F.relu(xi - 1)\n"
+"print(xi.data)\n"
+"print(yi.data)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:803
+msgid ""
+"[[0 1]\n"
+" [2 3]]\n"
+"[[ 0.  0.]\n"
+" [ 1.  2.]]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:809
+msgid ""
+"Note that in-place substitution from the rhs to the lhs cannot be done by the "
+"``=`` operator. For example, when ``x`` is an ``NdArray``, writing ``x = x + 1`` "
+"will *not* increment all values of ``x`` - instead, the expression on the rhs "
+"will create a *new* ``NdArray`` object that is different from the one originally "
+"bound by ``x``, and binds the new ``NdArray`` object to the Python variable "
+"``x`` on the lhs."
+msgstr ""
+"右辺から左辺への in-place な代入は、 ``=`` 演算子では適切に行えないことに注意して"
+"ください。 例えば、 ``x`` が ``NdArray`` であるとき、 ``x = x + 1`` により ``x`` "
+"の値が増加するわけでは *ありません。* その代わりに、 ``x`` がもともと参照されてい"
+"た ``NdArray`` とは異なる、右辺で新たに作成された ``NdArray`` を左辺の ``x`` は参"
+"照します。"
+
+#: ../../python/tutorial/python_api.rst:816
+msgid ""
+"For in-place editing of ``NdArrays``, the in-place assignment operators ``+=``, "
+"``-=``, ``*=``, and ``/=`` can be used. The ``copy_from`` method can also be "
+"used to copy values of an existing ``NdArray`` to another. For example, "
+"incrementing 1 to ``x``, an ``NdArray``, can be done by ``x.copy_from(x+1)``. "
+"The copy is performed with device acceleration if a device context is specified "
+"by using ``nnabla.set_default_context`` or ``nnabla.context_scope``."
+msgstr ""
+"``NdArrays`` の in-place な操作には、 in-place なアサインメント演算子 ``+=``、 "
+"``-=`` 、 ``*=`` と ``/=`` を使用できます。 ``copy_from`` メソッドにより、既存の "
+"``NdArray`` から他の既存の NdArray に値をコピーすることもできます。例えば、"
+"``NdArray`` である ``x`` を 1 増加させるには ``x.copy_from(x+1)`` で行うことがで"
+"きます。もし、デバイスのコンテキストが ``nnabla.set_default_context`` や "
+"``nnabla.context_scope`` を使って明示されていれば、コピーはデバイスアクセラレー"
+"ションを用いて行われます。"
+
+#: ../../python/tutorial/python_api.rst:824
+msgid ""
+"# The following doesn't perform substitution but assigns a new NdArray object to "
+"`xi`.\n"
+"# xi = xi + 1\n"
+"\n"
+"# The following copies the result of `xi + 1` to `xi`.\n"
+"xi.copy_from(xi + 1)\n"
+"assert np.all(xi.data == (np.arange(4).reshape(2, 2) + 1))\n"
+"\n"
+"# Inplace operations like `+=`, `*=` can also be used (more efficient).\n"
+"xi += 1\n"
+"assert np.all(xi.data == (np.arange(4).reshape(2, 2) + 2))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:838
+msgid "Solver"
+msgstr "Solver"
+
+#: ../../python/tutorial/python_api.rst:840
+msgid ""
+"NNabla provides stochastic gradient descent algorithms to optimize parameters "
+"listed in the ``nnabla.solvers`` module. The parameter updates demonstrated "
+"above can be replaced with this Solver API, which is easier and usually faster."
+msgstr ""
+"NNabla は ``nnabla.solvers`` モジュールでは、パラメータを最適化するために確率的勾"
+"配降下法アルゴリズムを提供します。上記で説明したパラメータの更新はこの Solver "
+"API で置き換えることができ、この API はより簡単であり、大抵の場合より速いです。"
+
+#: ../../python/tutorial/python_api.rst:845
+msgid ""
+"from nnabla import solvers as S\n"
+"solver = S.Sgd(lr=0.00001)\n"
+"solver.set_parameters(nn.get_parameters())"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:851
+msgid ""
+"# Set random data\n"
+"x.d = np.random.randn(*x.shape)\n"
+"label.d = np.random.randn(*label.shape)\n"
+"\n"
+"# Forward\n"
+"loss.forward()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:860
+msgid ""
+"Just call the the following solver method to fill zero grad region, then backprop"
+msgstr ""
+"以下の solver メソッドを呼び出し、勾配領域を 0 で埋めたあと、 backprop を呼び出し"
+"ます。"
+
+#: ../../python/tutorial/python_api.rst:863
+msgid ""
+"solver.zero_grad()\n"
+"loss.backward()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:868
+msgid ""
+"The following block updates parameters with the Vanilla Sgd rule (equivalent to "
+"the imperative example above)."
+msgstr ""
+"次のブロックでは、通常の SGD 更新則を使ってパラメータを更新します (上記の "
+"Imperative の例と同様 ) 。"
+
+#: ../../python/tutorial/python_api.rst:871
+msgid "solver.update()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:876
+msgid "Toy Problem To Demonstrate Training"
+msgstr "トイ問題を利用した学習の例"
+
+#: ../../python/tutorial/python_api.rst:878
+msgid ""
+"The following function defines a regression problem which computes the norm of a "
+"vector."
+msgstr "以下の関数のようなベクトルのノルムの計算を回帰する問題を考えます。"
+
+#: ../../python/tutorial/python_api.rst:881
+msgid ""
+"def vector2length(x):\n"
+"    # x : [B, 2] where B is number of samples.\n"
+"    return np.sqrt(np.sum(x ** 2, axis=1, keepdims=True))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:887
+msgid "We visualize this mapping with the contour plot by matplotlib as follows."
+msgstr ""
+"次のように、 matplotlib の contour plot により、この変換をビジュアライズします。"
+
+#: ../../python/tutorial/python_api.rst:890
+msgid ""
+"# Data for plotting contour on a grid data.\n"
+"xs = np.linspace(-1, 1, 100)\n"
+"ys = np.linspace(-1, 1, 100)\n"
+"grid = np.meshgrid(xs, ys)\n"
+"X = grid[0].flatten()\n"
+"Y = grid[1].flatten()\n"
+"\n"
+"def plot_true():\n"
+"    \"\"\"Plotting contour of true mapping from a grid data created above."
+"\"\"\"\n"
+"    plt.contourf(xs, ys, vector2length(np.hstack([X[:, None], Y[:, None]]))."
+"reshape(100, 100))\n"
+"    plt.axis('equal')\n"
+"    plt.colorbar()\n"
+"\n"
+"plot_true()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:912
+msgid "We define a deep prediction neural network."
+msgstr "これらを予測する深層ニューラルネットワークを定義します。"
+
+#: ../../python/tutorial/python_api.rst:914
+msgid ""
+"def length_mlp(x):\n"
+"    h = x\n"
+"    for i, hnum in enumerate([4, 8, 4, 2]):\n"
+"        h = F.tanh(PF.affine(h, hnum, name=\"fc{}\".format(i)))\n"
+"    y = PF.affine(h, 1, name='fc')\n"
+"    return y"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:923
+msgid ""
+"nn.clear_parameters()\n"
+"batchsize = 100\n"
+"x = nn.Variable([batchsize, 2])\n"
+"y = length_mlp(x)\n"
+"label = nn.Variable([batchsize, 1])\n"
+"loss = F.reduce_mean(F.squared_error(y, label))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:932
+msgid ""
+"We created a 5 layers deep MLP using for-loop. Note that only 3 lines of the "
+"code potentially create infinitely deep neural networks. The next block adds "
+"helper functions to visualize the learned function."
+msgstr ""
+"for ループを使って 5 層の深層 MLP を作成しました。わずか 3 行のコードだけで無限に"
+"深いニューラルネットワークを作成可能です。次のブロックでは、学習済み関数を視覚化"
+"するための helper 関数を追加します。"
+
+#: ../../python/tutorial/python_api.rst:936
+msgid ""
+"def predict(inp):\n"
+"    ret = []\n"
+"    for i in range(0, inp.shape[0], x.shape[0]):\n"
+"        xx = inp[i:i + x.shape[0]]\n"
+"        # Imperative execution\n"
+"        xi = nn.NdArray.from_numpy_array(xx)\n"
+"        yi = length_mlp(xi)\n"
+"        ret.append(yi.data.copy())\n"
+"    return np.vstack(ret)\n"
+"\n"
+"def plot_prediction():\n"
+"    plt.contourf(xs, ys, predict(np.hstack([X[:, None], Y[:, None]]))."
+"reshape(100, 100))\n"
+"    plt.colorbar()\n"
+"    plt.axis('equal')"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:953
+msgid ""
+"Next we instantiate a solver object as follows. We use Adam optimizer which is "
+"one of the most popular SGD algorithm used in the literature."
+msgstr ""
+"続いて、 solver オブジェクトを作成します。この分野でもっともよく使用される SGD ア"
+"ルゴリズムの 1 つである Adam オプティマイザーを使います。"
+
+#: ../../python/tutorial/python_api.rst:956
+msgid ""
+"from nnabla import solvers as S\n"
+"solver = S.Adam(alpha=0.01)\n"
+"solver.set_parameters(nn.get_parameters())"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:962
+msgid "The following function generates data from the true system infinitely."
+msgstr "次の関数は真のシステムにより無限にデータを生成します。"
+
+#: ../../python/tutorial/python_api.rst:964
+msgid ""
+"def random_data_provider(n):\n"
+"    x = np.random.uniform(-1, 1, size=(n, 2))\n"
+"    y = vector2length(x)\n"
+"    return x, y"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:971
+msgid "In the next block, we run 2000 training steps (SGD updates)."
+msgstr "次のブロックでは、 2000 回の学習ステップ ( SGD による更新 ) を実行します。"
+
+#: ../../python/tutorial/python_api.rst:973
+msgid ""
+"num_iter = 2000\n"
+"for i in range(num_iter):\n"
+"    # Sample data and set them to input variables of training.\n"
+"    xx, ll = random_data_provider(batchsize)\n"
+"    x.d = xx\n"
+"    label.d = ll\n"
+"    # Forward propagation given inputs.\n"
+"    loss.forward(clear_no_need_grad=True)\n"
+"    # Parameter gradients initialization and gradients computation by backprop.\n"
+"    solver.zero_grad()\n"
+"    loss.backward(clear_buffer=True)\n"
+"    # Apply weight decay and update by Adam rule.\n"
+"    solver.weight_decay(1e-6)\n"
+"    solver.update()\n"
+"    # Just print progress.\n"
+"    if i % 100 == 0 or i == num_iter - 1:\n"
+"        print(\"Loss@{:4d}: {}\".format(i, loss.d))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:996
+msgid ""
+"Loss@   0: 0.6976373195648193\n"
+"Loss@ 100: 0.08075223118066788\n"
+"Loss@ 200: 0.005213144235312939\n"
+"Loss@ 300: 0.001955194864422083\n"
+"Loss@ 400: 0.0011660841992124915\n"
+"Loss@ 500: 0.0006421314901672304\n"
+"Loss@ 600: 0.0009330055327154696\n"
+"Loss@ 700: 0.0008817618945613503\n"
+"Loss@ 800: 0.0006205961108207703\n"
+"Loss@ 900: 0.0009072928223758936\n"
+"Loss@1000: 0.0008160348515957594\n"
+"Loss@1100: 0.0011569359339773655\n"
+"Loss@1200: 0.000837412488181144\n"
+"Loss@1300: 0.0011542742140591145\n"
+"Loss@1400: 0.0005833200993947685\n"
+"Loss@1500: 0.0009848927147686481\n"
+"Loss@1600: 0.0005141657311469316\n"
+"Loss@1700: 0.0009339841199107468\n"
+"Loss@1800: 0.000950580753851682\n"
+"Loss@1900: 0.0005430278833955526\n"
+"Loss@1999: 0.0007046313839964569"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1019
+msgid ""
+"**Memory usage optimization**: You may notice that, in the above updates, ``."
+"forward()`` is called with the ``clear_no_need_grad=`` option, and ``."
+"backward()`` is called with the ``clear_buffer=`` option. Training of neural "
+"network in more realistic scenarios usually consumes huge memory due to the "
+"nature of backpropagation algorithm, in which all of the forward variable buffer "
+"``data`` should be kept in order to compute the gradient of a function. In a "
+"naive implementation, we keep all the variable ``data`` and ``grad`` living "
+"until the ``NdArray`` objects are not referenced (i.e. the graph is deleted). "
+"The ``clear_*`` options in ``.forward()`` and ``.backward()`` enables to save "
+"memory consumption due to that by clearing (erasing) memory of ``data`` and "
+"``grad`` when it is not referenced by any subsequent computation. (More "
+"precisely speaking, it doesn't free memory actually. We use our memory pool "
+"engine by default to avoid memory alloc/free overhead). The unreferenced buffers "
+"can be re-used in subsequent computation. See the document of ``Variable`` for "
+"more details. Note that the following ``loss.forward(clear_buffer=True)`` clears "
+"``data`` of any intermediate variables. If you are interested in intermediate "
+"variables for some purposes (e.g. debug, log), you can use the ``.persistent`` "
+"flag to prevent clearing buffer of a specific ``Variable`` like below."
+msgstr ""
+"**メモリ使用法の最適化** : 上記の更新で、 ``.forward()`` は "
+"``clear_no_need_grad=`` オプション付きで呼び出され、 ``.backward()`` は "
+"``clear_buffer=`` オプション付きで呼び出されていることがわかります。順方向の "
+"Variable のバッファーの ``データ`` はすべて Function の勾配を計算するときのために"
+"保持しなければならないバックプロパゲーションアルゴリズムの性質のため、ニューラル"
+"ネットワークの学習は、通常莫大なメモリを消費します。単純な実装では、 ``NdArray`` "
+"オブジェクトが参照されなくなるまで ( つまり、グラフが消去されるまで ) 存在するす"
+"べての Variable ``データ`` と ``勾配`` を保持します。 ``.forward()`` と ``."
+"backward()`` にある ``clear_*`` オプションを指定することで、その後の計算によって"
+"参照されない ``データ`` や ``勾配`` のメモリをクリアする ( 消去する ) ことがで"
+"き、メモリの消費を節約することができます。 ( このとき、実際にはメモリを解放しませ"
+"ん。メモリの確保 / 解放のオーバヘッドを回避するために、デフォルトでメモリプールエ"
+"ンジンを使っています。) 参照されなくなったバッファーは、その後の計算で再利用でき"
+"ます。詳細は ``Variable`` のドキュメントを参照してください。次の ``loss."
+"forward(clear_buffer=True)`` はどんな中間 Variable の ``データ`` もクリアすること"
+"に注意してください。もしデバッグやログなどの目的で中間 Variable に興味のある方"
+"は、下記のように特定の ``Variable`` のバッファーをクリアするのを防ぐために、 ``."
+"persistent`` フラグを使うことができます。"
+
+#: ../../python/tutorial/python_api.rst:1040
+msgid ""
+"loss.forward(clear_buffer=True)\n"
+"print(\"The prediction `y` is cleared because it's an intermediate variable.\")\n"
+"print(y.d.flatten()[:4])  # to save space show only 4 values\n"
+"y.persistent = True\n"
+"loss.forward(clear_buffer=True)\n"
+"print(\"The prediction `y` is kept by the persistent flag.\")\n"
+"print(y.d.flatten()[:4])  # to save space show only 4 value"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1053
+msgid ""
+"The prediction `y` is cleared because it's an intermediate variable.\n"
+"[  2.27279830e-04   6.02164946e-05   5.33679675e-04   2.35557582e-05]\n"
+"The prediction `y` is kept by the persistent flag.\n"
+"[ 1.0851264   0.87657517  0.79603785  0.40098712]"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1059
+msgid ""
+"We can confirm the prediction performs fairly well by looking at the following "
+"visualization of the ground truth and prediction function."
+msgstr ""
+"次のように正解と予測関数の視覚化により、予測がかなりうまく行われていることを確認"
+"することができました。"
+
+#: ../../python/tutorial/python_api.rst:1062
+msgid ""
+"plt.subplot(121)\n"
+"plt.title(\"Ground truth\")\n"
+"plot_true()\n"
+"plt.subplot(122)\n"
+"plt.title(\"Prediction\")\n"
+"plot_prediction()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1076
+msgid ""
+"You can save learned parameters by ``nnabla.save_parameters`` and load by "
+"``nnabla.load_parameters``."
+msgstr ""
+"``nnabla.save_parameters`` によって学習されたパラメータを保存し、 ``nnabla."
+"load_parameters`` によって読み込むことができます。"
+
+#: ../../python/tutorial/python_api.rst:1079
+msgid ""
+"path_param = \"param-vector2length.h5\"\n"
+"nn.save_parameters(path_param)\n"
+"# Remove all once\n"
+"nn.clear_parameters()\n"
+"nn.get_parameters()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1090
+msgid ""
+"2017-09-27 14:00:40,544 [nnabla][INFO]: Parameter save (.h5): param-"
+"vector2length.h5"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1097
+msgid "OrderedDict()"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1101
+msgid ""
+"# Load again\n"
+"nn.load_parameters(path_param)\n"
+"print('\\n'.join(map(str, nn.get_parameters().items())))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1110
+msgid ""
+"2017-09-27 14:00:40,564 [nnabla][INFO]: Parameter load (<built-in function "
+"format>): param-vector2length.h5"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1115
+msgid ""
+"('fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f576328df48>)\n"
+"('fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f57245f2868>)\n"
+"('fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f576328def8>)\n"
+"('fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f5727ee5c78>)\n"
+"('fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f5763297318>)\n"
+"('fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f5727d29908>)\n"
+"('fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f57632973b8>)\n"
+"('fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f57632974a8>)\n"
+"('fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f57632974f8>)\n"
+"('fc/affine/b', <Variable((1,), need_grad=True) at 0x7f5763297598>)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1127
+msgid "Both save and load functions can also be used in a parameter scope."
+msgstr "save および load 関数はパラメータスコープ内で使用できます。"
+
+#: ../../python/tutorial/python_api.rst:1129
+msgid ""
+"with nn.parameter_scope('foo'):\n"
+"    nn.load_parameters(path_param)\n"
+"print('\\n'.join(map(str, nn.get_parameters().items())))"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1138
+msgid ""
+"2017-09-27 14:00:40,714 [nnabla][INFO]: Parameter load (<built-in function "
+"format>): param-vector2length.h5"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1143
+msgid ""
+"('fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f576328df48>)\n"
+"('fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f57245f2868>)\n"
+"('fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f576328def8>)\n"
+"('fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f5727ee5c78>)\n"
+"('fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f5763297318>)\n"
+"('fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f5727d29908>)\n"
+"('fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f57632973b8>)\n"
+"('fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f57632974a8>)\n"
+"('fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f57632974f8>)\n"
+"('fc/affine/b', <Variable((1,), need_grad=True) at 0x7f5763297598>)\n"
+"('foo/fc0/affine/W', <Variable((2, 4), need_grad=True) at 0x7f5763297958>)\n"
+"('foo/fc0/affine/b', <Variable((4,), need_grad=True) at 0x7f57632978b8>)\n"
+"('foo/fc1/affine/W', <Variable((4, 8), need_grad=True) at 0x7f572a51ac78>)\n"
+"('foo/fc1/affine/b', <Variable((8,), need_grad=True) at 0x7f5763297c78>)\n"
+"('foo/fc2/affine/W', <Variable((8, 4), need_grad=True) at 0x7f5763297a98>)\n"
+"('foo/fc2/affine/b', <Variable((4,), need_grad=True) at 0x7f5763297d68>)\n"
+"('foo/fc3/affine/W', <Variable((4, 2), need_grad=True) at 0x7f5763297e08>)\n"
+"('foo/fc3/affine/b', <Variable((2,), need_grad=True) at 0x7f5763297ea8>)\n"
+"('foo/fc/affine/W', <Variable((2, 1), need_grad=True) at 0x7f5763297f48>)\n"
+"('foo/fc/affine/b', <Variable((1,), need_grad=True) at 0x7f5763297cc8>)"
+msgstr ""
+
+#: ../../python/tutorial/python_api.rst:1165
+msgid "!rm {path_param}  # Clean ups"
+msgstr ""

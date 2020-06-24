@@ -1,0 +1,1357 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-15 13:52+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/experimental.rst:2
+msgid "Experimental"
+msgstr ""
+
+#: ../../python/api/experimental.rst:5
+msgid "DynamicLossScalingUpdater"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:1 of
+msgid "Dynamic Loss Scaling Updater for the mixed precision training."
+msgstr "混合精度演算を利用した学習のためのDynamic Loss Scaling Updater。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter.convert
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter.convert
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter.convert
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter.convert
+#: nnabla.experimental.graph_converters.identity.IdentityConverter
+#: nnabla.experimental.graph_converters.identity.IdentityConverter.convert
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater
+#: nnabla.experimental.parametric_function_class.affine.Affine
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization
+#: nnabla.experimental.parametric_function_class.convolution.Convolution
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution
+#: nnabla.experimental.parametric_function_class.embed.Embed
+#: nnabla.experimental.trainers.Evaluator
+#: nnabla.experimental.trainers.NaiveClassificationTrainer
+#: nnabla.experimental.trainers.NaiveRegressionTrainer
+#: nnabla.experimental.trainers.Trainer nnabla.experimental.trainers.Updater
+#: nnabla.experimental.viewers.SimpleGraph.create_graphviz_digraph
+#: nnabla.experimental.viewers.SimpleGraph.save
+#: nnabla.experimental.viewers.SimpleGraph.view of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:3
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:28
+#: nnabla.experimental.trainers.Updater:1 of
+msgid "Solver object. E.g., Momentum or Adam."
+msgstr "Solver オブジェクト。例: Momentum や Adamなど。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:5
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:34
+#: nnabla.experimental.trainers.Updater:3 of
+msgid "Loss variable from which the forward and the backward is called."
+msgstr "forward および backward の呼び出し元の loss 変数。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:7
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:40 of
+msgid "Data feeder"
+msgstr "データフィーダー。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:9
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:46 of
+msgid "Loss scale constant. This is dynamically changing during training."
+msgstr "Loss スケール定数。この値は学習中に動的に変化します。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:11
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:52 of
+msgid "Scaling factor for the dynamic loss scaling."
+msgstr "lossを動的にスケーリングするための係数。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:13
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:58 of
+msgid ""
+"Interval, the number of iterations in training for increasing `loss "
+"scale` by `scaling_factor`."
+msgstr ""
+"学習時に、lossのスケールを増加させる間隔。Nイテレーション学習が実行されるごとに、 `scaling_factor` で指定された倍率で "
+"`lossのスケール` を増加させます。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:15
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:64
+#: nnabla.experimental.trainers.Evaluator:11
+#: nnabla.experimental.trainers.Updater:23 of
+msgid ""
+"Clears the no longer referenced variables during backpropagation to save "
+"memory."
+msgstr "メモリーを節約するために、backward実行時に参照されなくなった変数のメモリ領域を解放します。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:17
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:70 of
+msgid ""
+"Number of accumulation of gradients. Update method of the `solver` is "
+"called after the `accum_grad` number of the forward and backward is "
+"called."
+msgstr ""
+"勾配を累積する回数。 `accum_grad` で指定された回数の forward および backward を実行してから、 `solver` "
+"の update を実行します。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:19
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:76 of
+msgid "Decay constant. Default is `None`, not applying the weight decay."
+msgstr "重み減衰に利用する定数。デフォルトは `None` となり、重み減衰を適用しません。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:21
+#: nnabla.experimental.trainers.Evaluator:13
+#: nnabla.experimental.trainers.Updater:27 of
+msgid "Communicator when to do distributed training. Default is :obj:`None`."
+msgstr "分散学習実行時の Communicator。デフォルトは :obj:`None` です。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:23
+#: nnabla.experimental.trainers.Updater:29 of
+msgid ""
+"The list of gradients to be exchanged when to do distributed training. "
+"Default is the empty :obj:`list`."
+msgstr "分散学習を実行するときに交換される勾配のリスト。デフォルトは空の :obj:`list` です。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater of
+msgid "type"
+msgstr "型"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:30 of
+msgid ":obj:`nnabla.solvers.Solver`"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:36 of
+msgid ":obj:`nnabla.Variable`"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:42 of
+msgid "callable :obj:`object`, function, lambda"
+msgstr "呼び出し可能 :obj:`object` , 関数, または lambda"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:48
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:54
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:78 of
+msgid ":obj:`float`"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:60
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:72 of
+msgid ":obj:`int`"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:66 of
+msgid ":obj:`bool`"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:82 of
+msgid "Communicator when to do distributed training."
+msgstr "分散学習実行時の Communicator。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:84 of
+msgid ":obj:`nnabla.communicators.Communicator`"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:88 of
+msgid "The list of gradients to be exchanged when to do distributed training."
+msgstr "分散学習実行時に交換される勾配のリスト。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:90 of
+msgid ":obj:`list` of :obj:`nnabla._nd_array.NdArray`"
+msgstr ":obj:`nnabla._nd_array.NdArray` の :obj:`list`"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:93
+#: nnabla.experimental.trainers.Evaluator:17
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:35
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:33
+#: nnabla.experimental.trainers.Trainer:27
+#: nnabla.experimental.trainers.Updater:33 of
+msgid "サンプル"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:107
+#: of
+msgid "Reference:"
+msgstr "参考文献:"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater:109
+#: of
+msgid ""
+"https://docs.nvidia.com/deeplearning/sdk/mixed-precision-"
+"training/index.html#scalefactor"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:1
+#: nnabla.experimental.trainers.Updater.update:1 of
+msgid "Monolithic update method."
+msgstr "モノリシックな update メソッド。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:3
+#: nnabla.experimental.trainers.Updater.update:3 of
+msgid "This method calls the following methods with the dynamic loss scaling."
+msgstr "このメソッドは、動的 loss スケーリングを使って以下のメソッドを呼び出します。"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:5
+#: nnabla.experimental.trainers.Updater.update:5 of
+msgid "solver.zerograd"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:6
+#: nnabla.experimental.trainers.Updater.update:6 of
+msgid "feed data"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:7
+#: nnabla.experimental.trainers.Updater.update:7 of
+msgid "loss.forward"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:8
+#: nnabla.experimental.trainers.Updater.update:8 of
+msgid "loss.backward"
+msgstr ""
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:9
+#: nnabla.experimental.trainers.Updater.update:9 of
+msgid "comm.all_reduce (if it is specified)"
+msgstr "comm.all_reduce (commが指定された場合)"
+
+#: nnabla.experimental.mixed_precision_training.DynamicLossScalingUpdater.update:10
+#: nnabla.experimental.trainers.Updater.update:10 of
+msgid "solver.update"
+msgstr ""
+
+#: ../../python/api/experimental.rst:11
+msgid "SimpleGraph"
+msgstr "SimpleGraph"
+
+#: nnabla.experimental.viewers.SimpleGraph:1 of
+msgid "Simple Graph with GraphViz."
+msgstr "GraphViz を使った Simple Graph。"
+
+#: nnabla.experimental.viewers.SimpleGraph:3 of
+msgid "Example:"
+msgstr "例:"
+
+#: nnabla.experimental.viewers.SimpleGraph:5 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"\n"
+"import nnabla.experimental.viewers as V\n"
+"\n"
+"# Model definition\n"
+"def network(image, test=False):\n"
+"    h = image\n"
+"    h /= 255.0\n"
+"    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), name=\"conv\")\n"
+"    h = PF.batch_normalization(h, name=\"bn\", batch_stat=not test)\n"
+"    h = F.relu(h)\n"
+"    pred = PF.affine(h, 10, name='fc')\n"
+"    return pred\n"
+"\n"
+"# Model\n"
+"image = nn.Variable([4, 3, 32, 32])\n"
+"pred = network(image, test=False)\n"
+"\n"
+"# Graph Viewer\n"
+"graph = V.SimpleGraph(verbose=False)\n"
+"graph.view(pred)\n"
+"graph.save(pred, \"sample_grpah\")"
+msgstr ""
+
+#: nnabla.experimental.viewers.SimpleGraph.create_graphviz_digraph:1 of
+msgid ""
+"Create a :obj:`graphviz.Digraph` object given the leaf variable of a "
+"computation graph."
+msgstr ""
+"与えられたnnabla.Variableからたどることのできる計算グラフに対応した、 :obj:`graphviz.Digraph` "
+"オブジェクトを生成します。"
+
+#: nnabla.experimental.viewers.SimpleGraph.create_graphviz_digraph:4 of
+msgid ""
+"One of nice things of getting ``Digraph`` directly is that the drawn "
+"graph can be displayed inline in a Jupyter notebook as described in "
+"`Graphviz documentation "
+"<https://graphviz.readthedocs.io/en/stable/manual.html#jupyter-"
+"notebooks>`_."
+msgstr ""
+"取得した ``Digraph`` は 、Jupyter notebook上にインラインに直接描画することができます。詳細は `Graphviz "
+"ドキュメント <https://graphviz.readthedocs.io/en/stable/manual.html#jupyter-"
+"notebooks>`_ を参照してください。、"
+
+#: nnabla.experimental.viewers.SimpleGraph.create_graphviz_digraph:8
+#: nnabla.experimental.viewers.SimpleGraph.save:3
+#: nnabla.experimental.viewers.SimpleGraph.view:3 of
+msgid ""
+"End variable. All variables and functions which can be traversed from "
+"this variable are shown in the reuslt."
+msgstr "末端となる変数。この変数からたどることができるすべての変数と関数を表示します。"
+
+#: nnabla.experimental.viewers.SimpleGraph.create_graphviz_digraph:11
+#: nnabla.experimental.viewers.SimpleGraph.save:9
+#: nnabla.experimental.viewers.SimpleGraph.view:9 of
+msgid "Force overwrite ``format`` (``'pdf', 'png', ...)``) configuration."
+msgstr "ファイルへの書き出しに利用する ``format`` ( ``'pdf', 'png', ...`` )。"
+
+#: nnabla.experimental.viewers.SimpleGraph.create_graphviz_digraph:14 of
+msgid "Returns: graphviz.Digraph"
+msgstr "戻り値: graphviz.Digraph"
+
+#: nnabla.experimental.viewers.SimpleGraph.save:1 of
+msgid "Save the graph to a given file path."
+msgstr "指定されたファイルパスにグラフを保存します。"
+
+#: nnabla.experimental.viewers.SimpleGraph.save:5
+#: nnabla.experimental.viewers.SimpleGraph.view:5 of
+msgid "The file path used to save."
+msgstr "保存先のファイルパス。"
+
+#: nnabla.experimental.viewers.SimpleGraph.save:7 of
+msgid "Clean up the source file after rendering. Default is False."
+msgstr "レンダリング後にソースファイルを削除します。デフォルトは False です。"
+
+#: nnabla.experimental.viewers.SimpleGraph.view:1 of
+msgid "View the graph."
+msgstr "グラフを表示します。"
+
+#: nnabla.experimental.viewers.SimpleGraph.view:7 of
+msgid "Clean up the source file after rendering. Default is True."
+msgstr "レンダリング後にソースファイルを削除します。デフォルトは True です。"
+
+#: ../../python/api/experimental.rst:18
+msgid "GraphConverter"
+msgstr "GraphConverter"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter.convert:1
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter.convert:1
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter.convert:1
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter.convert:1
+#: nnabla.experimental.graph_converters.identity.IdentityConverter:1
+#: nnabla.experimental.graph_converters.identity.IdentityConverter.convert:1 of
+msgid "All functions are replaced with the same `new` function."
+msgstr "すべての関数を同一の `新しい` 関数に置き換えます。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter:5
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter:3
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter:3
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:3
+#: nnabla.experimental.graph_converters.identity.IdentityConverter:3 of
+msgid "Black list of the function list."
+msgstr "関数リストのブラックリスト。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter:7
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter:5
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter:5
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:5
+#: nnabla.experimental.graph_converters.identity.IdentityConverter:5 of
+msgid "Result of nn.get_parameters()."
+msgstr "nn.get_parameters() の結果。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter:9
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter:7
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter:11
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:15
+#: nnabla.experimental.graph_converters.identity.IdentityConverter:7 of
+msgid "Prefix of the parameter scope."
+msgstr "パラメータスコープのプレフィックス。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter.convert:3
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter.convert:3
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter.convert:3
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter.convert:3
+#: nnabla.experimental.graph_converters.identity.IdentityConverter.convert:3 of
+msgid "NNabla Variable"
+msgstr "NNabla Variable。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter.convert:5
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter.convert:5
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter.convert:5
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter.convert:5
+#: nnabla.experimental.graph_converters.identity.IdentityConverter.convert:5 of
+msgid "Entry variable from which the conversion starts."
+msgstr "変換の始点となる変数。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_linear.BatchNormalizationLinearConverter:1
+#: of
+msgid "The parameters of the batch normalization replaced simple scale and bias."
+msgstr "batch normalizationを等価なシンプルな線形演算に置き替えます。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter:1
+#: of
+msgid ""
+"Single `Convolution -> BatchNormalization` pass is folded into one "
+"`Convolution`."
+msgstr "連続する `Convolution -> BatchNormalization` の演算を１つの Convolutionまとめます。"
+
+#: nnabla.experimental.graph_converters.batch_normalization_folded.BatchNormalizationFoldedConverter:3
+#: of
+msgid ""
+"If there is a `Convolution -> BatchNormalization` pass, fold the batch "
+"normalization paramters to the kernel and bias (if it exists) of the "
+"preceeding convolution, then skip the batch normalization following the "
+"convolution."
+msgstr ""
+"`Convolution -> BatchNormalization` のパスがある場合、batch normalization "
+"パラメータを直前の convolution のカーネルとバイアス (存在する場合) で表現し、convolution 後の batch "
+"normalization をスキップします。"
+
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:1
+#: of
+msgid ""
+"All functions specified by `inner_prod_functions` are replaced with the "
+"fixed-point counter-part. The other functions are replaced with the same "
+"`new` function."
+msgstr ""
+"`inner_prod_functions` "
+"引数で指定されたすべての関数を対応する固定小数点演算に置き換えます。その他の関数については同一の新しい関数に置き換えます。"
+
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:7
+#: of
+msgid ""
+"Function names to be replaced. Default is [\"Affine\", \"Convolution\", "
+"\"Deconvolution\"]."
+msgstr "置き換える対象となる関数名。デフォルトは [“Affine”, “Convolution”, “Deconvolution”]."
+
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:9
+#: of
+msgid ""
+"Call forward function to obtain `W_q`. Default is \"True\", so one does "
+"not need to call the forward function to sync quantized weights. Note "
+"that if the network contains batch normalization or any other "
+"normalization that computes running stats (e.g., a running mean and "
+"variance), these stats are automatically updated by call_forward. To "
+"avoid that, change the argument batch_stat of the batch normalization "
+"layer to False when using this call_forward option True."
+msgstr ""
+"`W_q` を取得するため forward 関数を実行します。デフォルトは \"True\" "
+"であり、そのため、量子化された重みを同期するためにforward関数を呼び出す必要はありません。ネットワークが batch "
+"normalization などの移動統計量 (例：移動平均と分散) を計算する正則化関数を含む場合、これらの統計量は自動的に "
+"call_forward により更新される点に注意してください。これを回避するには、call_forward オプションを True "
+"で使用する場合に、batch normalization 層の引数 batch_stat を False に変更してください。"
+
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:11
+#: of
+msgid ""
+"When computing the step size, it is coerced to be the power-of-2 by using"
+" either :math:`2^ceil(log_2(abs(W)_max / (2^n - 1)))` or "
+":math:`2^floor(log_2(abs(W)_max / (2^n - 1)))`. Default is `False`."
+msgstr ""
+"ステップサイズを計算する際に、次のいずれかの式によって強制的に2 の累乗となるように変換します: "
+":math:`2^ceil(log_2(abs(W)_max / (2^n - 1)))` または "
+":math:`2^floor(log_2(abs(W)_max / (2^n - 1)))` が利用されます。 デフォルトは `False` "
+"です。"
+
+#: nnabla.experimental.graph_converters.fixed_point_weight.FixedPointWeightConverter:13
+#: of
+msgid ""
+"Argument into F.quantize. Default is `{\"sign_w\": True, \"n_w\": 8, "
+"\"delta_w\": 2e-4, \"quantize_w\": True, \"sign_b\": True, \"n_b\": 8, "
+"\"delta_b\": 2e-4, \"quantize_b\": True}`"
+msgstr ""
+" F.quantize に渡す引数。デフォルトは `{\"sign_w\": True, \"n_w\": 8, \"delta_w\": "
+"2e-4, \"quantize_w\": True, \"sign_b\": True, \"n_b\": 8, \"delta_b\": "
+"2e-4, \"quantize_b\": True}` です。"
+
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter:1
+#: of
+msgid ""
+"All functions specified by `activation_functions` are replaced with the "
+"fixed-point quantization function. The other functions are replaced with "
+"the same `new` function."
+msgstr ""
+"`activation_functions` で指定されたすべての関数を、固定小数点の量子化関数に置き換えます。その他の関数は、同一の `新しい`"
+" 関数に置き換えます。"
+
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter:7
+#: of
+msgid "Function names to be replaced. Default is [\"ReLU\"]."
+msgstr "置き換える対象となる関数名。デフォルトは [“ReLU”]。"
+
+#: nnabla.experimental.graph_converters.fixed_point_activation.FixedPointActivationConverter:9
+#: of
+msgid ""
+"Argument into F.quantize. Default is `{\"sign\": True, \"n\": 8, "
+"\"delta\": 2e-4, \"quantize\": True}`."
+msgstr ""
+"F.quantize に渡す引数。デフォルトは `{\"sign\": True, \"n\": 8, \"delta\": 2e-4, "
+"\"quantize\": True}` です。"
+
+#: ../../python/api/experimental.rst:37
+msgid "Trainer"
+msgstr ""
+
+#: nnabla.experimental.trainers.Trainer:1 of
+msgid "Trainer API"
+msgstr ""
+
+#: nnabla.experimental.trainers.Trainer:3 of
+msgid ""
+"Trainer class is the very basic class for training neural network. You "
+"can composite this class to your own trainer class and delegate the train"
+" method of this class to your class."
+msgstr ""
+"Trainer "
+"クラスはニューラルネットワークの学習において極めて基本となるクラスです。このクラスを利用してユーザ独自のTrainerクラスを構築することができます。、構築したクラスのtrain"
+" メソッドを呼び出すことで学習プロセスを実行することができます。"
+
+#: nnabla.experimental.trainers.Trainer:5 of
+msgid "Updater object."
+msgstr "Updater オブジェクト。"
+
+#: nnabla.experimental.trainers.Trainer:7 of
+msgid "Evaluator object."
+msgstr "Evaluator オブジェクト。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:23
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:23
+#: nnabla.experimental.trainers.Trainer:9 of
+msgid "Model save path."
+msgstr "モデルの保存先パス。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:25
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:25
+#: nnabla.experimental.trainers.Trainer:11 of
+msgid "Max epoch to train."
+msgstr "学習の最大 epoch。"
+
+#: nnabla.experimental.trainers.Trainer:13 of
+msgid "Iterations per one epoch."
+msgstr "１epoch あたりのイテレーション回数。"
+
+#: nnabla.experimental.trainers.Trainer:15 of
+msgid "Callback called before the trainer.train."
+msgstr "trainer.trainが実行される前に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Trainer:17 of
+msgid "Callback called after the trainer.train."
+msgstr "trainer.trainが実行された 後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Trainer:19 of
+msgid "Callback called before the updater.update."
+msgstr "updater.updateが実行される 前に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Trainer:21 of
+msgid "Callback called after the updater.update."
+msgstr "updater.updateが実行された 後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:32
+#: nnabla.experimental.trainers.Trainer:24 of
+msgid "The following example is a complete snippet to use this base trainer."
+msgstr "以下は、この trainer ベースクラスを使用した例です。"
+
+#: nnabla.experimental.trainers.Trainer:28 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import nnabla.solvers as S\n"
+"\n"
+"from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed\n"
+"\n"
+"import numpy as np\n"
+"\n"
+"from nnabla.experimental.trainers import Trainer, Updater, Evaluator\n"
+"\n"
+"# Batch, channel, height, width\n"
+"b, c, h, w = 32, 1, 128, 128\n"
+"\n"
+"# Train Input\n"
+"tinput = nn.Variable([b, c, h, w])\n"
+"tlabel = nn.Variable([b, c, h, w])\n"
+"\n"
+"# Train Model and Loss\n"
+"tpred = <training model>.apply(persistent=True)\n"
+"tloss = F.mean(F.softmax_cross_entropy(tpred, tlabel))\n"
+"\n"
+"# Test Input\n"
+"vinput = nn.Variable([b, c, h, w])\n"
+"vlabel = nn.Variable([b, c, h, w])\n"
+"\n"
+"# Test Model and Error\n"
+"vpred = <evaluation model>.apply(persistent=True)\n"
+"vloss = F.mean(F.softmax_cross_entropy(vpred, vlabel))\n"
+"verror = F.mean(F.top_n_error(vpred.get_unlinked_variable(), vlabel))\n"
+"\n"
+"# Solver\n"
+"solver = S.Adam()\n"
+"solver.set_parameters(nn.get_parameters())\n"
+"\n"
+"# DataIterator\n"
+"tdata = <training_data_iterator>\n"
+"vdata = <validation_data_iterator>\n"
+"\n"
+"# Monitor\n"
+"monitor = Monitor(<monitor_path>)\n"
+"monitor_loss = MonitorSeries(\"Training loss\", monitor, interval=10)\n"
+"monitor_err = MonitorSeries(\"Training error\", monitor, interval=10)\n"
+"monitor_time = MonitorTimeElapsed(\"Training time\", monitor, "
+"interval=100)\n"
+"monitor_verr = MonitorSeries(\"Valid error\", monitor, interval=10)\n"
+"\n"
+"# Updater\n"
+"def tdata_feeder():\n"
+"    tinput.d, tlabel.d = tdata.next()\n"
+"def update_callback_on_finish(i):\n"
+"    monitor_loss.add(i, tloss.d)\n"
+"    monitor_time.add(i)\n"
+"updater = Updater(solver, tloss,\n"
+"                  data_feeder=tdata_feeder,\n"
+"                  update_callback_on_finish=update_callback_on_finish)\n"
+"\n"
+"# Evaluator\n"
+"def vdata_feeder():\n"
+"    vinput.d, vlabel.d = vdata.next()\n"
+"def eval_callback_on_finish(i, ve):\n"
+"    monitor_verr.add(i, ve)\n"
+"evaluator = Evaluator(verror,\n"
+"                      data_feeder=vdata_feeder,\n"
+"                      val_iter=vdata.size // b,\n"
+"                      callback_on_finish=eval_callback_on_finish)\n"
+"\n"
+"# Trainer\n"
+"trainer = Trainer(updater, evaluator, <model_save_path>,\n"
+"                  max_epoch=<max_epoch>, iter_per_epoch=tdata.size // b)\n"
+"trainer.train()"
+msgstr ""
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:1 of
+msgid "Naive Classification Trainer"
+msgstr "単純な分類問題の学習のためのTrainer"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:3
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:3 of
+msgid "Solver object."
+msgstr "Solver オブジェクト。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:5
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:5 of
+msgid "Input variable for input feature in training."
+msgstr "学習用の入力変数。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:7
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:7 of
+msgid "Label variable for lable in training."
+msgstr "学習用のラベル変数。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:9
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:9 of
+msgid "Root variable for prediction in the training graph."
+msgstr "学習用ネットワークから出力される予測結果に対応する変数。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:11
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:11 of
+msgid "DataIterator for training."
+msgstr "学習に利用するDataIterator。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:13
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:13 of
+msgid "Input variable for input feature in evaluation."
+msgstr "評価用の入力変数。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:15
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:15 of
+msgid "Label variable for label in evaluation."
+msgstr "評価用のラベル変数。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:17
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:17 of
+msgid "Root variable for prediction in the evaluation graph."
+msgstr "評価用ネットワークから出力される予測結果に対応する変数。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:19
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:19 of
+msgid "DataIterator for evaluation."
+msgstr "評価に利用する DataIterator。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:21
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:21 of
+msgid "Monitor path."
+msgstr "モニターパス。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:27
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:27 of
+msgid ""
+"Iterations per one epoch. If not set, this value are determined by "
+"`tdata.size // tdata.batch_size`."
+msgstr ""
+"１ epoch あたりのイテレーション回数。指定されない場合、 `tdata.size // tdata.batch_size` "
+"によって決まります。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:29
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:29 of
+msgid ""
+"Iterations for evaluation. If not set, this value are determined by "
+"`vdata.size // vdata.batch_size`."
+msgstr "評価のためのイテレーション回数。指定されない場合、 `vdata.size // vdata.batch_size` によって決まります。"
+
+#: nnabla.experimental.trainers.NaiveClassificationTrainer:36 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import nnabla.solvers as S\n"
+"\n"
+"import numpy as np\n"
+"\n"
+"from nnabla.experimental.trainers import NaiveClassificationTrainer\n"
+"\n"
+"# Batch, channel, height, width\n"
+"b, c, h, w = 32, 1, 128, 128\n"
+"\n"
+"# Train Input\n"
+"tinput = nn.Variable([b, c, h, w])\n"
+"tlabel = nn.Variable([b, c, h, w])\n"
+"\n"
+"# Train Model and Loss\n"
+"tpred = <training model>\n"
+"\n"
+"# Test Input\n"
+"vinput = nn.Variable([b, c, h, w])\n"
+"\n"
+"# Test Model\n"
+"vpred = <evaluation model>\n"
+"\n"
+"# Solver\n"
+"solver = S.Adam()\n"
+"solver.set_parameters(nn.get_parameters())\n"
+"\n"
+"# DataIterator\n"
+"tdata = <training_data_iterator>\n"
+"vdata = <validation_data_iterator>\n"
+"\n"
+"# Trainer\n"
+"trainer = NaiveClassificationTrainer(solver,\n"
+"                                     tinput, tlabel, tpred, tdata,\n"
+"                                     vinput, vlabel, vpred, vdata,\n"
+"                                     <monitor_path>,\n"
+"                                     <model_save_path>,\n"
+"                                     max_epoch=<max_epoch>)\n"
+"trainer.train()"
+msgstr ""
+
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:1 of
+msgid "Naive Regression Trainer"
+msgstr "単純な回帰問題の学習のための Trainer"
+
+#: nnabla.experimental.trainers.NaiveRegressionTrainer:34 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import nnabla.solvers as S\n"
+"\n"
+"import numpy as np\n"
+"\n"
+"from nnabla.experimental.trainers import NaiveRegressionTrainer\n"
+"\n"
+"# Batch, channel, height, width\n"
+"b, c, h, w = 32, 1, 128, 128\n"
+"\n"
+"# Train Input\n"
+"tinput = nn.Variable([b, c, h, w])\n"
+"tlabel = nn.Variable([b, c, h, w])\n"
+"\n"
+"# Train Model and Loss\n"
+"tpred = <training model>\n"
+"\n"
+"# Test Input\n"
+"vinput = nn.Variable([b, c, h, w])\n"
+"vlabel = nn.Variable([b, c, h, w])\n"
+"\n"
+"# Test Model\n"
+"vpred = <evaluation model>\n"
+"\n"
+"# Solver\n"
+"solver = S.Adam()\n"
+"solver.set_parameters(nn.get_parameters())\n"
+"\n"
+"# DataIterator\n"
+"tdata = <training_data_iterator>\n"
+"vdata = <validation_data_iterator>\n"
+"\n"
+"# Trainer\n"
+"trainer = NaiveRegressionTrainer(solver,\n"
+"                                 tinput, tlabel, tpred, tdata,\n"
+"                                 vinput, vlabel, vpred, vdata,\n"
+"                                 <monitor_path>,\n"
+"                                 <model_save_path>,\n"
+"                                 max_epoch=<max_epoch>)\n"
+"trainer.train()"
+msgstr ""
+
+#: nnabla.experimental.trainers.Evaluator:3
+#: nnabla.experimental.trainers.Updater:5 of
+msgid "Data feeder."
+msgstr "データフィーダー。"
+
+#: nnabla.experimental.trainers.Updater:7 of
+msgid "Callback called before forward function."
+msgstr "forward 前に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:9 of
+msgid "Callback called after forward function."
+msgstr "forward 後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:11 of
+msgid "Callback called before backward function."
+msgstr "backward 前に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:13 of
+msgid "Callback called after backward function."
+msgstr "backward 前に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:15 of
+msgid "Callback called before comm.all_reduce."
+msgstr "comm.all_reduce 前に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:17 of
+msgid "Callback called after comm.all_reduce."
+msgstr "comm.all_reduce 後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:19 of
+msgid "Callback called before update function."
+msgstr "comm.all_reduce 後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:21 of
+msgid "Callback called after update function."
+msgstr "update 関数後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Updater:25 of
+msgid ""
+"Number of accumulation of gradients. Update method of the `solver` is "
+"called after the `accum_grad` number of the forward and backward is "
+"called. Default is 1."
+msgstr ""
+"勾配の累積数。 `accum_grad` で指定された回数の forward および backward が呼び出された後に `solver` の "
+"Update メソッドが呼び出されます。デフォルトは１です。"
+
+#: nnabla.experimental.trainers.Updater:34 of
+msgid ""
+"from nnabla.experimental.trainers import Updater\n"
+"\n"
+"solver = <Solver>\n"
+"loss = <Loss Variable of Network>\n"
+"\n"
+"def tdata_feeder():\n"
+"    ...\n"
+"def update_callback_on_finish(i):\n"
+"    ...\n"
+"updater = Updater(solver, loss, tdata_feeder, updater_callback_on_finish)"
+"\n"
+"\n"
+"# Training iteration\n"
+"for itr in range(<max_iter>):\n"
+"    updater.update()"
+msgstr ""
+
+#: nnabla.experimental.trainers.Evaluator:1 of
+msgid "Root varible of the evaluation graph."
+msgstr "評価用のグラフのルート変数。"
+
+#: nnabla.experimental.trainers.Evaluator:5 of
+msgid "Iterations for evaluation."
+msgstr "評価を実行するイテレーション回数。"
+
+#: nnabla.experimental.trainers.Evaluator:7 of
+msgid "Callback called before the evaluator.evalute."
+msgstr "evaluator.evalute 前に呼ばれるコールバック。 "
+
+#: nnabla.experimental.trainers.Evaluator:9 of
+msgid "Callback called after the evaluator.evalute."
+msgstr "evaluator.evalute 後に呼ばれるコールバック。"
+
+#: nnabla.experimental.trainers.Evaluator:18 of
+msgid ""
+"from nnabla.experimental.trainers import Evaluator\n"
+"\n"
+"# Evaluator\n"
+"def vdata_feeder():\n"
+"    ...\n"
+"def eval_callback_on_finish(i, ve):\n"
+"    ...\n"
+"evaluator = Evaluator(verror,\n"
+"                      data_feeder=vdata_feeder,\n"
+"                      val_iter=<val_iter>,\n"
+"                      callback_on_finish=eval_callback_on_finish)"
+msgstr ""
+
+#: ../../python/api/experimental.rst:55
+msgid "Parametric Function Classes"
+msgstr "パラメトリック関数クラス"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:1 of
+msgid "The affine layer, also known as the fully connected layer. Computes"
+msgstr "Affine層(全結合層)です。以下の計算を行います。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:3 of
+msgid "{\\mathbf y} = {\\mathbf A} {\\mathbf x} + {\\mathbf b}."
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:6 of
+msgid ""
+"where :math:`{\\mathbf x}, {\\mathbf y}` are the inputs and outputs "
+"respectively, and :math:`{\\mathbf A}, {\\mathbf b}` are constants."
+msgstr ""
+"上式において :math:`{\\mathbf x}, {\\mathbf y}` はそれぞれ入力、出力を表し、 :math:`{\\mathbf"
+" A}, {\\mathbf b}` はそれぞれ定数を表します。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:9 of
+msgid ""
+"Input N-D array with shape (:math:`M_0 \\times \\ldots \\times M_{B-1} "
+"\\times D_B \\times \\ldots \\times D_N`). Dimensions before and after "
+"base_axis are flattened as if it is a matrix."
+msgstr ""
+"(:math:`M_0 \\times \\ldots \\times M_{B-1} \\times D_B \\times \\ldots "
+"\\times D_N`) のshapeを持つ入力 N-D 配列。base_axis 前後の次元は二次元行列となるように平坦化されます。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:11 of
+msgid "Number of output neurons per data."
+msgstr "出力ニューロン数。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:13
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:43
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:21
+#: of
+msgid "Dimensions up to `base_axis` are treated as the sample dimensions."
+msgstr "`base_axis` までの次元をサンプル次元とします。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:15
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:39
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:17
+#: of
+msgid ""
+"Initializer for weight. By default, it is initialized with "
+":obj:`nnabla.initializer.UniformInitializer` within the range determined "
+"by :obj:`nnabla.initializer.calc_uniform_lim_glorot`."
+msgstr ""
+"重みの Initializer。デフォルトでは、 :obj:`nnabla.initializer.UniformInitializer` "
+"を使って :obj:`nnabla.initializer.calc_uniform_lim_glorot` "
+"によって決まる範囲内に初期化されます。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:17
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:41
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:19
+#: of
+msgid ""
+"Initializer for bias. By default, it is initialized with zeros if "
+"`with_bias` is `True`."
+msgstr "バイアスの Initializer。デフォルトでは、 `with_bias` が `True` の場合、ゼロで初期化されます。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:19
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:45
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:23
+#: of
+msgid "When set to `True`, the weights and biases will not be updated."
+msgstr "`True` が指定された場合、重みとバイアスは更新されません。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:21
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:47
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:25
+#: of
+msgid "Random generator for Initializer."
+msgstr "Initializer の乱数ジェネレーター。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:23
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:49
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:27
+#: of
+msgid "Specify whether to include the bias term."
+msgstr "バイアス項を含めるか否かを指定します。"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization
+#: nnabla.experimental.parametric_function_class.convolution.Convolution
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution
+#: nnabla.experimental.parametric_function_class.embed.Embed of
+msgid "戻り値"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:26 of
+msgid ""
+":math:`(B + 1)`-D array. (:math:`M_0 \\times \\ldots \\times M_{B-1} "
+"\\times L`)f"
+msgstr ""
+":math:`(B + 1)`-D 配列。 (:math:`M_0 \\times \\ldots \\times M_{B-1} \\times"
+" L`)f"
+
+#: nnabla.experimental.parametric_function_class.affine.Affine
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization
+#: nnabla.experimental.parametric_function_class.convolution.Convolution
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution
+#: nnabla.experimental.parametric_function_class.embed.Embed of
+msgid "戻り値の型"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.affine.Affine:27
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:41
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:41
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:41
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:41
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:53
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:31
+#: of
+msgid ":class:`~nnabla.Variable`"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:1 of
+msgid "N-D Convolution with a bias term."
+msgstr "バイアス項を含んだ N-D Convolution。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:3 of
+msgid "For Dilated Convolution (a.k.a. Atrous Convolution), refer to:"
+msgstr "DilatedConvolution ( Atrous Convolution) については、以下を参照してください:"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:5 of
+msgid ""
+"Chen et al., DeepLab: Semantic Image Segmentation with Deep Convolutional"
+" Nets, Atrous Convolution, and Fully Connected CRFs. "
+"https://arxiv.org/abs/1606.00915"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:7 of
+msgid ""
+"Yu et al., Multi-Scale Context Aggregation by Dilated Convolutions. "
+"https://arxiv.org/abs/1511.07122"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:11 of
+msgid ""
+"Convolution is a computationally intensive operation that should "
+"preferably be run with the `cudnn` backend. NNabla then uses CuDNN "
+"library functions to determine and cache the fastest algorithm for the "
+"given set of convolution parameters, which results in additional memory "
+"consumption which may pose a problem for GPUs with insufficient memory "
+"size. In that case, the `NNABLA_CUDNN_WORKSPACE_LIMIT` environment "
+"variable can be used to restrict the choice of algorithms to those that "
+"fit the given workspace memory limit, expressed in bytes. In some cases "
+"it may also be desired to restrict the automatic search to algorithms "
+"that produce deterministic (reproducable) results. This can be requested "
+"by setting the the environment variable `NNABLA_CUDNN_DETERMINISTIC` to a"
+" non-zero value."
+msgstr ""
+"Convolution は計算量が極めて大きいため、 `cudnn` "
+"バックエンドを使って実行することを推奨します。その際には、NNablaはCuDNNライブラリでサポートされている機能を利用して、指定されたパラメータに応じて最速な実行を行うconvolutionアルゴリズムを決定してキャッシュします。このアルゴリズムの決定の際に、GPUメモリを追加で消費するため、GPUメモリサイズが足りなくなる問題が発生する可能性があります。そのような場合は、環境変数として"
+" `NNABLA_CUDNN_WORKSPACE_LIMIT` "
+"にバイト単位でメモリ量を指定することで、ワークスペースのメモリ制限内でアルゴリズムを選択させることができます。またアルゴリズムを自動で決定する際に、演算結果が決定的な(再現性のある)アルゴリズムに制限したい場合もあります。そのときには、環境変数として"
+" `NNABLA_CUDNN_DETERMINISTIC` にゼロでない値を設定することで制限することができます。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:40
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:40
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:40
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:40
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:25
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:3
+#: of
+msgid "N-D array."
+msgstr " N-D 配列。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:27 of
+msgid ""
+"Number of convolution kernels (which is equal to the number of output "
+"channels). For example, to apply convolution on an input with 16 types of"
+" filters, specify 16."
+msgstr ""
+"Convolution カーネル数 (出力チャネルの数と同一)。例えば、入力に対して、16種類のフィルターを適用した場合には、16 "
+"を指定してください。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:29 of
+msgid ""
+"Convolution kernel size. For example, to apply convolution on an image "
+"with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5)."
+msgstr ""
+"Convolution カーネルサイズ。例えば、入力画像に対して、3 (高さ) x 5 (幅) の二次元カーネルで convolution "
+"を適用する場合、(3, 5) を指定してください。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:31
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:9
+#: of
+msgid "Padding sizes for dimensions."
+msgstr "それぞれの次元に対するパディングサイズ。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:33
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:11
+#: of
+msgid "Stride sizes for dimensions."
+msgstr "それぞれの次元に対するストライドサイズ。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:35
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:13
+#: of
+msgid "Dilation sizes for dimensions."
+msgstr "それぞれの次元に対する、dilationサイズ。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:37 of
+msgid ""
+"Number of groups of channels. This makes connections across channels more"
+" sparse by grouping connections along map direction."
+msgstr "チャネルグループ数。マップ方向に沿って入出力間の接続をグループ化することにより、チャネル間の接続がよりスパースになります。"
+
+#: nnabla.experimental.parametric_function_class.convolution.Convolution:52 of
+msgid "N-D array. See :obj:`~nnabla.functions.convolution` for the output shape."
+msgstr "N-D 配列。出力のshapeについては :obj:`~nnabla.functions.convolution` を参照してください。"
+
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:1
+#: of
+msgid "Deconvolution layer."
+msgstr "Deconvolution 層。"
+
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:5
+#: of
+msgid ""
+"Number of deconvolution kernels (which is equal to the number of output "
+"channels). For example, to apply deconvolution on an input with 16 types "
+"of filters, specify 16."
+msgstr ""
+"Deconvolution カーネル数 (出力チャネルの数と同一)。例えば、入力に、16種類のフィルターによって deconvolution "
+"を適用する場合には、16 を指定してください。"
+
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:7
+#: of
+msgid ""
+"Convolution kernel size. For example, to apply deconvolution on an image "
+"with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5)."
+msgstr ""
+"Convolution カーネルのサイズ。例えば、例えば、入力画像に対して、3 (高さ) x 5 (幅) の二次元カーネルで "
+"deconvolutionを適用する場合には、(3, 5) を指定してください。"
+
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:15
+#: of
+msgid ""
+"Number of groups of channels. This makes connections across channels "
+"sparser by grouping connections along map direction."
+msgstr "チャネルグループ数。マップ方向に沿って入出力間の接続をグループ化することにより、チャネル間の接続がよりスパースになります。"
+
+#: nnabla.experimental.parametric_function_class.deconvolution.Deconvolution:30
+#: of
+msgid ""
+"N-D array. See :obj:`~nnabla.functions.deconvolution` for the output "
+"shape."
+msgstr "N-D 配列。出力のshapeについては :obj:`~nnabla.functions.deconvolution` をご確認ください。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:1
+#: of
+msgid "Batch normalization layer."
+msgstr "Batch normalization 層。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:3
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:3
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:3
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:3
+#: of
+msgid ""
+"\\begin{array}{lcl} \\mu &=& \\frac{1}{M} \\sum x_i\\\\ \\sigma^2 &=& "
+"\\frac{1}{M} \\left(\\sum x_i - \\mu\\right)^2\\\\ \\hat{x}_i &=& "
+"\\frac{x_i - \\mu}{\\sqrt{\\sigma^2 + \\epsilon }}\\\\ y_i &= & "
+"\\hat{x}_i \\gamma + \\beta. \\end{array}"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:12
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:12
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:12
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:12
+#: of
+msgid ""
+"where :math:`x_i, y_i` are the inputs. In testing, the mean and variance "
+"computed by moving average calculated during training are used."
+msgstr "上式において :math:`x_i, y_i` は入力を表します。テスト時では、学習中に計算された移動平均によって算出した平均と分散が使用されます。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:15
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:15
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:15
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:15
+#: of
+msgid "N-D array of input."
+msgstr "N-D 入力の配列。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:17
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:17
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:17
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:17
+#: of
+msgid ""
+"Mean and variance for each element in ``axes`` are calculated using "
+"elements on the rest axes. For example, if an input is 4 dimensions, and "
+"``axes`` is ``[1]``,  batch mean is calculated as ``np.mean(inp.d, "
+"axis=(0, 2, 3), keepdims=True)`` (using numpy expression as an example)."
+msgstr ""
+"この引数に指定された ``axes`` の各要素に対する平均と分散を、それ以外のaxesの要素から計算します。例えば、４次元の入力、 "
+"``axes`` が ``[1]`` の場合、バッチ平均は ``np.mean(inp.d, axis=(0, 2, 3), "
+"keepdims=True)`` として計算されます (ここでは、例として numpy の表現を利用)。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:23
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:23
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:23
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:23
+#: of
+msgid "Decay rate of running mean and variance."
+msgstr "移動平均と分散の減衰率。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:25
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:25
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:25
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:25
+#: of
+msgid "Tiny value to avoid zero division by std."
+msgstr "std によるゼロ除算を避けるための小さな値。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:27
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:27
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:27
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:27
+#: of
+msgid "Use mini-batch statistics rather than running ones."
+msgstr "移動統計量ではなく、ミニバッチ統計量を使用します。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:29
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:29
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:29
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:29
+#: of
+msgid "Output batch mean and variance."
+msgstr "バッチ平均および分散を出力します。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:31
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:31
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:31
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:31
+#: of
+msgid "When set to `True`, the beta and gamma will not be updated."
+msgstr "`True` が指定された場合、beta と gamma は更新されません。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:33
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:33
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:33
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:33
+#: of
+msgid ""
+"Parameter initializers can be set with a dict. A key of the dict must be "
+"``'beta'``, ``'gamma'``, ``'mean'`` or ``'var'``. A value of the dict "
+"must be an :obj:`~nnabla.initializer.Initializer` or a "
+":obj:`numpy.ndarray`. E.g. ``{'beta': ConstantIntializer(0), 'gamma': "
+"np.ones(gamma_shape) * 2}``."
+msgstr ""
+"dict を使ってパラメータ initializer を設定します。dict のキー は ``'beta'``, ``'gamma'``, "
+"``'mean'`` または ``'var'`` となります。dictionary の値は "
+":obj:`~nnabla.initializer.Initializer` または :obj:`numpy.ndarray` となります。 例："
+" ``{'beta': ConstantIntializer(0), 'gamma': np.ones(gamma_shape) * 2}``."
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:44
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:44
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:44
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:44
+#: of
+msgid "参照"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:45
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:45
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:45
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:45
+#: of
+msgid ""
+"Ioffe and Szegedy, Batch Normalization: Accelerating Deep Network "
+"Training by Reducing Internal Covariate Shift. "
+"https://arxiv.org/abs/1502.03167"
+msgstr ""
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:47
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:47
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:47
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNormalization:47
+#: of
+msgid ""
+"The shape of parameters has the same number of dimensions with the input "
+"data, and the shapes in ``axes`` has the same dimensions with the input, "
+"while the rest has ``1``. If an input is 4-dim and ``axes=[1]``, the "
+"parameter shape will be ``param_shape  = np.mean(inp.d, axis=(0, 2, 3), "
+"keepdims=True).shape`` (using numpy expression as an example)."
+msgstr ""
+"パラメータの次元数は入力データと同じです。それぞれの軸の値としては、 ``axes`` "
+"引数によって指定された次元については入力と同じ値となり、それ以外は ``1`` "
+"となります。たとえば、入力が４次元で``axes=[1]``の場合、パラメータの形状は ``param_shape  = "
+"np.mean(inp.d, axis=(0, 2, 3), keepdims=True).shape`` となります "
+"(ここでは、例としてnumpy表現を使用)。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm1d:1
+#: of
+msgid ""
+"Batch normalization layer for 3d-Array or 3d-Variable. This is typically "
+"used together with `Conv1d`."
+msgstr "3D Arrayまたは 3D Variableに対する batch normalization 層です。通常、 `Conv1d` と共に使用します。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm2d:1
+#: of
+msgid ""
+"Batch normalization layer for 4d-Array or 4d-Variable. This is typically "
+"used together with `Conv2d`."
+msgstr "4D Arrayまたは 4D Variableに対する batch normalization 層です。通常、 `Conv2d` と共に使用します。"
+
+#: nnabla.experimental.parametric_function_class.batch_normalization.BatchNorm3d:1
+#: of
+msgid ""
+"Batch normalization layer for 5d-Array or 5d-Variable. This is typically "
+"used together with `Conv3d`."
+msgstr "5D Arrayまたは 5D Variableの batch normalization 層です。通常、`Conv3d` と共に使用します。 "
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:1 of
+msgid "Embed."
+msgstr "Embed。"
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:3 of
+msgid ""
+"Embed slices a matrix/tensor with indexing array/tensor. Weights are "
+"initialized with :obj:`nnabla.initializer.UniformInitializer` within the "
+"range of :math:`-\\sqrt{3}` and :math:`\\sqrt{3}`."
+msgstr ""
+"インデックス配列/テンソルによって、マトリックス/テンソルをスライスします。重みは "
+"`nnabla.initializer.UniformInitializer` により :math:`-\\sqrt{3}` から "
+":math:`\\sqrt{3}` までの範囲内に初期化されます。"
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:5 of
+msgid "[Integer] Indices with shape :math:`(I_0, ..., I_N)`"
+msgstr "[整数] :math:`(I_0, ..., I_N)` 形状のインデックス。"
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:7 of
+msgid "number of possible inputs, words or vocabraries"
+msgstr "データ中に存在し得る入力、単語、または語彙の数。"
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:8 of
+msgid "number of embedding features"
+msgstr "埋め込む機能の数。"
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:9 of
+msgid "When set to `True`, the embedding weight matrix will not be updated."
+msgstr "`True` を指定した場合は、埋め込む重みマトリックスは更新されません。"
+
+#: nnabla.experimental.parametric_function_class.embed.Embed:13 of
+msgid "Output with shape :math:`(I_0, ..., I_N, W_1, ..., W_M)`"
+msgstr ":math:`(I_0, ..., I_N, W_1, ..., W_M)` の形状を持つ出力"
+

@@ -1,0 +1,179 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.8.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-04-24 16:52+0900\n"
+"PO-Revision-Date: 2020-05-15 10:56+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja_JP\n"
+"X-Generator: Poedit 2.3\n"
+
+#: ../../python/api/utils/debug_utils.rst:3
+msgid "Debug Utils"
+msgstr ""
+
+#: ../../python/api/utils/debug_utils.rst:6
+msgid "Graph Profiler"
+msgstr ""
+
+#: nnabla.utils.profiler.GraphProfiler:1 of
+msgid ""
+"Class for measuring calculation time of each functions which compose "
+"nnabla computation graph."
+msgstr ""
+"ネットワークに含まれるそれぞれの関数の計算時間を計測するためのクラスです。"
+
+#: nnabla.utils.profiler.GraphProfiler:3 of
+msgid ""
+"You can check some performances of your nnabla network. This can measure "
+"the calculation times of :"
+msgstr "以下の項目について、実行時間を計測することができます。"
+
+#: nnabla.utils.profiler.GraphProfiler:6
+#: nnabla.utils.profiler.GraphProfiler.run:5 of
+msgid "function-wise forward"
+msgstr "関数ごとのforward演算実行速度"
+
+#: nnabla.utils.profiler.GraphProfiler:7
+#: nnabla.utils.profiler.GraphProfiler.run:6 of
+msgid "function-wise backward"
+msgstr "関数ごとのbackward演算実行速度"
+
+#: nnabla.utils.profiler.GraphProfiler:8
+#: nnabla.utils.profiler.GraphProfiler.run:7 of
+msgid "whole graph forward"
+msgstr "グラフ全体のforward演算実行速度"
+
+#: nnabla.utils.profiler.GraphProfiler:9
+#: nnabla.utils.profiler.GraphProfiler.run:8 of
+msgid "whole graph backward"
+msgstr "グラフ全体のbackward演算実行速度"
+
+#: nnabla.utils.profiler.GraphProfiler:10 of
+msgid "training (forward + backward + update) (if ``solver`` is not None)"
+msgstr ""
+"学習実行速度 ( forward + backward + update演算実行にかかる合計時間) "
+"( ``solver`` が None でない場合)"
+
+#: nnabla.utils.profiler.GraphProfiler:12
+#: nnabla.utils.profiler.GraphProfilerCsvWriter:3 of
+msgid "Example:"
+msgstr "例:"
+
+#: nnabla.utils.profiler.GraphProfiler
+#: nnabla.utils.profiler.GraphProfilerCsvWriter of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.utils.profiler.GraphProfiler:41 of
+msgid ""
+"Instance of `nnabla.Variable` class. GraphProfiler find all functions "
+"which compose network graph from root `nnabla.Variable` to this `nnabla."
+"Variable`."
+msgstr ""
+"`nnabla.Variable` インスタンス。 GraphProfiler は、ルートとなる `nnabla."
+"Variable` からこの 引数として与えられた `nnabla.Variable` までに含まれるす"
+"べての関数の実行時間を計測します。"
+
+#: nnabla.utils.profiler.GraphProfiler:44 of
+msgid "gpu device id."
+msgstr "GPU デバイスID。"
+
+#: nnabla.utils.profiler.GraphProfiler:46 of
+msgid "Extension name. e.g. 'cpu', 'cuda', 'cudnn' etc."
+msgstr ""
+"nnablaのctxとして指定できるコンテキスト名。指定されたctx下での実行速度が計"
+"測されます。例:  ‘cpu’, ‘cuda’, ‘cudnn’ など。"
+
+#: nnabla.utils.profiler.GraphProfiler:48 of
+msgid ""
+"Instance of `nnabla.solvers.Solver` for optimizing the parameters of the "
+"computation graph. if None, the training process is ignored. Default "
+"value is None."
+msgstr ""
+"`nnabla.solvers.Solver` のインスタンス。None が与えられた場合には、学習プ"
+"ロセスは計測されません。デフォルトは None です。"
+
+#: nnabla.utils.profiler.GraphProfiler:52 of
+msgid ""
+"This argument specifies how many times the each functions` execution time "
+"are measured. Default value is 100."
+msgstr ""
+"それぞれの関数に対して実行時間を計測する回数。デフォルトは 100 です。"
+
+#: nnabla.utils.profiler.GraphProfiler:55 of
+msgid ""
+"Maximum time of executing measurement for each functions. This argument "
+"has higher priority than ``n_run``. When the measurement time for each "
+"functions get bigger than this argument, this class stops measuring and "
+"goes to next function, unless the total times of measurement are less "
+"than n_run. Default value is 1 [sec]."
+msgstr ""
+"それぞれの関数の実行時間を計測する最大の時間。この引数は ``n_run`` よりも"
+"優先されます。すなわち、それぞれの関数での計測時間がこの引数より大きくなる"
+"場合、計測した回数が n_run 未満であっても、現在の関数に対する計測を中止し"
+"て次の関数に進みます。デフォルトは 1 [sec] です。"
+
+#: nnabla.utils.profiler.GraphProfiler:61 of
+msgid ""
+"Time scale to display. ['m', 'u', 'n'] (which stands for 'mili', 'micro' "
+"and 'nano')"
+msgstr ""
+"表示する時間スケール。[‘m’, ‘u’, ‘n’] (それぞれ ‘ミリ’, ‘マイクロ’, ‘ナ"
+"ノ’ の略記号 )"
+
+#: nnabla.utils.profiler.GraphProfiler.run:1 of
+msgid "Execute profiling."
+msgstr "プロファイリングを実行します。"
+
+#: nnabla.utils.profiler.GraphProfiler.run:3 of
+msgid "This executes the 5 types of measurement:"
+msgstr "以下の5つの項目についての実行時間を計測します。"
+
+#: nnabla.utils.profiler.GraphProfiler.run:9 of
+msgid "training (forward + backward + update) (if ``solver`` is not None.)"
+msgstr ""
+"学習実行速度 ( forward + backward + update演算実行にかかる合計時間) "
+"( ``solver`` が None でない場合)"
+
+#: nnabla.utils.profiler.GraphProfilerCsvWriter:1 of
+msgid "csv writer for GraphProfiler class."
+msgstr ""
+"GraphProfiler によって計測した時間をcsvファイルとして書き出すためのクラス"
+"です。"
+
+#: nnabla.utils.profiler.GraphProfilerCsvWriter:18 of
+msgid "Instance of GraphProfiler class which is main executor of profiling."
+msgstr "GraphProfiler クラスのインスタンス。"
+
+#: nnabla.utils.profiler.GraphProfilerCsvWriter:20 of
+msgid ""
+"Output file object. Profile results will be written to the file which is "
+"specified by this argument."
+msgstr ""
+"出力ファイルオブジェクト。この引数で指定されたファイルにプロファイリングの"
+"結果を書き込みます。"
+
+#: nnabla.utils.profiler.GraphProfilerCsvWriter.write:1 of
+msgid "Write result to the file. The output file is specified by ``file``."
+msgstr "指定された ``file`` に計測結果を出力します。"
+
+#: ../../python/api/utils/debug_utils.rst:18
+msgid "Time Profiler"
+msgstr ""
+
+#: ../../python/api/utils/debug_utils.rst:27
+msgid "Nan/Inf Tracer"
+msgstr ""

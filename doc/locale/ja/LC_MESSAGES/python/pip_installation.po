@@ -1,0 +1,104 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-10 11:25+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/pip_installation.rst:4
+msgid "NNabla package installation using PIP"
+msgstr "PIP を使用した NNabla パッケージのインストール"
+
+#: ../../python/pip_installation.rst:6
+msgid ""
+"Note: please refer to the :ref:`pip_os_specific` for the OS specific "
+"dependencies setup."
+msgstr "注 : 各 OS の依存関係については :ref:`pip_os_specific` を参照ください。"
+
+#: ../../python/pip_installation.rst:8
+msgid "Install NNabla package via pip:"
+msgstr "NNabla パッケージを pip インストールします。"
+
+#: ../../python/pip_installation.rst:10
+msgid "pip install nnabla"
+msgstr ""
+
+#: ../../python/pip_installation.rst:14
+msgid ""
+"**Note**: If you want to make sure the latest version will be installed, "
+"try to uninstall previously installed one with ``pip uninstall -y "
+"nnabla`` beforehand."
+msgstr ""
+"**注** : 確実に最新バージョンをインストールしたい場合は、あらかじめ ``pip uninstall - y nnabla`` "
+"で以前インストールされたものをアンインストールすることを試してください。"
+
+#: ../../python/pip_installation.rst:16
+msgid "Then, check if it works by running:"
+msgstr "次に、以下を実行して稼働するか確認してください。"
+
+#: ../../python/pip_installation.rst:18
+msgid "python -c \"import nnabla\""
+msgstr ""
+
+#: ../../python/pip_installation.rst:22
+msgid "2018-06-26 15:20:16,759 [nnabla][INFO]: Initializing CPU extension..."
+msgstr ""
+
+#: ../../python/pip_installation.rst:29
+msgid "NNabla CUDA extension package installation"
+msgstr "NNabla CUDA 拡張パッケージのインストール"
+
+#: ../../python/pip_installation.rst:31
+msgid "See :ref:`pip-installation-cuda`."
+msgstr ":ref:`pip-installation-cuda` を参照してください。"
+
+#: ../../python/pip_installation.rst:34
+msgid "Run an Example"
+msgstr "サンプルを実行"
+
+#: ../../python/pip_installation.rst:36
+msgid ""
+"Get `the examples <https://github.com/sony/nnabla-"
+"examples/archive/master.zip>`_ (, and unzip) or clone `NNabla Examples "
+"repository <https://github.com/sony/nnabla-examples/>`_, and go to the "
+"MNIST folder."
+msgstr ""
+"`サンプル <https://github.com/sony/nnabla-examples/archive/master.zip>`_ "
+"をダウンロードするか ( ダウンロード後 unzip ) 、`NNabla Examples リポジトリ "
+"<https://github.com/sony/nnabla-examples/>`_ からクローン、MNIST フォルダへ移動してください。"
+
+#: ../../python/pip_installation.rst:38
+msgid "cd nnabla-examples/mnist-collection/"
+msgstr ""
+
+#: ../../python/pip_installation.rst:43
+msgid "Run MNIST classification."
+msgstr "MNIST classification を実行してください。"
+
+#: ../../python/pip_installation.rst:45
+#, fuzzy
+msgid "python classification.py"
+msgstr "MNIST classification を実行してください。"
+
+#: ../../python/pip_installation.rst:50
+msgid "Run MNIST classification with CUDA/cuDNN."
+msgstr "CUDA/cuDNN で MNIST classification を実行してください。"
+
+#: ../../python/pip_installation.rst:52
+msgid "python classification.py -c cudnn"
+msgstr ""
+

@@ -1,0 +1,796 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-01 11:35+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/tutorial/model_finetuning.rst:3
+msgid "NNabla Models Finetuning Tutorial"
+msgstr "NNabla モデルのファインチューニングチュートリアル"
+
+#: ../../python/tutorial/model_finetuning.rst:5
+msgid ""
+"Here we demonstrate how to perform finetuning using nnabla's pre-trained "
+"models."
+msgstr "ここでは、 nnabla の学習済みモデルを使用してファインチューニングを実行する方法を説明します。"
+
+#: ../../python/tutorial/model_finetuning.rst:9
+msgid "Load the model"
+msgstr "モデルを読み込む"
+
+#: ../../python/tutorial/model_finetuning.rst:11
+msgid "Loading the model is very simple. All you need is just 2 lines."
+msgstr "モデルの読み込みは非常に簡単です。 必要なのは 2 行だけです。"
+
+#: ../../python/tutorial/model_finetuning.rst:13
+msgid ""
+"from nnabla.models.imagenet import ResNet18\n"
+"model = ResNet18()"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:18
+msgid ""
+"You can choose other ResNet models such as ``ResNet34``, ``ResNet50``, by"
+" specifying the model's name as an argument. Of course, you can choose "
+"other pretrained models as well. See the `Docs "
+"<https://nnabla.readthedocs.io/en/latest/python/api/models/imagenet.html>`__."
+msgstr ""
+"引数としてモデルの名前を指定することにより、 ``ResNet34`` 、 ``ResNet50`` などの他の ResNet "
+"モデルを選択できます。もちろん、他の学習済みモデルを選択することも可能です。 `ドキュメント "
+"<https://nnabla.readthedocs.io/jp/latest/python/api/models/imagenet.html>`__"
+" をご覧ください。"
+
+#: ../../python/tutorial/model_finetuning.rst:23
+msgid ""
+"**NOTE**: If you use the ``ResNet18`` for the first time, nnabla will "
+"automatically download the weights from ``https://nnabla.org`` and it may"
+" take up to a few minutes."
+msgstr ""
+"**注** : ``ResNet18`` を初めて使用する場合、nnabla は自動的に ``https://nnabla.org`` "
+"から重みをダウンロードします。これは数分かかる場合があります。"
+
+#: ../../python/tutorial/model_finetuning.rst:28
+msgid "Dataset"
+msgstr "データセット"
+
+#: ../../python/tutorial/model_finetuning.rst:30
+msgid ""
+"In this tutorial, we use `Caltech101 "
+"<http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`__ as the "
+"dataset for finetuning. Caltech101 consists of more than 9,000 object "
+"images in total and each image belongs to one of 101 distinct categories "
+"or \"clutter\" category. We use images from 101 categories for simple "
+"classification."
+msgstr ""
+"このチュートリアルでは、ファインチューニング用のデータセットとして `Caltech101 "
+"<http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`__ を使用します。 "
+"Caltech101 は合計 9,000 を超えるオブジェクト画像で構成され、各画像は 101 の異なるカテゴリの 1 つ、または "
+"“clutter” カテゴリに属します。単純な分類としては 101 のカテゴリの画像を使用します。"
+
+#: ../../python/tutorial/model_finetuning.rst:37
+msgid ""
+"We have a script named ``caltech101_data.py`` which can automatically "
+"download the dataset and store it in ``nnabla_data``."
+msgstr ""
+"データセットを自動的にダウンロードして ``nnabla_data`` に保存できる、 ``caltech101_data.py`` "
+"という名前のスクリプトを用意しました。"
+
+#: ../../python/tutorial/model_finetuning.rst:40
+msgid ""
+"If you have your own dataset and ``DataIterator`` which can load your "
+"data, you can use it instead."
+msgstr "独自のデータセットと、データを読み込むことができる ``DataIterator`` がある場合は、代わりにそれを使用できます。"
+
+#: ../../python/tutorial/model_finetuning.rst:43
+msgid "run caltech101_data.py"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:47
+msgid ""
+"batch_size = 32  # we set batch_size = 32\n"
+"all_data = data_iterator_caltech101(batch_size)"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:52
+#, python-format
+msgid ""
+"Since there is no separate data for training and validation in "
+"caltech101, we need to *manually* split it up. Here, we will split the "
+"dataset as the following way; **80% for training, and 20% for "
+"validation.**"
+msgstr ""
+"caltech101 には学習と検証のための個別のデータがないため、 *手動* "
+"で分割する必要があります。ここでは、データセットを次のように分割します。 **80% を学習、そして 20% を検証。**"
+
+#: ../../python/tutorial/model_finetuning.rst:57
+#, python-format
+msgid ""
+"num_samples = all_data.size\n"
+"num_train_samples = int(0.8 * num_samples)  # Take 80% for training, and "
+"the rest for validation.\n"
+"num_class = 101\n"
+"data_iterator_train = all_data.slice(\n"
+"        rng=None, slice_start=0, slice_end=num_train_samples)\n"
+"data_iterator_valid = all_data.slice(\n"
+"        rng=None, slice_start=num_train_samples, slice_end=num_samples)"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:67
+msgid "Now we have model and data!"
+msgstr "これでモデルとデータが用意できました !"
+
+#: ../../python/tutorial/model_finetuning.rst:70
+msgid "Optional: Check the image in the dataset"
+msgstr "オプショナル : データセット内の画像の確認"
+
+#: ../../python/tutorial/model_finetuning.rst:72
+msgid ""
+"Let's take a look at what kind of images are included in the dataset. You"
+" can get images by ``DataIterator``'s method, ``next``"
+msgstr "データセットにどのような画像があるか見てみましょう。 ``次`` に、 ``DataIterator`` メソッドで画像を取得します。"
+
+#: ../../python/tutorial/model_finetuning.rst:75
+msgid ""
+"import matplotlib.pyplot as plt\n"
+"%matplotlib inline\n"
+"images, labels = data_iterator_train.next()\n"
+"sample_image, sample_label = images[0], labels[0]\n"
+"plt.imshow(sample_image.transpose(1,2,0))\n"
+"plt.show()\n"
+"print(\"image_shape: {}\".format(sample_image.shape))\n"
+"print(\"label_id: {}\".format(sample_label))"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:93
+msgid ""
+"image_shape: (3, 128, 128)\n"
+"label_id: [94]"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:98
+msgid "Preparing Graph Construction"
+msgstr "グラフ作成の準備"
+
+#: ../../python/tutorial/model_finetuning.rst:100
+msgid "Let's start with importing basic modules."
+msgstr "基本的なモジュールのインポートから始めましょう。"
+
+#: ../../python/tutorial/model_finetuning.rst:102
+msgid ""
+"import nnabla as nn\n"
+"\n"
+"# Optional: If you want to use GPU\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"ctx = get_extension_context(\"cudnn\")\n"
+"nn.set_default_context(ctx)\n"
+"ext = nn.ext_utils.import_extension_module(\"cudnn\")"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:113
+msgid "Create input Variables for the Network"
+msgstr "ネットワークの入力 Variable を作成する"
+
+#: ../../python/tutorial/model_finetuning.rst:115
+msgid "Now we are going to create the input variables."
+msgstr "次に、入力 Variable を作成します。"
+
+#: ../../python/tutorial/model_finetuning.rst:117
+msgid ""
+"channels, image_height, image_width = sample_image.shape  # use info from"
+" the image we got\n"
+"\n"
+"# input variables for the validation network\n"
+"image_valid = nn.Variable((batch_size, channels, image_height, "
+"image_width))\n"
+"label_valid = nn.Variable((batch_size, 1))\n"
+"input_image_valid = {\"image\": image_valid, \"label\": label_valid}\n"
+"\n"
+"# input variables for the training network\n"
+"image_train = nn.Variable((batch_size, channels, image_height, "
+"image_width))\n"
+"label_train = nn.Variable((batch_size, 1))\n"
+"input_image_train = {\"image\": image_train, \"label\": label_train}"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:132
+msgid "Create the training graph using the pretrained model"
+msgstr "学習済みモデルを使用して学習用グラフを作成する"
+
+#: ../../python/tutorial/model_finetuning.rst:134
+msgid ""
+"If you take a look at the `Model's API Reference "
+"<https://nnabla.readthedocs.io/en/latest/python/api/models/imagenet.html>`__,"
+" you can find ``use_up_to`` option. Specifying one of the pre-defined "
+"strings when calling the model, the computation graph will be constructed"
+" up to the layer you specify. For example, in case of ``ResNet18``, you "
+"can choose one of the following as the last layer of the graph."
+msgstr ""
+"`モデルの API リファレンス "
+"<https://nnabla.readthedocs.io/jp/latest/python/api/models/imagenet.html>`__"
+" を参照すると、 ``use_up_to`` オプションがあることがわかります。モデルを呼び出す時に、事前定義された文字列の 1 "
+"つを指定すると、指定した層まで計算グラフが作成されます。例えば、 ``ResNet18`` "
+"の場合、グラフの最後の層として次のいずれかを選択できます。"
+
+#: ../../python/tutorial/model_finetuning.rst:142
+msgid ""
+"'classifier' (default): The output of the final affine layer for "
+"classification."
+msgstr "‘classifier’ ( デフォルト ) : 分類のための最後の Affine 層の出力。"
+
+#: ../../python/tutorial/model_finetuning.rst:144
+msgid "'pool': The output of the final global average pooling."
+msgstr "‘pool’ : 最終的な Global Average Pooling 出力。"
+
+#: ../../python/tutorial/model_finetuning.rst:145
+msgid ""
+"'lastconv': The input of the final global average pooling without ReLU "
+"activation.."
+msgstr "‘lastconv’ : ReLU 活性化なしの Global Average Pooling の入力。"
+
+#: ../../python/tutorial/model_finetuning.rst:147
+msgid "'lastconv+relu': Network up to 'lastconv' followed by ReLU activation."
+msgstr "‘lastconv+relu’ : ‘lastconv’ ReLU 活性化。"
+
+#: ../../python/tutorial/model_finetuning.rst:150
+msgid ""
+"For finetuning, it is common to replace only the upper layers with the "
+"new (not trained) ones and re-use the lower layers with their pretrained "
+"weights. Also, pretrained models have been trained on a classification "
+"task on ImageNet, which has 1000 categories, so the output of the "
+"``classifier`` layer has the output shape ``(batch_size, 1000)`` that "
+"wouldn't fit our current dataset. For this reason, here we construct the "
+"graph up to the ``pool`` layer, which corresponds to the ``global average"
+" pooling`` layer in the original graph, and connect it to the additional "
+"affine (fully-connected) layer for 101-way classification. For "
+"finetuning, it is common to train only the weights for the newly added "
+"layers (in this case, the last affine layer), but in this tutorial, we "
+"will update the weights for *all* layers in the graph. Also, when "
+"creating a training graph, you need to set ``training=True``."
+msgstr ""
+"ファインチューニングでは、上位層のみを新しい ( 学習されていない ) "
+"層に置き換え、下位層を学習済み重みで再利用するのが一般的です。また、学習済みモデルは、 1000 のカテゴリを持つ ImageNet "
+"の分類タスクで学習されているため、 ``分類`` 層の出力には、現在のデータセットに適合しない出力形状 ``( batch_size、1000 "
+")`` があります。このため、ここでは元のグラフにおける ``Global Average Pooling`` 層に対応する ``プール`` "
+"層までグラフを作成し、 101 カテゴリ分類のために Affine ( 全結合 ) レイヤに繋げます。ファインチューニングでは、新しく追加された層"
+" ( この場合は最後の Affine 層 ) の重みのみを学習するのが一般的ですが、このチュートリアルでは、グラフ内の *すべて* "
+"の層の重みを更新します。また、学習用グラフを作成するときは、 ``training = True`` に設定する必要があります。"
+
+#: ../../python/tutorial/model_finetuning.rst:164
+msgid ""
+"import nnabla.parametric_functions as PF\n"
+"\n"
+"y_train = model(image_train, force_global_pooling=True, "
+"use_up_to=\"pool\", training=True)\n"
+"with nn.parameter_scope(\"finetuning_fc\"):\n"
+"    pred_train = PF.affine(y_train, 101)  # adding the affine layer to "
+"the graph."
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:172
+msgid ""
+"**NOTE**: You need to specify ``force_global_pooling=True`` when the "
+"input shape is different from what the model expects. You can check the "
+"model's default input shape by typing ``model.input_shape``."
+msgstr ""
+"**注** : モデルに対して想定している入力形状と異なる場合は、 ``force_global_pooling = True`` "
+"を指定する必要があります。 ``model.input_shape`` と入力して、モデルのデフォルトの入力形状を確認できます。"
+
+#: ../../python/tutorial/model_finetuning.rst:177
+msgid "Create the validation graph using the model"
+msgstr "モデルを使用して検証用グラフを作成する"
+
+#: ../../python/tutorial/model_finetuning.rst:179
+msgid ""
+"Creating the validation graph is almost the same. You simply need to "
+"change ``training`` flag to ``False``."
+msgstr "ほぼ同様の方法で検証用グラフを作成できます。 ``training`` フラグを ``False`` に変更するだけです。"
+
+#: ../../python/tutorial/model_finetuning.rst:182
+msgid ""
+"y_valid = model(image_valid,\n"
+"                force_global_pooling=True, use_up_to=\"pool\", "
+"training=False)\n"
+"with nn.parameter_scope(\"finetuning_fc\"):\n"
+"    pred_valid = PF.affine(y_valid, 101)\n"
+"pred_valid.persistent = True  # to keep the value when get "
+"`forward(clear_buffer=True)`-ed."
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:191
+msgid "Define the functions for computing Loss and Categorical Error"
+msgstr "ロスと分類誤差計算のための関数を定義する"
+
+#: ../../python/tutorial/model_finetuning.rst:193
+msgid ""
+"import nnabla.functions as F\n"
+"\n"
+"\n"
+"def loss_function(pred, label):\n"
+"    \"\"\"\n"
+"        Compute loss.\n"
+"    \"\"\"\n"
+"    loss = F.mean(F.softmax_cross_entropy(pred, label))\n"
+"    return loss\n"
+"\n"
+"loss_valid = loss_function(pred_valid, label_valid)\n"
+"top_1_error_valid = F.mean(F.top_n_error(pred_valid, label_valid))\n"
+"loss_train = loss_function(pred_train, label_train)\n"
+"top_1_error_train = F.mean(F.top_n_error(pred_train, label_train))"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:211
+msgid "Prepare the solver"
+msgstr "Solver を準備する"
+
+#: ../../python/tutorial/model_finetuning.rst:213
+msgid ""
+"import nnabla.solvers as S\n"
+"\n"
+"solver = S.Momentum(0.01)  # you can choose others as well\n"
+"\n"
+"solver.set_parameters(nn.get_parameters())"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:222
+msgid "Some setting for iteration"
+msgstr "イテレーションのための設定"
+
+#: ../../python/tutorial/model_finetuning.rst:224
+msgid ""
+"num_epoch = 10  # arbitrary\n"
+"one_epoch = data_iterator_train.size // batch_size\n"
+"max_iter = num_epoch * one_epoch\n"
+"val_iter = data_iterator_valid.size // batch_size"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:232
+msgid "Performance before finetuning"
+msgstr "ファインチューニング前のパフォーマンス"
+
+#: ../../python/tutorial/model_finetuning.rst:234
+msgid ""
+"Let's see how *well* the model works. Note that all the weights are "
+"pretrained on ImageNet except for the last affine layer. First, prepare a"
+" function to show us the model's performance,"
+msgstr ""
+"モデルがどれほど *良く* 機能するかを見てみましょう。最後の Affine 層を除いて、すべての重みが ImageNet "
+"で学習済みであることに注意してください。 まず、モデルのパフォーマンスを示す関数を準備します。"
+
+#: ../../python/tutorial/model_finetuning.rst:238
+msgid ""
+"def run_validation(pred_valid, loss_valid, top_1_error_valid,\n"
+"                   input_image_valid, data_iterator_valid,\n"
+"                   with_visualized=False, num_visualized=3):\n"
+"    assert num_visualized < pred_valid.shape[0], \"too many images to "
+"plot.\"\n"
+"    val_iter = data_iterator_valid.size // pred_valid.shape[0]\n"
+"    ve = 0.\n"
+"    vloss = 0.\n"
+"    for j in range(val_iter):\n"
+"        v_image, v_label = data_iterator_valid.next()\n"
+"        input_image_valid[\"image\"].d = v_image\n"
+"        input_image_valid[\"label\"].d = v_label\n"
+"        nn.forward_all([loss_valid, top_1_error_valid], "
+"clear_no_need_grad=True)\n"
+"        vloss += loss_valid.d.copy()\n"
+"        ve += top_1_error_valid.d.copy()\n"
+"\n"
+"    vloss /= val_iter\n"
+"    ve /= val_iter\n"
+"\n"
+"    if with_visualized:\n"
+"        ind = 1\n"
+"        random_start = np.random.randint(pred_valid.shape[0] - "
+"num_visualized)\n"
+"        fig = plt.figure(figsize=(12., 12.))\n"
+"        for n in range(random_start, random_start + num_visualized):\n"
+"            sample_image, sample_label = v_image[n], v_label[n]\n"
+"            ax = fig.add_subplot(1, num_visualized, ind)\n"
+"            ax.imshow(sample_image.transpose(1,2,0))\n"
+"            with nn.auto_forward():\n"
+"                predicted_id = np.argmax(F.softmax(pred_valid)[n].d)\n"
+"            result = \"true label_id: {} - predicted as "
+"{}\".format(str(sample_label[0]), str(predicted_id))\n"
+"            ax.set_title(result)\n"
+"            ind += 1\n"
+"        fig.show()\n"
+"\n"
+"    return ve, vloss"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:275
+#: ../../python/tutorial/model_finetuning.rst:374
+msgid ""
+"_, _ = run_validation(pred_valid, loss_valid, top_1_error_valid, "
+"input_image_valid, data_iterator_valid, with_visualized=True)"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:283
+msgid ""
+"As you can see, the model fails to classify images properly. Now, let's "
+"begin the finetuning and see how performance improves."
+msgstr ""
+"ご覧いただける様に、モデルは画像を適切に分類できません。 "
+"それでは、ファインチューニングを始めて、パフォーマンスがどのように向上するか見てみましょう。"
+
+#: ../../python/tutorial/model_finetuning.rst:286
+msgid "Start Finetuning"
+msgstr "ファインチューニングを開始する"
+
+#: ../../python/tutorial/model_finetuning.rst:288
+msgid "Let's prepare the monitor for training."
+msgstr "学習用の monitor を準備しましょう。"
+
+#: ../../python/tutorial/model_finetuning.rst:290
+msgid ""
+"from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed\n"
+"monitor = Monitor(\"tmp.monitor\")\n"
+"monitor_loss = MonitorSeries(\"Training loss\", monitor, interval=200)\n"
+"monitor_err = MonitorSeries(\"Training error\", monitor, interval=200)\n"
+"monitor_vloss = MonitorSeries(\"Test loss\", monitor, interval=200)\n"
+"monitor_verr = MonitorSeries(\"Test error\", monitor, interval=200)"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:299
+msgid ""
+"# Training-loop\n"
+"for i in range(max_iter):\n"
+"    image, label = data_iterator_train.next()\n"
+"    input_image_train[\"image\"].d = image\n"
+"    input_image_train[\"label\"].d = label\n"
+"    nn.forward_all([loss_train, top_1_error_train], "
+"clear_no_need_grad=True)\n"
+"\n"
+"    monitor_loss.add(i, loss_train.d.copy())\n"
+"    monitor_err.add(i, top_1_error_train.d.copy())\n"
+"\n"
+"    solver.zero_grad()\n"
+"    loss_train.backward(clear_buffer=True)\n"
+"\n"
+"    # update parameters\n"
+"    solver.weight_decay(3e-4)\n"
+"    solver.update()\n"
+"\n"
+"    if i % 200 == 0:\n"
+"        ve, vloss = run_validation(pred_valid, loss_valid, "
+"top_1_error_valid,\n"
+"                                   input_image_valid, "
+"data_iterator_valid,\n"
+"                                   with_visualized=False, "
+"num_visualized=3)\n"
+"\n"
+"        monitor_vloss.add(i, vloss)\n"
+"        monitor_verr.add(i, ve)"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:329
+msgid ""
+"2019-07-05 14:26:26,885 [nnabla][INFO]: iter=199 {Training "
+"loss}=1.5021580457687378\n"
+"2019-07-05 14:26:26,887 [nnabla][INFO]: iter=199 {Training "
+"error}=0.3345312476158142\n"
+"2019-07-05 14:26:28,756 [nnabla][INFO]: iter=200 {Test "
+"loss}=2.975713219355654\n"
+"2019-07-05 14:26:28,756 [nnabla][INFO]: iter=200 {Test "
+"error}=0.5384837962962963\n"
+"2019-07-05 14:26:50,249 [nnabla][INFO]: iter=399 {Training "
+"loss}=0.22022955119609833\n"
+"2019-07-05 14:26:50,250 [nnabla][INFO]: iter=399 {Training "
+"error}=0.053437501192092896\n"
+"2019-07-05 14:26:52,256 [nnabla][INFO]: iter=400 {Test "
+"loss}=0.12045302835327608\n"
+"2019-07-05 14:26:52,257 [nnabla][INFO]: iter=400 {Test "
+"error}=0.029513888888888888\n"
+"2019-07-05 14:27:14,151 [nnabla][INFO]: iter=599 {Training "
+"loss}=0.0659928247332573\n"
+"2019-07-05 14:27:14,152 [nnabla][INFO]: iter=599 {Training "
+"error}=0.012500000186264515\n"
+"2019-07-05 14:27:16,175 [nnabla][INFO]: iter=600 {Test "
+"loss}=0.08744175952893717\n"
+"2019-07-05 14:27:16,175 [nnabla][INFO]: iter=600 {Test "
+"error}=0.02199074074074074\n"
+"2019-07-05 14:27:38,097 [nnabla][INFO]: iter=799 {Training "
+"loss}=0.03324155509471893\n"
+"2019-07-05 14:27:38,098 [nnabla][INFO]: iter=799 {Training "
+"error}=0.0054687499068677425\n"
+"2019-07-05 14:27:40,120 [nnabla][INFO]: iter=800 {Test "
+"loss}=0.07678695395588875\n"
+"2019-07-05 14:27:40,121 [nnabla][INFO]: iter=800 {Test "
+"error}=0.02025462962962963\n"
+"2019-07-05 14:28:02,041 [nnabla][INFO]: iter=999 {Training "
+"loss}=0.019672293215990067\n"
+"2019-07-05 14:28:02,042 [nnabla][INFO]: iter=999 {Training "
+"error}=0.0017187499906867743\n"
+"2019-07-05 14:28:04,064 [nnabla][INFO]: iter=1000 {Test "
+"loss}=0.06333287184437116\n"
+"2019-07-05 14:28:04,065 [nnabla][INFO]: iter=1000 {Test "
+"error}=0.017361111111111112\n"
+"2019-07-05 14:28:25,984 [nnabla][INFO]: iter=1199 {Training "
+"loss}=0.009992362931370735\n"
+"2019-07-05 14:28:25,985 [nnabla][INFO]: iter=1199 {Training "
+"error}=0.0003124999930150807\n"
+"2019-07-05 14:28:28,008 [nnabla][INFO]: iter=1200 {Test "
+"loss}=0.06950318495984431\n"
+"2019-07-05 14:28:28,008 [nnabla][INFO]: iter=1200 {Test error}=0.015625\n"
+"2019-07-05 14:28:49,954 [nnabla][INFO]: iter=1399 {Training "
+"loss}=0.007941835559904575\n"
+"2019-07-05 14:28:49,955 [nnabla][INFO]: iter=1399 {Training "
+"error}=0.0003124999930150807\n"
+"2019-07-05 14:28:51,978 [nnabla][INFO]: iter=1400 {Test "
+"loss}=0.06711215277512868\n"
+"2019-07-05 14:28:51,979 [nnabla][INFO]: iter=1400 {Test "
+"error}=0.016203703703703703\n"
+"2019-07-05 14:29:13,898 [nnabla][INFO]: iter=1599 {Training "
+"loss}=0.008225565776228905\n"
+"2019-07-05 14:29:13,899 [nnabla][INFO]: iter=1599 {Training "
+"error}=0.0007812500116415322\n"
+"2019-07-05 14:29:15,923 [nnabla][INFO]: iter=1600 {Test "
+"loss}=0.06447940292181792\n"
+"2019-07-05 14:29:15,923 [nnabla][INFO]: iter=1600 {Test "
+"error}=0.016203703703703703\n"
+"2019-07-05 14:29:37,850 [nnabla][INFO]: iter=1799 {Training "
+"loss}=0.005678100511431694\n"
+"2019-07-05 14:29:37,850 [nnabla][INFO]: iter=1799 {Training error}=0.0\n"
+"2019-07-05 14:29:39,873 [nnabla][INFO]: iter=1800 {Test "
+"loss}=0.06282947226255028\n"
+"2019-07-05 14:29:39,873 [nnabla][INFO]: iter=1800 {Test "
+"error}=0.01678240740740741\n"
+"2019-07-05 14:30:01,795 [nnabla][INFO]: iter=1999 {Training "
+"loss}=0.006834140978753567\n"
+"2019-07-05 14:30:01,796 [nnabla][INFO]: iter=1999 {Training "
+"error}=0.00046874998952262104\n"
+"2019-07-05 14:30:03,818 [nnabla][INFO]: iter=2000 {Test "
+"loss}=0.05948294078310331\n"
+"2019-07-05 14:30:03,818 [nnabla][INFO]: iter=2000 {Test "
+"error}=0.014467592592592593"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:371
+msgid ""
+"As you see, the loss and error rate is decreasing as the finetuning "
+"progresses. Let's see the classification result after finetuning."
+msgstr "ご覧いただける様に、ファインチューニングが進むにつれて、 loss とエラー率は減少しています。ファインチューニング後の分類結果を見てみましょう。"
+
+#: ../../python/tutorial/model_finetuning.rst:383
+msgid "You can see now the model is able to classify the image properly."
+msgstr "これで、モデルが画像を適切に分類できるようになりました。"
+
+#: ../../python/tutorial/model_finetuning.rst:386
+msgid "Finetuning more"
+msgstr "更にファインチューニング"
+
+#: ../../python/tutorial/model_finetuning.rst:388
+msgid ""
+"we have a convenient script named ``finetuning.py``. By using this, you "
+"can try finetuning with different models **even on your original "
+"dataset**."
+msgstr ""
+"``finetuning.py`` という名前の便利なスクリプトがあります。これを使用することで、 **独自のオリジナルのデータセットでも** "
+"、様々なモデルでファインチューニングを試すことができます。"
+
+#: ../../python/tutorial/model_finetuning.rst:392
+msgid ""
+"To do this, you need to prepare your own dataset and do some "
+"preprocessing. We will explain how to do this in the following."
+msgstr "これを行うには、独自のデータセットを準備し、いくつかの前処理を行う必要があります。 以下にその方法を説明します。"
+
+#: ../../python/tutorial/model_finetuning.rst:396
+msgid "Prepare your dataset"
+msgstr "独自のデータセットを準備する"
+
+#: ../../python/tutorial/model_finetuning.rst:398
+msgid ""
+"Suppose you have a lot of images which can be used for image "
+"classification. You need to organize your data in a certain manner. Here,"
+" we will explain that with another dataset, `Stanford Dogs Dataset "
+"<http://vision.stanford.edu/aditya86/ImageNetDogs/>`__. First, visit the "
+"official page and download ``images.tar`` (here is the `direct link "
+"<http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar>`__). Next, "
+"untar the archive and then you will see a directory named ``Images``. "
+"Inside that directory, there are many subdirectories and each "
+"subdirectory stores images which belong to 1 category. For example, a "
+"directory ``n02099712-Labrador_retriever`` contains labrador retriever's "
+"images only. So if you want to use your own dataset, you need to organize"
+" your images and directiories in the same way like the following;"
+msgstr ""
+"画像の分類に使用できる画像がたくさんあるとします。データを特定の方法で整理する必要があります。ここでは、他のデータセットである `Stanford"
+" Dogs Dataset <http://vision.stanford.edu/aditya86/ImageNetDogs/>`__ "
+"について説明します。 まず、公式ページにアクセスして、 ``images.tar`` をダウンロードします ( リンクは `こちら "
+"<http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar>`__ です ) "
+"。次に、アーカイブを展開すると、 ``Images`` "
+"という名前のディレクトリが表示されます。そのディレクトリ内には多くのサブディレクトリがあり、各サブディレクトリには 1 "
+"つのカテゴリに属する画像が格納されています。例えば、ディレクトリ ``n02099712-Labrador_retriever`` "
+"には、ラブラドールレトリバーの画像のみが含まれています。従って、独自のデータセットを使用する場合は、次のように画像とディレクトリを同じ様に整理する必要があります。"
+
+#: ../../python/tutorial/model_finetuning.rst:414
+msgid ""
+"parent_directory\n"
+"├── subdirectory_for_category_A\n"
+"│   ├── image_0.jpg\n"
+"│   ├── image_1.jpg\n"
+"│   ├── image_2.jpg\n"
+"│   ├── ...\n"
+"│\n"
+"├── subdirectory_for_category_B\n"
+"│   ├── image_0.jpg\n"
+"│   ├── ...\n"
+"│\n"
+"├── subdirectory_for_category_C\n"
+"│   ├── image_0.jpg\n"
+"│   ├── ...\n"
+"│\n"
+"├── subdirectory_for_category_D\n"
+"│   ├── image_0.jpg\n"
+"│   ├── ...\n"
+"│\n"
+" ..."
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:435
+msgid ""
+"The numbers of images in each category can vary, do not have to be "
+"exactly the same. Once you arrange your dataset, now you're good to go!"
+msgstr "各カテゴリの画像の数は異なる場合があり、完全に同じである必要はありません。 独自データセットを配置したら、準備完了です!"
+
+#: ../../python/tutorial/model_finetuning.rst:439
+msgid "Create image classification dataset using NNabla CLI"
+msgstr "NNabla CLI を使用して画像分類データセットを作成する"
+
+#: ../../python/tutorial/model_finetuning.rst:441
+msgid ""
+"Now that you prepare and organize your dataset, the only thing you have "
+"to do is to create a ``.csv`` file which will be used in "
+"``finetuning.py``. To do so, you can use NNabla's `Python Command Line "
+"Interface "
+"<https://nnabla.readthedocs.io/en/latest/python/command_line_interface.html"
+"#create-image-classification-dataset>`__. Just type like the following."
+msgstr ""
+"データセットを準備して整理したら、次に行う必要があるのは、 ``finetuning.py`` で使用される ``.csv`` "
+"ファイルを作成するだけです。そのために、 NNabla の `Python コマンドラインインターフェース "
+"<https://nnabla.readthedocs.io/jp/latest/python/command_line_interface.html"
+"#create-image-classification-dataset>`__ を使用できます。 次のように入力してください。"
+
+#: ../../python/tutorial/model_finetuning.rst:449
+msgid ""
+"nnabla_cli create_image_classification_dataset -i <path to parent "
+"directory> -o <output directory which contains \"preprocessed\" images> "
+"-c <number of channels> -w <width> -g <height> -m <padding or trimming> "
+"-s <whether apply shuffle or not> -f1 <name of the output csv file for "
+"training data> -f2 <name of the output csv file for test data> -r2 "
+"<ratio(%) of test data to training data>"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:451
+msgid "If you do that on Stanford Dogs Dataset,"
+msgstr "Stanford Dogs Dataset でこれを行うと、以下のようになります。"
+
+#: ../../python/tutorial/model_finetuning.rst:455
+msgid ""
+"nnabla_cli create_image_classification_dataset -i Images -o "
+"arranged_images -c 3 -w 128 -g 128 -m padding -s true -f1 "
+"stanford_dog_train.csv -f2 stanford_dog_test.csv -r2 20"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:457
+msgid ""
+"Note that output ``.csv`` file will be stored in the same directory you "
+"specified with -o option. For more information, please check the `docs "
+"<https://nnabla.readthedocs.io/en/latest/python/command_line_interface.html"
+"#create-image-classification-dataset>`__."
+msgstr ""
+"出力 ``.csv`` ファイルは、 -o オプションで指定したものと同じディレクトリに保存されることに注意してください。 詳細については、 "
+"`ドキュメント "
+"<https://nnabla.readthedocs.io/jp/latest/python/command_line_interface.html"
+"#create-image-classification-dataset>`__ を参照してください。"
+
+#: ../../python/tutorial/model_finetuning.rst:461
+msgid ""
+"After executing the command above, you can start finetuning on your "
+"dataset."
+msgstr "上記のコマンドを実行した後、データセットのファインチューニングを開始できます。"
+
+#: ../../python/tutorial/model_finetuning.rst:465
+msgid "Run finetuning"
+msgstr "ファインチューニングを実行"
+
+#: ../../python/tutorial/model_finetuning.rst:467
+msgid "All you need is just to type one line."
+msgstr "必要なのは、 1 行を入力することだけです。"
+
+#: ../../python/tutorial/model_finetuning.rst:471
+msgid ""
+"python finetuning.py --model <model name> --train-csv <.csv file "
+"containing training data>  --test-csv <.csv file containing test data>"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:473
+msgid "It will execute finetuning on your dataset!"
+msgstr "データセットのファインチューニングを実行します!"
+
+#: ../../python/tutorial/model_finetuning.rst:475
+msgid ""
+"run finetuning.py --model ResNet34 --epoch 10 --train-csv "
+"~/nnabla_data/stanford_dog_arranged/stanford_dog_train.csv --test-csv "
+"~/nnabla_data/stanford_dog_arranged/stanford_dog_test.csv --shuffle True"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:480
+msgid "An example of how to use finetuning's result for inference"
+msgstr "推論のためにファインチューニングの結果を使用する方法の例"
+
+#: ../../python/tutorial/model_finetuning.rst:482
+msgid ""
+"Once the finetuning finished, let's use it for inference! The script "
+"above has saved the parameters at every certain iteration you specified. "
+"So now call the same model you trained and this time let's use the "
+"finetuned parameters in the following way."
+msgstr ""
+"ファインチューニングが終了したら、推論に使用しましょう! "
+"上記のスクリプトは、指定した特定のイテレーターごとにパラメータを保存しました。そこで、学習したものと同じモデルを呼び出して、今度はファインチューニングされたパラメータを次のように使用します。"
+
+#: ../../python/tutorial/model_finetuning.rst:487
+msgid ""
+"from nnabla.models.imagenet import ResNet34\n"
+"import nnabla as nn\n"
+"\n"
+"param_path = \"params_XXX.h5\"  # specify the path to the saved parameter"
+" (.h5)\n"
+"\n"
+"model = ResNet34()\n"
+"batch_size = 1  # just for inference\n"
+"input_shape = (batch_size, ) + model.input_shape"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:498
+msgid ""
+"Then define an input Variable and a network for inference. Note that you "
+"need to construct the network exactly the same way as done in finetuning "
+"script (layer configuration, parameters names, and so on...)."
+msgstr ""
+"次に、入力 Variable "
+"と推論用のネットワークを定義します。スクリプトのファインチューニングと全く同じ方法で、ネットワークを構築する必要があることに注意してください ( "
+"レイヤ構成、パラメータ名など... ) 。"
+
+#: ../../python/tutorial/model_finetuning.rst:502
+msgid ""
+"x = nn.Variable(input_shape)  # input Variable\n"
+"pooled = model(x, use_up_to=\"pool\", training=False)\n"
+"with nn.parameter_scope(\"finetuning\"):\n"
+"    with nn.parameter_scope(\"last_fc\"):\n"
+"        pred = PF.affine(pooled, 120)"
+msgstr ""
+
+#: ../../python/tutorial/model_finetuning.rst:510
+msgid ""
+"Load the parameters which you finetuned above. You can use "
+"``nn.load_parameters()`` to load the parameters. Once you call this, the "
+"parameters stored in the ``params.h5`` will be stored in global scope. "
+"You can check the parameters are different before and after "
+"``nn.load_parameters()`` by using ``nn.get_parameters()``."
+msgstr ""
+"上記でファインチューニングしたパラメータを読み込みます。 ``nn.load_parameters()`` "
+"を使用してパラメータを読み込むことができます。これを呼び出すと、 ``params.h5`` "
+"に格納されているパラメータがグローバルスコープに格納されます。 ``nn.get_parameters()`` を使用して、 "
+"``nn.load_parameters()`` の前後でパラメータが異なることを確認できます。"
+
+#: ../../python/tutorial/model_finetuning.rst:516
+msgid ""
+"nn.load_parameters(param_path)  # load the finetuned parameters.\n"
+"pred.forward()"
+msgstr ""
+

@@ -1,0 +1,88 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-26 09:34+0900\n"
+"PO-Revision-Date: 2020-05-01 16:00+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja_JP\n"
+"X-Generator: Poedit 2.3\n"
+
+#: ../../python/installation.rst:4
+msgid "Python Package Installation"
+msgstr "Python パッケージのインストール"
+
+#: ../../python/installation.rst:6
+msgid "There are three ways to install NNabla Python package."
+msgstr "NNabla Python パッケージのインストール方法は 3 通りあります。"
+
+#: ../../python/installation.rst:10
+msgid "Install with pip command"
+msgstr "pip コマンドを使用してインストールする"
+
+#: ../../python/installation.rst:12
+msgid ""
+"The NNabla python packages are hosted on PYPI for many platforms. For "
+"people who are familiar with Python and its package management system "
+"``pip`` (and  optionally CUDA, but recommended), the following pip "
+"installation guide will be satisfactory when you install NNabla Python. "
+"To see the a bit more detailed OS specific setup guide, go to the next "
+"section."
+msgstr ""
+"NNabla Python パッケージは PYPI でホスティングされており、多くのプラット"
+"フォーム向けのパッケージを提供しています。Python とそのパッケージ・マ"
+"ネージメント・システム ``pip`` ( そして推奨されるオプションとして "
+"CUDA ) を使い慣れているなら、次の pip インストールガイドをご覧ください。"
+"OS 別のもう少し詳細なセットアップ方法は次の章を参照してください。"
+
+#: ../../python/installation.rst:23
+msgid "OS specific workflows"
+msgstr "OS 別ワークフロー"
+
+#: ../../python/installation.rst:34
+msgid "Install NNabla package compatible with Multi-GPU execution"
+msgstr "Multi-GPU 互換の NNabla パッケージをインストールする"
+
+#: ../../python/installation.rst:36
+msgid ""
+"To enable multi-GPU execution such as distributed training on NNabla, "
+"you have to install a special edition of NNabla package. See :ref:`pip-"
+"installation-distributed` for installation."
+msgstr ""
+"NNabla 上の分散学習のような multi-GPU 実行を可能にするために、NNabla "
+"パッケージの特別版をインストールする必要があります。インストール方法につ"
+"いては :ref:`pip-installation-distributed` を参照してください。"
+
+#: ../../python/installation.rst:40
+msgid "Install from source"
+msgstr "ソースコードからインストールする"
+
+#: ../../python/installation.rst:42
+msgid ""
+"Documentation of build from source has been moved to `Github repository "
+"<https://github.com/sony/nnabla-ext-cuda/tree/master/doc/build>`_ "
+"(`build <https://github.com/sony/nnabla/tree/master/doc/build/build."
+"md>`_ or `build_distributed <https://github.com/sony/nnabla-ext-cuda/"
+"blob/master/doc/build/build_distributed.md>`_)."
+msgstr ""
+"ソースコードからのビルドに関するドキュメントは `GitHub リポジトリ "
+"<https://github.com/sony/nnabla-ext-cuda/tree/master/doc/build>`_ "
+"( `build <https://github.com/sony/nnabla/tree/master/doc/build/build."
+"md>`_ または `build_distributed <https://github.com/sony/nnabla-ext-"
+"cuda/blob/master/doc/build/build_distributed.md>`_ ) へ移動しました。"
+
+#: ../../python/installation.rst:46
+msgid "Running on Docker"
+msgstr "Docker で実行"

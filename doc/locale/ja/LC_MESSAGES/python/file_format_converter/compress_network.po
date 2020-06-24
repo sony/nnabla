@@ -1,0 +1,917 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-10 15:10+0900\n"
+"PO-Revision-Date: 2020-06-11 15:30+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../python/file_format_converter/compress_network.rst:3
+msgid "Compress network by fixed point quantization"
+msgstr "固定小数点量子化によるネットワークの圧縮"
+
+#: ../../python/file_format_converter/compress_network.rst:5
+msgid "This tutorial introduces how to compress your network by fixed point quantization."
+msgstr "このチュートリアルでは、固定小数点量子化を利用してネットワークを圧縮する方法を紹介します。"
+
+#: ../../python/file_format_converter/compress_network.rst:9
+msgid "Introduction"
+msgstr "はじめに"
+
+#: ../../python/file_format_converter/compress_network.rst:11
+msgid ""
+"Neural networks show reliable results on AI fields, such as object recognition and detections are useful in real applications. Concurrent to the "
+"the progress in recognition, the increase of IoT devices at the edge of the network is producing a massive amount of data to be computed to data "
+"centers, pushing network bandwidth requirements to the limit. Despite the improvements of network technology, data centers cannot guarantee "
+"acceptable transfer rates and response times, which could be a critical requirement for many applications. But CNN-based recognition systems need "
+"large amounts of memory and computational power, which perform well on expensive GPU-based machines, for example, AlexNet has 61M parameters "
+"(249MB of memory) and performs 1.5B high precision operations to classify one image. These numbers are even higher for deeper CNNs e.g.,VGG. They "
+"are often unsuitable for such edge devices, like cell phones, small devices and embedded electronics. Hence, reducing the storage of network and "
+"computation complexity is the task of optimization."
+msgstr ""
+"ニューラルネットワークは、物体認識や検出などの AI フィールドで信頼できる結果をもたらし、実際のアプリケーションで役立ちます。認識技術の進歩と共に、"
+"これらの技術を利用したIoTエッジデバイスが増加しており、データセンターでは膨大なデータ量を処理する必要があります。その結果、デバイスとデータセン"
+"ターのネットワークの帯域幅の要件は限界まで引き上げられています。ネットワークテクノロジーが改善される一方、データセンターは、多くのアプリケーション"
+"にとって重要な要件となりえる許容可能な転送速度や応答時間を保証することができません。そこで、データセンターで処理するのではなく、IoTデバイス上で認"
+"識を実行することを考えます。しかし、CNN ベースの認識システムは大量のメモリと計算能力が必要であり、それらは高価な GPU をベースとしたマシン上で高い"
+"性能を発揮します。例えば、 AlexNet には 61M のパラメータ（ 249MB のメモリ）があり、1.5B の高精度演算を実行して 1 つの画像を分類します。これらの数"
+"値は、VGG などのより複雑な CNN の場合はさらに大きくなります。これらは多くの場合、携帯電話、小型デバイス、組み込み電子機器などのエッジデバイスには"
+"適さないでしょう。したがって、ネットワーク容量と計算の複雑さを減らすことがモデルの最適化として求められています。"
+
+#: ../../python/file_format_converter/compress_network.rst:28
+msgid ""
+"Currently, quantizing the weights and (or) input is the way which can dramatically reduce the memory and computation time and even keep original "
+"accuracy `[1] <https://arxiv.org/pdf/1603.05279.pdf>`__ (*)."
+msgstr ""
+"現在、元の精度を保ったまま、メモリと計算時間を大幅に削減する方法として、重みと(または)入力の量子化が知られています `[1] <https://arxiv.org/"
+"pdf/1603.05279.pdf>`__ (*) 。"
+
+#: ../../python/file_format_converter/compress_network.rst:32
+msgid "This tutorial tends to share a few of experiments using nnabla for such optimitions."
+msgstr "このチュートリアルでは、nnabla を利用したこれらの最適化の実施例をご紹介します。"
+
+#: ../../python/file_format_converter/compress_network.rst:36
+msgid "Two approaches"
+msgstr "２つのアプローチ"
+
+#: ../../python/file_format_converter/compress_network.rst:38
+msgid "There are mainly 2 approaches to design a fixed-point deep convolution network."
+msgstr "固定小数点を利用した深層畳み込みネットワークを設計する方法として、主に2つのアプローチがあります。"
+
+#: ../../python/file_format_converter/compress_network.rst:41
+msgid "Train a network with fix-point constraint"
+msgstr "固定小数点制約でネットワークを学習する"
+
+#: ../../python/file_format_converter/compress_network.rst:42
+msgid "Convert a pretrain float-point network to its fixed-point version"
+msgstr "浮動小数点演算を利用して学習したネットワークを、固定小数点演算で実行できるように変換する"
+
+#: ../../python/file_format_converter/compress_network.rst:44
+msgid ""
+"Binary Connect series functions, such as BinaryConnectAffine, BinaryConnectConvolution and Binary Weight series functions, such "
+"BinaryWeightAffine and BinaryWeightConvolution, fixed-point quantized series, such as FixedPointQuantizedAffine, FixedPointQuantizedConvolution "
+"acts as an important role for the first approach. These functions have different data paths for forward and backward. When forward, the float-"
+"point weights are converted to fixed-point weights or even binary weights, and the output is calculated by multiple such binary(quantized) "
+"weights with input. When backward, only float-point(or learnable) weights participate in the calculation of updating weights. In fact, binarizing "
+"weight is too extreme, fixed point quantization seems to be more commonly used."
+msgstr ""
+"BinaryConnectAffine, BinaryConnectConvolution などの Binary Connect をサポートするような関数と、 BinaryWeightAffine, BinaryWeightConvolution など"
+"の Binary Weight をサポートするような関数、FixedPointQuantizedAffine, FixedPointQuantizedConvolution などの固定小数点量子化をサポートするような関"
+"数は、最初のアプローチで重要な役割を果たします。これらの関数には、forward演算とbackward演算で異なるデータパスがあります。forward演算実行時は、浮動"
+"小数点の重みが固定小数点の重みまたはバイナリの重みに変換され、出力は、入力と、これらの二値化された(または量子化された)重みによって計算されます。"
+"backward演算実行時は、浮動小数点の(学習可能な)重みのみが更新に利用されます。実際のところ、重みの 2 値化は極端すぎるため、固定小数点による量子化が"
+"より一般的に使用されているようです。。"
+
+#: ../../python/file_format_converter/compress_network.rst:56
+msgid ""
+"Due to the second approach, a few steps need to be performed to keep minimal loss of accuracy. `[2] <http://proceedings.mlr.press/v48/linb16."
+"pdf>`__ provides a comprehensive analysis of such quantization for the relationship between quantization size and performance. Here, we shall do "
+"some experiments to illustrate the trade-off between accuracy and storage size."
+msgstr ""
+"2 番目のアプローチにより、精度の低下を最小限に抑えるために、いくつかの手順を実行する必要があります。`[2] <http://proceedings.mlr.press/v48/linb16."
+"pdf>`__ では、量子化サイズとパフォーマンスの関係について、包括的に分析しています。ここでは、精度とストレージサイズ間でのトレードオフを示すために、"
+"いくつかの実験を行います。"
+
+#: ../../python/file_format_converter/compress_network.rst:62
+msgid ""
+"We compared the ResNet23's original version and the version using ``binary_weight_convolution()``, we can observe the accuracy loss after using "
+"``binary_weight_convolution()``, which is worse than `[3] <http://arxiv.org/abs/1603.05279>`__ mentioned. It should be possible to improve after "
+"more careful fine-tuning."
+msgstr ""
+"ResNet23 の元のバージョンと ``binary_weight_convolution()`` を使用したバージョンを比較したところ、``binary_weight_convolution()`` を使用した後の精"
+"度は `[3] <http://arxiv.org/abs/1603.05279>`__ で報告されている精度よりも劣化しています。この結果は、より慎重にファインチューニングすることで、改"
+"善される可能性があります。"
+
+#: ../../python/file_format_converter/compress_network.rst:67
+msgid ""
+"This tutorial only shows a basic way to compress network. There are still a lot of new approach not presented in this tutorial. For example, a "
+"new way is proposed as in `[4] <https://ai.facebook.com/blog/compressing-neural-networks-for-image-classification-and-detection/>`__, a "
+"quantization network is designed as a student network, a float-point high precision network is designed as a teacher network, the distillation "
+"technique is used to train to obtain the-state-of-art performance and accuracy."
+msgstr ""
+"このチュートリアルでは、ネットワークを圧縮する基本的な方法のみを示します。このチュートリアルで紹介されていない新しいアプローチはまだまだたくさんあ"
+"ります。例えば、 `[4] <https://ai.facebook.com/blog/compressing-neural-networks-for-image-classification-and-detection/>`__ で提案された新しい手法"
+"では、量子化表現のネットワークを生徒、浮動小数点演算による高精度なネットワークを教師として、ネットワークの蒸留により学習を行うことで、最先端のパ"
+"フォーマンスと精度を達成しています。"
+
+#: ../../python/file_format_converter/compress_network.rst:76
+msgid "The benchmark"
+msgstr "ベンチマーク"
+
+#: ../../python/file_format_converter/compress_network.rst:78
+msgid ""
+"We chose a simple network ResNet23 and CIFAR-10 dataset as the benchmark. First, let us obtain base metrics of this benchmark, such as accuracy, "
+"model size, and so on. The following shows the network structure:"
+msgstr ""
+"ここでは、べンチマークとして、シンプルなネットワークの ResNet23 および CIFAR-10 データセットを選択しました。まず、精度、モデルサイズなど、このベン"
+"チマークの基本メトリックを取得します。以下にネットワーク構造を示します。"
+
+#: ../../python/file_format_converter/compress_network.rst:84
+msgid "Layer name"
+msgstr "層の名前"
+
+#: ../../python/file_format_converter/compress_network.rst:84
+msgid "Shape"
+msgstr "形状"
+
+#: ../../python/file_format_converter/compress_network.rst:84
+msgid "Required buffer size"
+msgstr "必要なバッファサイズ"
+
+#: ../../python/file_format_converter/compress_network.rst:86
+msgid "conv1"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:86
+msgid "(1, 3, 32, 32) -> (1, 64, 32, 32)"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:86
+msgid "281344"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:88
+msgid "conv2"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:88
+msgid "(1, 64, 32, 32)->(1, 32, 32, 32)->(1, 32, 32, 32) -> (1, 64, 32, 32)"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:88
+msgid "786432"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:90
+msgid "conv3"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:90 ../../python/file_format_converter/compress_network.rst:92
+msgid "(1, 64, 16, 16)->(1, 32, 16, 16)->(1, 32, 16, 16) -> (1, 64, 16, 16)"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:90 ../../python/file_format_converter/compress_network.rst:92
+msgid "196608"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:92
+msgid "conv4"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:94
+msgid "conv5"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:94 ../../python/file_format_converter/compress_network.rst:96
+msgid "(1, 64, 8, 8)->(1, 32, 8, 8)->(1, 32, 8, 8) -> (1, 64, 8, 8)"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:94 ../../python/file_format_converter/compress_network.rst:96
+msgid "49152"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:96
+msgid "conv6"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:98
+msgid "conv7"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:98 ../../python/file_format_converter/compress_network.rst:100
+msgid "(1, 64, 4, 4)->(1, 32, 4, 4)->(1, 32, 4, 4) -> (1, 64, 4, 4)"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:98 ../../python/file_format_converter/compress_network.rst:100
+msgid "12288"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:100
+msgid "conv8"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:104
+msgid ""
+"To downsize the footprint, we should consider to downsize both the parameter size and variable buffer size, and especially prior for the maximal "
+"buffer size."
+msgstr ""
+"フットプリントを小さくするためには、パラメータのサイズとVariableのバッファーサイズについて考える必要があります。特に、最大バッファーサイズを優先的"
+"に検討する必要があるでしょう。"
+
+#: ../../python/file_format_converter/compress_network.rst:112
+msgid "The network is created by the following code:"
+msgstr "ネットワークは、次のコードによって作成されます。"
+
+#: ../../python/file_format_converter/compress_network.rst:115
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"\n"
+"def resnet23_prediction(image, test=False, ncls=10, nmaps=64, act=F.relu):\n"
+"    \"\"\"\n"
+"    Construct ResNet 23\n"
+"    \"\"\"\n"
+"    # Residual Unit\n"
+"    def res_unit(x, scope_name, dn=False):\n"
+"        C = x.shape[1]\n"
+"        with nn.parameter_scope(scope_name):\n"
+"            # Conv -> BN -> Nonlinear\n"
+"            with nn.parameter_scope(\"conv1\"):\n"
+"                h = PF.convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),\n"
+"                                   with_bias=False)\n"
+"                h = PF.batch_normalization(h, batch_stat=not test)\n"
+"                h = act(h)\n"
+"            # Conv -> BN -> Nonlinear\n"
+"            with nn.parameter_scope(\"conv2\"):\n"
+"                h = PF.convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),\n"
+"                                   with_bias=False)\n"
+"                h = PF.batch_normalization(h, batch_stat=not test)\n"
+"                h = act(h)\n"
+"            # Conv -> BN\n"
+"            with nn.parameter_scope(\"conv3\"):\n"
+"                h = PF.convolution(h, C, kernel=(1, 1), pad=(0, 0),\n"
+"                                   with_bias=False)\n"
+"                h = PF.batch_normalization(h, batch_stat=not test)\n"
+"            # Residual -> Nonlinear\n"
+"            h = act(F.add2(h, x, inplace=True))\n"
+"            # Maxpooling\n"
+"            if dn:\n"
+"                h = F.max_pooling(h, kernel=(2, 2), stride=(2, 2))\n"
+"            return h\n"
+"    # Conv -> BN -> Nonlinear\n"
+"    with nn.parameter_scope(\"conv1\"):\n"
+"        # Preprocess\n"
+"        if not test:\n"
+"            image = F.image_augmentation(image, contrast=1.0,\n"
+"                                         angle=0.25,\n"
+"                                         flip_lr=True)\n"
+"            image.need_grad = False\n"
+"        h = PF.convolution(image, nmaps, kernel=(3, 3),\n"
+"                           pad=(1, 1), with_bias=False)\n"
+"        h = PF.batch_normalization(h, batch_stat=not test)\n"
+"        h = act(h)\n"
+"\n"
+"    h = res_unit(h, \"conv2\", False)    # -> 32x32\n"
+"    h = res_unit(h, \"conv3\", True)     # -> 16x16\n"
+"    h = res_unit(h, \"conv4\", False)    # -> 16x16\n"
+"    h = res_unit(h, \"conv5\", True)     # -> 8x8\n"
+"    h = res_unit(h, \"conv6\", False)    # -> 8x8\n"
+"    h = res_unit(h, \"conv7\", True)     # -> 4x4\n"
+"    h = res_unit(h, \"conv8\", False)    # -> 4x4\n"
+"    h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1\n"
+"    pred = PF.affine(h, ncls)\n"
+"\n"
+"    return pred"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:177
+msgid "The top-1 error reaches to 0.16 as the following diagram:"
+msgstr "次の図のように、トップ 1 エラーは 0.16 に達します。"
+
+#: ../../python/file_format_converter/compress_network.rst:182
+msgid ""
+"We compared the accuracy between ``nnabla_cli infer`` and ``nnablart infer`` in CIFAR10 test dataset. The comparison code is as the following:"
+msgstr "CIFAR10 テストデータセットで、 ``nnabla_cli infer`` と ``nnablart infer`` 間の精度を比較しました。比較コードは以下の通りです。"
+
+#: ../../python/file_format_converter/compress_network.rst:186
+msgid ""
+"import numpy as np\n"
+"import os\n"
+"from cifar10_data import data_iterator_cifar10\n"
+"\n"
+"data_iterator = data_iterator_cifar10\n"
+"vdata = data_iterator(1, False)\n"
+"iter_num = 100\n"
+"\n"
+"\n"
+"def get_infer_result(result_file):\n"
+"    d0 = np.fromfile(result_file, np.float32)\n"
+"    d0 = d0.reshape((10, ))\n"
+"    return np.argmax(d0)\n"
+"\n"
+"def normalize_image(image):\n"
+"    image = image.astype(np.float32)\n"
+"    image -= np.mean(image)\n"
+"    image_std = np.std(image)\n"
+"    return image / max(image_std, 1e-5)\n"
+"\n"
+"\n"
+"nnp_correct = 0\n"
+"nnb_correct = 0\n"
+"for i in range(iter_num):\n"
+"    img, gt = vdata.next()\n"
+"    img = normalize_image(img)\n"
+"    img.tofile('input.bin')\n"
+"    os.system('nnabla_cli infer -b 1 -c bin_class.nnp -o output_0 input.bin')\n"
+"    os.system('./nnablart infer bin_class.nnb input.bin output_1')\n"
+"\n"
+"    r1 = get_infer_result('output_0_0.bin')\n"
+"    r2 = get_infer_result('output_1_0.bin')\n"
+"\n"
+"    if r1 == gt:\n"
+"        nnp_correct += 1\n"
+"    if r2 == gt:\n"
+"        nnb_correct += 1\n"
+"\n"
+"    if r1 == r2 == gt:\n"
+"        print(\"{}:  all same!\".format(i))\n"
+"    else:\n"
+"        print(\"{}:  not all same\".format(i))\n"
+"print(\"nnp accuracy: {}, nnb accuracy: {}\".format(\n"
+"    float(nnp_correct) / iter_num, float(nnb_correct) / iter_num))"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:234
+msgid ""
+"In this code, ``nnablart`` is an executable implemented based on nnabla-c-runtime. ``nnablart`` is a simple command-line interface, which can "
+"infer the network defined by ``*.nnb`` file. As we known, nnabla-c-runtime is a c implementation aims to small device with constraint memory, it "
+"contains carefully designed memory policy, and the code for training purpose is removed for saving memory. This test program iterates 100 "
+"samples, comparing with ground truth, figure out the accuracy."
+msgstr ""
+"このコードでは、 ``nnablart`` は nnabla-c-runtime に基づいて実装された実行可能ファイルです。 ``nnablart`` は、 ``*.nnb`` ファイルで定義されたネッ"
+"トワークを推測できるシンプルなコマンドラインインターフェイスです。ご存知のように、 nnabla-c-runtime は、利用できるメモリに制約のある小さなデバイス"
+"上での実行を目的としてc言語で実装されています。メモリポリシーを慎重に設計し、またメモリ量削減のために学習に利用するコードを削除しています。このテ"
+"ストプログラムは、100 サンプルに対して反復実行され、Ground Truthと比較して、精度を計算します。"
+
+#: ../../python/file_format_converter/compress_network.rst:245
+msgid ""
+"...\n"
+"NNabla command line interface (Version:1.0.18, Build:190619071959)\n"
+"     0: input.bin\n"
+"     1: output_1\n"
+"Input[0] size:3072\n"
+"Input[0] data type:NN_DATA_TYPE_FLOAT, fp:0\n"
+"Input[0] Shape ( 1 3 32 32 )\n"
+"Output[0] size:10\n"
+"Output[0] filename output_1_0.bin\n"
+"Output[0] Shape ( 1 10 )\n"
+"Output[0] data type:NN_DATA_TYPE_FLOAT, fp:0\n"
+"99:  all same!\n"
+"nnp accuracy: 0.81, nnb accuracy: 0.81"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:260
+msgid "binary\\_weight\\_convolution"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:262
+msgid "We replaced ``PF.convolution()`` with ``PF.binary_weight_convolution()`` as the following:"
+msgstr "次のように、 ``PF.convolution()`` を ``PF.binary_weight_convolution()`` に置き換えた例を示します。"
+
+#: ../../python/file_format_converter/compress_network.rst:265
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"\n"
+"\n"
+"def resnet23_bin_w(image, test=False, ncls=10, nmaps=64, act=F.relu):\n"
+"    \"\"\"\n"
+"    Construct ResNet 23\n"
+"    \"\"\"\n"
+"    # Residual Unit\n"
+"    def res_unit(x, scope_name, dn=False):\n"
+"        C = x.shape[1]\n"
+"        with nn.parameter_scope(scope_name):\n"
+"            # Conv -> BN -> Nonlinear\n"
+"            with nn.parameter_scope(\"conv1\"):\n"
+"                h = PF.binary_weight_convolution(x, C // 2, kernel=(1, 1), pad=(0, 0),\n"
+"                                   with_bias=False)\n"
+"                h = PF.batch_normalization(h, batch_stat=not test)\n"
+"                h = act(h)\n"
+"            # Conv -> BN -> Nonlinear\n"
+"            with nn.parameter_scope(\"conv2\"):\n"
+"                h = PF.binary_weight_convolution(h, C // 2, kernel=(3, 3), pad=(1, 1),\n"
+"                                   with_bias=False)\n"
+"                h = PF.batch_normalization(h, batch_stat=not test)\n"
+"                h = act(h)\n"
+"            # Conv -> BN\n"
+"            with nn.parameter_scope(\"conv3\"):\n"
+"                h = PF.binary_weight_convolution(h, C, kernel=(1, 1), pad=(0, 0),\n"
+"                                   with_bias=False)\n"
+"                h = PF.batch_normalization(h, batch_stat=not test)\n"
+"            # Residual -> Nonlinear\n"
+"            h = act(F.add2(h, x, inplace=True))\n"
+"            # Maxpooling\n"
+"            if dn:\n"
+"                h = F.max_pooling(h, kernel=(2, 2), stride=(2, 2))\n"
+"            return h\n"
+"    # Conv -> BN -> Nonlinear\n"
+"    with nn.parameter_scope(\"conv1\"):\n"
+"        # Preprocess\n"
+"        if not test:\n"
+"            image = F.image_augmentation(image, contrast=1.0,\n"
+"                                         angle=0.25,\n"
+"                                         flip_lr=True)\n"
+"            image.need_grad = False\n"
+"        h = PF.binary_weight_convolution(image, nmaps, kernel=(3, 3),\n"
+"                           pad=(1, 1), with_bias=False)\n"
+"        h = PF.batch_normalization(h, batch_stat=not test)\n"
+"        h = act(h)\n"
+"\n"
+"    h = res_unit(h, \"conv2\", False)    # -> 32x32\n"
+"    h = res_unit(h, \"conv3\", True)     # -> 16x16\n"
+"    h = res_unit(h, \"conv4\", False)    # -> 16x16\n"
+"    h = res_unit(h, \"conv5\", True)     # -> 8x8\n"
+"    h = res_unit(h, \"conv6\", False)    # -> 8x8\n"
+"    h = res_unit(h, \"conv7\", True)     # -> 4x4\n"
+"    h = res_unit(h, \"conv8\", False)    # -> 4x4\n"
+"    h = F.average_pooling(h, kernel=(4, 4))  # -> 1x1\n"
+"    pred = PF.affine(h, ncls)\n"
+"\n"
+"    return pred"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:328 ../../python/file_format_converter/compress_network.rst:410
+msgid "The training become a bit slower and the accuracy loss can be detected. As the following:"
+msgstr "以下のような学習速度の劣化と精度劣化が観測されました。"
+
+#: ../../python/file_format_converter/compress_network.rst:334
+msgid "We saved the model and parameters as ``*.nnp`` file. Then, we shall convert it to ``*.nnb`` so that it can fit the memory-constraint device."
+msgstr "モデルとパラメータを ``*.nnp`` ファイルとして保存しました。次に、メモリ制約デバイスに適合するように、 ``*.nnb`` に変換します。"
+
+#: ../../python/file_format_converter/compress_network.rst:338
+msgid "Reduce parameter size of ``*.nnb`` model"
+msgstr "*.nnb モデルのパラメータサイズの縮小"
+
+#: ../../python/file_format_converter/compress_network.rst:340
+msgid "We need to set the data type of corresponding parameters, so that the binarized weights can be represented by `SIGN` data type."
+msgstr "2 値化された重みを SIGN データ型で表すことができるように、対応するパラメータのデータ型を設定する必要があります。"
+
+#: ../../python/file_format_converter/compress_network.rst:344
+msgid "Export a buffer setting file from our trained model"
+msgstr "学習済みモデルからバッファー設定ファイルをエクスポートします。"
+
+#: ../../python/file_format_converter/compress_network.rst:346
+msgid "$/> nnabla_cli nnb_template bin_class.nnp setting.yaml"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:350
+msgid "The output ``setting.yaml`` looks like:"
+msgstr "出力される ``setting.yaml`` は次のようになります。"
+
+#: ../../python/file_format_converter/compress_network.rst:352
+msgid ""
+"functions:\n"
+"  ...\n"
+"variables:\n"
+"  ...\n"
+"  input: FLOAT32                          <-- buffer\n"
+"  conv1/bwn_conv/W: FLOAT32               <-- parameter\n"
+"  conv1/bwn_conv/Wb: FLOAT32              <-- parameter\n"
+"  conv1/bwn_conv/alpha: FLOAT32           <-- parameter\n"
+"  BinaryWeightConvolution_Output: FLOAT32\n"
+"  conv1/bn/beta: FLOAT32\n"
+"  conv1/bn/gamma: FLOAT32\n"
+"  conv1/bn/mean: FLOAT32\n"
+"  conv1/bn/var: FLOAT32\n"
+"  BatchNormalization_Output: FLOAT32\n"
+"  ReLU_Output: FLOAT32\n"
+"  affine/W: FLOAT32\n"
+"  affine/b: FLOAT32\n"
+"  output: FLOAT32\n"
+"  ..."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:374
+msgid ""
+"We annotated buffer and parameter type based on its name character. The different between buffer and parameter is that: buffer value is "
+"undetermined at this time, while parameter values is determined. The quantization policy is different. As we known, ``conv1/bwn_conv/W`` is the "
+"float version, will not be used, just omit this. We need identify `conv1/bwn_conv/Wb` to be \"SIGN\" type, it looks like:"
+msgstr ""
+"名前に基づいて、バッファーとパラメータ型に注釈を付けました。バッファーとパラメータの違いは、パラメータの値は演算実行前に決定されていますが、バッ"
+"ファーの値は演算を実行するまで未定である点です。そのため、量子化ポリシーが異なります。ご存知のように、 ``conv1/bwn_conv/W`` は浮動小数点表現のた"
+"め、使用されませんので無視してください。 `conv1/bwn_conv/Wb` を “SIGN” 型として識別する必要があり、次のようになります。"
+
+#: ../../python/file_format_converter/compress_network.rst:381
+msgid ""
+"functions:\n"
+"  ...\n"
+"variables:\n"
+"  ...\n"
+"  input: FLOAT32\n"
+"  conv1/bwn_conv/W: FLOAT32               <-- omit\n"
+"  conv1/bwn_conv/Wb: SIGN                 <-- identified as SIGN\n"
+"  ...\n"
+"  output: FLOAT32\n"
+"  ..."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:394 ../../python/file_format_converter/compress_network.rst:416
+msgid "We tested the top-1 error in test dataset as the following:"
+msgstr "テストデータセットに対するトップ1エラーは以下のようになりました。"
+
+#: ../../python/file_format_converter/compress_network.rst:398
+msgid "nnp accuracy: 0.76, nnb accuracy: 0.73"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:400
+msgid "As we can see, accuracy loss is trivial compared with its float version."
+msgstr "ご覧いただけるように、精度の低下は浮動小数点演算の場合と比較してわずかです。"
+
+#: ../../python/file_format_converter/compress_network.rst:402
+msgid "And the ``*.nnb`` size is reduced from 830KB to 219KB."
+msgstr "また、 ``*.nnb`` サイズは 830KB から 219KB に縮小されました。"
+
+#: ../../python/file_format_converter/compress_network.rst:405
+msgid "binary\\_connect\\_convolution"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:407
+msgid "We replaced ``PF.convolution()`` with ``PF.binary_connect_convolution()`` and do same training as above."
+msgstr "``PF.convolution()`` を ``PF.binary_connect_convolution()`` に置き換え、上記と同じ学習を行いました。"
+
+#: ../../python/file_format_converter/compress_network.rst:420
+msgid "nnp accuracy: 0.68, nnb accuracy: 0.71"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:422
+msgid ""
+"As we can see, accuracy loss can be observed, but nnabla\\_cli got worse result than nnablart. From this test result, we found float32 version "
+"worse than binary quantized version. That seems a problem. The reason might be since the training process passes the data through 2 data paths, "
+"the binary weight data path has lower loss that the float32 data path at the same time."
+msgstr ""
+"ご覧のように、精度の低下は見られますが、 nnabla\\_cli は nnablart よりも低い結果になりました。このテスト結果は、float32による実行結果が二値量子化"
+"した場合よりも精度が低いことを示しています。それは問題となります。その理由は、学習プロセスが 2 つのデータパスを介してデータを渡すため、バイナリ重"
+"みデータパスの損失が、同時に float32 データパスよりも低くなるためです。"
+
+#: ../../python/file_format_converter/compress_network.rst:430
+msgid "Quantization functions"
+msgstr "量子化関数"
+
+#: ../../python/file_format_converter/compress_network.rst:432
+msgid "The mainly difference between binary\\_weight series functions and binary\\_connect series functions is the quantizing formular:"
+msgstr "binary\\_weight シリーズ関数と binary\\_connect シリーズ関数の主な違いは、量子化をする方法(式)です。"
+
+#: ../../python/file_format_converter/compress_network.rst:435
+msgid "For binary\\_weight\\_convolution or binary\\_weight\\_affine:"
+msgstr "binary\\_weight\\_convolution または binary\\_weight\\_affine については以下の式によって量子化を行います。"
+
+#: ../../python/file_format_converter/compress_network.rst:437
+msgid "\\alpha^*=\\frac{\\sum{|W_i|}}{n}=\\frac{1}{n}\\|\\mathbf{W}\\|_{\\ell_1}"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:441
+msgid "B=\\left\\{         \\begin{array}{ll}           +1 & if \\ \\ W \\ge 0 \\\\           -1 & if \\ \\ W < 0         \\end{array} \\right."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:449
+msgid "W \\approx \\alpha B"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:453
+msgid "For binary\\_connect\\_convolution or binary\\_connect\\_affine, there are 2 alternative binarization operations, one is:"
+msgstr "binary\\_connect\\_convolution または binary\\_connect\\_affine については、二値化を行う方法が二つ存在します。１つは、以下の方法です。"
+
+#: ../../python/file_format_converter/compress_network.rst:455
+msgid "W_b= \\left\\{          \\begin{array}{ll}            +1 & if\\ w \\ge 0 \\\\            -1 & otherwise          \\end{array} \\right."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:462
+msgid "Another way is:"
+msgstr "もう一つは以下のような方法です。"
+
+#: ../../python/file_format_converter/compress_network.rst:464
+msgid ""
+"W_b= \\left\\{          \\begin{array}{ll}            +1 & if\\ with\\ probability\\ p=\\sigma (\\omega ) \\\\            -1 & if\\ with\\ "
+"probability\\ 1 - p          \\end{array} \\right. \\\\"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:472
+msgid "where \\sigma is the \"hard sigmoid\" function,"
+msgstr "上式で \\sigmaは \"hard sigmoid\" を表し、以下のような式で表されます。"
+
+#: ../../python/file_format_converter/compress_network.rst:474
+msgid "\\sigma (x) = clip(\\frac{x + 1}{2}, 0, 1) = max (0, min(1, \\frac{x+1}{2}))"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:478
+msgid "In nnabla implementation, binary\\_connect\\_xxxx() implements the following formular:"
+msgstr "nnabla の実装では、 binary\\_connect\\_xxxx() は次の式によって実装されています。"
+
+#: ../../python/file_format_converter/compress_network.rst:481
+msgid ""
+"W_b=sign(W) = \\left\\{         \\begin{array}{ll}           +1 & if \\ \\ W > 0 \\\\            0 & if \\ \\ W = 0 \\\\           -1 & if \\ \\ "
+"W < 0         \\end{array} \\right."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:491
+msgid "According to this experiment, the accuracy is a bit different:"
+msgstr "以下のように、それぞれの量子化方法で若干の精度差が見られます。"
+
+#: ../../python/file_format_converter/compress_network.rst:494
+msgid "Accuracy inferred by nnabla"
+msgstr "nnabla で推定される精度"
+
+#: ../../python/file_format_converter/compress_network.rst:494
+msgid "Accuracy inferred by nnablart"
+msgstr "nnablart で推定される精度"
+
+#: ../../python/file_format_converter/compress_network.rst:494
+msgid "Model size"
+msgstr "モデルサイズ"
+
+#: ../../python/file_format_converter/compress_network.rst:496
+msgid "float point"
+msgstr "浮動小数点"
+
+#: ../../python/file_format_converter/compress_network.rst:496 ../../python/file_format_converter/compress_network.rst:630
+#: ../../python/file_format_converter/compress_network.rst:632
+msgid "0.81"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:496 ../../python/file_format_converter/compress_network.rst:630
+msgid "449.5 KB"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:498
+msgid "using binary weight convolution"
+msgstr "binary weight convolution　使用"
+
+#: ../../python/file_format_converter/compress_network.rst:498
+msgid "0.76"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:498
+msgid "0.75"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:498
+msgid "52.1 KB"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:500
+msgid "using binary connect convolution"
+msgstr "binary connect convolution 使用"
+
+#: ../../python/file_format_converter/compress_network.rst:500
+msgid "0.68"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:500
+msgid "0.71"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:500
+msgid "47.3 KB"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:503
+msgid "The model size has already been cut-down about 10x dramatically."
+msgstr "モデルサイズは既に約10倍小さくなっており、劇的に削減されています。"
+
+#: ../../python/file_format_converter/compress_network.rst:507
+msgid "Further reduce footprint"
+msgstr "フットプリントをさらに削減"
+
+#: ../../python/file_format_converter/compress_network.rst:509
+msgid ""
+"In order to keep maximal accuracy and reduce footprint as much as possible, let us try the second method as mentioned before. This method tends "
+"to work based on a pretrained network. Quantization process is done after training. Here, we chose the float-point trained model and start our "
+"experiment."
+msgstr ""
+"最大限の精度を維持し、フットプリントを可能な限り減らす為に、前述の 2 番目の方法を試してみましょう。この方法は、学習済みのネットワークに対して、有"
+"効に働く傾向があります。量子化プロセスは学習後に行われます。ここでは、浮動小数点演算で学習済みのモデルを利用して、実験を行います。"
+
+#: ../../python/file_format_converter/compress_network.rst:514
+msgid ""
+"As previous analysis, we knew that the big share of footprint in this benchmark network is buffer size. As the following diagram, a circle "
+"represents a variable buffer, a rectangle represents a function. When perform function 1, buffer 1, buffer 2 and buffer 3 are occupied. After "
+"performing function 1, when function2 is performed, buffer 1 and buffer 2 are released, and this function's output reuse buffer 1 if the size of "
+"buffer 1 can hold the data of function 2's output."
+msgstr ""
+"上述のベンチマークネットワークの解析から、バッファーサイズがフットプリントの大半を占めることがすでに分かっています。次の図では、円はVariableのバッ"
+"ファーを表し、長方形は関数を表します。Function 1 を実行する際には、buffer1, 2, 3に相当するメモリ領域が確保されます。Function 1 の実行後、Function "
+"2が実行される際には、buffer 1, 2は解放されています。このとき、もしbuffer1のメモリサイズが十分大きくFunction 2の出力を保持できる際には、buffer 1の"
+"メモリ領域が再利用されます。"
+
+#: ../../python/file_format_converter/compress_network.rst:526
+msgid ""
+"This buffer-reuse policy has been implemented during converting from ``*.nnp`` to ``*.nnb``. The maximal of the occupying memory for each "
+"function represents the maximal footprint memory for inferring this network. In order to reduce this size, we may use quantization data type for "
+"variable buffer. As previous ``setting.yaml``, if the following buffer type is changed, when converting from ``*.nnp`` to ``*.nnb``, the buffer "
+"size will be calculated based on this new buffer type definition."
+msgstr ""
+"このバッファー再利用ポリシーは、 ``*.nnp`` から ``*.nnb`` への変換中に実装されています。各関数の占有メモリの最大値は、このネットワークによって推論"
+"を行う際の最大フットプリントメモリ量に相当します。このサイズを削減するために、Variableのバッファーに量子化データ型を使用する場合があります。前の "
+"``setting.yaml`` と同様に、次のバッファー型が変更された場合、 ``*.nnp`` から ``*.nnb`` に変換すると、この新しいバッファー型の定義に基づいてバッ"
+"ファーサイズが計算されます。"
+
+#: ../../python/file_format_converter/compress_network.rst:536
+msgid ""
+"functions:\n"
+"  ...\n"
+"variables:\n"
+"  ...\n"
+"  input: FLOAT32             ==> input: FIXED8\n"
+"  conv1/bwn_conv/W: FIXED8\n"
+"  conv1/bwn_conv/Wb: FIXED8\n"
+"  ...\n"
+"  output: FLOAT32\n"
+"..."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:547
+msgid ""
+"As we known, this quantization process introduce quantization noise to the network, which sometimes cause obviously loss of the accuracy. How to "
+"choose best quantization step size, you may refer to `[2] <http://proceedings.mlr.press/v48/linb16.pdf>`__."
+msgstr ""
+"この量子化プロセスよって発生する量子化ノイズによって、精度が明らかに劣化する場合があることが広く知られています。最適な量子化ステップサイズを選択す"
+"る方法については、 `[2] <http://proceedings.mlr.press/v48/linb16.pdf>`__ を参照してください。"
+
+#: ../../python/file_format_converter/compress_network.rst:552
+msgid "Determine the fixed-point position"
+msgstr "固定小数点の位置の決定"
+
+#: ../../python/file_format_converter/compress_network.rst:554
+msgid ""
+"In converting from ``*.nnp`` to ``*.nnb``, the fixed-point position can be determined automatically when quantizing parameter type, since the "
+"histogram(or distribution) is known at that time. Due to the fixed-point position of the variable's buffer, in order to keep distortion as little "
+"as possible, we should determine its fixed-point according to its histogram (or distribution). But it is hard to know exactly the distribution of "
+"each of variable buffer, even though we statistics during training time. We supposed future test dataset has same distribution as current known "
+"dataset, make fixed-point decision based on the collection of current known dataset."
+msgstr ""
+"``*.nnp`` から ``*.nnb`` への変換では、それぞれのパラメータの値のヒストグラム（または分布）がその時点でわかっている為、パラメータ型の量子化時に固"
+"定小数点位置を自動的に決定できます。Variableのバッファーの固定小数点位置に起因した歪みを最小限に抑えるために、variableのバッファーについてもその値"
+"のヒストグラム(または分布)に応じて固定小数点位置を決定する必要があります。しかしながら、学習中に統計をとっても、各Variableのバッファーの分布を正確"
+"に知ることは困難です。今後のテストデータセットの分布は、現在の既知のデータセットと同じであると仮定し、現在の既知のデータセットに基づいて固定小数点"
+"の決定を行います。"
+
+#: ../../python/file_format_converter/compress_network.rst:565
+msgid ""
+"Manually tuning the fixed-point position is a work like an art. We shared some experience here. But an intelligent and automatic method seems be "
+"necessary."
+msgstr ""
+"固定小数点位置を手動で調整することは、芸術のような作業です。ここではいくつかの経験的な知見を共有しましたが、より賢く自動化された方法が必要となるで"
+"しょう。"
+
+#: ../../python/file_format_converter/compress_network.rst:568
+msgid ""
+"As the following diagram, we collected the variable buffer's distribution in a small known dataset. (Not all variable distribution are listed "
+"here.)"
+msgstr ""
+"次の図のように、既知の小さなデータセットで変数バッファーの分布を収集しました。（すべての変数分布がここにリストされているわけではありません。）"
+
+#: ../../python/file_format_converter/compress_network.rst:575
+msgid "The distribution of buffer values"
+msgstr "バッファー値の分布"
+
+#: ../../python/file_format_converter/compress_network.rst:577
+msgid ""
+"Of course, the simplest way to determine fixed-point position is only to dump the minimal and maximal value that occurs in variable buffer, but "
+"doing so might cause the value range is enlarged for values that some seldom occurs, then, cause precision loss of decimal part."
+msgstr ""
+"もちろん、固定小数点位置を決定する最も簡単な方法は、変数バッファーで発生する最小値と最大値をを出力して決定することですが、その場合には、めったに出"
+"現しないような外れ値を表現するために、値の範囲を広げることになる可能性もあり、結果的に小数部の精度を劣化させてしまうことになります。"
+
+#: ../../python/file_format_converter/compress_network.rst:582
+msgid "According to this distribution, we calculated the FP\\_POS as the following: (new\\_setting.yaml)"
+msgstr "この分布に従って、 FP\\_POS を次のように計算しました。(new\\_setting.yaml)"
+
+#: ../../python/file_format_converter/compress_network.rst:587
+msgid ""
+"variables:\n"
+"  ...\n"
+"  Convolution_3_Output: FIXED16_12  <-- Change data type according to value distribution\n"
+"  conv2/conv2/bn/beta: FLOAT32\n"
+"  conv2/conv2/bn/gamma: FLOAT32\n"
+"  conv2/conv2/bn/mean: FLOAT32\n"
+"  conv2/conv2/bn/var: FLOAT32\n"
+"  BatchNormalization_3_Output: FIXED16_12\n"
+"  ReLU_3_Output: FIXED16_12\n"
+"  conv2/conv3/conv/W: FIXED8\n"
+"  Convolution_4_Output: FIXED16_12\n"
+"  conv2/conv3/bn/beta: FLOAT32\n"
+"  conv2/conv3/bn/gamma: FLOAT32\n"
+"  conv2/conv3/bn/mean: FLOAT32\n"
+"  conv2/conv3/bn/var: FLOAT32\n"
+"  BatchNormalization_4_Output: FIXED8_4\n"
+"  Add2_Output: FIXED8_4\n"
+"  ReLU_4_Output: FIXED8_4\n"
+"  ..."
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:607
+msgid "After modifying ``new_setting.yaml``, the following command is used to convert from ``*.nnp`` to ``*.nnb``:"
+msgstr "``new_setting.yaml`` を変更した後、以下のコマンドによって、 ``*.nnp`` から ``*.nnb`` へ変換を行います。"
+
+#: ../../python/file_format_converter/compress_network.rst:610
+msgid "$> nnabla_cli convert -b 1 -d nnb_3 models/bin_class_float.nnp models/bin_class_f_fq.nnb -s setting/setting_f_fq.yaml"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:614
+msgid "``-d nnb_3`` is necessary to enable memory saving policy. By tuning, we got the the-state-of-art result:"
+msgstr "``-d nnb_3`` は、メモリ節約ポリシーを有効にするために必要です。 チューニングすることで、最先端の結果を得ました。"
+
+#: ../../python/file_format_converter/compress_network.rst:619
+msgid "nnp accuracy: 0.81, nnb accuracy: 0.79"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:622
+msgid "Summary"
+msgstr "まとめ"
+
+#: ../../python/file_format_converter/compress_network.rst:624
+msgid ""
+"After the quantization of variable buffer, the footprint is reduced noticeably from 1.2M to 495.2K, and accuracy is almost the same, as shown in "
+"the following table:"
+msgstr ""
+"Variableのバッファーを量子化することによって、以下の表に示すように、フットプリントは1.2Mから495.2Kとなり、明らかに削減され、かつ精度はほとんどその"
+"ままに維持されています。"
+
+#: ../../python/file_format_converter/compress_network.rst:628
+msgid "model size"
+msgstr "モデルサイズ"
+
+#: ../../python/file_format_converter/compress_network.rst:628
+msgid "footprint"
+msgstr "フットプリント"
+
+#: ../../python/file_format_converter/compress_network.rst:628
+msgid "accuracy"
+msgstr "精度"
+
+#: ../../python/file_format_converter/compress_network.rst:630
+msgid "float-point model"
+msgstr "浮動小数点モデル"
+
+#: ../../python/file_format_converter/compress_network.rst:630
+msgid "1.2 M"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:632
+msgid "parameter-quantized"
+msgstr "量子化されたパラメータ"
+
+#: ../../python/file_format_converter/compress_network.rst:632 ../../python/file_format_converter/compress_network.rst:634
+msgid "126.0 KB"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:632
+msgid "1.0 M"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:634
+msgid "parameter-and-buffer-quantized"
+msgstr "量子化されたパラメータ​​​​​​​とバッファー"
+
+#: ../../python/file_format_converter/compress_network.rst:634
+msgid "495.2 KB"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:634
+msgid "0.79"
+msgstr ""
+
+#: ../../python/file_format_converter/compress_network.rst:637
+msgid ""
+"Comparing these two ways, the second way shows better result on current nnabla's implementation. The reason is currently nnabla does not support "
+"SIGN parameter mode, so binarization weights lose accuracy without gaining the best benefit of saving memory. Future work is needed such that "
+"float-point weight parameters are removed from ``*.nnb`` for binary series functions."
+msgstr ""
+"これら 2 つの方法を比較すると、現在のnnablaの実装では、2番目の方法の方が良い結果となっています。その理由は、現在のnnablaではSIGN型のパラメータをサ"
+"ポートしていないので、重みの二値化によるメモリ削減の恩恵をフルに受けられないまま精度劣化のみが起きているからであると考えられます。また、今後の改善"
+"として、二値化処理を行う関数については、浮動小数点の重みパラメータを ``*.nnb`` から削除する必要があるでしょう。"
+
+#: ../../python/file_format_converter/compress_network.rst:642
+msgid ""
+"Notice: Currently, all experiments focus on classification problem, and softmax operation has higher tolerance to quantization error. The testing "
+"against regression problem has not yet been performed, so the accuracy loss is still unconfirmed."
+msgstr ""
+"注意: 現在、すべての実験は分類問題に焦点を当てていて、softmax は量子化許容値の影響を減らします。回帰問題に対するテストはまだ行っておらず、どの程度"
+"精度が劣化するかは不明です。"

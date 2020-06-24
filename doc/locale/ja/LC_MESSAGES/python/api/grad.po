@@ -1,0 +1,143 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-14 11:56+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/grad.rst:2
+msgid "Grad"
+msgstr "Grad"
+
+#: nnabla.grad.grad:1 of
+msgid "Gradient function for the outputs with respect to the inputs."
+msgstr "入力に対する出力の勾配関数。"
+
+#: nnabla.grad.grad:3 of
+msgid ""
+"The grad function computes the sum of gradients of the outputs w.r.t. the"
+" inputs."
+msgstr "grad 関数は入力に対する出力の勾配の和を計算します。"
+
+#: nnabla.grad.grad:5 of
+msgid "g_i = \\sum_{j} {\\frac{\\partial y_j}{\\partial x_i}},"
+msgstr "g_i = \\sum_{j} {\\frac{\\partial y_j}{\\partial x_i}},"
+
+#: nnabla.grad.grad:9 of
+msgid ""
+":math:`y_j` is each output, :math:`x_i` is each input, and :math:`g_i` is"
+" the sum of the gradient of :math:`y_j` w.r.t. :math:`x_i` over all "
+":math:`j`."
+msgstr ""
+":math:`y_j` は各出力、 :math:`x_i` は各入力、 :math:`g_i` は :math:`j` 全体の "
+":math:`x_i` に対する :math:`y_j` の勾配の和です。"
+
+#: nnabla.grad.grad of
+msgid "パラメータ"
+msgstr "パラメータ"
+
+#: nnabla.grad.grad:11 of
+msgid "Outputs of the differentiable function."
+msgstr "微分可能な関数の出力。"
+
+#: nnabla.grad.grad:13 of
+msgid "Inputs w.r.t. which the gradients of outputs are computed."
+msgstr "計算される出力の勾配に対応する入力。"
+
+#: nnabla.grad.grad:15 of
+msgid ""
+"Gradient outputs corresponding to outputs. This is same as the grad "
+"argument of :meth:`~nnabla.Variable.backward`. Default is None, so the "
+"one is used as the in-coming gradient at the very end of the Variable in "
+"the backward graph."
+msgstr ""
+"出力に応じた勾配の出力。これは :meth:`~nnabla.Variable.backward` の勾配の引数と同じです。デフォルトは None"
+" です。この場合、逆伝播のグラフにおいて、最初の変数 ( 出力に対応する変数 ) の勾配として 1 が使用されます。"
+
+#: nnabla.grad.grad:17 of
+msgid ""
+"Outputs become persistent accordingly. If not specified, all outputs "
+"become persistent."
+msgstr "出力の persistent フラグを指定します。指定がない場合は、すべての出力は persistent になります。"
+
+#: nnabla.grad.grad:19 of
+msgid ""
+"Bind data to grad of input Varaible. This is useful for the case where "
+"one wants to use the backward graph for training a neural network using "
+"the first-order gradients only. Default is False."
+msgstr ""
+"入力の Varaible の勾配へデータをバインドします。これは 1 "
+"次勾配のみを使うニューラルネットワークを学習するために逆方向のグラフを使いたい場合に役立ちます。デフォルトは False です。"
+
+#: nnabla.grad.grad:25 of
+msgid "Returns"
+msgstr "戻り値"
+
+#: nnabla.grad.grad:23 of
+msgid "List of :obj:`~nnabla.Variable`."
+msgstr ":obj:`~nnabla.Variable` のリスト。"
+
+#: nnabla.grad.grad:25 of
+msgid ""
+"If the backpropagation does not reach input(s), the corresponding "
+"returned value(s) are None."
+msgstr "バックプロパゲーションが入力に到達しなければ、対応する戻り値は None です。"
+
+#: nnabla.grad.grad:27 of
+msgid "Example:"
+msgstr "例 :"
+
+#: nnabla.grad.grad:29 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import numpy as np\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"# Context\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"\n"
+"# Input and label\n"
+"x = nn.Variable.from_numpy_array(np.random.randn(4, 3, 32, 32))\n"
+"y = nn.Variable.from_numpy_array(np.random.randint(0, 10, 4).reshape(4, "
+"1))\n"
+"\n"
+"# Network\n"
+"h = PF.convolution(x, 8, (3, 3), (1, 1), name=\"conv1\")\n"
+"h = F.relu(h)\n"
+"h = F.max_pooling(h, (2, 2))\n"
+"h = PF.convolution(h, 16, (3, 3), (1, 1), name=\"conv2\")\n"
+"h = F.relu(h)\n"
+"h = F.max_pooling(h, (2, 2))\n"
+"p = PF.affine(h, 10, name=\"pred\")\n"
+"loss = F.mean(F.softmax_cross_entropy(p, y))\n"
+"\n"
+"# Grad\n"
+"outputs = [loss]\n"
+"inputs = nn.get_parameters().values()\n"
+"grads = nn.grad(outputs, inputs)  # gradients of the parameters\n"
+"\n"
+"# Double backward of the outputs w.r.t. the parameters by constraining "
+"the gradient norms.\n"
+"gp = sum([F.sum(g ** 2.0) ** 0.5 for g in grads])\n"
+"loss += gp\n"
+"loss.forward()\n"
+"loss.backward()"
+msgstr ""
+

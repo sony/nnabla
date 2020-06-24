@@ -1,0 +1,882 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-01 16:02+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja_JP\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:3
+msgid "Model Support Status"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:10
+msgid "ONNX Support Status"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:13
+#: ../../python/file_format_converter/Model_Support_Status.rst:163
+msgid "Import"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:15
+#: ../../python/file_format_converter/Model_Support_Status.rst:50
+#: ../../python/file_format_converter/Model_Support_Status.rst:165
+#: ../../python/file_format_converter/Model_Support_Status.rst:198
+#: ../../python/file_format_converter/Model_Support_Status.rst:311
+msgid "✓: Support to convert"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:16
+#: ../../python/file_format_converter/Model_Support_Status.rst:51
+#: ../../python/file_format_converter/Model_Support_Status.rst:166
+#: ../../python/file_format_converter/Model_Support_Status.rst:199
+#: ../../python/file_format_converter/Model_Support_Status.rst:312
+msgid "X: Not support"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:18
+msgid "Total: 11/12"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:21
+msgid "ONNX Import Sample Test(onnx --> nnp)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:23
+msgid "Count 11/12"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:27
+#: ../../python/file_format_converter/Model_Support_Status.rst:62
+#: ../../python/file_format_converter/Model_Support_Status.rst:111
+#: ../../python/file_format_converter/Model_Support_Status.rst:141
+#: ../../python/file_format_converter/Model_Support_Status.rst:177
+#: ../../python/file_format_converter/Model_Support_Status.rst:210
+#: ../../python/file_format_converter/Model_Support_Status.rst:259
+#: ../../python/file_format_converter/Model_Support_Status.rst:289
+#: ../../python/file_format_converter/Model_Support_Status.rst:323
+msgid "Name"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:27
+#: ../../python/file_format_converter/Model_Support_Status.rst:62
+#: ../../python/file_format_converter/Model_Support_Status.rst:111
+#: ../../python/file_format_converter/Model_Support_Status.rst:141
+#: ../../python/file_format_converter/Model_Support_Status.rst:177
+#: ../../python/file_format_converter/Model_Support_Status.rst:210
+#: ../../python/file_format_converter/Model_Support_Status.rst:259
+#: ../../python/file_format_converter/Model_Support_Status.rst:289
+#: ../../python/file_format_converter/Model_Support_Status.rst:323
+msgid "Support"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:27
+#: ../../python/file_format_converter/Model_Support_Status.rst:62
+#: ../../python/file_format_converter/Model_Support_Status.rst:111
+#: ../../python/file_format_converter/Model_Support_Status.rst:141
+#: ../../python/file_format_converter/Model_Support_Status.rst:177
+#: ../../python/file_format_converter/Model_Support_Status.rst:210
+#: ../../python/file_format_converter/Model_Support_Status.rst:259
+#: ../../python/file_format_converter/Model_Support_Status.rst:289
+#: ../../python/file_format_converter/Model_Support_Status.rst:323
+msgid "Memo"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:29
+msgid "inception_v2_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:29
+#: ../../python/file_format_converter/Model_Support_Status.rst:31
+#: ../../python/file_format_converter/Model_Support_Status.rst:32
+#: ../../python/file_format_converter/Model_Support_Status.rst:33
+#: ../../python/file_format_converter/Model_Support_Status.rst:34
+#: ../../python/file_format_converter/Model_Support_Status.rst:35
+#: ../../python/file_format_converter/Model_Support_Status.rst:36
+#: ../../python/file_format_converter/Model_Support_Status.rst:37
+#: ../../python/file_format_converter/Model_Support_Status.rst:38
+#: ../../python/file_format_converter/Model_Support_Status.rst:39
+#: ../../python/file_format_converter/Model_Support_Status.rst:40
+#: ../../python/file_format_converter/Model_Support_Status.rst:64
+#: ../../python/file_format_converter/Model_Support_Status.rst:65
+#: ../../python/file_format_converter/Model_Support_Status.rst:66
+#: ../../python/file_format_converter/Model_Support_Status.rst:67
+#: ../../python/file_format_converter/Model_Support_Status.rst:68
+#: ../../python/file_format_converter/Model_Support_Status.rst:69
+#: ../../python/file_format_converter/Model_Support_Status.rst:70
+#: ../../python/file_format_converter/Model_Support_Status.rst:71
+#: ../../python/file_format_converter/Model_Support_Status.rst:72
+#: ../../python/file_format_converter/Model_Support_Status.rst:73
+#: ../../python/file_format_converter/Model_Support_Status.rst:74
+#: ../../python/file_format_converter/Model_Support_Status.rst:75
+#: ../../python/file_format_converter/Model_Support_Status.rst:76
+#: ../../python/file_format_converter/Model_Support_Status.rst:77
+#: ../../python/file_format_converter/Model_Support_Status.rst:78
+#: ../../python/file_format_converter/Model_Support_Status.rst:79
+#: ../../python/file_format_converter/Model_Support_Status.rst:80
+#: ../../python/file_format_converter/Model_Support_Status.rst:83
+#: ../../python/file_format_converter/Model_Support_Status.rst:84
+#: ../../python/file_format_converter/Model_Support_Status.rst:85
+#: ../../python/file_format_converter/Model_Support_Status.rst:86
+#: ../../python/file_format_converter/Model_Support_Status.rst:87
+#: ../../python/file_format_converter/Model_Support_Status.rst:89
+#: ../../python/file_format_converter/Model_Support_Status.rst:90
+#: ../../python/file_format_converter/Model_Support_Status.rst:91
+#: ../../python/file_format_converter/Model_Support_Status.rst:92
+#: ../../python/file_format_converter/Model_Support_Status.rst:93
+#: ../../python/file_format_converter/Model_Support_Status.rst:94
+#: ../../python/file_format_converter/Model_Support_Status.rst:95
+#: ../../python/file_format_converter/Model_Support_Status.rst:96
+#: ../../python/file_format_converter/Model_Support_Status.rst:97
+#: ../../python/file_format_converter/Model_Support_Status.rst:98
+#: ../../python/file_format_converter/Model_Support_Status.rst:99
+#: ../../python/file_format_converter/Model_Support_Status.rst:100
+#: ../../python/file_format_converter/Model_Support_Status.rst:113
+#: ../../python/file_format_converter/Model_Support_Status.rst:114
+#: ../../python/file_format_converter/Model_Support_Status.rst:115
+#: ../../python/file_format_converter/Model_Support_Status.rst:116
+#: ../../python/file_format_converter/Model_Support_Status.rst:117
+#: ../../python/file_format_converter/Model_Support_Status.rst:118
+#: ../../python/file_format_converter/Model_Support_Status.rst:119
+#: ../../python/file_format_converter/Model_Support_Status.rst:120
+#: ../../python/file_format_converter/Model_Support_Status.rst:121
+#: ../../python/file_format_converter/Model_Support_Status.rst:122
+#: ../../python/file_format_converter/Model_Support_Status.rst:123
+#: ../../python/file_format_converter/Model_Support_Status.rst:124
+#: ../../python/file_format_converter/Model_Support_Status.rst:125
+#: ../../python/file_format_converter/Model_Support_Status.rst:126
+#: ../../python/file_format_converter/Model_Support_Status.rst:127
+#: ../../python/file_format_converter/Model_Support_Status.rst:128
+#: ../../python/file_format_converter/Model_Support_Status.rst:129
+#: ../../python/file_format_converter/Model_Support_Status.rst:130
+#: ../../python/file_format_converter/Model_Support_Status.rst:143
+#: ../../python/file_format_converter/Model_Support_Status.rst:144
+#: ../../python/file_format_converter/Model_Support_Status.rst:145
+#: ../../python/file_format_converter/Model_Support_Status.rst:147
+#: ../../python/file_format_converter/Model_Support_Status.rst:148
+#: ../../python/file_format_converter/Model_Support_Status.rst:152
+#: ../../python/file_format_converter/Model_Support_Status.rst:180
+#: ../../python/file_format_converter/Model_Support_Status.rst:181
+#: ../../python/file_format_converter/Model_Support_Status.rst:185
+#: ../../python/file_format_converter/Model_Support_Status.rst:212
+#: ../../python/file_format_converter/Model_Support_Status.rst:213
+#: ../../python/file_format_converter/Model_Support_Status.rst:214
+#: ../../python/file_format_converter/Model_Support_Status.rst:215
+#: ../../python/file_format_converter/Model_Support_Status.rst:216
+#: ../../python/file_format_converter/Model_Support_Status.rst:217
+#: ../../python/file_format_converter/Model_Support_Status.rst:218
+#: ../../python/file_format_converter/Model_Support_Status.rst:219
+#: ../../python/file_format_converter/Model_Support_Status.rst:220
+#: ../../python/file_format_converter/Model_Support_Status.rst:221
+#: ../../python/file_format_converter/Model_Support_Status.rst:222
+#: ../../python/file_format_converter/Model_Support_Status.rst:223
+#: ../../python/file_format_converter/Model_Support_Status.rst:224
+#: ../../python/file_format_converter/Model_Support_Status.rst:225
+#: ../../python/file_format_converter/Model_Support_Status.rst:226
+#: ../../python/file_format_converter/Model_Support_Status.rst:227
+#: ../../python/file_format_converter/Model_Support_Status.rst:228
+#: ../../python/file_format_converter/Model_Support_Status.rst:231
+#: ../../python/file_format_converter/Model_Support_Status.rst:232
+#: ../../python/file_format_converter/Model_Support_Status.rst:233
+#: ../../python/file_format_converter/Model_Support_Status.rst:234
+#: ../../python/file_format_converter/Model_Support_Status.rst:235
+#: ../../python/file_format_converter/Model_Support_Status.rst:237
+#: ../../python/file_format_converter/Model_Support_Status.rst:238
+#: ../../python/file_format_converter/Model_Support_Status.rst:239
+#: ../../python/file_format_converter/Model_Support_Status.rst:240
+#: ../../python/file_format_converter/Model_Support_Status.rst:241
+#: ../../python/file_format_converter/Model_Support_Status.rst:242
+#: ../../python/file_format_converter/Model_Support_Status.rst:243
+#: ../../python/file_format_converter/Model_Support_Status.rst:244
+#: ../../python/file_format_converter/Model_Support_Status.rst:245
+#: ../../python/file_format_converter/Model_Support_Status.rst:246
+#: ../../python/file_format_converter/Model_Support_Status.rst:247
+#: ../../python/file_format_converter/Model_Support_Status.rst:248
+#: ../../python/file_format_converter/Model_Support_Status.rst:261
+#: ../../python/file_format_converter/Model_Support_Status.rst:262
+#: ../../python/file_format_converter/Model_Support_Status.rst:263
+#: ../../python/file_format_converter/Model_Support_Status.rst:264
+#: ../../python/file_format_converter/Model_Support_Status.rst:265
+#: ../../python/file_format_converter/Model_Support_Status.rst:266
+#: ../../python/file_format_converter/Model_Support_Status.rst:267
+#: ../../python/file_format_converter/Model_Support_Status.rst:268
+#: ../../python/file_format_converter/Model_Support_Status.rst:269
+#: ../../python/file_format_converter/Model_Support_Status.rst:270
+#: ../../python/file_format_converter/Model_Support_Status.rst:271
+#: ../../python/file_format_converter/Model_Support_Status.rst:272
+#: ../../python/file_format_converter/Model_Support_Status.rst:273
+#: ../../python/file_format_converter/Model_Support_Status.rst:274
+#: ../../python/file_format_converter/Model_Support_Status.rst:275
+#: ../../python/file_format_converter/Model_Support_Status.rst:276
+#: ../../python/file_format_converter/Model_Support_Status.rst:277
+#: ../../python/file_format_converter/Model_Support_Status.rst:278
+#: ../../python/file_format_converter/Model_Support_Status.rst:291
+#: ../../python/file_format_converter/Model_Support_Status.rst:292
+#: ../../python/file_format_converter/Model_Support_Status.rst:293
+#: ../../python/file_format_converter/Model_Support_Status.rst:295
+#: ../../python/file_format_converter/Model_Support_Status.rst:296
+#: ../../python/file_format_converter/Model_Support_Status.rst:300
+#: ../../python/file_format_converter/Model_Support_Status.rst:325
+#: ../../python/file_format_converter/Model_Support_Status.rst:326
+#: ../../python/file_format_converter/Model_Support_Status.rst:327
+#: ../../python/file_format_converter/Model_Support_Status.rst:328
+#: ../../python/file_format_converter/Model_Support_Status.rst:329
+#: ../../python/file_format_converter/Model_Support_Status.rst:330
+#: ../../python/file_format_converter/Model_Support_Status.rst:331
+#: ../../python/file_format_converter/Model_Support_Status.rst:332
+#: ../../python/file_format_converter/Model_Support_Status.rst:333
+#: ../../python/file_format_converter/Model_Support_Status.rst:334
+#: ../../python/file_format_converter/Model_Support_Status.rst:335
+#: ../../python/file_format_converter/Model_Support_Status.rst:336
+#: ../../python/file_format_converter/Model_Support_Status.rst:337
+#: ../../python/file_format_converter/Model_Support_Status.rst:338
+#: ../../python/file_format_converter/Model_Support_Status.rst:339
+#: ../../python/file_format_converter/Model_Support_Status.rst:340
+#: ../../python/file_format_converter/Model_Support_Status.rst:341
+#: ../../python/file_format_converter/Model_Support_Status.rst:344
+#: ../../python/file_format_converter/Model_Support_Status.rst:345
+#: ../../python/file_format_converter/Model_Support_Status.rst:346
+#: ../../python/file_format_converter/Model_Support_Status.rst:347
+#: ../../python/file_format_converter/Model_Support_Status.rst:348
+#: ../../python/file_format_converter/Model_Support_Status.rst:350
+#: ../../python/file_format_converter/Model_Support_Status.rst:351
+#: ../../python/file_format_converter/Model_Support_Status.rst:352
+#: ../../python/file_format_converter/Model_Support_Status.rst:353
+#: ../../python/file_format_converter/Model_Support_Status.rst:354
+#: ../../python/file_format_converter/Model_Support_Status.rst:355
+#: ../../python/file_format_converter/Model_Support_Status.rst:356
+#: ../../python/file_format_converter/Model_Support_Status.rst:357
+#: ../../python/file_format_converter/Model_Support_Status.rst:358
+#: ../../python/file_format_converter/Model_Support_Status.rst:359
+#: ../../python/file_format_converter/Model_Support_Status.rst:360
+#: ../../python/file_format_converter/Model_Support_Status.rst:361
+msgid "✓"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:30
+msgid "inception_v1_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:30
+#: ../../python/file_format_converter/Model_Support_Status.rst:81
+#: ../../python/file_format_converter/Model_Support_Status.rst:82
+#: ../../python/file_format_converter/Model_Support_Status.rst:88
+#: ../../python/file_format_converter/Model_Support_Status.rst:146
+#: ../../python/file_format_converter/Model_Support_Status.rst:149
+#: ../../python/file_format_converter/Model_Support_Status.rst:150
+#: ../../python/file_format_converter/Model_Support_Status.rst:151
+#: ../../python/file_format_converter/Model_Support_Status.rst:179
+#: ../../python/file_format_converter/Model_Support_Status.rst:182
+#: ../../python/file_format_converter/Model_Support_Status.rst:183
+#: ../../python/file_format_converter/Model_Support_Status.rst:184
+#: ../../python/file_format_converter/Model_Support_Status.rst:186
+#: ../../python/file_format_converter/Model_Support_Status.rst:187
+#: ../../python/file_format_converter/Model_Support_Status.rst:188
+#: ../../python/file_format_converter/Model_Support_Status.rst:229
+#: ../../python/file_format_converter/Model_Support_Status.rst:230
+#: ../../python/file_format_converter/Model_Support_Status.rst:236
+#: ../../python/file_format_converter/Model_Support_Status.rst:294
+#: ../../python/file_format_converter/Model_Support_Status.rst:297
+#: ../../python/file_format_converter/Model_Support_Status.rst:298
+#: ../../python/file_format_converter/Model_Support_Status.rst:299
+#: ../../python/file_format_converter/Model_Support_Status.rst:342
+#: ../../python/file_format_converter/Model_Support_Status.rst:343
+#: ../../python/file_format_converter/Model_Support_Status.rst:349
+msgid "X"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:30
+msgid "The `edge` mode of the `pad` in nnabla is not implemented."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:31
+msgid "zfnet512_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:32
+msgid "bvlc_reference_rcnn_ilsvrc13_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:33
+msgid "densenet121_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:34
+msgid "shufflenet_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:35
+msgid "bvlc_alexnet_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:36
+msgid "vgg19_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:37
+msgid "bvlc_reference_caffenet_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:38
+msgid "resnet50_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:39
+msgid "squeezenet_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:40
+msgid "bvlc_googlenet_model_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:48
+#: ../../python/file_format_converter/Model_Support_Status.rst:196
+#: ../../python/file_format_converter/Model_Support_Status.rst:309
+msgid "Export"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:53
+#: ../../python/file_format_converter/Model_Support_Status.rst:201
+msgid "Total: 58/65"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:56
+msgid "ONNX Export Sample Test(nnp --> onnx)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:58
+#: ../../python/file_format_converter/Model_Support_Status.rst:206
+#: ../../python/file_format_converter/Model_Support_Status.rst:319
+msgid "Count 34/37"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:64
+#: ../../python/file_format_converter/Model_Support_Status.rst:212
+#: ../../python/file_format_converter/Model_Support_Status.rst:325
+msgid "10_deep_mlp_13_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:65
+#: ../../python/file_format_converter/Model_Support_Status.rst:213
+#: ../../python/file_format_converter/Model_Support_Status.rst:326
+msgid "10_deep_mlp_14_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:66
+#: ../../python/file_format_converter/Model_Support_Status.rst:214
+#: ../../python/file_format_converter/Model_Support_Status.rst:327
+msgid "12_residual_learning_20_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:67
+#: ../../python/file_format_converter/Model_Support_Status.rst:215
+#: ../../python/file_format_converter/Model_Support_Status.rst:328
+msgid "06_auto_encoder_17_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:68
+#: ../../python/file_format_converter/Model_Support_Status.rst:216
+#: ../../python/file_format_converter/Model_Support_Status.rst:329
+msgid "binary_connect_mnist_LeNet_5_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:69
+#: ../../python/file_format_converter/Model_Support_Status.rst:217
+#: ../../python/file_format_converter/Model_Support_Status.rst:330
+msgid "elman_net_with_attention_33_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:70
+#: ../../python/file_format_converter/Model_Support_Status.rst:218
+#: ../../python/file_format_converter/Model_Support_Status.rst:331
+msgid "11_deconvolution_12_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:71
+#: ../../python/file_format_converter/Model_Support_Status.rst:219
+#: ../../python/file_format_converter/Model_Support_Status.rst:332
+msgid "LeNet_36_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:72
+#: ../../python/file_format_converter/Model_Support_Status.rst:220
+#: ../../python/file_format_converter/Model_Support_Status.rst:333
+msgid "01_logistic_regression_10_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:73
+#: ../../python/file_format_converter/Model_Support_Status.rst:221
+#: ../../python/file_format_converter/Model_Support_Status.rst:334
+msgid "binary_weight_mnist_MLP_6_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:74
+#: ../../python/file_format_converter/Model_Support_Status.rst:222
+#: ../../python/file_format_converter/Model_Support_Status.rst:335
+msgid "binary_net_mnist_MLP_4_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:75
+#: ../../python/file_format_converter/Model_Support_Status.rst:223
+#: ../../python/file_format_converter/Model_Support_Status.rst:336
+msgid "bidirectional_elman_net_25_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:76
+#: ../../python/file_format_converter/Model_Support_Status.rst:224
+#: ../../python/file_format_converter/Model_Support_Status.rst:337
+msgid "gated_recurrent_unitGRU_32_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:77
+#: ../../python/file_format_converter/Model_Support_Status.rst:225
+#: ../../python/file_format_converter/Model_Support_Status.rst:338
+msgid "mnist_vae_3_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:78
+#: ../../python/file_format_converter/Model_Support_Status.rst:226
+#: ../../python/file_format_converter/Model_Support_Status.rst:339
+msgid "stacked_GRU_27_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:79
+#: ../../python/file_format_converter/Model_Support_Status.rst:227
+#: ../../python/file_format_converter/Model_Support_Status.rst:340
+msgid "bidirectional_elman_net_26_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:80
+#: ../../python/file_format_converter/Model_Support_Status.rst:228
+#: ../../python/file_format_converter/Model_Support_Status.rst:341
+msgid "12_residual_learning_19_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:81
+#: ../../python/file_format_converter/Model_Support_Status.rst:229
+#: ../../python/file_format_converter/Model_Support_Status.rst:342
+msgid "mnist_dcgan_with_label_1_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:81
+#: ../../python/file_format_converter/Model_Support_Status.rst:88
+#: ../../python/file_format_converter/Model_Support_Status.rst:146
+#: ../../python/file_format_converter/Model_Support_Status.rst:229
+#: ../../python/file_format_converter/Model_Support_Status.rst:236
+#: ../../python/file_format_converter/Model_Support_Status.rst:294
+msgid "NNabla converter error, will be fixed in the future."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:82
+#: ../../python/file_format_converter/Model_Support_Status.rst:230
+#: ../../python/file_format_converter/Model_Support_Status.rst:343
+msgid "semi_supervised_learning_VAT_37_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:82
+#: ../../python/file_format_converter/Model_Support_Status.rst:230
+msgid "NNP with only a single executor is currently supported."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:83
+#: ../../python/file_format_converter/Model_Support_Status.rst:231
+#: ../../python/file_format_converter/Model_Support_Status.rst:344
+msgid "elman_net_22_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:84
+#: ../../python/file_format_converter/Model_Support_Status.rst:232
+#: ../../python/file_format_converter/Model_Support_Status.rst:345
+msgid "gated_recurrent_unitGRU_31_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:85
+#: ../../python/file_format_converter/Model_Support_Status.rst:233
+#: ../../python/file_format_converter/Model_Support_Status.rst:346
+msgid "elman_net_with_attention_34_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:86
+#: ../../python/file_format_converter/Model_Support_Status.rst:234
+#: ../../python/file_format_converter/Model_Support_Status.rst:347
+msgid "11_deconvolution_11_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:87
+#: ../../python/file_format_converter/Model_Support_Status.rst:235
+#: ../../python/file_format_converter/Model_Support_Status.rst:348
+msgid "binary_net_mnist_LeNet_7_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:88
+#: ../../python/file_format_converter/Model_Support_Status.rst:236
+#: ../../python/file_format_converter/Model_Support_Status.rst:349
+msgid "mnist_dcgan_with_label_2_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:89
+#: ../../python/file_format_converter/Model_Support_Status.rst:237
+#: ../../python/file_format_converter/Model_Support_Status.rst:350
+msgid "01_logistic_regression_9_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:90
+#: ../../python/file_format_converter/Model_Support_Status.rst:238
+#: ../../python/file_format_converter/Model_Support_Status.rst:351
+msgid "02_binary_cnn_15_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:91
+#: ../../python/file_format_converter/Model_Support_Status.rst:239
+#: ../../python/file_format_converter/Model_Support_Status.rst:352
+msgid "02_binary_cnn_16_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:92
+#: ../../python/file_format_converter/Model_Support_Status.rst:240
+#: ../../python/file_format_converter/Model_Support_Status.rst:353
+msgid "LSTM_auto_encoder_24_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:93
+#: ../../python/file_format_converter/Model_Support_Status.rst:241
+#: ../../python/file_format_converter/Model_Support_Status.rst:354
+msgid "LeNet_35_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:94
+#: ../../python/file_format_converter/Model_Support_Status.rst:242
+#: ../../python/file_format_converter/Model_Support_Status.rst:355
+msgid "LSTM_auto_encoder_23_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:95
+#: ../../python/file_format_converter/Model_Support_Status.rst:243
+#: ../../python/file_format_converter/Model_Support_Status.rst:356
+msgid "binary_connect_mnist_MLP_8_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:96
+#: ../../python/file_format_converter/Model_Support_Status.rst:244
+#: ../../python/file_format_converter/Model_Support_Status.rst:357
+msgid "long_short_term_memoryLSTM_30_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:97
+#: ../../python/file_format_converter/Model_Support_Status.rst:245
+#: ../../python/file_format_converter/Model_Support_Status.rst:358
+msgid "06_auto_encoder_18_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:98
+#: ../../python/file_format_converter/Model_Support_Status.rst:246
+#: ../../python/file_format_converter/Model_Support_Status.rst:359
+msgid "stacked_GRU_28_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:99
+#: ../../python/file_format_converter/Model_Support_Status.rst:247
+#: ../../python/file_format_converter/Model_Support_Status.rst:360
+msgid "elman_net_21_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:100
+#: ../../python/file_format_converter/Model_Support_Status.rst:248
+#: ../../python/file_format_converter/Model_Support_Status.rst:361
+msgid "long_short_term_memoryLSTM_29_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:105
+msgid "ONNX Export Pretrained Model Test(nnp --> onnx)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:107
+#: ../../python/file_format_converter/Model_Support_Status.rst:255
+msgid "Count 18/18"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:113
+#: ../../python/file_format_converter/Model_Support_Status.rst:261
+msgid "ShuffleNet_2_202_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:114
+#: ../../python/file_format_converter/Model_Support_Status.rst:262
+msgid "VGG-11_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:115
+#: ../../python/file_format_converter/Model_Support_Status.rst:263
+msgid "DenseNet-161_2_570_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:116
+#: ../../python/file_format_converter/Model_Support_Status.rst:264
+msgid "SqueezeNet-1.0_2_70_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:117
+#: ../../python/file_format_converter/Model_Support_Status.rst:265
+msgid "SqueezeNet-1.1_2_70_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:118
+#: ../../python/file_format_converter/Model_Support_Status.rst:266
+msgid "Resnet-18_3_71_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:119
+#: ../../python/file_format_converter/Model_Support_Status.rst:267
+msgid "VGG-16_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:120
+#: ../../python/file_format_converter/Model_Support_Status.rst:268
+msgid "Resnet-50_4_178_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:121
+#: ../../python/file_format_converter/Model_Support_Status.rst:269
+msgid "Xception_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:122
+#: ../../python/file_format_converter/Model_Support_Status.rst:270
+msgid "ShuffleNet-0.5x_2_202_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:123
+#: ../../python/file_format_converter/Model_Support_Status.rst:271
+msgid "Resnet-34_4_128_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:124
+#: ../../python/file_format_converter/Model_Support_Status.rst:272
+msgid "Resnet-152_4_518_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:125
+#: ../../python/file_format_converter/Model_Support_Status.rst:273
+msgid "MobileNet_1_86_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:126
+#: ../../python/file_format_converter/Model_Support_Status.rst:274
+msgid "Resnet-101_4_348_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:127
+#: ../../python/file_format_converter/Model_Support_Status.rst:275
+msgid "GoogLeNet_4_142_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:128
+#: ../../python/file_format_converter/Model_Support_Status.rst:276
+msgid "AlexNet_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:129
+#: ../../python/file_format_converter/Model_Support_Status.rst:277
+msgid "NIN_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:130
+#: ../../python/file_format_converter/Model_Support_Status.rst:278
+msgid "VGG-13_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:135
+msgid "ONNX Export Example Model Test(nnp --> onnx)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:137
+#: ../../python/file_format_converter/Model_Support_Status.rst:285
+msgid "Count 6/10"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:143
+#: ../../python/file_format_converter/Model_Support_Status.rst:291
+msgid "pix2pix_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:144
+#: ../../python/file_format_converter/Model_Support_Status.rst:292
+msgid "yolov2_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:145
+#: ../../python/file_format_converter/Model_Support_Status.rst:293
+msgid "classification_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:146
+#: ../../python/file_format_converter/Model_Support_Status.rst:294
+msgid "capsules_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:147
+#: ../../python/file_format_converter/Model_Support_Status.rst:295
+msgid "cycle_gan_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:148
+#: ../../python/file_format_converter/Model_Support_Status.rst:296
+msgid "siamese_embedding_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:149
+#: ../../python/file_format_converter/Model_Support_Status.rst:297
+msgid "meta_learning_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:149
+#: ../../python/file_format_converter/Model_Support_Status.rst:297
+#: ../../python/file_format_converter/Model_Support_Status.rst:343
+#: ../../python/file_format_converter/Model_Support_Status.rst:349
+msgid "Failed to compare inferring result."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:150
+#: ../../python/file_format_converter/Model_Support_Status.rst:298
+msgid "wavenet_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:150
+#: ../../python/file_format_converter/Model_Support_Status.rst:298
+msgid "The `onehot` dimension != 2 is not supported."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:151
+#: ../../python/file_format_converter/Model_Support_Status.rst:299
+msgid "deeplabv3plus_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:151
+#: ../../python/file_format_converter/Model_Support_Status.rst:299
+msgid "The `Interpolate` is currently not supported."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:152
+#: ../../python/file_format_converter/Model_Support_Status.rst:300
+msgid "word_embedding_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:160
+msgid "Tensorflow Support Status"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:168
+msgid "Total: 3/10"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:171
+msgid "Tensorflow Import Sample Test(pb --> nnp)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:173
+msgid "Count 3/10"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:179
+msgid "inception_resnet_v2_2016_08_30_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:179
+#: ../../python/file_format_converter/Model_Support_Status.rst:187
+#: ../../python/file_format_converter/Model_Support_Status.rst:188
+msgid ""
+"Failed to convert from tensorflow to onnx, `Bias` should be 1D, but "
+"actual n-D."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:180
+msgid "inception_v4_2016_09_09_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:181
+msgid "ae0_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:182
+msgid "lstm_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:182
+msgid "The `Shape` is currently not supported to convert by nnabla."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:183
+msgid "inception_v1_2016_08_28_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:183
+msgid "the `edge` mode of the `pad` in nnabla is not implemented."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:184
+msgid "mobilenet_v1_1.0_224_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:184
+#: ../../python/file_format_converter/Model_Support_Status.rst:186
+msgid "The `edge` mode of the pad function in nnabla is not implemented."
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:185
+msgid "fc-layers_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:186
+msgid "mobilenet_v1_0.75_192_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:187
+msgid "conv-layers_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:188
+msgid "inception_v3_2016_08_28_frozen_"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:204
+msgid "Tensorflow Export Sample Test(nnp --> pb)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:253
+msgid "Tensorflow Export Pretrained Models(nnp --> pb)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:283
+msgid "Tensorflow Export Example Models(nnp --> pb)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:306
+msgid "NNabla C Runtime Support Status"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:314
+msgid "Total: 34/37"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:317
+msgid "NNC Export Sample Test(nnp --> nnb)"
+msgstr ""
+
+#: ../../python/file_format_converter/Model_Support_Status.rst:342
+msgid "Failed to infer by nnabla."
+msgstr ""

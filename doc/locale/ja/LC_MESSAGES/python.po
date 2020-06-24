@@ -1,0 +1,35 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-26 09:34+0900\n"
+"PO-Revision-Date: 2020-05-01 18:44+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 2.3\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: ja_JP\n"
+
+#: ../../python.rst:2
+msgid "Python Package"
+msgstr "Python パッケージ"
+
+#: ../../python.rst:4
+msgid ""
+"The Python API built on top of our C++11 core maximizes the flexibility "
+"of the design of neural networks , and encourages fast prototyping and "
+"experimentation. NNabla works on Python>=3.5 (>=3.6 is recommended)."
+msgstr ""
+"C++11 コアをベースに作られた Python API は、ニューラルネットワークの設計"
+"の柔軟性を最大化し、迅速な試作と実験を促します。NNabla は Python 3.5 で"
+"動作します。"

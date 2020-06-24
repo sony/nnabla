@@ -1,0 +1,202 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-08 16:44+0900\n"
+"Last-Translator: \n"
+"Language: ext\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/ext.rst:2
+msgid "Extensions"
+msgstr "Extension"
+
+#: ../../python/api/ext.rst:4
+msgid ""
+"NNabla offers easy extensibility for developers to add new device "
+"extensions. The NNabla Python package officially supports the ``cudnn`` "
+"extension, which dramatically accelerates computation by leveraging "
+"NVIDIA CUDA GPUs with cuDNN computation primitives."
+msgstr ""
+"NNabla には、開発者が新規デバイスをかんたんに拡張できる機能があります。NNabla Python パッケージは、公式に ``cudnn``"
+" 拡張機能をサポートしており、cuDNN 計算機プリミティブが備わった NVIDIA CUDA GPU "
+"を活用することにより、劇的に計算処理が加速されます。"
+
+#: ../../python/api/ext.rst:9
+msgid "You can manually import extensions by:"
+msgstr "以下のように手動でExtensionをインポートできます:"
+
+#: ../../python/api/ext.rst:11
+msgid ""
+"import nnabla_ext.cudnn\n"
+"\n"
+"See :ref:`python-package-installation` to install the CUDA extension."
+msgstr ""
+
+#: ../../python/api/ext.rst:19
+msgid "Utilities for extension"
+msgstr "Extensionユーティリティ"
+
+#: nnabla.ext_utils:1 of
+msgid "Utilities for NNabla extensions."
+msgstr "NNabla Extensionのためのユーティリティ。"
+
+#: nnabla.ext_utils.list_extensions:1 of
+msgid "List up available extensions."
+msgstr "利用可能なExtensionをリストアップします。"
+
+#: nnabla.ext_utils.list_extensions:5 of
+msgid ""
+"It may not work on some platforms/environments since it depends on the "
+"directory structure of the namespace packages."
+msgstr "名前空間パッケージのディレクトリ構成に依存しているため、あるプラットフォームや環境によっては正しく動作しない可能性があります。"
+
+#: nnabla.ext_utils.list_extensions:8 of
+msgid "Returns: list of str"
+msgstr "戻り値: str のリスト"
+
+#: nnabla.ext_utils.list_extensions:9 of
+msgid "Names of available extensions."
+msgstr "利用可能なExtension名のリスト。"
+
+#: nnabla.ext_utils.import_extension_module:1 of
+msgid "Import an extension module by name."
+msgstr "Extensionモジュールの名称でインポートします。"
+
+#: nnabla.ext_utils.import_extension_module:3 of
+msgid ""
+"The extension modules are installed under the `nnabla_ext` package as "
+"namespace packages. All extension modules provide a unified set of APIs."
+msgstr ""
+"Extensionモジュールは、 `nnabla_ext` パッケージの下に名前空間パッケージとしてインストールされます。 "
+"すべてのExtensionモジュールは、統一した API セットを提供します。"
+
+#: nnabla.ext_utils.get_extension_context
+#: nnabla.ext_utils.import_extension_module of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.ext_utils.import_extension_module:6 of
+msgid "Extension name. e.g. 'cpu', 'cuda', 'cudnn' etc."
+msgstr "Extension名。例: ‘cpu’, ‘cuda’, ‘cudnn’ 等。"
+
+#: nnabla.ext_utils.import_extension_module:10 of
+msgid "Returns: module"
+msgstr "戻り値: module"
+
+#: nnabla.ext_utils.import_extension_module:10 of
+msgid "An Python module of a particular NNabla extension."
+msgstr "特定の NNabla Extensionの Python モジュール。"
+
+#: nnabla.ext_utils.get_extension_context:14
+#: nnabla.ext_utils.import_extension_module:13 of
+msgid "サンプル"
+msgstr ""
+
+#: nnabla.ext_utils.import_extension_module:14 of
+msgid ""
+"ext = import_extension_module('cudnn')\n"
+"available_devices = ext.get_devices()\n"
+"print(available_devices)\n"
+"ext.device_synchronize(available_devices[0])\n"
+"ext.clear_memory_cache()"
+msgstr ""
+
+#: nnabla.ext_utils.get_extension_context:1 of
+msgid "Get the context of the specified extension."
+msgstr "指定されたExtensionのContextを取得します。"
+
+#: nnabla.ext_utils.get_extension_context:3 of
+msgid "All extension's module must provide `context(**kw)` function."
+msgstr "すべてのExtensionモジュールは `context(**kw)` 関数を提供する必要があります。"
+
+#: nnabla.ext_utils.get_extension_context:5 of
+msgid "Module path relative to `nnabla_ext`."
+msgstr "`nnabla_ext` への相対的なモジュールパス"
+
+#: nnabla.ext_utils.get_extension_context:7 of
+msgid "Additional keyword arguments for context function in a extension module."
+msgstr "Extensionモジュールにあるcontext関数への追加のキーワード引数。"
+
+#: nnabla.ext_utils.get_extension_context of
+msgid "戻り値"
+msgstr ""
+
+#: nnabla.ext_utils.get_extension_context:10 of
+msgid "The current extension context."
+msgstr "現在のExtensionのcontext"
+
+#: nnabla.ext_utils.get_extension_context of
+msgid "戻り値の型"
+msgstr ""
+
+#: nnabla.ext_utils.get_extension_context:11 of
+msgid ":class:`nnabla.Context`"
+msgstr ""
+
+#: nnabla.ext_utils.get_extension_context:15 of
+msgid ""
+"ctx = get_extension_context('cudnn', device_id='0', type_config='half')\n"
+"nn.set_default_context(ctx)"
+msgstr ""
+
+#: ../../python/api/ext.rst:29
+msgid "APIs of extension modules"
+msgstr "Extensionモジュールの API"
+
+#: ../../python/api/ext.rst:31
+msgid "All extension modules must have the following functions."
+msgstr "すべてのExtensionモジュールは以下の関数を持つ必要があります。"
+
+#: ../../python/api/ext.rst:35
+msgid ""
+"Returns a default context descriptor of the extension module. This method"
+" takes optional arguments depending on the extension. For example, in the"
+" ``cudnn`` extension, it takes the ``device_id`` as an ``int`` to specify"
+" the GPU where computation runs on."
+msgstr ""
+"Extensionモジュールのデフォルトのcontext記述子を返します。本メソッドはExtensionによって異なるオプションとなる引数を取りえます。例えば、"
+" ``cudnn`` Extensionでは、計算処理を実行する GPU を指定するため ``int`` として ``device_id`` "
+"を取ります。"
+
+#: ../../python/api/ext.rst:42
+msgid ""
+"This method is used to synchronize the device execution stream with "
+"respect to the host thread. For example, in CUDA, the kernel execution is"
+" enqueued into a stream, and is executed asynchronously w.r.t. the host "
+"thread. This function is only valid in devices that use such features. In"
+" the CPU implementation, this method is implemented as dummy function, "
+"and therefore calls to this function are ignored. The function in the "
+"``cudnn`` extension takes the ``device_id`` as an optional argument, "
+"which specifies the device you want to synchronize with."
+msgstr ""
+"ホストスレッドに対してデバイス実行ストリームを同期するために本メソッドを使います。例えば CUDA "
+"では、カーネル実行をストリームのキューに追加し、ホストスレッドとは非同期に実行します。本関数は、そのような機能を使うデバイス内でのみ有効です。CPU"
+" 実装では、本メソッドはダミー関数として実装され、そのため本関数を呼び出しても無視されます。 ``cudnn`` "
+"Extensionにある本関数は、オプションの引数として ``device_id`` "
+"を取りますが、これによって同期させたいデバイスを指定できます。"
+
+#: ../../python/api/ext.rst:52 ../../python/api/ext.rst:56
+#: ../../python/api/ext.rst:60
+msgid "TODO: Write me."
+msgstr "TODO: 要記入"
+
+#: ../../python/api/ext.rst:65
+msgid "Implementing an extension"
+msgstr "Extensionの実装"
+
+#: ../../python/api/ext.rst:67
+msgid "TODO: Link to a page of how to create a new extension."
+msgstr "TODO: how to create a new extension ページへのリンク"
+

@@ -1,0 +1,322 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-10 15:10+0900\n"
+"PO-Revision-Date: 2020-06-11 15:25+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../python/api/models/semantic_segmentation.rst:2
+msgid "Semantic Segmentation Models"
+msgstr "Semantic Segmentation モデル"
+
+#: ../../python/api/models/semantic_segmentation.rst:4
+msgid ""
+"This subpackage provides a pre-trained state-of-the-art model for the "
+"purpose of semantic segmentation (DeepLabv3+, Xception-65 as backbone) which "
+"is trained on ImageNet_ dataset and fine-tuned on `Pascal VOC`_ and `MS "
+"COCO`_ dataset."
+msgstr ""
+"本サブパッケージは、 ImageNet_ データセットで学習され、 `Pascal VOC`_ と `MS "
+"COCO`_ データセットでファインチューニングされた Semantic Segmentation "
+"(DeepLabv3+, Xception-65 をバックボーンとする) のための最先端の学習済みモデル"
+"を提供します。"
+
+#: ../../python/api/models/semantic_segmentation.rst:11
+msgid "The pre-trained models can be used for inference as following:"
+msgstr "学習済みモデルは、以下のように推論で使うことができます。"
+
+#: ../../python/api/models/semantic_segmentation.rst:13
+msgid ""
+"#Import reauired modules\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"from nnabla.utils.image_utils import imread\n"
+"from nnabla.models.semantic_segmentation import DeepLabV3plus\n"
+"from nnabla.models.semantic_segmentation.utils import ProcessImage\n"
+"\n"
+"target_h = 513\n"
+"target_w = 513\n"
+"# Get context\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"nn.set_default_context(get_extension_context('cudnn', device_id='0'))\n"
+"\n"
+"# Build a Deeplab v3+ network\n"
+"image = imread(\"./test.jpg\")\n"
+"x = nn.Variable((1, 3, target_h, target_w), need_grad=False)\n"
+"deeplabv3 = DeepLabV3plus('voc-coco',output_stride=8)\n"
+"y = deeplabv3(x)\n"
+"\n"
+"# preprocess image\n"
+"processed_image = ProcessImage(image, target_h, target_w)\n"
+"input_array = processed_image.pre_process()\n"
+"\n"
+"# Compute inference\n"
+"x.d = input_array\n"
+"y.forward(clear_buffer=True)\n"
+"print (\"done\")\n"
+"output = np.argmax(y.d, axis=1)\n"
+"\n"
+"# Apply post processing\n"
+"post_processed = processed_image.post_process(output[0])\n"
+"\n"
+"#Display predicted class names\n"
+"predicted_classes = np.unique(post_processed).astype(int)\n"
+"for i in range(predicted_classes.shape[0]):\n"
+"    print('Classes Segmented: ', deeplabv3."
+"category_names[predicted_classes[i]])\n"
+"\n"
+"# save inference result\n"
+"processed_image.save_segmentation_image(\"./output.png\")"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:56
+msgid "Available models trained on voc dataset"
+msgstr "voc データセットで学習した利用可能なモデル"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Name"
+msgstr "名前"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Class"
+msgstr "クラス"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Output stride"
+msgstr "ストライド出力"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "mIOU"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Training framework"
+msgstr "学習フレームワーク"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Notes"
+msgstr "備考"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid ""
+"`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/"
+"semantic_segmentation/DeepLabV3-voc-os-8.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "DeepLabv3+"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "8"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "81.48"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Nnabla"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid ""
+"Backbone (Xception-65) weights converted from `author's model <http://"
+"download.tensorflow.org/models/deeplabv3_xception_2018_01_04.tar.gz>`_ and "
+"used for finetuning"
+msgstr ""
+"`論文著者のモデル <http://download.tensorflow.org/models/"
+"deeplabv3_xception_2018_01_04.tar.gz>`_ から変換し、ファインチューニングに使"
+"われるバックボーン (Xception-65) の重み"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid ""
+"`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/"
+"semantic_segmentation/DeepLabV3-voc-os-16.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "16"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "82.20"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:62
+msgid "Available models trained on Voc and coco dataset"
+msgstr "Voc と COCO データセットで学習した利用可能なモデル"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid ""
+"`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/"
+"semantic_segmentation/DeepLabV3-voc-coco-os-8.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "Tensorflow"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid ""
+"Weights converted from `author's model <http://download.tensorflow.org/"
+"models/deeplabv3_pascal_trainval_2018_01_04.tar.gz>`_"
+msgstr ""
+"`論文著者のモデル <http://download.tensorflow.org/models/"
+"deeplabv3_pascal_trainval_2018_01_04.tar.gz/>`_ から変換した重み"
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid ""
+"`DeepLabv3+ <https://nnabla.org/pretrained-models/nnp_models/"
+"semantic_segmentation/DeepLabV3-voc-coco-os-16.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:1
+msgid "83.58"
+msgstr ""
+
+#: ../../python/api/models/semantic_segmentation.rst:69
+msgid "Common interfaces"
+msgstr "共通インターフェイス"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation:1 of
+msgid ""
+"Semantic Segmentation pretrained models are inherited from this class so "
+"that it provides some common interfaces."
+msgstr ""
+"Semantic Segmentation 学習済みモデルは、このクラスから継承され、いくつかの共"
+"通インターフェイスを提供します。"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__:1 of
+msgid "Create a network (computation graph) from a loaded model."
+msgstr "読み込んだモデルからネットワーク (計算グラフ) を生成します。"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__ of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__:3 of
+msgid ""
+"If given, input variable is replaced with the given variable and a network "
+"is constructed on top of the variable. Otherwise, a variable with batch size "
+"as 1 and a default shape from ``self.input_shape``."
+msgstr ""
+"指定された場合、入力変数は指定された変数に置き換えられ、その変数の上にネット"
+"ワークが構築されます。それ以外の場合、バッチサイズが１で、 ``self."
+"input_shape`` を元にした形状を持つ変数となります。"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__:5 of
+msgid ""
+"Network is constructed up to a variable specified by a string. A list of "
+"string-variable correspondences in a model is described in documentation for "
+"each model class."
+msgstr ""
+"ネットワークは文字列で指定した変数まで構築されます。モデルに対応した文字列変"
+"数リストは、各モデルクラスのドキュメントに記載されます。"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__:7 of
+msgid ""
+"This option enables additional training (fine-tuning, transfer learning "
+"etc.) for the constructed network. If True, the ``batch_stat`` option in "
+"batch normalization is turned ``True``, and ``need_grad`` attribute in "
+"trainable variables (conv weights and gamma and beta of bn etc.) is turned "
+"``True``. The default is ``False``."
+msgstr ""
+"このオプションは、構築されたネットワークの追加学習 (ファインチューニング、転"
+"移学習など) を有効にします。 True の場合、batch normalization の "
+"``batch_stat`` オプションが ``True`` になり、学習可能な変数 (畳み込み層の重"
+"み および バッチ正規化層 のガンマとベータなど) の ``need_grad`` 属性が "
+"``True`` になります。 デフォルトは ``False`` です。"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__:9 of
+msgid ""
+"When ``True``, it returns a :obj:`~nnabla.utils.nnp_graph.NnpNetwork` "
+"object. Otherwise, It only returns the last variable of the constructed "
+"network. The default is ``False``."
+msgstr ""
+"``True`` の場合、 :obj:`~nnabla.utils.nnp_graph.NnpNetwork` オブジェクトを返"
+"します。それ以外の場合、構築したネットワークの最後の変数を返すのみです。デ"
+"フォルトは ``False`` です。"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.__call__:11 of
+msgid "Verbose level. With ``0``, it says nothing during network construction."
+msgstr ""
+"詳細レベル。 ``0`` に設定した場合、ネットワーク構築中は何も出力しません。"
+
+#: nnabla.models.semantic_segmentation.base.SemanticSegmentation.input_shape:1
+#: of
+msgid "Should return default image size (channel, height, width) as a tuple."
+msgstr "デフォルトの画像サイズ (チャネル、高さ、幅) の組として返します。"
+
+#: ../../python/api/models/semantic_segmentation.rst:85
+msgid "List of models"
+msgstr "モデルのリスト"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:1 of
+msgid "DeepLabV3+."
+msgstr ""
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:3 of
+msgid "Specify a training dataset name from 'voc' or 'coco'."
+msgstr "‘voc’ または ‘coco’ から学習データセット名を指定します。"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:5 of
+msgid ""
+"DeepLabV3 uses atrous (a.k.a. dilated) convolutions. The atrous rate depends "
+"on the output stride. the output stride has to be selected from 8 or 16. "
+"Default is 8. If the output_stride is 8 the atrous rate will be [12,24,36] "
+"and if the output_stride is 16 the atrous rate will be [6,12,18]."
+msgstr ""
+"DeepLabV3 はatrous convolution (別名：dilated convolution) を使います。"
+"atrous レートは出力ストライドに依存します。出力ストライドは 8 あるいは 16 か"
+"ら指定される必要があります。デフォルトは 8 です。もし output_stride が 8 の場"
+"合、atrous レートは [12,24,36] となり、output_stride が 16 の場合、atrous "
+"レートは [6,12,18] となります。"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:10 of
+msgid ""
+"The following is a list of string that can be specified to ``use_up_to`` "
+"option in ``__call__`` method;"
+msgstr ""
+"``__call__`` method にある ``use_up_to`` オプションで指定できる文字列リストは"
+"以下の通り;"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:12 of
+msgid "``'segmentation'`` (default): The output of the final layer."
+msgstr "``'segmentation'`` (デフォルト): 最終レイヤーの出力。"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:13 of
+msgid "``'lastconv'``: The output from last Convolution."
+msgstr "``'lastconv'``: 最後の畳み込みからの出力。"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:14 of
+msgid ""
+"``'lastconv+relu'``: Network up to ``'lastconv'`` followed by ReLU "
+"activation."
+msgstr "``'lastconv+relu'``: ReLU を含む ``'lastconv'`` までのネットワーク。"
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:17 of
+msgid "参照"
+msgstr ""
+
+#: nnabla.models.semantic_segmentation.DeepLabV3plus:18 of
+msgid ""
+"`Chen et al., Rethinking Atrous Convolution for Semantic Image Segmentation. "
+"<https://arxiv.org/abs/1706.05587>`_"
+msgstr ""

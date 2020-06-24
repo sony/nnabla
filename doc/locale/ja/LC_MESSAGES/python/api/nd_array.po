@@ -1,0 +1,317 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-01 11:32+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/nd_array.rst:4
+msgid "NdArray"
+msgstr "NdArray"
+
+#: ../../docstring nnabla._nd_array.NdArray:1 of
+msgid ""
+":class:`nnabla._nd_array.NdArray` is a device-agnostic data container for"
+" multi-dimensional arrays (tensors). :class:`nnabla._nd_array.NdArray` "
+"can also implicitly handle data transfers across different devices (e.g. "
+"CPU to CUDA GPU, CUDA GPU to CPU). See `Python API Tutorial "
+"<http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_"
+" for more details."
+msgstr ""
+":class:`nnabla._nd_array.NdArray` は、多次元配列のためのデバイスに依存しないデータコンテナー ( テンソル ) "
+"です。 :class:`nnabla._nd_array.NdArray` は、異なるデバイス間のデータ転送 ( 例 CPU から CUDA "
+"GPU , CUDA GPU から CPU ) を暗黙的に処理します。詳しくは `Python API Tutorial "
+"<http://nnabla.readthedocs.io/jp/latest/python/tutorial/python_api.html>`_"
+" を参照してください。"
+
+#: ../../docstring nnabla._nd_array.NdArray:5 of
+msgid ""
+":class:`~nnabla.NdArray` overrides some arithmetic operators (``+``, "
+"``-``, ``*``, ``/``, ``**``). Operands can be either a scalar number, "
+":class:`~nnabla.NdArray` or :class:`~nnabla.Variable`. An arithmetic "
+"operation containing :class:`~nnabla.NdArray` returns "
+":class:`~nnabla.NdArray` which stores the output of the computation "
+"immediately invoked. Also, inplace arithmetic operations (``+=``, ``-=``,"
+" ``*=``, ``/=``, ``**=``) are implemented. Note that ``=`` doesn't "
+"perform inplace substitution but just replaces the object reference. "
+"Instead, you can use :func:`~nnabla.NdArray.copy_from` for inplace "
+"substitution."
+msgstr ""
+":class:`~nnabla.NdArray` は、算術演算子 (``+``, ``-``, ``*``, ``/``, ``**``) "
+"をオーバーライドします。オペランドは、スカラー数、 :class:`~nnabla.NdArray` 、または "
+":class:`~nnabla.Variable` のいずれかになります。 :class:`~nnabla.NdArray` "
+"を含む算術演算は、すぐに呼び出される計算の出力を保持する :class:`~nnabla.NdArray` を返します。また、インプレース算術演算"
+" (``+=``, ``-=``, ``*=``, ``/=``, ``**=``) が実装されます。 ``=`` "
+"ではインプレース置換は行われずに、単にオブジェクト参照が置換されることに注意してください。代わりに、 "
+":func:`~nnabla.NdArray.copy_from` を使ってインプレース置換を行うことができます。"
+
+#: ../../docstring nnabla._nd_array.NdArray nnabla._nd_array.NdArray.cast
+#: nnabla._nd_array.NdArray.copy_from nnabla._nd_array.NdArray.data
+#: nnabla._nd_array.NdArray.data_ptr nnabla._nd_array.NdArray.fill
+#: nnabla._nd_array.NdArray.from_numpy_array nnabla._nd_array.NdArray.get_data
+#: nnabla._nd_array.NdArray.size_from_axis of
+msgid "パラメータ"
+msgstr ""
+
+#: ../../docstring nnabla._nd_array.NdArray:17 of
+msgid "Shape of tuple."
+msgstr "タプルの形状。"
+
+#: ../../docstring nnabla._nd_array.NdArray.cast:1 of
+msgid ""
+"In-place cast of data type of the NdArray. It returns the reference "
+"values as a numpy.ndarray only if optional parameter ctx is not given, "
+"None otherwise."
+msgstr ""
+"NdArray のデータ型のインプレースキャスト。オプションパラメータの ctx が指定されない場合のみ、 numpy.ndarray "
+"として参照値を返します。それ以外の場合は、 None を返します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.cast:5
+#: nnabla._nd_array.NdArray.data_ptr:6 of
+msgid "Numpy Data type."
+msgstr "Numpy データ型。"
+
+#: ../../docstring nnabla._nd_array.NdArray.cast:7
+#: nnabla._nd_array.NdArray.data_ptr:8 of
+msgid "Context descriptor."
+msgstr "コンテキスト記述子。"
+
+#: ../../docstring nnabla._nd_array.NdArray.cast
+#: nnabla._nd_array.NdArray.copy_from nnabla._nd_array.NdArray.data_ptr
+#: nnabla._nd_array.NdArray.size_from_axis of
+msgid "戻り値"
+msgstr ""
+
+#: ../../docstring nnabla._nd_array.NdArray.cast:10 of
+msgid ":obj:`numpy.array` if ``ctx`` is None, otherwise nothing."
+msgstr "``ctx`` が None の場合は、 :obj:`numpy.array` 。それ以外の場合はなし。"
+
+#: ../../docstring nnabla._nd_array.NdArray.copy_from:1 of
+msgid "Copy values from another NdArray object."
+msgstr "他の NdArray オブジェクトから値をコピーします。"
+
+#: ../../docstring nnabla._nd_array.NdArray.copy_from:3 of
+msgid "It returns the caller object itself."
+msgstr "呼び出し元のオブジェクト自身を返します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.copy_from:5 of
+msgid ""
+"Values will be copied to the caller object. The shape of ``arr``` must be"
+" same as the caller object."
+msgstr "呼び出し元のオブジェクトに値をコピーします。 ``arr`` の形状は呼び出し元のオブジェクトと同じでないといけません。"
+
+#: ../../docstring nnabla._nd_array.NdArray.copy_from:8 of
+msgid ""
+"If True, a copy is happening in a device and dtype specified in the "
+"current context (equivalent to call `F.identity(src, output=[self])`). "
+"Otherwise, a device and dtype in the source array is used. The default is"
+" True."
+msgstr ""
+"True の場合、デバイスと現在のコンテキスト ( call `F.identity(src, output=[self])` と同等 ) "
+"において指定されている dtype でコピーが行われています。そうでない場合は、ソース配列のデバイスと dtype が使われます。デフォルトは "
+"True です。"
+
+#: ../../docstring nnabla._nd_array.NdArray.copy_from:14 of
+msgid ":obj:`nnabla.NdArray`"
+msgstr ""
+
+#: ../../docstring nnabla._nd_array.NdArray.data:1 of
+msgid ""
+"Returns the values held by this array as a :class:`numpy.ndarray`. Note "
+"that only the references are returned, and the values are not copied. "
+"Therefore, modifying the returned :class:`nnabla._nd_array.NdArray` will "
+"affect the data contained inside the NNabla array. This method can also "
+"be called as a setter where an array is created as the same type as rhs. "
+"There is an exception where `zero()` or `fill(rhs)` is invoked if a "
+"scalar with a float or an integer <= 2^53 (as filling value is maintained"
+" as float64) is given."
+msgstr ""
+"この配列が保持する値を :class:`numpy.ndarray` "
+"として返します。参照を返すだけで、値はコピーされないことに注意してください。従って、戻り値の "
+":class:`nnabla._nd_array.NdArray` の変更は NNabla "
+"配列内のデータに影響を及ぼすことに注意してください。また、このメソッドは、 rhs と同じ型で配列が作成されるセッターとして呼び出されます。 "
+"2^53 以下の ( 充填値が float64 に維持される ) 浮動小数点または整数のスカラーを指定した場合に `zero()` または "
+"`fill(rhs)` が呼び出される例外があります。"
+
+#: ../../docstring nnabla._nd_array.NdArray.data:9 of
+msgid ""
+"Note that this may implicitly invoke a data transfer from device arrays "
+"to the CPU."
+msgstr "これはデバイス配列から CPU へデータ転送が暗黙的に呼び出される可能性があるということですので注意してください。"
+
+#: ../../docstring nnabla._nd_array.NdArray.data:14 of
+msgid "Returns: :obj:`numpy.ndarray`"
+msgstr "戻り値 : :obj:`numpy.ndarray`"
+
+#: ../../docstring nnabla._nd_array.NdArray.data_ptr:1 of
+msgid "Get array's pointer."
+msgstr "配列のポインターを取得します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.data_ptr:3 of
+msgid ""
+"The behavior is similar to `cast` method but returns the data pointer "
+"based on the `ctx`. If the `ctx` is not specified, the default context "
+"obtained by `nn.get_current_context` is used."
+msgstr ""
+"この動作は、 `cast` メソッド と同じですが、 `ctx` に基づいたデータポインターを返します。 `ctx` が指定されない場合は、 "
+"`nn.get_current_context` によって得られるデフォルトのコンテキストが使われます。"
+
+#: ../../docstring nnabla._nd_array.NdArray.data_ptr:11 of
+msgid "The data pointer."
+msgstr "データポインター。"
+
+#: ../../docstring nnabla._nd_array.NdArray.data_ptr of
+msgid "戻り値の型"
+msgstr ""
+
+#: ../../docstring nnabla._nd_array.NdArray.dtype:1 of
+msgid "Get dtype."
+msgstr "dtype を取得します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.dtype:3 of
+msgid "Returns: :obj:`numpy.dtype`"
+msgstr "戻り値 : :obj:`numpy.dtype`"
+
+#: ../../docstring nnabla._nd_array.NdArray.fill:1 of
+msgid "Fill all of the elements with the provided scalar value."
+msgstr "すべての要素に指定されたスカラー値を代入します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.fill:5 of
+msgid ""
+"This doesn't not fill values in an internal array with 0 immediately. An "
+"array is created as a requested data type when this array is used (in "
+"forward or backward computation for exampe), and is filled with the "
+"value."
+msgstr ""
+"ここでは、内部配列にはすぐに 0 が入りません。この配列を使うとき ( 例えば、順方向または逆方向の計算の際 ) "
+"に、要求されたデータ型で配列が生成され、その値が入ります。"
+
+#: ../../docstring nnabla._nd_array.NdArray.fill:10 of
+msgid "The value filled with."
+msgstr "代入する値。"
+
+#: ../../docstring nnabla._nd_array.NdArray.from_numpy_array:1 of
+msgid "Create a NdArray object from Numpy array data."
+msgstr "Numpy 配列データから NdArray オブジェクトを作成します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.from_numpy_array:3 of
+msgid "The data is initialized with the given Numpy array."
+msgstr "このデータは所定の Numpy 配列で初期化されます。"
+
+#: ../../docstring nnabla._nd_array.NdArray.from_numpy_array:5 of
+msgid "Numpy multi-dimensional array."
+msgstr "Numpy 多次元配列。"
+
+#: ../../docstring nnabla._nd_array.NdArray.from_numpy_array:8 of
+msgid "Returns: ~nnabla._nd_array.NdArray"
+msgstr "戻り値 : :class:`nnabla._nd_array.NdArray`"
+
+#: ../../docstring nnabla._nd_array.NdArray.get_data:1 of
+msgid ""
+"Returns the values held by this array as a :class:`numpy.ndarray` with a "
+"specified mode."
+msgstr "指定されたモードで :class:`numpy.ndarray` としてこの配列が保持する値を返します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.get_data:4 of
+msgid ""
+"Computation becomes more efficient if right one is chosen. * 'r': Read-"
+"only access. * 'w': Write-only access. * 'rw': You can both read and "
+"write."
+msgstr ""
+"正しく選択されると、より効率の良い計算が行われます。 * ‘r’ : 読み取り専用アクセス。 * ‘w’ : 書き込み専用アクセス。 * ‘rw’"
+" : 読み書き可。"
+
+#: ../../docstring nnabla._nd_array.NdArray.get_data:9 of
+msgid "Force dtype of a returned array."
+msgstr "強制的に戻り値の配列の dtype にします。"
+
+#: ../../docstring nnabla._nd_array.NdArray.get_data:12 of
+msgid "See :function:`nnabla._nd_array.NdArray.data for more details."
+msgstr "詳しくは、 :function:`nnabla._nd_array.NdArray.data` を参照してください。"
+
+#: ../../docstring nnabla._nd_array.NdArray.ndim:1 of
+msgid "Number of dimensions."
+msgstr "次元数。"
+
+#: ../../docstring nnabla._nd_array.NdArray.ndim:3
+#: nnabla._nd_array.NdArray.size:3 of
+msgid "Returns: int"
+msgstr "戻り値 : 整数"
+
+#: ../../docstring nnabla._nd_array.NdArray.shape:1 of
+msgid "Shape of the N-d array."
+msgstr "N-d 配列の形状。"
+
+#: ../../docstring nnabla._nd_array.NdArray.shape:3
+#: nnabla._nd_array.NdArray.strides:3 of
+msgid "Returns: tuple of int"
+msgstr "戻り値 : 整数のタプル"
+
+#: ../../docstring nnabla._nd_array.NdArray.size:1 of
+msgid "Total size of the N-d array."
+msgstr "N-d 配列の合計サイズ。"
+
+#: ../../docstring nnabla._nd_array.NdArray.size_from_axis:1 of
+msgid "Gets the size followed by the provided axis."
+msgstr "指定された軸に続いてサイズを返します。"
+
+#: ../../docstring nnabla._nd_array.NdArray.size_from_axis:4 of
+msgid "サンプル"
+msgstr "例"
+
+#: ../../docstring nnabla._nd_array.NdArray.size_from_axis:5 of
+msgid ""
+"a = nnabla.NdArray([10,9])\n"
+"a.size_from_axis()\n"
+"# ==> 90\n"
+"a.size_from_axis(0)\n"
+"# ==> 90\n"
+"a.size_from_axis(1)\n"
+"# ==> 9\n"
+"a.size_from_axis(2)\n"
+"# ==> 1"
+msgstr ""
+
+#: ../../docstring nnabla._nd_array.NdArray.size_from_axis:17 of
+msgid "-1 as default"
+msgstr "デフォルトで -1"
+
+#: ../../docstring nnabla._nd_array.NdArray.size_from_axis:20 of
+msgid ":obj:`int`"
+msgstr ":obj:`int`"
+
+#: ../../docstring nnabla._nd_array.NdArray.strides:1 of
+msgid "Strides."
+msgstr "ストライドします。"
+
+#: ../../docstring nnabla._nd_array.NdArray.zero:1 of
+msgid "Fill all of the elements with 0."
+msgstr "すべての要素に 0 を入れます。"
+
+#: ../../docstring nnabla._nd_array.NdArray.zero:5 of
+msgid ""
+"This doesn't not fill values in an internal array with 0 immediately. An "
+"array is created as a requested data type when this array is used (in "
+"forward or backward computation for exampe), and is filled with 0."
+msgstr ""
+"ここでは、内部配列にすぐには 0 が入りません。この配列を使うとき ( 例えば、順方向または逆方向の計算の際 ) "
+"に、要求されたデータ型で配列が生成され、 0 が入ります。"
+
+#: ../../docstring nnabla._nd_array.NdArray.zeroing:1 of
+msgid "Checking if the array is not modified after calling `zero()`."
+msgstr "`zero()` を呼び出した後に、配列に変更がないかどうかを確かめます。"
+

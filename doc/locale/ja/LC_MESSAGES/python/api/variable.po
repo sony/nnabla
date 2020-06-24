@@ -1,0 +1,917 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-09 10:13+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/variable.rst:4
+msgid "Variable"
+msgstr "Variable"
+
+#: ../../docstring nnabla.Variable:1 of
+msgid "ベースクラス: :class:`object`"
+msgstr "ベース : :class:`object`"
+
+#: ../../docstring nnabla.Variable:1 of
+msgid ""
+":class:`nnabla.Variable` is used to construct computation graphs (neural "
+"networks) together with functions in :ref:`functions` and :ref"
+":`parametric-functions` . It also provides a method to execute forward "
+"and backward propagation of the network. The :class:`nnabla.Variable` "
+"class holds:"
+msgstr ""
+":class:`nnabla.Variable` は、 :ref:`functions` や :ref:`parametric-"
+"functions` のリストにある関数とともに ( ニューラルネットワークの ) 計算グラフを作成するために用いられます。また、 "
+"nnabla.Variable はネットワークのフォーワード・バックワード計算を実行する機能も提供します。 "
+":class:`nnabla.Variable` クラスは以下の機能を提供します。"
+
+#: ../../docstring nnabla.Variable:8 of
+msgid ""
+"Reference to the parent function in a computation graph. This provides "
+"traceability of all connections in the computation graph."
+msgstr "計算グラフにおける親関数への参照。この参照により、計算グラフのすべての接続をたどることができます。"
+
+#: ../../docstring nnabla.Variable:10 of
+msgid ""
+"Both data and error signal (gradient) containers as "
+":class:`nnabla._nd_array.NdArray` s."
+msgstr ":class:`nnabla._nd_array.NdArray` としてのデータと誤差 ( 勾配 ) のコンテナ。"
+
+#: ../../docstring nnabla.Variable:12 of
+msgid "Some additional information of the computation graph."
+msgstr "その他、いくつかの計算グラフのに関する付加的な情報。"
+
+#: ../../docstring nnabla.Variable:14 of
+msgid ""
+":class:`~nnabla.Variable` overrides some arithmetic operators (``+``, "
+"``-``, ``*``, ``/``, ``**``). Operands can be either a scalar number, "
+":class:`~nnabla.NdArray` or :class:`~nnabla.Variable`. If "
+":class:`~nnabla.NdArray` is given as either of left or right operand, the"
+" arithmetic operation returns an :class:`~nnabla.NdArray` which stores "
+"the output of the computation immediately invoked. Otherwise, it returns "
+":class:`~nnabla.Variable` holds the graph connection. The computation is "
+"invoked immediately when `nnabla.auto_forward` or "
+"`nnabla.set_auto_forward(True)` is used."
+msgstr ""
+":class:`~nnabla.Variable` は、算術演算子 (``+``, ``-``, ``*``, ``/``, ``**``) "
+"をオーバーライドします。左右のオペランドとしては、スカラー数、 :class:`~nnabla.NdArray` 、または "
+":class:`~nnabla.Variable` のいずれかになりますが利用可能です。 :class:`~nnabla.NdArray` "
+"に対して左オペランドまたは右オペランドが指定された場合は、算術演算は、すぐに呼び出された計算の出力を格納する "
+":class:`~nnabla.NdArray` を返します。それ以外の場合は、グラフの連結を保持する "
+":class:`~nnabla.Variable` を返します。この演算は、 `nnabla.auto_forward` がTrue、または "
+"`nnabla.set_auto_forward(True)` が使われると指定されている場合はすぐに呼び出されます。"
+
+#: ../../docstring nnabla.Variable:26 of
+msgid ""
+"Relational operators  :code:`==` and :code:`!=` of two  :obj:`Variable` s"
+" are defined as an address comparison of underlying C++ instances "
+"(:code:`nbla::Variable`). Also, :func:`hash` function, which is often "
+"used in a key for :obj:`set` and :obj:`dict`, is based on the address."
+msgstr ""
+"2つの Variable の関係演算子 :code:`==` と :code:`!=` は、ベースとなる C++ インスタンス ( "
+":code:`nbla::Variable` ) のアドレスの比較を行います。また、 :obj:`set` や :obj:`dict` "
+"に対するキーでよく使われる :func:`hash` 関数もまた、このアドレスに基づいています。"
+
+#: ../../docstring nnabla.Variable:33 of
+msgid ""
+"`Python API Tutorial "
+"<http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_."
+msgstr ""
+"併せて `Python API Tutorial "
+"<http://nnabla.readthedocs.io/jp/latest/python/tutorial/python_api.html>`_"
+" を参照してください。"
+
+#: ../../docstring nnabla.Variable nnabla.Variable.backward nnabla.Variable.d
+#: nnabla.Variable.data nnabla.Variable.forward
+#: nnabla.Variable.from_numpy_array nnabla.Variable.g
+#: nnabla.Variable.get_unlinked_variable nnabla.Variable.grad
+#: nnabla.Variable.need_grad nnabla.Variable.parent nnabla.Variable.persistent
+#: nnabla.Variable.reset_shape nnabla.Variable.reshape
+#: nnabla.Variable.rewire_on nnabla.Variable.size_from_axis
+#: nnabla.Variable.visit nnabla.Variable.visit_check of
+msgid "パラメータ"
+msgstr "パラメータ"
+
+#: ../../docstring nnabla.Variable:36 of
+msgid "Shape of variable."
+msgstr "変数の形状 Shape。"
+
+#: ../../docstring nnabla.Variable:38 nnabla.Variable.from_numpy_array:14 of
+msgid "Flag for backprop or not."
+msgstr "この変数までのバックプロパゲーションが必要か否かのフラグ。"
+
+#: ../../docstring nnabla.Variable.apply:1 of
+msgid "Helper for setting property, then return self."
+msgstr "プロパティをセットするための helper です。それ自身を返します。"
+
+#: ../../docstring nnabla.Variable.backward:1 of
+msgid ""
+"Performs a backward propagation starting from this variable until the "
+"root variable(s) is/are reached in the function graph. The propagation "
+"will stop at a variable with need_grad=False."
+msgstr ""
+"この変数から関数グラフのルート変数に到達するまで、バックプロパゲーションを行います。このプロパゲーションは need_grad=False "
+"が指定された変数で終了します。"
+
+#: ../../docstring nnabla.Variable.backward:5 of
+msgid ""
+"The gradient signal value(s) of this variable. The default value 1 is "
+"used in an usual neural network training. This option is useful if you "
+"have a gradient computation module outside NNabla, and want to use that "
+"result as a gradient signal. Note that this doesn't modifies the grad "
+"values of this variable, instead assign received values to its gradient "
+"temporarily. Also, if the :class:`~nnabla.Variable` you want to execute "
+"`nnabla._variable.Variable.backward` is an unlinked variable from "
+"another, and the corresponding :class:`~nnabla.Variable` holds the pre-"
+"computed gradient values, **You need to set grad=None**, otherwise, for "
+"that backward pass (propagated from the unlinked "
+":class:`~nnabla.Variable`), pre-computed gradient values are **ignored**."
+msgstr ""
+"この変数の勾配の値。通常のニューラルネットワークの学習では、デフォルト値に 1 を用います。勾配計算を NNabla "
+"の外部で行い、勾配としてその結果を使いたい場合に、このオプションが役に立ちます。このオプションは、この変数の勾配値を変更するのではなく、受け取った値を一時的にその勾配として割り当てることに注意してください。また、"
+" `nnabla._variable.Variable.backward` を実行したい :class:`~nnabla.Variable` "
+"が他の変数との接続が切れている変数であり、対応する :class:`~nnabla.Variable` が事前計算された勾配値を保持する場合は、 "
+"**grad=None を指定する必要があります。** この指定が行われない場合、そのバックワードパス ( 結合されていない "
+":class:`~nnabla.Variable` からの伝播 ) では、事前計算された勾配値は **無視されます** 。"
+
+#: ../../docstring nnabla.Variable.backward:17 of
+msgid ""
+"Clears the no longer referenced variables during backpropagation to save "
+"memory."
+msgstr "メモリを節約するため、バックプロパゲーション中に参照されなくなった Variable の保持する値を消去します。"
+
+#: ../../docstring nnabla.Variable.backward:20 of
+msgid ""
+"The callback functions invoked when 1) backward computation of each "
+"function is finished and 2) all backward computation is finished."
+msgstr "1\\) 各関数の方向のバックワード計算が終了したときと、 2\\) すべてのバックワード計算が終了したときに、コールバック関数を呼び出します。"
+
+#: ../../docstring nnabla.Variable.backward:24 nnabla.Variable.forward:18 of
+msgid ""
+"This callable object is called immediately before each function is "
+"executed. It must take :obj:`~nnabla.function.Function` as an input. The "
+"default is None."
+msgstr ""
+"各関数の実行直前に、この呼び出し可能なオブジェクトを呼び出します。引数として :obj:`~nnabla.function.Function` "
+"を取る必要があります。デフォルトは None です。"
+
+#: ../../docstring nnabla.Variable.backward:28 nnabla.Variable.forward:22 of
+msgid ""
+"This callable object is called immediately after each function is "
+"executed. It must take :obj:`~nnabla.function.Function` as an input. The "
+"default is None."
+msgstr ""
+"各関数の実行直後に、この呼び出し可能なオブジェクトを呼び出します。引数として :obj:`~nnabla.function.Function` "
+"を取る必要があります。デフォルトは None です。"
+
+#: ../../docstring nnabla.Variable.backward:34
+#: nnabla.Variable.get_unlinked_variable:22 nnabla.Variable.rewire_on:9
+#: nnabla.Variable.size_from_axis:4 nnabla.Variable.visit:10
+#: nnabla.Variable.visit_check:17 of
+msgid "サンプル"
+msgstr "例"
+
+#: ../../docstring nnabla.Variable.backward:35 of
+msgid "We first explain simple backward usage."
+msgstr "はじめに、簡単な backward の使用法について説明します。"
+
+#: ../../docstring nnabla.Variable.backward:37 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import numpy as np\n"
+"import nnabla.initializer as I\n"
+"\n"
+"rng = np.random.seed(217)\n"
+"initializer = I.UniformInitializer((-0.1, 0.1), rng=rng)\n"
+"\n"
+"x = nn.Variable((8, 3, 32, 32))\n"
+"x.d = np.random.random(x.shape)  # random input, just for example.\n"
+"\n"
+"y0 = PF.convolution(x, outmaps=64, kernel=(3, 3), pad=(1, 1), stride=(2, "
+"2), w_init=initializer, name=\"conv1\", with_bias=False)\n"
+"y1 = F.relu(y0)\n"
+"y2 = PF.convolution(y1, outmaps=128, kernel=(3, 3), pad=(1, 1), "
+"stride=(2, 2), w_init=initializer, name=\"conv2\", with_bias=False)\n"
+"y3 = F.relu(y2)\n"
+"y4 = F.average_pooling(y3, kernel=y3.shape[2:])\n"
+"y5 = PF.affine(y4, 1, w_init=initializer)\n"
+"loss = F.mean(F.abs(y5 - 1.))\n"
+"loss.forward()  # Execute forward\n"
+"\n"
+"# We can check the current gradient of parameter.\n"
+"print(nn.get_parameters()[\"conv1/conv/W\"].g)"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:63 nnabla.Variable.backward:80
+#: nnabla.Variable.backward:141 nnabla.Variable.backward:160
+#: nnabla.Variable.visit:34 nnabla.Variable.visit_check:49
+#: nnabla.Variable.visit_check:64 of
+msgid "Output :"
+msgstr "出力 :"
+
+#: ../../docstring nnabla.Variable.backward:65 nnabla.Variable.backward:143 of
+msgid ""
+"[[[[0. 0. 0.]\n"
+"   [0. 0. 0.]\n"
+"   [0. 0. 0.]]\n"
+"      ..."
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:72 of
+msgid ""
+"Initially all the gradient values should be zero. Then let's see what "
+"happens after calling backward."
+msgstr "最初に、すべての勾配をゼロにする必要があります。次に、 backward を呼び出すとどうなるかを見てみましょう。"
+
+#: ../../docstring nnabla.Variable.backward:75 of
+msgid ""
+"loss.backward()\n"
+"print(nn.get_parameters()[\"conv1/conv/W\"].g)"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:82 nnabla.Variable.backward:189 of
+msgid ""
+"[[[[ 0.00539637  0.00770839  0.0090611 ]\n"
+"   [ 0.0078223   0.00978992  0.00720569]\n"
+"   [ 0.00879023  0.00578172  0.00790895]]\n"
+"                     ..."
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:89 of
+msgid ""
+"Now we know the gradient values are computed and registered by calling "
+"`backward`. Note that calling `backward` successively **accumulates** the"
+" result. It means if we execute `backward` again, we get the doubled "
+"result."
+msgstr ""
+"ここで、 `backward` を呼び出すことによって、勾配が計算され、 g に値が登録されることがわかります。 `backward` "
+"を連続的に呼び出すことで結果が **加算** されていくことに注意してください。つまり、 backward を再度実行すると、結果は 2 "
+"倍になります。"
+
+#: ../../docstring nnabla.Variable.backward:93 of
+msgid ""
+"loss.backward()  # execute again.\n"
+"print(nn.get_parameters()[\"conv1/conv/W\"].g)"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:98 of
+msgid "We can see it's accumulated."
+msgstr "以下で、累積されていることがわかります。"
+
+#: ../../docstring nnabla.Variable.backward:100 of
+msgid ""
+"[[[[ 0.01079273  0.01541678  0.0181222 ]\n"
+"   [ 0.01564459  0.01957984  0.01441139]\n"
+"   [ 0.01758046  0.01156345  0.0158179 ]]\n"
+"                     ..."
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:107 of
+msgid ""
+"Next is an advanced usage with an unlinked variable (please refer to "
+"`get_unlinked_variable`). We use the same network, but it is separated by"
+" the unlinked variable."
+msgstr ""
+"次は、接続されていない Variable を用いた高度な使用法です ( `get_unlinked_variable` を参照してください ) "
+"。ここでは同様のネットワークを使用しますが、結合していない Variable により分離されたネットワークとなります。"
+
+#: ../../docstring nnabla.Variable.backward:110 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"import numpy as np\n"
+"import nnabla.initializer as I\n"
+"\n"
+"rng = np.random.seed(217)  # use the same random seed.\n"
+"initializer = I.UniformInitializer((-0.1, 0.1), rng=rng)\n"
+"\n"
+"x = nn.Variable((8, 3, 32, 32))\n"
+"x.d = np.random.random(x.shape)  # random input, just for example.\n"
+"\n"
+"y0 = PF.convolution(x, outmaps=64, kernel=(3, 3), pad=(1, 1), stride=(2, "
+"2), w_init=initializer, name=\"conv1\", with_bias=False)\n"
+"y1 = F.relu(y0)\n"
+"y2 = PF.convolution(y1, outmaps=128, kernel=(3, 3), pad=(1, 1), "
+"stride=(2, 2), w_init=initializer, name=\"conv2\", with_bias=False)\n"
+"y3 = F.relu(y2)\n"
+"y3_unlinked = y3.get_unlinked_variable()  # the computation graph is cut "
+"apart here.\n"
+"y4 = F.average_pooling(y3_unlinked, kernel=y3_unlinked.shape[2:])\n"
+"y5 = PF.affine(y4, 1, w_init=initializer)\n"
+"loss = F.mean(F.abs(y5 - 1.))\n"
+"\n"
+"# Execute forward.\n"
+"y3.forward()  # you need to execute forward at the unlinked variable "
+"first.\n"
+"loss.forward()  # Then execute forward at the leaf variable.\n"
+"\n"
+"# Execute backward.\n"
+"loss.backward()  # works, but backpropagation stops at y3_unlinked.\n"
+"print(nn.get_parameters()[\"conv1/conv/W\"].g)  # no gradient registered "
+"yet."
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:150 of
+msgid ""
+"We can confirm that backpropagation stops at `y3_unlinked`. Then let's "
+"see how to execute backpropagation to the root variable (`x`). Since it's"
+" a little bit complicated, let us give you an example of common pitfall "
+"first. **Note that this is an incorrect way and intended just to show the"
+" backward's behavior.**"
+msgstr ""
+"バックプロパゲーション が `y3_unlinked` で停止することが確認できます。次に、ルート変数 (`x`) "
+"までのバックプロパゲーションを実行する方法を見てみましょう。これは少々複雑なため、最初によく陥りやすい誤りの一例を示します。 "
+"**これはあくまで間違った方法での backward の動作を示した例であることにご注意ください。**"
+
+#: ../../docstring nnabla.Variable.backward:155 of
+msgid ""
+"y3.backward()  # this works, but computed gradient values are not "
+"correct.\n"
+"print(nn.get_parameters()[\"conv1/conv/W\"].g)"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:162 of
+msgid ""
+"[[[[ 17.795254    23.960905    25.51168   ]\n"
+"   [ 20.661646    28.484127    19.406212  ]\n"
+"   [ 26.91042     22.239697    23.395714  ]]\n"
+"                     ..."
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:169 of
+msgid ""
+"**Note that this is a wrong result.** The gradient held by `y3_unlinked` "
+"has been totally ignored. As described above, just calling `backward`, "
+"the gradient (of the leaf variable where you call `backward`) is "
+"considered to be 1."
+msgstr ""
+"**これは間違った結果であることに注意してください。** `y3_unlinked` "
+"が保持するしていた勾配は完全に無視されています。上記のとおり、 `backward` を呼び出すだけで ( `backward` "
+"の呼び出し元のリーフ変数の) 勾配が 1 と見なされます。"
+
+#: ../../docstring nnabla.Variable.backward:172 of
+msgid ""
+"To execute backpropagation over 2 separate graphs **correctly**,  We need"
+" to specify `grad=None` as shown below, then present gradient held by "
+"that variable is used for computation. (`y3.backward(grad=y3_unlinked.g)`"
+" does the same thing.)"
+msgstr ""
+"2 つの個別のグラフに対して **正しく** バックプロパゲーションを実行するためには、以下のように `grad=None` "
+"を指定する必要があります。次に、変数が保持する現在の勾配を使って計算を行います。( "
+"`y3.backward(grad=y3_unlinked.g)` は同じ動作となります。)"
+
+#: ../../docstring nnabla.Variable.backward:175 of
+msgid ""
+"#reset all the gradient values.\n"
+"for v in nn.get_parameters().values():\n"
+"    v.g = 0.\n"
+"for v in [y0, y1, y2, y3, y4, y5]:\n"
+"    v.g = 0.  # need to reset all the gradient values.\n"
+"\n"
+"loss.backward()  # backpropagation starts from the leaf variable again.\n"
+"y3.backward(grad=None)  # By this, it can take over the gradient held by "
+"y3_unlinked.\n"
+"print(nn.get_parameters()[\"conv1/conv/W\"].g)  # correct result."
+msgstr ""
+
+#: ../../docstring nnabla.Variable.backward:187 of
+msgid "This time you should have the same result."
+msgstr "今回は同じ結果となります。"
+
+#: ../../docstring nnabla.Variable.clear_all_graph_links:1 of
+msgid "Clear all intermediate functions and variables."
+msgstr "すべての中間関数や Variable を消去します。"
+
+#: ../../docstring nnabla.Variable.clear_all_graph_links:3 of
+msgid ""
+"This method clear all intermediate functions and variables up to this "
+"variable in forward pass and is useful for the truncated backpropagation "
+"through time (truncated BPTT) in dynamic graph."
+msgstr ""
+"このメソッドは、順方向計算におけるこの Variable までのすべての中間関数と Variable "
+"を消去するため、動的グラフにおいて時間によるバックプロパゲーションの打ち切り ( truncated BPTT ) に役立ちます。"
+
+#: ../../docstring nnabla.Variable.d:1 of
+msgid ""
+"Returns the values held by this variable, as a :class:`numpy.ndarray`. "
+"Note that the values are referenced (not copied). Therefore, the "
+"modification of the returned ndarray will affect the data of the NNabla "
+"array. This method can be called as a setter to set the value held by "
+"this variable. Refer to the documentation of the setter "
+"`nnabla._nd_array.NdArray.data` for detailed behaviors of the setter."
+msgstr ""
+":class:`numpy.ndarray` として、この変数で保持された値を返します。変数は ( コピーではなく ) "
+"参照されるということである点に注意してください。従って、返された ndarray の変更は NNabla "
+"配列のデータに影響を及ぼします。このメソッドはセッターと呼ばれ、この変数が保持する値をセットします。 セッターの詳細な動作については、セッター "
+"`nnabla._nd_array.NdArray.data` のドキュメントをご参照してください。"
+
+#: ../../docstring nnabla.Variable.d nnabla.Variable.data
+#: nnabla.Variable.function_references nnabla.Variable.g nnabla.Variable.grad
+#: nnabla.Variable.need_grad nnabla.Variable.parent nnabla.Variable.reset_shape
+#: nnabla.Variable.reshape nnabla.Variable.size_from_axis of
+msgid "戻り値"
+msgstr "戻り値"
+
+#: ../../docstring nnabla.Variable.d:12 nnabla.Variable.g:12 of
+msgid ":obj:`numpy.ndarray`"
+msgstr ":obj:`numpy.ndarray`"
+
+#: ../../docstring nnabla.Variable.data:1 of
+msgid ""
+"Returns the data held by this variable, as a "
+":class:`~nnabla._nd_array.NdArray`. This can also be used as a setter."
+msgstr ""
+":class:`~nnabla._nd_array.NdArray` として、この Variable "
+"に保持されているデータの値を返します。セッターとしても使うことができます。"
+
+#: ../../docstring nnabla.Variable.data:4 nnabla.Variable.grad:4 of
+msgid "NdArray object. Size must be the same as this Variable."
+msgstr "NdArray オブジェクト。 Variable と同じである必要があります。"
+
+#: ../../docstring nnabla.Variable.data:8 nnabla.Variable.grad:8 of
+msgid ":class:`~nnabla._nd_array.NdArray`"
+msgstr ":class:`~nnabla._nd_array.NdArray`"
+
+#: ../../docstring nnabla.Variable.forward:1 of
+msgid ""
+"Performs a forward propagation from the root node to this variable. The "
+"forward propagation is performed on a subset of variables determined by "
+"the dependency of this variable. The subset is recursively constructed by"
+" tracking variables that the variables in the subset depend on, starting "
+"from this variable, until it reaches the root variable(s) in the function"
+" graph."
+msgstr ""
+"ルートノードからこの Variable へのフォワードプロパゲーションを行います。フォワードプロパゲーションは、この Variable "
+"の接続関係によって決まる Variable のサブセットで実行されます。関数グラフにおいてこの Variable からルートの Variable "
+"に到達するまで、サブセットの Variable が接続されている Variable を辿ることでこのセブセットを再帰的に構築します。 "
+
+#: ../../docstring nnabla.Variable.forward:8 of
+msgid ""
+"Clear the no longer referenced variables during forward propagation to "
+"save memory. This is usually set as True in an inference or a validation "
+"phase. Default is False."
+msgstr ""
+"メモリを節約するため、フォワードプロパゲーション中に参照されなくなった変数の data を解放します。通常、推論または検証フェーズで True "
+"にセットします。デフォルトは False です。"
+
+#: ../../docstring nnabla.Variable.forward:13 of
+msgid ""
+"Clear the unreferenced variables with need_grad=False during forward "
+"propagation. True is usually used when calling this during training. This"
+" is ignored when clear_buffer=True."
+msgstr ""
+"フォワードプロパゲーション中に need_grad=False で参照されない Variable の data "
+"を解放します。学習中にこの関数を呼ぶ場合、通常 True を用います。clear_buffer=True の場合は無視されます。"
+
+#: ../../docstring nnabla.Variable.from_numpy_array:1 of
+msgid "Create a Variable object from Numpy array(s)."
+msgstr "Numpy Array ( ndarray ) から Variable オブジェクトを作成します。"
+
+#: ../../docstring nnabla.Variable.from_numpy_array:3 of
+msgid ""
+"The ``data`` is initialized with the given Numpy array, as well as "
+"``grad`` if given."
+msgstr "``data`` は、指定された Numpy 配列で初期化されます。また、 ``grad`` も指定された場合は同様です。"
+
+#: ../../docstring nnabla.Variable.from_numpy_array:6 of
+msgid "The shape is also determined by the given array."
+msgstr "Shape も指定された ndarrayによって決まります。"
+
+#: ../../docstring nnabla.Variable.from_numpy_array:8 of
+msgid "Values copied to the ``data`` of the created Variable."
+msgstr "作成された Variable の ``data`` にコピーされる値。"
+
+#: ../../docstring nnabla.Variable.from_numpy_array:11 of
+msgid "Values copied to the ``grad`` of the created Variable."
+msgstr "作成された Variable の ``grad`` へコピーされる値。"
+
+#: ../../docstring nnabla.Variable.from_numpy_array:17 of
+msgid "Returns: ~nnabla.Variable"
+msgstr "戻り値 : :class:`~nnabla.Variable`"
+
+#: ../../docstring nnabla.Variable.function_references:1 of
+msgid ""
+"Returns a list of functions which take this variable as an input. This "
+"method can be called only as a getter."
+msgstr "入力としてこの Variable を取る関数のリストを返します。このメソッドはゲッターとしてのみ呼び出すことができます。"
+
+#: ../../docstring nnabla.Variable.function_references:4 of
+msgid "list of `nnabla.function.Function`"
+msgstr "`nnabla.function.Function` のリスト"
+
+#: ../../docstring nnabla.Variable.g:1 of
+msgid ""
+"Returns the gradient values held by this variable, as a "
+":class:`numpy.ndarray`. Note that the values are referenced (not copied)."
+" Therefore, the modification of the returned ndarray will affect the data"
+" of the NNabla array. This method can be called as a setter to set the "
+"gradient held by this variable. Refer to the documentation of the setter "
+"`nnabla._nd_array.NdArray.data` for detailed behaviors of the setter."
+msgstr ""
+":class:`numpy.ndarray` として、この変数が保持する勾配の値を返します。値は ( コピーではなく ) "
+"参照であるということに注意してください。従って、返された ndarray の変更は NNabla 配列の grad "
+"に影響を及ぼします。このメソッドは、セッターと呼ばれ、この Variable が保持する勾配を Variable "
+"が保持する勾配をセット変更します。セッターの詳細な動作については、セッター `nnabla._nd_array.NdArray.data` "
+"のドキュメントを参照してください。"
+
+#: ../../docstring nnabla.Variable.get_unlinked_variable:1 of
+msgid ""
+"Gets an unlinked (forgetting parent) variable that shares a Variable "
+"buffer instance."
+msgstr "Variable のバッファーのインスタンスを共有する、接続の切れた ( 親との接続が切れた ) Variable を取得します。"
+
+#: ../../docstring nnabla.Variable.get_unlinked_variable:4 of
+msgid ""
+"By default, the unlinked variable will have the same need_grad flag with "
+"this variable instance. By specifying a boolean value, the new need_grad "
+"flags will be set to the unlinked variable. It is recommended to "
+"explicitly specify this option to avoid an unintended behavior."
+msgstr ""
+"デフォルトでは、接続を解除された Variable はこの Variable のインスタンスと同じ need_grad フラグを持ちます。 "
+"bool 値を指定することで、連結を解除された変数に新しい need_grad "
+"フラグをセットすることができます。意図しない動作を避けるために、このオプションは明示的に指定することを推奨します。"
+
+#: ../../docstring nnabla.Variable.get_unlinked_variable:11 of
+msgid "Returns: :class:`~nnabla.Variable`"
+msgstr "戻り値 : :class:`~nnabla.Variable`"
+
+#: ../../docstring nnabla.Variable.get_unlinked_variable:16 of
+msgid ""
+"The unlinked Variable behaves equivalent to the original variable in a "
+"comparison operator and hash function regardless whether or not the "
+"`need_grad` attribute is changed. See a note in the `Variable` class "
+"documentation. Also, for backward execution with unlinked variable(s), "
+"please refer to `backward` and its example."
+msgstr ""
+"接続を解除された Variable は、 `need_grad` が変更されるかどうかにかかわらず、比較演算子とハッシュ関数において、元の "
+"Variable と同等に動作します。 `Variable` クラスのドキュメントの注意事項を参照してください。また、接続していない "
+"Variable を使った backward の実行については、 `backward` とその例を参照ください。"
+
+#: ../../docstring nnabla.Variable.get_unlinked_variable:23 of
+msgid ""
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.parametric_functions as PF\n"
+"\n"
+"x = nn.Variable.from_numpy_array(np.array([[1, 2], [3, 4]]))\n"
+"y = PF.affine(x, 4, name=\"y\")\n"
+"\n"
+"# Create a new variable of which graph connection is unlinked.\n"
+"# Recommend to specify need_grad option explicitly .\n"
+"z = y.get_unlinked_variable(need_grad=False)\n"
+"\n"
+"print(y.parent)\n"
+"# Affine\n"
+"print(z.parent)  # z is unlinked from the parent x but shares the buffers"
+" of y.\n"
+"# None"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.grad:1 of
+msgid ""
+"Returns the gradient held by this variable, as a "
+":class:`~nnabla._nd_array.NdArray`. This can also be used as a setter."
+msgstr ""
+":class:`~nnabla._nd_array.NdArray` として、この Variable "
+"が保持する勾配を返します。セッターとしても用いることができます。"
+
+#: ../../docstring nnabla.Variable.info:1 of
+msgid "object"
+msgstr "object"
+
+#: ../../docstring nnabla.Variable.info:3 of
+msgid "Information of the variable."
+msgstr "変数の情報。"
+
+#: ../../docstring nnabla.Variable.info of
+msgid "type"
+msgstr "type"
+
+#: ../../docstring nnabla.Variable.info:5 of
+msgid "info"
+msgstr "info"
+
+#: ../../docstring nnabla.Variable.ndim:1 of
+msgid "Gets the number of dimensions of this variable."
+msgstr "この Variable の次元数を取得します。"
+
+#: ../../docstring nnabla.Variable.ndim:3 of
+msgid "Returns: int"
+msgstr "戻り値 : int"
+
+#: ../../docstring nnabla.Variable.need_grad:1 of
+msgid ""
+"Gets or sets a boolean indicating whether backpropagation is performed at"
+" this variable."
+msgstr "この Variable でバックプロパゲーションが行われるかどうかを示す bool 値を取得、または指定します。"
+
+#: ../../docstring nnabla.Variable.need_grad:3 of
+msgid "Whether backpropagation is performed at this variable."
+msgstr "この変数でバックプロパゲーションが行われるかどうか。"
+
+#: ../../docstring nnabla.Variable.need_grad:6 of
+msgid "Whether this variable requires gradient or not."
+msgstr "この変数が勾配を要求するかどうか。"
+
+#: ../../docstring nnabla.Variable.need_grad of
+msgid "戻り値の型"
+msgstr "戻り値の型"
+
+#: ../../docstring nnabla.Variable.parent:1 of
+msgid ""
+"Returns the parent function of this variable. This method can also be "
+"called as a setter."
+msgstr "この Variable の親関数を返します。このメソッドはセッターと呼ばれることもあります。"
+
+#: ../../docstring nnabla.Variable.parent:7 of
+msgid ":obj:`nnabla.function.Function`"
+msgstr ":obj:`nnabla.function.Function`"
+
+#: ../../docstring nnabla.Variable.persistent:1 of
+msgid ""
+"Returns the persistent flag of this variable. If True, the variable is "
+"not cleared even if clear options in "
+":meth:`nnabla._variable.Variable.forward` and "
+":meth:`nnabla._variable.Variable.backward` are enabled. This is useful "
+"when you debug the variable values, or log them. This method can also be "
+"called as a setter."
+msgstr ""
+"この Variable の永続性を示すフラグを返します。 True の場合、 "
+":meth:`nnabla._variable.Variable.forward` と "
+":meth:`nnabla._variable.Variable.backward` で消去オプションが有効であっても、 Variable の "
+"data 、 grad は解放されません。これは、 Variable "
+"の値をデバッグしたり、ログを取る場合に役立ちます。このメソッドはセッターとして呼ぶこともできます。"
+
+#: ../../docstring nnabla.Variable.persistent:11 nnabla.Variable.visit_check:14
+#: of
+msgid "Returns: bool"
+msgstr "戻り値 : bool"
+
+#: ../../docstring nnabla.Variable.reset_shape:1 of
+msgid "Resizes the shape of the variable to a specified shape."
+msgstr "Variable の Shape を指定された Shape へ変更します。"
+
+#: ../../docstring nnabla.Variable.reset_shape:3 nnabla.Variable.reshape:3 of
+msgid "Target shape."
+msgstr "ターゲットの Shape 。"
+
+#: ../../docstring nnabla.Variable.reset_shape:5 of
+msgid "Flag to force reshape."
+msgstr "強制的に Shape を変更するためのフラグ。"
+
+#: ../../docstring nnabla.Variable.reset_shape:8 of
+msgid ""
+"This method destructively changes the shape of the target variable. For "
+"safety, :func:`~nnabla.functions.reshape` should be used instead."
+msgstr ""
+"このメソッドはターゲットの Shape の形状を破壊的に変更します。安全のためには、代わりに "
+":func:`~nnabla.functions.reshape` を使うべきです。"
+
+#: ../../docstring nnabla.Variable.reset_shape:10 of
+msgid "None"
+msgstr "None"
+
+#: ../../docstring nnabla.Variable.reshape:1 of
+msgid ""
+"Returns a new variable, where this variable is reshaped to a specified "
+"shape."
+msgstr "指定された Shape に変更された、新しい Variable を返します。"
+
+#: ../../docstring nnabla.Variable.reshape:5 of
+msgid ""
+"Unlink graph connection. Or, keep graph connection, i.e. the gradient "
+"will be backprop-ed to the original variable."
+msgstr ""
+"グラフ結合のリンクを解除するかどうかを指定します ( 指定のない場合、デフォルトではグラフ結合を維持します。つまり、勾配は元の Variable "
+"へバックプロパゲーションされます ) 。"
+
+#: ../../docstring nnabla.Variable.reshape:9 of
+msgid ":class:`~nnabla.Variable`"
+msgstr ":class:`~nnabla.Variable`"
+
+#: ../../docstring nnabla.Variable.rewire_on:1 of
+msgid "Rewire a successor graph of this variable on top of ``var``."
+msgstr "この Variable の後続のグラフを ``var`` の先頭に挿入し、グラフを再構築します。"
+
+#: ../../docstring nnabla.Variable.rewire_on:3 of
+msgid ""
+"The array elements and the parent function of ``var`` is copied to "
+"``self`` as references. Note that the parent function of ``var`` is "
+"removed."
+msgstr "配列の要素と ``var`` の親関数が参照として ``self`` にコピーされます。 ``var`` の親関数は削除されることにご注意ください。"
+
+#: ../../docstring nnabla.Variable.rewire_on:10 of
+msgid ""
+"# A. Create a graph A.\n"
+"xa = nn.Variable((2, 8), need_grad=True)\n"
+"ya = F.tanh(PF.affine(xa, 10, name='a'))\n"
+"\n"
+"# B. Create a graph B.\n"
+"xb = nn.Variable((2, 16), need_grad=True)\n"
+"yb = F.tanh(PF.affine(\n"
+"    F.tanh(PF.affine(xb, 8, name='b1')),\n"
+"    8, name='b2'))\n"
+"\n"
+"# C. Rewire the graph A on top of B such that\n"
+"#    `xb->B->(yb->)xa->A->ya`. Note `yb` is gone.\n"
+"xa.rewire_on(yb)\n"
+"\n"
+"# D. Execute the rewired graph.\n"
+"xb.d = 1\n"
+"ya.forward()\n"
+"ya.backward()"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.shape:1 of
+msgid "Gets the shape of the variable."
+msgstr "Variable の Shape を取得します。"
+
+#: ../../docstring nnabla.Variable.shape:4 of
+msgid "Returns: tuple of :obj:`int`"
+msgstr "戻り値 : :obj:`int` のタプル"
+
+#: ../../docstring nnabla.Variable.size:1 of
+msgid "Gets the size of the variable."
+msgstr "変数のサイズを取得します。"
+
+#: ../../docstring nnabla.Variable.size:3 of
+msgid "Returns: :obj:`int`"
+msgstr "戻り値 : :obj:`int`"
+
+#: ../../docstring nnabla.Variable.size_from_axis:1 of
+msgid "Gets the size followed by the provided axis."
+msgstr "指定された axis のサイズを取得します。"
+
+#: ../../docstring nnabla.Variable.size_from_axis:5 of
+msgid ""
+"a = nnabla.Variable([10,9])\n"
+"a.size_from_axis()\n"
+"# ==> 90\n"
+"a.size_from_axis(0)\n"
+"# ==> 90\n"
+"a.size_from_axis(1)\n"
+"# ==> 9\n"
+"a.size_from_axis(2)\n"
+"# ==> 1"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.size_from_axis:17 of
+msgid "-1 as default"
+msgstr "デフォルトは -1"
+
+#: ../../docstring nnabla.Variable.size_from_axis:20 of
+msgid ":obj:`int`"
+msgstr ":obj:`int`"
+
+#: ../../docstring nnabla.Variable.unlinked:1 of
+msgid "This function is `deprecated`, use get_unlinked_variable instead."
+msgstr "この関数の利用は `非推奨` です。代わりに get_unlinked_variable を使用してください。"
+
+#: ../../docstring nnabla.Variable.visit:1 nnabla.Variable.visit_check:1 of
+msgid "Visit functions recursively in forward order."
+msgstr "順方向で再帰的に関数にアクセスします。"
+
+#: ../../docstring nnabla.Variable.visit:3 nnabla.Variable.visit_check:9 of
+msgid ""
+"Function object which takes :obj:`nnabla._function.Function` object as an"
+" argument."
+msgstr "引数として :obj:`nnabla._function.Function` オブジェクトを取る Function オブジェクト。"
+
+#: ../../docstring nnabla.Variable.visit:7 of
+msgid "Returns: None"
+msgstr "戻り値 : None"
+
+#: ../../docstring nnabla.Variable.visit:11 of
+msgid ""
+"import nnabla as nn\n"
+"import nnabla.functions as F\n"
+"import nnabla.parametric_functions as PF\n"
+"\n"
+"# Define a simple network-graph\n"
+"def network_graph(x, maps=16, test=False):\n"
+"    h = x\n"
+"    h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), name=\"first-"
+"conv\", with_bias=False)\n"
+"    h = F.average_pooling(h, h.shape[2:])\n"
+"    pred = PF.affine(h, 10, name=\"pred\")\n"
+"    return pred\n"
+"\n"
+"# You can modify this PrintFunc to get the other information like "
+"inputs(nnabla_func.inputs), outputs and arguments(nnabla_func.info.args) "
+"of nnabla functions.\n"
+"class PrintFunc(object):\n"
+"    def __call__(self, nnabla_func):\n"
+"        print(nnabla_func.info.type_name)\n"
+"\n"
+"x = nn.Variable([1, 3, 16, 16])\n"
+"output = network_graph(x)\n"
+"output.visit(PrintFunc())"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.visit:36 of
+msgid ""
+"Convolution\n"
+"AveragePooling\n"
+"Affine"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.visit_check:5 of
+msgid ""
+"If any of evaluation of the function object returns True, the visit "
+"propagation will stop immediately, and will return True."
+msgstr "関数オブジェクトのいずれかが True を返した場合、順方向のプロパゲーションはすぐに停止し、 True を返します。"
+
+#: ../../docstring nnabla.Variable.visit_check:14 of
+msgid "Returns True if any of the function object call returns True."
+msgstr "いずれかの関数オブジェクトの呼び出しが True を返す場合、 True を返します。"
+
+#: ../../docstring nnabla.Variable.visit_check:18 of
+msgid ""
+"Define a simple network-graph where AveragePooling function can be added "
+"explicitly as below:"
+msgstr "以下のように、 AveragePooling 関数を明示的に加えることができる簡単なネットワークグラフを定義します。"
+
+#: ../../docstring nnabla.Variable.visit_check:20 of
+msgid ""
+"def network_graph(x, add_avg_pool=False, maps=16, test=False):\n"
+"    h = x\n"
+"    h = PF.convolution(h, maps, kernel=(3, 3), pad=(1, 1), name=\"first-"
+"conv\", with_bias=False)\n"
+"    if add_avg_pool :\n"
+"        h = F.average_pooling(h, h.shape[2:])\n"
+"    else :\n"
+"        h = F.relu(h)\n"
+"    pred = PF.affine(h, 10, name=\"pred\")\n"
+"    return pred\n"
+"\n"
+"# Define 'PrintFunc()' to check whether \"AveragePooling\" function "
+"exists in the network-graph\n"
+"class PrintFunc(object):\n"
+"    def __call__(self, nnabla_func):\n"
+"        if nnabla_func.info.type_name ==\"AveragePooling\" :\n"
+"            print(\"{} exists in the "
+"graph\".format(nnabla_func.info.type_name))\n"
+"            return True\n"
+"        else :\n"
+"            return False"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.visit_check:41 of
+msgid ""
+"Create a network-graph which has AveragePooling function and call "
+"visit_check() method :"
+msgstr "AveragePooling 関数を持ち、 visit_check() メソッドを呼び出すネットワークグラフを作成します。"
+
+#: ../../docstring nnabla.Variable.visit_check:43 of
+msgid ""
+"x = nn.Variable([1, 3, 16, 16])\n"
+"output = network_graph(x, add_avg_pool=True)  #Adding AveragePooling "
+"function to the graph\n"
+"print(\"The return value of visit_check() method is : "
+"{}\".format(output.visit_check(PrintFunc())))"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.visit_check:51 of
+msgid ""
+"AveragePooling exists in the graph\n"
+"The return value of visit_check() method is : True"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.visit_check:56 of
+msgid ""
+"Create a network-graph which doesn't have AveragePooling function and "
+"call visit_check() method :"
+msgstr "AveragePooling 関数を持たずに、 visit_check() メソッドを呼び出すネットワークグラフを作成します。"
+
+#: ../../docstring nnabla.Variable.visit_check:58 of
+msgid ""
+"nn.clear_parameters()                         # call this in case you "
+"want to run the following code again\n"
+"output = network_graph(x, add_avg_pool=False) # Exclusion of "
+"AveragePooling function in the graph\n"
+"print(\"The return value of visit_check() method is : "
+"{}\".format(output.visit_check(PrintFunc())))"
+msgstr ""
+
+#: ../../docstring nnabla.Variable.visit_check:66 of
+msgid "The return value of visit_check() method is : False"
+msgstr ""
+

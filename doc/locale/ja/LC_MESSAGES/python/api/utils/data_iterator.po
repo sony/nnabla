@@ -1,0 +1,571 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-06-09 10:19+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/utils/data_iterator.rst:4
+msgid "Data Iterators"
+msgstr "データのイテレーター"
+
+#: ../../python/api/utils/data_iterator.rst:6
+msgid "NNabla provides various utilities for using data for training."
+msgstr "NNabla では学習のためのデータ使用に関する様々なユーティリティを提供しています。"
+
+#: ../../python/api/utils/data_iterator.rst:9
+msgid "DataSource"
+msgstr "DataSource"
+
+#: nnabla.utils.data_iterator.DataIterator:1
+#: nnabla.utils.data_source.DataSource:1 of
+msgid "ベースクラス: :class:`object`"
+msgstr ""
+
+#: nnabla.utils.data_source.DataSource:1 of
+msgid ""
+"This class contains various properties and methods for the data source, "
+"which are utilized by py:class:`DataIterator`."
+msgstr "本クラスはデータソース用の様々なプロパティとメソッドを含んでおり、 :py:class:`DataIterator` で利用されます。"
+
+#: nnabla.utils.data_iterator.DataIterator
+#: nnabla.utils.data_iterator.DataIterator.register_epoch_begin_callback
+#: nnabla.utils.data_iterator.DataIterator.register_epoch_end_callback
+#: nnabla.utils.data_iterator.DataIterator.slice
+#: nnabla.utils.data_iterator.data_iterator
+#: nnabla.utils.data_iterator.data_iterator_cache
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset
+#: nnabla.utils.data_iterator.data_iterator_simple
+#: nnabla.utils.data_source.DataSource
+#: nnabla.utils.data_source.DataSourceWithFileCache
+#: nnabla.utils.data_source.DataSourceWithMemoryCache of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.utils.data_source.DataSource:3
+#: nnabla.utils.data_source.DataSourceWithFileCache:15
+#: nnabla.utils.data_source.DataSourceWithMemoryCache:5 of
+msgid "Indicates whether the dataset is shuffled or not."
+msgstr "データセットがシャッフルされるか否かを示します。"
+
+#: nnabla.utils.data_iterator.DataIterator:7
+#: nnabla.utils.data_iterator.data_iterator:18
+#: nnabla.utils.data_iterator.data_iterator_cache:18
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:16
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:18
+#: nnabla.utils.data_iterator.data_iterator_simple:17
+#: nnabla.utils.data_source.DataSource:5
+#: nnabla.utils.data_source.DataSourceWithFileCache:17
+#: nnabla.utils.data_source.DataSourceWithMemoryCache:7 of
+msgid "Numpy random number generator."
+msgstr "Numpy 乱数ジェネレーター。"
+
+#: nnabla.utils.data_iterator.DataIterator.position:1
+#: nnabla.utils.data_source.DataSource.position:1
+#: nnabla.utils.data_source.DataSourceWithFileCache.position:1
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.position:1 of
+msgid "Data position in current epoch."
+msgstr "現在のエポックでのデータの位置。"
+
+#: nnabla.utils.data_iterator.DataIterator.batch_size
+#: nnabla.utils.data_iterator.DataIterator.epoch
+#: nnabla.utils.data_iterator.DataIterator.next
+#: nnabla.utils.data_iterator.DataIterator.position
+#: nnabla.utils.data_iterator.DataIterator.size
+#: nnabla.utils.data_iterator.DataIterator.variables
+#: nnabla.utils.data_iterator.data_iterator
+#: nnabla.utils.data_iterator.data_iterator_cache
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset
+#: nnabla.utils.data_iterator.data_iterator_simple
+#: nnabla.utils.data_source.DataSource.position
+#: nnabla.utils.data_source.DataSource.shuffle
+#: nnabla.utils.data_source.DataSource.variables
+#: nnabla.utils.data_source.DataSourceWithFileCache.position
+#: nnabla.utils.data_source.DataSourceWithFileCache.shuffle
+#: nnabla.utils.data_source.DataSourceWithFileCache.variables
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.position
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.shuffle
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.variables of
+msgid "戻り値"
+msgstr ""
+
+#: nnabla.utils.data_iterator.DataIterator.position:3
+#: nnabla.utils.data_source.DataSource.position:3
+#: nnabla.utils.data_source.DataSourceWithFileCache.position:3
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.position:3 of
+msgid "Data position"
+msgstr "データの位置"
+
+#: nnabla.utils.data_iterator.DataIterator.batch_size
+#: nnabla.utils.data_iterator.DataIterator.epoch
+#: nnabla.utils.data_iterator.DataIterator.next
+#: nnabla.utils.data_iterator.DataIterator.position
+#: nnabla.utils.data_iterator.DataIterator.size
+#: nnabla.utils.data_iterator.DataIterator.variables
+#: nnabla.utils.data_iterator.data_iterator
+#: nnabla.utils.data_iterator.data_iterator_cache
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset
+#: nnabla.utils.data_iterator.data_iterator_simple
+#: nnabla.utils.data_source.DataSource.position
+#: nnabla.utils.data_source.DataSource.shuffle
+#: nnabla.utils.data_source.DataSource.variables
+#: nnabla.utils.data_source.DataSourceWithFileCache.position
+#: nnabla.utils.data_source.DataSourceWithFileCache.shuffle
+#: nnabla.utils.data_source.DataSourceWithFileCache.variables
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.position
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.shuffle
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.variables of
+msgid "戻り値の型"
+msgstr ""
+
+#: nnabla.utils.data_source.DataSource.shuffle:1
+#: nnabla.utils.data_source.DataSourceWithFileCache.shuffle:1
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.shuffle:1 of
+msgid "Whether dataset is shuffled or not."
+msgstr "データセットがシャッフルされたか否か。"
+
+#: nnabla.utils.data_source.DataSource.shuffle:3
+#: nnabla.utils.data_source.DataSourceWithFileCache.shuffle:3
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.shuffle:3 of
+msgid "whether dataset is shuffled."
+msgstr "データセットがシャッフルされた否か。"
+
+#: nnabla.utils.data_iterator.DataIterator.variables:1
+#: nnabla.utils.data_source.DataSource.variables:1
+#: nnabla.utils.data_source.DataSourceWithFileCache.variables:1
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.variables:1 of
+msgid "Variable names of the data."
+msgstr "データの変数名。"
+
+#: nnabla.utils.data_iterator.DataIterator.variables:3
+#: nnabla.utils.data_source.DataSource.variables:3
+#: nnabla.utils.data_source.DataSourceWithFileCache.variables:3
+#: nnabla.utils.data_source.DataSourceWithMemoryCache.variables:3 of
+msgid "tuple of Variable names"
+msgstr "変数名のタプル"
+
+#: nnabla.utils.data_source.DataSourceWithFileCache:1
+#: nnabla.utils.data_source.DataSourceWithMemoryCache:1 of
+msgid "ベースクラス: :class:`nnabla.utils.data_source.DataSource`"
+msgstr ""
+
+#: nnabla.utils.data_source.DataSourceWithFileCache:1 of
+msgid ""
+"This class contains properties and methods for data source that can be "
+"read from cache files, which are utilized by data iterator."
+msgstr "本クラスはキャッシュファイルから読み取ることができるデータソース用の様々なプロパティとメソッドを含んでおり、データのイテレーターで利用されます。"
+
+#: nnabla.utils.data_iterator.data_iterator:14
+#: nnabla.utils.data_source.DataSourceWithFileCache:3
+#: nnabla.utils.data_source.DataSourceWithMemoryCache:3 of
+msgid "Instance of DataSource class which provides data."
+msgstr "データを提供する DataSource クラスのインスタンスです。"
+
+#: nnabla.utils.data_iterator.data_iterator:31
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:29
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:34
+#: nnabla.utils.data_iterator.data_iterator_simple:30
+#: nnabla.utils.data_source.DataSourceWithFileCache:5 of
+msgid ""
+"Location of file_cache. If this value is None, "
+":py:class:`.data_source.DataSourceWithFileCache` creates file caches "
+"implicitly on temporary directory and erases them all when data_iterator "
+"is finished. Otherwise, :py:class:`.data_source.DataSourceWithFileCache` "
+"keeps created cache. Default is None."
+msgstr ""
+"file_cache の場所。この値が None の場合、 "
+":py:class:`.data_source.DataSourceWithFileCache` "
+"がファイルキャッシュを暗黙的に一時ディレクトリに作成し、data_iterator 終了時にすべて消去します。 そうでない場合は、 "
+":py:class:`.data_source.DataSourceWithFileCache` "
+"がキャッシュファイルを生成し続けます。デフォルトは None です。"
+
+#: nnabla.utils.data_source.DataSourceWithFileCache:12 of
+msgid "Beginning of the filenames of cache files. Default is 'cache'."
+msgstr "キャッシュファイルのファイル名の先頭文字列です。デフォルトは 'cache' です。"
+
+#: nnabla.utils.data_source.DataSourceWithMemoryCache:1 of
+msgid ""
+"This class contains properties and methods for data source that can be "
+"read from memory cache, which is utilized by data iterator."
+msgstr "本クラスはメモリキャッシュから読み取ることができるデータソース用の様々なプロパティとメソッドを含んでおり、データのイテレーターで利用されます。"
+
+#: ../../python/api/utils/data_iterator.rst:27
+msgid "DataIterator"
+msgstr "DataIterator"
+
+#: nnabla.utils.data_iterator.DataIterator:1 of
+msgid "Collect data from `data_source` and yields bunch of data."
+msgstr "`data_source` からデータを収集し、大量のデータを生成します。"
+
+#: nnabla.utils.data_iterator.DataIterator:3 of
+msgid "Instance of DataSource class witch provides data for this class."
+msgstr "本クラスにデータを提供する  DataSource クラスのインスタンスです。"
+
+#: nnabla.utils.data_iterator.DataIterator:5
+#: nnabla.utils.data_iterator.data_iterator_cache:13
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:11
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:13
+#: nnabla.utils.data_iterator.data_iterator_simple:12 of
+msgid "Size of data unit."
+msgstr "データユニットのサイズ。"
+
+#: nnabla.utils.data_iterator.DataIterator:10 of
+msgid ""
+"An item is a function which takes an epoch index as a argument. These are"
+" called at the beginning of an epoch."
+msgstr "1 つの項目が 1 つの関数であり、エポックインデックスを引数として取ります。これらはエポックの開始時に呼び出されます。"
+
+#: nnabla.utils.data_iterator.DataIterator:14 of
+msgid ""
+"An item is a function which takes an epoch index as a argument. These are"
+" called at the end of an epoch."
+msgstr "1 つの項目が 1 つの関数であり、エポックインデックスを引数として取ります。これらはエポックの終了時に呼び出されます。"
+
+#: nnabla.utils.data_iterator.DataIterator.batch_size:1 of
+msgid "Number of training samples that :py:meth:`next()` returns."
+msgstr ":py:meth:`next()` が返す学習のサンプル数。"
+
+#: nnabla.utils.data_iterator.DataIterator.batch_size:3 of
+msgid "Number of training samples."
+msgstr "学習のサンプル数"
+
+#: nnabla.utils.data_iterator.DataIterator.epoch:1 of
+msgid "The number of times :py:meth:`position` returns to zero."
+msgstr " :py:meth:`position` がゼロに戻る回数。"
+
+#: nnabla.utils.data_iterator.DataIterator.epoch:3 of
+msgid "epoch"
+msgstr ""
+
+#: nnabla.utils.data_iterator.DataIterator.next:1 of
+msgid "It generates tuple of data."
+msgstr "データのタプルを生成します。"
+
+#: nnabla.utils.data_iterator.DataIterator.next:3 of
+msgid ""
+"For example, if :py:meth:`self._variables == ('x', 'y')` This method "
+"returns :py:meth:` ( [[X] * batch_size], [[Y] * batch_size] )`"
+msgstr ""
+"例えば、もし :py:meth:`self._variables == ('x', 'y')` である場合、このメソッドは :py:meth:` "
+"( [[X] * batch_size], [[Y] * batch_size] )` を返します。"
+
+#: nnabla.utils.data_iterator.DataIterator.next:7 of
+msgid "tuple of data for mini-batch in numpy.ndarray."
+msgstr "numpy.ndarray にあるミニバッチ用のデータのタプル"
+
+#: nnabla.utils.data_iterator.DataIterator.register_epoch_begin_callback:1 of
+msgid "Register epoch begin callback."
+msgstr "エポック開始時のコールバックを登録します。"
+
+#: nnabla.utils.data_iterator.DataIterator.register_epoch_begin_callback:3
+#: nnabla.utils.data_iterator.DataIterator.register_epoch_end_callback:3 of
+msgid "A function takes an epoch index as an argument."
+msgstr "関数はエポックインデックスを引数として取ります。"
+
+#: nnabla.utils.data_iterator.DataIterator.register_epoch_end_callback:1 of
+msgid "Register epoch end callback."
+msgstr "エポック終了時のコールバックを登録します。"
+
+#: nnabla.utils.data_iterator.DataIterator.size:1 of
+msgid ""
+"Data size that DataIterator will generate. This is the largest integer "
+"multiple of batch_size not exceeding :py:meth:`self._data_source.size`."
+msgstr ""
+"DataIterator が生成するデータサイズ。 :py:meth:`self._data_source.size` を超えない "
+"batch_size の整数倍の最大値を表します。"
+
+#: nnabla.utils.data_iterator.DataIterator.size:5 of
+msgid "Data size"
+msgstr "データサイズ"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:1 of
+msgid ""
+"Slices the data iterator so that newly generated data iterator has access"
+" to limited portion of the original data."
+msgstr "データのイテレーターをスライスすることで、新しく生成されたデータのイテレーターが元データの限定部分へアクセスできるようになります。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:3 of
+msgid "Random generator for Initializer."
+msgstr "Initializer の乱数ジェネレーター。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:5 of
+msgid "Total number of slices to be made. Muts be used together with `slice_pos`."
+msgstr "生成するスライスの合計数。`slice_pos` と共に使う必要があります。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:7 of
+msgid ""
+"Position of the slice to be assigned to the new data iterator. Must be "
+"used together with `num_of_slices`."
+msgstr "新しいデータのイテレーターに割り当てられたスライスの位置。 `num_of_slices` と共に使う必要があります。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:9 of
+msgid ""
+"Starting position of the range to be sliced into new data iterator. Must "
+"be used together with `slice_end`."
+msgstr "新しいデータのイテレーターにスライスされる範囲の開始位置。 `slice_end` と共に使う必要があります。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:11 of
+msgid ""
+"End position of the range to be sliced into new data iterator. Must be "
+"used together with `slice_start`."
+msgstr "新しいデータのイテレーターにスライスされる範囲の終了位置。 `slice_start` と共に使う必要があります。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:13 of
+msgid "Directory to save cache files"
+msgstr "キャッシュファイルを保存するディレクトリ。"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:16 of
+msgid "Example:"
+msgstr "例:"
+
+#: nnabla.utils.data_iterator.DataIterator.slice:18 of
+msgid ""
+"from nnabla.utils.data_iterator import data_iterator_simple\n"
+"import numpy as np\n"
+"\n"
+"def load_func1(index):\n"
+"    d = np.ones((2, 2)) * index\n"
+"    return d\n"
+"\n"
+"di = data_iterator_simple(load_func1, 1000, batch_size=3)\n"
+"\n"
+"di_s1 = di.slice(None, num_of_slices=10, slice_pos=0)\n"
+"di_s2 = di.slice(None, num_of_slices=10, slice_pos=1)\n"
+"\n"
+"di_s3 = di.slice(None, slice_start=100, slice_end=200)\n"
+"di_s4 = di.slice(None, slice_start=300, slice_end=400)"
+msgstr ""
+
+#: ../../python/api/utils/data_iterator.rst:35
+msgid "Utilities"
+msgstr "ユーティリティ"
+
+#: nnabla.utils.data_iterator.data_iterator:1 of
+msgid ""
+"Helper method to use :py:class:`DataSource "
+"<nnabla.utils.data_source.DataSource>`."
+msgstr ""
+":py:class:`DataSource <nnabla.utils.data_source.DataSource>` を使うための "
+"Helper メソッド。"
+
+#: nnabla.utils.data_iterator.data_iterator:3 of
+msgid ""
+"You can use :py:class:`DataIterator "
+"<nnabla.utils.data_iterator.DataIterator>` with your own "
+":py:class:`DataSource <nnabla.utils.data_source.DataSource>` for easy "
+"implementation of data sources."
+msgstr ""
+"データソースの簡単な実装のため、独自の :py:class:`DataSource "
+"<nnabla.utils.data_source.DataSource>` と共に :py:class:`DataIterator "
+"<nnabla.utils.data_iterator.DataIterator>` を使うことができます。"
+
+#: nnabla.utils.data_iterator.data_iterator:6
+#: nnabla.utils.data_iterator.data_iterator_cache:5
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:3
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:5 of
+msgid "For example,"
+msgstr "例えば、"
+
+#: nnabla.utils.data_iterator.data_iterator:8 of
+msgid ""
+"ds = YourOwnImplementationOfDataSource()\n"
+"batch = data_iterator(ds, batch_size)"
+msgstr ""
+
+#: nnabla.utils.data_iterator.data_iterator:16 of
+msgid "Batch size."
+msgstr "バッチサイズ。"
+
+#: nnabla.utils.data_iterator.data_iterator:21
+#: nnabla.utils.data_iterator.data_iterator_cache:24
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:19
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:24
+#: nnabla.utils.data_iterator.data_iterator_simple:20 of
+msgid ""
+"If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache` to "
+"wrap ``data_source``. It is a good idea to set this as true unless "
+"data_source provides on-memory data. Default value is True."
+msgstr ""
+"``True`` の場合、 ``data_source`` をラップするため "
+":py:class:`.data_source.DataSourceWithMemoryCache` を使用します。data_source "
+"がオンメモリデータを提供しない限り、この値を True に設定することを推奨します。 デフォルトは True です。"
+
+#: nnabla.utils.data_iterator.data_iterator:26
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:24
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:29
+#: nnabla.utils.data_iterator.data_iterator_simple:25 of
+msgid ""
+"If ``True``, use :py:class:`.data_source.DataSourceWithFileCache` to wrap"
+" ``data_source``. If ``data_source`` is slow, enabling this option a is "
+"good idea. Default value is False."
+msgstr ""
+"``True`` の場合、 ``data_source`` をラップするため "
+":py:class:`.data_source.DataSourceWithFileCache` を使用します。data_source "
+"が遅い場合、このオプションを有効にすることをおすすめします。デフォルトは False です。"
+
+#: nnabla.utils.data_iterator.data_iterator:38
+#: nnabla.utils.data_iterator.data_iterator_cache:29
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:36
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:41
+#: nnabla.utils.data_iterator.data_iterator_simple:37 of
+msgid ""
+"An item is a function which takes an epoch index as an argument. These "
+"are called at the beginning of an epoch."
+msgstr "1 つの項目が 1 つの関数となり、エポックインデックスを引数として取ります。これらはエポックの開始時に呼び出されます。"
+
+#: nnabla.utils.data_iterator.data_iterator:42
+#: nnabla.utils.data_iterator.data_iterator_cache:33
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:40
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:45
+#: nnabla.utils.data_iterator.data_iterator_simple:41 of
+msgid ""
+"An item is a function which takes an epoch index as an argument. These "
+"are called at the end of an epoch."
+msgstr "1 つの項目が 1 つの関数となり、エポックインデックスを引数として受取ります。これらはエポックの終了時に呼び出されます。"
+
+#: nnabla.utils.data_iterator.data_iterator:47
+#: nnabla.utils.data_iterator.data_iterator_simple:46 of
+msgid "Instance of DataIterator."
+msgstr "DataIterator のインタンス"
+
+#: nnabla.utils.data_iterator.data_iterator:48
+#: nnabla.utils.data_iterator.data_iterator_cache:39
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:46
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:51
+#: nnabla.utils.data_iterator.data_iterator_simple:47 of
+msgid ":py:class:`DataIterator <nnabla.utils.data_iterator.DataIterator>`"
+msgstr ""
+
+#: nnabla.utils.data_iterator.data_iterator_simple:1 of
+msgid ""
+"A generator that ``yield`` s minibatch data as a tuple, as defined in "
+"``load_func`` . It can unlimitedly yield minibatches at your request, "
+"queried from the provided data."
+msgstr ""
+"``load_func`` に定義されている通り、ミニバッチデータをタプルとして ``生成する`` "
+"ジェネレーターです。提供されたデータからのクエリーにより、随時、無制限にミニバッチを生成します。"
+
+#: nnabla.utils.data_iterator.data_iterator_simple:4 of
+msgid ""
+"Takes a single argument `i`, an index of an example in your dataset to be"
+" loaded, and returns a tuple of data. Every call by any index `i` must "
+"return a tuple of arrays with the same shape."
+msgstr ""
+"単一の引数 `i` 、読み込まれるデータセットの例のインデックスを取り、データのタプルを返します。どのインデックス `i` "
+"から呼ばれる場合も毎回同じ形状の配列のタプルを返す必要があります。"
+
+#: nnabla.utils.data_iterator.data_iterator_simple:9 of
+msgid ""
+"Number of examples in your dataset. Random sequence of indexes is "
+"generated according to this number."
+msgstr "データセットにある例の数を表します。この数に従ってインデックスのランダムシーケンスが生成されます。"
+
+#: nnabla.utils.data_iterator.data_iterator_cache:15
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:13
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:15
+#: nnabla.utils.data_iterator.data_iterator_simple:14 of
+msgid "Indicates whether the dataset is shuffled or not. Default value is False."
+msgstr "データセットがシャッフルされたか否かを表します。デフォルトは False です。"
+
+#: nnabla.utils.data_iterator.data_iterator_simple:49 of
+msgid ""
+"Here is an example of `load_func` which returns an image and a label of a"
+" classification dataset."
+msgstr "以下に画像と分類ラベルのデータセットを返す `load_func` の例を示します。"
+
+#: nnabla.utils.data_iterator.data_iterator_simple:52 of
+msgid ""
+"import numpy as np\n"
+"from nnabla.utils.image_utils import imread\n"
+"image_paths = load_image_paths()\n"
+"labels = load_labels()\n"
+"def my_load_func(i):\n"
+"    '''\n"
+"    Returns:\n"
+"        image: c x h x w array\n"
+"        label: 0-shape array\n"
+"    '''\n"
+"    img = imread(image_paths[i]).astype('float32')\n"
+"    return np.rollaxis(img, 2), np.array(labels[i])"
+msgstr ""
+
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:1 of
+msgid "Get data directly from a dataset provided as a CSV file."
+msgstr "CSV ファイルで提供されたデータセットから直接データを取得します。"
+
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:3 of
+msgid ""
+"You can read files located on the local file system, http(s) servers or "
+"Amazon AWS S3 storage."
+msgstr "ローカルファイルシステムや http サーバー、Amazon AWS S3 ストレージ等に配置されたファイルを読み込むことができます。"
+
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:7 of
+msgid ""
+"batch = data_iterator_csv_dataset('CSV_FILE.csv', batch_size, "
+"shuffle=True)"
+msgstr ""
+
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:11 of
+msgid "Location of dataset CSV file."
+msgstr "CSV ファイルとなるデータセットの場所。"
+
+#: nnabla.utils.data_iterator.data_iterator_cache:21
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:21 of
+msgid ""
+"If True, each sample in the data gets normalized by a factor of 255. "
+"Default is True."
+msgstr "True の場合、データにあるそれぞれのサンプルは 255 の係数で正規化されます。デフォルトは True です。"
+
+#: nnabla.utils.data_iterator.data_iterator_cache:38
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:45
+#: nnabla.utils.data_iterator.data_iterator_csv_dataset:50 of
+msgid "Instance of DataIterator"
+msgstr "DataIterator のインタンス"
+
+#: nnabla.utils.data_iterator.data_iterator_cache:1 of
+msgid "Get data from the cache directory."
+msgstr "キャッシュディレクトリーからデータを取得します。"
+
+#: nnabla.utils.data_iterator.data_iterator_cache:3 of
+msgid "Cache files are read from the local file system."
+msgstr "ローカルファイルシステムからキャッシュファイルを読み込みます。"
+
+#: nnabla.utils.data_iterator.data_iterator_cache:7 of
+msgid "batch = data_iterator_cache('CACHE_DIR', batch_size, shuffle=True)"
+msgstr ""
+
+#: nnabla.utils.data_iterator.data_iterator_cache:11 of
+msgid "Location of directory with cache files."
+msgstr "キャッシュファイルのあるディレクトリの場所。"
+
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:1 of
+msgid "Get data from multiple datasets."
+msgstr "複数のデータセットからデータを取得します。"
+
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:5 of
+msgid ""
+"batch = data_iterator_concat_datasets([DataSource0, DataSource1, ...], "
+"batch_size)"
+msgstr ""
+
+#: nnabla.utils.data_iterator.data_iterator_concat_datasets:9 of
+msgid "list of datasets."
+msgstr "データセットのリスト。"
+

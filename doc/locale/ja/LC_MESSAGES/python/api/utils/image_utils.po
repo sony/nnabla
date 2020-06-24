@@ -1,0 +1,237 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-04-24 16:52+0900\n"
+"PO-Revision-Date: 2020-05-11 09:44+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3\n"
+
+#: ../../python/api/utils/image_utils.rst:2
+msgid "Image Utils"
+msgstr "画像ユーティリティ"
+
+#: ../../python/api/utils/image_utils.rst:4
+msgid ""
+"This module provides read, write and resize functions for images. The "
+"backends of these functions are automatically changed, depending on the "
+"user`s environment. The priority of the backends is as below (upper is higher "
+"priority):"
+msgstr ""
+"このモジュールは画像に対する読み込み、書き込み、サイズ変更を行う関数を提供しま"
+"す。これらの関数のバックエンドはユーザー環境により自動的に変更されます。バック"
+"エンドの優先度は以下の通りです (上位ほど優先度高):"
+
+#: ../../python/api/utils/image_utils.rst:6
+msgid "OpenCV (cv2)"
+msgstr "OpenCV (cv2)"
+
+#: ../../python/api/utils/image_utils.rst:7
+msgid "scikit-image (skimage)"
+msgstr "scikit-image (skimage)"
+
+#: ../../python/api/utils/image_utils.rst:8
+msgid "pillow (PIL) (need to be installed)"
+msgstr "pillow (PIL) (インストールが必要)"
+
+#: ../../python/api/utils/image_utils.rst:10
+msgid "At least one of these modules needs to be installed to use this module."
+msgstr ""
+"このモジュールを使うには、これらのうち少なくとも 1 つのモジュールをインストー"
+"ルする必要があります。"
+
+#: nnabla.utils.image_utils.imread:1 of
+msgid ""
+"Read image from ``path``. If you specify the ``size``, the output array is "
+"resized. Default output shape is (height, width, channel) for RGB image and "
+"(height, width) for gray-scale image."
+msgstr ""
+"``path`` から画像を読み込みます。 ``size`` を指定した場合、出力配列がサイズ変"
+"更されます。デフォルトの出力形状は、RGB 画像では (高さ, 幅, チャネル)、グレー"
+"スケール画像では (高さ, 幅) となります。"
+
+#: nnabla.utils.image_utils.imread nnabla.utils.image_utils.imresize
+#: nnabla.utils.image_utils.imsave of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.utils.image_utils.imread:5 of
+msgid "Input image path."
+msgstr "入力画像のパス。"
+
+#: nnabla.utils.image_utils.imread:7 of
+msgid "If True, the img is rescaled to gray-scale. Default is False."
+msgstr ""
+"True の場合、画像はグレースケールに再スケーリングされます。デフォルトは False "
+"です。"
+
+#: nnabla.utils.image_utils.imread:9 of
+msgid ""
+"Output shape. The order is (width, height). If None, the image is not "
+"resized. Default is None."
+msgstr ""
+"出力形状。順番は (幅, 高さ)。 None の場合、画像はサイズ変更されません。デフォ"
+"ルトは None です。"
+
+#: nnabla.utils.image_utils.imread:11 nnabla.utils.image_utils.imresize:8 of
+msgid ""
+"Interpolation method. This argument is depend on the backend. If you want to "
+"specify this argument, you should pay much attention to which backend you use "
+"now. What you can select is below:  - pil backend: [\"nearest\", \"box\", "
+"\"bilinear\", \"hamming\", \"bicubic\", \"lanczos\"].  - cv2 backend: "
+"[\"nearest\", \"bilinear\", \"bicubic\", \"lanczos\"]. Default is \"bilinear"
+"\" for both backends."
+msgstr ""
+
+#: nnabla.utils.image_utils.imread:11 nnabla.utils.image_utils.imresize:8 of
+msgid ""
+"Interpolation method. This argument is depend on the backend. If you want to "
+"specify this argument, you should pay much attention to which backend you use "
+"now. What you can select is below:"
+msgstr ""
+"補間法。この引数はバックエンドに依存します。この引数を指定したい場合、現在使用"
+"しているバックエンドに注意を払う必要があります。 以下を選択できます:"
+
+#: nnabla.utils.image_utils.imread:15 nnabla.utils.image_utils.imresize:12 of
+msgid ""
+"pil backend: [\"nearest\", \"box\", \"bilinear\", \"hamming\", \"bicubic\", "
+"\"lanczos\"]."
+msgstr ""
+
+#: nnabla.utils.image_utils.imread:16 nnabla.utils.image_utils.imresize:13 of
+msgid "cv2 backend: [\"nearest\", \"bilinear\", \"bicubic\", \"lanczos\"]."
+msgstr ""
+
+#: nnabla.utils.image_utils.imread:17 nnabla.utils.image_utils.imresize:14 of
+msgid "Default is \"bilinear\" for both backends."
+msgstr "両方のバックエンドのデフォルトは \"bilinear\" です。"
+
+#: nnabla.utils.image_utils.imread:19 nnabla.utils.image_utils.imresize:16 of
+msgid ""
+"If True, the shape of the output array is (channel, height, width) for RGB "
+"image. Default is False."
+msgstr ""
+"True の場合、出力配列の形状は RGB 画像で (チャネル, 高さ, 幅) となります。デ"
+"フォルトは False です。"
+
+#: nnabla.utils.image_utils.imread:21 of
+msgid "If True, this function tries to read img as np.uint16. Default is False."
+msgstr ""
+"True の場合、この関数は画像を np.uint16 として読み取ろうとします。デフォルト"
+"は False です。"
+
+#: nnabla.utils.image_utils.imread:23 of
+msgid ""
+"channel size of output array. Default is -1 which preserves raw image shape."
+msgstr ""
+"出力配列のチャネルサイズ。デフォルトは -1 で、raw 画像形状を保持します。"
+
+#: nnabla.utils.image_utils.imread:26 of
+msgid ""
+"This argument can be used only by pil backend. On pil backend, if this flag "
+"is True and PIL.Image has the mode \"P\", then this function returns 2-D "
+"array containing the indices into palette. Otherwise, 3-D array of \"RGB\" or "
+"\"RGBA\" (it depends on an image info) will be returned. Default value is "
+"False."
+msgstr ""
+"この引数は、pil バックエンドでのみ使うことができます。このフラグが True であ"
+"り、PIL.Image のモードが \"P\" の場合、この関数はインデックスを含む 2 次元配列"
+"をパレットに返します。それ以外の場合は、(画像情報によって) “RGB” もしくは "
+"“RGBA” の 3 次元配列を返します。デフォルト値は False です。"
+
+#: nnabla.utils.image_utils.imread nnabla.utils.image_utils.imresize of
+msgid "戻り値"
+msgstr ""
+
+#: nnabla.utils.image_utils.imread:33 of
+msgid "if as_uint16=True output dtype is np.uint16, else np.uint8 (default)."
+msgstr ""
+"as_uint16=True の場合、出力 dtype は np.uint16 となり、その他は np.uint8 (デ"
+"フォルト) となります。"
+
+#: nnabla.utils.image_utils.imread of
+msgid "戻り値の型"
+msgstr ""
+
+#: nnabla.utils.image_utils.imsave:1 of
+msgid ""
+"Save ``img`` to the file specified by ``path``. As default, the shape of "
+"``img`` has to be (height, width, channel)."
+msgstr ""
+"``path`` で指定されたファイルに ``img`` を保存します。デフォルトで、 ``img`` "
+"の形状は (高さ, 幅, チャネル) であることが必要です。"
+
+#: nnabla.utils.image_utils.imsave:4 of
+msgid "Output path."
+msgstr "出力パス。"
+
+#: nnabla.utils.image_utils.imsave:6 of
+msgid ""
+"Input image. All pixel values must be positive and in the range [0, 255] of "
+"int for uint8, [0, 65535] of int for uint16 or [0, 1] for float. When you "
+"pass float image, you must set `auto_scale` as True (If not, exception will "
+"be raised). If img with negative values is passed as input, exception will be "
+"raised."
+msgstr ""
+"入力画像。すべてのピクセル値は正の値であり、uint8 では int の [0, 255]、"
+"uint16 では int の [0, 65535]、float では [0, 1] の範囲内にある必要がありま"
+"す。float 画像を渡すとき、 `auto_scale` を True に設定する必要があります (そう"
+"でなければ例外が発生します)。負の値を持つ画像が入力に渡された場合、例外が発生"
+"します。"
+
+#: nnabla.utils.image_utils.imsave:11 of
+msgid ""
+"If True, you can input the image whose shape is (channel, height, width). "
+"Default is False."
+msgstr ""
+"True の場合、形状が (チャネル, 高さ, 幅) となる画像を入力することが出来ます。"
+"デフォルトは False です。"
+
+#: nnabla.utils.image_utils.imsave:13 of
+msgid "If True, cast image to uint16 before save. Default is False."
+msgstr ""
+"True の場合、保存する前に画像を uint16 にキャストします。デフォルトは False で"
+"す。"
+
+#: nnabla.utils.image_utils.imsave:15 of
+msgid ""
+"Whether the range of pixel values are scaled up or not. The range of upscaled "
+"pixel values depends on output dtype, which is [0, 255] as uint8 and [0, "
+"65535] as uint16."
+msgstr ""
+"ピクセル値の範囲がスケールアップされているか否かを表します。スケールアップされ"
+"たピクセル値の範囲は uint8 で [0, 255]、uint16 で [0, 65535] となる出力 dtype "
+"に依存します。"
+
+#: nnabla.utils.image_utils.imresize:1 of
+msgid ""
+"Resize ``img`` to ``size``. As default, the shape of input image has to be "
+"(height, width, channel)."
+msgstr ""
+"``img`` を ``size`` にサイズ変更します。デフォルトでは、入力画像の形状は (高"
+"さ, 幅, チャネル) である必要があります。"
+
+#: nnabla.utils.image_utils.imresize:4 of
+msgid "Input image."
+msgstr "入力画像。"
+
+#: nnabla.utils.image_utils.imresize:6 of
+msgid "Output shape. The order is (width, height)."
+msgstr "出力形状。順番は (幅, 高さ)。"
+
+#: nnabla.utils.image_utils.imresize:19 of
+msgid "numpy.ndarray"
+msgstr ""

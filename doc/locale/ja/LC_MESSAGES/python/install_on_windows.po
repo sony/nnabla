@@ -1,0 +1,184 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-06-10 15:10+0900\n"
+"PO-Revision-Date: 2020-06-15 13:40+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: ../../python/install_on_windows.rst:2
+msgid "Installation on Windows"
+msgstr "Windows へのインストール"
+
+#: ../../python/install_on_windows.rst:10
+msgid "Prerequisites"
+msgstr "前提条件"
+
+#: ../../python/install_on_windows.rst:12
+msgid "We tested on Windows8.1 64bit and Windows10 64bit."
+msgstr "Windows 8.1 64bit と Windows 10 64bit の環境でテスト済みです。"
+
+#: ../../python/install_on_windows.rst:14
+msgid "The following software are required for installation:"
+msgstr "インストールには次のソフトウェアが必要です。"
+
+#: ../../python/install_on_windows.rst:16
+msgid "Required software."
+msgstr "必要なソフトウェア"
+
+#: ../../python/install_on_windows.rst:18
+msgid "Python>=3.6: PIP"
+msgstr "Python 3.6 以上 : PIP"
+
+#: ../../python/install_on_windows.rst:19
+#: ../../python/install_on_windows.rst:53
+msgid "Microsoft Visual C++ 2015 Redistributable"
+msgstr "Microsoft Visual C++ 2015 再頒布可能パッケージ"
+
+#: ../../python/install_on_windows.rst:21
+msgid "Recommended."
+msgstr "推奨"
+
+#: ../../python/install_on_windows.rst:23
+msgid "CUDA Toolkit and cuDNN (if you have CUDA GPUs)."
+msgstr "CUDA ツールキットと cuDNN ( CUDA GPU をお使いの場合 )"
+
+#: ../../python/install_on_windows.rst:27
+msgid "Setup environment"
+msgstr "環境のセットアップ"
+
+#: ../../python/install_on_windows.rst:30
+msgid "Python"
+msgstr "Python"
+
+#: ../../python/install_on_windows.rst:32
+msgid ""
+"In this instruction, we use `Miniconda <https://conda.io/miniconda.html>`_."
+msgstr ""
+"この説明では、 `Miniconda <https://conda.io/miniconda.html>`_ を使用します。"
+
+#: ../../python/install_on_windows.rst:34
+msgid ""
+"Get and install the windows binary from `here <https://repo.anaconda.com/"
+"miniconda/Miniconda3-latest-Windows-x86_64.exe>`_"
+msgstr ""
+"`ここ <https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64."
+"exe>`_ から Windows 用のバイナリをダウンロードして、インストールしてくださ"
+"い。"
+
+#: ../../python/install_on_windows.rst:37
+msgid "And then install required packages from command prompt."
+msgstr ""
+"次に、コマンドプロンプトから必要なパッケージをインストールしてください。"
+
+#: ../../python/install_on_windows.rst:39
+msgid "> conda install scipy scikit-image ipython"
+msgstr ""
+
+#: ../../python/install_on_windows.rst:44
+msgid ""
+"If your network is using proxy and setup fails, configure proxy server with "
+"environment variable and try install again."
+msgstr ""
+"プロキシを使用しているネットワークでセットアップに失敗する場合は、プロキシ"
+"サーバーの環境変数を設定して、再度インストールを試してください。"
+
+#: ../../python/install_on_windows.rst:46
+msgid ""
+"> SET HTTP_PROXY=http://(enter the address of the http proxy server here)\n"
+"> SET HTTPS_PROXY=https://(enter the address of the https proxy server here)"
+msgstr ""
+
+#: ../../python/install_on_windows.rst:55
+msgid ""
+"Get and install from `here <https://www.microsoft.com/en-us/download/"
+"details.aspx?id=52685>`_"
+msgstr ""
+"`ここ <https://www.microsoft.com/en-us/download/details.aspx?id=52685>`_ か"
+"らダウンロードして、インストールしてください。"
+
+#: ../../python/install_on_windows.rst:59
+msgid "CUDA and cuDNN library"
+msgstr "CUDA と cuDNN のライブラリ"
+
+#: ../../python/install_on_windows.rst:61
+msgid ""
+"If you are using a NVIDIA GPU, execution speed will be drastically improved "
+"by installing the following software."
+msgstr ""
+"NVIDIA GPU を使用している場合は、次のソフトウェアをインストールすることで、"
+"実行スピードが飛躍的に向上します。"
+
+#: ../../python/install_on_windows.rst:63
+msgid "`CUDA Toolkit <https://developer.nvidia.com/cuda-downloads>`_"
+msgstr "`CUDA ツールキット <https://developer.nvidia.com/cuda-downloads>`_"
+
+#: ../../python/install_on_windows.rst:65
+msgid "`cuDNN <https://developer.nvidia.com/cudnn>`_"
+msgstr "`cuDNN <https://developer.nvidia.com/cudnn>`_"
+
+#: ../../python/install_on_windows.rst:67
+msgid ""
+"To install cuDNN, copy bin, include and lib to C:\\\\Program Files\\"
+"\\NVIDIA GPU Computing Toolkit\\\\CUDA\\\\v{CUDA_VERSION}"
+msgstr ""
+"cuDNN をインストールするために、 bin、 include、 lib を C:\\\\Program Files"
+"\\\\NVIDIA GPU Computing Toolkit\\\\CUDA\\\\v{CUDA_VERSION} へコピーしてくだ"
+"さい。"
+
+#: ../../python/install_on_windows.rst:69
+msgid ""
+"See :ref:`a list of compatible cuDNN versions of CUDA extension packages "
+"<cuda-cudnn-compatibility>`."
+msgstr ""
+":ref:`CUDA 拡張パッケージの互換性のある cuDNN バージョンのリスト <cuda-"
+"cudnn-compatibility>` を参照してください。"
+
+#: ../../python/install_on_windows.rst:73
+msgid "Install"
+msgstr "インストール"
+
+#: ../../python/install_on_windows.rst:75
+msgid "See :ref:`pip-installation-workflow`."
+msgstr ":ref:`pip-installation-workflow` を参照してください。"
+
+#: ../../python/install_on_windows.rst:78
+msgid "FAQ"
+msgstr "FAQ"
+
+#: ../../python/install_on_windows.rst:81
+msgid "Q. Scikit-image installation takes a long time."
+msgstr "Q. Scikit-image のインストールに時間がかかります。"
+
+#: ../../python/install_on_windows.rst:83
+msgid "Depending on the environment, it will take a long time.  Please wait."
+msgstr ""
+"環境によっては、長い時間がかかることがあります。しばらくお待ちください。"
+
+#: ../../python/install_on_windows.rst:86
+msgid "Q. Failed to install Scipy during installation."
+msgstr "Q. インストール中、 Scipy のインストールに失敗します。"
+
+#: ../../python/install_on_windows.rst:88
+msgid ""
+"Please install scipy using \"conda install\" before \"pip install nnabla\"."
+msgstr ""
+"“pip install nnabla” の前に “conda install” を使って scipy をインストールし"
+"てください。"
+
+#~ msgid "CUDA and CUDNN library"
+#~ msgstr "CUDA と cuDNN のライブラリ"

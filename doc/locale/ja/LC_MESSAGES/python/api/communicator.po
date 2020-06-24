@@ -1,0 +1,522 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-14 14:47+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/communicator.rst:2
+msgid "Communicator API"
+msgstr "Communicator API"
+
+#: ../../python/api/communicator.rst:4
+msgid "Communicator transfers parameters over the compute graphs."
+msgstr "Communicator は、計算グラフに含まれているパラメータを転送するAPIです。"
+
+#: nnabla.communicators:1 of
+msgid "This is an alias to communicator.py."
+msgstr "このドキュメントは、communicator.py のエイリアスです。"
+
+#: ../../python/api/communicator.rst:11
+msgid "Communicator interface"
+msgstr "Communicator のインターフェイス"
+
+#: ../../docstring nnabla.communicators.Communicator:1 of
+msgid "Communicator interface class."
+msgstr "Communicator のインターフェイスクラスです。"
+
+#: ../../docstring nnabla.communicators.Communicator:3 of
+msgid ""
+"Communicator exchanges data (e.g., gradient) using MPI-like collectives. "
+"This class is used for the distributed training."
+msgstr ""
+"Communicator は、MPI "
+"のようにグループ通信を利用して、データ（例：勾配など）をやり取りします。このクラスは、分散学習を行う際に使用されます。"
+
+#: ../../docstring nnabla.communicators.Communicator.abort:1 of
+msgid "Terminates MPI execution environment"
+msgstr "MPI 実行環境を終了します。"
+
+#: ../../docstring
+#: nnabla.communicators.Communicator.add_context_and_parameters:1 of
+msgid "Add context and parameters."
+msgstr "コンテキストとパラメータを追加します。"
+
+#: ../../docstring nnabla.communicators.Communicator.add_context_and_parameters
+#: nnabla.communicators.Communicator.all_gather
+#: nnabla.communicators.Communicator.all_reduce
+#: nnabla.communicators.Communicator.all_reduce_callback
+#: nnabla.communicators.Communicator.allreduce
+#: nnabla.communicators.Communicator.bcast
+#: nnabla.communicators.Communicator.find_group
+#: nnabla.communicators.Communicator.new_group
+#: nnabla.communicators.Communicator.reduce
+#: nnabla.communicators.Communicator.reduce_scatter
+#: nnabla.communicators.MultiProcessDataParalellCommunicator of
+msgid "パラメータ"
+msgstr "パラメータ"
+
+#: ../../docstring
+#: nnabla.communicators.Communicator.add_context_and_parameters:3 of
+msgid ""
+"Key of the dictionary is :obj:`string` and value of the dictionary is "
+":obj:`Variable`."
+msgstr "キーが :obj:`string` 、値が :obj:`Variable` の辞書です。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_gather:1 of
+msgid "All gather over data in different device."
+msgstr "異なるデバイスのデータに対して、All gether を実行します。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_gather:3 of
+msgid "Data to be gathered."
+msgstr "収集するデータ。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_gather:5
+#: nnabla.communicators.Communicator.reduce_scatter:5 of
+msgid "Data to be saved."
+msgstr "保存するデータ 。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_gather:7
+#: nnabla.communicators.Communicator.all_reduce:13
+#: nnabla.communicators.Communicator.all_reduce_callback:12
+#: nnabla.communicators.Communicator.bcast:12
+#: nnabla.communicators.Communicator.reduce:15
+#: nnabla.communicators.Communicator.reduce_scatter:7 of
+msgid "Name of a group. This groups is used when the collective is called."
+msgstr "グループの名前です。このグループは、集合が呼び出されるときに使用されます。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_gather:10
+#: nnabla.communicators.Communicator.all_reduce:16
+#: nnabla.communicators.Communicator.all_reduce_callback:15
+#: nnabla.communicators.Communicator.bcast:15
+#: nnabla.communicators.Communicator.new_group:6
+#: nnabla.communicators.Communicator.reduce:18
+#: nnabla.communicators.Communicator.reduce_scatter:10
+#: nnabla.communicators.MultiProcessDataParalellCommunicator:8 of
+msgid "Example:"
+msgstr "例:"
+
+#: ../../docstring nnabla.communicators.Communicator.all_gather:12 of
+msgid ""
+"# Run like `mpirun -n 2 python <code_snippet.py>`\n"
+"# note: the order of the output to stdout are stochastic because of "
+"multiprocesses.\n"
+"\n"
+"# Communicator and Context\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"# Data\n"
+"x = nn.Variable([2, 2])\n"
+"x.d = np.random.rand(*x.shape)\n"
+"y_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]\n"
+"print(\"Before the collective ({}-th)\".format(comm.rank))\n"
+"print(x.d)\n"
+"\n"
+"# AllGather\n"
+"comm.all_gather(x.data, [y.data for y in y_list])\n"
+"\n"
+"# Check\n"
+"print(\"After the collective ({}-th)\".format(comm.rank))\n"
+"for y in y_list:\n"
+"    print(y.d)"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce:1
+#: nnabla.communicators.Communicator.all_reduce_callback:1 of
+msgid "All reduce over data in different device."
+msgstr "異なるデバイスのデータに対して、 All reduce を実行します。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce:5
+#: nnabla.communicators.Communicator.all_reduce_callback:9
+#: nnabla.communicators.Communicator.allreduce:6
+#: nnabla.communicators.Communicator.reduce:7 of
+msgid ""
+"Flag to divide the reduce data by the number of `contexts` added, or the "
+"number of devices."
+msgstr "all_reduce した値を 与えられた `contexts` 数、または通信を行うデバイス数で割るかどうかを決定するフラグです。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce:8
+#: nnabla.communicators.Communicator.allreduce:9
+#: nnabla.communicators.Communicator.bcast:7
+#: nnabla.communicators.Communicator.reduce:10 of
+msgid ""
+"Flag to use a packed array. Default is false. When true, it is memory-"
+"efficient but slow. When false, it is not memory efficient but fast. In "
+"both case, one can get the result in the same memory region."
+msgstr ""
+"パック配列を使用するためのフラグです。デフォルトは false です。true の場合、メモリ効率は良いですが、処理が遅くなります。false "
+"の場合、メモリ効率は良くありませんが高速です。どちらの場合も、最終的な処理結果は同じメモリ領域に得られます。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce:18 of
+msgid ""
+"# Run like `mpirun -n 2 python <code_snippet.py>`\n"
+"# note: the order of the output to stdout are stochastic because of "
+"multiprocesses.\n"
+"\n"
+"# Communicator and Context\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"# Data\n"
+"x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]\n"
+"print(\"Before the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    x.d = np.random.rand(*x.shape)\n"
+"    print(x.d)\n"
+"\n"
+"# AllReduce\n"
+"comm.all_reduce([x.data for x in x_list], inplace=True)\n"
+"\n"
+"# Check\n"
+"print(\"After the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    print(x.d)"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce_callback:3 of
+msgid "This function does not support shared parameters (such as RNNs) currently."
+msgstr "この関数は現在、共有パラメータ ( RNN など) をサポートしていません。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce_callback:7 of
+msgid "The number of values contained in the packed data."
+msgstr "パックデータに含まれる値の数。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce_callback:17
+#: nnabla.communicators.MultiProcessDataParalellCommunicator:10 of
+msgid "In case of the multi-process data parallel distributed training,"
+msgstr "マルチプロセスデータ並列分散学習を行う例を以下に示します。"
+
+#: ../../docstring nnabla.communicators.Communicator.all_reduce_callback:19 of
+msgid ""
+"# Run like `mpirun -n 2 python <code_snippet.py>`\n"
+"\n"
+"# Communicator and Context\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"n_class = 2\n"
+"b, c, h, w = 4, 1, 32, 32\n"
+"\n"
+"# Data\n"
+"x = nn.Variable([b, c, h, w])\n"
+"y = nn.Variable([b, 1])\n"
+"\n"
+"# Network setting\n"
+"h = PF.convolution(x, 1, (3, 3), (1, 1), (1, 1))\n"
+"pred = PF.affine(h, 2)\n"
+"loss = F.mean(F.softmax_cross_entropy(pred, y))\n"
+"\n"
+"loss.forward()\n"
+"# AllReduce during backward\n"
+"loss.backward(communicator_callbacks = comm.all_reduce_callback([v.grad "
+"for v in nn.get_parameters().values()], 1024 * 1024 * 2))"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.allreduce:1 of
+msgid "Deprecated. See all_reduce, instead."
+msgstr "この関数の利用は非推奨です。代わりに all_reduce を参照してください。"
+
+#: ../../docstring nnabla.communicators.Communicator.allreduce:3 of
+msgid ""
+"Allreduce over parameters added. Currently, `allreduce` is applied to "
+"gradient regions."
+msgstr "与えられたパラメータに対して、 All reduce を実行します。現在、`allreduce` は勾配領域に適用されます。"
+
+#: ../../docstring nnabla.communicators.Communicator.barrier:1 of
+msgid "Blocks until all processes in the communicator have reached this routine."
+msgstr "Communicator のすべてのプロセスがこのルーチンに到達するまで、それぞれのプロセスをブロックします。"
+
+#: ../../docstring nnabla.communicators.Communicator.bcast:1 of
+msgid "Broadcast data to different devices."
+msgstr "異なるデバイスにデータをブロードキャストします。"
+
+#: ../../docstring nnabla.communicators.Communicator.bcast:5 of
+msgid "Source rank where the data is broadcasted."
+msgstr "データがブロードキャストされるソースランク。"
+
+#: ../../docstring nnabla.communicators.Communicator.bcast:17 of
+msgid ""
+"# Run like `mpirun -n 2 python <code_snippet.py>`\n"
+"# note: the order of the output to stdout are stochastic because of "
+"multiprocesses.\n"
+"\n"
+"# Communicator and Context\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"# Data\n"
+"x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]\n"
+"print(\"Before the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    x.d = np.random.rand(*x.shape)\n"
+"    print(x.d)\n"
+"\n"
+"# Bcast\n"
+"comm.bcast([x.data for x in x_list], src=0, inplace=True)\n"
+"\n"
+"# Check\n"
+"print(\"After the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    print(x.d)"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.clear_context_parameters:1
+#: of
+msgid "Clear all registered contexts and parameters."
+msgstr "登録されているすべてのコンテキストとパラメータを消去します。"
+
+#: ../../docstring nnabla.communicators.Communicator.find_group:1 of
+msgid ""
+"Return the list of ranks in the group. If the group does not exist, the "
+"empty list is returned."
+msgstr "グループ内のランクのリストを返します。グループが存在しない場合は、空のリストが返されます。"
+
+#: ../../docstring nnabla.communicators.Communicator.find_group:4 of
+msgid "Name of the group."
+msgstr "グループの名前です。"
+
+#: ../../docstring nnabla.communicators.Communicator.find_group
+#: nnabla.communicators.Communicator.list_groups
+#: nnabla.communicators.Communicator.new_group of
+msgid "戻り値"
+msgstr "戻り値"
+
+#: ../../docstring nnabla.communicators.Communicator.find_group:7 of
+msgid "List of ranks (`int`)."
+msgstr "ランクのリストです (`int`) 。"
+
+#: ../../docstring nnabla.communicators.Communicator.find_group
+#: nnabla.communicators.Communicator.list_groups of
+msgid "戻り値の型"
+msgstr "戻り値の型"
+
+#: ../../docstring nnabla.communicators.Communicator.init:1 of
+msgid "Initialize a communicator."
+msgstr "Communicator を初期化します。"
+
+#: ../../docstring nnabla.communicators.Communicator.init:3 of
+msgid ""
+"Initall or initrank, depending multi-threads or multi-processes. This "
+"function *MUST* be called after all parameters communicated are added by "
+"`add_context_and_parameters`."
+msgstr ""
+"マルチスレッドまたはマルチプロセスにより、 Initall または initrank となります。必ず *先に* "
+"`add_context_and_parameters` によって通信を行う全てのパラメータを追加してから、この関数を実行してください。"
+
+#: ../../docstring nnabla.communicators.Communicator.list_groups:1 of
+msgid "Groups (`str`) of name to ranks (`list`)."
+msgstr "グループ (`str`) のランク (`list`)。"
+
+#: ../../docstring nnabla.communicators.Communicator.local_rank:1 of
+msgid "Get local rank of communicator."
+msgstr "Communicator のローカルランクを取得します。"
+
+#: ../../docstring nnabla.communicators.Communicator.name:1 of
+msgid "Get communicator name."
+msgstr "Communicator の名前を取得します。"
+
+#: ../../docstring nnabla.communicators.Communicator.new_group:1 of
+msgid "Tuple of name (`str`) and ranks (`list`)."
+msgstr "名前のタプル (`str`) とランク (`list`)。"
+
+#: ../../docstring nnabla.communicators.Communicator.new_group:4 of
+msgid "group name (str)"
+msgstr "グループ名 (str)。"
+
+#: ../../docstring nnabla.communicators.Communicator.new_group:8 of
+msgid ""
+"# Communicator and Context\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"# New group\n"
+"group = comm.new_group(\"node0\", [0, 1, 2, 3])"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.rank:1 of
+msgid "Get rank of communicator."
+msgstr "Communicator のランクを取得します。"
+
+#: ../../docstring nnabla.communicators.Communicator.reduce:1 of
+msgid "Reduce over data in different device."
+msgstr "異なるデバイスのデータに対して、 reduce を実行します。"
+
+#: ../../docstring nnabla.communicators.Communicator.reduce:5 of
+msgid "Destination rank where the result is saved."
+msgstr "結果が保存される送り先のランク。"
+
+#: ../../docstring nnabla.communicators.Communicator.reduce:20 of
+msgid ""
+"# Run like `mpirun -n 2 python <code_snippet.py>`\n"
+"# note: the order of the output to stdout are stochastic because of "
+"multiprocesses.\n"
+"\n"
+"# Communicator and Context\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"# Data\n"
+"x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]\n"
+"print(\"Before the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    x.d = np.random.rand(*x.shape)\n"
+"    print(x.d)\n"
+"\n"
+"# Reduce\n"
+"comm.reduce([x.data for x in x_list], dst=0, inplace=True)\n"
+"\n"
+"# Check\n"
+"print(\"After the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    print(x.d)"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.reduce_scatter:1 of
+msgid "Reduce scatter over data in different device."
+msgstr "異なるデバイスのデータに対して、 Reduce scatter を実行します。"
+
+#: ../../docstring nnabla.communicators.Communicator.reduce_scatter:3 of
+msgid "List of data to be reduced over different devices."
+msgstr "さまざまなデバイスで削減されるデータのリスト。"
+
+#: ../../docstring nnabla.communicators.Communicator.reduce_scatter:12 of
+msgid ""
+"# Run like `mpirun -n 2 python <code_snippet.py>`\n"
+"# note: the order of the output to stdout are stochastic because of "
+"multiprocesses.\n"
+"\n"
+"# Communicator and Context\n"
+"import numpy as np\n"
+"import nnabla as nn\n"
+"import nnabla.communicators as C\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"\n"
+"# Data\n"
+"x_list = [nn.Variable([2, 2]), nn.Variable([2, 2])]\n"
+"y = nn.Variable([2, 2])\n"
+"print(\"Before the collective ({}-th)\".format(comm.rank))\n"
+"for x in x_list:\n"
+"    x.d = np.random.rand(*x.shape)\n"
+"    print(x.d)\n"
+"\n"
+"# ReduceScatter\n"
+"comm.reduce_scatter([x.data for x in x_list], y.data)\n"
+"\n"
+"# Check\n"
+"print(\"After the collective ({}-th)\".format(comm.rank))\n"
+"print(y.d)"
+msgstr ""
+
+#: ../../docstring nnabla.communicators.Communicator.size:1 of
+msgid "Get size of communicator."
+msgstr "Communicator のサイズを取得します。"
+
+#: ../../python/api/communicator.rst:17
+msgid "List of communicators"
+msgstr "Communicator の一覧"
+
+#: ../../docstring nnabla.communicators.MultiProcessDataParalellCommunicator:1
+#: of
+msgid "MultiProcessDataParallelCommunicator(CContext ctx)"
+msgstr "MultiProcessDataParallelCommunicator(CContext ctx)"
+
+#: ../../docstring nnabla.communicators.MultiProcessDataParalellCommunicator:3
+#: of
+msgid "Multi Process Data Parallel Communicator for Distributed Training."
+msgstr "分散学習のためのマルチプロセスデータ並列 Communicator。"
+
+#: ../../docstring nnabla.communicators.MultiProcessDataParalellCommunicator:5
+#: of
+msgid "context used in this communicator."
+msgstr "この Communicator で使用されるコンテキスト。"
+
+#: ../../docstring nnabla.communicators.MultiProcessDataParalellCommunicator:12
+#: of
+msgid ""
+"# Communicator and Context\n"
+"extension_module = \"cudnn\"\n"
+"ctx = get_extension_context(extension_module)\n"
+"comm = C.MultiProcessCommunicator(ctx)\n"
+"comm.init()\n"
+"n_devices = comm.size\n"
+"mpi_rank = comm.rank\n"
+"device_id = comm.local_rank\n"
+"ctx.device_id = str(device_id)\n"
+"nn.set_default_context(ctx)\n"
+"\n"
+"# Network and Solver created here\n"
+"\n"
+"...\n"
+"\n"
+"\n"
+"# Training loop\n"
+"for itr in range(num_itr):\n"
+"    # Forward, zerograd, backward\n"
+"    loss.forward()\n"
+"    solver.zero_grad()\n"
+"    loss.backward()\n"
+"\n"
+"    # Allreduce\n"
+"    comm.all_reduce([v.grad for v in nn.get_parameters().values()])\n"
+"\n"
+"    # Update\n"
+"    solver.update()"
+msgstr ""
+

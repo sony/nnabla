@@ -1,0 +1,308 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-15 16:17+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/models/object_detection.rst:2
+msgid "Object Detection Models"
+msgstr "オブジェクト検出モデル"
+
+#: ../../python/api/models/object_detection.rst:4
+msgid ""
+"This subpackage provides a pre-trained state-of-the-art models for the "
+"purpose of object detection which is trained on ImageNet_ dataset and "
+"fine-tuned on `Pascal VOC`_ and `MS COCO`_ dataset."
+msgstr ""
+"本サブパッケージは、 ImageNet_ データセットで学習され、 `Pascal VOC`_ と `MS COCO`_ "
+"データセットでファインチューニングされたオブジェクト検出のための最先端の学習済みモデルを提供します。"
+
+#: ../../python/api/models/object_detection.rst:11
+msgid ""
+"The pre-trained models can be used for both inference and training as "
+"following:"
+msgstr "学習済みモデルは、以下のように推論や学習で使うことができます:"
+
+#: ../../python/api/models/object_detection.rst:13
+msgid ""
+"# Import required modules\n"
+"import nnabla as nn\n"
+"from nnabla.models.object_detection import YoloV2\n"
+"from nnabla.models.object_detection.utils import (\n"
+"    LetterBoxTransform,\n"
+"    draw_bounding_boxes)\n"
+"from nnabla.utils.image_utils import imread, imsave\n"
+"import numpy as np\n"
+"\n"
+"# Set device\n"
+"from nnabla.ext_utils import get_extension_context\n"
+"nn.set_default_context(get_extension_context('cudnn', device_id='0'))\n"
+"\n"
+"# Load and create a detection model\n"
+"h, w = 608, 608\n"
+"yolov2 = YoloV2('coco')\n"
+"x = nn.Variable((1, 3, h, w))\n"
+"y = yolov2(x)\n"
+"\n"
+"# Load an image and scale it to fit inside the (h, w) frame\n"
+"img_orig = imread('dog.jpg')\n"
+"lbt = LetterBoxTransform(img_orig, h, w)\n"
+"\n"
+"# Execute detection\n"
+"x.d = lbt.image.transpose(2, 0, 1)[None]\n"
+"y.forward(clear_buffer=True)\n"
+"\n"
+"# Draw bounding boxes to the original image\n"
+"bboxes = lbt.inverse_coordinate_transform(y.d[0])\n"
+"img_draw = draw_bounding_boxes(\n"
+"    img_orig, bboxes, yolov2.get_category_names())\n"
+"imsave(\"detected.jpg\", img_draw)"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:49
+msgid "Available models trained on COCO dataset"
+msgstr "COCO データセットで学習した利用可能なモデル"
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "Name"
+msgstr "名前"
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "Class"
+msgstr "クラス"
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "mAP"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "Training framework"
+msgstr "学習フレームワーク"
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "Notes"
+msgstr "備考"
+
+#: ../../python/api/models/object_detection.rst:1
+msgid ""
+"`YOLO v2 <https://nnabla.org/pretrained-"
+"models/nnp_models/object_detection/yolov2-coco.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "YoloV2"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "44.12"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "Darknet"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:1
+msgid ""
+"Weights converted from `author's model "
+"<https://pjreddie.com/darknet/yolov2/>`_"
+msgstr "`論文著者のモデル <https://pjreddie.com/darknet/yolov2/>`_ から変換した重み"
+
+#: ../../python/api/models/object_detection.rst:54
+msgid "Available models trained on VOC dataset"
+msgstr "VOC データセットで学習した利用可能なモデル"
+
+#: ../../python/api/models/object_detection.rst:1
+msgid ""
+"`YOLO v2 <https://nnabla.org/pretrained-"
+"models/nnp_models/object_detection/yolov2-voc.nnp>`_"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:1
+msgid "76.00"
+msgstr ""
+
+#: ../../python/api/models/object_detection.rst:60
+msgid "Common interfaces"
+msgstr "共通インターフェイス"
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__:1 of
+msgid "Create a network (computation graph) from a loaded model."
+msgstr "読み込んだモデルからネットワーク (計算グラフ) を作成します。"
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__
+#: nnabla.models.object_detection.utils.LetterBoxTransform
+#: nnabla.models.object_detection.utils.LetterBoxTransform.inverse_coordinate_transform
+#: nnabla.models.object_detection.utils.draw_bounding_boxes of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__:3 of
+msgid ""
+"If given, input variable is replaced with the given variable and a "
+"network is constructed on top of the variable. Otherwise, a variable with"
+" batch size as 1 and a default shape from ``self.input_shape``."
+msgstr ""
+"指定された場合、入力変数は指定された変数に置き換えられ、その変数の上にネットワークが構築されます。それ以外の場合、バッチサイズが１で、 "
+"``self.input_shape`` を元にした形状を持つ変数になります。"
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__:5 of
+msgid ""
+"Network is constructed up to a variable specified by a string. A list of "
+"string-variable correspondences in a model is described in documentation "
+"for each model class."
+msgstr "ネットワークは文字列で指定した変数まで構築されます。モデルに対応した文字列変数リストは、各モデルクラスのドキュメントに記載されています。"
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__:7 of
+msgid ""
+"This option enables additional training (fine-tuning, transfer learning "
+"etc.) for the constructed network. If True, the ``batch_stat`` option in "
+"batch normalization is turned ``True``, and ``need_grad`` attribute in "
+"trainable variables (conv weights and gamma and beta of bn etc.) is "
+"turned ``True``. The default is ``False``."
+msgstr ""
+"このオプションは、構築されたネットワークの追加学習 (ファインチューニング、転移学習など) を有効にします。True の場合、batch "
+"normalization の ``batch_stat`` オプションが ``True`` になり、学習可能な変数 "
+"(畳み込み層の重みおよびバッチ正規化層のガンマとベータなど) の ``need_grad`` 属性が ``True`` になります。 デフォルトは"
+" ``False`` です。"
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__:9 of
+msgid ""
+"When ``True``, it returns a :obj:`~nnabla.utils.nnp_graph.NnpNetwork` "
+"object. Otherwise, It only returns the last variable of the constructed "
+"network. The default is ``False``."
+msgstr ""
+"``True`` の場合、 :obj:`~nnabla.utils.nnp_graph.NnpNetwork` "
+"オブジェクトを返します。それ以外の場合は、構築したネットワークの最後の変数を返すのみです。デフォルトは ``False`` です。"
+
+#: nnabla.models.object_detection.base.ObjectDetection.__call__:11 of
+msgid "Verbose level. With ``0``, it says nothing during network construction."
+msgstr "詳細レベル。 ``0`` に設定した場合、ネットワーク構築中は何も出力しません。"
+
+#: nnabla.models.object_detection.base.ObjectDetection.input_shape:1 of
+msgid "Should returns default image size (channel, height, width) as a tuple."
+msgstr "デフォルトの画像サイズ (チャネル、高さ、幅) の組として返します。"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform:1 of
+msgid "Create an object holding a new letterboxed image as `image` attribute."
+msgstr "`image` 属性として新しいレターボックス画像を持つオブジェクトを生成します。"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform:3 of
+msgid ""
+"Letterboxing is defined as scaling the input image to fit inside the "
+"desired output image frame (letterbox) while preserving the aspect ratio "
+"of the original image. The pixels that are not filled with the original "
+"image pixels become 127."
+msgstr ""
+"レターボックス化は、元画像のアスペクト比を維持しつつ、入力画像を意図した出力画像フレーム (レターボックス) "
+"内に収めるよう拡縮する処理として定義されます。元画像のピクセルで埋められないピクセルは 127 になります。"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform:8 of
+msgid ""
+"The created object also provides a functionality to convert bounding box "
+"coordinates back to the original image frame."
+msgstr "作成されたオブジェクトは、バウンディングボックス座標を元画像フレームに変換する機能も提供します。"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform:11 of
+msgid "An uint8 3-channel image"
+msgstr "uint8 の 3チャネル画像"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform:13 of
+msgid "Letterbox height"
+msgstr "レターボックスの高さ"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform:15 of
+msgid "Letterbox width"
+msgstr "レターボックスの幅"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform.inverse_coordinate_transform:1
+#: of
+msgid "Convert the bounding boxes back to the original image frame."
+msgstr "バウンディングボックスを元画像フレームに戻す変換を行います。"
+
+#: nnabla.models.object_detection.utils.LetterBoxTransform.inverse_coordinate_transform:3
+#: of
+msgid ""
+"`N` x `M` array where `M >= 4` and first 4 elements of `M` are `x`, `y` "
+"(center coordinates of bounding box), `w` and `h` (bouding box width and "
+"height)."
+msgstr ""
+"`M >= 4` かつ、 `M` の最初の４つの要素が `x`, `y` (境界ボックスの中心座標), `w` , `h` "
+"(境界ボックスの幅と高さ) となる `N` x `M` の配列。"
+
+#: nnabla.models.object_detection.utils.draw_bounding_boxes:1 of
+msgid ""
+"The transformed cordinates are further used to draw bounding boxes for "
+"the detected objects."
+msgstr "変換された座標は、検出されたオブジェクトのバウンディングボックスを描画するためにさらに使用されます。"
+
+#: nnabla.models.object_detection.utils.draw_bounding_boxes:3 of
+msgid "Input image"
+msgstr "入力画像"
+
+#: nnabla.models.object_detection.utils.draw_bounding_boxes:5 of
+msgid "Transformed bounding box co-orinates from the model."
+msgstr "モデルから変換されたバウンディングボックス座標。"
+
+#: nnabla.models.object_detection.utils.draw_bounding_boxes:7 of
+msgid "Name of categories in the dataset"
+msgstr "データセットにあるカテゴリ名。"
+
+#: nnabla.models.object_detection.utils.draw_bounding_boxes:9 of
+msgid "Colors for bunding boxes"
+msgstr "バウンディングボックスの色情報。"
+
+#: nnabla.models.object_detection.utils.draw_bounding_boxes:11 of
+msgid "Threshold of bounding boxes."
+msgstr "バウンディングボックスの閾値。"
+
+#: ../../python/api/models/object_detection.rst:75
+msgid "List of models"
+msgstr "モデルのリスト"
+
+#: nnabla.models.object_detection.YoloV2:1 of
+msgid ""
+"The following is a list of string that can be specified to ``use_up_to`` "
+"option in ``__call__`` method;"
+msgstr "``__call__`` method にある ``use_up_to`` オプションで指定できる文字列リストは以下の通り;"
+
+#: nnabla.models.object_detection.YoloV2:3 of
+msgid ""
+"``'detection'`` (default): The output from the last convolution "
+"(detection layer) after post-processing."
+msgstr "``'detection'`` (デフォルト): 後処理後の最後の畳み込み (検出層) からの出力。"
+
+#: nnabla.models.object_detection.YoloV2:4 of
+msgid "``'convdetect'``: The output of last convolution without post-processing."
+msgstr "``'convdetect'``: 後処理していない最後の畳み込みの出力。"
+
+#: nnabla.models.object_detection.YoloV2:5 of
+msgid ""
+"``'lastconv'``: Network till the convolution layer+relu which comes "
+"before detection convolution layer."
+msgstr "``'lastconv'``: 検出畳み込み層の直前の 畳み込み層+relu までのネットワーク。"
+
+#: nnabla.models.object_detection.YoloV2:8 of
+msgid "参照"
+msgstr ""
+
+#: nnabla.models.object_detection.YoloV2:9 of
+msgid ""
+"`Joseph Redmon et al., YOLO9000: Better, Faster, Stronger. "
+"<https://arxiv.org/abs/1612.08242>`_"
+msgstr ""
+

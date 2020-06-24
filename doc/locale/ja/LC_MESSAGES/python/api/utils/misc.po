@@ -1,0 +1,194 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Sony Corporation
+# This file is distributed under the same license as the Neural Network
+# Libraries package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Neural Network Libraries 1.7.0.dev1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-05-27 10:13+0900\n"
+"PO-Revision-Date: 2020-05-11 10:10+0900\n"
+"Last-Translator: \n"
+"Language: ja_JP\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.8.0\n"
+
+#: ../../python/api/utils/misc.rst:2
+msgid "Misc"
+msgstr "その他"
+
+#: ../../python/api/utils/misc.rst:5
+msgid "Python function profiler utilities"
+msgstr "Python 関数のプロファイラーユーティリティ"
+
+#: nnabla.utils.function_profile.profile:1 of
+msgid ""
+"Decorating a function that is profiled with a Python profiler such as "
+":class:`cProfile.Profile`."
+msgstr ":class:`cProfile.Profile` のように、Python プロファイラーでプロファイリングされた関数をデコレートします。"
+
+#: nnabla.utils.function_profile.profile:4 of
+msgid ""
+"**Note**: ``function`` doesn't refer to :obj:`~nnabla.function.Function`."
+" A Python function."
+msgstr "**注意**: ここでの ``関数`` は :obj:`~nnabla.function.Function` を指しません。Python 関数です。"
+
+#: nnabla.utils.function_profile.FunctionProfile.print_stats
+#: nnabla.utils.function_profile.profile of
+msgid "パラメータ"
+msgstr ""
+
+#: nnabla.utils.function_profile.profile:7 of
+msgid ""
+"A function that is profiled. If None is specified (default), it returns a"
+" new decorator function. It is used when you want to specify optional "
+"arguments of this decorator function."
+msgstr ""
+"プロファイリングされた関数。None (デフォルト) "
+"が指定された場合、新しいデコレーター関数が戻ります。本デコレーター関数のオプション引数を指定したい場合に使用します。"
+
+#: nnabla.utils.function_profile.profile:11 of
+msgid ""
+"A function object which takes the same inputs with the decorated "
+"function, and returns a boolean value. The decorated function is profiled"
+" only when the ``condition`` function returns ``True``. By default, it "
+"returns always `True`, hence profiling is performed everytime the "
+"decorated function is called."
+msgstr ""
+"デコレートした関数と同じ入力を受け取り、ブール値を返す関数オブジェクト。 ``condition`` 関数が ``True`` "
+"を返したときのみデコレートした関数がプロファイリングされます。デフォルトでは、常に `True` "
+"を返すため、デコレートした関数を呼び出す度にプロファイリングが実行されます。"
+
+#: nnabla.utils.function_profile.profile:17 of
+msgid ""
+"A profiler class such as :obj:`cProfile.Profile` and "
+":obj:`Profile.Profile`. The default value is :obj:`cProfile.Profile`."
+msgstr ""
+":obj:`cProfile.Profile` や :obj:`Profile.Profile` のようなプロファイラークラス。デフォルトは "
+":obj:`cProfile.Profile` です。"
+
+#: nnabla.utils.function_profile.profile:21 of
+msgid ""
+"The profiling result is printed at function calls with an interval "
+"specified by ``print_freq``. If 0 is specified (default), the profiling "
+"result is only printed at the end of the Python process unless "
+"``decorated_func.profiler.print_stats()`` is called manually."
+msgstr ""
+"プロファイリング結果は、 ``print_freq`` で指定された時間間隔での関数呼び出しで出力されます。 0 (デフォルト) "
+"が指定された場合、プロファイリング結果は、 ``decorated_func.profiler.print_stats()`` "
+"が手動で呼び出されない限り、Python プロセスの最後部のみに出力されます。"
+
+#: nnabla.utils.function_profile.profile:27 of
+msgid ""
+"A list or tuple of string, which is passed to "
+":meth:`pstats.Stats.sort_stats` as arguments. The default is "
+"``('cumulative', 'time', 'calls')``."
+msgstr ""
+":meth:`pstats.Stats.sort_stats` に引数として受け渡す、リストまたは文字列のタプル。デフォルトは "
+"``('cumulative', 'time', 'calls')`` 。"
+
+#: nnabla.utils.function_profile.profile:31 of
+msgid ""
+"A list or tuple which is passed to :meth:`pstats.Stats.print_stats` as "
+"arguments. The default value is ``(40,)``, which results in only 40 "
+"functions inside the decorated function are printed in the profiling "
+"result."
+msgstr ""
+":meth:`pstats.Stats.print_stats` に引数として受け渡す、リストまたは文字列のタプル。デフォルトは``(40,)``"
+" で、デコレートした関数内のうち 40 の関数がプロファイリング結果に出力されます。"
+
+#: nnabla.utils.function_profile.profile:37 of
+msgid "Returns: function"
+msgstr "戻り値: function"
+
+#: nnabla.utils.function_profile.profile:39 of
+msgid ""
+"A decorated function. If ``fn`` is ``None``, a new decorator function "
+"with optional arguments specified."
+msgstr "デコレート関数。 ``fn`` が ``None`` の場合、オプション引数付きの新しいデコレーター関数が指定されます。"
+
+#: nnabla.utils.function_profile.profile:43 of
+msgid "サンプル"
+msgstr ""
+
+#: nnabla.utils.function_profile.profile:44 of
+msgid ""
+"By decorating a function as following, the profling result is printed at "
+"the end of the Python process."
+msgstr "次のように関数をデコレートすると、プロファイリング結果は Python プロセスの最後部に出力されます。"
+
+#: nnabla.utils.function_profile.profile:47 of
+msgid ""
+"from nnabla.utils import function_profile\n"
+"\n"
+"@function_profile.profile\n"
+"def foo(a, b, c=None, d=None):\n"
+"    ..."
+msgstr ""
+
+#: nnabla.utils.function_profile.profile:55 of
+msgid ""
+"If you want to manually print the profiling result so far, use "
+":meth:`FunctionProfile.print_stats` of the :obj:`FunctionProfile` object "
+"attached to the decorated function as ``profiler`` attribute."
+msgstr ""
+"これまでのプロファイリング結果を手動で出力するには、 ``profiler`` 属性としてデコレートした関数にアタッチされた "
+":obj:`FunctionProfile` オブジェクトの :meth:`FunctionProfile.print_stats` "
+"をご使用ください。"
+
+#: nnabla.utils.function_profile.profile:60 of
+msgid "foo.profiler.print_stats()"
+msgstr ""
+
+#: nnabla.utils.function_profile.profile:64 of
+msgid ""
+"If you want to profile the function only when a specific argument is "
+"passed to, use the ``condition`` argument as following."
+msgstr "特定の引数が受け渡されたときにのみ関数をプロファイリングする場合、次のように ``condition`` 引数を使用してください。"
+
+#: nnabla.utils.function_profile.profile:67 of
+msgid ""
+"def profile_only_if_c_is_not_none(a, b, c=None, d=None):\n"
+"    return c is not None\n"
+"\n"
+"@function_profile.profile(condition=profile_only_if_c_is_not_none)\n"
+"def foo(a, b, c=None, d=None):\n"
+"    ..."
+msgstr ""
+
+#: nnabla.utils.function_profile.FunctionProfile:1 of
+msgid "Function profiler object."
+msgstr "関数プロファイラーオブジェクト"
+
+#: nnabla.utils.function_profile.FunctionProfile:3 of
+msgid ""
+"This is usually not directly used by users. It's created via "
+":func:`profile`, and attached to a decorated function object as an "
+"attribute ``profiler``. See ``profile`` function for details."
+msgstr ""
+"通常、ユーザーが直接使うことはありません。 :func:`profile` の実行を通じて生成され、属性 ``profiler`` "
+"ーとしてデコレートした関数にアタッチされます。詳しくは ``profile`` 関数をご覧ください。"
+
+#: nnabla.utils.function_profile.FunctionProfile.print_stats:1 of
+msgid "Manually print profiling result."
+msgstr "手動でプロファインリング結果を出力します。"
+
+#: nnabla.utils.function_profile.FunctionProfile.print_stats:3 of
+msgid ""
+"If False is specified, the profiling statistics so far is maintained. If "
+"``True`` (default), :obj:`~reset_stats` is called to reset the profiling "
+"statistics."
+msgstr ""
+"False が指定された場合、これまでのプロファイリング統計が維持されます。 ``True`` (デフォルト) の場合、 "
+":obj:`~reset_stats` を呼び出してプロファイリング統計をリセットします。"
+
+#: nnabla.utils.function_profile.FunctionProfile.reset_stats:1 of
+msgid "Manually reset the profiling statistics collected so far."
+msgstr "これまでのプロファイリング統計を手動でリセットします。"
+
