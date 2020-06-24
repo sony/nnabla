@@ -1,0 +1,4 @@
+scipy==1.2.1
+open3d
+scikit-image==0.15.0
+tqdm
