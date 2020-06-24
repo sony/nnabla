@@ -147,6 +147,7 @@ def test_rand_binomial_forward(seed, ctx, func_name, n, p, shape):
 @pytest.mark.parametrize("shape", [[50], [100, 100], [1000, 1000]])
 @pytest.mark.parametrize("seed", [-1, 313])
 @pytest.mark.skipif(platform.system() == "Darwin", reason='skipped on mac')
+@pytest.mark.skipif(platform.system() == "Windows", reason='skipped on win')
 def test_rand_gamma_forward(seed, ctx, func_name, k, theta, shape):
     with nn.context_scope(ctx):
         o = F.rand_gamma(k, theta, shape, seed=seed)

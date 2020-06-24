@@ -14,61 +14,37 @@
 
 # for nnabla>=1.5.0
 
-FROM centos:6
+FROM centos:7
 
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
 RUN yum install -y \
-        epel-release \
-        yum-utils \
+    epel-release \
+    yum-utils \
     && yum install -y \
         curl \
+        freetype-devel \
+        git \
         hdf5 \
         hdf5-devel \
+        lapack-devel \
+        libjpeg-devel \
+        liblzma-devel \
+        libpng-devel \
         redhat-lsb-core \
         rpm-build \
         unzip \
         wget \
+        which \
         zip \
         zlib-static \
+    && yum group install -y "Development Tools" \
     && yum clean all
 
-# ----------------------------------------------------------------------------
-# TODO: More sustainable way of installing gcc 5.x.
-# ----------------------------------------------------------------------------
-# It seems like devtoolset-4 is no longer provided in SCL repository,
-# but RPM packages for devtoolset-4 are still available in centos SCL
-# repoitory. We directly install these packages and their dependencies
-# from RPMs using yum command.
-# Packages we want to install are as follows:
-#   devtoolset-7-gcc
-#   devtoolset-7-gcc-c++
-#   devtoolset-7-gcc-gfortran
-#   git
-# ----------------------------------------------------------------------------
-
-# Installing devtoolset-7 directly from RPMs.
-RUN PKGS="\
-    devtoolset-7-runtime-7.1-4.el6.x86_64.rpm \
-    devtoolset-7-binutils-2.28-9.el6.x86_64.rpm \
-    devtoolset-7-gcc-7.2.1-1.el6.x86_64.rpm \
-    devtoolset-7-libstdc++-devel-7.2.1-1.el6.x86_64.rpm \
-    devtoolset-7-gcc-c++-7.2.1-1.el6.x86_64.rpm \
-    devtoolset-7-libquadmath-devel-7.2.1-1.el6.x86_64.rpm \
-    devtoolset-7-gcc-gfortran-7.2.1-1.el6.x86_64.rpm" \
-    && for pkg in $PKGS; do yum install -y http://mirror.centos.org/centos/6/sclo/x86_64/rh/Packages/d/$pkg; done \
-    && yum clean all
-
-RUN echo y|yum install git
-
-ENV PATH=/opt/rh/git/root/usr/bin:/opt/rh/devtoolset-7/root/usr/bin:$PATH
-ENV LD_LIBRARY_PATH=/opt/rh/git/root/usr/lib64:/opt/rh/devtoolset-7/root/usr/lib64:/opt/rh/devtoolset-7/root/usr/lib:$LD_LIBRARY_PATH
-ENV PKG_CONFIG_PATH=/opt/rh/git/root/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}
-
-################################################### cmake
-ENV CMAKEVER=3.14.3
+############################################################# cmake
+ARG CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && yum install -y cmake3 \
@@ -86,8 +62,8 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
-################################################## protobuf
-ENV PROTOVER=3.10.1
+############################################################ protobuf
+ARG PROTOVER=3.10.1
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
@@ -104,7 +80,7 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
-################################################## libarchive
+############################################################ libarchive
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
@@ -119,12 +95,11 @@ RUN mkdir /tmp/deps \
         -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
         -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
         ../libarchive-3.3.2 \
-    && make \
     && make install \
     && cd / \
     && rm -rf /tmp/*
 
-################################################## patchelf
+############################################################ patchelf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && wget http://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 \
@@ -137,8 +112,8 @@ RUN mkdir /tmp/deps \
     && rm -rf /tmp/*
 
 ################################################## miniconda3
-ARG PYTHON_VERSION_MAJOR
-ARG PYTHON_VERSION_MINOR
+ARG PYTHON_VERSION_MAJOR=3
+ARG PYTHON_VERSION_MINOR=6
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 ADD python/setup_requirements.txt /tmp/deps/
