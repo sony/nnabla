@@ -106,7 +106,7 @@ class TensorflowLiteExporter:
         if self._enable_optimize:
             optimizable_state = check_optimization_criteria(
                 self._nnp, self._batch_size)
-            if self.optimizable_state['NCHW_TO_NHWC']['status']:
+            if optimizable_state['NCHW_TO_NHWC']['status']:
                 from .common import OptimizePb
                 optimize = OptimizePb(graph_def).execute()
                 graph_def = optimize.export_graph_def()
