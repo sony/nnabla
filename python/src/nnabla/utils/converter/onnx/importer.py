@@ -1295,7 +1295,7 @@ class OnnxImporter:
                 func_list.append(muls)
                 inputs[2] = muls_out
 
-            bmout = n.input[0] + "_batchmatmul"
+            bmout = n.output[0] + "_batchmatmul"
             bm = generate_batchmatmul(n.name, inputs[:2], bmout, transpose_a, transpose_b,
                                       self._graph.name, self._func_counter)
             self._shape_output[bmout] = shape
