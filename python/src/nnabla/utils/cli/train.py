@@ -87,26 +87,28 @@ def _save_parameters(args, suffix, epoch, train_config, force=False):
         with open(version_filename, 'w') as file:
             file.write('{}\n'.format(nnp_version()))
 
-        param_filename = base + '_param.protobuf'
+        param_filename = base + '_param.h5'
         save_parameters(param_filename)
 
         need_save_opti = train_config.optimizers and epoch % _OPTIMIZER_CHECKPOINT_INTERVAL == 0
         if need_save_opti:
-            opti_filename = base + '_optimizer.protobuf'
-            save_optimizer_states(opti_filename, train_config)
+            opti_filenames = save_optimizer_states(
+                base, '.h5', train_config)
 
         with zipfile.ZipFile(filename, 'w') as nnp:
             nnp.write(version_filename, 'nnp_version.txt')
             nnp.write(_save_parameter_info['config'], os.path.basename(
                 _save_parameter_info['config']))
-            nnp.write(param_filename, 'parameter.protobuf')
+            nnp.write(param_filename, 'parameter.h5')
             if need_save_opti:
-                nnp.write(opti_filename, 'optimizer.protobuf')
+                for f in opti_filenames:
+                    nnp.write(f, f[len(base) + 1:])
 
         os.unlink(version_filename)
         os.unlink(param_filename)
         if need_save_opti:
-            os.unlink(opti_filename)
+            for f in opti_filenames:
+                os.unlink(f)
 
         _save_parameter_info[suffix]['epoch'] = epoch
         _save_parameter_info[suffix]['time'] = current_time

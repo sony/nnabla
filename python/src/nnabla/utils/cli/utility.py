@@ -183,18 +183,34 @@ def get_cpu_gpu_average_load():
 
 
 def _create_optimizer_lite(opti):
-    o = nnabla_pb2.Optimizer()
-    o.name = opti.name
-    o.solver.type = re.sub(r'(|Cuda)$', '', str(opti.solver.name))
-    opti.solver.set_states_to_protobuf(o)
-    return o
+    proto_o = nnabla_pb2.Optimizer()
+    proto_o.name = opti.name
+    proto_o.solver.type = re.sub(r'(|Cuda)$', '', str(opti.solver.name))
+    opti.solver.set_states_to_protobuf(proto_o)
+    return proto_o
 
 
-def save_optimizer_states(filename, train_config):
-    proto = nnabla_pb2.NNablaProtoBuf()
-    proto_optimizers = []
-    for o in train_config.optimizers.values():
-        proto_optimizers.append(_create_optimizer_lite(o.optimizer))
-    proto.optimizer.extend(proto_optimizers)
-    with get_file_handle_save(filename, '.protobuf') as file:
-        file.write(proto.SerializeToString())
+def save_optimizer_states(filebase, ext, train_config):
+    filelist = []
+    if ext == '.protobuf':
+        filename = filebase + '_optimizer.protobuf.optimizer'
+        proto = nnabla_pb2.NNablaProtoBuf()
+        proto_optimizers = []
+        for o in train_config.optimizers.values():
+            proto_optimizers.append(_create_optimizer_lite(o.optimizer))
+        proto.optimizer.extend(proto_optimizers)
+        with get_file_handle_save(filename, '.protobuf') as f:
+            f.write(proto.SerializeToString())
+            filelist.append(filename)
+    else:
+        for o in train_config.optimizers.values():
+            f_name = '{}_{}_optimizer.h5'.format(
+                o.optimizer.name,
+                re.sub(r'(|Cuda)$', '', str(o.optimizer.solver.name))
+            )
+            filename = '{}_{}'.format(filebase, f_name)
+            o.optimizer.solver.save_states(filename)
+            name_ext = '{}.optimizer'.format(filename)
+            os.rename(filename, name_ext)
+            filelist.append(name_ext)
+    return filelist

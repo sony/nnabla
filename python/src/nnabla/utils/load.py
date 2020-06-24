@@ -43,7 +43,7 @@ from nnabla.utils.learning_rate_scheduler import (
 
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
-from nnabla.utils.get_file_handle import get_file_handle_load
+from nnabla.utils.get_file_handle import get_file_handle_load, get_buf_type
 
 import nnabla as nn
 import nnabla.function as F
@@ -831,6 +831,27 @@ def _executors(executors_proto, networks):
     return executors
 
 
+def _load_optimizer_checkpoint(opti_proto, opti_h5_files, info):
+    if opti_proto.optimizer:
+        opti_proto_dict = {}
+        for o in opti_proto.optimizer:
+            opti_proto_dict[o.name] = o
+        for o in info.optimizers.values():
+            if o.name in opti_proto_dict:
+                o.solver.set_states_from_protobuf(opti_proto_dict[o.name])
+    elif opti_h5_files:
+        for o in info.optimizers.values():
+            key = '{}_{}_optimizer.h5.optimizer'.format(
+                o.name,
+                re.sub(r'(|Cuda)$', '', str(o.solver.name))
+            )
+            if key in opti_h5_files:
+                name_ext = opti_h5_files[key]
+                filepath = os.path.splitext(name_ext)[0]
+                os.rename(name_ext, filepath)
+                o.solver.load_states(filepath)
+
+
 ##########################################################################
 # API
 #
@@ -850,8 +871,11 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
 
     proto = nnabla_pb2.NNablaProtoBuf()
 
+    # optimizer checkpoint
     opti_proto = nnabla_pb2.NNablaProtoBuf()
-    OPTI_BUF_NAME = 'optimizer.protobuf'
+    OPTI_BUF_EXT = ['.optimizer']
+    opti_h5_files = {}
+    tmpdir = tempfile.mkdtemp()
 
     if isinstance(filenames, list) or isinstance(filenames, tuple):
         pass
@@ -884,9 +908,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                 if not exclude_parameter:
                     nn.load_parameters(filename, extension=ext)
         elif ext in ['.protobuf', '.h5']:
-            if filename == OPTI_BUF_NAME:
-                pass
-            elif not exclude_parameter:
+            if not exclude_parameter:
                 nn.load_parameters(filename, extension=ext)
             else:
                 logger.info('Skip loading parameter.')
@@ -906,15 +928,22 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
                                 with nnp.open(name, 'r') as f:
                                     nn.load_parameters(f, extension=ext)
                     elif ext in ['.protobuf', '.h5']:
-                        if name == OPTI_BUF_NAME:
-                            with nnp.open(name, 'r') as f:
-                                with get_file_handle_load(f, '.protobuf') as opti_p:
-                                    opti_proto.MergeFromString(opti_p.read())
-                        elif not exclude_parameter:
+                        if not exclude_parameter:
                             with nnp.open(name, 'r') as f:
                                 nn.load_parameters(f, extension=ext)
                         else:
                             logger.info('Skip loading parameter.')
+                    elif ext in OPTI_BUF_EXT:
+                        buf_type = get_buf_type(name)
+                        if buf_type == 'protobuf':
+                            with nnp.open(name, 'r') as f:
+                                with get_file_handle_load(f, '.protobuf') as opti_p:
+                                    opti_proto.MergeFromString(
+                                        opti_p.read())
+                        elif buf_type == 'h5':
+                            nnp.extract(name, tmpdir)
+                            opti_h5_files[name] = os.path.join(
+                                tmpdir, name)
 
     default_context = None
     if proto.HasField('global_config'):
@@ -954,13 +983,8 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
 
     info.optimizers = _optimizers(
         proto, default_context, info.networks, info.datasets)
-    if len(opti_proto.optimizer) > 0:
-        opti_proto_dict = {}
-        for o in opti_proto.optimizer:
-            opti_proto_dict[o.name] = o
-        for o in info.optimizers.values():
-            if o.name in opti_proto_dict:
-                o.solver.set_states_from_protobuf(opti_proto_dict[o.name])
+    _load_optimizer_checkpoint(opti_proto, opti_h5_files, info)
+    shutil.rmtree(tmpdir)
 
     info.monitors = _monitors(
         proto, default_context, info.networks, info.datasets)
