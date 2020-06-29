@@ -41,7 +41,7 @@ import os
 with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'VERSION.txt')) as f:
     version = release = f.readlines()[0].strip()
 
-language = None
+language = 'ja'
 locale_dirs = ['locale/']
 gettext_compact = False
 gettext_additional_targets = ['literal-block', 'code-block']
