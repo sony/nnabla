@@ -36,6 +36,11 @@ NBLA_API vector<NdArrayPtr> execute(FunctionPtr func,
 
 NBLA_API void execute(FunctionPtr f, const Variables &inputs,
                       const Variables &outputs);
+
+NBLA_API void backward(FunctionPtr f, const Variables &inputs,
+                       const Variables &outputs,
+                       const vector<bool> &propagate_down,
+                       const vector<bool> &accum);
 }
 
 #endif
