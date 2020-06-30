@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import argparse
-from utils import *
+
+from utils import read_yaml
 
 
 def get_config():
@@ -21,10 +22,15 @@ def get_config():
     Get command line arguments.
     Arguments set the default values of command line arguments.
     """
+
     parser = argparse.ArgumentParser(description='TecoGAN')
+
     parser.add_argument('--cfg', default="./config.yaml")
-    args, subargs = parser.parse_known_args()
+
+    args, _ = parser.parse_known_args()
+
     conf = read_yaml(args.cfg)
+
     parser.add_argument('--input_video_dir', default=conf.data.input_video_dir,
                         help='The directory of the video input data, for training')
     parser.add_argument('--output_dir', default=conf.data.output_dir,
@@ -35,10 +41,12 @@ def get_config():
                         help='max iteration for training')
     parser.add_argument('--pre_trained_model', type=str, default=conf.train.pre_trained_model,
                         help='the weight of frvsr generator will be loaded as an initial point')
-    parser.add_argument('--vgg_pre_trained_weights', type=str, default=conf.train.vgg_pre_trained_weights,
+    parser.add_argument('--vgg_pre_trained_weights', type=str,
+                        default=conf.train.vgg_pre_trained_weights,
                         help='path to pre-trained weights for the vgg19')
     parser.add_argument('--tecogan', type=bool,
-                        default=conf.train.tecogan, help='True for Tecogan training False for FRVSR training')
+                        default=conf.train.tecogan,
+                        help='True for Tecogan training False for FRVSR training')
 
     args = parser.parse_args()
 
@@ -50,8 +58,5 @@ def get_config():
     conf.train.pre_trained_model = args.pre_trained_model
     conf.train.vgg_pre_trained_weights = args.vgg_pre_trained_weights
     conf.train.tecogan = args.tecogan
+
     return conf
-
-
-if __name__ == "__main__":
-    conf = get_config()
