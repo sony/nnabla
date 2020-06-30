@@ -23,21 +23,27 @@ from nnabla.utils import nnabla_pb2
 from nnabla.utils.get_file_handle import get_file_handle_save
 from nnabla.logger import logger
 
-cg_load_backend_ok = True
+cpu_load_backend_ok = True
 try:
     import psutil
+except Exception:
+    # measure cpu load only if psutil installed
+    cpu_load_backend_ok = False
+
+gpu_load_backend_ok = True
+try:
     import pynvml
     pynvml.nvmlInit()
 except Exception:
-    # measure cpu/gpu load only if these two modules installed
-    cg_load_backend_ok = False
+    # measure gpu load only if nvml installed
+    gpu_load_backend_ok = False
 
 
 # load variable
 # ============
 gpu_m_count = 0
 gpu_a_load = {}
-if cg_load_backend_ok:
+if cpu_load_backend_ok:
     p_handler = psutil.Process()
     p_handler_avg = psutil.Process()
     p_handler_avg.cpu_percent()
@@ -118,12 +124,14 @@ def measure_cpu_gpu_instant_load():
     # load = [rank, cpu_load, nvidia_device_id, gpu_load]
     # result_arr: [load, load, ...]
 
-    if cg_load_backend_ok:
+    if cpu_load_backend_ok:
+        global p_handler
+        cpu_load = p_handler.cpu_percent()
+
+    if gpu_load_backend_ok:
         global gpu_a_load
         global gpu_m_count
-        global p_handler
 
-        cpu_load = p_handler.cpu_percent()
         gpu_m_count += 1
         try:
             comm = current_communicator()
@@ -155,6 +163,9 @@ def measure_cpu_gpu_instant_load():
 
         callback.update_status(
             ('cpu_gpu_load', collect_and_shape_result(cpu_load, gpu_load)))
+    else:
+        callback.update_status(
+            ('cpu_gpu_load', collect_and_shape_result(cpu_load, [])))
 
 
 def get_cpu_gpu_average_load():
@@ -162,12 +173,14 @@ def get_cpu_gpu_average_load():
     # load = [rank, cpu_load, nvidia_device_id, gpu_load]
     # result_arr: [load, load, ...]
 
-    if cg_load_backend_ok:
+    if cpu_load_backend_ok:
         global p_handler_avg
+        c_load = p_handler_avg.cpu_percent()
+
+    if gpu_load_backend_ok:
         global gpu_a_load
         global gpu_m_count
 
-        c_load = p_handler_avg.cpu_percent()
         load_info = {**gpu_a_load}
         gpu_a_load = {}
         gpu_m_count = 0
@@ -179,7 +192,7 @@ def get_cpu_gpu_average_load():
 
         return collect_and_shape_result(c_load, g_load)
     else:
-        return []
+        return collect_and_shape_result(c_load, [])
 
 
 def _create_optimizer_lite(opti):

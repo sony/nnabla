@@ -518,8 +518,7 @@ def _train(args, config):
                             timeinfo.past_time, timeinfo.estimate_time, cgload_log))
 
                         if cg_load_str:
-                            callback.update_status(
-                                (['cg_load', epoch], cg_load))
+                            callback.update_status(('cpu_gpu_load', cg_load))
                             progress(cg_load_str, 1)
 
                         if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
