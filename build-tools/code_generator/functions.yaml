@@ -5006,6 +5006,43 @@ Loss Functions:
     function_ids:
       i: 104
     c_runtime: not support
+Geometric Neural Network Layers:
+  WarpByFlow:
+    snake_name: warp_by_flow
+    doc: |2
+
+      Transform the image(s) *data* by *flow* field(s) of offset vectors such
+      that each output pixel corresponds to the input image pixel at the
+      relative offset location given by horizontal and vertical flow values
+      (in other words, the flow field describes the coordinate displacements
+      for each output pixel to the corresponding input pixel). Both *data* and
+      *flow* are 4-D variables (in "NCHW" layout) with identical shape except
+      the *flow* channel dimension (which is always 2).
+
+      .. math::
+          output_{n,c,y,x} = data_{n,c,y',x'}, 
+
+      where
+
+      .. math::
+          y' &=& y + flow_{n,1,y,x}, \\
+          x' &=& x + flow_{n,0,y,x}.
+
+      The output pixel values at :math:`y'` and :math:`x'` locations are
+      obtained by bilinear interpolating between the 4 closest pixels of the
+      input image. Pixel values outside of the input image are implicitly
+      padded with the value of the closest boundary pixel.
+    inputs:
+      data:
+        doc: Input image data with shape `(N, Channels, Height, Width)`.
+      flow:
+        doc: Flow field vectors with shape `(N, 2, Height, Width)`.
+    outputs:
+      warped_image:
+        doc: Transformed image data with shape `(N, Channels, Height, Width)`.
+    c_runtime: not support
+    function_ids:
+      Empty: 277
 Quantization Neural Network Layers:
   BinarySigmoid:
     snake_name: binary_sigmoid
@@ -6273,42 +6310,6 @@ Unsupported, Special Use:
     c_runtime: not support
     function_ids:
       iIiIBiIB: 272
-  WarpByFlow:
-    snake_name: warp_by_flow
-    doc: |2
-
-      Transform the image(s) *data* by *flow* field(s) of offset vectors such
-      that each output pixel corresponds to the input image pixel at the
-      relative offset location given by horizontal and vertical flow values
-      (in other words, the flow field describes the coordinate displacements
-      for each output pixel to the corresponding input pixel). Both *data* and
-      *flow* are 4-D variables (in "NCHW" layout) with identical shape except
-      the *flow* channel dimension (which is always 2).
-
-      .. math::
-          output_{n,c,y,x} = data_{n,c,y',x'}, 
-
-      where
-
-      .. math::
-          y' &=& y + flow_{n,1,y,x}, \\
-          x' &=& x + flow_{n,0,y,x}.
-
-      The output pixel values at :math:`y'` and :math:`x'` locations are
-      obtained by bilinear interpolating between the 4 closest pixels of the
-      input image. Pixel values outside of the input image are implicitly
-      padded with the value of the closest boundary pixel.
-    inputs:
-      data:
-        doc: Input image data with shape `(N, Channels, Height, Width)`.
-      flow:
-        doc: Flow field vectors with shape `(N, 2, Height, Width)`.
-    outputs:
-      warped_image:
-        doc: Transformed image data with shape `(N, Channels, Height, Width)`.
-    c_runtime: not support
-    function_ids:
-      Empty: 277
   PatchCorrelation:
     snake_name: patch_correlation
     doc: |2
