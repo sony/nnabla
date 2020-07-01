@@ -26,6 +26,10 @@ namespace nbla {
     return it->second;
   }
 
+  void VirtualCachingAllocatorBase::set_chunk_size(size_t size, int ct_flag) {
+    (ct_flag == int(chunk_type::SMALL) ? small_chunk_size_ : large_chunk_size_) = size;
+  }
+
   //----------------------------------------------------------------------
   // Overriding member functions
   //----------------------------------------------------------------------

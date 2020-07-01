@@ -31,14 +31,21 @@ namespace nbla {
     typedef queue<PhysicalMemoryPtr> PhysicalMemoryCache;
     typedef unordered_map<string, PhysicalMemoryCache> CacheMap;
 
+    enum chunk_type {
+      SMALL=0,
+      LARGE=1,
+    };
+
+    void set_chunk_size(size_t size, int ct_flag);
+
   private:
     // Memory cache
     CacheMap small_device_cache_;
     CacheMap large_device_cache_;
 
     // Size of each single memory chunk.
-    static constexpr size_t small_chunk_size_ = 2ULL << 20; // 2MB
-    static constexpr size_t large_chunk_size_ = 20ULL << 20; // 20MB
+    size_t small_chunk_size_ = 2ULL << 20; // 2MB
+    size_t large_chunk_size_ = 20ULL << 20; // 20MB
 
     // Waiting memory list to be cleared.
     queue<shared_ptr<Memory>> waiting_list_ = {};
