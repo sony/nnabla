@@ -30,6 +30,7 @@ from libcpp.string cimport string
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t
+from cpython cimport Py_INCREF, Py_DECREF
 
 cimport solver
 from solver cimport CSolver, CSolverState
@@ -46,20 +47,21 @@ np.import_array()
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import google.protobuf.text_format as text_format
 
+cdef void callback_incref(void *obj) with gil:
+    Py_INCREF(<object>obj)
+
 cdef void callback_decref(void *obj) with gil:
-    # Note we do not decrement reference count because we do not increment.
-    # Py_DECREF(<object>obj)
-    pass
+    Py_DECREF(<object>obj)
 
 cdef void callback_call_callable(void *obj) except+ with gil:
     cdef object cbl = <object>obj
     cbl()
 
 cdef UpdateHookWithObject create_update_hook_with_object(object callback):
-    # Note we do not have to increment reference count
-    # because we know callback will alive until FunctionHookWithObject dies.
-    # Py_INCREF(callback)
-    return UpdateHookWithObject(<void*>callback, <std_function[void(void*)]>callback_call_callable, <std_function[void(void*)]>callback_decref)
+    return UpdateHookWithObject(<void*>callback,
+                                <std_function[void(void*)]>callback_call_callable,
+                                <std_function[void(void*)]>callback_incref,
+                                <std_function[void(void*)]>callback_decref)
 
 
 class SolverState(object):

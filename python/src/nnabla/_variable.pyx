@@ -93,20 +93,22 @@ cdef class CommunicatorBackwardCallback:
 
         return var
 
+cdef void callback_incref(void *obj) with gil:
+    Py_INCREF(<object>obj)
+
 cdef void callback_decref(void *obj) with gil:
-    # Note we do not decrement reference count because we do not increment.
-    # Py_DECREF(<object>obj)
-    pass
+    Py_DECREF(<object>obj)
 
 cdef void callback_call_callable(void *obj, const CgFunctionPtr &f) except+ with gil:
     cdef object cbl = <object>obj
     cbl(function.Function.create_from_c(const_pointer_cast[CgFunction, CgFunction](<const shared_ptr[CgFunction]&>f)))
 
 cdef FunctionHookWithObject create_function_hook_with_object(object callback):
-    # Note we do not have to increment reference count
-    # because we know callback will alive until FunctionHookWithObject dies.
-    # Py_INCREF(callback)
-    return FunctionHookWithObject(<void*>callback, <std_function[void(void*, const CgFunctionPtr&)]>callback_call_callable, <std_function[void(void*)]>callback_decref)
+    return FunctionHookWithObject(<void*>callback,
+                                  <std_function[void(void*, const CgFunctionPtr&)]>callback_call_callable,
+                                  <std_function[void(void*)]>callback_incref,
+                                  <std_function[void(void*)]>callback_decref)
+
 
 
 cdef class Variable:

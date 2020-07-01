@@ -175,6 +175,7 @@ if __name__ == '__main__':
         'function',
         'solver',
         'communicator',
+        'callback',
         '_init',
         '_nd_array',
         '_computation_graph',

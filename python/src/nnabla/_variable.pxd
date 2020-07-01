@@ -50,11 +50,13 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
     ctypedef std_function[void(const CgFunctionPtr &)] function_hook_type
 
     cdef cppclass FunctionHookWithObject:
+        ctypedef std_function[void(void *)] setup_callback_type
         ctypedef std_function[void(void *)] cleanup_callback_type
         ctypedef std_function[void(void *, const CgFunctionPtr &)] callback_type
         FunctionHookWithObject()
         FunctionHookWithObject(void *obj, callback_type cb,
-                                   cleanup_callback_type clean_cb)
+                               setup_callback_type setup_cb,
+                               cleanup_callback_type clean_cb)
 
     cdef cppclass CgVariable:
         CgVariable() except+

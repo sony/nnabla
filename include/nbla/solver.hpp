@@ -40,19 +40,25 @@ This is used from Python frontend.
 */
 class UpdateHookWithObject {
 public:
+  typedef std::function<void(void *)> setup_callback_type;
   typedef std::function<void(void *)> cleanup_callback_type;
   typedef std::function<void(void *)> callback_type;
 
 private:
   void *obj_{ nullptr };
   callback_type callback_;
+  setup_callback_type  setup_callback_;
   cleanup_callback_type cleanup_callback_;
 
 public:
   NBLA_API UpdateHookWithObject();
+  NBLA_API UpdateHookWithObject(const UpdateHookWithObject& from);
   NBLA_API UpdateHookWithObject(void *obj, callback_type cb,
-                                cleanup_callback_type clean_cb);
+                                  setup_callback_type  setup_cb,
+                                  cleanup_callback_type clean_cb);
   NBLA_API ~UpdateHookWithObject();
+  NBLA_API UpdateHookWithObject& operator=(const UpdateHookWithObject& rhs);
+
   NBLA_API void operator()();
 };
 

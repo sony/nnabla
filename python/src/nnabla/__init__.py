@@ -39,6 +39,16 @@ from .context import (
 from .auto_forward import auto_forward, set_auto_forward, get_auto_forward
 from ._computation_graph import forward_all
 from .grad import grad
+from .callback import (
+    set_function_pre_hook,
+    set_function_post_hook,
+    unset_function_pre_hook,
+    unset_function_post_hook,
+    set_solver_pre_hook,
+    set_solver_post_hook,
+    unset_solver_pre_hook,
+    unset_solver_post_hook
+)
 
 from .core.module import Module
 from .core import graph_def

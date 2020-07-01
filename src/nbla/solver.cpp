@@ -15,6 +15,7 @@
 #include <nbla/cpu.hpp>
 #include <nbla/singleton_manager.hpp>
 #include <nbla/solver.hpp>
+#include <nbla/global_solver_callback.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -24,17 +25,42 @@ namespace nbla {
 using std::make_shared;
 using std::make_pair;
 
+/** UpdateHookWithObject Implementation **/
 UpdateHookWithObject::UpdateHookWithObject() {}
+
+UpdateHookWithObject::UpdateHookWithObject(const UpdateHookWithObject& from) :
+    obj_(from.obj_), callback_(from.callback_),
+    setup_callback_(from.setup_callback_),
+    cleanup_callback_(from.cleanup_callback_) {setup_callback_(obj_);}
+
 UpdateHookWithObject::UpdateHookWithObject(
-  void *obj, 
-  UpdateHookWithObject::callback_type cb,
-  UpdateHookWithObject::cleanup_callback_type cleanup_cb)
-  : obj_(obj), callback_(cb), cleanup_callback_(cleanup_cb) {}
+    void *obj, callback_type cb,
+    setup_callback_type setup_cb,
+    cleanup_callback_type cleanup_cb)
+    : obj_(obj), callback_(cb), setup_callback_(setup_cb), cleanup_callback_(cleanup_cb) {setup_callback_(obj_);}
 
 UpdateHookWithObject::~UpdateHookWithObject() { cleanup_callback_(obj_); }
+
+UpdateHookWithObject&
+UpdateHookWithObject::operator=(const UpdateHookWithObject& rhs) {
+  // check self-assignment
+  if (&rhs == this) return *this;
+
+  obj_ = rhs.obj_;
+  callback_ = rhs.callback_;
+  setup_callback_ = rhs.setup_callback_;
+  cleanup_callback_ = rhs.cleanup_callback_;
+
+  setup_callback_(obj_);
+
+  return *this;
+}
+
 void UpdateHookWithObject::operator()() { callback_(obj_); }
 
 
+
+/** Solver Implementation**/
 Solver::Solver(const Context &ctx) : ctx_(ctx), setup_called_(false) {}
 
 Solver::~Solver() {}
@@ -137,6 +163,9 @@ namespace {
   struct ScopedCallback {
     update_hook_type post_;
     ScopedCallback(update_hook_type &pre, update_hook_type &post) : post_(post) {
+      // Call global pre_hooks first
+      SingletonManager::get<GlobalSolverCallback>()->call_pre_hooks();
+
       if (pre) {
 	pre();
       }
@@ -145,6 +174,9 @@ namespace {
       if (post_) {
 	post_();
       }
+
+      // Call global post_hooks last
+      SingletonManager::get<GlobalSolverCallback>()->call_post_hooks();
     }
   };
 }

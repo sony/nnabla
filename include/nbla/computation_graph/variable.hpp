@@ -51,19 +51,25 @@ This is used from Python frontend.
  */
 class FunctionHookWithObject {
 public:
+  typedef std::function<void(void *)> setup_callback_type;
   typedef std::function<void(void *)> cleanup_callback_type;
   typedef std::function<void(void *, const CgFunctionPtr &f)> callback_type;
 
 private:
   void *obj_{nullptr};
   callback_type callback_;
+  setup_callback_type  setup_callback_;
   cleanup_callback_type cleanup_callback_;
 
 public:
   NBLA_API FunctionHookWithObject();
+  NBLA_API FunctionHookWithObject(const FunctionHookWithObject& from);
   NBLA_API FunctionHookWithObject(void *obj, callback_type cb,
+                                  setup_callback_type  setup_cb,
                                   cleanup_callback_type clean_cb);
   NBLA_API ~FunctionHookWithObject();
+  NBLA_API FunctionHookWithObject& operator=(const FunctionHookWithObject& rhs);
+
   NBLA_API void operator()(const CgFunctionPtr &f);
 };
 
