@@ -1,0 +1,100 @@
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from __future__ import absolute_import
+
+import nnabla as nn
+import nnabla.functions as F
+import nnabla.parametric_functions as PF
+
+from nnabla.parameter import get_parameter_or_create
+
+
+# LeNet
+def lenet(image, test=False):
+    h = PF.convolution(image, 16, (5, 5), (1, 1),
+                       with_bias=False, name='conv1')
+    h = PF.batch_normalization(h, batch_stat=not test, name='conv1-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='conv2')
+    h = PF.batch_normalization(h, batch_stat=not test, name='conv2-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.affine(h, 10, with_bias=False, name='fc1')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='fc2')
+    return pred
+
+
+# Channel last LeNet
+def cl_lenet(image, test=False):
+    h = PF.convolution(image, 16, (5, 5), (1, 1),
+                       channel_last=True, with_bias=False, name='conv1')
+    h = PF.batch_normalization(h, batch_stat=not test, name='conv1-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.convolution(h, 16, (5, 5), (1, 1),
+                       channel_last=True, with_bias=True, name='conv2')
+    h = PF.batch_normalization(h, batch_stat=not test, name='conv2-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.affine(h, 10, with_bias=False, name='fc1')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='fc2')
+    return pred
+
+
+# BN LeNet
+def bn_lenet(image, test=False, w_bias=False):
+    h = PF.convolution(image, 16, (5, 5), (1, 1),
+                       with_bias=w_bias, name='conv1')
+    h = PF.batch_normalization(h, batch_stat=not test, name='conv1-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='conv2')
+    h = PF.batch_normalization(h, batch_stat=not test, name='conv2-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.affine(h, 10, with_bias=True, name='fc1')
+    h = PF.batch_normalization(h, batch_stat=not test, name='fc1-bn')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='fc2')
+    return pred
+
+
+# Batch Normalization Small LeNet
+def bn_folding_lenet(image, test=False, name="bn-folding-graph-ref"):
+    h = PF.convolution(image, 16, (5, 5), (1, 1), with_bias=True, name='conv1')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='conv2')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.affine(h, 10, with_bias=True, name='fc1')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='fc2')
+    return pred
