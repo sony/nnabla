@@ -244,6 +244,7 @@ if __name__ == '__main__':
     packages = ['nnabla',
                 'nnabla.contrib',
                 'nnabla.experimental',
+                'nnabla.experimental.graph_converters',
                 'nnabla.experimental.parametric_function_class',
                 'nnabla.experimental.trainers',
                 'nnabla.models',
