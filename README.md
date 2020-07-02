@@ -25,3 +25,4 @@ We have prepared interactive demos, where you can play around without having to 
 | Name        | Notebook           | Task  |
 |:------------------------------------------------:|:-------------:|:-----:|
 | ESR-GAN       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla-examples/blob/master/interactive-demos/esrgan.ipynb) | Super-Resolution|
+| Self-Attention GAN       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla-examples/blob/master/interactive-demos/sagan.ipynb) | Image Generation|
