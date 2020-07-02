@@ -18,7 +18,8 @@ SgdW:
     Stochastic gradient descent (SGD) optimizer with decoupled weight decay.
 
     .. math::
-        w_{t+1} \leftarrow w_t - \eta \Delta w_t - (\eta / \eta_0)\lambda\w_t
+        v_t \leftarrow \gamma v_{t-1} + \eta g_t - (\eta / \eta_0)\lambda v_{t-1}\\
+        w_{t+1} \leftarrow w_t - v_t
 
     where :math:`\lambda` is the decoupled weight decay rate.
 
@@ -261,7 +262,7 @@ AdamW:
         v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
         w_{t+1} &\leftarrow w_t - \alpha
             \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
-            \frac{m_t}{\sqrt{v_t} + \epsilon} - \eta_t\lambda\w_{t-1}
+            \frac{m_t}{\sqrt{v_t} + \epsilon} - \eta_t\lambda w_t
 
     where :math:`g_t` denotes a gradient, :math:`\lambda` is the decoupled weight decay rate,
     and :math:`m_0 \leftarrow 0` and :math:`v_0 \leftarrow 0`.

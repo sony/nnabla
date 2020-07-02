@@ -442,7 +442,7 @@ class NnpLoader(object):
             # 'y' is an outputs of the graph.
             y = net.outputs['y']
             # Set random data as input and perform forward prop.
-            x.d = np.random.randn(x.shape)
+            x.d = np.random.randn(*x.shape)
             y.forward(clear_buffer=True)
             print('output:', y.d)
 
