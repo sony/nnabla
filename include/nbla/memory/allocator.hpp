@@ -89,6 +89,13 @@ public:
    */
   NBLA_API AllocatorMemory(shared_ptr<Memory> memory,
                            shared_ptr<Allocator> allocator);
+
+  /** Constructor.
+
+      This is called to create an epmpty instance.
+  */
+  NBLA_API AllocatorMemory();
+
   /** Destructor returns a Memory instance given at a constructor to an
       allocator.
    */

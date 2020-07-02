@@ -220,7 +220,8 @@ if(BUILD_CPP_LIB)
   # includes
   list(APPEND NBLA_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/third_party/eigen-3.3.5)
+    ${CMAKE_SOURCE_DIR}/third_party/eigen-3.3.5
+    ${CMAKE_SOURCE_DIR}/third_party/dlpack/include)
   
   if(BUILD_CPP_UTILS)
     list(APPEND NBLA_INCLUDE_DIRS
@@ -344,10 +345,15 @@ if(BUILD_PYTHON_PACKAGE)
   file(GLOB_RECURSE NBLA_PYTHON_DEPS
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.py
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.pyx
-    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.pxd)
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.pxd,
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.py,
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.pyx,
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.pxd)
   file(GLOB_RECURSE NBLA_PYTHON_BUILD_OUTPUT_CYTHON
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.h,
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.cpp,
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.h)
   
   set(NBLA_PYTHON_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py)
   set(NBLA_PYTHON_OUTPUT ${CMAKE_BINARY_DIR}/build)

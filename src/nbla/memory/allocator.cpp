@@ -95,6 +95,9 @@ AllocatorMemory::AllocatorMemory(shared_ptr<Memory> memory,
     : memory_(memory), allocator_(allocator) {
   memory->lock();
 }
+
+AllocatorMemory::AllocatorMemory() : memory_(nullptr), allocator_(nullptr)  {}
+
 void AllocatorMemory::release() {
   if (!memory_) {
     return;
@@ -103,6 +106,7 @@ void AllocatorMemory::release() {
   allocator_->free(memory_);
   memory_ = nullptr;
 }
+
 AllocatorMemory::~AllocatorMemory() { this->release(); }
 
 AllocatorMemory::AllocatorMemory(AllocatorMemory &&rhs) {

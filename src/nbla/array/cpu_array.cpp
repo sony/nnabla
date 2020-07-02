@@ -67,7 +67,6 @@ Context CpuArray::filter_context(const Context &ctx) {
   return Context({}, "CpuArray", "");
 }
 
-NBLA_DEFINE_COPY_WRAPPER(cpu_array_copy);
 NBLA_DEFINE_FUNC_COPY_FROM(CpuArray, cpu_array_copy, cpu);
 NBLA_DEFINE_FUNC_FILL(CpuArray, cpu_fill, cpu);
 

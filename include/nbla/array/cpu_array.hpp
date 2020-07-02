@@ -44,5 +44,14 @@ public:
   virtual ~CpuCachedArray();
   static Context filter_context(const Context &ctx);
 };
+
+/** Helper template to copy data from CpuArray with other data type.
+*/
+template <typename Ta, typename Tb>
+void cpu_array_copy(const Array *src, Array *dst);
+
+template <typename T> void cpu_fill(Array *self, float value);
+
+NBLA_DEFINE_COPY_WRAPPER(cpu_array_copy);
 }
 #endif

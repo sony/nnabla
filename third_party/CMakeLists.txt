@@ -51,4 +51,8 @@ endif()
 if(BUILD_CPP_UTILS)
   download_and_extract_library(cmdline-master .zip https://github.com/tanakh/cmdline/archive/master.zip)
 endif()
-  
+
+download_and_extract_library(dlpack .zip https://github.com/dmlc/dlpack/archive/v0.3.zip)
+if(NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/dlpack)
+  file(RENAME ${CMAKE_SOURCE_DIR}/third_party/dlpack-0.3 ${CMAKE_SOURCE_DIR}/third_party/dlpack)
+endif()
