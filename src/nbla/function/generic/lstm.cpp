@@ -238,7 +238,7 @@ vector<vector<CgVariablePtr>> LSTM<T>::create_fixed_length_lstm_graph(
     xs.push_back(tmp);
   } else {
     auto split = make_shared<CgFunction>(create_Split(this->ctx_, 0));
-    xs = connect(split, {in_x}, 2);
+    xs = connect(split, {in_x}, in_x->variable()->shape()[0]);
   }
 
   // Create graph & pass value

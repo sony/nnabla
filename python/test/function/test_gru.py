@@ -181,7 +181,7 @@ def get_gru_grad(xs_np, h0_np, w0_np, w_np, b_np, dy, dh, num_layers=1, dropout=
 @pytest.mark.parametrize("dropout", [0.0])
 @pytest.mark.parametrize("bidirectional", [True, False])
 @pytest.mark.parametrize("training", [True, False])
-@pytest.mark.parametrize("seq_len", [2])
+@pytest.mark.parametrize("seq_len", [2, 5])
 @pytest.mark.parametrize("batch_size", [3])
 @pytest.mark.parametrize("input_size", [2])
 @pytest.mark.parametrize("hidden_size", [3])
@@ -221,7 +221,7 @@ def test_gru(seed, num_layers, dropout, bidirectional, training, seq_len, batch_
 
 @pytest.mark.parametrize("num_layers", [2])
 @pytest.mark.parametrize("bidirectional", [False])
-@pytest.mark.parametrize("seq_len", [2])
+@pytest.mark.parametrize("seq_len", [2, 5])
 @pytest.mark.parametrize("batch_size", [3])
 @pytest.mark.parametrize("input_size", [2])
 @pytest.mark.parametrize("hidden_size", [3])
