@@ -103,9 +103,10 @@ def collect_and_shape_result(c_load, g_load):
         res = [[comm.rank, c_load], *g_load[:1]]
         t_load_ndarray = np.array(res).reshape(-1)
 
-        load_var = nn.Variable([4, ])
+        load_var = nn.Variable([len(t_load_ndarray), ])
         load_var.d = t_load_ndarray
-        load_list_var = [nn.Variable([4, ]) for _ in range(comm.size)]
+        load_list_var = [nn.Variable([len(t_load_ndarray), ])
+                         for _ in range(comm.size)]
         comm.all_gather(load_var.data, [a.data for a in load_list_var])
         result_arr = [[*np.round(a.d.astype(float), decimals=1)]
                       for a in load_list_var]
@@ -124,10 +125,7 @@ def measure_cpu_gpu_instant_load():
     # load = [rank, cpu_load, nvidia_device_id, gpu_load]
     # result_arr: [load, load, ...]
 
-    if cpu_load_backend_ok:
-        global p_handler
-        cpu_load = p_handler.cpu_percent()
-
+    gpu_load = []
     if gpu_load_backend_ok:
         global gpu_a_load
         global gpu_m_count
@@ -159,13 +157,13 @@ def measure_cpu_gpu_instant_load():
                 }
 
         except Exception:
-            gpu_load = [[-1, -1]]
+            gpu_load = []
 
+    if cpu_load_backend_ok:
+        global p_handler
+        cpu_load = p_handler.cpu_percent()
         callback.update_status(
             ('cpu_gpu_load', collect_and_shape_result(cpu_load, gpu_load)))
-    else:
-        callback.update_status(
-            ('cpu_gpu_load', collect_and_shape_result(cpu_load, [])))
 
 
 def get_cpu_gpu_average_load():
@@ -173,10 +171,7 @@ def get_cpu_gpu_average_load():
     # load = [rank, cpu_load, nvidia_device_id, gpu_load]
     # result_arr: [load, load, ...]
 
-    if cpu_load_backend_ok:
-        global p_handler_avg
-        c_load = p_handler_avg.cpu_percent()
-
+    g_load = []
     if gpu_load_backend_ok:
         global gpu_a_load
         global gpu_m_count
@@ -188,11 +183,12 @@ def get_cpu_gpu_average_load():
         # adjust data type then transfer them to numpy ndarray
         g_load = [[float(a), float(load_info[a]['load'])]
                   for a in load_info.keys()]
-        g_load = g_load[:1] if len(g_load) else [[-1, -1]]
+        g_load = g_load[:1] if len(g_load) else []
 
+    if cpu_load_backend_ok:
+        global p_handler_avg
+        c_load = p_handler_avg.cpu_percent()
         return collect_and_shape_result(c_load, g_load)
-    else:
-        return collect_and_shape_result(c_load, [])
 
 
 def _create_optimizer_lite(opti):
