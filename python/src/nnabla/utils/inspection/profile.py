@@ -32,7 +32,7 @@ class TimeProfiler(FunctionHookCallbackBase):
     An utility API to create function_hook callbacks to profile the execution time of each function.
     Passing ``ext_name`` and ``device_id``, you can define which device time you want to profile.
     If `ext_name` = "cuda" or "cudnn", then cudaEvent will be used to measure the execution time.
-    For more information about cudaEvent, see CUDA docs by NVIDIA corp.(https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html)
+    For more information about cudaEvent, see the CUDA `document <https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html>`_.
     If `ext_name`="cpu" , then wall-clock-time on host will be used.
 
     Example:
