@@ -269,3 +269,110 @@ def pooling_3d(x, mode, kernel, stride, pad, ignore_border=True,
                         pool_cnt = b_pad[c][np.ix_(zi, hi, wi)].sum()
                         yy[zo, ho, wo] = pool_sum / pool_cnt
     return y
+
+
+def generate_rotation_2d(rng, B):
+    degree = 2 * np.pi * (2.0 * rng.rand() - 1.0)
+    rotates = []
+    for i in range(B):
+        c, s = np.cos(degree), np.sin(degree)
+        rotate = np.asarray([[c, -s],
+                             [s, c]])
+        rotates.append(rotate)
+    return np.asarray(rotates)
+
+
+def generate_rotation_3d(rng, B):
+    alpha = np.pi * (2.0 * rng.rand() - 1.0)
+    beta = np.pi / 2.0 * (2.0 * rng.rand() - 1.0)
+    gamma = np.pi * (2.0 * rng.rand() - 1.0)
+    rotates = []
+    for i in range(B):
+        c, s = np.cos(alpha), np.sin(alpha)
+        Ra = np.asarray([[c, -s, 0],
+                         [s, c, 0],
+                         [0, 0, 1]])
+        c, s = np.cos(beta), np.sin(beta)
+        Rb = np.asarray([[c, 0, s],
+                         [0, 1, 0],
+                         [-s, 0, c]])
+        c, s = np.cos(gamma), np.sin(gamma)
+        Rg = np.asarray([[1, 0, 0],
+                         [0, c, -s],
+                         [0, s, c]])
+        rotate = Ra.dot(Rb).dot(Rg)
+        rotates.append(rotate)
+    return np.asarray(rotates)
+
+
+def generate_transformation_2d(rng, batch_size):
+    rotate = generate_rotation_2d(rng, batch_size)
+    translate = (2.0 * rng.rand(batch_size, 2, 1) - 1.0) * 0.001
+    theta = np.concatenate([rotate, translate], axis=2)
+    return theta.astype(np.float32)
+
+
+def generate_transformation_3d(rng, batch_size):
+    rotate = generate_rotation_3d(rng, batch_size)
+    translate = (2.0 * rng.rand(batch_size, 3, 1) - 1.0) * 0.001
+    theta = np.concatenate([rotate, translate], axis=2)
+    return theta.astype(np.float32)
+
+
+def generate_normalized_grid_2d(B, size, align_corners):
+    H, W = size
+    hgrid = np.linspace(-1.0, 1.0, H)
+    wgrid = np.linspace(-1.0, 1.0, W)
+    hgrid = hgrid if align_corners else hgrid * (H - 1) / H
+    wgrid = wgrid if align_corners else wgrid * (W - 1) / W
+    w, h = np.meshgrid(wgrid, hgrid)
+
+    x = w.reshape(-1)
+    y = h.reshape(-1)
+    t = np.ones(len(x))
+    normalized_grid = np.stack((x, y, t), axis=1)
+    normalized_grid = normalized_grid.reshape(H, W, 3)
+    normalized_grid = np.repeat(
+        normalized_grid[np.newaxis, :, :, :], B, axis=0)
+    return normalized_grid.astype(np.float32)
+
+
+def generate_normalized_grid_3d(B, size, align_corners):
+    D, H, W = size
+    dgrid = np.linspace(-1.0, 1.0, D)
+    hgrid = np.linspace(-1.0, 1.0, H)
+    wgrid = np.linspace(-1.0, 1.0, W)
+    dgrid = dgrid if align_corners else dgrid * (D - 1) / D
+    hgrid = hgrid if align_corners else hgrid * (H - 1) / H
+    wgrid = wgrid if align_corners else wgrid * (W - 1) / W
+    h, d, w = np.meshgrid(hgrid, dgrid, wgrid)
+
+    x = w.reshape(-1)
+    y = h.reshape(-1)
+    z = d.reshape(-1)
+    t = np.ones(len(x))
+    normalized_grid = np.stack((x, y, z, t), axis=1)
+    normalized_grid = normalized_grid.reshape(D, H, W, 4)
+    normalized_grid = np.repeat(
+        normalized_grid[np.newaxis, :, :, :, :], B, axis=0)
+    return normalized_grid.astype(np.float32)
+
+
+def affine_grid_2d(affine, size, align_corners):
+    B = affine.shape[0]
+    H, W = size
+    grid_t = generate_normalized_grid_2d(B, size, align_corners)
+    grid_s = np.matmul(grid_t.reshape(B, H * W, 3),
+                       affine.transpose((0, 2, 1)))
+    grid_s = grid_s.reshape(B, H, W, 2)
+    return grid_s.astype(np.float32)
+
+
+def affine_grid_3d(affine, size, align_corners):
+    B = affine.shape[0]
+    D, H, W = size
+    grid_t = generate_normalized_grid_3d(B, size, align_corners)
+    grid_s = np.matmul(grid_t.reshape(B, D * H * W, 4),
+                       affine.transpose((0, 2, 1)))
+    grid_s = grid_s.reshape(B, D, H, W, 3)
+    return grid_s.astype(np.float32)
