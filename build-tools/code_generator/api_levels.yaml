@@ -224,3 +224,6 @@
   QuantizeLinear_iBi: 293
 17:
   FusedConvolution_iiIiIiIiBffBifF: 295
+18:
+  AffineGrid_iIB: 296
+  WarpByGrid_iiBB: 297

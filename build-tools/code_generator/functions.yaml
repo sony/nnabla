@@ -5007,6 +5007,93 @@ Loss Functions:
       i: 104
     c_runtime: not support
 Geometric Neural Network Layers:
+  AffineGrid:
+    snake_name: affine_grid
+    doc: |
+      Generate the source grid based on the normalized target grid with `size`.
+      The target grid is first normalized in [-1, 1], then 
+      tranformed by the affine transformation :math:`\theta` to generate 
+      the source grid. 2D and 3D grid are supported now.
+
+      This function is normally used with the `warp_by_grid` function for 
+      constructing the spatial transformer.
+    inputs:
+      theta:
+        doc: N-D array with the shape (:math:`B \times 2 \times 3`), the sample-wise
+          affine transformation matrix.
+    arguments:
+      size:
+        doc: The grid size of (:math:`H \times W`) for 2D and (:math:`D \times H \times
+          W`) for 3D.
+        type: repeated int64
+      align_corners:
+        doc: |-
+          If `True`, the top-left and bottom-right pixcels correspond to (-1, -1) and (1, 1) respectively since a pixel is located on the corner of a grid, and the target grid is normalized in [-1, 1].
+          If `False`, the normalized target grid in [-1, 1] is scaled by `size - 1 / size` according to the respective spatial size (e.g., :math:`H` and :math:`W`) before the transformation since a pixel is located on a center of a cell in a grid.
+        type: bool
+        default: 'False'
+    outputs:
+      grid:
+        doc: N-D array with the shape (:math:`B \times H \times W \times 2`) for 2D
+          and (:math:`B \times D \times H \times W \times 3`) for 3D. The last dimension
+          of 2 is for (x, y) and of 3 for (x, y, z). The `gird` is used as the source
+          grid for the warping.
+    c_runtime: not support
+    function_ids:
+      iIB: 296
+  WarpByGrid:
+    snake_name: warp_by_grid
+    doc: |
+      Warp the input data by the grid. 
+      This function is normally used with the generated normalized grid by 
+      the `affine_grid` function for constructing the spatial transformer.
+    inputs:
+      x:
+        doc: Input data to be warped with the shape (:math:`B \times C \times H_{in}
+          \times W_{in}`) for 2D and (:math:`B \times C \times D_{in} \times H_{in}
+          \times W_{in}`) for 3D.
+      grid:
+        doc: Grid warping the input data with the shape (:math:`B \times H_{out} \times
+          W_{out} \times 2`) for 2D and (:math:`B \times D_{out} \times H_{out} \times
+          W_{out} \times 3`) for 3D. The last dimension of 2 is for (x, y) or (x,
+          y, z).
+    arguments:
+      mode:
+        doc: Interpolation mode, linear or nearest.
+        type: string
+        available_values:
+        - linear
+        - nearest
+        default: '''linear'''
+      padding_mode:
+        doc: Padding mode when the grid value is outside [-1, 1]. If this is "zero",
+          0 is used for padding. "reflect" uses the values reflected at the ends of
+          the original input data like the mirror. "repeat" used the values at the
+          ends of the original input data.
+        type: string
+        available_values:
+        - zero
+        - repeat
+        - reflect
+        default: '''zero'''
+      align_corners:
+        doc: The target grid normalized in [-1, 1] is scaled by `size - 1 / size`
+          according to the respective spatial size (e.g., :math:`H` and :math:`W`)
+          before the transformation if this is `False`. If this is `True`, the top-left
+          and bottom-right pixcels correspond to (-1, -1) and (1, 1) respectively.
+        type: bool
+        default: 'False'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: Output data warped by the grid.
+    c_runtime: not support
+    function_ids:
+      iiBB: 297
   WarpByFlow:
     snake_name: warp_by_flow
     doc: |2
