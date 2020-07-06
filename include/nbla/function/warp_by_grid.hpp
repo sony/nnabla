@@ -33,11 +33,30 @@ enum PADDING_MODE {
 }
 
 /**
-    @todo Write doc.
 
 Inputs:
+- x: Input data to be warped with the shape (\f$B \times C \times H_{in} \times
+W_{in}\f$) for 2D and (\f$B \times C \times D_{in} \times H_{in} \times
+W_{in}\f$) for 3D.
+- grid: Grid warping the input data with the shape (\f$B \times H_{out} \times
+W_{out} \times 2\f$) for 2D and (\f$B \times D_{out} \times H_{out} \times
+W_{out} \times 3\f$) for 3D. The last dimension of 2 is for (x, y) or (x, y, z).
 
 Outputs:
+- y: Output data warped by the grid.
+
+@tparam T Data type for computation.
+@param mode Interpolation mode, linear or nearest.
+@param padding_mode Padding mode when the grid value is outside [-1, 1]. If this
+is "zero", 0 is used for padding. "reflect" uses the values reflected at the
+ends of the original input data like the mirror. "repeat" used the values at the
+ends of the original input data.
+@param align_corners The target grid normalized in [-1, 1] is scaled by `size -
+1 / size` according to the respective spatial size (e.g., \f$H\f$ and \f$W\f$)
+before the transformation if this is `False`. If this is `True`, the top-left
+and bottom-right pixcels correspond to (-1, -1) and (1, 1) respectively.
+@param channel_last If True, the last dimension is considered as channel
+dimension, a.k.a NHWC order.
 
 \ingroup FunctionImplGrp
  */

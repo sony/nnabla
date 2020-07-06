@@ -256,6 +256,12 @@ Signal Processing
 .. autofunction:: stft
 .. autofunction:: istft
 
+Geometric Neural Network Layers
+-------------------------------
+.. autofunction:: affine_grid
+.. autofunction:: warp_by_grid
+.. autofunction:: warp_by_flow
+
 Quantized Neural Network Layers
 ----------------------------------
 
@@ -279,7 +285,6 @@ Unsupported, Special Use
 .. autofunction:: vat_noise
 .. autofunction:: unlink
 .. autofunction:: sink
-.. autofunction:: warp_by_flow
 .. autofunction:: confusion_matrix
 
 

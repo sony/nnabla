@@ -279,7 +279,7 @@ def ref_warp_by_grid(inp, grid, mode, padding_mode, align_corners, channel_last)
                           (2, 2, (4, 4), (4, 4)),
                           # 3D
                           (1, 1, (8, 8, 8), (4, 4, 4)),
-                             ])
+                          ])
 @pytest.mark.parametrize("mode", ["linear", "nearest"])
 @pytest.mark.parametrize("padding_mode", ["zero", "reflect", "repeat"])
 @pytest.mark.parametrize("align_corners", [False, True])

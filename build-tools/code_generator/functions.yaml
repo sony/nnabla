@@ -5028,7 +5028,7 @@ Geometric Neural Network Layers:
         type: repeated int64
       align_corners:
         doc: |-
-          If `True`, the top-left and bottom-right pixcels correspond to (-1, -1) and (1, 1) respectively since a pixel is located on the corner of a grid, and the target grid is normalized in [-1, 1].
+          If `True`, the top-left and bottom-right pixels correspond to (-1, -1) and (1, 1) respectively since a pixel is located on the corner of a grid, and the target grid is normalized in [-1, 1].
           If `False`, the normalized target grid in [-1, 1] is scaled by `size - 1 / size` according to the respective spatial size (e.g., :math:`H` and :math:`W`) before the transformation since a pixel is located on a center of a cell in a grid.
         type: bool
         default: 'False'
@@ -5055,8 +5055,8 @@ Geometric Neural Network Layers:
       grid:
         doc: Grid warping the input data with the shape (:math:`B \times H_{out} \times
           W_{out} \times 2`) for 2D and (:math:`B \times D_{out} \times H_{out} \times
-          W_{out} \times 3`) for 3D. The last dimension of 2 is for (x, y) or (x,
-          y, z).
+          W_{out} \times 3`) for 3D. The last dimension of 2 is for (x, y) or 3 for
+          (x, y, z).
     arguments:
       mode:
         doc: Interpolation mode, linear or nearest.
@@ -5080,7 +5080,7 @@ Geometric Neural Network Layers:
         doc: The target grid normalized in [-1, 1] is scaled by `size - 1 / size`
           according to the respective spatial size (e.g., :math:`H` and :math:`W`)
           before the transformation if this is `False`. If this is `True`, the top-left
-          and bottom-right pixcels correspond to (-1, -1) and (1, 1) respectively.
+          and bottom-right pixels correspond to (-1, -1) and (1, 1) respectively.
         type: bool
         default: 'False'
       channel_last:

@@ -27,10 +27,10 @@ void generate_target_grid_2d(T *grid, Shape_t shape, Shape_t stride) {
   auto B = shape[0];
   auto H = shape[1];
   auto W = shape[2];
+  auto idx = 0;
   for (int b = 0; b < B; ++b) {
     for (int h = 0; h < H; ++h) {
       for (int w = 0; w < W; ++w) {
-        auto idx = ndi::nd2flat(Shape_t{b, h, w, 0}, stride);
         // [-1, 1] <--> [0, S - 1] if align_corner
         // [-1, 1] <--> [-0.5, S - 0.5] = [0 - 0.5, S - 1 + 0.5] if not
         // align_corner
@@ -38,9 +38,9 @@ void generate_target_grid_2d(T *grid, Shape_t shape, Shape_t stride) {
         auto x = T(2.0) * w / (W - 1) - T(1.0);
         y = align_corners ? y : y * (T(H - 1) / T(H));
         x = align_corners ? x : x * (T(W - 1) / T(W));
-        grid[idx] = x;
-        grid[idx + 1] = y;
-        grid[idx + 2] = T(1.0);
+        grid[idx++] = x;
+        grid[idx++] = y;
+        grid[idx++] = T(1.0);
       }
     }
   }

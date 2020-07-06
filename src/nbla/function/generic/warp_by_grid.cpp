@@ -221,6 +221,7 @@ void warp_linear_forward_2d(T *output, const T *input, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto h = 0; h < Ho; ++h) {
@@ -252,8 +253,7 @@ void warp_linear_forward_2d(T *output, const T *input, const T *grid,
 
           auto val = (v_y0x0 * py1 * px1) + (v_y0x1 * py1 * px0) +
                      (v_y1x0 * py0 * px1) + (v_y1x1 * py0 * px0);
-          auto oidx = ndi::nd2flat(Shape_t{b, c, h, w}, ostride);
-          output[oidx] = val;
+          output[oidx++] = val;
         }
       }
     }
@@ -289,6 +289,7 @@ void warp_linear_forward_3d(T *output, const T *input, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto d = 0; d < Do; ++d) {
@@ -339,8 +340,7 @@ void warp_linear_forward_3d(T *output, const T *input, const T *grid,
                        v_z1y0x0 * pz0 * py1 * px1 + v_z1y0x1 * pz0 * py1 * px0 +
                        v_z1y1x0 * pz0 * py0 * px1 + v_z1y1x1 * pz0 * py0 * px0;
 
-            auto oidx = ndi::nd2flat(Shape_t{b, c, d, h, w}, ostride);
-            output[oidx] = val;
+            output[oidx++] = val;
           }
         }
       }
@@ -375,6 +375,7 @@ void warp_nearest_forward_2d(T *output, const T *input, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto h = 0; h < Ho; ++h) {
@@ -390,8 +391,7 @@ void warp_nearest_forward_2d(T *output, const T *input, const T *grid,
           auto yi = static_cast<int>(std::round(yf));
 
           auto vidx = get_pixel_value_2d(input, b, c, yi, xi, Hi, Wi, istride);
-          auto oidx = ndi::nd2flat(Shape_t{b, c, h, w}, ostride);
-          output[oidx] = vidx;
+          output[oidx++] = vidx;
         }
       }
     }
@@ -427,6 +427,7 @@ void warp_nearest_forward_3d(T *output, const T *input, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto d = 0; d < Do; ++d) {
@@ -448,8 +449,7 @@ void warp_nearest_forward_3d(T *output, const T *input, const T *grid,
 
             auto vidx = get_pixel_value_3d(input, b, c, zi, yi, xi, Di, Hi, Wi,
                                            istride);
-            auto oidx = ndi::nd2flat(Shape_t{b, c, d, h, w}, ostride);
-            output[oidx] = vidx;
+            output[oidx++] = vidx;
           }
         }
       }
@@ -488,6 +488,7 @@ void warp_linear_backward_data_2d(T *igrad, const T *ograd, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto h = 0; h < Ho; ++h) {
@@ -508,8 +509,7 @@ void warp_linear_backward_data_2d(T *igrad, const T *ograd, const T *grid,
           auto px1 = T(1) - px0;
           auto py1 = T(1) - py0;
 
-          auto oidx = ndi::nd2flat(Shape_t{b, c, h, w}, ostride);
-          auto grad = ograd[oidx];
+          auto grad = ograd[oidx++];
           backward_data_2d(igrad, grad, py1, px1, b, c, yi0, xi0, Hi, Wi,
                            istride);
           backward_data_2d(igrad, grad, py1, px0, b, c, yi0, xi1, Hi, Wi,
@@ -551,6 +551,7 @@ void warp_nearest_backward_data_2d(T *igrad, const T *ograd, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto h = 0; h < Ho; ++h) {
@@ -564,8 +565,7 @@ void warp_nearest_backward_data_2d(T *igrad, const T *ograd, const T *grid,
           auto yf = get_src_findex_with_pad(yf0, Hi);
           auto xi = static_cast<int>(std::round(xf));
           auto yi = static_cast<int>(std::round(yf));
-          auto oidx = ndi::nd2flat(Shape_t{b, c, h, w}, ostride);
-          auto grad = ograd[oidx];
+          auto grad = ograd[oidx++];
           backward_data_2d(igrad, grad, T(1), T(1), b, c, yi, xi, Hi, Wi,
                            istride);
         }
@@ -603,6 +603,7 @@ void warp_linear_backward_data_3d(T *igrad, const T *ograd, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto d = 0; d < Do; ++d) {
@@ -631,8 +632,7 @@ void warp_linear_backward_data_3d(T *igrad, const T *ograd, const T *grid,
             auto py1 = T(1) - py0;
             auto pz1 = T(1) - pz0;
 
-            auto oidx = ndi::nd2flat(Shape_t{b, c, d, h, w}, ostride);
-            auto grad = ograd[oidx];
+            auto grad = ograd[oidx++];
             backward_data_3d(igrad, grad, pz1, py1, px1, b, c, zi0, yi0, xi0,
                              Di, Hi, Wi, istride);
             backward_data_3d(igrad, grad, pz1, py1, px0, b, c, zi0, yi0, xi1,
@@ -685,6 +685,7 @@ void warp_nearest_backward_data_3d(T *igrad, const T *ograd, const T *grid,
     }
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto d = 0; d < Do; ++d) {
@@ -703,8 +704,7 @@ void warp_nearest_backward_data_3d(T *igrad, const T *ograd, const T *grid,
             auto xi = static_cast<int>(std::round(xf));
             auto yi = static_cast<int>(std::round(yf));
             auto zi = static_cast<int>(std::round(zf));
-            auto oidx = ndi::nd2flat(Shape_t{b, c, d, h, w}, ostride);
-            auto grad = ograd[oidx];
+            auto grad = ograd[oidx++];
             backward_data_3d(igrad, grad, T(1), T(1), T(1), b, c, zi, yi, xi,
                              Di, Hi, Wi, istride);
           }
@@ -760,6 +760,7 @@ void warp_linear_backward_grid_2d(T *ggrad, const T *ograd, const T *input,
     return align_corners ? coef * T(S - 1) / T(2) : coef * T(S) / T(2);
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto h = 0; h < Ho; ++h) {
@@ -788,8 +789,7 @@ void warp_linear_backward_grid_2d(T *ggrad, const T *ograd, const T *input,
               get_pixel_value_2d(input, b, c, yi1, xi0, Hi, Wi, istride);
           auto v_y1x1 =
               get_pixel_value_2d(input, b, c, yi1, xi1, Hi, Wi, istride);
-          auto oidx = ndi::nd2flat(Shape_t{b, c, h, w}, ostride);
-          auto grad = ograd[oidx];
+          auto grad = ograd[oidx++];
 
           // d_grid = d_output * local_grad{output/pad(x)} *
           // local_grad{pad(x)/x} * unnormalized_coef
@@ -851,6 +851,7 @@ void warp_linear_backward_grid_3d(T *ggrad, const T *ograd, const T *input,
     return align_corners ? coef * T(S - 1) / T(2) : coef * T(S) / T(2);
   };
 
+  auto oidx = 0;
   for (auto b = 0; b < B; ++b) {
     for (auto c = 0; c < C; ++c) {
       for (auto d = 0; d < Do; ++d) {
@@ -896,8 +897,7 @@ void warp_linear_backward_grid_3d(T *ggrad, const T *ograd, const T *input,
             auto v_z1y1x1 = get_pixel_value_3d(input, b, c, zi1, yi1, xi1, Di,
                                                Hi, Wi, istride);
 
-            auto oidx = ndi::nd2flat(Shape_t{b, c, d, h, w}, ostride);
-            auto grad = ograd[oidx];
+            auto grad = ograd[oidx++];
 
             // d_grid = d_output * local_grad{output/pad(x)} *
             // local_grad{pad(x)/x} * unnormalized_coef
@@ -979,6 +979,10 @@ void WarpByGrid<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   NBLA_CHECK(!channel_last_, error_code::not_implemented,
              "WarpByGrid w/ the channel_last is not supported.");
+  using PADDING_MODE = warp_by_grid::PADDING_MODE;
+  auto zero = PADDING_MODE::zero;
+  auto repeat = PADDING_MODE::repeat;
+  auto reflect = PADDING_MODE::reflect;
 
   auto ishape = inputs[0]->shape();
   auto gshape = inputs[1]->shape();
@@ -993,129 +997,87 @@ void WarpByGrid<T>::forward_impl(const Variables &inputs,
   auto grid = inputs[1]->get_data_pointer<T>(ctx_);
   auto output = outputs[0]->cast_data_and_get_pointer<T>(ctx_);
 
-  auto zero = warp_by_grid::PADDING_MODE::zero;
-  auto repeat = warp_by_grid::PADDING_MODE::repeat;
-  auto reflect = warp_by_grid::PADDING_MODE::reflect;
-
   if (mode_ == "linear") {
     if (ndims == 4) {
       if (padding_mode_t_ == zero && align_corners_) {
-        auto kernel =
-            warp_linear_forward_2d<T, warp_by_grid::PADDING_MODE::zero, true>;
+        auto kernel = warp_linear_forward_2d<T, PADDING_MODE::zero, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && align_corners_) {
-        auto kernel =
-            warp_linear_forward_2d<T, warp_by_grid::PADDING_MODE::repeat, true>;
+        auto kernel = warp_linear_forward_2d<T, PADDING_MODE::repeat, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && align_corners_) {
-        auto kernel =
-            warp_linear_forward_2d<T, warp_by_grid::PADDING_MODE::reflect,
-                                   true>;
+        auto kernel = warp_linear_forward_2d<T, PADDING_MODE::reflect, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == zero && !align_corners_) {
-        auto kernel =
-            warp_linear_forward_2d<T, warp_by_grid::PADDING_MODE::zero, false>;
+        auto kernel = warp_linear_forward_2d<T, PADDING_MODE::zero, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && !align_corners_) {
-        auto kernel =
-            warp_linear_forward_2d<T, warp_by_grid::PADDING_MODE::repeat,
-                                   false>;
+        auto kernel = warp_linear_forward_2d<T, PADDING_MODE::repeat, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && !align_corners_) {
-        auto kernel =
-            warp_linear_forward_2d<T, warp_by_grid::PADDING_MODE::reflect,
-                                   false>;
+        auto kernel = warp_linear_forward_2d<T, PADDING_MODE::reflect, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       }
     } else if (ndims == 5) {
       if (padding_mode_t_ == zero && align_corners_) {
-        auto kernel =
-            warp_linear_forward_3d<T, warp_by_grid::PADDING_MODE::zero, true>;
+        auto kernel = warp_linear_forward_3d<T, PADDING_MODE::zero, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && align_corners_) {
-        auto kernel =
-            warp_linear_forward_3d<T, warp_by_grid::PADDING_MODE::repeat, true>;
+        auto kernel = warp_linear_forward_3d<T, PADDING_MODE::repeat, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && align_corners_) {
-        auto kernel =
-            warp_linear_forward_3d<T, warp_by_grid::PADDING_MODE::reflect,
-                                   true>;
+        auto kernel = warp_linear_forward_3d<T, PADDING_MODE::reflect, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == zero && !align_corners_) {
-        auto kernel =
-            warp_linear_forward_3d<T, warp_by_grid::PADDING_MODE::zero, false>;
+        auto kernel = warp_linear_forward_3d<T, PADDING_MODE::zero, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && !align_corners_) {
-        auto kernel =
-            warp_linear_forward_3d<T, warp_by_grid::PADDING_MODE::repeat,
-                                   false>;
+        auto kernel = warp_linear_forward_3d<T, PADDING_MODE::repeat, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && !align_corners_) {
-        auto kernel =
-            warp_linear_forward_3d<T, warp_by_grid::PADDING_MODE::reflect,
-                                   false>;
+        auto kernel = warp_linear_forward_3d<T, PADDING_MODE::reflect, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       }
     }
   } else if (mode_ == "nearest") {
     if (ndims == 4) {
       if (padding_mode_t_ == zero && align_corners_) {
-        auto kernel =
-            warp_nearest_forward_2d<T, warp_by_grid::PADDING_MODE::zero, true>;
+        auto kernel = warp_nearest_forward_2d<T, PADDING_MODE::zero, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && align_corners_) {
-        auto kernel =
-            warp_nearest_forward_2d<T, warp_by_grid::PADDING_MODE::repeat,
-                                    true>;
+        auto kernel = warp_nearest_forward_2d<T, PADDING_MODE::repeat, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && align_corners_) {
-        auto kernel =
-            warp_nearest_forward_2d<T, warp_by_grid::PADDING_MODE::reflect,
-                                    true>;
+        auto kernel = warp_nearest_forward_2d<T, PADDING_MODE::reflect, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == zero && !align_corners_) {
-        auto kernel =
-            warp_nearest_forward_2d<T, warp_by_grid::PADDING_MODE::zero, false>;
+        auto kernel = warp_nearest_forward_2d<T, PADDING_MODE::zero, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && !align_corners_) {
-        auto kernel =
-            warp_nearest_forward_2d<T, warp_by_grid::PADDING_MODE::repeat,
-                                    false>;
+        auto kernel = warp_nearest_forward_2d<T, PADDING_MODE::repeat, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && !align_corners_) {
-        auto kernel =
-            warp_nearest_forward_2d<T, warp_by_grid::PADDING_MODE::reflect,
-                                    false>;
+        auto kernel = warp_nearest_forward_2d<T, PADDING_MODE::reflect, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       }
     } else if (ndims == 5) {
       if (padding_mode_t_ == zero && align_corners_) {
-        auto kernel =
-            warp_nearest_forward_3d<T, warp_by_grid::PADDING_MODE::zero, true>;
+        auto kernel = warp_nearest_forward_3d<T, PADDING_MODE::zero, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && align_corners_) {
-        auto kernel =
-            warp_nearest_forward_3d<T, warp_by_grid::PADDING_MODE::repeat,
-                                    true>;
+        auto kernel = warp_nearest_forward_3d<T, PADDING_MODE::repeat, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && align_corners_) {
-        auto kernel =
-            warp_nearest_forward_3d<T, warp_by_grid::PADDING_MODE::reflect,
-                                    true>;
+        auto kernel = warp_nearest_forward_3d<T, PADDING_MODE::reflect, true>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == zero && !align_corners_) {
-        auto kernel =
-            warp_nearest_forward_3d<T, warp_by_grid::PADDING_MODE::zero, false>;
+        auto kernel = warp_nearest_forward_3d<T, PADDING_MODE::zero, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == repeat && !align_corners_) {
-        auto kernel =
-            warp_nearest_forward_3d<T, warp_by_grid::PADDING_MODE::repeat,
-                                    false>;
+        auto kernel = warp_nearest_forward_3d<T, PADDING_MODE::repeat, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       } else if (padding_mode_t_ == reflect && !align_corners_) {
-        auto kernel =
-            warp_nearest_forward_3d<T, warp_by_grid::PADDING_MODE::reflect,
-                                    false>;
+        auto kernel = warp_nearest_forward_3d<T, PADDING_MODE::reflect, false>;
         kernel(output, input, grid, ishape, oshape, istride, gstride, ostride);
       }
     }
@@ -1129,10 +1091,14 @@ void WarpByGrid<T>::backward_impl(const Variables &inputs,
                                   const vector<bool> &accum) {
   NBLA_CHECK(!channel_last_, error_code::not_implemented,
              "WarpByGrid w/ the channel_last is not supported.");
-
   if (!(propagate_down[0] || propagate_down[1])) {
     return;
   }
+  using PADDING_MODE = warp_by_grid::PADDING_MODE;
+  auto zero = PADDING_MODE::zero;
+  auto repeat = PADDING_MODE::repeat;
+  auto reflect = PADDING_MODE::reflect;
+
   auto ishape = inputs[0]->shape();
   auto gshape = inputs[1]->shape();
   auto oshape = outputs[0]->shape();
@@ -1148,67 +1114,59 @@ void WarpByGrid<T>::backward_impl(const Variables &inputs,
   auto grid = inputs[1]->get_data_pointer<T>(ctx_);
   auto ograd = outputs[0]->get_grad_pointer<T>(ctx_);
 
-  auto zero = warp_by_grid::PADDING_MODE::zero;
-  auto repeat = warp_by_grid::PADDING_MODE::repeat;
-  auto reflect = warp_by_grid::PADDING_MODE::reflect;
-
   // w.r.t. data
   if (propagate_down[0]) {
     if (ndims == 4) {
       if (mode_ == "linear") {
         if (padding_mode_t_ == zero && align_corners_) {
           auto kernel =
-              warp_linear_backward_data_2d<T, warp_by_grid::PADDING_MODE::zero,
-                                           true>;
+              warp_linear_backward_data_2d<T, PADDING_MODE::zero, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && align_corners_) {
-          auto kernel = warp_linear_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::repeat, true>;
+          auto kernel =
+              warp_linear_backward_data_2d<T, PADDING_MODE::repeat, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && align_corners_) {
-          auto kernel = warp_linear_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::reflect, true>;
+          auto kernel =
+              warp_linear_backward_data_2d<T, PADDING_MODE::reflect, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == zero && !align_corners_) {
           auto kernel =
-              warp_linear_backward_data_2d<T, warp_by_grid::PADDING_MODE::zero,
-                                           false>;
+              warp_linear_backward_data_2d<T, PADDING_MODE::zero, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && !align_corners_) {
-          auto kernel = warp_linear_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::repeat, false>;
+          auto kernel =
+              warp_linear_backward_data_2d<T, PADDING_MODE::repeat, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && !align_corners_) {
-          auto kernel = warp_linear_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::reflect, false>;
+          auto kernel =
+              warp_linear_backward_data_2d<T, PADDING_MODE::reflect, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         }
       } else if (mode_ == "nearest") {
         if (padding_mode_t_ == zero && align_corners_) {
           auto kernel =
-              warp_nearest_backward_data_2d<T, warp_by_grid::PADDING_MODE::zero,
-                                            true>;
+              warp_nearest_backward_data_2d<T, PADDING_MODE::zero, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && align_corners_) {
-          auto kernel = warp_nearest_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::repeat, true>;
+          auto kernel =
+              warp_nearest_backward_data_2d<T, PADDING_MODE::repeat, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && align_corners_) {
-          auto kernel = warp_nearest_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::reflect, true>;
+          auto kernel =
+              warp_nearest_backward_data_2d<T, PADDING_MODE::reflect, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == zero && !align_corners_) {
           auto kernel =
-              warp_nearest_backward_data_2d<T, warp_by_grid::PADDING_MODE::zero,
-                                            false>;
+              warp_nearest_backward_data_2d<T, PADDING_MODE::zero, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && !align_corners_) {
-          auto kernel = warp_nearest_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::repeat, false>;
+          auto kernel =
+              warp_nearest_backward_data_2d<T, PADDING_MODE::repeat, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && !align_corners_) {
-          auto kernel = warp_nearest_backward_data_2d<
-              T, warp_by_grid::PADDING_MODE::reflect, false>;
+          auto kernel =
+              warp_nearest_backward_data_2d<T, PADDING_MODE::reflect, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         }
       }
@@ -1216,57 +1174,53 @@ void WarpByGrid<T>::backward_impl(const Variables &inputs,
       if (mode_ == "linear") {
         if (padding_mode_t_ == zero && align_corners_) {
           auto kernel =
-              warp_linear_backward_data_3d<T, warp_by_grid::PADDING_MODE::zero,
-                                           true>;
+              warp_linear_backward_data_3d<T, PADDING_MODE::zero, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && align_corners_) {
-          auto kernel = warp_linear_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::repeat, true>;
+          auto kernel =
+              warp_linear_backward_data_3d<T, PADDING_MODE::repeat, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && align_corners_) {
-          auto kernel = warp_linear_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::reflect, true>;
+          auto kernel =
+              warp_linear_backward_data_3d<T, PADDING_MODE::reflect, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == zero && !align_corners_) {
           auto kernel =
-              warp_linear_backward_data_3d<T, warp_by_grid::PADDING_MODE::zero,
-                                           false>;
+              warp_linear_backward_data_3d<T, PADDING_MODE::zero, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && !align_corners_) {
-          auto kernel = warp_linear_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::repeat, false>;
+          auto kernel =
+              warp_linear_backward_data_3d<T, PADDING_MODE::repeat, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && !align_corners_) {
-          auto kernel = warp_linear_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::reflect, false>;
+          auto kernel =
+              warp_linear_backward_data_3d<T, PADDING_MODE::reflect, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         }
       } else if (mode_ == "nearest") {
         if (padding_mode_t_ == zero && align_corners_) {
           auto kernel =
-              warp_nearest_backward_data_3d<T, warp_by_grid::PADDING_MODE::zero,
-                                            true>;
+              warp_nearest_backward_data_3d<T, PADDING_MODE::zero, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && align_corners_) {
-          auto kernel = warp_nearest_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::repeat, true>;
+          auto kernel =
+              warp_nearest_backward_data_3d<T, PADDING_MODE::repeat, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && align_corners_) {
-          auto kernel = warp_nearest_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::reflect, true>;
+          auto kernel =
+              warp_nearest_backward_data_3d<T, PADDING_MODE::reflect, true>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == zero && !align_corners_) {
           auto kernel =
-              warp_nearest_backward_data_3d<T, warp_by_grid::PADDING_MODE::zero,
-                                            false>;
+              warp_nearest_backward_data_3d<T, PADDING_MODE::zero, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == repeat && !align_corners_) {
-          auto kernel = warp_nearest_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::repeat, false>;
+          auto kernel =
+              warp_nearest_backward_data_3d<T, PADDING_MODE::repeat, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         } else if (padding_mode_t_ == reflect && !align_corners_) {
-          auto kernel = warp_nearest_backward_data_3d<
-              T, warp_by_grid::PADDING_MODE::reflect, false>;
+          auto kernel =
+              warp_nearest_backward_data_3d<T, PADDING_MODE::reflect, false>;
           kernel(igrad, ograd, grid, ishape, oshape, istride, gstride, ostride);
         }
       }
@@ -1279,34 +1233,32 @@ void WarpByGrid<T>::backward_impl(const Variables &inputs,
       if (mode_ == "linear") {
         if (padding_mode_t_ == zero && align_corners_) {
           auto kernel =
-              warp_linear_backward_grid_2d<T, warp_by_grid::PADDING_MODE::zero,
-                                           true>;
+              warp_linear_backward_grid_2d<T, PADDING_MODE::zero, true>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == repeat && align_corners_) {
-          auto kernel = warp_linear_backward_grid_2d<
-              T, warp_by_grid::PADDING_MODE::repeat, true>;
+          auto kernel =
+              warp_linear_backward_grid_2d<T, PADDING_MODE::repeat, true>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == reflect && align_corners_) {
-          auto kernel = warp_linear_backward_grid_2d<
-              T, warp_by_grid::PADDING_MODE::reflect, true>;
+          auto kernel =
+              warp_linear_backward_grid_2d<T, PADDING_MODE::reflect, true>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == zero && !align_corners_) {
           auto kernel =
-              warp_linear_backward_grid_2d<T, warp_by_grid::PADDING_MODE::zero,
-                                           false>;
+              warp_linear_backward_grid_2d<T, PADDING_MODE::zero, false>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == repeat && !align_corners_) {
-          auto kernel = warp_linear_backward_grid_2d<
-              T, warp_by_grid::PADDING_MODE::repeat, false>;
+          auto kernel =
+              warp_linear_backward_grid_2d<T, PADDING_MODE::repeat, false>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == reflect && !align_corners_) {
-          auto kernel = warp_linear_backward_grid_2d<
-              T, warp_by_grid::PADDING_MODE::reflect, false>;
+          auto kernel =
+              warp_linear_backward_grid_2d<T, PADDING_MODE::reflect, false>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         }
@@ -1320,34 +1272,32 @@ void WarpByGrid<T>::backward_impl(const Variables &inputs,
       if (mode_ == "linear") {
         if (padding_mode_t_ == zero && align_corners_) {
           auto kernel =
-              warp_linear_backward_grid_3d<T, warp_by_grid::PADDING_MODE::zero,
-                                           true>;
+              warp_linear_backward_grid_3d<T, PADDING_MODE::zero, true>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == repeat && align_corners_) {
-          auto kernel = warp_linear_backward_grid_3d<
-              T, warp_by_grid::PADDING_MODE::repeat, true>;
+          auto kernel =
+              warp_linear_backward_grid_3d<T, PADDING_MODE::repeat, true>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == reflect && align_corners_) {
-          auto kernel = warp_linear_backward_grid_3d<
-              T, warp_by_grid::PADDING_MODE::reflect, true>;
+          auto kernel =
+              warp_linear_backward_grid_3d<T, PADDING_MODE::reflect, true>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == zero && !align_corners_) {
           auto kernel =
-              warp_linear_backward_grid_3d<T, warp_by_grid::PADDING_MODE::zero,
-                                           false>;
+              warp_linear_backward_grid_3d<T, PADDING_MODE::zero, false>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == repeat && !align_corners_) {
-          auto kernel = warp_linear_backward_grid_3d<
-              T, warp_by_grid::PADDING_MODE::repeat, false>;
+          auto kernel =
+              warp_linear_backward_grid_3d<T, PADDING_MODE::repeat, false>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         } else if (padding_mode_t_ == reflect && !align_corners_) {
-          auto kernel = warp_linear_backward_grid_3d<
-              T, warp_by_grid::PADDING_MODE::reflect, false>;
+          auto kernel =
+              warp_linear_backward_grid_3d<T, PADDING_MODE::reflect, false>;
           kernel(ggrad, ograd, input, grid, ishape, oshape, istride, gstride,
                  ostride);
         }

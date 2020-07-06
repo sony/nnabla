@@ -26,11 +26,27 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_HEADER(AffineGrid, const vector<int> &, bool);
 
 /**
-    @todo Write doc.
 
 Inputs:
+- theta: N-D array with the shape (\f$B \times 2 \times 3\f$), the sample-wise
+  affine transformation matrix.
 
 Outputs:
+- grid: N-D array with the shape (\f$B \times H \times W \times 2\f$) for 2D and
+(\f$B \times D \times H \times W \times 3\f$) for 3D. The last dimension of 2 is
+for (x, y) and of 3 for (x, y, z). The `gird` is used as the source grid for the
+warping.
+
+@tparam T Data type for computation.
+@param size The grid size of (\f$H \times W\f$) for 2D and (\f$D \times H \times
+W\f$) for 3D.
+@param align_corners If `True`, the top-left and bottom-right pixcels correspond
+to (-1, -1) and (1, 1) respectively since a pixel is located on the corner of a
+grid, and the target grid is normalized in [-1, 1]. If `False`, the normalized
+target grid in [-1, 1] is scaled by `size - 1 / size` according to the
+respective spatial size (e.g., \f$H\f$ and \f$W\f$) before the transformation
+since a pixel is located on a center of a cell in a grid.
+
 
 \ingroup FunctionImplGrp
  */

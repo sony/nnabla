@@ -272,9 +272,9 @@ def pooling_3d(x, mode, kernel, stride, pad, ignore_border=True,
 
 
 def generate_rotation_2d(rng, B):
-    degree = 2 * np.pi * (2.0 * rng.rand() - 1.0)
     rotates = []
     for i in range(B):
+        degree = 2 * np.pi * (2.0 * rng.rand() - 1.0)
         c, s = np.cos(degree), np.sin(degree)
         rotate = np.asarray([[c, -s],
                              [s, c]])
@@ -283,11 +283,12 @@ def generate_rotation_2d(rng, B):
 
 
 def generate_rotation_3d(rng, B):
-    alpha = np.pi * (2.0 * rng.rand() - 1.0)
-    beta = np.pi / 2.0 * (2.0 * rng.rand() - 1.0)
-    gamma = np.pi * (2.0 * rng.rand() - 1.0)
     rotates = []
     for i in range(B):
+        alpha = np.pi * (2.0 * rng.rand() - 1.0)
+        beta = np.pi / 2.0 * (2.0 * rng.rand() - 1.0)
+        gamma = np.pi * (2.0 * rng.rand() - 1.0)
+
         c, s = np.cos(alpha), np.sin(alpha)
         Ra = np.asarray([[c, -s, 0],
                          [s, c, 0],
