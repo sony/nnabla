@@ -16,6 +16,7 @@ from nnabla.utils import nnabla_pb2
 from functools import partial
 import numpy as np
 import re
+import collections
 try:
     import onnx
     from .utils import *
@@ -204,6 +205,7 @@ class OnnxExporter:
         self._executor = None
         self._opset = 7
         self._quantize_dtype = TensorProto.INT32
+        self._scale_cnt = collections.Counter()
         # Dictionary used to convert NNabla function names to ONNX op_type
 
         # opset_6 default op table
@@ -418,6 +420,7 @@ class OnnxExporter:
             "MaxPooling": partial(self.BasePooling_6x, 'MaxPool', '11'),
             "AveragePooling": partial(self.BasePooling_6x, 'AveragePool', '11'),
             "SumPooling": self.SumPooling_6x,
+            "DequantizeLinear": self.DequantizeLinear_trt,
         }
         table_op_set_tensorrt = dict(table_op_set_11, **table_op_set_tensorrt)
 
@@ -3269,6 +3272,49 @@ class OnnxExporter:
         nl.append(n)
         return nl
 
+    def DequantizeLinear_trt(self, func):
+        nl = []
+        self._input_types[func.input[0]] = self._quantize_dtype
+        self._input_types[func.input[2]] = self._quantize_dtype
+        self._scale_cnt[func.input[1]] += 1
+
+        if func.input[1] not in self._parameters or func.input[2] not in self._parameters:
+            raise ValueError(
+                "The type of scale and zero_point must be parameter")
+
+        if self._scale_cnt[func.input[1]] > 1:
+            scale_name = fork_name(func.input[1])
+            scale = [1/d for d in self._parameters[func.input[1]].data]
+            p = self._nnp.parameter.add()
+            p.variable_name = scale_name
+            p.shape.dim.extend([len(scale)])
+            p.data.extend(scale)
+            self._var_dict[scale_name] = self._var_dict[func.input[1]]
+            func.input[1] = scale_name
+        else:
+            scale = [1/d for d in self._parameters[func.input[1]].data]
+            for p in self._nnp.parameter[:]:
+                if p.variable_name == func.input[1]:
+                    self._nnp.parameter.remove(p)
+            p = self._nnp.parameter.add()
+            p.variable_name = func.input[1]
+            p.shape.dim.extend([len(scale)])
+            p.data.extend(scale)
+
+        for p in func.input[1:]:
+            shape = np.prod(list(self._var_dict[p].dim[:]))
+            new_shape = nnabla_pb2.Shape()
+            new_shape.dim.extend([shape])
+            self._var_dict[p] = new_shape
+
+        n = onnx.helper.make_node(
+            "DequantizeLinear",
+            func.input,
+            func.output
+        )
+        nl.append(n)
+        return nl
+
     def QuantizeLinear(self, func):
         INT_TO_TENSOR_TYPE = {
             # Currently, ONNX's QuantizeLinear only supports int8 and uint8
@@ -3301,6 +3347,8 @@ class OnnxExporter:
             new_shape = nnabla_pb2.Shape()
             new_shape.dim.extend([shape])
             self._var_dict[p] = new_shape
+
+        self._scale_cnt[func.input[1]] += 1
 
         n = onnx.helper.make_node(
             "QuantizeLinear",
