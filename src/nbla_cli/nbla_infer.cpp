@@ -16,6 +16,8 @@
 #include <nbla_utils/nnp.hpp>
 
 #include <cmdline.h>
+
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 
@@ -29,6 +31,10 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
   // TODO: use Nnp::get_executor_names() to get default executor.
   p.add<std::string>("executor", 'e', "Executor name (required)", true,
                      std::string());
+
+  p.add<std::string>("data_type", 't', "Parameter type (uint8 or float)", false,
+                     std::string());
+
   p.add<std::string>(
       "output", 'o',
       "Output filename prefix, if not specified print output to stdout.", false,
@@ -52,6 +58,7 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
       add_files_to_nnp(nnp, p.rest(), on_memory);
 
   int batch_size = p.get<int>("batch_size");
+
   std::string exec_name = p.get<std::string>("executor");
   std::string output_filename_prefix = p.get<std::string>("output");
 
@@ -70,21 +77,41 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
     std::ifstream file(ifile.c_str(), std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
-    // TODO: other types
-    float *data = var->cast_data_and_get_pointer<float>(ctx);
-    if ((int)size == ((int)(var->size()) * sizeof(float))) {
-      std::vector<float> buffer(size / sizeof(float));
-      if (file.read((char *)buffer.data(), size)) {
-        std::cout << "  Read data from [" << ifile << "]" << std::endl;
-        for (int j = 0; j < var->size(); ++j) {
-          data[j] = buffer[j];
+
+    if (p.get<std::string>("data_type") == "uint8") {
+      uint8_t *data = var->cast_data_and_get_pointer<uint8_t>(ctx);
+      if ((int)size == ((int)(var->size()) * sizeof(uint8_t))) {
+        std::vector<uint8_t> buffer(size / sizeof(uint8_t));
+        if (file.read((char *)buffer.data(), size)) {
+          std::cout << "  Read data from [" << ifile << "]" << std::endl;
+          for (int j = 0; j < var->size(); ++j) {
+            data[j] = buffer[j];
+          }
         }
+      } else {
+        std::cout << " Data size mismatch on data " << i
+                  << ". expected size is "
+                  << (int)(var->size()) * sizeof(uint8_t) << " but data file ["
+                  << ifile << "] size is " << size << "." << std::endl;
+        return false;
       }
     } else {
-      std::cout << " Data size mismatch on data " << i << ". expected size is "
-                << (int)(var->size()) * sizeof(float) << " but data file ["
-                << ifile << "] size is " << size << "." << std::endl;
-      return false;
+      float *data = var->cast_data_and_get_pointer<float>(ctx);
+      if ((int)size == ((int)(var->size()) * sizeof(float))) {
+        std::vector<float> buffer(size / sizeof(float));
+        if (file.read((char *)buffer.data(), size)) {
+          std::cout << "  Read data from [" << ifile << "]" << std::endl;
+          for (int j = 0; j < var->size(); ++j) {
+            data[j] = buffer[j];
+          }
+        }
+      } else {
+        std::cout << " Data size mismatch on data " << i
+                  << ". expected size is " << (int)(var->size()) * sizeof(float)
+                  << " but data file [" << ifile << "] size is " << size << "."
+                  << std::endl;
+        return false;
+      }
     }
   }
 
