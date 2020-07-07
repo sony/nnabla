@@ -15,3 +15,15 @@ pip install -r requirements.txt
 
 * Our Docker workflow offers an easy installation and setup of running environments of our examples.
 * [See this page](doc/docker.md).
+
+
+## Interactive Demos
+
+We have prepared interactive demos, where you can play around without having to worry about the codes and the internal mechanism. You can run it directly on [Colab](https://colab.research.google.com/) from the links in the table below.
+
+
+| Name        | Notebook           | Task  |
+|:------------------------------------------------:|:-------------:|:-----:|
+| ESR-GAN       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla-examples/blob/master/interactive-demos/esrgan.ipynb) | Super-Resolution|
+| Self-Attention GAN       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla-examples/blob/master/interactive-demos/sagan.ipynb) | Image Generation|
+| Face Alignment Network | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sony/nnabla-examples/blob/master/interactive-demos/fan.ipynb) | Facial Keypoint Detection |
