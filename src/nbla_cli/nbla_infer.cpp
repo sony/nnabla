@@ -25,6 +25,7 @@
 bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
   cmdline::parser p;
   p.add<int>("batch_size", 'b', "Batch size", false, -1);
+  p.add<float>("scale", 's', "Scale", false, 1.0f);
 
   // TODO: use Nnp::get_executor_names() to get default executor.
   p.add<std::string>("executor", 'e', "Executor name (required)", true,
@@ -52,6 +53,9 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
       add_files_to_nnp(nnp, p.rest(), on_memory);
 
   int batch_size = p.get<int>("batch_size");
+  float scale = p.get<float>("scale");
+  std::cout << "Scale: " << scale << std::endl;
+
   std::string exec_name = p.get<std::string>("executor");
   std::string output_filename_prefix = p.get<std::string>("output");
 
@@ -77,7 +81,7 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
       if (file.read((char *)buffer.data(), size)) {
         std::cout << "  Read data from [" << ifile << "]" << std::endl;
         for (int j = 0; j < var->size(); ++j) {
-          data[j] = buffer[j];
+          data[j] = buffer[j] * scale;
         }
       }
     } else {

@@ -317,6 +317,49 @@ def forward_command(args):
     return True
 
 
+def infer(info, input_data):
+    class tmp:
+        pass
+    args = tmp
+    tmp.outdir = ''
+    tmp.result_outdir = ''
+
+    class ForwardConfig:
+        pass
+    config = ForwardConfig
+
+    config.executors = info.executors.values()
+    config.networks = []
+
+    for e in config.executors:
+        if e.network.name in info.networks.keys():
+            config.networks.append(info.networks[e.network.name])
+        else:
+            logger.critical('Network {} is not found.'.format(
+                config.executor.network.name))
+            return False
+
+    normalize = True
+    for d in info.datasets.values():
+        normalize = d.normalize
+
+    input_file_index = 0
+    inputs = []
+    for e in config.executors:
+        for v, d in e.dataset_assign.items():
+            data = input_data[input_file_index].reshape(
+                v.variable_instance.d.shape)
+            inputs.append((d, data))
+            input_file_index += 1
+    data = []
+    variables = []
+    for v, d in inputs:
+        variables.append(v)
+        data.append(d)
+
+    return _forward(tmp, 0, config, data, variables, False)
+
+
 def infer_command(args):
     files = []
     files.append(args.config)
@@ -334,40 +377,15 @@ def infer_command(args):
     os.environ['NNABLA_CUDNN_ALGORITHM_BY_HEURISTIC'] = '1'
     info = load.load(files, prepare_data_iterator=False, batch_size=batch_size)
 
-    config.executors = info.executors.values()
-
-    config.networks = []
-    for e in config.executors:
-        if e.network.name in info.networks.keys():
-            config.networks.append(info.networks[e.network.name])
-        else:
-            logger.critical('Network {} is not found.'.format(
-                config.executor.network.name))
-            return False
-
-    normalize = True
-    for d in info.datasets.values():
-        normalize = d.normalize
-
-    input_file_index = 0
     inputs = []
-    for e in config.executors:
-        for v, d in e.dataset_assign.items():
-            input_filename = args.inputs[input_file_index]
-            if "int32" in input_filename:
-                data = np.fromfile(input_filename, np.int32).reshape(
-                    v.variable_instance.d.shape)
-            else:
-                data = np.fromfile(input_filename, np.float32).reshape(
-                    v.variable_instance.d.shape)
-            inputs.append((d, data))
-            input_file_index += 1
-    data = []
-    variables = []
-    for v, d in inputs:
-        variables.append(v)
-        data.append(d)
-    result, outputs = _forward(args, 0, config, data, variables, False)
+    for input_filename in args.inputs:
+        if 'int32' in input_filename:
+            inputs.append(np.fromfile(input_filename, np.int32))
+        else:
+            inputs.append(np.fromfile(input_filename, np.float32) * args.scale)
+
+    result, outputs = infer(info, inputs)
+
     for i, o in enumerate(outputs):
         if args.output is not None:
             (np.array(o).astype(np.float32)).tofile(
@@ -384,9 +402,9 @@ def add_infer_command(subparsers):
     subparser.add_argument(
         '-o', '--output', help='output file prefix', required=False)
     subparser.add_argument(
-        '--result_outdir', help='output result directory', type=str, default='')
-    subparser.add_argument(
         '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-s', '--scale', help='Scale for input data.', type=float, default=1.0, required=False)
     subparser.add_argument(
         '-b', '--batch_size',
         help='Batch size to use batch size in nnp file set -1.',
