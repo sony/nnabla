@@ -22,8 +22,8 @@ from nnabla.function import PythonFunction
 
 class Add2(PythonFunction):
 
-    def __init__(self):
-        pass
+    def __init__(self, ctx=None):
+        super(Add2, self).__init__(ctx)
 
     @property
     def name(self):
