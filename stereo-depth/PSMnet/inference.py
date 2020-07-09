@@ -28,7 +28,6 @@ from nnabla.ext_utils import get_extension_context
 from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
 from stackhourglass import psm_net
 from datetime import datetime
-import scipy.misc
 import cv2
 from nnabla.utils.image_utils import imsave, imread
 
@@ -116,13 +115,13 @@ def main():
     pred = np.squeeze(pred, axis=1)
     pred = pred[0]
     pred = 2*(pred - np.min(pred))/np.ptp(pred)-1
-    scipy.misc.imsave('stereo_depth.png', pred)
+    imsave('stereo_depth.png', (pred + 1) * 0.5))
 
     print("Done")
 
-   # Save NNP file (used in C++ inference later.).
-   if args.save_nnp:
-        runtime_contents = {
+    # Save NNP file (used in C++ inference later.).
+    if args.save_nnp:
+        runtime_contents={
         'networks': [
             {'name': 'runtime',
              'batch_size': 1,
