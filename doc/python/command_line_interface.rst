@@ -367,7 +367,7 @@ File format converter
                             [export][ONNX] define convert to onnx for TensorRT. e.g. opset_tensorrt
                             [export][NNB] define binary format version. e.g. nnb_3
       --api API             [export][NNB] Set API Level to convert to, default is highest API Level.
-      --enabla-optimize-pb  [export][tensorflow] enable optimization when export to pb or tflite.
+      --enable-optimize-pb  [export][tensorflow] enable optimization when export to pb or tflite.
 
 Optimize pb model
 -----------------
