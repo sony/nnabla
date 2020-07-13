@@ -3,7 +3,7 @@ boto3
 h5py
 imageio
 numpy
-onnx
+onnx==1.6.0
 pillow
 protobuf
 pyyaml
@@ -12,4 +12,5 @@ requests
 scipy
 six
 tqdm
-
+tensorflow==1.14
+ply

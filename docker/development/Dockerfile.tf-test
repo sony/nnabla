@@ -127,8 +127,22 @@ RUN umask 0 \
 ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
 ENV LD_LIBRARY_PATH /opt/miniconda3/envs/nnabla-build/lib:$LD_LIBRARY_PATH
 
+RUN mkdir /patch
+
+ADD third_party/patches /patch
+
+RUN cd /tmp \
+    && git clone https://github.com/onnx/onnx-tensorflow.git \
+    && cd onnx-tensorflow \
+    && git checkout fac9b862c7af0fbd0d983d9b72bc5462eb380b91 \
+    && patch -p1< $(ls /patch/onnx-tensorflow/*.patch) \
+    && pip install -e . . \
+    && rm -rf /tmp/onnx-tensorflow
+
 RUN cd /tmp \
     && git clone https://github.com/onnx/tensorflow-onnx.git \
     && cd tensorflow-onnx \
+    && git checkout 4d0fcedd2d3331069aaa2c69e3c353e8a8c2b8c1 \
+    && patch -p1< $(ls /patch/tensorflow-onnx/*.patch) \
     && python setup.py install \
     && rm -rf /tmp/tensorflow-onnx

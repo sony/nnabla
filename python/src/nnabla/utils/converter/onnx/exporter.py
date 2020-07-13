@@ -23,7 +23,7 @@ try:
     from onnx import (ModelProto, TensorProto, TensorShapeProto)
 except:
     print('ONNX export support disabled because onnx python package is not found.')
-    print(' You may install onnx package with "pip install onnx".')
+    print(' You may install onnx package with "pip install onnx==1.6.0".')
 
 TENSOR_TYPE_TO_DTYPE = {
     TensorProto.FLOAT: np.float32,
