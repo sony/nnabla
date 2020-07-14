@@ -1365,14 +1365,17 @@ class OnnxExporter:
         output_y_shape = np.array(
             [d for d in self._var_dict[func.output[0]].dim])
         weight_shape = [d for d in self._var_dict[func.input[1]].dim]
-        output_padding = [0] * (len(weight_shape[2:]))
         if func_name == "Deconvolution":
             dp = func.deconvolution_param
-            output_padding = dp.output_padding.dim[:]
+            if dp.output_padding.dim:
+                output_padding = dp.output_padding.dim[:]
+            else:
+                output_padding = [0] * (len(weight_shape[2:]))
             group = dp.group
         elif func_name == "DepthwiseDeconvolution":
             dp = func.depthwise_deconvolution_param
-            group = output_y_shape[dp.base_axis]
+            group = input_x_shape[dp.base_axis] // dp.divisor
+            output_padding = [0] * (len(weight_shape[1:]))
             weight_shape.insert(1, 1)
             proto_weight_shape = self._var_dict[inputs[1]]
             del proto_weight_shape.dim[:]
