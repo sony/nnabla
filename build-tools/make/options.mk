@@ -36,12 +36,12 @@ DOCKER_RUN_OPTS += -e ftp_proxy=${ftp_proxy}
 
 ########################################################################################################################
 # Settings
-PYTHON_VERSION_MAJOR ?= $(shell python -c 'import sys;print("{}".format(sys.version_info.major))')
+PYTHON_VERSION_MAJOR ?= $(shell python3 -c 'import sys;print("{}".format(sys.version_info.major))')
 export PYTHON_VERSION_MAJOR
 DOCKER_RUN_OPTS += -e PYTHON_VERSION_MAJOR=$(PYTHON_VERSION_MAJOR)
 DOCKER_BUILD_ARGS += --build-arg PYTHON_VERSION_MAJOR=${PYTHON_VERSION_MAJOR}
 
-PYTHON_VERSION_MINOR ?= $(shell python -c 'import sys;print("{}".format(sys.version_info.minor))')
+PYTHON_VERSION_MINOR ?= $(shell python3 -c 'import sys;print("{}".format(sys.version_info.minor))')
 export PYTHON_VERSION_MINOR
 DOCKER_RUN_OPTS += -e PYTHON_VERSION_MINOR=$(PYTHON_VERSION_MINOR)
 DOCKER_BUILD_ARGS += --build-arg PYTHON_VERSION_MINOR=${PYTHON_VERSION_MINOR}

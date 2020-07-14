@@ -41,7 +41,7 @@ if(NNABLA_UTILS_WITH_HDF5)
   install(EXPORT nbla_utils-hdf5-targets DESTINATION "trash")
 endif()
 
-download_and_extract_library(eigen-git-mirror-3.3.5 .zip https://github.com/eigenteam/eigen-git-mirror/archive/3.3.5.zip)
+download_and_extract_library(eigen-3.3.5 .zip https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.zip)
 
 if(BUILD_TEST)
   download_and_extract_library(googletest-release-1.7.0 .zip https://github.com/google/googletest/archive/release-1.7.0.zip)

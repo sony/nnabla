@@ -166,3 +166,9 @@ Also, you can add new features very easy by the help of our code template genera
 See the following link for details.
 
 * [Contribution guide](CONTRIBUTING.md)
+
+## License & Notice
+
+Neural Network Libraries is provided under the [Apache License Version 2.0](LICENSE) license.
+
+It also depends on some open source softwares. For more information, see [LICENSES](third_party/LICENSES.md) 
