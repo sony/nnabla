@@ -39,7 +39,7 @@ def get_config():
                         help='How many residual blocks are there in the generator')
     parser.add_argument('--max_iter', type=int, default=conf.train.max_iter,
                         help='max iteration for training')
-    parser.add_argument('--pre_trained_model', type=str, default=conf.train.pre_trained_model,
+    parser.add_argument('--pre_trained_frvsr_weights', type=str, default=conf.train.pre_trained_frvsr_weights,
                         help='the weight of frvsr generator will be loaded as an initial point')
     parser.add_argument('--vgg_pre_trained_weights', type=str,
                         default=conf.train.vgg_pre_trained_weights,
@@ -47,7 +47,8 @@ def get_config():
     parser.add_argument('--tecogan', type=bool,
                         default=conf.train.tecogan,
                         help='True for Tecogan training False for FRVSR training')
-
+    parser.add_argument('--checkpoint', type=str,
+                        default=conf.train.checkpoint, help='path to checkpoint file')
     args = parser.parse_args()
 
     # refine config
@@ -55,8 +56,9 @@ def get_config():
     conf.train.max_iter = conf.train.max_iter
     conf.data.output_dir = args.output_dir
     conf.train.num_resblock = args.num_resblock
-    conf.train.pre_trained_model = args.pre_trained_model
+    conf.train.pre_trained_frvsr_weights = args.pre_trained_frvsr_weights
     conf.train.vgg_pre_trained_weights = args.vgg_pre_trained_weights
     conf.train.tecogan = args.tecogan
+    conf.train.checkpoint = args.checkpoint
 
     return conf

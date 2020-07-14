@@ -15,18 +15,14 @@ train:
   # The eps parameter for the Adam optimizer
   adameps: 1e-8
   # The max iteration of the training
-  max_epoch: None
-  # The max iteration of the training
   max_iter: 900000
   # The frequency of saving images
-  save_freq: 1000
+  save_freq: 10000
 
   # The number of the rnn recurrent length
   rnn_n: 10
   # Batch size of the input batch
   batch_size: 4
-  # global random seed
-  rand_seed: 1
   # Whether random flip data augmentation is applied
   flip: True
   # Whether perform the random crop
@@ -39,13 +35,12 @@ train:
   crop_size: 32
   # Number of residual blocks in the generator 10 for FRVSR and 16 for tecogan
   num_resblock: 16
-  # If provided, the weight will be restored from the provided checkpoint
-  checkpoint: True
+  # If provided, the training will be resumed from the provided checkpoint
+  checkpoint: False # It can be either False or path for checkpoint. Ex : model/checkpoint_100000.json
   # The weight of generator will be loaded as an initial point
-  pre_trained_model: ./FRVSR_NNabla_model.h5
+  pre_trained_frvsr_weights: ./FRVSR_NNabla_model.h5
   # path to pre-trained weights for the vgg19
   vgg_pre_trained_weights: ./vgg_tf_2_nnabla.h5
-  
 
 gan:
   # The ratio between content loss and adversarial loss
@@ -56,12 +51,8 @@ gan:
   d_balance: 0.4
   # factor of dt crop
   crop_dt: 0.75
-  # Whether use layer loss from D
-  d_layerloss: True
   # The scaling factor for the VGG perceptual loss, disable with negative value
   vgg_scaling: 0.2
-  # The scaling factor for the warp
-  warp_scaling: 1.0
   # factor of pingpong term, works only when pingpong is True
   pp_scaling: 0.5
   
@@ -74,21 +65,7 @@ data:
   str_dir: 2000
   # The ending index of the video directory
   end_dir: 2249
-  # The ending index for validation of the video directory
-  end_dir_val: 2250
   # The ending index of the video directory
   max_frm: 119
-  # The directory of the input resolution input data, for inference mode
-  input_dir_LR: None
-  # length of the input for inference mode, -1 means all
-  input_dir_len: -1
-  # The directory of the input resolution input data, for inference mode
-  input_dir_HR: None
   # The output directory of the trained model
   output_dir: model
-  # The name of the subfolder for the images
-  output_pre: ''
-  # The pre name of the outputs
-  output_name: output
-  output_ext: jpg
-  summary_dir: None

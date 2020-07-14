@@ -9,3 +9,4 @@ from neu.yaml_wrapper import read_yaml
 from neu.misc import AttrDict
 from neu.comm import CommunicatorWrapper
 from neu.variable_utils import set_persistent_all
+from neu.checkpoint_util import save_checkpoint, load_checkpoint

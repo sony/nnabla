@@ -25,9 +25,9 @@ from models import generator, flow_estimator
 parser = argparse.ArgumentParser(description='TecoGAN')
 parser.add_argument('--model', default='./TecoGAN_NNabla_model.h5',
                     help='path to converted NNabla weight file')
-parser.add_argument('--input-dir-lr', default='./LR/foliage',
+parser.add_argument('--input-dir-lr', default='./LR/calendar',
                     help='Path to input LR directory')
-parser.add_argument('--output-dir', default='./results/foliage',
+parser.add_argument('--output-dir', default='./results/calendar',
                     help='Path to save the output HR frames')
 parser.add_argument('--output-name', default='output',
                     help='The pre name of the outputs')

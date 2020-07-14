@@ -15,10 +15,53 @@
 import collections
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
 from models import flow_estimator, generator, discriminator
 from utils import set_persistent_all
 from utils.utils import deprocess, warp_by_flow, space_to_depth, space_to_depth_disc, upscale_four
 from vgg19 import VGG19
+
+
+def get_common_monitors(monitor):
+    """
+    Create monitors for displaying and storing losses.
+    """
+    monitor_content_loss = MonitorSeries(
+        'content loss', monitor, interval=20)
+    monitor_gen_loss = MonitorSeries(
+        'generator loss', monitor, interval=20)
+    monitor_warp_loss = MonitorSeries(
+        'warp loss', monitor, interval=20)
+    monitor_lr = MonitorSeries(
+        'learning rate', monitor, interval=20)
+    monitor_time = MonitorTimeElapsed(
+        "training time per iteration", monitor, interval=20)
+    Monitor_common = collections.namedtuple('Monitor_common',
+                                            ['monitor_content_loss', 'monitor_gen_loss', 'monitor_warp_loss',
+                                             'monitor_lr', 'monitor_time'])
+    return Monitor_common(monitor_content_loss, monitor_gen_loss, monitor_warp_loss, monitor_lr, monitor_time)
+
+
+def get_tecogan_monitors(monitor):
+    """
+    Create monitors for displaying and storing TECOGAN losses.
+    """
+    monitor_vgg_loss = MonitorSeries(
+        'vgg loss', monitor, interval=20)
+    monitor_pp_loss = MonitorSeries(
+        'ping pong', monitor, interval=20)
+    monitor_sum_layer_loss = MonitorSeries(
+        'd layer loss', monitor, interval=20)
+    monitor_adv_loss = MonitorSeries(
+        'adversarial loss', monitor, interval=20)
+    monitor_disc_loss = MonitorSeries(
+        'discriminator loss', monitor, interval=20)
+    monitor_tb = MonitorSeries(
+        'tb', monitor, interval=20)
+    Monitor_tecogan = collections.namedtuple('Monitor_tecogan',
+                                             ['monitor_vgg_loss', 'monitor_pp_loss', 'monitor_sum_layer_loss',
+                                              'monitor_adv_loss', 'monitor_disc_loss', 'monitor_tb'])
+    return Monitor_tecogan(monitor_vgg_loss, monitor_pp_loss, monitor_sum_layer_loss, monitor_adv_loss, monitor_disc_loss, monitor_tb)
 
 
 def get_tecogan_inputs(r_inputs, r_targets):

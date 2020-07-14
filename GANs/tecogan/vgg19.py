@@ -78,17 +78,19 @@ class VGG19(object):
 
     def __init__(self):
         conf = get_config()
-        print("Loading pre-trained vgg19 weights from ",
-              conf.train.vgg_pre_trained_weights)
-        with nn.parameter_scope("vgg19"):
-            nn.load_parameters(conf.train.vgg_pre_trained_weights)
 
-            # drop all the affine layers from pre-trained model for finetuning.
-            drop_layers = ['classifier/0/affine',
-                           'classifier/3/affine', 'classifier/6/affine']
-            for layers in drop_layers:
-                nn.parameter.pop_parameter((layers + '/W'))
-                nn.parameter.pop_parameter((layers + '/b'))
+        with nn.parameter_scope("vgg19"):
+            if not conf.train.checkpoint:
+                print("Loading pre-trained vgg19 weights from ",
+                      conf.train.vgg_pre_trained_weights)
+                nn.load_parameters(conf.train.vgg_pre_trained_weights)
+
+                # drop all the affine layers from pre-trained model for finetuning.
+                drop_layers = ['classifier/0/affine',
+                               'classifier/3/affine', 'classifier/6/affine']
+                for layers in drop_layers:
+                    nn.parameter.pop_parameter((layers + '/W'))
+                    nn.parameter.pop_parameter((layers + '/b'))
             self.mean = nn.Variable.from_numpy_array(np.asarray(
                 [123.68, 116.78, 103.94]).reshape(1, 1, 1, 3))
 

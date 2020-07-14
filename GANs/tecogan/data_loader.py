@@ -16,8 +16,6 @@ import os
 import collections
 import numpy as np
 import cv2 as cv
-from PIL import Image
-from numpy import asarray
 from scipy import signal
 import nnabla as nn
 import nnabla.functions as F
@@ -111,7 +109,7 @@ def get_sample_name_grid(conf):
                               '%s_%04d' % (conf.data.input_video_pre, dir_i))
         if os.path.exists(ip_dir):  # the following names are hard coded
             if not os.path.exists(os.path.join(ip_dir, 'col_high_%04d.png' % conf.data.max_frm)):
-                print("Skip %s, since foler doesn't contain enough frames!" % ip_dir)
+                print("Skip %s, since folder doesn't contain enough frames!" % ip_dir)
                 continue
             for f_i in range(conf.train.rnn_n):
                 image_grid_hr_r[f_i] += [os.path.join(ip_dir, 'col_high_%04d.png' % frame_i)
@@ -170,8 +168,7 @@ def data_iterator_sr(conf, num_samples, sample_names, tar_size, shuffle, rng=Non
 
         for f_i in range(conf.train.rnn_n):
             img_name = sample_names[f_i][i]
-            image = Image.open(img_name)
-            img_data = asarray(image).astype(float)
+            img_data = cv.imread(img_name, 3).astype(np.float32)
             img_data = img_data/255
 
             if conf.train.movingFirstFrame:
@@ -179,14 +176,12 @@ def data_iterator_sr(conf, num_samples, sample_names, tar_size, shuffle, rng=Non
                     img_data_0 = img_data
                     target_size = img_data.shape
 
-                img_data_1 = img_data_0[lefttop_pos[f_i][1]:target_size[0]
-                                        - range_pos[1] + lefttop_pos[f_i][1],
-                                        lefttop_pos[f_i][0]:target_size[1]
-                                        - range_pos[0] + lefttop_pos[f_i][0], :]
-
-                # random data augmentation -> move first frame only with 70% probability
-                img_data = img_data if is_move < 0.7 else img_data_1
-
+                # random data augmentation -> move first frame only with 30% probability
+                if not is_move < 0.7:
+                    img_data = img_data_0[lefttop_pos[f_i][1]:target_size[0]
+                                          - range_pos[1] + lefttop_pos[f_i][1],
+                                          lefttop_pos[f_i][0]:target_size[1]
+                                          - range_pos[0] + lefttop_pos[f_i][0], :]
             hr_data.append(img_data)
 
         return hr_data

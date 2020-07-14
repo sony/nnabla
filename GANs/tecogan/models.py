@@ -26,11 +26,11 @@ def conv2d(input, output_channels, kernel, stride, name='', pad=(1, 1), bias=Tru
                           pad=pad, with_bias=bias, name=name, channel_last=True)
 
 
-def deconv2d(input, output_channels, kernel, stride, name='', pad=(1, 1), bias=True):
+def deconv2d(input, output_channels, kernel, stride, name='', pad=(1, 1), output_padding=(1, 1), bias=True):
     """
     Deconvolution layer
     """
-    return PF.deconvolution(input, output_channels, kernel=kernel, stride=stride,
+    return PF.deconvolution(input, output_channels, kernel=kernel, stride=stride, output_padding=output_padding,
                             pad=pad, with_bias=bias, name=name, channel_last=True)
 
 
@@ -106,13 +106,9 @@ def generator(gen_input, gen_output_channels, num_resblock=16):
             net = residual_block(net, 64, 1, scope='resblock_%d' % (i+1))
 
         with nn.parameter_scope('conv_tran2highres'):
-            net = F.pad(net, (1, 0, 1, 0, 0, 0), mode='constant')
             net = deconv2d(net, 64, (3, 3), (2, 2), name='conv_tran1')
-            net = net[:, 1:, 1:, :]
             net = F.relu(net)
-            net = F.pad(net, (1, 0, 1, 0, 0, 0), mode='constant')
             net = deconv2d(net, 64, (3, 3), (2, 2), name='conv_tran2')
-            net = net[:, 1:, 1:, :]
             net = F.relu(net)
 
         with nn.parameter_scope('output_stage'):

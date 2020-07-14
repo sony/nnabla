@@ -83,52 +83,54 @@ def space_to_depth_disc(input, t_batch, inplace=False):
     return output
 
 
-def exp_moving_average(x, decay):
-    shadow_variable = nn.Variable(x.shape)
-    shadow_variable.data = x.data.copy_from(x.data)
-    shadow_variable -= (1 - decay) * (shadow_variable - x)
-    return shadow_variable
-
-# mimic the tensorflow bilinear-upscaling for a fix ratio of 4
-
-
 def upscale_four(inputs, scope='upscale_four'):
-    b, h, w, c = inputs.shape
+    """
+    Mimic the tensorflow bilinear-upscaling for a fix ratio of 4.
+    """
+    with nn.parameter_scope(scope):
+        b, h, w, c = inputs.shape
 
-    p_inputs = F.concatenate(
-        inputs, inputs[:, -1:, :, :], axis=1)  # pad bottom
-    p_inputs = F.concatenate(
-        p_inputs, p_inputs[:, :, -1:, :], axis=2)  # pad right
+        p_inputs = F.concatenate(
+            inputs, inputs[:, -1:, :, :], axis=1)  # pad bottom
+        p_inputs = F.concatenate(
+            p_inputs, p_inputs[:, :, -1:, :], axis=2)  # pad right
 
-    hi_res_bin = [
-        [
-                inputs,  # top-left
-                p_inputs[:, :-1, 1:, :]  # top-right
-        ],
-        [
-                p_inputs[:, 1:, :-1, :],  # bottom-left
-                p_inputs[:, 1:, 1:, :]  # bottom-right
-        ]
-        ]
+        hi_res_bin = [
+            [
+                    inputs,  # top-left
+                    p_inputs[:, :-1, 1:, :]  # top-right
+            ],
+            [
+                    p_inputs[:, 1:, :-1, :],  # bottom-left
+                    p_inputs[:, 1:, 1:, :]  # bottom-right
+            ]
+            ]
 
-    hi_res_array = []
-    for hi in range(4):
-        for wj in range(4):
-            hi_res_array.append(
-                    hi_res_bin[0][0] * (1.0 - 0.25 * hi) * (1.0 - 0.25 * wj)
-                    + hi_res_bin[0][1] * (1.0 - 0.25 * hi) * (0.25 * wj)
-                    + hi_res_bin[1][0] * (0.25 * hi) * (1.0 - 0.25 * wj)
-                    + hi_res_bin[1][1] * (0.25 * hi) * (0.25 * wj)
-                    )
+        hi_res_array = []
+        for hi in range(4):
+            for wj in range(4):
+                hi_res_array.append(
+                        hi_res_bin[0][0] *
+                            (1.0 - 0.25 * hi) * (1.0 - 0.25 * wj)
+                        + hi_res_bin[0][1] * (1.0 - 0.25 * hi) * (0.25 * wj)
+                        + hi_res_bin[1][0] * (0.25 * hi) * (1.0 - 0.25 * wj)
+                        + hi_res_bin[1][1] * (0.25 * hi) * (0.25 * wj)
+                        )
 
-    hi_res = F.stack(*hi_res_array, axis=3)  # shape (b,h,w,16,c)
-    hi_res_reshape = F.reshape(hi_res, (b, h, w, 4, 4, c))
-    hi_res_reshape = F.transpose(hi_res_reshape, (0, 1, 3, 2, 4, 5))
-    hi_res_reshape = F.reshape(hi_res_reshape, (b, h*4, w*4, c))
+        hi_res = F.stack(*hi_res_array, axis=3)  # shape (b,h,w,16,c)
+        hi_res_reshape = F.reshape(hi_res, (b, h, w, 4, 4, c))
+        hi_res_reshape = F.transpose(hi_res_reshape, (0, 1, 3, 2, 4, 5))
+        hi_res_reshape = F.reshape(hi_res_reshape, (b, h*4, w*4, c))
+
     return hi_res_reshape
 
 
 def bicubic_four(inputs, scope='bicubic_four'):
+    """
+    Equivalent to tf.image.resize_bicubic( inputs, (h*4, w*4) ) for a fix ratio of 4 FOR API <=1.13
+    For API 2.0, tf.image.resize_bicubic will be different, old version is tf.compat.v1.image.resize_bicubic
+    **Parallel Catmull-Rom Spline Interpolation Algorithm for Image Zooming Based on CUDA*[Wu et. al.]**
+    """
     with nn.parameter_scope(scope):
         b, h, w, c = inputs.shape
 
