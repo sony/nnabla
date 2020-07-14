@@ -112,10 +112,10 @@ string NetworkExpander::gen_repeat_name(const string &name, const string &id,
                                         int index, bool old_naming) {
   if (old_naming) {
     regex e("\\{" + id + "\\}");
-    return regex_replace(name, e, "[" + to_string(index) + "]");
+    return regex_replace(name, e, "_" + to_string(index));
   } else {
     char buffer[MAX_NAME_LEN];
-    ::snprintf(buffer, sizeof(buffer), "%s_%s[%d]", name.c_str(), id.c_str(),
+    ::snprintf(buffer, sizeof(buffer), "%s_%s_%d", name.c_str(), id.c_str(),
                index);
     return string(buffer);
   }
