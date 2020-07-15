@@ -29,7 +29,7 @@ from libc.stdint cimport int64_t, intptr_t
 cimport function
 from function cimport CFunction, Variables, CgFunction
 cimport _variable
-from _variable cimport Variable as _Variable, CVariable, CgVariable, CContext
+from _variable cimport Variable as _Variable, CVariable, CgVariable, CContext, Context
 from _nd_array cimport NdArray
 from _nd_array import NdArray
 from _imperative cimport *
@@ -218,6 +218,12 @@ cdef class Function:
             caccum)
 
     @property
+    def context(self):
+        ccontext = self.funp.function().get().context()
+        ctx = Context(**ccontext)
+        return ctx
+
+    @property
     def name(self):
         return self.funp.function().get().name()
 
@@ -334,7 +340,7 @@ cdef class Function:
 cdef class UnsafeVariable:
     """This is a Python wrapper class for Variable class in C++.
 
-    Note:
+    .. note::
         that it is intended to be used only in PythonFunction. Copying
         a reference of this class to outside of Python Function is prohibited
         because the lifetime of C++ is not ensured after calling
@@ -457,7 +463,9 @@ cdef void setup_callback(void *cself, const Variables &cinputs,
     outputs = to_unsafe_variables(coutputs)
 
     # Call setup_impl in function.
-    self.setup_impl(inputs, outputs)
+    from nnabla import context_scope
+    with context_scope(self.ctx):
+        self.setup_impl(inputs, outputs)
 
 cdef void forward_callback(void *cself, const Variables &cinputs,
                            const Variables &coutputs) except+ with gil:
@@ -469,7 +477,9 @@ cdef void forward_callback(void *cself, const Variables &cinputs,
     outputs = to_unsafe_variables(coutputs)
 
     # Call setup_impl in function.
-    self.forward_impl(inputs, outputs)
+    from nnabla import context_scope
+    with context_scope(self.ctx):    
+        self.forward_impl(inputs, outputs)
 
 cdef void backward_callback(void *cself, const Variables &cinputs,
                             const Variables &coutputs,
@@ -483,9 +493,11 @@ cdef void backward_callback(void *cself, const Variables &cinputs,
     outputs = to_unsafe_variables(coutputs)
 
     # Call setup_impl in function.
-    self.backward_impl(inputs, outputs,
-                       [propagate_down[i] for i in range(propagate_down.size())],
-                       [accum[i] for i in range(accum.size())])
+    from nnabla import context_scope
+    with context_scope(self.ctx):    
+        self.backward_impl(inputs, outputs,
+                           [propagate_down[i] for i in range(propagate_down.size())],
+                           [accum[i] for i in range(accum.size())])
 
 cdef void cleanup_callback(void *cself) with gil:
     """Decrement a reference count of PythonFunction.
@@ -495,7 +507,81 @@ cdef void cleanup_callback(void *cself) with gil:
 
 class PythonFunction:
     """
+    Creates a user-defined custom function in the subclsass.
+
+
+    To implement the naive multiplicaiton function of two variables using PythonFunction, 
+
+    .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.functions as F
+        from nnabla.function import PythonFunction
+    
+        class Mul2(PythonFunction):
+
+            def __init__(self, ctx):
+                super(Mul2, self).__init__(ctx)
+
+            def name(self):
+                return "Mul2"
+
+            def min_outputs(self):
+                return 1
+
+            def setup_impl(self, inputs, outputs):
+                i0 = inputs[0]
+                i1 = inputs[1]
+                assert i0.shape == i1.shape, "Shapes of inputs are different."
+                o0 = outputs[0]
+                o0.reset_shape(i0.shape, True)
+
+            def forward_impl(self, inputs, outputs):
+                x0 = inputs[0].data
+                x1 = inputs[1].data
+                y = outputs[0].data
+
+                # We can also write like, y.copy_from(x0 * x1)
+                y.copy_from(F.mul2(x0, x1))
+
+            def backward_impl(self, inputs, outputs, propagate_down, accum):
+                # Data of inputs and outputs
+                x0 = inputs[0].data
+                x1 = inputs[1].data
+                y = outputs[0].data
+                # Grads of inputs and outputs
+                dx0 = inputs[0].grad
+                dx1 = inputs[1].grad
+                dy = outputs[0].grad
+
+                # backward w.r.t. x0
+                if propagate_down[0]:
+                    if accum[0]:
+                        dx0 += F.mul2(dy, x1)
+                    else:
+                        dx0.copy_from(F.mul2(dy, x1))
+
+                # backward w.r.t. x1
+                if propagate_down[1]:
+                    if accum[1]:
+                        dx1 += F.mul2(dy, x0)
+                    else:
+                        dx1.copy_from(F.mul2(dy, x0))
+
+        def mul2(x, y, ctx=None):
+            func = Mul2(ctx)
+            return func(x, y)
     """
+
+    def __init__(self, ctx=None):
+        """
+        Args:
+            ctx (:class:`nnabla.Context`): Context used for the forward and backward pass. If not specified,
+              the current context is used.
+        """
+        from nnabla import get_current_context
+        self._ctx = ctx if ctx else get_current_context()
+    
     def __call__(self, *inputs, n_outputs=-1, outputs=None):
         from .auto_forward import get_auto_forward
         info = Info()
@@ -519,18 +605,57 @@ class PythonFunction:
 
     @property
     def name(self):
+        """
+        Name of the function.
+        """
         raise NotImplementedError("Implement `name`.")
 
+    @property
+    def ctx(self):
+        """Context
+        Return the context if the context is set in the constructor; 
+        otherwise return the global context
+        """
+        if hasattr(self, '_ctx'):
+            return self._ctx
+        from nnabla import get_current_context
+        self._ctx = get_current_context()
+        return self._ctx
+
     def min_outputs(self):
+        """
+        Minimum number of outputs of the function.
+        """
         raise NotImplementedError("Implement `min_outputs`.")
 
     def setup_impl(self, inputs, outputs):
+        """
+        Setup method.
+
+        Args:
+            inputs: (list of :class:`nnabla.Variable`): Inputs to the function.
+            outputs: (list of :class:`nnabla.Variable`): Outputs from the function.
+        """
         raise NotImplementedError("Implement `setup`.")
 
     def forward_impl(self, inputs, outputs):
+        """
+        Forward method.
+
+        Args:
+            inputs: (list of :class:`nnabla.Variable`): Inputs to the function.
+            outputs: (list of :class:`nnabla.Variable`): Outputs from the function.
+        """        
         raise NotImplementedError("Implement `forward`.")
 
     def backward_impl(self, inputs, outputs, propagate_down, accum):
+        """
+        Backward method.
+
+        Args:
+            inputs: (list of :class:`nnabla.Variable`): Inputs to the function.
+            outputs: (list of :class:`nnabla.Variable`): Outputs from the function.
+        """
         raise NotImplementedError("Implement `backward`.")
 # ==============================================================================
 # Python Function End
@@ -540,7 +665,7 @@ class PythonFunction:
 class Dummy(PythonFunction):
     """
     """
-    def __init__(self):
+    def __init__(self, ctx):
         pass
 
     @property

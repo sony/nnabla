@@ -13,6 +13,11 @@ Function
 .. autoclass:: Function
    :members:
 
+.. autoclass:: PythonFunction
+   :members:
+
+   .. automethod:: __init__
+
 .. _functions:
 
 List of Functions
@@ -24,9 +29,10 @@ The :mod:`nnabla.functions` module provides various types of functions listed be
 These functions takes input :class:`nnabla.Variable` (s) as its leading argument(s), followed by options
 specific to each function.
 
-Note:
-    The functions can also take :obj:`~nnabla.NdArray`s as inputs instead
-    of :obj:`~nnabla.Variable`s. It will execute the function operation immediately,
+.. note::
+
+    The functions can also take :obj:`~nnabla.NdArray` (s) as inputs instead
+    of :obj:`~nnabla.Variable` (s). It will execute the function operation immediately,
     and returns :obj:`~nnabla.NdArray` (s) as output(s) holding output values of the
     operation. We call this "Imperative Mode" (NdArray + Functions).
 

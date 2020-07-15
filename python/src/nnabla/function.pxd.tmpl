@@ -40,6 +40,7 @@ cdef extern from "nbla/function.hpp" namespace "nbla":
         void backward(const Variables&, const Variables&,
                       const vector[cpp_bool] &propagate_down,
                       const vector[cpp_bool] &accum) nogil except +
+        CContext context() except +
         vector[dtypes] in_types()
         vector[dtypes] out_types()
         int min_inputs()

@@ -19,7 +19,9 @@ class BackwardFunction(PythonFunction):
     """Parent class for the backward functions.
     """
 
-    def __init__(self):
+    def __init__(self, ctx):
+        super(BackwardFunction, self).__init__(ctx)
+
         self._num_inputs = 0
         self._num_outputs = 0
         self._num_inputs_fwd = 0

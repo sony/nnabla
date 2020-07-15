@@ -306,3 +306,25 @@ def test_shared_variable_on_same_function(seed):
     y.forward()
     y.backward()
     assert_allclose(x.g, 3 * xd ** 2)
+
+
+@pytest.mark.parametrize("seed", [313])
+def test_function_context(seed):
+    rng = np.random.RandomState(313)
+    xd = rng.randn(2, 3)
+    x = nn.Variable.from_numpy_array(xd)
+    ctx1 = nn.Context(backend=['cpu:float'],
+                      array_class='CpuCachedArray', device_id='1')
+
+    with nn.context_scope(ctx1):
+        y = F.relu(x)
+    ctx0 = nn.Context(backend=['cpu:float'],
+                      array_class='CpuCachedArray', device_id='0')
+
+    # TODO: use id or hash if we determine the spec
+    assert str(ctx0) != str(ctx1)
+    assert str(ctx1) == str(y.parent.context)
+
+    with nn.context_scope(y.parent.context):
+        z = F.relu(x)
+    assert str(y.parent.context) == str(z.parent.context)
