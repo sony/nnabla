@@ -246,7 +246,7 @@ def load_image_imread(file, shape=None, max_range=1.0):
         assert(out_n_color == n_color)
         if out_height != height or out_width != width or out_n_color != n_color:
             # imresize returns 0 to 255 image.
-            img255 = imresize(img255, (out_height, out_width, out_n_color))
+            img255 = imresize(img255, (out_height, out_width))
         img255 = img255.transpose(2, 0, 1)
 
     if max_range < 0 or max_range == 255.0:
