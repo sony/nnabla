@@ -15,6 +15,8 @@
 #include <nbla/array/cpu_array.hpp>
 #include <nbla/array/cpu_dlpack_array.hpp>
 
+#include <cstring>
+
 namespace nbla {
 
 CpuDlpackArray::CpuDlpackArray(const Size_t size, dtypes dtype,
