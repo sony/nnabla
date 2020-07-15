@@ -41,7 +41,7 @@ cimport numpy as np
 np.import_array()
 # CPython
 from cpython cimport Py_INCREF, Py_DECREF
-
+from nnabla.core.graph_def import ProtoVariable, ProtoFunction
 
 class Info:
     '''
@@ -252,6 +252,15 @@ cdef class Function:
     @property
     def rank(self):
         return self.funp.rank()
+
+    @property
+    def arguments(self):
+        info = eval(self.funp.info())
+        return info['args']
+
+    def _proto_call(self, inputs, int n_outputs, outputs):
+        info = eval(self.funp.info())
+        return ProtoFunction(self, info['name'], info['args'])(inputs, n_outputs)
     
     def _imperative_call(self, inputs, int n_outputs, outputs):
         cdef vector[NdArrayPtr] na_outputs
@@ -292,9 +301,10 @@ cdef class Function:
         if outputs is None:
             outputs = []
         if inputs:
-            for i in range(len(inputs)):
-                if isinstance(inputs[i], NdArray):
-                    return self._imperative_call(inputs, n_outputs, outputs)
+            if any([isinstance(inp, ProtoVariable) for inp in inputs]):
+                return self._proto_call(inputs, n_outputs, outputs)
+            elif any([isinstance(inp, NdArray) for inp in inputs]):
+                return self._imperative_call(inputs, n_outputs, outputs)
         return self._cg_call(inputs, n_outputs, outputs, auto_forward)
 
     @property
