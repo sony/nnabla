@@ -31,6 +31,8 @@ from .utils import *
 # and set a default name to it.
 DEFAULT_EXECUTOR_NAME = "exec_0"
 
+fork_name_number = 0
+
 
 def add_value_info_as_variable(network, info):
     if not info.type.HasField("tensor_type"):  # accepting only tensor
@@ -78,6 +80,13 @@ def set_function_name(func, node_name, base_name, func_counter):
     func.name, count = generate_function_name(func.type, base_name, node_name,
                                               func_counter)
     update_function_counter(func.type, func_counter, count)
+
+
+def fork_name(name):
+    global fork_name_number
+    fork_name_number += 1
+    ret = name + '_{:04}'.format(fork_name_number)
+    return ret
 
 
 def generate_transpose(node_name, in_name, out_name, axes, base_name, func_counter):
@@ -776,7 +785,7 @@ class OnnxImporter:
                 # Add a separate padding function for
                 # asymmetry padding
                 input = n.input[0]
-                padded = input+"_pad"
+                padded = fork_name(input)+"_pad"
                 pad_width = rearrange_pads(pads)
                 padf = generate_pad(n.name, input, padded,
                                     "constant", pad_width, 0,
@@ -1081,7 +1090,7 @@ class OnnxImporter:
             if asymmetry:
                 pad_width = rearrange_pads(pads)
                 input = n.input[0]
-                pad_out = input + "_pad"
+                pad_out = fork_name(input) + "_pad"
                 padf = generate_pad(n.name, input, pad_out,
                                     pad_mode, pad_width, value,
                                     self._graph.name, self._func_counter)
@@ -1165,7 +1174,7 @@ class OnnxImporter:
         broadcasted_postfix = "_broadcasted"
         input = n.input[:]
         bin = n.input[b_idx]
-        bout = bin+broadcasted_postfix
+        bout = fork_name(bin)+broadcasted_postfix
         bt = generate_broadcast_to(n.name, n.input[0], bin, bout, broadcast_axis,
                                    self._graph.name, self._func_counter)
         self._shape_output[bout] = self.get_func_input_shape(n.input[0])
@@ -1204,7 +1213,7 @@ class OnnxImporter:
                 if input0_dim < ndim:
                     shape.extend(list(np.ones(ndim-input0_dim, dtype=np.int)))
                     shape.extend(input0_shape)
-                    out = n.input[0]+"_shape"
+                    out = fork_name(n.input[0])+"_shape"
                     rp = generate_reshape(n.name, n.input[0], out, shape,
                                           self._graph.name, self._func_counter)
                     self._shape_output[out] = shape
@@ -1215,7 +1224,7 @@ class OnnxImporter:
                 elif input1_dim < ndim:
                     shape.extend(list(np.ones(ndim-input1_dim, dtype=np.int)))
                     shape.extend(input1_shape)
-                    out = n.input[1]+"_shape"
+                    out = fork_name(n.input[1])+"_shape"
                     rp = generate_reshape(n.name, n.input[1], out, shape,
                                           self._graph.name, self._func_counter)
                     self._shape_output[out] = shape
@@ -1272,7 +1281,7 @@ class OnnxImporter:
 
         if alpha != 1.0:
             # MulScalar
-            muls_out = inputs[0]+"_muls"
+            muls_out = fork_name(inputs[0])+"_muls"
             muls = generate_mul_scalar(n.name, inputs[0], muls_out,
                                        alpha, self._graph.name, self._func_counter)
             self._shape_output[muls_out] = shape
@@ -1288,21 +1297,21 @@ class OnnxImporter:
             bias_shape = self.get_func_input_shape(inputs[2])
             if beta != 1.0:
                 # MulScalar
-                muls_out = inputs[2]+"_muls"
+                muls_out = fork_name(inputs[2])+"_muls"
                 muls = generate_mul_scalar(n.name, inputs[2], muls_out,
                                            beta, self._graph.name, self._func_counter)
                 self._shape_output[muls_out] = bias_shape
                 func_list.append(muls)
                 inputs[2] = muls_out
 
-            bmout = n.input[0] + "_batchmatmul"
+            bmout = fork_name(n.input[0]) + "_batchmatmul"
             bm = generate_batchmatmul(n.name, inputs[:2], bmout, transpose_a, transpose_b,
                                       self._graph.name, self._func_counter)
             self._shape_output[bmout] = shape
             func_list.append(bm)
             inputs[0] = bmout
             if len(bias_shape) != len(shape):
-                rout = inputs[2] + "_reshape"
+                rout = fork_name(inputs[2]) + "_reshape"
                 bias_shape = [1] * (len(shape) - len(bias_shape)) + bias_shape
                 rp = generate_reshape(n.name, inputs[2], rout, bias_shape,
                                       self._graph.name, self._func_counter)
@@ -1332,7 +1341,7 @@ class OnnxImporter:
                                  .format(attr.name, n.op_type))
 
         # Reshape
-        rout_x = n.input[0]+"_reshape"
+        rout_x = fork_name(n.input[0])+"_reshape"
         _shape = [int(np.prod(input_shape[:axis])),
                   int(np.prod(input_shape[axis:]))]
         rp = generate_reshape(n.name, n.input[0], rout_x, _shape,
@@ -1341,35 +1350,35 @@ class OnnxImporter:
         func_list.append(rp)
 
         # Max
-        mout_x = rout_x+"_max"
+        mout_x = fork_name(rout_x)+"_max"
         gr = generate_reduction("Max", n.name, rout_x, mout_x,
                                 [1], True, self._graph.name, self._func_counter)
         self._shape_output[mout_x] = [_shape[0], 1]
         func_list.append(gr)
 
         # Sub2
-        sout_x = rout_x+"_sub2"
+        sout_x = fork_name(rout_x)+"_sub2"
         ga = generate_arithmetic("Sub2", n.name, [rout_x, mout_x], sout_x,
                                  self._graph.name, self._func_counter)
         self._shape_output[sout_x] = _shape
         func_list.append(ga)
 
         # Exp
-        expout_x = sout_x+"_exp"
+        expout_x = fork_name(sout_x)+"_exp"
         ge = generate_unary("Exp", n.name, sout_x, expout_x,
                             self._graph.name, self._func_counter)
         self._shape_output[expout_x] = _shape
         func_list.append(ge)
 
         # Sum
-        sumout_x = expout_x+"_sum"
+        sumout_x = fork_name(expout_x)+"_sum"
         gr = generate_reduction("Sum", n.name, expout_x, sumout_x,
                                 [1], True, self._graph.name, self._func_counter)
         self._shape_output[sumout_x] = [_shape[0], 1]
         func_list.append(gr)
 
         # Div2
-        div2out_x = n.output[0]+"_div2"
+        div2out_x = fork_name(n.output[0])+"_div2"
         ga = generate_arithmetic("Div2", n.name, [expout_x, sumout_x], div2out_x,
                                  self._graph.name, self._func_counter)
         self._shape_output[div2out_x] = _shape
@@ -1527,14 +1536,14 @@ class OnnxImporter:
         # Convert to PowScalar+Transpose+SumPooling+Transpose+
         # MulScalar+AddScalar+PowScalar
         pow0_in = n.input[0]
-        pow0_out = pow0_in+"_pow0"
+        pow0_out = fork_name(pow0_in)+"_pow0"
         pow0 = generate_pow_scalar(n.name, pow0_in, pow0_out,
                                    2, self._graph.name, self._func_counter)
         self._shape_output[pow0_out] = self.get_func_input_shape(pow0_in)
         func_list.append(pow0)
         # Transpose the channel axis so we can sumpool along the channels
         # We are assuming 4D input
-        trans0_out = pow0_out+"_trans0"
+        trans0_out = fork_name(pow0_out)+"_trans0"
         axes = [0, 2, 3, 1]
         trans0 = generate_transpose(n.name, pow0_out, trans0_out,
                                     axes, self._graph.name, self._func_counter)
@@ -1547,7 +1556,7 @@ class OnnxImporter:
         func_list.append(trans0)
         # SumPool along channels.
         padval = (size - 1)//2
-        sp_out = trans0_out+"_sp"
+        sp_out = fork_name(trans0_out)+"_sp"
         sump = generate_sum_pooling(n.name, trans0_out, sp_out,
                                     [1, size], [1, 1], True, [0, padval],
                                     self._graph.name, self._func_counter)
@@ -1567,7 +1576,7 @@ class OnnxImporter:
         self._shape_output[sp_out] = output_shape
         func_list.append(sump)
         # Transpose back
-        trans1_out = sp_out+"_trans1"
+        trans1_out = fork_name(sp_out)+"_trans1"
         axes = [0, 3, 1, 2]
         trans1 = generate_transpose(n.name, sp_out, trans1_out,
                                     axes, self._graph.name, self._func_counter)
@@ -1579,19 +1588,19 @@ class OnnxImporter:
         self._shape_output[trans1_out] = output_shape
         func_list.append(trans1)
         # MulScalar
-        muls_out = trans1_out+"_muls"
+        muls_out = fork_name(trans1_out)+"_muls"
         muls = generate_mul_scalar(n.name, trans1_out, muls_out,
                                    alpha/size, self._graph.name, self._func_counter)
         self._shape_output[muls_out] = self._shape_output[trans1_out]
         func_list.append(muls)
         # AddScalar
-        adds_out = muls_out+"_adds"
+        adds_out = fork_name(muls_out)+"_adds"
         adds = generate_add_scalar(n.name, muls_out, adds_out,
                                    bias, self._graph.name, self._func_counter)
         self._shape_output[adds_out] = self._shape_output[muls_out]
         func_list.append(adds)
         # PowScalar
-        pow1_out = adds_out+"_pow1"
+        pow1_out = fork_name(adds_out)+"_pow1"
         pow1 = generate_pow_scalar(n.name, adds_out, pow1_out,
                                    beta, self._graph.name, self._func_counter)
         self._shape_output[pow1_out] = self._shape_output[adds_out]
@@ -1739,7 +1748,7 @@ class OnnxImporter:
                                  .format(attr.name, n.op_type))
 
         # Reshape
-        rout_x = n.input[0]+"_reshape"
+        rout_x = fork_name(n.input[0])+"_reshape"
         _shape = [int(np.prod(input_shape[:axis])),
                   int(np.prod(input_shape[axis:]))]
         rp = generate_reshape(n.name, n.input[0], rout_x, _shape,
@@ -1748,49 +1757,49 @@ class OnnxImporter:
         func_list.append(rp)
 
         # Max
-        mout_x = rout_x+"_max"
+        mout_x = fork_name(rout_x)+"_max"
         gr = generate_reduction("Max", n.name, rout_x, mout_x,
                                 [1], True, self._graph.name, self._func_counter)
         self._shape_output[mout_x] = [_shape[0], 1]
         func_list.append(gr)
 
         # Sub2
-        sout_x = rout_x+"_sub2"
+        sout_x = fork_name(rout_x)+"_sub2"
         ga = generate_arithmetic("Sub2", n.name, [rout_x, mout_x], sout_x,
                                  self._graph.name, self._func_counter)
         self._shape_output[sout_x] = _shape
         func_list.append(ga)
 
         # Exp
-        expout_x = sout_x+"_exp"
+        expout_x = fork_name(sout_x)+"_exp"
         ge = generate_unary("Exp", n.name, sout_x, expout_x,
                             self._graph.name, self._func_counter)
         self._shape_output[expout_x] = _shape
         func_list.append(ge)
 
         # Sum
-        sumout_x = expout_x+"_sum"
+        sumout_x = fork_name(expout_x)+"_sum"
         gr = generate_reduction("Sum", n.name, expout_x, sumout_x,
                                 [1], True, self._graph.name, self._func_counter)
         self._shape_output[sumout_x] = [_shape[0], 1]
         func_list.append(gr)
 
         # Log
-        logout_x = sumout_x+"_log"
+        logout_x = fork_name(sumout_x)+"_log"
         ge = generate_unary("Log", n.name, sumout_x, logout_x,
                             self._graph.name, self._func_counter)
         self._shape_output[logout_x] = [_shape[0], 1]
         func_list.append(ge)
 
         # Add2
-        add2out_x = rout_x+"_add2"
+        add2out_x = fork_name(rout_x)+"_add2"
         ga = generate_arithmetic("Add2", n.name, [mout_x, logout_x], add2out_x,
                                  self._graph.name, self._func_counter)
         self._shape_output[add2out_x] = [_shape[0], 1]
         func_list.append(ga)
 
         # Sub2
-        sub2out = n.output[0]+"sub2"
+        sub2out = fork_name(n.output[0])+"sub2"
         ga = generate_arithmetic("Sub2", n.name, [rout_x, add2out_x], sub2out,
                                  self._graph.name, self._func_counter)
         self._shape_output[sub2out] = _shape
@@ -1853,7 +1862,7 @@ class OnnxImporter:
         else:  # both min and max is specified
             # Add MinimumScalar and rewire with MaximumScalar
             minin = n.input[0]
-            minout = minin+"_min"
+            minout = fork_name(minin)+"_min"
             minf = generate_minimum_scalar(n.name, minin, minout,
                                            maxval, self._graph.name, self._func_counter)
             self._shape_output[minout] = self.get_func_input_shape(minin)
@@ -2070,7 +2079,7 @@ class OnnxImporter:
 
         # Reshape
         rin = n.input[0]
-        rout = n.input[0]+"_reshape"
+        rout = fork_name(n.input[0])+"_reshape"
         if mode == "DCR":
             _shape = [b, blocksize, blocksize, c // (blocksize**2), h, w]
         else:
@@ -2081,7 +2090,7 @@ class OnnxImporter:
         func_list.append(rp)
 
         # Transpose
-        trans_out = rout+"_trans"
+        trans_out = fork_name(rout)+"_trans"
         if mode == "DCR":
             axes = [0, 3, 4, 1, 5, 2]
         else:
@@ -2123,7 +2132,7 @@ class OnnxImporter:
         reduced_w = w // blocksize
         # Reshape
         rin = n.input[0]
-        rout = n.input[0]+"_reshape"
+        rout = fork_name(n.input[0])+"_reshape"
         _shape = [b, c, reduced_h, blocksize, reduced_w, blocksize]
         rp = generate_reshape(n.name, rin, rout, _shape,
                               self._graph.name, self._func_counter)
@@ -2131,7 +2140,7 @@ class OnnxImporter:
         func_list.append(rp)
 
         # Transpose
-        trans_out = rout+"_trans"
+        trans_out = fork_name(rout)+"_trans"
         axes = [0, 3, 5, 1, 2, 4]
         transp = generate_transpose(n.name, rout, trans_out,
                                     axes, self._graph.name, self._func_counter)
@@ -2342,7 +2351,7 @@ class OnnxImporter:
                 if len(input_shape[i]) < ndim:
                     input_shape[i] = list(
                         np.ones(ndim - len(input_shape[i]), dtype=np.int)) + input_shape[i]
-                    rout = inputs[i]+"_shape"
+                    rout = fork_name(inputs[i])+"_shape"
                     rp = generate_reshape(n.name, inputs[i], rout, input_shape[i],
                                           self._graph.name, self._func_counter)
                     self._shape_output[rout] = input_shape[i]
@@ -2357,14 +2366,14 @@ class OnnxImporter:
                         need_broadcast = True
                         break
                 if need_broadcast:
-                    bout = inputs[i] + "_broadcast"
+                    bout = fork_name(inputs[i]) + "_broadcast"
                     bt = generate_broadcast(n.name, inputs[i], bout, broadcast_shape,
                                             self._graph.name, self._func_counter)
                     self._shape_output[bout] = shape
                     inputs[i] = bout
                     func_list.append(bt)
 
-            sout = func.output[0] + "_stack"
+            sout = fork_name(func.output[0]) + "_stack"
             sp = generate_stack(n.name, inputs, sout, 0,
                                 self._graph.name, self._func_counter)
             self._shape_output[sout] = [len(input_shape)] + broadcast_shape
@@ -2453,7 +2462,7 @@ class OnnxImporter:
             # Add a separate padding function for
             # asymmetry padding
             input = n.input[0]
-            padded = input+"_pad"
+            padded = fork_name(input)+"_pad"
             pad_width = rearrange_pads(pads)
             padf = generate_pad(n.name, input, padded,
                                 "constant", pad_width, 0,
@@ -2490,7 +2499,7 @@ class OnnxImporter:
                         convt_output_shape[index] - output_shape[2+index])
 
         if output_need_pad:
-            deconv_out = func.output[0] + "_deconv"
+            deconv_out = fork_name(func.output[0]) + "_deconv"
             del func.output[:]
             func.output.extend([deconv_out])
             self._shape_output[deconv_out] = output_shape
@@ -2543,7 +2552,7 @@ class OnnxImporter:
 
         if len(raw_data) > len(input_shape):
             new_shape = [1] * (len(raw_data) - len(input_shape)) + input_shape
-            rout = n.input[0]+"_shape"
+            rout = fork_name(n.input[0])+"_shape"
             rp = generate_reshape(n.name, n.input[0], rout, new_shape,
                                   self._graph.name, self._func_counter)
             self._shape_output[rout] = new_shape
@@ -2570,19 +2579,19 @@ class OnnxImporter:
             func = self.generate_default_function("HardSigmoid", n)
             func_list.append(func)
         else:
-            muls_out = n.input[0]+"_muls"
+            muls_out = fork_name(n.input[0])+"_muls"
             muls = generate_mul_scalar(n.name, n.input[0], muls_out,
                                        alpha, self._graph.name, self._func_counter)
             self._shape_output[muls_out] = shape
             func_list.append(muls)
 
-            adds_out = n.input[0]+"_adds"
+            adds_out = fork_name(n.input[0])+"_adds"
             adds = generate_add_scalar(n.name, muls_out, adds_out,
                                        beta, self._graph.name, self._func_counter)
             self._shape_output[adds_out] = shape
             func_list.append(adds)
 
-            mins_out = n.input[0]+"_mins"
+            mins_out = fork_name(n.input[0])+"_mins"
             mins = generate_minimum_scalar(n.name, adds_out, mins_out,
                                            1, self._graph.name, self._func_counter)
             self._shape_output[mins_out] = shape
@@ -2604,14 +2613,14 @@ class OnnxImporter:
                     axis = attr.i
         new_shape = [int(np.prod(input_shape[:axis])),
                      int(np.prod(input_shape[axis:]))]
-        rout = n.input[0]+"_shape"
+        rout = fork_name(n.input[0])+"_shape"
         rp = generate_reshape(n.name, n.input[0], rout, new_shape,
                               self._graph.name, self._func_counter)
         self._shape_output[rout] = new_shape
         func_list.append(rp)
 
         max_func = self.generate_default_function("Max", n)
-        max_out = n.input[0]+"_max"
+        max_out = fork_name(n.input[0])+"_max"
         max_func.input[0] = rout
         max_func.output[0] = max_out
         mp = max_func.max_param
@@ -2622,7 +2631,7 @@ class OnnxImporter:
         func_list.append(max_func)
 
         one_hot_func = self.generate_default_function("OneHot", n)
-        one_hot_out = n.input[0]+"_one_hot"
+        one_hot_out = fork_name(n.input[0])+"_one_hot"
         one_hot_func.input[0] = max_out
         one_hot_func.output[0] = one_hot_out
         one_hot_p = one_hot_func.one_hot_param
@@ -2641,12 +2650,12 @@ class OnnxImporter:
         nnp_order = [0, 2, 1]
         nnp_input = [n.input[i] for i in nnp_order]
 
-        mean_out = n.input[0]+"_mean"
+        mean_out = fork_name(n.input[0])+"_mean"
         mean_param = create_parameter_variable(self._pb, mean_out,
                                                scale_shape, [0]*scale_shape[0])
         self._param_vars[mean_out] = None
         nnp_input.append(mean_out)
-        variance_out = n.input[0]+"_variance"
+        variance_out = fork_name(n.input[0])+"_variance"
         variance_param = create_parameter_variable(self._pb, variance_out,
                                                    scale_shape, [0]*scale_shape[0])
         self._param_vars[variance_out] = None
@@ -2730,7 +2739,7 @@ class OnnxImporter:
                 alpha = attr.f
 
         input_shape = self.get_func_input_shape(n.input[0])
-        cout = n.input[0]+"_zeros"
+        cout = fork_name(n.input[0])+"_zeros"
         constant_func = self.generate_default_function("Constant", n)
         cp = constant_func.constant_param
         cp.val = 0.0
@@ -2740,7 +2749,7 @@ class OnnxImporter:
         func_list.append(constant_func)
         self._shape_output[cout] = input_shape
 
-        gout = n.input[0]+"_greaterscalar"
+        gout = fork_name(n.input[0])+"_greaterscalar"
         greater_func = self.generate_default_function("GreaterScalar", n)
         gp = greater_func.greater_scalar_param
         gp.val = alpha
@@ -2778,7 +2787,7 @@ class OnnxImporter:
                 del output_shape[i]
 
         # PowScalar
-        pow_scalar_out = n.input[0]+"_pow2"
+        pow_scalar_out = fork_name(n.input[0])+"_pow2"
         pow_func = generate_pow_scalar(n.name, n.input[0], pow_scalar_out,
                                        2, self._graph.name, self._func_counter)
         self._shape_output[pow_scalar_out] = input_shape
@@ -2816,7 +2825,7 @@ class OnnxImporter:
         for index in indices:
             start[axis] = index
             stop[axis] = index + 1
-            slice_out = n.input[0]+"_slice_"+str(index)
+            slice_out = fork_name(n.input[0])+"_slice_"+str(index)
             func = self.generate_default_function("Slice", n)
             del func.input[1]
             func.output[0] = slice_out
