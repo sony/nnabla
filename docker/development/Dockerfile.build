@@ -44,6 +44,7 @@ RUN yum install -y \
     && yum clean all
 
 ############################################################# cmake
+
 ARG CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
@@ -54,7 +55,7 @@ RUN mkdir /tmp/deps \
     && mkdir build \
     && cd build \
     && cmake3 -DBUILD_TESTING=FALSE .. \
-    && make \
+    && make -j8 \
     && make install \
     && yum remove -y cmake3 \
     && yum clean all \
@@ -75,7 +76,7 @@ RUN mkdir /tmp/deps \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -Dprotobuf_BUILD_TESTS=OFF \
         ../cmake \
-    && make \
+    && make -j8 \
     && make install \
     && cd / \
     && rm -rf /tmp/*
@@ -95,6 +96,7 @@ RUN mkdir /tmp/deps \
         -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
         -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
         ../libarchive-3.3.2 \
+    && make -j8 \
     && make install \
     && cd / \
     && rm -rf /tmp/*

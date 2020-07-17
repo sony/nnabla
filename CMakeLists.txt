@@ -220,7 +220,7 @@ if(BUILD_CPP_LIB)
   # includes
   list(APPEND NBLA_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/third_party/eigen-git-mirror-3.3.5)
+    ${CMAKE_SOURCE_DIR}/third_party/eigen-3.3.5)
   
   if(BUILD_CPP_UTILS)
     list(APPEND NBLA_INCLUDE_DIRS

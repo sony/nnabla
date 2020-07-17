@@ -212,8 +212,7 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(os.path.join(build_dir, 'bin')):
         for fn in files:
             if os.path.splitext(fn)[1] == '' or os.path.splitext(fn)[1] == '.exe':
-                if not os.path.isdir(os.path.join(path_pkg, 'bin')):
-                    os.makedirs(os.path.join(path_pkg, 'bin'))
+                os.makedirs(os.path.join(path_pkg, 'bin'), exist_ok=True)
                 shutil.copyfile(os.path.join(root, fn),
                                 os.path.join(path_pkg, 'bin', fn))
                 os.chmod(os.path.join(path_pkg, 'bin', fn), 0o755)
@@ -222,8 +221,7 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(os.path.join(build_dir, 'lib')):
         for fn in files:
             if os.path.splitext(fn)[1] == '.so' or os.path.splitext(fn)[1] == '.dylib':
-                if not os.path.isdir(os.path.join(path_pkg, 'bin')):
-                    os.makedirs(os.path.join(path_pkg, 'bin'))
+                os.makedirs(os.path.join(path_pkg, 'bin'), exist_ok=True)
                 shutil.copyfile(os.path.join(root, fn),
                                 os.path.join(path_pkg, 'bin', fn))
                 os.chmod(os.path.join(path_pkg, 'bin', fn), 0o755)
@@ -239,8 +237,18 @@ if __name__ == '__main__':
                                     os.path.join(path_pkg, fn))
                     package_data["nnabla"].append(fn)
 
-    package_dir = {'': src_dir}
+    # License information.
+    nnabla_root = os.path.abspath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), '..'))
+    os.makedirs(os.path.join(path_pkg, 'doc/third_party'), exist_ok=True)
+    for fn in ['LICENSE',
+               'NOTICE.md',
+               os.path.join('third_party', 'LICENSES.md')]:
+        shutil.copyfile(os.path.join(nnabla_root, fn),
+                        os.path.join(path_pkg, 'doc', fn))
+        package_data["nnabla"].append(os.path.join('doc', fn))
 
+    package_dir = {'': src_dir}
     packages = ['nnabla',
                 'nnabla.contrib',
                 'nnabla.experimental',
