@@ -407,7 +407,7 @@ cdef class UnsafeVariable:
         """Get data as ``NdArray``.
 
         Returns:
-            :class:`~nnabla._nd_array.NdArray`
+            :class:`~nnabla.NdArray`
         """
         return NdArray.create(self.var.data())
 
@@ -416,7 +416,7 @@ cdef class UnsafeVariable:
         """Get grad as ``NdArray``.
 
         Returns:
-            :class:`~nnabla._nd_array.NdArray`
+            :class:`~nnabla.NdArray`
         """
         return NdArray.create(self.var.grad())
 
