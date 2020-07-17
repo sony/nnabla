@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,10 +40,10 @@ def test_from_dlpack_new(ext_name, numpy_type, torch_type):
     ctx = get_extension_context(ext_name)
     device_name = ctx.backend[0].split(':')[0]
     if device_name == 'cudnn':
-        device_name = 'cuda' # for PyTorch
+        device_name = 'cuda'  # for PyTorch
     nn.set_default_context(ctx)
 
-    # Init PyTorch Tensor    
+    # Init PyTorch Tensor
     t = torch.ones((5, 5), dtype=torch_type,
                    device=torch.device(device_name))
 
@@ -67,10 +67,10 @@ def test_from_dlpack_given(ext_name, numpy_type, torch_type):
     ctx = get_extension_context(ext_name)
     device_name = ctx.backend[0].split(':')[0]
     if device_name == 'cudnn':
-        device_name = 'cuda' # for PyTorch
+        device_name = 'cuda'  # for PyTorch
     nn.set_default_context(ctx)
 
-    # Init PyTorch Tensor    
+    # Init PyTorch Tensor
     t = torch.ones((5, 5), dtype=torch_type,
                    device=torch.device(device_name))
 
@@ -100,7 +100,7 @@ def test_to_dlpack(ext_name, numpy_type, torch_type, set_dtype, set_ctx):
 
     # Init nnabla.NdArray
     a = nn.NdArray.from_numpy_array(np.ones((5, 5), dtype=numpy_type))
-    a.cast(numpy_type)
+    a.cast(numpy_type, ctx)
 
     # NNabla to DLPack
     passed_dtype = numpy_type if set_dtype else None
@@ -112,7 +112,7 @@ def test_to_dlpack(ext_name, numpy_type, torch_type, set_dtype, set_ctx):
     assert t.dtype == torch_type
 
     # Check if the memory locations are still same.
-    t.add_(1) # in-place add
+    t.add_(1)  # in-place add
     assert np.all(a.data == t.to('cpu').detach().numpy().copy())
 
 

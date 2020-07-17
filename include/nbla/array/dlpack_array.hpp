@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
 #ifndef __NBLA_DLPACK_ARRAY_HPP__
 #define __NBLA_DLPACK_ARRAY_HPP__
 
-#include <nbla/array.hpp>
 #include <dlpack/dlpack.h> // third-party
+#include <nbla/array.hpp>
 
 namespace nbla {
 /** Array with a borrwed memory pointer from other frameworks via DLPack.
 */
 class NBLA_API DlpackArray : public Array {
 protected:
-  DLManagedTensor *dlp_ = nullptr;  
+  DLManagedTensor *dlp_ = nullptr;
   void *ptr_ = nullptr; // Borrowed memory pointer added "byte_offset".
 
   // Return the borrowed memory pointer.
@@ -32,7 +32,7 @@ protected:
 
 public:
   /** Constructor not to finish the construction of this class.
-  
+
       This special constructor is expected to be called from
       ArrayCreator::create in SyncedArray::get/cast. After the call,
       DlpackArray::borrow must be done to complete the construction.

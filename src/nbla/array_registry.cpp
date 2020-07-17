@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2017-2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,14 +42,13 @@ string ArrayGroup::get_group(const string &array_class) {
   Registry_t &registry = get_registry();
   try {
     return registry.at(array_class);
-  }
-  catch (std::out_of_range &) {
+  } catch (std::out_of_range &) {
     vector<string> keys;
-      for (auto &kv : registry) {
-        keys.push_back(kv.first);
-      }
-      NBLA_ERROR(error_code::unclassified, "'%s' cannot be found in [%s].",
-                 array_class.c_str(), string_join(keys, ", ").c_str());
+    for (auto &kv : registry) {
+      keys.push_back(kv.first);
+    }
+    NBLA_ERROR(error_code::unclassified, "'%s' cannot be found in [%s].",
+               array_class.c_str(), string_join(keys, ", ").c_str());
   }
 }
 

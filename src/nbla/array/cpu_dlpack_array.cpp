@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/array/cpu_dlpack_array.hpp>
 #include <nbla/array/cpu_array.hpp>
+#include <nbla/array/cpu_dlpack_array.hpp>
 
 namespace nbla {
 
 CpuDlpackArray::CpuDlpackArray(const Size_t size, dtypes dtype,
                                const Context &ctx)
-  : DlpackArray(size, dtype, ctx) {}
+    : DlpackArray(size, dtype, ctx) {}
 
 CpuDlpackArray::~CpuDlpackArray() {}
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@
 namespace nbla {
 
 DlpackArrayRegistry::ArrayToDLDeviceType
-DlpackArrayRegistry::array_to_device_type_;
+    DlpackArrayRegistry::array_to_device_type_;
 
 DlpackArrayRegistry::DLDeviceTypeToArray
-DlpackArrayRegistry::device_type_to_array_;
+    DlpackArrayRegistry::device_type_to_array_;
 
 DlpackArrayRegistry::DLDeviceTypeToBackend
-DlpackArrayRegistry::device_type_to_backend_;
+    DlpackArrayRegistry::device_type_to_backend_;
 
 template <typename K, typename V>
 void raise_error(const map<K, V> &map, const string &key_name,
@@ -35,7 +35,7 @@ void raise_error(const map<K, V> &map, const string &key_name,
   }
 
   NBLA_ERROR(error_code::unclassified, "%s %s cannot be found in [%s].",
-    key_name, key, string_join(keys, ", ").c_str());
+             key_name, key, string_join(keys, ", ").c_str());
 }
 
 Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
@@ -57,20 +57,18 @@ Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
   string array_class = "";
   try {
     array_class = device_type_to_array_.at(dev_t);
-  }
-  catch (std::out_of_range&) {
+  } catch (std::out_of_range &) {
     raise_error(device_type_to_array_, "DLDeviceType", std::to_string(dev_t));
   }
 
   // Device ID
   const auto device_id = std::to_string(dl_tensor.ctx.device_id);
 
-  // Backend  
+  // Backend
   string backend = "";
   try {
     backend = device_type_to_backend_.at(dev_t);
-  }
-  catch (std::out_of_range&) {
+  } catch (std::out_of_range &) {
     raise_error(device_type_to_backend_, "DLDeviceType", std::to_string(dev_t));
   }
 
@@ -78,7 +76,7 @@ Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
   // Convert FLOAT to float, and HALF to half
   std::transform(str_dtpe.begin(), str_dtpe.end(), str_dtpe.begin(), ::tolower);
   backend = string_join(vector<string>{backend, str_dtpe}, ":");
-    
+
   return Context({backend}, array_class, device_id);
 }
 
@@ -86,8 +84,7 @@ DLDeviceType
 DlpackArrayRegistry::array_to_device_type(const string &array_class) {
   try {
     return array_to_device_type_.at(array_class);
-  }
-  catch (std::out_of_range &) {
+  } catch (std::out_of_range &) {
     raise_error(array_to_device_type_, "Array class", array_class);
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,18 +18,18 @@
 namespace nbla {
 
 DlpackArray::DlpackArray(const Size_t size, dtypes dtype, const Context &ctx)
-  : Array(size, dtype, ctx, AllocatorMemory()) {}
+    : Array(size, dtype, ctx, AllocatorMemory()) {}
 
 DlpackArray::~DlpackArray() {
   call_deleter(dlp_); // Call the given deleter to return the borrowed array.
 }
 
 inline void *get_ptr_with_offset(const DLTensor &dl_tensor) {
-  return reinterpret_cast<void*>(reinterpret_cast<char*>(dl_tensor.data)
-                                 + dl_tensor.byte_offset);
+  return reinterpret_cast<void *>(reinterpret_cast<char *>(dl_tensor.data) +
+                                  dl_tensor.byte_offset);
 }
 
-void  DlpackArray::borrow(DLManagedTensor *dlp) {
+void DlpackArray::borrow(DLManagedTensor *dlp) {
   dlp_ = dlp;
   ptr_ = get_ptr_with_offset(dlp->dl_tensor);
 }
@@ -40,8 +40,7 @@ void DlpackArray::copy_from(const Array *src_array) {
 }
 
 void DlpackArray::zero() {
-  NBLA_ERROR(error_code::not_implemented,
-             "Array must implement zero().");
+  NBLA_ERROR(error_code::not_implemented, "Array must implement zero().");
 }
 
 void DlpackArray::fill(float value) {
@@ -51,6 +50,6 @@ void DlpackArray::fill(float value) {
 
 Context DlpackArray::filter_context(const Context &ctx) {
   NBLA_ERROR(error_code::not_implemented,
-            "Array must implement filter_context(const Context&).");
+             "Array must implement filter_context(const Context&).");
 }
 }
