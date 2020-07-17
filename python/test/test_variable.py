@@ -113,8 +113,6 @@ def test_reshape():
     assert np.all(v2_s.g == 1)
     v2.d = 1
     assert np.all(v2_s.d == 1)
-    v2.g = 1.5
-    assert np.all(v2_s.g == 1.5)
 
     # Check unlink
     v2_su = v2.reshape((3, 4, 2), unlink=True)

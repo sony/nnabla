@@ -628,10 +628,6 @@ def function_tester(rng, func, ref_func, inputs,
             continue
         f = o[0].parent
 
-        # If input's grad is inplaced, the test doesn't work correctly.
-        if f.inplace_grad(i):
-            continue
-
         # Prepare function inputs
         finputs = list(filter(lambda x: x is not None, vinputs))
 

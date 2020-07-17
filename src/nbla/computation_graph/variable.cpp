@@ -289,9 +289,6 @@ class BackwardCallback {
         if (f->inplace_data(i)) {
           clear[f->inplace_data_with(i)].first = false;
         }
-        if (f->inplace_grad(i)) {
-          clear[f->inplace_grad_with(i)].second = false;
-        }
       }
       for (int o = 0; o < outputs.size(); ++o) {
         if (prohibit_clear[o] || outputs[o]->persistent()) {
@@ -359,13 +356,6 @@ class BackwardCallback {
       // Propagate prohibit property from the output variables.
       if (func->function()->inplace_data(i)) {
         auto inplaced = outputs[func->function()->inplace_data_with(i)];
-        auto it2 = vseen_.find(inplaced);
-        if (it2 == vseen_.end() || it2->second) {
-          it->second = true;
-        }
-      }
-      if (func->function()->inplace_grad(i)) {
-        auto inplaced = outputs[func->function()->inplace_grad_with(i)];
         auto it2 = vseen_.find(inplaced);
         if (it2 == vseen_.end() || it2->second) {
           it->second = true;

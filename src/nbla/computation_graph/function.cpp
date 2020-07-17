@@ -94,27 +94,6 @@ void CgFunction::check_data_inplace(int i, CgVariablePtr input,
   }
 }
 
-void CgFunction::check_grad_inplace(int i, CgVariablePtr input) {
-  if (!input->need_grad_state()) {
-    return;
-  }
-  auto f = this->function();
-  int inplace_level = f->inplace_grad(i);
-  if (inplace_level == Function::INPLACE) {
-    NBLA_CHECK(input->parent(), error_code::value,
-               "A grad array of a root variable in a graph cannot be "
-               "in-placed (%d-th input of '%s').",
-               i, f->name().c_str());
-  }
-  if (inplace_level >= Function::INPLACE_NOT_MODIFY) {
-    NBLA_CHECK(input->function_reference_count() < 2, error_code::value,
-               "In-placing grad at a variable which branches"
-               " is prohibited. %d-th input "
-               "grad of `%s` (depth=%d) is inplaced.",
-               i, f->name().c_str(), this->rank());
-  }
-}
-
 void CgFunction::verify_during_forward() {
   for (auto o : this->outputs()) {
     o->set_allow_modify_data(true);
@@ -123,7 +102,6 @@ void CgFunction::verify_during_forward() {
   auto outputs = this->outputs();
   for (int i = 0; i < inputs.size(); ++i) {
     this->check_data_inplace(i, inputs[i], outputs);
-    this->check_grad_inplace(i, inputs[i]);
   }
 }
 

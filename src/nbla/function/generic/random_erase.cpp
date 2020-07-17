@@ -212,7 +212,6 @@ void RandomErase<T>::setup_impl(const Variables &inputs,
   outputs[0]->reshape(inputs[0]->shape(), true);
   if (inplace_) {
     outputs[0]->data()->set_array(inputs[0]->data()->array());
-    outputs[0]->grad()->set_array(inputs[0]->grad()->array());
   }
 
   rgen_ = std::mt19937((seed_ == -1 ? std::random_device()() : seed_));
@@ -289,8 +288,7 @@ void RandomErase<T>::backward_impl(const Variables &inputs,
   auto H = shape[base_axis_ + 1];
   auto W = shape[base_axis_ + 2];
 
-  T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_,
-                                                   !(inplace_ || accum[0]));
+  T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
 
   // STE
