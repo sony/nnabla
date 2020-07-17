@@ -13,7 +13,7 @@
 ## [Eigen](eigen.tuxfamily.org/index.php)
 
 `Neural Network Libraries` use [Eigen](eigen.tuxfamily.org/index.php) as-is with `EIGEN_MPL2_ONLY` flag.
-The source code we are using is [eigen-3.3.5.zip](https://nnabla.org/third_party/eigen-3.3.5.zip)
+You can get a copy of the source code [here](https://nnabla.org/third_party/eigen-3.3.5.zip).
 
 ```
 Mozilla Public License Version 2.0
