@@ -171,4 +171,4 @@ See the following link for details.
 
 Neural Network Libraries is provided under the [Apache License Version 2.0](LICENSE) license.
 
-It also depends on some open source softwares. For more information, see [LICENSES](third_party/LICENSES.md) 
+It also depends on some open source software packages. For more information, see [LICENSES](third_party/LICENSES.md).
