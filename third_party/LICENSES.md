@@ -1,6 +1,6 @@
 # LICENCES
 
-`Neural Network Libraries` depends on following open source softwares.
+`Neural Network Libraries` depends on the following open source software packages.
 
 * [Eigen](#eigen)
 * [LAPACK](#lapack)
@@ -788,4 +788,3 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
-
