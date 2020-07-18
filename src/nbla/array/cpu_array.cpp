@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // cpu_array.cpp
-#include <nbla/array/cpu_array.hpp>
+#include "./cpu_array-internal.hpp"
 #include <nbla/array_registry.hpp>
 #include <nbla/common.hpp>
 #include <nbla/cpu.hpp>
@@ -41,26 +41,6 @@ CpuArray::~CpuArray() {}
 void CpuArray::zero() {
   std::memset(this->pointer<void>(), 0,
               this->size() * sizeof_dtype(this->dtype_));
-}
-
-/** Helper template to copy data from CpuArray with other data type.
-*/
-template <typename Ta, typename Tb>
-void cpu_array_copy(const Array *src, Array *dst) {
-  const Ta *p_src = src->const_pointer<Ta>();
-  Tb *p_dst = dst->pointer<Tb>();
-  if (!src->size()) {
-    // zero-size means scalar
-    *p_dst = *p_src;
-    return;
-  }
-  std::copy(p_src, p_src + src->size(), p_dst);
-}
-
-template <typename T> void cpu_fill(Array *self, float value) {
-  T *ptr = self->pointer<T>();
-  size_t size = self->size();
-  std::fill(ptr, ptr + size, static_cast<T>(value));
 }
 
 Context CpuArray::filter_context(const Context &ctx) {

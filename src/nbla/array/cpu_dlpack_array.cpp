@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <nbla/array/cpu_array.hpp>
+#include "./cpu_array-internal.hpp"
 #include <nbla/array/cpu_dlpack_array.hpp>
 
 #include <cstring>
