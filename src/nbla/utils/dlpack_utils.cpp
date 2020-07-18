@@ -46,7 +46,7 @@ inline uint8_t convert_dtype_to_dlpack_code(const dtypes dtype) {
   default:
     NBLA_ERROR(error_code::type, "dtype %s cannot be converted to "
                                  "DLDataTypeCode.",
-               dtype_to_string(dtype));
+               dtype_to_string(dtype).c_str());
     break;
   }
   return code;
@@ -155,7 +155,7 @@ void deleter(struct DLManagedTensor *self) {
   // Delete the members
   delete[] self->dl_tensor.shape;
   delete[] self->dl_tensor.strides;
-  delete self->manager_ctx;
+  delete static_cast<manager_ctx *>(self->manager_ctx);
 
   // Finally delete itself.
   delete self;
@@ -185,7 +185,7 @@ DLManagedTensor *to_dlpack_impl(const shared_ptr<Array> &arr_ptr,
     } catch (...) {
       NBLA_ERROR(error_code::value, "device_id %s cannot be converted to "
                                     "integer.",
-                 ctx.device_id);
+                 ctx.device_id.c_str());
     }
   }
 

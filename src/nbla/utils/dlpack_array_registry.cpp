@@ -35,7 +35,7 @@ void raise_error(const map<K, V> &map, const string &key_name,
   }
 
   NBLA_ERROR(error_code::unclassified, "%s %s cannot be found in [%s].",
-             key_name, key, string_join(keys, ", ").c_str());
+             key_name.c_str(), key.c_str(), string_join(keys, ", ").c_str());
 }
 
 Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
@@ -87,6 +87,7 @@ DlpackArrayRegistry::array_to_device_type(const string &array_class) {
   } catch (std::out_of_range &) {
     raise_error(array_to_device_type_, "Array class", array_class);
   }
+  return kDLCPU;
 }
 
 void DlpackArrayRegistry::add_map(const DLDeviceType device_type,
