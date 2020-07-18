@@ -61,6 +61,7 @@
 /python/src/nnabla/utils/load_function.py
 /python/src/nnabla/utils/nnabla_pb2.py
 /python/src/nnabla/utils/save_function.py
+/python/src/nnabla/utils/dlpack.cpp
 /python/test/Test-error.series.txt
 /python/test/Training-error.series.txt
 /python/test/Training-loss.series.txt
@@ -87,6 +88,8 @@
 /build-android/
 /build-doc/
 /build_wheel_py*/
+/python/src/nnabla/bin/
+/python/src/nnabla/libnnabla.so
 
 # Converted ReST
 # doc/python/tutorial/
