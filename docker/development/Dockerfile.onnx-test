@@ -122,7 +122,6 @@ RUN umask 0 \
     && pip install -U -r /tmp/deps/setup_requirements.txt \
     && pip install -U -r /tmp/deps/requirements.txt \
     && pip install -U -r /tmp/deps/test_requirements.txt \
-    && conda install pytorch cpuonly -c pytorch \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
