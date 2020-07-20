@@ -53,7 +53,7 @@ def extopts(library_name, library_dir):
     include_dir = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '../include'))
     dlpack_include_dir = os.path.realpath(os.path.join(
-        os.path.dirname(__file__), '../third_party/dlpack/include'))
+        os.path.dirname(__file__), '../include/third_party'))
     ext_opts = dict(
         include_dirs=[include_dir, dlpack_include_dir, np.get_include()],
         libraries=[library_name],

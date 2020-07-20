@@ -792,6 +792,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## [DLPack](https://github.com/dmlc/dlpack/)
 
+A file [dlpack.h](../include/third_party/dlpack/dlpack.h) is copied from
+[dlpack v0.3](https://github.com/dmlc/dlpack/archive/v0.3.zip),
+and is provided under a license below.
+
 ```
                                  Apache License
                            Version 2.0, January 2004
