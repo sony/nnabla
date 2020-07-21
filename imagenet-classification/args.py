@@ -110,13 +110,6 @@ def post_process_spatial_size(args):
         args.spatial_size = args.spatial_size * 2
 
 
-def post_process_spatial_size(args):
-    if isinstance(args.spatial_size, int):
-        args.spatial_size = (args.spatial_size, args.spatial_size)
-    elif len(args.spatial_size) == 1:
-        args.spatial_size = args.spatial_size * 2
-
-
 def get_train_args():
     """
     Get command line arguments.
