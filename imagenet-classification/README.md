@@ -199,10 +199,10 @@ Training results are summarized as follows.
 
 | Arch. | GPUs | MP*1 | Config*2 | Batch size per GPU | Training time (h) | Validation error (%) | Pretrained parameters (Click to download) | Note |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
-| EfficientNet-B0 | 4 x V100 | Yes | Cos350 | 256 | 49.31 | 23.76  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_cos340.h5) | |
-| EfficientNet-B1 | 4 x V100 | Yes | Cos350 | 256 | 78.41 | 22.11  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_cos350.h5) | |
-| EfficientNet-B2 | 4 x V100 | Yes | Cos350 | 256 | 95.18 | 21.27  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b2_nchw_cos350.h5) | |
-| EfficientNet-B3 | 4 x V100 | Yes | Cos350 | 256 | 149.89 | 20.08  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b3_nchw_cos350.h5) | |
+| EfficientNet-B0 | 4 x V100 | Yes | Cos350 | 64 | 49.31 | 23.76  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_cos340.h5) | |
+| EfficientNet-B1 | 4 x V100 | Yes | Cos350 | 64 | 78.41 | 22.11  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_cos350.h5) | |
+| EfficientNet-B2 | 4 x V100 | Yes | Cos350 | 64 | 95.18 | 21.27  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b2_nchw_cos350.h5) | |
+| EfficientNet-B3 | 4 x V100 | Yes | Cos350 | 64 | 149.89 | 20.08  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b3_nchw_cos350.h5) | |
 
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
