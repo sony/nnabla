@@ -142,8 +142,10 @@ We provide some of preset training configurations as config files summerized bel
 |:---:|:---:|:---:|
 | Step90 | [cfg/step90.yaml](./cfg/step90.yaml) | Similar setting with ResNet author's experiment. It trains for 90 epochs with step learning rate decay scheduler with warmup, label smoothing, and so on. | 
 | Cos90 | [cfg/cos90.yaml](./cfg/cos90.yaml) | It uses cosine annealing rate decay schedular, and some modified hyperparameters such as base learning rate and weight decay from Step90. |
-| Mixup250 | [cfg/mixup250.yaml](./cfg/mixup250.yaml) | It trains for more epochs (250 epochs) based on Cos90, and uses [mixup](https://arxiv.org/abs/1710.09412) regularization technique to prevent overfitting. |
-| Mixup90 | [cfg/mixup90.yaml](./cfg/mixup90.yaml) | All is the same as Mixup250 except for epochs as 90. |
+| Cos350 | [cfg/cos350.yaml](./cfg/cos350.yaml) | All is the same as Cos90 except for epochs as 350. |
+| Mixup350 | [cfg/mixup350.yaml](./cfg/mixup350.yaml) | It trains for more epochs (350 epochs) based on Cos90, and uses [mixup](https://arxiv.org/abs/1710.09412) regularization technique to prevent overfitting. |
+| Mixup250 | [cfg/mixup250.yaml](./cfg/mixup250.yaml) | All is the same as Mixup350 except for epochs as 250.  |
+| Mixup90 | [cfg/mixup90.yaml](./cfg/mixup90.yaml) | All is the same as Mixup350 except for epochs as 90. |
 
 Some of these settings are compatible with the settings found in [NVIDIA's repository](https://github.com/NVIDIA/DeepLearningExamples)  for deep learning examples.
 
