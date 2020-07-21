@@ -188,9 +188,9 @@ Training results are summarized as follows.
 | MobileNet-V3-Large | 4 x V100 | No | Cos90 | 256 | 10.92 | 26.11 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_cos90.h5) | |
 | MobileNet-V3-Samll | 4 x V100 | No | Cos90 | 256 | 5.32 | 33.87  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nchw_cos90.h5) | |
 | MobileNet-V1 | 4 x V100 | Yes | Cos90 | 256 | 6.35  | 27.63  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv1_nhwc_cos90.h5) | |
-| MobileNet-V2 | 4 x V100 | Yes | Cos90 | 256 | 7.14  | 28.32  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nhwc_cos90.h5) | |
-| MobileNet-V3-Large | 4 x V100 | Yes | Cos90 | 256 | 7.63  | 26.09 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_cos90.h5) | |
-| MobileNet-V3-Samll | 4 x V100 | Yes | Cos90 | 256 | 5.49  | 33.49  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_cos90.h5) | |
+| MobileNet-V2 | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 7.14  | 28.32  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nhwc_cos90.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nhwc_mixup350.h5) | |
+| MobileNet-V3-Large | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 7.63  | 26.09 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_cos90.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_mixup350.h5) | |
+| MobileNet-V3-Samll | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 5.49  | 33.49  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_cos90.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_mixup350.h5) | |
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
 * *2 We used training configuration summarized above.
@@ -201,11 +201,10 @@ Training results are summarized as follows.
 
 | Arch. | GPUs | MP*1 | Config*2 | Batch size per GPU | Training time (h) | Validation error (%) | Pretrained parameters (Click to download) | Note |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
-| EfficientNet-B0 | 4 x V100 | Yes | Cos350 | 64 | 49.31 | 23.76  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_cos340.h5) | |
-| EfficientNet-B1 | 4 x V100 | Yes | Cos350 | 64 | 78.41 | 22.11  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_cos350.h5) | |
-| EfficientNet-B2 | 4 x V100 | Yes | Cos350 | 64 | 95.18 | 21.27  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b2_nchw_cos350.h5) | |
-| EfficientNet-B3 | 4 x V100 | Yes | Cos350 | 64 | 149.89 | 20.08  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b3_nchw_cos350.h5) | |
-
+| EfficientNet-B0 | 4 x V100 | Yes | Cos350 Mixup350 | 64 | 49.31 | 23.76  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_cos340.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_mixup350.h5) | Input spatial size = (224, 224) |
+| EfficientNet-B1 | 4 x V100 | Yes | Cos350 Mixup350 | 64 | 78.41 | 22.11  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_cos350.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_mixup350.h5) | Input spatial size = (240, 240) |
+| EfficientNet-B2 | 4 x V100 | Yes | Cos350 Mixup350 | 64 | 95.18 | 21.27  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b2_nchw_cos350.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b2_nchw_mixup350.h5) | Input spatial size = (260, 260) |
+| EfficientNet-B3 | 4 x V100 | Yes | Cos350 Mixup350 | 64 | 149.89 | 20.08  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b3_nchw_cos350.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b3_nchw_mixup350.h5)| Input spatial size = (300, 300) |
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
 * *2 We used training configuration summarized above.
