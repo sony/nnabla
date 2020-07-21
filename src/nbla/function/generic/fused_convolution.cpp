@@ -46,7 +46,11 @@ void FusedConvolution<T>::get_optional_input_pointers(const Variables &inputs) {
   case 3:
     // Assume bias vector is one dimensional vector, while z has a spatial
     // structure.
-    input_variables_[Z] = {2, inputs[2]};
+    if (inputs[2]->ndim() == 1) {
+      input_variables_[BIAS] = {2, inputs[2]};
+    } else {
+      input_variables_[Z] = {2, inputs[2]};
+    }
     break;
   case 4:
     // No BN.
