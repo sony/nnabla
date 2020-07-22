@@ -43,7 +43,8 @@ nnabla-auto-format:
 		'\./python/src/nnabla/(solver.pyx|function.pyx|function.pxd|function_bases.py)' \
 		'\./python/src/nnabla/utils/(save|load)_function.py' \
 		'\./src/nbla_utils/nnp_impl_create_function.cpp' \
-		'\./src/nbla_utils/nnabla\.pb\.(h|cc)'
+		'\./src/nbla_utils/nnabla\.pb\.(h|cc)' \
+		'\./include/third_party/.*'
 
 
 ########################################################################################################################

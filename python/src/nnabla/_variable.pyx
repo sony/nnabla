@@ -121,7 +121,7 @@ cdef class Variable:
     * Reference to the parent function in a
       computation graph. This provides traceability of all connections in the computation graph.
     * Both data and error
-      signal (gradient) containers as :class:`nnabla._nd_array.NdArray` s.
+      signal (gradient) containers as :class:`nnabla.NdArray` s.
     * Some additional information of the computation graph.
 
     :class:`~nnabla.Variable` overrides some arithmetic operators
@@ -384,14 +384,14 @@ cdef class Variable:
     @property
     def data(self):
         """Returns the data held by this variable, as a
-        :class:`~nnabla._nd_array.NdArray`. This can also be used as a setter.
+        :class:`~nnabla.NdArray`. This can also be used as a setter.
 
         Args:
-            ndarray (~nnabla._nd_array.NdArray): NdArray object. Size must
+            ndarray (~nnabla.NdArray): NdArray object. Size must
                 be the same as this Variable.
 
         Returns:
-            :class:`~nnabla._nd_array.NdArray`
+            :class:`~nnabla.NdArray`
         """
         return NdArray.create(self.varp.variable().get().data())
 
@@ -402,14 +402,14 @@ cdef class Variable:
     @property
     def grad(self):
         """Returns the gradient held by this variable, as a
-        :class:`~nnabla._nd_array.NdArray`. This can also be used as a setter.
+        :class:`~nnabla.NdArray`. This can also be used as a setter.
 
         Args:
-            ndarray (~nnabla._nd_array.NdArray): NdArray object. Size must
+            ndarray (~nnabla.NdArray): NdArray object. Size must
                 be the same as this Variable.
 
         Returns:
-            :class:`~nnabla._nd_array.NdArray`
+            :class:`~nnabla.NdArray`
         """
         return NdArray.create(self.varp.variable().get().grad())
 
@@ -425,7 +425,7 @@ cdef class Variable:
         modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the value held by this variable.
-        Refer to the documentation of the setter `nnabla._nd_array.NdArray.data`
+        Refer to the documentation of the setter `nnabla.NdArray.data`
         for detailed behaviors of the setter.
 
         Args:
@@ -448,7 +448,7 @@ cdef class Variable:
         modification of the returned ndarray will affect the data of the
         NNabla array.
         This method can be called as a setter to set the gradient held by this variable.        
-        Refer to the documentation of the setter `nnabla._nd_array.NdArray.data`
+        Refer to the documentation of the setter `nnabla.NdArray.data`
         for detailed behaviors of the setter.
 
         Args:
@@ -550,7 +550,7 @@ cdef class Variable:
         The propagation will stop at a variable with need_grad=False.
 
         Args:
-            grad(scalar, :obj:`numpy.ndarray`, :obj:`nnabla._nd_array.NdArray`, or None):
+            grad(scalar, :obj:`numpy.ndarray`, :obj:`nnabla.NdArray`, or None):
                 The gradient signal value(s) of this variable.
                 The default value 1 is used in an usual neural network training.
                 This option is useful if you have a gradient computation module outside NNabla,

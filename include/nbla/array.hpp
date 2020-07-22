@@ -62,6 +62,14 @@ protected:
 
   static NBLA_API size_t size_as_bytes(Size_t size, dtypes dtype);
 
+  // This method is used to override Array::pointer.
+  virtual NBLA_API void *mem_pointer() { return mem_.pointer(); }
+
+  // This method is used to override Array::const_pointer.
+  virtual NBLA_API const void *mem_const_pointer() const {
+    return mem_.const_pointer();
+  }
+
 public:
   typedef shared_ptr<Array> Ptr;
 
@@ -70,13 +78,13 @@ public:
   /** Get object pointer.
    */
   template <typename T = void> T *pointer() {
-    return reinterpret_cast<T *>(mem_.pointer());
+    return reinterpret_cast<T *>(mem_pointer());
   }
 
   /** Get constant object pointer
    */
   template <typename T = void> const T *const_pointer() const {
-    return reinterpret_cast<const T *>(mem_.const_pointer());
+    return reinterpret_cast<const T *>(mem_const_pointer());
   }
 
   /** Return dtype. */

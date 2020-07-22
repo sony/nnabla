@@ -31,7 +31,7 @@ class Updater(object):
         clear_buffer (:obj:`bool`, optional): Clears the no longer referenced variables during backpropagation to save memory.
         accum_grad (:obj:`int`, optional): Number of accumulation of gradients. Update method of the `solver` is called after the `accum_grad` number of the forward and backward is called. Default is 1.
         comm (:obj:`nnabla.communicators.Communicator`, optional): Communicator when to do distributed training. Default is :obj:`None`.
-        grads (:obj:`list` of :obj:`nnabla._nd_array.NdArray`, optional): The list of gradients to be exchanged when to do distributed training. Default is the empty :obj:`list`.
+        grads (:obj:`list` of :obj:`nnabla.NdArray`, optional): The list of gradients to be exchanged when to do distributed training. Default is the empty :obj:`list`.
 
     Example:
 

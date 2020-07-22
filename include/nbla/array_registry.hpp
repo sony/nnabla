@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2017-2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,27 @@ using std::shared_ptr;
 using std::string;
 using std::map;
 using std::pair;
+
+/** Array classes which can be get/cast without copy. */
+class NBLA_API ArrayGroup {
+public:
+  // map array classes to group names
+  using Registry_t = map<string, string>;
+
+  /** Register a new array */
+  static void add_group(const string &array_class, const string &group_name);
+
+  /** Get the group name of an array */
+  static string get_group(const string &array_class);
+
+private:
+  // Never be created
+  inline ArrayGroup(){};
+
+  /** Get registry of array creator function.
+   */
+  static Registry_t &get_registry();
+};
 
 /** ArrayCreator class this is never be instantiated. */
 class NBLA_API ArrayCreator {
@@ -91,6 +112,9 @@ private:
    same device class like CpuArray-CpuCachedArray.
  */
 NBLA_API void synchronizer_default(Array *src, Array *dst);
+
+#define NBLA_REGISTER_ARRAY_GROUP(CLASS, GROUP)                                \
+  { ArrayGroup::add_group(#CLASS, #GROUP); }
 
 #define NBLA_REGISTER_ARRAY_CREATOR(CLS)                                       \
   {                                                                            \

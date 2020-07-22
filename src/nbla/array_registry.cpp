@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2017-2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,33 @@ namespace nbla {
 using std::shared_ptr;
 using std::string;
 using std::vector;
+
+// Array group
+ArrayGroup::Registry_t &ArrayGroup::get_registry() {
+  static Registry_t registry_;
+  return registry_;
+}
+
+void ArrayGroup::add_group(const string &array_class,
+                           const string &group_name) {
+  Registry_t &registry = get_registry();
+  registry[array_class] = group_name;
+}
+
+string ArrayGroup::get_group(const string &array_class) {
+  init_cpu();
+  Registry_t &registry = get_registry();
+  try {
+    return registry.at(array_class);
+  } catch (std::out_of_range &) {
+    vector<string> keys;
+    for (auto &kv : registry) {
+      keys.push_back(kv.first);
+    }
+    NBLA_ERROR(error_code::unclassified, "'%s' cannot be found in [%s].",
+               array_class.c_str(), string_join(keys, ", ").c_str());
+  }
+}
 
 // Array Factory
 ArrayCreator::Registry_t &ArrayCreator::get_registry() {

@@ -51,4 +51,3 @@ endif()
 if(BUILD_CPP_UTILS)
   download_and_extract_library(cmdline-master .zip https://github.com/tanakh/cmdline/archive/master.zip)
 endif()
-  

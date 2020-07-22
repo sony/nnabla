@@ -108,8 +108,8 @@ cdef c_as_numpy_array(CNdArray * arrp, str mode, cpp_bool force_dtype=False, int
 
 cdef class NdArray:
     """
-    :class:`nnabla._nd_array.NdArray` is a device-agnostic data container for multi-dimensional arrays (tensors).
-    :class:`nnabla._nd_array.NdArray` can also implicitly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
+    :class:`nnabla.NdArray` is a device-agnostic data container for multi-dimensional arrays (tensors).
+    :class:`nnabla.NdArray` can also implicitly handle data transfers across different devices (e.g. CPU to CUDA GPU, CUDA GPU to CPU).
     See `Python API Tutorial <http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_ for more details.
 
     :class:`~nnabla.NdArray` overrides some arithmetic operators
@@ -146,7 +146,7 @@ cdef class NdArray:
             nparr (~numpy.ndarray): Numpy multi-dimensional array.
 
         Returns: 
-            nnabla._nd_array.NdArray
+            nnabla.NdArray
 
         """
         assert isinstance(nparr, np.ndarray)
@@ -303,7 +303,7 @@ cdef class NdArray:
         """
         Returns the values held by this array as a :class:`numpy.ndarray`.
         Note that only the references are returned, and the values are not copied. Therefore,
-        modifying the returned :class:`nnabla._nd_array.NdArray` will affect the data contained inside the
+        modifying the returned :class:`nnabla.NdArray` will affect the data contained inside the
         NNabla array.
         This method can also be called as a setter where an array is created as the same type as rhs.
         There is an exception where `zero()` or `fill(rhs)` is invoked if a scalar with a float or an
@@ -354,7 +354,7 @@ cdef class NdArray:
                 * 'rw': You can both read and write.
             dtype (:obj:`numpy.dtype`, optional): Force dtype of a returned array.
 
-        See :function:`nnabla._nd_array.NdArray.data` for more details.
+        See :function:`nnabla.NdArray.data` for more details.
 
         '''
         if dtype is None:

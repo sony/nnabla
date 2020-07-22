@@ -85,6 +85,14 @@ public:
    */
   shared_ptr<const Array> get_sp(dtypes dtype, const Context &ctx);
 
+  /** Get the head array.
+  */
+  Array *head_array();
+
+  /** Get the head array as a shared pointer.
+  */
+  shared_ptr<Array> head_array_sp();
+
   /** Get array's ptr.
 
       @param[in] dtype Enum of data type.

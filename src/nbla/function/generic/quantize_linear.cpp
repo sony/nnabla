@@ -126,7 +126,6 @@ void QuantizeLinear<T>::backward_impl(const Variables &inputs,
 
   auto x = inputs[0];
   auto scale = inputs[1];
-  auto zero_point = inputs[2];
   auto y = outputs[0];
   auto dx_sptr = make_shared<Variable>(x->shape());
   auto dy_sptr = make_shared<Variable>(y->shape());

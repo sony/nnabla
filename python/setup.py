@@ -52,8 +52,10 @@ def extopts(library_name, library_dir):
     import numpy as np
     include_dir = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '../include'))
+    dlpack_include_dir = os.path.realpath(os.path.join(
+        os.path.dirname(__file__), '../include/third_party'))
     ext_opts = dict(
-        include_dirs=[include_dir, np.get_include()],
+        include_dirs=[include_dir, dlpack_include_dir, np.get_include()],
         libraries=[library_name],
         library_dirs=[library_dir],
         language="c++",
@@ -178,9 +180,10 @@ if __name__ == '__main__':
         '_computation_graph',
         '_array',
         '_arithmetic_ops',
-        '_indexing']
+        '_indexing',
+        'utils/dlpack']
 
-    ext_modules = [Extension('nnabla.{}'.format(mname),
+    ext_modules = [Extension('nnabla.{}'.format(mname.replace('/', '.')),
                              [os.path.join(path_pkg,
                                            '{}.pyx'.format(mname))],
                              **ext_opts) for mname in module_names]

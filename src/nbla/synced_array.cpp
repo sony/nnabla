@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2017-2020 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,6 +87,12 @@ shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx) {
   return std::const_pointer_cast<const Array>(array_[desc.key].first);
 }
 
+Array *SyncedArray::head_array() { return head_array_sp().get(); }
+
+shared_ptr<Array> SyncedArray::head_array_sp() {
+  return array_[head_.key].first;
+}
+
 const void *SyncedArray::data_ptr(dtypes dtype, const Context &ctx,
                                   bool write_only) {
   cast_sp(dtype, ctx, write_only);
@@ -108,11 +114,17 @@ void SyncedArray::fill(float value) {
 
 size_t SyncedArray::modification_count() const { return modification_count_; }
 
+inline string create_key(const dtypes &dtype, const Context &ctx) {
+  // Array classes in the same array group are identified in SyncedArray.
+  return ctx.device_id + ":" + ArrayGroup::get_group(ctx.array_class) + ":" +
+         dtype_to_string(dtype);
+}
+
 SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
                                          bool write_only) {
   Context ctx = ArrayCreator::filter_context(ctx_orig);
-  ArrayDesc desc{get_array_key_from_context(ctx) + ":" + dtype_to_string(dtype),
-                 ctx.array_class, dtype};
+  ArrayDesc desc{create_key(dtype, ctx), ctx.array_class, dtype};
+
   // Specified array is not allocated
   if (array_.find(desc.key) == array_.end()) {
     if (array_.size() == 0)
