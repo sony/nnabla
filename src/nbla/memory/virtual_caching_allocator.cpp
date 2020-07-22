@@ -177,7 +177,7 @@ namespace nbla {
 
     for (auto &p: small_device_cache_) {
       string device_id = p.first;
-      printf("===== device_id: %s =====\n# waiting memory: %s\ncached bytes (small): %s\ncached bytes (large): %s\n",
+      printf("===== device_id: %s =====\n# waiting memory: %lu\ncached bytes (small): %s\ncached bytes (large): %s\n",
               device_id.c_str(), waiting_list_.size(),
               byte_to_human_readable(small_device_cache_[device_id].size() * small_chunk_size_).c_str(),
               byte_to_human_readable(large_device_cache_[device_id].size() * large_chunk_size_).c_str()

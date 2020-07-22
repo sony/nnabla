@@ -117,6 +117,7 @@ void ArraySynchronizer::synchronize(const string &src_class, Array *src_array,
                ss << ").";
                return ss.str();
              }().c_str()); // TODO: Display key list that has been registered.
+
   registry[key](src_array, dst_array, async_flags);
 }
 

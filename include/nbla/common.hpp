@@ -104,7 +104,7 @@ inline string byte_to_human_readable(long double byte) {
   }
 
   std::ostringstream out;
-  out.precision(1);
+  out.precision(2);
   out << std::fixed << byte;
 
   return out.str() + unit;
