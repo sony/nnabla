@@ -545,6 +545,12 @@ MaxPoolingBackward:
 WarpByFlow:
   float: [float]
   half: [Half]
+AffineGrid:
+  float: [float]
+  half: [Half]
+WarpByGrid:
+  float: [float]
+  half: [Half]
 PatchCorrelation:
   float: [float]
   half: [Half]
