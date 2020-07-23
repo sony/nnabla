@@ -57,10 +57,23 @@ class FunctionModifier(object):
         if not isinstance(o, (list)):
             return [o]
 
+    def _copy_inputs(self, inputs):
+        """Shallow Copy the inputs.
+        The Variable copied is different from the original once, but the actual data and grad
+        are different.
+        """
+        inps_cp = []
+        for inp in inputs:
+            i = nn.Variable(inp.shape).apply(need_grad=inp.need_grad)
+            i.data = inp.data
+            i.grad = inp.grad
+            inps_cp.append(i)
+        return inps_cp
+
     def __call__(self, f):
         # Init condition
         if self._map_func_inputs == {}:
-            self._map_func_inputs[f] = f.inputs
+            self._map_func_inputs[f] = self._copy_inputs(f.inputs)
 
         # Lookup
         inputs = self._map_func_inputs[f]
