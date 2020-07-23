@@ -26,6 +26,27 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_SOURCE(FusedBatchNormalization, const vector<int> &,
                               float, float, bool, const string &);
 
+namespace fused_batch_normalization {
+// These functions are special cases for the fused batch normalization
+template <typename T>
+void relu_backward(int size, T *dx, const T *dy, const T *y) {
+  for (int i = 0; i < size; i++) {
+    if (y[i] > 0)
+      dx[i] = dy[i];
+    else
+      dx[i] = T(0);
+  }
+}
+
+template <typename T>
+void add2_backward(int size, T *dx1, const T *dx, bool accum) {
+  bool accum_bn = false; // Whatever since it's inplaced.
+  for (int i = 0; i < size; i++) {
+    dx1[i] = accum ? dx1[i] + dx[i] : dx[i];
+  }
+}
+}
+
 template <class T>
 void FusedBatchNormalization<T>::setup_impl(const Variables &inputs,
                                             const Variables &outputs) {
@@ -75,23 +96,22 @@ void FusedBatchNormalization<T>::backward_impl(
   bool prop_down_bn =
       std::accumulate(propagate_down.begin(), propagate_down.begin() + 3, false,
                       std::logical_or<bool>());
-
-  bool accum_relu = false; // Whatever because inout are inplaced.
-  auto relu = create_ReLU(this->ctx_, true);
-  relu->setup(Variables{outputs[0]}, Variables{outputs[0]}); // Inplace
-  relu->backward(Variables{outputs[0]}, Variables{outputs[0]},
-                 {prop_down_add2 || prop_down_bn}, {accum_relu});
-
-  // 2. Perform Add2 backward
-  // NOTE: Output buffer are re-used by inplacing.
-  if (prop_down_add2) {
-    auto add2 = create_Add2(this->ctx_, true);
-    bool accum_bn = false; // Whatever since it's inplaced.
-    add2->setup(Variables{outputs[0], inputs[5]}, Variables{outputs[0]});
-    add2->backward(Variables{outputs[0], inputs[5]}, Variables{outputs[0]},
-                   {prop_down_bn, prop_down_add2}, {accum_bn, accum[5]});
+  auto y = outputs[0]->get_data_pointer<T>(this->ctx_);
+  auto dx = outputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+  auto dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  auto size = outputs[0]->size();
+  if (prop_down_add2 || prop_down_bn) {
+    fused_batch_normalization::relu_backward(size, dx, dy, y);
   }
 
+  // 2. Perform Add2 backward
+  // NOTE: Output buffer for the first operand of the addition are re-used by
+  // inplacing,
+  // nothing done for it.
+  if (prop_down_add2) {
+    auto dx1 = inputs[5]->cast_grad_and_get_pointer<T>(this->ctx_);
+    fused_batch_normalization::add2_backward(size, dx1, dx, accum[5]);
+  }
   // 3. Perform BN backward
   Variables inputs_bn(inputs.begin(), inputs.begin() + 5);
   vector<bool> prop_down_bn_inputs(propagate_down.begin(),
