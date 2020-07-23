@@ -86,6 +86,14 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "ScatterNd"; }
+  virtual int inplace_data(int i) const {
+    return i == 2 ? Function::INPLACE : Function::NOT_INPLACE;
+  }
+  virtual int inplace_data_with(int i) const { return 0; }
+  virtual int inplace_grad(int i) const {
+    return i == 2 ? Function::INPLACE : Function::NOT_INPLACE;
+  }
+  virtual int inplace_grad_with(int i) const { return 0; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

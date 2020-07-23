@@ -91,14 +91,14 @@ def basic_getitem(self, key):
     import nnabla.functions as F
 
     key, idx, start, stop, step = basic_getsetitem_prepare(self, key)
-    result = F.slice(self, start, stop, step)
 
-    shape = basic_getsetitem_result_shape(self, key, result)
+    sliced_array = F.slice(self, start, stop, step)
+    sliced_shape = basic_getsetitem_result_shape(self, key, sliced_array)
     
-    if result.shape != shape:
-        result = F.reshape(result, shape)
+    if sliced_array.shape != sliced_shape:
+        sliced_array = F.reshape(sliced_array, sliced_shape)
     
-    return result
+    return sliced_array
 
 
 def basic_setitem(self, key, value):
@@ -106,24 +106,24 @@ def basic_setitem(self, key, value):
     integers, Ellipsis, or None (numpy.newaxis). Sets the sub-shape produced
     by indexing `self` to the, potentially broadcast, `value` elements.
     """
-    key, idx, start, stop, step = basic_getsetitem_prepare(self, key)
-    
     import nnabla.functions as F
-    index = F.reshape(F.arange(0, self.size), self.shape)
-    index = F.slice(index, start, stop, step)
 
-    shape = basic_getsetitem_result_shape(self, key, index)
+    key, idx, start, stop, step = basic_getsetitem_prepare(self, key)
 
-    if index.shape != shape:
-        index = F.reshape(index, shape)
-    
-    if value.shape != index.shape:
-        value = broadcast(value, index.shape)
-    
-    value_flat = F.reshape(value, (value.size,))
-    index_flat = F.reshape(index, (1, index.size))
-    self_flat = F.reshape(self, (self.size,))
-    F.scatter_nd(value_flat, index_flat, out=self_flat)
+    array = self.data if isinstance(self, Variable) else self
+    sliced_array = F.slice(array, start, stop, step)
+    sliced_shape = basic_getsetitem_result_shape(self, key, sliced_array)
+
+    if value.shape != sliced_shape:
+        value = broadcast(value, sliced_shape)
+
+    indices = (np.arange(self.shape[ax])[ix] for ax, ix in enumerate(idx))
+    indices = np.array(np.meshgrid(*indices, indexing='ij'))
+
+    if value.shape != indices.shape[1:]:
+        value = F.reshape(value, indices.shape[1:])
+
+    return F.scatter_nd(value, indices, out=self)
 
 
 def advanced_getitem(self, key):
@@ -216,7 +216,7 @@ def advanced_setitem(self, key, value):
 
     upshape = indices.shape[1:] + self.shape[indices.shape[0]:]
     updates = broadcast(value, upshape) if value.shape != upshape else value
-    F.scatter_nd(updates, indices, out=self)
+    return F.scatter_nd(updates, indices, out=self)
 
 
 cdef object getitem(object self, object key):

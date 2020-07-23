@@ -223,3 +223,44 @@ def test_nnabla_boolean_array_as_index():
         x_np[i_np] = -1
         x_nn[i_nn] = -1
         assert_allclose(x_nn.d, x_np)
+
+
+@pytest.mark.parametrize("indices", [
+    ([[2, 2], [3, 3], [4, 4]], [[3, 4], [3, 4], [3, 4]]),
+    (nn.Variable.from_numpy_array([[2, 2], [3, 3], [4, 4]]),
+     nn.Variable.from_numpy_array([[3, 4], [3, 4], [3, 4]])),
+    (slice(2, 5), slice(3, 5)),
+])
+def test_graph_connection_with_setitem(indices):
+    import nnabla.functions as F
+    x = np.arange(8 * 7).reshape((8, 7))
+    x = nn.Variable.from_numpy_array(x, need_grad=True)
+    u = np.arange(-1, -7, -1).reshape(3, 2)
+    u = nn.Variable.from_numpy_array(u, need_grad=True)
+    y = F.mul_scalar(x, 1)
+    y[indices] = u
+    z = F.add_scalar(y, 0)
+    z.forward()
+    # '+' signs only to persist visual alignment through autopep8
+    assert_allclose(z.d, np.array([[+0, +1, +2, +3, +4, +5, +6],
+                                   [+7, +8, +9, 10, 11, 12, 13],
+                                   [14, 15, 16, -1, -2, 19, 20],
+                                   [21, 22, 23, -3, -4, 26, 27],
+                                   [28, 29, 30, -5, -6, 33, 34],
+                                   [35, 36, 37, 38, 39, 40, 41],
+                                   [42, 43, 44, 45, 46, 47, 48],
+                                   [49, 50, 51, 52, 53, 54, 55]]))
+    x.grad.zero()
+    u.grad.zero()
+    z.backward(np.arange(1, 1 + 8 * 7).reshape(8, 7))
+    assert_allclose(x.g, np.array([[+1, +2, +3, +4, +5, +6, +7],
+                                   [+8, +9, 10, 11, 12, 13, 14],
+                                   [15, 16, 17, +0, +0, 20, 21],
+                                   [22, 23, 24, +0, +0, 27, 28],
+                                   [29, 30, 31, +0, +0, 34, 35],
+                                   [36, 37, 38, 39, 40, 41, 42],
+                                   [43, 44, 45, 46, 47, 48, 49],
+                                   [50, 51, 52, 53, 54, 55, 56]]))
+    assert_allclose(u.g, np.array([[18, 19],
+                                   [25, 26],
+                                   [32, 33]]))

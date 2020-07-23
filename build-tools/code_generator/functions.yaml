@@ -3933,10 +3933,14 @@ Array Manipulation:
         doc: N-D array input data.
       indices:
         doc: N-D array scatter indices.
+      out:
+        doc: existing output array
+        optional: true
     arguments:
       shape:
         doc: Shape of output variable.
         type: repeated int64
+        default: None
     outputs:
       y:
         doc: N-D array of given `shape`.
