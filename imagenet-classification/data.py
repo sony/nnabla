@@ -75,7 +75,8 @@ class ValPipeline(Pipeline):
         self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB,
                                        device_memory_padding=nvjpeg_padding,
                                        host_memory_padding=nvjpeg_padding)
-        resize_shorter = round(256 / 224 * spatial_size[0] / 2) * 2
+        import args as A
+        resize_shorter = A.resize_by_ratio(spatial_size[0])
         self.res = ops.Resize(device="gpu", resize_shorter=resize_shorter)
         self.cmnp = ops.CropMirrorNormalize(device="gpu",
                                             output_dtype=types.FLOAT16 if dtype == "half" else types.FLOAT,
