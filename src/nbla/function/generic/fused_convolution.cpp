@@ -46,7 +46,11 @@ void FusedConvolution<T>::get_optional_input_pointers(const Variables &inputs) {
   case 3:
     // Assume bias vector is one dimensional vector, while z has a spatial
     // structure.
-    input_variables_[Z] = {2, inputs[2]};
+    if (inputs[2]->ndim() == 1) {
+      input_variables_[BIAS] = {2, inputs[2]};
+    } else {
+      input_variables_[Z] = {2, inputs[2]};
+    }
     break;
   case 4:
     // No BN.
@@ -60,15 +64,12 @@ void FusedConvolution<T>::get_optional_input_pointers(const Variables &inputs) {
   case 7: {
     // Assume bias vector is one dimensional vector, while bn args and z have
     // spatial dimensions.
-    size_t offset = 0;
     NBLA_CHECK(inputs[2]->ndim() != 1, error_code::value,
-               "Wrong input shape. It seeems that you pass convolution bias "
+               "Wrong input shape. It seems that you pass convolution bias "
                "and batch normalization inputs at the same time (prohibited).");
     // No bias nor z
     set_bn_ptrs();
-    if (!offset) {
-      input_variables_[Z] = {6, inputs[6]};
-    }
+    input_variables_[Z] = {6, inputs[6]};
     break;
   }
   default:
