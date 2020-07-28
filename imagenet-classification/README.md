@@ -199,7 +199,7 @@ Training results are summarized as follows.
 
 Training results are summarized as follows.
 
-| Arch. | GPUs | MP*1 | Config*2 | Batch size per GPU | Training time (h) | Validation error (%) | Pretrained parameters (Click to download) | Note |
+| Arch. | GPUs | MP*1 | Config*2 | Batch size per GPU | Training time (h) | Validation error (%) | Pretrained parameters (Click to download) | Note*3 |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
 | EfficientNet-B0 | 4 x V100 | Yes | Cos350 Mixup350 | 64 | 49.31 | 23.76  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_cos340.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b0_nchw_mixup350.h5) | Input spatial size = (224, 224) |
 | EfficientNet-B1 | 4 x V100 | Yes | Cos350 Mixup350 | 64 | 78.41 | 22.11  | Download: [Cos350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_cos350.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/efficientnet_b1_nchw_mixup350.h5) | Input spatial size = (240, 240) |
@@ -208,6 +208,7 @@ Training results are summarized as follows.
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
 * *2 We used training configuration summarized above.
+* *3 In EfficientNet family, the input shape is normally different from the other models. Please specify the `--spatial-size <size>` argument for the inference and validation.
 
 ### Evalutation of pretrained model
 
