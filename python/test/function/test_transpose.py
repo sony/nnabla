@@ -65,11 +65,22 @@ def test_transpose_forward_backward(seed, inshape, axes, ctx, func_name):
     ((4, 4, 4, 4, 4), (4, 3, 2, 1, 0)),
 ])
 def test_transpose_double_backward(seed, inshape, axes, ctx, func_name):
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.transpose import TransposeDataGrad
     rng = np.random.RandomState(seed)
     # Input
     inputs = [rng.randn(*inshape).astype(np.float32)]
-    # TODO: backward_ref
-    backward_function_tester(rng, F.transpose, ref_transpose, inputs,
-                             func_args=[axes], ctx=ctx, func_name=func_name,
-                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=1e-3)
+    func_args = [axes]
+    # 2rd-order
+    backward_function_tester(rng, F.transpose, inputs,
+                             func_args=func_args, ctx=ctx)
+    # 3rd-order
+    df, y = grad_function_forward_function_output(TransposeDataGrad,
+                                                  F.transpose,
+                                                  ctx, inputs,
+                                                  *func_args)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             ginputs, func_args=[],
+                             ctx=ctx, non_accum_check=True)

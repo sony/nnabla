@@ -39,7 +39,7 @@ def test_r_pow_scalar_double_backward(seed, val, ctx, func_name):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
-    backward_function_tester(rng, F.r_pow_scalar, None, inputs,
-                             func_args=[val], atol_b=1e-2, atol_accum=1e-2,
+    backward_function_tester(rng, F.r_pow_scalar, inputs,
+                             func_args=[val], atol_accum=3e-2,
                              dstep=1e-3,
-                             ctx=ctx, func_name=func_name)
+                             ctx=ctx)

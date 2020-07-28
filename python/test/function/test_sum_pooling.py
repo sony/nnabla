@@ -125,7 +125,8 @@ def test_sum_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border, chann
 ])
 def test_sum_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, ignore_border, channel_last,
                                         ctx, func_name):
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.sum_pooling import SumPoolingDataGrad
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip('Channel last is only supported in Cudnn so far')
     if channel_last:
@@ -136,9 +137,20 @@ def test_sum_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, igno
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [kernel, stride, ignore_border, pad, channel_last]
-    backward_function_tester(rng, F.sum_pooling, ref_sum_pooling, inputs=inputs,
-                             func_args=func_args, func_name=func_name, ctx=ctx,
-                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2)
+    # 2nd-order
+    backward_function_tester(rng, F.sum_pooling, inputs=inputs,
+                             func_args=func_args, ctx=ctx)
+
+    # 3rd-order
+    df, y = grad_function_forward_function_output(SumPoolingDataGrad,
+                                                  F.sum_pooling,
+                                                  ctx, inputs,
+                                                  *func_args)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             inputs=ginputs, func_args=[],
+                             ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -151,7 +163,8 @@ def test_sum_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, igno
 ])
 def test_sum_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, ignore_border, channel_last,
                                         ctx, func_name):
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.sum_pooling import SumPoolingDataGrad
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip('Channel last is only supported in Cudnn so far')
     if channel_last:
@@ -162,6 +175,15 @@ def test_sum_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, igno
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [kernel, stride, ignore_border, pad, channel_last]
-    backward_function_tester(rng, F.sum_pooling, ref_sum_pooling, inputs=inputs,
-                             func_args=func_args, func_name=func_name, ctx=ctx,
-                             atol_f=1e-6, atol_b=1e-1, atol_accum=1e-1)
+    # 2nd-order
+    backward_function_tester(rng, F.sum_pooling, inputs=inputs,
+                             func_args=func_args, ctx=ctx)
+    # 3rd-order
+    df, y = grad_function_forward_function_output(SumPoolingDataGrad,
+                                                  F.sum_pooling,
+                                                  ctx, inputs,
+                                                  *func_args)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             inputs=ginputs, ctx=ctx, atol_accum=3e-2, non_accum_check=True)

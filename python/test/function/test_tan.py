@@ -38,11 +38,9 @@ def test_tan_double_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [np.clip(rng.randn(2, 3, 4).astype(
         np.float32), -np.pi / 2, np.pi / 2) * 1e-1]
-    backward_function_tester(rng, F.tan, None,
+    backward_function_tester(rng, F.tan,
                              inputs=inputs,
                              func_args=[], func_kwargs={},
-                             atol_b=1e-2,
                              atol_accum=1e-2,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

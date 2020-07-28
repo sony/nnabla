@@ -136,9 +136,10 @@ def test_convolution_3d_forward_backward(inshape, kernel, outmaps, pad, stride,
 
 def core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name, atol_f=1e-4, atol_b=1e-1, atol_accum=1e-1, dstep=1e-3):
-    from nbla_test_utils import backward_function_tester, cap_ignore_region
-
+                                          func_name, non_accum_check=True,
+                                          atol_f=1e-4, atol_b=1e-3, atol_accum=8e-2, dstep=1e-3):
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.convolution import ConvolutionDataGrad, ConvolutionFilterGrad
     if func_name == 'ConvolutionCuda':
         pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
     if channel_last and not func_name.endswith('Cudnn'):
@@ -158,23 +159,44 @@ def core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
         t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
         inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
-    i = rng.randn(*inshape).astype(np.float32)
+    i = np.clip(rng.randn(*inshape).astype(np.float32), -0.8, 0.8)
     kshape = (outmaps,) + (inmaps // group,) + kernel
     if channel_last:
         t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
         kshape = tuple(kshape[i] for i in t.inv_axes)
-    k = rng.randn(*kshape).astype(np.float32)
+    k = np.clip(rng.randn(*kshape).astype(np.float32), -0.8, 0.8)
     b = None
     if with_bias:
-        #b = rng.randn(outmaps).astype(np.float32) * 1e3
-        b = rng.randn(outmaps).astype(np.float32)
+        b = np.clip(rng.randn(outmaps).astype(np.float32), -0.8, 0.8)
     inputs = [i, k, b]
     atol_half = 1.0 if inmaps > 64 else 1e-1
-    backward_function_tester(rng, F.convolution, None, inputs,
-                             func_args=[base_axis, pad, stride,
-                                        dilation, group, channel_last],
+    func_args = [base_axis, pad, stride, dilation, group, channel_last]
+    # Convolution
+    backward_function_tester(rng, F.convolution, inputs,
+                             func_args=func_args,
+                             atol_f=atol_f, atol_accum=atol_accum, dstep=dstep,
+                             ctx=ctx)
+    # DataGrad
+    df, y = grad_function_forward_function_output(ConvolutionDataGrad,
+                                                  F.convolution,
+                                                  ctx, inputs, *func_args)
+    df.xshape = i.shape
+    ginputs = [rng.randn(*y.shape), k]
+    backward_function_tester(rng, df, ginputs,
+                             func_args=[],
                              atol_f=atol_f, atol_b=atol_b, atol_accum=atol_accum, dstep=dstep,
-                             ctx=ctx, func_name=func_name, atol_half=atol_half)
+                             ctx=ctx, non_accum_check=non_accum_check)
+
+    # FilterGrad
+    df, y = grad_function_forward_function_output(ConvolutionFilterGrad,
+                                                  F.convolution,
+                                                  ctx, inputs, *func_args)
+    df.wshape = k.shape
+    ginputs = [rng.randn(*y.shape), i]
+    backward_function_tester(rng, df, ginputs,
+                             func_args=[],
+                             atol_f=atol_f, atol_b=atol_b, atol_accum=atol_accum, dstep=dstep,
+                             ctx=ctx, non_accum_check=non_accum_check)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -191,7 +213,7 @@ def test_convolution_1d_double_backward(inshape, kernel, outmaps, pad, stride,
                                         func_name):
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name, atol_b=2e-2, atol_accum=2e-2, dstep=1e-3)
+                                          func_name, non_accum_check=True)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -209,7 +231,7 @@ def test_convolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
                                         func_name):
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name, atol_b=2e-1, atol_accum=2e-1, dstep=1e-3)
+                                          func_name, non_accum_check=True)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -233,4 +255,4 @@ def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
 
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, seed, ctx,
-                                          func_name, atol_b=3e-1, atol_accum=3e-1, dstep=5e-4)
+                                          func_name, atol_accum=2e-1, non_accum_check=True)

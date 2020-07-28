@@ -55,6 +55,6 @@ def test_prelu_double_backward(seed, inshape, wshape, base_axis, ctx, func_name)
     x = rng.randn(*inshape).astype(np.float32)
     w = np.array(rng.randn(*wshape)).astype(np.float32)
     inputs = [x, w]
-    backward_function_tester(rng, F.prelu, None, inputs,
+    backward_function_tester(rng, F.prelu, inputs,
                              func_args=[base_axis],
-                             ctx=ctx, func_name=func_name, atol_b=1e-1, atol_accum=1e-1, dstep=1e-3)
+                             ctx=ctx, atol_accum=1e-1, dstep=1e-3)

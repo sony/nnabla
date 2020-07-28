@@ -43,10 +43,6 @@ def ref_batch_normalization(x, beta, gamma, rmean, rvar, axes, decay_rate,
         mean = rmean
         var = rvar
     x_hat = (x - mean) / np.sqrt(var + eps)
-    if gamma is None:
-        gamma = 1
-    if beta is None:
-        beta = 0
     y = x_hat * gamma + beta
     if output_stat:
         return y, mean, var
@@ -102,8 +98,7 @@ def mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance):
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True], [True, True]])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("no_scale", [False, True])
-@pytest.mark.parametrize("no_bias", [False, True])
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
 @pytest.mark.parametrize("no_mean", [True, False])
 @pytest.mark.parametrize("no_variance", [True, False])
 def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
@@ -131,8 +126,7 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
                         inputs,
                         func_args=[axes, decay_rate, eps,
                                    batch_stat, output_stat],
-                        backward=[True, not no_bias,
-                                  not no_scale, False, False],
+                        backward=[True, True, True, False, False],
                         ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
 
     # Check if running mean and var works.
@@ -193,10 +187,6 @@ def ref_batch_normalization_for_multiple_axes(x, beta, gamma, rmean, rvar, axes,
         mean = rmean
         var = rvar
     x_hat = (x - mean) / np.sqrt(var + eps)
-    if gamma is None:
-        gamma = 1
-    if beta is None:
-        beta = 0
     y = x_hat * gamma + beta
     if output_stat:
         return y, mean, var
@@ -220,20 +210,15 @@ def create_inputs_for_multiple_axes(rng, axes):
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat", [True, False])
-@pytest.mark.parametrize("no_scale", [False, True])
-@pytest.mark.parametrize("no_bias", [False, True])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, decay_rate, eps,
-                                                                output_stat, no_scale, no_bias, ctx, func_name):
+                                                                output_stat, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs_for_multiple_axes(rng, axes))
     vinputs = []
     for i in inputs:
         vinputs.append(nn.Variable(i.shape, True))
         vinputs[-1].d = i
-
-    inputs = mask_vinputs(inputs, no_scale, no_bias, False, False)
-    vinputs = mask_vinputs(vinputs, no_scale, no_bias, False, False)
 
     # Check if global stat mode works
     batch_stat = False
@@ -252,22 +237,38 @@ def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, deca
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True]])
-@pytest.mark.parametrize("no_scale", [False, True])
-@pytest.mark.parametrize("no_bias", [False, True])
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
                                              output_stat, batch_stat, no_scale, no_bias, ctx, func_name):
     from nbla_test_utils import backward_function_tester
+    from nnabla.backward_function.batch_normalization import BatchNormalizationBackward
+
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis))
     inputs = mask_vinputs(inputs, no_scale, no_bias, False, False)
 
     axes = [axis]
-    backward_function_tester(rng, F.batch_normalization, None,
+    func_args = [axes, decay_rate, eps, batch_stat, output_stat]
+
+    # 2nd-order
+    backward_function_tester(rng, F.batch_normalization,
                              inputs,
-                             func_args=[axes, decay_rate, eps,
-                                        batch_stat, output_stat],
+                             func_args=func_args,
                              backward=[True, not no_bias,
                                        not no_scale, False, False],
-                             ctx=ctx, func_name=func_name,
-                             atol_b=2e-2, atol_accum=2e-2, dstep=1e-3)
+                             ctx=ctx, atol_accum=1e-2, dstep=1e-3)
+    # 3rd-order
+    func_args = func_args[:-1] + [no_scale, no_bias]
+    df = BatchNormalizationBackward(ctx, *func_args)
+    ginputs = list(filter(lambda x: x is not None, [
+                   rng.randn(*inputs[0].shape)] + inputs))
+    if not no_scale and not no_bias:
+        backward = [True, True, False, True, False, False]
+    else:
+        backward = [True, True, False, False]
+    backward_function_tester(rng, df,
+                             inputs=ginputs,
+                             func_args=[],
+                             backward=backward,
+                             ctx=ctx, atol_accum=1e-2, dstep=1e-3, non_accum_check=True)

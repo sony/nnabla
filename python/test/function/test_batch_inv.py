@@ -39,3 +39,14 @@ def test_batch_inv_forward_backward(seed, ctx, func_name):
     function_tester(rng, F.batch_inv, ref_inv, inputs, ctx=ctx,
                     func_name=func_name, atol_b=2e-2, dstep=1e-4,
                     disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+def test_batch_inv_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    # input must be batched square matrix
+    inputs = [np.clip(rng.randn(2, 3, 3).astype(np.float32), -0.9, 0.9) * 10]
+    backward_function_tester(rng, F.batch_inv, inputs,
+                             ctx=ctx, atol_accum=1e-2)

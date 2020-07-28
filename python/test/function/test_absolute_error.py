@@ -43,6 +43,6 @@ def test_abs_double_backward(seed, ctx, func_name):
     for _ in range(2):
         inputs.append(rng.randn(2, 3,).astype(np.float32) * 2)
 
-    backward_function_tester(rng, F.absolute_error, None, inputs,
-                             ctx=ctx, func_name=func_name,
-                             atol_b=1e-3, atol_accum=1e-3)
+    backward_function_tester(rng, F.absolute_error, inputs,
+                             ctx=ctx,
+                             atol_accum=1e-3)

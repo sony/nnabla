@@ -32,3 +32,17 @@ def test_tanh_shrink_forward_backward(seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
     function_tester(rng, F.tanh_shrink, ref_tanh_shrink, inputs,
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_tanh_shrink_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
+    backward_function_tester(rng, F.tanh_shrink,
+                             inputs=inputs,
+                             func_args=[], func_kwargs={},
+                             atol_accum=1e-2,
+                             dstep=1e-3,
+                             ctx=ctx)

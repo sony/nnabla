@@ -76,22 +76,13 @@ def test_broadcast_double_backward(ndim, broadcast_dim, seed, fname, ctx, func_n
     if ndim == 0:
         # Performing 0-dim array test too.
         inputs = [np.array(rng.randn()).astype("float32")]
-        backward_function_tester(rng, F.broadcast, None,
+        backward_function_tester(rng, F.broadcast,
                                  inputs=inputs,
                                  func_args=[shape], func_kwargs={},
-                                 atol_b=1e-3,
-                                 atol_accum=1e-3,
-                                 dstep=1e-3,
-                                 ctx=ctx, func_name=None,
-                                 disable_half_test=False)
+                                 ctx=ctx)
 
     inputs = [np.array(rng.randn(*inshape)).astype("float32")]
-    backward_function_tester(rng, F.broadcast, None,
-                             inputs=inputs,
+    backward_function_tester(rng, F.broadcast, inputs,
                              func_args=[shape], func_kwargs={},
-                             atol_f=1e-3,
-                             atol_b=2e-2,
-                             atol_accum=2e-2,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

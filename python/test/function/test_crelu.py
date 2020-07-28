@@ -48,5 +48,4 @@ def test_crelu_double_backward(seed, axis, ctx, func_name):
         cap_ignore_region(
             rng.randn(2, 3, 4).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
-    backward_function_tester(rng, F.crelu, None, inputs, func_args=[axis],
-                             ctx=ctx, func_name=func_name, atol_b=1e-3, atol_accum=1e-3)
+    backward_function_tester(rng, F.crelu, inputs, func_args=[axis], ctx=ctx)

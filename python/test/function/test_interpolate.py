@@ -433,14 +433,39 @@ def test_interpolate_linear_double_backward(seed, inshape, outsize, scale, sdim_
         pytest.skip(
             "Interpolate for spatial dimension only data is only supported for channel_first option.")
 
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.interpolate import InterpolateDataGrad
+
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [scale, outsize, 'linear',
                  align_corners, half_pixel, False, channel_last]
-    backward_function_tester(rng, F.interpolate, None, inputs,
-                             func_name=func_name, func_args=func_args,
-                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=2e-3, ctx=ctx)
+    # 2nd-order
+    backward_function_tester(rng, F.interpolate, inputs,
+                             func_args=func_args,
+                             ctx=ctx)
+    # 3rd-order
+    # F.interpolate takes scale and output_size while InterpolateDataGrad takes only output_size
+    # for passing kwargs in the nn.grad, same as F.Interpolate
+    import nnabla as nn
+    import math
+    vinputs = [nn.Variable(inp.shape)
+               if inp is not None else None for inp in inputs]
+    y = F.interpolate(*(vinputs + func_args))
+    x = inputs[0]
+    if scale:
+        input_size = x.shape[-len(scale)-1:-
+                             1] if channel_last else x.shape[-len(scale):]
+        output_size = [int(math.floor(s * d))
+                       for d, s in zip(input_size, scale)]
+    else:
+        output_size = outsize
+    df = InterpolateDataGrad(ctx, *([output_size] + func_args[2:]))
+    df.xshape = x.shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             ginputs, func_args=[],
+                             ctx=ctx, atol_f=1e-6, atol_accum=8e-2, non_accum_check=True)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -490,12 +515,36 @@ def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim
     if sdim_only and channel_last:
         pytest.skip(
             "Interpolate for spatial dimension only data is only supported for channel_first option.")
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.interpolate import InterpolateDataGrad
 
-    from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [scale, outsize, 'nearest', align_corners,
                  half_pixel, half_pixel_for_nn, channel_last]
-    backward_function_tester(rng, F.interpolate, ref_interpolate, inputs,
-                             func_name=func_name, func_args=func_args,
-                             atol_f=1e-6, atol_b=5e-2, atol_accum=5e-2, dstep=1e-3, ctx=ctx)
+    # 2nd-order
+    backward_function_tester(rng, F.interpolate, inputs,
+                             func_args=func_args,
+                             atol_f=1e-6, atol_accum=1e-2, dstep=1e-3, ctx=ctx)
+    # 3rd-order
+    # F.interpolate takes scale and output_size while InterpolateDataGrad takes only output_size
+    # for passing kwargs in the nn.grad, same as F.Interpolate
+    import nnabla as nn
+    import math
+    vinputs = [nn.Variable(inp.shape)
+               if inp is not None else None for inp in inputs]
+    y = F.interpolate(*(vinputs + func_args))
+    x = inputs[0]
+    if scale:
+        input_size = x.shape[-len(scale)-1:-
+                             1] if channel_last else x.shape[-len(scale):]
+        output_size = [int(math.floor(s * d))
+                       for d, s in zip(input_size, scale)]
+    else:
+        output_size = outsize
+    df = InterpolateDataGrad(ctx, *([output_size] + func_args[2:]))
+    df.xshape = x.shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             ginputs, func_args=[],
+                             ctx=ctx, atol_f=1e-6, atol_accum=5e-2, non_accum_check=True)

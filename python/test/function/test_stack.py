@@ -48,11 +48,9 @@ def test_stack_double_backward(seed, axis, num_inputs, ctx, func_name):
     rng = np.random.RandomState(seed)
     shape = [2, 3, 4]
     inputs = [rng.randn(*shape).astype(np.float32) for x in range(num_inputs)]
-    backward_function_tester(rng, F.stack, None,
+    backward_function_tester(rng, F.stack,
                              inputs=inputs,
                              func_args=[], func_kwargs=dict(axis=axis),
-                             atol_b=1e-3,
                              atol_accum=1e-3,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

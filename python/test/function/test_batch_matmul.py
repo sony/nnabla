@@ -87,13 +87,12 @@ def test_batch_matmul_forward_backward(seed, reduce_dim, row_a, col_b, transpose
    # ((2, 2, 4), (2, 4)),  # this pattern is no longer supported since the batch dimensions have a meaning.
    # ((1,), tuple())      # this pattern is no longer supported since we expect > 3dims
    ((2, 3), (2, 3)),
-   ## ((2, 3), (2, 1)),
-   ## ((1, 3), (2, 3)),
-   ## ((1, 3), (2, 1)),
-   ## ((1, 1), (1, 1)),
+   ((2, 3), (2, 1)),
+   ((1, 3), (2, 3)),
+   ((1, 3), (2, 1)),
+   ((1, 1), (1, 1)),
 ]))
 def test_batch_matmul_double_backward(seed, reduce_dim, row_a, col_b, transpose_a, transpose_b, batch_dims_a, batch_dims_b, ctx, func_name):
-
     from nbla_test_utils import backward_function_tester
     if transpose_a:
         shape_a = (reduce_dim, row_a)
@@ -112,5 +111,5 @@ def test_batch_matmul_double_backward(seed, reduce_dim, row_a, col_b, transpose_
         rng.randn(*shape_a).astype(np.float32),
         rng.randn(*shape_b).astype(np.float32),
     ]
-    backward_function_tester(rng, F.batch_matmul, None, inputs, func_args=[transpose_a, transpose_b],
-                             atol_b=1e-1, atol_accum=1e-1, dstep=1e-3, ctx=ctx, func_name=func_name)
+    backward_function_tester(rng, F.batch_matmul, inputs, func_args=[transpose_a, transpose_b],
+                             atol_accum=1e-1, dstep=1e-3, ctx=ctx)

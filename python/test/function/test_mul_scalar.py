@@ -47,15 +47,14 @@ def test_mul_scalar_inplace(seed, val, ctx, func_name):
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("val", [0.5, 1, -2])
-def test_mul_scalar_double_backward(seed, val, ctx, func_name):
+@pytest.mark.parametrize("inplace", [False, True])
+def test_mul_scalar_double_backward(seed, val, ctx, func_name, inplace):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3).astype(np.float32)]
-    backward_function_tester(rng, F.mul_scalar, None,
+    backward_function_tester(rng, F.mul_scalar,
                              inputs=inputs,
-                             func_args=[val], func_kwargs={},
-                             atol_b=2e-3,
+                             func_args=[val, inplace], func_kwargs={},
                              atol_accum=2e-3,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)
