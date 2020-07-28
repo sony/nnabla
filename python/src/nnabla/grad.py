@@ -61,7 +61,8 @@ class Grad(object):
         # 1. accumulate variables used more than one or do nothing
         vf_vb_map = grad_vars.pop(f)  # {VO_fwd: [VI_bwd]}
         grad_inputs = []
-        for v in vf_vb_map.values():
+        for o in f.outputs:
+            v = vf_vb_map[o]
             if len(v) > 1:
                 grad_inputs += [sum(v)]
             else:
