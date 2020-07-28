@@ -17,3 +17,4 @@ from __future__ import absolute_import
 from .base import FunctionHookCallbackBase
 from .profile import TimeProfiler, CpuTimerCallback
 from .value_trace import NanInfTracer
+from .pretty_print import pprint

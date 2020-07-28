@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,6 @@
 
 from __future__ import absolute_import
 
-
-import nnabla.functions as F
-import nnabla.parametric_functions as PF
-import nnabla as nn
 
 from nnabla.parameter import get_parameter_or_create
 

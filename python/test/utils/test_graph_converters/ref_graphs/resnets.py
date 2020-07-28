@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,166 +14,70 @@
 
 from __future__ import absolute_import
 
-
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
-from nnabla.logger import logger
-from nnabla.config import nnabla_config
-from nnabla.utils.data_source_loader import load_image
-from nnabla.utils.data_iterator import data_iterator_csv_dataset
-from nnabla.utils.data_iterator import data_iterator_simple
-
-from nnabla.experimental import graph_converters as GC
-
 from .helper import create_scale_bias
 
 
-# Small ResNet
-def resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name="convblock"):
+# Small Channel First ResNet
+def cf_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='cf-convblock'):
     h = x
     with nn.parameter_scope(name):
         h = PF.convolution(h, maps, kernel=kernel, pad=pad,
                            stride=stride, with_bias=False)
-        h = PF.batch_normalization(h, batch_stat=not test)
+        h = PF.batch_normalization(h, axes=[1], batch_stat=not test)
     return F.relu(h + x)
 
 
-def small_resnet(image, test=False):
+def small_cf_resnet(image, test=False):
     h = image
     h /= 255.0
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(
-        1, 1), name="first-conv", with_bias=False)
-    h = PF.batch_normalization(h, name="first-bn", batch_stat=not test)
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=False, name='first-cf-conv')
+    h = PF.batch_normalization(
+        h, axes=[1], batch_stat=not test, name='first-cf-bn')
     h = F.relu(h)
-    h = resblock(h, maps=16, test=test, name="cb1")
-    h = resblock(h, maps=16, test=test, name="cb2")
-    h = resblock(h, maps=16, test=test, name="cb3")
-    h = resblock(h, maps=16, test=test, name="cb4")
-    pred = PF.affine(h, 10, name='fc')
+    h = F.max_pooling(h, (2, 2))
+    h = cf_resblock(h, maps=16, test=test, name='cf-cb1')
+    h = cf_resblock(h, maps=16, test=test, name='cf-cb2')
+    h = cf_resblock(h, maps=16, test=test, name='cf-cb3')
+    h = cf_resblock(h, maps=16, test=test, name='cf-cb4')
+    h = F.average_pooling(h, (2, 2))
+    pred = PF.affine(h, 10, name='cf-fc')
     return pred
 
 
-# Small Fixed-point-weight ResNet
-def fpq_weight_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False,
-                        sign=True, n=8, delta=2e-4,
-                        name="convblock"):
+def cl_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='cl_convblock'):
     h = x
     with nn.parameter_scope(name):
-        h = PF.fixed_point_quantized_convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
-                                                 with_bias=False,
-                                                 sign_w=sign, n_w=n, delta_w=delta,
-                                                 sign_b=sign, n_b=n, delta_b=delta)
-        h = PF.batch_normalization(h, batch_stat=not test)
+        h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
+                           channel_last=True, with_bias=False)
+        h = PF.batch_normalization(h, axes=[3], batch_stat=not test)
     return F.relu(h + x)
 
 
-def fpq_weight_small_resnet(image, test=False, sign=True, n=8, delta=2e-4,
-                            name="fixed-point-graph-ref"):
-    with nn.parameter_scope(name):
-        h = image
-        h /= 255.0
-        h = PF.fixed_point_quantized_convolution(h, 16, kernel=(3, 3), pad=(1, 1),
-                                                 sign_w=sign, n_w=n, delta_w=delta,
-                                                 sign_b=sign, n_b=n, delta_b=delta,
-                                                 with_bias=False,
-                                                 name="first-conv")
-        h = PF.batch_normalization(h, name="first-bn", batch_stat=not test)
-        h = F.relu(h)
-        h = fpq_weight_resblock(h, maps=16, test=test,
-                                sign=sign, n=n, delta=delta, name="cb1")
-        h = fpq_weight_resblock(h, maps=16, test=test,
-                                sign=sign, n=n, delta=delta, name="cb2")
-        h = fpq_weight_resblock(h, maps=16, test=test,
-                                sign=sign, n=n, delta=delta, name="cb3")
-        h = fpq_weight_resblock(h, maps=16, test=test,
-                                sign=sign, n=n, delta=delta, name="cb4")
-        pred = PF.fixed_point_quantized_affine(h, 10,
-                                               sign_w=sign, n_w=n, delta_w=delta,
-                                               sign_b=sign, n_b=n, delta_b=delta,
-                                               name='fc')
+def small_cl_resnet(image, test=False):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=True,
+                       with_bias=False, name='first-cl-conv')
+    h = PF.batch_normalization(
+        h, axes=[3], batch_stat=not test, name='first-cl-bn')
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2), channel_last=True)
+    h = cl_resblock(h, maps=16, test=test, name='cl-cb1')
+    h = cl_resblock(h, maps=16, test=test, name='cl-cb2')
+    h = cl_resblock(h, maps=16, test=test, name='cl-cb3')
+    h = cl_resblock(h, maps=16, test=test, name='cl-cb4')
+    h = F.average_pooling(h, (2, 2), channel_last=True)
+    pred = PF.affine(h, 10, name='cl-fc')
     return pred
 
 
-# Small Fixed-point-activation ResNet
-def fpq_relu_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False,
-                      sign=False, n=8, delta=2e-4,
-                      name="convblock"):
-    h = x
-    with nn.parameter_scope(name):
-        h = PF.convolution(h, maps, kernel=kernel, pad=pad,
-                           stride=stride, with_bias=False)
-        h = PF.batch_normalization(h, batch_stat=not test)
-    return F.fixed_point_quantize(h + x, n=n, sign=sign, delta=delta)
-
-
-def fpq_relu_small_resnet(image, test=False,
-                          sign=False, n=8, delta=2e-4,
-                          name="fixed-point-graph-ref"):
-    with nn.parameter_scope(name):
-        h = image
-        h /= 255.0
-        h = PF.convolution(h, 16, kernel=(3, 3), pad=(
-            1, 1), name="first-conv", with_bias=False)
-        h = PF.batch_normalization(h, name="first-bn", batch_stat=not test)
-        h = F.fixed_point_quantize(h, sign=sign, n=n, delta=delta)
-        h = fpq_relu_resblock(h, maps=16, test=test,
-                              sign=sign, n=n, delta=delta, name="cb1")
-        h = fpq_relu_resblock(h, maps=16, test=test,
-                              sign=sign, n=n, delta=delta, name="cb2")
-        h = fpq_relu_resblock(h, maps=16, test=test,
-                              sign=sign, n=n, delta=delta, name="cb3")
-        h = fpq_relu_resblock(h, maps=16, test=test,
-                              sign=sign, n=n, delta=delta, name="cb4")
-        pred = PF.affine(h, 10, name='fc')
-    return pred
-
-
-# Small Fixed-point ResNet
-def fpq_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False,
-                 sign=True, n=8, delta=2e-4,
-                 name="convblock"):
-    h = x
-    with nn.parameter_scope(name):
-        h = PF.fixed_point_quantized_convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
-                                                 with_bias=False,
-                                                 sign_w=sign, n_w=n, delta_w=delta,
-                                                 sign_b=sign, n_b=n, delta_b=delta)
-        h = PF.batch_normalization(h, batch_stat=not test)
-    return F.fixed_point_quantize(h + x, n=n, sign=sign, delta=delta)
-
-
-def fpq_small_resnet(image, test=False, sign=True, n=8, delta=2e-4,
-                     name="fixed-point-graph-ref"):
-    with nn.parameter_scope(name):
-        h = image
-        h /= 255.0
-        h = PF.fixed_point_quantized_convolution(h, 16, kernel=(3, 3), pad=(1, 1),
-                                                 sign_w=sign, n_w=n, delta_w=delta,
-                                                 sign_b=sign, n_b=n, delta_b=delta,
-                                                 with_bias=False,
-                                                 name="first-conv")
-        h = PF.batch_normalization(h, name="first-bn", batch_stat=not test)
-        h = F.fixed_point_quantize(h, n=n, sign=sign, delta=delta)
-        h = fpq_resblock(h, maps=16, test=test, sign=sign,
-                         n=n, delta=delta, name="cb1")
-        h = fpq_resblock(h, maps=16, test=test, sign=sign,
-                         n=n, delta=delta, name="cb2")
-        h = fpq_resblock(h, maps=16, test=test, sign=sign,
-                         n=n, delta=delta, name="cb3")
-        h = fpq_resblock(h, maps=16, test=test, sign=sign,
-                         n=n, delta=delta, name="cb4")
-        pred = PF.fixed_point_quantized_affine(h, 10,
-                                               sign_w=sign, n_w=n, delta_w=delta,
-                                               sign_b=sign, n_b=n, delta_b=delta,
-                                               name='fc')
-    return pred
-
-# BatchNormalization Linear Small ResNet
-
-
-def bn_linear_resblock(x, i, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), name="convblock"):
+# BatchNormalization Self-folding Small ResNet
+def bn_self_folding_resblock(x, i, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), name='convblock'):
     h = x
     with nn.parameter_scope(name):
         h = PF.convolution(h, maps, kernel=kernel, pad=pad,
@@ -183,42 +87,113 @@ def bn_linear_resblock(x, i, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), nam
     return F.relu(h + x)
 
 
-def bn_linear_small_resnet(image,
-                           name="bn-linear-graph-ref"):
+def small_bn_self_folding_resnet(image, name='bn-self-folding-graph-ref'):
     h = image
     h /= 255.0
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(
-        1, 1), name="first-conv", with_bias=False)
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=False, name='first-conv')
     a, b = create_scale_bias(1, h.shape[1])
     h = a * h + b
     h = F.relu(h)
-    h = bn_linear_resblock(h, 2, maps=16, name="cb1")
-    h = bn_linear_resblock(h, 3, maps=16, name="cb2")
-    h = bn_linear_resblock(h, 4, maps=16, name="cb3")
-    h = bn_linear_resblock(h, 5, maps=16, name="cb4")
+    h = F.max_pooling(h, (2, 2))
+    h = bn_self_folding_resblock(h, 2, maps=16, name='cb1')
+    h = bn_self_folding_resblock(h, 3, maps=16, name='cb2')
+    h = bn_self_folding_resblock(h, 4, maps=16, name='cb3')
+    h = bn_self_folding_resblock(h, 5, maps=16, name='cb4')
+    h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='fc')
     return pred
 
 
-# Batch Normalization Folded Small ResNet
-def bn_folded_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name="convblock"):
-    h = x
+# BatchNormalization Small ResNet
+def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
     with nn.parameter_scope(name):
-        h = PF.convolution(h, maps, kernel=kernel, pad=pad,
-                           stride=stride, with_bias=True)
-    return F.relu(h + x)
+        h = PF.convolution(x, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=False)
+        z = h
+        h = PF.batch_normalization(h, batch_stat=not test)
+    return F.relu(h + z)
 
 
-def bn_folded_small_resnet(image, test=False,
-                           name="bn-folded-graph-ref"):
+def small_bn_resnet(image, test=False, w_bias=False, name='bn-graph-ref'):
     h = image
     h /= 255.0
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(
-        1, 1), name="first-conv", with_bias=True)
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=w_bias, name='first-conv')
+    h = PF.batch_normalization(h, batch_stat=not test, name='first-bn')
     h = F.relu(h)
-    h = bn_folded_resblock(h, maps=16, test=test, name="cb1")
-    h = bn_folded_resblock(h, maps=16, test=test, name="cb2")
-    h = bn_folded_resblock(h, maps=16, test=test, name="cb3")
-    h = bn_folded_resblock(h, maps=16, test=test, name="cb4")
+    h = bn_resblock(h, maps=16, test=test, name='cb1')
+    h = bn_resblock(h, maps=16, test=test, name='cb2')
+    h = bn_resblock(h, maps=16, test=test, name='cb3')
+    h = bn_resblock(h, maps=16, test=test, name='cb4')
     pred = PF.affine(h, 10, name='fc')
+    return pred
+
+
+# BatchNormalization folding Small ResNet
+def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+    with nn.parameter_scope(name):
+        h = PF.convolution(x, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=True)
+        z = h
+    return F.relu(h + z)
+
+
+def small_bn_folding_resnet(image, test=False, name='bn-graph-ref'):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=True, name='first-conv')
+    h = F.relu(h)
+    h = bn_folding_resblock(h, maps=16, test=test, name='cb1')
+    h = bn_folding_resblock(h, maps=16, test=test, name='cb2')
+    h = bn_folding_resblock(h, maps=16, test=test, name='cb3')
+    h = bn_folding_resblock(h, maps=16, test=test, name='cb4')
+    pred = PF.affine(h, 10, name='fc')
+    return pred
+
+
+# FusedBatchNormalization Small ResNet
+def fbn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='fbn-convblock'):
+    with nn.parameter_scope(name):
+        h = PF.convolution(x, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=False)
+        h = PF.fused_batch_normalization(h, x, batch_stat=not test)
+    return h
+
+
+def small_fbn_resnet(image, test=False, name='fbn-graph-ref'):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=False, name='first-fbn-conv')
+    h = PF.batch_normalization(h, batch_stat=not test, name='first-fbn')
+    h = F.relu(h)
+    h = fbn_resblock(h, maps=16, test=test, name='fbn-cb1')
+    h = fbn_resblock(h, maps=16, test=test, name='fbn-cb2')
+    h = fbn_resblock(h, maps=16, test=test, name='fbn-cb3')
+    h = fbn_resblock(h, maps=16, test=test, name='fbn-cb4')
+    pred = PF.affine(h, 10, name='fbn-fc')
+    return pred
+
+
+# BatchNormalization Small ResNet removed functions
+def bn_rm_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+    with nn.parameter_scope(name):
+        h = PF.convolution(x, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=False)
+        z = h
+    return F.relu(h + z)
+
+
+def small_bn_rm_resnet(image, test=False, w_bias=False, name='bn-rm-graph-ref'):
+    h = image
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=w_bias, name='first-conv')
+    h = F.relu(h)
+    h = bn_rm_resblock(h, maps=16, test=test, name='cb1')
+    h = bn_rm_resblock(h, maps=16, test=test, name='cb2')
+    h = bn_rm_resblock(h, maps=16, test=test, name='cb3')
+    h = bn_rm_resblock(h, maps=16, test=test, name='cb4')
+    pred = PF.affine(h, 10, name='bn-rm-fc')
     return pred
