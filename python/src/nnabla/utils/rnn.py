@@ -301,3 +301,295 @@ def pad_packed_sequence(sequence, batch_first=False, padding_value=0.0, total_le
         padded_sequence = F.gather(padded_sequence, unsorted_indices, axis)
         lengths = lengths[unsorted_indices]
     return padded_sequence, lengths
+
+
+def _rnn(x, h, w, b, nonlinearity, with_bias):
+    """RNN cell.
+    Args:
+        x (:obj:`~nnabla.Variable`): Input data.
+        h (:obj:`~nnabla.Variable`): Hidden state.
+        w (:obj:`~nnabla.Variable`): Weight.
+        b (:obj:`~nnabla.Variable`): Bias.
+        nonlinearity (str): "tanh" or "relu".
+        with_bias (bool): Include the bias or not.
+    """
+    hidden_size = h.shape[1]
+    xh = F.concatenate(*(x, h), axis=1)
+    b_ = None
+    if with_bias:
+        b_ = b
+    h_t = F.affine(xh, F.transpose(w, (1, 0)), b_)
+    if nonlinearity == 'tanh':
+        h_t = F.tanh(h_t)
+    elif nonlinearity == 'relu':
+        h_t = F.relu(h_t)
+
+    return h_t
+
+
+def _create_fixed_length_rnn(xs0, h0, w0, w, b, num_layers, nonlinearity, num_directions, with_bias):
+    """NStepRNNCells over time and over layers.
+    Args:
+        xs0 (:obj:`~nnabla.Variable`): Input data with [T, B, I]  shape.
+        h0 (:obj:`~nnabla.Variable`): Hidden states with [L, D, B, H] shape.
+        w0 (:obj:`~nnabla.Variable`): Weights at the first layer with [D, H, I+H] shape.
+        w (:obj:`~nnabla.Variable`): Weights with [L-1, D, H, D * H + H]  shape at layers other than the first layer.
+        b (:obj:`~nnabla.Variable`): Biases with [L, D, H] shape.
+        num_layers (int): Number of layers.
+        nonlinearity (str): "tanh" or "relu".
+        num_directions (int): "tanh" or "relu".
+        with_bias (bool): Include the bias or not.
+    """
+    # xs : [T, B, I]
+    # h0 : [L, D, B, H]
+    # w0 : [D, H, I+H]
+    # w : [L-1, D, H, D * H + H]
+    batch_size = xs0.shape[1]
+    hidden_size = h0.shape[3]
+
+    if xs0.shape[0] == 1:
+        xs = [xs0[0]]
+    else:
+        xs = F.split(xs0, axis=0)
+    hn = []
+    for i in range(num_layers):
+        wi = w0
+        if i > 0:
+            wi = w[i - 1]
+        # wi : [D, H, ?]
+        # Forward direction
+        hif = h0[i, 0]  # [B, H]
+        wif = wi[0]
+        bif = None
+        if with_bias:
+            bif = b[i, 0]
+        hs = []
+        for j, x in enumerate(xs):
+            # x : [B, I]
+            hif = _rnn(x, hif, wif, bif, nonlinearity, with_bias)
+            hs.append(hif)
+        hn.append(hif)
+
+        if num_directions == 1:
+            xs = hs
+            continue
+
+        # Backward direction
+        hib = h0[i, 1]  # [B, H]
+        wib = wi[1]
+        bib = None
+        if with_bias:
+            bib = b[i, 1]
+        for k, x, in enumerate(reversed(xs)):
+            j = len(xs) - 1 - k
+            # x : [B, I]
+            hib = _rnn(x, hib, wib, bib, nonlinearity, with_bias)
+            hs[j] = F.concatenate(hs[j], hib, axis=1)
+        hn.append(hib)
+        xs = hs
+
+    ys = xs  # list of [B, HD]
+    ys = F.stack(*ys, axis=0)  # [T, B, HD]
+    hn = F.reshape(F.stack(*hn, axis=0), (num_layers, num_directions,
+                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
+    return ys, hn
+
+
+def _gru(x, h, w, b, with_bias):
+    """GRU cell.
+    Args:
+        x (:obj:`~nnabla.Variable`): Input data.
+        h (:obj:`~nnabla.Variable`): Hidden state.
+        w (:obj:`~nnabla.Variable`): Weight.
+        b (:obj:`~nnabla.Variable`): Bias.
+        with_bias (bool): Include the bias or not.
+    """
+    hidden_size = h.shape[1]
+    xh = F.concatenate(*(x, h), axis=1)
+    w0, w1, w2 = F.split(w, axis=0)
+    b0 = b1 = b2 = b3 = None
+    if with_bias:
+        b0, b1, b2, b3 = F.split(b, axis=0)
+    r_t = F.sigmoid(F.affine(xh, F.transpose(w0, (1, 0)), b0))
+    z_t = F.sigmoid(F.affine(xh, F.transpose(w1, (1, 0)), b1))
+
+    w2_0 = w2[:, :w2.shape[1]-hidden_size]
+    w2_1 = w2[:, w2.shape[1]-hidden_size:]
+    n_t = F.tanh(F.affine(x, F.transpose(w2_0, (1, 0)), b2) +
+                 r_t*F.affine(h, F.transpose(w2_1, (1, 0)), b3))
+    h_t = (1-z_t)*n_t + z_t*h
+
+    return h_t
+
+
+def _create_fixed_length_gru(xs0, h0, w0, w, b, num_layers, num_directions, with_bias):
+    """NStepGRUCells over time and over layers.
+    Args:
+        xs0 (:obj:`~nnabla.Variable`): Input data with [T, B, I]  shape.
+        h0 (:obj:`~nnabla.Variable`): Hidden states with [L, D, B, H] shape.
+        w0 (:obj:`~nnabla.Variable`): Weights at the first layer with [D, 3, H, I+H] shape.
+        w (:obj:`~nnabla.Variable`): Weights with [L-1, D, 3, H, D * H + H] shape at layers other than the first layer.
+        b (:obj:`~nnabla.Variable`): Biases with [L, D, 3, H] shape.
+        num_layers (int): Number of layers.
+        num_directions (int): "tanh" or "relu".
+        with_bias (bool): Include the bias or not.
+    """
+    # xs : [T, B, I]
+    # h0 : [L, D, B, H]
+    # w0 : [D, 3, H, I+H]
+    # w : [L-1, D, 3, H, D * H + H]
+    # b : [L, D, 3, H]
+
+    batch_size = xs0.shape[1]
+    hidden_size = h0.shape[3]
+
+    if xs0.shape[0] == 1:
+        xs = [xs0[0]]
+    else:
+        xs = F.split(xs0, axis=0)
+    hn = []
+    for i in range(num_layers):
+        wi = w0
+        if i > 0:
+            wi = w[i - 1]
+        # wi : [D, 3, H, ?]
+        # Forward direction
+        hif = h0[i, 0]  # [B, H]
+        wif = wi[0]
+        bif = None
+        if with_bias:
+            bif = b[i, 0]
+        hs = []
+        for j, x in enumerate(xs):
+            # x : [B, I]
+            hif = _gru(x, hif, wif, bif, with_bias)
+            hs.append(hif)
+        hn.append(hif)
+
+        if num_directions == 1:
+            xs = hs
+            continue
+
+        # Backward direction
+        hib = h0[i, 1]  # [B, H]
+        wib = wi[1]
+        bib = None
+        if with_bias:
+            bib = b[i, 1]
+        for k, x, in enumerate(reversed(xs)):
+            j = len(xs) - 1 - k
+            # x : [B, I]
+            hib = _gru(x, hib, wib, bib, with_bias)
+            hs[j] = F.concatenate(hs[j], hib, axis=1)
+        hn.append(hib)
+        xs = hs
+
+    ys = xs  # list of [B, HD]
+    ys = F.stack(*ys, axis=0)  # [T, B, HD]
+    hn = F.reshape(F.stack(*hn, axis=0), (num_layers, num_directions,
+                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
+    return ys, hn
+
+
+def _lstm(x, h, c, w, b, with_bias):
+    """LSTM cell.
+    Args:
+        x (:obj:`~nnabla.Variable`): Input data.
+        h (:obj:`~nnabla.Variable`): Short-term state.
+        c (:obj:`~nnabla.Variable`): Long-term state.
+        w (:obj:`~nnabla.Variable`): Weight.
+        b (:obj:`~nnabla.Variable`): Bias.
+        with_bias (bool): Include the bias or not.
+    """
+    hidden_size = h.shape[1]
+    xh = F.concatenate(*(x, h), axis=1)
+    w0, w1, w2, w3 = F.split(w, axis=0)
+    b0 = b1 = b2 = b3 = None
+    if with_bias:
+        b0, b1, b2, b3 = F.split(b, axis=0)
+    i_t = F.affine(xh, F.transpose(w0, (1, 0)), b0)
+    f_t = F.affine(xh, F.transpose(w1, (1, 0)), b1)
+    g_t = F.affine(xh, F.transpose(w2, (1, 0)), b2)
+    o_t = F.affine(xh, F.transpose(w3, (1, 0)), b3)
+    c_t = F.sigmoid(f_t) * c + F.sigmoid(i_t) * F.tanh(g_t)
+    h_t = F.sigmoid(o_t) * F.tanh(c_t)
+
+    return h_t, c_t
+
+
+def _create_fixed_length_lstm(xs0, h0, c0, w0, w, b, num_layers, num_directions, with_bias):
+    """NStepGRUCells over time and over layers.
+    Args:
+        xs0 (:obj:`~nnabla.Variable`): Input data with [T, B, I]  shape.
+        h0 (:obj:`~nnabla.Variable`): Short-term states with [L, D, B, H] shape.
+        c0 (:obj:`~nnabla.Variable`): Long-term states with [L, D, B, H] shape.
+        w0 (:obj:`~nnabla.Variable`): Weights at the first layer with [D, 4, H, I+H] shape.
+        w (:obj:`~nnabla.Variable`): Weights with [L-1, D, 4, H, D * H + H] shape at layers other than the first layer.
+        b (:obj:`~nnabla.Variable`): Biases with [L, D, 4*H] shape.
+        num_layers (int): Number of layers.
+        num_directions (int): "tanh" or "relu".
+        with_bias (bool): Include the bias or not.
+    """
+    # xs : [T, B, I]
+    # h0 : [L, D, B, H]
+    # c0 : [L, D, B, H]
+    # w0 : [D, 4, H, I+H]
+    # w : [L-1, D, 4, H, D * H + H]
+    # b : [L, D, 4*H]
+
+    batch_size = xs0.shape[1]
+    hidden_size = h0.shape[3]
+
+    if xs0.shape[0] == 1:
+        xs = [xs0[0]]
+    else:
+        xs = F.split(xs0, axis=0)
+    hn = []
+    cn = []
+    for i in range(num_layers):
+        wi = w0
+        if i > 0:
+            wi = w[i - 1]
+        # wi : [D, 4, H, ?]
+        # Forward direction
+        hif = h0[i, 0]  # [B, H]
+        cif = c0[i, 0]  # [B, H]
+        wif = wi[0]
+        bif = None
+        if with_bias:
+            bif = b[i, 0]
+        hs = []
+        for j, x in enumerate(xs):
+            # x : [B, I]
+            hif, cif = _lstm(x, hif, cif, wif, bif, with_bias)
+            hs.append(hif)
+        hn.append(hif)
+        cn.append(cif)
+
+        if num_directions == 1:
+            xs = hs
+            continue
+
+        # Backward direction
+        hib = h0[i, 1]  # [B, H]
+        cib = c0[i, 1]  # [B, H]
+        wib = wi[1]
+        bib = None
+        if with_bias:
+            bib = b[i, 1]
+        for k, x, in enumerate(reversed(xs)):
+            j = len(xs) - 1 - k
+            # x : [B, I]
+            hib, cib = _lstm(x, hib, cib, wib, bib, with_bias)
+            hs[j] = F.concatenate(hs[j], hib, axis=1)
+        hn.append(hib)
+        cn.append(cib)
+        xs = hs
+
+    ys = xs  # list of [B, HD]
+    ys = F.stack(*ys, axis=0)  # [T, B, HD]
+    hn = F.reshape(F.stack(*hn, axis=0), (num_layers, num_directions,
+                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
+    cn = F.reshape(F.stack(*cn, axis=0), (num_layers, num_directions,
+                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
+    return ys, hn, cn
