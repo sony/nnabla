@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <nbla/array.hpp>
+#include <nbla/function/max_pooling.hpp>
 #include <nbla/function/max_pooling_backward.hpp>
+#include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -30,212 +32,348 @@ NBLA_REGISTER_FUNCTION_SOURCE(MaxPoolingBackward, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
                               bool);
 
-namespace max_pooling_impl {
+namespace max_pooling_backward {
 
-template <typename TI, typename TO, int NDIM>
-inline const std::array<TO, NDIM> v2a(const std::vector<TI> &v,
-                                      const int skip = 0) {
-  std::array<TO, NDIM> a;
-  for (int i = 0; i < NDIM; i++)
-    a[i] = v.at(skip + i);
-  return a;
+template <typename T> void zeroing(T *x, int size) {
+  for (int i = 0; i < size; ++i) {
+    *x++ = T(0);
+  }
 }
 
-typedef std::array<int, 2> Array2D;
-typedef std::array<int, 3> Array3D;
-
 template <typename T>
-inline void forward_map(const T *x, T *y, int *m, const Array2D &x_stride,
-                        const Array2D &x_shape, const Array2D &y_shape,
-                        const Array2D &kernel, const Array2D &stride,
-                        const Array2D &pad) {
-  Array2D y_idx, pool_start, pool_end;
-
-  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; ++y_idx[0]) {
-    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; ++y_idx[1]) {
-      for (int a = 0; a < 2; a++) {
-        pool_start[a] = y_idx[a] * stride[a] - pad[a];
-        pool_end[a] = min(pool_start[a] + kernel[a], x_shape[a] + pad[a]);
-        pool_start[a] = max(pool_start[a], 0);
-        pool_end[a] = min(pool_end[a], x_shape[a]);
-      }
-      auto max_idx = pool_start[0] * x_stride[0] + pool_start[1];
-      auto max_val = x[max_idx];
-      for (int i0 = pool_start[0]; i0 < pool_end[0]; ++i0) {
-        for (int i1 = pool_start[1]; i1 < pool_end[1]; ++i1) {
-          auto idx = i0 * x_stride[0] + i1;
-          if (max_val < x[idx]) {
-            max_val = x[idx];
-            max_idx = idx;
+void max_pooling_2d_forward(T *dx, const T *dy, const T *x, int Cx, int Hx,
+                            int Wx, Shape_t xstride, int By, int Cy, int Hy,
+                            int Wy, Shape_t ystride, int wkernel, int hkernel,
+                            int wstride, int hstride, int wpad, int hpad) {
+  auto oidx = 0;
+  for (auto b = 0; b < By; ++b) {
+    for (auto c = 0; c < Cy; ++c) {
+      for (auto h = 0; h < Hy; ++h) {
+        for (auto w = 0; w < Wy; ++w) {
+          // region
+          auto hi_pool_start = h * hstride - hpad;
+          auto wi_pool_start = w * wstride - wpad;
+          auto hi_pool_end = min(hi_pool_start + hkernel, Hx);
+          auto wi_pool_end = min(wi_pool_start + wkernel, Wx);
+          hi_pool_start = max(hi_pool_start, 0);
+          wi_pool_start = max(wi_pool_start, 0);
+          // pool
+          auto ind_idx = Shape_t{b, c, hi_pool_start, wi_pool_start};
+          auto max_idx = ndi::nd2flat(ind_idx, xstride);
+          auto max_val = x[max_idx];
+          for (auto rh = hi_pool_start; rh < hi_pool_end; ++rh) {
+            for (auto rw = wi_pool_start; rw < wi_pool_end; ++rw) {
+              ind_idx = Shape_t{b, c, rh, rw};
+              auto iidx = ndi::nd2flat(ind_idx, xstride);
+              if (max_val < x[iidx]) {
+                max_val = x[iidx];
+                max_idx = iidx;
+              }
+            }
           }
+          dx[max_idx] += dy[oidx];
+          oidx++;
         }
       }
-      *m++ = max_idx;
-      *y++ = max_val;
     }
   }
 }
 
 template <typename T>
-inline void forward_map(const T *x, T *y, int *m, const Array3D &x_stride,
-                        const Array3D &x_shape, const Array3D &y_shape,
-                        const Array3D &kernel, const Array3D &stride,
-                        const Array3D &pad) {
-  Array3D y_idx, pool_start, pool_end;
-
-  for (y_idx[0] = 0; y_idx[0] < y_shape[0]; ++y_idx[0]) {
-    for (y_idx[1] = 0; y_idx[1] < y_shape[1]; ++y_idx[1]) {
-      for (y_idx[2] = 0; y_idx[2] < y_shape[2]; ++y_idx[2]) {
-        for (int a = 0; a < 3; a++) {
-          pool_start[a] = y_idx[a] * stride[a] - pad[a];
-          pool_end[a] = min(pool_start[a] + kernel[a], x_shape[a] + pad[a]);
-          pool_start[a] = max(pool_start[a], 0);
-          pool_end[a] = min(pool_end[a], x_shape[a]);
-        }
-        auto max_idx = (pool_start[0] * x_stride[0] +
-                        pool_start[1] * x_stride[1] + pool_start[2]);
-        auto max_val = x[max_idx];
-        for (int i0 = pool_start[0]; i0 < pool_end[0]; ++i0) {
-          for (int i1 = pool_start[1]; i1 < pool_end[1]; ++i1) {
-            for (int i2 = pool_start[2]; i2 < pool_end[2]; ++i2) {
-              auto idx = i0 * x_stride[0] + i1 * x_stride[1] + i2;
-              if (max_val < x[idx]) {
-                max_val = x[idx];
-                max_idx = idx;
+void max_pooling_3d_forward(T *dx, const T *dy, const T *x, int Cx, int Dx,
+                            int Hx, int Wx, Shape_t xstride, int By, int Cy,
+                            int Dy, int Hy, int Wy, Shape_t ystride,
+                            int wkernel, int hkernel, int dkernel, int wstride,
+                            int hstride, int dstride, int wpad, int hpad,
+                            int dpad) {
+  auto oidx = 0;
+  for (auto b = 0; b < By; ++b) {
+    for (auto c = 0; c < Cy; ++c) {
+      for (auto d = 0; d < Dy; ++d) {
+        for (auto h = 0; h < Hy; ++h) {
+          for (auto w = 0; w < Wy; ++w) {
+            // region
+            auto di_pool_start = d * dstride - dpad;
+            auto hi_pool_start = h * hstride - hpad;
+            auto wi_pool_start = w * wstride - wpad;
+            auto di_pool_end = min(di_pool_start + dkernel, Dx);
+            auto hi_pool_end = min(hi_pool_start + hkernel, Hx);
+            auto wi_pool_end = min(wi_pool_start + wkernel, Wx);
+            di_pool_start = max(di_pool_start, 0);
+            hi_pool_start = max(hi_pool_start, 0);
+            wi_pool_start = max(wi_pool_start, 0);
+            // pool
+            auto ind_idx =
+                Shape_t{b, c, di_pool_start, hi_pool_start, wi_pool_start};
+            auto max_idx = ndi::nd2flat(ind_idx, xstride);
+            auto max_val = x[max_idx];
+            for (auto rd = di_pool_start; rd < di_pool_end; ++rd) {
+              for (auto rh = hi_pool_start; rh < hi_pool_end; ++rh) {
+                for (auto rw = wi_pool_start; rw < wi_pool_end; ++rw) {
+                  ind_idx = Shape_t{b, c, rd, rh, rw};
+                  auto iidx = ndi::nd2flat(ind_idx, xstride);
+                  if (max_val < x[iidx]) {
+                    max_val = x[iidx];
+                    max_idx = iidx;
+                  }
+                }
               }
             }
+            dx[max_idx] += dy[oidx];
+            oidx++;
           }
         }
-        *m++ = max_idx;
-        *y++ = max_val;
       }
     }
   }
 }
 
 template <typename T, bool accum>
-inline void backward_map(T *g_dy, const T *g_dx, const int *m, int n_map,
-                         const int x_map_size, const int y_map_size) {
-  while (n_map--) {
-    for (int k = 0; k < y_map_size; k++) {
-      if (accum)
-        g_dy[k] += g_dx[m[k]];
-      else
-        g_dy[k] = g_dx[m[k]];
+void max_pooling_2d_backward(T *gdy, const T *gdx, const T *x, int Cx, int Hx,
+                             int Wx, Shape_t xstride, int By, int Cy, int Hy,
+                             int Wy, Shape_t ystride, int wkernel, int hkernel,
+                             int wstride, int hstride, int wpad, int hpad) {
+  auto oidx = 0;
+  for (auto b = 0; b < By; ++b) {
+    for (auto c = 0; c < Cy; ++c) {
+      for (auto h = 0; h < Hy; ++h) {
+        for (auto w = 0; w < Wy; ++w) {
+          // region
+          auto hi_pool_start = h * hstride - hpad;
+          auto wi_pool_start = w * wstride - wpad;
+          auto hi_pool_end = min(hi_pool_start + hkernel, Hx);
+          auto wi_pool_end = min(wi_pool_start + wkernel, Wx);
+          hi_pool_start = max(hi_pool_start, 0);
+          wi_pool_start = max(wi_pool_start, 0);
+          // pool
+          auto ind_idx = Shape_t{b, c, hi_pool_start, wi_pool_start};
+          auto max_idx = ndi::nd2flat(ind_idx, xstride);
+          auto max_val = x[max_idx];
+          for (auto rh = hi_pool_start; rh < hi_pool_end; ++rh) {
+            for (auto rw = wi_pool_start; rw < wi_pool_end; ++rw) {
+              ind_idx = Shape_t{b, c, rh, rw};
+              auto iidx = ndi::nd2flat(ind_idx, xstride);
+              if (max_val < x[iidx]) {
+                max_val = x[iidx];
+                max_idx = iidx;
+              }
+            }
+          }
+          gdy[oidx] = accum ? gdy[oidx] + gdx[max_idx] : gdx[max_idx];
+          oidx++;
+        }
+      }
     }
-    g_dy += y_map_size;
-    g_dx += x_map_size;
-    m += y_map_size;
   }
 }
 
-} // namespace max_pooling_impl
+template <typename T, bool accum>
+void max_pooling_3d_backward(T *gdy, const T *gdx, const T *x, int Cx, int Dx,
+                             int Hx, int Wx, Shape_t xstride, int By, int Cy,
+                             int Dy, int Hy, int Wy, Shape_t ystride,
+                             int wkernel, int hkernel, int dkernel, int wstride,
+                             int hstride, int dstride, int wpad, int hpad,
+                             int dpad) {
+  auto oidx = 0;
+  for (auto b = 0; b < By; ++b) {
+    for (auto c = 0; c < Cy; ++c) {
+      for (auto d = 0; d < Dy; ++d) {
+        for (auto h = 0; h < Hy; ++h) {
+          for (auto w = 0; w < Wy; ++w) {
+            // region
+            auto di_pool_start = d * dstride - dpad;
+            auto hi_pool_start = h * hstride - hpad;
+            auto wi_pool_start = w * wstride - wpad;
+            auto di_pool_end = min(di_pool_start + dkernel, Dx);
+            auto hi_pool_end = min(hi_pool_start + hkernel, Hx);
+            auto wi_pool_end = min(wi_pool_start + wkernel, Wx);
+            di_pool_start = max(di_pool_start, 0);
+            hi_pool_start = max(hi_pool_start, 0);
+            wi_pool_start = max(wi_pool_start, 0);
+            // pool
+            auto ind_idx =
+                Shape_t{b, c, di_pool_start, hi_pool_start, wi_pool_start};
+            auto max_idx = ndi::nd2flat(ind_idx, xstride);
+            auto max_val = x[max_idx];
+            for (auto rd = di_pool_start; rd < di_pool_end; ++rd) {
+              for (auto rh = hi_pool_start; rh < hi_pool_end; ++rh) {
+                for (auto rw = wi_pool_start; rw < wi_pool_end; ++rw) {
+                  ind_idx = Shape_t{b, c, rd, rh, rw};
+                  auto iidx = ndi::nd2flat(ind_idx, xstride);
+                  if (max_val < x[iidx]) {
+                    max_val = x[iidx];
+                    max_idx = iidx;
+                  }
+                }
+              }
+            }
+            gdy[oidx] = accum ? gdy[oidx] + gdx[max_idx] : gdx[max_idx];
+            oidx++;
+          }
+        }
+      }
+    }
+  }
+}
+}
 
 template <typename T>
 void MaxPoolingBackward<T>::setup_impl(const Variables &inputs,
                                        const Variables &outputs) {
-  outputs[0]->reshape(inputs[0]->shape(), true);
+  outputs[0]->reshape(inputs[1]->shape(), true);
 }
 
 template <typename T>
 void MaxPoolingBackward<T>::forward_impl(const Variables &inputs,
                                          const Variables &outputs) {
-  NBLA_ERROR(error_code::not_implemented,
-             "Do not call MaxPoolingBackward::forward. \n"
-             "This is the temporal function to support the double backward of "
-             "the max pooling. \n"
-             "Directly call the backward method.");
-}
+  NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
+             "The passed argument channel_last=true is not supported in CPU "
+             "pooling.");
+  // inputs[0]  : dy
+  // inputs[1]  : x
+  // outputs[0] : dx
+  // dx = df(dy, x)
 
-using nbla::max_pooling_impl::v2a;
-using nbla::max_pooling_impl::Array2D;
-using nbla::max_pooling_impl::Array3D;
-using nbla::max_pooling_impl::forward_map;
-using nbla::max_pooling_impl::backward_map;
+  auto sdim = this->kernel_.size();
+  auto yshape = inputs[0]->shape();
+  auto xshape = inputs[1]->shape();
+  int ndim = xshape.size();
+  // data
+  auto dy = inputs[0]->get_data_pointer<T>(this->ctx_);
+  auto x = inputs[1]->get_data_pointer<T>(this->ctx_);
+  auto dx = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, false);
+  // zeroing
+  max_pooling_backward::zeroing(dx, outputs[0]->size());
+  if (sdim == 2) {
+    // pool params
+    int hstride = this->stride_[0];
+    int wstride = this->stride_[1];
+    int hpad = this->pad_[0];
+    int wpad = this->pad_[1];
+    int hkernel = this->kernel_[0];
+    int wkernel = this->kernel_[1];
+    int Cx = xshape[ndim - 3];
+    int Hx = xshape[ndim - 2];
+    int Wx = xshape[ndim - 1];
+    int Cy = yshape[ndim - 3];
+    int Hy = yshape[ndim - 2];
+    int Wy = yshape[ndim - 1];
+    int By = inputs[0]->size() / (Cy * Hy * Wy);
+    auto ystride = ndi::strides(Shape_t{By, Cy, Hy, Wy});
+    auto xstride = ndi::strides(Shape_t{By, Cx, Hx, Wx});
+    // pool
+    max_pooling_backward::max_pooling_2d_forward(
+        dx, dy, x, Cx, Hx, Wx, xstride, By, Cy, Hy, Wy, ystride, wkernel,
+        hkernel, wstride, hstride, wpad, hpad);
+  } else if (sdim == 3) {
+    // pool params
+    int dstride = this->stride_[0];
+    int hstride = this->stride_[1];
+    int wstride = this->stride_[2];
+    int dpad = this->pad_[0];
+    int hpad = this->pad_[1];
+    int wpad = this->pad_[2];
+    int dkernel = this->kernel_[0];
+    int hkernel = this->kernel_[1];
+    int wkernel = this->kernel_[2];
+    int Cx = xshape[ndim - 4];
+    int Dx = xshape[ndim - 3];
+    int Hx = xshape[ndim - 2];
+    int Wx = xshape[ndim - 1];
+    int Cy = yshape[ndim - 4];
+    int Dy = yshape[ndim - 3];
+    int Hy = yshape[ndim - 2];
+    int Wy = yshape[ndim - 1];
+    int By = inputs[0]->size() / (Cy * Dy * Hy * Wy);
+    auto ystride = ndi::strides(Shape_t{By, Cy, Dy, Hy, Wy});
+    auto xstride = ndi::strides(Shape_t{By, Cx, Dx, Hx, Wx});
+    // pool
+    max_pooling_backward::max_pooling_3d_forward(
+        dx, dy, x, Cx, Dx, Hx, Wx, xstride, By, Cy, Dy, Hy, Wy, ystride,
+        wkernel, hkernel, dkernel, wstride, hstride, dstride, wpad, hpad, dpad);
+  }
+}
 
 template <typename T>
 void MaxPoolingBackward<T>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &propagate_down,
                                           const vector<bool> &accum) {
+  // inputs[0]  : dy
+  // inputs[1]  : x
+  // outputs[0] : dx
+  // dx = df(dy, x)
+  // gdy = gdf(gdx, x)
+
   NBLA_CHECK(!this->channel_last_, error_code::not_implemented,
              "The passed argument channel_last=true is not supported in CPU "
              "pooling.");
 
-  if (!(propagate_down[0] || propagate_down[1])) {
+  if (!propagate_down[0]) {
     return;
   }
 
-  // w.r.t. x
-  if (propagate_down[0]) {
-    if (!accum[0]) {
-      inputs[0]->grad()->zero();
-    }
-  }
+  auto sdim = this->kernel_.size();
+  auto yshape = inputs[0]->shape();
+  auto xshape = inputs[1]->shape();
+  int ndim = xshape.size();
+  // data
+  auto gdy = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  auto x = inputs[1]->get_data_pointer<T>(this->ctx_);
+  auto gdx = outputs[0]->get_grad_pointer<T>(this->ctx_);
 
-  // w.r.t. dy
-  if (propagate_down[1]) {
-
-    // Dummy output and Index
-    Variable yv;
-    Variable max_idx;
-    yv.reshape(inputs[1]->shape(), true);
-    max_idx.reshape(inputs[1]->shape(), true);
-
-    // Once create indices
-    auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
-    auto y = yv.cast_data_and_get_pointer<T>(this->ctx_, true);
-    auto m = max_idx.cast_data_and_get_pointer<int>(
-        this->ctx_, false); // read and write in this function
-
-    const Shape_t &inshape = inputs[0]->shape();
-    const Shape_t &outshape = inputs[1]->shape();
-    const Shape_t &instrides = inputs[0]->strides();
-    const Shape_t &outstrides = inputs[1]->strides();
-    const int s = inshape.size() - this->kernel_.size();
-    const int x_map_size = (s == 0) ? inputs[0]->size() : instrides[s - 1];
-    const int y_map_size = (s == 0) ? inputs[1]->size() : outstrides[s - 1];
-    int n_map = inputs[0]->size() / x_map_size;
-
-    if (this->kernel_.size() == 2) {
-      const auto x_stride = v2a<Size_t, int, 2>(instrides, s);
-      const auto x_shape = v2a<Size_t, int, 2>(inshape, s);
-      const auto y_shape = v2a<Size_t, int, 2>(outshape, s);
-      const auto kernel = v2a<int, int, 2>(this->kernel_);
-      const auto stride = v2a<int, int, 2>(this->stride_);
-      const auto pad = v2a<int, int, 2>(this->pad_);
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
-      for (int n = 0; n < n_map; ++n) {
-        forward_map(x + n * x_map_size, y + n * y_map_size, m + n * y_map_size,
-                    x_stride, x_shape, y_shape, kernel, stride, pad);
-      }
-    }
-
-    else if (this->kernel_.size() == 3) {
-      const auto x_stride = v2a<Size_t, int, 3>(instrides, s);
-      const auto x_shape = v2a<Size_t, int, 3>(inshape, s);
-      const auto y_shape = v2a<Size_t, int, 3>(outshape, s);
-      const auto kernel = v2a<int, int, 3>(this->kernel_);
-      const auto stride = v2a<int, int, 3>(this->stride_);
-      const auto pad = v2a<int, int, 3>(this->pad_);
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
-      for (int n = 0; n < n_map; ++n) {
-        forward_map(x + n * x_map_size, y + n * y_map_size, m + n * y_map_size,
-                    x_stride, x_shape, y_shape, kernel, stride, pad);
-      }
-    }
-
-    // Map
-    auto g_dx = outputs[0]->get_grad_pointer<T>(this->ctx_);
-    auto g_dy = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
-    if (accum[1])
-      backward_map<T, true>(g_dy, g_dx, m, n_map, x_map_size, y_map_size);
-    else
-      backward_map<T, false>(g_dy, g_dx, m, n_map, x_map_size, y_map_size);
+  if (sdim == 2) {
+    // pool params
+    int hstride = this->stride_[0];
+    int wstride = this->stride_[1];
+    int hpad = this->pad_[0];
+    int wpad = this->pad_[1];
+    int hkernel = this->kernel_[0];
+    int wkernel = this->kernel_[1];
+    int Cx = xshape[ndim - 3];
+    int Hx = xshape[ndim - 2];
+    int Wx = xshape[ndim - 1];
+    int Cy = yshape[ndim - 3];
+    int Hy = yshape[ndim - 2];
+    int Wy = yshape[ndim - 1];
+    int By = inputs[0]->size() / (Cy * Hy * Wy);
+    auto ystride = ndi::strides(Shape_t{By, Cy, Hy, Wy});
+    auto xstride = ndi::strides(Shape_t{By, Cx, Hx, Wx});
+    // pool
+    auto backward =
+        accum[0] ? max_pooling_backward::max_pooling_2d_backward<T, true>
+                 : max_pooling_backward::max_pooling_2d_backward<T, false>;
+    backward(gdy, gdx, x, Cx, Hx, Wx, xstride, By, Cy, Hy, Wy, ystride, wkernel,
+             hkernel, wstride, hstride, wpad, hpad);
+  } else if (sdim == 3) {
+    // pool params
+    int dstride = this->stride_[0];
+    int hstride = this->stride_[1];
+    int wstride = this->stride_[2];
+    int dpad = this->pad_[0];
+    int hpad = this->pad_[1];
+    int wpad = this->pad_[2];
+    int dkernel = this->kernel_[0];
+    int hkernel = this->kernel_[1];
+    int wkernel = this->kernel_[2];
+    int Cx = xshape[ndim - 4];
+    int Dx = xshape[ndim - 3];
+    int Hx = xshape[ndim - 2];
+    int Wx = xshape[ndim - 1];
+    int Cy = yshape[ndim - 4];
+    int Dy = yshape[ndim - 3];
+    int Hy = yshape[ndim - 2];
+    int Wy = yshape[ndim - 1];
+    int By = inputs[0]->size() / (Cy * Dy * Hy * Wy);
+    auto ystride = ndi::strides(Shape_t{By, Cy, Dy, Hy, Wy});
+    auto xstride = ndi::strides(Shape_t{By, Cx, Dx, Hx, Wx});
+    // pool
+    auto backward =
+        accum[0] ? max_pooling_backward::max_pooling_3d_backward<T, true>
+                 : max_pooling_backward::max_pooling_3d_backward<T, false>;
+    backward(gdy, gdx, x, Cx, Dx, Hx, Wx, xstride, By, Cy, Dy, Hy, Wy, ystride,
+             wkernel, hkernel, dkernel, wstride, hstride, dstride, wpad, hpad,
+             dpad);
   }
 }
 }
