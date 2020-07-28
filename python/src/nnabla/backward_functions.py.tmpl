@@ -1,0 +1,90 @@
+# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Backward function
+% for function_name, sname_name, _ in function_list:
+from .backward_function.${sname_name} import ${sname_name}_backward
+% endfor
+
+# Mapping
+from collections import OrderedDict
+registry = OrderedDict()
+
+registry.update(dict(
+% for function_name, snake_name, _ in function_list:
+    ${function_name}=${snake_name}_backward,
+% endfor
+))
+
+# Update the mapping for the function of the periodic property in backwards
+from .backward_function.affine import affine_data_grad_backward, affine_filter_grad_backward
+from .backward_function.convolution import convolution_data_grad_backward, convolution_filter_grad_backward
+from .backward_function.deconvolution import deconvolution_data_grad_backward, deconvolution_filter_grad_backward
+from .backward_function.embed import embed_filter_grad_backward
+from .backward_function.batch_normalization import batch_normalization_backward_backward
+from .backward_function.fused_batch_normalization import fused_batch_normalization_backward_backward
+from .backward_function.average_pooling import average_pooling_data_grad_backward
+from .backward_function.global_average_pooling import global_average_pooling_data_grad_backward
+## maxpooling is different from others since the backward needs the max indices of the input data
+## the corresponding function is registered automatically.
+from .backward_function.sum_pooling import sum_pooling_data_grad_backward
+from .backward_function.unpooling import unpooling_data_grad_backward
+from .backward_function.concatenate import concatenate_data_grad_backward
+from .backward_function.slice import slice_data_grad_backward
+from .backward_function.pad import pad_data_grad_backward
+from .backward_function.transpose import transpose_data_grad_backward
+from .backward_function.interpolate import interpolate_data_grad_backward
+
+def register(func_name, func):
+    """Register the backward function to a function.
+
+    Args:
+      func_name (str): The function class name, for example, Affine.
+      func (function): The function to be called as the backward function to the function `func_name`..
+                       Arguments of the func must be (ctx: nn.Context, inputs: list of nn.Variable, **kwargs)..
+                       The inputs are the ones to the function of the `func_name`. The kwargs are
+                       the arguments of the function. For example, if the `func_name` is Affine,
+                       func is `affine_backward`, the inputs are data, weights, and bias if necessary, and
+                       kwargs = dict(base_axis=base_axis).
+    """
+    registry[func_name] = func
+
+def show_registry():
+    """Show all backward fuctions registry
+    """
+    for k, v in registry.items():
+        print(k, v)
+    print("Functions registered are ones which originally support the backward method.\n"
+          "Functions e.g., F.constant which do not support the backward can be parts of "
+          "the computation graph targeted by nn.grad.")
+
+register("AffineDataGrad", affine_data_grad_backward)
+register("AffineFilterGrad", affine_filter_grad_backward)
+register("ConvolutionDataGrad", convolution_data_grad_backward)
+register("ConvolutionFilterGrad", convolution_filter_grad_backward)
+register("DeconvolutionDataGrad", deconvolution_data_grad_backward)
+register("DeconvolutionFilterGrad", deconvolution_filter_grad_backward)
+register("EmbedFilterGrad", embed_filter_grad_backward)
+register("BatchNormalizationBackward", batch_normalization_backward_backward)
+register("FusedBatchNormalizationBackward", fused_batch_normalization_backward_backward)
+register("UnpoolingDataGrad", unpooling_data_grad_backward)
+register("AveragePoolingDataGrad", average_pooling_data_grad_backward)
+register("GlobalAveragePoolingDataGrad", global_average_pooling_data_grad_backward)
+register("MaxPoolingBackwardDataGrad", max_pooling_backward)
+register("SumPoolingDataGrad", sum_pooling_data_grad_backward)
+register("ConcatenateDataGrad", concatenate_data_grad_backward)
+register("SliceDataGrad", slice_data_grad_backward)
+register("PadDataGrad", pad_data_grad_backward)
+register("TransposeDataGrad", transpose_data_grad_backward)
+register("InterpolateDataGrad", interpolate_data_grad_backward)

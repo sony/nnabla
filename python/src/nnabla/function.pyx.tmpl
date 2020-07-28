@@ -302,6 +302,15 @@ cdef class Function:
         return self._cg_call(inputs, n_outputs, outputs, auto_forward)
 
     @property
+    def args(self):
+        """Experimental
+
+        Get args of the function.
+        """
+        info = eval(self.funp.info())
+        return info['args']
+
+    @property
     def tags(self):
         """Experimental
 
@@ -589,9 +598,9 @@ class PythonFunction:
     def __call__(self, *inputs, n_outputs=-1, outputs=None):
         from .auto_forward import get_auto_forward
         info = Info()
-        info.args = {}
+        info.args = self.args if hasattr(self, "args") else {}
         info.type_name = self.name
-        info.tags = {}
+        info.tags = self.tags if hasattr(self, "tags") else {}
         # Increment reference count to prevent deleting this object as long as
         # the CgFunction instance created below exists.
         # The reference count is decremented at the cleanup_callback function
