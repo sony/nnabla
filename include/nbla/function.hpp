@@ -218,32 +218,6 @@ public:
         "This must be implemented for in-place support of this function.");
   }
 
-  /** Get in-place-level of i-th input variable's grad (see below).
-
-      * 0 (NOT_INPLACE): Not in-placed
-      * 1 (INPLACE_NOT_MODIFY): In-placed but not modified.
-      * 2 (INPLACE): In-placed and modified.
-
-      @param[in] i Input variable index.
-      @retval Returns 0 by default.
-      @note If a subclass uses in-place computation, the function must override
-     this function.
-   */
-  virtual int inplace_grad(int i) const { return NOT_INPLACE; }
-
-  /** Get the output variable index where i-th variables' grad in-placed to.
-
-      @param[in] i Input variable index.
-      @note This is only valid if the i-th variable is in-placed.
-            The maintainer of a sub-class function must override
-            this function.
-   */
-  virtual int inplace_grad_with(int i) const {
-    NBLA_ERROR(
-        error_code::not_implemented,
-        "This must be implemented for in-place support of this function.");
-  }
-
   /** A flag for preventing that the graph engine clears buffers of
       input variables even if clear_buffer is true and condition mets.
    */

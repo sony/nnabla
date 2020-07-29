@@ -239,12 +239,6 @@ cdef class Function:
     def inplace_data_with(self, int i):
         return self.funp.function().get().inplace_data_with(i)
 
-    def inplace_grad(self, int i):
-        return self.funp.function().get().inplace_grad(i)
-
-    def inplace_grad_with(self, int i):
-        return self.funp.function().get().inplace_grad_with(i)
-
     @property
     def need_grad(self):
         return self.funp.need_grad()

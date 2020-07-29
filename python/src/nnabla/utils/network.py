@@ -151,7 +151,7 @@ class Network:
                     seq.func = func
                     for i, v in enumerate(func.variable_inputs):
                         accum = (
-                            v in backward_sequence.grad_variables or v in backward_sequence.parameters) and not func.function_instance.inplace_grad(i)
+                            v in backward_sequence.grad_variables or v in backward_sequence.parameters)
                         seq.accum_grad.append(accum)
                         if not v in backward_sequence.grad_variables:
                             backward_sequence.grad_variables.append(v)

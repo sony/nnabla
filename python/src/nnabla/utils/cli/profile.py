@@ -150,8 +150,7 @@ def profile_optimizer(config, result_array, synchronize):
 
             def backward():
                 o.network.backward_function(seq)
-            in_place_str = ' : in_place' if seq.func.function_instance.inplace_grad(
-                0) > 0 else ''
+            in_place_str = ''
             profile(config, 'backward_function (%s : %s%s)' % (
                 seq.func.name, seq.func.function_instance.name, in_place_str), backward, result_dict, synchronize)
 

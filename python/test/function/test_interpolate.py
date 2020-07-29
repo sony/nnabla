@@ -498,4 +498,4 @@ def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim
                  half_pixel, half_pixel_for_nn, channel_last]
     backward_function_tester(rng, F.interpolate, ref_interpolate, inputs,
                              func_name=func_name, func_args=func_args,
-                             atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2, dstep=2e-3, ctx=ctx)
+                             atol_f=1e-6, atol_b=5e-2, atol_accum=5e-2, dstep=1e-3, ctx=ctx)

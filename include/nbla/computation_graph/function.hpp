@@ -145,7 +145,6 @@ public:
 
   void check_data_inplace(int i, CgVariablePtr input,
                           const vector<CgVariablePtr> &outputs);
-  void check_grad_inplace(int i, CgVariablePtr input);
   void verify_during_forward();
 };
 

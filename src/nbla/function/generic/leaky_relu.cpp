@@ -34,7 +34,6 @@ void LeakyReLU<T>::setup_impl(const Variables &inputs,
         alpha_ > 0, error_code::value,
         "Alpha must be greater than zero with inplace option being true.");
     outputs[0]->data()->set_array(inputs[0]->data()->array());
-    outputs[0]->grad()->set_array(inputs[0]->grad()->array());
   }
 }
 
@@ -78,18 +77,11 @@ void LeakyReLU<T>::backward_impl(const Variables &inputs,
     return;
   }
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_,
-                                                  !(inplace_ || accum[0]));
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  if (dx != dy) {
-    // not in-place
-    if (accum[0])
-      leaky_relu_backward_cpu<T, true>(inputs[0]->size(), alpha_, dx, dy, x);
-    else
-      leaky_relu_backward_cpu<T, false>(inputs[0]->size(), alpha_, dx, dy, x);
-  } else {
-    // in-place
+  if (accum[0])
+    leaky_relu_backward_cpu<T, true>(inputs[0]->size(), alpha_, dx, dy, x);
+  else
     leaky_relu_backward_cpu<T, false>(inputs[0]->size(), alpha_, dx, dy, x);
-  }
 }
 }

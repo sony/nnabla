@@ -71,12 +71,6 @@ public:
     // 0 is okay because never be called in the case of i != 0.
     return 0;
   }
-  virtual int inplace_grad(int i) const {
-    if (this->fall_back_func_ || !inplace_ || i > 0)
-      return Function::NOT_INPLACE;
-    return Function::INPLACE_NOT_MODIFY;
-  }
-  virtual int inplace_grad_with(int i) const { return 0; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

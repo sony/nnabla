@@ -50,8 +50,6 @@ cdef extern from "nbla/function.hpp" namespace "nbla":
         cpp_bool grad_depends_output_data(int i, int o) except+
         int inplace_data(int i) except+
         int inplace_data_with(int i) except+
-        int inplace_grad(int i) except+
-        int inplace_grad_with(int i) except+
 
     ctypedef shared_ptr[CFunction] FunctionPtr
 

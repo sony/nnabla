@@ -72,10 +72,6 @@ public:
     return inplace_ ? Function::INPLACE_NOT_MODIFY : Function::NOT_INPLACE;
   }
   virtual int inplace_data_with(int i) const { return 0; }
-  virtual int inplace_grad(int i) const {
-    return inplace_ ? Function::INPLACE_NOT_MODIFY : Function::NOT_INPLACE;
-  }
-  virtual int inplace_grad_with(int i) const { return 0; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

@@ -29,7 +29,6 @@ void ReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   outputs[0]->reshape(inputs[0]->shape(), true);
   if (inplace_) {
     outputs[0]->data()->set_array(inputs[0]->data()->array());
-    outputs[0]->grad()->set_array(inputs[0]->grad()->array());
   }
 }
 
@@ -59,18 +58,11 @@ void ReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     return;
   }
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_,
-                                                  !(inplace_ || accum[0]));
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  if (dx != dy) {
-    // not in-place
-    if (accum[0])
-      relu_backward_cpu<T, true>(inputs[0]->size(), dx, dy, x);
-    else
-      relu_backward_cpu<T, false>(inputs[0]->size(), dx, dy, x);
-  } else {
-    // in-place
+  if (accum[0])
+    relu_backward_cpu<T, true>(inputs[0]->size(), dx, dy, x);
+  else
     relu_backward_cpu<T, false>(inputs[0]->size(), dx, dy, x);
-  }
 }
 }

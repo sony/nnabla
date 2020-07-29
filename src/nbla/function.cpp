@@ -148,8 +148,7 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
   // array instance.
   if (!this->prohibit_zero_input_grad()) {
     for (int i = 0; i < inputs.size(); i++) {
-      if (propagate_down[i] && !accum[i] &&
-          (this->inplace_grad(i) == Function::NOT_INPLACE)) {
+      if (propagate_down[i] && !accum[i]) {
         inputs[i]->grad()->zero();
       }
     }

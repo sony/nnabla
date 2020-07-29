@@ -61,7 +61,6 @@ void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   // D: Inplace
   if (inplace_) {
     outputs[0]->data()->set_array(inputs[0]->data()->array());
-    outputs[0]->grad()->set_array(inputs[0]->grad()->array());
   }
 }
 
@@ -98,10 +97,9 @@ void Reshape<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_,
-                                                  !(inplace_ || accum[0]));
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  if (dx != dy && accum[0])
+  if (accum[0])
     reshape_backward_cpu<T, true>(inputs[0]->size(), dx, dy);
   else
     reshape_backward_cpu<T, false>(inputs[0]->size(), dx, dy);
