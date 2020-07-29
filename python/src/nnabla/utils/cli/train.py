@@ -390,8 +390,12 @@ def _calc_epoch_span(timeinfo):
 
 def _format_cgload_log(cg_load):
     narr = np.array(cg_load).T
-    log_str = 'average load:{{cpu:{:.1f}%, gpu:{:.1f}%}}'.format(
-        np.mean(narr[1]), np.mean(narr[3]))
+    if narr.shape[0] == 4:
+        log_str = 'average load:{{cpu:{:.1f}%, gpu:{:.1f}%}}'.format(
+            np.mean(narr[1]), np.mean(narr[3]))
+    else:
+        log_str = 'average load:{{cpu:{:.1f}%}}'.format(
+            np.mean(narr[1]))
     return log_str
 
 
@@ -451,7 +455,7 @@ def _train(args, config):
 
             for iteration in range(last_iteration, max_iteration):
 
-                # instant load
+                # instant load measurement
                 measure_cpu_gpu_instant_load()
 
                 cost = _update(iteration, config, cost)
@@ -488,7 +492,7 @@ def _train(args, config):
                     cg_load_str = ''
                     cgload_log = ''
                     cg_load = get_cpu_gpu_average_load()
-                    if len(cg_load):
+                    if cg_load:
                         cg_load_str = 'epoch {} average_load_matrix: {}'.format(
                             epoch, cg_load)
                         span = _calc_epoch_span(timeinfo)
@@ -518,8 +522,9 @@ def _train(args, config):
                             timeinfo.past_time, timeinfo.estimate_time, cgload_log))
 
                         if cg_load_str:
+                            # cpu_gpu_average_load record at epoch level
                             callback.update_status(
-                                (['cg_load', epoch], cg_load))
+                                (['cpu_gpu_epoch_load', epoch], cg_load))
                             progress(cg_load_str, 1)
 
                         if not callback.check_training_time(args, config, timeinfo, epoch, last_epoch):
