@@ -120,10 +120,10 @@ Limitation
 ++++++++++
 
 - Training is not supported.
-- Only supports operator set 6 and 9.
+- Support operator set 6,7,9,10,11.
 - Not all functions are supported. See :any:`Function-Level_Support_Status`.
 - Only limited Neural Network Console projects supported.  See :any:`Model_Support_Status`.
-- In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
+- In some case you must install onnx package by hand. For example you can install with command `pip install onnx==1.6.0` or if you want to install system wide, you can install with command `sudo -HE pip install onnx==1.6.0`.
   
 NNB
 ^^^
@@ -161,13 +161,7 @@ As for the importer, 3 formats tends to be supported:
 As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
 The output of converter is tensorflow frozen graph format(e.g. *.pb)
 
-Before using this converter, please confirm if tensorflow and related packages are installed:
-
-
-.. code-block:: none
-
-   $ pip install -U tensorflow==1.5 onnx==1.4.1 onnx_tf
-   $ pip install https://github.com/onnx/tensorflow-onnx.git
+Before using this converter, please refer to :any:`../docker` to install tensorflow and related packages.
 
 
 Process

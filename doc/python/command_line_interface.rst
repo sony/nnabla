@@ -325,7 +325,8 @@ File format converter
                               [--nnp-parameter-h5] [--nnp-parameter-nntxt]
                               [--nnp-exclude-parameter] [-T DEFAULT_VARIABLE_TYPE]
                               [-s SETTINGS] [-c CONFIG] [-d DEFINE_VERSION] [--api API]
-                              [--outputs OUTPUTS] [--inputs INPUTS] FILE [FILE ...]
+                              [--enable-optimize-pb] [--outputs OUTPUTS]
+                              [--inputs INPUTS] FILE [FILE ...]
     
     positional arguments:
       FILE                  File or directory name(s) to convert.

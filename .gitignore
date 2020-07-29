@@ -78,7 +78,6 @@
 /src/nbla_utils/nnabla.pb.h
 /src/nbla_utils/nnp_impl_create_function.cpp
 /third_party/*.zip
-/third_party/*/
 /third_party/hdf5-1.10.1tar.bz2
 /third_party/libarchive-3.3.2tar.gz
 /third_party/protobuf-3.1.0tar.gz
