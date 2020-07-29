@@ -185,12 +185,12 @@ Training results are summarized as follows.
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---|
 | MobileNet-V1 | 4 x V100 | No | Cos90 | 256 | 8.63 | 27.77  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv1_nchw_cos90.h5) | |
 | MobileNet-V2 | 4 x V100 | No | Cos90 | 256 | 9.66 | 28.06  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nchw_cos90.h5) | |
-| MobileNet-V3-Large | 4 x V100 | No | Cos90 | 256 | 10.92 | 26.11 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_cos90.h5) | |
-| MobileNet-V3-Samll | 4 x V100 | No | Cos90 | 256 | 5.32 | 33.87  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nchw_cos90.h5) | |
+| MobileNet-V3-Large | 4 x V100 | No | Cos90 | 256 | 10.92 | 26.11 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nchw_cos90.v2.h5) | |
+| MobileNet-V3-Samll | 4 x V100 | No | Cos90 | 256 | 5.32 | 33.87  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nchw_cos90.v2.h5) | |
 | MobileNet-V1 | 4 x V100 | Yes | Cos90 | 256 | 6.35  | 27.63  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv1_nhwc_cos90.h5) | |
 | MobileNet-V2 | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 7.14  | 28.32  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nhwc_cos90.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv2_nhwc_mixup350.h5) | |
-| MobileNet-V3-Large | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 7.63  | 26.09 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_cos90.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_mixup350.h5) | |
-| MobileNet-V3-Samll | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 5.49  | 33.49  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_cos90.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_mixup350.h5) | |
+| MobileNet-V3-Large | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 7.63  | 26.09 | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_cos90.v2.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_large_nhwc_mixup350.h5) | |
+| MobileNet-V3-Samll | 4 x V100 | Yes | Cos90 Mixup350 | 256 | 5.49  | 33.49  | Download: [Cos90](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_cos90.v2.h5) [Mixup350](https://nnabla.org/pretrained-models/nnabla-examples/ilsvrc2012/mbnv3_small_nhwc_mixup350.h5) | |
 
 * *1 Mixed precision training with NHWC layout  (`-t half --channel-last`).
 * *2 We used training configuration summarized above.
