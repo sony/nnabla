@@ -3,7 +3,6 @@ from . cimport lms
 from nnabla.function cimport Function
 import callback
 
-
 cdef class SwapInOutScheduler:
     def __cinit__(self, h_ctx, d_ctx, size, prefetch_size=None,
                   cpp_bool save_host_mem=False,

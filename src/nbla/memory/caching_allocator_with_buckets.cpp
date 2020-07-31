@@ -175,6 +175,11 @@ CachingAllocatorWithBucketsBase::alloc_impl(size_t orig_bytes,
     device_cache_map[create_key_by_memory(remaining.get())] = remaining;
   }
   DEBUG_PRINT_CACHES("alloc_end", this, device_cache_map, small);
+
+  // increment memory count
+  auto &count_map = (mem->bytes() <= small_alloc_) ? small_memory_counter_ : large_memory_counter_;
+  count_map[device_id]++;
+
   return mem;
 }
 
@@ -209,6 +214,10 @@ void CachingAllocatorWithBucketsBase::free_impl(shared_ptr<Memory> memory) {
   // Cache
   device_cache_map[create_key_by_memory(memory.get())] = memory;
   DEBUG_PRINT_CACHES("free_end", this, device_cache_map, small);
+
+  // decrement memory count
+  auto &count_map = small ? small_memory_counter_ : large_memory_counter_;
+  count_map[memory->device_id()]--;
 }
 
 size_t CachingAllocatorWithBucketsBase::free_unused_device_caches_impl(
@@ -250,6 +259,57 @@ void CachingAllocatorWithBucketsBase::print_memory_cache_map_impl() {
 
   // large
   print_func(large_cache_map_, "large");
+}
+
+size_t CachingAllocatorWithBucketsBase::get_max_cache_bytes(const string& device_id) {
+  size_t max_bytes = 0;
+
+  // small
+  for(auto &p: small_cache_map_[device_id]) {
+    max_bytes = std::max(max_bytes, p.second->bytes());
+  }
+
+  // large
+  for (auto &p: large_cache_map_[device_id]) {
+    max_bytes = std::max(max_bytes, p.second->bytes());
+  }
+
+  return max_bytes;
+}
+
+size_t CachingAllocatorWithBucketsBase::get_total_cache_bytes(const std::string &device_id) {
+  size_t total_bytes = 0;
+
+  // small
+  for(auto &p: small_cache_map_[device_id]) {
+    total_bytes += p.second->bytes();
+  }
+
+  // large
+  for (auto &p: large_cache_map_[device_id]) {
+    total_bytes += p.second->bytes();
+  }
+
+  return total_bytes;
+}
+
+
+size_t CachingAllocatorWithBucketsBase::get_fragmentation_bytes(const std::string &device_id) {
+  return get_total_cache_bytes(device_id) - get_max_cache_bytes(device_id);
+}
+
+size_t CachingAllocatorWithBucketsBase::get_max_available_bytes(const string &device_id) {
+  return get_max_cache_bytes(device_id);
+}
+
+std::vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(const std::string &device_id) {
+  // small
+  auto small_cnt = small_memory_counter_[device_id];
+
+  // large
+  auto large_cnt = large_memory_counter_[device_id];
+
+  return {small_cnt, large_cnt};
 }
 
 }

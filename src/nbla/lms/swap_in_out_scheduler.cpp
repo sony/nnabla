@@ -265,7 +265,6 @@ void SwapInOutScheduler::schedule() {
       }
       schedule_swap_out(params, clear_info, head_type);
 
-      // todo revisit
       bytes_debugger.emplace_back(params.swap_in_bytes, params.swap_out_bytes, params.prefetch_bytes);
     }
 
@@ -283,11 +282,12 @@ void SwapInOutScheduler::schedule() {
 #if 0
     for (int i = 0; i < bytes_debugger.size(); i++) {
       auto e = bytes_debugger[i];
-      printf("[fid :%d] SI: %s SO: %s PF: %s",
+      printf("[fid :%d] SI: %s SO: %s PF: %s\n",
               i,
               byte_to_human_readable(e.swap_in).c_str(),
               byte_to_human_readable(e.swap_out).c_str(),
               byte_to_human_readable(e.prefetch).c_str());
+      fflush(stdout);
     }
 #endif
 
@@ -908,16 +908,18 @@ void SwapInOutScheduler::pre_callback() {
 // Common implementation of post callback
 void SwapInOutScheduler::post_callback() {}
 
-void SwapInOutScheduler::run(const ScheduleType &s) {
+Size_t SwapInOutScheduler::run(const ScheduleType &s) {
   if (s.tag == ScheduleTag::SWAP_IN_GET) {
     if (auto p = s.r->sawptr.lock()) {
       p->get(s.r->dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+      return s.r->size;
     }
   } else if (s.tag == ScheduleTag::SWAP_IN_CAST) {
     if (auto p = s.r->sawptr.lock()) {
       p->cast(s.r->dtype, device_ctx, false,
               AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
       cast_prefetched[p] = true;
+      return s.r->size;
     }
   } else if (s.tag == ScheduleTag::SWAP_OUT) {
     // Swap out and preclear the arrays used in the previous function.
@@ -925,6 +927,7 @@ void SwapInOutScheduler::run(const ScheduleType &s) {
       if (is_not_cleared_yet(p)) {
         p->cast(p->dtype(), host_ctx, false,
                 AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
+        return 0;
       }
     }
   } else if (s.tag == ScheduleTag::WAIT) {
@@ -933,13 +936,24 @@ void SwapInOutScheduler::run(const ScheduleType &s) {
     if (p && p->head_array_class() == host_ctx.array_class &&
         is_not_cleared_yet(p)) {
       p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
+      return -s.r->size;
     }
   } else if (s.tag == ScheduleTag::PRECLEAR) {
     if (auto p = s.r->sawptr.lock()) {
       p->clear();
       precleared[p] = true;
+      return -s.r->size;
     }
   }
+  return 0;
+}
+
+inline string SwapInOutScheduler::to_str(const ScheduleTag& st) {
+  if (st == ScheduleTag::PRECLEAR) return "Preclear";
+  if (st == ScheduleTag::SWAP_IN_CAST) return "SwapInCast";
+  if (st == ScheduleTag::SWAP_IN_GET) return "SwapInGet";
+  if (st == ScheduleTag::SWAP_OUT) return "SwapOut";
+  if (st == ScheduleTag::WAIT) return "Wait";
 }
 
 void SwapInOutScheduler::run_on_beginning_schedule() {

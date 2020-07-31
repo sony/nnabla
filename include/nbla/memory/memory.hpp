@@ -74,6 +74,7 @@ allocating/freeing a device memory block, and splitting into/merging blocks.
 class Memory {
 private:
   size_t bytes_{0};
+  long long requested_bytes_{-1};
   string device_id_;
   bool locked_{false};
   Memory *next_{nullptr};
@@ -122,6 +123,10 @@ public:
   /** Get memory block size in bytes.
    */
   inline size_t bytes() const { return bytes_; }
+
+  /** Get requested allocation memory size in bytes.
+   */
+  inline size_t requested_bytes() const { return requested_bytes_ < 0 ? bytes_ : requested_bytes_; }
 
   /** Get device id as a string.
    */
@@ -248,6 +253,8 @@ public:
     * In default this function does nothing.
     */
    virtual void lock_device_memory() {};
+
+   void set_requested_bytes(size_t bytes) {requested_bytes_ = bytes;}
 
   // Virtual functions
 protected:

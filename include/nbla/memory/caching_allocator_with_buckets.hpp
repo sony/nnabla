@@ -82,6 +82,8 @@ public:
 private:
   CacheMap small_cache_map_;
   CacheMap large_cache_map_;
+  MemCountMap small_memory_counter_;
+  MemCountMap large_memory_counter_;
   static constexpr int round_small_ = 512;       // 512B
   static constexpr int round_large_ = 128 << 10; // 128KB
   static constexpr int small_alloc_ = 1 << 20;   // 1MB
@@ -97,6 +99,9 @@ private:
 
   void print_memory_cache_map_impl() override;
 
+  size_t get_max_cache_bytes(const string& device_id);
+  size_t get_total_cache_bytes(const string& device_id);
+
 protected:
   /** Make Memory instance with a given configuration.
 
@@ -111,6 +116,12 @@ protected:
 
 public:
   CachingAllocatorWithBucketsBase();
+
+  size_t get_fragmentation_bytes(const string& device_id) override;
+
+  size_t get_max_available_bytes(const string& device_id) override;
+
+  vector<int> get_used_memory_counts(const string& device_id) override;
 };
 
 /** A realization of CachingAllocatorWithBuckets.

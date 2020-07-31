@@ -44,6 +44,7 @@ def print_memory_cache_map():
     """Print CPU memory cache map."""
     print_cpu_memory_cache_map()
 
+
 cdef public void call_gc() with gil:
     """
     Callback function to be registered GC singleton in C++.

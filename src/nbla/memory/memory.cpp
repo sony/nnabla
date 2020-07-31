@@ -24,7 +24,7 @@ namespace nbla {
 // Memory interface
 // ----------------------------------------------------------------------
 Memory::Memory(size_t bytes, const string &device_id)
-    : bytes_(std::max(bytes, (size_t)1)), device_id_(device_id) {}
+    : bytes_(std::max(bytes, (size_t)1)), device_id_(device_id), requested_bytes_(bytes_) {}
 
 Memory::~Memory() {}
 

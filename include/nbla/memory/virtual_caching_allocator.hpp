@@ -42,6 +42,9 @@ namespace nbla {
     // Memory cache
     CacheMap small_device_cache_;
     CacheMap large_device_cache_;
+    MemCountMap small_memory_counter_;
+    MemCountMap large_memory_counter_;
+    unordered_map<string, long long> fragmentation_bytes_;
 
     // Size of each single memory chunk.
     size_t small_chunk_size_ = 2ULL << 20; // 2MB
@@ -76,8 +79,17 @@ namespace nbla {
 
     void print_memory_cache_map_impl() override;
 
+    size_t get_total_cache_bytes_impl(const PhysicalMemoryCache& cache);
+    size_t get_total_cache_bytes(const string& device_id);
+
   public:
-    VirtualCachingAllocatorBase() {};
+    VirtualCachingAllocatorBase() = default;
+
+    size_t get_fragmentation_bytes(const string& device_id) override;
+
+    size_t get_max_available_bytes(const string& device_id) override;
+
+    vector<int> get_used_memory_counts(const string& device_id) override;
   };
 
   template<class PhysicalMemoryType, class VirtualMemoryType>

@@ -367,7 +367,7 @@ private:
   // Execute swap in/out, wait, and preclear on a schedule.
   void run_on_beginning_schedule();
   void run_on_end_schedule();
-  void run(const ScheduleType &s);
+  Size_t run(const ScheduleType &s);
 
   //---------------------------------------------------
   //              SyncedArrayCallback
@@ -397,6 +397,8 @@ private:
   // Tag converter
   RecTag convert_tag(const SyncedArrayCallbackTag sa_tag,
                      const bool write_only);
+
+  string to_str(const ScheduleTag&);
 };
 }
 #endif

@@ -95,6 +95,9 @@ inline string string_join(const vector<T> &vec, const string &delim) {
 inline string byte_to_human_readable(long double byte) {
   vector<string> units = {"B", "KB", "MB", "GB"};
 
+  bool neg = byte < 0;
+  if (neg) byte = -byte;
+
   string unit;
   double div = 1 << 10;
   for(auto &u: units) {
@@ -107,7 +110,7 @@ inline string byte_to_human_readable(long double byte) {
   out.precision(2);
   out << std::fixed << byte;
 
-  return out.str() + unit;
+  return (neg ? "-" : "") + out.str() + unit;
 }
 
 /** Scoped callback

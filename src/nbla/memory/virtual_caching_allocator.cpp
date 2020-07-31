@@ -34,10 +34,14 @@ namespace nbla {
   // Overriding member functions
   //----------------------------------------------------------------------
 
+  using std::cout;
+  using std::endl;
+
   void VirtualCachingAllocatorBase::free_impl(shared_ptr<Memory> memory) {
+
     // large or small
     // Currently assume either small or large physical memories are used for virtual memory.
-    bool is_small = memory->get_physical_memory()[0]->bytes() < large_chunk_size_;
+    bool is_small = memory->get_physical_memory()[0]->bytes() == small_chunk_size_ && memory->bytes() <= small_chunk_size_;
     auto &cache = is_small ? small_device_cache_ : large_device_cache_;
 
     // get device_cache
@@ -57,6 +61,7 @@ namespace nbla {
 
     // Keep this memory in waiting_list
     waiting_list_.push(memory);
+
   }
 
   void VirtualCachingAllocatorBase::sync_waiting_list() {
@@ -66,6 +71,14 @@ namespace nbla {
     while (!waiting_list_.empty()) {
       auto &m = waiting_list_.front();
       if (m->get_device_memory_state() == DeviceMemoryState::Locked) break;
+
+      // decrease memory counts
+      bool is_small = m->bytes() <= large_chunk_size_;
+      auto &count_map = is_small ? small_memory_counter_ : large_memory_counter_;
+      count_map[m->device_id()]--;
+
+      fragmentation_bytes_[m->device_id()] -= m->bytes() - m->requested_bytes();
+
       m->unbind();
       waiting_list_.pop();
     }
@@ -139,6 +152,14 @@ namespace nbla {
     try {
       auto mem = create_virtual_memory_impl(p_mem_bytes, device_id, p_mems);
       mem->bind();
+
+      // increment memory counts
+      auto &count_map = (mem->bytes() <= large_chunk_size_) ? small_memory_counter_ : large_memory_counter_;
+      count_map[device_id]++;
+
+      fragmentation_bytes_[device_id] += mem->bytes() - orig_bytes;
+      mem->set_requested_bytes(orig_bytes);
+
       return mem;
     } catch (...) {
       std::cerr << "[VirtualCachingAllocatorBase] Failed to map virtual memory." << std::endl;
@@ -183,5 +204,41 @@ namespace nbla {
               byte_to_human_readable(large_device_cache_[device_id].size() * large_chunk_size_).c_str()
       );
     }
+  }
+
+  size_t VirtualCachingAllocatorBase::get_total_cache_bytes_impl(const PhysicalMemoryCache& cache) {
+    // Assuming each single block size is never changed after the first allocation.
+    if (cache.empty()) return 0;
+    return cache.size() * cache.front() -> bytes();
+  }
+
+  size_t VirtualCachingAllocatorBase::get_total_cache_bytes(const string &device_id) {
+    size_t total_bytes = 0;
+
+    // small
+    total_bytes += get_total_cache_bytes_impl(small_device_cache_[device_id]);
+
+    // large
+    total_bytes += get_total_cache_bytes_impl(large_device_cache_[device_id]);
+
+    return total_bytes;
+  }
+
+  size_t VirtualCachingAllocatorBase::get_fragmentation_bytes(const string &device_id) {
+    return fragmentation_bytes_[device_id];
+  }
+
+  size_t VirtualCachingAllocatorBase::get_max_available_bytes(const string &device_id) {
+    return get_total_cache_bytes(device_id);
+  }
+
+  vector<int> VirtualCachingAllocatorBase::get_used_memory_counts(const string &device_id) {
+    // small
+    auto small_cnt = small_memory_counter_[device_id];
+
+    // large
+    auto large_cnt = large_memory_counter_[device_id];
+
+    return {small_cnt, large_cnt};
   }
 }
