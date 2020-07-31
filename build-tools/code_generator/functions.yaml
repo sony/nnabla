@@ -1270,6 +1270,29 @@ Neural Network Activation Functions:
     function_ids:
       Empty: 245
     c_runtime: not support
+  Mish:
+    snake_name: mish
+    doc: |2
+
+      Mish activation function.
+
+      .. math::
+          Mish(x) = x \tanh(\log(1+\exp(x_i)))
+
+
+      References:
+          * `Diganta Misra.
+            Mish A Self Regularized Non-Monotonic Neural Activation Function.
+            <https://arxiv.org/abs/1908.08681>`_
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 298
   ReLU6:
     snake_name: relu6
     doc: |2
