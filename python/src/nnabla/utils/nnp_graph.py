@@ -261,7 +261,7 @@ class NnpNetwork(object):
         pvar = v.proto
         name = pvar.name
         shape = list(pvar.shape.dim)
-        if shape[0] < 0:
+        if len(shape) > 0 and shape[0] < 0:
             shape[0] = self.batch_size
         shape = tuple(shape)
         assert np.all(np.array(shape) >
