@@ -8,7 +8,7 @@ from nnabla.testing import assert_allclose
 from nnabla.normalization_functions import _get_axes_excluding
 
 
-@pytest.fixture("function")
+@pytest.fixture(scope="function")
 def rng():
     nn.clear_parameters()
     yield np.random.RandomState(313)
