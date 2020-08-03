@@ -60,7 +60,6 @@ void ScatterNd<T>::setup_impl(const Variables &inputs,
 
   if (inputs.size() > 2) {
     outputs[0]->data()->set_array(inputs[2]->data()->array());
-    outputs[0]->grad()->set_array(inputs[2]->grad()->array());
   }
 }
 
@@ -111,13 +110,8 @@ void ScatterNd<T>::backward_impl(const Variables &inputs,
     return;
   }
 
-  auto g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
   auto g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   auto idx = inputs[1]->get_data_pointer<int>(this->ctx_);
-
-  T *g_o = nullptr;
-  if (inputs.size() > 2)
-    g_o = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, true);
 
   auto idx_shape = inputs[1]->shape();
   auto src_shape = outputs[0]->shape();
@@ -128,19 +122,42 @@ void ScatterNd<T>::backward_impl(const Variables &inputs,
   auto idx_rows = idx_shape[0];
   auto idx_cols = ndi::inner_size(idx_shape, 1);
 
-  for (int i = 0; i < idx_cols; i++) {
-    for (int m = 0; m < idx_rows; m++) {
-      auto index = idx[m * idx_cols + i];
-      src_ndi[m] = (index < 0) ? src_shape[m] + index : index;
+  if (inputs.size() < 3) {
+    // Because input[0] data is scattered into a new output variable during
+    // forward, output[0] gradient values from scatter indices are propagated
+    // back to input[0] gradient.
+    auto g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
+    for (int i = 0; i < idx_cols; i++) {
+      for (int m = 0; m < idx_rows; m++) {
+        auto index = idx[m * idx_cols + i];
+        src_ndi[m] = (index < 0) ? src_shape[m] + index : index;
+      }
+      auto slice_length = src_strides.at(idx_rows - 1);
+      auto slice_offset = ndi::nd2flat(src_ndi, src_strides);
+      for (int k = 0; k < slice_length; k++) {
+        g_x[i * slice_length + k] =
+            !accum[0] ? g_y[slice_offset + k]
+                      : g_x[i * slice_length + k] + g_y[slice_offset + k];
+      }
     }
-    auto slice_length = src_strides.at(idx_rows - 1);
-    auto slice_offset = ndi::nd2flat(src_ndi, src_strides);
-    for (int k = 0; k < slice_length; k++) {
-      g_x[i * slice_length + k] =
-          !accum[0] ? g_y[slice_offset + k]
-                    : g_x[i * slice_length + k] + g_y[slice_offset + k];
-      if (inputs.size() > 2) {
-        g_o[slice_offset + k] = T(0);
+  } else {
+    // Because input[0] data is scattered into the data of input[2] (the input
+    // parameter named `out`) inplaced with output[0], the gradient values of
+    // output[0] that belong to the scatter indices are propagated back to the
+    // input[0] gradient and set to 0 (masked) in the grad array of output[0].
+    auto g_y = outputs[0]->cast_grad_and_get_pointer<T>(this->ctx_);
+    for (int i = 0; i < idx_cols; i++) {
+      for (int m = 0; m < idx_rows; m++) {
+        auto index = idx[m * idx_cols + i];
+        src_ndi[m] = (index < 0) ? src_shape[m] + index : index;
+      }
+      auto slice_length = src_strides.at(idx_rows - 1);
+      auto slice_offset = ndi::nd2flat(src_ndi, src_strides);
+      for (int k = 0; k < slice_length; k++) {
+        g_x[i * slice_length + k] =
+            !accum[0] ? g_y[slice_offset + k]
+                      : g_x[i * slice_length + k] + g_y[slice_offset + k];
+        g_y[slice_offset + k] = T(0);
       }
     }
   }
