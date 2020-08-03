@@ -80,9 +80,12 @@ def create_mesh_from_volume(volume, gradient_direction="ascent"):
 
 
 def compute_pts_vol(model, grid_size, volume_factor, sub_batch_size=512):
-    x = np.linspace(-volume_factor, volume_factor, grid_size).astype(np.float32)
-    y = np.linspace(-volume_factor, volume_factor, grid_size).astype(np.float32)
-    z = np.linspace(-volume_factor, volume_factor, grid_size).astype(np.float32)
+    x = np.linspace(-volume_factor, volume_factor,
+                    grid_size).astype(np.float32)
+    y = np.linspace(-volume_factor, volume_factor,
+                    grid_size).astype(np.float32)
+    z = np.linspace(-volume_factor, volume_factor,
+                    grid_size).astype(np.float32)
     X, Y, Z = np.meshgrid(x, y, z)
 
     X = X.reshape(-1)
