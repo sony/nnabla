@@ -153,3 +153,23 @@ def bn_opp_lenet(image, test=False, channel_last=False, w_bias=False):
 
     pred = PF.affine(h, 10, with_bias=True, name='fc2')
     return pred
+
+
+# Identity LeNet
+def id_lenet(image, test=False):
+    h = PF.convolution(image, 16, (5, 5), (1, 1),
+                       with_bias=False, name='id-conv1')
+    h = PF.batch_normalization(h, batch_stat=not test, name='id-conv1-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='id-conv2')
+    h = PF.batch_normalization(h, batch_stat=not test, name='id-conv2-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.affine(h, 10, with_bias=False, name='id-fc1')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='id-fc2')
+    return pred

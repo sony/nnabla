@@ -458,3 +458,31 @@ def small_clbn_self_folding_resnet(image, name='clbn-self-folding-graph-ref'):
     h = F.average_pooling(h, (2, 2), channel_last=True)
     pred = PF.affine(h, 10, name='fc')
     return pred
+
+
+# Small Identity ResNet
+def id_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='id-convblock'):
+    h = x
+    with nn.parameter_scope(name):
+        h = PF.convolution(h, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=False)
+        h = PF.batch_normalization(h, axes=[1], batch_stat=not test)
+    return F.relu(h + x)
+
+
+def small_id_resnet(image, test=False):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=False, name='first-id-conv')
+    h = PF.batch_normalization(
+        h, axes=[1], batch_stat=not test, name='first-id-bn')
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2))
+    h = id_resblock(h, maps=16, test=test, name='id-cb1')
+    h = id_resblock(h, maps=16, test=test, name='id-cb2')
+    h = id_resblock(h, maps=16, test=test, name='id-cb3')
+    h = id_resblock(h, maps=16, test=test, name='id-cb4')
+    h = F.average_pooling(h, (2, 2))
+    pred = PF.affine(h, 10, name='id-fc')
+    return pred

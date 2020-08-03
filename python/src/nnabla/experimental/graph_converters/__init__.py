@@ -25,3 +25,4 @@ from .channel_first import ChannelFirstModifier
 from .remove_function import RemoveFunctionModifier
 from .batch_norm_batchstat import BatchNormBatchStatModifier
 from .test_mode import TestModeModifier
+from .identity import IdentityModifier
