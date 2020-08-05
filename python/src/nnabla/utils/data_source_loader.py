@@ -223,11 +223,11 @@ def load_image_imread(file, shape=None, max_range=1.0):
     :return: numpy array
 
     '''
-    img255 = imread(
+    orig_img = imread(
         file)  # return value is from zero to 255 (even if the image has 16-bitdepth.)
 
-    if len(img255.shape) == 2:  # gray image
-        height, width = img255.shape
+    if len(orig_img.shape) == 2:  # gray image
+        height, width = orig_img.shape
         if shape is None:
             out_height, out_width, out_n_color = height, width, 1
         else:
@@ -235,10 +235,10 @@ def load_image_imread(file, shape=None, max_range=1.0):
         assert(out_n_color == 1)
         if out_height != height or out_width != width:
             # imresize returns 0 to 255 image.
-            img255 = imresize(img255, (out_height, out_width))
-        img255 = img255.reshape((out_n_color, out_height, out_width))
-    elif len(img255.shape) == 3:  # RGB image
-        height, width, n_color = img255.shape
+            orig_img = imresize(orig_img, (out_height, out_width))
+        orig_img = orig_img.reshape((out_n_color, out_height, out_width))
+    elif len(orig_img.shape) == 3:  # RGB image
+        height, width, n_color = orig_img.shape
         if shape is None:
             out_height, out_width, out_n_color = height, width, n_color
         else:
@@ -246,13 +246,22 @@ def load_image_imread(file, shape=None, max_range=1.0):
         assert(out_n_color == n_color)
         if out_height != height or out_width != width or out_n_color != n_color:
             # imresize returns 0 to 255 image.
-            img255 = imresize(img255, (out_height, out_width))
-        img255 = img255.transpose(2, 0, 1)
+            orig_img = imresize(orig_img, (out_height, out_width, out_n_color))
+        orig_img = orig_img.transpose(2, 0, 1)
 
-    if max_range < 0 or max_range == 255.0:
-        return img255
+    if max_range < 0:
+        return orig_img
     else:
-        return img255 * (max_range / 255.0)
+        # 16bit depth
+        if orig_img.dtype == 'uint16':
+            if max_range == 65535.0:
+                return orig_img
+            return orig_img * (max_range / 65535.0)
+        # 8bit depth (default)
+        else:
+            if max_range == 255.0:
+                return orig_img
+            return orig_img * (max_range / 255.0)
 
 
 def load_image(file, shape=None, normalize=False):
@@ -276,14 +285,9 @@ def load_csv(file, shape=None, normalize=False):
     :return: numpy array
     """
     value_list = []
-    if six.PY2:
-        for row in csv.reader(file):
-            if len(row):
-                value_list.append(list(map(float, row)))
-    elif six.PY34:
-        for row in csv.reader([l.decode('utf-8') for l in file.readlines()]):
-            if len(row):
-                value_list.append(list(map(float, row)))
+    for row in csv.reader([l.decode('utf-8') for l in file.readlines()]):
+        if len(row):
+            value_list.append(list(map(float, row)))
     try:
         if shape is None:
             return numpy.array(value_list)
