@@ -310,12 +310,14 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
     # 5. Check if output values are close between function data types.
     for ff, hh in zip(y_f, y_h):
         # TODO: set tol param
-        assert_allclose(ff, hh, atol=atol)
+        assert_allclose(
+            ff, hh, atol=atol, err_msg="{} half forward test fails.".format(func_name))
     if True not in backward:
         return
     for ff, hh in zip(g_f, g_h):
         # TODO: set tol param
-        assert_allclose(ff, hh, atol=atol)
+        assert_allclose(
+            ff, hh, atol=atol, err_msg="{} half backward test fails.".format(func_name))
 
 
 def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
@@ -537,7 +539,8 @@ def function_tester(rng, func, ref_func, inputs,
     assert len(o) == len(refs)
     for i, ref in enumerate(refs):
         res = o[i].d
-        assert_allclose(ref, res, atol=atol_f)
+        assert_allclose(ref, res, atol=atol_f,
+                        err_msg="{} forward test fails".format(func_name))
 
     # Checking function name
     try:
@@ -595,7 +598,8 @@ def function_tester(rng, func, ref_func, inputs,
         ngrads = ref_grad(*(rinputs + doutputs + func_args),
                           **func_kwargs, need_grad_flags=backward)
 
-    assert_allclose(ngrads, agrads, atol=atol_b)
+    assert_allclose(ngrads, agrads, atol=atol_b,
+                    err_msg="{} backward w/o accumulation test fails".format(func_name))
 
     # Check if need_grad works
     for v, b in zip(vinputs, backward):
@@ -647,7 +651,8 @@ def function_tester(rng, func, ref_func, inputs,
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert_allclose(
-            v.g, true_g, atol=atol_accum)
+            v.g, true_g, atol=atol_accum,
+            err_msg="{} backward w/ accumulation test fails.".format(func_name))
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')
@@ -657,7 +662,8 @@ def function_tester(rng, func, ref_func, inputs,
         assert not np.any(np.isnan(v.g))
 
 
-def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx=None, rng=None):
+def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={},
+                                 ctx=None, func_name=None, rng=None):
     if rng is None:
         rng = np.random.RandomState(313)
     if ctx is None:
@@ -683,7 +689,8 @@ def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx
     l_i.backward()
     grads_i = [inp.g.copy() for inp in inputs]
     for g, g_i in zip(grads, grads_i):
-        assert_allclose(g, g_i)
+        assert_allclose(
+            g, g_i, err_msg="{} inplace test fails.".format(func_name))
 
 
 def convert_to_float2_array(x_complex, dtype=np.float32):
@@ -800,12 +807,12 @@ def backward_function_tester(rng, func, inputs=None,
                                    for v in grad_vinputs if v is not None])
 
     for i, ograd in enumerate(ograds0):
-        # We can skip if the backward is the functions composite. 
+        # We can skip if the backward is the functions composite.
         # If the backward is of functions composite,
         # the numerical difference is really different from the analytical one for some functions.
-        if skip_backward_check:  
+        if skip_backward_check:
             continue
-        
+
         if ograd is None or not backward[i]:
             continue
         for ig, v in zip(initial_grads, grad_vinputs):
@@ -823,7 +830,8 @@ def backward_function_tester(rng, func, inputs=None,
                                             for g in initial_grads])
         # grad_vinputs: dy_1, ..., dy_n, x_1, ..., x_n
         # grad_voutputs: dy_1, ..., dy_n
-        seps = [0] + np.cumsum([int(np.prod(v.shape)) for v in grad_vinputs]).tolist()
+        seps = [0] + np.cumsum([int(np.prod(v.shape))
+                                for v in grad_vinputs]).tolist()
         ngrads = len(grad_voutputs)
         ninputs = len(grad_vinputs)
         backward_b = [True] * ninputs if backward_b is None else backward_b
@@ -841,8 +849,6 @@ def backward_function_tester(rng, func, inputs=None,
     vinputs = [v for b, v in zip(backward, vinputs) if b]
     vinputs = list(filter(lambda x: x is not None, vinputs))
 
-
-
     with nn.context_scope(ctx), nn.auto_forward():
         ograds1 = nn.grad(outputs0, vinputs,
                           grad_outputs=[g.d.copy() for g in grad_voutputs])
@@ -857,18 +863,22 @@ def backward_function_tester(rng, func, inputs=None,
     # Some functions backward like AffineDataGrad and AffineFilterGrad does not check non-accum anywhere
     # so check those non-accum backward method here.
     if non_accum_check:
-        parent = outputs0[0].parent # for any outputs, parents are the same function.
+        # for any outputs, parents are the same function.
+        parent = outputs0[0].parent
         inputs = parent.inputs
         # Accum
-        initial_grads = np.concatenate([inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        initial_grads = np.concatenate(
+            [inp.g.flatten() for inp, b in zip(inputs, backward) if b])
         accum = [True] * len(inputs)
         parent.backward(inputs, outputs0, accum=accum)
-        accum_grads = np.concatenate([inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        accum_grads = np.concatenate([inp.g.flatten()
+                                      for inp, b in zip(inputs, backward) if b])
         non_accum_grads0 = accum_grads - initial_grads
         # Non-accum
         accum = [False] * len(inputs)
         parent.backward(inputs, outputs0, accum=accum)
-        non_accum_grads1 = np.concatenate([inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        non_accum_grads1 = np.concatenate(
+            [inp.g.flatten() for inp, b in zip(inputs, backward) if b])
         # Check
         assert_allclose(non_accum_grads0, non_accum_grads1, atol=atol_b,
                         err_msg="Backward (non-accum) of the backward function ({}) fails.".format(
