@@ -1,5 +1,5 @@
-Communicator API
-================
+Communicator
+============
 
 Communicator transfers parameters over the compute graphs.  
 

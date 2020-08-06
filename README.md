@@ -109,6 +109,32 @@ with nn.auto_forward():
 loss.backward()
 ```
 
+You can differentiate to any order with nn.grad.
+
+```python
+import nnabla as nn
+import nnabla.functions as F
+import numpy as np
+
+x = nn.Variable.from_numpy_array(np.random.randn(2, 2)).apply(need_grad=True)
+x.grad.zero()
+y = F.sin(x)
+def grad(y, x, n=1):
+    dx = [y]
+    for _ in range(n):
+        dx = nn.grad([dx[0]], [x])
+    return dx[0]
+dnx = grad(y, x, n=10)
+dnx.forward()
+print(np.allclose(-np.sin(x.d), dnx.d))
+dnx.backward()
+print(np.allclose(-np.cos(x.d), x.g))
+
+# Show the supported status for each function
+from nnabla.backward_functions import show_registry
+show_registry()
+```
+
 ### Command line utility
 
 Neural Network Libraries provides a command line utility `nnabla_cli` for easier use of NNL.
