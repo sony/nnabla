@@ -701,3 +701,184 @@ def convert_to_complex_array(x_float2, dtype=np.complex64):
     x_complex = x_real + 1j * x_imag
     return x_complex
 
+
+def backward_function_tester(rng, func, inputs=None,
+                             func_args=[], func_kwargs={},
+                             atol_f=1e-4, atol_b=1e-3, atol_accum=5e-2,
+                             dstep=1e-3, backward=None, backward_b=None,
+                             ctx=None, non_accum_check=False, skip_backward_check=False):
+    """ Automatic testing of backward function and backward pass of `func` by comparing it.
+    The backward pass of `func` is the reference; therefore, 
+    the backward pass of `func` must be tested first!
+
+    Syntax of `ref_func`: inputs, parameters
+    """
+
+    if ctx is None:
+        ctx = nn.Context()
+    if backward is None:
+        backward = [True for _ in inputs]
+
+    def create_variables(inputs, backward):
+        vinputs = []
+        for i, b in zip(inputs, backward):
+            if i is None:
+                vinputs += [None]
+                continue
+            vinp = nn.Variable(i.shape, need_grad=b)
+            vinp.grad.zero()  # grads always not accumulation
+            vinputs += [vinp]
+            vinputs[-1].data.cast(i.dtype)[...] = i
+        return vinputs
+
+    vinputs = create_variables(inputs, backward)
+
+    # Forward and backward of the forward function
+    with nn.context_scope(ctx), nn.auto_forward():
+        outputs0 = func(*(vinputs + func_args), **func_kwargs)
+        outputs0 = force_list(outputs0)
+    grad_voutputs = []
+    for output in outputs0:
+        ograd = rng.randn(*output.shape)
+        grad_voutputs.append(nn.Variable.from_numpy_array(
+            ograd).apply(need_grad=True))
+        output.g = ograd
+    F.sink(*outputs0, one_input_grad=False).backward()
+    vinputs = list(filter(lambda x: x is not None, vinputs))
+    grad_inputs0 = [inp.g.copy() for inp in vinputs]
+
+    # Forward of the backward function
+    from nnabla.backward_functions import registry
+    func_name = output.parent.info.type_name
+    func_backward = registry[func_name]
+    grad_vinputs = grad_voutputs + vinputs
+    func_info_args = output.parent.info.args
+    with nn.context_scope(ctx), nn.auto_forward():
+        ograds0 = func_backward(grad_vinputs, **func_info_args)
+        ograds0 = force_list(ograds0)
+    outputs1 = []
+    for i, ograd in enumerate(ograds0):
+        outputs1.append(ograd.d.copy()) if ograd is not None else \
+          outputs1.append(None)
+
+    # Check num of returned elements
+    assert_allclose(len(vinputs), len(outputs1),
+                    err_msg="Length of the outputs ({}) does not match "
+                    "the length of the inputs ({}) to the backward function".format(len(outputs1), len(vinputs)))
+
+    # Check forward
+    for i, elm in enumerate(zip(grad_inputs0, outputs1)):
+        grad_ref, grad_res = elm
+        if grad_ref is None or grad_res is None:
+            continue
+        assert_allclose(grad_ref, grad_res, atol=atol_f,
+                        err_msg="Forward of the backward function ({}) fails at {}-th output.".format(
+                            func_backward.__name__, i))
+
+    # Check backward
+    # needed since we sometimes do need_grad=False for optimization, e.g., mask.
+    def set_inputs(inputs0, vinputs):
+        begin = 0
+        for i in vinputs:
+            end = begin + i.size
+            i.d = inputs0[begin:end].reshape(i.shape)
+            begin = end
+
+    def obj_func(inputs0, voutput, vinputs):
+        set_inputs(inputs0, vinputs)
+        voutput.forward()
+        y = voutput.d.copy()
+        return y
+
+    initial_grads = []
+    for grad_vinput in grad_vinputs:
+        if grad_vinput is None:
+            continue
+        g = np.asarray(rng.randn(*grad_vinput.shape))
+        initial_grads.append(g)
+    grad_inputs1 = np.concatenate([v.d.flatten()
+                                   for v in grad_vinputs if v is not None])
+
+    for i, ograd in enumerate(ograds0):
+        # We can skip if the backward is the functions composite. 
+        # If the backward is of functions composite,
+        # the numerical difference is really different from the analytical one for some functions.
+        if skip_backward_check:  
+            continue
+        
+        if ograd is None or not backward[i]:
+            continue
+        for ig, v in zip(initial_grads, grad_vinputs):
+            v.g = ig
+        from scipy.optimize import approx_fprime
+        rgrad = rng.randn()
+        sum_ograd = F.sum(ograd) * rgrad
+        numerical_grads = approx_fprime(
+            grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
+        sum_ograd.forward()
+        sum_ograd.backward()
+        analytical_grads = np.concatenate(
+            [v.g.flatten() for v in grad_vinputs])
+        analytical_grads -= np.concatenate([g.flatten()
+                                            for g in initial_grads])
+        # grad_vinputs: dy_1, ..., dy_n, x_1, ..., x_n
+        # grad_voutputs: dy_1, ..., dy_n
+        seps = [0] + np.cumsum([int(np.prod(v.shape)) for v in grad_vinputs]).tolist()
+        ngrads = len(grad_voutputs)
+        ninputs = len(grad_vinputs)
+        backward_b = [True] * ninputs if backward_b is None else backward_b
+        for k, sep in enumerate(zip(seps[:-1], seps[1:])):
+            if k >= ngrads and not backward[k - ngrads] or not backward_b[k]:
+                continue
+            s0, s1 = sep
+            analytical_grad = analytical_grads[s0:s1]
+            numerical_grad = numerical_grads[s0:s1]
+            assert_allclose(analytical_grad, numerical_grad, atol=atol_accum,
+                            err_msg="Backward (accum) of the backward function ({}) wrt {}-th / {} input fails.".format(
+                                func_backward.__name__, k, ninputs))
+
+    # Check the same results between backward_function and nn.grad
+    vinputs = [v for b, v in zip(backward, vinputs) if b]
+    vinputs = list(filter(lambda x: x is not None, vinputs))
+
+
+
+    with nn.context_scope(ctx), nn.auto_forward():
+        ograds1 = nn.grad(outputs0, vinputs,
+                          grad_outputs=[g.d.copy() for g in grad_voutputs])
+    ograds0 = list(filter(lambda o: o is not None, ograds0))
+    ograds1 = list(filter(lambda o: o is not None, ograds1))
+    for i in range(len(ograds0)):
+        if ograds0[i].parent is None:
+            continue
+        assert_allclose(ograds0[i].d, ograds1[i].d, atol=atol_f,
+                        err_msg="nn.grad and backward_functon results differ.")
+
+    # Some functions backward like AffineDataGrad and AffineFilterGrad does not check non-accum anywhere
+    # so check those non-accum backward method here.
+    if non_accum_check:
+        parent = outputs0[0].parent # for any outputs, parents are the same function.
+        inputs = parent.inputs
+        # Accum
+        initial_grads = np.concatenate([inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        accum = [True] * len(inputs)
+        parent.backward(inputs, outputs0, accum=accum)
+        accum_grads = np.concatenate([inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        non_accum_grads0 = accum_grads - initial_grads
+        # Non-accum
+        accum = [False] * len(inputs)
+        parent.backward(inputs, outputs0, accum=accum)
+        non_accum_grads1 = np.concatenate([inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        # Check
+        assert_allclose(non_accum_grads0, non_accum_grads1, atol=atol_b,
+                        err_msg="Backward (non-accum) of the backward function ({}) fails.".format(
+                            func_backward.__name__))
+
+
+def grad_function_forward_function_output(bwd_func_class, fwd_func, ctx, inputs,
+                                          *func_args, **func_kwargs):
+    vinputs = [nn.Variable(inp.shape)
+               if inp is not None else None for inp in inputs]
+    y = fwd_func(*(vinputs + force_list(func_args)), **func_kwargs)
+    bwd_func = bwd_func_class(ctx, *func_args, **func_kwargs)
+    return bwd_func, y
