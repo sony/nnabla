@@ -37,11 +37,15 @@ def crop_center_image(image, crop_shape):
 
 
 def read_image_with_preprocess(path, norm_config, channel_last=False,
-                               channels=3):
+                               channels=3, spatial_size=(224, 224)):
     assert channels in (3, 4)
     from nnabla.utils.image_utils import imread
-    H, W = 256, 256
-    h, w = 224, 224
+    # Assume the ratio between the resized image and the input shape to the network is 256 / 224,
+    # this is a mostly typical setting for the imagenet classification.
+    import args as A
+    H = A.resize_by_ratio(spatial_size[0])
+    W = A.resize_by_ratio(spatial_size[1])
+    h, w = spatial_size[0], spatial_size[0]
     image = imread(path, num_channels=3, size=(W, H))
     image = crop_center_image(image, (h, w))
     image = normalize_uint8_image(image, norm_config)
@@ -73,35 +77,40 @@ def get_args():
     parser.add_argument(
         '--norm-config', '-n', type=A.lower_str, default='default',
         help='Specify how to normalize an image as preprocessing.')
+    parser.add_argument("--channel-last", action='store_true',
+                        help='Use a model with NHWC layout.')
+    parser.add_argument("--spatial-size", type=int, default=224, nargs="+",
+                        help='Spatial size.')
     args = parser.parse_args()
+
+    # Post process
+    A.post_process_spatial_size(args)
 
     # See available archs
     A.check_arch_or_die(args.arch)
     return args
 
 
-def load_parameters_and_config(path):
+def load_parameters_and_config(path, type_config):
     '''
     Load paramters and deduce the configuration
-    of memory layout and input channels
+    of memory layout and input channels if possible.
 
     Returns: (channel_last, input_channels)
 
     '''
     nn.load_parameters(path)
-    try:
-        conv1 = nn.parameter.get_parameter('conv1/conv/W')
-    except:
-        raise ValueError(
-            'conv1/conv/W is not found. This parameter configuration deduction works for resnet only.')
-    shape = conv1.shape
-    assert shape[1] == 7 or shape[3] == 7, 'This deduction process assumes that the first convolution has 7x7 filter.'
-    channel_last = False
-    channels = shape[1]
-    if shape[1] == 7:
-        channel_last = True
-        channels = shape[3]
-    assert channels in (3, 4), f'channels must be either 3 or 4: {channels}.'
+    logger.info('')
+    logger.info(
+        'Assume there is only the imagenet model parameters in the parameter space.')
+
+    first_param = list(nn.get_parameters().values())[0]
+    if first_param is None:
+        raise ValueError("Load parameter first.")
+    fshape = first_param.shape
+    channel_last = True if fshape[3] == 4 else False
+    channels = 4 if channel_last or type_config == 'half' else 3
+
     return channel_last, channels
 
 
@@ -119,15 +128,16 @@ def main():
     nn.set_default_context(ctx)
 
     # Load parameters
-    channel_last, channels = load_parameters_and_config(args.weights)
-    logger.info('parameter configuration is deduced as:')
+    channel_last, channels = load_parameters_and_config(
+        args.weights, args.type_config)
+    logger.info('Parameter configuration is deduced as:')
     logger.info(f'* channel_last={channel_last}')
     logger.info(f'* channels={channels}')
 
     # Read image
     image = read_image_with_preprocess(
         args.input_image, args.norm_config, channel_last=channel_last,
-        channels=channels)
+        channels=channels, spatial_size=args.spatial_size)
     img = nn.NdArray.from_numpy_array(image)
 
     # Perform inference

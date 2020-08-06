@@ -83,18 +83,8 @@ def main():
             raise ValueError(f'The batchsize and number of workers must be set so that {imagenet_val_size} can be divisible by (batch_size * num_workers).')
 
     # Load parameters
-    try:
-        channel_last, channels = load_parameters_and_config(args.weights)
-        logger.info('Parameter configuration is inferred as:')
-    except:
-        logger.warn(
-            "Input shape deducation fails. Use the channel_last in the argument.")
-        logger.warn(
-            "Input shape deducation fails. Use the channels of 4 in half data type; otherwise, 3.")
-        channels = 4 if args.type_config == 'half' else 3
-        channel_last, channels = args.channel_last, channels
-    logger.info(f'* channel_last={channel_last}')
-    logger.info(f'* channels={channels}')
+    channel_last, channels = load_parameters_and_config(
+        args.weights, args.channels, args.type_config)
     args.channel_last = channel_last
 
     # Build a validation entwork

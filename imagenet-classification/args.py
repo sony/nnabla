@@ -110,11 +110,11 @@ def post_process_spatial_size(args):
         args.spatial_size = args.spatial_size * 2
 
 
-def post_process_spatial_size(args):
-    if isinstance(args.spatial_size, int):
-        args.spatial_size = (args.spatial_size, args.spatial_size)
-    elif len(args.spatial_size) == 1:
-        args.spatial_size = args.spatial_size * 2
+def resize_by_ratio(size):
+    """ Resize the size according to the imagenet training ratio.
+    """
+    resize = round(256 / 224 * size / 2) * 2
+    return resize
 
 
 def get_train_args():
