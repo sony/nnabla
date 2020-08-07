@@ -31,8 +31,8 @@ class BatchNormBase(object):
             'Deconvolution': F.deconvolution
         }
 
-    def connect(self, f, x, w, b, fct_set):
-        fct = fct_set[f.info.type_name]
+    def connect(self, f, x, w, b):
+        fct = self._fct_set[f.info.type_name]
         h = fct(x, w, b, **f.info.args)
         return h
 
@@ -76,7 +76,7 @@ class AddBiasModifier(FunctionModifier, BatchNormBase):
         with nn.parameter_scope(scope):
             b = get_parameter_or_create(
                 'b', (n_outmaps, ), ConstantInitializer(), True, True)
-        h = self.connect(f, x, w, b, self._fct_set)
+        h = self.connect(f, x, w, b)
         return h
 
 
@@ -131,7 +131,7 @@ class BatchNormalizationFoldingModifierInner(FunctionModifier, BatchNormBase):
         w = ip_func.inputs[1]
         b = ip_func.inputs[2]
 
-        h = self.connect(f, x, w, b, self._fct_set)
+        h = self.connect(f, x, w, b)
 
         return h
 

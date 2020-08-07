@@ -197,3 +197,28 @@ def small_bn_rm_resnet(image, test=False, w_bias=False, name='bn-rm-graph-ref'):
     h = bn_rm_resblock(h, maps=16, test=test, name='cb4')
     pred = PF.affine(h, 10, name='bn-rm-fc')
     return pred
+
+
+# BatchNormalization Small ResNet with batch_stat False
+def bsf_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+    with nn.parameter_scope(name):
+        h = PF.convolution(x, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=False)
+        z = h
+        h = PF.batch_normalization(h, batch_stat=False)
+    return F.relu(h + z)
+
+
+def small_bsf_resnet(image, w_bias=False, name='bn-graph-ref'):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                       with_bias=w_bias, name='first-conv')
+    h = PF.batch_normalization(h, batch_stat=False, name='first-bn-bsf')
+    h = F.relu(h)
+    h = bsf_resblock(h, maps=16, test=False, name='cb1')
+    h = bsf_resblock(h, maps=16, test=False, name='cb2')
+    h = bsf_resblock(h, maps=16, test=False, name='cb3')
+    h = bsf_resblock(h, maps=16, test=False, name='cb4')
+    pred = PF.affine(h, 10, name='fc')
+    return pred

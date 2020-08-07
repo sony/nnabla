@@ -22,3 +22,4 @@ from .unfused_batch_normalization import UnfusedBatchNormalizationModifier
 from .channel_last import ChannelLastModifier
 from .channel_first import ChannelFirstModifier
 from .remove_function import RemoveFunctionModifier
+from .batch_norm_batchstat import BatchNormBatchStatModifier

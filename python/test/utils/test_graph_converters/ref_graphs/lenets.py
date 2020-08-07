@@ -22,7 +22,7 @@ from nnabla.parameter import get_parameter_or_create
 
 
 # LeNet
-def lenet(image, test=False):
+def lenet(image, test=False, w_bias=False):
     h = PF.convolution(image, 16, (5, 5), (1, 1),
                        with_bias=False, name='conv1')
     h = PF.batch_normalization(h, batch_stat=not test, name='conv1-bn')
@@ -94,6 +94,26 @@ def bn_folding_lenet(image, test=False, name="bn-folding-graph-ref"):
     h = F.relu(h)
 
     h = PF.affine(h, 10, with_bias=True, name='fc1')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='fc2')
+    return pred
+
+
+# LeNet with batch_stat False
+def bsf_lenet(image, w_bias=False):
+    h = PF.convolution(image, 16, (5, 5), (1, 1),
+                       with_bias=False, name='conv1')
+    h = PF.batch_normalization(h, batch_stat=False, name='conv1-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='conv2')
+    h = PF.batch_normalization(h, batch_stat=False, name='conv2-bn')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.affine(h, 10, with_bias=False, name='fc1')
     h = F.relu(h)
 
     pred = PF.affine(h, 10, with_bias=True, name='fc2')
