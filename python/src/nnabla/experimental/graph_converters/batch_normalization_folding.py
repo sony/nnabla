@@ -93,7 +93,7 @@ class BatchNormalizationFoldingModifierInner(FunctionModifier, BatchNormBase):
 
     """
 
-    def __init__(self):
+    def __init__(self, channel_last=False):
         super(BatchNormalizationFoldingModifierInner, self).__init__()
 
     def modify(self, f, inputs):
@@ -202,5 +202,5 @@ class BatchNormalizationFoldingModifier(object):
 
     """
 
-    def __new__(self):
-        return [AddBiasModifier(), BatchNormalizationFoldingModifierInner()]
+    def __new__(self, channel_last=False):
+        return [AddBiasModifier(), BatchNormalizationFoldingModifierInner(channel_last=channel_last)]

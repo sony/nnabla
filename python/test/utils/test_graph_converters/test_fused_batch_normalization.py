@@ -28,7 +28,7 @@ resnet_ref = small_fbn_resnet
 
 
 @pytest.mark.parametrize('seed', [313])
-@pytest.mark.parametrize('test', [False, True])
+@pytest.mark.parametrize('test', [True])
 @pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
 def test_fused_batch_normalization(seed, test, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
