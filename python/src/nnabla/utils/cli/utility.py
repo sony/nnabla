@@ -15,6 +15,8 @@
 import os
 import re
 import numpy as np
+import timeit
+from contextlib import contextmanager
 
 import nnabla as nn
 import nnabla.utils.callback as callback
@@ -22,6 +24,7 @@ from nnabla.utils.communicator_util import current_communicator
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.get_file_handle import get_file_handle_save
 from nnabla.logger import logger
+from nnabla.config import nnabla_config
 
 cpu_load_backend_ok = True
 try:
@@ -38,6 +41,17 @@ except Exception:
     # measure gpu load only if nvml installed
     gpu_load_backend_ok = False
 
+try:
+    _ANALYSE_GPU_STATUS_INTERVAL = int(
+        nnabla_config.get('MULTINODE', 'analyse_gpu_status_interval'))
+    _GPU_SLOWING_WARNING_THRESHOLD = float(
+        nnabla_config.get('MULTINODE', 'gpu_slowing_warning_threshold'))
+    _GPU_SLOWING_ERROR_THRESHOLD = float(
+        nnabla_config.get('MULTINODE', 'gpu_slowing_error_threshold'))
+except Exception:
+    _ANALYSE_GPU_STATUS_INTERVAL = 20
+    _GPU_SLOWING_WARNING_THRESHOLD = 1.4
+    _GPU_SLOWING_ERROR_THRESHOLD = 2
 
 # load variable
 # ============
@@ -223,3 +237,68 @@ def save_optimizer_states(filebase, ext, train_config):
             os.rename(filename, name_ext)
             filelist.append(name_ext)
     return filelist
+
+
+class NodeTimeInfoCollector:
+    def __init__(self):
+        self.timelist = []
+        self._frequency = _ANALYSE_GPU_STATUS_INTERVAL
+        self._warning_threshold = _GPU_SLOWING_WARNING_THRESHOLD
+        self._error_threshold = _GPU_SLOWING_ERROR_THRESHOLD
+
+    @contextmanager
+    def collect_cost_time(self, comm, iter_n):
+        if comm and iter_n % self._frequency == 0:
+            t1 = timeit.default_timer()
+            yield
+            t2 = timeit.default_timer()
+            self.timelist.append(t2 - t1)
+            self._get_analysis(comm)
+        else:
+            yield
+
+    def _reap_data(self):
+        result = self.timelist[:]
+        self.timelist = []
+        return result
+
+    def _collect_info_from_multinode(self, comm, _d_ndarray):
+        load_var = nn.Variable([len(_d_ndarray), ])
+        load_var.d = _d_ndarray
+        load_list_var = [nn.Variable([len(_d_ndarray), ])
+                         for _ in range(comm.size)]
+        comm.all_gather(load_var.data, [a.data for a in load_list_var])
+
+        return load_list_var
+
+    def _reap_multinode_data(self, comm):
+        c_data = np.array([comm.rank, sum(self._reap_data())])
+        multinode_data = self._collect_info_from_multinode(comm, c_data)
+        result_arr = [a.d for a in multinode_data]
+
+        # result_arr is list(<class 'numpy.ndarray'>, ...) like
+        return result_arr
+
+    def _get_analysis(self, comm):
+
+        def _analyse_gpu_cost_time(result, threshold):
+            aver = np.mean(result, axis=0)[1]
+            _node_l = [*filter(lambda n: n[1] > aver * threshold, result)]
+            if len(_node_l):
+                ranks = ', '.join([str(int(n[0])) for n in _node_l])
+                _str = ('Gpu of Rank {} ran slower than average '
+                        'by a factor of {} or more'.format(ranks, threshold))
+                return _str
+            return ''
+
+        result = self._reap_multinode_data(comm)
+        if comm.rank == 0:
+            error_str = _analyse_gpu_cost_time(result, self._error_threshold)
+            if error_str:
+                logger.error(error_str)
+                raise Exception(error_str)
+            else:
+                warning_str = _analyse_gpu_cost_time(
+                    result, self._warning_threshold)
+                if warning_str:
+                    logger.warning(warning_str)

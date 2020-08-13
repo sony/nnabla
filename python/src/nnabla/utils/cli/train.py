@@ -30,7 +30,7 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 import nnabla.utils.callback as callback
 
-from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load, save_optimizer_states
+from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load, save_optimizer_states, NodeTimeInfoCollector
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
@@ -45,6 +45,9 @@ except Exception:
 
 
 _save_parameter_info = {}
+
+
+nodeTimeCollector = NodeTimeInfoCollector()
 
 
 def _all_reduce(comm, var, division, inplace):
@@ -198,12 +201,13 @@ def _update(iter, config, cost):
                                  (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
                     cost.sum_iteration = 0.0
 
-            # Forward
-            o.network.forward(o.forward_sequence)
+            with nodeTimeCollector.collect_cost_time(comm, iter):
+                # Forward
+                o.network.forward(o.forward_sequence)
 
-            # Backward
-            o.network.backward(o.backward_sequence, iter %
-                               o.update_interval == 0)
+                # Backward
+                o.network.backward(o.backward_sequence, iter %
+                                   o.update_interval == 0)
 
             # Update
             if iter % o.update_interval == o.update_interval - 1:
