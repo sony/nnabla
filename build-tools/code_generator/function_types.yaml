@@ -82,6 +82,9 @@ PReLU:
 GELU:
   float: [float]
   half: [Half]
+Mish:
+  float: [float]
+  half: [Half]
 ReLU6:
   float: [float]
   half: [Half]
