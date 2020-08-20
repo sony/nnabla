@@ -40,7 +40,7 @@ def main():
     image = io.imread(args.test_image)
     if image.ndim == 2:
         image = color.gray2rgb(image)
-    elif image.ndim == 4:
+    elif image.shape[-1] == 4:
         image = image[..., :3]
 
     if args.context == 'cudnn':
