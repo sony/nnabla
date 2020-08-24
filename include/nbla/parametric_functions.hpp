@@ -67,6 +67,7 @@ public:
   CgVariablePtr get_parameter_or_create(string name, Shape_t shape,
                                         Initializer *initializer,
                                         bool need_grad);
+  CgVariablePtr get_parameter_or_create(string name, CgVariablePtr variable);
 
   ParameterDirectory create_deep_copy();
 };

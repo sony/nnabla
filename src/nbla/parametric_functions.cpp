@@ -128,6 +128,38 @@ ParameterDirectory::get_parameter_or_create(string name, Shape_t shape,
   return parameter;
 }
 
+CgVariablePtr ParameterDirectory::get_parameter_or_create(string name,
+                                                          CgVariablePtr cg_v) {
+  // Parameter name.
+  string param_path;
+
+  if (!scope_path_.empty())
+    param_path = scope_path_ + "/" + name;
+  else
+    param_path = name;
+
+  // Search exist one.
+  auto it = param_dict_->find(param_path);
+  if (it != param_dict_->end()) {
+    NBLA_CHECK(
+        cg_v->variable()->shape() == it->second->variable()->shape(),
+        error_code::value,
+        "Parameter \"%s\" already exists but the shape of the variable you "
+        "passed is mismatch."
+        "the shape of existed paremeter: (%s) != the shape you passed: (%s).",
+        param_path.c_str(),
+        string_join(it->second->variable()->shape(), ", ").c_str(),
+        string_join(cg_v->variable()->shape(), ", ").c_str());
+
+    return it->second;
+  }
+
+  param_dict_->insert({param_path, cg_v});
+  ordered_keys_->push_back(param_path);
+
+  return cg_v;
+}
+
 ParameterDirectory ParameterDirectory::create_deep_copy() {
   auto param_dict = make_shared<dict_type>();
   auto ordered_keys = make_shared<ordered_keys_type>(*ordered_keys_.get());

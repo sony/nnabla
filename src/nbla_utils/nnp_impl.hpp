@@ -474,12 +474,6 @@ class NnpImpl {
   unique_ptr<::NNablaProtoBuf> proto_;
   unordered_map<string, CgVariablePtr> parameters_;
 
-  static const int MAX_NAME = 1024;
-#ifdef NBLA_UTILS_WITH_HDF5
-  hid_t root_;
-  bool parse_hdf5_dataset(std::string name, hid_t did);
-  bool parse_hdf5_group(hid_t gid);
-#endif
   void update_parameters();
   int get_network_repeat_nest_depth(const ::Network &orig);
   std::vector<std::string> create_suffixes(std::string prefix,

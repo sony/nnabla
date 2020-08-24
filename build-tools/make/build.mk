@@ -165,7 +165,9 @@ nnabla-shell:
 .PHONY: nnabla-test-cpplib
 nnabla-test-cpplib: nnabla-cpplib
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) cpplibtest
+	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) test_nbla_utils
 	@bash -c "(cd $(BUILD_DIRECTORY_CPPLIB) && ctest -R cpplibtest --output-on-failure)"
+	# Do not test test_nbla_utils here, since it depends on data preparation.
 
 .PHONY: nnabla-test
 nnabla-test:
@@ -179,3 +181,5 @@ nnabla-test-local: nnabla-install
 	&& PATH=$(PYTEST_PATH_EXTRA):$(PATH) \
 	LD_LIBRARY_PATH=$(PYTEST_LD_LIBRARY_PATH_EXTRA):$(LD_LIBRARY_PATH) \
 	$(NNABLA_DIRECTORY)/build-tools/make/pytest.sh $(NNABLA_DIRECTORY)/python/test
+	@python -m pytest $(NNABLA_DIRECTORY)/src/nbla_utils/test
+	$(NNABLA_DIRECTORY)/build-tools/make/test_nbla_utils.sh

@@ -121,7 +121,11 @@ bool nbla_train_core(nbla::Context ctx, int argc, char *argv[]) {
     fprintf(stdout, "\n");
   }
 
+#ifdef NBLA_UTILS_WITH_HDF5
+  string parameter_file = result_dir + "/parameters.h5";
+#else
   string parameter_file = result_dir + "/parameters.protobuf";
+#endif
   if (!nnp.save_parameters(parameter_file.c_str())) {
     return false;
   }

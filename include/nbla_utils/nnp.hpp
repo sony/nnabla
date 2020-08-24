@@ -492,7 +492,7 @@ public:
 
   /** Save parameters
 
-  @param[in] name output binary filename (.protobuf)
+  @param[in] name output binary filename (.protobuf or .h5)
   */
   NBLA_API bool save_parameters(const string &filename);
 };

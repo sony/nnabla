@@ -24,6 +24,7 @@
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/parametric_functions.hpp>
 #include <nbla/solver/adam.hpp>
+#include <nbla_utils/nnp.hpp>
 #include <nbla_utils/parameters.hpp>
 
 namespace nbla {
@@ -36,6 +37,7 @@ namespace pf = nbla::parametric_functions;
 
 const Context kCpuCtx{{"cpu:float"}, "CpuCachedArray", "0"};
 const string filename = "params.protobuf";
+const string filename_h5 = "parameters.h5";
 
 CgVariablePtr model(CgVariablePtr x, ParameterDirectory parameters) {
   auto h = pf::convolution(x, 1, 16, {3, 3}, parameters["conv1"]);
@@ -113,6 +115,27 @@ CgVariablePtr simple_train(ParameterDirectory &params) {
   return h;
 }
 
+void expect_params_equal(vector<pair<string, VariablePtr>> &a,
+                         vector<pair<string, VariablePtr>> &b) {
+  for (auto a_it = a.begin(); a_it != a.end(); ++a_it) {
+    bool exist = false;
+    for (auto b_it = b.begin(); b_it != b.end(); ++b_it) {
+      if (a_it->first == b_it->first) {
+        int a_size = a_it->second->size();
+        int b_size = b_it->second->size();
+        EXPECT_EQ(a_size, b_size);
+        float *a_data =
+            a_it->second->template cast_data_and_get_pointer<float>(kCpuCtx);
+        float *b_data =
+            b_it->second->template cast_data_and_get_pointer<float>(kCpuCtx);
+        EXPECT_TRUE(memcmp(a_data, b_data, a_size) == 0);
+        exist = true;
+      }
+    }
+    EXPECT_TRUE(exist);
+  }
+}
+
 CgVariablePtr simple_infer(ParameterDirectory &params) {
   int batch_size = 1;
   auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
@@ -141,10 +164,63 @@ TEST(test_save_and_load_parameters, test_save_load_without_train) {
   CgVariablePtr x = simple_infer(train_params);
   save_parameters(train_params, filename);
   load_parameters(infer_params, filename);
-  //  dump_parameters(train_params);
-  //  dump_parameters(infer_params);
   CgVariablePtr y = simple_infer(infer_params);
   check_result(x, y);
 }
+
+#ifdef NBLA_UTILS_WITH_HDF5
+TEST(test_save_and_load_parameters, test_save_load_h5) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters(train_params, filename_h5);
+  load_parameters(infer_params, filename_h5);
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
+TEST(test_save_and_load_parameters, test_nnp_save_h5) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters(train_params, filename);
+
+  nbla::utils::nnp::Nnp nnp(kCpuCtx);
+  nnp.add(filename);
+  nnp.save_parameters(filename_h5);
+  nbla::utils::nnp::Nnp nnp_ref(kCpuCtx);
+  nnp_ref.add(filename_h5);
+  auto params = nnp.get_parameters();
+  auto params_ref = nnp_ref.get_parameters();
+  expect_params_equal(params, params_ref);
+
+  load_parameters(infer_params, filename_h5);
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
+TEST(test_save_and_load_parameters, test_nnp_save_pb) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters(train_params, filename_h5);
+
+  nbla::utils::nnp::Nnp nnp(kCpuCtx);
+  nnp.add(filename_h5);
+  nnp.save_parameters(filename);
+  nbla::utils::nnp::Nnp nnp_ref(kCpuCtx);
+  nnp_ref.add(filename);
+  auto params = nnp.get_parameters();
+  auto params_ref = nnp_ref.get_parameters();
+  expect_params_equal(params, params_ref);
+
+  load_parameters(infer_params, filename);
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+#endif
 }
 }

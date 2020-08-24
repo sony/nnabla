@@ -40,10 +40,24 @@ RUN yum install -y \
         which \
         zip \
         zlib-static \
+        libmpc-devel \
+        mpfr-devel \
+        gmp-devel \
     && yum group install -y "Development Tools" \
     && yum clean all
 
 ############################################################# cmake
+
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && wget http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
+    && tar xvfj gcc-4.9.2.tar.bz2 \
+    && cd gcc-4.9.2 \
+    && ./configure --disable-multilib --enable-languages=c,c++ \
+    && make -j8 \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
 
 ARG CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
@@ -141,3 +155,5 @@ RUN umask 0 \
 
 ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
 ENV LD_LIBRARY_PATH /opt/miniconda3/envs/nnabla-build/lib:$LD_LIBRARY_PATH
+ENV CC /usr/local/bin/gcc
+ENV CXX /usr/local/bin/g++
