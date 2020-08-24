@@ -19,9 +19,11 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
 from nnabla.parameter import get_parameter_or_create
-
+from .helper import get_channel_axes
 
 # LeNet
+
+
 def lenet(image, test=False, w_bias=False):
     h = PF.convolution(image, 16, (5, 5), (1, 1),
                        with_bias=False, name='conv1')
@@ -63,20 +65,25 @@ def cl_lenet(image, test=False):
 
 
 # BN LeNet
-def bn_lenet(image, test=False, w_bias=False):
-    h = PF.convolution(image, 16, (5, 5), (1, 1),
-                       with_bias=w_bias, name='conv1')
-    h = PF.batch_normalization(h, batch_stat=not test, name='conv1-bn')
+def bn_lenet(image, test=False, channel_last=False, w_bias=False):
+    axes = get_channel_axes(channel_last)
+    h = PF.convolution(image, 16, (5, 5), (1, 1), with_bias=w_bias,
+                       channel_last=channel_last, name='conv1')
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='conv1-bn')
     h = F.max_pooling(h, (2, 2))
     h = F.relu(h)
 
-    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='conv2')
-    h = PF.batch_normalization(h, batch_stat=not test, name='conv2-bn')
-    h = F.max_pooling(h, (2, 2))
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True,
+                       channel_last=channel_last, name='conv2')
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='conv2-bn')
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
     h = F.relu(h)
 
     h = PF.affine(h, 10, with_bias=True, name='fc1')
-    h = PF.batch_normalization(h, batch_stat=not test, name='fc1-bn')
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='fc1-bn')
     h = F.relu(h)
 
     pred = PF.affine(h, 10, with_bias=True, name='fc2')
@@ -84,13 +91,15 @@ def bn_lenet(image, test=False, w_bias=False):
 
 
 # Batch Normalization Small LeNet
-def bn_folding_lenet(image, test=False, name="bn-folding-graph-ref"):
-    h = PF.convolution(image, 16, (5, 5), (1, 1), with_bias=True, name='conv1')
-    h = F.max_pooling(h, (2, 2))
+def bn_folding_lenet(image, test=False, channel_last=False, name="bn-folding-graph-ref"):
+    h = PF.convolution(image, 16, (5, 5), (1, 1), with_bias=True,
+                       channel_last=channel_last, name='conv1')
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
     h = F.relu(h)
 
-    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True, name='conv2')
-    h = F.max_pooling(h, (2, 2))
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True,
+                       channel_last=channel_last, name='conv2')
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
     h = F.relu(h)
 
     h = PF.affine(h, 10, with_bias=True, name='fc1')
@@ -114,6 +123,32 @@ def bsf_lenet(image, test=False, w_bias=False):
     h = F.relu(h)
 
     h = PF.affine(h, 10, with_bias=False, name='fc1')
+    h = F.relu(h)
+
+    pred = PF.affine(h, 10, with_bias=True, name='fc2')
+    return pred
+
+
+# BN LeNet Opposite
+def bn_opp_lenet(image, test=False, channel_last=False, w_bias=False):
+    axes = get_channel_axes(channel_last)
+    h = PF.batch_normalization(
+        image, axes=axes, batch_stat=not test, name='conv1-bn')
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=w_bias,
+                       channel_last=channel_last, name='conv1')
+    h = F.max_pooling(h, (2, 2))
+    h = F.relu(h)
+
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='conv2-bn')
+    h = PF.convolution(h, 16, (5, 5), (1, 1), with_bias=True,
+                       channel_last=channel_last, name='conv2')
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = F.relu(h)
+
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='fc1-bn')
+    h = PF.affine(h, 10, with_bias=True, name='fc1')
     h = F.relu(h)
 
     pred = PF.affine(h, 10, with_bias=True, name='fc2')

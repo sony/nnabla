@@ -15,7 +15,8 @@
 from .graph_converter import (GraphConverter, FunctionModifier)
 from .batch_normalization_folding import (BatchNormalizationFoldingModifier,
                                           AddBiasModifier,
-                                          BatchNormalizationFoldingModifierInner)
+                                          BatchNormalizationFoldingModifierInner,
+                                          BatchNormalizationFoldingOppositeModifierInner)
 from .batch_normalization_self_folding import BatchNormalizationSelfFoldingModifier
 from .fused_batch_normalization import FusedBatchNormalizationModifier
 from .unfused_batch_normalization import UnfusedBatchNormalizationModifier

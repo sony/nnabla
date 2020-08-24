@@ -156,6 +156,42 @@ def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='b
     return pred
 
 
+# BatchNormalization Small ResNet Opposite
+def bn_opp_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                    test=False, channel_last=False, name='convblock'):
+    axes = get_channel_axes(channel_last)
+    with nn.parameter_scope(name):
+        h = PF.batch_normalization(x, axes=axes, batch_stat=not test)
+        z = h
+        h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
+                           channel_last=channel_last, with_bias=True)
+    return F.relu(z + h)
+
+
+def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref'):
+    axes = get_channel_axes(channel_last)
+
+    h = image
+    h /= 255.0
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='first-bn')
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+                       with_bias=w_bias, name='first-conv')
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = bn_opp_resblock(h, maps=16, test=test,
+                        channel_last=channel_last, name='cb1')
+    h = bn_opp_resblock(h, maps=16, test=test,
+                        channel_last=channel_last, name='cb2')
+    h = bn_opp_resblock(h, maps=16, test=test,
+                        channel_last=channel_last, name='cb3')
+    h = bn_opp_resblock(h, maps=16, test=test,
+                        channel_last=channel_last, name='cb4')
+    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    pred = PF.affine(h, 10, name='fc')
+    return pred
+
+
 # BatchNormalization Folding Small ResNet
 def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
                         test=False, channel_last=False, name='convblock'):

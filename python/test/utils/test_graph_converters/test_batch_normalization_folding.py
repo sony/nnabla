@@ -22,21 +22,28 @@ import nnabla.experimental.graph_converters as GC
 
 from nnabla.ext_utils import get_extension_context
 from nbla_test_utils import list_context
-from .ref_graphs.resnets import small_bn_resnet, small_bn_folding_resnet
+from .ref_graphs.lenets import bn_lenet, bn_folding_lenet, bn_opp_lenet
+from .ref_graphs.resnets import (small_bn_resnet,
+                                 small_bn_folding_resnet,
+                                 small_bn_opp_resnet)
+
 
 ctxs = list_context('Convolution')  # proxy to switch the context
 batch_size = 1
+lenet_ref = bn_folding_lenet
 resnet_ref = small_bn_folding_resnet
 
 
 @pytest.mark.parametrize('ctx, func_name', ctxs)
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
-@pytest.mark.parametrize('w_bias', [True, False])
-@pytest.mark.parametrize('channel_last', [True, False])
-@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
+@pytest.mark.parametrize('w_bias', [True])
+@pytest.mark.parametrize('channel_last', [True])
+@pytest.mark.parametrize('graph_ref, graph_act, opposite',
+                         [(resnet_ref, small_bn_resnet, False),
+                          (resnet_ref, small_bn_opp_resnet, True)])
 def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
-                                     channel_last, graph_ref, graph_act):
+                                     channel_last, graph_ref, graph_act, opposite):
     from .graph_converter_test_utils import structure_tester, value_tester
 
     if channel_last == True and not func_name.endswith('Cudnn'):
@@ -58,7 +65,8 @@ def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
 
         # FunctionModifier
         modifiers = []
-        modifiers.append(GC.BatchNormalizationFoldingModifier(channel_last))
+        modifiers.append(GC.BatchNormalizationFoldingModifier(
+            opposite, channel_last))
 
         y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
