@@ -230,8 +230,14 @@ class CacheDataSource(DataSource):
         data = [self._current_data[v][index] for v in self.variables]
 
         if self._normalize:
-            data = [d.astype(numpy.float32) * (1.0 / 255.0)
-                    if d.dtype == numpy.uint8 else d for d in data]
+            new_data = []
+            for d in data:
+                if d.dtype == numpy.uint8:
+                    d = d.astype(numpy.float32) * (1.0 / 255.0)
+                elif d.dtype == numpy.uint16:
+                    d = d.astype(numpy.float32) * (1.0 / 65535.0)
+                new_data.append(d)
+            data = new_data
         return data
 
     def initialize_cache_files(self, filename):
