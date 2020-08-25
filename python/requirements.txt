@@ -12,5 +12,4 @@ requests
 scipy
 six
 tqdm
-tensorflow==1.14
 ply
