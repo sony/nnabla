@@ -147,7 +147,6 @@ RUN umask 0 \
     && conda update --all -y \
     && conda install -y numpy scipy scikit-image six \
     && pip install -r /tmp/deps/setup_requirements.txt \
-    && sed -i '/tensorflow/d' /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \

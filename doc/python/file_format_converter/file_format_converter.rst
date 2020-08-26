@@ -151,7 +151,17 @@ File format converter supports C source code output for `nnabla-c-runtime`_.
 Tensorflow
 ^^^^^^^^^^
 
-Through onnx, tensorflow import and export is partially supported.
+.. _Dockerfile: https://github.com/sony/nnabla/blob/master/docker/development/Dockerfile.tf-test
+
+Limitation
+++++++++++
+
+- Currently python3.8 is not supported.
+- Tensorflow version is required to be 1.14.
+- ONNX version is 1.6.0.
+- onnx_tf, tf2onnx needs to be patched based on specified revision.
+
+Bridged by onnx, tensorflow import and export is supported with some limitations.
 
 As for the importer, 3 formats tends to be supported:
    - .pb, tensorflow frozen graph format
@@ -161,7 +171,7 @@ As for the importer, 3 formats tends to be supported:
 As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
 The output of converter is tensorflow frozen graph format(e.g. *.pb)
 
-Before using this converter, please refer to :any:`../docker` to install tensorflow and related packages.
+Before using this converter, please refer to `Dockerfile`_ to prepare the environment for converter.
 
 
 Process
@@ -343,6 +353,14 @@ For checkpoint version 2:
 
 In the same directory of input.ckpt.meta, the related files, such as checkpoint, *.ckpt.index, ... and
 so on are required to exist.
+
+
+Convert NNP to Tensorflow Lite
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+   $ nnabla_cli convert input.nnp output.tflite
 
 
 Splitting network

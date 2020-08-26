@@ -124,7 +124,6 @@ RUN umask 0 \
     && pip install -U numpy \
     && pip install scipy\<1.4 \
     && pip install -r /tmp/deps/setup_requirements.txt \
-    && sed -i '/tensorflow/d' /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/requirements.txt \
     && pip install -r /tmp/deps/test_requirements.txt \
     && conda clean -y --all \
