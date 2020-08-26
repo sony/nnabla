@@ -81,7 +81,7 @@ class CachePrefetcher(object):
             if retry > 10:
                 logger.log(99, 'read_cache() retry count over give up.')
                 logger.log(
-                    99, 'Cache file {} not found.'.format(file_name))
+                    99, 'Cache file {} not found. pid={}'.format(file_name, os.getpid()))
                 logger.log(99, 'Fatal Error! send SIGKILL to myself.')
                 os.kill(os.getpid(), 9)
 
@@ -96,10 +96,12 @@ class CachePrefetcher(object):
                     logger.log(
                         99, 'read_cache() fails retrying count {}/10.'.format(retry))
                     retry += 1
+                    sleep(0.5)
             except:
                 logger.log(
                     99, 'Cache file {} not found, retry count {}.'.format(file_name, retry))
                 retry += 1
+                sleep(0.5)
 
         return result
 

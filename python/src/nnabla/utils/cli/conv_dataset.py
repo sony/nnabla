@@ -42,6 +42,11 @@ def _convert(args, source):
 
 
 def conv_dataset_command(args):
+    if isinstance(args.process_num, int) and args.process_num <= 0:
+        print(
+            "The numbers of CPU cores [{}] must be positive integer.".format(args.process_num))
+        return False
+
     if os.path.exists(args.destination):
         if not args.force:
             print(
@@ -57,12 +62,13 @@ def conv_dataset_command(args):
             return False
     else:
         os.mkdir(args.destination)
-    datasource = None
+
     _, ext = os.path.splitext(args.source)
     if ext.lower() == '.csv':
 
         if os.path.exists(args.source):
-            cc = CreateCache(args.source, shuffle=args.shuffle)
+            cc = CreateCache(args.source, shuffle=args.shuffle,
+                             process_num=args.process_num)
             print('Number of Data: {}'.format(cc._size))
             print('Shuffle:        {}'.format(cc._shuffle))
             print('Normalize:      {}'.format(args.normalize))
@@ -89,6 +95,9 @@ def add_conv_dataset_command(subparsers):
         '-S', '--shuffle', action='store_true', help='shuffle data', required=False)
     subparser.add_argument('-N', '--normalize', action='store_true',
                            help='normalize data range', required=False)
+    subparser.add_argument('-p', '--process_num', type=int,
+                           help='default to half of cpu count. if the picture pixel is \
+                           too large, please specify process_num as 1.', required=False)
     subparser.add_argument('source')
     subparser.add_argument('destination')
     subparser.set_defaults(func=conv_dataset_command)
