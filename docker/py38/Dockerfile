@@ -28,8 +28,8 @@ RUN umask 0 \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
     && PATH=/opt/miniconda3/bin:$PATH \
-    && conda install python=3.6 \
-    && conda install pip wheel opencv \
+    && conda install python=3.8 \
+    && conda install pip wheel \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
