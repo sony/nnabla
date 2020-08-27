@@ -181,7 +181,7 @@ class FunctionProto(object):
     @property
     def outputs(self):
         outputs = [o() for o in self._outputs]
-        assert all([os is not None for o in outputs])
+        assert all([o is not None for o in outputs])
         return outputs
 
     @outputs.setter
