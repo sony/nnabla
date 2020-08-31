@@ -359,7 +359,7 @@ cdef class NdArray:
         '''
         if dtype is None:
             return c_as_numpy_array(self.arrp, mode)
-        return c_as_numpy_array(self.arrp, mode, True, dtype)
+        return c_as_numpy_array(self.arrp, mode, True, np.dtype(dtype).num)
 
 
     def zero(self):
