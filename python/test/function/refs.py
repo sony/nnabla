@@ -377,3 +377,19 @@ def affine_grid_3d(affine, size, align_corners):
                        affine.transpose((0, 2, 1)))
     grid_s = grid_s.reshape(B, D, H, W, 3)
     return grid_s.astype(np.float32)
+
+
+def pad_sequence(sequences, batch_first):
+    # sequences: list of nparray
+    # sequences[i]: (T_i, D_1, ..., D_M)
+    Ds = () if len(sequences[0].shape) == 1 else sequences[0].shape[1:]
+    B = len(sequences)
+    T = max([seq.shape[0] for seq in sequences])
+    data = np.zeros((B, T) + Ds) if batch_first else np.zeros((T, B) + Ds)
+    for b, seq in enumerate(sequences):
+        l = seq.shape[0]
+        if batch_first:
+            data[b, :l] = seq
+        else:
+            data[:l, b] = seq
+    return data

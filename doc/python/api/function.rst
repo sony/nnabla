@@ -222,6 +222,8 @@ Array Manipulation
 .. autofunction:: assign
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
+.. autofunction:: pack_padded_sequence
+.. autofunction:: pad_packed_sequence
 
 
 Stochasticity

@@ -118,6 +118,9 @@ BatchNormalization:
 SyncBatchNormalization:
   float: [float]
   half: [Half]
+WeightNormalization:
+  float: [float]
+  half: [Half]
 MeanSubtraction:
   float: [float]
   half: [Half]
@@ -567,5 +570,11 @@ RandBeta:
   float: [float]
   half: [Half]
 RandGamma:
+  float: [float]
+  half: [Half]
+PackPaddedSequence:
+  float: [float]
+  half: [Half]
+PadPackedSequence:
   float: [float]
   half: [Half]

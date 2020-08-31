@@ -4043,6 +4043,92 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       iI: 271
+  PackPaddedSequence:
+    snake_name: pack_padded_sequence
+    doc: |
+      Pack a padded variable-length sequences.
+
+      This method packs a padded variable-length sequences.
+
+      :math:`T_i` is the length of the :math:`i`-th Variable in the sequences.
+      :math:`B` is the batch size equal to the length of the sequences. 
+      :math:`T` is the max of :math:`T_i` for all :math:`i`. 
+      :math:`*` is the remaining dimensions including none.
+
+      .. note::
+        This function assumes the length-sorted padded sequence in the decreasing order
+        and must be used by :func:`~nnabla.utils.rnn.pack_padded_sequence` in the dynamic computation mode.
+        See :
+        
+    inputs:
+      padded_sequence:
+        doc: |
+          Padded sequence of (:math:`T \times B \times *`) or (:math:`B \times T \times *`) shape.
+      lengths:
+        doc: Sequence length for each batch and always resides in CPU.
+    arguments:
+      batch_first:
+        doc: |
+          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
+          otherwise (:math:`B`, :math:`T`, :math:`*`).
+        type: bool
+        default: 'False'
+    outputs:
+      pack_sequence:
+        doc: Packed sequence of (:math:`N`, :math:`*`) shape.
+      batch_sizes:
+        doc: Batch size for each time and always resides in CPU.
+    c_runtime: not support
+    function_ids:
+      B: 305
+  PadPackedSequence:
+    snake_name: pad_packed_sequence
+    doc: |
+      Pad packed sequence.
+
+      This method unpacks the packed sequqnce and pad it, the inverse operation of :func:`pack_padded_sequence`.
+       
+      :math:`T_i` is the length of the :math:`i`-th Variable in the sequences.
+      :math:`B` is the batch size equal to the length of the sequences. 
+      :math:`T` is the max of :math:`T_i` for all :math:`i`. 
+      :math:`*` is the remaining dimensions including none.
+
+      .. note::
+        This function assumes the output of the length-sorted padded sequence in the decreasing order 
+        and must be used by :func:`~nnabla.utils.rnn.pad_packed_sequence` in the dynamic computation mode.
+    inputs:
+      packed_sequence:
+        doc: |
+          Packed sequence of (:math:`N`, :math:`*`) shape.
+      batch_sizes:
+        doc: Batch size for each time and always resides in CPU.
+    arguments:
+      batch_first:
+        doc: |
+          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
+          otherwise (:math:`B`, :math:`T`, :math:`*`).
+        type: bool
+        default: 'False'
+      padding_value:
+        doc: Padding value.
+        type: float
+        default: 0.0
+      total_length:
+        doc: |
+          If not None, the outputs are padded up to the `total_length`. 
+          If the `total_length` is less than the max length in the `sequences`, 
+          the error is thrown.
+        type: int64
+        default: -1
+    outputs:
+      padded_sequence:
+        doc: Padded sequence of (:math:`T \times B \times *`) or (:math:`B \times
+          T \times *`) shape.
+      lengths:
+        doc: Sequence length for each batch and always resides in CPU.
+    c_runtime: not support
+    function_ids:
+      Bfi: 306
 Signal Processing:
   Interpolate:
     snake_name: interpolate
