@@ -17,6 +17,7 @@
 #include <nbla/array.hpp>
 #include <nbla/function/sum.hpp>
 #include <nbla/function/transpose.hpp>
+#include <nbla/imperative.hpp>
 #include <nbla/singleton_manager.hpp>
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
@@ -68,24 +69,25 @@ void Sum<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   if (transpose_axes != seq) {
     // Need transpose
     f_transpose_ = create_Transpose(this->ctx_, transpose_axes);
-    o_transpose_ = make_shared<Variable>(Shape_t{});
-    f_transpose_->setup(inputs, Variables{o_transpose_.get()});
   }
   outputs[0]->reshape(outshape, true);
 }
 
 template <typename T>
 void Sum<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
-  if (f_transpose_) {
-    f_transpose_->forward(inputs, Variables{o_transpose_.get()});
-  }
-  auto _get = [this](Variable *v) {
-    return v->get_data_pointer<T>(this->ctx_);
-  };
-  const T *x = f_transpose_ ? _get(o_transpose_.get()) : _get(inputs[0]);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const int outer_size = inputs[0]->size() / reduction_size_;
-  this->forward_impl_reduce(x, y, outer_size, reduction_size_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  if (f_transpose_) {
+    // For not overwriting the memory region of the transpose results,
+    // call transpose and sum with i_transpose in the same scope.
+    Variable i_transpose;
+    execute(f_transpose_, inputs, {&i_transpose});
+    const T *x_T = i_transpose.get_data_pointer<T>(this->ctx_);
+    this->forward_impl_reduce(x_T, y, outer_size, reduction_size_);
+  } else {
+    const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+    this->forward_impl_reduce(x, y, outer_size, reduction_size_);
+  }
 }
 
 template <typename T>
@@ -94,20 +96,22 @@ void Sum<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                            const vector<bool> &accum) {
   if (!prop_down[0])
     return;
-  auto _gcast = [this](Variable *v, bool wo) {
-    return v->cast_grad_and_get_pointer<T>(this->ctx_, wo);
-  };
-  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = f_transpose_ ? _gcast(o_transpose_.get(), false)
-                       : _gcast(inputs[0], !accum[0]);
-  this->backward_impl_reduce(dy, dx, inputs[0]->size() / reduction_size_,
-                             reduction_size_, (!f_transpose_) && accum[0]);
 
-  // If need un-transpose
-  if (!f_transpose_)
-    return;
-  f_transpose_->backward(inputs, Variables{o_transpose_.get()}, prop_down,
-                         {accum[0]});
+  auto dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  if (f_transpose_) {
+    // For not overwriting the memory region of the transpose results,
+    // call sum/transpsoe backward with i_transpose in the same scope.
+    Variable i_transpose;
+    f_transpose_->setup(inputs, {&i_transpose}); // Set the output shape
+    auto dx_T = i_transpose.cast_grad_and_get_pointer<T>(ctx_);
+    this->backward_impl_reduce(dy, dx_T, inputs[0]->size() / reduction_size_,
+                               reduction_size_, false);
+    nbla::backward(f_transpose_, inputs, {&i_transpose}, {true}, {accum[0]});
+  } else {
+    this->backward_impl_reduce(dy, dx, inputs[0]->size() / reduction_size_,
+                               reduction_size_, accum[0]);
+  }
 }
 
 template <typename T>

@@ -42,7 +42,6 @@ protected:
   bool keep_dims_;
   int reduction_size_;
   shared_ptr<Function> f_transpose_{nullptr};
-  shared_ptr<Variable> o_transpose_{nullptr};
 
 public:
   Sum(const Context &ctx, const vector<int> &axes, bool keep_dims)

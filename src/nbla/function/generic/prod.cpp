@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <nbla/function/prod.hpp>
+#include <nbla/imperative.hpp>
 
 namespace nbla {
 
@@ -36,26 +37,28 @@ void Prod<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                             const vector<bool> &accum) {
   if (!prop_down[0])
     return;
-  auto _get = [this](Variable *v) {
-    return v->get_data_pointer<T>(this->ctx_);
-  };
-  auto _gcast = [this](Variable *v, bool wo) {
-    return v->cast_grad_and_get_pointer<T>(this->ctx_, wo);
-  };
-  const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  T *dx = this->f_transpose_ ? _gcast(this->o_transpose_.get(), true)
-                             : _gcast(inputs[0], !accum[0]);
-  const T *x =
-      this->f_transpose_ ? _get(this->o_transpose_.get()) : _get(inputs[0]);
-  const T *y = _get(outputs[0]);
-  this->backward_impl_reduce_prod(
-      dy, x, y, dx, inputs[0]->size() / this->reduction_size_,
-      this->reduction_size_, accum[0] && (!this->f_transpose_));
-  // If need un-transpose
-  if (!this->f_transpose_)
-    return;
-  this->f_transpose_->backward(inputs, Variables{this->o_transpose_.get()},
-                               prop_down, {accum[0]});
+
+  auto y = outputs[0]->get_data_pointer<T>(this->ctx_);
+  auto dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  auto dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  if (this->f_transpose_) {
+    // For not overwriting the memory region of the transpose results,
+    // call sum/transpsoe backward with i_transpose in the same scope.
+    Variable i_transpose;
+    execute(this->f_transpose_, inputs, {&i_transpose});
+    auto x_T = i_transpose.get_data_pointer<T>(this->ctx_);
+    auto dx_T = i_transpose.cast_grad_and_get_pointer<T>(this->ctx_);
+    this->backward_impl_reduce_prod(dy, x_T, y, dx_T,
+                                    inputs[0]->size() / this->reduction_size_,
+                                    this->reduction_size_, false);
+    nbla::backward(this->f_transpose_, inputs, {&i_transpose}, {true},
+                   {accum[0]});
+  } else {
+    auto x = inputs[0]->get_data_pointer<T>(this->ctx_);
+    this->backward_impl_reduce_prod(dy, x, y, dx,
+                                    inputs[0]->size() / this->reduction_size_,
+                                    this->reduction_size_, accum[0]);
+  }
 }
 
 template <typename T>
