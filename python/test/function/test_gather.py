@@ -17,37 +17,53 @@ import numpy as np
 import nnabla.functions as F
 from nbla_test_utils import list_context, function_tester
 
-ctxs = list_context('GatherNd')
+ctxs = list_context('Gather')
 
 
-def gather_nd(data, index):
-    index_ = index.reshape(index.shape[0], -1)  # flatten inner dims
-    index_ = (idx + (Ellipsis,) for idx in zip(*index_))
-    result = np.vstack(data[idx] for idx in index_)
-    result = result.reshape(*(index.shape[1:] + data.shape[index.shape[0]:]))
-    return result
+def gather(x, indices, axis, batch_dims):
+    xshape = x.shape
+    ishape = indices.shape
+    bshape = xshape[:batch_dims]
+    samples = np.prod(bshape).astype(np.int)
+    x = x.reshape((samples, ) + xshape[batch_dims:])
+    indices = indices.reshape((samples, ) + ishape[batch_dims:])
+    y_list = []
+    for b in range(samples):
+        y = np.take(x[b], indices[b], axis=axis - batch_dims)
+        y_list.append(y)
+    y = np.stack(y_list) if samples != 1 else y_list[0]
+    y = y.reshape(bshape + y.shape[1:]) if samples != 1 else y
+    return y
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("ishape, index", [
-    ([10], [[0]]),
-    ([10], [[1, 5, 8]]),
-    ([10], [[-1, -5, -8]]),
-    ([3, 4], [[0]]),
-    ([3, 4], [[0], [0]]),
-    ([3, 4], [[0, 1], [0, 2]]),
-    ([3, 4], [[0, -1], [0, -2]]),
-    ([2, 3, 4], [[0]]),
-    ([2, 3, 4], [[0], [1]]),
-    ([2, 3, 4], [[0], [1], [2]]),
-    ([2, 3, 4], [[0, 1]]),
-    ([2, 3, 4], [[0, 1], [1, 2]]),
-    ([2, 3, 4], [[0, 1], [1, 2], [1, 0]]),
-    ([4, 4, 4, 4], [[[0, 1], [2, 3]], [[0, 1], [2, 3]]]),
+@pytest.mark.parametrize("xshape, ishape, axis, batch_dims", [
+   # batch_dims = 0
+   ((2, 3, 4), (2, ), 0, 0),
+   ((2, 3, 4), (2, ), 1, 0),
+   ((2, 3, 4), (2, ), 2, 0),
+   ((2, 3, 4), (2, 2), 0, 0),
+   ((2, 3, 4), (2, 2), 1, 0),
+   ((2, 3, 4), (2, 2), 2, 0),
+   ((2, 3, 4), (1, 2, 2), 0, 0),
+   ((2, 3, 4), (1, 2, 2), 1, 0),
+   ((2, 3, 4), (1, 2, 2), 2, 0),
+   ((2, 3, 4), (1, 2, 2, 1), 0, 0),
+   ((2, 3, 4), (1, 2, 2, 1), 1, 0),
+   ((2, 3, 4), (1, 2, 2, 1), 2, 0),
+   # batch_dims = 1
+   ((2, 3, 4), (2, 2, 2, 1), 1, 1),
+   ((2, 3, 4), (2, 2, 2, 1), 2, 1),
+   # batch_dims = 2
+   ((2, 3, 4, 5), (2, 3, 2, 1), 2, 2),
+   ((2, 3, 4, 5), (2, 3, 2, 1), 3, 2)
 ])
-def test_forward_backward(seed, ishape, index, ctx, func_name):
+def test_forward_backward(seed, xshape, ishape, axis, batch_dims, ctx, func_name):
     rng = np.random.RandomState(seed)
-    inputs = [rng.randn(*ishape).astype(np.float32), np.array(index)]
-    function_tester(rng, F.gather_nd, gather_nd, inputs, func_name=func_name,
-                    ctx=ctx, backward=[True, False])
+    x = rng.randn(*xshape).astype(np.float32)
+    indices = rng.randint(0, xshape[axis], ishape)
+    inputs = [x, indices]
+    func_args = [axis, batch_dims]
+    function_tester(rng, F.gather, gather, inputs, func_name=func_name, func_args=func_args,
+                    ctx=ctx, backward=[True, False], disable_half_test=False)

@@ -204,6 +204,7 @@ Array Manipulation
 .. autofunction:: split
 .. autofunction:: stack
 .. autofunction:: slice
+.. autofunction:: gather
 .. autofunction:: gather_nd
 .. autofunction:: scatter_nd
 .. autofunction:: pad

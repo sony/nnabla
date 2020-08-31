@@ -3881,6 +3881,51 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 248
+  Gather:
+    snake_name: gather
+    doc: |
+      Gather from the input data according to the index.
+
+      Given the input data :math:`X` of :math:`(D_{0}, \ldots, D_{N-1})` shape and 
+      the indices :math:`IDX` of :math:`(I_{0}, \ldots, I_{M-1})` shape, in case of `batch_dims = 0`, 
+      the gather outputs
+
+      .. math::
+        && Y[d_{0}, \ldots, d_{axis - 1}, i_{0}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
+        && X[d_{0}, \ldots, d_{axis - 1}, IDX[i_{0}, \ldots, i_{M-1}], d_{axis + 1}, \ldots, d_{N-1}].
+
+      Generally, the gather ouptuts
+
+      .. math::
+        && Y[d_{0}, \ldots, d_{axis - 1}, i_{B}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
+        && X[d_{0}, \ldots, d_{axis - 1}, IDX[i_{0}, \ldots, i_{B - 1}, i_{B} \ldots, i_{M-1}], d_{axis + 1}, \ldots d_{N-1}].
+
+      where :math:`B` = `batch_dims`. 
+
+      `x.shape[:batch_dims]` must be equal to `indices.shape[:batch_dims]`.
+
+      Output shape is `x.shape[:axis] + indices.shape[batch_dims:] + x.shape[axis + 1]`.
+    inputs:
+      x:
+        doc: Data from which to gather.
+      Indices:
+        doc: Index with which to gather.
+    arguments:
+      axis:
+        doc: Axis in `x` to gather from. `axis` must be greater than or equal to `batch_dims`.
+        type: int64
+        default: 0
+      batch_dims:
+        doc: The number of batch dimensions.
+        type: int64
+        default: 0
+    outputs:
+      y:
+        doc: Gathered output.
+    c_runtime: not support
+    function_ids:
+      iiI: 302
+      ii: 303
   GatherNd:
     snake_name: gather_nd
     doc: |2
