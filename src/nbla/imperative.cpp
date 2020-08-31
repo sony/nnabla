@@ -75,7 +75,11 @@ void execute(FunctionPtr f, const Variables &inputs, const Variables &outputs) {
 }
 
 void backward(FunctionPtr f, const Variables &inputs, const Variables &outputs,
-              const vector<bool> &propagate_down, const vector<bool> &accum) {
+              const vector<bool> &propagate_down, const vector<bool> &accum,
+              bool with_setup) {
+  if (with_setup) {
+    f->setup(inputs, outputs);
+  }
   f->backward(inputs, outputs, propagate_down, accum);
 }
 }
