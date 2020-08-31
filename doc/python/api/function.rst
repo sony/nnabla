@@ -102,6 +102,7 @@ Normalization
 .. autofunction:: instance_normalization
 .. autofunction:: group_normalization
 .. autofunction:: weight_standardization
+.. autofunction:: weight_normalization
 
 
 Reduction

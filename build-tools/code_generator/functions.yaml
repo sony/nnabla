@@ -1615,6 +1615,42 @@ Normalization:
     c_runtime: not support
     function_ids:
       CiiIffB: 263
+  WeightNormalization:
+    snake_name: weight_normalization
+    doc: |2
+
+      Weight normalization.
+
+      .. math::
+        \mathbf{w}_{WN} = g \dfrac{\mathbf{w}}{\|\mathbf{w}\|}
+        
+      where :math:`\mathbf{w}` is the input weights to be normalized.
+      and :math:`g` is learnable multiplication factors each of which is applied to each data at `dim`.
+
+      References:
+          * `Tim Salimans, Diederik P. Kingma, Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks. <https://arxiv.org/abs/1602.07868>`_
+          
+    inputs:
+      w:
+        doc: N-D array of learnable weights.
+      g:
+        doc: 1-D array of learnable scales.
+    arguments:
+      dim:
+        doc: Output dimension. For the other dimensions, the norms are computed.
+        type: int64
+        default: '0'
+      eps:
+        doc: Epsilon for the normalization. This `eps` is added before taking the
+          sqrt in the norm computation.
+        type: float
+        default: 1e-12
+    outputs:
+      w_wn:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      if: 304
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
