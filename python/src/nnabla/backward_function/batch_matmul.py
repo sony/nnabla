@@ -45,6 +45,13 @@ class BatchMatmulBackward(BackwardFunction):
         # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
         # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
 
+        shape_a = inputs[0].shape
+        shape_b = inputs[1].shape
+        if shape_a[:-2] != shape_b[:-2]:
+            raise ValueError("shape_a[:-2] () != shape_b[:-2] (). \n"
+                             "Implicit broadcast is supported now.",
+                             shape_a[:-2] != shape_b[:-2])
+
         # Args
         transpose_a = self.forward_func.info.args["transpose_a"]
         transpose_b = self.forward_func.info.args["transpose_b"]

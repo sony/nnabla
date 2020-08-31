@@ -3001,7 +3001,35 @@ Math:
 
       Batch matrix multiplication.
 
-      Two of batchs of matrices are multiplied for each sample in a batch. A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, and the first dimensions up to the third last dimension are considered as batch samples.
+      Two of batchs of matrices are multiplied for each sample in a batch. 
+      A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, 
+      and the first dimensions up to the third last dimension are considered as batch samples. 
+      These batch dimensions are internally broadcasted when the size of a dimension is 1.
+
+      Example:
+
+      .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.functions as F
+        import numpy as np
+        
+        nn.set_auto_forward(True)
+
+        # Same batch size
+        a = nn.Variable.from_numpy_array(np.random.rand(2, 2, 3, 4))
+        b = nn.Variable.from_numpy_array(np.random.rand(2, 2, 4, 3))
+        c = F.batch_matmul(a, b)
+
+        # Different batch size with the broadcast
+        a = nn.Variable.from_numpy_array(np.random.rand(2, 1, 3, 4))
+        b = nn.Variable.from_numpy_array(np.random.rand(1, 3, 4, 3))
+        c = F.batch_matmul(a, b)
+
+      .. WARNING::
+        Since the version 1.13, the behavior of the batch dimensions changed, it supported the internal 
+        broadcast when the size of a dimension is 1. Accordingly, this function does not supports different
+        batch dimensions between two inputs even if the total sample size for each input is same.
     inputs:
       a:
         doc: N-D array with >= 2-dim. The last two dimensions will be treated as a
