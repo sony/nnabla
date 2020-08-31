@@ -3519,7 +3519,7 @@ def _spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_para
         w_shape = w.shape
     d0 = w.shape[0]            # Out
     d1 = np.prod(w.shape[1:])  # In
-    w = F.reshape(w, [d0, d1], inplace=False)
+    w = F.reshape(w, [d0, d1])
     if u_init is None:
         u_init = NormalInitializer()
     u0 = get_parameter_or_create("u", [d0], u_init, False, False)
