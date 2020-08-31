@@ -184,7 +184,7 @@ def train():
             comm.all_reduce(ve.data, division=True, inplace=True)
 
             # Save model
-            if device_id == 0:
+            if mpi_rank == 0:
                 monitor_verr.add(i * n_devices, ve.d.copy())
                 monitor_vtime.add(i * n_devices)
                 if i % int(args.model_save_interval / n_devices) == 0:
@@ -210,14 +210,14 @@ def train():
             lr = base_lr + warmup_slope * i
             solver.set_learning_rate(lr)
 
-        if device_id == 0:  # loss and error locally, and elapsed time
+        if mpi_rank == 0:  # loss and error locally, and elapsed time
             monitor_loss.add(i * n_devices, loss_train.d.copy())
             monitor_err.add(i * n_devices, error_train.d.copy())
             monitor_time.add(i * n_devices)
 
         # exit(0)
 
-    if device_id == 0:
+    if mpi_rank == 0:
         nn.save_parameters(os.path.join(
             args.model_save_path,
             'params_%06d.h5' % (args.max_iter / n_devices)))
