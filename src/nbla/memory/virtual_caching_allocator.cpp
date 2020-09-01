@@ -41,7 +41,7 @@ namespace nbla {
 
     // large or small
     // Currently assume either small or large physical memories are used for virtual memory.
-    bool is_small = memory->get_physical_memory()[0]->bytes() == small_chunk_size_ && memory->bytes() <= small_chunk_size_;
+    bool is_small = memory->get_physical_memory()[0]->bytes() == small_chunk_size_ && memory->bytes() <= large_chunk_size_;
     auto &cache = is_small ? small_device_cache_ : large_device_cache_;
 
     // get device_cache

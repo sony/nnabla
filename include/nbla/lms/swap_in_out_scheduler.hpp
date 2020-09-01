@@ -18,6 +18,7 @@
 #include <numeric>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 #include <nbla/backend_registry.hpp>
 #include <nbla/computation_graph/function.hpp>
@@ -46,6 +47,7 @@ using std::accumulate;
 using std::weak_ptr;
 using std::reference_wrapper;
 using std::pair;
+using std::set;
 
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
@@ -367,7 +369,7 @@ private:
   // Execute swap in/out, wait, and preclear on a schedule.
   void run_on_beginning_schedule();
   void run_on_end_schedule();
-  Size_t run(const ScheduleType &s);
+  void run(const ScheduleType &s);
 
   //---------------------------------------------------
   //              SyncedArrayCallback
