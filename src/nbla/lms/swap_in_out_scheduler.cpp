@@ -748,22 +748,21 @@ void SwapInOutScheduler::schedule_swap_out(
         // Transfer memory usage of all types
         for (auto &elem : params.sa_states[r->said]) {
           if (elem.second.state == ArrayStateTag::IN) {
+            // Swap out is performed by cast. 
+            // Thus, all dtypes are cleared from device.
+            auto array_bytes = r->size * sizeof_dtype(elem.first);
+            params.swap_in_bytes -= array_bytes;
+            params.prefetch_bytes -= array_bytes;
+            elem.second.swapped_out_r = r;
+            
             if (elem.first == head_type[r->said].second) {
               // Swap out only head
-              auto array_bytes = r->size * sizeof_dtype(elem.first);
               params.swap_out_bytes += array_bytes;
-              params.swap_in_bytes -= array_bytes;
-              params.prefetch_bytes -= array_bytes;
               elem.second.state = ArrayStateTag::OUT; // IN to OUT
-              elem.second.swapped_out_r = r;
             } else {
-              auto array_bytes = r->size * sizeof_dtype(elem.first);
               // Do not add array_bytes to swap_out_bytes
-              params.swap_in_bytes -= array_bytes;
-              params.prefetch_bytes -= array_bytes;
               elem.second.state =
                   ArrayStateTag::OUT_CLEARED; // IN to OUT_CLREARED
-              elem.second.swapped_out_r = r;
             }
           }
         }
@@ -845,10 +844,10 @@ void SwapInOutScheduler::schedule_preclear(
         if (clear_trace[r->said].first) { // get/cast just before clear
           if (fid < clear_trace[r->said].second) {
             // Preclear
-            clear_info[fid].push_back({r, true});
+            clear_info[fid].emplace_back(r, true);
           } else if (clear_last.at(r->said)) {
             // Do not preclear because clear before preclear.
-            clear_info[fid].push_back({r, false});
+            clear_info[fid].emplace_back(r, false);
           }
 
           clear_trace[r->said] = {false, -1};
@@ -1075,7 +1074,7 @@ void SwapInOutScheduler::sa_callback_tracer(
 
   // Case 1: Over the current function block.
   if (order_idx >= func_block_ends[func_idx]) {
-    #if 1
+    #if 0
       std::cerr << "[wrong order] type 1: order idx exceeds recorded one." << std::endl;
     #endif    
     wrong_ordered.push_back(
@@ -1085,7 +1084,7 @@ void SwapInOutScheduler::sa_callback_tracer(
   else if (r.sawptr.expired() && // "expired" implies the replacement.
            tag == r.tag && saptr->size() == r.size && dtype == r.dtype &&
            ctx.array_class == r.ctx.array_class) {
-    #if 1
+    #if 0
       std::cout << "[wrong order] type 2: SyncedArray would be replaced." << std::endl;
     #endif
     // Replace all recorded SyncedArray with new one
@@ -1096,7 +1095,7 @@ void SwapInOutScheduler::sa_callback_tracer(
   // Case 3: Different entry
   else if (tag != r.tag || saptr != rec_saptr || saptr->size() != r.size ||
            dtype != r.dtype || ctx.array_class != r.ctx.array_class) {
-    #if 1
+    #if 0
       std::cout << "[wrong order] type 3: Different entry." << std::endl;
     #endif
     
