@@ -145,9 +145,8 @@ def train():
         _, tdata = data_iterator(args.batch_size, True, rng)
         vsource, vdata = data_iterator(args.batch_size, False)
 
-    # Wait for data to be prepared with dummy data
-    a = [nn.NdArray.from_numpy_array(np.ones(1))]
-    comm.all_reduce(a, division=False, inplace=False)
+    # Wait for data to be prepared without watchdog
+    comm.barrier()
 
     # Prepare data when local_rank is not 0
     if mpi_local_rank != 0:
