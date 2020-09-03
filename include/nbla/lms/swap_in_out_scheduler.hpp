@@ -115,13 +115,14 @@ class SwapInOutScheduler {
     const Context ctx;
     const bool write_only_cast;
     bool first_creation;
+    bool temporary_buffer;
 
     RecType(const RecTag tag_, const unsigned int said_, SyncedArrayPtr saptr_,
             const Size_t size_, const dtypes dtype_, const Context ctx_,
             const bool write_only_cast_, const bool first_creation_)
         : tag(tag_), said(said_), sawptr(saptr_), size(size_), dtype(dtype_),
           ctx(ctx_), write_only_cast(write_only_cast_),
-          first_creation(first_creation_) {}
+          first_creation(first_creation_), temporary_buffer(false) {}
   };
 
   //---------------------------------------------------

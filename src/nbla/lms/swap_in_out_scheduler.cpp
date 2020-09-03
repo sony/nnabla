@@ -740,7 +740,20 @@ void SwapInOutScheduler::schedule_swap_out(
           head_type[r->said].first = false;
         }
       }
+      else if (r->temporary_buffer) {
+	for (auto &elem : params.sa_states[r->said]) { // Any states to CLEARED
+          if (elem.second.state == ArrayStateTag::IN) {
+            auto array_bytes = r->size * sizeof_dtype(elem.first);
+            params.swap_in_bytes -= array_bytes;
+            params.prefetch_bytes -= array_bytes;
+          }
 
+          elem.second.state = ArrayStateTag::CLEARED;
+        }
+
+	// Update head array type
+	head_type[r->said].first = false;
+      }
       else { // Not precleared, Swap out
         end_schedules[params.fid].push_back(
             ScheduleType(ScheduleTag::SWAP_OUT, r));
@@ -965,11 +978,14 @@ void SwapInOutScheduler::swap_out_first_iter() {
       continue;
 
     if (context_checker(r->ctx, device_ctx)) {
-      auto p = r->sawptr.lock();
-
-      if (p && is_not_cleared_yet(p)) {
-        // The array is not cleared yet. Swap it out.
-        p->cast(p->dtype(), host_ctx, false);
+      if (auto p = r->sawptr.lock()) {
+	if (is_not_cleared_yet(p)) {
+	  // The array is not cleared yet. Swap it out.
+	  p->cast(p->dtype(), host_ctx, false);
+	}
+      }
+      else {
+	r->temporary_buffer = true;
       }
     }
   }
