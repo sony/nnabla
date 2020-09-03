@@ -123,7 +123,10 @@ void SwapInOutScheduler::end_scheduling() {
 //----------------------------------------------------------------
 //  Pre/post hook of function and update
 //----------------------------------------------------------------
+using std::cout;
+using std::endl;
 void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) {
+  // cout << "function_ptr: " << (uint64_t) &ptr << endl;
   pre_callback();
 }
 
@@ -280,7 +283,7 @@ void SwapInOutScheduler::schedule() {
     do_reschedule = false;
 
     // todo revisit
-#if 1
+#if 0
     for (int i = 0; i < bytes_debugger.size(); i++) {
       auto e = bytes_debugger[i];
       printf("[fid :%d] SI: %s SO: %s PF: %s\n",
@@ -912,37 +915,39 @@ void SwapInOutScheduler::pre_callback() {
 void SwapInOutScheduler::post_callback() {}
 
 void SwapInOutScheduler::run(const ScheduleType &s) {
-  if (s.tag == ScheduleTag::SWAP_IN_GET) {
-    if (auto p = s.r->sawptr.lock()) {
+
+  if (s.r->sawptr.expired()) return;
+
+  if (auto p = s.r->sawptr.lock()) {
+      // cout << "type: " << to_str(s.tag);
+      // cout << " said: " << s.r->said;
+      // cout << " saptr: " << (uint64_t) s.r->sawptr.lock().get();
+      // cout << " bytes: " << byte_to_human_readable(s.r->size * sizeof_dtype(s.r->dtype));
+      // cout << " dtype: " << dtype_to_string(s.r->dtype) << endl;
+      // cout << " count: " << s.r->sawptr.use_count() << endl;
+
+    if (s.tag == ScheduleTag::SWAP_IN_GET) {
       p->get(s.r->dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
-    }
-  } else if (s.tag == ScheduleTag::SWAP_IN_CAST) {
-    if (auto p = s.r->sawptr.lock()) {
+    } else if (s.tag == ScheduleTag::SWAP_IN_CAST) {
       p->cast(s.r->dtype, device_ctx, false,
               AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
       cast_prefetched[p] = true;
-    }
-  } else if (s.tag == ScheduleTag::SWAP_OUT) {
-    // Swap out and preclear the arrays used in the previous function.
-    if (auto p = s.r->sawptr.lock()) {
+    } else if (s.tag == ScheduleTag::SWAP_OUT) {
+      // Swap out and preclear the arrays used in the previous function.
       if (is_not_cleared_yet(p)) {
         p->cast(p->dtype(), host_ctx, false,
                 AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
       }
-    }
-  } else if (s.tag == ScheduleTag::WAIT) {
-    auto p = s.r->sawptr.lock();
-
-    if (p && p->head_array_class() == host_ctx.array_class &&
-        is_not_cleared_yet(p)) {
-      p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
-    }
-  } else if (s.tag == ScheduleTag::PRECLEAR) {
-    if (auto p = s.r->sawptr.lock()) {
+    } else if (s.tag == ScheduleTag::WAIT) {
+      if (p->head_array_class() == host_ctx.array_class &&
+          is_not_cleared_yet(p)) {
+        p->get(p->dtype(), host_ctx, AsyncFlag::UNSAFE);
+      }
+    } else if (s.tag == ScheduleTag::PRECLEAR) {
       p->clear();
       precleared[p] = true;
     }
-  }
+  } 
 }
 
 inline string SwapInOutScheduler::to_str(const ScheduleTag& st) {

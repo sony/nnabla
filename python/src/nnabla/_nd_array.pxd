@@ -59,6 +59,7 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
         unsigned long data_ptr(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except+
         CArray * cast(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
         ArrayPtr cast_sp(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
+        unsigned long synced_array_ptr() nogil except +
 
     ctypedef shared_ptr[CNdArray] NdArrayPtr
 
