@@ -1052,9 +1052,9 @@ void SwapInOutScheduler::sa_callback_tracer(
   auto tag = convert_tag(sa_tag, write_only);
 
   // Abort when off-scheduled get/cast happens after preclear destroyed data.
-  if (precleared[saptr]) {
+  if (precleared.find(saptr) != precleared.end()) {
     if (tag == RecTag::CLEAR) { // Actual clear. it is Ok.
-      precleared[saptr] = false;
+      precleared.erase(saptr);
     } else { // Unexpected get/cast. Abort.
       NBLA_ERROR(error_code::unclassified,
                  "Off-scheduled get or cast appears after preclear.");
@@ -1062,9 +1062,9 @@ void SwapInOutScheduler::sa_callback_tracer(
   }
 
   // Reset the cast prefetch flag when the real cast was called.
-  if (cast_prefetched[saptr]) {
+  if (cast_prefetched.find(saptr) != cast_prefetched.end()) {
     if (tag == RecTag::CAST) {
-      cast_prefetched[saptr] = false;
+      cast_prefetched.erase(saptr);
     }
   }
 
