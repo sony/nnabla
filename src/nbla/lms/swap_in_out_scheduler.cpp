@@ -22,6 +22,9 @@
 
 namespace nbla {
 
+using std::cout;
+using std::endl;
+
 using std::accumulate;
 
 // Constructor
@@ -123,8 +126,6 @@ void SwapInOutScheduler::end_scheduling() {
 //----------------------------------------------------------------
 //  Pre/post hook of function and update
 //----------------------------------------------------------------
-using std::cout;
-using std::endl;
 void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) {
   // cout << "function_ptr: " << (uint64_t) &ptr << endl;
   pre_callback();
@@ -744,7 +745,7 @@ void SwapInOutScheduler::schedule_swap_out(
         }
       }
       else if (r->temporary_buffer) {
-	for (auto &elem : params.sa_states[r->said]) { // Any states to CLEARED
+	      for (auto &elem : params.sa_states[r->said]) { // Any states to CLEARED
           if (elem.second.state == ArrayStateTag::IN) {
             auto array_bytes = r->size * sizeof_dtype(elem.first);
             params.swap_in_bytes -= array_bytes;
@@ -754,8 +755,8 @@ void SwapInOutScheduler::schedule_swap_out(
           elem.second.state = ArrayStateTag::CLEARED;
         }
 
-	// Update head array type
-	head_type[r->said].first = false;
+	      // Update head array type
+      	head_type[r->said].first = false;
       }
       else { // Not precleared, Swap out
         end_schedules[params.fid].push_back(
@@ -812,14 +813,6 @@ void SwapInOutScheduler::schedule_wait_for_swap_out_impl(
         ScheduleType(ScheduleTag::WAIT, r));
 
     // Decrease memory usage
-    /**
-     * Why can we subtract summed bytes of all types? 
-     * SchedulieTag::WAIT will issue get on CPU for this synced array,
-     * this means that all of device memories will be kept. 
-     * -> No, Swap-out is issued by cast to CPU, so when swap-out is occured other types of this array is cleared.
-     * If so, why do we need to iterate all dtypes here? Only single dtype should have OUT state, shouldn't it?
-     */
-
     size_t bytes = 0;
     for (auto &elem : params.sa_states[r->said]) {
       if (elem.second.state == ArrayStateTag::OUT) {
@@ -915,9 +908,6 @@ void SwapInOutScheduler::pre_callback() {
 void SwapInOutScheduler::post_callback() {}
 
 void SwapInOutScheduler::run(const ScheduleType &s) {
-
-  if (s.r->sawptr.expired()) return;
-
   if (auto p = s.r->sawptr.lock()) {
       // cout << "type: " << to_str(s.tag);
       // cout << " said: " << s.r->said;
@@ -983,14 +973,15 @@ void SwapInOutScheduler::swap_out_first_iter() {
       continue;
 
     if (context_checker(r->ctx, device_ctx)) {
+      if (r->sawptr.use_count() <= 1) {
+        // If shared_ptr exists only in said_map (= use_count() == 1),
+        // this shared_ptr owns intermideate buffer.
+        r->temporary_buffer = true;
+      } 
+      
       if (auto p = r->sawptr.lock()) {
-	if (is_not_cleared_yet(p)) {
-	  // The array is not cleared yet. Swap it out.
-	  p->cast(p->dtype(), host_ctx, false);
-	}
-      }
-      else {
-	r->temporary_buffer = true;
+        // The array is not cleared yet. Swap it out.
+        if (is_not_cleared_yet(p)) p->cast(p->dtype(), host_ctx, false);
       }
     }
   }
