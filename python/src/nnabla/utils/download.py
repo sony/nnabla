@@ -15,8 +15,7 @@
 
 from nnabla.logger import logger
 
-import six.moves.urllib.request as request
-import six
+import requests
 from tqdm import tqdm
 import os
 
@@ -55,19 +54,15 @@ def download(url, output_file=None, open_file=True, allow_overwrite=False):
         logger.info("> If you have any issue when using this file, ")
         logger.info("> manually remove the file and try download again.")
     else:
-        r = request.urlopen(url)
+        r = requests.get(url, stream=True)
         try:
-            if six.PY2:
-                content_length = int(r.info().dict['content-length'])
-            elif six.PY3:
-                content_length = int(r.info()['Content-Length'])
+            content_length = int(r.headers['Content-Length'])
         except:
             content_length = 0
         unit = 1000000
         content = b''
         with tqdm(total=content_length, desc=filename, unit='B', unit_scale=True, unit_divisor=1024) as t:
-            while True:
-                data = r.read(unit)
+            for data in r.iter_content(chunk_size=unit):
                 l = len(data)
                 t.update(l)
                 if l == 0:
