@@ -66,7 +66,7 @@ const void *NNabla::ones(Size_t size, dtypes dtype, const Context &ctx) {
     ones = std::make_shared<SyncedArray>(size);
     ones->fill(1);
     ones_[tid] = ones;
-    return ones->get(dtype, ctx)->const_pointer<void>();
+    return ones->get(dtype, ctx, AsyncFlag::ASYNC)->const_pointer<void>();
   }
   ones = it->second;
   if (size > ones->size()) {
@@ -74,7 +74,7 @@ const void *NNabla::ones(Size_t size, dtypes dtype, const Context &ctx) {
     ones->fill(1);
     ones_[tid] = ones;
   }
-  return ones->get(dtype, ctx)->const_pointer<void>();
+  return ones->get(dtype, ctx, AsyncFlag::ASYNC)->const_pointer<void>();
 }
 
 const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
@@ -86,7 +86,7 @@ const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
     zeros = std::make_shared<SyncedArray>(size);
     zeros->zero();
     ones_[tid] = zeros;
-    return zeros->get(dtype, ctx)->const_pointer<void>();
+    return zeros->get(dtype, ctx, AsyncFlag::ASYNC)->const_pointer<void>();
   }
   zeros = it->second;
   if (size > zeros->size()) {
@@ -94,7 +94,7 @@ const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
     zeros->zero();
     ones_[tid] = zeros;
   }
-  return zeros->get(dtype, ctx)->const_pointer<void>();
+  return zeros->get(dtype, ctx, AsyncFlag::ASYNC)->const_pointer<void>();
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, NNabla);

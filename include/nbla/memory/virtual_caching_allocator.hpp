@@ -16,6 +16,7 @@
 
 #include <queue>
 #include <memory>
+#include <set>
 
 #include <nbla/memory/allocator.hpp>
 #include <nbla/global_context.hpp>
@@ -24,6 +25,7 @@
 namespace nbla {
   using std::queue;
   using std::make_shared;
+  using std::multiset;
 
   class NBLA_API VirtualCachingAllocatorBase : public Allocator {
   public:
@@ -38,6 +40,10 @@ namespace nbla {
 
     void set_chunk_size(size_t size, int ct_flag);
 
+    // Size of each single memory chunk.
+    size_t small_chunk_size_ = 2ULL << 20; // 2MB
+    size_t large_chunk_size_ = 20ULL << 20; // 20MB
+    
   private:
     // Memory cache
     CacheMap small_device_cache_;
@@ -46,9 +52,6 @@ namespace nbla {
     MemCountMap large_memory_counter_;
     unordered_map<string, long long> fragmentation_bytes_;
 
-    // Size of each single memory chunk.
-    size_t small_chunk_size_ = 2ULL << 20; // 2MB
-    size_t large_chunk_size_ = 20ULL << 20; // 20MB
 
     // Waiting memory list to be cleared.
     queue<shared_ptr<Memory>> waiting_list_ = {};
