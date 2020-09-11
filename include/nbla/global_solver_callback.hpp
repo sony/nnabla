@@ -35,7 +35,7 @@ public:
   ~GlobalSolverCallback();
   /** Call pre_hooks.
    */
-   void call_pre_hooks();
+  void call_pre_hooks();
 
   /** Call pre_hooks.
    */
@@ -43,19 +43,19 @@ public:
 
   /** Set a pre_hook.
  */
-  void set_pre_hook(const string& key, const update_hook_type & cb);
+  void set_pre_hook(const string &key, const update_hook_type &cb);
 
   /** Set a post_hook.
    */
-  void set_post_hook(const string& key, const update_hook_type & cb);
+  void set_post_hook(const string &key, const update_hook_type &cb);
 
   /** Unset a pre_hook.
    */
-  void unset_pre_hook(const string& key);
+  void unset_pre_hook(const string &key);
 
   /** Unset a post_hook.
    */
-  void unset_post_hook(const string& key);
+  void unset_post_hook(const string &key);
 
 private:
   friend SingletonManager;
@@ -65,10 +65,11 @@ private:
 };
 
 /**API**/
-NBLA_API void set_solver_pre_hook(const string& key, const update_hook_type & cb);
-NBLA_API void set_solver_post_hook(const string& key, const update_hook_type & cb);
-NBLA_API void unset_solver_pre_hook(const string& key);
-NBLA_API void unset_solver_post_hook(const string& key);
-
+NBLA_API void set_solver_pre_hook(const string &key,
+                                  const update_hook_type &cb);
+NBLA_API void set_solver_post_hook(const string &key,
+                                   const update_hook_type &cb);
+NBLA_API void unset_solver_pre_hook(const string &key);
+NBLA_API void unset_solver_post_hook(const string &key);
 }
 #endif

@@ -40,27 +40,27 @@ public:
   ~GlobalFunctionCallback();
   /** Call pre_hooks.
    */
-  void call_pre_hooks(const CgFunctionPtr&);
+  void call_pre_hooks(const CgFunctionPtr &);
 
   /** Call pre_hooks.
    */
-  void call_post_hooks(const CgFunctionPtr&);
+  void call_post_hooks(const CgFunctionPtr &);
 
   /** Set a pre_hook.
  */
-  void set_pre_hook(const string& key, const function_hook_type & cb);
+  void set_pre_hook(const string &key, const function_hook_type &cb);
 
   /** Set a post_hook.
    */
-  void set_post_hook(const string& key, const function_hook_type & cb);
+  void set_post_hook(const string &key, const function_hook_type &cb);
 
   /** Unset a pre_hook.
    */
-  void unset_pre_hook(const string& key);
+  void unset_pre_hook(const string &key);
 
   /** Unset a post_hook.
    */
-  void unset_post_hook(const string& key);
+  void unset_post_hook(const string &key);
 
 private:
   friend SingletonManager;
@@ -70,10 +70,11 @@ private:
 };
 
 /** API **/
-NBLA_API void set_function_pre_hook(const string& key, const function_hook_type& cb);
-NBLA_API void set_function_post_hook(const string& key, const function_hook_type& cb);
-NBLA_API void unset_function_pre_hook(const string& key);
-NBLA_API void unset_function_post_hook(const string& key);
-
+NBLA_API void set_function_pre_hook(const string &key,
+                                    const function_hook_type &cb);
+NBLA_API void set_function_post_hook(const string &key,
+                                     const function_hook_type &cb);
+NBLA_API void unset_function_pre_hook(const string &key);
+NBLA_API void unset_function_post_hook(const string &key);
 }
 #endif

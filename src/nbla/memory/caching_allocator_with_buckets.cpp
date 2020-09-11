@@ -177,7 +177,8 @@ CachingAllocatorWithBucketsBase::alloc_impl(size_t orig_bytes,
   DEBUG_PRINT_CACHES("alloc_end", this, device_cache_map, small);
 
   // increment memory count
-  auto &count_map = (mem->bytes() <= small_alloc_) ? small_memory_counter_ : large_memory_counter_;
+  auto &count_map = (mem->bytes() <= small_alloc_) ? small_memory_counter_
+                                                   : large_memory_counter_;
   count_map[device_id]++;
 
   return mem;
@@ -232,13 +233,13 @@ size_t CachingAllocatorWithBucketsBase::free_unused_device_caches_impl(
 }
 
 void CachingAllocatorWithBucketsBase::print_memory_cache_map_impl() {
-  auto print_func = [&] (const CacheMap& m, const string &map_type) {
-    for (auto &p1: m) {
+  auto print_func = [&](const CacheMap &m, const string &map_type) {
+    for (auto &p1 : m) {
       vector<string> sz;
       unsigned long long ss = 0;
 
       string d_id = p1.first;
-      for (auto &p2: p1.second) {
+      for (auto &p2 : p1.second) {
         size_t s = p2.second->bytes();
         ss += s;
         sz.push_back(byte_to_human_readable(s));
@@ -246,11 +247,11 @@ void CachingAllocatorWithBucketsBase::print_memory_cache_map_impl() {
 
       size_t used = device_memory_used_in_bytes(d_id);
 
-      printf("cache_map(device_id: %s, mem_type: %s, used: %s, free: %s): \n [%s]\n\n",
-              d_id.c_str(), map_type.c_str(),
-              byte_to_human_readable(used).c_str(),
-              byte_to_human_readable(ss).c_str(),
-              string_join(sz, ", ").c_str());
+      printf("cache_map(device_id: %s, mem_type: %s, used: %s, free: %s): \n "
+             "[%s]\n\n",
+             d_id.c_str(), map_type.c_str(),
+             byte_to_human_readable(used).c_str(),
+             byte_to_human_readable(ss).c_str(), string_join(sz, ", ").c_str());
     }
   };
 
@@ -261,48 +262,52 @@ void CachingAllocatorWithBucketsBase::print_memory_cache_map_impl() {
   print_func(large_cache_map_, "large");
 }
 
-size_t CachingAllocatorWithBucketsBase::get_max_cache_bytes(const string& device_id) {
+size_t
+CachingAllocatorWithBucketsBase::get_max_cache_bytes(const string &device_id) {
   size_t max_bytes = 0;
 
   // small
-  for(auto &p: small_cache_map_[device_id]) {
+  for (auto &p : small_cache_map_[device_id]) {
     max_bytes = std::max(max_bytes, p.second->bytes());
   }
 
   // large
-  for (auto &p: large_cache_map_[device_id]) {
+  for (auto &p : large_cache_map_[device_id]) {
     max_bytes = std::max(max_bytes, p.second->bytes());
   }
 
   return max_bytes;
 }
 
-size_t CachingAllocatorWithBucketsBase::get_total_cache_bytes(const std::string &device_id) {
+size_t CachingAllocatorWithBucketsBase::get_total_cache_bytes(
+    const std::string &device_id) {
   size_t total_bytes = 0;
 
   // small
-  for(auto &p: small_cache_map_[device_id]) {
+  for (auto &p : small_cache_map_[device_id]) {
     total_bytes += p.second->bytes();
   }
 
   // large
-  for (auto &p: large_cache_map_[device_id]) {
+  for (auto &p : large_cache_map_[device_id]) {
     total_bytes += p.second->bytes();
   }
 
   return total_bytes;
 }
 
-
-size_t CachingAllocatorWithBucketsBase::get_fragmentation_bytes(const std::string &device_id) {
+size_t CachingAllocatorWithBucketsBase::get_fragmentation_bytes(
+    const std::string &device_id) {
   return get_total_cache_bytes(device_id) - get_max_cache_bytes(device_id);
 }
 
-size_t CachingAllocatorWithBucketsBase::get_max_available_bytes(const string &device_id) {
+size_t CachingAllocatorWithBucketsBase::get_max_available_bytes(
+    const string &device_id) {
   return get_max_cache_bytes(device_id);
 }
 
-std::vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(const std::string &device_id) {
+std::vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(
+    const std::string &device_id) {
   // small
   auto small_cnt = small_memory_counter_[device_id];
 
@@ -311,5 +316,4 @@ std::vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(const s
 
   return {small_cnt, large_cnt};
 }
-
 }

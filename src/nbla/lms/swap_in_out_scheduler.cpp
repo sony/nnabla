@@ -165,10 +165,11 @@ void SwapInOutScheduler::collect_info_about_dtype_conversion(
   }
 
   // Count all dtypes before scheduling.
-  // We need to check both order and head_typd, 
+  // We need to check both order and head_typd,
   // since order and head_type could have different dtypes.
-  // If user touch some arraies outside of nnabla's graph engine, 
-  // syncedArray would have other dtypes which are not recorded by sa_callback_tracer(). 
+  // If user touch some arraies outside of nnabla's graph engine,
+  // syncedArray would have other dtypes which are not recorded by
+  // sa_callback_tracer().
   for (const auto &h : head_type) {
     if (h.second.first) {
       counter[h.first].insert(h.second.second);
@@ -184,7 +185,8 @@ void SwapInOutScheduler::collect_info_about_dtype_conversion(
 
 struct bytes_state {
   size_t swap_in, swap_out, prefetch;
-  bytes_state(size_t i, size_t o, size_t p) : swap_in(i), swap_out(o), prefetch(p) {}
+  bytes_state(size_t i, size_t o, size_t p)
+      : swap_in(i), swap_out(o), prefetch(p) {}
 };
 
 void SwapInOutScheduler::schedule() {
@@ -270,7 +272,8 @@ void SwapInOutScheduler::schedule() {
       }
       schedule_swap_out(params, clear_info, head_type);
 
-      bytes_debugger.emplace_back(params.swap_in_bytes, params.swap_out_bytes, params.prefetch_bytes);
+      bytes_debugger.emplace_back(params.swap_in_bytes, params.swap_out_bytes,
+                                  params.prefetch_bytes);
     }
 
     if (do_reschedule) {
@@ -283,7 +286,7 @@ void SwapInOutScheduler::schedule() {
     // The end of schedule
     do_reschedule = false;
 
-    // todo revisit
+// todo revisit
 #if 0
     for (int i = 0; i < bytes_debugger.size(); i++) {
       auto e = bytes_debugger[i];
@@ -494,7 +497,8 @@ void SwapInOutScheduler::calc_mem_usage_before_forward(
   for (; params.head < func_block_ends[0]; params.head++) {
     RecType *r = &order[params.head];
 
-    if (r->tag == RecTag::CLEAR) continue;
+    if (r->tag == RecTag::CLEAR)
+      continue;
 
     // Check the change of head array type
     // The changes were already done before first prefetch.
@@ -521,7 +525,8 @@ void SwapInOutScheduler::calc_mem_usage_before_forward(
       // CLEARED to IN
       // note: This condition cannot be happended. Could delete this safely.
       if (params.sa_states[r->said][r->dtype].state != ArrayStateTag::CLEARED) {
-        NBLA_ERROR(error_code::type, "Array state must be CLEARED before first fetch.");
+        NBLA_ERROR(error_code::type,
+                   "Array state must be CLEARED before first fetch.");
       }
       params.sa_states[r->said][r->dtype].state = ArrayStateTag::IN;
     }
@@ -548,10 +553,10 @@ void SwapInOutScheduler::cancel_swap_out(const RecType *r,
 
   size_t bytes = 0;
   for (auto &elem : params.sa_states[r->said]) {
-    if (elem.second.state == ArrayStateTag::OUT 
-    || elem.second.state == ArrayStateTag::OUT_CLEARED) {
+    if (elem.second.state == ArrayStateTag::OUT ||
+        elem.second.state == ArrayStateTag::OUT_CLEARED) {
       bytes += r->size * sizeof_dtype(elem.first);
-      
+
       if (elem.second.state == ArrayStateTag::OUT) {
         params.swap_out_bytes -= r->size * sizeof_dtype(elem.first);
       }
@@ -743,9 +748,8 @@ void SwapInOutScheduler::schedule_swap_out(
           // Update head array type
           head_type[r->said].first = false;
         }
-      }
-      else if (r->temporary_buffer) {
-	      for (auto &elem : params.sa_states[r->said]) { // Any states to CLEARED
+      } else if (r->temporary_buffer) {
+        for (auto &elem : params.sa_states[r->said]) { // Any states to CLEARED
           if (elem.second.state == ArrayStateTag::IN) {
             auto array_bytes = r->size * sizeof_dtype(elem.first);
             params.swap_in_bytes -= array_bytes;
@@ -755,23 +759,22 @@ void SwapInOutScheduler::schedule_swap_out(
           elem.second.state = ArrayStateTag::CLEARED;
         }
 
-	      // Update head array type
-      	head_type[r->said].first = false;
-      }
-      else { // Not precleared, Swap out
+        // Update head array type
+        head_type[r->said].first = false;
+      } else { // Not precleared, Swap out
         end_schedules[params.fid].push_back(
             ScheduleType(ScheduleTag::SWAP_OUT, r));
 
         // Transfer memory usage of all types
         for (auto &elem : params.sa_states[r->said]) {
           if (elem.second.state == ArrayStateTag::IN) {
-            // Swap out is performed by cast. 
+            // Swap out is performed by cast.
             // Thus, all dtypes are cleared from device.
             auto array_bytes = r->size * sizeof_dtype(elem.first);
             params.swap_in_bytes -= array_bytes;
             params.prefetch_bytes -= array_bytes;
             elem.second.swapped_out_r = r;
-            
+
             if (elem.first == head_type[r->said].second) {
               // Swap out only head
               params.swap_out_bytes += array_bytes;
@@ -909,12 +912,13 @@ void SwapInOutScheduler::post_callback() {}
 
 void SwapInOutScheduler::run(const ScheduleType &s) {
   if (auto p = s.r->sawptr.lock()) {
-      // cout << "type: " << to_str(s.tag);
-      // cout << " said: " << s.r->said;
-      // cout << " saptr: " << (uint64_t) s.r->sawptr.lock().get();
-      // cout << " bytes: " << byte_to_human_readable(s.r->size * sizeof_dtype(s.r->dtype));
-      // cout << " dtype: " << dtype_to_string(s.r->dtype) << endl;
-      // cout << " count: " << s.r->sawptr.use_count() << endl;
+    // cout << "type: " << to_str(s.tag);
+    // cout << " said: " << s.r->said;
+    // cout << " saptr: " << (uint64_t) s.r->sawptr.lock().get();
+    // cout << " bytes: " << byte_to_human_readable(s.r->size *
+    // sizeof_dtype(s.r->dtype));
+    // cout << " dtype: " << dtype_to_string(s.r->dtype) << endl;
+    // cout << " count: " << s.r->sawptr.use_count() << endl;
 
     if (s.tag == ScheduleTag::SWAP_IN_GET) {
       p->get(s.r->dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
@@ -937,15 +941,20 @@ void SwapInOutScheduler::run(const ScheduleType &s) {
       p->clear();
       precleared[p] = true;
     }
-  } 
+  }
 }
 
-inline string SwapInOutScheduler::to_str(const ScheduleTag& st) {
-  if (st == ScheduleTag::PRECLEAR) return "Preclear";
-  if (st == ScheduleTag::SWAP_IN_CAST) return "SwapInCast";
-  if (st == ScheduleTag::SWAP_IN_GET) return "SwapInGet";
-  if (st == ScheduleTag::SWAP_OUT) return "SwapOut";
-  if (st == ScheduleTag::WAIT) return "Wait";
+inline string SwapInOutScheduler::to_str(const ScheduleTag &st) {
+  if (st == ScheduleTag::PRECLEAR)
+    return "Preclear";
+  if (st == ScheduleTag::SWAP_IN_CAST)
+    return "SwapInCast";
+  if (st == ScheduleTag::SWAP_IN_GET)
+    return "SwapInGet";
+  if (st == ScheduleTag::SWAP_OUT)
+    return "SwapOut";
+  if (st == ScheduleTag::WAIT)
+    return "Wait";
 }
 
 void SwapInOutScheduler::run_on_beginning_schedule() {
@@ -977,11 +986,12 @@ void SwapInOutScheduler::swap_out_first_iter() {
         // If shared_ptr exists only in said_map (= use_count() == 1),
         // this shared_ptr owns intermideate buffer.
         r->temporary_buffer = true;
-      } 
-      
+      }
+
       if (auto p = r->sawptr.lock()) {
         // The array is not cleared yet. Swap it out.
-        if (is_not_cleared_yet(p)) p->cast(p->dtype(), host_ctx, false);
+        if (is_not_cleared_yet(p))
+          p->cast(p->dtype(), host_ctx, false);
       }
     }
   }
@@ -1033,9 +1043,10 @@ void SwapInOutScheduler::sa_callback_recorder(
 
   // check context whether is supported by scheduler or not.
   if (sa_tag != SyncedArrayCallbackTag::CLEAR && // when clear, ctx is dummy.
-    !context_checker(ctx, device_ctx) && !context_checker(ctx, host_ctx)) {
+      !context_checker(ctx, device_ctx) && !context_checker(ctx, host_ctx)) {
     NBLA_ERROR(error_code::type,
-                "[SwapInOutScheduler] Unsupported array type: " + ctx.array_class);
+               "[SwapInOutScheduler] Unsupported array type: " +
+                   ctx.array_class);
   }
 
   // Define SyncedArray ID
@@ -1086,9 +1097,9 @@ void SwapInOutScheduler::sa_callback_tracer(
 
   // Case 1: Over the current function block.
   if (order_idx >= func_block_ends[func_idx]) {
-    #if 0
+#if 0
       std::cerr << "[wrong order] type 1: order idx exceeds recorded one." << std::endl;
-    #endif    
+#endif
     wrong_ordered.push_back(
         {tag, 0, saptr, saptr->size(), dtype, ctx, false, false});
   }
@@ -1096,9 +1107,9 @@ void SwapInOutScheduler::sa_callback_tracer(
   else if (r.sawptr.expired() && // "expired" implies the replacement.
            tag == r.tag && saptr->size() == r.size && dtype == r.dtype &&
            ctx.array_class == r.ctx.array_class) {
-    #if 0
+#if 0
       std::cout << "[wrong order] type 2: SyncedArray would be replaced." << std::endl;
-    #endif
+#endif
     // Replace all recorded SyncedArray with new one
     for (auto &i : said_to_order_idx[r.said]) {
       order[i].sawptr = saptr;
@@ -1107,10 +1118,10 @@ void SwapInOutScheduler::sa_callback_tracer(
   // Case 3: Different entry
   else if (tag != r.tag || saptr != rec_saptr || saptr->size() != r.size ||
            dtype != r.dtype || ctx.array_class != r.ctx.array_class) {
-    #if 0
+#if 0
       std::cout << "[wrong order] type 3: Different entry." << std::endl;
-    #endif
-    
+#endif
+
     // Abort when off-scheduled get/cast happens after prefetch cast erased
     // the original data type.
     if (cast_prefetched[saptr]) {

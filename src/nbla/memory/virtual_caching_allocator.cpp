@@ -15,230 +15,371 @@
 #include <nbla/memory/virtual_caching_allocator.hpp>
 
 namespace nbla {
-  inline VirtualCachingAllocatorBase::PhysicalMemoryCache &
-  get_device_cache_map(unordered_map<string, VirtualCachingAllocatorBase::PhysicalMemoryCache> &m,
-                       const string &device_id) {
-    auto it = m.find(device_id);
-    if (it == m.end()) {
-      // Create a new DeviceCacheMap
-      it = m.emplace(device_id, VirtualCachingAllocatorBase::PhysicalMemoryCache()).first;
+
+using std::cout;
+using std::endl;
+using std::cerr;
+
+void debug() { cerr << "(L" << __LINE__ << ")" << endl; }
+
+template <typename H, typename... T> void debug(H h, T... t) {
+  cerr << h << " ";
+  debug(t...);
+}
+
+inline VirtualCachingAllocatorBase::PhysicalMemoryCache &get_device_cache_map(
+    unordered_map<string, VirtualCachingAllocatorBase::PhysicalMemoryCache> &m,
+    const string &device_id) {
+  auto it = m.find(device_id);
+  if (it == m.end()) {
+    // Create a new DeviceCacheMap
+    it =
+        m.emplace(device_id, VirtualCachingAllocatorBase::PhysicalMemoryCache())
+            .first;
+  }
+  return it->second;
+}
+
+void VirtualCachingAllocatorBase::set_chunk_size(size_t size) {
+  chunk_size_ = size;
+}
+
+//----------------------------------------------------------------------
+// Overriding member functions
+//----------------------------------------------------------------------
+
+void VirtualCachingAllocatorBase::free_impl(shared_ptr<Memory> memory) {
+  // Request to change device memory state
+  memory->lock_device_memory();
+
+  // get time_point
+  auto tp = std::chrono::high_resolution_clock::now();
+
+  // Keep this memory in mapped_ptr_cache_
+  mapped_ptr_cache_[memory->device_id()].emplace(memory->bytes(),
+                                                 make_pair(tp, memory));
+}
+
+void VirtualCachingAllocatorBase::sync_waiting_list() {
+  // Lazily unbind virtual memory to keep memory region safe in asynchronous
+  // computation.
+
+  // todo: binary search?
+  while (!waiting_list_.empty()) {
+    auto &m = waiting_list_.top().second;
+    if (m->get_device_memory_state() == DeviceMemoryState::Locked)
+      break;
+
+    string dev = m->device_id();
+
+    // decrease memory counts
+    memory_counter_[dev]--;
+
+    fragmentation_bytes_[dev] -= m->bytes() - m->requested_bytes();
+
+    m->unbind();
+    waiting_list_.pop();
+  }
+}
+
+void VirtualCachingAllocatorBase::alloc_physical_memory(
+    size_t alloc_bytes, const string &device_id, size_t &p_mem_bytes,
+    vector<PhysicalMemoryPtr> &p_mems) {
+  while (alloc_bytes > p_mem_bytes) {
+    auto pm = create_physical_memory_impl(chunk_size_, device_id);
+    p_mems.push_back(pm);
+    p_mem_bytes += p_mems.back()->bytes();
+  }
+}
+
+void VirtualCachingAllocatorBase::alloc_physical_memory_with_retry(
+    size_t alloc_bytes, const string &device_id, size_t &p_mem_bytes,
+    std::vector<PhysicalMemoryPtr> &p_mems) {
+  // Retry allocation logic.
+  try {
+    // Additionally allocate physical memory if needed.
+    alloc_physical_memory(alloc_bytes, device_id, p_mem_bytes, p_mems);
+
+  } catch (...) {
+    std::cout << "[VirtualCachingAllocatorBase] Failed to allocate physical "
+                 "memory. Free cache and try again."
+              << std::endl;
+    // If memory allocation is failed,
+    // freeing all caches once might help to allocate a new memory.
+    free_unused_caches();
+
+    try {
+      // Additionally allocate physical memory if needed.
+      alloc_physical_memory(alloc_bytes, device_id, p_mem_bytes, p_mems);
+
+    } catch (...) {
+      std::cerr << "[VirtualCachingAllocatorBase] Failed to allocate physical "
+                   "memory again."
+                << std::endl;
+      throw;
     }
-    return it->second;
+  }
+}
+
+void VirtualCachingAllocatorBase::transfer_memory_from_cache(
+    MemPtrWithTime &from, vector<PhysicalMemoryPtr> &ext_pmems,
+    size_t alloc_bytes, size_t &p_mem_bytes) {
+  // Unbind previous virtual address
+  waiting_list_.push(from);
+
+  auto mem = from.second;
+
+  auto &p_mems = mem->get_physical_memory();
+  string dev = mem->device_id();
+
+  int i = 0;
+  // Move physical memory
+  for (; i < p_mems.size() && alloc_bytes > p_mem_bytes; i++) {
+    ext_pmems.emplace_back(p_mems[i]);
+    p_mem_bytes += p_mems[i]->bytes();
   }
 
-  void VirtualCachingAllocatorBase::set_chunk_size(size_t size, int ct_flag) {
-    (ct_flag == int(chunk_type::SMALL) ? small_chunk_size_ : large_chunk_size_) = size;
+  // Move back unecessary memories to cache.
+  for (; i < p_mems.size(); i++) {
+    physical_memory_cache_[dev].push(p_mems[i]);
   }
+}
 
-  //----------------------------------------------------------------------
-  // Overriding member functions
-  //----------------------------------------------------------------------
+shared_ptr<Memory>
+VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
+                                        const string &device_id) {
 
-  using std::cout;
-  using std::endl;
+  sync_waiting_list();
 
-  void VirtualCachingAllocatorBase::free_impl(shared_ptr<Memory> memory) {
+  // Round up to allocataion bytes
+  size_t alloc_bytes =
+      (orig_bytes + chunk_size_ - 1) / chunk_size_ * chunk_size_;
+  auto &mapped_cache = mapped_ptr_cache_[device_id];
+  auto &p_cache = physical_memory_cache_[device_id];
 
-    // large or small
-    // Currently assume either small or large physical memories are used for virtual memory.
-    bool is_small = memory->get_physical_memory()[0]->bytes() == small_chunk_size_ && memory->bytes() <= large_chunk_size_;
-    auto &cache = is_small ? small_device_cache_ : large_device_cache_;
-
-    // get device_cache
-    auto &p_mem_cache = get_device_cache_map(cache, memory->device_id());
-
-    // Return physical memories to cache.
-    // todo: trace whether a physical memory is used or not by any virtual memory.
-    // Currently both waiting_list and cache have shared_ptr<PhysicalMemory>
-    // to prevent keep memory from being freed by free_unused_device_caches_impl.
-    // This is just a workaround and not so efficient.
-    for (auto &e: memory->get_physical_memory()) {
-      p_mem_cache.push(e);
-    }
-
-    // Request to change device memory state
-    memory->lock_device_memory();
-
-    // Keep this memory in waiting_list
-    waiting_list_.push(memory);
-
-  }
-
-  void VirtualCachingAllocatorBase::sync_waiting_list() {
-    // Lazily unbind virtual memory to keep memory region safe in asynchronous computation.
-
-    // todo: binary search?
-    while (!waiting_list_.empty()) {
-      auto &m = waiting_list_.front();
-      if (m->get_device_memory_state() == DeviceMemoryState::Locked) break;
-
-      // decrease memory counts
-      bool is_small = m->bytes() <= large_chunk_size_;
-      auto &count_map = is_small ? small_memory_counter_ : large_memory_counter_;
-      count_map[m->device_id()]--;
-
-      fragmentation_bytes_[m->device_id()] -= m->bytes() - m->requested_bytes();
-
-      m->unbind();
-      waiting_list_.pop();
-    }
-  }
-
-  void VirtualCachingAllocatorBase::alloc_physical_memory(size_t orig_bytes,
-                                                          size_t chunk_size,
-                                                          const string& device_id,
-                                                          size_t &allocated_bytes,
-                                                          std::vector<PhysicalMemoryPtr> &p_mems) {
-    while (allocated_bytes < orig_bytes) {
-      auto pm = create_physical_memory_impl(chunk_size, device_id);
-      p_mems.push_back(pm);
-      allocated_bytes += p_mems.back()->bytes();
-    }
-  }
-
-  shared_ptr<Memory>
-  VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
-                                          const string &device_id) {
-    /*
-     * write me
-     */
-    sync_waiting_list();
-
-    // Decide large or small depending on request bytes
-    bool is_small = orig_bytes < large_chunk_size_;
-    auto &cache = is_small ? small_device_cache_ : large_device_cache_;
-    auto cs = is_small ? small_chunk_size_ : large_chunk_size_;
-    auto &p_mem_cache = get_device_cache_map(cache, device_id);
-
-#if 0
-    print_memory_cache_map_impl()
-#endif
-
+  // 1. There is no cache in memory. Allocate a new one.
+  if (mapped_cache.size() == 0) {
+    // cout << "case 1" << endl;
     vector<PhysicalMemoryPtr> p_mems;
 
-    // Get physical memories from cache.
-    // todo: more efficient way.
     size_t p_mem_bytes = 0;
-    while (!p_mem_cache.empty() && orig_bytes > p_mem_bytes) {
-      auto p_mem = p_mem_cache.front();
-      p_mem_cache.pop();
+    while (!p_cache.empty() && alloc_bytes > p_mem_bytes) {
+      auto p_mem = p_cache.front();
+      p_cache.pop();
 
       p_mems.push_back(p_mem);
       p_mem_bytes += p_mem->bytes();
     }
 
-    // note: p_mem_bytes is always a multiple of chunk_size_, since it's sum of a multiple of chunk_size_.
-    // Retry allocation logic.
     try {
-      // Additionally allocate physical memory if needed.
-      alloc_physical_memory(orig_bytes, cs, device_id, p_mem_bytes, p_mems);
+      alloc_physical_memory_with_retry(orig_bytes, device_id, p_mem_bytes,
+                                       p_mems);
 
-    } catch (...) {
-      std::cout << "[VirtualCachingAllocatorBase] Failed to allocate physical memory. Free cache and try again." << std::endl;
-      // If memory allocation is failed, it is possible that memory cache causes this problem.
-      // So freeing all caches once might help to allocate a new memory.
-      free_unused_caches();
-
-      try {
-        // Additionally allocate physical memory if needed.
-        alloc_physical_memory(orig_bytes, cs, device_id, p_mem_bytes, p_mems);
-
-      } catch (...) {
-        std::cerr << "[VirtualCachingAllocatorBase] Failed to allocate physical memory again." << std::endl;
-        throw;
-      }
-    }
-
-    try {
+      // can allocate new physical memory
       auto mem = create_virtual_memory_impl(p_mem_bytes, device_id, p_mems);
       mem->bind();
 
-      // increment memory counts
-      auto &count_map = (mem->bytes() <= large_chunk_size_) ? small_memory_counter_ : large_memory_counter_;
-      count_map[device_id]++;
+      // [debug] increment memory counts
+      memory_counter_[device_id]++;
 
       fragmentation_bytes_[device_id] += mem->bytes() - orig_bytes;
       mem->set_requested_bytes(orig_bytes);
 
       return mem;
     } catch (...) {
-      std::cerr << "[VirtualCachingAllocatorBase] Failed to map virtual memory." << std::endl;
-      throw;
+      NBLA_ERROR(error_code::memory,
+                 "[VirtualCachingAllocatorBase] Failed to map virtual memory.")
     }
   }
 
-  size_t VirtualCachingAllocatorBase::free_unused_device_caches_impl(
-          const string &device_id) {
-
-    // VirtualCachingAllocator has 2 kinds of memory cache, large and small.
-    // If various size of memories are requested time to time,
-    // the number of caching memories can glow.
-    // It is possible that Selection algorithm selects the one which is not cached and create new ones
-    // in spite of selecting opposite ones even if a lot of memories are cached for the opposite.
-    // In that case, this method could be helpful.
-
-    // todo: Clear not all memories but partial ones?
-    sync_waiting_list();
-
-    auto &ms = small_device_cache_[device_id];
-    auto &ml = large_device_cache_[device_id];
-
-    // sum all memory bytes sizes up
-    size_t freed = ms.size() * large_chunk_size_ + ml.size() * small_chunk_size_;
-
-    // clear all
-    PhysicalMemoryCache().swap(ms);
-    PhysicalMemoryCache().swap(ml);
-
-    return freed;
+  // 2. If exactly the same size memory exists, return it.
+  auto it = mapped_cache.lower_bound(alloc_bytes);
+  if (it != mapped_cache.end() && it->first == alloc_bytes) {
+    // cout << "case 2" << endl;
+    // Just reuse memory.
+    auto ret = it->second.second;
+    mapped_cache.erase(it);
+    return ret;
   }
 
-  void VirtualCachingAllocatorBase::print_memory_cache_map_impl() {
-    printf("[VirtualCachingAllocatorBase]");
+  // there is no exact match
+  // 3. There is at least one smaller memory than request. Can grow memory.
+  if (it != mapped_cache.begin()) {
+    // cout << "case 3" << endl;
+    // Use maximum memory among smaller memoryies than request as a base.
 
-    for (auto &p: small_device_cache_) {
-      string device_id = p.first;
-      printf("===== device_id: %s =====\n# waiting memory: %lu\ncached bytes (small): %s\ncached bytes (large): %s\n",
-              device_id.c_str(), waiting_list_.size(),
-              byte_to_human_readable(small_device_cache_[device_id].size() * small_chunk_size_).c_str(),
-              byte_to_human_readable(large_device_cache_[device_id].size() * large_chunk_size_).c_str()
-      );
+    // lower_bound()-- is the maximum smaller memory. Remove from cache to use.
+    it--;
+    auto ret = it->second.second;
+    auto prev = it->second; // temporary
+    mapped_cache.erase(it);
+
+    size_t p_mem_bytes = ret->bytes();
+    vector<PhysicalMemoryPtr> ext_p_mems;
+
+    // Get physical memories from physical memory cache first.
+    while (!p_cache.empty() && alloc_bytes > p_mem_bytes) {
+      auto p_mem = p_cache.front();
+      p_cache.pop();
+
+      p_mem_bytes += p_mem->bytes();
+      ext_p_mems.push_back(p_mem);
     }
+
+    // When physical memories are additionally needed.
+    if (alloc_bytes > p_mem_bytes) {
+      auto it2 = mapped_cache.lower_bound(alloc_bytes - p_mem_bytes);
+
+      if (it2 != mapped_cache.end()) {
+        // cout << "case 3-1" << endl;
+        // There is a larger memory in chace than remaining bytes.
+        transfer_memory_from_cache(it2->second, ext_p_mems, alloc_bytes,
+                                   p_mem_bytes);
+
+        mapped_cache.erase(it2);
+      } else {
+        // cout << "case 3-2" << endl;
+        // There is no larger memories in chace than remaining bytes.
+        // Unbind from larger ones.
+        auto it3 = mapped_cache.rbegin();
+        for (; it3 != mapped_cache.rend() && alloc_bytes > p_mem_bytes; it3++) {
+          transfer_memory_from_cache(it3->second, ext_p_mems, alloc_bytes,
+                                     p_mem_bytes);
+        }
+        mapped_cache.erase(it3.base(), mapped_cache.end());
+
+        // create new physical memory
+        alloc_physical_memory(alloc_bytes, device_id, p_mem_bytes, ext_p_mems);
+      }
+    }
+
+    // grow memory
+    size_t prev_bytes = ret->bytes();
+    bool status = ret->grow(ext_p_mems);
+
+    if (status) {
+      // Success.
+      // In this case, previous virtual memory is just moved to new one.
+      // Thus update debug info here.
+      memory_counter_[device_id]--;
+      fragmentation_bytes_[device_id] -= prev_bytes - ret->requested_bytes();
+
+      ret->append_physical_memories(ext_p_mems);
+    } else {
+      // Fail, fall back to slower impl.
+
+      // Previous virtual address is not used any more.
+      waiting_list_.push(prev); // pair<cpu_time, ret>
+
+      // create new physical memory vector
+      auto p_mems_base = ret->get_physical_memory();
+      vector<PhysicalMemoryPtr> p_mems_new;
+      p_mems_new.reserve(p_mems_base.size() + ext_p_mems.size());
+      p_mems_new.insert(p_mems_new.end(), p_mems_base.begin(),
+                        p_mems_base.end());
+      p_mems_new.insert(p_mems_new.end(), ext_p_mems.begin(), ext_p_mems.end());
+
+      // create new virtual memory
+      ret = create_virtual_memory_impl(p_mem_bytes, device_id, p_mems_new);
+      ret->bind();
+    }
+
+    // debug info for the new memroy.
+    memory_counter_[device_id]++;
+    fragmentation_bytes_[device_id] += alloc_bytes - orig_bytes;
+
+    return ret;
   }
 
-  size_t VirtualCachingAllocatorBase::get_total_cache_bytes_impl(const PhysicalMemoryCache& cache) {
-    // Assuming each single block size is never changed after the first allocation.
-    if (cache.empty()) return 0;
-    return cache.size() * cache.front() -> bytes();
+  // cout << "case 4" << endl;
+
+  // 4. There is no smaller memory than request.
+  // Unmap minimum memory among larger memories than request.
+  auto prev = it->second;
+  vector<PhysicalMemoryPtr> p_mems;
+  size_t p_mem_bytes = 0;
+
+  transfer_memory_from_cache(prev, p_mems, alloc_bytes, p_mem_bytes);
+  mapped_cache.erase(it);
+
+  auto ret = create_virtual_memory_impl(alloc_bytes, device_id, p_mems);
+
+  ret->bind();
+
+  // increment memory counts
+  memory_counter_[device_id]++;
+
+  fragmentation_bytes_[device_id] += alloc_bytes - orig_bytes;
+  ret->set_requested_bytes(orig_bytes);
+
+  return ret;
+}
+
+size_t VirtualCachingAllocatorBase::free_unused_device_caches_impl(
+    const string &device_id) {
+
+  // Try to free all caches.
+  // todo: Clear not all memories but partial ones?
+  auto &mapped_cache = mapped_ptr_cache_[device_id];
+  for (auto &p : mapped_cache) {
+    waiting_list_.push(p.second);
   }
 
-  size_t VirtualCachingAllocatorBase::get_total_cache_bytes(const string &device_id) {
-    size_t total_bytes = 0;
+  MappedCache().swap(mapped_cache);
 
-    // small
-    total_bytes += get_total_cache_bytes_impl(small_device_cache_[device_id]);
+  sync_waiting_list();
 
-    // large
-    total_bytes += get_total_cache_bytes_impl(large_device_cache_[device_id]);
+  // Try to free all cached physical memories.
+  auto &ms = physical_memory_cache_[device_id];
 
-    return total_bytes;
+  // sum all memory bytes sizes up.
+  size_t freed = ms.size() * chunk_size_;
+
+  // clear all.
+  PhysicalMemoryCache().swap(ms);
+
+  return freed;
+}
+
+void VirtualCachingAllocatorBase::print_memory_cache_map_impl() {
+  for (auto &p : physical_memory_cache_) {
+    string device_id = p.first;
+    printf("===== device_id: %s =====\n# waiting memory: %lu\ncached bytes "
+           "(small): %s\ncached bytes (large): %s\n",
+           device_id.c_str(), waiting_list_.size(),
+           byte_to_human_readable(p.second.size() * chunk_size_).c_str());
+  }
+}
+
+size_t VirtualCachingAllocatorBase::get_total_cache_bytes_impl(
+    const string &device_id) {
+  size_t ret = 0;
+
+  // physical memory cache
+  auto p_cache = physical_memory_cache_[device_id];
+  if (p_cache.empty())
+    ret += p_cache.size() * chunk_size_;
+
+  // mapped cache
+  for (auto &p : mapped_ptr_cache_[device_id]) {
+    ret += p.first;
   }
 
-  size_t VirtualCachingAllocatorBase::get_fragmentation_bytes(const string &device_id) {
-    return fragmentation_bytes_[device_id];
-  }
+  return ret;
+}
 
-  size_t VirtualCachingAllocatorBase::get_max_available_bytes(const string &device_id) {
-    return get_total_cache_bytes(device_id);
-  }
+size_t
+VirtualCachingAllocatorBase::get_fragmentation_bytes(const string &device_id) {
+  return fragmentation_bytes_[device_id];
+}
 
-  vector<int> VirtualCachingAllocatorBase::get_used_memory_counts(const string &device_id) {
-    // small
-    auto small_cnt = small_memory_counter_[device_id];
+size_t
+VirtualCachingAllocatorBase::get_max_available_bytes(const string &device_id) {
+  return get_total_cache_bytes_impl(device_id);
+}
 
-    // large
-    auto large_cnt = large_memory_counter_[device_id];
-
-    return {small_cnt, large_cnt};
-  }
+vector<int>
+VirtualCachingAllocatorBase::get_used_memory_counts(const string &device_id) {
+  return {memory_counter_[device_id]};
+}
 }

@@ -99,8 +99,8 @@ private:
 
   void print_memory_cache_map_impl() override;
 
-  size_t get_max_cache_bytes(const string& device_id);
-  size_t get_total_cache_bytes(const string& device_id);
+  size_t get_max_cache_bytes(const string &device_id);
+  size_t get_total_cache_bytes(const string &device_id);
 
 protected:
   /** Make Memory instance with a given configuration.
@@ -117,11 +117,11 @@ protected:
 public:
   CachingAllocatorWithBucketsBase();
 
-  size_t get_fragmentation_bytes(const string& device_id) override;
+  size_t get_fragmentation_bytes(const string &device_id) override;
 
-  size_t get_max_available_bytes(const string& device_id) override;
+  size_t get_max_available_bytes(const string &device_id) override;
 
-  vector<int> get_used_memory_counts(const string& device_id) override;
+  vector<int> get_used_memory_counts(const string &device_id) override;
 };
 
 /** A realization of CachingAllocatorWithBuckets.

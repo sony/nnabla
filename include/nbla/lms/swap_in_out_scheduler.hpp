@@ -16,9 +16,9 @@
 #define __NBLA_CUDA_PREFETCH_HPP__
 
 #include <numeric>
+#include <set>
 #include <unordered_map>
 #include <vector>
-#include <set>
 
 #include <nbla/backend_registry.hpp>
 #include <nbla/computation_graph/function.hpp>
@@ -401,7 +401,7 @@ private:
   RecTag convert_tag(const SyncedArrayCallbackTag sa_tag,
                      const bool write_only);
 
-  string to_str(const ScheduleTag&);
+  string to_str(const ScheduleTag &);
 };
 }
 #endif

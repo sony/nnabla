@@ -14,105 +14,114 @@
 
 #pragma once
 
-#include <queue>
+#include <chrono>
+#include <map>
 #include <memory>
-#include <set>
+#include <queue>
 
-#include <nbla/memory/allocator.hpp>
-#include <nbla/global_context.hpp>
 #include <nbla/backend_registry.hpp>
+#include <nbla/global_context.hpp>
+#include <nbla/memory/allocator.hpp>
 
 namespace nbla {
-  using std::queue;
-  using std::make_shared;
-  using std::multiset;
+using std::queue;
+using std::make_shared;
+using std::multimap;
 
-  class NBLA_API VirtualCachingAllocatorBase : public Allocator {
-  public:
-    // Types realted to memory cache
-    typedef queue<PhysicalMemoryPtr> PhysicalMemoryCache;
-    typedef unordered_map<string, PhysicalMemoryCache> CacheMap;
+typedef std::chrono::system_clock::time_point Tp;
 
-    enum chunk_type {
-      SMALL=0,
-      LARGE=1,
-    };
+class NBLA_API VirtualCachingAllocatorBase : public Allocator {
+public:
+  // Types realted to memory cache
+  typedef queue<PhysicalMemoryPtr> PhysicalMemoryCache;
+  typedef unordered_map<string, PhysicalMemoryCache> PhysicalMemoryCacheMap;
 
-    void set_chunk_size(size_t size, int ct_flag);
+  typedef pair<Tp, shared_ptr<Memory>> MemPtrWithTime;
+  typedef multimap<size_t, MemPtrWithTime> MappedCache;
+  typedef std::priority_queue<MemPtrWithTime, vector<MemPtrWithTime>,
+                              std::greater<MemPtrWithTime>>
+      Wlist;
 
-    // Size of each single memory chunk.
-    size_t small_chunk_size_ = 2ULL << 20; // 2MB
-    size_t large_chunk_size_ = 20ULL << 20; // 20MB
-    
-  private:
-    // Memory cache
-    CacheMap small_device_cache_;
-    CacheMap large_device_cache_;
-    MemCountMap small_memory_counter_;
-    MemCountMap large_memory_counter_;
-    unordered_map<string, long long> fragmentation_bytes_;
+  void set_chunk_size(size_t size);
 
+  // Size of each single memory chunk.
+  size_t chunk_size_ = 20ULL << 20; // 20MB
 
-    // Waiting memory list to be cleared.
-    queue<shared_ptr<Memory>> waiting_list_ = {};
+private:
+  // Memory cache
+  PhysicalMemoryCacheMap physical_memory_cache_;
+  MemCountMap memory_counter_;
+  unordered_map<string, long long> fragmentation_bytes_;
 
-    void sync_waiting_list();
+  // Waiting memory list to be cleared.
+  Wlist waiting_list_;
 
-    void alloc_physical_memory(size_t orig_bytes,
-                               size_t chunk_size,
-                               const string& device_id,
-                               size_t& allocated_bytes,
-                               vector<PhysicalMemoryPtr>& p_mems);
+  // Mapped deviceptr cache
+  unordered_map<string, MappedCache> mapped_ptr_cache_;
 
-    void free_impl(shared_ptr<Memory> memory) override;
+  void sync_waiting_list();
 
-    shared_ptr<Memory> alloc_impl(size_t orig_bytes,
-                                  const string &device_id) override;
+  void alloc_physical_memory(size_t alloc_bytes, const string &device_id,
+                             size_t &p_mem_bytes,
+                             vector<PhysicalMemoryPtr> &p_mems);
 
-  protected:
-    /** CachingAllocatorWithBuckets implements this with Memory class template.
-     */
-    virtual PhysicalMemoryPtr create_physical_memory_impl(size_t bytes,
-                                                          const string &device_id) = 0;
+  void alloc_physical_memory_with_retry(size_t alloc_bytes,
+                                        const string &device_id,
+                                        size_t &p_mem_bytes,
+                                        vector<PhysicalMemoryPtr> &p_mems);
 
-    virtual shared_ptr<Memory> create_virtual_memory_impl(size_t bytes, const string &device_id,
-                                                          const VecPhysicalMemoryPtr &p_memories) = 0;
+  void transfer_memory_from_cache(MemPtrWithTime &from,
+                                  vector<PhysicalMemoryPtr> &to,
+                                  size_t alloc_bytes, size_t &p_mem_bytes);
 
-    size_t free_unused_device_caches_impl(const string &device_id) override;
+  void free_impl(shared_ptr<Memory> memory) override;
 
-    void print_memory_cache_map_impl() override;
+  shared_ptr<Memory> alloc_impl(size_t orig_bytes,
+                                const string &device_id) override;
 
-    size_t get_total_cache_bytes_impl(const PhysicalMemoryCache& cache);
-    size_t get_total_cache_bytes(const string& device_id);
+protected:
+  /** CachingAllocatorWithBuckets implements this with Memory class template.
+   */
+  virtual PhysicalMemoryPtr
+  create_physical_memory_impl(size_t bytes, const string &device_id) = 0;
 
-  public:
-    VirtualCachingAllocatorBase() = default;
+  virtual shared_ptr<Memory>
+  create_virtual_memory_impl(size_t bytes, const string &device_id,
+                             const VecPhysicalMemoryPtr &p_memories) = 0;
 
-    size_t get_fragmentation_bytes(const string& device_id) override;
+  size_t free_unused_device_caches_impl(const string &device_id) override;
 
-    size_t get_max_available_bytes(const string& device_id) override;
+  void print_memory_cache_map_impl() override;
 
-    vector<int> get_used_memory_counts(const string& device_id) override;
-  };
+  size_t get_total_cache_bytes_impl(const string &device_id);
 
-  template<class PhysicalMemoryType, class VirtualMemoryType>
-  class NBLA_API VirtualCachingAllocator : public VirtualCachingAllocatorBase {
-    typedef PhysicalMemoryType p_memory_type;
-    typedef VirtualMemoryType v_memory_type;
+public:
+  VirtualCachingAllocatorBase() = default;
 
-    PhysicalMemoryPtr create_physical_memory_impl(size_t bytes,
-                                                  const string &device_id) override {
-      return make_shared<p_memory_type>(bytes, device_id);
-    }
+  size_t get_fragmentation_bytes(const string &device_id) override;
 
-    shared_ptr<Memory> create_virtual_memory_impl(size_t bytes,
-                                                  const string &device_id,
-                                                  const VecPhysicalMemoryPtr &p_memories) override {
-      return make_shared<v_memory_type>(bytes, device_id, p_memories);
-    }
+  size_t get_max_available_bytes(const string &device_id) override;
 
-  public:
-    VirtualCachingAllocator()
-    : VirtualCachingAllocatorBase() {}
-  };
+  vector<int> get_used_memory_counts(const string &device_id) override;
+};
+
+template <class PhysicalMemoryType, class VirtualMemoryType>
+class NBLA_API VirtualCachingAllocator : public VirtualCachingAllocatorBase {
+  typedef PhysicalMemoryType p_memory_type;
+  typedef VirtualMemoryType v_memory_type;
+
+  PhysicalMemoryPtr
+  create_physical_memory_impl(size_t bytes, const string &device_id) override {
+    return make_shared<p_memory_type>(bytes, device_id);
+  }
+
+  shared_ptr<Memory>
+  create_virtual_memory_impl(size_t bytes, const string &device_id,
+                             const VecPhysicalMemoryPtr &p_memories) override {
+    return make_shared<v_memory_type>(bytes, device_id, p_memories);
+  }
+
+public:
+  VirtualCachingAllocator() : VirtualCachingAllocatorBase() {}
+};
 }

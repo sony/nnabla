@@ -58,17 +58,17 @@ public:
 private:
   void *obj_{nullptr};
   callback_type callback_;
-  setup_callback_type  setup_callback_;
+  setup_callback_type setup_callback_;
   cleanup_callback_type cleanup_callback_;
 
 public:
   NBLA_API FunctionHookWithObject();
-  NBLA_API FunctionHookWithObject(const FunctionHookWithObject& from);
+  NBLA_API FunctionHookWithObject(const FunctionHookWithObject &from);
   NBLA_API FunctionHookWithObject(void *obj, callback_type cb,
-                                  setup_callback_type  setup_cb,
+                                  setup_callback_type setup_cb,
                                   cleanup_callback_type clean_cb);
   NBLA_API ~FunctionHookWithObject();
-  NBLA_API FunctionHookWithObject& operator=(const FunctionHookWithObject& rhs);
+  NBLA_API FunctionHookWithObject &operator=(const FunctionHookWithObject &rhs);
 
   NBLA_API void operator()(const CgFunctionPtr &f);
 };

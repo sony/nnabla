@@ -45,27 +45,32 @@ using std::get;
 using std::unique_ptr;
 using std::vector;
 
-
 /** FunctionHookWithObject Implementation **/
 FunctionHookWithObject::FunctionHookWithObject() {}
 
-FunctionHookWithObject::FunctionHookWithObject(const FunctionHookWithObject& from) :
-    obj_(from.obj_), callback_(from.callback_),
-    setup_callback_(from.setup_callback_),
-    cleanup_callback_(from.cleanup_callback_) {setup_callback_(obj_);}
-
 FunctionHookWithObject::FunctionHookWithObject(
-    void *obj, callback_type cb,
-    setup_callback_type setup_cb,
-    cleanup_callback_type cleanup_cb)
-    : obj_(obj), callback_(cb), setup_callback_(setup_cb), cleanup_callback_(cleanup_cb) {setup_callback_(obj_);}
+    const FunctionHookWithObject &from)
+    : obj_(from.obj_), callback_(from.callback_),
+      setup_callback_(from.setup_callback_),
+      cleanup_callback_(from.cleanup_callback_) {
+  setup_callback_(obj_);
+}
 
-FunctionHookWithObject::~FunctionHookWithObject() { cleanup_callback_(obj_);}
+FunctionHookWithObject::FunctionHookWithObject(void *obj, callback_type cb,
+                                               setup_callback_type setup_cb,
+                                               cleanup_callback_type cleanup_cb)
+    : obj_(obj), callback_(cb), setup_callback_(setup_cb),
+      cleanup_callback_(cleanup_cb) {
+  setup_callback_(obj_);
+}
 
-FunctionHookWithObject&
-FunctionHookWithObject::operator=(const FunctionHookWithObject& rhs) {
+FunctionHookWithObject::~FunctionHookWithObject() { cleanup_callback_(obj_); }
+
+FunctionHookWithObject &FunctionHookWithObject::
+operator=(const FunctionHookWithObject &rhs) {
   // check self-assignment
-  if (&rhs == this) return *this;
+  if (&rhs == this)
+    return *this;
 
   obj_ = rhs.obj_;
   callback_ = rhs.callback_;

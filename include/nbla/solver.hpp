@@ -46,17 +46,17 @@ public:
 private:
   void *obj_{nullptr};
   callback_type callback_;
-  setup_callback_type  setup_callback_;
+  setup_callback_type setup_callback_;
   cleanup_callback_type cleanup_callback_;
 
 public:
   NBLA_API UpdateHookWithObject();
-  NBLA_API UpdateHookWithObject(const UpdateHookWithObject& from);
+  NBLA_API UpdateHookWithObject(const UpdateHookWithObject &from);
   NBLA_API UpdateHookWithObject(void *obj, callback_type cb,
-                                  setup_callback_type  setup_cb,
-                                  cleanup_callback_type clean_cb);
+                                setup_callback_type setup_cb,
+                                cleanup_callback_type clean_cb);
   NBLA_API ~UpdateHookWithObject();
-  NBLA_API UpdateHookWithObject& operator=(const UpdateHookWithObject& rhs);
+  NBLA_API UpdateHookWithObject &operator=(const UpdateHookWithObject &rhs);
 
   NBLA_API void operator()();
 };
@@ -195,7 +195,7 @@ public:
   @param decay_rate Coefficient of weight decay.
   */
   void weight_decay(float decay_rate, update_hook_type pre_callback = nullptr,
-		    update_hook_type post_callback = nullptr);
+                    update_hook_type post_callback = nullptr);
 
   /** Clip gradients by norm.
   The norm is calculated at each variable.

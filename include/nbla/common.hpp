@@ -96,13 +96,15 @@ inline string byte_to_human_readable(long double byte) {
   vector<string> units = {"B", "KB", "MB", "GB"};
 
   bool neg = byte < 0;
-  if (neg) byte = -byte;
+  if (neg)
+    byte = -byte;
 
   string unit;
   double div = 1 << 10;
-  for(auto &u: units) {
+  for (auto &u : units) {
     unit = u;
-    if (byte < div) break;
+    if (byte < div)
+      break;
     byte /= div;
   }
 

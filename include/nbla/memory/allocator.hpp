@@ -200,11 +200,13 @@ public:
    */
   void print_memory_cache_map() { print_memory_cache_map_impl(); }
 
-  virtual size_t get_fragmentation_bytes(const string& device_id) {return 0;}
+  virtual size_t get_fragmentation_bytes(const string &device_id) { return 0; }
 
-  virtual size_t get_max_available_bytes(const string& device_id) {return 0;}
+  virtual size_t get_max_available_bytes(const string &device_id) { return 0; }
 
-  virtual vector<int> get_used_memory_counts(const string& device_id) {return {};}
+  virtual vector<int> get_used_memory_counts(const string &device_id) {
+    return {};
+  }
 
 protected:
   /** Call mem's Memory::alloc with retry.
@@ -257,7 +259,7 @@ protected:
    */
   virtual size_t free_unused_device_caches_impl(const string &device_id) = 0;
 
-  virtual void print_memory_cache_map_impl() {};
+  virtual void print_memory_cache_map_impl(){};
 
   DISABLE_COPY_AND_ASSIGN(Allocator);
 };
