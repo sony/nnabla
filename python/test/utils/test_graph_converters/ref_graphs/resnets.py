@@ -49,6 +49,7 @@ def small_cf_resnet(image, test=False):
     return pred
 
 
+# Small Channel Last ResNet
 def cl_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='cl_convblock'):
     h = x
     with nn.parameter_scope(name):
@@ -236,3 +237,78 @@ def small_bsf_resnet(image, w_bias=False, name='bn-graph-ref'):
     h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='fc')
     return pred
+
+
+# Small BatchNormalization Multiple Inputs/Outputs ResNet
+def multiple_inputs_outputs_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                                     w_bias=False, test=False, name='mo-convblock'):
+    h = x
+    with nn.parameter_scope(name):
+        h = PF.convolution(h, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=w_bias)
+        h = PF.batch_normalization(h, axes=[1], batch_stat=not test)
+    return F.relu(h + x)
+
+
+def small_multiple_inputs_outputs_resnet(images, test=False, w_bias=False):
+    # Branches
+    outputs = []
+    for i, image in enumerate(images):
+        h = image
+        h /= 255.0
+        h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                           with_bias=w_bias, name='first-mo-conv-{}'.format(i))
+        h = PF.batch_normalization(
+            h, axes=[1], batch_stat=not test, name='first-mo-bn-{}'.format(i))
+        h = F.relu(h)
+        h = F.max_pooling(h, (2, 2))
+        outputs.append(h)
+    # Merge branches
+    z = sum(outputs)
+
+    h = multiple_inputs_outputs_resblock(
+        z, maps=16, w_bias=w_bias, test=test, name='mo-cb1')
+    h = F.average_pooling(h, (2, 2))
+    pred1 = PF.affine(h, 10, name='mo-fc1')
+
+    h = multiple_inputs_outputs_resblock(
+        z, maps=16, w_bias=w_bias, test=test, name='mo-cb2')
+    h = F.average_pooling(h, (2, 2))
+    pred2 = PF.affine(h, 10, name='mo-fc2')
+    return [pred1, pred2]
+
+
+# Small BatchNormalization Folding Multiple Inputs/Outputs ResNet
+def multiple_inputs_outputs_bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1),
+                                                stride=(1, 1), test=False, name='mo-convblock'):
+    h = x
+    with nn.parameter_scope(name):
+        h = PF.convolution(h, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=True)
+    return F.relu(h + x)
+
+
+def small_multiple_inputs_outputs_bn_folding_resnet(images, test=False):
+    # Branches
+    outputs = []
+    for i, image in enumerate(images):
+        h = image
+        h /= 255.0
+        h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                           with_bias=True, name='first-mo-conv-{}'.format(i))
+        h = F.relu(h)
+        h = F.max_pooling(h, (2, 2))
+        outputs.append(h)
+    # Merge branches
+    z = sum(outputs)
+
+    h = multiple_inputs_outputs_bn_folding_resblock(
+        z, maps=16, test=test, name='mo-cb1')
+    h = F.average_pooling(h, (2, 2))
+    pred1 = PF.affine(h, 10, name='mo-fc1')
+
+    h = multiple_inputs_outputs_bn_folding_resblock(
+        z, maps=16, test=test, name='mo-cb2')
+    h = F.average_pooling(h, (2, 2))
+    pred2 = PF.affine(h, 10, name='mo-fc2')
+    return [pred1, pred2]

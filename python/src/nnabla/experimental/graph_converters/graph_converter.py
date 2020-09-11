@@ -72,7 +72,7 @@ class FunctionModifier(object):
 
     def __call__(self, f):
         # Init condition
-        if self._map_func_inputs == {}:
+        if not f.inputs[0].parent and f not in self._map_func_inputs:
             self._map_func_inputs[f] = self._copy_inputs(f.inputs)
 
         # Lookup
