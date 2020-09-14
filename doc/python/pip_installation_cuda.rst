@@ -19,7 +19,7 @@ Package name       CUDA version cuDNN version
 ================== ============ =====================
 nnabla-ext-cuda90  9.0          7.6(Linux & Win)
 nnabla-ext-cuda100 10.0         7.6(Linux & Win)
-nnabla-ext-cuda101 10.1         7.6(Linux & Win)
+nnabla-ext-cuda102 10.2         7.6(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -27,11 +27,11 @@ The latest CUDA version is always preferred if your GPU accepts.
 Installation
 ------------
 
-The following is an example of installing the extension for CUDA 10.1
+The following is an example of installing the extension for CUDA 10.2
 
 .. code-block:: bash
 
-	pip install nnabla-ext-cuda101
+	pip install nnabla-ext-cuda102
 
 and check if all works.
 
@@ -53,41 +53,57 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is available only on ubuntu16.04 and python3.5+.
+Multi-GPU wheel package is only available on ubuntu16.04, ubuntu18.04 and python3.5+.
 
 .. _cuda-cudnn-compatibility:
 
 CUDA vs cuDNN Compatibility
 ---------------------------
 
-================================= ============ =============
-Package name                      CUDA version cuDNN version
-================================= ============ =============
-nnabla-ext-cuda90_nccl2_ubuntu16  9.0          7.6
-nnabla-ext-cuda100_nccl2_ubuntu16 10.0         7.6
-nnabla-ext-cuda100_nccl2_ubuntu18 10.0         7.6
-nnabla-ext-cuda101_nccl2_ubuntu16 10.1         7.6
-nnabla-ext-cuda101_nccl2_ubuntu18 10.1         7.6
-================================= ============ =============
+================================== ============ =============
+Package name                       CUDA version cuDNN version
+================================== ============ =============
+nnabla-ext-cuda90-nccl2-mpi1-10-2   9.0          7.6
+nnabla-ext-cuda90-nccl2-mpi2-1-1    9.0          7.6
+nnabla-ext-cuda90-nccl2-mpi3-1-6    9.0          7.6
+nnabla-ext-cuda100-nccl2-mpi1-10-2  10.0         7.6
+nnabla-ext-cuda100-nccl2-mpi2-1-1   10.0         7.6
+nnabla-ext-cuda100-nccl2-mpi3-1-6   10.0         7.6
+nnabla-ext-cuda102-nccl2-mpi1-10-2  10.2         7.6
+nnabla-ext-cuda102-nccl2-mpi2-1-1   10.2         7.6
+nnabla-ext-cuda102-nccl2-mpi3-1-6   10.2         7.6
+================================== ============ =============
 
 You can install as the following.
 
 .. code-block:: bash
 
-  pip install nnabla-ubuntu16
-  pip install nnabla-ext-cuda101-nccl2-ubuntu16
+  pip install nnabla
+  pip install nnabla-ext-cuda90-nccl2-mpi1-10-2
 
 
 If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, venv.
 
 
-You should also install OpenMPI,
+You should also install OpenMPI and NCCL in addition to CUDA and CuDNN.
+
+If you are using Ubuntu16.04 and choose mpi1.10.2 or you are using Ubuntu18.04 and choose mpi2.1.1, you can install mpi with following command.
 
 .. code-block:: bash
 
-  apt-get install libopenmpi-dev
+  sudo apt install -y --no-install-recommends openmpi-bin libopenmpi-dev
 
-and NCCL in addition to CUDA and CuDNN.
+Otherwise, you must install openmpi with following command.(MPIVER=3.1.6 or 1.10.2 or 2.1.1)
+
+.. code-block:: bash
+
+  MPIVER=3.1.6
+  curl -O https://download.open-mpi.org/release/open-mpi/v${MPIVER%.*}/openmpi-${MPIVER}.tar.bz2
+  tar xvf openmpi-${MPIVER}.tar.bz2
+  cd openmpi-${MPIVER}
+  ./configure --with-sge
+  make
+  sudo make install
 
 
 FAQ
@@ -120,6 +136,6 @@ Following is a sample error message.
 .. code-block:: bash
 
   [nnabla][INFO]: Initializing CPU extension...
-  Please install CUDA version 10.1.
+  Please install CUDA version 10.2.
     and cuDNN version 7.6
     Or install correct nnabla-ext-cuda for installed version of CUDA/cuDNN.
