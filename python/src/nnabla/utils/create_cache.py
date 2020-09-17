@@ -15,6 +15,7 @@ from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
 
+import psutil
 
 def multiprocess_save_cache(create_cache_args):
 
@@ -56,16 +57,17 @@ def multiprocess_save_cache(create_cache_args):
         start_position = position + 1 - len(cache_data)
         end_position = position
         cache_filename = os.path.join(
-            cc_args._cache_dir, '{}_{:08d}_{:08d}{}'.format(cc_args._cache_file_name_prefix,
-                                                            start_position,
-                                                            end_position,
-                                                            cc_args._cache_file_format))
+            cc_args._output_cache_dirname, 
+            '{}_{:08d}_{:08d}{}'.format(cc_args._cache_file_name_prefix,
+                                        start_position,
+                                        end_position,
+                                        cc_args._cache_file_format))
 
         logger.info('Creating cache file {}'.format(cache_filename))
 
         data = collections.OrderedDict(
             [(n, []) for n in cc_args._variables])
-        for pos, cd in enumerate(cache_data):
+        for _, cd in enumerate(cache_data):
             for i, n in enumerate(cc_args._variables):
                 if isinstance(cd[i], numpy.ndarray):
                     d = cd[i]
@@ -104,11 +106,11 @@ def multiprocess_save_cache(create_cache_args):
                             k, size, d.shape))
             raise
 
-        cc_args._cache_file_name_and_data_nums_q.put(
+        cc_args._cache_file_name_and_data_nums_list.append(
             (cache_filename, len(cache_data)))
         progress(
             'Create cache',
-            cc_args._cache_file_name_and_data_nums_q.qsize() / cc_args._cache_file_count)
+            len(cc_args._cache_file_name_and_data_nums_list) / cc_args._cache_file_count)
 
 
 class CreateCache(CsvDataSource):
@@ -162,68 +164,57 @@ class CreateCache(CsvDataSource):
 
     def create(self, output_cache_dirname, normalize=True, cache_file_name_prefix='cache'):
 
-        self._normalize = normalize
-        self._cache_file_name_prefix = cache_file_name_prefix
-
-        self._cache_file_format = nnabla_config.get(
-            'DATA_ITERATOR', 'cache_file_format')
-        logger.info('Cache file format is {}'.format(self._cache_file_format))
-
-        self._cache_dir = output_cache_dirname
+        cache_file_format = nnabla_config.get('DATA_ITERATOR', 'cache_file_format')
+        logger.info('Cache file format is {}'.format(cache_file_format))
 
         progress(None)
 
-        self._cache_file_name_and_data_nums_q = multiprocessing.Manager().Queue()
+        cache_file_name_and_data_nums_list = multiprocessing.Manager().list()
 
-        self._csv_position_and_data = []
+        csv_position_and_data = []
         csv_row = []
         for _position in range(self._size):
             csv_row.append(self._csv_data[self._order[_position]])
             if len(csv_row) == self._cache_size:
-                self._csv_position_and_data.append((_position, csv_row))
+                csv_position_and_data.append((_position, csv_row))
                 csv_row = []
         if len(csv_row):
-            self._csv_position_and_data.append((self._size-1, csv_row))
+            csv_position_and_data.append((self._size-1, csv_row))
 
         self_args = {
-            '_cache_file_name_prefix': self._cache_file_name_prefix,
-            '_cache_file_format': self._cache_file_format,
-            '_cache_file_name_and_data_nums_q': self._cache_file_name_and_data_nums_q,
-            '_cache_dir': self._cache_dir,
+            '_cache_file_name_prefix': cache_file_name_prefix,
+            '_cache_file_format': cache_file_format,
+            '_cache_file_name_and_data_nums_list': cache_file_name_and_data_nums_list,
+            '_output_cache_dirname': output_cache_dirname,
             '_variables': self._variables,
             '_filereader': self._filereader,
-            '_normalize': self._normalize,
+            '_normalize': normalize,
             '_columns': self._columns,
-            '_cache_file_count': len(self._csv_position_and_data)
+            '_cache_file_count': len(csv_position_and_data)
         }
+        p = psutil.Process()
+        print('memory info: {}'.format(p.memory_info()))
 
         progress('Create cache', 0)
         with closing(multiprocessing.Pool(self._process_num)) as pool:
             pool.map(multiprocess_save_cache,
-                     ((i, self_args) for i in self._csv_position_and_data))
+                     ((i, self_args) for i in csv_position_and_data))
         progress('Create cache', 1.0)
 
         logger.info('The total of cache files is {}'.format(
-            self._cache_file_name_and_data_nums_q.qsize()))
+                    len(cache_file_name_and_data_nums_list)))
 
         # Create Index
-        index_filename = os.path.join(self._cache_dir, "cache_index.csv")
-        cache_index_rows = []
-        while True:
-            try:
-                cache_index_rows.append(
-                    self._cache_file_name_and_data_nums_q.get(block=False))
-            except Exception:
-                break
-        cache_index_rows = sorted(cache_index_rows, key=lambda x: x[0])
+        index_filename = os.path.join(output_cache_dirname, "cache_index.csv")
+        cache_index_rows = sorted(cache_file_name_and_data_nums_list, key=lambda x: x[0])
         with open(index_filename, 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
             for file_name, data_nums in cache_index_rows:
                 writer.writerow((os.path.basename(file_name), data_nums))
 
         # Create Info
-        if self._cache_file_format == ".npy":
-            info_filename = os.path.join(self._cache_dir, "cache_info.csv")
+        if cache_file_format == ".npy":
+            info_filename = os.path.join(output_cache_dirname, "cache_info.csv")
             with open(info_filename, 'w') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 for variable in self._variables:
@@ -232,12 +223,12 @@ class CreateCache(CsvDataSource):
         # Create original.csv
         if self._original_source_uri is not None:
             shutil.copy(self._original_source_uri, os.path.join(
-                self._cache_dir, "original.csv"))
+                output_cache_dirname, "original.csv"))
 
         # Create order.csv
         if self._order is not None and \
                 self._original_order is not None:
-            with open(os.path.join(self._cache_dir, "order.csv"), 'w') as o:
+            with open(os.path.join(output_cache_dirname, "order.csv"), 'w') as o:
                 writer = csv.writer(o, lineterminator='\n')
                 for orders in zip(self._original_order, self._order):
                     writer.writerow(list(orders))
