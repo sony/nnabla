@@ -337,6 +337,11 @@ class CacheDataSource(DataSource):
 
         self.reset()
 
+    def close(self):
+        if hasattr(self, '_cache_reader_with_prefetch') and self._cache_reader_with_prefetch:
+            self._cache_reader_with_prefetch.close()
+            self._cache_reader_with_prefetch = None
+
     def reset(self):
         with self._thread_lock:
             super(CacheDataSource, self).reset()

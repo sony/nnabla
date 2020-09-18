@@ -1,5 +1,6 @@
 import os
 import csv
+import gc
 import h5py
 import numpy
 import shutil
@@ -15,7 +16,6 @@ from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
 
-import psutil
 
 def multiprocess_save_cache(create_cache_args):
 
@@ -57,7 +57,7 @@ def multiprocess_save_cache(create_cache_args):
         start_position = position + 1 - len(cache_data)
         end_position = position
         cache_filename = os.path.join(
-            cc_args._output_cache_dirname, 
+            cc_args._output_cache_dirname,
             '{}_{:08d}_{:08d}{}'.format(cc_args._cache_file_name_prefix,
                                         start_position,
                                         end_position,
@@ -164,7 +164,8 @@ class CreateCache(CsvDataSource):
 
     def create(self, output_cache_dirname, normalize=True, cache_file_name_prefix='cache'):
 
-        cache_file_format = nnabla_config.get('DATA_ITERATOR', 'cache_file_format')
+        cache_file_format = nnabla_config.get(
+            'DATA_ITERATOR', 'cache_file_format')
         logger.info('Cache file format is {}'.format(cache_file_format))
 
         progress(None)
@@ -192,8 +193,15 @@ class CreateCache(CsvDataSource):
             '_columns': self._columns,
             '_cache_file_count': len(csv_position_and_data)
         }
-        p = psutil.Process()
-        print('memory info: {}'.format(p.memory_info()))
+
+        # Notice:
+        #   Here, we have to place a gc.collect(), since we found
+        #   python might perform garbage collection operation in
+        #   a child process, which tends to release some objects
+        #   created by its parent process, thus, it might touch
+        #   cuda APIs which has not initialized in child process.
+        #   Place a gc.collect() here can avoid such cases.
+        gc.collect()
 
         progress('Create cache', 0)
         with closing(multiprocessing.Pool(self._process_num)) as pool:
@@ -206,7 +214,8 @@ class CreateCache(CsvDataSource):
 
         # Create Index
         index_filename = os.path.join(output_cache_dirname, "cache_index.csv")
-        cache_index_rows = sorted(cache_file_name_and_data_nums_list, key=lambda x: x[0])
+        cache_index_rows = sorted(
+            cache_file_name_and_data_nums_list, key=lambda x: x[0])
         with open(index_filename, 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
             for file_name, data_nums in cache_index_rows:
@@ -214,7 +223,8 @@ class CreateCache(CsvDataSource):
 
         # Create Info
         if cache_file_format == ".npy":
-            info_filename = os.path.join(output_cache_dirname, "cache_info.csv")
+            info_filename = os.path.join(
+                output_cache_dirname, "cache_info.csv")
             with open(info_filename, 'w') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 for variable in self._variables:
